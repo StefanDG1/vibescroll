@@ -1,5 +1,5 @@
 {
-  "recordedAt": "2026-10-10T16:08:15.593268+00:00",
+  "recordedAt": "2026-10-10T16:22:25.318734+00:00",
   "baseCommit": "23e5db10e221f4a64d43d56d527689891fd43a8c",
   "scope": "Tree connector flashing and restoring numeral one",
   "environment": "Windows Node 24; local production build; native Chrome with emulated viewports; labeled synthetic demo",
@@ -30,7 +30,34 @@
     },
     "finalNumeral": "lint, typecheck, formatting and Starter production build passed"
   },
-  "release": "Pending exact-head CI, merge and canonical verification",
+  "release": {
+    "pr": 105,
+    "checkedHead": "38d5a5485cfeb3acee88c87918ee7943dc0ceccf",
+    "headVerify": 38066744874,
+    "initialPreview": {
+      "id": "dpl_FkvRvibc7HvuCNbMjwksdLSBUyyz",
+      "result": "ERROR git_info_fail before build; no logs"
+    },
+    "sameCommitRetry": {
+      "id": "dpl_8HvULyhbmkAqvdPfFkoFurapEdbN",
+      "result": "READY; required Vercel status passed"
+    },
+    "applicationCommit": "7982f2e6d8f6a57197b3ef7fa682a00b9edb3fbc",
+    "version": "0.1.0-alpha.20261010161716.g7982f2e6d8f6",
+    "mainVerify": 38067047186,
+    "mainVersion": 38067047163,
+    "alphaPublication": 38067150416,
+    "prereleasePublishedAt": "2026-10-10T16:18:57Z",
+    "productionDeployment": "dpl_4xMVoXTWSYZp2q3w3uSuVweA3qKb",
+    "productionState": "READY",
+    "domain": "scroll.companynerve.com",
+    "canonicalHealth": {
+      "httpStatus": 200,
+      "status": "ok",
+      "exactCommitVersion": true
+    },
+    "buildSettings": "Official dashboard: Basic 2 vCPU 8GB, on-demand disabled; no settings changed"
+  },
   "limitations": [
     "Emulated Chrome viewports, not physical phone",
     "No independent-user acceptance",
@@ -39,5 +66,39 @@
   "spending": "No inference, sandbox, purchase, cap or hold changes; cumulative EUR 2 remains",
   "billing": "Verified team upcoming USD1.68 vs USD1.38; no new invoice, USD15 threshold unchanged; project attribution and EUR settlement unverified",
   "numeralOne": "Final production build: native mobile Tree light and Folders dark both show 1, accessible count and 24px slot; captures opened",
-  "aggregation": "Distinct current totals unchanged; repeated child-link counting awaiting owner clarification"
+  "aggregation": "Distinct current totals unchanged; repeated child-link counting awaiting owner clarification",
+  "productionBrowser": {
+    "environment": "Native Chrome, emulated widths; authenticated owner Library and labeled synthetic demo",
+    "ownerClosingFrames": 197,
+    "ownerSampleDurationMs": 1200.9000000357628,
+    "ownerPathIdentityRetained": true,
+    "ownerClosedEndHeightOpacity": [0, 0],
+    "ownerBranchReopened": true,
+    "widths": [
+      {
+        "width": 320,
+        "doc": 320
+      },
+      {
+        "width": 390,
+        "doc": 390
+      },
+      {
+        "width": 768,
+        "doc": 758
+      },
+      {
+        "width": 1440,
+        "doc": 1430
+      }
+    ],
+    "demoNumeralOne": "Visible1, accessible1 open proposal, alongside2 and3; production capture opened",
+    "ownerProposalLimitation": "No eligible positive proposal in sampled real branch",
+    "failuresRetained": [
+      "Early post-reload AX controls unavailable",
+      "Wrong scroll helper argument corrected with native CDP wheel",
+      "Initial equality-to-viewport overflow assertion rejected normal desktop scrollbar; corrected check is document width at most viewport width"
+    ],
+    "physicalPhone": false
+  }
 }

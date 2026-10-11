@@ -1,6 +1,6 @@
 # ADR 104: Read active recovery work and source-scoped restore records
 
-Mode: reference. Date: October 11, 2026. Status: implemented candidate; production release and comparable billing measurement pending.
+Mode: reference. Date: October 11, 2026. Status: deployed to production; comparable billing measurement pending.
 
 The authenticated Convex dashboard showed 47.38 GB of VibeScroller database I/O in the September 26 to October 26 period. Production `knowledge.recoverPage` contributed 4.58 GB and preview `recovery.applyMarkers` contributed 7.63 GB. The October 7 team invoice charged $9.02 for database I/O out of $10.60. These are accumulated observations, not a forecast or proof of savings.
 
@@ -13,3 +13,5 @@ Evidence inventory and locked restore projections reuse document reads inside th
 The three added indexes require no application-data migration. Existing indexes and document fields remain intact. Index storage adds copies of the affected records; measure net provider charges rather than equating fewer reads with invoice savings. Rollback may retain the additive indexes. Reverting the query would restore the expensive history scan.
 
 Regression tests enforce a 64 KiB transaction read budget with large unrelated history, assets and runs. They cover all recovery phases over multiple pages, removal from an index during pagination, terminal and healthy-job exclusion, reservations, kill switches, legacy continuations, PR preservation, repeated marker application and fresh deletion/generation checks after query-local reuse. Existing knowledge, privacy, recovery and storage-accounting suites remain required. See implementation status and the usage runbook for actual verification and release evidence.
+
+[PR107](https://github.com/StefanDG1/vibescroll/pull/107) merged to application `553099dd3dace3f2938036ee5f3cae92f9766572` after exact-head CI and preview verification. The Convex production deployment added the three indexes successfully. A subsequent bounded read-only query of all four active ranges read zero documents/bytes with no eligible work. This verifies idle indexed selection, not an entire cron execution, paid processing, physical restore or invoice savings. See the [release receipt](../operations/evidence/recovery-costs-20261011.json).

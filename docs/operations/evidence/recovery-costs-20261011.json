@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-11",
+  "applicationCommit": "553099dd3dace3f2938036ee5f3cae92f9766572",
+  "pullRequest": "https://github.com/StefanDG1/vibescroll/pull/107",
+  "applicationRelease": "v0.1.0-alpha.20261011195058.g553099dd3dac",
+  "convexDeployment": "bold-lemur-667",
+  "vercelProductionDeployment": "dpl_BQosnU4LLUUkkcgSHNJ32YF2Y1DS",
+  "addedIndexes": [
+    "assets.by_org_source",
+    "knowledgeJobs.by_state_updated",
+    "knowledgeEvaluations.by_state_updated"
+  ],
+  "deletedIndexes": [],
+  "dataMigration": false,
+  "verification": {
+    "backendPassed": 577,
+    "externalSkipped": 3,
+    "authenticationPassed": 28,
+    "pythonPassed": [6, 6, 3],
+    "basicBuildPolicyPassed": 5,
+    "productionBuildsPassed": 2,
+    "formatting": "passed",
+    "secretScan": "passed; redacted Gitleaks staged patch",
+    "dependencyAudit": "passed policy; existing Braces mitigation; no unresolved findings",
+    "pullRequestCi": 38169579614,
+    "mainCi": 38169744025,
+    "alphaPublication": 38169833154,
+    "productionHealth": "ok; exact application commit and version"
+  },
+  "boundedProductionReads": {
+    "before": [
+      {
+        "table": "knowledgeJobs",
+        "historicalPageRows": 20,
+        "bytesRead": 144191
+      },
+      {
+        "table": "knowledgeEvaluations",
+        "historicalPageRows": 20,
+        "bytesRead": 138601
+      }
+    ],
+    "afterObservedAt": "2026-10-11T19:52:09.113Z",
+    "after": {
+      "activeRangesProbed": 4,
+      "eligibleWork": false,
+      "documentsRead": 0,
+      "bytesRead": 0
+    },
+    "limitations": "Read-only range selection on an idle database. Not a direct cron invocation, whole-workload comparison or invoice-savings measurement. No private document content returned."
+  },
+  "localRegressionEvidence": "Six cost/safety tests enforce 64 KiB read limits, paginate all active phases, preserve holds, verify restore lock/PR preservation and query-local read freshness.",
+  "retainedFailures": [
+    "Initial new test fixture omitted required fields; corrected before reproducing the baseline read-budget failure.",
+    "Initial concurrent focused run timed out in an existing callback test; serial focused run passed unchanged.",
+    "Initial full check had seven timeouts and a following mock-call assertion failure. Unchanged two-worker rerun passed all 577 tests.",
+    "Initial Convex dry run stopped at noninteractive confirmation. Verified-target --yes --dry-run rerun passed."
+  ],
+  "notRun": [
+    "physical restore",
+    "live user-content deletion",
+    "paid inference",
+    "authenticated post-deploy UI",
+    "physical device acceptance",
+    "comparable daily billing measurement"
+  ],
+  "providerBudgetChanges": false,
+  "financialHoldChanges": false
+}

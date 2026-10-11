@@ -1,12 +1,14 @@
 # Convex usage investigation and rollout
 
-## October 11 recovery and restore candidate
+## October 11 recovery and restore release
 
 The authenticated September 26 to October 26 usage breakdown now shows 47.38 GB for VibeScroller, including 4.58 GB for production `knowledge.recoverPage` and 7.63 GB for preview `recovery.applyMarkers`. The October 7 team invoice charges $9.02 for database I/O of $10.60; the current $2.20 draft includes $1.76 more database I/O. Draft amounts can change. These totals include earlier usage and do not measure this candidate's savings.
 
-[ADR104](../adr/104-active-recovery-and-scoped-restore-reads.md) replaces full-history recovery with state/time index pages, scopes redaction to affected assets/runs, and reuses evidence source reads within one query. Deploy all three additive indexes with the compatible backend; no data migration or financial-hold cleanup is required. Existing frontend contracts are unchanged. Production `bold-lemur-667` dry-run validation passed; final deployment and post-release observation remain pending.
+[ADR104](../adr/104-active-recovery-and-scoped-restore-reads.md) replaces full-history recovery with state/time index pages, scopes redaction to affected assets/runs, and reuses evidence source reads within one query. All three additive indexes and compatible functions deployed successfully to production `bold-lemur-667` from application `553099dd3dace3f2938036ee5f3cae92f9766572`. No data migration or financial-hold cleanup was required. Existing frontend contracts are unchanged.
 
 A bounded read-only production baseline at 19:45-19:46 UTC read twenty historical jobs and twenty historical evaluations in separate queries. They consumed 144,191 and 138,601 database-read bytes respectively. Only safe state/count/transaction metrics were returned. The candidate's local 64 KiB regression tests exclude large terminal histories, unrelated assets/runs and duplicate same-query source reads. Neither result is a full-sweep benchmark or an invoice forecast.
+
+At 19:52:09 UTC after deployment, all four state/time range probes reported no eligible work and together read zero documents and zero database bytes. Deployed function metadata includes the internal indexed continuation state and checkpoint fields. Main CI and alpha publication passed; the canonical health endpoint reports application `553099dd3dace3f2938036ee5f3cae92f9766572`, version `0.1.0-alpha.20261011195058.g553099dd3dac`. The [receipt](evidence/recovery-costs-20261011.json) separates local safety tests from bounded production selection evidence. No real content deletion or physical restore ran to demonstrate savings.
 
 After release, inspect active state/time ranges and the next daily `knowledge.recoverPage` and restore-function breakdowns. Keep preview rehearsal traffic separate from serving traffic. Do not create or restore another deployment merely to measure savings. Preserve current deletion checks, restore locks, reservation holds and backup retention. Historical charges cannot be reversed by a query change.
 

@@ -495,7 +495,7 @@
       "navigation": "Follow only-child chains from any returned node in both Tree and Folders. Stop at a leaf, fork or direct evidence plus child choice; no individual insight auto-opens. Preserve explicit collapse and scoped remembered place. Paths remain twelve-level bounded and missing parents/cycles grant no access.",
       "loading": "react-loading-skeleton 3.5.0, MIT, supplies metadata, insight and proposal placeholders with Line/Panel tones and 1.6s shimmer; system reduced motion and app motion-off suppress animation. Failed reads clear the view and show Retry loading library.",
       "demo": "Read-only, explicitly synthetic fixed citations include three distinct open proposals and two closed/merged examples retained in Projects, with matching full source/proposal routes. No inference, provider polling or backend writes.",
-      "proposalDrilldown": "ADR104: distinct current open proposals, independent 44px bubble targets, shared Tree/Folders sheet, available related topics and project, no additional queries, incomplete proof clears content."
+      "proposalDrilldown": "ADR105: distinct current open proposals, independent 44px bubble targets, shared Tree/Folders sheet, available related topics and project, no additional queries, incomplete proof clears content."
     }
   },
   "components": [

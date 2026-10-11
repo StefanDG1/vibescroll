@@ -1,4 +1,4 @@
-# ADR 104: Distinct proposal totals and bubble drilldown
+# ADR 105: Distinct proposal totals and bubble drilldown
 
 Status: accepted by the owner, October 11, 2026.
 

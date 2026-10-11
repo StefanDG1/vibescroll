@@ -1,7 +1,7 @@
 {
   "observedAt": "2026-10-11T19:56:05.256029+00:00",
   "sourceBase": "6a7d978fc616aca30901ef5257016737dd4c9751",
-  "scope": "ADR104 distinct open-proposal bubble drilldown, both Library representations",
+  "scope": "ADR105 distinct open-proposal bubble drilldown, both Library representations",
   "candidate": {
     "validation": "233 documents and 12 skill snapshots",
     "formatting": "passed",

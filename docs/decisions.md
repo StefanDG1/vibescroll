@@ -178,4 +178,4 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 
 ## October 11: distinct proposal drilldown
 
-[ADR104](adr/104-proposal-count-drilldown.md) resolves ADR103: parent counts remain distinct current open proposals. Separate right-side bubble controls reveal their unique proposals, project and related topics from existing authorized pages in both Library views. A small help control explains overlapping child counts. No new query, grant, funding or execution authority follows.
+[ADR105](adr/105-proposal-count-drilldown.md) resolves ADR103: parent counts remain distinct current open proposals. Separate right-side bubble controls reveal their unique proposals, project and related topics from existing authorized pages in both Library views. A small help control explains overlapping child counts. No new query, grant, funding or execution authority follows.

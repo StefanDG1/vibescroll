@@ -1272,7 +1272,7 @@
   border-left: 1px solid var(--teal);
   padding-left: 12px;
 }
-.hybrid-proposals > span {
+.hybrid-proposals > .hybrid-proposal-status > span {
   font-size: 12px;
   color: var(--subtle);
 }
@@ -1830,6 +1830,62 @@ body:has(.hybrid-proposal-dialog[open]) {
   margin-top: 14px !important;
   color: var(--subtle);
   font-size: 12px !important;
+}
+.hybrid-proposal-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.hybrid-proposal-status > p {
+  margin: 0 !important;
+  font-size: inherit !important;
+}
+.hybrid-help-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--subtle);
+  cursor: help;
+}
+.hybrid-help-trigger:hover,
+.hybrid-help-trigger[data-state="delayed-open"],
+.hybrid-help-trigger[data-state="instant-open"] {
+  background: var(--muted);
+  color: var(--ink);
+}
+.hybrid-help-trigger:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.hybrid-help-tooltip {
+  z-index: 100;
+  max-width: min(300px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+.hybrid-help-tooltip-arrow {
+  fill: var(--panel);
+}
+@media (pointer: coarse) {
+  .hybrid-help-trigger {
+    width: 44px;
+    height: 44px;
+  }
 }
 .library-skeleton {
   display: block;

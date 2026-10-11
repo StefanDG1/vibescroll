@@ -1,5 +1,23 @@
 import type { QueryCtx } from "../_generated/server";
 
+const snapshots = new WeakMap<QueryCtx, Map<string, Promise<unknown>>>();
+
+/** Memoize additional reads only in an explicitly immutable query context. */
+export function queryRead<T>(
+  ctx: QueryCtx,
+  key: string,
+  read: () => Promise<T>,
+): Promise<T> {
+  const snapshot = snapshots.get(ctx);
+  if (!snapshot) return read();
+  let pending = snapshot.get(key);
+  if (!pending) {
+    pending = read();
+    snapshot.set(key, pending);
+  }
+  return pending as Promise<T>;
+}
+
 /** Reuse document reads only within one immutable query snapshot. */
 export function knowledgeReadContext(ctx: QueryCtx): QueryCtx {
   const reads = new Map<string, Promise<unknown>>();
@@ -19,5 +37,7 @@ export function knowledgeReadContext(ctx: QueryCtx): QueryCtx {
       return typeof value === "function" ? value.bind(target) : value;
     },
   });
-  return { ...ctx, db };
+  const snapshot = { ...ctx, db };
+  snapshots.set(snapshot, reads);
+  return snapshot;
 }

@@ -353,6 +353,24 @@ export const productTables = {
       searchField: "searchable",
       filterFields: ["organizationId", "state"],
     }),
+  repositoryManifests: defineTable({
+    organizationId: v.id("organizations"),
+    repositoryId: v.id("repositories"),
+    sha: v.string(),
+    manifest: v.array(v.string()),
+    manifestEntries: v.optional(
+      v.array(
+        v.object({
+          path: v.string(),
+          blobSha: v.string(),
+          mode: v.string(),
+          size: v.number(),
+        }),
+      ),
+    ),
+  })
+    .index("by_org", ["organizationId"])
+    .index("by_repository", ["repositoryId"]),
   repositoryContent: defineTable({
     organizationId: v.id("organizations"),
     repositoryId: v.id("repositories"),
@@ -375,6 +393,7 @@ export const productTables = {
     .index("by_repository", ["repositoryId"]),
   repositories: defineTable({
     ...tenant,
+    manifestStored: v.optional(v.boolean()),
     contentStored: v.optional(v.boolean()),
     contextEvidence: v.optional(
       v.array(

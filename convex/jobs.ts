@@ -1,5 +1,10 @@
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import {
+  repositoryManifest,
+  storeRepositoryManifest,
+  clearRepositoryManifest,
+} from "./lib/repositoryManifest";
+import {
   repositoryContent,
   storeRepositoryContent,
   clearRepositoryContent,
@@ -165,6 +170,8 @@ export const saveRepository = internalMutation({
         context: _context,
         contextTree: _tree,
         contextExcerpts: _excerpts,
+        manifest: _manifest,
+        manifestEntries: _manifestEntries,
         ...fields
       } = a;
       await ctx.db.patch(old._id, {
@@ -177,6 +184,10 @@ export const saveRepository = internalMutation({
         context: a.context,
         contextTree: a.contextTree,
         contextExcerpts: a.contextExcerpts,
+      });
+      await storeRepositoryManifest(ctx, (await ctx.db.get(old._id))!, {
+        manifest: a.manifest,
+        manifestEntries: a.manifestEntries,
       });
       return old._id;
     }
@@ -204,10 +215,13 @@ export const saveRepository = internalMutation({
               "context",
               "contextTree",
               "contextExcerpts",
+              "manifest",
+              "manifestEntries",
             ].includes(key),
         ),
       ) as Omit<typeof a, "snapshotActor">),
       context: "",
+      manifest: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
       enabled: true,
@@ -222,6 +236,10 @@ export const saveRepository = internalMutation({
       context: a.context,
       contextTree: a.contextTree,
       contextExcerpts: a.contextExcerpts,
+    });
+    await storeRepositoryManifest(ctx, (await ctx.db.get(id))!, {
+      manifest: a.manifest,
+      manifestEntries: a.manifestEntries,
     });
     return id;
   },
@@ -252,7 +270,7 @@ export const previousSnapshot = internalQuery({
           extractionVersion: repo.extractionVersion,
           profileVersion: repo.profileVersion,
           contextExcerpts: content?.contextExcerpts,
-          manifestEntries: repo.manifestEntries,
+          manifestEntries: content?.manifestEntries,
         }
       : null;
   },
@@ -441,6 +459,7 @@ export const revoke = mutation({
         .collect();
       for (const repo of repos) {
         await clearRepositoryContent(ctx, repo._id);
+        await clearRepositoryManifest(ctx, repo._id);
         await ctx.db.patch(repo._id, {
           enabled: false,
           status: "revoked",
@@ -1157,7 +1176,12 @@ export const exportPage = query({
             ? { title: "Unavailable private draft", body: "" }
             : {}),
         });
-      } else permitted.push(row);
+      } else
+        permitted.push(
+          a.section === "repositories" && "manifest" in row
+            ? (await repositoryManifest(ctx, row))!
+            : row,
+        );
     }
     return {
       page: permitted

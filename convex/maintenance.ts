@@ -66,6 +66,7 @@ export const purgeOrganization = internalMutation({
       "categorySuggestions",
       "repositories",
       "repositoryContent",
+      "repositoryManifests",
       "proposals",
       "runs",
       "wallets",

@@ -1,5 +1,7 @@
 # Convex usage investigation and rollout
 
+The [October 11 comprehensive follow-up audit](convex-cost-audit-20261011.md) records every resource category, the recent function ranking, repository-manifest amplification, backup source checks, and the remaining opportunities. Its candidate implementation and rollout constraints are documented in [ADR106](../adr/106-repository-manifests-and-backup-authority.md).
+
 ## October 11 recovery and restore release
 
 The authenticated September 26 to October 26 usage breakdown now shows 47.38 GB for VibeScroller, including 4.58 GB for production `knowledge.recoverPage` and 7.63 GB for preview `recovery.applyMarkers`. The October 7 team invoice charges $9.02 for database I/O of $10.60; the current $2.20 draft includes $1.76 more database I/O. Draft amounts can change. These totals include earlier usage and do not measure this candidate's savings.

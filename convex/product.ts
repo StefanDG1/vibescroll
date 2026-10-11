@@ -1,6 +1,8 @@
 import { presentAnalysis } from "../packages/insights/presentation";
 import { filing } from "./librarySpaces";
 import { repositoryContent } from "./lib/repositoryContent";
+import { repositoryManifest } from "./lib/repositoryManifest";
+import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { validateInspectedContext } from "../packages/repositories/retrieval";
 import { inspectionManifestValidator } from "../packages/repositories/context";
 import { inspectedContextValidator } from "../packages/repositories/context";
@@ -311,6 +313,7 @@ export async function settle(
 export const libraryContext = query({
   args: org,
   handler: async (ctx, { organizationId }) => {
+    ctx = knowledgeReadContext(ctx);
     const { organization, membership } = await access(ctx, organizationId);
     const [repositories, proposals, notifications] = await Promise.all([
       ctx.db
@@ -578,6 +581,7 @@ export const detail = query({
     organizationId: v.optional(v.id("organizations")),
   },
   handler: async (ctx, { id, organizationId }) => {
+    ctx = knowledgeReadContext(ctx);
     const s = await ctx.db.get(id);
     if (
       !s ||
@@ -1825,7 +1829,7 @@ export async function editPlanCore(
     plan.files.map((file) => file.path),
     true,
   );
-  const repo = await ctx.db.get(p.repositoryId);
+  const repo = await repositoryManifest(ctx, await ctx.db.get(p.repositoryId));
   if (!repo || repo.organizationId !== p.organizationId)
     fail("Repository unavailable.");
   for (const f of plan.files)

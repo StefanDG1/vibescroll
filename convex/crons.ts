@@ -4,13 +4,13 @@ const crons = cronJobs();
 crons.interval(
   "Recover full library scans",
   { minutes: 5 },
-  internal.libraryScanWorker.recover,
+  internal.usageMaintenance.recoverLibraryScans,
   {},
 );
 crons.interval(
   "Advance reviewed improvements",
   { minutes: 5 },
-  internal.improvementAutomation.recover,
+  internal.usageMaintenance.recoverImprovements,
   {},
 );
 for (const kind of ["media", "coding"] as const) {

@@ -16,7 +16,7 @@ export function ProposalBubbleButton({
 }: {
   count?: number;
   name: string;
-  onClick?: () => void;
+  onClick?: (origin: HTMLButtonElement) => void;
 }) {
   if (!count || !onClick) return null;
   return (
@@ -25,7 +25,7 @@ export function ProposalBubbleButton({
       className="hybrid-bubble-button"
       aria-label={`View ${count} open ${count === 1 ? "proposal" : "proposals"} for ${name}`}
       aria-haspopup="dialog"
-      onClick={onClick}
+      onClick={(event) => onClick(event.currentTarget)}
     >
       <ProposalBubble count={count} />
     </button>

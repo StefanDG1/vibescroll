@@ -55,7 +55,7 @@ export function TopicDiagram({
 }: {
   topics: Topic[];
   proposalCounts?: Record<string, number>;
-  onOpenProposals?: (topic: Topic) => void;
+  onOpenProposals?: (topic: Topic, origin: HTMLButtonElement) => void;
   onOpen: (topic: Topic) => void;
   selectedId?: string;
   representation?: "tree" | "folders";
@@ -242,7 +242,11 @@ export function TopicDiagram({
         <ProposalBubbleButton
           count={proposalCounts?.[node.id]}
           name={topic.name}
-          onClick={onOpenProposals ? () => onOpenProposals(topic) : undefined}
+          onClick={
+            onOpenProposals
+              ? (origin) => onOpenProposals(topic, origin)
+              : undefined
+          }
         />
       </div>
     );

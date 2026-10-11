@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-10-11T19:56:05.256029+00:00",
+  "observedAt": "2026-10-11T20:00:45.657499+00:00",
   "sourceBase": "6a7d978fc616aca30901ef5257016737dd4c9751",
   "scope": "ADR105 distinct open-proposal bubble drilldown, both Library representations",
   "candidate": {
@@ -37,7 +37,8 @@
         "count-help disclosure and matching full-proposal route"
       ],
       "corrections": "First desktop capture was not centered; final margin correction and rebuilt viewport matrix passed. Native helper attempts used a wrong fixture title and offscreen/fixed-control coordinates; those attempts were not treated as passing app checks."
-    }
+    },
+    "secretScan": "redacted staged diff passed with no findings"
   },
   "authority": "Current loaded complete badge proof only; exact reference matching; no copied modal records retained across invalidated proof. Negative proof cases are helper tests and code inspection, not live consent revocation tests.",
   "costs": "No inference, API-token reanalysis, sandbox, purchase, grant, cap or financial-hold change. Existing bounded badge pages are reused. October11 billing check already recorded privately; team estimate is not attributable task EUR settlement.",
@@ -48,5 +49,15 @@
     "Synthetic positive proposals do not establish real historical-proposal acceptance",
     "Chrome emulation is not a physical-phone or independent-user test",
     "No full V1 or whole-mockup pixel-fidelity acceptance claimed"
-  ]
+  ],
+  "integrated": {
+    "mainBase": "d94eb4fe4ee666ccb078ce16cf656a1a46aed92a",
+    "unitIntegrationTests": 580,
+    "externalSkippedTests": 3,
+    "authenticationTests": 28,
+    "pythonTests": [6, 6, 3],
+    "fixedBasicBuildTests": 5,
+    "pnpmCheck": "passed, including both builds",
+    "focusCorrection": "Actual activated bubble retained for touch/keyboard focus recovery. Final types and Starter production build passed; native touch tap followed by Escape returned focus to that bubble without changing selection. An intermediate missing callback type was corrected."
+  }
 }

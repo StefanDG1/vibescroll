@@ -87,7 +87,11 @@ function EvidenceList({
   onRemember,
   onOpenProposals,
 }: {
-  onOpenProposals: (selection: ProposalSelection, title: string) => void;
+  onOpenProposals: (
+    selection: ProposalSelection,
+    title: string,
+    origin: HTMLButtonElement,
+  ) => void;
   detail: any;
   organizationId: string;
   demo: boolean;
@@ -196,10 +200,11 @@ function EvidenceList({
                     <ProposalBubbleButton
                       count={count}
                       name={presentation.title}
-                      onClick={() =>
+                      onClick={(origin) =>
                         onOpenProposals(
                           { reference: member.evidence.reference },
                           presentation.title,
+                          origin,
                         )
                       }
                     />
@@ -405,15 +410,16 @@ export function LibraryAtlas({
     proposalSelection?.scope === authority && !message && selectionAvailable
       ? proposalDrilldown(badges, proposalSelection.selection)
       : null;
-  function showProposals(selection: ProposalSelection, title: string) {
+  function showProposals(
+    selection: ProposalSelection,
+    title: string,
+    origin: HTMLButtonElement,
+  ) {
     setProposalSelection({
       selection,
       title,
       scope: authority,
-      origin:
-        document.activeElement instanceof HTMLElement
-          ? document.activeElement
-          : null,
+      origin,
     });
   }
   // Never retain a proposal sheet through an invalidated or incomplete permission proof.
@@ -504,8 +510,8 @@ export function LibraryAtlas({
       <TopicDiagram
         topics={items}
         proposalCounts={proposalBadgeTotals(badges)?.topics}
-        onOpenProposals={(topic) =>
-          showProposals({ topicId: topic.id }, topic.name)
+        onOpenProposals={(topic, origin) =>
+          showProposals({ topicId: topic.id }, topic.name, origin)
         }
         onOpen={onOpen}
         selectedId={selected?.id}

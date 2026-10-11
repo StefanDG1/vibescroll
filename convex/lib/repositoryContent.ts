@@ -1,5 +1,6 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { repositoryManifest } from "./repositoryManifest";
 
 type Content = Pick<
   Doc<"repositories">,
@@ -10,6 +11,7 @@ export async function repositoryContent(
   ctx: QueryCtx,
   repo: Doc<"repositories"> | null,
 ) {
+  repo = await repositoryManifest(ctx, repo);
   if (!repo || !repo.contentStored) return repo;
   const content = await ctx.db
     .query("repositoryContent")

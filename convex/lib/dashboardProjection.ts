@@ -31,6 +31,7 @@ function fields(
       state: row.state,
       sourceId: row._id,
       sourceKind: row.kind,
+      sourceAuthorityVersion: 1,
       coverage: row.coverage,
       generation: row.generation,
       rightsAttested: row.rightsAttested,

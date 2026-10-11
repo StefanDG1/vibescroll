@@ -135,7 +135,11 @@ export const retentionPage = internalMutation({
         }
       } else if (
         row.updatedAt < Date.now() - 14 * 86400000 &&
-        ["completed", "failed", "canceled"].includes(row.state)
+        ["completed", "failed", "canceled"].includes(row.state) &&
+        (row.events.length > 0 ||
+          row.patch !== undefined ||
+          row.changes !== undefined ||
+          row.report !== undefined)
       ) {
         await ctx.db.patch(row._id, {
           events: [],

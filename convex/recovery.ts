@@ -1,4 +1,5 @@
 import { clearRepositoryContent } from "./lib/repositoryContent";
+import { clearRepositoryManifest } from "./lib/repositoryManifest";
 import { internalQuery } from "./_generated/server";
 import { internalMutation } from "./lib/projectedMutations";
 import { internal } from "./_generated/api";
@@ -8,6 +9,7 @@ import { redactSource } from "./product";
 import { rememberDeletion, subjectHash } from "./lib/deletionMarkers";
 import type { QueryCtx } from "./_generated/server";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
+import { sourceAuthority } from "./lib/sourceAuthority";
 
 export async function retainedFrame(ctx: QueryCtx, key: string, asOf: number) {
   ensure(
@@ -29,7 +31,7 @@ export async function retainedFrame(ctx: QueryCtx, key: string, asOf: number) {
     (asset.expiresAt !== undefined && asset.expiresAt <= Date.now())
   )
     return null;
-  const source = await ctx.db.get(asset.sourceId),
+  const source = await sourceAuthority(ctx, asset.sourceId),
     organization = await ctx.db.get(asset.organizationId);
   if (
     !source ||
@@ -130,7 +132,7 @@ export const evidenceRestoreCurrent = internalQuery({
     ensure(a.key.length <= 300, "INVALID_INPUT", "Use a bounded evidence key.");
     const evidence = await retainedFrame(ctx, a.key, a.asOf);
     if (!evidence) return null;
-    const source = (await ctx.db.get(evidence.sourceId))!;
+    const source = (await sourceAuthority(ctx, evidence.sourceId))!;
     return {
       locked: true,
       source: {
@@ -367,6 +369,7 @@ export const quarantinePage = internalMutation({
           });
       } else if ("fullName" in row) {
         await clearRepositoryContent(ctx, row._id);
+        await clearRepositoryManifest(ctx, row._id);
         await ctx.db.patch(row._id, {
           enabled: false,
           status: "reconnect_required",
@@ -410,24 +413,24 @@ export const readiness = internalQuery({
       .query("knowledgePolicies")
       .filter((q) => q.eq(q.field("enabled"), true))
       .first();
-    const activeKnowledge = await ctx.db
-      .query("knowledgeJobs")
-      .filter((q) =>
-        q.or(
-          q.eq(q.field("state"), "queued"),
-          q.eq(q.field("state"), "running"),
-        ),
-      )
-      .first();
-    const activeEvaluation = await ctx.db
-      .query("knowledgeEvaluations")
-      .filter((q) =>
-        q.or(
-          q.eq(q.field("state"), "queued"),
-          q.eq(q.field("state"), "running"),
-        ),
-      )
-      .first();
+    const activeKnowledge =
+      (await ctx.db
+        .query("knowledgeJobs")
+        .withIndex("by_state_updated", (q) => q.eq("state", "queued"))
+        .first()) ??
+      (await ctx.db
+        .query("knowledgeJobs")
+        .withIndex("by_state_updated", (q) => q.eq("state", "running"))
+        .first());
+    const activeEvaluation =
+      (await ctx.db
+        .query("knowledgeEvaluations")
+        .withIndex("by_state_updated", (q) => q.eq("state", "queued"))
+        .first()) ??
+      (await ctx.db
+        .query("knowledgeEvaluations")
+        .withIndex("by_state_updated", (q) => q.eq("state", "running"))
+        .first());
     const activeIssue = await ctx.db
       .query("issueAttempts")
       .filter((q) =>

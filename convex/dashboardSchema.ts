@@ -29,6 +29,7 @@ export const dashboardTables = {
     repositoryId: v.optional(v.id("repositories")),
     proposalId: v.optional(v.id("proposals")),
     sourceKind: v.optional(v.string()),
+    sourceAuthorityVersion: v.optional(v.literal(1)),
     coverage: v.optional(v.string()),
     generation: v.optional(v.number()),
     rightsAttested: v.optional(v.boolean()),

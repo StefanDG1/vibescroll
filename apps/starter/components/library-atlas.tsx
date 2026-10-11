@@ -27,15 +27,18 @@ import { motion } from "motion/react";
 import { Button } from "@companynerve/ui";
 import { LibrarySkeleton } from "./library-skeleton";
 import { TopicLoader } from "./topic-loader";
-import { ProposalBubble } from "./proposal-bubble";
+import { ProposalBubbleButton } from "./proposal-bubble";
+import { ProposalLink } from "./proposal-link";
+import { ProposalDrilldown } from "./proposal-drilldown";
 import {
   proposalBadgeTotals,
+  proposalDrilldown,
+  type ProposalSelection,
   openReferenceProposals,
   badgeReferenceKey,
   type ProposalBadgePage,
 } from "../../../packages/knowledge/proposal-badges";
 import { TopicDiagram } from "./topic-diagram";
-import { insightProposalStatus } from "@/lib/insight-project-links";
 import { topicPath } from "@/lib/topic-tree";
 import { insightPresentation } from "../../../packages/insights/presentation";
 import type { LibraryPlace } from "@/lib/library-place";
@@ -55,12 +58,18 @@ const insightIcons = {
   heart: Heart,
   wrench: Wrench,
 };
-function HelpNote({ children }: { children: React.ReactNode }) {
+function HelpNote({
+  children,
+  label = "About these connections",
+}: {
+  children: React.ReactNode;
+  label?: string;
+}) {
   return (
     <details className="hybrid-help">
-      <summary aria-label="About these connections">
+      <summary aria-label={label}>
         <CircleHelp size={16} />
-        <span className="sr-only">About these connections</span>
+        <span className="sr-only">{label}</span>
       </summary>
       <div>{children}</div>
     </details>
@@ -76,7 +85,13 @@ function EvidenceList({
   loadingEvidence,
   place,
   onRemember,
+  onOpenProposals,
 }: {
+  onOpenProposals: (
+    selection: ProposalSelection,
+    title: string,
+    origin: HTMLButtonElement,
+  ) => void;
   detail: any;
   organizationId: string;
   demo: boolean;
@@ -126,55 +141,74 @@ function EvidenceList({
                   ];
               return (
                 <li key={member._id} data-selected={expanded}>
-                  <button
-                    className="hybrid-insight-select"
-                    aria-label={`Inspect ${member.evidence.insight.claim}${count ? `, ${count} open proposals` : ""}`}
-                    aria-expanded={expanded}
-                    data-has-bubble={!!count}
-                    onPointerDown={() => setPointer(true)}
-                    onKeyDown={() => setPointer(false)}
-                    onClick={(event) => {
-                      setPointer(event.detail > 0);
-                      const next = expanded ? null : member._id;
-                      setInsightId(next);
-                      onRemember({ insightId: next ?? undefined });
-                    }}
-                  >
-                    <span
-                      className="hybrid-insight-icon"
-                      data-icon={presentation.icon}
-                      data-tone={
-                        Object.keys(insightIcons).indexOf(presentation.icon) % 4
-                      }
+                  <div className="hybrid-insight-card-control">
+                    <button
+                      className="hybrid-insight-select"
+                      aria-label={`Inspect ${member.evidence.insight.claim}${count ? `, ${count} open proposals` : ""}`}
+                      aria-expanded={expanded}
+                      data-has-bubble={!!count}
+                      onPointerDown={() => setPointer(true)}
+                      onKeyDown={() => setPointer(false)}
+                      onClick={(event) => {
+                        setPointer(event.detail > 0);
+                        const next = expanded ? null : member._id;
+                        setInsightId(next);
+                        onRemember({ insightId: next ?? undefined });
+                      }}
                     >
-                      <Icon aria-hidden="true" />
-                    </span>
-                    <span className="hybrid-insight-copy">
-                      <strong title={presentation.title}>
-                        {presentation.title}
-                      </strong>
-                      <small>
-                        <FileText size={14} aria-hidden="true" />
+                      <span
+                        className="hybrid-insight-icon"
+                        data-icon={presentation.icon}
+                        data-tone={
+                          Object.keys(insightIcons).indexOf(presentation.icon) %
+                          4
+                        }
+                      >
+                        <Icon aria-hidden="true" />
+                      </span>
+                      <span className="hybrid-insight-copy">
+                        <strong title={presentation.title}>
+                          {presentation.title}
+                        </strong>
+                        <small>
+                          <FileText size={14} aria-hidden="true" />
+                          <span
+                            className="hybrid-source-label"
+                            title={member.evidence.title}
+                          >
+                            {demo
+                              ? member.evidence.title.replace(
+                                  "Synthetic example",
+                                  "Example",
+                                )
+                              : member.evidence.title}
+                          </span>
+                        </small>
+                      </span>
+                      {!!count && (
                         <span
-                          className="hybrid-source-label"
-                          title={member.evidence.title}
-                        >
-                          {demo
-                            ? member.evidence.title.replace(
-                                "Synthetic example",
-                                "Example",
-                              )
-                            : member.evidence.title}
-                        </span>
-                      </small>
-                    </span>
-                    <ProposalBubble count={count} />
-                    {expanded ? (
-                      <ChevronDown size={18} aria-hidden="true" />
-                    ) : (
-                      <ChevronRight size={18} aria-hidden="true" />
-                    )}
-                  </button>
+                          className="hybrid-proposal-slot"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {expanded ? (
+                        <ChevronDown size={18} aria-hidden="true" />
+                      ) : (
+                        <ChevronRight size={18} aria-hidden="true" />
+                      )}
+                    </button>
+                    <ProposalBubbleButton
+                      count={count}
+                      name={presentation.title}
+                      onClick={(origin) =>
+                        onOpenProposals(
+                          { reference: member.evidence.reference },
+                          presentation.title,
+                          origin,
+                        )
+                      }
+                    />
+                  </div>
                   <motion.div
                     className="hybrid-insight-details"
                     initial={false}
@@ -279,43 +313,6 @@ function EvidenceList({
     </div>
   );
 }
-function ProposalLink({
-  step,
-  demo,
-  organizationId,
-}: {
-  step: any;
-  demo: boolean;
-  organizationId: string;
-}) {
-  const status = insightProposalStatus(step);
-  return (
-    <a
-      className="hybrid-proposal-link"
-      data-open={status.open}
-      href={
-        demo
-          ? `/demo?view=projects&proposal=${encodeURIComponent(step.id)}`
-          : `/app/${organizationId}/projects?proposal=${encodeURIComponent(step.id)}`
-      }
-    >
-      <FileText size={18} aria-hidden="true" />
-      <div>
-        <strong>{step.title}</strong>
-        <small>
-          {step.repository} ·{" "}
-          <span className="hybrid-proposal-state">{status.label}</span>
-        </small>
-        {step.description && (
-          <p>
-            {step.description.replace(/^[#>*\s]+/gm, "").replace(/\s+/g, " ")}
-          </p>
-        )}
-      </div>
-      <ChevronRight size={17} aria-hidden="true" />
-    </a>
-  );
-}
 export function LibraryAtlas({
   topics,
   selected,
@@ -387,6 +384,51 @@ export function LibraryAtlas({
     // oxlint-disable-next-line react/set-state-in-effect -- Restore the authorized branch's filing when external navigation loads.
     if (next) setFiling(next);
   }, [startingRoot, place?.filing, defaultFiling]);
+  const [proposalSelection, setProposalSelection] = useState<{
+    selection: ProposalSelection;
+    title: string;
+    scope: string;
+    origin: HTMLElement | null;
+  } | null>(null);
+  const authority = JSON.stringify([
+    organizationId,
+    topics?.scope,
+    badges?.scope,
+    search,
+  ]);
+  const currentSelection = proposalSelection?.selection;
+  const selectionAvailable =
+    currentSelection &&
+    ("topicId" in currentSelection
+      ? items.some((topic: any) => topic.id === currentSelection.topicId)
+      : detail?.members?.some(
+          (member: any) =>
+            badgeReferenceKey(member.evidence.reference) ===
+            badgeReferenceKey(currentSelection.reference),
+        ));
+  const proposalItems =
+    proposalSelection?.scope === authority && !message && selectionAvailable
+      ? proposalDrilldown(badges, proposalSelection.selection)
+      : null;
+  function showProposals(
+    selection: ProposalSelection,
+    title: string,
+    origin: HTMLButtonElement,
+  ) {
+    setProposalSelection({
+      selection,
+      title,
+      scope: authority,
+      origin,
+    });
+  }
+  // Never retain a proposal sheet through an invalidated or incomplete permission proof.
+  useEffect(() => {
+    if (proposalSelection && (!proposalItems || !proposalItems.length)) {
+      // oxlint-disable-next-line react/set-state-in-effect -- Clear the selection when its external permission proof is invalidated.
+      setProposalSelection(null);
+    }
+  }, [proposalSelection, proposalItems]);
   const evidenceKey = `${selected?.id}:${detail?.resetKey ?? "opening"}`;
   function chooseFiling(value: "Personal" | "Business") {
     setFiling(value);
@@ -408,7 +450,14 @@ export function LibraryAtlas({
       aria-busy={loading || loadingEvidence}
     >
       <div className="hybrid-heading-row">
-        <h2>Library</h2>
+        <div className="hybrid-title">
+          <h2>Library</h2>
+          <HelpNote label="How proposal counts work">
+            A proposal can relate to several topics. Each total counts it once.
+            Tap a number to see its open proposals. Closed proposals remain in
+            Projects.
+          </HelpNote>
+        </div>
         <label className="hybrid-search">
           <Search size={18} aria-hidden="true" />
           <span className="sr-only">Search library</span>
@@ -461,6 +510,9 @@ export function LibraryAtlas({
       <TopicDiagram
         topics={items}
         proposalCounts={proposalBadgeTotals(badges)?.topics}
+        onOpenProposals={(topic, origin) =>
+          showProposals({ topicId: topic.id }, topic.name, origin)
+        }
         onOpen={onOpen}
         selectedId={selected?.id}
         representation={folders ? "folders" : "tree"}
@@ -477,6 +529,7 @@ export function LibraryAtlas({
         {selected && !selected.autoCategory && (
           <EvidenceList
             key={evidenceKey}
+            onOpenProposals={showProposals}
             detail={detail}
             organizationId={organizationId}
             demo={demo}
@@ -494,6 +547,18 @@ export function LibraryAtlas({
           cursor={JSON.stringify([topics?.next, badges?.next])}
           loading={loading}
           onMore={onMoreTopics}
+        />
+      )}
+      {proposalSelection && proposalItems && proposalItems.length > 0 && (
+        <ProposalDrilldown
+          key={JSON.stringify([authority, proposalSelection.selection])}
+          title={proposalSelection.title}
+          items={proposalItems}
+          topics={items}
+          demo={demo}
+          organizationId={organizationId}
+          origin={proposalSelection.origin}
+          onClose={() => setProposalSelection(null)}
         />
       )}
       <details className="hybrid-settings">

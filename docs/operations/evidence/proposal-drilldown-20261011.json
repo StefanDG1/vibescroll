@@ -1,0 +1,63 @@
+{
+  "observedAt": "2026-10-11T20:00:45.657499+00:00",
+  "sourceBase": "6a7d978fc616aca30901ef5257016737dd4c9751",
+  "scope": "ADR105 distinct open-proposal bubble drilldown, both Library representations",
+  "candidate": {
+    "validation": "233 documents and 12 skill snapshots",
+    "formatting": "passed",
+    "lint": "passed",
+    "types": "passed",
+    "focusedTests": 8,
+    "fullTests": 574,
+    "externalSkippedTests": 3,
+    "authenticationTests": 28,
+    "pythonTests": [6, 6, 3],
+    "fixedBasicBuildTests": 5,
+    "builds": [
+      "marketing production passed",
+      "starter production passed",
+      "final starter production passed"
+    ],
+    "dependencyAudit": {
+      "unresolved": 0,
+      "existingLocalBracesMitigation": true
+    },
+    "initialFailure": "Initial full check: existing refund aggregation test timed out at 5000ms, 573 passed. Isolated 38-test product rerun and full test rerun passed unchanged.",
+    "nativeBrowser": {
+      "environment": "local production-build Chrome emulation, labeled synthetic demo",
+      "widths": [320, 390, 768, 1440],
+      "checks": [
+        "unique 3-proposal parent list, 2-proposal category list and 1-proposal category/insight list",
+        "closed and merged exclusion",
+        "44px separate bubble targets, no nested buttons",
+        "bubble leaves branch and insight unchanged",
+        "Escape focus return and native modal Tab containment",
+        "mobile sheet and corrected centered desktop dialog, no horizontal overflow",
+        "Tree/Folders light and dark captures opened",
+        "count-help disclosure and matching full-proposal route"
+      ],
+      "corrections": "First desktop capture was not centered; final margin correction and rebuilt viewport matrix passed. Native helper attempts used a wrong fixture title and offscreen/fixed-control coordinates; those attempts were not treated as passing app checks."
+    },
+    "secretScan": "redacted staged diff passed with no findings"
+  },
+  "authority": "Current loaded complete badge proof only; exact reference matching; no copied modal records retained across invalidated proof. Negative proof cases are helper tests and code inspection, not live consent revocation tests.",
+  "costs": "No inference, API-token reanalysis, sandbox, purchase, grant, cap or financial-hold change. Existing bounded badge pages are reused. October11 billing check already recorded privately; team estimate is not attributable task EUR settlement.",
+  "release": {
+    "status": "pending exact-head checks, merge and canonical production verification"
+  },
+  "limits": [
+    "Synthetic positive proposals do not establish real historical-proposal acceptance",
+    "Chrome emulation is not a physical-phone or independent-user test",
+    "No full V1 or whole-mockup pixel-fidelity acceptance claimed"
+  ],
+  "integrated": {
+    "mainBase": "d94eb4fe4ee666ccb078ce16cf656a1a46aed92a",
+    "unitIntegrationTests": 580,
+    "externalSkippedTests": 3,
+    "authenticationTests": 28,
+    "pythonTests": [6, 6, 3],
+    "fixedBasicBuildTests": 5,
+    "pnpmCheck": "passed, including both builds",
+    "focusCorrection": "Actual activated bubble retained for touch/keyboard focus recovery. Final types and Starter production build passed; native touch tap followed by Escape returned focus to that bubble without changing selection. An intermediate missing callback type was corrected."
+  }
+}

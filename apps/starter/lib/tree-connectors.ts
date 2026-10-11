@@ -84,7 +84,7 @@ export function measureTreeConnectors(tree: HTMLElement) {
     } else {
       const children = [
         ...frame.querySelectorAll<HTMLElement>(
-          ":scope > .hybrid-tree-level > .hybrid-node-level > .hybrid-node-row > li > .hybrid-node",
+          ":scope > .hybrid-tree-level > .hybrid-node-level > .hybrid-node-row > li > .hybrid-node-card > .hybrid-node",
         ),
       ].map((node) => ({
         id: node.dataset.topicId!,

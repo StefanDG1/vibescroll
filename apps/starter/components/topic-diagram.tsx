@@ -20,7 +20,7 @@ import {
   singleChildTarget,
   type TopicNode,
 } from "@/lib/topic-tree";
-import { ProposalBubble } from "./proposal-bubble";
+import { ProposalBubble, ProposalBubbleButton } from "./proposal-bubble";
 import { useInterfaceMotion } from "./motion-preference";
 import { measureTreeConnectors } from "@/lib/tree-connectors";
 type Topic = {
@@ -51,9 +51,11 @@ export function TopicDiagram({
   closedTopicId,
   onCollapse,
   proposalCounts,
+  onOpenProposals,
 }: {
   topics: Topic[];
   proposalCounts?: Record<string, number>;
+  onOpenProposals?: (topic: Topic, origin: HTMLButtonElement) => void;
   onOpen: (topic: Topic) => void;
   selectedId?: string;
   representation?: "tree" | "folders";
@@ -210,25 +212,43 @@ export function TopicDiagram({
     const expanded =
       active.has(node.id) && !(phase !== "open" && depth >= cutDepth);
     return (
-      <button
-        className="hybrid-node"
-        data-topic-id={node.id}
-        data-selected={expanded}
-        data-has-bubble={!!proposalCounts?.[node.id]}
-        data-wrap-label={/\S+\s+\S+/.test(topic.name)}
-        aria-label={`Open ${topic.name}${proposalCounts?.[node.id] ? `, ${proposalCounts[node.id]} open proposals` : ""}`}
-        aria-expanded={
-          node.children.length || node.id === selectedId ? expanded : undefined
-        }
-        onPointerDown={() => setPointer(true)}
-        onKeyDown={() => setPointer(false)}
-        onClick={(event) => choose(node, event.detail > 0)}
-      >
-        <Icon aria-hidden="true" />
-        <strong>{topic.name}</strong>
-        <ProposalBubble count={proposalCounts?.[node.id]} />
-        {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button>
+      <div className="hybrid-node-card">
+        <button
+          className="hybrid-node"
+          data-topic-id={node.id}
+          data-selected={expanded}
+          data-has-bubble={!!proposalCounts?.[node.id]}
+          data-wrap-label={/\S+\s+\S+/.test(topic.name)}
+          aria-label={`Open ${topic.name}${proposalCounts?.[node.id] ? `, ${proposalCounts[node.id]} open proposals` : ""}`}
+          aria-expanded={
+            node.children.length || node.id === selectedId
+              ? expanded
+              : undefined
+          }
+          onPointerDown={() => setPointer(true)}
+          onKeyDown={() => setPointer(false)}
+          onClick={(event) => choose(node, event.detail > 0)}
+        >
+          <Icon aria-hidden="true" />
+          <strong>{topic.name}</strong>
+          {proposalCounts?.[node.id] &&
+            (onOpenProposals ? (
+              <span className="hybrid-proposal-slot" aria-hidden="true" />
+            ) : (
+              <ProposalBubble count={proposalCounts[node.id]} />
+            ))}
+          {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
+        <ProposalBubbleButton
+          count={proposalCounts?.[node.id]}
+          name={topic.name}
+          onClick={
+            onOpenProposals
+              ? (origin) => onOpenProposals(topic, origin)
+              : undefined
+          }
+        />
+      </div>
     );
   }
   const evidenceCurrent = selectedId === candidate;

@@ -175,3 +175,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 - [ADR100: Lazy library browsing and choice-free branches](adr/100-lazy-library-and-choice-free-branches.md) records the owner-approved interaction and loading refinement.
 
 - [ADR101: One open proposal uses a solid dot](adr/101-single-proposal-dot.md) records a solid dot for one open proposal and numbered bubbles for two or more.
+
+## October 11: distinct proposal drilldown
+
+[ADR105](adr/105-proposal-count-drilldown.md) resolves ADR103: parent counts remain distinct current open proposals. Separate right-side bubble controls reveal their unique proposals, project and related topics from existing authorized pages in both Library views. A small help control explains overlapping child counts. No new query, grant, funding or execution authority follows.

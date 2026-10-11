@@ -4,6 +4,8 @@ import {
   proposalBadgeTotals,
   openReferenceProposals,
   badgeReferenceKey,
+  proposalDrilldown,
+  proposalTopicLabels,
 } from "../packages/knowledge/proposal-badges";
 import { insightProposalStatus } from "../packages/knowledge/proposal-status";
 import { demoProposalBadges } from "../apps/starter/lib/library-demo";
@@ -43,6 +45,67 @@ it("deduplicates proposals across references and descendant branches, withholdin
   expect(proposalBadgeTotals({ ...all, complete: false })).toBeNull();
   expect(openReferenceProposals(all, { ...a, revision: 1 })).toEqual([]);
   expect(openReferenceProposals(all, a)).toHaveLength(2);
+});
+it("explains parent, child and exact insight bubbles with unique open proposals only", () => {
+  const page = demoProposalBadges();
+  const root = proposalDrilldown(page, { topicId: "demo-topic" })!;
+  expect(root).toHaveLength(3);
+  expect(new Set(root.map((item) => item.id)).size).toBe(3);
+  expect(root.every((item) => insightProposalStatus(item).open)).toBe(true);
+  expect(proposalDrilldown(page, { topicId: "demo-control" })).toHaveLength(2);
+  expect(
+    proposalDrilldown(page, { reference: page.items[0].references[0] }),
+  ).toHaveLength(3);
+  expect(
+    proposalDrilldown(page, {
+      reference: { ...page.items[0].references[0], revision: 999 },
+    }),
+  ).toEqual([]);
+  expect(
+    proposalDrilldown({ ...page, next: "pending" }, { topicId: "demo-topic" }),
+  ).toBeNull();
+  expect(
+    proposalDrilldown({ ...page, complete: false }, { topicId: "demo-topic" }),
+  ).toBeNull();
+  expect(proposalDrilldown(null, { topicId: "demo-topic" })).toBeNull();
+});
+it("reconciles duplicate records to the newest lifecycle in both lists and totals", () => {
+  const item = {
+    id: "same",
+    state: "draft",
+    references: [a],
+    topicIds: ["root"],
+  };
+  const page = {
+    items: [item, item, { ...item, state: "rejected" }],
+    next: null,
+    complete: true,
+  };
+  expect(proposalDrilldown(page, { topicId: "root" })).toEqual([]);
+  expect(proposalBadgeTotals(page)?.topics.root).toBeUndefined();
+  const open = { ...page, items: [item, item] };
+  expect(proposalDrilldown(open, { topicId: "root" })).toHaveLength(1);
+  expect(proposalBadgeTotals(open)?.topics.root).toBe(1);
+});
+it("labels the most specific returned topics without exposing unavailable topic IDs", () => {
+  const proposal = {
+    id: "p",
+    state: "draft",
+    references: [a],
+    topicIds: ["root", "child", "unknown"],
+  };
+  const topics = [
+    { id: "root", name: "Business" },
+    { id: "child", name: "Pricing", parentId: "root" },
+  ];
+  expect(proposalTopicLabels(proposal, topics)).toEqual([topics[1]]);
+  expect(proposalTopicLabels(proposal, [])).toEqual([]);
+  expect(() =>
+    proposalTopicLabels(proposal, [
+      { ...topics[0], parentId: "child" },
+      topics[1],
+    ]),
+  ).not.toThrow();
 });
 it("excludes real closed-unmerged, closed issues, merged, rejected, deleted and unknown states", () => {
   for (const value of [

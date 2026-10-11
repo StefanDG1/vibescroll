@@ -22,6 +22,7 @@ import {
 } from "@/lib/topic-tree";
 import { ProposalBubble, ProposalBubbleButton } from "./proposal-bubble";
 import { useInterfaceMotion } from "./motion-preference";
+import { titleCase } from "@/lib/title-case";
 import { measureTreeConnectors } from "@/lib/tree-connectors";
 type Topic = {
   id: string;
@@ -208,6 +209,7 @@ export function TopicDiagram({
   function control(node: TopicNode, folder = false) {
     const topic = records.get(node.id)!;
     const Icon = folder ? Folder : iconFor(topic.name);
+    const label = titleCase(topic.name);
     const depth = path.findIndex((t) => t.id === node.id);
     const expanded =
       active.has(node.id) && !(phase !== "open" && depth >= cutDepth);
@@ -219,7 +221,7 @@ export function TopicDiagram({
           data-selected={expanded}
           data-has-bubble={!!proposalCounts?.[node.id]}
           data-wrap-label={/\S+\s+\S+/.test(topic.name)}
-          aria-label={`Open ${topic.name}${proposalCounts?.[node.id] ? `, ${proposalCounts[node.id]} open proposals` : ""}`}
+          aria-label={`Open ${label}${proposalCounts?.[node.id] ? `, ${proposalCounts[node.id]} open proposals` : ""}`}
           aria-expanded={
             node.children.length || node.id === selectedId
               ? expanded
@@ -230,7 +232,7 @@ export function TopicDiagram({
           onClick={(event) => choose(node, event.detail > 0)}
         >
           <Icon aria-hidden="true" />
-          <strong>{topic.name}</strong>
+          <strong>{label}</strong>
           {proposalCounts?.[node.id] &&
             (onOpenProposals ? (
               <span className="hybrid-proposal-slot" aria-hidden="true" />
@@ -241,7 +243,7 @@ export function TopicDiagram({
         </button>
         <ProposalBubbleButton
           count={proposalCounts?.[node.id]}
-          name={topic.name}
+          name={label}
           onClick={
             onOpenProposals
               ? (origin) => onOpenProposals(topic, origin)

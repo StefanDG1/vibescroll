@@ -24,7 +24,7 @@ import {
   CircleHelp,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { Button } from "@companynerve/ui";
+import { Button, Tooltip } from "@companynerve/ui";
 import { LibrarySkeleton } from "./library-skeleton";
 import { TopicLoader } from "./topic-loader";
 import { ProposalBubbleButton } from "./proposal-bubble";
@@ -39,6 +39,7 @@ import {
   type ProposalBadgePage,
 } from "../../../packages/knowledge/proposal-badges";
 import { TopicDiagram } from "./topic-diagram";
+import { titleCase } from "@/lib/title-case";
 import { topicPath } from "@/lib/topic-tree";
 import { insightPresentation } from "../../../packages/insights/presentation";
 import type { LibraryPlace } from "@/lib/library-place";
@@ -65,14 +66,37 @@ function HelpNote({
   children: React.ReactNode;
   label?: string;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <details className="hybrid-help">
-      <summary aria-label={label}>
-        <CircleHelp size={16} />
-        <span className="sr-only">{label}</span>
-      </summary>
-      <div>{children}</div>
-    </details>
+    <Tooltip.Provider delayDuration={200}>
+      <Tooltip.Root open={open} onOpenChange={setOpen}>
+        <Tooltip.Trigger asChild>
+          <button
+            type="button"
+            className="hybrid-help-trigger"
+            aria-label={label}
+            onClick={(event) => {
+              event.preventDefault();
+              setOpen(!open);
+            }}
+          >
+            <CircleHelp size={16} aria-hidden="true" />
+          </button>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            className="hybrid-help-tooltip"
+            side="top"
+            align="end"
+            sideOffset={6}
+            collisionPadding={16}
+          >
+            {children}
+            <Tooltip.Arrow className="hybrid-help-tooltip-arrow" />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
   );
 }
 const emptyMembers: any[] = [];
@@ -123,12 +147,13 @@ function EvidenceList({
       ) : (
         <div className="hybrid-insight-tray">
           <div className="hybrid-evidence-heading">
-            <span>{detail.topic?.name ?? "Insights"}</span>
+            <span>{titleCase(detail.topic?.name ?? "Insights")}</span>
             <small>Insights</small>
           </div>
           <ul>
             {members.slice(0, visible).map((member: any) => {
               const presentation = insightPresentation(member.evidence.insight),
+                label = titleCase(presentation.title),
                 Icon = insightIcons[presentation.icon],
                 expanded = member._id === insightId,
                 steps = openReferenceProposals(
@@ -139,6 +164,14 @@ function EvidenceList({
                   totals?.references[
                     badgeReferenceKey(member.evidence.reference)
                   ];
+              const proposalHelp = badges && !totals && (
+                <HelpNote label="About proposal coverage">
+                  {badges.next
+                    ? "Proposal totals appear after all current permitted pages are checked. Continue browsing to load more."
+                    : "This bounded check could not establish the total. Review proposals in Projects."}{" "}
+                  Closed proposals remain in Projects.
+                </HelpNote>
+              );
               return (
                 <li key={member._id} data-selected={expanded}>
                   <div className="hybrid-insight-card-control">
@@ -167,9 +200,7 @@ function EvidenceList({
                         <Icon aria-hidden="true" />
                       </span>
                       <span className="hybrid-insight-copy">
-                        <strong title={presentation.title}>
-                          {presentation.title}
-                        </strong>
+                        <strong title={label}>{label}</strong>
                         <small>
                           <FileText size={14} aria-hidden="true" />
                           <span
@@ -199,11 +230,11 @@ function EvidenceList({
                     </button>
                     <ProposalBubbleButton
                       count={count}
-                      name={presentation.title}
+                      name={label}
                       onClick={(origin) =>
                         onOpenProposals(
                           { reference: member.evidence.reference },
-                          presentation.title,
+                          label,
                           origin,
                         )
                       }
@@ -248,7 +279,10 @@ function EvidenceList({
                       )}
                       {expanded && steps.length > 0 && (
                         <div className="hybrid-proposals">
-                          <span>Open proposals</span>
+                          <div className="hybrid-proposal-status">
+                            <span>Open proposals</span>
+                            {proposalHelp}
+                          </div>
                           {steps.map((step: any) => (
                             <ProposalLink
                               key={step.id}
@@ -265,19 +299,14 @@ function EvidenceList({
                         </div>
                       )}
                       {expanded && badges && !steps.length && (
-                        <p className="hybrid-proposal-empty">
-                          {totals
-                            ? "No open proposals for this insight."
-                            : "No open proposals in the checked pages yet."}
-                        </p>
-                      )}
-                      {expanded && badges && !totals && (
-                        <HelpNote>
-                          {badges.next
-                            ? "Proposal totals appear after all current permitted pages are checked. Continue browsing to load more."
-                            : "This bounded check could not establish the total. Review proposals in Projects."}
-                          Closed proposals remain in Projects.
-                        </HelpNote>
+                        <div className="hybrid-proposal-status hybrid-proposal-empty">
+                          <p>
+                            {totals
+                              ? "No open proposals for this insight."
+                              : "No open proposals in the checked pages yet."}
+                          </p>
+                          {proposalHelp}
+                        </div>
                       )}
                     </div>
                   </motion.div>
@@ -511,7 +540,7 @@ export function LibraryAtlas({
         topics={items}
         proposalCounts={proposalBadgeTotals(badges)?.topics}
         onOpenProposals={(topic, origin) =>
-          showProposals({ topicId: topic.id }, topic.name, origin)
+          showProposals({ topicId: topic.id }, titleCase(topic.name), origin)
         }
         onOpen={onOpen}
         selectedId={selected?.id}

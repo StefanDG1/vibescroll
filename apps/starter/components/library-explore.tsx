@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { ChevronDown, GitBranch, ArrowRight, Lightbulb } from "lucide-react";
+import { titleCase } from "@/lib/title-case";
 import { KnowledgeMap } from "./knowledge-map";
 import { InsightProjectLinks } from "./insight-project-links";
 import { TopicDiagram } from "./topic-diagram";
@@ -585,7 +586,7 @@ export function LibraryExplore({
           corrections={
             detail?.topic && !readOnly && !demo ? (
               <details className="hybrid-filing-editor">
-                <summary>Move {selected.name}</summary>
+                <summary>Move {titleCase(selected.name)}</summary>
                 <form
                   key={`${selected.id}:${detail.topic.layoutVersion}`}
                   className="form-grid"
@@ -626,7 +627,7 @@ export function LibraryExplore({
                         .filter((topic: any) => topic.id !== selected.id)
                         .map((topic: any) => (
                           <option key={topic.id} value={topic.id}>
-                            {topic.name}
+                            {titleCase(topic.name)}
                           </option>
                         ))}
                     </ChoiceSelect>
@@ -889,7 +890,7 @@ export function LibraryExplore({
                   }
                   onClick={() => void open(topic)}
                 >
-                  {topic.name}
+                  {titleCase(topic.name)}
                 </button>
               ))}
             </nav>
@@ -905,7 +906,7 @@ export function LibraryExplore({
               Library overview
             </button>
             <h3 ref={selectedHeading} tabIndex={-1}>
-              {detail?.topic?.name ?? selected.name}
+              {titleCase(detail?.topic?.name ?? selected.name)}
             </h3>
             {detail?.topic && !readOnly && (
               <details className="explore-structure">
@@ -956,7 +957,7 @@ export function LibraryExplore({
                         .filter((t: any) => t.id !== selected.id)
                         .map((t: any) => (
                           <option key={t.id} value={t.id}>
-                            {t.name}
+                            {titleCase(t.name)}
                           </option>
                         ))}
                     </ChoiceSelect>
@@ -1216,12 +1217,12 @@ export function LibraryExplore({
                 <li key={topic.id}>
                   <button
                     onClick={() => void open(topic)}
-                    aria-label={`Open ${topic.name}`}
+                    aria-label={`Open ${titleCase(topic.name)}`}
                   >
                     <GitBranch size={19} aria-hidden="true" />
                     <span className="explore-topic-text">
                       <strong>
-                        {topic.name}
+                        {titleCase(topic.name)}
                         {topic.pinned ? " · Pinned" : ""}
                       </strong>
                       <span className="explore-meta">
@@ -1309,7 +1310,7 @@ function TopicBranches({
             <summary>
               <GitBranch size={19} aria-hidden="true" />
               <span>
-                <strong>{topic.name}</strong>
+                <strong>{titleCase(topic.name)}</strong>
                 <span className="explore-meta">
                   {topic.posts} posts · {topic.ideas} current ideas
                 </span>
@@ -1317,19 +1318,19 @@ function TopicBranches({
               <ChevronDown size={18} aria-hidden="true" />
             </summary>
             <button className="secondary" onClick={() => onOpen(topic)}>
-              Inspect {topic.name}
+              Inspect {titleCase(topic.name)}
             </button>
             <ul>{node.children.map(branch)}</ul>
           </details>
         ) : (
           <button
             onClick={() => onOpen(topic)}
-            aria-label={`Open ${topic.name}`}
+            aria-label={`Open ${titleCase(topic.name)}`}
           >
             <GitBranch size={19} aria-hidden="true" />
             <span>
               <strong>
-                {topic.name}
+                {titleCase(topic.name)}
                 {topic.pinned ? " · Pinned" : ""}
               </strong>
               <span className="explore-meta">

@@ -1,6 +1,6 @@
 # ADR 106: Keep manifests and backup source checks out of large routine reads
 
-Mode: reference. Date: October 11, 2026. Status: candidate; production verification pending.
+Mode: reference. Date: October 11, 2026. Status: deployed and migrated; comparable invoice measurement pending.
 
 ## Problem
 
@@ -27,3 +27,5 @@ Deploy the compatible backend before running either migration. Run `usageMainten
 After manifest migration, retain a backend that understands `repositoryManifests`. An inline-only rollback cannot read the moved paths. Prefer a compatible forward fix; a reverse migration needs separate validation. Projection rollback can use canonical source checks while retaining the optional card field. Do not disable backups or reduce retention to obtain savings.
 
 See the [complete cost audit](../operations/convex-cost-audit-20261011.md) for ranking, reviewed subsystems, deferred changes and measurement limits.
+
+Application `2152520930c1c4c66c03b262d53f78aa3ae36854` shipped through PR110. Both production and development migrations completed. All six production manifests and authority fields matched the baseline; all 250 production and 18 development source records passed card consistency checks. The six-repository read fell from 1,031,204 to 88,868 database bytes, and one matched source-authority read fell from 19,759 to 745 bytes. These bounded reads establish smaller selections, not whole-function or invoice savings. See the [release receipt](../operations/evidence/convex-cost-audit-20261011.json).

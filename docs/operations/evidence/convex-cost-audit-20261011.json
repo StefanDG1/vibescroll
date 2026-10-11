@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-11",
+  "applicationCommit": "2152520930c1c4c66c03b262d53f78aa3ae36854",
+  "testedCommit": "4bab5f621a2d402ddf30e27745b4b9c3f683a7da",
+  "identicalApplicationTrees": true,
+  "pullRequest": "https://github.com/StefanDG1/vibescroll/pull/110",
+  "release": "v0.1.0-alpha.20261011203603.g2152520930c1",
+  "productionDeployment": "bold-lemur-667",
+  "developmentDeployment": "resolute-ladybug-999",
+  "githubProductionDeployment": 7001438133,
+  "productionAddedIndexes": [
+    "repositoryManifests.by_org",
+    "repositoryManifests.by_repository"
+  ],
+  "removedIndexes": [],
+  "developmentAdditionalPriorMainIndexes": [
+    "assets.by_org_source",
+    "issueAttempts.by_current_publication",
+    "knowledgeEvaluations.by_state_updated",
+    "knowledgeJobs.by_state_updated",
+    "knowledgeMembers.by_reference",
+    "knowledgeTopics.by_org_leaf"
+  ],
+  "commands": [
+    "pnpm check",
+    "node scripts/audit-dependencies.mjs outputs/convex-cost-audit-audit.json",
+    "Gitleaks 8.30.1 stdin --redact --no-banner",
+    "pnpm exec convex deploy --dry-run --yes --typecheck enable",
+    "pnpm exec convex deploy --yes --typecheck enable",
+    "convex run usageMaintenance:compactRepositories {} --prod",
+    "convex run usageMaintenance:projectSourceAuthority {} --prod",
+    "pnpm exec convex dev --once --typecheck enable",
+    "convex run usageMaintenance:compactRepositories {}",
+    "convex run usageMaintenance:projectSourceAuthority {}",
+    "bounded read-only inline queries and authenticated browser checks"
+  ],
+  "verification": {
+    "environment": "Windows/Node 24.12.0/pnpm 12.3.4",
+    "localCompletedAt": "2026-10-11T20:32:54.899Z",
+    "backendPassed": 590,
+    "externalSkipped": 3,
+    "authPassed": 28,
+    "pythonPassed": [6, 6, 3],
+    "basicBuildPolicyPassed": 5,
+    "productionBuildsPassed": 2,
+    "formatLintTypesValidation": "passed",
+    "secretScan": "passed, redacted staged Gitleaks patch",
+    "dependencyPolicy": "passed; recorded Braces mitigation; zero unresolved findings",
+    "prCi": 38172786448,
+    "mainCi": 38172894840,
+    "alphaPublication": 38173000346,
+    "productionHealth": "ok; exact application commit/version",
+    "authenticatedBrowser": "Projects renders six cards; authenticated data returns six repositories; Library renders"
+  },
+  "repositoryMigration": {
+    "rows": 6,
+    "manifestDigestsAndAuthorityUnchanged": true,
+    "fieldsCompared": [
+      "manifest SHA256",
+      "repository SHA",
+      "organization",
+      "profileVersion",
+      "selectionVersion",
+      "updatedAt",
+      "snapshotAt",
+      "enabled",
+      "confirmed"
+    ],
+    "matchedRead": {
+      "beforeAt": 1791750750052,
+      "afterAt": 1791751017541,
+      "beforeBytes": 1031204,
+      "afterBytes": 88868,
+      "beforeJsonChars": 1064160,
+      "afterJsonChars": 89319
+    }
+  },
+  "sourceAuthorityMigration": {
+    "production": {
+      "at": "2026-10-11T20:38:06.077Z",
+      "sourceRows": 250,
+      "pages": 26,
+      "mismatches": 0,
+      "done": true
+    },
+    "development": {
+      "at": "2026-10-11T20:39:19.273Z",
+      "deployment": "resolute-ladybug-999",
+      "repositories": 1,
+      "manifestMismatches": 0,
+      "sourceRows": 18,
+      "sourceMismatches": 0
+    },
+    "matchedRead": {
+      "beforeAt": 1791750775934,
+      "afterAt": 1791751048178,
+      "beforeBytes": 19759,
+      "afterBytes": 745,
+      "authorityUnchanged": true
+    }
+  },
+  "measurementLimit": "Bounded read selections, not complete function execution or comparable invoice savings. Daily dashboard comparisons remain pending.",
+  "retainedFailures": [
+    "Initial fixture/schema errors were corrected before the final passing suite.",
+    "Exploratory general reference projection failed ten existing tests; removed and canonical reference validation retained.",
+    "Initial formatting file-array quoting failed; explicit file arguments passed.",
+    "Initial metrics probe returned an unawaited promise; corrected. A source calculation used the wrong metrics shape; corrected numeric probe retained.",
+    "Live Projects initially showed a generic navigation error. Its authenticated read succeeded and a fresh navigation rendered normally; cause unestablished.",
+    "Squash merge refused local fast-forward. Trees were identical; selected merged main after deployment.",
+    "Release lookup used an incorrect timestamp; the exact tag from canonical health was then verified."
+  ],
+  "notRun": [
+    "real physical restore",
+    "live user-content deletion",
+    "paid inference acceptance",
+    "comparable post-release invoice measurement"
+  ],
+  "unchangedPolicies": [
+    "tenancy and grants",
+    "evidence and source generations",
+    "expiry and object retirement checks",
+    "before/after backup and restore fences",
+    "restore lock",
+    "financial unknown holds",
+    "backup cadence and seven-day retention",
+    "provider budgets",
+    "Basic Vercel build policy"
+  ],
+  "rollback": "Keep a backend that reads repositoryManifests after migration. Inline-only rollback requires separately validated reverse migration. Existing locked previews untouched; new restore targets must deploy compatible code."
+}

@@ -76,6 +76,8 @@ import type * as lib_prObservation from "../lib/prObservation.js";
 import type * as lib_projectedMutations from "../lib/projectedMutations.js";
 import type * as lib_repositoryAllowance from "../lib/repositoryAllowance.js";
 import type * as lib_repositoryContent from "../lib/repositoryContent.js";
+import type * as lib_repositoryManifest from "../lib/repositoryManifest.js";
+import type * as lib_sourceAuthority from "../lib/sourceAuthority.js";
 import type * as lib_storageUsage from "../lib/storageUsage.js";
 import type * as lib_topicHierarchy from "../lib/topicHierarchy.js";
 import type * as lib_workspacePrivacy from "../lib/workspacePrivacy.js";
@@ -194,6 +196,8 @@ declare const fullApi: ApiFromModules<{
   "lib/projectedMutations": typeof lib_projectedMutations;
   "lib/repositoryAllowance": typeof lib_repositoryAllowance;
   "lib/repositoryContent": typeof lib_repositoryContent;
+  "lib/repositoryManifest": typeof lib_repositoryManifest;
+  "lib/sourceAuthority": typeof lib_sourceAuthority;
   "lib/storageUsage": typeof lib_storageUsage;
   "lib/topicHierarchy": typeof lib_topicHierarchy;
   "lib/workspacePrivacy": typeof lib_workspacePrivacy;

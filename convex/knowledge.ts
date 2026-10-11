@@ -1437,6 +1437,8 @@ export const redactDerived = internalMutation({
 export const recoverPage = internalMutation({
   args: {
     cursor: v.optional(v.string()),
+    state: v.optional(v.union(v.literal("running"), v.literal("queued"))),
+    asOf: v.optional(v.number()),
     section: v.optional(
       v.union(v.literal("knowledgeJobs"), v.literal("knowledgeEvaluations")),
     ),
@@ -1444,9 +1446,28 @@ export const recoverPage = internalMutation({
   handler: async (ctx, a) => {
     if (!workersEnabled()) return;
     const section = a.section ?? "knowledgeJobs";
-    const page = await ctx.db
-      .query(section)
-      .paginate({ cursor: a.cursor ?? null, numItems: 20 });
+    const state = a.state ?? "running";
+    const asOf = a.asOf ?? Date.now();
+    ensure(
+      Number.isSafeInteger(asOf) && asOf > 0 && asOf <= Date.now(),
+      "INVALID_INPUT",
+      "Invalid recovery checkpoint.",
+    );
+    const active = (table: WorkTable, status: "running" | "queued") =>
+      ctx.db
+        .query(table)
+        .withIndex("by_state_updated", (q) =>
+          status === "running"
+            ? q.eq("state", status).lt("updatedAt", asOf - limits.timeoutMs)
+            : q.eq("state", status).lte("updatedAt", asOf),
+        );
+    // A pre-upgrade continuation has an unindexed history cursor. Restart it
+    // against active work instead of reusing that cursor in the new index.
+    const page = await active(section, state).paginate({
+      cursor: a.state ? (a.cursor ?? null) : null,
+      numItems: 20,
+      maximumBytesRead: 512 * 1024,
+    });
     for (const row of page.page) {
       if (
         row.state === "running" &&
@@ -1475,11 +1496,30 @@ export const recoverPage = internalMutation({
     if (!page.isDone)
       await ctx.scheduler.runAfter(0, internal.knowledge.recoverPage, {
         section,
+        state,
+        asOf,
         cursor: page.continueCursor,
       });
-    else if (section === "knowledgeJobs")
-      await ctx.scheduler.runAfter(0, internal.knowledge.recoverPage, {
-        section: "knowledgeEvaluations",
-      });
+    else {
+      const phases = [
+        { section: "knowledgeJobs", state: "running" },
+        { section: "knowledgeJobs", state: "queued" },
+        { section: "knowledgeEvaluations", state: "running" },
+        { section: "knowledgeEvaluations", state: "queued" },
+      ] as const;
+      const position = phases.findIndex(
+        (p) => p.section === section && p.state === state,
+      );
+      // Empty phases need no scheduled invocation. One idle cron reads only
+      // four empty index ranges, regardless of retained job history.
+      for (const next of phases.slice(position + 1))
+        if (await active(next.section, next.state).first()) {
+          await ctx.scheduler.runAfter(0, internal.knowledge.recoverPage, {
+            ...next,
+            asOf,
+          });
+          break;
+        }
+    }
   },
 });

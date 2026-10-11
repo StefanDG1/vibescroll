@@ -238,6 +238,7 @@ export const productTables = {
     kind: v.optional(v.string()),
   })
     .index("by_org", ["organizationId"])
+    .index("by_org_source", ["organizationId", "sourceId"])
     .index("by_key", ["key"])
     .index("by_expiry", ["expiresAt"]),
   sources: defineTable({

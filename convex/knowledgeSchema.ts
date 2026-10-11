@@ -102,6 +102,7 @@ export const knowledgeTables = {
     processingVersion: v.string(),
     model: v.optional(v.string()),
   })
+    .index("by_state_updated", ["state", "updatedAt"])
     .index("by_org", ["organizationId"])
     .index("by_org_state", ["organizationId", "state"])
     .index("by_topic", ["topicId"])
@@ -133,6 +134,7 @@ export const knowledgeTables = {
     covered: v.number(),
     omitted: v.boolean(),
   })
+    .index("by_state_updated", ["state", "updatedAt"])
     .index("by_org", ["organizationId"])
     .index("by_org_state", ["organizationId", "state"])
     .index("by_topic", ["topicId"])

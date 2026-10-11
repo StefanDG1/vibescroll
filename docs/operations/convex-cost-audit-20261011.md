@@ -1,6 +1,6 @@
 # Convex cost audit, October 11, 2026
 
-Mode: reference. Candidate changes follow [ADR106](../adr/106-repository-manifests-and-backup-authority.md). Production rollout and comparable invoice savings remain pending.
+Mode: reference. Changes follow [ADR106](../adr/106-repository-manifests-and-backup-authority.md), deployed through [PR110](https://github.com/StefanDG1/vibescroll/pull/110). Production/development migrations and bounded read verification passed. Comparable invoice savings remain pending.
 
 ## What still costs the most
 
@@ -75,3 +75,7 @@ Production baseline probes return only counts, field sizes, authority values and
 Local tests establish migration and policy behavior, not production savings. After exact deployment, compare manifest hashes and unchanged SHA/profile/selection/timestamps, upgrade source authority, validate card/canonical consistency, and measure matched read/query payloads. Check the next daily breakdowns under similar workload. The audit cannot guarantee future usage or an exact invoice reduction from a single partial-day snapshot.
 
 The corrected production baseline at 20:32-20:33 UTC reads all six canonical repositories in a bounded ten-row query: 1,031,204 database-read bytes and 1,064,160 JSON characters. One matched source read consumes 19,759 database bytes. Transaction metrics distinguish database bytes from JSON length. Local acceptance and retained probe/test failures are recorded in [implementation status](../implementation-status.md).
+
+After deployment at approximately 20:36 UTC, the same six repository records read 88,868 database bytes, a 91.4% reduction. All manifest digests, repository SHAs, profile/selection versions, timestamps, enabled and confirmed flags matched the baseline. One matched source authority read fell to 745 database bytes, a 96.2% reduction, with identical identity/workspace/state/generation. All 250 production source records passed card consistency checks across 26 bounded pages. Development also received the compatible main backend: one repository and 18 sources passed side-record/card binding checks. Its deployment additionally installs six indexes from earlier main releases; no index was removed.
+
+Exact application commit `2152520930c1c4c66c03b262d53f78aa3ae36854` passed PR and main CI and published alpha `v0.1.0-alpha.20261011203603.g2152520930c1`. Canonical health reported that commit/version. Authenticated post-migration Projects rendered six project cards, its data read returned six repositories, and Library rendered successfully. No real restore, content deletion, paid inference or billing product change was used as a test. The [machine-readable receipt](evidence/convex-cost-audit-20261011.json) preserves command, deployment, test and measurement boundaries. Future locked previews must deploy compatible code before restoring these newer snapshots; existing untouched previews retain their previously deployed code.

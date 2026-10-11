@@ -1341,6 +1341,177 @@
   font-size: 12px;
   color: var(--subtle);
 }
+.hybrid-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.hybrid-title .hybrid-help {
+  position: static;
+}
+.hybrid-title .hybrid-help > div {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  width: min(270px, calc(100vw - 48px));
+  padding: 14px;
+  line-height: 1.6;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  z-index: 5;
+}
+.hybrid-node-card,
+.hybrid-insight-card-control {
+  position: relative;
+  min-width: 0;
+}
+.hybrid-proposal-slot {
+  width: 24px;
+  height: 24px;
+}
+.hybrid-bubble-button {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.hybrid-bubble-button:hover {
+  background: var(--hybrid-active);
+}
+.hybrid-bubble-button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: -2px;
+}
+.hybrid-insight-card-control .hybrid-bubble-button {
+  right: 30px;
+}
+.hybrid-proposal-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(82dvh, 720px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--ink);
+  overflow: hidden;
+}
+.hybrid-proposal-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.hybrid-proposal-dialog::backdrop {
+  background: rgb(12 24 35 / 45%);
+}
+body:has(.hybrid-proposal-dialog[open]) {
+  overflow: hidden;
+}
+.hybrid-proposal-dialog header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.hybrid-proposal-dialog header > div {
+  min-width: 0;
+}
+.hybrid-proposal-dialog h3 {
+  font-size: 19px;
+  margin: 0 0 6px;
+}
+.hybrid-proposal-dialog h3 span {
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+}
+.hybrid-proposal-dialog header p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--subtle);
+  overflow-wrap: anywhere;
+}
+.hybrid-proposal-dialog header button {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+}
+.hybrid-proposal-dialog-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 18px max(18px, env(safe-area-inset-bottom));
+  scrollbar-width: thin;
+  scrollbar-color: var(--subtle) transparent;
+}
+.hybrid-count-explanation {
+  color: var(--subtle);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.hybrid-proposal-results,
+.hybrid-proposal-topics {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.hybrid-proposal-results > li + li {
+  border-top: 1px solid var(--line);
+}
+.hybrid-proposal-dialog .hybrid-proposal-link {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  border-radius: 6px;
+}
+.hybrid-proposal-dialog .hybrid-proposal-link:hover {
+  background: var(--hybrid-active);
+}
+.hybrid-proposal-dialog .hybrid-proposal-link p {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.hybrid-proposal-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.hybrid-proposal-topics li {
+  font-size: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 7px;
+}
+@media (max-width: 767px) {
+  .hybrid-insight-card-control .hybrid-bubble-button {
+    right: 24px;
+  }
+  .hybrid-proposal-dialog {
+    width: 100%;
+    max-width: 100%;
+    max-height: 84dvh;
+    margin: auto 0 0;
+    border-radius: 16px 16px 0 0;
+  }
+}
 .hybrid-help summary,
 .metric-help summary {
   display: flex;

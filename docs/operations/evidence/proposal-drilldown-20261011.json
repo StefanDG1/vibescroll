@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-10-11T20:00:45.657499+00:00",
+  "observedAt": "2026-10-11T20:10:14.282913+00:00",
   "sourceBase": "6a7d978fc616aca30901ef5257016737dd4c9751",
   "scope": "ADR105 distinct open-proposal bubble drilldown, both Library representations",
   "candidate": {
@@ -43,7 +43,33 @@
   "authority": "Current loaded complete badge proof only; exact reference matching; no copied modal records retained across invalidated proof. Negative proof cases are helper tests and code inspection, not live consent revocation tests.",
   "costs": "No inference, API-token reanalysis, sandbox, purchase, grant, cap or financial-hold change. Existing bounded badge pages are reused. October11 billing check already recorded privately; team estimate is not attributable task EUR settlement.",
   "release": {
-    "status": "pending exact-head checks, merge and canonical production verification"
+    "status": "verified",
+    "pullRequest": 108,
+    "checkedHead": "3fe15adfc90ca54b56174f88f4dece4f517f2314",
+    "headVerifyRun": 38170415452,
+    "previewDeployment": "dpl_2mupkEjYUUwvQoDjUbYZKpmW9cRq",
+    "commit": "09e303cafbb604936c010869def91f9dd16040d4",
+    "version": "0.1.0-alpha.20261011200318.g09e303cafbb6",
+    "mainVerifyRun": 38170586907,
+    "versionRun": 38170586863,
+    "alphaRun": 38170702804,
+    "alphaPublishedAt": "2026-10-11T20:05:09Z",
+    "deployment": "dpl_7WVmMd9mnNj4SjF4tU5PK4wS6re6",
+    "deploymentState": "READY",
+    "canonicalDomain": "scroll.companynerve.com",
+    "canonicalHealth": {
+      "status": 200,
+      "bodyStatus": "ok",
+      "exactCommitAndVersion": true
+    },
+    "buildSettings": "Official deployment-settings disclosure: Basic, 2 vCPU, 8 GB, on-demand concurrent builds disabled. No settings changed.",
+    "nativeProduction": {
+      "syntheticDemo": "390px Tree unique3 and Folders unique1, exact project/topic previews, Escape focus recovery without branch change, count-help disclosure and no nested buttons; both captures opened",
+      "authenticatedOwner": "Existing owner Library loaded and fit390/390 mobile and1590/1600 desktop, with no eligible positive bubble in the sampled returned branch. The initial premature390px sample was invalidated; a later explicit-target sample passed after loading.",
+      "invalidProviderRead": "An initial shared-browser foreground sample was unrelated and invalidated. Subsequent provider and production commands used explicit owned targets and CDP sessions."
+    },
+    "backendDeployment": "None for this frontend update; preserves separately released recovery-read optimization",
+    "documentationFollowup": "ADR033 allows docs-only follow-up to skip frontend deployment; its main version is distinct from the serving application above."
   },
   "limits": [
     "Synthetic positive proposals do not establish real historical-proposal acceptance",

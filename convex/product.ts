@@ -1526,22 +1526,21 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     .withIndex("by_source", (q) => q.eq("sourceId", id))
     .collect())
     await ctx.db.delete(stage._id);
-  const runs = await ctx.db
-    .query("runs")
-    .withIndex("by_org", (q) => q.eq("organizationId", s.organizationId))
-    .collect();
-  const related = new Set(proposals.map((p) => p._id));
-  for (const run of runs)
-    if (related.has(run.proposalId))
-      await ctx.db.patch(run._id, {
-        generation: run.generation + 1,
-        state: run.prNumber ? "completed" : "canceled",
-        patch: undefined,
-        changes: undefined,
-        report: undefined,
-        events: [],
-        updatedAt: Date.now(),
-      });
+  for (const proposal of proposals)
+    for (const run of await ctx.db
+      .query("runs")
+      .withIndex("by_proposal", (q) => q.eq("proposalId", proposal._id))
+      .collect())
+      if (run.organizationId === s.organizationId)
+        await ctx.db.patch(run._id, {
+          generation: run.generation + 1,
+          state: run.prNumber ? "completed" : "canceled",
+          patch: undefined,
+          changes: undefined,
+          report: undefined,
+          events: [],
+          updatedAt: Date.now(),
+        });
   await ctx.db.patch(id, {
     state: "deleted",
     canonical: `deleted:${id}`,
@@ -1585,9 +1584,11 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
   await ctx.db.patch(id, { categoryOverride: undefined });
   for (const asset of await ctx.db
     .query("assets")
-    .withIndex("by_org", (q) => q.eq("organizationId", s.organizationId))
+    .withIndex("by_org_source", (q) =>
+      q.eq("organizationId", s.organizationId).eq("sourceId", id),
+    )
     .collect())
-    if (asset.sourceId === id) await queueDeletion(ctx, asset.key);
+    await queueDeletion(ctx, asset.key);
   if (s.objectKey) await queueDeletion(ctx, s.objectKey);
 }
 export const repositories = query({

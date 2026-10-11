@@ -7,6 +7,7 @@ import { ensure } from "../packages/policy";
 import { redactSource } from "./product";
 import { rememberDeletion, subjectHash } from "./lib/deletionMarkers";
 import type { QueryCtx } from "./_generated/server";
+import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 
 export async function retainedFrame(ctx: QueryCtx, key: string, asOf: number) {
   ensure(
@@ -79,6 +80,7 @@ export const evidencePage = internalQuery({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, a) => {
+    ctx = knowledgeReadContext(ctx);
     ensure(
       Number.isSafeInteger(a.asOf) && a.asOf > 0 && a.asOf <= Date.now(),
       "INVALID_INPUT",
@@ -119,6 +121,7 @@ export const evidenceCurrent = internalQuery({
 export const evidenceRestoreCurrent = internalQuery({
   args: { key: v.string(), asOf: v.number() },
   handler: async (ctx, a) => {
+    ctx = knowledgeReadContext(ctx);
     ensure(
       process.env.RESTORE_LOCK === "true",
       "POLICY_BLOCKED",

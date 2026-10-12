@@ -1,6 +1,6 @@
 # ADR 107: Reuse the local ChatGPT connection between bounded jobs
 
-Status: implemented local candidate. Date: October 11, 2026. Owner-account login and replacement-worker reconnect passed; release verification follows. Public customer onboarding remains unverified.
+Status: implemented and released through PR 113 on October 12, 2026. Decision date: October 11, 2026. Owner-account login and replacement-worker reconnect passed. See the [release receipt](../operations/evidence/local-chatgpt-connection-20261012.json). Public customer onboarding remains unverified.
 
 The owner requested one ChatGPT login for the supported local workflows instead of another device login for each imported batch. This supersedes ADR 068's prohibition on retaining the runner's own credentials between sessions. It does not extend a job, grant new tools, enable Windows coding, pool subscriptions, authorize paid fallback, or open general hosted subscription inference.
 

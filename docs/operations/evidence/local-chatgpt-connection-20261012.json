@@ -1,0 +1,123 @@
+{
+  "observedAt": "2026-10-12T21:51:11Z",
+  "pullRequest": "https://github.com/StefanDG1/vibescroll/pull/113",
+  "commit": "dabab6830f7d6a514df7f305fab0bf1bcd974e70",
+  "baseCommit": "2b3f15ab48026c7ee1180c7f0c3f666273b9f4c5",
+  "local": {
+    "environment": "Windows, Node 24, pnpm 12.3.4",
+    "format": "passed",
+    "documentValidation": "passed",
+    "lint": "passed",
+    "workspaceTypes": "passed",
+    "unitSerial": {
+      "passed": 597,
+      "skipped": 3
+    },
+    "initialUnitParallel": {
+      "passed": 594,
+      "failed": 3,
+      "reason": "five-second timeouts; unchanged full serial run passed"
+    },
+    "auth": {
+      "passed": 28
+    },
+    "python": {
+      "passed": [6, 6, 3]
+    },
+    "basicBuildPolicy": {
+      "passed": 5
+    },
+    "productionBuilds": ["marketing passed", "starter passed"],
+    "dependencyAudit": {
+      "passed": true,
+      "unresolved": 0,
+      "locallyMitigated": "GHSA-vfj7-8cjw-p6xm, braces"
+    },
+    "secretScan": "gitleaks 8.30.1 staged patch passed"
+  },
+  "currentDockerIntegration": {
+    "status": "blocked",
+    "reason": "Docker Desktop Linux engine unavailable; existing installation startup failed removing a stale telemetry socket. Automatic approval review rejected removing the socket as blocked by policy. No factory reset or diagnostics upload ran."
+  },
+  "historicalDockerIntegration": {
+    "date": "2026-10-11",
+    "status": "passed",
+    "scope": "real official-client synthetic cache transfer, replacement worker and child credential/write/network denial; source hashes unchanged in this release"
+  },
+  "historicalOwnerReconnect": {
+    "date": "2026-10-11",
+    "status": "passed",
+    "scope": "owner-account connection saved, replacement worker reused without device login; completed authorized 64-source batch recorded separately"
+  },
+  "ci": {
+    "pullRequest": {
+      "runId": 38312844979,
+      "conclusion": "success",
+      "commit": "86712452cccbd46aed916a94ae2f61ca0725de49"
+    },
+    "main": {
+      "runId": 38313013615,
+      "conclusion": "success",
+      "commit": "dabab6830f7d6a514df7f305fab0bf1bcd974e70"
+    },
+    "versionMain": {
+      "runId": 38313013625,
+      "conclusion": "success"
+    },
+    "publishAlpha": {
+      "runId": 38313183290,
+      "conclusion": "success"
+    }
+  },
+  "deployment": {
+    "id": "dpl_8mYNriqUNWHZgjUJ7DHCJN7NukSm",
+    "projectId": "prj_vttvT5mxKm3qlSYlc3Gzy1KyW6iF",
+    "teamId": "team_DhWXMCbwZ17w9onoe5eyLpY3",
+    "state": "READY",
+    "target": "production",
+    "domain": "https://scroll.companynerve.com",
+    "commit": "dabab6830f7d6a514df7f305fab0bf1bcd974e70",
+    "healthStatus": 200,
+    "version": "0.1.0-alpha.20261012214924.gdabab6830f7d",
+    "releaseUrl": "https://github.com/StefanDG1/vibescroll/releases/tag/v0.1.0-alpha.20261012214924.gdabab6830f7d",
+    "isPrerelease": true,
+    "route": "existing Git integration, no manual redundant deployment"
+  },
+  "browser": {
+    "environment": "authenticated native Chrome, 390px emulation",
+    "status": "passed scoped observation",
+    "observations": [
+      "production Library loaded",
+      "tree/folder control switched",
+      "document width equals viewport width 390"
+    ],
+    "limits": [
+      "no physical-device test",
+      "no new UI implementation in this PR",
+      "private screenshots not published"
+    ]
+  },
+  "preservation": {
+    "originalChangedFiles": 15,
+    "backup": "ignored verified source copy and binary patch",
+    "stash": "retained",
+    "privateConfiguration": "preserved",
+    "savedCredentials": "outside repository, untouched by release checks",
+    "mainAtAppRelease": "clean and synchronized 0/0"
+  },
+  "spending": {
+    "inference": false,
+    "purchase": false,
+    "cloudSandbox": false,
+    "fundingOrHoldChange": false,
+    "newPaidOperation": false,
+    "limit": "EUR 2 cumulative new spending from October 8 authorization remains unchanged"
+  },
+  "limits": [
+    "does not close independent tester or public customer onboarding gates",
+    "does not enable hosted subscription-funded inference",
+    "does not verify Windows coding",
+    "requires functioning existing Docker installation for local execution",
+    "subsequent documentation-only release may keep this application deployment under ADR 033"
+  ]
+}

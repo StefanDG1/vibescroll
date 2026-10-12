@@ -14,6 +14,8 @@ export const subscriptionConfig = [
   "features.unbounded_connection_retries=false",
   // Built-in provider IDs cannot be overridden by the current official client.
   // Its bounded transport retries remain inside our one-turn/deadline policy.
+  // Codex stages its sandbox executable under CODEX_HOME/tmp. Deny the
+  // credential file without hiding the trusted runtime it needs to execute.
   'permissions.trial.filesystem={":root"="read","/home/node/auth/auth.json"="deny","/home/node/auth/outside"="deny","/run"="deny"}',
   "permissions.trial.network.enabled=false",
   'web_search="disabled"',

@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 11: persistent local ChatGPT connection
+
+[ADR 107](adr/107-persistent-local-chatgpt-connection.md) separates the runner's saved ChatGPT connection from temporary approved work sessions. The Windows user keeps a DPAPI-protected own-client cache across eligible local analysis, synthesis and evaluation runs. Credentials never enter repository mappings, model children or cloud services. Official-client renewal, account binding and local disconnect reuse the connection; task approvals, fixed deadlines, funding and unsupported coding/hosted routes keep their existing boundaries. The owner-account login and replacement-worker reconnect passed; public customer onboarding remains unverified.
+
 ## October 7: scoped assistant candidate
 
 [ADR 085](adr/085-scoped-assistant-oauth-and-intake.md) separates official user OAuth from ordinary app identity and requires current, versioned app grants for every assistant operation. Explicit intake reuses capture policy without fetching or spending. Production access remains disabled pending configuration, review and actual supported-client acceptance.

@@ -32,32 +32,32 @@
     "lint": "oxlint apps/starter convex packages tests scripts --react-plugin --jsx-a11y-plugin --nextjs-plugin --ignore-pattern 'packages/runner/protocol/**' --ignore-pattern 'convex/_generated/**' --ignore-pattern '**/node_modules/**' --max-warnings 0"
   },
   "dependencies": {
-    "@convex-dev/rate-limiter": "0.4.0",
-    "@convex-dev/resend": "0.2.8",
-    "@convex-dev/workflow": "0.4.8",
-    "@convex-dev/workpool": "0.4.12",
+    "@convex-dev/rate-limiter": "0.4.2",
+    "@convex-dev/resend": "0.2.9",
+    "@convex-dev/workflow": "0.4.10",
+    "@convex-dev/workpool": "0.4.14",
     "@modelcontextprotocol/server": "2.3.1",
-    "@vercel/sandbox": "3.5.1",
+    "@vercel/sandbox": "3.6.1",
     "@workos-inc/node": "10.13.0",
     "convex": "1.46.0",
-    "convex-helpers": "0.1.124",
+    "convex-helpers": "0.1.128",
     "diff": "9.0.0",
     "fflate": "0.8.3",
-    "ignore": "7.0.10",
+    "ignore": "7.0.12",
     "jose": "6.2.12",
     "parse5": "8.0.1",
     "repomix": "1.18.1",
     "stripe": "22.6.2",
-    "zod": "4.6.1"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@edge-runtime/vm": "5.0.0",
-    "@types/node": "24.13.4",
-    "convex-test": "0.0.57",
-    "oxlint": "1.86.0",
-    "prettier": "3.9.6",
+    "@types/node": "24.19.2",
+    "convex-test": "0.0.61",
+    "oxlint": "1.87.0",
+    "prettier": "3.9.10",
     "typescript": "7.0.2",
-    "vite": "8.2.2",
-    "vitest": "5.0.0"
+    "vite": "8.3.4",
+    "vitest": "5.0.3"
   }
 }

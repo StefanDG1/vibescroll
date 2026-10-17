@@ -13,6 +13,7 @@ import { assistantProject } from "./lib/assistantProject";
 import { evaluationCurrent } from "./knowledge";
 import { createIssueCore } from "./issues";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
+import { assistantGrantActive } from "../packages/policy/assistant";
 import {
   evaluation as evaluationContract,
   assertReferences,
@@ -243,6 +244,7 @@ async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
     .take(51);
   const available = [];
   for (const grant of rows) {
+    if (!assistantGrantActive(grant)) continue;
     const org = await ctx.db.get(grant.organizationId);
     const membership = await ctx.db
       .query("memberships")
@@ -250,12 +252,7 @@ async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
         q.eq("organizationId", grant.organizationId).eq("userId", p.actor._id),
       )
       .unique();
-    if (
-      grant.state === "active" &&
-      grant.expiresAt > Date.now() &&
-      workspaceReadable(org, p.actor._id) &&
-      membership
-    )
+    if (workspaceReadable(org, p.actor._id) && membership)
       available.push(grant.organizationId);
   }
   ensure(
@@ -295,6 +292,11 @@ export const getProfile = internalQuery({
       : null;
     const profiles = [];
     for (const grant of selected ? [selected.grant] : page!.page) {
+      if (
+        !assistantGrantActive(grant) ||
+        !grant.scopes.includes("context:read")
+      )
+        continue;
       const org = await ctx.db.get(grant.organizationId);
       const member = await ctx.db
         .query("memberships")
@@ -304,14 +306,7 @@ export const getProfile = internalQuery({
             .eq("userId", p.actor._id),
         )
         .unique();
-      if (
-        grant.state !== "active" ||
-        grant.expiresAt <= Date.now() ||
-        !workspaceReadable(org, p.actor._id) ||
-        !member ||
-        !grant.scopes.includes("context:read")
-      )
-        continue;
+      if (!workspaceReadable(org, p.actor._id) || !member) continue;
       const context =
         grant.contextVersion === undefined
           ? null

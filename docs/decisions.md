@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 17: assistant access until revoked
+
+[ADR 108](adr/108-assistant-access-until-revoked.md) permits explicitly reviewed assistant access until the user turns it off, including future eligible posts within the selected live library scope. Seven-day and thirty-day choices remain available. Existing grants retain their expiry; no automatic upgrade, polling, renewal job, post-copy migration or broader work approval follows. OAuth renewal and provider revocation remain separate.
+
 ## October 11: persistent local ChatGPT connection
 
 [ADR 107](adr/107-persistent-local-chatgpt-connection.md) separates the runner's saved ChatGPT connection from temporary approved work sessions. The Windows user keeps a DPAPI-protected own-client cache across eligible local analysis, synthesis and evaluation runs. Credentials never enter repository mappings, model children or cloud services. Official-client renewal, account binding and local disconnect reuse the connection; task approvals, fixed deadlines, funding and unsupported coding/hosted routes keep their existing boundaries. The owner-account login and replacement-worker reconnect passed; public customer onboarding remains unverified.

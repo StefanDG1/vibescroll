@@ -10,6 +10,16 @@ export const assistantScopes = [
   "events:subscribe",
 ] as const;
 export type AssistantScope = (typeof assistantScopes)[number];
+// null is an explicitly reviewed grant until revocation. Missing expiry is not.
+export function assistantGrantActive(
+  grant: { state: string; expiresAt: number | null } | null | undefined,
+  now = Date.now(),
+) {
+  return (
+    grant?.state === "active" &&
+    (grant.expiresAt === null || grant.expiresAt > now)
+  );
+}
 export function isAssistantScope(value: unknown): value is AssistantScope {
   return (
     typeof value === "string" &&

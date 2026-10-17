@@ -157,7 +157,7 @@ export const subscribe = internalAction({
       now + requested,
       now + 1800000,
       tokenExpiresAt,
-      prepared.grantExpiresAt,
+      prepared.grantExpiresAt ?? Infinity,
     );
     if (expiresAt - now < 30000)
       throw Error("EVENT_AUTHORIZATION_EXPIRES_SOON");

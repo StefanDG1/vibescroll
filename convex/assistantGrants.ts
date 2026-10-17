@@ -118,7 +118,7 @@ export const save = mutation({
       v.union(v.literal("personal"), v.literal("business")),
     ),
     expectedVersion: v.number(),
-    expiresAt: v.number(),
+    expiresAt: v.union(v.number(), v.null()),
     acknowledged: v.literal(true),
   },
   handler: async (ctx, a) => {
@@ -164,11 +164,12 @@ export const save = mutation({
       "Select a bounded source or context grant.",
     );
     ensure(
-      Number.isSafeInteger(a.expiresAt) &&
-        a.expiresAt > Date.now() &&
-        a.expiresAt <= Date.now() + 30 * 86400000,
+      a.expiresAt === null ||
+        (Number.isSafeInteger(a.expiresAt) &&
+          a.expiresAt > Date.now() &&
+          a.expiresAt <= Date.now() + 30 * 86400000),
       "INVALID_INPUT",
-      "Choose an expiry within 30 days.",
+      "Choose access until revoked or an expiry within 30 days.",
     );
     for (const ref of a.sources) {
       const source = await ctx.db.get(ref.sourceId);

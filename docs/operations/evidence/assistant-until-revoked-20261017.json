@@ -1,0 +1,81 @@
+{
+  "observedAt": "2026-10-17T13:07:28.713561+00:00",
+  "applicationCommit": "df1857169b76591b34a81d0daa20b63c33680531",
+  "version": "0.1.0-alpha.20261017130520.gdf1857169b76",
+  "pullRequest": 116,
+  "backend": {
+    "deployment": "bold-lemur-667",
+    "schemaValidated": true,
+    "indexesDeleted": false,
+    "postMigration": false
+  },
+  "frontend": {
+    "deployment": "dpl_8q94Fbr6xTk7HM4g4gBaUdxtpggx",
+    "state": "READY",
+    "domain": "https://scroll.companynerve.com",
+    "canonicalHealth": 200,
+    "exactHealthCommit": true
+  },
+  "ci": {
+    "pullRequest": 39035027299,
+    "main": 39035129114,
+    "bothPassed": true,
+    "version": 39035129144,
+    "release": 39035227099
+  },
+  "local": {
+    "fullCheckPassed": true,
+    "unitIntegrationPassed": 601,
+    "externalSkipped": 3,
+    "authPassed": 28,
+    "pythonPassed": [6, 6, 3],
+    "basicBuildPolicyPassed": 5,
+    "productionBuildsPassed": 2,
+    "focusedAssistantPassed": 42,
+    "unresolvedDependencyAdvisories": 0,
+    "existingLocallyMitigatedAdvisory": "GHSA-vfj7-8cjw-p6xm",
+    "initialRecoveryTimeout": "Passed isolated and full reruns; original log retained privately"
+  },
+  "ownerGrant": {
+    "ordinaryAuthenticatedAppMutation": true,
+    "freshGoogleSignIn": true,
+    "initialStaleSignInRejected": true,
+    "version": 4,
+    "expiresAt": null,
+    "libraryScope": "all",
+    "includesFutureEligiblePosts": true,
+    "copiedSourceCount": 0,
+    "registeredActions": 8,
+    "selectedCurrentProjectContexts": 5,
+    "oauthReconnectionRequired": false
+  },
+  "pluginSmoke": {
+    "profileReturned": true,
+    "profileExpiry": null,
+    "grantVersion": 4,
+    "searchPages": 1,
+    "citedFetch": true,
+    "continuedPagination": false,
+    "analysisOrSpendStarted": false
+  },
+  "browser": {
+    "productionActiveUntilOff": true,
+    "durationControl": "Until I turn access off",
+    "viewportWidths": [390, 1600],
+    "horizontalOverflow": false,
+    "syntheticDurationChangeInvalidatesConsent": true
+  },
+  "usage": {
+    "newPolling": false,
+    "newRenewalJobs": false,
+    "fullLibraryScan": false,
+    "postCopies": false,
+    "invoiceSavingsMeasured": false
+  },
+  "limitations": [
+    "OAuth expiry, provider revocation and account/workspace/source authority remain enforced",
+    "Events remains disabled",
+    "Spending, analysis, coding and publication retain separate approvals",
+    "No real future post was created solely for verification; future-post coverage is tested locally"
+  ]
+}

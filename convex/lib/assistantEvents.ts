@@ -1,6 +1,9 @@
 import type { QueryCtx, MutationCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
-import { assistantClients } from "../../packages/policy/assistant";
+import {
+  assistantClients,
+  assistantGrantActive,
+} from "../../packages/policy/assistant";
 import { workspaceReadable } from "./workspacePrivacy";
 import { sourceWithinAssistantScope } from "./assistantSourceScope";
 export const eventsEnabled = () =>
@@ -36,8 +39,7 @@ export async function eventSubscriptionCurrent(
     grant.actor !== s.actor ||
     grant.clientId !== s.clientId ||
     grant.version !== s.grantVersion ||
-    grant.state !== "active" ||
-    grant.expiresAt <= Date.now() ||
+    !assistantGrantActive(grant) ||
     !grant.scopes.includes("events:subscribe") ||
     source?.organizationId !== s.organizationId ||
     source.state === "deleted" ||

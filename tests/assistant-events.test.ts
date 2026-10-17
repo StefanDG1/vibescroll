@@ -17,10 +17,11 @@ afterEach(() => {
 });
 import { setup } from "./assistant-event-fixture";
 
-async function selected() {
+async function selected(untilRevoked = false) {
   const s = await setup();
   const grant = await s.owner.mutation(api.assistantGrants.save, {
     ...s.args,
+    expiresAt: untilRevoked ? null : s.args.expiresAt,
     scopes: ["events:subscribe"],
   });
   const input = {
@@ -43,6 +44,25 @@ async function selected() {
   ))!;
   return { ...s, grant, input, result, subscription };
 }
+it("keeps completion subscriptions finite and revocable under a grant until revoked", async () => {
+  const s = await selected(true);
+  expect(
+    await s.t.run((ctx) => eventSubscriptionCurrent(ctx, s.subscription)),
+  ).toBe(true);
+  await expect(
+    s.assistant.mutation(internal.assistantEvents.install, {
+      ...s.input,
+      expiresAt: Date.now() + 1900000,
+    }),
+  ).rejects.toThrow("INVALID_INPUT");
+  await s.owner.mutation(api.assistantGrants.revoke, {
+    id: s.grant.id,
+    expectedVersion: 1,
+  });
+  expect(
+    await s.t.run((ctx) => eventSubscriptionCurrent(ctx, s.subscription)),
+  ).toBe(false);
+});
 async function ready(s: Awaited<ReturnType<typeof selected>>) {
   return s.t.run(async (ctx) => {
     const before = (await ctx.db.get(s.sourceId))!;

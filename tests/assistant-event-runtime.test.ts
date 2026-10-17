@@ -31,11 +31,12 @@ const principal = {
   clientId: "client_01234567890123456789012345",
   consentId: "app_consent_01234567890123456789012345",
 };
-async function runtimeSetup() {
+async function runtimeSetup(untilRevoked = false) {
   const s = await setup();
   vi.stubEnv("MCP_EVENT_SECRET_KEY_1", Buffer.alloc(32, 9).toString("base64"));
   const grant = await s.owner.mutation(api.assistantGrants.save, {
     ...s.args,
+    expiresAt: untilRevoked ? null : s.args.expiresAt,
     scopes: ["events:subscribe"],
   });
   if (!signingKeys) {
@@ -92,6 +93,19 @@ async function runtimeSetup() {
   }));
   return { ...s, grant, selected, input, sign, provider, credentials };
 }
+it("caps completion credentials at OAuth expiry even when the app grant lasts until revoked", async () => {
+  const s = await runtimeSetup(true);
+  const result = await s.assistant.action(
+    internal.assistantEventRuntime.subscribe,
+    s.input,
+  );
+  expect(result.verified).toBe(true);
+  const stored = (await s.t.run((ctx) =>
+    ctx.db.query("assistantSubscriptions").first(),
+  ))!;
+  expect(stored.expiresAt).toBeGreaterThan(Date.now());
+  expect(stored.expiresAt).toBeLessThanOrEqual(Date.now() + 600000);
+});
 it("verifies signed callback ownership and current RSA/provider authority before storing finite encrypted credentials", async () => {
   const s = await runtimeSetup();
   for (const changes of [

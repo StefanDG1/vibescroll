@@ -152,3 +152,7 @@ Updated all four briefs together for the owner-authorized branching Tree and exp
 ## F034: exact reference correction, October 9
 
 Updated all four briefs together for the owner-rejected flat layout, exact Tree/Folders authority and deterministic saved filing categories. Retain original rejection, source/access separation, manual corrections and unproven independent usability, cost savings and outcome claims. See ADR 096 and separately dated implementation evidence.
+
+## F035: assistant access until revoked, October 17
+
+The owner authorized an explicit assistant grant lasting until they turn it off, including future eligible posts within the selected live library scope. [ADR 108](../adr/108-assistant-access-until-revoked.md) retains optional timed grants, immediate revocation, current account/workspace/source checks and separate OAuth renewal. Existing grants are not silently extended. The implementation reuses bounded reads without a renewal job or post-copy scan. Exact deployment and account activation remain separately recorded in implementation status. This owner preference changes no audience, price, funding allowance or spending/coding/publication approval and supplies no measured savings or customer-demand evidence.

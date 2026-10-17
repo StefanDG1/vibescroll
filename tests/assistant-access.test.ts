@@ -255,6 +255,127 @@ it("requires fresh owner review, current source versions and configured scopes w
   ).toEqual([]);
   expect(await s.t.run((ctx) => ctx.db.query("outbox").collect())).toEqual([]);
 });
+it("keeps an explicitly reviewed all-library grant until revoked, including future posts years later without renewal work", async () => {
+  const s = await setup();
+  const context = await s.owner.mutation(api.librarySpaces.saveSetup, {
+    organizationId: s.organizationId,
+    expectedVersion: 0,
+    focus: ["personal"],
+    goal: "Keep useful ideas accessible",
+    role: "Project owner",
+    interests: ["Testing"],
+    connectSpaces: false,
+    confirmed: true,
+    stage: 2,
+  });
+  const grant = await s.owner.mutation(api.assistantGrants.save, {
+    ...s.args,
+    sources: [],
+    libraryScope: "all",
+    expiresAt: null,
+    scopes: ["knowledge:read", "context:read"],
+    contextVersion: context.version,
+  });
+  const clock = vi
+    .spyOn(Date, "now")
+    .mockReturnValue(Date.now() + 10 * 365 * 86400000);
+  try {
+    const future = await s.owner.mutation(api.product.capture, {
+      organizationId: s.organizationId,
+      key: "future-unfiled-permanent-post",
+      kind: "text",
+      title: "Future permanent access",
+      text: "PRIVATE transcript",
+      rightsAttested: true,
+    });
+    const profile = (await s.assistant.query(internal.assistant.getProfile, {}))
+      .profiles[0];
+    expect(profile).toMatchObject({
+      profile_id: s.organizationId,
+      expires_at: null,
+    });
+    expect(
+      (await s.assistant.query(internal.assistant.fetch, { id: future })).id,
+    ).toBe(future);
+    expect(
+      (
+        await s.owner.query(api.assistantGrants.setup, {
+          organizationId: s.organizationId,
+        })
+      ).sources,
+    ).toEqual([]);
+    expect(
+      await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+    ).toEqual([]);
+    expect(await s.t.run((ctx) => ctx.db.query("outbox").collect())).toEqual(
+      [],
+    );
+    await s.owner.mutation(api.assistantGrants.revoke, {
+      id: grant.id,
+      expectedVersion: 1,
+    });
+    expect(
+      (await s.assistant.query(internal.assistant.getProfile, {})).profiles,
+    ).toEqual([]);
+    await expect(
+      s.assistant.query(internal.assistant.fetch, {
+        profileId: s.organizationId,
+        id: future,
+      }),
+    ).rejects.toThrow("FORBIDDEN");
+  } finally {
+    clock.mockRestore();
+  }
+});
+it("retains timed expiry and fresh review, version and membership checks for access until revoked", async () => {
+  const s = await setup();
+  await expect(
+    s.owner.mutation(api.assistantGrants.save, {
+      ...s.args,
+      expiresAt: Date.now() + 31 * 86400000,
+    }),
+  ).rejects.toThrow("INVALID_INPUT");
+  await s.owner.mutation(api.assistantGrants.save, s.args);
+  const clock = vi.spyOn(Date, "now").mockReturnValue(s.args.expiresAt + 1);
+  try {
+    await expect(
+      s.assistant.query(internal.assistant.fetch, {
+        profileId: s.organizationId,
+        id: s.sourceId,
+      }),
+    ).rejects.toThrow("FORBIDDEN");
+    await expect(
+      s.owner.mutation(api.assistantGrants.save, {
+        ...s.args,
+        expectedVersion: 1,
+        expiresAt: null,
+      }),
+    ).rejects.toThrow("Sign in again");
+  } finally {
+    clock.mockRestore();
+  }
+  await expect(
+    s.owner.mutation(api.assistantGrants.save, { ...s.args, expiresAt: null }),
+  ).rejects.toThrow("STALE_APPROVAL");
+  await s.owner.mutation(api.assistantGrants.save, {
+    ...s.args,
+    expectedVersion: 1,
+    expiresAt: null,
+  });
+  await s.t.run(async (ctx) => {
+    const membership = await ctx.db
+      .query("memberships")
+      .withIndex("by_pair", (q) => q.eq("organizationId", s.organizationId))
+      .first();
+    await ctx.db.delete(membership!._id);
+  });
+  await expect(
+    s.assistant.query(internal.assistant.fetch, {
+      profileId: s.organizationId,
+      id: s.sourceId,
+    }),
+  ).rejects.toThrow("FORBIDDEN");
+});
 it("retrieves only selected current metadata/citations and immediately denies revocation and source changes", async () => {
   const s = await setup();
   await expect(

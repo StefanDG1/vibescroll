@@ -139,7 +139,8 @@ export const install = internalMutation({
         /^[1-9][0-9]{0,2}$/.test(args.keyVersion) &&
         Number.isSafeInteger(args.expiresAt) &&
         args.expiresAt > Date.now() &&
-        args.expiresAt <= Math.min(a.grant.expiresAt, Date.now() + 1800000),
+        args.expiresAt <=
+          Math.min(a.grant.expiresAt ?? Infinity, Date.now() + 1800000),
       "INVALID_INPUT",
       "Use bounded verified completion authority.",
     );

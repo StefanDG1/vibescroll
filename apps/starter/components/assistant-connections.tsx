@@ -17,7 +17,7 @@ type Grant = {
   libraryScope?: "all" | "personal" | "business";
   version: number;
   state: string;
-  expiresAt: number;
+  expiresAt: number | null;
 };
 type Setup = {
   repositoryNextCursor: string | null;
@@ -67,6 +67,7 @@ function AssistantAccessEditor({
   const [includeLibraryContext, setIncludeLibraryContext] = useState(false);
   const [scopes, setScopes] = useState<string[]>([]);
   const [intakeSpace, setIntakeSpace] = useState("");
+  const [duration, setDuration] = useState("until_revoked");
   const [ack, setAck] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState<string | null>(null);
@@ -164,11 +165,12 @@ function AssistantAccessEditor({
     includeLibraryContext,
     scopes,
     intakeSpace,
+    duration,
     data?.context?.version,
     existing?.version,
   ]);
   const disabled = busy || pageLoading || readOnly || demo || !data?.enabled;
-  async function save(expiresAt: number) {
+  async function save(expiresAt: number | null) {
     setPending("save");
     setError("");
     try {
@@ -261,7 +263,8 @@ function AssistantAccessEditor({
       <h2 id="assistant-access-title">Use saved ideas in your assistant</h2>
       <p>
         Choose a library scope once. Current and future eligible posts in that
-        scope are available for seven days, or until you turn access off.
+        scope stay available until you turn access off, or until the expiry you
+        choose.
       </p>
       {error && (
         <p role="alert" className="error">
@@ -291,8 +294,11 @@ function AssistantAccessEditor({
                       "Previously configured assistant"}
                   </strong>
                   <p className="fine">
-                    {grant.state === "active" && grant.expiresAt > checkedAt
-                      ? `Active until ${new Date(grant.expiresAt).toLocaleString()}`
+                    {grant.state === "active" &&
+                    (grant.expiresAt === null || grant.expiresAt > checkedAt)
+                      ? grant.expiresAt === null
+                        ? "Active until you turn access off"
+                        : `Active until ${new Date(grant.expiresAt).toLocaleString()}`
                       : "Access ended"}
                     .{" "}
                     {grant.libraryScope
@@ -639,8 +645,31 @@ function AssistantAccessEditor({
                     </ChoiceSelect>
                   </label>
                 )}
+                <label htmlFor="assistant-access-duration">
+                  Access duration
+                  <ChoiceSelect
+                    id="assistant-access-duration"
+                    value={duration}
+                    onValueChange={(value) => {
+                      setDuration(value);
+                      setAck("");
+                    }}
+                    disabled={disabled}
+                    aria-label="Assistant access duration"
+                  >
+                    <option value="until_revoked">
+                      Until I turn access off
+                    </option>
+                    <option value="7">7 days</option>
+                    <option value="30">30 days</option>
+                  </ChoiceSelect>
+                </label>
                 <div className="assistant-access-summary" aria-live="polite">
-                  <h3>Review access for seven days</h3>
+                  <h3>
+                    {duration === "until_revoked"
+                      ? "Review access until you turn it off"
+                      : `Review access for ${duration} days`}
+                  </h3>
                   <p>
                     {libraryScope === "all"
                       ? "All current and future eligible posts"
@@ -667,8 +696,11 @@ function AssistantAccessEditor({
                     onChange={(e) => setAck(e.target.checked ? binding : "")}
                   />
                   I approve this library scope, including future posts, and the
-                  selected context and actions for seven days. This replaces
-                  previous access.
+                  selected context and actions{" "}
+                  {duration === "until_revoked"
+                    ? "until I turn access off"
+                    : `for ${duration} days`}
+                  . This replaces previous access.
                 </label>
                 <p className="fine">
                   Saving needs a sign-in within five minutes.{" "}
@@ -699,7 +731,13 @@ function AssistantAccessEditor({
                     !contextValid ||
                     !libraryScope
                   }
-                  onClick={() => void save(Date.now() + 7 * 86400000)}
+                  onClick={() =>
+                    void save(
+                      duration === "until_revoked"
+                        ? null
+                        : Date.now() + Number(duration) * 86400000,
+                    )
+                  }
                 >
                   {pending === "save"
                     ? "Saving access..."

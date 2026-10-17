@@ -107,7 +107,7 @@ export const assistantTables = {
     ),
     version: v.number(),
     state: v.union(v.literal("active"), v.literal("revoked")),
-    expiresAt: v.number(),
+    expiresAt: v.union(v.number(), v.null()),
     updatedAt: v.number(),
   })
     .index("by_org", ["organizationId"])

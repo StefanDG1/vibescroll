@@ -2,6 +2,7 @@ import type { QueryCtx } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import {
   assistantClients,
+  assistantGrantActive,
   isAssistantIdentity,
   type AssistantScope,
 } from "../../packages/policy/assistant";
@@ -75,8 +76,8 @@ export async function assistantGrant(
     organization &&
       workspaceReadable(organization, principal.actor._id) &&
       membership &&
-      grant?.state === "active" &&
-      grant.expiresAt > Date.now() &&
+      grant &&
+      assistantGrantActive(grant) &&
       grant.scopes.includes(required),
     "FORBIDDEN",
     "This assistant grant is unavailable, expired or revoked.",

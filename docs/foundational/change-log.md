@@ -156,3 +156,7 @@ Updated all four briefs together for the owner-rejected flat layout, exact Tree/
 ## F035: assistant access until revoked, October 17
 
 The owner authorized an explicit assistant grant lasting until they turn it off, including future eligible posts within the selected live library scope. [ADR 108](../adr/108-assistant-access-until-revoked.md) retains optional timed grants, immediate revocation, current account/workspace/source checks and separate OAuth renewal. Existing grants are not silently extended. The implementation reuses bounded reads without a renewal job or post-copy scan. Exact deployment and account activation remain separately recorded in implementation status. This owner preference changes no audience, price, funding allowance or spending/coding/publication approval and supplies no measured savings or customer-demand evidence.
+
+## F036: automatic assistant intake, October 20
+
+Updated all four briefs for the owner's link-to-local-extraction default, one-time connection permission, offline queue, optional explicit credits and project opt-in. [ADR 109](../adr/109-automatic-assistant-intake.md) preserves current access, funding and publication boundaries. The implementation plan and dated status distinguish local/synthetic checks from actual deployment, account activation and model completion. No new audience, pricing, provider access, customer benefit or measured savings is claimed.

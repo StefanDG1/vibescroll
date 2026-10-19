@@ -18,8 +18,21 @@ type Grant = {
   version: number;
   state: string;
   expiresAt: number | null;
+  analysisDefaults?: {
+    enabled: boolean;
+    deviceId: string;
+    profileBinding: string;
+  };
+  intakeSpace?: "personal" | "business";
+  contextVersion?: number;
 };
 type Setup = {
+  devices?: {
+    id: string;
+    name: string;
+    profileBinding?: string;
+    online: boolean;
+  }[];
   repositoryNextCursor: string | null;
   repositories: Project[];
   enabled: boolean;
@@ -39,7 +52,8 @@ const scopeNames: Record<string, string> = {
   "context:read": "Read the confirmed context I select",
   "links:save": "Save links I explicitly request",
   "jobs:read": "Read status of work in my chosen scope",
-  "analysis:request": "Prepare analysis for my review",
+  "analysis:request":
+    "Use my saved local analysis preferences; use credits only when I choose them",
   "feedback:write": "Record feedback I explicitly state",
   "suggestions:draft": "Prepare private project suggestions",
   "events:subscribe": "Notify me about completed work in my chosen scope",
@@ -68,6 +82,8 @@ function AssistantAccessEditor({
   const [scopes, setScopes] = useState<string[]>([]);
   const [intakeSpace, setIntakeSpace] = useState("");
   const [duration, setDuration] = useState("until_revoked");
+  const [automatic, setAutomatic] = useState<boolean | null>(null);
+  const [computerId, setComputerId] = useState("");
   const [ack, setAck] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState<string | null>(null);
@@ -75,6 +91,7 @@ function AssistantAccessEditor({
   const [pageLoading, setPageLoading] = useState(false);
   const [checkedAt, setCheckedAt] = useState(0);
   const generation = useRef(0);
+  const editor = useRef<HTMLDetailsElement>(null);
   const needsContext = scopes.includes("context:read");
   useEffect(() => {
     const epoch = generation;
@@ -145,6 +162,18 @@ function AssistantAccessEditor({
     clientId || (data?.clients.length === 1 ? data.clients[0].id : "");
   const client = data?.clients.find((c) => c.id === activeClientId);
   const existing = data?.grants.find((g) => g.clientId === activeClientId);
+  const automaticAnalysis =
+    automatic ?? existing?.analysisDefaults?.enabled ?? true;
+  const computers = data?.devices?.filter((d) => !!d.profileBinding) ?? [];
+  const chosenComputerId =
+    computerId ||
+    existing?.analysisDefaults?.deviceId ||
+    (computers.length === 1 ? computers[0].id : "");
+  const computer = computers.find((d) => d.id === chosenComputerId);
+  const intakeValid =
+    !scopes.includes("links:save") ||
+    !automaticAnalysis ||
+    (scopes.includes("analysis:request") && !!computer && !!libraryScope);
   const projects = selectedProjects.map(
     (ref) =>
       data?.repositories?.find((r) => r.repositoryId === ref.repositoryId) ??
@@ -166,10 +195,38 @@ function AssistantAccessEditor({
     scopes,
     intakeSpace,
     duration,
+    automaticAnalysis,
+    computer,
     data?.context?.version,
     existing?.version,
   ]);
   const disabled = busy || pageLoading || readOnly || demo || !data?.enabled;
+  function editPreferences(grant: Grant) {
+    setClientId(grant.clientId);
+    setLibraryScope(grant.libraryScope ?? "");
+    setScopes(grant.scopes);
+    setSelectedProjects(
+      (grant.repositories ?? []).map((r) => ({
+        ...r,
+        name:
+          data?.repositories.find((p) => p.repositoryId === r.repositoryId)
+            ?.name ?? r.repositoryId,
+      })),
+    );
+    setIncludeLibraryContext(grant.contextVersion !== undefined);
+    setIntakeSpace(grant.intakeSpace ?? "");
+    setAutomatic(grant.analysisDefaults?.enabled ?? true);
+    setComputerId(grant.analysisDefaults?.deviceId ?? "");
+    setDuration(
+      grant.expiresAt === null
+        ? "until_revoked"
+        : grant.expiresAt - checkedAt <= 7 * 86400000
+          ? "7"
+          : "30",
+    );
+    setAck("");
+    if (editor.current) editor.current.open = true;
+  }
   async function save(expiresAt: number | null) {
     setPending("save");
     setError("");
@@ -192,6 +249,20 @@ function AssistantAccessEditor({
         expectedVersion: existing?.version ?? 0,
         expiresAt,
         acknowledged: true,
+        ...(scopes.includes("links:save")
+          ? { intakePolicy: "explicit_links" }
+          : {}),
+        ...(scopes.includes("links:save") &&
+        scopes.includes("analysis:request") &&
+        computer
+          ? {
+              analysisDefaults: {
+                enabled: automaticAnalysis,
+                deviceId: computer.id,
+                profileBinding: computer.profileBinding,
+              },
+            }
+          : {}),
       });
       if (!result)
         throw Error(
@@ -307,8 +378,19 @@ function AssistantAccessEditor({
                         : `Current and future ${grant.libraryScope === "personal" ? "Personal" : "Business"} posts`
                       : `${grant.sources.length} previously selected posts`}
                     . {grant.repositories?.length ?? 0} selected projects.
+                    {grant.analysisDefaults?.enabled
+                      ? " Links automatically queue local extraction and organization."
+                      : " Automatic analysis is off."}
                   </p>
                 </div>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy || readOnly}
+                  onClick={() => editPreferences(grant)}
+                >
+                  Edit preferences
+                </button>
                 {grant.state === "active" && (
                   <button
                     type="button"
@@ -324,7 +406,7 @@ function AssistantAccessEditor({
               </div>
             ))}
           </div>
-          <details className="assistant-grant-editor">
+          <details ref={editor} className="assistant-grant-editor">
             <summary>Choose assistant access</summary>
             <p className="fine">
               Connect VibeScroll in{" "}
@@ -446,6 +528,79 @@ function AssistantAccessEditor({
                       </p>
                     )}
                 </fieldset>
+                {scopes.includes("links:save") && (
+                  <fieldset>
+                    <legend>When I send a link</legend>
+                    <p className="fine">
+                      Links you send to VibeScroll are saved using this
+                      connection permission. You will not be asked to confirm
+                      each link again. Submit content you are permitted to
+                      process.
+                    </p>
+                    <label className="check">
+                      <input
+                        type="checkbox"
+                        checked={automaticAnalysis}
+                        disabled={disabled}
+                        onChange={(e) => {
+                          setAutomatic(e.target.checked);
+                          setAck("");
+                        }}
+                      />
+                      Extract and organize automatically on my computer
+                    </label>
+                    {automaticAnalysis && (
+                      <>
+                        <label htmlFor="assistant-analysis-computer">
+                          Computer
+                          <ChoiceSelect
+                            id="assistant-analysis-computer"
+                            value={chosenComputerId}
+                            disabled={disabled}
+                            onValueChange={(value) => {
+                              setComputerId(value);
+                              setAck("");
+                            }}
+                          >
+                            <option value="">
+                              Choose your paired computer
+                            </option>
+                            {computers.map((d) => (
+                              <option key={d.id} value={d.id}>
+                                {d.name}
+                                {d.online
+                                  ? " · connected"
+                                  : " · will wait until connected"}
+                              </option>
+                            ))}
+                          </ChoiceSelect>
+                        </label>
+                        {!computers.length && (
+                          <p className="notice">
+                            Start the local assistant runner on your paired
+                            computer, then reload Connections. Your ChatGPT
+                            login stays on that computer.
+                          </p>
+                        )}
+                        <p className="fine">
+                          Uses your own ChatGPT allowance with local media
+                          preparation. Offline links wait. VibeScroll offers a
+                          credit quote and balance if you want to run sooner; it
+                          never switches to credits automatically. Add a project
+                          name or ask for best project matches to evaluate a
+                          source for projects. Coding and publication require
+                          separate approval.
+                        </p>
+                        {!scopes.includes("analysis:request") && (
+                          <p className="notice">
+                            Select the analysis action above to enable automatic
+                            extraction.
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </fieldset>
+                )}
                 {scopes.includes("context:read") && (
                   <fieldset>
                     <legend>Confirmed context</legend>
@@ -637,9 +792,7 @@ function AssistantAccessEditor({
                       disabled={disabled}
                       aria-label="Assistant intake space"
                     >
-                      <option value="">
-                        Choose in the app for each saved link
-                      </option>
+                      <option value="">Use my selected library scope</option>
                       <option value="personal">Personal</option>
                       <option value="business">Business</option>
                     </ChoiceSelect>
@@ -683,9 +836,13 @@ function AssistantAccessEditor({
                       : ""}
                   </p>
                   <p className="fine">
-                    No spending, coding, publication, repository code or chat
-                    history. Your assistant may retain content already shared in
-                    a conversation.
+                    {scopes.includes("links:save") && automaticAnalysis
+                      ? "Automatic extraction and organization use your selected computer and ChatGPT allowance. "
+                      : ""}
+                    Credits require a separate explicit choice. Coding and
+                    publication require separate approval. Chat history is not
+                    included. Your assistant may retain content already shared
+                    in a conversation.
                   </p>
                 </div>
                 <label className="check">
@@ -729,6 +886,7 @@ function AssistantAccessEditor({
                     !scopes.length ||
                     !projectDraftValid ||
                     !contextValid ||
+                    !intakeValid ||
                     !libraryScope
                   }
                   onClick={() =>

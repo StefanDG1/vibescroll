@@ -1,6 +1,11 @@
 import { presentAnalysis } from "../packages/insights/presentation";
 import { repositoryContent } from "./lib/repositoryContent";
-import { query, internalQuery, type QueryCtx } from "./_generated/server";
+import {
+  query,
+  internalQuery,
+  type QueryCtx,
+  type MutationCtx,
+} from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
 import type { Id, Doc } from "./_generated/dataModel";
@@ -8,6 +13,7 @@ import { internal } from "./_generated/api";
 import { writeAccess, access, recentAuthentication, audit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { personalAllowed } from "./lib/personalAccess";
+import { validateLocalRun } from "./lib/assistantIntake";
 import { digest } from "./product";
 import { insightOutput } from "../packages/contracts";
 import { syncCategories } from "./categories";
@@ -76,10 +82,20 @@ export const sourceFingerprint = (s: Doc<"sources">) =>
       updatedAt: s.updatedAt,
     }),
   );
-async function activeRun(ctx: QueryCtx, id: Id<"localLibraryRuns">) {
+async function activeRun(
+  ctx: QueryCtx,
+  id: Id<"localLibraryRuns">,
+  actorId?: Id<"users">,
+) {
   const run = await ctx.db.get(id);
   ensure(run, "FORBIDDEN", "Local run unavailable.");
-  const { actor } = await access(ctx, run.organizationId, ["owner", "admin"]);
+  const actor = actorId
+    ? await ctx.db.get(actorId)
+    : (await access(ctx, run.organizationId, ["owner", "admin"])).actor;
+  ensure(actor, "FORBIDDEN", "Actor unavailable.");
+  if (actorId) {
+    await validateLocalRun(ctx, run, actorId);
+  }
   ensure(
     actor._id === run.actor &&
       personalAllowed(actor.subject) &&
@@ -264,109 +280,124 @@ export const sourcePrepare = mutation({
       }),
     ),
   },
-  handler: async (ctx, a) => {
-    const run = await activeRun(ctx, a.runId),
-      s = await ctx.db.get(a.sourceId);
-    ensure(
-      s &&
-        run.sources.includes(s._id) &&
-        s.organizationId === run.organizationId &&
-        s.state !== "deleted" &&
-        s.rightsAttested &&
-        !["queued", "processing"].includes(s.state) &&
-        s.generation === a.generation &&
-        s.updatedAt === a.revision &&
-        (await sourceFingerprint(s)) === a.inputHash,
-      "APPROVAL_STALE",
-      "A saved post changed. Prepare its current evidence again.",
-    );
-    const acquisition =
-      a.acquisition === undefined
-        ? undefined
-        : acquisitionManifest.parse(a.acquisition);
-    if (acquisition) {
-      ensure(
-        s.url && ["acquired", "downloaded"].includes(acquisition.status),
-        "INVALID_EVIDENCE",
-        "Use metadata from the permitted source fetch.",
-      );
-      acquisitionPolicy(s.url);
-    }
-    const old = await ctx.db
-      .query("localSourceImports")
-      .withIndex("by_run_source", (q) =>
-        q.eq("runId", run._id).eq("sourceId", s._id),
-      )
-      .unique();
-    if (old) {
-      ensure(
-        old.inputHash === a.inputHash &&
-          canonicalJson(old.acquisition ?? null) ===
-            canonicalJson(acquisition ?? null),
-        "APPROVAL_STALE",
-        "Import input changed.",
-      );
-      return old._id;
-    }
-    const transcript = transcriptSchema.parse(a.transcript);
-    ensure(
-      a.frames.length <= 48 &&
-        new Set(a.frames.map((f) => f.id)).size === a.frames.length &&
-        a.frames.every(
-          (f) =>
-            /^[a-zA-Z0-9_.-]{1,100}$/.test(f.id) &&
-            /^[a-f0-9]{64}$/.test(f.sha256) &&
-            Number.isSafeInteger(f.timestampMs) &&
-            f.timestampMs >= 0 &&
-            f.timestampMs <= 600000 &&
-            Number.isSafeInteger(f.size) &&
-            f.size > 0 &&
-            f.size <= 600000,
-        ),
-      "INVALID_EVIDENCE",
-      "Use bounded decoded frame evidence.",
-    );
-    ensure(
-      transcript.segments.length || a.frames.length,
-      "INVALID_EVIDENCE",
-      "No prepared speech or frames.",
-    );
-    ensure(
-      !containsSecret(JSON.stringify(transcript)),
-      "POLICY_BLOCKED",
-      "Remove credentials from source evidence.",
-    );
-    ensure(
-      run.jobs < 1000,
-      "BUDGET_EXCEEDED",
-      "This run reached its job limit.",
-    );
-    await ctx.db.patch(run._id, { jobs: run.jobs + 1, updatedAt: Date.now() });
-    return ctx.db.insert("localSourceImports", {
-      organizationId: run.organizationId,
-      runId: run._id,
-      sourceId: s._id,
-      generation: s.generation,
-      revision: s.updatedAt,
-      inputHash: a.inputHash,
-      transcript,
-      ...(acquisition ? { acquisition } : {}),
-      frames: a.frames,
-      coverage: a.frames.length
-        ? transcript.segments.length
-          ? "full_sampled"
-          : "visual_only"
-        : "audio_only",
-      state: "prepared",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-  },
+  handler: (ctx, a) => sourcePrepareCore(ctx, a),
 });
-async function sourceImport(ctx: QueryCtx, id: Id<"localSourceImports">) {
+export async function sourcePrepareCore(
+  ctx: MutationCtx,
+  a: {
+    runId: Id<"localLibraryRuns">;
+    sourceId: Id<"sources">;
+    generation: number;
+    revision: number;
+    inputHash: string;
+    transcript: any;
+    acquisition?: any;
+    frames: { id: string; timestampMs: number; sha256: string; size: number }[];
+  },
+  actorId?: Id<"users">,
+) {
+  const run = await activeRun(ctx, a.runId, actorId),
+    s = await ctx.db.get(a.sourceId);
+  ensure(
+    s &&
+      run.sources.includes(s._id) &&
+      s.organizationId === run.organizationId &&
+      s.state !== "deleted" &&
+      s.rightsAttested &&
+      !["queued", "processing"].includes(s.state) &&
+      s.generation === a.generation &&
+      s.updatedAt === a.revision &&
+      (await sourceFingerprint(s)) === a.inputHash,
+    "APPROVAL_STALE",
+    "A saved post changed. Prepare its current evidence again.",
+  );
+  const acquisition =
+    a.acquisition === undefined
+      ? undefined
+      : acquisitionManifest.parse(a.acquisition);
+  if (acquisition) {
+    ensure(
+      s.url && ["acquired", "downloaded"].includes(acquisition.status),
+      "INVALID_EVIDENCE",
+      "Use metadata from the permitted source fetch.",
+    );
+    acquisitionPolicy(s.url);
+  }
+  const old = await ctx.db
+    .query("localSourceImports")
+    .withIndex("by_run_source", (q) =>
+      q.eq("runId", run._id).eq("sourceId", s._id),
+    )
+    .unique();
+  if (old) {
+    ensure(
+      old.inputHash === a.inputHash &&
+        canonicalJson(old.acquisition ?? null) ===
+          canonicalJson(acquisition ?? null),
+      "APPROVAL_STALE",
+      "Import input changed.",
+    );
+    return old._id;
+  }
+  const transcript = transcriptSchema.parse(a.transcript);
+  ensure(
+    a.frames.length <= 48 &&
+      new Set(a.frames.map((f) => f.id)).size === a.frames.length &&
+      a.frames.every(
+        (f) =>
+          /^[a-zA-Z0-9_.-]{1,100}$/.test(f.id) &&
+          /^[a-f0-9]{64}$/.test(f.sha256) &&
+          Number.isSafeInteger(f.timestampMs) &&
+          f.timestampMs >= 0 &&
+          f.timestampMs <= 600000 &&
+          Number.isSafeInteger(f.size) &&
+          f.size > 0 &&
+          f.size <= 600000,
+      ),
+    "INVALID_EVIDENCE",
+    "Use bounded decoded frame evidence.",
+  );
+  ensure(
+    transcript.segments.length || a.frames.length,
+    "INVALID_EVIDENCE",
+    "No prepared speech or frames.",
+  );
+  ensure(
+    !containsSecret(JSON.stringify(transcript)),
+    "POLICY_BLOCKED",
+    "Remove credentials from source evidence.",
+  );
+  ensure(run.jobs < 1000, "BUDGET_EXCEEDED", "This run reached its job limit.");
+  await ctx.db.patch(run._id, { jobs: run.jobs + 1, updatedAt: Date.now() });
+  return ctx.db.insert("localSourceImports", {
+    organizationId: run.organizationId,
+    runId: run._id,
+    sourceId: s._id,
+    generation: s.generation,
+    revision: s.updatedAt,
+    inputHash: a.inputHash,
+    transcript,
+    ...(acquisition ? { acquisition } : {}),
+    frames: a.frames,
+    coverage: a.frames.length
+      ? transcript.segments.length
+        ? "full_sampled"
+        : "visual_only"
+      : "audio_only",
+    state: "prepared",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+}
+
+async function sourceImport(
+  ctx: QueryCtx,
+  id: Id<"localSourceImports">,
+  actorId?: Id<"users">,
+) {
   const j = await ctx.db.get(id);
   ensure(j, "FORBIDDEN", "Import unavailable.");
-  const run = await activeRun(ctx, j.runId),
+  const run = await activeRun(ctx, j.runId, actorId),
     s = await ctx.db.get(j.sourceId);
   ensure(
     j.organizationId === run.organizationId &&
@@ -386,13 +417,19 @@ async function sourceImport(ctx: QueryCtx, id: Id<"localSourceImports">) {
 }
 export const frameContext = internalQuery({
   args: { id: v.id("localSourceImports"), frameId: v.string() },
-  handler: async (ctx, a) => {
-    const c = await sourceImport(ctx, a.id);
-    const frame = c.j.frames.find((f) => f.id === a.frameId);
-    ensure(frame, "INVALID_EVIDENCE", "Frame was not approved.");
-    return { ...c, frame };
-  },
+  handler: (ctx, a) => frameContextCore(ctx, a),
 });
+export async function frameContextCore(
+  ctx: QueryCtx,
+  a: { id: Id<"localSourceImports">; frameId: string },
+  actorId?: Id<"users">,
+) {
+  const c = await sourceImport(ctx, a.id, actorId);
+  const frame = c.j.frames.find((f) => f.id === a.frameId);
+  ensure(frame, "INVALID_EVIDENCE", "Frame was not approved.");
+  return { ...c, frame };
+}
+
 export const recordFrame = internalMutation({
   args: {
     id: v.id("localSourceImports"),
@@ -400,229 +437,246 @@ export const recordFrame = internalMutation({
     assetId: v.id("assets"),
     sha256: v.string(),
   },
-  handler: async (ctx, a) => {
-    const { j } = await sourceImport(ctx, a.id);
-    const frame = j.frames.find((f) => f.id === a.frameId),
-      asset = await ctx.db.get(a.assetId);
-    ensure(
-      frame &&
-        frame.sha256 === a.sha256 &&
-        asset?.organizationId === j.organizationId &&
-        asset.sourceId === j.sourceId &&
-        asset.kind === "evidence" &&
-        asset.state === "complete" &&
-        asset.size === frame.size,
-      "INVALID_EVIDENCE",
-      "Frame receipt changed.",
-    );
-    if (frame.assetId) {
-      ensure(
-        frame.assetId === asset._id,
-        "INVALID_EVIDENCE",
-        "Frame already registered.",
-      );
-      return;
-    }
-    await ctx.db.patch(j._id, {
-      frames: j.frames.map((f) =>
-        f.id === a.frameId ? { ...f, assetId: asset._id } : f,
-      ),
-      updatedAt: Date.now(),
-    });
-  },
+  handler: (ctx, a) => recordFrameCore(ctx, a),
 });
+export async function recordFrameCore(
+  ctx: MutationCtx,
+  a: {
+    id: Id<"localSourceImports">;
+    frameId: string;
+    assetId: Id<"assets">;
+    sha256: string;
+  },
+  actorId?: Id<"users">,
+) {
+  const { j } = await sourceImport(ctx, a.id, actorId);
+  const frame = j.frames.find((f) => f.id === a.frameId),
+    asset = await ctx.db.get(a.assetId);
+  ensure(
+    frame &&
+      frame.sha256 === a.sha256 &&
+      asset?.organizationId === j.organizationId &&
+      asset.sourceId === j.sourceId &&
+      asset.kind === "evidence" &&
+      asset.state === "complete" &&
+      asset.size === frame.size,
+    "INVALID_EVIDENCE",
+    "Frame receipt changed.",
+  );
+  if (frame.assetId) {
+    ensure(
+      frame.assetId === asset._id,
+      "INVALID_EVIDENCE",
+      "Frame already registered.",
+    );
+    return;
+  }
+  await ctx.db.patch(j._id, {
+    frames: j.frames.map((f) =>
+      f.id === a.frameId ? { ...f, assetId: asset._id } : f,
+    ),
+    updatedAt: Date.now(),
+  });
+}
+
 export const sourceFinish = mutation({
   args: { id: v.id("localSourceImports"), output: v.any(), receipt: v.any() },
-  handler: async (ctx, a) => {
-    const existing = await ctx.db.get(a.id);
-    if (existing?.state === "ready") {
-      await activeRun(ctx, existing.runId);
-      ensure(
-        existing.organizationId ===
-          (await ctx.db.get(existing.runId))?.organizationId,
-        "FORBIDDEN",
-        "Import unavailable.",
-      );
-      const currentSource = await ctx.db.get(existing.sourceId);
-      ensure(
-        currentSource?.state === "ready" &&
-          currentSource.updatedAt ===
-            currentSource.localAnalysisReceipt?.completedAt &&
-          currentSource.localAnalysisReceipt?.runId === existing.runId &&
-          currentSource.localAnalysisReceipt?.outputHash ===
-            a.receipt?.outputHash,
-        "APPROVAL_STALE",
-        "This imported result is no longer current.",
-      );
-      return { saved: true, cached: true };
-    }
-    const { j, run, s } = await sourceImport(ctx, a.id),
-      output: any = presentAnalysis(insightOutput.parse(a.output) as any);
+  handler: (ctx, a) => sourceFinishCore(ctx, a),
+});
+export async function sourceFinishCore(
+  ctx: MutationCtx,
+  a: { id: Id<"localSourceImports">; output: any; receipt: any },
+  actorId?: Id<"users">,
+) {
+  const existing = await ctx.db.get(a.id);
+  if (existing?.state === "ready") {
+    await activeRun(ctx, existing.runId, actorId);
     ensure(
-      output.sourceId === s._id &&
-        output.processingRunId === `${s._id}:${s.generation}` &&
-        output.coverage === j.coverage &&
-        !containsSecret(JSON.stringify(output)) &&
-        new Set(output.insights.map((i: any) => i.id)).size ===
-          output.insights.length,
-      "INVALID_EVIDENCE",
-      "Analysis identity or coverage changed.",
+      existing.organizationId ===
+        (await ctx.db.get(existing.runId))?.organizationId,
+      "FORBIDDEN",
+      "Import unavailable.",
     );
+    const currentSource = await ctx.db.get(existing.sourceId);
     ensure(
-      a.receipt?.state === "completed" &&
-        a.receipt.model === run.model &&
-        a.receipt.effort === run.effort &&
-        a.receipt.appCredits === 0 &&
-        a.receipt.separateApiCall === false &&
-        /^[a-f0-9]{64}$/.test(a.receipt.inputHash ?? "") &&
-        a.receipt.outputHash === (await digest(canonicalJson(a.output))),
-      "INVALID_EVIDENCE",
-      "Use the completed own-plan client receipt.",
-    );
-    const timed = j.transcript.segments.map((x: any) => ({
-      kind: "transcript",
-      id: "segment-" + x.index,
-      startMs: x.startMs,
-      endMs: x.endMs,
-    }));
-    const permitted = [
-      ...timed,
-      ...j.frames.map((f) => ({
-        kind: "frame",
-        id: f.id,
-        startMs: f.timestampMs,
-        endMs: f.timestampMs,
-      })),
-      ...((j.acquisition?.description ?? s.acquisition?.description)
-        ? [{ kind: "caption", id: "post_caption", startMs: null, endMs: null }]
-        : []),
-      ...(s.correctionAuthor
-        ? [
-            {
-              kind: "user_note",
-              id: "owner_corrected_text",
-              startMs: null,
-              endMs: null,
-            },
-          ]
-        : []),
-    ];
-    const key = (e: any) => JSON.stringify([e.kind, e.id, e.startMs, e.endMs]);
-    for (const i of output.insights)
-      for (const e of i.evidence)
-        ensure(
-          permitted.some((p) => key(p) === key(e)),
-          "INVALID_EVIDENCE",
-          "Evidence was not supplied.",
-        );
-    for (const f of j.frames) {
-      const asset = f.assetId ? await ctx.db.get(f.assetId) : null;
-      ensure(
-        asset?.organizationId === s.organizationId &&
-          asset.sourceId === s._id &&
-          asset.state === "complete" &&
-          asset.kind === "evidence" &&
-          asset.size === f.size,
-        "INVALID_EVIDENCE",
-        "Complete the private frame upload first.",
-      );
-    }
-    const members = await ctx.db
-      .query("knowledgeMembers")
-      .withIndex("by_source", (q) => q.eq("sourceId", s._id))
-      .collect();
-    ensure(
-      members
-        .filter((m) => m.manual || m.excluded)
-        .every((m) => output.insights.some((i: any) => i.id === m.insightId)),
+      currentSource?.state === "ready" &&
+        currentSource.updatedAt ===
+          currentSource.localAnalysisReceipt?.completedAt &&
+        currentSource.localAnalysisReceipt?.runId === existing.runId &&
+        currentSource.localAnalysisReceipt?.outputHash ===
+          a.receipt?.outputHash,
       "APPROVAL_STALE",
-      "Retain the insight IDs used by your manual organization corrections.",
+      "This imported result is no longer current.",
     );
-    const mapped = permitted.map((e) =>
+    return { saved: true, cached: true };
+  }
+  const { j, run, s } = await sourceImport(ctx, a.id, actorId),
+    output: any = presentAnalysis(insightOutput.parse(a.output) as any);
+  ensure(
+    output.sourceId === s._id &&
+      output.processingRunId === `${s._id}:${s.generation}` &&
+      output.coverage === j.coverage &&
+      !containsSecret(JSON.stringify(output)) &&
+      new Set(output.insights.map((i: any) => i.id)).size ===
+        output.insights.length,
+    "INVALID_EVIDENCE",
+    "Analysis identity or coverage changed.",
+  );
+  ensure(
+    a.receipt?.state === "completed" &&
+      a.receipt.model === run.model &&
+      a.receipt.effort === run.effort &&
+      a.receipt.appCredits === 0 &&
+      a.receipt.separateApiCall === false &&
+      /^[a-f0-9]{64}$/.test(a.receipt.inputHash ?? "") &&
+      a.receipt.outputHash === (await digest(canonicalJson(a.output))),
+    "INVALID_EVIDENCE",
+    "Use the completed own-plan client receipt.",
+  );
+  const timed = j.transcript.segments.map((x: any) => ({
+    kind: "transcript",
+    id: "segment-" + x.index,
+    startMs: x.startMs,
+    endMs: x.endMs,
+  }));
+  const permitted = [
+    ...timed,
+    ...j.frames.map((f) => ({
+      kind: "frame",
+      id: f.id,
+      startMs: f.timestampMs,
+      endMs: f.timestampMs,
+    })),
+    ...((j.acquisition?.description ?? s.acquisition?.description)
+      ? [{ kind: "caption", id: "post_caption", startMs: null, endMs: null }]
+      : []),
+    ...(s.correctionAuthor
+      ? [
+          {
+            kind: "user_note",
+            id: "owner_corrected_text",
+            startMs: null,
+            endMs: null,
+          },
+        ]
+      : []),
+  ];
+  const key = (e: any) => JSON.stringify([e.kind, e.id, e.startMs, e.endMs]);
+  for (const i of output.insights)
+    for (const e of i.evidence)
+      ensure(
+        permitted.some((p) => key(p) === key(e)),
+        "INVALID_EVIDENCE",
+        "Evidence was not supplied.",
+      );
+  for (const f of j.frames) {
+    const asset = f.assetId ? await ctx.db.get(f.assetId) : null;
+    ensure(
+      asset?.organizationId === s.organizationId &&
+        asset.sourceId === s._id &&
+        asset.state === "complete" &&
+        asset.kind === "evidence" &&
+        asset.size === f.size,
+      "INVALID_EVIDENCE",
+      "Complete the private frame upload first.",
+    );
+  }
+  const members = await ctx.db
+    .query("knowledgeMembers")
+    .withIndex("by_source", (q) => q.eq("sourceId", s._id))
+    .collect();
+  ensure(
+    members
+      .filter((m) => m.manual || m.excluded)
+      .every((m) => output.insights.some((i: any) => i.id === m.insightId)),
+    "APPROVAL_STALE",
+    "Retain the insight IDs used by your manual organization corrections.",
+  );
+  const mapped = permitted.map((e) =>
+    e.kind === "frame"
+      ? { ...e, id: j.frames.find((f) => f.id === e.id)!.assetId! }
+      : e,
+  );
+  for (const i of output.insights)
+    i.evidence = i.evidence.map((e: any) =>
       e.kind === "frame"
         ? { ...e, id: j.frames.find((f) => f.id === e.id)!.assetId! }
         : e,
     );
-    for (const i of output.insights)
-      i.evidence = i.evidence.map((e: any) =>
-        e.kind === "frame"
-          ? { ...e, id: j.frames.find((f) => f.id === e.id)!.assetId! }
-          : e,
-      );
-    const now = Math.max(Date.now(), s.updatedAt + 1);
-    await ctx.db.patch(s._id, {
-      ...(j.acquisition
-        ? { acquisition: importedAcquisition(j.acquisition, now) }
-        : {}),
-      state: "ready",
-      analysis: output,
-      summary: output.summary,
-      coverage: j.coverage,
-      mediaCoverage: j.coverage,
-      mediaEvidence: s.correctionAuthor
-        ? [...(s.mediaEvidence ?? []), ...mapped]
-        : mapped,
-      text: s.correctionAuthor
+  const now = Math.max(Date.now(), s.updatedAt + 1);
+  await ctx.db.patch(s._id, {
+    ...(j.acquisition
+      ? { acquisition: importedAcquisition(j.acquisition, now) }
+      : {}),
+    state: "ready",
+    analysis: output,
+    summary: output.summary,
+    coverage: j.coverage,
+    mediaCoverage: j.coverage,
+    mediaEvidence: s.correctionAuthor
+      ? [...(s.mediaEvidence ?? []), ...mapped]
+      : mapped,
+    text: s.correctionAuthor
+      ? s.text
+      : j.transcript.segments.map((x: any) => x.text).join("\n"),
+    originalText: s.originalText ?? s.text,
+    originalMediaEvidence: s.originalMediaEvidence,
+    error: undefined,
+    processingReceipt: undefined,
+    personalAnalysis: undefined,
+    speechProvenance: j.transcript.segments.length
+      ? {
+          model: "Local offline transcription",
+          language: "",
+          uncertainty:
+            "Automatic local speech recognition can contain errors. Check the cited segments and frames.",
+        }
+      : undefined,
+    searchable: [
+      s.title,
+      output.summary,
+      s.correctionAuthor
         ? s.text
-        : j.transcript.segments.map((x: any) => x.text).join("\n"),
-      originalText: s.originalText ?? s.text,
-      originalMediaEvidence: s.originalMediaEvidence,
-      error: undefined,
-      processingReceipt: undefined,
-      personalAnalysis: undefined,
-      speechProvenance: j.transcript.segments.length
-        ? {
-            model: "Local offline transcription",
-            language: "",
-            uncertainty:
-              "Automatic local speech recognition can contain errors. Check the cited segments and frames.",
-          }
-        : undefined,
-      searchable: [
-        s.title,
-        output.summary,
-        s.correctionAuthor
-          ? s.text
-          : j.transcript.segments.map((x: any) => x.text).join(" "),
-        ...s.tags,
-      ]
-        .filter(Boolean)
-        .join(" "),
-      localAnalysisReceipt: {
-        model: run.model,
-        effort: run.effort,
-        route: "local_subscription",
-        runId: run._id,
-        completedAt: now,
-        inputHash: a.receipt.inputHash,
-        outputHash: a.receipt.outputHash,
-        frames: j.frames.length,
-        appCredits: 0,
-      },
-      updatedAt: now,
-    });
-    await syncCategories(ctx, (await ctx.db.get(s._id))!, output);
-    await syncKnowledge(ctx, (await ctx.db.get(s._id))!, { enqueue: false });
-    await ctx.db.patch(j._id, {
-      state: "ready",
-      transcript: { durationMs: j.transcript.durationMs, segments: [] },
-      acquisition: undefined,
-      updatedAt: now,
-    });
-    await ctx.db.patch(run._id, {
-      completed: run.completed + 1,
-      updatedAt: now,
-    });
-    await audit(
-      ctx,
-      run.organizationId,
-      run.actor,
-      "local_library.source_imported",
-      s._id,
-    );
-    return { saved: true, cached: false };
-  },
-});
+        : j.transcript.segments.map((x: any) => x.text).join(" "),
+      ...s.tags,
+    ]
+      .filter(Boolean)
+      .join(" "),
+    localAnalysisReceipt: {
+      model: run.model,
+      effort: run.effort,
+      route: "local_subscription",
+      runId: run._id,
+      completedAt: now,
+      inputHash: a.receipt.inputHash,
+      outputHash: a.receipt.outputHash,
+      frames: j.frames.length,
+      appCredits: 0,
+    },
+    updatedAt: now,
+  });
+  await syncCategories(ctx, (await ctx.db.get(s._id))!, output);
+  await syncKnowledge(ctx, (await ctx.db.get(s._id))!, { enqueue: false });
+  await ctx.db.patch(j._id, {
+    state: "ready",
+    transcript: { durationMs: j.transcript.durationMs, segments: [] },
+    acquisition: undefined,
+    updatedAt: now,
+  });
+  await ctx.db.patch(run._id, {
+    completed: run.completed + 1,
+    updatedAt: now,
+  });
+  await audit(
+    ctx,
+    run.organizationId,
+    run.actor,
+    "local_library.source_imported",
+    s._id,
+  );
+  return { saved: true, cached: false };
+}
+
 export const redactSource = internalMutation({
   args: { sourceId: v.id("sources"), cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, a) => {
@@ -779,248 +833,265 @@ export const evaluationPrepare = mutation({
     cursor: v.optional(v.string()),
     members: v.optional(v.array(v.id("knowledgeMembers"))),
   },
-  handler: async (ctx, a) => {
-    const run = await activeRun(ctx, a.runId),
-      topic = await ctx.db.get(a.topicId),
-      repo = await repositoryContent(ctx, await ctx.db.get(a.repositoryId));
-    ensure(
-      topic?.organizationId === run.organizationId &&
-        !topic.redirect &&
-        repo?.organizationId === run.organizationId &&
-        run.repositories.includes(repo._id) &&
-        repo.enabled &&
-        repo.confirmed &&
-        snapshotScopeCurrent(repo),
-      "CONTEXT_REQUIRED",
-      "Confirm the current selected project.",
-    );
-    ensure(
-      !a.members ||
-        (a.members.length > 0 &&
-          a.members.length <= limits.evidence &&
-          new Set(a.members).size === a.members.length &&
-          !a.cursor),
-      "INVALID_INPUT",
-      "Choose at most twelve distinct included ideas.",
-    );
-    const selected = a.members
-      ? await Promise.all(a.members.map((id) => ctx.db.get(id)))
-      : undefined;
-    ensure(
-      !selected ||
-        selected.every(
-          (m) =>
-            m &&
-            m.organizationId === run.organizationId &&
-            !m.excluded &&
-            run.sources.includes(m.sourceId),
-        ),
-      "FORBIDDEN",
-      "Choose included ideas in this private workspace.",
-    );
-    const page = selected
-        ? {
-            page: selected as Doc<"knowledgeMembers">[],
-            isDone: true,
-            continueCursor: "",
-          }
-        : await ctx.db
-            .query("knowledgeMembers")
-            .withIndex("by_topic", (q) => q.eq("topicId", topic._id))
-            .paginate({ cursor: a.cursor ?? null, numItems: limits.evidence }),
-      evidence = (await memberEvidence(ctx, page.page)).filter((e) =>
-        run.sources.includes(e.reference.sourceId),
-      );
-    ensure(
-      evidence.length,
-      "CONTEXT_REQUIRED",
-      "No included evidence in this batch.",
-    );
-    ensure(
-      !selected || evidence.length === selected.length,
-      "APPROVAL_STALE",
-      "A chosen idea changed.",
-    );
-    ensure(
-      new Set(
-        evidence.map((e) => `${e.reference.sourceId}:${e.reference.insightId}`),
-      ).size === evidence.length,
-      "INVALID_INPUT",
-      "Choose distinct ideas rather than repeated topic memberships.",
-    );
-    const topicBindings = [];
-    for (const id of new Set(page.page.map((m) => m.topicId))) {
-      const bound = await ctx.db.get(id);
-      ensure(
-        bound?.organizationId === run.organizationId && !bound.redirect,
-        "APPROVAL_STALE",
-        "A chosen topic changed.",
-      );
-      topicBindings.push({ id, version: bound.version });
-    }
-    ensure(
-      topicBindings.some((b) => b.id === topic._id),
-      "INVALID_INPUT",
-      "Choose an anchor topic containing one of these ideas.",
-    );
-    const references = evidence.map((e) => e.reference),
-      sourceSetHash = await digest(
-        canonicalJson({ references, topicBindings }),
+  handler: (ctx, a) => evaluationPrepareCore(ctx, a),
+});
+export async function evaluationPrepareCore(
+  ctx: MutationCtx,
+  a: {
+    runId: Id<"localLibraryRuns">;
+    topicId: Id<"knowledgeTopics">;
+    repositoryId: Id<"repositories">;
+    cursor?: string;
+    members?: Id<"knowledgeMembers">[];
+  },
+  actorId?: Id<"users">,
+) {
+  const run = await activeRun(ctx, a.runId, actorId),
+    topic = await ctx.db.get(a.topicId),
+    repo = await repositoryContent(ctx, await ctx.db.get(a.repositoryId));
+  ensure(
+    topic?.organizationId === run.organizationId &&
+      !topic.redirect &&
+      repo?.organizationId === run.organizationId &&
+      run.repositories.includes(repo._id) &&
+      repo.enabled &&
+      repo.confirmed &&
+      snapshotScopeCurrent(repo),
+    "CONTEXT_REQUIRED",
+    "Confirm the current selected project.",
+  );
+  ensure(
+    !a.members ||
+      (a.members.length > 0 &&
+        a.members.length <= limits.evidence &&
+        new Set(a.members).size === a.members.length &&
+        !a.cursor),
+    "INVALID_INPUT",
+    "Choose at most twelve distinct included ideas.",
+  );
+  const selected = a.members
+    ? await Promise.all(a.members.map((id) => ctx.db.get(id)))
+    : undefined;
+  ensure(
+    !selected ||
+      selected.every(
+        (m) =>
+          m &&
+          m.organizationId === run.organizationId &&
+          !m.excluded &&
+          run.sources.includes(m.sourceId),
       ),
-      preferences = await ctx.db
-        .query("improvementPreferences")
-        .withIndex("by_org", (q) => q.eq("organizationId", run.organizationId))
-        .unique(),
-      preferenceVersion = preferences?.version ?? 0,
-      key = `knowledge-evaluation:${processingVersion}:insight-first-project-context-v3:${topic._id}:${topic.version}:${repo._id}:${repo.sha}:${repo.profileVersion}:${repo.selectionVersion ?? 0}:${sourceSetHash}:${preferenceVersion}`;
-    const previous = await ctx.db
-      .query("knowledgeEvaluations")
-      .withIndex("by_topic_repo", (q) =>
-        q.eq("topicId", topic._id).eq("repositoryId", repo._id),
-      )
-      .order("desc")
-      .take(20);
-    const reviewHistory = [];
-    for (const old of previous) {
-      if (
-        old.state === "ready" &&
-        old.output &&
-        ["rejected", "deferred"].includes(old.decision) &&
-        (await referencesCurrent(ctx, run.organizationId, old.references))
-      )
-        reviewHistory.push({
-          decision: old.decision,
-          disposition: old.output.disposition,
-          rationale: old.output.rationale,
-          problem: old.output.problem,
-          baseSha: old.baseSha,
-        });
-      if (reviewHistory.length === 10) break;
-    }
-    const old = await ctx.db
-      .query("knowledgeEvaluations")
-      .withIndex("by_key", (q) => q.eq("key", key))
-      .unique();
-    if (old) {
-      ensure(
-        old.state === "ready" ||
-          (old.state === "local_prepared" && old.localRunId === run._id),
-        "SOURCE_BUSY",
-        "Reconcile the existing evaluation first.",
-      );
-      return {
-        id: old._id,
-        cached: old.state === "ready",
-        evidence,
-        repo,
-        preference: preferences?.note ?? "",
-        reviewHistory,
-        next: page.isDone ? null : page.continueCursor,
-      };
-    }
-    ensure(
-      run.jobs < 1000,
-      "BUDGET_EXCEEDED",
-      "This run reached its job limit.",
+    "FORBIDDEN",
+    "Choose included ideas in this private workspace.",
+  );
+  const page = selected
+      ? {
+          page: selected as Doc<"knowledgeMembers">[],
+          isDone: true,
+          continueCursor: "",
+        }
+      : await ctx.db
+          .query("knowledgeMembers")
+          .withIndex("by_topic", (q) => q.eq("topicId", topic._id))
+          .paginate({ cursor: a.cursor ?? null, numItems: limits.evidence }),
+    evidence = (await memberEvidence(ctx, page.page)).filter((e) =>
+      run.sources.includes(e.reference.sourceId),
     );
-    const now = Date.now();
-    const id = await ctx.db.insert("knowledgeEvaluations", {
-      organizationId: run.organizationId,
-      topicId: topic._id,
-      repositoryId: repo._id,
-      actor: run.actor,
-      topicVersion: topic.version,
-      baseSha: repo.sha,
-      profileVersion: repo.profileVersion,
-      selectionVersion: repo.selectionVersion ?? 0,
-      references,
-      sourceSetHash,
-      preferenceVersion,
-      localRunId: run._id,
-      topicBindings,
-      key,
-      state: "local_prepared",
-      decision: "new",
-      covered: evidence.length,
-      omitted: !!a.members || !page.isDone || !!a.cursor,
-      processingVersion,
-      createdAt: now,
-      updatedAt: now,
-    });
-    await ctx.db.patch(run._id, { jobs: run.jobs + 1, updatedAt: now });
+  ensure(
+    evidence.length,
+    "CONTEXT_REQUIRED",
+    "No included evidence in this batch.",
+  );
+  ensure(
+    !selected || evidence.length === selected.length,
+    "APPROVAL_STALE",
+    "A chosen idea changed.",
+  );
+  ensure(
+    new Set(
+      evidence.map((e) => `${e.reference.sourceId}:${e.reference.insightId}`),
+    ).size === evidence.length,
+    "INVALID_INPUT",
+    "Choose distinct ideas rather than repeated topic memberships.",
+  );
+  const topicBindings = [];
+  for (const id of new Set(page.page.map((m) => m.topicId))) {
+    const bound = await ctx.db.get(id);
+    ensure(
+      bound?.organizationId === run.organizationId && !bound.redirect,
+      "APPROVAL_STALE",
+      "A chosen topic changed.",
+    );
+    topicBindings.push({ id, version: bound.version });
+  }
+  ensure(
+    topicBindings.some((b) => b.id === topic._id),
+    "INVALID_INPUT",
+    "Choose an anchor topic containing one of these ideas.",
+  );
+  const references = evidence.map((e) => e.reference),
+    sourceSetHash = await digest(canonicalJson({ references, topicBindings })),
+    preferences = await ctx.db
+      .query("improvementPreferences")
+      .withIndex("by_org", (q) => q.eq("organizationId", run.organizationId))
+      .unique(),
+    preferenceVersion = preferences?.version ?? 0,
+    key = `knowledge-evaluation:${processingVersion}:insight-first-project-context-v3:${topic._id}:${topic.version}:${repo._id}:${repo.sha}:${repo.profileVersion}:${repo.selectionVersion ?? 0}:${sourceSetHash}:${preferenceVersion}`;
+  const previous = await ctx.db
+    .query("knowledgeEvaluations")
+    .withIndex("by_topic_repo", (q) =>
+      q.eq("topicId", topic._id).eq("repositoryId", repo._id),
+    )
+    .order("desc")
+    .take(20);
+  const reviewHistory = [];
+  for (const old of previous) {
+    if (
+      old.state === "ready" &&
+      old.output &&
+      ["rejected", "deferred"].includes(old.decision) &&
+      (await referencesCurrent(ctx, run.organizationId, old.references))
+    )
+      reviewHistory.push({
+        decision: old.decision,
+        disposition: old.output.disposition,
+        rationale: old.output.rationale,
+        problem: old.output.problem,
+        baseSha: old.baseSha,
+      });
+    if (reviewHistory.length === 10) break;
+  }
+  const old = await ctx.db
+    .query("knowledgeEvaluations")
+    .withIndex("by_key", (q) => q.eq("key", key))
+    .unique();
+  if (old) {
+    ensure(
+      old.state === "ready" ||
+        (old.state === "local_prepared" && old.localRunId === run._id),
+      "SOURCE_BUSY",
+      "Reconcile the existing evaluation first.",
+    );
     return {
-      id,
-      cached: false,
+      id: old._id,
+      cached: old.state === "ready",
       evidence,
       repo,
       preference: preferences?.note ?? "",
       reviewHistory,
       next: page.isDone ? null : page.continueCursor,
     };
-  },
-});
+  }
+  ensure(run.jobs < 1000, "BUDGET_EXCEEDED", "This run reached its job limit.");
+  const now = Date.now();
+  const id = await ctx.db.insert("knowledgeEvaluations", {
+    organizationId: run.organizationId,
+    topicId: topic._id,
+    repositoryId: repo._id,
+    actor: run.actor,
+    topicVersion: topic.version,
+    baseSha: repo.sha,
+    profileVersion: repo.profileVersion,
+    selectionVersion: repo.selectionVersion ?? 0,
+    references,
+    sourceSetHash,
+    preferenceVersion,
+    localRunId: run._id,
+    topicBindings,
+    key,
+    state: "local_prepared",
+    decision: "new",
+    covered: evidence.length,
+    omitted: !!a.members || !page.isDone || !!a.cursor,
+    processingVersion,
+    createdAt: now,
+    updatedAt: now,
+  });
+  await ctx.db.patch(run._id, { jobs: run.jobs + 1, updatedAt: now });
+  return {
+    id,
+    cached: false,
+    evidence,
+    repo,
+    preference: preferences?.note ?? "",
+    reviewHistory,
+    next: page.isDone ? null : page.continueCursor,
+  };
+}
+
 export const recordInspection = internalMutation({
   args: { id: v.id("knowledgeEvaluations"), inspected: v.any() },
-  handler: async (ctx, a) => {
-    const e = await ctx.db.get(a.id);
-    ensure(e?.localRunId, "FORBIDDEN", "Local evaluation unavailable.");
-    await activeRun(ctx, e.localRunId);
-    ensure(
-      e.state === "local_prepared" && (await evaluationCurrent(ctx, e)),
-      "APPROVAL_STALE",
-      "Project or evidence changed.",
-    );
-    await ctx.db.patch(e._id, {
-      inspected: a.inspected,
-      updatedAt: Date.now(),
-    });
-  },
+  handler: (ctx, a) => recordInspectionCore(ctx, a),
 });
+export async function recordInspectionCore(
+  ctx: MutationCtx,
+  a: { id: Id<"knowledgeEvaluations">; inspected: any },
+  actorId?: Id<"users">,
+) {
+  const e = await ctx.db.get(a.id);
+  ensure(e?.localRunId, "FORBIDDEN", "Local evaluation unavailable.");
+  await activeRun(ctx, e.localRunId, actorId);
+  ensure(
+    e.state === "local_prepared" && (await evaluationCurrent(ctx, e)),
+    "APPROVAL_STALE",
+    "Project or evidence changed.",
+  );
+  await ctx.db.patch(e._id, {
+    inspected: a.inspected,
+    updatedAt: Date.now(),
+  });
+}
+
 export const evaluationFinish = mutation({
   args: { id: v.id("knowledgeEvaluations"), output: v.any() },
-  handler: async (ctx, a) => {
-    const e = await ctx.db.get(a.id);
-    ensure(e?.localRunId, "FORBIDDEN", "Local evaluation unavailable.");
-    const run = await activeRun(ctx, e.localRunId);
-    ensure(
-      e.organizationId === run.organizationId &&
-        e.actor === run.actor &&
-        run.repositories.includes(e.repositoryId) &&
-        (await evaluationCurrent(ctx, e)),
-      "APPROVAL_STALE",
-      "Project or source evidence changed.",
-    );
-    if (e.state === "ready") return { saved: true, cached: true };
-    ensure(
-      e.state === "local_prepared" && e.inspected,
-      "CONTEXT_REQUIRED",
-      "Prepare repository evidence first.",
-    );
-    const output = evaluation.parse(a.output);
-    assertReferences([output], e.references);
-    ensure(
-      !containsSecret(JSON.stringify(output)),
-      "POLICY_BLOCKED",
-      "Remove credentials.",
-    );
-    for (const ref of output.repositoryEvidence)
-      ensure(
-        e.inspected.some(
-          (p: any) =>
-            p.path === ref.path &&
-            p.startLine <= ref.startLine &&
-            p.endLine >= ref.endLine,
-        ),
-        "INVALID_EVIDENCE",
-        "Repository citation is outside inspected evidence.",
-      );
-    await ctx.db.patch(e._id, {
-      state: "ready",
-      output,
-      credits: 0,
-      model: "gpt-6.1-sol",
-      updatedAt: Date.now(),
-    });
-    return { saved: true, cached: false };
-  },
+  handler: (ctx, a) => evaluationFinishCore(ctx, a),
 });
+export async function evaluationFinishCore(
+  ctx: MutationCtx,
+  a: { id: Id<"knowledgeEvaluations">; output: any },
+  actorId?: Id<"users">,
+) {
+  const e = await ctx.db.get(a.id);
+  ensure(e?.localRunId, "FORBIDDEN", "Local evaluation unavailable.");
+  const run = await activeRun(ctx, e.localRunId, actorId);
+  ensure(
+    e.organizationId === run.organizationId &&
+      e.actor === run.actor &&
+      run.repositories.includes(e.repositoryId) &&
+      (await evaluationCurrent(ctx, e)),
+    "APPROVAL_STALE",
+    "Project or source evidence changed.",
+  );
+  if (e.state === "ready") return { saved: true, cached: true };
+  ensure(
+    e.state === "local_prepared" && e.inspected,
+    "CONTEXT_REQUIRED",
+    "Prepare repository evidence first.",
+  );
+  const output = evaluation.parse(a.output);
+  assertReferences([output], e.references);
+  ensure(
+    !containsSecret(JSON.stringify(output)),
+    "POLICY_BLOCKED",
+    "Remove credentials.",
+  );
+  for (const ref of output.repositoryEvidence)
+    ensure(
+      e.inspected.some(
+        (p: any) =>
+          p.path === ref.path &&
+          p.startLine <= ref.startLine &&
+          p.endLine >= ref.endLine,
+      ),
+      "INVALID_EVIDENCE",
+      "Repository citation is outside inspected evidence.",
+    );
+  await ctx.db.patch(e._id, {
+    state: "ready",
+    output,
+    credits: 0,
+    model: "gpt-6.1-sol",
+    updatedAt: Date.now(),
+  });
+  return { saved: true, cached: false };
+}

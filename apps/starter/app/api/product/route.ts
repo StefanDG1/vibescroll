@@ -3,6 +3,8 @@ import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
+  assistantIntakeStatus: ["query", api.assistantIntakeUi.status],
+  assistantIntakeAction: ["mutation", api.assistantIntakeUi.act],
   assistantSetup: ["query", api.assistantGrants.setup],
   assistantProjectChoices: ["query", api.assistantGrants.projectChoices],
   saveAssistantGrant: ["mutation", api.assistantGrants.save],

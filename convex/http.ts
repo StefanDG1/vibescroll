@@ -1,9 +1,15 @@
 import { tools as assistantTools } from "./assistantHttp";
+import { runner as assistantLocalRunner } from "./assistantLocalHttp";
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { events as assistantEvents } from "./assistantEventsHttp";
 const http = httpRouter();
+http.route({
+  path: "/runner/assistant/v1",
+  method: "POST",
+  handler: assistantLocalRunner,
+});
 http.route({
   path: "/assistant-events",
   method: "POST",

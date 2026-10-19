@@ -740,10 +740,13 @@ it("saves explicit intake once in the approved space without fetching or analysi
     sourceId: first.source_id,
   });
   expect(status.status).toBe("needs_upload");
-  const analysis = await s.assistant.query(internal.assistant.requestAnalysis, {
-    profileId: s.organizationId,
-    sourceId: first.source_id,
-  });
+  const analysis = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    {
+      profileId: s.organizationId,
+      sourceId: first.source_id,
+    },
+  );
   expect(analysis).toMatchObject({
     status: "approval_required",
     analysis_started: false,

@@ -335,6 +335,7 @@ export const productTables = {
     tags: v.array(v.string()),
     error: v.optional(v.string()),
     rightsAttested: v.boolean(),
+    assistantIntake: v.optional(v.boolean()),
     generation: v.number(),
   })
     .index("by_org", ["organizationId"])
@@ -654,6 +655,10 @@ export const productTables = {
     personalSeenAt: v.optional(v.number()),
     personalProfileBinding: v.optional(v.string()),
     activePersonalSource: v.optional(v.id("sources")),
+    assistantSeenAt: v.optional(v.number()),
+    assistantProfileBinding: v.optional(v.string()),
+    assistantSessionExpiresAt: v.optional(v.number()),
+    assistantPending: v.optional(v.boolean()),
   })
     .index("by_org", ["organizationId"])
     .index("by_code", ["codeHash"])

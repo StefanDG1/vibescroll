@@ -6,6 +6,11 @@ export const assistantRepositoryBinding = v.object({
   profileVersion: v.number(),
   selectionVersion: v.number(),
 });
+export const assistantAnalysisDefaults = v.object({
+  enabled: v.boolean(),
+  deviceId: v.id("devices"),
+  profileBinding: v.string(),
+});
 export const assistantTables = {
   assistantSubscriptions: defineTable({
     organizationId: v.id("organizations"),
@@ -79,11 +84,22 @@ export const assistantTables = {
     sourceId: v.id("sources"),
     generation: v.number(),
     revision: v.number(),
+    permissionBasis: v.optional(v.literal("connection_explicit_links")),
+    deviceId: v.optional(v.id("devices")),
+    queueState: v.optional(v.string()),
+    runId: v.optional(v.id("localLibraryRuns")),
+    repositories: v.optional(v.array(v.id("repositories"))),
+    queuedRepositories: v.optional(v.array(v.id("repositories"))),
+    projectRequest: v.optional(v.boolean()),
+    analysisGeneration: v.optional(v.number()),
+    error: v.optional(v.string()),
+    updatedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_source", ["sourceId"])
     .index("by_org", ["organizationId"])
     .index("by_actor", ["actor"])
+    .index("by_device_state", ["deviceId", "queueState"])
     .index("by_pair", ["actor", "clientId", "sourceId"]),
   assistantGrants: defineTable({
     organizationId: v.id("organizations"),
@@ -105,6 +121,8 @@ export const assistantTables = {
     intakeSpace: v.optional(
       v.union(v.literal("personal"), v.literal("business")),
     ),
+    intakePolicy: v.optional(v.literal("explicit_links")),
+    analysisDefaults: v.optional(assistantAnalysisDefaults),
     version: v.number(),
     state: v.union(v.literal("active"), v.literal("revoked")),
     expiresAt: v.union(v.number(), v.null()),

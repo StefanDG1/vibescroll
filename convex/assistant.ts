@@ -6,7 +6,12 @@ import type { Id } from "./_generated/dataModel";
 import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
 import { audit, limit } from "./lib";
 import { ensure, containsSecret, safeSourceUrl } from "../packages/policy";
-import { captureAuthorized, digest } from "./product";
+import { captureAuthorized, digest, startSource } from "./product";
+import {
+  chooseIntakeProjects,
+  enqueueIntake,
+  intakeReceipt,
+} from "./lib/assistantIntake";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { internal } from "./_generated/api";
 import { assistantProject } from "./lib/assistantProject";
@@ -42,8 +47,11 @@ export const saveLink = internalMutation({
     ...profile,
     url: v.string(),
     title: v.string(),
-    rightsAttested: v.literal(true),
-    explicitlyRequested: v.literal(true),
+    rightsAttested: v.optional(v.literal(true)),
+    explicitlyRequested: v.optional(v.literal(true)),
+    analyze: v.optional(v.boolean()),
+    project: v.optional(v.string()),
+    bestProjects: v.optional(v.boolean()),
     key: v.string(),
   },
   handler: async (ctx, args) => {
@@ -61,6 +69,23 @@ export const saveLink = internalMutation({
       "Use a short link and title without credentials.",
     );
     const url = safeSourceUrl(args.url);
+    ensure(
+      a.grant.intakePolicy === "explicit_links" || args.rightsAttested === true,
+      "SETUP_REQUIRED",
+      "Review explicit-link saving once in Connections. Future links need no repeated confirmation.",
+    );
+    const repositories = await chooseIntakeProjects(
+      ctx,
+      a.grant,
+      args.project,
+      args.bestProjects,
+    );
+    if (repositories.length)
+      ensure(
+        a.scopes.includes("context:read"),
+        "FORBIDDEN",
+        "Project context OAuth permission is missing.",
+      );
     const key = `mcp:${await digest(`${a.client.id}:${args.key}:${url}`)}`;
     const id = await captureAuthorized(
       ctx,
@@ -70,13 +95,15 @@ export const saveLink = internalMutation({
         kind: "url",
         url,
         title: args.title,
-        rightsAttested: args.rightsAttested,
+        rightsAttested: true,
       },
       a,
       false,
       true,
     );
     const source = (await ctx.db.get(id))!;
+    if (!source.assistantIntake)
+      await ctx.db.patch(id, { assistantIntake: true });
     // Replayed capture never changes existing filing or shares existing content.
     const old = await ctx.db
       .query("assistantIntakes")
@@ -87,8 +114,35 @@ export const saveLink = internalMutation({
           .eq("sourceId", id),
       )
       .unique();
+    let intakeId = old?._id;
+    if (old && old.grantVersion !== a.grant.version) {
+      ensure(
+        !["local", "credits"].includes(old.queueState ?? ""),
+        "APPROVAL_STALE",
+        "Earlier processing may have started. Review the source and usage before retrying under new preferences.",
+      );
+      // A new explicit submission may use newly reviewed preferences. It never
+      // revives execution that was already dispatched under older authority.
+      await ctx.db.patch(old._id, {
+        grantId: a.grant._id,
+        grantVersion: a.grant.version,
+        generation: source.generation,
+        revision: source.updatedAt,
+        permissionBasis:
+          a.grant.intakePolicy === "explicit_links"
+            ? "connection_explicit_links"
+            : undefined,
+        queueState: undefined,
+        runId: undefined,
+        repositories: undefined,
+        queuedRepositories: undefined,
+        projectRequest: undefined,
+        error: undefined,
+        updatedAt: Date.now(),
+      });
+    }
     if (!old) {
-      await ctx.db.insert("assistantIntakes", {
+      intakeId = await ctx.db.insert("assistantIntakes", {
         organizationId: a.organization._id,
         actor: a.actor._id,
         clientId: a.client.id,
@@ -97,12 +151,18 @@ export const saveLink = internalMutation({
         sourceId: id,
         generation: source.generation,
         revision: source.updatedAt,
+        ...(a.grant.intakePolicy === "explicit_links"
+          ? { permissionBasis: "connection_explicit_links" as const }
+          : {}),
         createdAt: Date.now(),
       });
-      if (
-        a.grant.intakeSpace &&
-        a.organization.privateOwnerId === a.actor._id
-      ) {
+      const intakeSpace =
+        a.grant.intakeSpace ??
+        (a.grant.libraryScope === "personal" ||
+        a.grant.libraryScope === "business"
+          ? a.grant.libraryScope
+          : undefined);
+      if (intakeSpace && a.organization.privateOwnerId === a.actor._id) {
         const rows = await ctx.db
           .query("sourceSpaces")
           .withIndex("by_source", (q) => q.eq("sourceId", id))
@@ -111,22 +171,54 @@ export const saveLink = internalMutation({
           await ctx.db.insert("sourceSpaces", {
             organizationId: a.organization._id,
             sourceId: id,
-            space: a.grant.intakeSpace,
+            space: intakeSpace,
             actor: a.actor._id,
             provenance: "user",
             updatedAt: Date.now(),
           });
       }
     }
+    const intake = (await ctx.db.get(intakeId!))!;
+    // Replays do not widen old work to a replacement grant or start duplicate jobs.
+    if (
+      args.analyze !== false &&
+      a.scopes.includes("analysis:request") &&
+      a.grant.analysisDefaults?.enabled &&
+      intake.grantVersion === a.grant.version &&
+      ![
+        "failed",
+        "cancelled",
+        ...(repositories.length
+          ? []
+          : [
+              "waiting",
+              "local",
+              "credits",
+              "completed",
+              "completed_no_evidence",
+            ]),
+      ].includes(intake.queueState ?? "") &&
+      (source.state !== "ready" || repositories.length)
+    )
+      await enqueueIntake(ctx, intake, repositories);
+    const currentIntake = (await ctx.db.get(intake._id))!;
     return {
       source_id: id,
       profile_id: a.organization._id,
       status: "saved",
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${id}`,
       analysis_started: false,
-      note: a.grant.libraryScope
-        ? "Saved without fetching media or spending. Your live library scope includes eligible future posts. Review the post in VibeScroll to approve analysis."
-        : "Saved without fetching media or spending. Review the post in VibeScroll to approve analysis or grant retrieval.",
+      receipt: await intakeReceipt(ctx, currentIntake, source),
+      note:
+        args.analyze === false
+          ? "Saved only, as requested."
+          : ["failed", "cancelled"].includes(currentIntake.queueState ?? "")
+            ? "Saved. Review earlier processing and usage before explicitly requesting another local run."
+            : source.state === "ready"
+              ? "Existing insights reused. No duplicate extraction was started."
+              : ["waiting", "local"].includes(currentIntake.queueState ?? "")
+                ? "Saved. Local extraction and organization will run when your computer requests work. Credits are used only if you explicitly choose them."
+                : "Saved. Set up automatic local extraction and organization once in Connections.",
     };
   },
 });
@@ -207,6 +299,18 @@ export const getJobStatus = internalQuery({
       source_id: source._id,
       profile_id: a.organization._id,
       status: source.state,
+      receipt: await (async () => {
+        const intake = await ctx.db
+          .query("assistantIntakes")
+          .withIndex("by_pair", (q) =>
+            q
+              .eq("actor", a.actor._id)
+              .eq("clientId", a.client.id)
+              .eq("sourceId", source._id),
+          )
+          .unique();
+        return intake ? intakeReceipt(ctx, intake, source) : null;
+      })(),
       evidence_changed: changed,
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
       note: changed
@@ -215,8 +319,23 @@ export const getJobStatus = internalQuery({
     };
   },
 });
-export const requestAnalysis = internalQuery({
-  args: { ...profile, sourceId: v.id("sources") },
+export const requestAnalysis = internalMutation({
+  args: {
+    ...profile,
+    sourceId: v.id("sources"),
+    mode: v.optional(
+      v.union(
+        v.literal("local"),
+        v.literal("credits"),
+        v.literal("projects"),
+        v.literal("cancel"),
+      ),
+    ),
+    generation: v.optional(v.number()),
+    maxCredits: v.optional(v.number()),
+    project: v.optional(v.string()),
+    bestProjects: v.optional(v.boolean()),
+  },
   handler: async (ctx, args) => {
     const { a, source } = await selectedWork(
       ctx,
@@ -224,6 +343,73 @@ export const requestAnalysis = internalQuery({
       args.sourceId,
       "analysis:request",
     );
+    const intake = await ctx.db
+      .query("assistantIntakes")
+      .withIndex("by_pair", (q) =>
+        q
+          .eq("actor", a.actor._id)
+          .eq("clientId", a.client.id)
+          .eq("sourceId", source._id),
+      )
+      .unique();
+    if (intake && args.mode) {
+      ensure(
+        intake.grantVersion === a.grant.version,
+        "APPROVAL_STALE",
+        "This intake belongs to earlier connection settings. Review the source in the app.",
+      );
+      if (args.mode === "credits") {
+        ensure(
+          args.generation === source.generation &&
+            args.maxCredits === 10 &&
+            intake.queueState === "waiting" &&
+            !intake.runId,
+          "QUOTE_CHANGED",
+          "Review the current waiting source and its 10-credit maximum.",
+        );
+        await startSource(ctx, { id: source._id, maxCredits: 10 }, a.actor);
+        const fresh = (await ctx.db.get(source._id))!;
+        await ctx.db.patch(intake._id, {
+          queueState: "credits",
+          analysisGeneration: fresh.generation,
+          updatedAt: Date.now(),
+        });
+      } else if (args.mode === "cancel") {
+        ensure(
+          intake.queueState === "waiting",
+          "SOURCE_BUSY",
+          "Use the source page to cancel work that has already started.",
+        );
+        await ctx.db.patch(intake._id, {
+          queueState: "cancelled",
+          updatedAt: Date.now(),
+        });
+      } else {
+        const repositories = await chooseIntakeProjects(
+          ctx,
+          a.grant,
+          args.project,
+          args.bestProjects,
+        );
+        if (repositories.length)
+          ensure(
+            a.scopes.includes("context:read"),
+            "FORBIDDEN",
+            "Project context OAuth permission is missing.",
+          );
+        ensure(
+          args.mode !== "projects" || repositories.length > 0,
+          "CONTEXT_REQUIRED",
+          "Name a project or explicitly request best project matches.",
+        );
+        await enqueueIntake(ctx, intake, repositories);
+      }
+      return intakeReceipt(
+        ctx,
+        (await ctx.db.get(intake._id))!,
+        (await ctx.db.get(source._id))!,
+      );
+    }
     return {
       source_id: source._id,
       status: "approval_required",
@@ -395,6 +581,9 @@ export const getProfile = internalQuery({
         name: org!.name.slice(0, 200),
         grant_version: grant.version,
         expires_at: grant.expiresAt,
+        automatic_analysis: grant.analysisDefaults?.enabled ?? false,
+        intake_setup_required: grant.intakePolicy !== "explicit_links",
+        default_output: "extraction_and_organization",
         selected_project_count: (grant.repositories ?? []).length,
         projects,
         context:

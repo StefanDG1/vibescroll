@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 20: automatic assistant intake
+
+[ADR 109](adr/109-automatic-assistant-intake.md) adopts one-time explicit-link connection permission, automatic local extraction and organization, offline waiting with optional explicitly quoted credits, reconciled receipts and project evaluation only when requested. It supersedes the repeated per-link confirmation and approval-link-only flow for newly reviewed automatic-analysis grants. Existing grants, personal-route eligibility and coding/publication approvals remain unchanged.
+
 ## October 17: assistant access until revoked
 
 [ADR 108](adr/108-assistant-access-until-revoked.md) permits explicitly reviewed assistant access until the user turns it off, including future eligible posts within the selected live library scope. Seven-day and thirty-day choices remain available. Existing grants retain their expiry; no automatic upgrade, polling, renewal job, post-copy migration or broader work approval follows. OAuth renewal and provider revocation remain separate.

@@ -992,6 +992,26 @@ export async function startSource(
   const { actor } = authorizedActor
     ? { actor: authorizedActor }
     : await writeAccess(ctx, s.organizationId, ["owner", "admin", "member"]);
+  if (s.assistantIntake) {
+    const intakes = await ctx.db
+      .query("assistantIntakes")
+      .withIndex("by_source", (q) => q.eq("sourceId", s._id))
+      .take(51);
+    ensure(
+      intakes.length <= 50,
+      "SOURCE_BUSY",
+      "Review this source's existing assistant work.",
+    );
+    for (const intake of intakes)
+      if (intake.queueState === "local" && intake.runId) {
+        const run = await ctx.db.get(intake.runId);
+        ensure(
+          !run || run.state !== "active" || run.expiresAt <= Date.now(),
+          "SOURCE_BUSY",
+          "Local work already started. No credit fallback was used.",
+        );
+      }
+  }
   ensure(
     a.maxCredits === 10,
     "QUOTE_CHANGED",
@@ -1252,9 +1272,40 @@ export const commitAnalysis = internalMutation({
       processingReceipt: receipt,
       updatedAt: Date.now(),
     });
+    if (s.assistantIntake) {
+      const current = (await ctx.db.get(s._id))!;
+      const intakes = await ctx.db
+        .query("assistantIntakes")
+        .withIndex("by_source", (q) => q.eq("sourceId", s._id))
+        .take(11);
+      for (const intake of intakes)
+        if (
+          intake.queueState === "credits" &&
+          intake.analysisGeneration === a.generation
+        ) {
+          const continueProjects = !!analysis && !!intake.projectRequest;
+          await ctx.db.patch(intake._id, {
+            queueState: continueProjects
+              ? "waiting"
+              : analysis
+                ? "completed"
+                : "failed",
+            generation: current.generation,
+            revision: current.updatedAt,
+            updatedAt: Date.now(),
+          });
+          if (continueProjects && intake.deviceId) {
+            const device = await ctx.db.get(intake.deviceId);
+            if (device?.state === "paired")
+              await ctx.db.patch(device._id, { assistantPending: true });
+          }
+        }
+    }
     if (analysis)
       await syncCategories(ctx, (await ctx.db.get(s._id))!, analysis);
-    await syncKnowledge(ctx, (await ctx.db.get(s._id))!);
+    await syncKnowledge(ctx, (await ctx.db.get(s._id))!, {
+      enqueue: !s.assistantIntake,
+    });
     await ctx.db.insert("notifications", {
       organizationId: s.organizationId,
       createdAt: Date.now(),

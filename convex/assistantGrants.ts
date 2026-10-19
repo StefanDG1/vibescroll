@@ -8,7 +8,10 @@ import {
   assistantScopes,
 } from "../packages/policy/assistant";
 import { ensure, containsSecret } from "../packages/policy";
-import { assistantRepositoryBinding } from "./assistantSchema";
+import {
+  assistantRepositoryBinding,
+  assistantAnalysisDefaults,
+} from "./assistantSchema";
 import { snapshotScopeCurrent } from "../packages/repositories/scope";
 const binding = v.object({
   sourceId: v.id("sources"),
@@ -38,6 +41,19 @@ export const setup = query({
         !!assistantIssuer(process.env.MCP_AUTH_ISSUER),
       privateLibrary: organization.privateOwnerId === actor._id,
       eventsEnabled: process.env.MCP_EVENTS_ENABLED === "true",
+      devices: (
+        await ctx.db
+          .query("devices")
+          .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
+          .take(21)
+      )
+        .filter((d) => d.owner === actor._id && d.state === "paired")
+        .map((d) => ({
+          id: d._id,
+          name: d.name,
+          profileBinding: d.assistantProfileBinding,
+          online: (d.assistantSeenAt ?? 0) > Date.now() - 360000,
+        })),
       sources: [],
       nextCursor: null,
       coverage:
@@ -54,6 +70,8 @@ export const setup = query({
           contextVersion: g.contextVersion,
           repositories: g.repositories ?? [],
           intakeSpace: g.intakeSpace,
+          intakePolicy: g.intakePolicy,
+          analysisDefaults: g.analysisDefaults,
           version: g.version,
           state: g.state,
           expiresAt: g.expiresAt,
@@ -117,6 +135,8 @@ export const save = mutation({
     intakeSpace: v.optional(
       v.union(v.literal("personal"), v.literal("business")),
     ),
+    intakePolicy: v.optional(v.literal("explicit_links")),
+    analysisDefaults: v.optional(assistantAnalysisDefaults),
     expectedVersion: v.number(),
     expiresAt: v.union(v.number(), v.null()),
     acknowledged: v.literal(true),
@@ -261,6 +281,39 @@ export const save = mutation({
       "INVALID_INPUT",
       "Choose intake filing only for your private library.",
     );
+    ensure(
+      !a.intakeSpace ||
+        !a.libraryScope ||
+        a.libraryScope === "all" ||
+        a.intakeSpace === a.libraryScope,
+      "INVALID_INPUT",
+      "Choose an intake destination within the approved library scope.",
+    );
+    if (a.analysisDefaults?.enabled) {
+      const device = await ctx.db.get(a.analysisDefaults.deviceId);
+      const membership = await ctx.db
+        .query("memberships")
+        .withIndex("by_pair", (q) =>
+          q.eq("organizationId", a.organizationId).eq("userId", actor._id),
+        )
+        .unique();
+      ensure(
+        a.intakePolicy === "explicit_links" &&
+          a.libraryScope &&
+          a.scopes.includes("links:save") &&
+          a.scopes.includes("analysis:request") &&
+          device?.owner === actor._id &&
+          device.organizationId === a.organizationId &&
+          device.state === "paired" &&
+          device.assistantProfileBinding ===
+            a.analysisDefaults.profileBinding &&
+          /^[a-f0-9]{64}$/.test(a.analysisDefaults.profileBinding) &&
+          membership &&
+          ["owner", "admin"].includes(membership.role),
+        "SETUP_REQUIRED",
+        "Connect your own local assistant runner and review automatic analysis.",
+      );
+    }
     const old = await ctx.db
       .query("assistantGrants")
       .withIndex("by_pair", (q) =>
@@ -296,6 +349,8 @@ export const save = mutation({
       scopes: a.scopes,
       contextVersion: a.contextVersion,
       intakeSpace: a.intakeSpace,
+      intakePolicy: a.intakePolicy,
+      analysisDefaults: a.analysisDefaults,
       version: (old?.version ?? 0) + 1,
       state: "active" as const,
       expiresAt: a.expiresAt,

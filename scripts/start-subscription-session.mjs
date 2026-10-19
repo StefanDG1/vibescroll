@@ -43,6 +43,7 @@ const exec = promisify(execFile),
 const library = options === "--personal-library";
 const sessionMs = library ? 4 * 3600000 : 1800000;
 const expiresAt = sessionDeadline(sessionMs);
+const startedAt = Date.now();
 const run = async (args) =>
   (
     await exec("docker", args, {
@@ -66,6 +67,10 @@ const stop = () => {
 };
 process.once("SIGINT", stop);
 process.once("SIGTERM", stop);
+const parentStop = (message) => {
+  if (message === "stop") stop();
+};
+process.on("message", parentStop);
 try {
   await store.lock(async () => {
     try {
@@ -214,6 +219,7 @@ try {
           socket,
           image,
           expiresAt,
+          startedAt,
           purpose: library ? "personal_library" : "comparison",
         }),
         { mode: 0o600 },
@@ -249,6 +255,7 @@ try {
           profileBinding,
           connectionSaved: true,
           expiresAt,
+          startedAt,
           purpose: library ? "personal_library" : "comparison",
         }),
         { mode: 0o600 },
@@ -311,6 +318,8 @@ try {
       await run(["volume", "rm", socket]).catch(() => {});
       process.removeListener("SIGINT", stop);
       process.removeListener("SIGTERM", stop);
+      process.removeListener("message", parentStop);
+      if (process.connected) process.disconnect();
     }
   });
 } catch {
@@ -321,4 +330,7 @@ try {
     }),
   );
   process.exitCode = 1;
+} finally {
+  process.removeListener("message", parentStop);
+  if (process.connected) process.disconnect();
 }

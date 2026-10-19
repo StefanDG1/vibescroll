@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useEffectEvent } from "react";
 import { useRouter } from "next/navigation";
 import { usePolling } from "@/lib/use-polling";
 import { AssistantConnections } from "./assistant-connections";
+import { AssistantIntakeStatus } from "./assistant-intake-status";
 import { UsageSummary } from "./usage-summary";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 import Link from "next/link";
@@ -3519,6 +3520,14 @@ function SourceDetail({
           </span>
           <ArrowRight size={20} aria-hidden="true" />
         </a>
+      )}
+      {detail.assistantIntake && (
+        <AssistantIntakeStatus
+          key={sourceId}
+          sourceId={sourceId}
+          demo={demo}
+          call={call}
+        />
       )}
       <div className="panel">
         <span className="coverage">

@@ -57,8 +57,11 @@ const operations = z.discriminatedUnion("operation", [
           url: z.string().url().max(2048),
           title: z.string().min(1).max(160),
           key: z.string().min(8).max(64),
-          rightsAttested: z.literal(true),
-          explicitlyRequested: z.literal(true),
+          rightsAttested: z.literal(true).optional(),
+          analyze: z.boolean().optional(),
+          project: z.string().min(1).max(200).optional(),
+          bestProjects: z.boolean().optional(),
+          explicitlyRequested: z.literal(true).optional(),
         })
         .strict(),
     })
@@ -75,7 +78,15 @@ const operations = z.discriminatedUnion("operation", [
     .object({
       operation: z.literal("request_analysis"),
       args: z
-        .object({ profileId, sourceId: z.string().min(1).max(100) })
+        .object({
+          profileId,
+          sourceId: z.string().min(1).max(100),
+          mode: z.enum(["local", "credits", "projects", "cancel"]).optional(),
+          generation: z.number().int().nonnegative().optional(),
+          maxCredits: z.number().int().nonnegative().optional(),
+          project: z.string().min(1).max(200).optional(),
+          bestProjects: z.boolean().optional(),
+        })
         .strict(),
     })
     .strict(),
@@ -199,7 +210,8 @@ export const tools = httpAction(async (ctx, request) => {
         });
         break;
       case "request_analysis":
-        value = await ctx.runQuery(internal.assistant.requestAnalysis, {
+        value = await ctx.runMutation(internal.assistant.requestAnalysis, {
+          ...input.args,
           sourceId: input.args.sourceId as Id<"sources">,
           profileId: selectedProfile,
         });

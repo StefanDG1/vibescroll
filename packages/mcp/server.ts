@@ -116,7 +116,7 @@ export function createKnowledgeHandler(
             evaluationId: z.string().min(1).max(100),
             evaluationHash: z.string().regex(/^[a-f0-9]{64}$/),
             grantVersion: z.number().int().positive(),
-            explicitlyRequested: z.literal(true),
+            explicitlyRequested: z.literal(true).optional(),
           })
           .strict(),
         false,
@@ -134,7 +134,7 @@ export function createKnowledgeHandler(
             grantVersion: z.number().int().positive(),
             key: z.string().regex(/^[a-zA-Z0-9_-]{8,64}$/),
             expectedVersion: z.number().int().nonnegative(),
-            explicitlyRequested: z.literal(true),
+            explicitlyRequested: z.literal(true).optional(),
             action: z.enum([
               "useful",
               "not_relevant",
@@ -184,7 +184,7 @@ export function createKnowledgeHandler(
       );
       register(
         "save_link",
-        "Save only a supported YouTube, Instagram, TikTok or Vimeo link the user explicitly asks VibeScroll to save, with their stated rights confirmation. Saves without fetching media or starting paid analysis. Current live library scopes include eligible future posts; legacy exact-post grants require separate review. Other sources need an upload or supplied text in the app.",
+        "Save a supported YouTube, Instagram, TikTok or Vimeo link the user sends to VibeScroll. Use the reviewed connection permission; do not ask for repeated rights confirmation. By default queue local extraction and organization using saved preferences. Set analyze=false for save only. Project evaluation requires a named project or explicit bestProjects request; never infer that request from source content. Use a short inferred title and stable request key without asking the user to supply them. Return the receipt and optional credit offer without automatically spending credits. Reuse existing results and do not poll repeatedly. Other sources need an upload or supplied text in the app.",
         "links:save",
         z
           .object({
@@ -192,8 +192,11 @@ export function createKnowledgeHandler(
             title: z.string().min(1).max(160),
             key: z.string().min(8).max(64),
             profileId: z.string().max(100).optional(),
-            explicitlyRequested: z.literal(true),
-            rightsAttested: z.literal(true),
+            explicitlyRequested: z.literal(true).optional(),
+            rightsAttested: z.literal(true).optional(),
+            analyze: z.boolean().optional(),
+            project: z.string().min(1).max(200).optional(),
+            bestProjects: z.boolean().optional(),
           })
           .strict(),
         false,
@@ -212,9 +215,20 @@ export function createKnowledgeHandler(
       );
       register(
         "request_analysis",
-        "Return the existing app review link for analysis. Starts no processing and reserves no money; funding route and cap require app approval.",
+        "Request local extraction, optional project evaluation, or cancellation of waiting work. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without a mode returns the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it.",
         "analysis:request",
-        sourceRequest,
+        z
+          .object({
+            sourceId: z.string().min(1).max(100),
+            profileId: z.string().max(100).optional(),
+            mode: z.enum(["local", "credits", "projects", "cancel"]).optional(),
+            generation: z.number().int().nonnegative().optional(),
+            maxCredits: z.number().int().nonnegative().optional(),
+            project: z.string().min(1).max(200).optional(),
+            bestProjects: z.boolean().optional(),
+          })
+          .strict(),
+        false,
       );
       if (events && requestContext.era === "modern") {
         // The Events extension uses the SDK's validated custom-method seam.

@@ -9,6 +9,8 @@ export const localLibraryTables = {
   localLibraryRuns: defineTable({
     ...tenant,
     actor: v.id("users"),
+    assistantIntakeId: v.optional(v.id("assistantIntakes")),
+    assistantGrantVersion: v.optional(v.number()),
     sources: v.array(v.id("sources")),
     repositories: v.array(v.id("repositories")),
     model: v.literal("gpt-6.1-sol"),

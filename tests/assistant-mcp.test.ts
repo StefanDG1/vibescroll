@@ -54,7 +54,8 @@ it("exposes bounded read and explicit intake schemas through actual stateless MC
     (t: { name: string }) => t.name === "save_link",
   );
   expect(save.annotations.readOnlyHint).toBe(false);
-  expect(save.inputSchema.required).toContain("explicitlyRequested");
+  expect(save.inputSchema.required).not.toContain("explicitlyRequested");
+  expect(save.inputSchema.required).not.toContain("rightsAttested");
   expect(save.inputSchema.additionalProperties).toBe(false);
 });
 it("challenges absent tool scopes before invoking the backend and rejects unknown tool input", async () => {

@@ -21,6 +21,7 @@
     "benchmark": "node scripts/evaluate-benchmark.ts",
     "chatgpt:local": "node packages/runner/chatgpt-cli.mjs",
     "runner:personal": "node packages/runner/personal-runner.mjs",
+    "runner:assistant": "node packages/runner/assistant-runner.mjs",
     "check": "pnpm validate && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "convex:dev": "convex dev",
     "template:export": "node scripts/export-template.mjs",

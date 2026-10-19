@@ -16,6 +16,20 @@ Open [the hosted application](https://scroll.companynerve.com/app) or follow the
 
 See [capabilities and limits](docs/CAPABILITIES.md) for evidence and availability details.
 
+## How it works
+
+Save content → extract cited insights → organize and connect knowledge → check project relevance → review a proposal and plan → approve coding → review a draft PR → record the outcome.
+
+1. Save a permitted link or upload media to your library.
+2. Review the analysis route and cost, then approve processing. VibeScroll extracts main ideas with transcript or sampled-frame references so you can inspect the evidence and coverage.
+3. Browse related ideas through topics, Tree or Folders. Keep useful knowledge for reference and correct its organization when needed.
+4. Optionally connect GitHub, select repositories and confirm project context. Evaluate relevant ideas against what a project needs and already implements.
+5. Review the proposed change and its evidence. Refine, edit or export a plan when you want to act. You can also reject an idea, defer it, or keep a no-fit or already-implemented result.
+6. Separately approve coding for the selected repository, plan, funding route and spending limit. Review the resulting patch and checks before approving draft PR publication. You control merge and deployment.
+7. Follow the PR status and record whether the change helped. Merging a PR does not establish that the change helped; benefit needs its own evidence. Return to that knowledge when reviewing the next idea.
+
+The library is useful without GitHub, and a saved source does not have to become code. You can stop at cited insights, keep an idea for later or export a plan to use elsewhere. See the [first-source tutorial](docs/HOSTED-TUTORIAL.md) for the guided journey.
+
 ## Use with ChatGPT or an AI agent
 
 VibeScroll exposes a remote MCP server at `https://scroll.companynerve.com/mcp`. The private pilot has verified ChatGPT and native Codex retrieval. Public directory availability and general onboarding for other agent clients are not established.

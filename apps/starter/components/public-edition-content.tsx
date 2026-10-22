@@ -7,6 +7,11 @@ export function PublicEditionContent({ edition }: { edition: PublicPayload }) {
   return (
     <article className="public-edition-content">
       <h2>{edition.title}</h2>
+      <p>
+        AI-generated analysis may contain errors. Review the source references
+        before relying on it. The publisher is responsible for reviewing this
+        edition.
+      </p>
       <p>{edition.summary}</p>
       <p>
         Published by {edition.publisher}. Coverage:{" "}

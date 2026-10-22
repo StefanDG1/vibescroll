@@ -1,0 +1,41 @@
+{
+  "synthetic": true,
+  "actualComponent": "PublicEditionContent",
+  "environment": "loopback static SSR with copied current CSS; no product/provider calls",
+  "initialFixtureCorrections": [
+    "Initial review omitted atlas theme CSS; added actual product/studio/atlas/public CSS.",
+    "Exact scrollWidth equality assertion was incorrect: 380px document fits390px viewport; use no-overflow inequality."
+  ],
+  "checks": [
+    {
+      "width": 1440,
+      "scrollWidth": 1430,
+      "theme": "light",
+      "disclosure": "AI-generated analysis may contain errors. Review the source references before relying on it. The publisher is responsible for reviewing this edition."
+    },
+    {
+      "width": 390,
+      "scrollWidth": 380,
+      "theme": "light",
+      "disclosure": "AI-generated analysis may contain errors. Review the source references before relying on it. The publisher is responsible for reviewing this edition."
+    },
+    {
+      "width": 1440,
+      "scrollWidth": 1430,
+      "theme": "dark",
+      "disclosure": "AI-generated analysis may contain errors. Review the source references before relying on it. The publisher is responsible for reviewing this edition."
+    },
+    {
+      "width": 390,
+      "scrollWidth": 380,
+      "theme": "dark",
+      "disclosure": "AI-generated analysis may contain errors. Review the source references before relying on it. The publisher is responsible for reviewing this edition."
+    }
+  ],
+  "screenshots": [
+    "launch-20261022-disclosure-synthetic-light-mobile.png",
+    "launch-20261022-disclosure-synthetic-dark-desktop.png"
+  ],
+  "componentSHA256": "17a9df23b81705813be61257f4db10e10c4e266e4b883b90cccc60dcf78267da",
+  "livePublicationVerified": false
+}

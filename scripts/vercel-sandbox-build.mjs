@@ -2,6 +2,7 @@ import { Sandbox } from "@vercel/sandbox";
 import { readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { reviewedDependencyPatches } from "./dependency-patches.mjs";
+import { singleSandboxCreationFetch } from "../packages/providers/sandbox-creation.ts";
 const token = process.env.VERCEL_OIDC_TOKEN ?? process.env.VERCEL_SANDBOX_TOKEN;
 if (
   !token ||
@@ -66,6 +67,8 @@ let sandbox;
 try {
   sandbox = await Sandbox.create({
     ...credentials,
+    fetch: singleSandboxCreationFetch(undefined, { allowSnapshot: true }),
+    signal: AbortSignal.timeout(30000),
     image: base,
     persistent: false,
     networkPolicy: {

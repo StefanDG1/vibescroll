@@ -6,6 +6,7 @@ import { signSandboxRequest } from "../policy/sandbox-broker";
 import { publicProxy, publicBridge } from "../media/public-proxy";
 import { ensure } from "../policy";
 import { toolSnapshot, type ToolSnapshot } from "../policy/tool-snapshots";
+import { singleSandboxCreationFetch } from "./sandbox-creation";
 
 type Options = {
   user?: "user" | "root";
@@ -559,6 +560,8 @@ export async function createJobSandbox(
   const sdk = await Sandbox.create({
     ...credentials,
     ...sandboxPolicy(kind, seconds, domains),
+    fetch: singleSandboxCreationFetch(),
+    signal: AbortSignal.timeout(30000),
     ...(snapshotId
       ? { source: { type: "snapshot" as const, snapshotId } }
       : { image }),

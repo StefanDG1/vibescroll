@@ -37,6 +37,11 @@ export default async function Collection({
           <h1>{result.data!.title}</h1>
           <p>{result.data!.description}</p>
           <p>Topic: {result.data!.topic}</p>
+          <p>
+            These edition summaries are AI-generated and may contain errors.
+            Open an edition to review its source references before relying on
+            it.
+          </p>
           <div className="help-index">
             {result.data!.editions.map((edition) => (
               <article key={edition.slug}>

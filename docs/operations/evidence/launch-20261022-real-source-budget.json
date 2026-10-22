@@ -1,0 +1,58 @@
+{
+  "recordedAt": "2026-10-22T19:31:34.652189+00:00",
+  "checkpoint": 6,
+  "sameUTCDayFullWindow": true,
+  "seedStatus": "complete",
+  "entireDeploymentDayWorstRateUSD": 0.1672976921144237,
+  "priorVercelGrossAndResidualUSD": 0.7213523828000468,
+  "codeStorageUSD": 0.02574,
+  "controlPlaneContingencyUSD": 0.05,
+  "browserRuntimeUSD": 0.014622157333263197,
+  "historicalStaticContingencyRetainedUSD": 0.012,
+  "futureTextCallbackReserveUSD": 0.04,
+  "browserDynamicRequests": 30,
+  "legacyStaticDispatches": 80,
+  "workerAttempts": [
+    {
+      "requests": 3,
+      "inferenceTurns": 0
+    },
+    {
+      "requests": 2,
+      "inferenceTurns": 0
+    },
+    {
+      "requests": 9,
+      "inferenceTurns": 1,
+      "completed": true
+    }
+  ],
+  "allCompletedApplicationRequestsCoveredInDayMeter": true,
+  "unknownPriorVercelHoldsRetained": true,
+  "settledInvoice": false,
+  "conservativeCompletedAndRetainedUSD": 1.0310122322477338,
+  "remainingUnreservedUSD": 0.9689877677522662,
+  "staticContract": {
+    "accountObserved": "Existing Pro Flat Rate CDN enabled throughout current billing period; CDN Requests, Additional CPU and Fast Data Transfer shown Included",
+    "applicablePeriod": "2026-10-01/2026-11-01",
+    "incrementalPriceFor80PureStaticRequestsUSD": 0,
+    "usageUILag": "up to1hour; fixed marginalprice contract does not depend on freshness",
+    "sources": [
+      "https://vercel.com/blog/introducing-flat-rate-cdn",
+      "https://vercel.com/legal/service-terms"
+    ],
+    "doesNotCover": "dynamic function CPU/memory or builds; prior gross holds retained"
+  },
+  "nextStageReservation": {
+    "fixedBasicBuildUSD": 0.315,
+    "stagedAndCanonicalHealthUSD": 0.06,
+    "boundedBrowserUSD": 0.5,
+    "newHostedMediaUSD": 0,
+    "combinedMaximumUSD": 1.9060122322477338,
+    "state": "reserved before dispatch, no new deployment or app request started"
+  },
+  "scope": "Shared US$2 cumulative task ceiling across all providers and previous activity; no reset by agent, attempt or day",
+  "convexContract": "https://docs.convex.dev/deployment-api/get-current-usage",
+  "reconciliation": "Complete current-day deployment meter includes unrelated traffic conservatively; only completed same-window normal calls are reconciled. Prior unknown Vercel/control/storage holds remain.",
+  "unsettled": "Conservative reservation and observed usage; not a certified final invoice. No paid API inference, billing change or new media job."
+}

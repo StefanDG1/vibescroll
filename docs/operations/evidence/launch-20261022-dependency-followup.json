@@ -1,0 +1,92 @@
+{
+  "mode": "Dependency audit before and after narrow security refresh; no exploitation or whole-product acceptance claim",
+  "initialFailed": {
+    "observedAt": "2026-10-22T19:34:41.988Z",
+    "passed": false,
+    "registryCounts": {
+      "info": 0,
+      "low": 1,
+      "moderate": 1,
+      "high": 3,
+      "critical": 3
+    },
+    "locallyMitigated": [
+      {
+        "advisory": "GHSA-vfj7-8cjw-p6xm",
+        "module": "braces",
+        "severity": "high"
+      }
+    ],
+    "unresolved": [
+      {
+        "advisory": "GHSA-2464-fhr4-w9xw",
+        "module": "next",
+        "severity": "critical"
+      },
+      {
+        "advisory": "GHSA-p3m5-59mp-jv5r",
+        "module": "next",
+        "severity": "high"
+      },
+      {
+        "advisory": "GHSA-673q-mjm6-r5xr",
+        "module": "next",
+        "severity": "critical"
+      },
+      {
+        "advisory": "GHSA-cg2g-xh64-v4q7",
+        "module": "dompurify",
+        "severity": "critical"
+      },
+      {
+        "advisory": "GHSA-mrv2-3pqr-j5jr",
+        "module": "dompurify",
+        "severity": "high"
+      }
+    ],
+    "limitation": "Local mitigation does not remove registry advisories or establish an upstream fixed release. Review patch tests and the dated security record."
+  },
+  "finalPassed": {
+    "observedAt": "2026-10-22T19:37:53.264Z",
+    "passed": true,
+    "registryCounts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 1,
+      "critical": 0
+    },
+    "locallyMitigated": [
+      {
+        "advisory": "GHSA-vfj7-8cjw-p6xm",
+        "module": "braces",
+        "severity": "high"
+      }
+    ],
+    "unresolved": [],
+    "limitation": "Local mitigation does not remove registry advisories or establish an upstream fixed release. Review patch tests and the dated security record."
+  },
+  "directChanges": {
+    "apps/starter/package.json": {
+      "next": ["16.3.8", "16.4.2"]
+    },
+    "apps/marketing/package.json": {
+      "next": ["16.3.8", "16.4.2"]
+    }
+  },
+  "permittedTransitiveChanges": {
+    "dompurify": ["3.4.16", "3.4.17"],
+    "ip-address": ["10.7.2", "10.7.4"]
+  },
+  "retained": "Existing pnpm12.3.4 supply-chain policies, sharp0.35.5 override, exact-byte braces mitigation, auth/privacy controls and unrelated grouped PR117",
+  "primarySources": [
+    "https://github.com/advisories/GHSA-2464-fhr4-w9xw",
+    "https://github.com/advisories/GHSA-p3m5-59mp-jv5r",
+    "https://github.com/advisories/GHSA-673q-mjm6-r5xr",
+    "https://github.com/advisories/GHSA-cg2g-xh64-v4q7",
+    "https://github.com/advisories/GHSA-mrv2-3pqr-j5jr",
+    "https://github.com/advisories/GHSA-rxp7-6hxx-x8q5"
+  ],
+  "productionState": "not deployed by this audit; exact-head validation and rollout are separate receipts",
+  "offlineCloudCache": "The retained published clean-cache recipe/snapshot remains bound to its historical reviewed lockfile. No cache rebuild or snapshot promotion occurred; uncached packages continue to refuse offline checks."
+}

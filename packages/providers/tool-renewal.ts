@@ -4,6 +4,7 @@ import { sandboxCredentials, sandboxPolicy, namespaceCommand } from "./sandbox";
 import { toolSnapshot } from "../policy/tool-snapshots";
 import { ensure } from "../policy";
 import downloader from "../../infra/downloader.json";
+import { singleSandboxCreationFetch } from "./sandbox-creation";
 
 // This process receives only a previously verified clean tools snapshot. No
 // customer job, source, repository, transcript or credential enters the VM.
@@ -30,6 +31,8 @@ export async function renewCleanTools(item: {
     vm = await Sandbox.create({
       ...credentials,
       ...sandboxPolicy(item.kind, 120),
+      fetch: singleSandboxCreationFetch(undefined, { allowSnapshot: true }),
+      signal: AbortSignal.timeout(30000),
       source: { type: "snapshot", snapshotId: item.snapshotId },
       tags: {
         product: "vibescroller",

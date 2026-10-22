@@ -3947,11 +3947,17 @@ function SourceDetail({
           open={transcriptOpen}
           onToggle={(event) => setTranscriptOpen(event.currentTarget.open)}
         >
-          <summary>Original transcript and corrections</summary>
+          <summary>
+            {detail.kind === "text"
+              ? "Original supplied text and corrections"
+              : "Original transcript and corrections"}
+          </summary>
           <p style={{ whiteSpace: "pre-wrap" }}>
             {detail.originalText ??
               detail.text ??
-              "Original transcript is unavailable."}
+              (detail.kind === "text"
+                ? "Original supplied text is unavailable."
+                : "Original transcript is unavailable.")}
           </p>
           {detail.originalText && <p>Current user correction: {detail.text}</p>}
           {(detail.originalMediaEvidence ?? detail.mediaEvidence)

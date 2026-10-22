@@ -2,9 +2,11 @@
 
 Mode: how-to. Current host: Vercel Pro, checked October 2, 2026. Older Netlify and Worker deployments are historical; follow this procedure for the serving application.
 
+October 22 publication hold: [ADR 114](../adr/114-budget-gated-launch-rollout.md) temporarily disables automatic main Git deployment and production-domain assignment. Full CI builds remain enabled. Follow [the launch rollout procedure](launch-20261022-rollout.md) to verify backend compatibility and spending bounds before removing either hold. The normal automatic deployment step below applies after that controlled resumption.
+
 ## Current production setup
 
-- Repository: `StefanDG1/vibe-scroller`, production branch `main`.
+- Repository: `StefanDG1/vibescroll`, production branch `main`.
 - Vercel project: [vibe-scroller](https://vercel.com/stefandg1s-projects/vibe-scroller), root `apps/starter`, shared workspace files included, Node 24, pnpm 12.3.4 and Frankfurt functions.
 - Public domain: `https://scroll.companynerve.com`. Namecheap retains parent DNS and mail; only scroll points to Vercel's verified target `a987f11417c888aa.vercel-dns-017.com.`.
 - Convex production: `bold-lemur-667`. Dedicated development: `resolute-ladybug-999`.

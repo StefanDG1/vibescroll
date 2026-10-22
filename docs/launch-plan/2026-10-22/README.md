@@ -1,6 +1,6 @@
 # VibeScroll complete product and launch plan
 
-Status: October 22 engineering candidate complete in [five draft PRs](RUN-STATUS.md), with [acceptance evidence and remaining external steps](ACCEPTANCE.md). Release, live-provider and independent-human acceptance remain separate. The original planning update approved the direction without starting implementation; this run implemented the independently buildable scope below.
+Status: all 16 work packages have implementation and local evidence across the [five launch PRs](RUN-STATUS.md). The final candidate passes 894 local tests with three hosted skips. [Production publication is held](../../adr/114-budget-gated-launch-rollout.md) pending compatible backend rollout and verified spending bounds. [Live-provider and independent-human acceptance](ACCEPTANCE.md) remain separate. The original planning update approved the direction without starting implementation; this run implemented the independently buildable scope below.
 
 ## Outcome
 

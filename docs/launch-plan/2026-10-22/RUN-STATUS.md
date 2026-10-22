@@ -2,6 +2,16 @@
 
 Independently buildable engineering is present in five staged PRs. The subsequent production/merge review below supersedes the earlier no-merge authorization state. This receipt is not live-provider acceptance.
 
+## Final integration and publication hold
+
+All 16 work packages have implementation and local evidence. The final corrected candidate passed 894 local tests and three hosted skips, all types/lint, 280 documents / 12 snapshots and both builds. A fresh exact `bd3e615` remote checkout passed frozen offline installation and its overlapping 12-test backend/native/acquisition subset with clean Git status. No extra unique-test count follows from that subset.
+
+The stack merged upward after exact-head workflows recorded success: PR 124 into product at `9574cd8`, PR 123 into companion at `43375b9`, PR 122 into sources at `1a533bc`, and PR 121 into foundation at `2640785`. The final correction heads `06911ab` / `bd3e615` passed workflows 39792394913 / 39795745767; the integrated sources head `1a533bc` passed workflow 39797820345. The [GitHub Actions results incident](https://www.githubstatus.com/incidents/q29p76qtnkyk), reported October 22 at 14:18 UTC, delayed some run/check updates. A completed successful workflow and a lagging individual check record are reported separately. The final foundation and main exact-head outcomes are recorded on [PR 120](https://github.com/StefanDG1/vibescroll/pull/120), without copying an earlier pass onto a later commit.
+
+The owner approved private metadata inspection after automatic review blocked the combined shell form. A safer CLI-only preparation succeeded. Exactly one read-only schema-impact evaluation then reached its 20-second deadline without a prediction. Its temporary credential file was deleted before the network call; no backend push, application/inference job or retry ran. Complete migration impact, legacy matching disposition and new backend canaries remain pending. The US$1.50 reservation is conditional, with US$0.50 unreserved headroom under the unchanged shared US$2 cap. Control-plane incremental charges are unsettled; missing invoice detail is not zero account usage. The US$20 team disable threshold is unchanged.
+
+[ADR 114](../../adr/114-budget-gated-launch-rollout.md) temporarily suppresses main Git deployment as well as automatic domain assignment. Vercel's [published Pro Basic price](https://vercel.com/docs/builds/managing-builds) is US$0.007 per build minute. Full GitHub CI and production builds still run; an unnecessary metered Vercel build does not. The canonical serving application remains `54a0b2695c72bbd47a2c37d40dbcbeee6546bda9`. New code is integrated separately from live publication. Resume only after backend compatibility and Convex/Vercel spending bounds pass, then verify and promote the exact build. No provider, signing, privacy, payment or independent-human gate is opened by merging.
+
 ## Subsequent merge and production review
 
 The owner authorized merging all five launch PRs and requested production operation. Presentation PR 124 merged into product at `9574cd8ea7f70104b9b809d786a99d6b877fe5b9`; its updated exact-head CI 39788481533 passed. The remaining stack is integrated upward before its final main merge, with exact-head checks retained at each stage.

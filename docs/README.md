@@ -1,5 +1,9 @@
 # VibeScroller documentation
 
+Launch plan: [the complete product, GitHub and customer plan](launch-plan/2026-10-22/README.md), with accepted insight adaptations and a short unattended implementation prompt. This documentation update starts no application implementation.
+
+Competitor research: [Laytuh review](research/laytuh-competitor.md), checked October 20, 2026, covers public claims, evidence limits and implications for capture, resurfacing and project workflows.
+
 Mode: reference. Updated October 3, 2026. VibeScroller keeps a permitted source, its cited insights, a project decision and an approved implementation together. A no-fit result is a valid decision.
 
 | Reader            | Start here                                                                                                                                               | Scope                                                               |

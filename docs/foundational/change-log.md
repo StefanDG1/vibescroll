@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## Laytuh competitor evidence, October 20
+
+Added the owner-requested [Laytuh competitor review](../research/laytuh-competitor.md) and linked it from foundational Research and the docs index. Public site, policy, terms and store evidence distinguish broad capture, classification and reminders from unverified audiovisual capabilities. Recorded the nearby-reminder policy mismatch and bounded comparison recommendations. Avatar, Offer and Beliefs require no change because this adds competitive evidence without adopting a new audience, price, scope or customer promise. No hands-on app test, purchase, demand validation or superiority claim is recorded.
+
 ## F025: bounded live paging, sharing and review recovery, October 7
 
 Updated all four current briefs together after exact PR 74 release, actual bounded cursor delivery through both hosts, actual owner-controlled saved-title sharing and production sign-in recovery. Preserved F024 and earlier failed/pending receipts as history. The new scope does not establish independent prospect validation, cited-ready/mixed-derived sharing, Events or usefulness/cost claims; no audience, prices, allowances, provider authority or six-belief changes follow.

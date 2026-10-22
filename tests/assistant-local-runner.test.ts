@@ -204,3 +204,126 @@ it("refuses tool execution emitted during an official analysis turn", async () =
   ).rejects.toThrow("ASSISTANT_LOCAL_UNEXPECTED_ACTION");
   expect(server.interrupt).toHaveBeenCalledWith("thread", "turn");
 });
+
+it("keeps default Sol/medium exact while using only approved available model and effort overrides", async () => {
+  let listener: (message: any) => void = () => {};
+  const server = {
+    account: async () => ({
+      account: { type: "chatgpt", email: "owner@example.test" },
+    }),
+    models: vi.fn(async () => ({
+      data: [
+        {
+          model: "fixture-high",
+          supportedReasoningEfforts: [{ reasoningEffort: "high" }],
+        },
+      ],
+    })),
+    onEvent: (fn: any) => {
+      listener = fn;
+      return () => {};
+    },
+    request: vi.fn(async (method: string, params: any) => {
+      if (method === "thread/start")
+        return { model: params.model, thread: { id: "thread" } };
+      if (method === "account/rateLimits/read")
+        return { rateLimits: { primary: { usedPercent: 0 } } };
+      if (method === "turn/start") {
+        queueMicrotask(() => {
+          listener({
+            method: "item/completed",
+            params: {
+              threadId: "thread",
+              item: { type: "agentMessage", text: "{}" },
+            },
+          });
+          listener({
+            method: "turn/completed",
+            params: { threadId: "thread", turn: { status: "completed" } },
+          });
+        });
+        return { turn: { id: "turn" } };
+      }
+    }),
+    interrupt: vi.fn(async () => {}),
+  };
+  const client = new OfficialAssistantClient(
+    {
+      profileBinding: hash("owner@example.test"),
+      expiresAt: Date.now() + 10000,
+    },
+    server,
+  );
+  await client.structured({ type: "object", properties: {} }, {});
+  expect(server.models).not.toHaveBeenCalled();
+  expect(server.request).toHaveBeenCalledWith(
+    "turn/start",
+    expect.objectContaining({ model: "gpt-6.1-sol", effort: "medium" }),
+  );
+  const abort = new AbortController();
+  await client.structured({ type: "object", properties: {} }, {}, [], {
+    model: "fixture-high",
+    effort: "high",
+    signal: abort.signal,
+  });
+  expect(server.request).toHaveBeenCalledWith(
+    "turn/start",
+    expect.objectContaining({ model: "fixture-high", effort: "high" }),
+  );
+  const turns = server.request.mock.calls.filter(
+    ([method]) => method === "turn/start",
+  ).length;
+  await expect(
+    client.structured({ type: "object", properties: {} }, {}, [], {
+      model: "fixture-high",
+      effort: "low",
+    }),
+  ).rejects.toThrow("ASSISTANT_LOCAL_MODEL_UNAVAILABLE");
+  expect(
+    server.request.mock.calls.filter(([method]) => method === "turn/start"),
+  ).toHaveLength(turns);
+});
+
+it("interrupts an official turn when the approved personal job signal is canceled", async () => {
+  const abort = new AbortController();
+  const server = {
+    account: async () => ({
+      account: { type: "chatgpt", email: "owner@example.test" },
+    }),
+    models: async () => ({
+      data: [
+        {
+          model: "fixture-high",
+          supportedReasoningEfforts: [{ reasoningEffort: "high" }],
+        },
+      ],
+    }),
+    onEvent: () => () => {},
+    request: vi.fn(async (method: string, params: any) => {
+      if (method === "thread/start")
+        return { model: params.model, thread: { id: "thread" } };
+      if (method === "account/rateLimits/read")
+        return { rateLimits: { primary: { usedPercent: 0 } } };
+      if (method === "turn/start") {
+        queueMicrotask(() => abort.abort());
+        return { turn: { id: "turn" } };
+      }
+    }),
+    interrupt: vi.fn(async () => {}),
+  };
+  const client = new OfficialAssistantClient(
+    {
+      profileBinding: hash("owner@example.test"),
+      expiresAt: Date.now() + 10000,
+    },
+    server,
+  );
+  await expect(
+    client.structured({ type: "object", properties: {} }, {}, [], {
+      model: "fixture-high",
+      effort: "high",
+      signal: abort.signal,
+    }),
+  ).rejects.toThrow("ASSISTANT_LOCAL_CANCELED");
+  expect(server.interrupt).toHaveBeenCalledWith("thread", "turn");
+});

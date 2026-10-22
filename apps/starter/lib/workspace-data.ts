@@ -1,5 +1,5 @@
 import "server-only";
-import { backend, api } from "@/lib/backend";
+import { backend, api } from "./backend";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 
@@ -152,6 +152,38 @@ export async function workspaceData({
       customerRoutes,
       connections,
       aiPreference,
+    };
+  }
+  if (view === "projects" || view === "plans" || view === "proposals") {
+    const [organization, proposals, repositories, devices, githubChoices] =
+      await Promise.all([
+        c.query(api.organizations.details, { organizationId }),
+        c.query(api.product.proposals, { organizationId }),
+        view === "projects"
+          ? c.query(api.product.repositories, { organizationId })
+          : Promise.resolve([]),
+        view === "projects"
+          ? c.query(api.devices.list, { organizationId })
+          : Promise.resolve([]),
+        view === "projects"
+          ? c.query(api.githubLinks.choices, { organizationId })
+          : Promise.resolve([]),
+      ]);
+    return {
+      workspaceSlice:
+        view === "projects" ? ("projects" as const) : ("plans" as const),
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      sources: [],
+      repositories,
+      proposals,
+      devices,
+      githubChoices,
+      runs: [],
+      notifications: [],
+      usage: null,
     };
   }
   const [

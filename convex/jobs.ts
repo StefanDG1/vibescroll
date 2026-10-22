@@ -11,7 +11,20 @@ import {
 } from "./lib/repositoryContent";
 import { RETRIEVAL_VERSION } from "../packages/repositories/retrieval";
 import { selectedInsights } from "../packages/insights/scope";
-import { exportRecord } from "../packages/privacy/export";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import {
+  contentExportSections,
+  exportRecord,
+} from "../packages/privacy/export";
+import type { Doc, Id } from "./_generated/dataModel";
+import { sourceRetained, retainedSourceRevision } from "./lib/sourceAuthority";
+import { sourcePolicyCurrent } from "./lib/sourcePolicy";
+import { sharedTypedCitations } from "./lib/sourceCitations";
+import {
+  editionCurrent,
+  publicEdition,
+  reusableArtifact,
+} from "./lib/publicKnowledge";
 import { internal } from "./_generated/api";
 import { workflow } from "./workflows";
 import { actorCurrent, referencesCurrent } from "./knowledge";
@@ -26,7 +39,13 @@ import {
   currentCustomerModel,
 } from "../packages/providers/customerAi";
 import { ensure, validatePaths, containsSecret } from "../packages/policy";
-import { reserve, settle, digest, wallet } from "./product";
+import {
+  reserve,
+  settle,
+  digest,
+  wallet,
+  currentMatchingProposal,
+} from "./product";
 import { repositoryAllowance } from "./lib/repositoryAllowance";
 import { cloudExecutionAllowed } from "./lib/cloudAccess";
 import { trialCurrent } from "./subscriptionTrials";
@@ -493,7 +512,44 @@ export const reserveMatch = mutation({
       source.organizationId !== repo.organizationId
     )
       fail("Matching context unavailable.");
-    await writeAccess(ctx, source.organizationId);
+    const { actor } = await writeAccess(ctx, source.organizationId);
+    ensure(
+      source.rightsAttested && sourceRetained(source.sourceRetentionUntil),
+      "SOURCE_CHANGED",
+      "Source evidence is no longer available.",
+    );
+    const typedRevision = source.currentRevisionId
+      ? await ctx.db.get(source.currentRevisionId)
+      : null;
+    const registry = typedRevision
+      ? await retainedSourceRevision(ctx, typedRevision)
+      : null;
+    const typedRequired =
+      !!source.currentRevisionId ||
+      ["github_repository", "reddit_thread"].includes(
+        source.sourceType ?? "",
+      ) ||
+      source.analysis?.schemaVersion === "2.0.0";
+    ensure(
+      !typedRequired ||
+        (!!typedRevision &&
+          !!registry &&
+          sourcePolicyCurrent(registry.revision) &&
+          source.analysis?.schemaVersion === "2.0.0" &&
+          source.analysis.sourceRevisionId === typedRevision._id &&
+          source.analysis.sourceContentHash === typedRevision.contentHash),
+      "SOURCE_CHANGED",
+      "Analyze the current retained source revision before matching.",
+    );
+    if (typedRequired) await sharedTypedCitations(ctx, source);
+    const sourceRevisionRegistry =
+      typedRevision && registry
+        ? {
+            id: typedRevision._id,
+            revision: registry.revision,
+            evidence: registry.evidence,
+          }
+        : null;
     ensure(
       repo.enabled && repo.confirmed,
       "CONTEXT_REQUIRED",
@@ -516,18 +572,22 @@ export const reserveMatch = mutation({
       insights.length === source.analysis.insights.length
         ? ""
         : `:scope:${await digest(JSON.stringify(insights.map((i: any) => i.id)))}`;
-    const semanticKey = `match:${RETRIEVAL_VERSION}:${source._id}:${source.generation}:${repo._id}:${repo.sha}:${repo.profileVersion}${suffix}`;
+    const semanticKey = `match:${RETRIEVAL_VERSION}:${source._id}:${source.generation}:${source.updatedAt}:${repo._id}:${repo.sha}:${repo.profileVersion}${suffix}`;
     const old = await ctx.db
       .query("matchingJobs")
       .withIndex("by_key", (q) => q.eq("key", semanticKey))
       .unique();
-    if (old?.proposalId)
+    if (
+      old?.proposalId &&
+      (await currentMatchingProposal(ctx, old, source, repo, actor._id))
+    )
       return {
         source: scopedSource,
         repo,
         key: old.reservationKey,
         semanticKey,
         cached: true,
+        sourceRevisionRegistry,
       };
     ensure(
       old?.state !== "pending",
@@ -547,7 +607,13 @@ export const reserveMatch = mutation({
         state: "pending",
         attempt,
         reservationKey: key,
+        proposalId: undefined,
         insightIds: insights.map((i: any) => i.id),
+        actor: actor._id,
+        sourceGeneration: source.generation,
+        sourceRevision: source.updatedAt,
+        sourceRevisionId: typedRevision?._id,
+        sourceContentHash: typedRevision?.contentHash,
         updatedAt: Date.now(),
       });
     else
@@ -560,10 +626,22 @@ export const reserveMatch = mutation({
         attempt,
         reservationKey: key,
         insightIds: insights.map((i: any) => i.id),
+        actor: actor._id,
+        sourceGeneration: source.generation,
+        sourceRevision: source.updatedAt,
+        sourceRevisionId: typedRevision?._id,
+        sourceContentHash: typedRevision?.contentHash,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-    return { source: scopedSource, repo, key, semanticKey, cached: false };
+    return {
+      source: scopedSource,
+      repo,
+      key,
+      semanticKey,
+      cached: false,
+      sourceRevisionRegistry,
+    };
   },
 });
 export const finishMatch = internalMutation({
@@ -1096,27 +1174,7 @@ export const exportPage = query({
   args: {
     ...org,
     section: v.union(
-      v.literal("improvements"),
-      v.literal("improvementOutcomes"),
-      v.literal("improvementPolicies"),
-      v.literal("improvementPreferences"),
-      v.literal("libraryScans"),
-      v.literal("subscriptionTrials"),
-      v.literal("localLibraryRuns"),
-      v.literal("localSourceImports"),
-      v.literal("sources"),
-      v.literal("proposals"),
-      v.literal("feedback"),
-      v.literal("repositories"),
-      v.literal("runs"),
-      v.literal("workspaceCategories"),
-      v.literal("knowledgeTopics"),
-      v.literal("knowledgeMembers"),
-      v.literal("knowledgeJobs"),
-      v.literal("knowledgeEvaluations"),
-      v.literal("knowledgePolicies"),
-      v.literal("issueDrafts"),
-      v.literal("issueAttempts"),
+      ...contentExportSections.map((section) => v.literal(section)),
     ),
     cursor: v.union(v.string(), v.null()),
     asOf: v.number(),
@@ -1134,6 +1192,114 @@ export const exportPage = query({
       .paginate({ cursor: a.cursor, numItems: 5 });
     const permitted = [];
     for (const row of rows.page) {
+      if (
+        (a.section === "publicImports" || a.section === "publicGeography") &&
+        "actor" in row &&
+        row.actor !== actor._id
+      )
+        continue;
+      if (
+        a.section === "sourceRevisions" &&
+        "evidence" in row &&
+        "revision" in row &&
+        "sourceId" in row
+      ) {
+        const registry = await retainedSourceRevision(
+          ctx,
+          row as Doc<"sourceRevisions">,
+        );
+        if (registry && sourcePolicyCurrent(registry.revision))
+          permitted.push({
+            ...row,
+            revision: registry.revision,
+            evidence: registry.evidence,
+            text: registry.evidence.map((e) => e.excerpt).join("\n"),
+          });
+        continue;
+      }
+      if (
+        a.section === "publicArtifacts" &&
+        !(await reusableArtifact(ctx, row._id as Id<"publicArtifacts">))
+      )
+        continue;
+      if (
+        a.section === "publicEditions" &&
+        "payload" in row &&
+        (!(await editionCurrent(ctx, row as Doc<"publicEditions">)) ||
+          row.payloadHash !== (await digest(canonicalJson(row.payload))))
+      ) {
+        permitted.push({ ...row, payload: undefined, payloadHash: undefined });
+        continue;
+      }
+      if (a.section === "publicCollections" && "bindings" in row) {
+        let current =
+          row.state === "published" &&
+          row.bindings.length === row.editions.length;
+        for (const binding of row.bindings) {
+          const edition = await publicEdition(ctx, binding.id);
+          if (
+            !edition ||
+            edition.version !== binding.version ||
+            edition.payloadHash !== binding.hash ||
+            edition.payloadHash !==
+              (await digest(canonicalJson(edition.payload)))
+          )
+            current = false;
+        }
+        if (!current) {
+          permitted.push({
+            ...row,
+            title: "Unavailable collection",
+            description: "",
+            editions: [],
+            bindings: [],
+            reviewedHash: undefined,
+          });
+          continue;
+        }
+      }
+      if (
+        a.section === "sources" &&
+        "generation" in row &&
+        "rightsAttested" in row
+      ) {
+        if (row.state === "deleted") continue;
+        const revision = row.currentRevisionId
+          ? await ctx.db.get(row.currentRevisionId)
+          : null;
+        const registryRequired =
+          row.sourceType === "github_repository" ||
+          row.sourceType === "reddit_thread" ||
+          row.analysis?.schemaVersion === "2.0.0";
+        const registry = revision
+          ? await retainedSourceRevision(ctx, revision)
+          : null;
+        const registryCurrent = row.currentRevisionId
+          ? !!registry && sourcePolicyCurrent(registry.revision)
+          : !registryRequired;
+        if (
+          !row.rightsAttested ||
+          !sourceRetained(row.sourceRetentionUntil) ||
+          !registryCurrent
+        ) {
+          permitted.push({
+            ...row,
+            state: "needs_upload",
+            coverage: "metadata_only",
+            text: undefined,
+            originalText: undefined,
+            summary: undefined,
+            analysis: undefined,
+            mediaEvidence: undefined,
+            originalMediaEvidence: undefined,
+            personalMedia: undefined,
+            acquisition: undefined,
+            searchable: undefined,
+            repositorySelection: undefined,
+          });
+          continue;
+        }
+      }
       if (
         a.section === "subscriptionTrials" &&
         "actor" in row &&

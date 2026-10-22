@@ -12,6 +12,11 @@ export class OfficialAssistantClient {
     schema: any,
     input: any,
     frames?: string[],
+    options?: {
+      model?: string;
+      effort?: "low" | "medium" | "high";
+      signal?: AbortSignal;
+    },
   ): Promise<{ output: any; inputHash: string; outputHash: string }>;
   close(): void;
 }

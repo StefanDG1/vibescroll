@@ -66,6 +66,7 @@ export const knowledgeTables = {
     sourceTitle: v.optional(v.string()),
     excluded: v.boolean(),
     manual: v.boolean(),
+    retainedHistory: v.optional(v.boolean()),
   })
     .index("by_org", ["organizationId"])
     .index("by_source", ["sourceId"])

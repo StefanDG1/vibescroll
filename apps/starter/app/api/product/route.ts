@@ -3,6 +3,32 @@ import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
+  publicModerationReports: ["query", api.publicKnowledge.reports],
+  publicModerationInspect: ["query", api.publicKnowledge.inspectReport],
+  publicModerateReport: ["mutation", api.publicKnowledge.moderate],
+  sourceRelationships: ["query", api.sourceRelationships.list],
+  saveSourceRelationship: ["mutation", api.sourceRelationships.save],
+  removeSourceRelationship: ["mutation", api.sourceRelationships.remove],
+  setupJourney: ["query", api.setupJourney.status],
+  saveSetupJourney: ["mutation", api.setupJourney.save],
+  acquisitionPrepare: ["mutation", api.sourceAcquisition.prepare],
+  acquisitionStatus: ["query", api.sourceAcquisition.status],
+  acquisitionSelect: ["mutation", api.sourceAcquisition.select],
+  acquisitionCancel: ["mutation", api.sourceAcquisition.cancel],
+  acquisitionInspect: ["action", api.sourceAcquisitionActions.inspect],
+  acquisitionAcquire: ["action", api.sourceAcquisitionActions.acquire],
+  acquisitionSupplyText: ["mutation", api.sourceAcquisition.supplyText],
+  publicOwn: ["query", api.publicKnowledge.own],
+  prepareEdition: ["mutation", api.publicKnowledge.prepareEdition],
+  publishEdition: ["mutation", api.publicKnowledge.publishEdition],
+  withdrawEdition: ["mutation", api.publicKnowledge.withdrawEdition],
+  saveCollection: ["mutation", api.publicKnowledge.saveCollection],
+  publishCollection: ["mutation", api.publicKnowledge.publishCollection],
+  withdrawCollection: ["mutation", api.publicKnowledge.withdrawCollection],
+  setGeography: ["mutation", api.publicKnowledge.setGeography],
+  savedPublicDetail: ["query", api.publicKnowledge.savedDetail],
+  savePersonalLayer: ["mutation", api.publicKnowledge.savePersonalLayer],
+  publicSaveEdition: ["mutation", api.publicKnowledge.saveEdition],
   assistantIntakeStatus: ["query", api.assistantIntakeUi.status],
   assistantIntakeAction: ["mutation", api.assistantIntakeUi.act],
   assistantSetup: ["query", api.assistantGrants.setup],
@@ -193,6 +219,12 @@ export async function POST(req: NextRequest) {
       PROVIDER_ERROR:
         "AI could not complete this request. Check the connection before trying again.",
       SETUP_REQUIRED: "Finish the connection setup before using this action.",
+      SOURCE_UNAVAILABLE:
+        "This source evidence is unavailable or expired. Review its current status or explicitly supply permitted replacement text.",
+      PROVENANCE_REQUIRED:
+        "Retrieve a current cited source revision or explicitly supply permitted text before processing.",
+      STALE_APPROVAL:
+        "This source or setup changed. Reload its current status and review again.",
       CONTEXT_REQUIRED:
         "This action needs a ready source, supported main point or refreshed repository evidence.",
       SOURCE_BUSY:

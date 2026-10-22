@@ -19,13 +19,26 @@ export const linkPreview = workflow
   });
 export const sourceAnalysis = workflow
   .define({
-    args: { id: v.id("sources"), generation: v.number(), media: v.boolean() },
+    args: {
+      id: v.id("sources"),
+      generation: v.number(),
+      media: v.boolean(),
+      route: v.optional(
+        v.union(
+          v.literal("media"),
+          v.literal("text"),
+          v.literal("source_text"),
+        ),
+      ),
+    },
     returns: v.null(),
   })
   .handler(async (step, a): Promise<null> => {
     try {
       await step.runAction(
-        a.media ? internal.media.analyze : internal.integrations.analyze,
+        (a.route ?? (a.media ? "media" : "text")) === "media"
+          ? internal.media.analyze
+          : internal.integrations.analyze,
         { id: a.id, generation: a.generation },
         { retry: false, name: "bounded-source-analysis-v1" },
       );

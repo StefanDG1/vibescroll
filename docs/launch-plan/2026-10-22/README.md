@@ -1,6 +1,6 @@
 # VibeScroll complete product and launch plan
 
-Status: owner-approved direction, implementation not started by this planning update. Updated October 22, 2026. The owner accepted the eight recommended insight adaptations and requested the complete product, open-source presentation and customer-acquisition plan. This is the controlling index for the later implementation run.
+Status: all 16 work packages have implementation and local evidence across the [five launch PRs](RUN-STATUS.md). The final candidate passes 894 local tests with three hosted skips. [Production publication is held](../../adr/114-budget-gated-launch-rollout.md) pending compatible backend rollout and verified spending bounds. [Live-provider and independent-human acceptance](ACCEPTANCE.md) remain separate. The original planning update approved the direction without starting implementation; this run implemented the independently buildable scope below.
 
 ## Outcome
 

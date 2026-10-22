@@ -1,3 +1,9 @@
+export class OfficialPersonalClient {
+  constructor(official: any);
+  status(): Promise<{ profileBinding: string }>;
+  models(): Promise<{ slug: string; displayName: string }[]>;
+  respond(options: any): Promise<{ text: string }>;
+}
 export function processPersonalJob(
   job: any,
   dependencies: {

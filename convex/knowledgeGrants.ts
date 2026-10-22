@@ -7,6 +7,9 @@ import { access, recentAuthentication, limit, audit } from "./lib";
 import { privateLibrary } from "./librarySpaces";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { ensure } from "../packages/policy";
+import { sharedTypedCitations } from "./lib/sourceCitations";
+import { cardSourceRetained, sourceRetained } from "./lib/sourceAuthority";
+import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 const binding = v.object({
   sourceId: v.id("sources"),
   generation: v.number(),
@@ -54,7 +57,7 @@ export async function grantedSources(
   ctx: QueryCtx,
   grant: Doc<"teamKnowledgeGrants">,
 ) {
-  if (!(await grantCurrent(ctx, grant))) return [];
+  if (grant.sources.length > 50 || !(await grantCurrent(ctx, grant))) return [];
   const items = [];
   for (const reference of grant.sources) {
     const card = await ctx.db
@@ -65,17 +68,44 @@ export async function grantedSources(
       card?.kind === "source" &&
       card.organizationId === grant.organizationId &&
       card.rightsAttested &&
+      (await cardSourceRetained(ctx, card)) &&
       card.generation === reference.generation &&
       card.updatedAt === reference.revision
-    )
+    ) {
+      // One canonical read per selected source, never per point. Compact cards
+      // alone cannot establish provider policy or a typed revision's authority.
+      const source = await ctx.db.get(reference.sourceId);
+      if (
+        !source ||
+        source.organizationId !== grant.organizationId ||
+        source.state === "deleted" ||
+        !source.rightsAttested ||
+        !sourceRetained(source.sourceRetentionUntil) ||
+        source.generation !== reference.generation ||
+        source.updatedAt !== reference.revision
+      )
+        continue;
+      try {
+        await sharedTypedCitations(ctx, source);
+      } catch {
+        continue;
+      }
       items.push({
         sourceId: reference.sourceId,
-        title: card.title,
-        state: card.state,
+        title: source.title,
+        state: source.state,
         generation: reference.generation,
         revision: reference.revision,
-        mainPoints: card.state === "ready" ? card.mainPoints : undefined,
+        mainPoints:
+          source.state === "ready"
+            ? (source.analysis?.insights ?? [])
+                .slice(0, 3)
+                .flatMap((i: { title?: unknown }) =>
+                  typeof i?.title === "string" ? [i.title.slice(0, 140)] : [],
+                )
+            : undefined,
       });
+    }
   }
   return items;
 }
@@ -183,6 +213,7 @@ export const save = mutation({
           source.organizationId === a.organizationId &&
           source.state !== "deleted" &&
           source.rightsAttested &&
+          sourceRetained(source.sourceRetentionUntil) &&
           source.generation === ref.generation &&
           source.updatedAt === ref.revision,
         "STALE_APPROVAL",
@@ -276,6 +307,7 @@ export const shared = query({
     cursor: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
+    ctx = knowledgeReadContext(ctx);
     await access(ctx, a.organizationId);
     const page = await ctx.db
       .query("teamKnowledgeGrants")
@@ -303,6 +335,7 @@ export const fetchShared = query({
     sourceId: v.id("sources"),
   },
   handler: async (ctx, a) => {
+    ctx = knowledgeReadContext(ctx);
     await access(ctx, a.organizationId);
     const grant = await ctx.db.get(a.grantId);
     ensure(
@@ -320,13 +353,22 @@ export const fetchShared = query({
         source.organizationId === grant.organizationId &&
         source.state !== "deleted" &&
         source.rightsAttested &&
+        sourceRetained(source.sourceRetentionUntil) &&
         source.generation === current.generation &&
         source.updatedAt === current.revision,
       "FORBIDDEN",
       "Shared source unavailable or changed.",
     );
+    const typed = await sharedTypedCitations(ctx, source);
     return {
       ...current,
+      ...(typed
+        ? {
+            sourceRevisionId: typed.sourceRevisionId,
+            sourceContentHash: typed.sourceContentHash,
+            sourceCoverage: typed.coverage,
+          }
+        : {}),
       url: `https://scroll.companynerve.com/app/${a.organizationId}/shared?grant=${grant._id}&source=${a.sourceId}`,
       insights:
         source.state === "ready"
@@ -340,11 +382,13 @@ export const fetchShared = query({
               },
               title: String(i.title ?? "").slice(0, 200),
               claim: String(i.claim ?? "").slice(0, 2000),
-              evidence: (i.evidence ?? []).slice(0, 10).map((e: any) => ({
-                kind: e.kind,
-                startMs: e.startMs,
-                endMs: e.endMs,
-              })),
+              evidence: typed
+                ? typed.summarize(i.evidence ?? [])
+                : (i.evidence ?? []).slice(0, 10).map((e: any) => ({
+                    kind: e.kind,
+                    startMs: e.startMs,
+                    endMs: e.endMs,
+                  })),
             }))
           : [],
       grantVersion: grant.version,
@@ -392,6 +436,7 @@ export async function referencesGranted(
       source.organizationId !== grant.organizationId ||
       source.state !== "ready" ||
       !source.rightsAttested ||
+      !sourceRetained(source.sourceRetentionUntil) ||
       source.generation !== ref.generation ||
       source.updatedAt !== ref.revision ||
       !source.analysis?.insights?.some((i: any) => i.id === ref.insightId)

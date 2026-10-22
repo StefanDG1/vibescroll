@@ -2,7 +2,7 @@ import { promisify } from "node:util";
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { writeFile, readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { companionPrivatePath } from "../packages/companion/config-root.mjs";
 import { subscriptionConfig } from "../packages/runner/subscription-trial.mjs";
 import { AppServer } from "../packages/runner/app-server.mjs";
 import {
@@ -34,7 +34,7 @@ if (options === "--disconnect") {
 }
 const exec = promisify(execFile),
   image = JSON.parse(
-    await readFile(resolve("private/subscription-images.json"), "utf8"),
+    await readFile(companionPrivatePath("subscription-images.json"), "utf8"),
   ).codex,
   prefix = "vibe-trial-" + randomUUID(),
   worker = prefix + "-codex",
@@ -212,7 +212,7 @@ try {
       });
       server.send({ method: "initialized", params: {} });
       await writeFile(
-        resolve("private/subscription-session.json"),
+        companionPrivatePath("subscription-session.json"),
         JSON.stringify({
           worker,
           proxy,
@@ -246,7 +246,7 @@ try {
         },
       );
       await writeFile(
-        resolve("private/subscription-session.json"),
+        companionPrivatePath("subscription-session.json"),
         JSON.stringify({
           worker,
           proxy,

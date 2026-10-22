@@ -6,6 +6,7 @@ import { v } from "convex/values";
 import { access, limit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { librarySpace } from "./librarySpacesSchema";
+import { cardSourceRetained } from "./lib/sourceAuthority";
 
 export async function privateLibrary(
   ctx: QueryCtx,
@@ -177,7 +178,8 @@ export const list = query({
       if (
         card &&
         card.organizationId === a.organizationId &&
-        card.kind === "source"
+        card.kind === "source" &&
+        (await cardSourceRetained(ctx, card))
       )
         items.push({
           id: row.sourceId,
@@ -216,7 +218,8 @@ export const exportPage = query({
       if (
         card &&
         card.organizationId === a.organizationId &&
-        card.kind === "source"
+        card.kind === "source" &&
+        (await cardSourceRetained(ctx, card))
       )
         items.push({
           sourceId: row.sourceId,
@@ -265,7 +268,8 @@ export const connected = query({
       if (
         card &&
         card.organizationId === a.organizationId &&
-        card.kind === "source"
+        card.kind === "source" &&
+        (await cardSourceRetained(ctx, card))
       )
         items.push({
           id: row.sourceId,

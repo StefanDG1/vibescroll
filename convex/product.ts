@@ -1,4 +1,14 @@
 import { presentAnalysis } from "../packages/insights/presentation";
+import { classifySourceUrl } from "../packages/sources/classify";
+import { validateEvidenceRegistry } from "../packages/sources/evidence";
+import { sourcePolicyCurrent } from "./lib/sourcePolicy";
+import { retainedSourceRevision, sourceRetained } from "./lib/sourceAuthority";
+import {
+  validateTypedProposal,
+  type SourceProposal,
+} from "../packages/proposals/evidence";
+import { sharedTypedCitations } from "./lib/sourceCitations";
+import { invalidatePublicSource } from "./publicKnowledge";
 import { filing } from "./librarySpaces";
 import { repositoryContent } from "./lib/repositoryContent";
 import { repositoryManifest } from "./lib/repositoryManifest";
@@ -16,18 +26,14 @@ import { access, fail, limit, audit, writeAccess } from "./lib";
 import { productLimits } from "./limitsV1";
 import { internal } from "./_generated/api";
 import { googleConfigured } from "../packages/providers/google-inference";
-import {
-  safeSourceUrl,
-  ensure,
-  containsSecret,
-  validatePaths,
-} from "../packages/policy";
+import { ensure, containsSecret, validatePaths } from "../packages/policy";
 import {
   insightOutput,
+  sourceInsightOutput,
   proposalOutput,
   planInput,
 } from "../packages/contracts";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Id, Doc } from "./_generated/dataModel";
 import { queueDeletion } from "./assets";
 import { mediaStagePayload } from "../packages/media/stages";
@@ -41,7 +47,7 @@ import {
   hostedSourceAllowed,
 } from "./lib/hostedMediaAccess";
 import { syncCategories } from "./categories";
-import { syncKnowledge, referencesCurrent } from "./knowledge";
+import { syncKnowledge, referencesCurrent, actorCurrent } from "./knowledge";
 import { improvementCurrent } from "./lib/improvementContext";
 import {
   acquisitionManifest,
@@ -520,6 +526,11 @@ export const library = query({
     const page = [];
     for (const source of result.page) {
       if (!source || (sourceState && source.state !== sourceState)) continue;
+      if (
+        source.sourceRetentionUntil &&
+        source.sourceRetentionUntil <= Date.now()
+      )
+        continue;
       if (notAnalyzed && source.state === "ready") continue;
       if (inProgress && !["queued", "processing"].includes(source.state))
         continue;
@@ -590,6 +601,38 @@ export const detail = query({
     )
       fail("Source unavailable.");
     const reader = await access(ctx, s.organizationId);
+    ensure(
+      !s.sourceRetentionUntil || s.sourceRetentionUntil > Date.now(),
+      "SOURCE_UNAVAILABLE",
+      "The retained source evidence expired. Recover it with permitted supplied text.",
+    );
+    let typedRegistry;
+    if (s.currentRevisionId) {
+      const revision = await ctx.db.get(s.currentRevisionId);
+      ensure(
+        revision &&
+          revision.state === "current" &&
+          revision.organizationId === s.organizationId &&
+          revision.sourceId === s._id &&
+          revision.generation === s.generation,
+        "INVALID_EVIDENCE",
+        "Source evidence changed.",
+      );
+      typedRegistry = await validateEvidenceRegistry(
+        revision.revision,
+        revision.evidence,
+      );
+      ensure(
+        typedRegistry.revision.contentHash === revision.contentHash,
+        "INVALID_EVIDENCE",
+        "Source content hash changed.",
+      );
+      ensure(
+        sourcePolicyCurrent(typedRegistry.revision),
+        "SOURCE_UNAVAILABLE",
+        "The retained source permission expired or changed.",
+      );
+    }
     const analysisHash = s.analysis
       ? await digest(JSON.stringify(s.analysis))
       : undefined;
@@ -617,6 +660,8 @@ export const detail = query({
       .collect();
     return {
       ...s,
+      sourceRevision: typedRegistry?.revision,
+      evidenceRegistry: typedRegistry?.evidence,
       spaces: reader.organization.privateOwnerId
         ? await filing(ctx, id)
         : undefined,
@@ -789,9 +834,10 @@ export async function captureAuthorized(
     )
     .unique();
   if (old && old.state !== "deleted") return old._id;
+  const classified = a.kind === "url" ? classifySourceUrl(a.url ?? "") : null;
   let canonical =
     a.kind === "url"
-      ? safeSourceUrl(a.url ?? "")
+      ? classified!.canonical
       : a.kind === "text"
         ? `text:${await digest(a.text ?? "")}`
         : `object:${a.objectKey}`;
@@ -873,14 +919,23 @@ export async function captureAuthorized(
   const id = await ctx.db.insert("sources", {
     ...a,
     canonical,
+    sourceType:
+      classified?.sourceType ?? (a.kind === "text" ? "supplied_text" : "media"),
+    ...(classified && classified.sourceType !== "media"
+      ? { retrievalState: "saved" as const }
+      : {}),
     searchable: [a.title, a.text].filter(Boolean).join(" "),
-    state: a.kind === "url" ? "needs_upload" : "saved",
+    state:
+      a.kind === "url" && classified?.sourceType === "media"
+        ? "needs_upload"
+        : "saved",
     coverage: a.kind === "text" ? "caption_only" : "metadata_only",
     tags: [],
     generation: 0,
     createdAt: now,
     updatedAt: now,
     ...(a.kind === "url" &&
+    classified?.sourceType === "media" &&
     !suppressPreview &&
     process.env.LINK_PREVIEWS_ENABLED === "true"
       ? { linkPreview: { state: "queued" as const, updatedAt: now } }
@@ -900,6 +955,7 @@ export async function captureAuthorized(
   await audit(ctx, a.organizationId, actor.actor._id, "source.captured", id);
   if (
     a.kind === "url" &&
+    classified?.sourceType === "media" &&
     !suppressPreview &&
     process.env.LINK_PREVIEWS_ENABLED === "true"
   )
@@ -922,6 +978,7 @@ export async function queueLinkPreview(ctx: MutationCtx, id: Id<"sources">) {
     !source ||
     source.state === "deleted" ||
     source.kind !== "url" ||
+    (source.sourceType !== undefined && source.sourceType !== "media") ||
     !source.url ||
     !source.rightsAttested ||
     ["queued", "loading", "ready"].includes(source.linkPreview?.state || "") ||
@@ -992,6 +1049,51 @@ export async function startSource(
   const { actor } = authorizedActor
     ? { actor: authorizedActor }
     : await writeAccess(ctx, s.organizationId, ["owner", "admin", "member"]);
+  ensure(
+    !s.publicImportId,
+    "POLICY_BLOCKED",
+    "Open the current saved public artifact. Saving it does not start inference.",
+  );
+  const typedRevision = s.currentRevisionId
+    ? await ctx.db.get(s.currentRevisionId)
+    : null;
+  if (typedRevision) {
+    ensure(
+      typedRevision.sourceId === s._id &&
+        typedRevision.organizationId === s.organizationId &&
+        typedRevision.state === "current" &&
+        typedRevision.generation === s.generation,
+      "APPROVAL_STALE",
+      "Review the current acquired source revision.",
+    );
+    const registry = await validateEvidenceRegistry(
+      typedRevision.revision,
+      typedRevision.evidence,
+    );
+    ensure(
+      registry.revision.contentHash === typedRevision.contentHash &&
+        sourceRetained(s.sourceRetentionUntil),
+      "INVALID_EVIDENCE",
+      "The current retained content changed.",
+    );
+    ensure(
+      !registry.revision.retention ||
+        registry.revision.retention.retainUntil > Date.now(),
+      "SOURCE_UNAVAILABLE",
+      "The retained source evidence expired.",
+    );
+    ensure(
+      sourcePolicyCurrent(registry.revision),
+      "POLICY_BLOCKED",
+      "Both direct source adapters await current provider acceptance.",
+    );
+  }
+  ensure(
+    typedRevision ||
+      !["github_repository", "reddit_thread"].includes(s.sourceType ?? ""),
+    "SOURCE_UNAVAILABLE",
+    "Prepare permitted cited text before reviewing an analysis quote.",
+  );
   if (s.assistantIntake) {
     const intakes = await ctx.db
       .query("assistantIntakes")
@@ -1024,7 +1126,7 @@ export async function startSource(
   );
   if (s.state === "ready" || s.state === "processing" || s.state === "queued")
     return;
-  if (s.kind === "url") {
+  if (s.kind === "url" && !typedRevision) {
     ensure(
       process.env.ACQUISITION_VERIFIED === "true" &&
         process.env.MEDIA_VERIFIED === "true" &&
@@ -1035,7 +1137,7 @@ export async function startSource(
     );
     acquisitionPolicy(s.url);
   }
-  if (s.kind !== "text")
+  if (s.kind !== "text" && !typedRevision)
     ensure(
       ["cloudflare_free", "google_metered"].includes(
         process.env.MANAGED_INFERENCE_ROUTE ?? "",
@@ -1055,18 +1157,27 @@ export async function startSource(
   await ctx.db.patch(s._id, {
     state: "queued",
     generation: s.generation + 1,
-    managedAnalysisActor: s.kind !== "text" ? actor._id : undefined,
+    managedAnalysisActor:
+      s.kind !== "text" && !typedRevision ? actor._id : undefined,
+    typedAnalysisActor: typedRevision ? actor._id : undefined,
     processingStartedAt: Date.now(),
     processingReceipt: undefined,
     error: undefined,
   });
+  if (typedRevision)
+    await ctx.db.patch(typedRevision._id, { generation: s.generation + 1 });
   await workflow.start(
     ctx,
     internal.workflows.sourceAnalysis,
     {
       id: s._id,
       generation: s.generation + 1,
-      media: s.kind !== "text",
+      media: s.kind !== "text" && !typedRevision,
+      route: typedRevision
+        ? ("source_text" as const)
+        : s.kind === "text"
+          ? ("text" as const)
+          : ("media" as const),
     },
     {
       startAsync: true,
@@ -1132,6 +1243,58 @@ export const workerSource = internalQuery({
   args: { id: v.id("sources") },
   handler: (ctx, a) => ctx.db.get(a.id),
 });
+export const workerSourceRevision = internalQuery({
+  args: { id: v.id("sources"), generation: v.number() },
+  handler: async (ctx, a) => {
+    const source = await ctx.db.get(a.id);
+    if (!source?.currentRevisionId) return null;
+    ensure(
+      source.state !== "deleted" &&
+        source.rightsAttested &&
+        source.generation === a.generation &&
+        source.typedAnalysisActor &&
+        (await actorCurrent(
+          ctx,
+          source.organizationId,
+          source.typedAnalysisActor,
+        )),
+      "FORBIDDEN",
+      "Source processing authority changed.",
+    );
+    const row = await ctx.db.get(source.currentRevisionId);
+    ensure(
+      row &&
+        row.sourceId === source._id &&
+        row.organizationId === source.organizationId &&
+        row.state === "current" &&
+        row.generation === a.generation,
+      "INVALID_EVIDENCE",
+      "Source evidence revision changed.",
+    );
+    const registry = await validateEvidenceRegistry(
+      row!.revision,
+      row!.evidence,
+    );
+    ensure(
+      registry.revision.contentHash === row!.contentHash &&
+        sourceRetained(source.sourceRetentionUntil),
+      "INVALID_EVIDENCE",
+      "The retained source content changed.",
+    );
+    ensure(
+      !registry.revision.retention ||
+        registry.revision.retention.retainUntil > Date.now(),
+      "SOURCE_UNAVAILABLE",
+      "Source evidence retention expired.",
+    );
+    ensure(
+      sourcePolicyCurrent(registry.revision),
+      "POLICY_BLOCKED",
+      "Current direct-source eligibility is required.",
+    );
+    return { id: row!._id, ...registry };
+  },
+});
 export const authorizeHostedMedia = internalQuery({
   args: { id: v.id("sources"), generation: v.number() },
   handler: async (ctx, a) => {
@@ -1193,7 +1356,24 @@ export const commitAnalysis = internalMutation({
         "FORBIDDEN",
         "Media authorization changed before output commit.",
       );
-      analysis = presentAnalysis(insightOutput.parse(a.output) as any);
+      const typedRevision = s.currentRevisionId
+        ? await ctx.db.get(s.currentRevisionId)
+        : null;
+      ensure(
+        typedRevision ||
+          (!s.currentRevisionId &&
+            !["github_repository", "reddit_thread"].includes(
+              s.sourceType ?? "",
+            ) &&
+            s.analysis?.schemaVersion !== "2.0.0"),
+        "INVALID_EVIDENCE",
+        "A typed source cannot fall back to legacy media evidence.",
+      );
+      analysis = presentAnalysis(
+        (typedRevision ? sourceInsightOutput : insightOutput).parse(
+          a.output,
+        ) as any,
+      );
       ensure(
         analysis.sourceId === s._id &&
           analysis.processingRunId === `${s._id}:${a.generation}`,
@@ -1201,9 +1381,11 @@ export const commitAnalysis = internalMutation({
         "Wrong source reference.",
       );
       ensure(
-        s.kind === "text"
-          ? analysis.coverage === "caption_only"
-          : ["upload", "url"].includes(s.kind) &&
+        typedRevision
+          ? analysis.coverage === "source_text"
+          : s.kind === "text"
+            ? analysis.coverage === "caption_only"
+            : ["upload", "url"].includes(s.kind) &&
               analysis.coverage === s.mediaCoverage,
         "INVALID_EVIDENCE",
         "Analysis coverage does not match verified processing.",
@@ -1213,17 +1395,81 @@ export const commitAnalysis = internalMutation({
           JSON.stringify([e.kind, e.id, e.startMs, e.endMs]),
         ),
       );
+      if (typedRevision) {
+        ensure(
+          s.rightsAttested && sourceRetained(s.sourceRetentionUntil),
+          "RIGHTS_REQUIRED",
+          "Source rights or retention changed before completion.",
+        );
+        ensure(
+          s.typedAnalysisActor &&
+            (await actorCurrent(ctx, s.organizationId, s.typedAnalysisActor)),
+          "FORBIDDEN",
+          "Processing authority changed before completion.",
+        );
+        ensure(
+          typedRevision.state === "current" &&
+            typedRevision.organizationId === s.organizationId &&
+            typedRevision.sourceId === s._id &&
+            typedRevision.generation === s.generation &&
+            analysis.sourceRevisionId === typedRevision._id &&
+            analysis.sourceContentHash === typedRevision.contentHash,
+          "INVALID_EVIDENCE",
+          "The immutable source evidence changed.",
+        );
+        const registry = await validateEvidenceRegistry(
+          typedRevision.revision,
+          typedRevision.evidence,
+        );
+        ensure(
+          registry.revision.contentHash === typedRevision.contentHash &&
+            sourceRetained(s.sourceRetentionUntil),
+          "INVALID_EVIDENCE",
+          "The retained source content changed.",
+        );
+        ensure(
+          !registry.revision.retention ||
+            registry.revision.retention.retainUntil > Date.now(),
+          "SOURCE_UNAVAILABLE",
+          "Source evidence retention expired.",
+        );
+        ensure(
+          sourcePolicyCurrent(registry.revision),
+          "POLICY_BLOCKED",
+          "Direct source permission changed before completion.",
+        );
+        for (const item of analysis.insights) {
+          ensure(
+            item.evidence.length > 0,
+            "INVALID_EVIDENCE",
+            "Each source claim needs a current citation.",
+          );
+          for (const evidence of item.evidence)
+            ensure(
+              registry.evidence.some(
+                (record) =>
+                  record.id === evidence.id && record.kind === evidence.kind,
+              ) &&
+                evidence.startMs === null &&
+                evidence.endMs === null,
+              "INVALID_EVIDENCE",
+              "Unknown source evidence reference.",
+            );
+        }
+      }
       for (const i of analysis.insights)
         for (const e of i.evidence)
           ensure(
-            s.kind === "text"
-              ? e.id === "supplied_text" &&
+            typedRevision
+              ? true
+              : s.kind === "text"
+                ? e.id === "supplied_text" &&
                   e.kind === "user_note" &&
                   e.startMs === null &&
                   e.endMs === null
-              : permitted.has(
-                  JSON.stringify([e.kind, e.id, e.startMs, e.endMs]),
-                ),
+                : permitted.has(
+                    JSON.stringify([e.kind, e.id, e.startMs, e.endMs]),
+                  ),
             "INVALID_EVIDENCE",
             "Unverified evidence reference.",
           );
@@ -1263,6 +1509,11 @@ export const commitAnalysis = internalMutation({
     await ctx.db.patch(s._id, {
       state: analysis ? "ready" : "failed",
       analysis,
+      analysisPipelineVersion: analysis
+        ? s.currentRevisionId
+          ? "cited-source-v2"
+          : "legacy-media-text-v1"
+        : undefined,
       summary: analysis?.summary,
       searchable: [s.title, analysis?.summary, s.text, ...s.tags]
         .filter(Boolean)
@@ -1347,6 +1598,18 @@ export const editSource = mutation({
     );
     const corrected =
       a.correctedText !== undefined && a.correctedText !== s.text;
+    ensure(
+      !s.publicImportId,
+      "POLICY_BLOCKED",
+      "Edit your private saved-public layer separately.",
+    );
+    ensure(
+      !corrected ||
+        (!s.currentRevisionId &&
+          !["github_repository", "reddit_thread"].includes(s.sourceType ?? "")),
+      "POLICY_BLOCKED",
+      "Use the explicit supplied-text replacement to retain typed provenance.",
+    );
     if (corrected) {
       for (const stage of await ctx.db
         .query("mediaStages")
@@ -1421,6 +1684,13 @@ export const attachSource = mutation({
     const s = await ctx.db.get(a.id);
     ensure(s && s.state !== "deleted", "FORBIDDEN", "Source unavailable.");
     const { actor } = await writeAccess(ctx, s.organizationId);
+    ensure(
+      !s.publicImportId &&
+        !s.currentRevisionId &&
+        !["github_repository", "reddit_thread"].includes(s.sourceType ?? ""),
+      "POLICY_BLOCKED",
+      "Use the explicit supplied-text replacement for a typed source.",
+    );
     await limit(ctx, `source-attach:${actor._id}`, 10);
     ensure(
       a.rightsAttested && !!a.text !== !!a.objectKey,
@@ -1524,6 +1794,7 @@ export const deleteSource = mutation({
   },
 });
 export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
+  await invalidatePublicSource(ctx, id);
   const trialSource = await ctx.db.get(id);
   if (trialSource)
     await ctx.scheduler.runAfter(0, internal.subscriptionTrials.redact, {
@@ -1617,6 +1888,12 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     personalAnalysis: undefined,
     personalMedia: undefined,
     acquisition: undefined,
+    currentRevisionId: undefined,
+    retrievalState: undefined,
+    analysisPipelineVersion: undefined,
+    publicImportId: undefined,
+    typedAnalysisActor: undefined,
+    sourceRetentionUntil: undefined,
     repositorySelection: undefined,
     linkPreview: undefined,
     originalSavedAt: undefined,
@@ -1919,6 +2196,112 @@ export const editPlan = mutation({
     return editPlanCore(ctx, a);
   },
 });
+export async function currentMatchingProposal(
+  ctx: QueryCtx,
+  job: Doc<"matchingJobs">,
+  source: Doc<"sources">,
+  repo: Doc<"repositories">,
+  actorId?: Id<"users">,
+) {
+  if (
+    !job.proposalId ||
+    !job.actor ||
+    (actorId && job.actor !== actorId) ||
+    job.organizationId !== source.organizationId ||
+    job.sourceId !== source._id ||
+    job.repositoryId !== repo._id ||
+    repo.organizationId !== source.organizationId ||
+    !repo.enabled ||
+    !repo.confirmed ||
+    job.sourceGeneration !== source.generation ||
+    job.sourceRevision !== source.updatedAt ||
+    source.state !== "ready" ||
+    !source.rightsAttested ||
+    !sourceRetained(source.sourceRetentionUntil) ||
+    !(await actorCurrent(ctx, source.organizationId, job.actor))
+  )
+    return null;
+  const proposal = await ctx.db.get(job.proposalId);
+  if (
+    !proposal ||
+    proposal.organizationId !== source.organizationId ||
+    proposal.sourceId !== source._id ||
+    proposal.repositoryId !== repo._id ||
+    proposal.baseSha !== repo.sha ||
+    proposal.profileVersion !== repo.profileVersion ||
+    proposal.review === "superseded"
+  )
+    return null;
+  try {
+    const typedRequired =
+      !!source.currentRevisionId ||
+      ["github_repository", "reddit_thread"].includes(
+        source.sourceType ?? "",
+      ) ||
+      source.analysis?.schemaVersion === "2.0.0";
+    const insights = (source.analysis?.insights ?? []).filter(
+      (i: any) => !job.insightIds || job.insightIds.includes(i.id),
+    );
+    let detail: Pick<
+      SourceProposal,
+      "repositoryId" | "baseSha" | "profileVersion" | "insightIds"
+    >;
+    if (typedRequired) {
+      if (
+        !(await sharedTypedCitations(ctx, source)) ||
+        !source.currentRevisionId
+      )
+        return null;
+      const row = await ctx.db.get(source.currentRevisionId);
+      const registry = row && (await retainedSourceRevision(ctx, row));
+      if (
+        !row ||
+        !registry ||
+        job.sourceRevisionId !== row._id ||
+        job.sourceContentHash !== row.contentHash ||
+        !proposal.references?.length ||
+        !(await referencesCurrent(
+          ctx,
+          source.organizationId,
+          proposal.references,
+        ))
+      )
+        return null;
+      detail = await validateTypedProposal(proposal.detail, {
+        sourceId: source._id,
+        sourceRevisionId: row._id,
+        sourceContentHash: row.contentHash,
+        ...registry,
+        insights,
+      });
+      if (
+        proposal.references.length !== detail.insightIds.length ||
+        new Set(proposal.references.map((ref) => ref.insightId)).size !==
+          detail.insightIds.length ||
+        proposal.references.some(
+          (ref) =>
+            ref.sourceId !== source._id ||
+            ref.generation !== source.generation ||
+            ref.revision !== source.updatedAt ||
+            !detail.insightIds.includes(ref.insightId),
+        )
+      )
+        return null;
+    } else detail = proposalOutput.parse(proposal.detail) as typeof detail;
+    if (
+      detail.repositoryId !== repo._id ||
+      detail.baseSha !== repo.sha ||
+      detail.profileVersion !== repo.profileVersion ||
+      !detail.insightIds.every((id: string) =>
+        insights.some((i: any) => i.id === id),
+      )
+    )
+      return null;
+    return proposal;
+  } catch {
+    return null;
+  }
+}
 export const addProposal = internalMutation({
   args: {
     sourceId: v.id("sources"),
@@ -1938,7 +2321,6 @@ export const addProposal = internalMutation({
           .withIndex("by_key", (q) => q.eq("key", a.matchKey!))
           .unique()
       : null;
-    if (matchingJob?.proposalId) return matchingJob.proposalId;
     if (
       !s ||
       s.state === "deleted" ||
@@ -1952,7 +2334,76 @@ export const addProposal = internalMutation({
       "APPROVAL_STALE",
       "Source context changed during matching.",
     );
-    const d: any = proposalOutput.parse(a.detail);
+    const insights = (s.analysis?.insights ?? []).filter(
+      (i: any) =>
+        !matchingJob?.insightIds || matchingJob.insightIds.includes(i.id),
+    );
+    const typedRequired =
+      !!s.currentRevisionId ||
+      ["github_repository", "reddit_thread"].includes(s.sourceType ?? "") ||
+      s.analysis?.schemaVersion === "2.0.0";
+    if (typedRequired)
+      ensure(
+        await sharedTypedCitations(ctx, s),
+        "INVALID_EVIDENCE",
+        "Typed proposal context changed before completion.",
+      );
+    if (matchingJob) {
+      ensure(
+        matchingJob.organizationId === s.organizationId &&
+          matchingJob.sourceId === s._id &&
+          matchingJob.repositoryId === r._id &&
+          matchingJob.actor &&
+          (await actorCurrent(ctx, s.organizationId, matchingJob.actor)) &&
+          matchingJob.sourceGeneration === s.generation &&
+          matchingJob.sourceRevision === s.updatedAt &&
+          s.state === "ready" &&
+          s.rightsAttested &&
+          sourceRetained(s.sourceRetentionUntil) &&
+          r.confirmed,
+        "APPROVAL_STALE",
+        "Matching authority or source context changed.",
+      );
+      if (matchingJob.proposalId) {
+        const cached = await currentMatchingProposal(ctx, matchingJob, s, r);
+        ensure(
+          cached,
+          "APPROVAL_STALE",
+          "The completed proposal is no longer current.",
+        );
+        return cached._id;
+      }
+      ensure(
+        matchingJob.state === "pending",
+        "APPROVAL_STALE",
+        "The matching attempt is no longer active.",
+      );
+    }
+    let d: any;
+    if (s.currentRevisionId) {
+      const row = await ctx.db.get(s.currentRevisionId);
+      const registry = row ? await retainedSourceRevision(ctx, row) : null;
+      ensure(
+        s.state === "ready" &&
+          registry &&
+          sourcePolicyCurrent(registry.revision) &&
+          matchingJob?.actor &&
+          (await actorCurrent(ctx, s.organizationId, matchingJob.actor)) &&
+          matchingJob.sourceGeneration === s.generation &&
+          matchingJob.sourceRevision === s.updatedAt &&
+          matchingJob.sourceRevisionId === row!._id &&
+          matchingJob.sourceContentHash === row!.contentHash,
+        "APPROVAL_STALE",
+        "Source or matching authority changed.",
+      );
+      d = await validateTypedProposal(a.detail, {
+        sourceId: s._id,
+        sourceRevisionId: row!._id,
+        sourceContentHash: row!.contentHash,
+        ...registry,
+        insights,
+      });
+    } else d = proposalOutput.parse(a.detail);
     ensure(
       d.baseSha === r.sha &&
         d.repositoryId === r._id &&
@@ -1968,10 +2419,6 @@ export const addProposal = internalMutation({
     validateRepositoryEvidence(
       d.repositoryEvidence,
       a.inspectedContext ?? r.contextExcerpts ?? [],
-    );
-    const insights = (s.analysis?.insights ?? []).filter(
-      (i: any) =>
-        !matchingJob?.insightIds || matchingJob.insightIds.includes(i.id),
     );
     const insightIds = new Set(insights.map((i: any) => i.id));
     const evidenceKey = (e: any) =>
@@ -1995,6 +2442,16 @@ export const addProposal = internalMutation({
       createdAt: now,
       updatedAt: now,
       sourceId: s._id,
+      ...(s.currentRevisionId
+        ? {
+            references: d.insightIds.map((insightId: string) => ({
+              sourceId: s._id,
+              generation: s.generation,
+              revision: s.updatedAt,
+              insightId,
+            })),
+          }
+        : {}),
       repositoryId: r._id,
       baseSha: r.sha,
       profileVersion: r.profileVersion,

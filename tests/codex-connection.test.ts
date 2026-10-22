@@ -1,6 +1,7 @@
 import { expect, it, vi } from "vitest";
-import { readFile, unlink } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
+import { readFile, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { resolve, join, sep } from "node:path";
 import {
   CodexConnectionStore,
   SavedCodexConnection,
@@ -180,11 +181,16 @@ it.skipIf(process.platform !== "win32")(
   "protects the runner's own credentials with Windows DPAPI and removes only that connection",
   async () => {
     const store = new CodexConnectionStore();
-    // A separate file in the app credential directory. Never touch a real login.
-    store.file = store.file.replace(
-      "connection.dpapi",
-      `test-${randomUUID()}.dpapi`,
-    );
+    // Isolate the directory and its lock, not only the synthetic credential file.
+    const directory = await mkdtemp(join(tmpdir(), "vibescroll-dpapi-test-"));
+    if (
+      !resolve(directory).startsWith(
+        `${resolve(tmpdir())}${sep}vibescroll-dpapi-test-`,
+      )
+    )
+      throw Error("Unsafe synthetic credential cleanup path");
+    store.directory = directory;
+    store.file = join(directory, "connection.dpapi");
     const synthetic = {
       version: 1,
       hostId: "urn:uuid:01234567-89ab-4cde-8123-456789abcdef",
@@ -204,7 +210,7 @@ it.skipIf(process.platform !== "win32")(
         code: "ENOENT",
       });
     } finally {
-      await unlink(store.file).catch(() => {});
+      await rm(directory, { recursive: true, force: true });
     }
   },
 );

@@ -3,7 +3,11 @@ import { mutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
 import { access, writeAccess } from "./lib";
 import { ensure } from "../packages/policy";
-import { intakeReceipt, intakeAuthority } from "./lib/assistantIntake";
+import {
+  intakeReceipt,
+  intakeAuthority,
+  intakeNeedsSourceReview,
+} from "./lib/assistantIntake";
 import { startSource } from "./product";
 const sourceArgs = { sourceId: v.id("sources") };
 export const status = query({
@@ -25,7 +29,9 @@ export const status = query({
       .sort(
         (a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt),
       )[0];
-    return own?.queueState ? intakeReceipt(ctx, own, source) : null;
+    return own && (own.queueState || intakeNeedsSourceReview(source))
+      ? intakeReceipt(ctx, own, source)
+      : null;
   },
 });
 export const act = mutation({
@@ -50,6 +56,15 @@ export const act = mutation({
       .query("assistantIntakes")
       .withIndex("by_source", (q) => q.eq("sourceId", source._id))
       .take(51);
+    if (a.mode === "credits" && intakeNeedsSourceReview(source)) {
+      const own = rows
+        .filter((r) => r.actor === actor._id)
+        .sort(
+          (x, y) => (y.updatedAt ?? y.createdAt) - (x.updatedAt ?? x.createdAt),
+        )[0];
+      ensure(own, "FORBIDDEN", "Submission unavailable.");
+      return intakeReceipt(ctx, own, source);
+    }
     const own = rows.filter(
       (r) => r.actor === actor._id && r.queueState === "waiting",
     );
@@ -59,7 +74,9 @@ export const act = mutation({
       "Refresh this source's current waiting state.",
     );
     const intake = own[0];
-    await intakeAuthority(ctx, intake);
+    await intakeAuthority(ctx, intake, {
+      allowSourceReview: a.mode === "cancel",
+    });
     if (a.mode === "credits") {
       ensure(
         a.maxCredits === 10 && !intake.runId,

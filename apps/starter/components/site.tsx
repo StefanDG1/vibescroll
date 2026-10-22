@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CookieSettings } from "./consent";
+import { AppTheme } from "./app-theme";
+import "../app/public.css";
 export function Brand({ href = "/" }: { href?: string }) {
   return (
     <Link href={href} className="brand">
@@ -18,7 +20,9 @@ export function SiteHeader() {
       <nav aria-label="Website">
         <Link href="/how-it-works">How it works</Link>
         <Link href="/pricing">Pricing</Link>
-        <Link href="/docs">Docs</Link>
+        <Link href="/help">Help</Link>
+        <Link href="/open-source">Open source</Link>
+        <a href="https://github.com/StefanDG1/vibescroll">GitHub</a>
         <Link className="primary" href="/app">
           Start your library
         </Link>
@@ -31,11 +35,15 @@ export function SiteFooter() {
     <footer className="site-footer">
       <Brand />
       <p>Make scrolling useful.</p>
+      <AppTheme control />
       <nav aria-label="Footer">
         {[
           "about",
           "contact",
           "status",
+          "faq",
+          "help",
+          "open-source",
           "privacy",
           "terms",
           "cookies",
@@ -63,6 +71,7 @@ export function SiteFooter() {
 export function PublicPage({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <AppTheme />
       <SiteHeader />
       <main id="main" className="public-content">
         {children}

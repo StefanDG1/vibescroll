@@ -7,9 +7,11 @@ import { v } from "convex/values";
 import { ensure } from "../packages/policy";
 import { redactSource } from "./product";
 import { rememberDeletion, subjectHash } from "./lib/deletionMarkers";
-import type { QueryCtx } from "./_generated/server";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
-import { sourceAuthority } from "./lib/sourceAuthority";
+import { sourceAuthority, sourceRetained } from "./lib/sourceAuthority";
+import { recoveryQuarantineSections } from "../packages/recovery/quarantine";
 
 export async function retainedFrame(ctx: QueryCtx, key: string, asOf: number) {
   ensure(
@@ -37,6 +39,7 @@ export async function retainedFrame(ctx: QueryCtx, key: string, asOf: number) {
     !source ||
     source.organizationId !== asset.organizationId ||
     source.state === "deleted" ||
+    !sourceRetained(source.sourceRetentionUntil) ||
     organization?.status !== "active"
   )
     return null;
@@ -301,24 +304,58 @@ export const applyMarkers = internalMutation({
   },
 });
 
+async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
+  const provider =
+    source.sourceType === "github_repository" ||
+    source.sourceType === "reddit_thread" ||
+    source.sourceRetentionUntil !== undefined;
+  if (!provider && !source.currentRevisionId && !source.publicImportId) return;
+  const retainedContent =
+    source.currentRevisionId ||
+    source.analysis ||
+    source.summary ||
+    source.originalText ||
+    source.mediaEvidence ||
+    source.originalMediaEvidence ||
+    source.personalMedia ||
+    source.acquisition ||
+    source.sourceRetentionUntil !== undefined ||
+    (provider && source.text);
+  if (
+    !retainedContent &&
+    !["queued", "processing", "ready"].includes(source.state)
+  )
+    return;
+  await ctx.db.patch(source._id, {
+    currentRevisionId: undefined,
+    sourceRetentionUntil: undefined,
+    state:
+      source.state === "deleted"
+        ? "deleted"
+        : provider
+          ? "needs_upload"
+          : "saved",
+    retrievalState: provider ? "needs_supplied_text" : source.retrievalState,
+    generation: source.generation + 1,
+    text: provider || source.publicImportId ? undefined : source.text,
+    originalText: undefined,
+    summary: undefined,
+    analysis: undefined,
+    mediaEvidence: undefined,
+    originalMediaEvidence: undefined,
+    personalMedia: undefined,
+    acquisition: undefined,
+    personalAnalysis: undefined,
+    repositorySelection: undefined,
+    searchable: source.title,
+    coverage: "metadata_only",
+    updatedAt: Math.max(Date.now(), source.updatedAt + 1),
+  });
+}
 export const quarantinePage = internalMutation({
   args: {
     section: v.union(
-      v.literal("assistantSubscriptions"),
-      v.literal("assistantDeliveries"),
-      v.literal("assistantGrants"),
-      v.literal("assistantIntakes"),
-      v.literal("connections"),
-      v.literal("devices"),
-      v.literal("githubLinks"),
-      v.literal("githubBindings"),
-      v.literal("runs"),
-      v.literal("repositories"),
-      v.literal("knowledgePolicies"),
-      v.literal("knowledgeJobs"),
-      v.literal("knowledgeEvaluations"),
-      v.literal("issueAttempts"),
-      v.literal("issueDrafts"),
+      ...recoveryQuarantineSections.map((section) => v.literal(section)),
     ),
     cursor: v.union(v.string(), v.null()),
   },
@@ -332,7 +369,63 @@ export const quarantinePage = internalMutation({
       .query(a.section)
       .paginate({ cursor: a.cursor, numItems: 25 });
     for (const row of page.page) {
-      if ("body" in row)
+      if (a.section === "pilotPaymentObservations") {
+        // Keep the opaque dedup key: old verified webhook replay must not
+        // recreate an observation that restoration has withdrawn.
+        await ctx.db.patch(row._id as Doc<"pilotPaymentObservations">["_id"], {
+          state: "withdrawn",
+          updatedAt: Date.now(),
+        });
+      } else if (
+        a.section === "publicImports" ||
+        a.section === "publicReports" ||
+        a.section === "publicCorrections"
+      ) {
+        // Preserve authored personal layers/report history. Their restored base
+        // never becomes available because editions/artifacts are quarantined.
+        continue;
+      } else if (a.section === "publicEditions") {
+        const edition = row as Doc<"publicEditions">;
+        await ctx.db.patch(edition._id, {
+          state: "removed",
+          payload: {
+            ...edition.payload,
+            title: "Unavailable restored edition",
+            summary: "",
+            insights: [],
+            sourceUrl: null,
+            publisher: "",
+          },
+          permissionReference: "Recovery quarantined",
+          removalReason: "recovery_quarantined",
+          updatedAt: Date.now(),
+        });
+      } else if (a.section === "publicCollections") {
+        await ctx.db.patch(row._id as Doc<"publicCollections">["_id"], {
+          state: "removed",
+          editions: [],
+          bindings: [],
+          reviewedHash: undefined,
+          updatedAt: Date.now(),
+        });
+      } else if (
+        a.section === "publicArtifacts" ||
+        a.section === "publicGeography" ||
+        a.section === "sourceAcquisitions"
+      ) {
+        await ctx.db.delete(row._id);
+      } else if (a.section === "sources") {
+        await quarantineSource(ctx, row as Doc<"sources">);
+      } else if (a.section === "sourceRevisions") {
+        const revision = row as Doc<"sourceRevisions">;
+        const source = await ctx.db.get(revision.sourceId);
+        if (
+          source?.organizationId === revision.organizationId &&
+          source.currentRevisionId === revision._id
+        )
+          await quarantineSource(ctx, source);
+        await ctx.db.delete(revision._id);
+      } else if ("body" in row)
         await ctx.db.patch(row._id, {
           title: "Recovery quarantined draft",
           body: "",
@@ -445,12 +538,35 @@ export const readiness = internalQuery({
       .first();
     const assistantGrant = await ctx.db.query("assistantGrants").first();
     const assistantDelivery = await ctx.db.query("assistantDeliveries").first();
+    const publicEdition = await ctx.db
+      .query("publicEditions")
+      .withIndex("by_state", (q) => q.eq("state", "published"))
+      .first();
+    const publicCollection = await ctx.db
+      .query("publicCollections")
+      .withIndex("by_state", (q) => q.eq("state", "published"))
+      .first();
+    const publicArtifact = await ctx.db.query("publicArtifacts").first();
+    const geography = await ctx.db.query("publicGeography").first();
+    const acquisition = await ctx.db.query("sourceAcquisitions").first();
+    const retainedRevision = await ctx.db.query("sourceRevisions").first();
+    const paymentObservation = await ctx.db
+      .query("pilotPaymentObservations")
+      .filter((q) => q.eq(q.field("state"), "pending"))
+      .first();
     return {
       locked: process.env.RESTORE_LOCK === "true",
       quarantineComplete:
         !assistantAuthority &&
         !assistantGrant &&
         !assistantDelivery &&
+        !publicEdition &&
+        !publicCollection &&
+        !publicArtifact &&
+        !geography &&
+        !acquisition &&
+        !retainedRevision &&
+        !paymentObservation &&
         !deleting &&
         !credentials &&
         !device &&

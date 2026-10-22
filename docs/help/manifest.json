@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 1,
+  "reviewPolicy": "Source review approves text exposure only. Live routes, reviewed screenshots and independent usability remain distinct. A reviewer records updated, unaffected-with-reason or reverified for affected dependencies.",
+  "assets": [
+    {
+      "path": "/help/library-tree.png",
+      "status": "approved",
+      "alt": "Mobile Library Tree with a synthetic source and its evidence link.",
+      "caption": "Actual candidate interface with synthetic data. Library filing is separate from access permission.",
+      "width": 390,
+      "height": 900,
+      "captureCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true
+    },
+    {
+      "path": "/help/source-evidence.png",
+      "status": "approved",
+      "alt": "Synthetic source detail with AI summary, main points and coverage.",
+      "caption": "Synthetic source detail. A ready label is not independent truth verification.",
+      "width": 390,
+      "height": 700,
+      "captureCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true
+    },
+    {
+      "path": "/help/save-form.png",
+      "status": "approved",
+      "alt": "Save form with source type, title, URL and permission checkbox.",
+      "caption": "Synthetic Save form. Saving does not start analysis.",
+      "width": 390,
+      "height": 700,
+      "captureCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true
+    },
+    {
+      "path": "/help/project-draft.png",
+      "status": "approved",
+      "alt": "Editable synthetic issue draft with current-evidence and publication-permission warnings.",
+      "caption": "Synthetic private draft. No repository permission or publication has been granted.",
+      "width": 390,
+      "height": 700,
+      "captureCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true
+    },
+    {
+      "path": "/help/no-fit.png",
+      "status": "approved",
+      "alt": "Synthetic no-fit decision explaining why sensitive records need access controls.",
+      "caption": "Synthetic no-fit example. It supplies no measured benefit or customer result.",
+      "width": 390,
+      "height": 700,
+      "captureCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true
+    }
+  ],
+  "articles": [
+    {
+      "slug": "getting-started",
+      "title": "Get started with one saved source",
+      "summary": "Choose a first task and a processing route without connecting everything at once.",
+      "file": "getting-started.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
+      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "dependencies": [
+        "apps/starter/components/console.tsx",
+        "docs/CAPABILITIES.md",
+        "docs/HOSTED-TUTORIAL.md",
+        "apps/starter/components/setup-journey.tsx",
+        "convex/setupJourney.ts",
+        "packages/onboarding/preflight-report.ts"
+      ],
+      "related": [
+        "first-useful-insight",
+        "organize-your-library",
+        "evaluate-an-idea-for-a-project"
+      ],
+      "assets": ["/help/library-tree.png", "/help/save-form.png"]
+    },
+    {
+      "slug": "first-useful-insight",
+      "title": "Save and inspect your first insight",
+      "summary": "Review a permitted source, its processing choice and the evidence behind a ready result.",
+      "file": "first-useful-insight.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
+      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "dependencies": [
+        "apps/starter/components/console.tsx",
+        "docs/CAPABILITIES.md",
+        "docs/HOSTED-TUTORIAL.md",
+        "apps/starter/components/source-acquisition-panel.tsx",
+        "apps/starter/components/typed-source-evidence.tsx",
+        "convex/sourceAcquisition.ts",
+        "packages/sources/types.ts"
+      ],
+      "related": ["getting-started", "processing-and-recovery"],
+      "assets": ["/help/save-form.png", "/help/source-evidence.png"]
+    },
+    {
+      "slug": "organize-your-library",
+      "title": "Find and organize your library",
+      "summary": "Return to source evidence and correct organization without rerunning analysis.",
+      "file": "organize-your-library.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
+      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "dependencies": [
+        "apps/starter/components/console.tsx",
+        "docs/CAPABILITIES.md",
+        "docs/HOSTED-TUTORIAL.md"
+      ],
+      "related": ["getting-started", "processing-and-recovery"],
+      "assets": ["/help/library-tree.png", "/help/source-evidence.png"]
+    },
+    {
+      "slug": "evaluate-an-idea-for-a-project",
+      "title": "Review an idea for a project",
+      "summary": "Compare cited knowledge with confirmed project context and retain a private next step.",
+      "file": "evaluate-an-idea-for-a-project.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
+      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "dependencies": [
+        "apps/starter/components/console.tsx",
+        "docs/CAPABILITIES.md",
+        "docs/HOSTED-TUTORIAL.md",
+        "apps/starter/components/repository-checklist.tsx"
+      ],
+      "related": ["getting-started", "processing-and-recovery"],
+      "assets": ["/help/project-draft.png", "/help/no-fit.png"]
+    },
+    {
+      "slug": "processing-and-recovery",
+      "title": "Processing, costs and recovery",
+      "summary": "Distinguish waiting work, unavailable accounts, reservations and settled usage.",
+      "file": "processing-and-recovery.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
+      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "dependencies": [
+        "apps/starter/components/console.tsx",
+        "docs/CAPABILITIES.md",
+        "docs/HOSTED-TUTORIAL.md",
+        "docs/operations/assistant-local-runner.md",
+        "apps/starter/components/setup-journey.tsx",
+        "convex/setupJourney.ts",
+        "scripts/companion.mjs",
+        "packages/companion/README.md",
+        "apps/starter/components/source-acquisition-panel.tsx"
+      ],
+      "related": ["getting-started"],
+      "assets": []
+    },
+    {
+      "slug": "imports-and-data",
+      "title": "Import saved links and manage your data",
+      "summary": "Preview metadata, inspect duplicates and find export or deletion controls.",
+      "file": "imports-and-data.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
+      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "dependencies": [
+        "apps/starter/components/console.tsx",
+        "docs/CAPABILITIES.md",
+        "docs/HOSTED-TUTORIAL.md",
+        "packages/privacy/export.ts",
+        "packages/recovery/quarantine.ts",
+        "convex/knowledge.ts",
+        "apps/starter/components/saved-public-source.tsx"
+      ],
+      "related": ["getting-started", "processing-and-recovery"],
+      "assets": []
+    },
+    {
+      "slug": "actions-and-publication",
+      "title": "Plans, coding and publication",
+      "summary": "Understand which decisions authorize work and which remain separate.",
+      "file": "actions-and-publication.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
+      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "dependencies": [
+        "apps/starter/components/console.tsx",
+        "docs/CAPABILITIES.md",
+        "docs/HOSTED-TUTORIAL.md",
+        "apps/starter/components/public-knowledge-panel.tsx",
+        "apps/starter/components/saved-public-source.tsx",
+        "apps/starter/components/public-save-continuation.tsx",
+        "convex/publicKnowledge.ts",
+        "packages/sources/geography.ts"
+      ],
+      "related": ["getting-started", "processing-and-recovery"],
+      "assets": []
+    },
+    {
+      "slug": "advanced-troubleshooting-draft",
+      "title": "Advanced troubleshooting",
+      "summary": "Draft follow-up; not publicly rendered.",
+      "file": "advanced-troubleshooting-draft.md",
+      "status": "draft",
+      "reviewMode": "not reviewed",
+      "lastVerifiedCommit": "472c6e1",
+      "dependencies": [],
+      "related": [],
+      "assets": []
+    }
+  ],
+  "candidateReview": {
+    "date": "2026-10-22",
+    "status": "source-reviewed-unreleased",
+    "commit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+    "baseline": "472c6e1",
+    "limits": "Source review and local synthetic browser/media evidence only. No live processing, signed installation, independent usability or released surface acceptance.",
+    "updated": [
+      "getting-started",
+      "first-useful-insight",
+      "processing-and-recovery",
+      "imports-and-data",
+      "actions-and-publication"
+    ],
+    "unaffected": [
+      {
+        "slug": "organize-your-library",
+        "reason": "Typed retrieval/public/setup additions do not change the documented private filing and current-evidence boundary."
+      },
+      {
+        "slug": "evaluate-an-idea-for-a-project",
+        "reason": "New typed citations preserve the documented current evidence, confirmed context and separate plan/coding approvals."
+      }
+    ]
+  }
+}

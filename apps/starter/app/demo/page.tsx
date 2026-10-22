@@ -27,6 +27,7 @@ export default async function Demo({
       : undefined;
   return (
     <Console
+      key={[demoState, params.view, source?._id, params.proposal].join(":")}
       demo
       readOnly
       initialReviewDraftId={params.proposal}

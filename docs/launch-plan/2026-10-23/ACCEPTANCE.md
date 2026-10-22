@@ -50,6 +50,39 @@ Status: baseline audit, October 23, 2026. Read the [complete plan](README.md) an
 | P14 Both direct source adapters           | R1/R9             | GitHub independently accepted first under the superseding decision; Reddit later after approval, retention/deletion and actual retrieval                                                                        |
 | P15 Existing V1 and operational readiness | R0-R13            | Preserve the complete V1; actual isolation/credential, security, billing/deletion/restore and disaster recovery; current model/budget/login readiness, reviewed integration, rollback and clean pushed checkout |
 
+## Planning-only additions
+
+These N0-N7 scenarios reconcile A01-A24 in the supplied creator-following plan. None is an executed acceptance result. Implementation authorization remains pending. Existing R work and the owner's exact seven-insight reuse approval remain valid. Root owns contracts, integration, budget and final review; [the plan](README.md#owners-dependencies-and-review-stages) assigns bounded implementation/review roles and dependencies.
+
+| Input ID | Package  | Required evidence after implementation authorization                                                       | Current state                                     |
+| -------- | -------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| A01      | N3       | Two private subscribers share one creator discovery run/window without exposing follows.                   | Planned; not attempted                            |
+| A02      | N1/N2    | Follow, paste, tool intake and Saved import resolve the same post and compatible analysis intent once.     | Planned; not attempted                            |
+| A03      | N0/N1    | Short/alternate URLs and handle changes resolve verified stable creator/post IDs.                          | Provider evidence pending                         |
+| A04      | N3       | Pinned/equal-time/delayed posts, pagination limits and failed pages retain resumable incomplete state.     | Planned; not attempted                            |
+| A05      | N3/N4    | Server cutoff excludes history; optional latest ten quotes all child assets/minutes and respects ceilings. | Planned; not attempted                            |
+| A06      | N1       | Real permitted single images, TikTok photos and image/mixed carousels preserve child order and evidence.   | Acquisition/provider evidence pending             |
+| A07      | N1       | Missing slides/audio, tiny text and caption-only access show actual partial/unknown coverage.              | Planned; not attempted                            |
+| A08      | N2       | Neutral shared evidence excludes private goals, repositories, filing vocabulary, notes and corrections.    | New reuse policy pending                          |
+| A09      | N2/N4    | Compatible hits start no generic inference; concurrent misses share one authorized job/reservation.        | Planned; not attempted                            |
+| A10      | N4       | Offline local work waits; managed work needs current allowance; no route fallback is implicit.             | New workload policy pending                       |
+| A11      | N1/N2/N4 | Revocation, changed evidence and local/cloud races fence results and interrupt lost-authority work.        | Planned; not attempted                            |
+| A12      | N2/N3    | Pause/resume/catch-up/unfollow/suppression/user deletion/shared removal remain distinct across restore.    | Rights/lifecycle design pending                   |
+| A13      | N5       | Requested project-builder order; Library-only users skip GitHub and installations without losing access.   | New chapter implementation pending                |
+| A14      | N5       | Three relevant verified skill candidates where available; fewer/outage/installed-unknown cases honest.     | Catalog/destination policy pending                |
+| A15      | N6       | Installed/disconnected/unavailable VibeScroll tool states show recovery and invocation/paste/web fallback. | Supported-host evidence pending                   |
+| A16      | N6       | Real Android/iPhone share or copy/paste reaches explicit VibeScroll invocation under reviewed scope.       | Native-device observation pending                 |
+| A17      | N5/N6    | Final static or animated guide acknowledgement works without Instagram/export request/archive.             | Guide implementation pending                      |
+| A18      | N1/N6    | Full ZIP stays local; only selected recognized Saved metadata is submitted; repeat import idempotent.      | Existing parser reused; combined journey untested |
+| A19      | N5       | OAuth/reload/cross-device/workspace changes preserve versioned chapters/deferrals and recheck authority.   | Progress extension pending                        |
+| A20      | N5/N6/N7 | Keyboard, screen-reader text, reduced-motion/static/failed assets and 320-1440 px layouts usable.          | Browser/native evidence pending                   |
+| A21      | N3/N7    | Timezone/DST digest separates found/ready/waiting/partial/blocked and discovery from delivery clocks.      | Planned; not attempted                            |
+| A22      | N5/N6    | Examples never confer connection, skill installation, live processing or result-ready state.               | Planned; not attempted                            |
+| A23      | N1/N3    | Uncertain/corrected publication dates cannot create automatically funded historical work.                  | Provider/date contract pending                    |
+| A24      | N1/N2/N3 | Material revision updates one source, preserves private history, stales evaluations and delivers once.     | Revision/lifecycle extension pending              |
+
+Additional integration acceptance: extend existing SetupJourney/CompanionSetup/librarySetup rather than duplicate onboarding; use current processing jobs and artifact/import records rather than parallel queues/stores; preserve existing exact-edition owner/source checks and seven-insight approval; keep guide acknowledgement, self-reported export intent, imported links, ready analyses and first useful result separate. Retaining service artifacts after actor deletion needs independent rights, not weakened current checks. Every live provider/benchmark/discovery/build/canary requires a conservative reservation under the unchanged cumulative US$2 cap. No supplier or recurring budget is approved.
+
 ## Evidence vocabulary
 
 Use `passed`, `failed`, `blocked`, `assisted` or `not attempted` for actual observations. Record head, environment, command/time and result. Proposed implementation or owner approval is not an executed test. Keep signup, provider entitlement, code isolation, source rights, publication permission and spending approval distinct.

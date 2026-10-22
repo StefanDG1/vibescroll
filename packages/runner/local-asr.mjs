@@ -11,6 +11,9 @@ import {
 } from "node:fs/promises";
 import { resolve, join, sep, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
+export const localWhisperPath = fileURLToPath(
+  new URL("../media/local_whisper.py", import.meta.url),
+);
 
 // Only the isolated decoder's normalized audio belongs here. No URL, raw-media
 // decoding, subprocess command from a source, API credential or funding fallback.
@@ -80,7 +83,7 @@ export async function transcribeNormalizedAudio(
         pythonPath,
         [
           "-I",
-          fileURLToPath(new URL("../media/local_whisper.py", import.meta.url)),
+          localWhisperPath,
           "--audio",
           input,
           "--model-directory",

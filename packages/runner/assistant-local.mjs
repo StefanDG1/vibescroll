@@ -3,8 +3,9 @@ import { resolve, join } from "node:path";
 import { createHash } from "node:crypto";
 import { AppServer } from "./app-server.mjs";
 import { subscriptionConfig } from "./subscription-trial.mjs";
-import { prepareLocalUrl, docker } from "./local-preparation.mjs";
+import { prepareLocalUrl, docker } from "./assistant-runtime.mjs";
 import { transcribeNormalizedAudio } from "./local-asr.mjs";
+export { localWhisperPath } from "./local-asr.mjs";
 import { canonicalJson } from "../contracts/canonical-json.mjs";
 import insightSchema from "../../contracts/insight.schema.json" with { type: "json" };
 import { evaluationJson } from "../knowledge/contracts.ts";
@@ -245,8 +246,11 @@ export async function processAssistantJob(
       image: config.mediaImage,
       privateRoot: resolve("private/subscription-prepared"),
     });
-    if (prepared.status !== "prepared")
-      throw Error("ASSISTANT_LOCAL_MEDIA_UNAVAILABLE");
+    if (prepared.status !== "prepared") {
+      const error = new Error("ASSISTANT_LOCAL_MEDIA_UNAVAILABLE");
+      error.mediaStatus = prepared.status;
+      throw error;
+    }
     const receipt = JSON.parse(
       await readFile(join(prepared.directory, "receipt.json"), "utf8"),
     );

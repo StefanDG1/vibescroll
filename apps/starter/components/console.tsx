@@ -3523,7 +3523,7 @@ function SourceDetail({
       )}
       {detail.assistantIntake && (
         <AssistantIntakeStatus
-          key={sourceId}
+          key={`${sourceId}:${detail.state}`}
           sourceId={sourceId}
           demo={demo}
           call={call}
@@ -3936,11 +3936,16 @@ function SourceDetail({
         )}
       </details>
       {detail.state === "needs_upload" && (
-        <section className="panel">
-          <h2>Supply permitted content</h2>
+        <details className="panel" open={!detail.assistantIntake}>
+          <summary>
+            {detail.assistantIntake
+              ? "Supply content if link retrieval fails"
+              : "Supply permitted content"}
+          </summary>
           <p>
-            This saved URL has no verified audiovisual analysis. Attach a
-            permitted upload or supplied transcript to this saved source.
+            {detail.assistantIntake
+              ? "Automatic analysis uses your saved link. If retrieval fails, you can attach permitted media or a transcript here."
+              : "This saved URL has no verified audiovisual analysis. Attach a permitted upload or supplied transcript to this saved source."}
           </p>
           <CaptureForm
             demo={demo}
@@ -3953,7 +3958,7 @@ function SourceDetail({
             linkAnalysisEnabled={linkAnalysisEnabled}
             onDone={() => {}}
           />
-        </section>
+        </details>
       )}
       <details className="panel">
         <summary>Edit summary, tags and transcript correction</summary>

@@ -3,6 +3,7 @@ import { expect, it, vi } from "vitest";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep, basename } from "node:path";
+import { execFileSync } from "node:child_process";
 import {
   hash,
   idleDelay,
@@ -11,6 +12,15 @@ import {
   OfficialAssistantClient,
 } from "../packages/runner/assistant-local.mjs";
 import insightSchema from "../contracts/insight.schema.json";
+
+it("starts the real Node CLI with shared policies without connecting an account", () => {
+  const output = execFileSync(
+    process.execPath,
+    ["packages/runner/assistant-runner.mjs", "--check"],
+    { cwd: resolve("."), encoding: "utf8", timeout: 20000, windowsHide: true },
+  );
+  expect(output).toContain("assistant runtime ready");
+}, 25000);
 async function cleanFixture(directory: string) {
   if (
     !resolve(directory).startsWith(resolve(tmpdir()) + sep) ||
@@ -127,6 +137,35 @@ it("treats empty project evidence as a completed extraction without inventing ma
     "project_work",
     "done",
   ]);
+});
+it("preserves platform refusal status without starting transcription or AI", async () => {
+  const request = vi.fn(),
+    transcribe = vi.fn();
+  const client = {
+    session: { profileBinding: "a".repeat(64) },
+    structured: vi.fn(),
+  };
+  await expect(
+    processAssistantJob(
+      {
+        runId: "run",
+        sourceId: "source",
+        extract: true,
+        profileBinding: client.session.profileBinding,
+        expiresAt: Date.now() + 10000,
+      },
+      {
+        client,
+        request,
+        transcribe,
+        config: { mediaImage: "image" },
+        prepare: async () => ({ status: "needs_auth" }),
+      },
+    ),
+  ).rejects.toMatchObject({ mediaStatus: "needs_auth" });
+  expect(transcribe).not.toHaveBeenCalled();
+  expect(client.structured).not.toHaveBeenCalled();
+  expect(request).not.toHaveBeenCalled();
 });
 it("refuses tool execution emitted during an official analysis turn", async () => {
   let listener: (message: any) => void = () => {};

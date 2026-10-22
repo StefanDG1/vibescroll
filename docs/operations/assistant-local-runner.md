@@ -7,8 +7,22 @@ Mode: how-to. October 20, 2026 implementation. The personal-account eligibility 
 1. Pair your own computer using the existing [device setup](personal-analysis-runner.md). Keep the device credential in Windows Credential Manager.
 2. Prepare the existing pinned local Docker images and your saved official Codex connection described in [ADR 107](../adr/107-persistent-local-chatgpt-connection.md). The older standalone SIWC text adapter is a separate connection. Docker isolation and a working offline Whisper installation are required.
 3. In an ignored private copy of the paired runner configuration, keep the existing `server`, `workspaceId`, `credentialVaultAdapter` and `credentialTarget`. Add `mediaImage` with the exact local decoder image digest from your private image manifest, and retain `localAsr.pythonPath` and `localAsr.modelDirectory`. Use no provider token in this configuration.
-4. From the repository root run `pnpm runner:assistant C:/absolute/private/config.json`. The command restores the saved official-client login into an isolated worker, announces the computer and waits for approved incoming work. If official sign-in or consent is needed, complete it locally; the app cannot manufacture it.
+4. Check the real Node launch path with `node packages/runner/assistant-runner.mjs --check`. This bundles the shared policies using the repository tooling without contacting an account or starting processing. From the repository root run `pnpm runner:assistant C:/absolute/private/config.json`. The command restores the saved official-client login into an isolated worker, announces the computer and waits for approved incoming work. If official sign-in or consent is needed, complete it locally; the app cannot manufacture it.
 5. Open VibeScroll Connections, edit the assistant's preferences, choose the library scope and actions, and enable **Extract and organize automatically on my computer**. Select the announced paired computer, review the scope and save after a recent app sign-in. Current and future explicitly submitted links use these preferences. Existing grants retain their old behavior until reviewed. If your host still shows required per-link confirmation fields or describes analysis as review-only, refresh its VibeScroll tool definitions through its supported controls. Host-controlled OAuth consent and tool approval settings remain separate.
+
+## Keep the runner available for phone submissions
+
+On Windows, install the per-user background launcher from the repository root:
+
+```powershell
+powershell -NoProfile -File scripts/assistant-runner-background.ps1 -Config C:/absolute/private/config.json -Install
+```
+
+The launcher starts hidden when that Windows user signs in. To start its supervisor now, run the same command without `-Install`, using a hidden PowerShell process. It observes an already running assistant instead of launching another session. If the controller stops during a network or Docker outage, it waits five minutes before reconnecting. It does not retry a failed source automatically or switch funding. The computer must remain awake with Docker available; queued links wait otherwise.
+
+Remove automatic startup with `powershell -NoProfile -File scripts/assistant-runner-background.ps1 -Remove`. Turning off automatic analysis in Connections prevents new claims, independently of startup. Existing finite tasks retain their current revocation and expiry checks. Local status/error logs stay in the ignored `private/` directory.
+
+After a tool update, open ChatGPT's VibeScroll plugin settings and choose **Refresh tools**, then start a fresh conversation. Verify that `save_link` describes automatic local extraction and `request_analysis` is a write tool with explicit local/credits modes. An old conversation can retain the previous instructions. Refreshing tools does not enable a grant or start a runner; all three setup states must be checked separately.
 
 ## Send links and choose next steps
 

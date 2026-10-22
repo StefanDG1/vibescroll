@@ -12,6 +12,7 @@ import {
   checkProjectBindings,
 } from "./lib/assistantIntake";
 import { evaluationCurrent } from "./knowledge";
+import { acquisitionMessage } from "../packages/media/acquisition";
 import {
   sourceFingerprint,
   sourcePrepareCore,
@@ -368,7 +369,16 @@ export const operation = internalMutation({
             : "failed",
         error:
           input.operation === "fail"
-            ? "Local analysis stopped. No paid fallback was used; review before retrying."
+            ? [
+                "needs_auth",
+                "rate_limited",
+                "unavailable",
+                "unsupported",
+                "over_limit",
+                "failed",
+              ].includes(a.mediaStatus)
+              ? `${acquisitionMessage(a.mediaStatus)} No AI analysis or processing-credit charge started.`
+              : "Local analysis stopped. No paid fallback was used; review before retrying."
             : undefined,
         updatedAt: now,
       });

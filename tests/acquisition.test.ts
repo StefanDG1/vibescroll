@@ -44,6 +44,9 @@ describe("permitted source acquisition", () => {
     expect(
       acquisitionPolicy("https://youtube.com/watch?v=BaW_jenozKc").domains,
     ).not.toContain("*.google.com");
+    expect(
+      acquisitionPolicy("https://vm.tiktok.com/Synthetic123/").domains,
+    ).toContain("*.tiktokcdn-eu.com");
   });
   it("requires measured media bounds, rejects leaked credentials, and distinguishes platform refusal", () => {
     const valid = {

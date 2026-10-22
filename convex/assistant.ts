@@ -295,22 +295,22 @@ export const getJobStatus = internalQuery({
       args.sourceId,
       "jobs:read",
     );
+    const intake = await ctx.db
+      .query("assistantIntakes")
+      .withIndex("by_pair", (q) =>
+        q
+          .eq("actor", a.actor._id)
+          .eq("clientId", a.client.id)
+          .eq("sourceId", source._id),
+      )
+      .unique();
+    const receipt = intake ? await intakeReceipt(ctx, intake, source) : null;
     return {
       source_id: source._id,
       profile_id: a.organization._id,
-      status: source.state,
-      receipt: await (async () => {
-        const intake = await ctx.db
-          .query("assistantIntakes")
-          .withIndex("by_pair", (q) =>
-            q
-              .eq("actor", a.actor._id)
-              .eq("clientId", a.client.id)
-              .eq("sourceId", source._id),
-          )
-          .unique();
-        return intake ? intakeReceipt(ctx, intake, source) : null;
-      })(),
+      status: receipt?.status ?? source.state,
+      source_status: source.state,
+      receipt,
       evidence_changed: changed,
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
       note: changed

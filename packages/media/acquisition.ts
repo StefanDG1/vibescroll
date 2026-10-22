@@ -73,6 +73,7 @@ export function acquisitionPolicy(raw: string) {
       "*.tiktok.com",
       "*.tiktokcdn.com",
       "*.tiktokcdn-us.com",
+      "*.tiktokcdn-eu.com",
       "*.byteoversea.com",
       "*.ibytedtos.com",
       "*.muscdn.com",

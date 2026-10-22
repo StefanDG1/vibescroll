@@ -58,6 +58,21 @@ it("exposes bounded read and explicit intake schemas through actual stateless MC
   expect(save.inputSchema.required).not.toContain("rightsAttested");
   expect(save.inputSchema.additionalProperties).toBe(false);
 });
+it("bounds argument elements before schema validation or backend dispatch", async () => {
+  invoke.mockClear();
+  const response = await call(
+    "tools/call",
+    {
+      name: "search",
+      arguments: { query: "synthetic", extra: Array(1025).fill(0) },
+    },
+    ["knowledge:read"],
+  );
+  expect(JSON.stringify(await packet(response))).toContain(
+    "maximum of 1024 elements",
+  );
+  expect(invoke).not.toHaveBeenCalled();
+});
 it("challenges absent tool scopes before invoking the backend and rejects unknown tool input", async () => {
   invoke.mockClear();
   const response = await call(

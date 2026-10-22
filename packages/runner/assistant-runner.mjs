@@ -1,13 +1,23 @@
-import { readFile } from "node:fs/promises";
+import { readFile, access } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { spawn } from "node:child_process";
 import { vault } from "./vault.mjs";
-import {
+import { loadAssistantRuntime } from "./assistant-runtime.mjs";
+const {
   OfficialAssistantClient,
   processAssistantJob,
   idleDelay,
-} from "./assistant-local.mjs";
+  localWhisperPath,
+} = await loadAssistantRuntime();
+
+if (process.argv[2] === "--check") {
+  await access(localWhisperPath);
+  console.log(
+    "VibeScroll assistant runtime ready. No account or processing request was made.",
+  );
+  process.exit(0);
+}
 
 // Device credentials are sent only to the paired Convex origin. Provider
 // credentials remain in the existing isolated official-client controller.
@@ -141,10 +151,31 @@ try {
           console.log(
             "VibeScroll source completed. Review the cited results in your library.",
           );
-        } catch {
-          await request("fail", { runId: job.runId }).catch(() => {});
+        } catch (error) {
+          const code =
+            /^(?:ASSISTANT|LOCAL_ASR|LOCAL_PREPARATION)_[A-Z_]+$/.test(
+              error?.message,
+            )
+              ? error.message
+              : "ASSISTANT_LOCAL_WORK_FAILED";
+          const mediaStatus = [
+            "needs_auth",
+            "rate_limited",
+            "unavailable",
+            "unsupported",
+            "over_limit",
+            "failed",
+          ].includes(error?.mediaStatus)
+            ? error.mediaStatus
+            : undefined;
+          await request("fail", {
+            runId: job.runId,
+            ...(mediaStatus ? { mediaStatus } : {}),
+          }).catch(() => {});
           console.error(
-            "VibeScroll local work stopped. No alternate provider was used; review the source before retrying.",
+            mediaStatus
+              ? `VibeScroll media preparation stopped (${mediaStatus}). No AI analysis or paid fallback started. Review the source for next steps.`
+              : `VibeScroll local work stopped (${code}). No alternate provider was used; review the source before retrying.`,
           );
         }
       } else empty++;

@@ -18,10 +18,13 @@ export function createKnowledgeHandler(
 ) {
   return createMcpHandler(
     (requestContext) => {
-      const server = new McpServer({
-        name: "VibeScroll",
-        version: process.env.NEXT_PUBLIC_APP_VERSION ?? "development",
-      });
+      const server = new McpServer(
+        {
+          name: "VibeScroll",
+          version: process.env.NEXT_PUBLIC_APP_VERSION ?? "development",
+        },
+        { maxToolInputElements: 1024 },
+      );
       const register = (
         name: string,
         description: string,

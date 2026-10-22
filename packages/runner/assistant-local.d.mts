@@ -1,6 +1,7 @@
 export function hash(value: unknown): string;
 export function idleDelay(empty: number): number;
 export function strictSchema(value: any): any;
+export const localWhisperPath: string;
 export class OfficialAssistantClient {
   constructor(session: any, server: any);
   session: any;

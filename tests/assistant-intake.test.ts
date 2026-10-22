@@ -132,6 +132,10 @@ it("queues explicit links without per-link confirmation, preserves replay and wa
   const replay = await s.save();
   expect(replay.source_id).toBe(saved.source_id);
   expect(saved.receipt.status).toBe("waiting_for_computer");
+  expect(await s.status(saved.source_id)).toMatchObject({
+    status: "waiting_for_computer",
+    source_status: "needs_upload",
+  });
   expect(saved.receipt.balance).toMatchObject({ available: 30, total: 30 });
   expect(saved.receipt.credit_offer).toMatchObject({
     max_credits: 10,
@@ -160,6 +164,26 @@ it("requires review once for legacy grants and honors save-only override", async
     expiresAt: Date.now() + 4 * 3600000,
   });
   expect(await s.dispatch("claim")).toMatchObject({ job: null });
+});
+it("reports a platform refusal as a source access problem rather than another analysis approval", async () => {
+  const s = await fixture();
+  const saved = await s.save();
+  await s.dispatch("hello", {
+    profileBinding: s.profileBinding,
+    model: "gpt-6.1-sol",
+    expiresAt: Date.now() + 4 * 3600000,
+  });
+  const { job } = await s.dispatch("claim");
+  await s.dispatch("fail", { runId: job.runId, mediaStatus: "needs_auth" });
+  const result = await s.status(saved.source_id);
+  expect(result.receipt).not.toBeNull();
+  const receipt = result.receipt!;
+  expect(receipt.status).toBe("failed");
+  expect(receipt.error).toContain("platform requires sign-in");
+  expect(receipt.error).toContain(
+    "No AI analysis or processing-credit charge started",
+  );
+  expect(receipt.credits.actual_used).toBe(0);
 });
 it("claims one finite local run on reconnect and rejects credit races, changed accounts and revoked grants", async () => {
   const s = await fixture();

@@ -1,0 +1,18 @@
+field,value,unit,evidence_or_gate
+term,3,years,Proposed bounded founding pass only; inactive
+start_date,,,Owner-approved terms required
+end_date,,,Explicit fixed end date required
+gross_price,,,No price adopted
+tax_and_fees,,,Verified checkout/accounting evidence required
+net_revenue,,,Gross less applicable taxes and provider fees
+support_allowance,,,Observed pilot support burden required
+storage_allowance,,,Define retained GB and duration
+processing_allowance,,,Define service units and replenishment schedule
+updates_obligation,,,Define included maintenance and term
+settled_processing_cost,,,Record actual provider settlement separately from holds
+unresolved_holds,,,Do not treat as settled zero
+overage_behavior,,,Explicit quote or stop; never unlimited or silent top-up
+cancellation_refund_terms,,,Match applicable reviewed terms
+worst_case_service_cost,,,Model three-year obligation and usage sensitivity
+remaining_margin,,,Net revenue less cost; no validated margin claimed
+activation,false,boolean,Requires pilot cost evidence and owner-approved price/terms

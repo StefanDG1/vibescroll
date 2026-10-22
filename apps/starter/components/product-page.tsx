@@ -15,6 +15,8 @@ export async function ProductPage({
   reviewDraftId,
   sharedSourceId,
   sharedGrantId,
+  publicEdition,
+  publicVersion,
 }: {
   org: string;
   view: string;
@@ -28,6 +30,8 @@ export async function ProductPage({
   reviewDraftId?: string;
   sharedSourceId?: string;
   sharedGrantId?: string;
+  publicEdition?: string;
+  publicVersion?: number;
 }) {
   const { user } = await withAuth();
   const initial = await workspaceData({
@@ -62,6 +66,8 @@ export async function ProductPage({
         "selectedSource" in initial ? initial.selectedSource : null
       }
       initialSharedDraft={draft.slice(0, 2048)}
+      publicEdition={publicEdition}
+      publicVersion={publicVersion}
       initialSearch={search}
       initialFilter={filter}
       initialCategory={category}

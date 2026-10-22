@@ -28,12 +28,18 @@ const pages: Record<string, { title: string; body: string[] }> = {
   docs: {
     title: "Get started with your library",
     body: [
-      "Sign in with an email code or Google. Your default workspace opens automatically. Use the library before connecting GitHub.",
-      "Paste a source URL, upload permitted content, or provide a transcript. Text input does not imply audio or video analysis.",
-      "Connect the VibeScroller GitHub App to selected repositories and confirm purpose, audience, goals, constraints and non-goals.",
-      "Review processing quotes before spending credits. Local Codex and API-funded cloud execution have separate authorization and funding.",
-      "Connections show actual setup state. Unavailable providers never trigger an automatic paid fallback.",
-      "Telegram is deferred by the owner. Use the web inbox and in-app notifications; email needs a verified sender. Read the repository deployment guide for installation and release gates.",
+      "The task-based Help guides are the maintained instructions for saving a source, finding evidence and reviewing an idea for a project.",
+      "For your own deployment or companion runtime, use the repository's setup and operations guides. Provider settings do not establish successful authentication or available processing.",
+    ],
+  },
+  faq: {
+    title: "Before you start",
+    body: [
+      "GitHub is optional. You can keep a library without creating a project or starting code work.",
+      "A saved link is metadata until an enabled route processes permitted evidence. Private and blocked sources can need a permitted upload or supplied text.",
+      "Browser library use needs no installed companion. Personal analysis needs an eligible paired computer and your connected official account. Managed processing uses its separately reviewed credit route.",
+      "A ChatGPT subscription has its own eligibility and quota. It does not include transcription, VibeScroll hosting or cloud compute. General hosted commercial subscription-funded access remains gated.",
+      "No fit and already implemented are useful decisions. A plan, coding approval, patch approval, draft publication, merge and measured outcome remain separate.",
     ],
   },
   status: {
@@ -178,6 +184,20 @@ export default async function Page({
         {p.body.map((s) => (
           <p key={s}>{s}</p>
         ))}
+        {slug === "docs" && (
+          <div className="row">
+            <Link className="primary" href="/help/getting-started">
+              Get started
+            </Link>
+            <a href="https://github.com/StefanDG1/vibescroll/blob/main/docs/PERSONAL-SETUP.md">
+              Personal setup
+            </a>
+            <a href="https://github.com/StefanDG1/vibescroll/blob/main/docs/operations/assistant-local-runner.md">
+              Companion setup
+            </a>
+          </div>
+        )}
+        {slug === "faq" && <Link href="/help">Find help with your task</Link>}
         {slug === "contact" && (
           <a className="primary" href="mailto:contact@exponentialeducation.ro">
             Email support

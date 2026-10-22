@@ -20,6 +20,10 @@ Discovery uses bounded list/topic views with an explicitly opened, static, lazy 
 
 Expiry and deletion scrub provider and generated evidence through bounded, generation-fenced continuations. Authored corrections/manual history and published PR/financial receipts have separate retention roles. Restore quarantines source/public dispatch authority and retains conservative provider quotas and unknown financial holds; old publication or acquisition cannot resume merely because a backup was restored.
 
+User-confirmed source relationships keep an announcement and repository as separate records. Links are workspace-scoped, symmetric, limited to twenty per source and never imply corroboration or start analysis. Current rights and retention govern every related-source read; export and deletion include the opaque authored relationship records.
+
+Moderation uses an explicit bounded open-report queue, separately requested current public inspection and per-report confirmation. Only allowlisted current identities can inspect; decisions also require fresh authentication. See [the operator procedure](../operations/public-knowledge-moderation.md).
+
 ## Evidence and limits
 
 Local handler, transport, lifecycle, public-read-bound, renderer and native module tests cover these contracts with synthetic fixtures and mocked providers. [Implementation status](../implementation-status.md) records commands and limits. No live Reddit permission, universal source access, model-quality result, independent comprehension, production public community or deployed release is established by these tests. Current external flags and operator/provider evidence still control availability.

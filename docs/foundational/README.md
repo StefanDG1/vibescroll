@@ -1,5 +1,13 @@
 # VibeScroller foundational document process
 
+## Current brief, October 22: F037 unreleased candidate
+
+[F037](idea-backlog.md#f037-implemented-launch-candidate-and-evidence-limits-october-22) updates Research, Avatar, Offer and Beliefs together for the implemented launch candidate. Typed source provenance, exact reviewed public reuse, resumable setup, source-reviewed Help, a synthetic no-signup example and the verified companion package engine are implementation facts. Source review and synthetic/local tests are not deployment, independent usability, model quality, provider permission, signed installation or customer value. The supported personal candidate uses the user's eligible account and official isolated Codex controller; the legacy direct OAuth/Responses client is excluded from its package graph.
+
+The audience, existing prices/allowances and six beliefs remain unchanged. Direct retrieval and anonymous public release remain gated. Founding-pass policy is disabled with no active price/checkout; purchase instrumentation has no external sender. Pilot and acquisition drafts remain unsent. The new brief supplies concrete evidence/recovery/comprehension tasks without new interviews, outcomes or marketing results. [ADRs 111](../adr/111-typed-source-and-public-knowledge-authority.md), [112](../adr/112-persisted-setup-and-verified-companion-packages.md), [113](../adr/113-source-reviewed-help-and-consented-pilot-evidence.md) and [candidate status](../implementation-status.md) define the limits. Exact integrated commit and final whole-candidate checks remain root-owned and pending in this entry.
+
+Earlier dated briefs and release receipts below remain historical evidence at their recorded scope.
+
 October 7 current brief: [F014](idea-backlog.md#f014-vibescroll-scroll-and-useful-connected-knowledge-october-7) updates all four foundations for VibeScroll and its owner-confirmed project-owner, dashboard and Scroll direction. [ADR 075](../adr/075-vibescroll-product-direction.md) records the planning boundary. Current copy uses that direction; older dated evidence and filenames remain for traceability. The complete insight review is design input, not new customer validation or production acceptance.
 
 [F015](idea-backlog.md#f015-persuasive-design-and-analysis-references-october-7) and [ADR 076](../adr/076-persuasive-design-and-analysis-references.md) refine the current brief with owner-approved persuasive design and authenticated analysis references. They supersede broad rejection labels. The earlier-payment experiment remains future work outside this plan; no implementation or measured conversion is claimed.

@@ -1,5 +1,7 @@
 # VibeScroll documentation
 
+Task-based user instructions now live in [Help](help/getting-started.md), with a [review manifest](help/manifest.json) and public `/help` routes. [The unsent launch kit](launch-kit/README.md) separates preparation from real pilot results and publication.
+
 Launch plan: [the complete product, GitHub and customer plan](launch-plan/2026-10-22/README.md), with accepted insight adaptations and a short unattended implementation prompt. This documentation update starts no application implementation.
 
 Competitor research: [Laytuh review](research/laytuh-competitor.md), checked October 20, 2026, covers public claims, evidence limits and implications for capture, resurfacing and project workflows.

@@ -42,7 +42,10 @@ export default async function Demo({
         sources:
           demoState === "loading" || demoState === "empty"
             ? []
-            : fixture.sources.map((source) => ({ ...source, state: "ready" })),
+            : fixture.sources.map((source) => ({
+                ...source,
+                state: source.state ?? "ready",
+              })),
         repositories:
           demoState === "ready"
             ? [

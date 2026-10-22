@@ -17,6 +17,7 @@ export default defineConfig({
       "apps/starter/billing-actions.test.ts",
       "apps/starter/product-errors.test.ts",
       "apps/starter/shared-refresh.test.ts",
+      "apps/starter/public-moderation-auth.test.ts",
     ],
     environment: "node",
   },

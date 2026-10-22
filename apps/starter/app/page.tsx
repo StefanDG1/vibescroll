@@ -19,8 +19,8 @@ export default function Home() {
             <Link className="primary" href="/app">
               Try one post
             </Link>
-            <Link className="secondary" href="/demo">
-              Explore the labeled demo
+            <Link className="secondary" href="/example">
+              Inspect a cited example
             </Link>
           </div>
           <p className="fine">
@@ -109,7 +109,7 @@ export default function Home() {
             for your task. Temporary originals expire, and private evidence
             stays behind access checks.
           </p>
-          <Link href="/privacy">Read the draft privacy policy</Link>
+          <Link href="/privacy">Read the privacy policy</Link>
         </div>
       </section>
       <section className="section">
@@ -142,7 +142,7 @@ export default function Home() {
         {[
           [
             "Do I need a desktop application?",
-            "No. Capture, library, reviews and approvals work in your browser. The optional runner only executes approved local tasks.",
+            "No. Saving, reading, project review and approvals work in your browser. Personal processing needs an eligible paired computer; an enabled managed route needs no companion.",
           ],
           [
             "Can every saved Instagram video be imported?",

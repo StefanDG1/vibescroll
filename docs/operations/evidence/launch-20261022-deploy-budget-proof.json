@@ -1,0 +1,195 @@
+{
+  "recordedAt": "2026-10-22T20:36:41Z",
+  "mode": "Independent read-only local/source review; not a reservation, dispatch, hosted attestation or settled invoice",
+  "reviewer": "public_audit, Sol High",
+  "conclusion": "The reviewed single-push guard and published Convex billing categories support the operator's conservative US$0.30 envelope, subject to the stated scope and caveats. No arbitrary deployment-analyzer action count is used.",
+  "guardReview": {
+    "result": "No remaining P0/P1 found in the stated unmodified installed CLI and fixed exclusive receipt scope",
+    "filesSHA256": {
+      "convex-deploy-budget-core.mjs": "cc9d344954c340684197631daf559ded3bf0fcd144b01a6cb85c261e6e7304da",
+      "convex-deploy-budget-preload.mjs": "ac1c3a76a08c26fa60fd602febdcdae02eb8c3f48cf94be71515cfb7b5381273",
+      "convex-deploy-budget.test.mjs": "ddb04ad1d19eb2bbe7363550744c7a69c1166d20521feb03d4599ffa1a6d1d8f"
+    },
+    "physicalRequestCaps": {
+      "existingTargetControlMetadataAndAuthorization": 12,
+      "evaluate_schema": 1,
+      "start_push": 1,
+      "wait_for_schema": 3,
+      "finish_push": 1,
+      "report_push_completed": 1,
+      "total": 19
+    },
+    "durationMsMaximum": 120000,
+    "preparedRequestBytesMaximumCompressedAndDecompressed": 32000000,
+    "observedPreparedRequestBytesFromRootReceipt": 21753408,
+    "mandatorySemanticGate": {
+      "freshEvaluationInSameProcess": true,
+      "components": 12,
+      "tables": 131,
+      "indexes": 273,
+      "exactBaselineNames": true,
+      "schemaValidationEnabled": true,
+      "allTableOutcomesSupersetOfEnforcedOrShape": true,
+      "mustWalk": 0,
+      "indexChanges": 0,
+      "indexBackfills": 0,
+      "newComponentDefinitions": 0,
+      "startRequestByteIdenticalToEvaluatedDecompressedRequest": true,
+      "waitBoundToStartedSchemaAndAdmin": true,
+      "finishBoundToCanonicalStartedResponseAndAdmin": true,
+      "finishRequiresCompleteSchemaStatus": true,
+      "evaluate_pushFallbackAllowed": false
+    },
+    "otherControls": [
+      "Control-plane access restricted to explicit metadata GETs and exact existing-target authorize_prod body; no provisioning or arbitrary POST",
+      "Queries, redirects, foreign origins and unapproved endpoints refused",
+      "Exclusive wx append-only receipt is fsynced before every transport dispatch; same receipt cannot reopen or reset counters",
+      "Transport errors, non-success responses, unsafe predictions and ambiguous outcomes halt further dispatch; the full external envelope remains held",
+      "CI=1 and VERCEL!=1 required to disable the installed CLI's separate native Sentry transport",
+      "Real installed CLI request serializers and loose-object response parsers inspected for binding compatibility"
+    ],
+    "tests": {
+      "authorReportedOfflineTestsPassed": 13,
+      "independentReviewerReranTests": false,
+      "independentlyRead": [
+        "Original installed CLI six-retry adapter permits only one physical start dispatch",
+        "Actual Node --import preload precedes installed CLI fetch capture",
+        "Unsafe table walk, index backfill, new definition, disabled validation and missing component deny later dispatch",
+        "Changed prepared bytes, wrong admin/schema/finish response and phase order deny before dispatch",
+        "Counters, exclusive receipt, request/response reader bounds and permanent unknown halt",
+        "Actual node:fs short-write and zero-progress fixtures: record completes in a Buffer/offset loop and fsyncs before dispatch; zero progress refuses physical dispatch"
+      ]
+    },
+    "readerLimitCaveat": "The 34 MB aggregate response-reader allowance limits consumed bytes, not server wire egress or billing. The generic 16 MiB UDF result limit is not asserted for administrative deployment endpoints."
+  },
+  "sourceProof": {
+    "officialRepository": "https://github.com/convex/convex-backend",
+    "pinnedCommit": "315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f",
+    "classification": "Deployment Analyze and direct administrative JSON responses are outside the visible UDF-execution billing path and published user-action/file-egress categories. This is a source-backed interpretation of the published contract, not a cryptographic assertion of the hosted binary.",
+    "references": [
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/crates/usage_tracking/src/lib.rs#L61-L110",
+        "finding": "Usage CallType enumerates actions, HTTP actions, queries, mutations and system work; no deployment Analyze call type."
+      },
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/crates/usage_tracking/src/lib.rs#L663-L666",
+        "finding": "The source states that accumulated function usage is rolled into track_call at UDF completion and billing is limited to usage reaching the UDF execution log."
+      },
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/crates/application/src/application_function_runner/mod.rs#L1780-L1886",
+        "finding": "Module analysis partitions Node and isolate modules. Empty Node groups return without invocation. Nonempty groups call NodeActions.analyze; this path has no function-execution billing/logging call."
+      },
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/npm-packages/node-executor/src/executor.ts#L520-L574",
+        "finding": "AnalyzeResponse contains modules or analysis errors, without the execution-time, memory and egress usage fields carried by ExecuteResponse. Analysis imports modules and inspects registrations rather than invoking their registered action bodies."
+      },
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/crates/application/src/deploy_config.rs#L205-L340",
+        "finding": "A physical start_push evaluates its contents once, including one root analysis; component analysis follows the bounded supplied definition list."
+      },
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/crates/application/src/deploy_config.rs#L586-L608",
+        "finding": "Schema prediction evaluates schema bundles without runtime-module analysis or upload; its transaction is dropped uncommitted."
+      },
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/crates/node_executor/src/executor.rs#L383-L435",
+        "finding": "Internal Node analyzer invocation has a retry loop, so physical CLI request count alone must not be called the analyzer count."
+      },
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/crates/common/src/knobs.rs#L1551-L1574",
+        "finding": "Dynamic analysis runtime memory defaults to 4096 MB and analyzer retries default to three, giving four attempts per nonempty Node group. These are configurable implementation defaults, not a hosted billing ceiling."
+      },
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/crates/local_backend/src/deploy_config2.rs#L332-L516",
+        "finding": "Visible administrative handlers call Application deployment methods and return JSON directly, without a UDF function execution or file-download metering wrapper. Private hosted routing may add implementation outside this public file."
+      },
+      {
+        "url": "https://github.com/convex/convex-backend/blob/315ea3e3b5cf2e47aa4cd4e6351ac62dfeab264f/crates/application/src/lib.rs#L3563-L3579",
+        "finding": "Application administrative OCC helper delegates to the database and discards returned transaction statistics, without a UsageCounter tracking call in this helper."
+      },
+      {
+        "url": "https://docs.convex.dev/production/usage-limits#available-metrics",
+        "finding": "Published function-call categories are query, mutation, action, HTTP action and file storage. Published data-egress scope is file downloads, outgoing fetch and log-stream egress, rather than arbitrary admin JSON responses."
+      },
+      {
+        "url": "https://docs.convex.dev/production/state/limits",
+        "finding": "Published Starter rates used for the conservative allowances are database I/O/storage $0.22/GB, function calls $2.20/million, file data egress $0.132/GB and a 1.3 non-US multiplier. UDF transaction/return limits are scoped to functions, not all admin endpoints."
+      }
+    ],
+    "rootPreparedMetadataObservation": {
+      "componentDefinitions": 7,
+      "componentDefinitionsWithNodeModules": 0,
+      "rootNodeModules": 102,
+      "definitionsWithAnyNodeModules": 1,
+      "externalDependencies": 0,
+      "nodeAnalyzerDefaultAttemptsPerPhysicalPush": 4,
+      "notUsedAsBillingMultiplication": true,
+      "observedBy": "core_audit using the installed CLI offline bundler; not a hosted observation"
+    }
+  },
+  "operatorEnvelopeUSD": {
+    "extra90MBOneMonthStorageAllowance": 0.02574,
+    "twoFull32MBRequestsReadWriteAndMonthStorageOverlapAllowance": 0.054912,
+    "controlPlaneContingency": 0.05,
+    "fourPureQueryRPCHolds": 0.0307204562,
+    "retainedUncertainty": 0.1386275438,
+    "total": 0.3,
+    "arithmetic": {
+      "extraStorage": "0.09 GB * $0.22/GB-month * 1.3",
+      "overlapAllowance": "2 requests * 0.032 GB * 3 allowances (read, write, month storage) * $0.22/GB * 1.3; intentionally overcounts schema-only evaluation and overlaps the separate code-storage hold",
+      "pureQueries": "4 * (16 MiB database read * $0.22/GB + 16 MiB conservative return-egress allowance * $0.132/GB + $2.20/million calls) * 1.3",
+      "uncertainty": "Unreleased remainder of the $0.30 envelope, not a measured or invented provider price"
+    }
+  },
+  "wholeTaskBudgetFromRoot": {
+    "ceilingUSD": 2,
+    "completedAndRetainedUSD": 1.183759795210689,
+    "proposedBackendEnvelopeUSD": 0.3,
+    "separateConditionalDocsBasicBuildHoldUSD": 0.315,
+    "separateConditionalStagedCanonicalHealthHoldUSD": 0.06,
+    "combinedMaximumUSD": 1.858759795210689,
+    "remainingUSD": 0.1412402047893111,
+    "reservationMadeByThisReview": false,
+    "priorUnknownHoldsReleasedByThisReview": false
+  },
+  "conditionsAndLimits": [
+    "Root must make the reservation before dispatch and use the exact reviewed guard hashes, installed CLI, fixed receipt path and existing deployment target; deliberate replacement receipt/config filenames are not a new budget grant",
+    "Fresh live prediction must satisfy the mandatory unchanged schema/index gate; source agreement or old local fixtures do not replace it",
+    "No action invocation, provider processing, new source acquisition, inference, job enqueue, funding fallback, new deployment provisioning, flag change, new cron or schema migration is included",
+    "The exact two-query postcheck guard is independently reviewed in this receipt; four query RPCs remain financially held as an overcount, and the two processes must run sequentially",
+    "The exact hosted Convex binary, private Conductor routing/instrumentation and all invoice treatment cannot be cryptographically established from public source",
+    "No explicit documentation sentence promises every administrative response is free; classification follows the published meter definitions and visible execution paths, with uncertainty retained",
+    "Response reader cancellation is not a wire-egress cap, and admin requests do not inherit generic UDF 16 MiB limits",
+    "Storage allowance uses a one-month accounting horizon; this does not fund indefinite future retention or service operation",
+    "Independent concurrent traffic and future scheduled workloads are outside the CLI guard; root's existing controls, retained holds and whole-task ledger remain authoritative",
+    "Transport-complete responses alone never release the reserved envelope; ambiguous dispatch remains fully held until authoritative reconciliation",
+    "No hosted Convex application call, production mutation, browser action, reservation or spend was performed by this review"
+  ],
+  "readCanaryReview": {
+    "result": "No P0/P1 found in fixed private account/scope and unmodified installed CLI use",
+    "filesSHA256": {
+      "convex-read-canary-budget-core.mjs": "6b22b478150cc20a7cfae7f92e91c30e457cf89b3be44570db685ef0cfffef6a",
+      "convex-read-canary-budget-preload.mjs": "f74cb03afc8a156d180aab27e12ad01433c53d1033b0d51f4df46622161adc42",
+      "convex-read-canary-budget.test.mjs": "5be619280a07d4fe13e4874a19e2fe0086418a003a8e14640096f20f21f49661"
+    },
+    "physicalApplicationCallsMaximum": 2,
+    "physicalCallsPerNamedFunctionMaximum": 1,
+    "sharedControlCallsMaximum": 12,
+    "durationMsPerProcessMaximum": 30000,
+    "functions": ["product:library", "setupJourney:status"],
+    "checkedAuthority": "Exact existing target, captured authorization token in memory, private account organizationId and subject, default issuer/tokenIdentifier; no component or extra arguments",
+    "durability": "Exclusive per-function receipt and atomic shared control markers, write-all and fsync before dispatch; shared halt persists unknown outcomes across later processes; prior receipts cannot be reset",
+    "independentHandlerReview": "Current product:library, setupJourney:status and access helper inspected. Query-only; no downstream run calls, action, mutation, scheduler or provider invocation. Default library paginates 30; setup uses bounded 30-row lists.",
+    "authorReportedOfflineTestsPassed": 5,
+    "independentReviewerReranTests": false,
+    "evidenceRead": [
+      "Actual installed ConvexHttpClient function wire protocol",
+      "Actual Node --import preload before installed client captures fetch",
+      "Foreign function, organization, identity, component, argument and endpoint refusal",
+      "Persistent unknown halt and per-function exclusive receipt",
+      "Twelve shared control slots across both processes"
+    ],
+    "operationalCondition": "Run the two CLI processes sequentially so the first unknown halt is observed before the second starts. A halt cannot retroactively cancel an already dispatched parallel query.",
+    "responseLimitCaveat": "Reader caps consumed bytes only; query pricing hold uses published query transaction/return limits, not an admin wire-size assumption. No response alone releases cost holds."
+  }
+}

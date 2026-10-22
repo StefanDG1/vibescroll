@@ -13,7 +13,39 @@
     "fourBoundedPureQueryCanariesUSD": 0.0307204562,
     "unallocatedUncertaintyUSD": 0.1386275438
   },
-  "conditions": [
+  "scope": "Original cumulative US$2 task cap across providers, agents, CI and all prior attempts; no reset",
+  "priorCheckpoint": 8,
+  "settledInvoice": false,
+  "postBackendCheckpoint9": {
+    "recordedAt": "2026-10-22T20:39:43.907497+00:00",
+    "checkpoint": 9,
+    "seedStatus": "complete",
+    "entireDeploymentDayWorstRateUSD": 0.17967047805315334,
+    "metrics": {
+      "actionComputeConvexGbHours": 0.007532100694444445,
+      "actionComputeCpuGbHours": 0.007342829861111113,
+      "actionComputeNodeJsGbHours": 0.17254,
+      "aiGatewayCostDollars": 0,
+      "dataEgressGb": 0.029621259309351444,
+      "databaseIoGb": 0.12293627206236124,
+      "functionCalls": 19199,
+      "queryMutationComputeGbHours": 0.00959802083333329,
+      "searchQueryGb": 0
+    },
+    "completedBaseWithUpdatedDayMeterUSD": 1.1847009555199923,
+    "backendFullEnvelopeRetainedUSD": 0.3,
+    "conditionalDocsBuildHoldUSD": 0.315,
+    "conditionalHealthHoldUSD": 0.06,
+    "combinedMaximumUSD": 1.8597009555199924,
+    "headroomUSD": 0.14029904448000763,
+    "backendPublicationConclusive": true,
+    "unconfirmedMetadataReportHoldRetained": true,
+    "twoReadCanariesPassed": true,
+    "allPreviousUnknownHoldsRetained": true,
+    "settledInvoice": false
+  },
+  "backendReadGuardReview": "Independent High clear; 13 deployment and5 query operational tests passed locally; two actual queries passed",
+  "initialReservationConditions": [
     "Mandatory fresh exact12component131table273index schema-only prediction;zero walks/backfills/newdefinitions",
     "At most1physical start_push,3wait,1finish,1report,noevaluate_pushfallback,normalunchangedCLI",
     "Maximum32MBpreparedpayload,7componentdefinitions,noexternalNodedependencies,oneNodeanalysisgroup",
@@ -22,8 +54,6 @@
     "Prior unknown Vercel/control/residual holds retained; no universal hosted binary attestation or settled invoice claim",
     "Fixed Basic queued45minute maxdocsbuild, no other new spending; later unused reservation release requires actual completed receipt"
   ],
-  "state": "reserved before dispatch; no new backend call yet",
-  "scope": "Original cumulative US$2 task cap across providers, agents, CI and all prior attempts; no reset",
-  "priorCheckpoint": 8,
-  "settledInvoice": false
+  "initialReservationState": "reserved before dispatch; no new backend call yet",
+  "currentState": "Backend publication confirmed and two read-only canaries passed. Full backend envelope remains held for unknown reporting/uncertainty. Documentation CI/merge outcome pending."
 }

@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { sourceType, retrievalState } from "./sourceSchema";
 import {
   revertEvidenceValidator,
   revertStatusValidator,
@@ -135,6 +136,11 @@ export const productTables = {
     reservationKey: v.string(),
     proposalId: v.optional(v.id("proposals")),
     insightIds: v.optional(v.array(v.string())),
+    actor: v.optional(v.id("users")),
+    sourceGeneration: v.optional(v.number()),
+    sourceRevision: v.optional(v.number()),
+    sourceRevisionId: v.optional(v.id("sourceRevisions")),
+    sourceContentHash: v.optional(v.string()),
   })
     .index("by_key", ["key"])
     .index("by_org", ["organizationId"]),
@@ -243,6 +249,13 @@ export const productTables = {
     .index("by_expiry", ["expiresAt"]),
   sources: defineTable({
     ...tenant,
+    sourceType: v.optional(sourceType),
+    currentRevisionId: v.optional(v.id("sourceRevisions")),
+    retrievalState: v.optional(retrievalState),
+    publicImportId: v.optional(v.id("publicImports")),
+    analysisPipelineVersion: v.optional(v.string()),
+    sourceRetentionUntil: v.optional(v.number()),
+    typedAnalysisActor: v.optional(v.id("users")),
     localAnalysisReceipt: v.optional(v.any()),
     processingStartedAt: v.optional(v.number()),
     processingReceipt: v.optional(v.any()),
@@ -282,6 +295,8 @@ export const productTables = {
         generation: v.number(),
         model: v.string(),
         profileBinding: v.string(),
+        sourceRevisionId: v.optional(v.id("sourceRevisions")),
+        sourceContentHash: v.optional(v.string()),
         effort: v.union(
           v.literal("low"),
           v.literal("medium"),

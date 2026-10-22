@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scroll.companynerve.com/contracts/source-proposal-v2.schema.json",
+  "title": "Cited non-media project proposal v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "repositoryId",
+    "baseSha",
+    "profileVersion",
+    "insightIds",
+    "disposition",
+    "title",
+    "currentProblem",
+    "repositoryEvidence",
+    "sourceEvidence",
+    "proposedChange",
+    "benefitHypothesis",
+    "risks",
+    "nonGoals",
+    "acceptanceCriteria",
+    "verificationNeeds",
+    "sourceId",
+    "sourceRevisionId",
+    "sourceContentHash"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "2.0.0"
+    },
+    "repositoryId": {
+      "type": "string"
+    },
+    "baseSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "profileVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "insightIds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": {
+        "type": "string"
+      }
+    },
+    "disposition": {
+      "enum": [
+        "relevant",
+        "no_fit",
+        "already_implemented",
+        "unsupported_claim",
+        "needs_context",
+        "defer"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "currentProblem": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "repositoryEvidence": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "startLine", "endLine", "observation"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "startLine": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "endLine": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "observation": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      }
+    },
+    "sourceEvidence": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "id", "startMs", "endMs"],
+        "properties": {
+          "kind": {
+            "enum": [
+              "github_file",
+              "reddit_post",
+              "reddit_comment",
+              "supplied_text"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "startMs": {
+            "const": null
+          },
+          "endMs": {
+            "const": null
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "proposedChange": {
+      "type": ["string", "null"],
+      "maxLength": 4000
+    },
+    "benefitHypothesis": {
+      "type": ["string", "null"],
+      "maxLength": 1500
+    },
+    "risks": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      }
+    },
+    "nonGoals": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      }
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      }
+    },
+    "verificationNeeds": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      }
+    },
+    "sourceId": {
+      "maxLength": 100,
+      "minLength": 1,
+      "type": "string"
+    },
+    "sourceRevisionId": {
+      "maxLength": 100,
+      "minLength": 1,
+      "type": "string"
+    },
+    "sourceContentHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

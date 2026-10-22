@@ -11,6 +11,9 @@ import { reserve, settle, digest } from "./product";
 import { categoryKey, categoryName } from "../packages/categories";
 import { snapshotScopeCurrent } from "../packages/repositories/scope";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
+import { sourceRetained } from "./lib/sourceAuthority";
+import { retainedSourceRevision } from "./lib/sourceAuthority";
+import { sourcePolicyCurrent } from "./lib/sourcePolicy";
 import { organizeTopicAutomatically } from "./lib/topicHierarchy";
 import {
   assertReferences,
@@ -96,12 +99,32 @@ export async function referencesCurrent(
       !s ||
       s.organizationId !== organizationId ||
       s.state !== "ready" ||
+      !sourceRetained(s.sourceRetentionUntil) ||
       !s.rightsAttested ||
       s.generation !== r.generation ||
       s.updatedAt !== r.revision ||
       !s.analysis?.insights?.some((i: any) => i.id === r.insightId)
     )
       return false;
+    if (
+      s.currentRevisionId ||
+      ["github_repository", "reddit_thread"].includes(s.sourceType ?? "") ||
+      s.analysis?.schemaVersion === "2.0.0"
+    ) {
+      const row = s.currentRevisionId
+        ? await ctx.db.get(s.currentRevisionId)
+        : null;
+      const registry = row ? await retainedSourceRevision(ctx, row) : null;
+      if (
+        !row ||
+        !registry ||
+        !sourcePolicyCurrent(registry.revision) ||
+        s.analysis?.schemaVersion !== "2.0.0" ||
+        s.analysis.sourceRevisionId !== row._id ||
+        s.analysis.sourceContentHash !== row.contentHash
+      )
+        return false;
+    }
   }
   return true;
 }
@@ -122,7 +145,11 @@ export async function memberEvidence(
       revision: m.revision,
       insightId: m.insightId,
     };
-    if (m.excluded || !(await referencesCurrent(ctx, m.organizationId, [ref])))
+    if (
+      m.excluded ||
+      m.retainedHistory ||
+      !(await referencesCurrent(ctx, m.organizationId, [ref]))
+    )
       continue;
     const source = (await ctx.db.get(m.sourceId))!;
     if (
@@ -151,6 +178,7 @@ async function sourceMembers(
     .withIndex("by_topic_source", (q) =>
       q.eq("topicId", topicId).eq("sourceId", sourceId),
     )
+    .filter((q) => q.neq(q.field("retainedHistory"), true))
     .collect();
 }
 async function updateCounts(
@@ -208,7 +236,7 @@ function topicNames(source: Doc<"sources">, point: any): string[] {
 export async function syncKnowledge(
   ctx: MutationCtx,
   source: Doc<"sources">,
-  options: { enqueue?: boolean } = {},
+  options: { enqueue?: boolean; preserveManualHistory?: boolean } = {},
 ) {
   if (process.env.RESTORE_LOCK === "true") return;
   const old = await ctx.db
@@ -217,7 +245,9 @@ export async function syncKnowledge(
     .collect();
   const touched = new Set<Id<"knowledgeTopics">>();
   const points =
-    source.state === "ready" && source.rightsAttested
+    source.state === "ready" &&
+    source.rightsAttested &&
+    sourceRetained(source.sourceRetentionUntil)
       ? (source.analysis?.insights ?? [])
           .filter((i: any) => typeof i.id === "string")
           .slice(0, 20)
@@ -225,9 +255,33 @@ export async function syncKnowledge(
   const active = new Set(points.map((i: any) => i.id));
   const before = new Map<Id<"knowledgeTopics">, number>();
   for (const m of old)
-    before.set(m.topicId, (before.get(m.topicId) ?? 0) + Number(!m.excluded));
+    before.set(
+      m.topicId,
+      (before.get(m.topicId) ?? 0) + Number(!m.excluded && !m.retainedHistory),
+    );
   const inserted = new Set<string>();
+  const historical = new Set<string>();
   for (const m of old) {
+    const preserve =
+      source.state !== "deleted" &&
+      (m.retainedHistory ||
+        (options.preserveManualHistory &&
+          (m.manual || m.excluded) &&
+          (!active.has(m.insightId) ||
+            m.generation !== source.generation ||
+            m.revision !== source.updatedAt)));
+    if (preserve) {
+      historical.add(m._id);
+      if (!m.retainedHistory || m.sourceTitle !== undefined) {
+        await ctx.db.patch(m._id, {
+          retainedHistory: true,
+          sourceTitle: undefined,
+          updatedAt: Math.max(Date.now(), m.updatedAt + 1),
+        });
+        touched.add(m.topicId);
+      }
+      continue;
+    }
     const point = points.find((i: any) => i.id === m.insightId);
     const topic = await ctx.db.get(m.topicId);
     const names = topicNames(source, point);
@@ -295,6 +349,8 @@ export async function syncKnowledge(
       if (!target || target.redirect) continue;
       const previous = old.find(
         (m) =>
+          !m.retainedHistory &&
+          !historical.has(m._id) &&
           (m.topicId === topic!._id || m.topicId === target._id) &&
           m.insightId === point.id,
       );
@@ -473,7 +529,7 @@ export const list = query({
     const items = [];
     const seen = new Set<string>();
     for (const row of page.page) {
-      if ("excluded" in row && row.excluded) continue;
+      if ("excluded" in row && (row.excluded || row.retainedHistory)) continue;
       const t = "topicId" in row ? await ctx.db.get(row.topicId) : row;
       if (!t || seen.has(t._id)) continue;
       seen.add(t._id);
@@ -588,6 +644,7 @@ export const detail = query({
         : [];
     const members = [];
     for (const m of page.page) {
+      if (m.retainedHistory) continue;
       const evidence = await memberEvidence(ctx, [m]);
       members.push({ ...m, evidence: evidence[0] ?? null });
     }
@@ -641,7 +698,10 @@ export const correct = mutation({
     if (a.memberId) {
       const m = await ctx.db.get(a.memberId);
       ensure(
-        m && m.topicId === t._id && m.organizationId === t.organizationId,
+        m &&
+          !m.retainedHistory &&
+          m.topicId === t._id &&
+          m.organizationId === t.organizationId,
         "FORBIDDEN",
         "Evidence unavailable.",
       );
@@ -686,7 +746,10 @@ export const correct = mutation({
           .withIndex("by_source", (q) => q.eq("sourceId", m.sourceId))
           .collect();
         const match = existing.find(
-          (e) => e.topicId === dest && e.insightId === m.insightId,
+          (e) =>
+            !e.retainedHistory &&
+            e.topicId === dest &&
+            e.insightId === m.insightId,
         );
         if (match)
           await ctx.db.patch(match._id, { manual: true, excluded: false });
@@ -753,6 +816,7 @@ export const mergePage = internalMutation({
       .withIndex("by_topic", (q) => q.eq("topicId", t._id))
       .paginate({ cursor: a.cursor, numItems: 20 });
     for (const m of page.page) {
+      if (m.retainedHistory) continue;
       const before = (await sourceMembers(ctx, d._id, m.sourceId)).filter(
         (e) => !e.excluded,
       ).length;
@@ -761,7 +825,10 @@ export const mergePage = internalMutation({
         .withIndex("by_source", (q) => q.eq("sourceId", m.sourceId))
         .collect();
       const match = old.find(
-        (e) => e.topicId === d._id && e.insightId === m.insightId,
+        (e) =>
+          !e.retainedHistory &&
+          e.topicId === d._id &&
+          e.insightId === m.insightId,
       );
       if (match) {
         if (m.excluded && m.manual)
@@ -1376,23 +1443,127 @@ export const redactDerived = internalMutation({
   args: {
     ...org,
     sourceId: v.id("sources"),
+    maxGeneration: v.optional(v.number()),
     section: v.union(
       v.literal("knowledgeJobs"),
       v.literal("knowledgeEvaluations"),
       v.literal("issueDrafts"),
       v.literal("improvements"),
       v.literal("improvementOutcomes"),
+      v.literal("runs"),
+      v.literal("proposals"),
     ),
     cursor: v.union(v.string(), v.null()),
   },
   handler: async (ctx, a) => {
     if (process.env.RESTORE_LOCK === "true") return;
+    ensure(
+      a.maxGeneration === undefined ||
+        (Number.isSafeInteger(a.maxGeneration) && a.maxGeneration >= 0),
+      "INVALID_INPUT",
+      "Invalid source generation cleanup bound.",
+    );
     const page = await ctx.db
       .query(a.section)
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
-      .paginate({ cursor: a.cursor, numItems: 30 });
-    for (const r of page.page)
-      if (r.references.some((ref) => ref.sourceId === a.sourceId)) {
+      .paginate({
+        cursor: a.cursor,
+        numItems: a.section === "runs" || a.section === "proposals" ? 10 : 30,
+        maximumBytesRead: 512 * 1024,
+      });
+    const affected = (proposal: Doc<"proposals">) =>
+      proposal.organizationId === a.organizationId &&
+      proposal.sourceId === a.sourceId &&
+      proposal.detail?.schemaVersion === "2.0.0" &&
+      proposal.references?.some(
+        (ref) =>
+          ref.sourceId === a.sourceId &&
+          (a.maxGeneration === undefined || ref.generation <= a.maxGeneration),
+      );
+    for (const r of page.page) {
+      if (a.section === "runs") {
+        const run = r as Doc<"runs">;
+        const proposal = await ctx.db.get(run.proposalId);
+        if (!proposal || !affected(proposal)) continue;
+        const notice =
+          "Source evidence unavailable; generated content removed. Outstanding usage requires reconciliation.";
+        const receipts = run.events.filter(
+          (event) =>
+            /^Isolated sandbox started: [A-Za-z0-9_-]{1,200}$/.test(event) ||
+            /^Teardown confirmed; service credits settled: \d{1,5}\.$/.test(
+              event,
+            ),
+        );
+        if (
+          run.events.includes(notice) &&
+          !run.patch &&
+          run.changes === undefined &&
+          !run.report &&
+          !run.aiReview &&
+          !run.error &&
+          run.checksPassed === undefined
+        )
+          continue;
+        const published = !!(run.prNumber || run.prUrl);
+        await ctx.db.patch(run._id, {
+          patch: undefined,
+          changes: undefined,
+          report: undefined,
+          aiReview: undefined,
+          checksPassed: undefined,
+          error: undefined,
+          events: [...receipts, notice],
+          state:
+            !published && run.state !== "completed" ? "canceled" : run.state,
+          generation:
+            run.state === "canceled" ? run.generation : run.generation + 1,
+          ...(!published
+            ? { leaseUntil: 0, expiresAt: Math.min(Date.now(), run.expiresAt) }
+            : {}),
+          updatedAt: Math.max(Date.now(), run.updatedAt + 1),
+        });
+        continue;
+      }
+      if (a.section === "proposals") {
+        const proposal = r as Doc<"proposals">;
+        if (!affected(proposal)) continue;
+        if (
+          proposal.detail?.sourceRetentionRedacted &&
+          !proposal.plan &&
+          !proposal.planDraft &&
+          !proposal.planHash &&
+          !proposal.planDraftKey &&
+          !proposal.planDraftActor &&
+          proposal.planDraftVersion === undefined &&
+          proposal.review === "needs_context"
+        )
+          continue;
+        await ctx.db.patch(proposal._id, {
+          title: "Unavailable source proposal",
+          detail: { schemaVersion: "2.0.0", sourceRetentionRedacted: true },
+          // Keep opaque reference generations so delayed run cleanup cannot
+          // erase a fresh recovery or lose its old-generation authority fence.
+          plan: undefined,
+          planDraft: undefined,
+          planHash: undefined,
+          planDraftVersion: undefined,
+          planDraftKey: undefined,
+          planDraftActor: undefined,
+          review: "needs_context",
+          version: proposal.version + 1,
+          updatedAt: Math.max(Date.now(), proposal.updatedAt + 1),
+        });
+        continue;
+      }
+      if (
+        "references" in r &&
+        r.references?.some(
+          (ref) =>
+            ref.sourceId === a.sourceId &&
+            (a.maxGeneration === undefined ||
+              ref.generation <= a.maxGeneration),
+        )
+      ) {
         if ("body" in r)
           await ctx.db.patch(r._id, {
             title: "Deleted private draft",
@@ -1414,12 +1585,13 @@ export const redactDerived = internalMutation({
             updatedAt: Date.now(),
           });
       }
+    }
     if (!page.isDone)
       await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
         ...a,
         cursor: page.continueCursor,
       });
-    else if (a.section !== "improvementOutcomes")
+    else if (a.section !== "proposals")
       await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
         ...a,
         section:
@@ -1429,7 +1601,11 @@ export const redactDerived = internalMutation({
               ? "issueDrafts"
               : a.section === "issueDrafts"
                 ? "improvements"
-                : "improvementOutcomes",
+                : a.section === "improvements"
+                  ? "improvementOutcomes"
+                  : a.section === "improvementOutcomes"
+                    ? "runs"
+                    : "proposals",
         cursor: null,
       });
   },

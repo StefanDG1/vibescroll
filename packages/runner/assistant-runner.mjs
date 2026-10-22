@@ -1,5 +1,6 @@
 import { readFile, access } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
+import { companionPrivatePath } from "../companion/config-root.mjs";
 import { setTimeout as delay } from "node:timers/promises";
 import { spawn } from "node:child_process";
 import { vault } from "./vault.mjs";
@@ -25,6 +26,12 @@ let client, controller;
 const stop = new AbortController();
 for (const name of ["SIGINT", "SIGTERM"])
   process.once(name, () => stop.abort());
+// The opt-in companion only controls the child it starts. Preserve the normal
+// graceful checkpoint and controller teardown when the user pauses it.
+const parentStop = (message) => {
+  if (message === "stop") stop.abort();
+};
+process.on("message", parentStop);
 try {
   const path = process.argv[2];
   if (process.platform !== "win32" || !isAbsolute(path ?? ""))
@@ -104,7 +111,7 @@ try {
       attempt++
     ) {
       const candidate = await readFile(
-        resolve("private/subscription-session.json"),
+        companionPrivatePath("subscription-session.json"),
         "utf8",
       )
         .then(JSON.parse)
@@ -211,4 +218,6 @@ try {
     });
     if (controller.connected) controller.disconnect();
   }
+  process.removeListener("message", parentStop);
+  if (process.connected) process.disconnect();
 }

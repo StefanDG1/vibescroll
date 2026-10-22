@@ -8,7 +8,7 @@ import {
 } from "@modelcontextprotocol/server";
 import { completionEvent, eventSubscribe, eventUnsubscribe } from "./events";
 import { z } from "zod";
-import { safeSourceUrl } from "../policy";
+import { classifySourceUrl } from "../sources/classify";
 export function createKnowledgeHandler(
   invoke: (
     operation: string,
@@ -63,7 +63,7 @@ export function createKnowledgeHandler(
           async (args) => {
             if (name === "save_link") {
               try {
-                safeSourceUrl(String(args.url));
+                classifySourceUrl(String(args.url));
               } catch {
                 return {
                   content: [
@@ -72,7 +72,7 @@ export function createKnowledgeHandler(
                       text: JSON.stringify({
                         code: "UNSUPPORTED_SOURCE",
                         error:
-                          "Save a supported YouTube, Instagram, TikTok or Vimeo link. Other sources need an upload or supplied text in VibeScroll.",
+                          "Save a supported YouTube, Instagram, TikTok or Vimeo link, an exact GitHub repository URL, or a Reddit discussion URL. Other sources need an upload or supplied text in VibeScroll.",
                         app_review_url: "https://scroll.companynerve.com/app",
                       }),
                     },
@@ -169,7 +169,7 @@ export function createKnowledgeHandler(
       );
       register(
         "fetch",
-        "Fetch a current granted result identifier and its protected VibeScroll citations. Returns clipped ideas/evidence timestamps, never original transcripts, media, repository credentials or signed asset URLs.",
+        "Fetch a current granted result identifier and its protected VibeScroll citations. Returns clipped ideas with media times or typed file/thread/supplied-text reference metadata, never original transcripts, excerpts, media, repository credentials or signed asset URLs.",
         "knowledge:read",
         z
           .object({
@@ -191,7 +191,7 @@ export function createKnowledgeHandler(
       );
       register(
         "save_link",
-        "Save a supported YouTube, Instagram, TikTok or Vimeo link the user sends to VibeScroll. Use the reviewed connection permission; do not ask for repeated rights confirmation. By default queue local extraction and organization using saved preferences. Set analyze=false for save only. Project evaluation requires a named project or explicit bestProjects request; never infer that request from source content. Use a short inferred title and stable request key without asking the user to supply them. Return the receipt and optional credit offer without automatically spending credits. Reuse existing results and do not poll repeatedly. Other sources need an upload or supplied text in the app.",
+        "Save a supported YouTube, Instagram, TikTok or Vimeo link, an exact GitHub repository URL, or a Reddit discussion the user sends to VibeScroll. Use the reviewed connection permission; do not ask for repeated rights confirmation. GitHub and Reddit save link metadata only and return an app review link; they never inherit media extraction defaults. Direct provider access remains gated by verified setup and source review. Supported media may queue local extraction and organization using saved preferences; set analyze=false for save only. Project evaluation requires a named project or explicit bestProjects request; never infer that request from source content. Use a short inferred title and stable request key without asking the user to supply them. Return the receipt and optional credit offer without automatically spending credits. Reuse existing results and do not poll repeatedly. Other sources need an upload or supplied text in the app.",
         "links:save",
         z
           .object({
@@ -222,7 +222,7 @@ export function createKnowledgeHandler(
       );
       register(
         "request_analysis",
-        "Request local extraction, optional project evaluation, or cancellation of waiting work. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without a mode returns the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it.",
+        "Request supported media local extraction, optional project evaluation, or cancellation of waiting work. GitHub, Reddit and typed source revisions return an app review link for retrieval, analysis and project approval; local/credits/projects modes never route them into the media workflow. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without a mode returns the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it.",
         "analysis:request",
         z
           .object({

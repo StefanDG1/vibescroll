@@ -6,6 +6,7 @@ import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { createHash } from "node:crypto";
+import { enqueueIntake } from "../convex/lib/assistantIntake";
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345",
   clientId = "client_01234567890123456789012345",
@@ -151,6 +152,165 @@ it("queues explicit links without per-link confirmation, preserves replay and wa
   expect(rows.runs).toHaveLength(0);
   expect(rows.intakes[0].permissionBasis).toBe("connection_explicit_links");
   await expect(s.dispatch("claim")).rejects.toThrow("SETUP_REQUIRED");
+});
+it("saves GitHub and Reddit metadata under the existing grant without inheriting enabled media defaults", async () => {
+  for (const [url, sourceType] of [
+    ["https://github.com/example/project", "github_repository"],
+    [
+      "https://www.reddit.com/r/example/comments/abc123/title/",
+      "reddit_thread",
+    ],
+  ]) {
+    const s = await fixture();
+    vi.stubEnv("DIRECT_SOURCES_ENABLED", "false");
+    vi.stubEnv("LINK_PREVIEWS_ENABLED", "true");
+    const saved = await s.save({ url, analyze: true });
+    expect((await s.save({ url })).source_id).toBe(saved.source_id);
+    expect(saved).toMatchObject({
+      status: "saved",
+      analysis_started: false,
+      receipt: {
+        status: "source_review_required",
+        source_review_required: true,
+        processing_succeeded: false,
+        credit_offer: null,
+      },
+    });
+    expect(saved.note).toContain("Saved link metadata");
+    expect(saved.receipt.review_url).toBe(saved.url);
+    const source = (await s.t.run((ctx) => ctx.db.get(saved.source_id)))!;
+    expect(await s.status(saved.source_id)).toMatchObject({
+      status: "source_review_required",
+      source_status: "saved",
+    });
+    expect(source).toMatchObject({
+      sourceType,
+      state: "saved",
+      coverage: "metadata_only",
+      rightsAttested: true,
+    });
+    expect(source.linkPreview).toBeUndefined();
+    expect(source.text).toBeUndefined();
+    expect(source.analysis).toBeUndefined();
+    for (const mode of [undefined, "local", "credits", "projects"] as const) {
+      await expect(
+        s.assistant.mutation(internal.assistant.requestAnalysis, {
+          profileId: s.org,
+          sourceId: saved.source_id,
+          ...(mode ? { mode } : {}),
+          generation: source.generation,
+          maxCredits: 10,
+        }),
+      ).resolves.toMatchObject({
+        status: "approval_required",
+        analysis_started: false,
+        review_url: saved.url,
+      });
+    }
+    await expect(
+      s.owner.mutation(api.assistantIntakeUi.act, {
+        sourceId: saved.source_id,
+        mode: "credits",
+        generation: source.generation,
+        maxCredits: 10,
+      }),
+    ).resolves.toMatchObject({
+      source_review_required: true,
+      credit_offer: null,
+    });
+    expect(
+      (
+        await s.owner.query(api.assistantIntakeUi.status, {
+          sourceId: saved.source_id,
+        })
+      )?.review_url,
+    ).toBe(saved.url);
+    const intake = (
+      await s.t.run((ctx) => ctx.db.query("assistantIntakes").collect())
+    )[0];
+    await expect(s.t.run((ctx) => enqueueIntake(ctx, intake))).rejects.toThrow(
+      "SOURCE_REVIEW_REQUIRED",
+    );
+    await s.t.run(async (ctx) => {
+      expect((await ctx.db.get(s.grant.id))!.analysisDefaults?.enabled).toBe(
+        true,
+      );
+      expect((await ctx.db.get(s.device))!.assistantPending).not.toBe(true);
+      expect((await ctx.db.get(intake._id))!.queueState).toBeUndefined();
+      for (const table of [
+        "localLibraryRuns",
+        "sourceAcquisitions",
+        "sourceRevisions",
+        "reservations",
+        "outbox",
+      ] as const)
+        expect(await ctx.db.query(table).collect()).toEqual([]);
+    });
+    await s.t.run(async (ctx) => {
+      // A restored waiting row cannot route typed evidence into a media worker.
+      await ctx.db.patch(intake._id, {
+        queueState: "waiting",
+        deviceId: s.device,
+      });
+      await ctx.db.patch(s.device, { assistantPending: true });
+    });
+    await s.dispatch("hello", {
+      profileBinding: s.profileBinding,
+      model: "gpt-6.1-sol",
+      expiresAt: Date.now() + 4 * 3600000,
+    });
+    await expect(s.dispatch("claim")).resolves.toMatchObject({ job: null });
+    expect(
+      await s.t.run((ctx) => ctx.db.query("localLibraryRuns").collect()),
+    ).toEqual([]);
+    await s.t.run((ctx) => ctx.db.patch(intake._id, { queueState: "waiting" }));
+    await expect(
+      s.assistant.mutation(internal.assistant.requestAnalysis, {
+        profileId: s.org,
+        sourceId: saved.source_id,
+        mode: "cancel",
+      }),
+    ).resolves.toMatchObject({ status: "cancelled" });
+    expect((await s.status(saved.source_id)).receipt?.status).toBe("cancelled");
+    await s.t.run((ctx) => ctx.db.patch(intake._id, { queueState: "waiting" }));
+    await expect(
+      s.owner.mutation(api.assistantIntakeUi.act, {
+        sourceId: saved.source_id,
+        mode: "cancel",
+        generation: source.generation,
+      }),
+    ).resolves.toMatchObject({ status: "cancelled" });
+    await s.owner.mutation(api.assistantGrants.revoke, {
+      id: s.grant.id,
+      expectedVersion: 1,
+    });
+    await expect(s.save({ url })).rejects.toThrow("FORBIDDEN");
+    await expect(s.status(saved.source_id)).rejects.toThrow("FORBIDDEN");
+  }
+});
+it("keeps direct-source metadata saving behind the same explicit rights and OAuth scopes", async () => {
+  const s = await fixture(false),
+    url = "https://github.com/example/project";
+  await expect(s.save({ url })).rejects.toThrow("SETUP_REQUIRED");
+  const saved = await s.save({ url, rightsAttested: true });
+  const limited = s.t.withIdentity({
+    subject,
+    issuer,
+    client_id: clientId,
+    scope: "jobs:read",
+    sid: "app_consent_01234567890123456789012345",
+  });
+  await expect(
+    limited.mutation(internal.assistant.saveLink, {
+      ...s.input,
+      url,
+      rightsAttested: true,
+    }),
+  ).rejects.toThrow("FORBIDDEN");
+  await s.t.run((ctx) =>
+    ctx.db.patch(saved.source_id, { rightsAttested: false }),
+  );
+  await expect(s.status(saved.source_id)).rejects.toThrow("FORBIDDEN");
 });
 it("requires review once for legacy grants and honors save-only override", async () => {
   const legacy = await fixture(false);

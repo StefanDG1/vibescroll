@@ -36,6 +36,27 @@ export const librarySpacesTables = {
     confirmed: v.boolean(),
     stage: v.union(v.literal(0), v.literal(1), v.literal(2)),
     provenance: v.literal("user"),
+    processingRoute: v.optional(
+      v.union(v.literal("local"), v.literal("cloud"), v.literal("save_only")),
+    ),
+    importReviewed: v.optional(v.boolean()),
+    preferencesReviewed: v.optional(v.boolean()),
+    localPreflight: v.optional(
+      v.object({
+        reportedAt: v.number(),
+        passed: v.boolean(),
+        checks: v.array(
+          v.object({
+            id: v.string(),
+            status: v.union(
+              v.literal("passed"),
+              v.literal("blocked"),
+              v.literal("unknown"),
+            ),
+          }),
+        ),
+      }),
+    ),
     updatedAt: v.number(),
   }).index("by_org", ["organizationId"]),
   sourceSpaces: defineTable({

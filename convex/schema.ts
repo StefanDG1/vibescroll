@@ -6,6 +6,9 @@ import { improvementTables } from "./improvementSchema";
 import { libraryScanTables } from "./libraryScanSchema";
 import { dashboardTables } from "./dashboardSchema";
 import { localLibraryTables } from "./localLibrarySchema";
+import { publicTables } from "./publicSchema";
+import { sourceTables } from "./sourceSchema";
+import { pilotPaymentTables } from "./pilotPaymentSchema";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 export const role = v.union(
@@ -23,6 +26,9 @@ export default defineSchema({
   ...libraryScanTables,
   ...dashboardTables,
   ...localLibraryTables,
+  ...publicTables,
+  ...sourceTables,
+  ...pilotPaymentTables,
   users: defineTable({
     subject: v.string(),
     email: v.string(),

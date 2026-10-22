@@ -8,6 +8,12 @@ import { pricing, ensure } from "../packages/policy";
 import { billingReadiness } from "../packages/providers/billing-readiness";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import {
+  pilotProviderEvent,
+  recordSettledPilotPayment,
+  withdrawPilotPayment,
+  withdrawOrganizationPilotPayments,
+} from "./lib/pilotPayments";
 async function invoiceRefundFraction(
   ctx: MutationCtx,
   organizationId: Id<"organizations">,
@@ -121,6 +127,7 @@ export const grantPeriod = internalMutation({
     upgradeAt: v.optional(v.number()),
     invoiceId: v.optional(v.string()),
     billingRevision: v.optional(v.number()),
+    pilotEvent: v.optional(pilotProviderEvent),
   },
   handler: async (ctx, a) => {
     if (a.billingRevision !== undefined) {
@@ -201,6 +208,13 @@ export const grantPeriod = internalMutation({
           updatedAt: Date.now(),
         });
       }
+      if (a.invoiceId)
+        await recordSettledPilotPayment(ctx, {
+          organizationId: a.organizationId,
+          paymentId: a.invoiceId,
+          kind: "monthly_subscription",
+          evidence: a.pilotEvent,
+        });
       return;
     }
     ensure(
@@ -246,6 +260,13 @@ export const grantPeriod = internalMutation({
       periodEnd: a.end,
       updatedAt: Date.now(),
     });
+    if (a.invoiceId)
+      await recordSettledPilotPayment(ctx, {
+        organizationId: a.organizationId,
+        paymentId: a.invoiceId,
+        kind: "monthly_subscription",
+        evidence: a.pilotEvent,
+      });
   },
 });
 export const preferences = mutation({
@@ -270,6 +291,12 @@ export const preferences = mutation({
         updatedAt: Date.now(),
         acceptedAt: Date.now(),
       });
+    if (!a.analytics)
+      await withdrawOrganizationPilotPayments(
+        ctx,
+        a.organizationId,
+        Date.now(),
+      );
   },
 });
 export const invoiceTasks = query({
@@ -375,6 +402,7 @@ export const grantTopup = internalMutation({
     organizationId: v.id("organizations"),
     paymentId: v.string(),
     credits: v.number(),
+    pilotEvent: v.optional(pilotProviderEvent),
   },
   handler: async (ctx, a) => {
     ensure(
@@ -388,8 +416,15 @@ export const grantTopup = internalMutation({
         .query("creditPools")
         .withIndex("by_key", (q) => q.eq("key", key))
         .unique()
-    )
+    ) {
+      await recordSettledPilotPayment(ctx, {
+        organizationId: a.organizationId,
+        paymentId: a.paymentId,
+        kind: "topup",
+        evidence: a.pilotEvent,
+      });
       return;
+    }
     const w = await wallet(ctx, a.organizationId);
     const reversal = await ctx.db
       .query("billingReversals")
@@ -415,6 +450,12 @@ export const grantTopup = internalMutation({
       updatedAt: Date.now(),
     });
     await ctx.db.patch(w._id, { purchased: w.purchased + a.credits - revoked });
+    await recordSettledPilotPayment(ctx, {
+      organizationId: a.organizationId,
+      paymentId: a.paymentId,
+      kind: "topup",
+      evidence: a.pilotEvent,
+    });
   },
 });
 export const reversePayment = internalMutation({
@@ -475,6 +516,16 @@ export const reversePayment = internalMutation({
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
+    if (a.refunded > 0) {
+      await withdrawPilotPayment(ctx, a.organizationId, a.paymentId, "topup");
+      if (a.invoiceId)
+        await withdrawPilotPayment(
+          ctx,
+          a.organizationId,
+          a.invoiceId,
+          "monthly_subscription",
+        );
+    }
     if (a.invoiceId) {
       const invoiceId = a.invoiceId;
       const fraction = await invoiceRefundFraction(

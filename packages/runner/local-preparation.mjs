@@ -6,7 +6,7 @@ import { resolve, join, sep } from "node:path";
 import {
   acquisitionPolicy,
   acquisitionManifest,
-} from "../media/acquisition.ts";
+} from "../media/acquisition-runtime.ts";
 import { decoderManifest } from "../media/manifest.ts";
 const execute = promisify(execFile);
 export async function docker(args, timeout = 20000) {

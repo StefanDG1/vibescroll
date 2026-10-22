@@ -1147,6 +1147,7 @@ export function Console({
               </span>
               <Link
                 href={demo ? "/demo" : "/app/workspaces"}
+                prefetch={false}
                 title={
                   data.workspaceName ??
                   (demo ? "Demo workspace" : "Current workspace")

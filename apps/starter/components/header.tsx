@@ -14,7 +14,9 @@ export function Header() {
           Workspace
         </Link>
         <Link href="/help">Help</Link>
-        <Link href="/account">Account</Link>
+        <Link href="/account" prefetch={false}>
+          Account
+        </Link>
       </nav>
     </header>
   );

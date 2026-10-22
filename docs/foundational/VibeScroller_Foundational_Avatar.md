@@ -1,5 +1,15 @@
 # VibeScroll foundational avatar
 
+## F038: founder observation is not independent first use, October 22
+
+The adult project-owner audience, including non-coders and people using only the Library, is unchanged. Launch PRs 120–129 are merged and the current canonical frontend is `77da4ad7`, with backend `abfdeff6779a2fc7790d4441152117262965fe60` now deployed after exact-head full CI 39849741790 passed. The recorded 915 local passes and three hosted skips are engineering evidence. They do not show that this audience can independently install, understand the controls or find recurring value. See [implementation status](../implementation-status.md).
+
+A real founder-account supplied README and MIT notice produced seven cited insights through an official own-account GPT-6.1 Sol Medium session. Input equality and schema validation passed. Native original/citation inspection at 1440/390 widths in both system themes had no observed browser alerts or mobile overflow. These are operator observations. Blocked Help prefetch and a logo query limit whole-flow conclusions; no uninterrupted unthrottled journey or independent usability result follows. The [result receipt](../operations/evidence/launch-20261022-founder-text-result.json) keeps the original serving/producer versions distinct from the latest frontend.
+
+The next participant must use their own eligible account and device, with actual consent and understood evidence/funding limits. The [prepared Windows protocol](../operations/launch-20261022-independent-setup.md) distinguishes reviewed developer-run source from signed customer distribution. No signing certificate is available and no participant has been supplied by writing instructions. Provider permissions and human review before public sharing remain pending. No new demographic, customer, testimonial, demand, price or benefit claim is adopted; earlier dated evidence remains intact.
+
+Subsequent read-only admin-identity Library/setup canaries passed at 20:38:20 UTC, with setup version 3 and `sampleCited: true`. This is distinct from earlier normal WorkOS browser acceptance and supplies no new participant or model-quality observation. The [follow-up receipt](../operations/evidence/launch-20261022-followup-production.json) retains the confirmed backend finish and unconfirmed best-effort report metadata with its full cost hold. Original inference backend `13835ea4` remains historical; actual provider Sandbox jobs remain skipped and no new inference, media, payment or public publication ran.
+
 ## F037: first-use and recovery tasks, October 22
 
 The audience remains adult project owners using AI agents, including non-coders, with library-only use available. The implemented, unreleased candidate gives this person a no-signup authored example, source-reviewed Help, save-only/local/cloud setup choices and an inspectable source acquisition/recovery flow. It does not establish that this audience can independently install the companion, understand every permission or find a useful first result. Technical installer fixtures and operator review are not beginner acceptance.

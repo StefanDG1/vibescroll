@@ -1,5 +1,15 @@
 # VibeScroll foundational beliefs
 
+## F038: one traceable result, unchanged proof requirements, October 22
+
+The six first-person beliefs remain unchanged. Launch PRs 120–129 are merged; frontend `77da4ad7` is canonical, with current backend `abfdeff6779a2fc7790d4441152117262965fe60` now deployed, exact-head/main CI passed and 915 local passes plus three hosted skips recorded. These are technical release facts, not evidence that prospective users hold these beliefs. [Implementation status](../implementation-status.md) retains exact-version scope.
+
+One genuine founder-account supplied README plus MIT notice, 6,073 characters and 6,084 UTF-8 bytes, produced seven cited insights through an official own-account GPT-6.1 Sol Medium session. Exact persisted input and schema passed validation. Native original/citation inspection passed at 1440/390 widths in both system themes with no observed browser alerts or mobile overflow. This supports a narrow demonstration of traceability. Its untimed user-note citations do not establish verified repository retrieval, audiovisual coverage or independent truth. Help prefetch and a logo query were blocked, so the [result receipt](../operations/evidence/launch-20261022-founder-text-result.json) is not an uninterrupted unthrottled journey.
+
+Personally demonstrated usefulness still needs the person's actual task and judgment. Public sharing of the seven-insight result awaits human review; the joint direct-adapter release gate and Reddit workload approval remain pending and no signing certificate exists. The [independent Windows protocol](../operations/launch-20261022-independent-setup.md) is prepared, not performed. No new customer, independent quality result, demand, testimonial, benefit, outreach or payment follows. Preserve audience, prices, allowances, explicit authority and all prior gates; earlier receipts remain dated historical evidence.
+
+Subsequent read-only admin-identity Library/setup canaries passed at 20:38:20 UTC, with setup version 3 and `sampleCited: true`. This is distinct from earlier normal WorkOS browser acceptance and supplies no new participant or model-quality observation. The [follow-up receipt](../operations/evidence/launch-20261022-followup-production.json) retains the confirmed backend finish and unconfirmed best-effort report metadata with its full cost hold. Original inference backend `13835ea4` remains historical; actual provider Sandbox jobs remain skipped and no new inference, media, payment or public publication ran.
+
 ## F037: inspectable candidate evidence, October 22
 
 The six first-person purchase conditions below remain unchanged. The implemented, unreleased candidate supplies additional ways to inspect them: a labelled synthetic useful/already-implemented/no-fit example, typed source citations, source-reviewed Help, a resumable setup checklist and exact-version disclosure/withdrawal. These support demonstration design. They do not show that prospective users hold these beliefs or that the product has earned a purchase.

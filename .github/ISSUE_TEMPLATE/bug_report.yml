@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible template problem.
+description: Report a reproducible VibeScroll problem with a safe example.
 body:
   - type: markdown
     attributes:
@@ -7,7 +7,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Template version or commit
+      label: App version or commit
     validations:
       required: true
   - type: textarea

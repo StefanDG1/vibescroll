@@ -1,6 +1,6 @@
 # ADR 112: persisted setup and verified companion packages
 
-Accepted October 22, 2026 for the implemented, unreleased candidate. Exact candidate commit: `ROOT_CANDIDATE_COMMIT_PENDING`. Signing, publication and real installation require separate evidence.
+Accepted October 22, 2026 for the implemented, unreleased candidate. Exact candidate commit: `76ec7bf0b9812e670207cba199b8d07cc07839fd`. Signing, publication and real installation require separate evidence.
 
 ## Context
 

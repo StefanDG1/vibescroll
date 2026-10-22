@@ -8,6 +8,15 @@ import { ConvexError } from "convex/values";
 import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../convex/_generated/dataModel";
 import type { FormState } from "@/components/action-form";
+import { publicContinuation } from "@/lib/public-knowledge-display";
+function continuation(d: FormData) {
+  const result = publicContinuation({
+    draft: String(d.get("draft") ?? ""),
+    publicEdition: String(d.get("publicEdition") ?? ""),
+    publicVersion: String(d.get("publicVersion") ?? ""),
+  });
+  return result ? `?${result}` : "";
+}
 const val = (d: FormData, key: string) => String(d.get(key) ?? "");
 const org = (d: FormData) => val(d, "organizationId") as Id<"organizations">;
 export async function recordInvoiceReceipt(_: FormState, d: FormData) {
@@ -149,7 +158,7 @@ export async function createOrganization(_: FormState, d: FormData) {
     const id = await c.mutation(api.organizations.create, {
       name: val(d, "name"),
     });
-    return { path: `/app/${id}` };
+    return { path: `/app/${id}${continuation(d)}` };
   });
 }
 export async function createPrivateLibrary(_: FormState, d: FormData) {
@@ -157,9 +166,8 @@ export async function createPrivateLibrary(_: FormState, d: FormData) {
     const id = await (
       await backend()
     ).mutation(api.organizations.createPrivate, {});
-    const draft = val(d, "draft").slice(0, 2048);
     return {
-      path: `/app/${id}${draft ? `?draft=${encodeURIComponent(draft)}` : ""}`,
+      path: `/app/${id}${continuation(d)}`,
     };
   });
 }

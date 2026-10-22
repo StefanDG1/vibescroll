@@ -57,6 +57,13 @@ import { ChoiceSelect } from "./choice-select";
 import { policyRelease } from "../../../packages/policy/publication";
 import { EvidenceViewer } from "./evidence-viewer";
 import { AnalysisReview } from "./analysis-review";
+import { SetupJourney } from "./setup-journey";
+import { SourceAcquisitionPanel } from "./source-acquisition-panel";
+import { TypedSourceEvidence } from "./typed-source-evidence";
+import { PublicKnowledgePanel } from "./public-knowledge-panel";
+import { SavedPublicSource } from "./saved-public-source";
+import { PublicSaveContinuation } from "./public-save-continuation";
+import { SourceRelationships } from "./source-relationships";
 import {
   availableProcessingCredits,
   cloudExecutionEstimate,
@@ -64,10 +71,13 @@ import {
 import { reviewedPlan } from "../../../packages/plans/editor";
 import { CookieSettings, rejectAnalytics } from "./consent";
 import { track } from "@/lib/analytics";
-import { productAnalyticsEvent } from "@/lib/analytics-events";
+import {
+  productAnalyticsEvent,
+  createJourneyMeasurements,
+} from "@/lib/analytics-events";
 import type { ImportPreview } from "../../../packages/instagram-import";
 type Initial = {
-  workspaceSlice?: "library" | "connections" | "usage";
+  workspaceSlice?: "library" | "connections" | "usage" | "projects" | "plans";
   compact?: boolean;
   privateLibrary?: boolean;
   sharedKnowledge?: { items: any[]; next: string | null };
@@ -218,6 +228,8 @@ export function Console({
   initialSort = "newest",
   initialSource = null,
   demoState = "ready",
+  publicEdition,
+  publicVersion,
 }: {
   profile?: AccountProfile;
   compactHomePreview?: boolean;
@@ -235,9 +247,12 @@ export function Console({
   initialSort?: string;
   initialSource?: any;
   demoState?: "ready" | "loading" | "error" | "empty";
+  publicEdition?: string;
+  publicVersion?: number;
 }) {
   const [accessAvailable, setAccessAvailable] = useState(true);
   const captureAccess = useRef(true);
+  const [journey] = useState(() => createJourneyMeasurements(track));
   const captureOrigin = useRef<HTMLElement | null>(null);
   const router = useRouter(),
     [data, setData] = useState(initial),
@@ -301,6 +316,34 @@ export function Console({
   const libraryRequest = useRef(0);
   const libraryAbort = useRef<AbortController | null>(null);
   const refreshFlight = useRef<Promise<Initial | undefined> | null>(null);
+  const recordReturn = useEffectEvent((hiddenAt: number) => {
+    const destination = view === "proposals" ? "plans" : view;
+    if (
+      !["library", "projects", "source", "plans"].includes(destination) ||
+      (!data.sources.some((s) => s.state === "ready") && !data.proposals.length)
+    )
+      return;
+    journey.returned(
+      `${organizationId}:${destination}:${hiddenAt}`,
+      destination,
+      new Date(hiddenAt).toDateString() === new Date().toDateString()
+        ? "same_day"
+        : "later_day",
+    );
+  });
+  useEffect(() => {
+    if (demo) return;
+    let hiddenAt = 0;
+    const changed = () => {
+      if (document.hidden) hiddenAt = Date.now();
+      else if (hiddenAt && Date.now() - hiddenAt >= 60000) {
+        recordReturn(hiddenAt);
+        hiddenAt = 0;
+      }
+    };
+    document.addEventListener("visibilitychange", changed);
+    return () => document.removeEventListener("visibilitychange", changed);
+  }, [demo, organizationId]);
   async function loadLibrary(append = false) {
     if (demo) {
       setLibraryError("");
@@ -474,13 +517,13 @@ export function Console({
       for (const source of next.sources) {
         const old = data.sources.find((s) => id(s) === id(source));
         if (source.state === "ready" && old && old.state !== "ready")
-          track("analysis_completed", {
-            route:
-              source.personalAnalysis?.state === "completed"
-                ? "personal_chatgpt"
-                : "included",
-            coverage: source.coverage,
-          });
+          journey.ready(
+            `${id(source)}:${source.generation}:${source.updatedAt}`,
+            source.personalAnalysis?.state === "completed"
+              ? "personal_chatgpt"
+              : "included",
+            source.coverage,
+          );
       }
     setData((current) => ({ ...next, workspaceName: current.workspaceName }));
     setSelected((current: any) => {
@@ -521,6 +564,7 @@ export function Console({
     }
   }
   function clearAccess() {
+    journey.clear();
     captureAccess.current = false;
     captureOrigin.current = null;
     setAccessAvailable(false);
@@ -624,7 +668,7 @@ export function Console({
       );
   }, [view, demo]);
   async function openCapture() {
-    if (readOnly || !captureAccess.current) return;
+    if ((readOnly && !demo) || !captureAccess.current) return;
     // Full-editor loading can disable Save and move focus to the page body.
     // Retain the actual opener before starting that asynchronous refresh.
     captureOrigin.current =
@@ -697,6 +741,10 @@ export function Console({
       applyData(next);
       setSelected(next.selectedProposal);
       setView("proposal");
+      journey.decision(
+        `${id(next.selectedProposal)}:${next.selectedProposal.version}:${next.selectedProposal.updatedAt}`,
+        next.selectedProposal.detail?.disposition,
+      );
     } catch (error) {
       setNoticeKind("error");
       setNotice(
@@ -744,11 +792,23 @@ export function Console({
       ),
     );
   }
-  async function call(operation: string, args: any) {
-    if (readOnly) {
+  async function call(operation: string, args: any, strict = false) {
+    if (
+      readOnly &&
+      !demo &&
+      ![
+        "setupJourney",
+        "acquisitionStatus",
+        "publicOwn",
+        "savedPublicDetail",
+        "sourceRelationships",
+      ].includes(operation)
+    ) {
       setNotice(
         "Your viewer role allows reading. Ask a workspace owner to change your role before making changes.",
       );
+      if (strict)
+        throw new Error("Your current role cannot perform this operation.");
       return;
     }
     setBusy(true);
@@ -798,11 +858,24 @@ export function Console({
           "checkPersonalSession",
           "subscriptionTrialList",
           "subscriptionTrialBundle",
+          "setupJourney",
+          "acquisitionStatus",
+          "publicOwn",
+          "savedPublicDetail",
+          "sourceRelationships",
         ].includes(operation)
       )
         return body.result;
       const event = productAnalyticsEvent(operation, args, body.result);
-      if (!demo && event) track(event.event, event.properties);
+      if (!demo && event && operation !== "editPlan")
+        track(event.event, event.properties);
+      if (!demo && operation === "editPlan")
+        journey.planRetained(
+          `${args.id}:${args.version}:${JSON.stringify(args.plan)}`.slice(
+            0,
+            512,
+          ),
+        );
       setHomeData(null);
       await refreshData();
       if (operation === "deleteSource") go("library");
@@ -854,10 +927,13 @@ export function Console({
     } catch (e) {
       setNoticeKind("error");
       setNotice(e instanceof Error ? e.message : "The action failed.");
+      if (strict) throw e;
     } finally {
       setBusy(false);
     }
   }
+  const strictCall = (operation: string, args: any) =>
+    call(operation, args, true);
   const syncRoute = useEffectEvent(() => {
     setView(
       initialView === "account"
@@ -1085,7 +1161,7 @@ export function Console({
           <div className="row">
             <Button
               busy={busy}
-              disabled={readOnly || !accessAvailable}
+              disabled={(readOnly && !demo) || !accessAvailable}
               primary
               onClick={() => {
                 void openCapture();
@@ -1096,7 +1172,7 @@ export function Console({
             </Button>
           </div>
         </header>
-        {readOnly && (
+        {readOnly && !demo && (
           <p className="demo-banner">
             Viewer access. You can read this workspace. Captures, edits,
             approvals, execution and billing changes require another role.
@@ -1220,6 +1296,13 @@ export function Console({
                     open={librarySection !== "topics"}
                   >
                     <summary>Posts, insights and sharing</summary>
+                    <a
+                      href="/help/organize-your-library"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Library and filing help
+                    </a>
                     {!data.privateLibrary && !demo && (
                       <a
                         className="button secondary"
@@ -1277,18 +1360,38 @@ export function Console({
               )}
               {view === "home" && (
                 <>
-                  {data.privateLibrary && !demo && (
-                    <PrivateLibrary
-                      key={organizationId}
+                  {!demo && publicEdition && publicVersion && (
+                    <PublicSaveContinuation
+                      slug={publicEdition}
+                      version={publicVersion}
                       organizationId={organizationId}
-                      call={call}
-                      readOnly={readOnly}
-                      onOpenSource={findSource}
-                      onSave={() => {
-                        void openCapture();
-                      }}
-                      onProjects={() => go("projects")}
+                      call={strictCall}
+                      disabled={readOnly}
                     />
+                  )}
+                  {data.privateLibrary && !demo && (
+                    <SetupJourney
+                      organizationId={organizationId}
+                      call={strictCall}
+                      onNavigate={go}
+                      onSave={() => void openCapture()}
+                      disabled={readOnly}
+                    />
+                  )}
+                  {data.privateLibrary && !demo && (
+                    <div id="library-purpose">
+                      <PrivateLibrary
+                        key={organizationId}
+                        organizationId={organizationId}
+                        call={call}
+                        readOnly={readOnly}
+                        onOpenSource={findSource}
+                        onSave={() => {
+                          void openCapture();
+                        }}
+                        onProjects={() => go("projects")}
+                      />
+                    </div>
                   )}
                   <StudioHome
                     organizationId={organizationId}
@@ -1623,6 +1726,7 @@ export function Console({
                 <SourceDetail
                   key={id(selected)}
                   source={selected}
+                  sources={data.sources}
                   readOnly={readOnly}
                   busy={busy}
                   canSuggestCategories={canSuggestCategories}
@@ -1636,6 +1740,8 @@ export function Console({
                   linkAnalysisEnabled={data.aiPreference?.linkAnalysisEnabled}
                   cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
                   call={call}
+                  strictCall={strictCall}
+                  journey={journey}
                   onProposal={(p: any) => {
                     setSelected(p);
                     setView("proposal");
@@ -1994,6 +2100,13 @@ export function Console({
                   </section>
                   <section className="panel">
                     <h2>Review and edit the plan</h2>
+                    <a
+                      href="/help/evaluate-an-idea-for-a-project"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Project decision and plan help
+                    </a>
                     <Button
                       busy={busy}
                       disabled={selected.review !== "accepted"}
@@ -2067,6 +2180,11 @@ export function Console({
                           planText,
                           "application/json",
                         );
+                        if (!demo)
+                          journey.planExported(
+                            `${id(selected)}:${selected.version}:${selected.updatedAt}`,
+                            "json",
+                          );
                       }}
                     >
                       Export plan
@@ -2605,7 +2723,7 @@ export function Console({
           <button
             type="button"
             className="mobile-save"
-            disabled={readOnly || busy || !accessAvailable}
+            disabled={(readOnly && !demo) || busy || !accessAvailable}
             onClick={() => {
               void openCapture();
             }}
@@ -3352,6 +3470,7 @@ function CaptureForm({
 }
 function SourceDetail({
   source,
+  sources,
   readOnly,
   busy,
   canSuggestCategories,
@@ -3363,6 +3482,8 @@ function SourceDetail({
   linkAnalysisEnabled,
   cloudEnabled,
   call,
+  strictCall,
+  journey,
   onProposal,
 }: any) {
   const [detail, setDetail] = useState(source);
@@ -3484,6 +3605,64 @@ function SourceDetail({
       : savedFrames.slice(0, 4);
   return (
     <>
+      {!demo && !detailLoading && (
+        <>
+          <SourceAcquisitionPanel
+            source={detail}
+            call={strictCall}
+            readOnly={readOnly}
+            onAnalyze={() =>
+              document
+                .getElementById("source-analysis-actions")
+                ?.scrollIntoView({ block: "start" })
+            }
+          />
+          <SourceRelationships
+            sourceId={sourceId}
+            sources={sources}
+            call={strictCall}
+            readOnly={readOnly}
+          />
+          {detail.publicImportId ? (
+            <SavedPublicSource
+              sourceId={sourceId}
+              call={strictCall}
+              readOnly={readOnly}
+              enabled
+            />
+          ) : (
+            canSuggestCategories && (
+              <PublicKnowledgePanel
+                organizationId={org}
+                source={detail}
+                call={strictCall}
+                readOnly={readOnly}
+                enabled
+              />
+            )
+          )}
+        </>
+      )}
+      {!demo && !detailLoading && detail.evidenceRegistry && (
+        <section className="panel">
+          <h2>Acquired source evidence</h2>
+          <p>
+            Inspect this retained revision before approving analysis. Retrieval
+            and analysis are separate actions.
+          </p>
+          <TypedSourceEvidence
+            evidenceRegistry={detail.evidenceRegistry}
+            sourceRevision={detail.sourceRevision}
+          />
+          <a
+            href="/help/first-useful-insight"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Evidence and coverage help
+          </a>
+        </section>
+      )}
       {viewFrame && (
         <EvidenceViewer
           key={viewFrame}
@@ -3632,7 +3811,18 @@ function SourceDetail({
                 </span>
               )}
               {!!i.evidence?.length && (
-                <details className="insight-evidence">
+                <details
+                  className="insight-evidence"
+                  onToggle={(event) => {
+                    if (!demo && event.currentTarget.open)
+                      for (const e of i.evidence ?? [])
+                        journey?.citation(
+                          `${sourceId}:${detail.generation}:${detail.updatedAt}:${i.id}:${e.id}`,
+                          e.kind,
+                          detail.coverage,
+                        );
+                  }}
+                >
                   <summary>
                     Evidence · {i.evidence.length}{" "}
                     {i.evidence.length === 1 ? "reference" : "references"}
@@ -3693,7 +3883,21 @@ function SourceDetail({
                               Post caption
                             </a>
                           )}
-                        {e.kind !== "caption" &&
+                        {[
+                          "github_file",
+                          "reddit_post",
+                          "reddit_comment",
+                          "supplied_text",
+                        ].includes(e.kind) && (
+                          <span>{label(e.kind)} · see cited excerpt below</span>
+                        )}
+                        {![
+                          "github_file",
+                          "reddit_post",
+                          "reddit_comment",
+                          "supplied_text",
+                        ].includes(e.kind) &&
+                          e.kind !== "caption" &&
                           e.kind !== "transcript" &&
                           (e.kind !== "frame" || demo) && (
                             <span>
@@ -3706,6 +3910,15 @@ function SourceDetail({
                       </li>
                     ))}
                   </ul>
+                  {detail.evidenceRegistry && (
+                    <TypedSourceEvidence
+                      evidenceRegistry={detail.evidenceRegistry.filter(
+                        (record: any) =>
+                          i.evidence.some((e: any) => e.id === record.id),
+                      )}
+                      sourceRevision={detail.sourceRevision}
+                    />
+                  )}
                 </details>
               )}
             </article>
@@ -3935,32 +4148,34 @@ function SourceDetail({
           </details>
         )}
       </details>
-      {detail.state === "needs_upload" && (
-        <details className="panel" open={!detail.assistantIntake}>
-          <summary>
-            {detail.assistantIntake
-              ? "Supply content if link retrieval fails"
-              : "Supply permitted content"}
-          </summary>
-          <p>
-            {detail.assistantIntake
-              ? "Automatic analysis uses your saved link. If retrieval fails, you can attach permitted media or a transcript here."
-              : "This saved URL has no verified audiovisual analysis. Attach a permitted upload or supplied transcript to this saved source."}
-          </p>
-          <CaptureForm
-            demo={demo}
-            organizationId={org}
-            call={call}
-            existingSourceId={id(source)}
-            existingGeneration={detail.generation}
-            devices={devices}
-            personalEnabled={personalEnabled}
-            linkAnalysisEnabled={linkAnalysisEnabled}
-            onDone={() => {}}
-          />
-        </details>
-      )}
-      <details className="panel">
+      {detail.state === "needs_upload" &&
+        !detail.currentRevisionId &&
+        !["github_repository", "reddit_thread"].includes(detail.sourceType) && (
+          <details className="panel" open={!detail.assistantIntake}>
+            <summary>
+              {detail.assistantIntake
+                ? "Supply content if link retrieval fails"
+                : "Supply permitted content"}
+            </summary>
+            <p>
+              {detail.assistantIntake
+                ? "Automatic analysis uses your saved link. If retrieval fails, you can attach permitted media or a transcript here."
+                : "This saved URL has no verified audiovisual analysis. Attach a permitted upload or supplied transcript to this saved source."}
+            </p>
+            <CaptureForm
+              demo={demo}
+              organizationId={org}
+              call={call}
+              existingSourceId={id(source)}
+              existingGeneration={detail.generation}
+              devices={devices}
+              personalEnabled={personalEnabled}
+              linkAnalysisEnabled={linkAnalysisEnabled}
+              onDone={() => {}}
+            />
+          </details>
+        )}
+      <details className="panel" hidden={Boolean(detail.publicImportId)}>
         <summary>Edit summary, tags and transcript correction</summary>
         <form
           key={`${id(source)}:${detail.updatedAt}`}
@@ -3993,10 +4208,25 @@ function SourceDetail({
             Tags, separated by commas
             <input name="tags" defaultValue={detail.tags?.join(", ") ?? ""} />
           </label>
-          <label>
+          <label
+            hidden={Boolean(
+              detail.currentRevisionId ||
+              detail.publicImportId ||
+              ["github_repository", "reddit_thread"].includes(
+                detail.sourceType,
+              ),
+            )}
+          >
             Transcript correction, retained beside the original
             <textarea
               name="correction"
+              disabled={Boolean(
+                detail.currentRevisionId ||
+                detail.publicImportId ||
+                ["github_repository", "reddit_thread"].includes(
+                  detail.sourceType,
+                ),
+              )}
               maxLength={60000}
               defaultValue={detail.analysis?.correctedText ?? ""}
             />
@@ -4004,8 +4234,15 @@ function SourceDetail({
           <button className="primary">Save source edits</button>
         </form>
       </details>
-      <section className="panel">
+      <section className="panel" id="source-analysis-actions">
         <h2>Applies to your projects</h2>
+        <a
+          href="/help/evaluate-an-idea-for-a-project"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Review project context and alternatives
+        </a>
         {detail.analysis?.insights?.length > 0 && (
           <>
             <p>
@@ -4195,6 +4432,7 @@ function SourceDetail({
         )}
         {personalEnabled && (
           <PersonalSourceAnalysis
+            key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
             source={detail}
             devices={devices}
             linkAnalysisEnabled={linkAnalysisEnabled}
@@ -4250,6 +4488,11 @@ function PersonalSourceAnalysis({
       d.personalModels?.length,
   );
   const device = eligible.find((d: any) => id(d) === deviceId);
+  const typedSource = Boolean(source.currentRevisionId);
+  const typedRequired =
+    typedSource ||
+    ["github_repository", "reddit_thread"].includes(source.sourceType);
+  const textSource = source.kind === "text" || typedSource;
   const running = ["preparing", "queued", "running"].includes(
     source.personalAnalysis?.state,
   );
@@ -4262,7 +4505,7 @@ function PersonalSourceAnalysis({
           aria-label="Analysis progress"
           aria-live="polite"
         >
-          {(source.kind !== "text"
+          {(!textSource
             ? [
                 "Preparing media",
                 "Transcribing audio",
@@ -4270,14 +4513,13 @@ function PersonalSourceAnalysis({
               ]
             : ["Analyzing text and saving insights"]
           ).map((step, index) => {
-            const active =
-              source.kind === "text"
+            const active = textSource
+              ? 0
+              : source.personalAnalysis.state === "preparing"
                 ? 0
-                : source.personalAnalysis.state === "preparing"
-                  ? 0
-                  : source.personalAnalysis.stage === "transcribing"
-                    ? 1
-                    : 2;
+                : source.personalAnalysis.stage === "transcribing"
+                  ? 1
+                  : 2;
             return (
               <li
                 key={step}
@@ -4326,8 +4568,13 @@ function PersonalSourceAnalysis({
         >
           Cancel personal analysis
         </Button>
+      ) : typedRequired && !typedSource ? (
+        <p>
+          Review and acquire the current permitted source evidence above before
+          approving analysis.
+        </p>
       ) : !(
-          source.kind === "text" ||
+          textSource ||
           source.kind === "upload" ||
           (source.kind === "url" && linkAnalysisEnabled)
         ) ? (
@@ -4339,9 +4586,11 @@ function PersonalSourceAnalysis({
         source.state !== "ready" && (
           <>
             <p>
-              {source.kind !== "text"
+              {!textSource
                 ? "Your laptop transcribes audio locally, then sends sampled frames and the transcript to your ChatGPT account. Media preparation reserves up to 10 compute credits."
-                : "Your laptop sends this text to your ChatGPT account."}{" "}
+                : typedSource
+                  ? "Your laptop sends only the reviewed file or discussion excerpts to your ChatGPT account. This source uses text citations and no media preparation credits."
+                  : "Your laptop sends this text to your ChatGPT account."}{" "}
               No VibeScroll inference credits or paid AI fallback. Your ChatGPT
               limits apply.
             </p>
@@ -4415,9 +4664,7 @@ function PersonalSourceAnalysis({
                         model,
                         effort: "medium",
                         useOwnPlan: true,
-                        ...(source.kind !== "text"
-                          ? { maxComputeCredits: 10 }
-                          : {}),
+                        ...(!textSource ? { maxComputeCredits: 10 } : {}),
                       });
                       setConsent(false);
                     } finally {
@@ -4425,7 +4672,7 @@ function PersonalSourceAnalysis({
                     }
                   }}
                 >
-                  {source.kind !== "text"
+                  {!textSource
                     ? "Transcribe and analyze video"
                     : "Analyze with my plan"}
                 </Button>

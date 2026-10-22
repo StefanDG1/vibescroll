@@ -13,7 +13,7 @@ export function Header() {
         <Link href="/app" prefetch={false}>
           Workspace
         </Link>
-        <Link href="/docs">Help</Link>
+        <Link href="/help">Help</Link>
         <Link href="/account">Account</Link>
       </nav>
     </header>

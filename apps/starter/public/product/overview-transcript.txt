@@ -1,0 +1,24 @@
+VibeScroll overview walkthrough
+
+Edited native screen captures of candidate 76ec7bf0b9812e670207cba199b8d07cc07839fd. Synthetic data. Silent captions; no processing, sign-in, pairing or successful sample run. Waiting is an explicitly labelled fixture. Frames are reordered for explanation; durations are editorial holds, not measured processing time.
+
+00:00:00.000 Make scrolling useful. Actual UI with synthetic data.
+Screen: /demo?view=library
+
+00:00:05.000 Save permitted material. Saving alone starts no analysis.
+Screen: /demo?view=library
+
+00:00:11.000 Simulated waiting state. No processing job is running.
+Screen: /demo?view=library&uiState=loading
+
+00:00:15.000 Open the source evidence. Check coverage before acting.
+Screen: /demo?view=library&source=demo-0
+
+00:00:22.000 Keep an editable private plan. Coding needs separate approval.
+Screen: /demo?view=projects&proposal=demo-proposal-draft
+
+00:00:28.000 No fit is a useful decision. An idea need not become code.
+Screen: /example
+
+00:00:34.000 Find the source again. Explore the labelled example.
+Screen: /demo?view=library

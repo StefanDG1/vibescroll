@@ -1,6 +1,6 @@
 # ADR 111: typed source and public knowledge authority
 
-Accepted October 22, 2026 for the implemented, unreleased candidate. Exact candidate commit: `ROOT_CANDIDATE_COMMIT_PENDING`. Root must replace this marker after integration; local fixture results do not establish exact-head CI, deployment or provider permission.
+Accepted October 22, 2026 for the implemented, unreleased candidate. Exact candidate commit: `76ec7bf0b9812e670207cba199b8d07cc07839fd`. This identifies product code; local fixture results do not establish exact-head CI, deployment or provider permission.
 
 ## Context
 
@@ -19,6 +19,10 @@ Publication requires exact reviewed payload/version/hash and explicit disclosure
 Discovery uses bounded list/topic views with an explicitly opened, static, lazy globe alternative. Broad geography requires voluntary opt-in and the current contributor threshold; counts describe a bounded snapshot, never exhaustive participation or precise location. No polling, geolocation or invented contributions are introduced. Saving an edition preserves its exact slug/version through authentication and workspace choice, then requires an explicit authenticated action; GET navigation never imports it.
 
 Expiry and deletion scrub provider and generated evidence through bounded, generation-fenced continuations. Authored corrections/manual history and published PR/financial receipts have separate retention roles. Restore quarantines source/public dispatch authority and retains conservative provider quotas and unknown financial holds; old publication or acquisition cannot resume merely because a backup was restored.
+
+User-confirmed source relationships keep an announcement and repository as separate records. Links are workspace-scoped, symmetric, limited to twenty per source and never imply corroboration or start analysis. Current rights and retention govern every related-source read; export and deletion include the opaque authored relationship records.
+
+Moderation uses an explicit bounded open-report queue, separately requested current public inspection and per-report confirmation. Only allowlisted current identities can inspect; decisions also require fresh authentication. See [the operator procedure](../operations/public-knowledge-moderation.md).
 
 ## Evidence and limits
 

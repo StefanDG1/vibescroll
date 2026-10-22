@@ -2,7 +2,10 @@ import { expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { TypedSourceEvidence } from "./components/typed-source-evidence";
-import { SourceAcquisitionPanel } from "./components/source-acquisition-panel";
+import {
+  SourceAcquisitionPanel,
+  GithubRevisionPreview,
+} from "./components/source-acquisition-panel";
 import { AssistantIntakeReceipt } from "./components/assistant-intake-status";
 import type {
   EvidenceRecord,
@@ -44,6 +47,56 @@ const revision: SourceRevision = {
     omissions: ["binary_files_omitted"],
   },
 };
+it("shows the bounded refresh comparison and keeps missing paths distinct from verified deletion", () => {
+  const html = renderToStaticMarkup(
+    createElement(GithubRevisionPreview, {
+      preview: {
+        previousCommit: "a".repeat(40),
+        nextCommit: "b".repeat(40),
+        changedFiles: ["README.md"],
+        unchangedFiles: ["LICENSE"],
+        unavailableFiles: ["docs/<script>old()</script>.md"],
+        completeListing: false,
+      },
+    }),
+  );
+  expect(html).toContain("Previous pinned commit");
+  expect(html).toContain("a".repeat(40));
+  expect(html).toContain("New pinned commit");
+  expect(html).toContain("b".repeat(40));
+  expect(html).toMatch(/Changed files<\/h5><ul><li><code>README.md/);
+  expect(html).toMatch(/Unchanged files<\/h5><ul><li><code>LICENSE/);
+  expect(html).toContain("Unavailable in this inspection");
+  expect(html).toContain("docs/&lt;script&gt;old()&lt;/script&gt;.md");
+  expect(html).not.toContain("<script>");
+  expect(html).toContain("previously selected files only");
+  expect(html).toContain("Incomplete listing");
+  expect(html).toContain("does not verify deletion");
+  expect(html).toContain("confirm the new paths and exact");
+  expect(html).not.toContain("<button");
+});
+it("renders empty comparison groups honestly and invents no preview for an initial retrieval", () => {
+  expect(renderToStaticMarkup(createElement(GithubRevisionPreview, {}))).toBe(
+    "",
+  );
+  const html = renderToStaticMarkup(
+    createElement(GithubRevisionPreview, {
+      preview: {
+        previousCommit: "a".repeat(40),
+        nextCommit: "a".repeat(40),
+        changedFiles: [],
+        unchangedFiles: ["README.md"],
+        unavailableFiles: [],
+        completeListing: true,
+      },
+    }),
+  );
+  expect(html).toContain("No inspection omissions reported.");
+  expect(html.match(/None among the previously selected files/g)).toHaveLength(
+    2,
+  );
+  expect(html).not.toContain("Incomplete listing");
+});
 it("renders pinned file lines, omissions and escaped source text without video timestamps", () => {
   const html = renderToStaticMarkup(
     createElement(TypedSourceEvidence, {

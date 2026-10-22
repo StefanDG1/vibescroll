@@ -18,7 +18,9 @@ export default async function Page({
     expiry = new Date(q.expiresAt).toISOString();
   return (
     <main id="main" className="doc">
-      <Link href={`/app/${org}/billing`}>Back to billing</Link>
+      <Link prefetch={false} href={`/app/${org}/billing`}>
+        Back to billing
+      </Link>
       <h1>Review plan change</h1>
       <section className="panel">
         <h2>

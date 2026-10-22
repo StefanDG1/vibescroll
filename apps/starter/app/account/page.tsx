@@ -23,7 +23,7 @@ export default async function Page() {
           <Card>
             <h2 style={{ marginTop: 0 }}>Workspaces</h2>
             <Button variant="outline" asChild>
-              <Link href="/app/workspaces">
+              <Link prefetch={false} href="/app/workspaces">
                 Switch or manage your workspaces
               </Link>
             </Button>

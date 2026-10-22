@@ -30,7 +30,9 @@ export default async function Page({
   const selectedTier = (await searchParams).tier === "pro" ? "pro" : "starter";
   return (
     <main id="main" className="doc">
-      <Link href={`/app/${org}`}>Back to workspace</Link>
+      <Link prefetch={false} href={`/app/${org}`}>
+        Back to workspace
+      </Link>
       <h1>Billing and allowances</h1>
       <p>
         {catalogue.liveEnabled

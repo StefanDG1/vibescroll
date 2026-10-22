@@ -1,6 +1,6 @@
 # VibeScroll complete product and launch plan
 
-Status: all 16 work packages have implementation and local evidence across the [merged launch PRs](RUN-STATUS.md). The corrected candidate passes 894 local tests with three hosted skips, including the actual Convex compiler configuration. The compatible backend and integrated frontend are deployed. Canonical health, the website/Help and normal authenticated Home/Library browser checks passed under [controlled publication](../../adr/115-controlled-production-publication.md) within the whole-task US$2 budget. [Live-provider and independent-human acceptance](ACCEPTANCE.md) remain separate. The original planning update approved the direction without starting implementation; this run implemented the independently buildable scope below.
+Status: all 16 work packages have implementation and local evidence across the [merged launch PRs](RUN-STATUS.md). The corrected candidate passes 896 local tests with three hosted skips, including the actual Convex compiler configuration. The compatible backend and integrated frontend are deployed. Canonical health, the website/Help and normal authenticated Home/Library browser checks passed under [controlled publication](../../adr/115-controlled-production-publication.md) within the whole-task US$2 budget. [Live-provider and independent-human acceptance](ACCEPTANCE.md) remain separate. The original planning update approved the direction without starting implementation; this run implemented the independently buildable scope below.
 
 ## Outcome
 

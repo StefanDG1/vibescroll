@@ -13,7 +13,9 @@ export default async function Page({
   if (!access.allowed)
     return (
       <main id="main" className="doc">
-        <Link href="/account">Back to account</Link>
+        <Link prefetch={false} href="/account">
+          Back to account
+        </Link>
         <h1>Invoice operator access required</h1>
         <p>
           This queue is available to explicitly authorized company invoice
@@ -27,7 +29,9 @@ export default async function Page({
   });
   return (
     <main id="main" className="doc" style={{ overflowWrap: "anywhere" }}>
-      <Link href="/account">Back to account</Link>
+      <Link prefetch={false} href="/account">
+        Back to account
+      </Link>
       <h1>Invoice reporting queue</h1>
       <p>
         {queue.mode === "test"

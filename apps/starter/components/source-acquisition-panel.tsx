@@ -18,6 +18,14 @@ export type AcquisitionSource = {
   updatedAt: number;
   url?: string;
 };
+type GithubRevisionComparison = {
+  previousCommit: string;
+  nextCommit: string;
+  changedFiles: string[];
+  unchangedFiles: string[];
+  unavailableFiles: string[];
+  completeListing: boolean;
+};
 type RequestStatus = {
   id: string;
   version: number;
@@ -33,8 +41,70 @@ type RequestStatus = {
     commit: string;
     files: ListedSourceFile[];
     omissions: string[];
+    revisionPreview?: GithubRevisionComparison;
   };
 };
+
+export function GithubRevisionPreview({
+  preview,
+}: {
+  preview?: GithubRevisionComparison;
+}) {
+  if (!preview) return null;
+  return (
+    <section style={{ overflowWrap: "anywhere" }}>
+      <h4>Changes since the previous retrieval</h4>
+      <p>
+        This bounded comparison covers previously selected files only. Newly
+        listed files and other repository history are outside this comparison.
+        Comparing blob identifiers does not retrieve file contents.
+      </p>
+      <dl>
+        <dt>Previous pinned commit</dt>
+        <dd>
+          <code>{preview.previousCommit}</code>
+        </dd>
+        <dt>New pinned commit</dt>
+        <dd>
+          <code>{preview.nextCommit}</code>
+        </dd>
+        <dt>Inspection listing</dt>
+        <dd>
+          {preview.completeListing
+            ? "No inspection omissions reported."
+            : "Incomplete listing: inspection omissions were reported."}
+        </dd>
+      </dl>
+      {(
+        [
+          ["Changed files", preview.changedFiles],
+          ["Unchanged files", preview.unchangedFiles],
+          ["Unavailable in this inspection", preview.unavailableFiles],
+        ] as const
+      ).map(([label, paths]) => (
+        <div key={label}>
+          <h5>{label}</h5>
+          {paths.length ? (
+            <ul>
+              {paths.map((path) => (
+                <li key={path}>
+                  <code>{path}</code>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>None among the previously selected files.</p>
+          )}
+        </div>
+      ))}
+      <p>
+        An unavailable path may be omitted from the bounded listing. Its absence
+        does not verify deletion. Review and confirm the new paths and exact
+        commit below before retrieval.
+      </p>
+    </section>
+  );
+}
 type Status = {
   enabled: boolean;
   requiresRightsReview?: boolean;
@@ -274,6 +344,9 @@ function Acquisition({ source, call, readOnly = false, onAnalyze }: Props) {
                 {sourceLimits.github.totalBytes.toLocaleString("en-US")} bytes.
                 Edit it before confirmation.
               </p>
+              <GithubRevisionPreview
+                preview={request.selection.revisionPreview}
+              />
               <fieldset
                 disabled={
                   busy ||

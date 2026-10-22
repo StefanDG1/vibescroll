@@ -1,5 +1,15 @@
 # VibeScroll foundational offer
 
+## F040: complete per-user workflow and GitHub first, October 23
+
+The owner approved all seven actual README insights for use and allows readers to save/reuse the reviewed published insights. Exact edition preview/hash, attribution, permission expiry and private-layer exclusion still govern publication. Direct GitHub release may proceed first; Reddit remains independently gated. The owner requests each eligible user's own subscription for video analysis and selected-repository evaluation, proposals and editable plans inside VibeScroll. The immediate route uses the user's own awake paired computer; computer-free hosted use follows provider approval.
+
+The new audit found real engineering gaps in worker selection/controller ownership, first pairing, task-stage funding/model readiness, plan generation, retry preparation reuse and public moderation/provenance. These are planned corrections, not already deployed capabilities. Independent testers will be observed later in production; no independent result or customer benefit is claimed. The [October 23 completion plan](../launch-plan/2026-10-23/README.md) retains the complete original scope and [ADR 117](../adr/117-github-first-and-complete-own-subscription-workflows.md) records superseding decisions.
+
+The owner permits relevant VibeScroll and Exponential Education examples, with unrelated private material excluded. Images are optional and must explain the example without publishing private evidence. Audience, prices, allowances and six beliefs remain unchanged. Subscription allowance does not eliminate preparation/platform costs or establish commercial provider permission. The original cumulative US$2 ceiling remains; unfunded live tests stay pending. Root High is explicitly authorized for this continuation, with Ultra off.
+
+The intended complete own-subscription workflow is a product requirement. Describe availability from actual enabled/tested routes; do not advertise the planned customer route as released. Earlier briefs retain their original dated scope.
+
 ## F039: live contrast verification, October 22
 
 Canonical frontend `3e831ae461aa4cb2b8577a3c81e18952b45bceae`, version `0.1.0-alpha.20261022212012.g3e831ae461aa`, now includes the source-detail contrast correction. PR 132 passed exact-head CI 39856055089, main CI 39856416737 and alpha publication 39856628535. The fixed Basic build passed staged/canonical health before and after exact-build promotion. Backend `abfdeff6779a2fc7790d4441152117262965fe60` remains compatible; this CSS correction required no backend deployment or inference. The full offline suite passed 915 tests with three hosted skips.

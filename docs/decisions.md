@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 23: GitHub first and complete per-user subscription workflows
+
+[ADR 117](adr/117-github-first-and-complete-own-subscription-workflows.md) adopts the seven-insight review, GitHub-first/Reddit-later release order and complete own-subscription video/project/proposal/plan requirement. It preserves provider permission, exact work/publication authority, isolation and spending controls. The [remaining-work plan](launch-plan/2026-10-23/README.md) records code gaps, deferred independent observations, signing boundaries and pending route/reuse/budget/settings answers. This supersedes joint release, not Reddit prerequisites. No activation or commercial permission is claimed.
+
 ## October 20: automatic assistant intake
 
 [ADR 109](adr/109-automatic-assistant-intake.md) adopts one-time explicit-link connection permission, automatic local extraction and organization, offline waiting with optional explicitly quoted credits, reconciled receipts and project evaluation only when requested. It supersedes the repeated per-link confirmation and approval-link-only flow for newly reviewed automatic-analysis grants. Existing grants, personal-route eligibility and coding/publication approvals remain unchanged.

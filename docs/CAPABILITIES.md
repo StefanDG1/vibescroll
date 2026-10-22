@@ -1,5 +1,9 @@
 # Capabilities and troubleshooting
 
+## October 23 completion work
+
+The [new plan](launch-plan/2026-10-23/README.md) and [completion ledger](launch-plan/2026-10-23/ACCEPTANCE.md) retain the original scope and record additional audited code gaps. The owner approved the seven real README claims and their published saving/reuse, GitHub-first release and the paired-computer route for each eligible user's complete own-subscription workflow. Root High is authorized; Ultra stays off. The original cumulative US$2 cap remains. This update records decisions and planned corrections, not new deployed behavior or executed live acceptance. See [F040](foundational/README.md) for the synchronized brief.
+
 ## Latest live contrast verification, October 22
 
 Latest production evidence: [PR 132](https://github.com/StefanDG1/vibescroll/pull/132) is merged and canonical frontend `3e831ae4`, alpha `0.1.0-alpha.20261022212012.g3e831ae461aa`, passed exact-head/main CI, staged/canonical health and eight hydrated public synthetic-demo width/theme/state cases. Both source-detail controls have 13.92:1 light and 13.02:1 dark contrast, verified native keyboard behavior, at least 44-pixel targets and no overflow. Backend `abfdeff67` is unchanged and compatible. The complete offline sequence passed 915 tests with three hosted skips. Launch PRs 120–129, 131 and 132 are merged; unrelated dependency PR 130 remains unmerged with failing CI. This does not close pending provider, signed distribution, human public-content review or independent acceptance. Earlier dated receipts retain their actual versions.

@@ -1,5 +1,7 @@
 # VibeScroll complete product and launch plan
 
+October 23 continuation: the owner changed release order to GitHub first/Reddit later, approved the seven actual README insights and requested complete per-user subscription-funded video/project/proposal/plan workflows. Follow the [completion plan](../2026-10-23/README.md) and [ADR 117](../../adr/117-github-first-and-complete-own-subscription-workflows.md) for superseding decisions and new gaps. This original package and unfinished acceptance remain in scope.
+
 ## Latest live contrast verification, October 22
 
 Latest production evidence: [PR 132](https://github.com/StefanDG1/vibescroll/pull/132) is merged and canonical frontend `3e831ae4`, alpha `0.1.0-alpha.20261022212012.g3e831ae461aa`, passed exact-head/main CI, staged/canonical health and eight hydrated public synthetic-demo width/theme/state cases. Both source-detail controls have 13.92:1 light and 13.02:1 dark contrast, verified native keyboard behavior, at least 44-pixel targets and no overflow. Backend `abfdeff67` is unchanged and compatible. The complete offline sequence passed 915 tests with three hosted skips. Launch PRs 120–129, 131 and 132 are merged; unrelated dependency PR 130 remains unmerged with failing CI. This does not close pending provider, signed distribution, human public-content review or independent acceptance. Earlier dated receipts retain their actual versions.

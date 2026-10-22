@@ -2358,7 +2358,7 @@ dialog.capture-modal::backdrop {
   min-height: 44px;
   padding: 12px 0;
   cursor: pointer;
-  color: var(--console-ink, #f4f4f4);
+  color: var(--ink);
 }
 .source-notes[open] > summary {
   margin-bottom: 8px;

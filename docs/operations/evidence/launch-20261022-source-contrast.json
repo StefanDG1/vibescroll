@@ -1,0 +1,224 @@
+{
+  "syntheticLocalOnly": true,
+  "component": "Actual Console/SourceDetail SSR with synthetic source; Next navigation/link/image adapters replaced for static review",
+  "cssOrder": ["product.css", "studio.css", "atlas.css", "public.css"],
+  "beforeLightContrastRatios": [1.099866662818517, 1.099866662818517],
+  "afterCases": [
+    {
+      "theme": "light",
+      "width": 390,
+      "summaryOpen": false,
+      "keyboardAndFocusVerified": false,
+      "scrollWidth": 390,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "open": false,
+          "color": "rgb(24, 46, 66)",
+          "background": "rgb(255, 255, 255)",
+          "height": 45.59375,
+          "contrastRatio": 13.92290820022637
+        },
+        {
+          "label": "Categories",
+          "open": false,
+          "color": "rgb(24, 46, 66)",
+          "background": "rgb(255, 255, 255)",
+          "height": 45.59375,
+          "contrastRatio": 13.92290820022637
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "summaryOpen": true,
+      "keyboardAndFocusVerified": true,
+      "scrollWidth": 390,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "open": true,
+          "color": "rgb(24, 46, 66)",
+          "background": "rgb(255, 255, 255)",
+          "height": 45.59375,
+          "contrastRatio": 13.92290820022637
+        },
+        {
+          "label": "Categories",
+          "open": true,
+          "color": "rgb(24, 46, 66)",
+          "background": "rgb(255, 255, 255)",
+          "height": 45.59375,
+          "contrastRatio": 13.92290820022637
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "summaryOpen": false,
+      "keyboardAndFocusVerified": false,
+      "scrollWidth": 1430,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "open": false,
+          "color": "rgb(24, 46, 66)",
+          "background": "rgb(255, 255, 255)",
+          "height": 45.59375,
+          "contrastRatio": 13.92290820022637
+        },
+        {
+          "label": "Categories",
+          "open": false,
+          "color": "rgb(24, 46, 66)",
+          "background": "rgb(255, 255, 255)",
+          "height": 45.59375,
+          "contrastRatio": 13.92290820022637
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "summaryOpen": true,
+      "keyboardAndFocusVerified": true,
+      "scrollWidth": 1430,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "open": true,
+          "color": "rgb(24, 46, 66)",
+          "background": "rgb(255, 255, 255)",
+          "height": 45.59375,
+          "contrastRatio": 13.92290820022637
+        },
+        {
+          "label": "Categories",
+          "open": true,
+          "color": "rgb(24, 46, 66)",
+          "background": "rgb(255, 255, 255)",
+          "height": 45.59375,
+          "contrastRatio": 13.92290820022637
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "summaryOpen": false,
+      "keyboardAndFocusVerified": false,
+      "scrollWidth": 390,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "open": false,
+          "color": "rgb(231, 240, 247)",
+          "background": "rgb(27, 40, 51)",
+          "height": 45.59375,
+          "contrastRatio": 13.02282669224414
+        },
+        {
+          "label": "Categories",
+          "open": false,
+          "color": "rgb(231, 240, 247)",
+          "background": "rgb(27, 40, 51)",
+          "height": 45.59375,
+          "contrastRatio": 13.02282669224414
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "summaryOpen": true,
+      "keyboardAndFocusVerified": true,
+      "scrollWidth": 390,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "open": true,
+          "color": "rgb(231, 240, 247)",
+          "background": "rgb(27, 40, 51)",
+          "height": 45.59375,
+          "contrastRatio": 13.02282669224414
+        },
+        {
+          "label": "Categories",
+          "open": true,
+          "color": "rgb(231, 240, 247)",
+          "background": "rgb(27, 40, 51)",
+          "height": 45.59375,
+          "contrastRatio": 13.02282669224414
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "summaryOpen": false,
+      "keyboardAndFocusVerified": false,
+      "scrollWidth": 1430,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "open": false,
+          "color": "rgb(231, 240, 247)",
+          "background": "rgb(27, 40, 51)",
+          "height": 45.59375,
+          "contrastRatio": 13.02282669224414
+        },
+        {
+          "label": "Categories",
+          "open": false,
+          "color": "rgb(231, 240, 247)",
+          "background": "rgb(27, 40, 51)",
+          "height": 45.59375,
+          "contrastRatio": 13.02282669224414
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "summaryOpen": true,
+      "keyboardAndFocusVerified": true,
+      "scrollWidth": 1430,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "open": true,
+          "color": "rgb(231, 240, 247)",
+          "background": "rgb(27, 40, 51)",
+          "height": 45.59375,
+          "contrastRatio": 13.02282669224414
+        },
+        {
+          "label": "Categories",
+          "open": true,
+          "color": "rgb(231, 240, 247)",
+          "background": "rgb(27, 40, 51)",
+          "height": 45.59375,
+          "contrastRatio": 13.02282669224414
+        }
+      ]
+    }
+  ],
+  "nativeMeasurementsPassed": true,
+  "keyboardExpansionFocusPassed": true,
+  "productionVerificationPending": true,
+  "noBackendOrProviderCalls": true,
+  "validation": {
+    "offlinePasses": 915,
+    "hostedSkips": 3,
+    "lintWarnings": 0,
+    "typecheck": "passed including Convex",
+    "productionBuilds": "starter and marketing passed",
+    "scope": "one CSS color token, no backend changes"
+  },
+  "screenshots": [
+    "launch-20261022-source-contrast-synthetic-light-mobile.png",
+    "launch-20261022-source-contrast-synthetic-dark-desktop.png"
+  ]
+}

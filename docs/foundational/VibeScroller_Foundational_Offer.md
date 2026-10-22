@@ -1,5 +1,13 @@
 # VibeScroll foundational offer
 
+## F038: deployed code and one real text result, October 22
+
+The current canonical frontend is `77da4ad7c442f387ca3feaf9ca2536a9658a248e`, version `0.1.0-alpha.20261022195936.g77da4ad7c442`. Launch PRs 120–129 are merged, exact-head/main CI passed and local validation records 915 passes with three hosted skips. The backend remains `13835ea4`; this brief claims no later backend deployment. Deployed code is distinct from enabled provider workloads, signed distribution and independent acceptance. [Implementation status](../implementation-status.md) and the [matrix](../launch-plan/2026-10-22/ACCEPTANCE.md) define those boundaries.
+
+The [founder text-result receipt](../operations/evidence/launch-20261022-founder-text-result.json) establishes one real permitted README-plus-MIT input, 6,073 characters and 6,084 UTF-8 bytes, processed by the founder's official own-account GPT-6.1 Sol Medium session into seven cited insights. Input bytes and schema were validated. Native original/citation inspection passed at desktop 1440/mobile 390 in both system themes, with no observed browser alerts or mobile overflow. Intentional blocking of Help prefetch and a logo query prevents an uninterrupted unthrottled whole-journey claim. This is neither independent model quality nor a customer outcome.
+
+Direct GitHub and Reddit provider permissions remain pending. Human review for public sharing of this seven-insight result is pending; no publication or reuse approval follows from its processing. No code-signing certificate is available, so actual signed customer distribution/install/update remains gated. [Independent setup instructions](../operations/launch-20261022-independent-setup.md) are preparation for later, with unsigned reviewed developer-run source explicitly separate from signed distribution. Existing audience, prices, allowances, six beliefs and commercial/privacy/funding gates are unchanged. No outreach, payment, new participant or broader offer is established by this entry.
+
 ## F037: implemented package and availability limits, October 22
 
 The new launch candidate implements browser Help, a no-signup authored example, resumable private setup, typed source acquisition/evidence, exact reviewed public editions/collections and a signed-manifest companion package/update engine. These features are unreleased candidate code. The anonymous community and direct-provider release switches remain closed; public preview labels cannot be read as real contributions. A saved public source keeps a currently permitted base and actor-private notes, with withdrawal and current rights/retention controlling reuse. Supplied text never becomes verified direct retrieval.

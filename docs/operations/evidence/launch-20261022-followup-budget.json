@@ -1,0 +1,29 @@
+{
+  "recordedAt": "2026-10-22T20:30:38.761359+00:00",
+  "baseCompletedAndRetainedUSD": 1.183759795210689,
+  "backendMaximumUSD": 0.3,
+  "conditionalDocsBuildMaximumUSD": 0.315,
+  "conditionalStagedCanonicalHealthMaximumUSD": 0.06,
+  "combinedMaximumUSD": 1.8587597952106891,
+  "headroomUSD": 0.14124020478931087,
+  "backendBreakdown": {
+    "extra90MBFullMonthStorageUSD": 0.02574,
+    "two32MBCodeCopiesReadWriteMonthStorageUSD": 0.054912,
+    "controlContingencyUSD": 0.05,
+    "fourBoundedPureQueryCanariesUSD": 0.0307204562,
+    "unallocatedUncertaintyUSD": 0.1386275438
+  },
+  "conditions": [
+    "Mandatory fresh exact12component131table273index schema-only prediction;zero walks/backfills/newdefinitions",
+    "At most1physical start_push,3wait,1finish,1report,noevaluate_pushfallback,normalunchangedCLI",
+    "Maximum32MBpreparedpayload,7componentdefinitions,noexternalNodedependencies,oneNodeanalysisgroup",
+    "Analyze/admincontrolclassification follows publishedbillingmeterdefinition and pinnedvisiblebackendpaths; no useraction/job triggered",
+    "At most2physical exact-function readcanaries,final separatecounterreviewpending",
+    "Prior unknown Vercel/control/residual holds retained; no universal hosted binary attestation or settled invoice claim",
+    "Fixed Basic queued45minute maxdocsbuild, no other new spending; later unused reservation release requires actual completed receipt"
+  ],
+  "state": "reserved before dispatch; no new backend call yet",
+  "scope": "Original cumulative US$2 task cap across providers, agents, CI and all prior attempts; no reset",
+  "priorCheckpoint": 8,
+  "settledInvoice": false
+}

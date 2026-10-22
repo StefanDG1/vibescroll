@@ -1,5 +1,13 @@
 # Foundational document change log
 
+## F038: bounded production result and current release, October 22
+
+Updated Research, Avatar, Offer, Beliefs, the current brief and [review backlog](idea-backlog.md#f038-bounded-production-result-and-release-evidence-october-22) together. The brief now distinguishes merged/deployed engineering from independent acceptance: PRs 120–129 merged, frontend `77da4ad7c442f387ca3feaf9ca2536a9658a248e`, alpha `0.1.0-alpha.20261022195936.g77da4ad7c442`, exact-head/main CI passed, backend `13835ea4` unchanged, and 915 local passes with three hosted skips.
+
+Added the [real founder text receipt](../operations/evidence/launch-20261022-founder-text-result.json): one official own-account GPT-6.1 Sol Medium session, permitted README/MIT input of 6,073 characters/6,084 UTF-8 bytes, exact persisted input and actual schema validation, seven cited insights, and native original/citation inspection at 1440/390 widths in both system themes without observed browser alerts or mobile overflow. The original processing receipt keeps its actual version; the latest release does not retroactively become that run's producer. Help prefetch and a logo query were blocked, so no uninterrupted unthrottled whole journey is inferred.
+
+Research preserves the founder/task-selection limitation; Avatar distinguishes operator success from independent setup; Offer separates deployed code from permission/signing availability; Beliefs keeps personally demonstrated value and independent evidence requirements. Both direct-adapter permissions, human review for public sharing of the seven insights and signed distribution remain gated; no certificate is available. [Independent Windows instructions](../operations/launch-20261022-independent-setup.md) are prepared for later, with no contacted or observed participant. Audience, prices, allowances, six beliefs, authority and all remaining gates are unchanged. No independent quality, demand, customer benefit, publication, outreach or payment is claimed. Earlier dated entries and failures remain intact.
+
 ## F037: implemented launch candidate and evidence limits, October 22
 
 Updated all four foundations and the current brief together for the owner-authorized implementation candidate. Research distinguishes new engineering receipts from demand/quality evidence; Avatar defines concrete first-use and recovery comprehension tasks without a new segment; Offer records implemented package boundaries and disabled/public/provider/signing gates; Beliefs preserves the existing six conditions and personally demonstrated value requirement. [The review entry](idea-backlog.md#f037-implemented-launch-candidate-and-evidence-limits-october-22) records the counterargument and next evidence.

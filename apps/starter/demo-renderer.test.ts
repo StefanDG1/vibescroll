@@ -5,6 +5,8 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }));
 import { Console } from "./components/console";
+import Demo from "./app/demo/page";
+import { libraryDemoDrafts, libraryDemoSources } from "./lib/library-demo";
 const initial = {
   sources: [],
   repositories: [],
@@ -45,4 +47,63 @@ it("preserves viewer read-only Save restrictions in an actual workspace", () => 
   expect(buttons.length).toBeGreaterThan(0);
   expect(buttons.every((match) => match[1].includes("disabled"))).toBe(true);
   expect(html).toContain("Viewer access.");
+});
+
+async function renderDemo(params: {
+  view?: string;
+  source?: string;
+  proposal?: string;
+  uiState?: string;
+}) {
+  return renderToStaticMarkup(
+    await Demo({ searchParams: Promise.resolve(params) }),
+  );
+}
+
+it("opens the actual source evidence reached from a demo library link", async () => {
+  const source = libraryDemoSources[0];
+  const html = await renderDemo({ view: "library", source: source._id });
+  expect(html).toContain("Back to list");
+  expect(html).toContain("AI summary");
+  expect(html).toContain("Main points");
+  expect(html).toContain(source.summary);
+});
+
+it("leaves an unknown source on the ordinary demo library", async () => {
+  const html = await renderDemo({ view: "library", source: "unknown-source" });
+  expect(html).not.toContain("AI summary");
+  expect(html).not.toContain("Back to list");
+  expect(html).toContain('<h1 class="sr-only">Library</h1>');
+});
+
+it.each(["loading", "error", "empty"])(
+  "preserves the %s library state when a source link is supplied",
+  async (uiState) => {
+    const html = await renderDemo({
+      view: "library",
+      source: libraryDemoSources[0]._id,
+      uiState,
+    });
+    expect(html).not.toContain("AI summary");
+    expect(html).not.toContain("Back to list");
+    if (uiState === "loading") expect(html).toContain('aria-busy="true"');
+    if (uiState === "error")
+      expect(html).toContain("Synthetic request failure.");
+    if (uiState === "empty") expect(html).toContain("Synthetic absent source");
+  },
+);
+
+it("opens the demo Connections view without granting assistant access", async () => {
+  const html = await renderDemo({ view: "connections" });
+  expect(html).toContain("Use saved ideas in your assistant");
+  expect(html).toContain("Assistant access needs your own signed-in account.");
+});
+
+it("opens the exact existing issue draft targeted by a project proposal link", async () => {
+  const draft = libraryDemoDrafts[0];
+  const html = await renderDemo({ view: "projects", proposal: draft._id });
+  expect(html).toContain("Explore project evidence");
+  expect(html).toContain(
+    '<details class="knowledge-result" open=""><summary><span>' + draft.title,
+  );
 });

@@ -2,13 +2,48 @@ import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { randomUUID, createHash } from "node:crypto";
 import { mkdir, readFile, writeFile, lstat, realpath } from "node:fs/promises";
-import { resolve, join, sep } from "node:path";
+import { resolve, join, sep, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { companionPreparationRoot } from "../companion/config-root.mjs";
 import {
   acquisitionPolicy,
   acquisitionManifest,
 } from "../media/acquisition-runtime.ts";
 import { decoderManifest } from "../media/manifest.ts";
 const execute = promisify(execFile);
+export function localPreparationCleanupCommand(directory) {
+  return {
+    executable: process.execPath,
+    args: [
+      fileURLToPath(
+        new URL("../../scripts/purge-subscription-media.mjs", import.meta.url),
+      ),
+      directory,
+      "--wait",
+    ],
+  };
+}
+async function scheduleLocalCleanup(directory) {
+  const command = localPreparationCleanupCommand(directory);
+  await new Promise((done, reject) => {
+    const cleanup = spawn(command.executable, command.args, {
+      detached: true,
+      windowsHide: true,
+      stdio: "ignore",
+    });
+    cleanup.once("error", reject);
+    cleanup.once("spawn", () => {
+      cleanup.unref();
+      done();
+    });
+  });
+}
+async function readPreparedJson(path, maximum) {
+  const stat = await lstat(path);
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > maximum)
+    throw Error("LOCAL_PREPARATION_OUTPUT_INVALID");
+  return JSON.parse(await readFile(path, "utf8"));
+}
 export async function docker(args, timeout = 20000) {
   const r = await execute("docker", args, {
     timeout,
@@ -70,15 +105,17 @@ export async function prepareLocalUrl({
   image,
   privateRoot,
   run = docker,
+  scheduleCleanup = scheduleLocalCleanup,
 }) {
   const policy = acquisitionPolicy(url);
   if (!/^[a-zA-Z0-9_-]{1,100}$/.test(sourceId))
     throw Error("LOCAL_PREPARATION_SOURCE_INVALID");
   const root = resolve(privateRoot),
     dir = join(root, randomUUID());
-  const base = resolve("private");
+  const expectedRoot = companionPreparationRoot();
+  const base = dirname(expectedRoot);
   if (
-    root !== join(base, "subscription-prepared") ||
+    root !== expectedRoot ||
     !dir.startsWith(root + sep) ||
     (await realpath(base)) !== base ||
     (await lstat(base)).isSymbolicLink()
@@ -102,18 +139,7 @@ export async function prepareLocalUrl({
     { flag: "wx", mode: 0o600 },
   );
   // Schedule cleanup before work, including acquisition failures and early returns.
-  await new Promise((done, reject) => {
-    const cleanup = spawn(
-      process.execPath,
-      [resolve("scripts/purge-subscription-media.mjs"), dir, "--wait"],
-      { detached: true, windowsHide: true, stdio: "ignore" },
-    );
-    cleanup.once("error", reject);
-    cleanup.once("spawn", () => {
-      cleanup.unref();
-      done();
-    });
-  });
+  await scheduleCleanup(dir);
   const prefix = `vibe-trial-${randomUUID()}`,
     worker = `${prefix}-worker`,
     proxy = `${prefix}-proxy`,
@@ -238,7 +264,7 @@ export async function prepareLocalUrl({
       join(dir, "acquisition.json"),
     ]);
     const acquisition = acquisitionManifest.parse(
-      JSON.parse(await readFile(join(dir, "acquisition.json"), "utf8")),
+      await readPreparedJson(join(dir, "acquisition.json"), 32768),
     );
     await run(["stop", "--time", "1", proxy]);
     if (!["acquired", "downloaded"].includes(acquisition.status))
@@ -258,7 +284,7 @@ export async function prepareLocalUrl({
       join(dir, "manifest.json"),
     ]);
     const manifest = decoderManifest(
-      JSON.parse(await readFile(join(dir, "manifest.json"), "utf8")),
+      await readPreparedJson(join(dir, "manifest.json"), 65536),
       true,
     );
     const assets = [];

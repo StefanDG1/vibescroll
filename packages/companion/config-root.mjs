@@ -1,5 +1,20 @@
 import { lstatSync } from "node:fs";
 import { isAbsolute, resolve, join, relative, sep, dirname } from "node:path";
+export function companionPreparationRoot(
+  legacyRoot = process.cwd(),
+  environment = process.env,
+) {
+  return join(
+    dirname(
+      companionPrivatePath(
+        "subscription-session.json",
+        legacyRoot,
+        environment,
+      ),
+    ),
+    "subscription-prepared",
+  );
+}
 export function companionPrivatePath(
   name,
   legacyRoot = process.cwd(),

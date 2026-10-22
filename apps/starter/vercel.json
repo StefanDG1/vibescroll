@@ -4,6 +4,11 @@
   "buildCommand": "pnpm --filter @companynerve/starter... run build",
   "installCommand": "pnpm install --frozen-lockfile",
   "ignoreCommand": "node ../../scripts/ignore-vercel-build.mjs",
+  "git": {
+    "deploymentEnabled": {
+      "codex/launch-20261022-*": false
+    }
+  },
   "regions": ["fra1"],
   "fluid": true
 }

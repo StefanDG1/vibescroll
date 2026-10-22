@@ -23,7 +23,11 @@ export function createKnowledgeHandler(
           name: "VibeScroll",
           version: process.env.NEXT_PUBLIC_APP_VERSION ?? "development",
         },
-        { maxToolInputElements: 1024 },
+        {
+          // Current tools have fewer than 30 fields. Bound traversal before
+          // schema validation, including hostile unknown nested arguments.
+          maxToolInputElements: 256,
+        },
       );
       const register = (
         name: string,

@@ -99,6 +99,27 @@ it("challenges absent tool scopes before invoking the backend and rejects unknow
   });
   expect(invoke).toHaveBeenCalledOnce();
 });
+it("rejects broad and deep tool arguments before invoking the backend", async () => {
+  invoke.mockClear();
+  for (const hostile of [
+    { query: "synthetic", extra: Array.from({ length: 257 }, () => null) },
+    {
+      query: "synthetic",
+      extra: Array.from({ length: 300 }).reduce<unknown>(
+        (value) => ({ nested: value }),
+        null,
+      ),
+    },
+  ]) {
+    const result = await packet(
+      await call("tools/call", { name: "search", arguments: hostile }, [
+        "knowledge:read",
+      ]),
+    );
+    expect(JSON.stringify(result)).toContain("256 elements");
+    expect(invoke).not.toHaveBeenCalled();
+  }
+});
 
 it("requires the feedback scope and explicit request before dispatching a versioned judgment", async () => {
   invoke.mockClear();

@@ -2,7 +2,7 @@
 
 Mode: how-to. Current host: Vercel Pro, checked October 2, 2026. Older Netlify and Worker deployments are historical; follow this procedure for the serving application.
 
-October 22 publication hold: [ADR 114](../adr/114-budget-gated-launch-rollout.md) temporarily disables automatic main Git deployment and production-domain assignment. Full CI builds remain enabled. Follow [the launch rollout procedure](launch-20261022-rollout.md) to verify backend compatibility and spending bounds before removing either hold. The normal automatic deployment step below applies after that controlled resumption.
+October 22 controlled resumption: [ADR 115](../adr/115-controlled-production-publication.md) records the compatible backend deployment, bounded production reads and whole-task spending reservation. Main Git deployments resume while exact-build production-domain promotion remains controlled. Follow [the launch rollout procedure](launch-20261022-rollout.md), verify the staged production build, then promote it and confirm normal authenticated browser journeys before restoring automatic domain assignment. Full CI builds remain enabled.
 
 ## Current production setup
 

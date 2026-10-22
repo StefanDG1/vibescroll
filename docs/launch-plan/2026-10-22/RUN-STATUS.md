@@ -1,5 +1,9 @@
 # Implementation run, October 22
 
+Current controlled rollout: PRs 120–125 are merged. Exact correction head `868ee8e` passed CI 39807257448 and main `13835ea4` passed CI 39807717323. The compatible backend deployed successfully to `bold-lemur-667` at 15:47:50 UTC on October 22, after a first uploaded/staged attempt failed its required TypeScript check before publication. Two actual production handler reads returned the founder's existing Library and non-null setup status, version 3. These supported CLI admin-identity checks are separate from normal WorkOS browser acceptance. [ADR 115](../../adr/115-controlled-production-publication.md) resumes main Git publication under exact-build domain promotion control. The frontend rollout and normal authenticated canaries are pending execution; the historical receipts below retain their original observations.
+
+The current whole-task reservation is US$0.90 Convex, US$0.90 Vercel including one Basic build and bounded live requests, and US$0.20 unsettled prior/control-plane headroom. No paid inference or customer acquisition was initiated. Neither the reservation nor missing settlement certifies a zero invoice. Actual provider/privacy/human gates remain in [the acceptance matrix](ACCEPTANCE.md).
+
 Independently buildable engineering is present in five staged PRs. The subsequent production/merge review below supersedes the earlier no-merge authorization state. This receipt is not live-provider acceptance.
 
 ## Final integration and publication hold

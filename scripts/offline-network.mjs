@@ -16,9 +16,9 @@ globalThis.fetch = function (input, init) {
   refuse(url.hostname);
   return originalFetch(input, init);
 };
-for (const module of [http, https]) {
-  const request = module.request;
-  module.request = function (input, ...args) {
+for (const transport of [http, https]) {
+  const request = transport.request;
+  transport.request = function (input, ...args) {
     const options =
       typeof input === "string" || input instanceof URL
         ? new URL(input)
@@ -26,8 +26,8 @@ for (const module of [http, https]) {
     refuse(options.hostname ?? options.host ?? "localhost");
     return request.call(this, input, ...args);
   };
-  module.get = function (...args) {
-    const request = module.request(...args);
+  transport.get = function (...args) {
+    const request = transport.request(...args);
     request.end();
     return request;
   };

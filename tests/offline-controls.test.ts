@@ -6,6 +6,12 @@ import { resolve, join, sep } from "node:path";
 
 it("isolates validation from inherited provider credentials and blocks public network egress", () => {
   const directory = mkdtempSync(join(tmpdir(), "vibescroll-offline-"));
+  if (
+    !resolve(directory).startsWith(
+      `${resolve(tmpdir())}${sep}vibescroll-offline-`,
+    )
+  )
+    throw Error("Unsafe test cleanup path");
   try {
     const result = spawnSync(
       process.execPath,
@@ -29,12 +35,6 @@ it("isolates validation from inherited provider credentials and blocks public ne
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("offline controls verified");
   } finally {
-    if (
-      !resolve(directory).startsWith(
-        `${resolve(tmpdir())}${sep}vibescroll-offline-`,
-      )
-    )
-      throw Error("Unsafe test cleanup path");
     rmSync(directory, { recursive: true });
   }
 });

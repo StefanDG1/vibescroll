@@ -26,6 +26,10 @@ Customer jobs explicitly disable provider persistence and have bounded lifetimes
 
 Pause the three verification flags when image expiry, isolation, broker, spend or teardown acceptance fails. Never restore E2B or unrestricted execution. Preserve prior approved evidence and use an exact verified Vercel frontend deployment for rollback. Frontend rollback does not undo backend state or charges.
 
+Job creation, clean-tool renewal and the image builder use the [single-dispatch resource adapter](../adr/116-single-dispatch-sandbox-resources.md). A lost creation response cannot authorize a second VM. Only the two clean-tool paths permit one candidate snapshot with an explicit expiry of at most seven days. Automatic resume and additional resource allocation are refused. The thirty-second creation-request deadline does not shorten the approved VM lifetime or subsequent teardown requests.
+
+Treat `SANDBOX_CREATE_UNCERTAIN` as unresolved VM compute and `SANDBOX_SNAPSHOT_UNCERTAIN` as unresolved retained snapshot storage. Keep the applicable reservation. Inspect the exact provider inventory before an explicit retry; a missing response is not proof that nothing was allocated. Confirm VM stop/deletion and snapshot deletion or expiry separately. A failed clean-tool stage does not promote the candidate or verify cleanup. Preserve maintenance leases, backoff and the existing recovery procedure below.
+
 ## Restrict acceptance before public release
 
 Worker verification and public commercial approval are separate. Set CLOUD_PUBLIC_RELEASE_APPROVED=false and provide CLOUD_EXECUTION_SUBJECTS_JSON as a JSON array containing only the verified operator identity for production acceptance. An absent, malformed or oversized list denies execution. CLOUD_VERIFIED still needs to be true, and DISABLE_CLOUD=true denies everyone. Approval, worker claim and publication all recheck this audience. Do not enable public release merely because an owner integration test passed. Hosted video analysis additionally requires HOSTED_MEDIA_ANALYSIS_VERIFIED=true after its licensed vision model and actual audiovisual quality checks; media-worker verification alone does not enable it.

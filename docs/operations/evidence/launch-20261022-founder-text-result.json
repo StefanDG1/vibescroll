@@ -1,0 +1,60 @@
+{
+  "mode": "bounded founder-account production supplied-text receipt; not independent or whole-plan acceptance",
+  "recordedAt": "2026-10-22T19:21:30.168Z",
+  "frontendCommit": "097f30ecaca12c110dc7eafa916ee374ca340345",
+  "backendCommit": "13835ea4e5a5de28e1a0fbc1eab88df5d00cb9b2",
+  "source": {
+    "description": "Founder-authored public repository README excerpt and MIT notice, supplied manually",
+    "repositoryRevision": "9724fb51cc8848602931dce3d3c570893b315499",
+    "characters": 6073,
+    "utf8Bytes": 6084,
+    "sha256": "f7dd4248300285dfb26bbd91c5fef968a8f4b967a2619a3a3178fce5dcb790b8",
+    "persistedInputByteEquality": true,
+    "provenance": "User-supplied; no direct provider verification"
+  },
+  "processing": {
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "funding": "own official account session; no paid API fallback",
+    "actualInferenceTurns": 1,
+    "sourceState": "ready",
+    "generation": 1,
+    "insights": 7,
+    "citations": 7,
+    "citationKind": "user_note / supplied_text, untimed",
+    "coverage": "caption_only",
+    "pipeline": "official-personal-media-text-v1",
+    "contractValidation": "persisted output passed actual insight schema"
+  },
+  "warnings": [
+    "This is supplied text rather than verified video content. No video, audio or screenshot content was inspected.",
+    "Repository provenance, revision and implementation status are user-supplied and were not independently verified. Linked documentation and hosted routes were not inspected.",
+    "Supported confidence indicates support within the supplied excerpt, not independent confirmation of functionality, availability or results."
+  ],
+  "browser": {
+    "nativeEvidenceOpened": true,
+    "originalSourceTextInspectable": true,
+    "desktopCSSWidth": 1440,
+    "mobileCSSWidth": 390,
+    "mobileScrollWidth": 390,
+    "refreshLimit": "Budget guard intentionally blocked background and redundant refreshes before dispatch. This is not an uninterrupted unthrottled UI journey."
+  },
+  "review": {
+    "method": "Local comparison of all seven claims, interpretations and warnings with the exact supplied excerpt; explicit UTF-8 byte comparison",
+    "finding": "Claims are materially supported by the excerpt; citations point to the whole supplied text, not repository lines or verified media. No independent product functionality, provider access or customer outcome is inferred.",
+    "earlierReviewCorrection": "An apparent input mismatch came from a locale-dependent local JSON read. Explicit UTF-8 reads confirmed exact byte equality; no production encoding defect was found."
+  },
+  "worker": {
+    "requests": 9,
+    "conservativeReservationUSD": 0.05681498012905001,
+    "existingControllerPreserved": true,
+    "settledIncrementalInvoiceUSD": null
+  },
+  "limitations": [
+    "Founder account, not independent acceptance",
+    "Manual supplied-text route, not direct GitHub/Reddit retrieval",
+    "Budget guard intentionally blocked background and redundant refreshes; not an uninterrupted unthrottled UI flow",
+    "No audiovisual processing, project review, public publication, paid billing or signing acceptance"
+  ],
+  "privacy": "No account, workspace, device or source record identifiers, credentials, private paths, screenshots or raw analysis payload are included."
+}

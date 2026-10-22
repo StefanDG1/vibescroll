@@ -107,3 +107,52 @@ it("opens the exact existing issue draft targeted by a project proposal link", a
     '<details class="knowledge-result" open=""><summary><span>' + draft.title,
   );
 });
+
+it.each([
+  ["text", "Original supplied text and corrections"],
+  ["upload", "Original transcript and corrections"],
+  ["url", "Original transcript and corrections"],
+])(
+  "keeps %s source wording and original/corrected evidence distinct",
+  (kind, title) => {
+    const source = {
+      ...libraryDemoSources[0],
+      kind,
+      originalText: "Original <source> passage",
+      text: "Corrected source passage",
+      analysis: {
+        insights: [
+          {
+            id: "synthetic-text-evidence",
+            title: "Inspect the original passage",
+            claim: "Synthetic claim for renderer validation only.",
+            evidence: [
+              {
+                kind: "user_note",
+                id: "supplied_text",
+                startMs: null,
+                endMs: null,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const html = renderToStaticMarkup(
+      createElement(Console, {
+        initial,
+        organizationId: "demo",
+        demo: true,
+        readOnly: true,
+        initialView: "source",
+        initialSource: source,
+      }),
+    );
+    expect(html).toContain(`<summary>${title}</summary>`);
+    expect(html).toContain('id="source-transcript"');
+    expect(html).toContain("Original &lt;source&gt; passage");
+    expect(html).toContain("Current user correction: Corrected source passage");
+    expect(html).toContain("user note · Supplied text");
+    expect(html).not.toContain("user note · 0.0s");
+  },
+);

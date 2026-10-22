@@ -24,6 +24,9 @@ import {
 } from "./lib/public-knowledge";
 import { POST } from "./app/api/public-knowledge/report/route";
 import { PublicEditionContent } from "./components/public-edition-content";
+import Edition from "./app/editions/[slug]/page";
+import Collection from "./app/collections/[slug]/page";
+import type { PublicEdition } from "./lib/public-knowledge-display";
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "https://synthetic.convex.cloud");
   vi.stubEnv("APP_URL", "https://synthetic.example.test");
@@ -134,4 +137,91 @@ it("renders evidence as escaped text and omits unsafe source/citation links", ()
   expect(html).not.toContain('href="javascript:');
   expect(html).not.toContain('href="file:');
   expect(html).toContain("Uncertainty");
+});
+
+function publicEdition(): PublicEdition & { corrections: [] } {
+  return {
+    slug: "permitted-example",
+    version: 2,
+    reuseAllowed: true,
+    publishedDate: "2026-10-22",
+    corrections: [],
+    title: "Synthetic public edition",
+    summary: "Synthetic generated summary",
+    publisher: "Example publisher",
+    sourceUrl: "https://github.com/example/project/blob/abc/README.md",
+    coverage: "supplied_text",
+    language: "en",
+    pipelineVersion: "synthetic-v2",
+    schemaVersion: "2",
+    insights: [
+      {
+        id: "synthetic-point",
+        title: "Synthetic source point",
+        claim: "Synthetic claim requiring review",
+        interpretation: "A possible application, subject to review",
+        uncertainty: ["Not independently verified"],
+        citations: [
+          {
+            label: "Supplied source excerpt",
+            url: null,
+            kind: "supplied_text",
+          },
+        ],
+      },
+    ],
+  };
+}
+
+it("discloses AI generation visibly on the actual edition page before its claims", async () => {
+  vi.stubEnv("PUBLIC_KNOWLEDGE_WEB_ENABLED", "true");
+  const edition = publicEdition();
+  mock.query.mockResolvedValueOnce(edition);
+  const html = renderToStaticMarkup(
+    await Edition({ params: Promise.resolve({ slug: edition.slug }) }),
+  );
+  expect(html).toMatch(/<p[^>]*>AI-generated analysis may contain errors\./);
+  expect(html).toContain("Review the source references before relying on it.");
+  expect(html).toContain(
+    "The publisher is responsible for reviewing this edition.",
+  );
+  expect(html.indexOf("AI-generated analysis")).toBeLessThan(
+    html.indexOf(edition.insights[0].claim),
+  );
+  expect(html).toContain(`href="${edition.sourceUrl}"`);
+  expect(html).toContain("Supplied source excerpt");
+  expect(html).not.toMatch(/human[- ]reviewed|reviewed by a human/i);
+  expect(mock.query).toHaveBeenCalledTimes(1);
+  expect(mock.setAuth).not.toHaveBeenCalled();
+  expect(mock.mutation).not.toHaveBeenCalled();
+});
+
+it("labels generated summaries on the actual collection page and links to source review", async () => {
+  vi.stubEnv("PUBLIC_KNOWLEDGE_WEB_ENABLED", "true");
+  const edition = publicEdition();
+  mock.query.mockResolvedValueOnce({
+    slug: "example-collection",
+    title: "Synthetic collection",
+    description: "An explicitly permitted synthetic collection",
+    topic: "Testing",
+    editions: [edition],
+  });
+  const html = renderToStaticMarkup(
+    await Collection({
+      params: Promise.resolve({ slug: "example-collection" }),
+    }),
+  );
+  expect(html).toMatch(/<p[^>]*>These edition summaries are AI-generated/);
+  expect(html).toContain("may contain errors");
+  expect(html).toContain(
+    "Open an edition to review its source references before relying on it.",
+  );
+  expect(html.indexOf("These edition summaries are AI-generated")).toBeLessThan(
+    html.indexOf(edition.summary),
+  );
+  expect(html).toContain(`href="/editions/${edition.slug}"`);
+  expect(html).not.toMatch(/human[- ]reviewed|reviewed by a human/i);
+  expect(mock.query).toHaveBeenCalledTimes(1);
+  expect(mock.setAuth).not.toHaveBeenCalled();
+  expect(mock.mutation).not.toHaveBeenCalled();
 });

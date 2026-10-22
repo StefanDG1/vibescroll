@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "releaseStatus": "prepared in draft PR, not publicly released",
+  "assets": [
+    {
+      "path": "/product/production-summary.png",
+      "kind": "native-browser-crop",
+      "surface": "existing production result",
+      "route": "private source detail, identifying path omitted",
+      "sourceCommit": null,
+      "sourceCommitStatus": "production build commit not independently verified",
+      "observedAt": "2026-10-22T11:23:32Z",
+      "viewportCss": {
+        "width": 1440,
+        "height": 809
+      },
+      "clipCss": {
+        "x": 403,
+        "y": 758,
+        "width": 1030,
+        "height": 1140
+      },
+      "width": 2060,
+      "height": 2280,
+      "synthetic": false,
+      "ownerAuthorization": "existing production account insights permitted for demo in this chat",
+      "reviewer": "root GPT-6.1 Sol xhigh",
+      "status": "approved for this prepared demo crop",
+      "privacyReview": "No account identity, balance, private project choices, source thumbnail or raw media included.",
+      "caption": "Existing production output. No new processing run, accuracy benchmark, customer outcome or candidate release is established.",
+      "sha256": "2c444f8c59978f728b1576786bbf84935f50ce922d55b1ed43e076ba36a2a4a0",
+      "bytes": 250899
+    }
+  ]
+}

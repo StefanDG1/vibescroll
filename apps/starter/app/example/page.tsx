@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PublicPage } from "@/components/site";
 export const metadata = {
   title: "Inspect a source and a project decision",
@@ -96,6 +97,29 @@ export default function Example() {
           </p>
         </section>
       </div>
+      <section className="section" aria-labelledby="existing-result">
+        <h2 id="existing-result">An existing production result</h2>
+        <p>
+          This cropped result comes from the founder&apos;s account, shared with
+          permission. It separates a source&apos;s proposal from what its
+          evidence can establish. Account details, private project choices and
+          source media are excluded.
+        </p>
+        <figure className="product-result">
+          <Image
+            src="/product/production-summary.png"
+            width={2060}
+            height={2280}
+            alt="An existing result summarizes an onboarding idea, labels the Duolingo comparison uncertain, and keeps supporting references beside each insight."
+            unoptimized
+          />
+          <figcaption>
+            Existing production output captured October 22, 2026. This is not a
+            new processing run, a reviewed accuracy benchmark or a customer
+            outcome. The project decisions above remain synthetic.
+          </figcaption>
+        </figure>
+      </section>
       <div className="row">
         <Link className="primary" href="/demo?view=library">
           Explore the Library demo

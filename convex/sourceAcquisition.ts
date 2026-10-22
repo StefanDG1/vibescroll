@@ -19,8 +19,14 @@ import {
   redditSourceUrl,
   safeSourcePath,
 } from "../packages/sources/urls";
-import { directSourceEligibility } from "./lib/sourcePolicy";
-export { directSourceEligibility } from "./lib/sourcePolicy";
+import {
+  directSourceEnabled,
+  redditSourceEligibility,
+} from "./lib/sourcePolicy";
+export {
+  directSourceEnabled,
+  redditSourceEligibility,
+} from "./lib/sourcePolicy";
 import {
   createEvidence,
   excerptHash,
@@ -192,7 +198,7 @@ async function currentLease(
     row.state !== "fetching" ||
     row.lease !== lease ||
     row.deadline <= Date.now() ||
-    !directSourceEligibility()
+    !directSourceEnabled(row.provider)
   )
     return null;
   const source = await actorCurrent(ctx, row);
@@ -219,9 +225,9 @@ export const prepare = mutation({
     const provider = providerOf(source);
     await revisionCapacity(ctx, source._id);
     ensure(
-      directSourceEligibility(),
+      directSourceEnabled(provider),
       "SETUP_REQUIRED",
-      "Both direct source adapters require current verified provider setup.",
+      "This source provider requires current verified setup and release approval.",
     );
     const recovery = await requiresRightsReview(ctx, source);
     ensure(
@@ -332,10 +338,15 @@ export const status = query({
       "Source unavailable.",
     );
     await access(ctx, source.organizationId);
+    const enabled =
+      source.sourceType === "github_repository"
+        ? directSourceEnabled("github")
+        : source.sourceType === "reddit_thread" &&
+          directSourceEnabled("reddit");
     const rightsReview = await requiresRightsReview(ctx, source);
     if (rightsReview)
       return {
-        enabled: !!directSourceEligibility(),
+        enabled,
         sourceType: source.sourceType,
         retrievalState: "unavailable" as const,
         request: null,
@@ -352,7 +363,7 @@ export const status = query({
       .order("desc")
       .first();
     return {
-      enabled: !!directSourceEligibility(),
+      enabled,
       requiresRightsReview: false,
       sourceGeneration: source.generation,
       sourceRevision: source.updatedAt,
@@ -530,7 +541,7 @@ export const select = mutation({
         row.version === a.version &&
         row.state === "saved" &&
         row.provider === "github" &&
-        directSourceEligibility() &&
+        directSourceEnabled("github") &&
         (await actorCurrent(ctx, row)),
       "STALE_APPROVAL",
       "Source or retrieval changed. Review it again.",
@@ -605,7 +616,7 @@ export const claim = internalMutation({
       actor._id === row.actor &&
         source &&
         row.version === a.version &&
-        directSourceEligibility(),
+        directSourceEnabled(row.provider),
       "STALE_APPROVAL",
       "Source retrieval authority changed.",
     );
@@ -1003,7 +1014,7 @@ export const finish = internalMutation({
           "Retrieved files exceed the reviewed selection.",
         );
       else {
-        const eligibility = directSourceEligibility()!;
+        const eligibility = redditSourceEligibility()!;
         ensure(
           revision.retention &&
             revision.retention.policyEvidenceId === eligibility.evidenceId &&

@@ -6,7 +6,11 @@ import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import { acquireGithubSource } from "../packages/providers/github-source";
-import type { SourceTransport } from "../packages/sources/types";
+import { createEvidence, registryHash } from "../packages/sources/evidence";
+import type {
+  SourceRevision,
+  SourceTransport,
+} from "../packages/sources/types";
 const fixture = vi.hoisted(() => ({
   transport: undefined as SourceTransport | undefined,
 }));
@@ -86,6 +90,8 @@ afterEach(() => {
 });
 async function setup() {
   vi.stubEnv("DIRECT_SOURCES_ENABLED", "true");
+  vi.stubEnv("GITHUB_SOURCES_ENABLED", "true");
+  vi.stubEnv("REDDIT_SOURCES_ENABLED", "true");
   vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "fixture-oauth-only");
   currentEligibility();
   const t = convexTest(schema, modules);
@@ -149,76 +155,123 @@ async function setup() {
     prepare,
   };
 }
-it("persists inspect, exact file review and acquisition without starting or charging inference", async () => {
-  const s = await setup(),
-    request = await s.prepare();
-  expect(await s.prepare()).toEqual(request);
-  await expect(
-    s.owner.action(api.sourceAcquisitionActions.acquire, {
-      id: request.id,
-      version: request.version,
-    }),
-  ).rejects.toThrow();
-  expect(s.transport).not.toHaveBeenCalled();
-  expect(
-    await s.owner.action(api.sourceAcquisitionActions.inspect, {
-      id: request.id,
-      version: request.version,
-    }),
-  ).toEqual({ accepted: true });
-  const status = await s.owner.query(api.sourceAcquisition.status, {
-    id: s.sourceId,
-  });
-  expect(
-    status.request?.selection.files.map((f: { path: string }) => f.path),
-  ).toEqual(["README.md"]);
-  await expect(
-    s.owner.mutation(api.sourceAcquisition.select, {
+it.each(["absent", "malformed", "expired", "oauth_missing", "disabled"])(
+  "persists GitHub inspection and selected acquisition with Reddit %s without starting or charging inference",
+  async (change) => {
+    const s = await setup(),
+      permission = JSON.parse(process.env.REDDIT_SOURCE_ELIGIBILITY_JSON!);
+    if (change === "absent") vi.stubEnv("REDDIT_SOURCE_ELIGIBILITY_JSON", "");
+    if (change === "malformed")
+      vi.stubEnv("REDDIT_SOURCE_ELIGIBILITY_JSON", "{");
+    if (change === "expired")
+      vi.stubEnv(
+        "REDDIT_SOURCE_ELIGIBILITY_JSON",
+        JSON.stringify({ ...permission, expiresAt: Date.now() - 1 }),
+      );
+    if (change === "oauth_missing") vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "");
+    if (change === "disabled") vi.stubEnv("REDDIT_SOURCES_ENABLED", "false");
+    const request = await s.prepare();
+    expect(
+      (await s.owner.query(api.sourceAcquisition.status, { id: s.sourceId }))
+        .enabled,
+    ).toBe(true);
+    expect(await s.prepare()).toEqual(request);
+    await expect(
+      s.owner.action(api.sourceAcquisitionActions.acquire, {
+        id: request.id,
+        version: request.version,
+      }),
+    ).rejects.toThrow();
+    expect(s.transport).not.toHaveBeenCalled();
+    expect(
+      await s.owner.action(api.sourceAcquisitionActions.inspect, {
+        id: request.id,
+        version: request.version,
+      }),
+    ).toEqual({ accepted: true });
+    const status = await s.owner.query(api.sourceAcquisition.status, {
+      id: s.sourceId,
+    });
+    expect(
+      status.request?.selection.files.map((f: { path: string }) => f.path),
+    ).toEqual(["README.md"]);
+    await expect(
+      s.owner.mutation(api.sourceAcquisition.select, {
+        id: request.id,
+        version: status.request!.version,
+        paths: [".env"],
+      }),
+    ).rejects.toThrow();
+    const selected = await s.owner.mutation(api.sourceAcquisition.select, {
       id: request.id,
       version: status.request!.version,
-      paths: [".env"],
-    }),
-  ).rejects.toThrow();
-  const selected = await s.owner.mutation(api.sourceAcquisition.select, {
-    id: request.id,
-    version: status.request!.version,
-    paths: ["README.md"],
-  });
-  expect(
-    await s.owner.action(api.sourceAcquisitionActions.acquire, selected),
-  ).toEqual({ accepted: true });
-  await s.t.run(async (ctx) => {
-    const source = (await ctx.db.get(s.sourceId))!,
-      revision = (await ctx.db.get(source.currentRevisionId!))!,
-      row = (await ctx.db.get(request.id))!;
-    expect(source).toMatchObject({
-      generation: 2,
-      text,
-      state: "saved",
-      retrievalState: "ready",
+      paths: ["README.md"],
     });
-    expect(revision).toMatchObject({
-      generation: 2,
-      state: "current",
-      text,
-      sourceId: s.sourceId,
-      organizationId: s.organizationId,
+    expect(
+      await s.owner.action(api.sourceAcquisitionActions.acquire, selected),
+    ).toEqual({ accepted: true });
+    await s.t.run(async (ctx) => {
+      const source = (await ctx.db.get(s.sourceId))!,
+        revision = (await ctx.db.get(source.currentRevisionId!))!,
+        row = (await ctx.db.get(request.id))!;
+      expect(source).toMatchObject({
+        generation: 2,
+        text,
+        state: "saved",
+        retrievalState: "ready",
+      });
+      expect(revision).toMatchObject({
+        generation: 2,
+        state: "current",
+        text,
+        sourceId: s.sourceId,
+        organizationId: s.organizationId,
+      });
+      expect(row.requestCount).toBe(7);
+      expect(row.byteCount).toBeGreaterThan(Buffer.byteLength(text));
+      expect(await ctx.db.query("reservations").collect()).toEqual([]);
     });
-    expect(row.requestCount).toBe(7);
-    expect(row.byteCount).toBeGreaterThan(Buffer.byteLength(text));
-    expect(await ctx.db.query("reservations").collect()).toEqual([]);
-  });
-  await expect(
-    s.other.query(api.sourceAcquisition.status, { id: s.sourceId }),
-  ).rejects.toThrow();
-});
-it("gates both adapters together and prevents rights or grant changes from making requests", async () => {
+    await expect(
+      s.other.query(api.sourceAcquisition.status, { id: s.sourceId }),
+    ).rejects.toThrow();
+  },
+);
+it.each(["absent", "malformed", "expired", "oauth_missing", "disabled"])(
+  "does not prepare or dispatch Reddit with %s setup even when GitHub is enabled",
+  async (change) => {
+    const s = await setup(),
+      permission = JSON.parse(process.env.REDDIT_SOURCE_ELIGIBILITY_JSON!);
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.sourceId, {
+        sourceType: "reddit_thread",
+        canonical: "https://www.reddit.com/r/example/comments/abc123/",
+        url: "https://www.reddit.com/r/example/comments/abc123/",
+      }),
+    );
+    if (change === "absent") vi.stubEnv("REDDIT_SOURCE_ELIGIBILITY_JSON", "");
+    if (change === "malformed")
+      vi.stubEnv("REDDIT_SOURCE_ELIGIBILITY_JSON", "{");
+    if (change === "expired")
+      vi.stubEnv(
+        "REDDIT_SOURCE_ELIGIBILITY_JSON",
+        JSON.stringify({ ...permission, expiresAt: Date.now() - 1 }),
+      );
+    if (change === "oauth_missing") vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "");
+    if (change === "disabled") vi.stubEnv("REDDIT_SOURCES_ENABLED", "");
+    expect(
+      (await s.owner.query(api.sourceAcquisition.status, { id: s.sourceId }))
+        .enabled,
+    ).toBe(false);
+    await expect(s.prepare()).rejects.toThrow("SETUP_REQUIRED");
+    expect(s.transport).not.toHaveBeenCalled();
+    expect(
+      await s.t.run((ctx) => ctx.db.query("sourceAcquisitions").collect()),
+    ).toEqual([]);
+  },
+);
+it("requires GitHub activation and current source rights before making requests", async () => {
   const s = await setup();
-  for (const env of [
-    "REDDIT_SOURCE_OAUTH_TOKEN",
-    "REDDIT_SOURCE_ELIGIBILITY_JSON",
-    "DIRECT_SOURCES_ENABLED",
-  ]) {
+  for (const env of ["GITHUB_SOURCES_ENABLED", "DIRECT_SOURCES_ENABLED"]) {
     const previous = process.env[env];
     vi.stubEnv(env, "");
     await expect(s.prepare()).rejects.toThrow();
@@ -228,6 +281,116 @@ it("gates both adapters together and prevents rights or grant changes from makin
   await s.t.run((ctx) => ctx.db.patch(s.sourceId, { rightsAttested: false }));
   await expect(s.prepare()).rejects.toThrow();
 });
+it.each([
+  "current",
+  "policy_changed",
+  "deletion_changed",
+  "disabled",
+  "oauth_revoked",
+  "workload_revoked",
+  "expired",
+  "wrong_lease",
+])(
+  "accepts Reddit completion only with its current permission and lease: %s",
+  async (change) => {
+    const s = await setup(),
+      now = Date.now(),
+      canonical = "https://www.reddit.com/r/example/comments/abc123/";
+    vi.stubEnv("GITHUB_SOURCES_ENABLED", "false");
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.sourceId, {
+        sourceType: "reddit_thread",
+        canonical,
+        url: canonical,
+      }),
+    );
+    const permission = JSON.parse(process.env.REDDIT_SOURCE_ELIGIBILITY_JSON!);
+    const request = await s.prepare();
+    const job = await s.owner.mutation(internal.sourceAcquisition.claim, {
+      id: request.id,
+      version: request.version,
+      phase: "acquire",
+    });
+    const record = await createEvidence({
+      kind: "reddit_post",
+      postId: "abc123",
+      itemId: "abc123",
+      parentId: null,
+      author: "fixture-author",
+      role: "op",
+      availability: "available",
+      createdAt: null,
+      editedAt: null,
+      excerpt: text,
+      canonicalUrl: canonical,
+      observedAt: now,
+    });
+    const revision: SourceRevision = {
+      schemaVersion: "1.0.0",
+      sourceType: "reddit_thread",
+      canonical,
+      providerIdentity: "reddit:abc123",
+      contentHash: await registryHash([record]),
+      adapterVersion: "fixture",
+      observedAt: now,
+      rightsBasis: "verified_reddit_contract:fixture-permission-not-live",
+      retention: {
+        retainUntil: now + 3600000,
+        deletionWithinMs: 3600000,
+        policyEvidenceId: permission.evidenceId,
+      },
+      coverage: { method: "fixture", retrieved: 1, omitted: 0, omissions: [] },
+    };
+    if (change === "policy_changed")
+      vi.stubEnv(
+        "REDDIT_SOURCE_ELIGIBILITY_JSON",
+        JSON.stringify({ ...permission, evidenceId: "different-permission" }),
+      );
+    if (change === "deletion_changed")
+      vi.stubEnv(
+        "REDDIT_SOURCE_ELIGIBILITY_JSON",
+        JSON.stringify({
+          ...permission,
+          retention: { ...permission.retention, deletionWithinMs: 1000 },
+        }),
+      );
+    if (change === "disabled") vi.stubEnv("REDDIT_SOURCES_ENABLED", "false");
+    if (change === "oauth_revoked") vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "");
+    if (change === "workload_revoked")
+      vi.stubEnv(
+        "REDDIT_SOURCE_ELIGIBILITY_JSON",
+        JSON.stringify({
+          ...permission,
+          workloads: ["selected_thread_read", "private_summary"],
+        }),
+      );
+    if (change === "expired")
+      vi.stubEnv(
+        "REDDIT_SOURCE_ELIGIBILITY_JSON",
+        JSON.stringify({ ...permission, expiresAt: Date.now() - 1 }),
+      );
+    const completion = s.t.mutation(internal.sourceAcquisition.finish, {
+      id: request.id,
+      lease: change === "wrong_lease" ? "foreign-lease" : job.lease,
+      phase: "acquire",
+      result: { status: "ready", revision, evidence: [record], text },
+    });
+    if (change === "policy_changed" || change === "deletion_changed")
+      await expect(completion).rejects.toThrow(
+        "Provider retention authority changed",
+      );
+    else expect(await completion).toEqual({ accepted: change === "current" });
+    await s.t.run(async (ctx) => {
+      const rows = await ctx.db.query("sourceRevisions").collect();
+      expect(rows).toHaveLength(change === "current" ? 1 : 0);
+      expect((await ctx.db.get(s.sourceId))!.text).toBe(
+        change === "current" ? text : undefined,
+      );
+      expect(await ctx.db.query("reservations").collect()).toEqual([]);
+    });
+    expect(s.transport).not.toHaveBeenCalled();
+  },
+);
 it("fences cancelled, stale, revoked and expired completions before retaining any text", async () => {
   const scenarios = [
     "cancel",
@@ -237,6 +400,9 @@ it("fences cancelled, stale, revoked and expired completions before retaining an
     "actor",
     "deadline",
     "disabled",
+    "provider_disabled",
+    "restore_locked",
+    "capture_disabled",
   ] as const;
   for (const scenario of scenarios) {
     const s = await setup(),
@@ -275,6 +441,20 @@ it("fences cancelled, stale, revoked and expired completions before retaining an
         ctx.db.patch(prepared.id, { deadline: Date.now() - 1 }),
       );
     if (scenario === "disabled") vi.stubEnv("DIRECT_SOURCES_ENABLED", "false");
+    if (scenario === "provider_disabled")
+      vi.stubEnv("GITHUB_SOURCES_ENABLED", "false");
+    if (scenario === "restore_locked") vi.stubEnv("RESTORE_LOCK", "true");
+    if (scenario === "capture_disabled") vi.stubEnv("DISABLE_CAPTURE", "true");
+    expect(
+      (
+        await s.t.mutation(internal.sourceAcquisition.providerClaim, {
+          id: prepared.id,
+          lease: job.lease,
+          provider: "github",
+        })
+      ).allowed,
+      scenario,
+    ).toBe(false);
     expect(
       await s.t.mutation(internal.sourceAcquisition.finish, {
         id: prepared.id,
@@ -288,6 +468,7 @@ it("fences cancelled, stale, revoked and expired completions before retaining an
       expect(await ctx.db.query("sourceRevisions").collect()).toEqual([]);
       expect((await ctx.db.get(s.sourceId))?.text).toBeUndefined();
     });
+    vi.unstubAllEnvs();
   }
 });
 it("rejects a forged acquisition registry and accepts only the current selected revision", async () => {

@@ -181,6 +181,8 @@ it("rejects citations borrowed from another selected insight and keeps typed pro
 });
 async function setup(mode: "github" | "supplied" = "github") {
   vi.stubEnv("DIRECT_SOURCES_ENABLED", "true");
+  vi.stubEnv("GITHUB_SOURCES_ENABLED", "true");
+  vi.stubEnv("REDDIT_SOURCES_ENABLED", "true");
   vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "fixture-oauth-not-live");
   vi.stubEnv(
     "REDDIT_SOURCE_ELIGIBILITY_JSON",

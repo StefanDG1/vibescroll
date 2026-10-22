@@ -12,6 +12,8 @@ afterEach(() => vi.unstubAllEnvs());
 async function setup(mode: "github" | "supplied" = "github") {
   vi.stubEnv("PUBLIC_KNOWLEDGE_ENABLED", "true");
   vi.stubEnv("DIRECT_SOURCES_ENABLED", "true");
+  vi.stubEnv("GITHUB_SOURCES_ENABLED", "true");
+  vi.stubEnv("REDDIT_SOURCES_ENABLED", "true");
   vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "fixture-only-oauth");
   vi.stubEnv(
     "REDDIT_SOURCE_ELIGIBILITY_JSON",

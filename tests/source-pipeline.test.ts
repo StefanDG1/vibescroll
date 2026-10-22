@@ -17,6 +17,8 @@ async function setup(mode: "github" | "reddit" | "supplied" = "github") {
   const now = Date.now(),
     permissionId = "fixture-commercial-access-not-live";
   vi.stubEnv("DIRECT_SOURCES_ENABLED", "true");
+  vi.stubEnv("GITHUB_SOURCES_ENABLED", "true");
+  vi.stubEnv("REDDIT_SOURCES_ENABLED", "true");
   vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "fixture-oauth-not-live");
   vi.stubEnv(
     "REDDIT_SOURCE_ELIGIBILITY_JSON",

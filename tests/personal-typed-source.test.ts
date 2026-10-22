@@ -18,6 +18,8 @@ async function setup() {
   vi.useFakeTimers();
   vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", '["typed-personal-owner"]');
   vi.stubEnv("DIRECT_SOURCES_ENABLED", "true");
+  vi.stubEnv("GITHUB_SOURCES_ENABLED", "true");
+  vi.stubEnv("REDDIT_SOURCES_ENABLED", "true");
   vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "fixture-only-not-live");
   vi.stubEnv(
     "REDDIT_SOURCE_ELIGIBILITY_JSON",

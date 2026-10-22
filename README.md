@@ -6,6 +6,13 @@ Make scrolling useful. Keep saved ideas with their source evidence, find them ag
 
 The example uses clearly labelled synthetic text. Its useful, already-implemented and no-fit decisions demonstrate the review process without claiming customer results. New routes in this branch need the separately approved release before appearing on the hosted site.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="apps/starter/public/product/library-dark-1440.png">
+  <img src="apps/starter/public/product/library-light-1440.png" alt="Actual VibeScroll Library with synthetic sources, Tree navigation and an evidence link" width="1440" height="900">
+</picture>
+
+Actual candidate UI with synthetic data. [40-second captioned overview](apps/starter/public/product/overview.mp4), [setup guide video](apps/starter/public/product/setup-walkthrough.mp4), [text transcripts](docs/launch-kit/media.md) and [mobile view](apps/starter/public/product/library-light-390.png). Live sign-in, pairing and a real sample run remain separate acceptance steps.
+
 ## What you can do
 
 Save a permitted source → inspect cited insights → find and organize knowledge → optionally review project fit → retain an editable plan.
@@ -28,7 +35,7 @@ See [capabilities](docs/CAPABILITIES.md), [readiness](docs/V1-READINESS.md) and 
 
 ## Try the synthetic local demo
 
-Use Node 24 and pnpm 12.3.4. From a fresh clone:
+Use the verified Node 24.22.1 patch and pnpm 12.3.4. From a fresh clone:
 
 ```powershell
 pnpm install --frozen-lockfile

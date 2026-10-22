@@ -1,6 +1,6 @@
 # Capabilities and troubleshooting
 
-Mode: reference. Updated October 22, 2026. The October 22 additions below are an implemented, unreleased candidate, not an update to production availability. Exact integrated commit: `ROOT_CANDIDATE_COMMIT_PENDING`. Root must fill the commit and final check receipt after integration. Earlier hosted capability evidence is from October 3; earlier assistant evidence includes the October 17 release and owner activation. See [readiness](V1-READINESS.md) and [implementation status](implementation-status.md) for dated records; the [October 3 deployment receipt](operations/evidence/paid-release-deployment-20261003.json) identifies that historical demonstrated build.
+Mode: reference. Updated October 22, 2026. The October 22 additions below are an implemented, unreleased candidate, not an update to production availability. Exact integrated commit: `76ec7bf0b9812e670207cba199b8d07cc07839fd`. The final presentation and exact-head CI receipts are recorded separately in implementation status. Earlier hosted capability evidence is from October 3; earlier assistant evidence includes the October 17 release and owner activation. See [readiness](V1-READINESS.md) and [implementation status](implementation-status.md) for dated records; the [October 3 deployment receipt](operations/evidence/paid-release-deployment-20261003.json) identifies that historical demonstrated build.
 
 ## October 22 candidate
 

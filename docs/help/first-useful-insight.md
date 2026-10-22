@@ -41,3 +41,7 @@ You can find the source again, show the reference behind one insight and describ
 [More recovery steps](/help/processing-and-recovery)
 
 **Tip:** Keep a short note about what you expected to learn. Compare the result with the actual source before acting.
+
+![Save form with source type, title, URL and permission checkbox.](/help/save-form.png)
+
+![Synthetic source detail with AI summary, main points and coverage.](/help/source-evidence.png)

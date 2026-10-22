@@ -4,7 +4,7 @@ Start with [AGENTS.md](AGENTS.md), [START-HERE](docs/START-HERE.md), [decisions]
 
 ## Run a synthetic preview
 
-Use Node 24 and pnpm 12.3.4. Install with pnpm install --frozen-lockfile, then follow [local development](docs/local-development.md). The /demo preview needs no provider accounts. Real integrations require dedicated test accounts and reviewed budgets, never inherited production credentials.
+Use the verified Node 24.22.1 patch and pnpm 12.3.4. Install with pnpm install --frozen-lockfile, then follow [local development](docs/local-development.md). The /demo preview needs no provider accounts. Real integrations require dedicated test accounts and reviewed budgets, never inherited production credentials.
 
 ## Make a reviewable change
 

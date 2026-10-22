@@ -1,3 +1,4 @@
+import { ProductMedia } from "@/components/product-media";
 import Link from "next/link";
 import Image from "next/image";
 import { PublicPage } from "@/components/site";
@@ -133,6 +134,7 @@ export default function Example() {
           Inspect the source on GitHub
         </a>
       </p>
+      <ProductMedia />
     </PublicPage>
   );
 }

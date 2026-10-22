@@ -1,6 +1,6 @@
 # ADR 111: typed source and public knowledge authority
 
-Accepted October 22, 2026 for the implemented, unreleased candidate. Exact candidate commit: `ROOT_CANDIDATE_COMMIT_PENDING`. Root must replace this marker after integration; local fixture results do not establish exact-head CI, deployment or provider permission.
+Accepted October 22, 2026 for the implemented, unreleased candidate. Exact candidate commit: `76ec7bf0b9812e670207cba199b8d07cc07839fd`. This identifies product code; local fixture results do not establish exact-head CI, deployment or provider permission.
 
 ## Context
 

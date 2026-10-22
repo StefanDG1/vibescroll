@@ -1,0 +1,30 @@
+VibeScroll setup walkthrough
+
+Edited native screen captures of candidate 76ec7bf0b9812e670207cba199b8d07cc07839fd. Synthetic data. Silent captions; no processing, sign-in, pairing or successful sample run. Waiting is an explicitly labelled fixture. Frames are reordered for explanation; durations are editorial holds, not measured processing time.
+
+00:00:00.000 Start with one permitted source. GitHub is optional. This guide shows candidate Help and synthetic UI.
+Screen: /help/getting-started
+
+00:00:10.000 Review the route and maximum before analysis. Personal preparation may send evidence to its provider.
+Screen: /help/getting-started
+
+00:00:20.000 Pairing, account access, worker health and a cited sample are separate. Saving a prerequisite report proves none of them.
+Screen: /help/getting-started
+
+00:00:30.000 Assistant access needs your own signed-in account and reviewed scope. No account is connected in this synthetic walkthrough.
+Screen: /demo?view=connections
+
+00:00:40.000 Check the supported computer, worker, engine, account and quota. Offline work waits. There is no silent paid fallback.
+Screen: /help/processing-and-recovery
+
+00:00:50.000 Preflight reports contain metadata only. Never paste credentials. Signed installation, pairing, login and a real sample remain pending.
+Screen: /help/processing-and-recovery
+
+00:01:00.000 Use supported session renewal when needed. Pause, unpair and optional startup have distinct permissions.
+Screen: /help/processing-and-recovery
+
+00:01:10.000 An estimate, a reservation and settled usage are different. Check the existing source before retrying uncertain work.
+Screen: /help/processing-and-recovery
+
+00:01:20.000 Inspect a retained private plan. Coding and publication need separate approval. Try the written guide; independent setup acceptance is still pending.
+Screen: /demo?view=projects&proposal=demo-proposal-draft

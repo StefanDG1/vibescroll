@@ -37,3 +37,7 @@ You can reopen the saved source and explain whether it is saved, waiting, failed
 - Want the longer route: review purpose in your private library setup, then Connections, computer readiness and optional Projects. You do not need every connection for first value.
 
 **Tip:** Start with one short source you already understand. That makes omissions easier to notice.
+
+![Mobile Library Tree with a synthetic source and its evidence link.](/help/library-tree.png)
+
+![Save form with source type, title, URL and permission checkbox.](/help/save-form.png)

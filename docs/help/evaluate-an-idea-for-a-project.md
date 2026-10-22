@@ -33,3 +33,7 @@ Coding has a separate approval for the repository, base commit, exact plan, exec
 - Changed repository or source: treat the old decision as historical until its currentness is established.
 
 **Tip:** Review one concrete idea against one current project before attempting a broad batch.
+
+![Editable synthetic issue draft with current-evidence and publication-permission warnings.](/help/project-draft.png)
+
+![Synthetic no-fit decision explaining why sensitive records need access controls.](/help/no-fit.png)

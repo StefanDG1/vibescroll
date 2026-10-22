@@ -6,8 +6,7 @@
   "ignoreCommand": "node ../../scripts/ignore-vercel-build.mjs",
   "git": {
     "deploymentEnabled": {
-      "codex/launch-20261022-*": false,
-      "main": false
+      "codex/launch-20261022-*": false
     }
   },
   "regions": ["fra1"],

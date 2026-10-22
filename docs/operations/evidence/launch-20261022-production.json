@@ -1,0 +1,148 @@
+{
+  "mode": "production verification receipt, not whole-plan or independent-user acceptance",
+  "recordedAt": "2026-10-22T17:06:50.408281+00:00",
+  "repository": "https://github.com/StefanDG1/vibescroll",
+  "launchPRsMerged": [120, 121, 122, 123, 124, 125, 126, 127],
+  "finalApplication": {
+    "commit": "097f30ecaca12c110dc7eafa916ee374ca340345",
+    "pr": 127,
+    "head": "d68d5ff5ffbe107e5d01952e2b82c6d9a7f5c01f",
+    "headCI": 39817998433,
+    "mainCI": 39818379912,
+    "CIConclusion": "success",
+    "treeEqualToTestedHead": true,
+    "alpha": "v0.1.0-alpha.20261022165659.g097f30ecaca1",
+    "alphaPublishCI": 39818609686,
+    "deployment": "dpl_5ExYmPKgsAUj4iKmpderXDCAp3yZ",
+    "buildSeconds": 40.534,
+    "canonical": "https://scroll.companynerve.com",
+    "canonicalHealthStatus": 200,
+    "canonicalVersion": "0.1.0-alpha.20261022165659.g097f30ecaca1",
+    "firstImmediateCanonicalRead": "200 at prior version while promotion propagated; retained, then mapping completed and prefunded retry matched"
+  },
+  "backend": {
+    "deployment": "bold-lemur-667",
+    "commit": "13835ea4e5a5de28e1a0fbc1eab88df5d00cb9b2",
+    "normalSupportedDeploy": "success after required compiler/schema checks",
+    "firstAttempt": "uploaded/staged candidate failed required TypeScript check before publication; PR125 correction preserved",
+    "sourceUnchangedThroughFinalApplication": true,
+    "schemaPrediction": "12 mounted components, validation enabled, no populated table walks/backfills, no removed/replaced indexes",
+    "actualCanaries": [
+      "existing founder Library handler",
+      "non-null setup version3 status"
+    ],
+    "canaryIdentity": "supported CLI admin identity; separate from browser WorkOS acceptance"
+  },
+  "normalBrowser": {
+    "earlierApplicationCommit": "0a1918fa1f363efd71850d3b46bb9587b601a3f1",
+    "earlierPassed": [
+      "existing workspace30loaded posts",
+      "founder private Home/setup",
+      "private Library desktop/mobile390px"
+    ],
+    "existingPrivateFixture": "not a new provider processing result",
+    "earlierCanceledRead": "retained as canceled",
+    "finalApplicationPassed": [
+      "public homepage",
+      "normal signed-in workspace chooser"
+    ],
+    "finalDesktopCSSPixels": 1440,
+    "finalMobileCSSPixels": 390,
+    "finalDocumentStatuses": [200, 200],
+    "finalDocumentOverflow": false,
+    "finalSameOriginResourceEntries": 45,
+    "finalPrivateOrAPIPrefetchResources": 0,
+    "phaseDeadlineSeconds": 8,
+    "sameOriginResourceReservationCeiling": 80,
+    "screenshots": "retained privately; no account screenshots in public repository"
+  },
+  "offlineValidation": {
+    "environment": "Windows; portable Node24.22.1; pnpm12.3.4; credential-stripping offline wrapper",
+    "sourceHead": "d68d5ff5ffbe107e5d01952e2b82c6d9a7f5c01f",
+    "backendPass": 802,
+    "authAPIPass": 35,
+    "publicWebPass": 25,
+    "WindowsInstallerPass": 14,
+    "PythonPass": 15,
+    "buildPolicyPass": 5,
+    "totalPass": 896,
+    "hostedSkips": 3,
+    "documents": 282,
+    "skillSnapshots": 12,
+    "lint": "pass",
+    "typesIncludingProductionConvexProject": "pass",
+    "productionWebBuilds": 2,
+    "dependencyPolicy": "pass with one documented mitigated high braces registry advisory, no unresolved advisory",
+    "secretScan": "zero leaks in changed/staged scope",
+    "earlierFailedInvocation": {
+      "backendPass": 798,
+      "backendFail": 4,
+      "hostedSkips": 3,
+      "reason": "three unchanged5000ms timeouts, then mock count after timed-out action continued",
+      "focusedUnchangedRecheckPass": 10,
+      "unchangedCompleteRerun": "pass; no timeout/assertion/control weakened"
+    },
+    "commands": [
+      "node outputs/launch-run/check-serial.mjs via scripts/run-offline.mjs",
+      "node scripts/audit-dependencies.mjs",
+      "prettier changed-file checks",
+      "git diff --check",
+      "gitleaks stdin --redact on staged diff"
+    ]
+  },
+  "hosting": {
+    "buildMachine": "fixed Basic2vCPU8GB",
+    "elasticConcurrencyEnabled": false,
+    "nodeVersion": "24.x",
+    "region": "fra1",
+    "domainAutoAssignmentRestored": true,
+    "launchBranchGitDeploySuppressionRetained": true,
+    "unrelatedQueuedBuild": "preserved; normal concurrency queue used"
+  },
+  "budget": {
+    "scope": "US$2 TOTAL incremental task spending across providers including earlier activity, agents, CI and tests",
+    "capUSD": 2,
+    "convexReservationUSD": 0.89,
+    "vercelReservationUSD": 1.02,
+    "residualMarginUSD": 0.09,
+    "conservativeConvexBoundUSD": 0.8872765479936001,
+    "conservativeVercelBoundUSD": 0.9752190494667139,
+    "conservativeTotalWithResidualUSD": 1.9524955974603138,
+    "boundIncludes": [
+      "prior metadata/schema inspections and both backend attempts",
+      "96 combined query/mutation/worker/nested RPCs including13 explicit earlier reads",
+      "32 reviewed mutations <=300KB and2 bounded identity refreshes",
+      "90MB code/storage allowance and.05control-plane contingency",
+      "completed first61.395s and second40.534s builds rounded to2min each",
+      "known completed handler/proxy spans with3xmargin after source/completion-contract review",
+      "unknown/canceled/untimed SSR/redirect full holds",
+      "CDN CPU, transfer, invocation and rounding allowances",
+      "completed final browser reservation and promotion retry",
+      "one possible final documentation45minBasicbuild and one conditional health request"
+    ],
+    "paidInferenceJobs": 0,
+    "newPaidOrders": 0,
+    "teamDisableThresholdChanged": false,
+    "actualSettledIncrementalInvoiceUSD": null,
+    "limitations": "Conservative finite-operation reservation, not invoice certification. No included credits assumed; unrelated existing account projects/workers preserved and excluded."
+  },
+  "cleanup": {
+    "taskCreatedTabClosed": true,
+    "optionalNamedLocalDaemonStopped": true,
+    "temporaryLocalPorts4333and4348Closed": true,
+    "newPairedProcessingWorkerStarted": false,
+    "userTabsWorkersAndOriginalCheckoutPreserved": true
+  },
+  "notAccepted": [
+    "fresh paired-device official-controller result and model/source quality",
+    "independent account/device and human usefulness",
+    "signed Windows distribution/install/update trust",
+    "current permitted Reddit and joint direct-adapter live acceptance",
+    "rights-cleared analyzed public edition/collection/reuse/moderation lifecycle",
+    "five genuine voluntary globe contributors",
+    "commercial provider/isolation and legal/payment acceptance",
+    "real pilot, price, customer purchase and outreach outcomes"
+  ],
+  "publicFlags": "remain closed; no fake contributions, provider permissions, customer outcomes or live charges",
+  "optionalBrowserReconnect": "new named connection required fresh Chrome consent; not retried or marked passed; existing approved session used normally"
+}

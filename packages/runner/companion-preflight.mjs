@@ -87,6 +87,10 @@ export function companionPreflight(observed) {
     version: 1,
     kind: "local_prerequisites",
     readyForLocalStart: checks.every((c) => c.status === "passed"),
+    // Launch may offer normal official consent; this does not certify an account.
+    readyToConnect: checks.every(
+      (c) => c.id === "saved_account" || c.status === "passed",
+    ),
     processingReady: "unverified",
     checks,
     limits: [

@@ -1373,6 +1373,7 @@ export function Console({
                   )}
                   {data.privateLibrary && !demo && (
                     <SetupJourney
+                      key={organizationId}
                       organizationId={organizationId}
                       call={strictCall}
                       onNavigate={go}

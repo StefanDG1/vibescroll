@@ -7,6 +7,7 @@ export type CompanionReport = {
   version: number;
   kind: string;
   readyForLocalStart: boolean;
+  readyToConnect: boolean;
   processingReady: string;
   checks: CompanionCheck[];
   limits: string[];

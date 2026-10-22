@@ -5,7 +5,19 @@ import type {
   SetupSnapshot,
   SetupAction,
 } from "../../../packages/onboarding/companion-setup";
-type Progress = { version: number; snapshot: SetupSnapshot };
+import type { pairingConfiguration } from "../../../packages/onboarding/pairing-configuration";
+type Progress = {
+  version: number;
+  snapshot: SetupSnapshot;
+  pairingConfiguration?: ReturnType<typeof pairingConfiguration>;
+  localPreflight?: {
+    readyToConnect?: boolean;
+    passed: boolean;
+    reportedAt: number;
+    provenance: "user_provided";
+    processingReady: "unverified";
+  } | null;
+};
 export function SetupJourney({
   organizationId,
   call,
@@ -19,7 +31,12 @@ export function SetupJourney({
   onSave: () => void;
   disabled?: boolean;
 }) {
-  const [progress, setProgress] = useState<Progress | null>(null);
+  const [loaded, setLoaded] = useState<{
+    organizationId: string;
+    value: Progress | null;
+  } | null>(null);
+  const progress =
+    loaded?.organizationId === organizationId ? loaded.value : null;
   const [error, setError] = useState("");
   const [routeReview, setRouteReview] = useState(false);
   const [instruction, setInstruction] = useState("");
@@ -31,7 +48,7 @@ export function SetupJourney({
       throw Error(
         "Setup progress is unavailable. Check your current workspace access.",
       );
-    setProgress(result);
+    setLoaded({ organizationId, value: result });
   }
   async function save(changes: Record<string, unknown>) {
     if (!progress || disabled || saving) return false;
@@ -64,7 +81,7 @@ export function SetupJourney({
     let active = true;
     call("setupJourney", { organizationId })
       .then((value) => {
-        if (active) setProgress(value);
+        if (active) setLoaded({ organizationId, value });
       })
       .catch(() => {
         if (active) setError("Setup progress could not be loaded. Try again.");
@@ -83,7 +100,8 @@ export function SetupJourney({
         ?.scrollIntoView({ block: "start" });
       return;
     }
-    if (action === "source" || action === "sample") return onSave();
+    if (action === "source") return onSave();
+    if (action === "sample") return onNavigate("library");
     if (action === "route") return setRouteReview(true);
     if (action === "assistant") return onNavigate("connections");
     if (action === "project") return onNavigate("projects");
@@ -94,17 +112,16 @@ export function SetupJourney({
       return;
     }
     const commands: Partial<Record<SetupAction, string>> = {
-      preflight: "node scripts/companion.mjs preflight ABSOLUTE_CONFIG_PATH",
-      account:
-        "Complete the documented official account connection on your paired computer, then start the companion.",
-      worker: "node scripts/companion.mjs run ABSOLUTE_CONFIG_PATH",
-      pause: "node scripts/companion.mjs pause ABSOLUTE_CONFIG_PATH",
+      preflight: 'node scripts/companion.mjs preflight "ABSOLUTE_CONFIG_PATH"',
+      account: 'node scripts/companion.mjs run "ABSOLUTE_CONFIG_PATH"',
+      worker: 'node scripts/companion.mjs run "ABSOLUTE_CONFIG_PATH"',
+      pause: 'node scripts/companion.mjs pause "ABSOLUTE_CONFIG_PATH"',
       resume:
-        "node scripts/companion.mjs resume ABSOLUTE_CONFIG_PATH --allow-approved-work",
+        'node scripts/companion.mjs resume "ABSOLUTE_CONFIG_PATH" --allow-approved-work',
       startup_enable:
-        "node scripts/companion.mjs startup-enable ABSOLUTE_CONFIG_PATH --start-at-sign-in",
+        'node scripts/companion.mjs startup-enable "ABSOLUTE_CONFIG_PATH" --start-at-sign-in',
       startup_disable:
-        "node scripts/companion.mjs startup-disable ABSOLUTE_CONFIG_PATH",
+        'node scripts/companion.mjs startup-disable "ABSOLUTE_CONFIG_PATH"',
     };
     setInstruction(
       commands[action] ?? "Review the companion setup guide on your computer.",
@@ -113,6 +130,37 @@ export function SetupJourney({
   return (
     <details className="panel" open={!progress?.snapshot.sampleCited}>
       <summary>Continue setup</summary>
+      <p>
+        Use the browser to save, review and approve work. The own-plan route
+        needs your eligible account and an awake paired Windows computer with
+        its supported isolated runtime. Your subscription allowance does not
+        cover every preparation, storage or platform cost. Review each task's
+        route and maximum before approval.
+      </p>
+      <a
+        href="/help/connect-your-computer"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Set up your computer step by step
+      </a>
+      {progress && (
+        <p>
+          Saved route:{" "}
+          {progress.snapshot.route === "local"
+            ? "Your paired computer"
+            : progress.snapshot.route === "cloud"
+              ? "Managed cloud"
+              : progress.snapshot.route === "save_only"
+                ? "Save for later"
+                : "Not selected"}
+          . Own-plan account eligibility:{" "}
+          {progress.snapshot.localEligible ? "available" : "unavailable"}.
+          Managed processing:{" "}
+          {progress.snapshot.cloudAvailable ? "available" : "unavailable"}.
+          Availability still requires the task's current checks and approval.
+        </p>
+      )}
       {progress && (
         <CompanionSetup
           snapshot={progress.snapshot}
@@ -125,13 +173,15 @@ export function SetupJourney({
           <legend>Choose your processing route</legend>
           <p>
             Saving alone starts no inference. Every analysis still requires its
-            own current approval and maximum.
+            own current approval and maximum. A saved preference cannot enable
+            an unavailable route.
           </p>
           {(["save_only", "local", "cloud"] as const).map((route) => (
             <button
               type="button"
               className="secondary"
               key={route}
+              aria-pressed={progress.snapshot.route === route}
               onClick={async () => {
                 if (await save({ route })) setRouteReview(false);
               }}
@@ -148,8 +198,10 @@ export function SetupJourney({
       {instruction && (
         <div>
           <output>
-            Run this on your paired computer. This page has not changed its
-            local state.
+            Run this on your paired computer. This page has not started a worker
+            or changed its local state. Run only one companion. The connection
+            step offers official consent if needed; a saved login is not proof
+            of a working model request.
           </output>
           <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
             {instruction}
@@ -160,13 +212,85 @@ export function SetupJourney({
             page.
           </p>
           <a
-            href="/help/processing-and-recovery"
+            href="/help/connect-your-computer"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Companion and recovery help
+            Computer setup and recovery
           </a>
         </div>
+      )}
+      {progress?.snapshot.route === "local" && (
+        <section className="form-grid" aria-label="New computer configuration">
+          <h3>Prepare a new computer</h3>
+          <p>
+            Download this workspace's unpaired configuration and keep it in a
+            private local file. It contains setup metadata, no login token or
+            device credential. Choose your own computer name and the required
+            pinned media/transcription settings using the guide. Pairing creates
+            the protected device credential separately.
+          </p>
+          <button
+            type="button"
+            className="secondary"
+            disabled={disabled || saving || !progress.pairingConfiguration}
+            onClick={() => {
+              const configuration = progress.pairingConfiguration;
+              if (!configuration || disabled || saving) return;
+              const {
+                server,
+                workspaceId,
+                protocolVersion,
+                credentialVaultAdapter,
+                deviceName,
+              } = configuration;
+              const blob = new Blob(
+                [
+                  JSON.stringify(
+                    {
+                      server,
+                      workspaceId,
+                      protocolVersion,
+                      credentialVaultAdapter,
+                      deviceName,
+                    },
+                    null,
+                    2,
+                  ) + "\n",
+                ],
+                { type: "application/json" },
+              );
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = "vibescroll-unpaired-config.json";
+              link.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Download new computer configuration
+          </button>
+          <p>
+            Save with a new filename. Never overwrite an existing paired
+            configuration or copy it to a different computer. This download
+            installs nothing, pairs nothing and starts no work.
+          </p>
+          {!progress.pairingConfiguration && (
+            <output>
+              Configuration is unavailable because the deployment's matching
+              setup origins could not be verified. Keep your source saved and
+              follow the deployment-configuration repair in the guide. Do not
+              guess the backend address.
+            </output>
+          )}
+          <a
+            href="/help/connect-your-computer"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Configuration and runtime instructions
+          </a>
+        </section>
       )}
       {progress?.snapshot.route === "local" && (
         <form
@@ -206,6 +330,18 @@ export function SetupJourney({
             grants no startup, processing or account permission. Do not paste
             the private configuration or raw command logs.
           </p>
+          {progress.localPreflight && (
+            <p>
+              Recorded user-provided report:{" "}
+              {progress.localPreflight.passed
+                ? "full local prerequisite checks passed"
+                : progress.localPreflight.readyToConnect
+                  ? "local prerequisites permit official connection; full checks remain incomplete"
+                  : "local prerequisites need attention"}
+              . This acknowledgement expires after 24 hours. Processing and
+              actual account/model access remain unverified by this report.
+            </p>
+          )}
           <button type="submit" disabled={disabled || saving || !report.trim()}>
             Save local prerequisite report
           </button>

@@ -1,10 +1,14 @@
-import { expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { convexTest } from "convex-test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import { prerequisiteIds } from "../packages/onboarding/preflight-report";
 const modules = import.meta.glob("../convex/**/*.ts");
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
 async function fixture() {
   const t = convexTest(schema, modules);
   rateLimiterTest.register(t);
@@ -140,4 +144,78 @@ it("denies another actor's private setup and accepts no client readiness claims"
       preferencesReviewed: true,
     }),
   ).rejects.toThrow();
+});
+it("persists connection prerequisites without certifying processing and expires the acknowledgement", async () => {
+  vi.stubEnv("CONVEX_CLOUD_URL", "https://setup-fixture.convex.cloud");
+  vi.stubEnv("CONVEX_SITE_URL", "https://setup-fixture.convex.site");
+  const { t, client, org } = await fixture();
+  await client.mutation(api.librarySpaces.saveSetup, {
+    organizationId: org,
+    expectedVersion: 0,
+    focus: ["personal"],
+    goal: "Keep useful source evidence",
+    interests: [],
+    role: "",
+    connectSpaces: false,
+    confirmed: true,
+    stage: 2,
+  });
+  await client.mutation(api.setupJourney.save, {
+    organizationId: org,
+    expectedVersion: 1,
+    preflightReport: {
+      version: 1,
+      kind: "local_prerequisites",
+      readyForLocalStart: false,
+      readyToConnect: true,
+      processingReady: "unverified",
+      checks: prerequisiteIds.map((id) => ({
+        id,
+        status: id === "saved_account" ? "blocked" : "passed",
+      })),
+      limits: [],
+    },
+  });
+  expect(
+    await client.query(api.setupJourney.status, { organizationId: org }),
+  ).toMatchObject({
+    pairingConfiguration: {
+      server: "https://setup-fixture.convex.site/",
+      workspaceId: org,
+      credentialVaultAdapter: "windows-credential-manager",
+    },
+    localPreflight: {
+      readyToConnect: true,
+      passed: false,
+      processingReady: "unverified",
+    },
+    snapshot: {
+      connectionPrerequisitesChecked: true,
+      prerequisitesChecked: false,
+      accountConnected: false,
+      workerAvailable: false,
+      sampleCited: false,
+    },
+  });
+  const now = Date.now();
+  vi.spyOn(Date, "now").mockReturnValue(now + 86400001);
+  expect(
+    await client.query(api.setupJourney.status, { organizationId: org }),
+  ).toMatchObject({
+    snapshot: {
+      connectionPrerequisitesChecked: false,
+      prerequisitesChecked: false,
+    },
+  });
+  expect(
+    await t.run(async (ctx) => ({
+      grants: (await ctx.db.query("assistantGrants").collect()).length,
+      sources: (await ctx.db.query("sources").collect()).length,
+      reservations: (await ctx.db.query("reservations").collect()).length,
+    })),
+  ).toEqual({ grants: 0, sources: 0, reservations: 0 });
+  vi.stubEnv("CONVEX_SITE_URL", "https://different.convex.site");
+  expect(
+    await client.query(api.setupJourney.status, { organizationId: org }),
+  ).toMatchObject({ pairingConfiguration: null });
 });

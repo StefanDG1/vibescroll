@@ -45,6 +45,7 @@ export const librarySpacesTables = {
       v.object({
         reportedAt: v.number(),
         passed: v.boolean(),
+        readyToConnect: v.optional(v.boolean()),
         checks: v.array(
           v.object({
             id: v.string(),

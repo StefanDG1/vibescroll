@@ -22,6 +22,7 @@ export type SetupSnapshot = {
   cloudAvailable: boolean;
   localEligible: boolean;
   prerequisitesChecked: boolean;
+  connectionPrerequisitesChecked?: boolean;
   paired: boolean;
   accountConnected: boolean;
   workerAvailable: boolean;
@@ -60,7 +61,7 @@ export function companionSetupSteps(
       detail:
         "Use a link or file you have permission to process. Saving alone starts no paid work.",
       complete: s.sourceSaved,
-      help: "/docs",
+      help: "/help/first-useful-insight",
     },
     {
       action: "route",
@@ -76,34 +77,37 @@ export function companionSetupSteps(
           : s.route === "cloud"
             ? !s.cloudAvailable
             : false,
-      help: "/docs",
+      help: "/help/processing-and-recovery",
     },
   ];
   if (s.route === "local")
     steps.push(
-      {
-        action: "preflight",
-        title: "Check this computer",
-        detail:
-          "Run the local prerequisite check. It checks installed tools without downloading or starting a worker.",
-        complete: s.prerequisitesChecked,
-        help: "/docs",
-      },
       {
         action: "pair",
         title: "Pair your computer",
         detail:
           "Compare its fingerprint and approve the short-lived request in your signed-in workspace.",
         complete: s.paired,
-        help: "/docs",
+        help: "/help/connect-your-computer",
+      },
+      {
+        action: "preflight",
+        title: "Check this computer",
+        detail: s.accountConnected
+          ? "Run the prerequisite check again after connecting. Record the full report before approving a sample."
+          : "Run the prerequisite check after pairing. A ready-to-connect report permits official sign-in; it does not establish processing readiness.",
+        complete:
+          s.prerequisitesChecked ||
+          (!s.accountConnected && s.connectionPrerequisitesChecked === true),
+        help: "/help/connect-your-computer",
       },
       {
         action: "account",
         title: "Connect your own account",
         detail:
-          "Complete official account consent on the paired Windows computer. Credentials stay in protected local storage.",
+          "Start the companion once and follow its official account consent. Credentials stay in protected local storage. A saved login alone does not verify current model access.",
         complete: s.accountConnected,
-        help: "/docs",
+        help: "/help/connect-your-computer",
       },
       {
         action: "worker",
@@ -112,7 +116,7 @@ export function companionSetupSteps(
           ? "Your companion is paused. Resume it locally when you want approved work to continue."
           : "Keep the computer awake and start its companion. A paired computer can still be offline.",
         complete: s.workerAvailable && !s.paused,
-        help: "/docs",
+        help: "/help/connect-your-computer",
       },
     );
   if (s.route && s.route !== "save_only")
@@ -131,7 +135,7 @@ export function companionSetupSteps(
             !s.accountConnected ||
             !s.workerAvailable ||
             s.paused,
-      help: "/docs",
+      help: "/help/first-useful-insight",
     });
   if (guided)
     steps.push(
@@ -141,7 +145,7 @@ export function companionSetupSteps(
         detail:
           "Choose its library scope and whether submitted links may be processed. Existing permissions remain unchanged until you review them.",
         complete: s.assistantReviewed,
-        help: "/docs",
+        help: "/help/actions-and-publication",
       },
       {
         action: "project",
@@ -149,7 +153,7 @@ export function companionSetupSteps(
         detail:
           "Optional: select a repository and confirm its purpose before evaluating ideas. Library-only use is complete on its own.",
         complete: s.projectConfirmed,
-        help: "/docs",
+        help: "/help/evaluate-an-idea-for-a-project",
       },
       {
         action: "import",
@@ -157,7 +161,7 @@ export function companionSetupSteps(
         detail:
           "Optional: inspect links before importing. A batch needs its own scope and processing budget.",
         complete: s.importReviewed,
-        help: "/docs",
+        help: "/help/imports-and-data",
       },
       {
         action: "preferences",
@@ -165,7 +169,7 @@ export function companionSetupSteps(
         detail:
           "Choose appearance and optional companion startup. Coding and publication keep their separate approvals.",
         complete: s.preferencesReviewed,
-        help: "/docs",
+        help: "/help/connect-your-computer",
       },
     );
   return steps;

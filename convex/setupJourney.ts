@@ -6,6 +6,7 @@ import { ensure } from "../packages/policy";
 import { personalAllowed } from "./lib/personalAccess";
 import { hostedMediaAllowed } from "./lib/hostedMediaAccess";
 import { privateLibrary } from "./librarySpaces";
+import { pairingConfiguration } from "../packages/onboarding/pairing-configuration";
 import { parsePreflightReport } from "../packages/onboarding/preflight-report";
 
 export const status = query({
@@ -44,6 +45,11 @@ export const status = query({
       .take(30);
     return {
       version: setup?.version ?? 0,
+      pairingConfiguration: pairingConfiguration(
+        process.env.CONVEX_CLOUD_URL,
+        process.env.CONVEX_SITE_URL,
+        a.organizationId,
+      ),
       localPreflight: setup?.localPreflight
         ? {
             ...setup.localPreflight,
@@ -61,6 +67,9 @@ export const status = query({
         // proves availability only; it never certifies a local installation.
         prerequisitesChecked:
           setup?.localPreflight?.passed === true &&
+          setup.localPreflight.reportedAt > Date.now() - 86400000,
+        connectionPrerequisitesChecked:
+          setup?.localPreflight?.readyToConnect === true &&
           setup.localPreflight.reportedAt > Date.now() - 86400000,
         paired: owned.length > 0,
         accountConnected: active.some(

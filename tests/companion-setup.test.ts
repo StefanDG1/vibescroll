@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import manifest from "../docs/help/manifest.json";
 import {
   companionSetupSteps,
   type SetupSnapshot,
@@ -21,13 +22,23 @@ const snapshot: SetupSnapshot = {
   paused: false,
   startupEnabled: false,
 };
+it("resolves every setup repair to approved task help rather than the generic documentation index", () => {
+  const approved = new Set(
+    manifest.articles
+      .filter((article) => article.status === "approved")
+      .map((article) => `/help/${article.slug}`),
+  );
+  for (const step of companionSetupSteps(snapshot, true)) {
+    expect(approved.has(step.help.split("#")[0])).toBe(true);
+  }
+});
 it("keeps first-result setup separate from optional project, import and assistant authority", () => {
   expect(companionSetupSteps(snapshot).map((s) => s.action)).toEqual([
     "purpose",
     "source",
     "route",
-    "preflight",
     "pair",
+    "preflight",
     "account",
     "worker",
     "sample",
@@ -40,6 +51,38 @@ it("keeps first-result setup separate from optional project, import and assistan
   expect(
     companionSetupSteps(snapshot).find((s) => s.action === "sample"),
   ).toMatchObject({ complete: false, blocked: false });
+});
+it("takes a fresh computer through pairing and connection checks without treating connectable as processing-ready", () => {
+  const fresh = {
+    ...snapshot,
+    paired: false,
+    prerequisitesChecked: false,
+    accountConnected: false,
+    workerAvailable: false,
+  };
+  const next = (state: SetupSnapshot) =>
+    companionSetupSteps(state).find((step) => !step.complete || step.blocked);
+  expect(next(fresh)?.action).toBe("pair");
+  expect(next({ ...fresh, paired: true })?.action).toBe("preflight");
+  const connectable = {
+    ...fresh,
+    paired: true,
+    connectionPrerequisitesChecked: true,
+  };
+  expect(next(connectable)?.action).toBe("account");
+  expect(
+    companionSetupSteps(connectable).find((step) => step.action === "sample")
+      ?.blocked,
+  ).toBe(true);
+  const connected = {
+    ...connectable,
+    accountConnected: true,
+    workerAvailable: true,
+  };
+  expect(next(connected)?.action).toBe("preflight");
+  expect(next({ ...connected, prerequisitesChecked: true })?.action).toBe(
+    "sample",
+  );
 });
 it("cannot count paired, cached-login or online badges as a cited result and fences unavailable local work", () => {
   for (const change of [

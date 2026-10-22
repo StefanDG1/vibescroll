@@ -5,12 +5,14 @@ import type { QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
 import { audit, limit } from "./lib";
-import { ensure, containsSecret, safeSourceUrl } from "../packages/policy";
+import { ensure, containsSecret } from "../packages/policy";
+import { classifySourceUrl } from "../packages/sources/classify";
 import { captureAuthorized, digest, startSource } from "./product";
 import {
   chooseIntakeProjects,
   enqueueIntake,
   intakeReceipt,
+  intakeNeedsSourceReview,
 } from "./lib/assistantIntake";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { internal } from "./_generated/api";
@@ -18,6 +20,8 @@ import { assistantProject } from "./lib/assistantProject";
 import { evaluationCurrent } from "./knowledge";
 import { createIssueCore } from "./issues";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
+import { sharedTypedCitations } from "./lib/sourceCitations";
+import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { assistantGrantActive } from "../packages/policy/assistant";
 import {
   evaluation as evaluationContract,
@@ -68,7 +72,15 @@ export const saveLink = internalMutation({
       "INVALID_INPUT",
       "Use a short link and title without credentials.",
     );
-    const url = safeSourceUrl(args.url);
+    let classified: ReturnType<typeof classifySourceUrl>;
+    try {
+      classified = classifySourceUrl(args.url);
+    } catch {
+      throw Error(
+        "UNSUPPORTED_SOURCE: Save a supported media link, GitHub repository or Reddit discussion.",
+      );
+    }
+    const url = classified.canonical;
     ensure(
       a.grant.intakePolicy === "explicit_links" || args.rightsAttested === true,
       "SETUP_REQUIRED",
@@ -179,8 +191,10 @@ export const saveLink = internalMutation({
       }
     }
     const intake = (await ctx.db.get(intakeId!))!;
+    const sourceReview = intakeNeedsSourceReview(source);
     // Replays do not widen old work to a replacement grant or start duplicate jobs.
     if (
+      !sourceReview &&
       args.analyze !== false &&
       a.scopes.includes("analysis:request") &&
       a.grant.analysisDefaults?.enabled &&
@@ -209,8 +223,9 @@ export const saveLink = internalMutation({
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${id}`,
       analysis_started: false,
       receipt: await intakeReceipt(ctx, currentIntake, source),
-      note:
-        args.analyze === false
+      note: sourceReview
+        ? "Saved link metadata. Open the source in VibeScroll to review permitted retrieval or supply text, then separately review analysis. This save fetched no source content and started no analysis. Direct provider access requires current verified setup."
+        : args.analyze === false
           ? "Saved only, as requested."
           : ["failed", "cancelled"].includes(currentIntake.queueState ?? "")
             ? "Saved. Review earlier processing and usage before explicitly requesting another local run."
@@ -352,6 +367,14 @@ export const requestAnalysis = internalMutation({
           .eq("sourceId", source._id),
       )
       .unique();
+    if (intakeNeedsSourceReview(source) && args.mode !== "cancel")
+      return {
+        source_id: source._id,
+        status: "approval_required",
+        analysis_started: false,
+        review_url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+        note: "Review this typed source in VibeScroll. GitHub file selection, Reddit retrieval permission and supplied-text provenance need their source review; analysis and project work require separate current approval. This request queued no local media work, reserved no credits and started no retrieval or analysis.",
+      };
     if (intake && args.mode) {
       ensure(
         intake.grantVersion === a.grant.version,
@@ -844,6 +867,7 @@ export const search = internalQuery({
     cursor: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    ctx = knowledgeReadContext(ctx);
     ensure(
       args.query.trim().length > 0 && args.query.length <= 200,
       "INVALID_INPUT",
@@ -1027,6 +1051,7 @@ export const search = internalQuery({
 export const fetch = internalQuery({
   args: { ...profile, id: v.string() },
   handler: async (ctx, args) => {
+    ctx = knowledgeReadContext(ctx);
     ensure(
       args.id.length <= 300,
       "INVALID_INPUT",
@@ -1057,6 +1082,7 @@ export const fetch = internalQuery({
     if (index !== undefined)
       ensure(!!all[index], "FORBIDDEN", "Idea unavailable.");
     const ideas = index === undefined ? all.slice(0, 20) : [all[index]];
+    const typed = await sharedTypedCitations(ctx, source);
     const insights = ideas.map((i: any) => ({
       id: String(i.id ?? "").slice(0, 200),
       title: String(i.title ?? "").slice(0, 200),
@@ -1067,17 +1093,19 @@ export const fetch = internalQuery({
         revision: source.updatedAt,
         insightId: i.id,
       },
-      evidence: (i.evidence ?? []).slice(0, 10).map((e: any) => ({
-        kind: typeof e.kind === "string" ? e.kind.slice(0, 64) : "unknown",
-        startMs:
-          typeof e.startMs === "number" && Number.isFinite(e.startMs)
-            ? e.startMs
-            : undefined,
-        endMs:
-          typeof e.endMs === "number" && Number.isFinite(e.endMs)
-            ? e.endMs
-            : undefined,
-      })),
+      evidence: typed
+        ? typed.summarize(i.evidence ?? [])
+        : (i.evidence ?? []).slice(0, 10).map((e: any) => ({
+            kind: typeof e.kind === "string" ? e.kind.slice(0, 64) : "unknown",
+            startMs:
+              typeof e.startMs === "number" && Number.isFinite(e.startMs)
+                ? e.startMs
+                : undefined,
+            endMs:
+              typeof e.endMs === "number" && Number.isFinite(e.endMs)
+                ? e.endMs
+                : undefined,
+          })),
     }));
     return {
       id: args.id,
@@ -1086,6 +1114,13 @@ export const fetch = internalQuery({
         state: source.state,
         coverage: source.coverage,
         insights,
+        ...(typed
+          ? {
+              sourceRevisionId: typed.sourceRevisionId,
+              sourceContentHash: typed.sourceContentHash,
+              sourceCoverage: typed.coverage,
+            }
+          : {}),
       }),
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
       profile_id: a.organization._id,

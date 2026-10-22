@@ -43,6 +43,7 @@ import {
   LogOut,
   ChevronDown,
   ExternalLink,
+  CircleHelp,
 } from "lucide-react";
 import { openCookiePreferences } from "./consent";
 export function AccountMenu({
@@ -110,6 +111,12 @@ export function AccountMenu({
             Cookie preferences
           </Menu.Item>
           <Menu.Separator className="menu-separator" />
+          <Menu.Item asChild className="menu-item">
+            <Link href="/help" target="_blank" rel="noopener noreferrer">
+              <CircleHelp size={17} />
+              Help
+            </Link>
+          </Menu.Item>
           <Menu.Label
             className="version-label"
             title={process.env.NEXT_PUBLIC_APP_COMMIT}

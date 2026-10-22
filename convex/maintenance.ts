@@ -28,6 +28,17 @@ export const purgeOrganization = internalMutation({
       return;
     }
     for (const table of [
+      "publicEditions",
+      "publicCollections",
+      "publicReports",
+      "publicCorrections",
+      "publicArtifacts",
+      "publicImports",
+      "publicGeography",
+      "sourceRevisions",
+      "sourceAcquisitions",
+      "sourceRelationships",
+      "pilotPaymentObservations",
       "assistantDeliveries",
       "assistantSubscriptions",
       "assistantIntakes",

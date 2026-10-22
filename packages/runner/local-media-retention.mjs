@@ -6,10 +6,11 @@ import {
   unlink,
   rmdir,
 } from "node:fs/promises";
-import { resolve, join, sep } from "node:path";
+import { resolve, join, sep, dirname } from "node:path";
+import { companionPreparationRoot } from "../companion/config-root.mjs";
 export async function purgeLocalPreparation(directory, now = Date.now()) {
-  const base = resolve("private"),
-    root = join(base, "subscription-prepared"),
+  const root = companionPreparationRoot(),
+    base = dirname(root),
     path = resolve(directory);
   if (
     !path.startsWith(root + sep) ||

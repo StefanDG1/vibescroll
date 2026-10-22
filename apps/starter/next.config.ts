@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 import { buildVersion } from "../../scripts/version.mjs";
 const config: NextConfig = {
+  outputFileTracingIncludes: {
+    "/help/[slug]": ["../../docs/help/**/*.md"],
+  },
   transpilePackages: [
     "@companynerve/ui",
     "@companynerve/company-config",

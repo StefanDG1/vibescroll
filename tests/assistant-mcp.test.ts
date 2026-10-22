@@ -405,7 +405,7 @@ it("serves scoped Events through the actual modern SDK and excludes legacy/disab
 it("explains unsupported intake before backend dispatch and preserves supported-link dispatch", async () => {
   invoke.mockClear();
   const args = {
-    url: "https://github.com/owner/disposable",
+    url: "https://unsupported.example.test/owner/disposable",
     title: "Owned test",
     key: "intake-replay-key",
     explicitlyRequested: true,
@@ -430,4 +430,49 @@ it("explains unsupported intake before backend dispatch and preserves supported-
     ["links:save"],
   );
   expect(invoke).toHaveBeenCalledOnce();
+});
+it("accepts exact direct-source metadata URLs under links:save and keeps unsupported destinations blocked", async () => {
+  for (const url of [
+    "https://github.com/owner/disposable",
+    "https://www.reddit.com/r/example/comments/abc123/title/",
+  ]) {
+    invoke.mockClear();
+    const args = {
+      url,
+      title: "Explicit saved source",
+      key: "direct-metadata-save",
+    };
+    await call("tools/call", { name: "save_link", arguments: args }, []);
+    expect(invoke).not.toHaveBeenCalled();
+    const result = await packet(
+      await call("tools/call", { name: "save_link", arguments: args }, [
+        "links:save",
+      ]),
+    );
+    expect(result.result.isError).not.toBe(true);
+    expect(invoke).toHaveBeenCalledWith("save_link", args);
+  }
+  for (const url of [
+    "https://github.com/owner/repository/tree/main",
+    "https://reddit.com/r/example/",
+    "https://127.0.0.1/r/example/comments/abc123/",
+  ]) {
+    invoke.mockClear();
+    const result = await packet(
+      await call(
+        "tools/call",
+        {
+          name: "save_link",
+          arguments: {
+            url,
+            title: "Unsupported source",
+            key: "unsupported-direct-save",
+          },
+        },
+        ["links:save"],
+      ),
+    );
+    expect(result.result.isError).toBe(true);
+    expect(invoke).not.toHaveBeenCalled();
+  }
 });

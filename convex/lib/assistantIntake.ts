@@ -12,9 +12,19 @@ import { sourceWithinAssistantScope } from "./assistantSourceScope";
 import { hostedMediaAllowed } from "./hostedMediaAccess";
 import { googleConfigured } from "../../packages/providers/google-inference";
 
+export function intakeNeedsSourceReview(source: Doc<"sources">) {
+  return (
+    !!source.currentRevisionId ||
+    source.analysis?.schemaVersion === "2.0.0" ||
+    source.sourceType === "github_repository" ||
+    source.sourceType === "reddit_thread"
+  );
+}
+
 export async function intakeAuthority(
   ctx: QueryCtx,
   intake: Doc<"assistantIntakes">,
+  options: { allowSourceReview?: boolean } = {},
 ) {
   const grant = await ctx.db.get(intake.grantId);
   const actor = await ctx.db.get(intake.actor);
@@ -56,6 +66,11 @@ export async function intakeAuthority(
     ),
     "FORBIDDEN",
     "This source is outside the current permitted library scope.",
+  );
+  ensure(
+    options.allowSourceReview || (source && !intakeNeedsSourceReview(source)),
+    "SOURCE_REVIEW_REQUIRED",
+    "Review typed source retrieval, analysis and project work in the source page. Media defaults do not apply.",
   );
   return { grant, actor, organization: organization! };
 }
@@ -296,6 +311,8 @@ export async function intakeReceipt(
   source: Doc<"sources">,
 ) {
   const generation = intake.analysisGeneration ?? source.generation;
+  const sourceReview = intakeNeedsSourceReview(source);
+  const reviewUrl = `https://scroll.companynerve.com/app/${source.organizationId}/library/${source._id}`;
   const reservations = (
     await Promise.all(
       [
@@ -333,15 +350,17 @@ export async function intakeReceipt(
     source_id: source._id,
     generation: source.generation,
     status:
-      intake.queueState === "waiting"
-        ? "waiting_for_computer"
-        : ["failed", "cancelled"].includes(intake.queueState ?? "")
-          ? intake.queueState
-          : localExpired
-            ? "needs_review"
-            : intake.queueState === "local" && !localComplete
-              ? "processing_locally"
-              : source.state,
+      sourceReview && !intake.queueState && !completed
+        ? "source_review_required"
+        : intake.queueState === "waiting"
+          ? "waiting_for_computer"
+          : ["failed", "cancelled"].includes(intake.queueState ?? "")
+            ? intake.queueState
+            : localExpired
+              ? "needs_review"
+              : intake.queueState === "local" && !localComplete
+                ? "processing_locally"
+                : source.state,
     processing_succeeded:
       completed && (intake.queueState !== "local" || localComplete),
     error:
@@ -367,6 +386,7 @@ export async function intakeReceipt(
         : reservations.reduce((n, r) => n + r.settled, 0),
     },
     credit_offer:
+      !sourceReview &&
       creditRouteAvailable &&
       intake.queueState === "waiting" &&
       source.state !== "ready"
@@ -378,7 +398,7 @@ export async function intakeReceipt(
           }
         : null,
     credit_route_note:
-      intake.queueState === "waiting" && !creditRouteAvailable
+      !sourceReview && intake.queueState === "waiting" && !creditRouteAvailable
         ? "Cloud credits are unavailable for this account or source route. Your link will keep waiting for the local computer."
         : null,
     project_evaluation_requested: intake.projectRequest ?? false,
@@ -388,10 +408,13 @@ export async function intakeReceipt(
         : intake.projectRequest
           ? intake.queueState
           : "not_requested",
-    follow_up:
-      completed && !intake.projectRequest
+    follow_up: sourceReview
+      ? "Open this source in VibeScroll to review current evidence and separately approve retrieval, analysis or project work."
+      : completed && !intake.projectRequest
         ? "Want to check how these insights apply to a project? Name one, or say find the best project matches."
         : null,
-    url: `https://scroll.companynerve.com/app/${source.organizationId}/library/${source._id}`,
+    source_review_required: sourceReview,
+    review_url: sourceReview ? reviewUrl : null,
+    url: reviewUrl,
   };
 }

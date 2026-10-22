@@ -21,28 +21,43 @@ export default async function Demo({
     state === "loading" || state === "error" || state === "empty"
       ? state
       : "ready";
+  const source =
+    demoState === "ready"
+      ? libraryDemoSources.find((s) => s._id === params.source)
+      : undefined;
   return (
     <Console
+      key={[demoState, params.view, source?._id, params.proposal].join(":")}
       demo
       readOnly
       initialReviewDraftId={params.proposal}
-      initialSource={libraryDemoSources.find((s) => s._id === params.source)}
+      initialSource={source}
       demoState={demoState}
       initialView={
         demoState !== "ready"
           ? "library"
-          : ["library", "projects", "proposals", "runs", "account"].includes(
-                params.view ?? "",
-              )
-            ? params.view
-            : "home"
+          : source
+            ? "source"
+            : [
+                  "library",
+                  "projects",
+                  "proposals",
+                  "runs",
+                  "connections",
+                  "account",
+                ].includes(params.view ?? "")
+              ? params.view
+              : "home"
       }
       initialSearch={demoState === "empty" ? "Synthetic absent source" : ""}
       initial={{
         sources:
           demoState === "loading" || demoState === "empty"
             ? []
-            : fixture.sources.map((source) => ({ ...source, state: "ready" })),
+            : fixture.sources.map((source) => ({
+                ...source,
+                state: source.state ?? "ready",
+              })),
         repositories:
           demoState === "ready"
             ? [

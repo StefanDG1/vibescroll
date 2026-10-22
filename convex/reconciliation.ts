@@ -8,6 +8,10 @@ import {
   missingStripeCustomer,
   confirmStripeCustomerDeleted,
 } from "../packages/providers/stripe-deletion";
+import {
+  pilotProviderEvent,
+  type PilotProviderEvent,
+} from "./lib/pilotPayments";
 export const stripeEvent = internalAction({
   args: { body: v.string(), signature: v.string() },
   handler: async (ctx, a) => {
@@ -34,6 +38,22 @@ export const stripeEvent = internalAction({
       return { status: 400 };
     const own = await client.accounts.retrieve(null);
     if (own.id !== account) return { status: 400 };
+    const pilotEvent: Omit<PilotProviderEvent, "paymentId"> | undefined =
+      Number.isSafeInteger(event.created) &&
+      [
+        "invoice.paid",
+        "checkout.session.completed",
+        "checkout.session.async_payment_succeeded",
+      ].includes(event.type)
+        ? {
+            eventId: event.id,
+            accountId: account,
+            mode: event.livemode ? "live" : "test",
+            eventType: event.type as PilotProviderEvent["eventType"],
+            occurredAt: event.created * 1000,
+            settlement: "settled",
+          }
+        : undefined;
     const object = event.data.object as any;
     if (
       [
@@ -144,6 +164,16 @@ export const stripeEvent = internalAction({
             organizationId: session.metadata.organizationId as any,
             paymentId: session.payment_intent as string,
             credits,
+            ...(pilotEvent &&
+            typeof session.payment_intent === "string" &&
+            (session.amount_total ?? 0) > 0
+              ? {
+                  pilotEvent: {
+                    ...pilotEvent,
+                    paymentId: session.payment_intent,
+                  },
+                }
+              : {}),
           });
       }
     }
@@ -156,6 +186,15 @@ export const stripeEvent = internalAction({
     if (customer)
       await ctx.runAction(internal.reconciliation.customer, {
         customerId: customer,
+        ...(pilotEvent &&
+        event.type === "invoice.paid" &&
+        object.status === "paid" &&
+        typeof object.id === "string"
+          ? {
+              pilotEvent: { ...pilotEvent, paymentId: object.id },
+              pilotInvoiceId: object.id,
+            }
+          : {}),
       });
     await ctx.runMutation(internal.privacy.receipt, {
       provider: "stripe",
@@ -165,11 +204,17 @@ export const stripeEvent = internalAction({
   },
 });
 export const customer = internalAction({
-  args: { customerId: v.string() },
+  args: {
+    customerId: v.string(),
+    pilotEvent: v.optional(pilotProviderEvent),
+    pilotInvoiceId: v.optional(v.string()),
+  },
   handler: async (ctx, a) => {
     if (!process.env.STRIPE_SECRET_KEY) return;
     const client = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const reserved = await ctx.runMutation(internal.billing.reserveRefresh, a);
+    const reserved = await ctx.runMutation(internal.billing.reserveRefresh, {
+      customerId: a.customerId,
+    });
     if (!reserved) return;
     const account = process.env.STRIPE_ACCOUNT_ID;
     ensure(
@@ -260,6 +305,14 @@ export const customer = internalAction({
           : undefined,
         invoiceId: invoice.id,
         billingRevision: reserved.revision,
+        ...(a.pilotEvent &&
+        interval === "monthly" &&
+        a.pilotInvoiceId === invoice.id &&
+        invoice.amount_paid > 0 &&
+        sub.livemode === (a.pilotEvent.mode === "live") &&
+        invoice.livemode === (a.pilotEvent.mode === "live")
+          ? { pilotEvent: a.pilotEvent }
+          : {}),
       });
     if (
       sub.metadata.billingRoute !== "managed_payments" &&

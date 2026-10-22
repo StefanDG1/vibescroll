@@ -8,7 +8,10 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { access, writeAccess, recentAuthentication, limit, audit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
-import { insightOutput } from "../packages/contracts";
+import { insightOutput, sourceInsightOutput } from "../packages/contracts";
+import { retainedSourceRevision, sourceRetained } from "./lib/sourceAuthority";
+import { sourcePolicyCurrent } from "./lib/sourcePolicy";
+import { syncKnowledge } from "./knowledge";
 import { reserve, settle } from "./product";
 import { personalAllowed } from "./lib/personalAccess";
 import { releaseUnstarted } from "./personalMediaState";
@@ -32,6 +35,55 @@ export type PersonalApproval = {
   useOwnPlan: boolean;
   maxComputeCredits?: number;
 };
+
+async function typedSource(
+  ctx: QueryCtx,
+  source: Doc<"sources">,
+  bound: Doc<"sources">["personalAnalysis"] | null = source.personalAnalysis ??
+    null,
+) {
+  const required =
+    !!source.currentRevisionId ||
+    ["github_repository", "reddit_thread"].includes(source.sourceType ?? "") ||
+    source.analysis?.schemaVersion === "2.0.0" ||
+    !!bound?.sourceRevisionId;
+  ensure(
+    !source.publicImportId &&
+      source.rightsAttested &&
+      sourceRetained(source.sourceRetentionUntil),
+    "SOURCE_UNAVAILABLE",
+    "Source rights or retained evidence changed.",
+  );
+  if (!required) return null;
+  const row = source.currentRevisionId
+    ? await ctx.db.get(source.currentRevisionId)
+    : null;
+  const registry = row ? await retainedSourceRevision(ctx, row) : null;
+  ensure(
+    row &&
+      row.sourceId === source._id &&
+      row.organizationId === source.organizationId &&
+      row.generation === source.generation &&
+      registry &&
+      sourcePolicyCurrent(registry.revision) &&
+      (!bound ||
+        (bound.sourceRevisionId === row._id &&
+          bound.sourceContentHash === row.contentHash)),
+    "INVALID_EVIDENCE",
+    "Review the exact current retained source evidence.",
+  );
+  ensure(
+    registry.evidence.map((record) => record.excerpt).join("\n").length <=
+      60000,
+    "INVALID_EVIDENCE",
+    "Source excerpts exceed the approved text bound.",
+  );
+  return {
+    id: row._id,
+    revision: registry.revision,
+    evidence: registry.evidence,
+  };
+}
 
 // A personal alpha is explicitly bound to verified WorkOS subjects. Email or
 // a saved preference cannot activate subscription permission for hosted users.
@@ -198,8 +250,10 @@ export async function approvePersonalCore(
     "APPROVAL_STALE",
     "Review the current source state before approving.",
   );
+  const registry = await typedSource(ctx, source, null);
   ensure(
-    ((source.kind === "text" && source.text) ||
+    (registry ||
+      (source.kind === "text" && source.text) ||
       (source.kind === "upload" && source.objectKey) ||
       (source.kind === "url" &&
         source.url &&
@@ -224,8 +278,8 @@ export async function approvePersonalCore(
     );
   }
   const generation = source.generation + 1;
-  const media = source.kind !== "text";
-  if (source.kind === "url") acquisitionPolicy(source.url!);
+  const media = source.kind !== "text" && !registry;
+  if (source.kind === "url" && !registry) acquisitionPolicy(source.url!);
   if (media) {
     const unresolved = await ctx.db
       .query("reservations")
@@ -284,6 +338,12 @@ export async function approvePersonalCore(
       generation,
       model: a.model,
       profileBinding: device.personalProfileBinding!,
+      ...(registry
+        ? {
+            sourceRevisionId: registry.id,
+            sourceContentHash: registry.revision.contentHash,
+          }
+        : {}),
       effort: a.effort,
       state: media ? "preparing" : "queued",
       approvedAt: Date.now(),
@@ -294,6 +354,7 @@ export async function approvePersonalCore(
     },
     updatedAt: Date.now(),
   });
+  if (registry) await ctx.db.patch(registry.id, { generation });
   if (media)
     await workflow.start(
       ctx,
@@ -359,6 +420,19 @@ export const cancel = mutation({
         "Personal analysis was canceled. Your plan may have counted work already started.",
       updatedAt: Date.now(),
     });
+    if (
+      source.personalAnalysis.sourceRevisionId &&
+      source.currentRevisionId === source.personalAnalysis.sourceRevisionId
+    ) {
+      const row = await ctx.db.get(source.currentRevisionId);
+      if (
+        row?.organizationId === source.organizationId &&
+        row.sourceId === source._id &&
+        row.generation === source.generation &&
+        row.state === "current"
+      )
+        await ctx.db.patch(row._id, { generation: source.generation + 1 });
+    }
   },
 });
 export const dispatch = internalMutation({
@@ -452,7 +526,14 @@ export const dispatch = internalMutation({
         .take(20);
       for (const source of queued) {
         const job = source.personalAnalysis!;
+        let registry;
+        try {
+          registry = await typedSource(ctx, source);
+        } catch {
+          registry = undefined;
+        }
         if (
+          registry === undefined ||
           job.expiresAt <= now ||
           source.state !== "queued" ||
           source.generation !== job.generation ||
@@ -476,13 +557,17 @@ export const dispatch = internalMutation({
           continue;
         }
         const leaseUntil = now + 40000,
-          deadline = now + (source.kind !== "text" ? 900000 : 180000);
+          deadline =
+            now + (source.kind !== "text" && !registry ? 900000 : 180000);
         await ctx.db.patch(source._id, {
           state: "processing",
           personalAnalysis: {
             ...job,
             state: "running",
-            stage: source.kind !== "text" ? "transcribing" : "analyzing",
+            stage:
+              source.kind !== "text" && !registry
+                ? "transcribing"
+                : "analyzing",
             leaseUntil,
             deadline,
           },
@@ -496,18 +581,23 @@ export const dispatch = internalMutation({
             model: job.model,
             effort: job.effort,
             profileBinding: job.profileBinding,
-            text: source.text,
-            ...(source.acquisition?.description
+            ...(registry
+              ? { sourceRevisionRegistry: registry }
+              : { text: source.text }),
+            ...(!registry && source.acquisition?.description
               ? { caption: source.acquisition.description }
               : {}),
             categoryVocabulary: (
               await vocabulary(ctx, source.organizationId)
             ).map((c) => c.name),
-            coverage:
-              source.kind !== "text"
+            coverage: registry
+              ? "source_text"
+              : source.kind !== "text"
                 ? source.personalMedia?.coverage
                 : "caption_only",
-            ...(source.kind !== "text" ? { media: source.personalMedia } : {}),
+            ...(source.kind !== "text" && !registry
+              ? { media: source.personalMedia }
+              : {}),
             leaseUntil,
             deadline,
           },
@@ -556,6 +646,7 @@ export const dispatch = internalMutation({
         job?.deviceId === device._id &&
         job.actor === device.owner &&
         job.profileBinding === device.personalProfileBinding &&
+        device.personalModels?.some((entry) => entry.slug === job.model) &&
         job.state === "running" &&
         source.generation === a.generation &&
         job.generation === a.generation &&
@@ -564,7 +655,14 @@ export const dispatch = internalMutation({
       "APPROVAL_STALE",
       "Personal lease was canceled, expired or changed.",
     );
+    const registry = await typedSource(ctx, source);
+    const media = source.kind !== "text" && !registry;
     if (a.operation === "heartbeat") {
+      ensure(
+        !registry || a.stage !== "transcribing",
+        "INVALID_EVIDENCE",
+        "Typed text sources have no audiovisual processing stage.",
+      );
       await ctx.db.patch(source._id, {
         personalAnalysis: {
           ...job,
@@ -574,8 +672,10 @@ export const dispatch = internalMutation({
       });
       return { valid: true, deadline: job.deadline };
     }
-    const output: any = presentAnalysis(insightOutput.parse(a.output) as any);
-    if (source.kind !== "text")
+    const output: any = presentAnalysis(
+      (registry ? sourceInsightOutput : insightOutput).parse(a.output) as any,
+    );
+    if (media)
       output.warnings = [
         ...new Set([
           "Video frames are sampled; short scenes can be missed. Automatic transcription can contain errors.",
@@ -588,18 +688,32 @@ export const dispatch = internalMutation({
         output.sourceId === source._id &&
         output.processingRunId === `${source._id}:${job.generation}` &&
         output.coverage ===
-          (source.kind !== "text"
-            ? source.personalMedia?.coverage
-            : "caption_only"),
+          (registry
+            ? "source_text"
+            : media
+              ? source.personalMedia?.coverage
+              : "caption_only"),
       "INVALID_EVIDENCE",
       "Invalid personal source output.",
     );
-    const transcript =
-      source.kind !== "text"
-        ? validateTranscript(a.transcript, source.personalMedia)
-        : [];
-    const evidenceList =
-      source.kind !== "text"
+    ensure(
+      !registry ||
+        (output.sourceRevisionId === registry.id &&
+          output.sourceContentHash === registry.revision.contentHash),
+      "INVALID_EVIDENCE",
+      "Output is bound to a different retained revision.",
+    );
+    const transcript = media
+      ? validateTranscript(a.transcript, source.personalMedia)
+      : [];
+    const evidenceList = registry
+      ? registry.evidence.map((record) => ({
+          kind: record.kind,
+          id: record.id,
+          startMs: null,
+          endMs: null,
+        }))
+      : media
         ? [
             ...transcript.map((s: any) => ({
               kind: "transcript",
@@ -622,14 +736,14 @@ export const dispatch = internalMutation({
               endMs: null,
             },
           ];
-    if (source.acquisition?.description)
+    if (!registry && source.acquisition?.description)
       evidenceList.push({
         kind: "caption",
         id: "post_caption",
         startMs: null,
         endMs: null,
       });
-    if (source.kind !== "text")
+    if (media)
       for (const frame of source.personalMedia.frames) {
         const assetId = ctx.db.normalizeId("assets", frame.assetId);
         const asset = assetId ? await ctx.db.get(assetId) : null;
@@ -642,7 +756,12 @@ export const dispatch = internalMutation({
           "Frame evidence is unavailable.",
         );
       }
-    for (const insight of output.insights)
+    for (const insight of output.insights) {
+      ensure(
+        !registry || insight.evidence.length > 0,
+        "INVALID_EVIDENCE",
+        "Each typed claim needs current source evidence.",
+      );
       for (const evidence of insight.evidence)
         ensure(
           evidenceList.some(
@@ -655,6 +774,7 @@ export const dispatch = internalMutation({
           "INVALID_EVIDENCE",
           "Unverified evidence reference.",
         );
+    }
     ensure(
       !a.usage ||
         [a.usage.inputTokens, a.usage.outputTokens].every(
@@ -672,7 +792,10 @@ export const dispatch = internalMutation({
     await ctx.db.patch(source._id, {
       state: "ready",
       analysis: output,
-      ...(source.kind !== "text"
+      analysisPipelineVersion: registry
+        ? "official-personal-cited-source-v2"
+        : "official-personal-media-text-v1",
+      ...(media
         ? {
             text: transcript.map((s: any) => s.text).join(" "),
             mediaCoverage: output.coverage,
@@ -701,8 +824,11 @@ export const dispatch = internalMutation({
       updatedAt: now,
     });
     await syncCategories(ctx, (await ctx.db.get(source._id))!, output);
+    await syncKnowledge(ctx, (await ctx.db.get(source._id))!, {
+      enqueue: false,
+    });
     await ctx.db.patch(device._id, { activePersonalSource: undefined });
-    if (source.kind !== "text")
+    if (media)
       await ctx.scheduler.runAfter(0, internal.assets.expireOriginal, {
         sourceId: source._id,
         generation: source.generation,

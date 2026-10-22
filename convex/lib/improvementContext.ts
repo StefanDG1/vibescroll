@@ -1,11 +1,33 @@
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
+import { retainedSourceRevision } from "./sourceAuthority";
+import { sourcePolicyCurrent } from "./sourcePolicy";
 import {
   evaluationCurrent,
   referencesCurrent,
   actorCurrent,
 } from "../knowledge";
 export async function improvementCurrent(ctx: QueryCtx, p: Doc<"proposals">) {
+  if (p.detail?.schemaVersion === "2.0.0") {
+    const source = await ctx.db.get(p.sourceId);
+    const row = source?.currentRevisionId
+      ? await ctx.db.get(source.currentRevisionId)
+      : null;
+    const registry = row ? await retainedSourceRevision(ctx, row) : null;
+    if (
+      !source ||
+      source.organizationId !== p.organizationId ||
+      source.state !== "ready" ||
+      !row ||
+      !registry ||
+      !sourcePolicyCurrent(registry.revision) ||
+      p.detail.sourceRevisionId !== row._id ||
+      p.detail.sourceContentHash !== row.contentHash ||
+      !p.references?.length ||
+      !(await referencesCurrent(ctx, p.organizationId, p.references))
+    )
+      return false;
+  }
   if (!p.improvementId) return true;
   const i = await ctx.db.get(p.improvementId);
   if (

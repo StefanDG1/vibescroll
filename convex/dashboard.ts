@@ -5,6 +5,7 @@ import { access, fail } from "./lib";
 import { v } from "convex/values";
 import { syncDashboardCard } from "./lib/dashboardProjection";
 import type { Doc } from "./_generated/dataModel";
+import { cardSourceRetained } from "./lib/sourceAuthority";
 const migrationName = "dashboard-v1";
 const tables = ["sources", "repositories", "proposals", "runs"] as const;
 
@@ -73,9 +74,17 @@ export const home = query({
           .take(31),
       ),
     );
-    const [sources, repositories, proposals, runs] = pages.map((rows) =>
+    const [sourceRows, repositories, proposals, runs] = pages.map((rows) =>
       rows.slice(0, 30),
     );
+    const retention = new Map<string, boolean>();
+    const retained = async (row: Doc<"dashboardCards">) => {
+      if (!retention.has(row.entityId))
+        retention.set(row.entityId, await cardSourceRetained(ctx, row));
+      return retention.get(row.entityId)!;
+    };
+    const sources = [];
+    for (const row of sourceRows) if (await retained(row)) sources.push(row);
     const cache = new Map<string, Doc<"dashboardCards"> | null>(
       pages.flat().map((row) => [row.entityId, row]),
     );
@@ -121,6 +130,7 @@ export const home = query({
           !s ||
           s.state !== "ready" ||
           !s.rightsAttested ||
+          !(await retained(s)) ||
           s.generation !== r.generation ||
           s.updatedAt !== r.revision ||
           !s.insightIds?.includes(r.insightId)

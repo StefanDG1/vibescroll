@@ -83,7 +83,16 @@
       "unchangedCompleteRerun": "pass; no timeout/assertion/control weakened"
     },
     "commands": [
-      "node outputs/launch-run/check-serial.mjs via scripts/run-offline.mjs",
+      "node scripts/run-offline.mjs pnpm validate",
+      "node scripts/run-offline.mjs pnpm lint",
+      "node scripts/run-offline.mjs pnpm typecheck",
+      "node scripts/run-offline.mjs pnpm exec vitest run --maxWorkers=1",
+      "node scripts/run-offline.mjs pnpm exec vitest run --config apps/starter/vitest.auth.config.ts",
+      "node scripts/run-offline.mjs pnpm exec vitest run --config apps/starter/vitest.public-knowledge.config.ts",
+      "node scripts/run-offline.mjs node --test tests/companion-installer.test.mjs",
+      "node scripts/run-offline.mjs pnpm test:pcm",
+      "node scripts/run-offline.mjs pnpm test:build-policy",
+      "node scripts/run-offline.mjs pnpm build",
       "node scripts/audit-dependencies.mjs",
       "prettier changed-file checks",
       "git diff --check",

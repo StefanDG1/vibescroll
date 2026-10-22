@@ -4,7 +4,7 @@ Status: requirements for a future implementation session. The owner will be asle
 
 ## Model and delegation
 
-Select GPT-6.1 Sol in the application before starting. Use Ultra when exposed by the host; otherwise report the actual supported effort and resolve the owner's preference during preflight. A prompt cannot change an already selected root model or combine two effort settings. Preserve the requested model rather than silently substituting another.
+Select GPT-6.1 Sol with Extra High reasoning, `xhigh`, in the application before starting. The owner selected this instead of Ultra. Keep the root at this setting and use explicit subagent delegation for independent work. If the requested setting is unavailable, resolve that during preflight rather than silently substituting a model or enabling Ultra. A prompt cannot change an already selected root model or combine two effort settings.
 
 Explicitly use GPT-6.1 Sol subagents where independent work benefits. Medium fits bounded inspection, documentation, assets and routine tests. High fits authorization, schemas, state machines, spending, recovery and difficult integration. Give each agent a bounded goal, applicable instructions, file ownership, evidence requirements and the shared budget. Use fresh task context when the host requires it to set an effort override. Verify accepted settings rather than claiming an unobserved model/effort.
 

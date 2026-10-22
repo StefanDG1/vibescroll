@@ -1,0 +1,218 @@
+{
+  "recordedAt": "2026-10-22T21:31:48.520273+00:00",
+  "environment": "canonical production public synthetic demo",
+  "origin": "https://scroll.companynerve.com",
+  "frontendCommit": "3e831ae461aa4cb2b8577a3c81e18952b45bceae",
+  "version": "0.1.0-alpha.20261022212012.g3e831ae461aa",
+  "compatibleBackendCommit": "abfdeff6779a2fc7790d4441152117262965fe60",
+  "PR": 132,
+  "featureHead": "6f6c58a0979ac11fbfef7c19e9d89143dbe65c09",
+  "headCI": 39856055089,
+  "mainCI": 39856416737,
+  "alphaCI": 39856628535,
+  "CI": "success at exact recorded heads",
+  "health": "Staged and canonical HTTP 200 with exact commit and version",
+  "actualInferenceTurnsThisCorrection": 0,
+  "newConvexCallsThisCorrection": 0,
+  "source": "existing synthetic demo-0 fixture, not the founder actual result",
+  "cases": [
+    {
+      "theme": "light",
+      "width": 390,
+      "expanded": false,
+      "nativeKeyboardVerified": false,
+      "scrollWidth": 390,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "contrastRatio": 13.92290820022637,
+          "height": 45.59375,
+          "open": false
+        },
+        {
+          "label": "Categories",
+          "contrastRatio": 13.92290820022637,
+          "height": 45.59375,
+          "open": false
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "width": 390,
+      "expanded": true,
+      "nativeKeyboardVerified": true,
+      "scrollWidth": 390,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "contrastRatio": 13.92290820022637,
+          "height": 45.59375,
+          "open": true
+        },
+        {
+          "label": "Categories",
+          "contrastRatio": 13.92290820022637,
+          "height": 45.59375,
+          "open": true
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "expanded": false,
+      "nativeKeyboardVerified": false,
+      "scrollWidth": 1430,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "contrastRatio": 13.92290820022637,
+          "height": 45.59375,
+          "open": false
+        },
+        {
+          "label": "Categories",
+          "contrastRatio": 13.92290820022637,
+          "height": 45.59375,
+          "open": false
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "expanded": true,
+      "nativeKeyboardVerified": true,
+      "scrollWidth": 1430,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "contrastRatio": 13.92290820022637,
+          "height": 45.59375,
+          "open": true
+        },
+        {
+          "label": "Categories",
+          "contrastRatio": 13.92290820022637,
+          "height": 45.59375,
+          "open": true
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "expanded": false,
+      "nativeKeyboardVerified": false,
+      "scrollWidth": 390,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "contrastRatio": 13.02282669224414,
+          "height": 45.59375,
+          "open": false
+        },
+        {
+          "label": "Categories",
+          "contrastRatio": 13.02282669224414,
+          "height": 45.59375,
+          "open": false
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "width": 390,
+      "expanded": true,
+      "nativeKeyboardVerified": true,
+      "scrollWidth": 390,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "contrastRatio": 13.02282669224414,
+          "height": 45.59375,
+          "open": true
+        },
+        {
+          "label": "Categories",
+          "contrastRatio": 13.02282669224414,
+          "height": 45.59375,
+          "open": true
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "expanded": false,
+      "nativeKeyboardVerified": false,
+      "scrollWidth": 1430,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "contrastRatio": 13.02282669224414,
+          "height": 45.59375,
+          "open": false
+        },
+        {
+          "label": "Categories",
+          "contrastRatio": 13.02282669224414,
+          "height": 45.59375,
+          "open": false
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "expanded": true,
+      "nativeKeyboardVerified": true,
+      "scrollWidth": 1430,
+      "controls": [
+        {
+          "label": "Full summary and analysis notes",
+          "contrastRatio": 13.02282669224414,
+          "height": 45.59375,
+          "open": true
+        },
+        {
+          "label": "Categories",
+          "contrastRatio": 13.02282669224414,
+          "height": 45.59375,
+          "open": true
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    "launch-20261022-source-contrast-production-light-mobile.png",
+    "launch-20261022-source-contrast-production-dark-desktop.png"
+  ],
+  "rootReviewedScreenshots": "brand images loaded, synthetic source labels visible",
+  "guard": "28 offline regressions independently passed. Literal route and exact 22-asset manifest only, all HTTP(S) intercepted. No Convex, API, private, authentication or optimizer route. Serial durable full fallback holds.",
+  "requestsAcrossAllThreeAttempts": 58,
+  "allDispatchedRequestsCompleted": true,
+  "unknownBrowserRequests": 0,
+  "failedAttemptsRetained": [
+    "Initial dark measurement failed after four light cases with a generic state assertion; dark contrast was later measured at 13.02:1.",
+    "A helper retake lacked an AX target. Its parent guard then stopped safely.",
+    "The second funded phase exposed a Categories click that did not toggle after a viewport change. A responsive AX target retake also failed.",
+    "Native hit testing, bounded wheel adjustment, toggle verification and refreshed AX with exact read-only DOM fallback corrected the helper. All eight cases then passed with assertions unchanged."
+  ],
+  "budget": {
+    "cumulativeTaskCapUSD": 2,
+    "conservativeRetainedBeforeFinalEvidenceBuildUSD": 1.6652885298898517,
+    "finalEvidenceBuildMaximumUSD": 0.315,
+    "combinedMaximumBeforeFinalEvidenceBuildUSD": 1.9802885298898516,
+    "unknownBackendEnvelopeRetainedUSD": 0.3,
+    "settledInvoice": false,
+    "scope": "All prior attempts, agents, providers and CI retained. No reset. One-month storage horizon, no indefinite operating allowance."
+  },
+  "cleanup": "All three owned task tabs blanked and closed. Guards stopped and locks released. User tabs and the default daemon preserved.",
+  "limits": [
+    "Public synthetic demo UI only; not a new actual source/inference/authentication journey.",
+    "Budget gate blocks prefetch and other routes; not unthrottled browser acceptance.",
+    "Provider approval, joint adapters, signing, independent setup, public generation review and remaining full-plan live/human acceptance remain pending."
+  ]
+}

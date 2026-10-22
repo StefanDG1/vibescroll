@@ -1,6 +1,14 @@
 # VibeScroller foundational document process
 
-## Current brief, October 22: F038 bounded production evidence
+## F039: live contrast verification, October 22
+
+Canonical frontend `3e831ae461aa4cb2b8577a3c81e18952b45bceae`, version `0.1.0-alpha.20261022212012.g3e831ae461aa`, now includes the source-detail contrast correction. PR 132 passed exact-head CI 39856055089, main CI 39856416737 and alpha publication 39856628535. The fixed Basic build passed staged/canonical health before and after exact-build promotion. Backend `abfdeff6779a2fc7790d4441152117262965fe60` remains compatible; this CSS correction required no backend deployment or inference. The full offline suite passed 915 tests with three hosted skips.
+
+Actual hydrated production synthetic-demo review passed eight closed/expanded width/theme cases at 390/1440 pixels, native keyboard focus/expansion, 44-pixel targets and no document overflow. Contrast is 13.92:1 light and 13.02:1 dark. All 58 dispatched browser requests across three bounded attempts completed, with zero Convex calls. Earlier helper click/AX failures are retained. The [live contrast receipt](../operations/evidence/launch-20261022-source-contrast-production.json) identifies synthetic screenshots and budget limits. This does not add a second founder inference, independent user, provider approval, publication, customer or payment. The seven real founder insights still await manual public-sharing review.
+
+Decision: synchronize factual engineering evidence across all four foundations. Preserve contrary evidence and all external/human gates. No audience, price, allowance, belief, campaign or release-permission change. Earlier briefs below are historical.
+
+## Earlier brief, October 22: F038 bounded production evidence
 
 [F038](idea-backlog.md#f038-bounded-production-result-and-release-evidence-october-22) updates Research, Avatar, Offer and Beliefs together for factual production evidence. Launch PRs 120–129 are merged. Current canonical frontend `77da4ad7c442f387ca3feaf9ca2536a9658a248e`, alpha `0.1.0-alpha.20261022195936.g77da4ad7c442`, has passed exact-head/main CI. The current backend is `abfdeff6779a2fc7790d4441152117262965fe60`, deployed at 20:37:21 UTC; its application tree is equivalent to frontend `77da4ad7`. Exact-head full CI 39849741790 passed. Local validation records 915 passes and three hosted skips. [Implementation status](../implementation-status.md) and the [acceptance matrix](../launch-plan/2026-10-22/ACCEPTANCE.md) retain exact-version scope and historical failures.
 

@@ -33,8 +33,13 @@ describe("public task help", () => {
       for (const related of article.related)
         expect(helpArticle(related)).toBeDefined();
       const text = readFileSync(resolve("docs/help", article.file), "utf8");
-      for (const match of text.matchAll(/\]\((\/help\/[^)#]+)(?:#[^)]*)?\)/g))
-        expect(helpArticle(match[1].slice("/help/".length))).toBeDefined();
+      for (const match of text.matchAll(
+        /(!?)\[[^\]]*\]\((\/help\/[^)#]+)(?:#[^)]*)?\)/g,
+      )) {
+        if (match[1] === "!")
+          expect(helpAsset(match[2], article.assets)).toBeDefined();
+        else expect(helpArticle(match[2].slice("/help/".length))).toBeDefined();
+      }
       for (const path of article.assets as string[]) {
         const asset = helpAsset(path, article.assets);
         expect(asset).toBeDefined();

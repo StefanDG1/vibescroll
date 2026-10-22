@@ -1,6 +1,6 @@
 # ADR 113: source-reviewed Help and consented pilot evidence
 
-Accepted October 22, 2026 for the implemented, unreleased candidate. Exact candidate commit: `ROOT_CANDIDATE_COMMIT_PENDING`. This decision authorizes no campaign, customer claim, price activation or public release.
+Accepted October 22, 2026 for the implemented, unreleased candidate. Exact candidate commit: `76ec7bf0b9812e670207cba199b8d07cc07839fd`. This decision authorizes no campaign, customer claim, price activation or public release.
 
 ## Decision
 

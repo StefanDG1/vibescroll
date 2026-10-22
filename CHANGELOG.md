@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### VibeScroll complete-launch candidate, October 22, 2026
+
+- Add public task-based Help, an inspectable synthetic source-to-decision example and an Open source comparison. Preserve separate processing, coding and publication approval.
+- Apply the Library theme preference to public pages, add stable Help discovery and retain unavailable demo source states.
+- Refresh repository contribution/security entry points and prepare unsent pilot/distribution materials. These changes do not establish deployment, independent usability, provider permission or customer results.
+
+### Historical CompanyNerve foundation notes
+
 - Set email one-time codes and Google OAuth as the only authentication methods in setup guidance, with passwords disabled in WorkOS. Clarify the starter UX and distinguish local settings from verified provider setup.
 - Require independent WorkOS/Google credentials for every generated app and carry the authentication policy into exported instructions.
 - Add English privacy, terms, and legal-notice pages for CompanyNerve using company-published operator details and the reused Stripe profile postcode, without independent registry validation. Reset legal identity/contact on export and keep CompanyNerve's terms out of generated product navigation.

@@ -1,3 +1,4 @@
+import { ProductMedia } from "@/components/product-media";
 import Link from "next/link";
 import { PublicPage } from "@/components/site";
 export const metadata = {
@@ -163,6 +164,7 @@ export default function Home() {
           </details>
         ))}
       </section>
+      <ProductMedia variant="overview" idPrefix="home-media" />
     </PublicPage>
   );
 }

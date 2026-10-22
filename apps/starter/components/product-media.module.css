@@ -1,0 +1,73 @@
+.media {
+  display: grid;
+  gap: 1.5rem;
+  margin-block: 2.5rem;
+}
+
+.media > p,
+.media section > p,
+.summary p {
+  max-width: 70ch;
+}
+
+.overview {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1.25rem, 4vw, 3rem);
+}
+
+.figure {
+  min-width: 0;
+  margin: 0;
+}
+
+.figure figcaption {
+  margin-block: 0.65rem 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.portrait,
+.landscape,
+.figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.portrait {
+  max-width: 320px;
+}
+
+.landscape {
+  margin-top: 1.25rem;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.theme {
+  min-width: 0;
+}
+
+.phone {
+  display: block;
+  max-width: 195px;
+}
+
+@media (max-width: 640px) {
+  .overview,
+  .gallery {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overview .figure {
+    justify-self: center;
+  }
+}

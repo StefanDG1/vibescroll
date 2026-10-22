@@ -1,0 +1,2 @@
+record_state,decline_id,participant_id,stage,observed_at_utc,stated_reason_category,current_alternative_category,voluntary_reason_recorded,offer_version,eligible_route,follow_up_authorized,private_record_reference
+UNFILLED,,,,,UNASSESSED,UNASSESSED,NOT_RECORDED,,,NOT_AUTHORIZED,

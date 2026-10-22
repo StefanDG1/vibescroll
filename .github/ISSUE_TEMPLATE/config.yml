@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Task guides
+    url: https://scroll.companynerve.com/help
+    about: First source, Library, project decisions and recovery.
+  - name: Private support or security report
+    url: https://scroll.companynerve.com/contact
+    about: Request a private exchange. Never put secrets or private source contents in an issue.

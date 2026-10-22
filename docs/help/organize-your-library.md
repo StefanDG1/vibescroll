@@ -28,3 +28,7 @@ You can find the same source through search or its branch, explain where it belo
 - Filing seems wrong: correct the organization where supported. Theme changes, navigation and filing do not require paid reanalysis.
 
 **Tip:** Use a small set of labels you would actually search for. Personal interests and project knowledge can stay separate.
+
+![Mobile Library Tree with a synthetic source and its evidence link.](/help/library-tree.png)
+
+![Synthetic source detail with AI summary, main points and coverage.](/help/source-evidence.png)

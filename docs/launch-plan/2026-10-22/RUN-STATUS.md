@@ -1,6 +1,20 @@
 # Implementation run, October 22
 
-Independently buildable engineering is complete in five draft PRs. This receipt is not release or live-provider acceptance.
+Independently buildable engineering is present in five staged PRs. The subsequent production/merge review below supersedes the earlier no-merge authorization state. This receipt is not live-provider acceptance.
+
+## Subsequent merge and production review
+
+The owner authorized merging all five launch PRs and requested production operation. Presentation PR 124 merged into product at `9574cd8ea7f70104b9b809d786a99d6b877fe5b9`; its updated exact-head CI 39788481533 passed. The remaining stack is integrated upward before its final main merge, with exact-head checks retained at each stage.
+
+The root and High reviewers found two production P1 defects during this additional audit. Provider expiry and derived redaction now survive `RESTORE_LOCK`; typed raw exports now require current provider policy. Fourteen new regressions pass, plus three matching rollout tests for rejected legacy authority, measured/idempotent settlement, unknown holds and fresh authorization. A test fixture's invalid table name was caught by types and corrected before the passing type check. No timeout or safety assertion changed.
+
+The first updated full serial run failed one unchanged billing-approval test at its five-second timeout, with 799 passes and three hosted skips. Its unchanged focused case passed in 95 ms and the entire product file passed 38/38. That invocation remains failed; the full rerun and later merge CI outcomes are recorded separately.
+
+The unchanged complete serial rerun passed on Windows with portable Node 24.22.1 and pnpm 12.3.4: 280 documents / 12 skill snapshots, zero-warning lint, all types, 800 unit/integration passes / three hosted skips, 35 auth/API, 23 public-web/rendered, 14 Windows installer, 15 Python and five build-policy tests, plus both production builds. These are 892 passing local tests across the named groups, with three hosted skips. New code had 17 added regression cases. Formatting and whitespace checks passed. The dependency audit passed its existing exact-byte mitigation policy, retaining one high braces registry advisory and no unresolved advisories. This receipt describes the reviewed working tree based on `9574cd8`; exact committed-head CI is recorded on PR 123 and each subsequent parent merge. It does not copy an earlier build version onto a later commit.
+
+Supported production metadata reads confirmed the current backend lacks the new setup/source/public functions. The direct/public/restore-lock environment variables are absent. A new frontend therefore requires the reviewed backend first. [The rollout procedure](../../operations/launch-20261022-rollout.md) records active matching disposition, conditional candidate retention repair, canaries and rollback limits. Backend rollback to the old schema is unsafe after new authority-version writes.
+
+The root temporarily disabled Vercel automatic production domain assignment. Full main CI and staged Basic builds remain enabled, with fixed Basic machinery and elastic concurrency disabled. The current canonical deployment remains serving until a compatible backend and real canaries permit promotion. No production backend deployment or application/inference job has run for this task. Control-plane metadata/billing inspection does not establish a settled zero account charge. The shared US$2 ceiling, unchanged US$20 team threshold and unrelated project traffic remain distinct; no conservative whole-deployment reservation has been verified.
 
 ## Preflight
 

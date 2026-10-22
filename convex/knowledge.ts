@@ -1456,7 +1456,12 @@ export const redactDerived = internalMutation({
     cursor: v.union(v.string(), v.null()),
   },
   handler: async (ctx, a) => {
-    if (process.env.RESTORE_LOCK === "true") return;
+    if (process.env.RESTORE_LOCK === "true") {
+      // Preserve this serial, bounded continuation across an operator lock.
+      // No provider call, content read or redaction runs while locked.
+      await ctx.scheduler.runAfter(60000, internal.knowledge.redactDerived, a);
+      return;
+    }
     ensure(
       a.maxGeneration === undefined ||
         (Number.isSafeInteger(a.maxGeneration) && a.maxGeneration >= 0),

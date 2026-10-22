@@ -43,6 +43,8 @@ export const sourceTables = {
     revision: v.any(),
     evidence: v.array(v.any()),
     text: v.string(),
+    // Optional for candidate rows created before durable retention recovery.
+    retentionScheduledAt: v.optional(v.number()),
     state: v.union(
       v.literal("current"),
       v.literal("superseded"),

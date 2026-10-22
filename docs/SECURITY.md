@@ -2,6 +2,8 @@
 
 Mode: reference. This document specifies controls and evidence. It does not claim the application has passed a security audit.
 
+For implemented user-facing boundaries, download domains and data flow, see [security and privacy for users](SECURITY-FOR-USERS.md). The table below lists requirements and verification criteria, not blanket pass results. [Implementation status](implementation-status.md) records actual checks. Private reports follow the repository's [security policy](../SECURITY.md).
+
 ## Assets and trust boundaries
 
 Protected assets include provider credentials, source media, transcripts, repository content, plans, payment state, device credentials, approval records, and private evidence URLs. The browser, external media, repository content, model output, and execution sandbox are less trusted than the authorization and credential services.
@@ -77,4 +79,4 @@ Automated scans supplement code review and adversarial tests. Record what was te
 
 ## Private reporting route
 
-Use [GitHub private vulnerability reporting](https://github.com/StefanDG1/vibe-scroller/security/advisories/new) when enabled. If unavailable, use the address on [the contact page](https://scroll.companynerve.com/contact) to request a private exchange. Never publish credentials or private media/code in an issue. Send version, safe error code, UTC time and a minimal synthetic reproduction. Redact cookies, signing URLs, keys, identities and source content. No bounty, response deadline or independent audit is promised.
+The repository's [security policy](../SECURITY.md) maintains the current private reporting contact and requested evidence. GitHub private vulnerability reporting was disabled when checked on October 22, 2026. No bounty, response deadline or independent audit is promised.

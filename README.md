@@ -21,7 +21,7 @@ See [capabilities and limits](docs/CAPABILITIES.md) for evidence and availabilit
 Save content → extract cited insights → organize and connect knowledge → check project relevance → review a proposal and plan → approve coding → review a draft PR → record the outcome.
 
 1. Save a permitted link or upload media to your library.
-2. Review the analysis route and cost, then approve processing. VibeScroll extracts main ideas with transcript or sampled-frame references so you can inspect the evidence and coverage.
+2. Extract main ideas with transcript or sampled-frame references so you can inspect the evidence and coverage. With automatic assistant analysis configured, submitted links queue on your paired computer without another per-link approval. Other processing routes retain their route and cost review; using VibeScroll credits requires an explicit choice.
 3. Browse related ideas through topics, Tree or Folders. Keep useful knowledge for reference and correct its organization when needed.
 4. Optionally connect GitHub, select repositories and confirm project context. Evaluate relevant ideas against what a project needs and already implements.
 5. Review the proposed change and its evidence. Refine, edit or export a plan when you want to act. You can also reject an idea, defer it, or keep a no-fit or already-implemented result.
@@ -57,6 +57,16 @@ Additional tools support explicit link saving, feedback and private project sugg
 
 Configure this once in Connections and follow the [local assistant runner guide](docs/operations/assistant-local-runner.md). Existing grants require review before acquiring automatic-analysis authority. The connector does not authorize coding or publication; provider credentials stay on the local computer. Background MCP Events remain disabled, so proactive completion messages in an already finished host chat are not promised.
 
+## Security and privacy
+
+- Media downloads use a platform-specific domain allowlist. The download broker rejects private network addresses and checks each new connection, including destinations reached through redirects.
+- Local media retrieval and decoding run in isolated Docker workers with no direct network access or host folder mounts. A separate broker permits only approved HTTPS destinations. Processing has size, duration and resource limits.
+- Assistant access follows the library scope and actions you choose in Connections. Access can be revoked there. Source content and model output cannot grant permissions.
+- The local ChatGPT route keeps its saved login on your computer. Transcripts and sampled frames go to OpenAI for inference; derived insights and evidence are saved in your private VibeScroll library.
+- Automatic extraction does not authorize paid fallback, coding or publication. Those actions retain their separate funding and approval boundaries.
+
+See [security and privacy for users](docs/SECURITY-FOR-USERS.md) for the exact download domains, data flow, failure cases and evidence limits. [Private vulnerability reporting](SECURITY.md) and [technical security requirements](docs/SECURITY.md) have separate references. These protections do not establish an independent security audit.
+
 ## Try the local demo
 
 For a labeled synthetic preview, use Node 24 and pnpm 12.3.4:
@@ -67,7 +77,7 @@ node scripts/setup-preflight.mjs --demo
 pnpm dev
 ```
 
-Open `http://localhost:3001/demo`. Real setup uses [your own provider accounts](docs/PERSONAL-SETUP.md); [contribution](docs/CONTRIBUTING.md) and [private security reporting](docs/SECURITY.md) have separate paths. Keep credentials, source archives and private evidence out of Git.
+Open `http://localhost:3001/demo`. Real setup uses [your own provider accounts](docs/PERSONAL-SETUP.md); [contribution](docs/CONTRIBUTING.md) and [private security reporting](SECURITY.md) have separate paths. Keep credentials, source archives and private evidence out of Git.
 
 ## Availability and documentation
 

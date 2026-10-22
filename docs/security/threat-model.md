@@ -1,6 +1,8 @@
-# Template threat model
+# Inherited template threat model
 
-This is the review checklist for the implemented starter. See [verification status](../status.md) for tests actually completed; requirements below are not blanket pass results.
+This is the inherited CompanyNerve starter review checklist. Its [template verification status](../status.md) records foundation evidence, not current VibeScroll acceptance. Requirements below are not blanket pass results.
+
+Current VibeScroll documentation starts with [security and privacy for users](../SECURITY-FOR-USERS.md), [product security requirements](../SECURITY.md) and [implementation status](../implementation-status.md). Vulnerability reports follow the repository's [security policy](../../SECURITY.md).
 
 ## Assets and actors
 

@@ -8,7 +8,7 @@ The example uses clearly labelled synthetic text. Its useful, already-implemente
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="apps/starter/public/product/library-dark-1440.png">
-  <img src="apps/starter/public/product/library-light-1440.png" alt="Actual VibeScroll Library with synthetic sources, Tree navigation and an evidence link" width="1440" height="900">
+  <img src="apps/starter/public/product/library-light-1440.png" alt="Actual VibeScroll Library with synthetic sources, Tree navigation and an evidence link" width="1440">
 </picture>
 
 Actual candidate UI with synthetic data. [40-second captioned overview](apps/starter/public/product/overview.mp4), [setup guide video](apps/starter/public/product/setup-walkthrough.mp4), [text transcripts](docs/launch-kit/media.md) and [mobile view](apps/starter/public/product/library-light-390.png). Live sign-in, pairing and a real sample run remain separate acceptance steps.

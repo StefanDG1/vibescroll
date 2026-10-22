@@ -1,0 +1,2 @@
+record_state,correction_id,participant_id,session_id,task,observed_at_utc,assistance_level,safe_failure_code,severity,reproduction_reference,fix_reference,verification_reference,verification_state,remaining_uncertainty,consent_scope,private_record_reference
+UNFILLED,,,,,,,,,,,,UNVERIFIED,,,

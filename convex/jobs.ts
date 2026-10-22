@@ -1208,7 +1208,7 @@ export const exportPage = query({
           ctx,
           row as Doc<"sourceRevisions">,
         );
-        if (registry)
+        if (registry && sourcePolicyCurrent(registry.revision))
           permitted.push({
             ...row,
             revision: registry.revision,
@@ -1271,8 +1271,11 @@ export const exportPage = query({
           row.sourceType === "github_repository" ||
           row.sourceType === "reddit_thread" ||
           row.analysis?.schemaVersion === "2.0.0";
+        const registry = revision
+          ? await retainedSourceRevision(ctx, revision)
+          : null;
         const registryCurrent = row.currentRevisionId
-          ? !!revision && !!(await retainedSourceRevision(ctx, revision))
+          ? !!registry && sourcePolicyCurrent(registry.revision)
           : !registryRequired;
         if (
           !row.rightsAttested ||

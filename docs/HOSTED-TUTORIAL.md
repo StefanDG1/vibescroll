@@ -1,5 +1,7 @@
 # Review your first source
 
+The maintained task-based version is [Save and inspect your first insight](help/first-useful-insight.md), rendered publicly at `/help/first-useful-insight` after release. This dated tutorial remains a compact historical reference; use current account availability and route controls.
+
 Mode: how-to. Updated October 3, 2026. Intended for adult developers and technical founders with practical content to review. The library works before connecting a project.
 
 1. Open [VibeScroller](https://scroll.companynerve.com/app) on phone or desktop. Sign in through Google or an email code and open Library in the default workspace.

@@ -1,0 +1,59 @@
+{
+  "commit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+  "edited": true,
+  "synthetic": true,
+  "width": 390,
+  "height": 700,
+  "frames": [
+    {
+      "file": "overview-01.png",
+      "duration": 5,
+      "caption": "Make scrolling useful.\nActual UI with synthetic data.",
+      "route": "/demo?view=library",
+      "observedAt": "2026-10-22T12:33:16Z"
+    },
+    {
+      "file": "overview-02.png",
+      "duration": 6,
+      "caption": "Save permitted material.\nSaving alone starts no analysis.",
+      "route": "/demo?view=library",
+      "observedAt": "2026-10-22T12:37:55Z"
+    },
+    {
+      "file": "overview-03.png",
+      "duration": 4,
+      "caption": "Simulated waiting state.\nNo processing job is running.",
+      "route": "/demo?view=library&uiState=loading",
+      "observedAt": "2026-10-22T12:33:29Z"
+    },
+    {
+      "file": "overview-04.png",
+      "duration": 7,
+      "caption": "Open the source evidence.\nCheck coverage before acting.",
+      "route": "/demo?view=library&source=demo-0",
+      "observedAt": "2026-10-22T12:33:32Z"
+    },
+    {
+      "file": "overview-05.png",
+      "duration": 6,
+      "caption": "Keep an editable private plan.\nCoding needs separate approval.",
+      "route": "/demo?view=projects&proposal=demo-proposal-draft",
+      "observedAt": "2026-10-22T12:37:48Z"
+    },
+    {
+      "file": "overview-06.png",
+      "duration": 6,
+      "caption": "No fit is a useful decision.\nAn idea need not become code.",
+      "route": "/example",
+      "observedAt": "2026-10-22T12:33:39Z"
+    },
+    {
+      "file": "overview-07.png",
+      "duration": 6,
+      "caption": "Find the source again.\nExplore the labelled example.",
+      "route": "/demo?view=library",
+      "observedAt": "2026-10-22T12:33:41Z"
+    }
+  ],
+  "editing": "Reordered individually reviewed native captures. No real job or continuous recording."
+}

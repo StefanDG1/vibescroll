@@ -1,0 +1,24 @@
+name: Feature request
+description: Explain a useful task and the gap in the current product.
+body:
+  - type: markdown
+    attributes:
+      value: "Use synthetic examples. Do not include private sources, credentials or account exports."
+  - type: textarea
+    id: task
+    attributes:
+      label: What task are you trying to complete?
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior and workaround
+    validations:
+      required: true
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired outcome and important constraints
+    validations:
+      required: true

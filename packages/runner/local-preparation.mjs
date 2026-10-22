@@ -7,9 +7,11 @@ import { fileURLToPath } from "node:url";
 import { companionPreparationRoot } from "../companion/config-root.mjs";
 import {
   acquisitionPolicy,
-  acquisitionManifest,
+  createAcquisitionManifest,
 } from "../media/acquisition-runtime.ts";
+import release from "../../infra/downloader.json" with { type: "json" };
 import { decoderManifest } from "../media/manifest.ts";
+const acquisitionManifest = createAcquisitionManifest(release.version);
 const execute = promisify(execFile);
 export function localPreparationCleanupCommand(directory) {
   return {

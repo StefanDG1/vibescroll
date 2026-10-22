@@ -9,6 +9,8 @@ export default async function Page({
     q?: string;
     state?: string;
     homeMode?: string;
+    publicEdition?: string;
+    publicVersion?: string;
   }>;
 }) {
   const query = await searchParams;
@@ -20,6 +22,8 @@ export default async function Page({
       search={query.q}
       filter={query.state}
       compactHome={query.homeMode === "compact"}
+      publicEdition={query.publicEdition}
+      publicVersion={Number(query.publicVersion)}
     />
   );
 }

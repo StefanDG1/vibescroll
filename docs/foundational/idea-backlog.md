@@ -1,5 +1,13 @@
 # Foundational idea backlog
 
+## F037: implemented launch candidate and evidence limits, October 22
+
+Source: the owner's complete implementation request and local source/test receipts in the October 22 worktree. Decision: adopt precise candidate capability language across all four foundations, while retaining audience, prices, six beliefs, explicit authority and provider/commercial limits. Implemented additions include typed retrieval/provenance, exact public reuse/withdrawal, resumable setup, official isolated personal processing, verified package/update preparation, source-reviewed Help and synthetic examples. Minimal payment instrumentation and disabled founding-pass policy are preparation rather than a changed offer.
+
+Counterargument: a larger implemented surface and passing synthetic checks can increase setup burden without producing enough additional value; an authored example does not validate a model, a signed-manifest engine does not supply a signed customer installer, and payment observations do not establish repeat usefulness. Public contribution interest, independent first-use comprehension, source reliability, willingness to pay and comparative outcomes remain unmeasured.
+
+Next evidence: use a real recent permitted source and active project to observe evidence inspection, a useful/already-implemented/no-fit decision, recovery and understood spending/privacy boundaries; record denominators, observation windows, contrary results and existing-tool comparison. Test fresh-account/device setup and upgrade with independent people only when actual release/provider/signing gates permit it. No contacts, outcomes or figures are fabricated. Pilot drafts remain unsent; recording this entry authorizes no campaign, checkout, deployment or spending. See [candidate status](../implementation-status.md) and [ADRs 111](../adr/111-typed-source-and-public-knowledge-authority.md), [112](../adr/112-persisted-setup-and-verified-companion-packages.md) and [113](../adr/113-source-reviewed-help-and-consented-pilot-evidence.md).
+
 ## F025: bounded live paging, sharing and review recovery, October 7
 
 Source: actual engineering acceptance under the owner's full implementation request. Adopt precise availability language: bounded live cursor delivery, owner-controlled saved-title sharing/revocation and exact review recovery. Counterargument: two founder accounts and passing navigation do not establish new-user comprehension, cited-ready/mixed-derived sharing, helpfulness or billing savings. Retain independent evaluation and provider/funding gates; no marketing publication follows.

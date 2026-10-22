@@ -14,7 +14,7 @@
     "dev:marketing": "pnpm --filter @companynerve/marketing dev",
     "build": "pnpm --filter @companynerve/marketing build && pnpm --filter @companynerve/starter build",
     "typecheck": "tsc --noEmit && pnpm -r --if-present typecheck",
-    "test": "vitest run --maxWorkers=2 && vitest run --config apps/starter/vitest.auth.config.ts && pnpm test:pcm && pnpm test:build-policy",
+    "test": "vitest run --maxWorkers=2 && vitest run --config apps/starter/vitest.auth.config.ts && vitest run --config apps/starter/vitest.public-knowledge.config.ts && node --test tests/companion-installer.test.mjs && pnpm test:pcm && pnpm test:build-policy",
     "test:build-policy": "node --test tests/vercel-build-ignore.test.mjs",
     "test:pcm": "python tests/local_pcm_test.py && python tests/public_proxy_test.py && python tests/media_sampling_test.py",
     "validate": "node scripts/validate.mjs",

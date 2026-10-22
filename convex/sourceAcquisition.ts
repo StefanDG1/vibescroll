@@ -3,7 +3,7 @@ import { internal } from "./_generated/api";
 import { z } from "zod";
 import { query } from "./_generated/server";
 import { internalMutation, mutation } from "./lib/projectedMutations";
-import type { QueryCtx } from "./_generated/server";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { access, limit, audit } from "./lib";
 import { workspaceReadable } from "./lib/workspacePrivacy";
@@ -779,15 +779,64 @@ export const bytesObserved = internalMutation({
     await ctx.db.patch(row._id, { byteCount: row.byteCount + a.bytes });
   },
 });
+const retentionRetryMs = 60000;
+async function scheduleRetention(
+  ctx: MutationCtx,
+  revision: Doc<"sourceRevisions">,
+  at: number,
+) {
+  // The marker and callback are committed atomically. Concurrent normalization
+  // or duplicate callbacks cannot create a second future retry for this row.
+  if ((revision.retentionScheduledAt ?? 0) > Date.now()) return false;
+  await ctx.scheduler.runAt(at, internal.sourceAcquisition.expire, {
+    revisionId: revision._id,
+  });
+  await ctx.db.patch(revision._id, { retentionScheduledAt: at });
+  return true;
+}
+// Explicit operator repair for unreleased revisions whose old callback was
+// consumed while locked. Supply each affected source ID; never scan all data.
+export const normalizeRetention = internalMutation({
+  args: { sourceId: v.id("sources") },
+  handler: async (ctx, a) => {
+    const revisions = await ctx.db
+      .query("sourceRevisions")
+      .withIndex("by_source", (q) => q.eq("sourceId", a.sourceId))
+      .take(26);
+    ensure(
+      revisions.length <= 25,
+      "LIMIT_REACHED",
+      "Review this source's oversized revision history before retention repair.",
+    );
+    let scheduled = 0;
+    for (const revision of revisions) {
+      const deadline = revision.revision?.retention?.retainUntil;
+      if (revision.state === "removed" || !Number.isSafeInteger(deadline))
+        continue;
+      if (
+        await scheduleRetention(
+          ctx,
+          revision,
+          Math.max(Date.now() + 1, deadline),
+        )
+      )
+        scheduled++;
+    }
+    return { visited: revisions.length, scheduled };
+  },
+});
 export const expire = internalMutation({
   args: { revisionId: v.id("sourceRevisions") },
   handler: async (ctx, a) => {
-    if (process.env.RESTORE_LOCK === "true") return { expired: false };
     const revision = await ctx.db.get(a.revisionId);
     if (!revision || revision.state === "removed") return { expired: false };
     const retainUntil = revision.revision?.retention?.retainUntil;
     if (!Number.isSafeInteger(retainUntil) || retainUntil > Date.now())
       return { expired: false };
+    if (process.env.RESTORE_LOCK === "true") {
+      await scheduleRetention(ctx, revision, Date.now() + retentionRetryMs);
+      return { expired: false };
+    }
     const source = await ctx.db.get(revision.sourceId);
     const now = Date.now();
     // Superseded provider material expires too, without mutating a later source.
@@ -796,6 +845,7 @@ export const expire = internalMutation({
       evidence: [],
       text: "",
       revision: { removedAt: now, reason: "provider_retention_expired" },
+      retentionScheduledAt: undefined,
       updatedAt: now,
     });
     if (
@@ -988,6 +1038,7 @@ export const finish = internalMutation({
         evidence,
         text: a.result.text,
         state: "current",
+        retentionScheduledAt: revision.retention?.retainUntil,
         createdAt: now,
         updatedAt: now,
       });

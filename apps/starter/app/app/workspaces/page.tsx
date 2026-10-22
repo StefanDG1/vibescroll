@@ -4,12 +4,19 @@ import { Header } from "@/components/header";
 import { ActionForm } from "@/components/action-form";
 import { createOrganization, createPrivateLibrary } from "@/app/actions";
 import { Card, Input, Label, Badge } from "@companynerve/ui";
+import { publicContinuation } from "@/lib/public-knowledge-display";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ draft?: string }>;
+  searchParams: Promise<{
+    draft?: string;
+    publicEdition?: string;
+    publicVersion?: string;
+  }>;
 }) {
-  const draft = (await searchParams).draft?.slice(0, 2048);
+  const query = await searchParams;
+  const continuation = publicContinuation(query);
+  const fields = new URLSearchParams(continuation);
   const data = await (await backend()).query(api.accounts.current, {});
   return (
     <div className="container">
@@ -24,7 +31,7 @@ export default async function Page({
             <Link
               href={
                 `/app?workspace=${o.id}` +
-                (draft ? `&draft=${encodeURIComponent(draft)}` : "")
+                (continuation ? `&${continuation}` : "")
               }
               className="card project-link"
               key={o.id}
@@ -53,13 +60,18 @@ export default async function Page({
             action={createPrivateLibrary}
             label="Open my private library"
           >
-            <input type="hidden" name="draft" value={draft ?? ""} />
+            {[...fields].map(([name, value]) => (
+              <input key={name} type="hidden" name={name} value={value} />
+            ))}
           </ActionForm>
         </Card>
         <Card style={{ marginTop: 24 }}>
           <h2 style={{ marginTop: 0 }}>Create a team workspace</h2>
           <p>Workspace members can read its library according to their role.</p>
           <ActionForm action={createOrganization} label="Create workspace">
+            {[...fields].map(([name, value]) => (
+              <input key={name} type="hidden" name={name} value={value} />
+            ))}
             <div>
               <Label htmlFor="name">Workspace name</Label>
               <Input

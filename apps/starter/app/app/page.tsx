@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { publicContinuation } from "@/lib/public-knowledge-display";
 export default async function Page({
   searchParams,
 }: {
@@ -9,9 +10,12 @@ export default async function Page({
     workspace?: string;
     view?: string;
     tier?: string;
+    publicEdition?: string;
+    publicVersion?: string;
   }>;
 }) {
   const query = await searchParams;
+  const continuation = publicContinuation(query);
   const id = await (
     await backend()
   ).mutation(
@@ -20,14 +24,10 @@ export default async function Page({
       ? { preferredId: query.workspace as Id<"organizations"> }
       : {},
   );
-  const draft = query.draft?.slice(0, 2048);
-  if (!id)
-    redirect(
-      `/app/workspaces${draft ? `?draft=${encodeURIComponent(draft)}` : ""}`,
-    );
+  if (!id) redirect(`/app/workspaces${continuation ? `?${continuation}` : ""}`);
   if (query.view === "billing")
     redirect(
       `/app/${id}/billing${query.tier === "pro" ? "?tier=pro" : "?tier=starter"}`,
     );
-  redirect(`/app/${id}${draft ? `?draft=${encodeURIComponent(draft)}` : ""}`);
+  redirect(`/app/${id}${continuation ? `?${continuation}` : ""}`);
 }

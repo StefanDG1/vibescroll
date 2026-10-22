@@ -6,6 +6,8 @@ The goal is a source you can reopen with an inspectable cited insight. A source'
 
 Sign in and use a workspace role that permits capture. Have a permitted URL, media upload or supplied text. To analyze it, your account needs an enabled route and sufficient allowance. Reading, changing theme and filing existing knowledge do not start inference.
 
+Using your own plan needs your awake [paired Windows computer and official connection](/help/connect-your-computer). Account eligibility, actual task capabilities and current consent still apply. A saved login, model list or paired badge is not a successful request or cited result. Local preparation, platform/storage costs and provider allowance remain separate.
+
 ## Save the source
 
 1. Choose **Save**. Select the input type and enter your source.

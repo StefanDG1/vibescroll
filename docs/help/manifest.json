@@ -55,25 +55,54 @@
   ],
   "articles": [
     {
+      "slug": "connect-your-computer",
+      "title": "Connect your computer for own-plan work",
+      "summary": "Prepare, pair, connect and run one companion without confusing local checks with a cited result.",
+      "file": "connect-your-computer.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed October 23 candidate; two-queue companion and phased checks locally tested; portable runtime and native/live/independent acceptance pending",
+      "lastVerifiedCommit": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
+      "dependencies": [
+        "apps/starter/components/setup-journey.tsx",
+        "packages/onboarding/companion-setup.ts",
+        "packages/onboarding/pairing-configuration.ts",
+        "packages/onboarding/preflight-report.ts",
+        "packages/runner/companion-preflight.mjs",
+        "packages/runner/pair.mjs",
+        "packages/runner/config.example.json",
+        "scripts/companion.mjs",
+        "convex/setupJourney.ts",
+        "docs/PERSONAL-VIDEO-GUIDE.md"
+      ],
+      "related": [
+        "getting-started",
+        "first-useful-insight",
+        "processing-and-recovery"
+      ],
+      "assets": []
+    },
+    {
       "slug": "getting-started",
       "title": "Get started with one saved source",
       "summary": "Choose a first task and a processing route without connecting everything at once.",
       "file": "getting-started.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed October 23 candidate; prior illustrations retain original capture versions; portable runtime and native/live/independent setup pending",
+      "lastVerifiedCommit": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
         "docs/HOSTED-TUTORIAL.md",
         "apps/starter/components/setup-journey.tsx",
         "convex/setupJourney.ts",
-        "packages/onboarding/preflight-report.ts"
+        "packages/onboarding/preflight-report.ts",
+        "packages/onboarding/companion-setup.ts"
       ],
       "related": [
         "first-useful-insight",
         "organize-your-library",
-        "evaluate-an-idea-for-a-project"
+        "evaluate-an-idea-for-a-project",
+        "connect-your-computer"
       ],
       "assets": ["/help/library-tree.png", "/help/save-form.png"]
     },
@@ -83,8 +112,8 @@
       "summary": "Review a permitted source, its processing choice and the evidence behind a ready result.",
       "file": "first-useful-insight.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed October 23 candidate; prior illustrations retain original capture versions; portable runtime and native/live/independent setup pending",
+      "lastVerifiedCommit": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
@@ -92,9 +121,14 @@
         "apps/starter/components/source-acquisition-panel.tsx",
         "apps/starter/components/typed-source-evidence.tsx",
         "convex/sourceAcquisition.ts",
-        "packages/sources/types.ts"
+        "packages/sources/types.ts",
+        "packages/onboarding/companion-setup.ts"
       ],
-      "related": ["getting-started", "processing-and-recovery"],
+      "related": [
+        "getting-started",
+        "processing-and-recovery",
+        "connect-your-computer"
+      ],
       "assets": ["/help/save-form.png", "/help/source-evidence.png"]
     },
     {
@@ -136,8 +170,8 @@
       "summary": "Distinguish waiting work, unavailable accounts, reservations and settled usage.",
       "file": "processing-and-recovery.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed October 23 candidate; prior illustrations retain original capture versions; portable runtime and native/live/independent setup pending",
+      "lastVerifiedCommit": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
@@ -147,9 +181,10 @@
         "convex/setupJourney.ts",
         "scripts/companion.mjs",
         "packages/companion/README.md",
-        "apps/starter/components/source-acquisition-panel.tsx"
+        "apps/starter/components/source-acquisition-panel.tsx",
+        "packages/onboarding/companion-setup.ts"
       ],
-      "related": ["getting-started"],
+      "related": ["getting-started", "connect-your-computer"],
       "assets": []
     },
     {
@@ -229,5 +264,17 @@
         "reason": "New typed citations preserve the documented current evidence, confirmed context and separate plan/coding approvals."
       }
     ]
+  },
+  "continuationReview": {
+    "date": "2026-10-23",
+    "baseline": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
+    "status": "source-reviewed-candidate",
+    "updated": [
+      "connect-your-computer",
+      "getting-started",
+      "first-useful-insight",
+      "processing-and-recovery"
+    ],
+    "limits": "Ordered pairing/connection/full-check instructions, workspace-safe configuration and serial existing source/assistant dispatch source-reviewed/local-tested. Eight static SSR cases passed; native browser failed before task-tab creation. No actual processing, installation or independent walkthrough. Full portable runtime preparation and project/plan route integration remain pending."
   }
 }

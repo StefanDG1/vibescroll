@@ -2,6 +2,8 @@
 
 ## October 23 completion work
 
+Local application candidate `58df6ec` adds independent default-off direct-provider gates, advertised capability/input/quota checks, one controller for the existing app-source and assistant queues, an uncertainty stop and separate pairing/connection/full-check setup. The combined tree passed 1,001 local tests with three hosted skips and both builds. Native browser review is blocked by an expired connection; source/assistant fixtures are not real account acceptance. Full server capability propagation, own-plan project/plan production, safe retry reuse, portable runtime completion and production verification remain pending. No creator monitoring, ordered-carousel acquisition, new onboarding chapters or customer skill discovery was implemented. See [the receipt](operations/evidence/launch-20261023-local-completion.json), [ADR 118](adr/118-creator-and-guided-onboarding-planning-boundary.md) and the [remaining-work plan](launch-plan/2026-10-23/README.md).
+
 The [new plan](launch-plan/2026-10-23/README.md) and [completion ledger](launch-plan/2026-10-23/ACCEPTANCE.md) retain the original scope and record additional audited code gaps. The owner approved the seven real README claims and their published saving/reuse, GitHub-first release and the paired-computer route for each eligible user's complete own-subscription workflow. Root High is authorized; Ultra stays off. The original cumulative US$2 cap remains. This update records decisions and planned corrections, not new deployed behavior or executed live acceptance. See [F040](foundational/README.md) for the synchronized brief.
 
 ## Latest live contrast verification, October 22

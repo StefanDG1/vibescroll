@@ -18,6 +18,8 @@ Use a phone or desktop browser. Reading this help and the [synthetic example](/e
 
 Personal analysis needs an eligible paired computer, its working local runtime and that person's connected official account. It can wait when the computer is unavailable. Local preparation can send text and sampled frames to the model provider. It is not entirely offline AI.
 
+For the own-plan route, [connect your Windows computer](/help/connect-your-computer) before approving a sample. Pairing, permission to connect, a full prerequisite report, an online worker and a cited result are separate checks. The website needs no desktop installation; this processing route does need its supported local executor. Your subscription does not cover every preparation or platform cost.
+
 An enabled managed route uses VibeScroll credits and explicit limits. A cloud route needs no paired laptop. Availability and quotas differ by account. VibeScroll never silently changes a waiting local task to paid processing.
 
 ## Continue setup without starting work

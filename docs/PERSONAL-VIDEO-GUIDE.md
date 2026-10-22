@@ -1,55 +1,47 @@
-# Test video analysis with your ChatGPT plan
+# Analyze permitted video with your own plan
 
-This personal alpha uses your paired Windows laptop for offline English transcription and your own connected ChatGPT plan for supported visual reasoning. The laptop must stay on. Its OAuth credentials stay on that laptop. No paid inference fallback is enabled.
+Use the website on your phone or computer to save media, approve work and inspect results. Own-plan work needs your eligible account and an awake paired Windows computer running the supported isolated companion. Computer-free hosted subscription processing remains gated until its provider requirements pass. No paid inference fallback is automatic.
 
-## Upload from your phone or laptop
+## Prepare your computer once
 
-1. Open https://scroll.companynerve.com/app and sign in with your Google account. Your default workspace opens automatically.
-2. Choose **Upload or import**, then choose a video file. MP4 and WebM uploads are bounded to 250 MB and ten minutes. Use media you are permitted to process.
-3. Leave automatic analysis selected. If the app asks you to **Sign in again**, follow that link before selecting your file again. A fresh website sign-in is required to authorize personal plan usage. Choose your online computer and a model actually listed by your connected ChatGPT account. Read and check the permission to use your plan allowance and reserve up to ten app compute credits for isolated media preparation.
-4. Upload. The app prepares audio and sampled frames in an isolated cloud sandbox, transcribes normalized audio locally, then sends the transcript and sampled frames through your local ChatGPT connection. You do not need to type a transcript.
-5. Watch the progress in the source. Review the saved summary, main points, categories, automatic transcript, and timestamped private frame evidence. Sampled frames do not guarantee that every scene or caption was captured.
-
-Your ChatGPT allowance is separate from VibeScroller's media compute allowance. This permission does not authorize coding or a pull request. Those require a separate reviewed plan and bounded execution approval.
-
-If **Analysis provider** is shown, keep **My ChatGPT plan · paired laptop** selected. The separately tested **Cloud processing · app credits** option uses managed models and its own permission; it does not use your ChatGPT allowance. There is no automatic switch between these routes.
-
-## Keep the existing laptop connection running
-
-The owner's private configuration is at `private/personal-runner-production.json`. From the repository folder, run:
+Follow [Connect your computer](help/connect-your-computer.md) for portable setup. Pair to the same account/workspace, check local prerequisites and start one companion from its verified package or checkout root:
 
 ```powershell
-pnpm runner:personal C:/Code/VibeScroller/vibe-scroller/private/personal-runner-production.json
+node scripts/companion.mjs run "ABSOLUTE_CONFIG_PATH"
 ```
 
-Keep one runner process active. The configuration includes the local Python environment and pinned offline Whisper model. Do not share that file, copy credentials into the website, or commit private files. If your ChatGPT connection needs renewal, use the local connection command and review its official browser consent:
+Replace the placeholder locally with your protected configuration's quoted absolute path. Never copy another user's configuration or account connection. This unified entry point owns the official controller; do not separately start a second worker or controller. Follow only its official consent when needed. A legacy local connection command is not readiness evidence for this controller.
 
-```powershell
-pnpm chatgpt:local connect
-```
+Video needs supported decoder/frame tools, the pinned preparation image and a compatible offline transcription environment/model. The prerequisite check distinguishes permission to connect from a full local pass; neither verifies model entitlement or a completed video. Keep the computer awake and use the actual task's model/effort choices, not a name copied from an earlier example.
 
-The app lists only models returned by the connected account. It does not promise a model based on its name in another application. Only the verified operator is enabled for this personal alpha; this test is not proof of general commercial availability.
+## Save and approve one video
 
-## Import Instagram Saved links
+1. Sign in to the intended workspace and choose **Save**. Select a permitted upload within the form's limits. Start with a short video you can check yourself.
+2. Review whether you are saving only or requesting analysis. For own-plan processing, select your computer and an available model. Complete normal fresh sign-in when requested.
+3. Read the source-specific consent, reasoning choice and preparation route. Provider allowance, preparation compute, storage and platform charges are different. Approve only the displayed route and maximum; a subscription does not make every stage free.
+4. Submit once and retain the source/status link. Supported preparation supplies bounded transcript and sampled images to the official client. Raw audio/video and transcription must not be sent through an inference route that does not support them.
+5. Inspect the actual completed transcript, claims, interpretations, warnings and available timestamped or numbered image evidence. Sampling can miss scenes; a transcript does not prove visual coverage. A ready state does not prove the advice is true.
+6. Return to Library and reopen the source. Correct filing without another analysis. Project evaluation, plans, coding and publication retain separate current context and approvals.
 
-The JSON or HTML ZIP import extracts Saved links and their relevant metadata in your browser. The whole archive is not uploaded. Saved exports usually contain links rather than playable saved videos. Importing links does not itself provide audio or images for analysis.
+After a failure, inspect the existing source before retrying. Retained preparation can be reused only while current, permitted and compatible. Changed source, language, pipeline, permission or expired evidence may need new preparation and a new quote. An unknown completion cannot become a free retry.
 
-Choose automatic analysis in the import dialog, select your online laptop and available ChatGPT model, then approve the displayed allowance. The app saves the links and starts an isolated public-link downloader for up to five sources per batch. The original ZIP stays on your device. Completed duplicates keep their existing results without another analysis charge.
+## Import saved links
 
-Retrieval depends on the platform permitting public access. The actual August-export test returned Instagram HTTP 429 for a Reel, and the multi-image carousel is unsupported by this downloader. Those outcomes remain visible; they do not produce an invented transcript. If a post is private, removed, login-gated or rate-limited, a permitted media upload remains the optional fallback. Do not supply Instagram passwords or session cookies as a workaround. The four existing operator-assisted analyses remain available in your library.
+The browser can preview permitted JSON/HTML saved-link exports without uploading the whole archive. Links and metadata are not playable media or permission to fetch a platform. Choose only the reviewed batch and processing scope shown by the app.
 
-## If analysis stops
+Direct public-link retrieval needs its own enabled capability and source permission. Private, removed, login-gated, rate-limited or unsupported posts can remain saved. A permitted upload or supplied text is a separately labelled recovery path, not successful direct retrieval. Never supply platform passwords, cookies or another person's session to bypass restrictions.
 
-- **Computer offline:** start the paired laptop runner, then review the analysis permission again if it expired.
-- **Sign in again:** complete the website's fresh sign-in before approving sensitive operations.
-- **Allowance unavailable:** check Usage. The app will not switch to a paid provider.
-- **Media preparation failed:** review the displayed error. Unknown compute usage remains reserved until reconciliation; repeated requests do not bypass this boundary.
-- **Cancel or delete:** cancel processing from the source, or delete it from your library. Deletion fences delayed results and queues associated private assets for removal.
+## Recover without duplicate work
 
-Raw source media is scheduled for expiry after processing; the selected evidence and derived insights follow the documented retention policy. Evidence requires workspace access and is not public. Browser and physical-phone testing are recorded separately in the implementation status.
+- **Computer unavailable:** start the matching companion and keep the computer awake. Pairing alone does not establish an online worker or current account access.
+- **Reconnect account:** use the supported official controller flow. Do not delete protected state, remove uncertain locks or stop unrelated workers to force access.
+- **Model or quota denied:** inspect the actual error. A listed model is not guaranteed request access. Another route requires a new explicit approval.
+- **Preparation unavailable:** inspect task capabilities and prerequisites. Do not disable isolation, substitute an unpinned image or treat text-only success as video acceptance.
+- **Completion uncertain:** inspect existing status before resubmitting. Started work may consume plan allowance; unknown platform usage keeps its hold.
+- **Cancel or delete:** use the current source control. Cancellation, pausing, unpairing and deleting evidence have different effects. Deletion fences delayed results and follows retention/removal policy.
 
-## Verified production example
+See [processing and recovery](help/processing-and-recovery.md) and [the personal runtime reference](operations/personal-analysis-runner.md). Local reports, standalone transcription, a protected connection and an actual browser-approved cited result are separate observations. Independent setup and usefulness remain pending until observed.
 
-On 1 October 2026, an explicitly owned 15-second synthetic video completed through automatic upload on the real domain, at its first processing generation. Whisper supplied the transcript; GPT-5.6-Sol with medium reasoning saved three cited design insights and correctly read frame-only size and spacing markers. Your account advertised GPT-5.6-Sol during this test; select only models shown by your connection. This verifies the personal audio/visual path, not every Instagram source, language, scene or device.
+## Historical production observations
 
-The four posts from your supplied Instagram archive have now also been analyzed in production. Open Library and select an imported source to see its results: three Reels have automatic transcripts and sampled visual evidence; the fourth post is a 14-slide carousel and has visual-only analysis. Together they have 21 saved insights. Media was retrieved through your existing signed-in browser and attached to the original records; this was operator-assisted ingestion, not an automatic Instagram account-sync feature. No Instagram session credentials were transferred to the app. Keep the paired laptop on for future analysis jobs while using the mobile website.
+The October 1 record includes an owned 15-second synthetic video with transcript/frame evidence and three design insights. Four imported posts also produced 21 insights with operator-assisted media ingestion. Their original runtime/account versions remain in [implementation status](implementation-status.md). They do not verify the current unified official-controller workflow, arbitrary platform access or independent users. The October 22 seven-insight founder result used supplied text, not audiovisual processing.

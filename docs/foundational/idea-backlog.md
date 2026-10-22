@@ -1,5 +1,11 @@
 # Foundational idea backlog
 
+## F042: local companion and source-gate corrections, October 23
+
+The application tree committed as `58df6ec` passed 1,001 local tests with three hosted skips, all types, zero-warning lint and both production builds. It separates GitHub/Reddit release gates, validates advertised account capabilities and reported quota, serializes existing app-source and assistant work through one owned controller, halts after uncertain dispatch, and separates pairing/connection/full-check setup with workspace-safe configuration. [The receipt](../operations/evidence/launch-20261023-local-completion.json) preserves the corrected review finding, earlier test failures, unchanged formatting failures and blocked native browser review.
+
+This is partial local engineering evidence. Complete own-plan project/plan production, retry reuse, portable runtime preparation, provider access, production and independent acceptance remain open. F041's creator/onboarding additions remain planning-only; the seven reviewed insights retain their existing publication/save/reuse approval. No new source discovery, customer, measured benefit, deployment or provider job ran. The original cumulative US$2 cap and unknown holds remain unchanged, with US$1.679289 conservatively retained. Audience, prices, allowances and six beliefs remain unchanged.
+
 ## F041: creator and onboarding planning reconciliation, October 23
 
 The owner selected daily public TikTok/Instagram creator monitoring without creator cooperation, including video, image, TikTok photo and ordered/mixed carousel evidence, eligible neutral shared ideas/lessons/summaries with private personalization, eligible local own-subscription and approved cloud routes, future posts by default and optional latest ten. These are planning-only additions. [ADR 118](../adr/118-creator-and-guided-onboarding-planning-boundary.md) and the [single remaining-work plan](../launch-plan/2026-10-23/README.md#creator-and-onboarding-reconciliation) require later implementation authorization and extend existing setup, jobs, source contracts and public artifact/reuse systems.

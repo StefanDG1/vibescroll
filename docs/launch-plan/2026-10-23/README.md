@@ -2,7 +2,7 @@
 
 Status: implementation plan requested October 23, 2026, reconciled with the creator-following plan and onboarding storyboard the same day. Baseline main `d8e97a393fb86fce57ee17d47c0779f02c554cfe`; serving frontend `3e831ae461aa4cb2b8577a3c81e18952b45bceae`; compatible backend `abfdeff6779a2fc7790d4441152117262965fe60`. The reconciliation inspected completion branch `codex/launch-20261022-completion-20261023` at `59d81ce` plus its uncommitted R1/R3/R7 changes. It does not attribute those changes to production. This extends the [October 22 scope](../2026-10-22/README.md), its linked issue plans and [acceptance matrix](../2026-10-22/ACCEPTANCE.md). It does not replace unfinished requirements with a smaller pilot.
 
-The last integrated local suite passed 915 tests with three hosted skips. The new audit found additional engineering gaps despite that passing baseline. Earlier evidence remains dated to its actual code and environment. Do not label a newly identified code gap an external dependency merely because it was missed before.
+Before this continuation, the integrated local suite passed 915 tests with three hosted skips. The new audit found additional engineering gaps despite that passing baseline. The later authorized application tree committed as `58df6ec` passed 1,001 local tests with three hosted skips, all types, lint and both builds. [Its receipt](../../operations/evidence/launch-20261023-local-completion.json) records partial R1/R3/R4/R7 fixes, the resolved uncertainty finding, blocked native browser review and retained failures. Complete server capabilities, project/plan production, retry reuse, portable runtime completion and production acceptance remain open. Earlier evidence remains dated to its actual code and environment. Do not label a newly identified code gap an external dependency merely because it was missed before.
 
 ## Owner decisions and unresolved constraints
 
@@ -126,6 +126,8 @@ Separate inference authority from execution and publication. Repository text is 
 Separate subscription allowance, local preparation, platform/storage and managed credits. Reusing authorized preparation cannot inherit changed funding/model permission. Unknown results retain holds and cannot be resubmitted as fresh zero-cost work.
 
 Use default-off GitHub and Reddit switches under master/restore/capture controls. Temporary canary restrictions must be separate from permanent customer enrollment. Broad traffic is not bounded by a founder browser counter. Do not call a canary allowlist general availability or open general traffic without reviewed capacity/operating controls.
+
+The backend switch names are `DIRECT_SOURCES_ENABLED`, `GITHUB_SOURCES_ENABLED` and `REDDIT_SOURCES_ENABLED`. Each must explicitly equal `true` for its scope. Reddit also needs the current permission record and dedicated OAuth credential. `RESTORE_LOCK` and `DISABLE_CAPTURE` fence both providers. The placeholder environment file documents defaults only; it changes no hosted flags.
 
 Persist moderator restrictions outside mutable edition state. Enforce them at preparation, publication and access; only explicit moderator authority releases them. Define source/publisher/revision scope before schema changes and test same/new slug plus relevant duplicate-source bypasses. Self-withdrawal cannot create or remove moderator authority.
 

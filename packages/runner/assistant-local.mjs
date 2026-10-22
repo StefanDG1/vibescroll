@@ -10,6 +10,11 @@ export { localWhisperPath } from "./local-asr.mjs";
 import { canonicalJson } from "../contracts/canonical-json.mjs";
 import insightSchema from "../../contracts/insight.schema.json" with { type: "json" };
 import { evaluationJson } from "../knowledge/contracts.ts";
+import {
+  readSubscriptionCapabilities,
+  assertSubscriptionInput,
+  subscriptionInputLimits,
+} from "./subscription-capabilities.mjs";
 export const hash = (value) =>
   createHash("sha256")
     .update(
@@ -99,16 +104,8 @@ export class OfficialAssistantClient {
       server.send({ method: "initialized", params: {} });
       const client = new OfficialAssistantClient(session, server);
       await client.check();
-      const catalogue = await server.models();
-      if (
-        !catalogue.data?.some(
-          (m) =>
-            (m.model ?? m.id) === "gpt-6.1-sol" &&
-            m.supportedReasoningEfforts?.some(
-              (e) => e.reasoningEffort === "medium",
-            ),
-        )
-      )
+      const capabilities = await client.capabilities();
+      if (!capabilities.models.length)
         throw Error("ASSISTANT_LOCAL_MODEL_UNAVAILABLE");
       return client;
     } catch (error) {
@@ -126,26 +123,19 @@ export class OfficialAssistantClient {
     )
       throw Error("ASSISTANT_LOCAL_ACCOUNT_CHANGED");
   }
+  async capabilities() {
+    await this.check();
+    const capabilities = await readSubscriptionCapabilities(this.server);
+    await this.check();
+    return capabilities;
+  }
   async structured(schema, input, frames = [], options = {}) {
     const model = options.model ?? "gpt-6.1-sol",
       effort = options.effort ?? "medium";
     options.signal?.throwIfAborted();
-    await this.check();
-    if (options.model !== undefined || options.effort !== undefined) {
-      const catalogue = await this.server.models();
-      if (
-        !/^[a-zA-Z0-9_.:-]{1,100}$/.test(model) ||
-        !["low", "medium", "high"].includes(effort) ||
-        !catalogue.data?.some(
-          (entry) =>
-            (entry.model ?? entry.id) === model &&
-            entry.supportedReasoningEfforts?.some(
-              (level) => level.reasoningEffort === effort,
-            ),
-        )
-      )
-        throw Error("ASSISTANT_LOCAL_MODEL_UNAVAILABLE");
-    }
+    const capabilities = await this.capabilities();
+    assertSubscriptionInput(capabilities, model, effort, input, frames);
+    options.signal?.throwIfAborted();
     const thread = await this.server.request("thread/start", {
       cwd: "/home/node/evidence",
       model,
@@ -209,6 +199,7 @@ export class OfficialAssistantClient {
         )
       )
         throw Error("ASSISTANT_LOCAL_ALLOWANCE_UNAVAILABLE");
+      options.signal?.throwIfAborted();
       const turn = await this.server.request("turn/start", {
         threadId: thread.thread.id,
         model,
@@ -222,9 +213,14 @@ export class OfficialAssistantClient {
       });
       turnId = turn.turn.id;
       await done;
-      if (typeof text !== "string" || Buffer.byteLength(text) > 120000)
+      options.signal?.throwIfAborted();
+      if (
+        typeof text !== "string" ||
+        Buffer.byteLength(text) > subscriptionInputLimits.maxOutputBytes
+      )
         throw Error("ASSISTANT_LOCAL_OUTPUT_LIMIT");
       await this.check();
+      options.signal?.throwIfAborted();
       return {
         output: JSON.parse(text),
         inputHash: hash(input),
@@ -249,17 +245,36 @@ export async function processAssistantJob(
   job,
   {
     client,
-    request,
+    request: dispatch,
     config,
     prepare = prepareLocalUrl,
     transcribe = transcribeNormalizedAudio,
+    signal,
   },
 ) {
   if (
     job.profileBinding !== client.session.profileBinding ||
+    !Number.isFinite(job.expiresAt) ||
     job.expiresAt <= Date.now()
   )
     throw Error("ASSISTANT_LOCAL_JOB_CHANGED");
+  const deadline = Math.min(
+    job.expiresAt,
+    client.session.expiresAt ?? job.expiresAt,
+  );
+  const active = AbortSignal.any([
+    AbortSignal.timeout(
+      Math.max(0, Math.min(2147483647, deadline - Date.now())),
+    ),
+    ...(signal ? [signal] : []),
+  ]);
+  const request = async (...args) => {
+    active.throwIfAborted();
+    const result = await dispatch(...args);
+    active.throwIfAborted();
+    return result;
+  };
+  active.throwIfAborted();
   const base = { runId: job.runId };
   if (job.extract) {
     const prepared = await prepare({
@@ -271,6 +286,7 @@ export async function processAssistantJob(
         "subscription-prepared",
       ),
     });
+    active.throwIfAborted();
     if (prepared.status !== "prepared") {
       const error = new Error("ASSISTANT_LOCAL_MEDIA_UNAVAILABLE");
       error.mediaStatus = prepared.status;
@@ -286,7 +302,7 @@ export async function processAssistantJob(
     const transcript = manifest.audio
       ? await transcribe(
           await readFile(join(prepared.directory, manifest.audio)),
-          config.localAsr,
+          { ...config.localAsr, signal: active },
         )
       : {
           durationMs: Math.ceil(manifest.durationSeconds * 1000),
@@ -295,6 +311,7 @@ export async function processAssistantJob(
     const frames = [];
     let totalBytes = 0;
     for (const frame of manifest.frames) {
+      active.throwIfAborted();
       const bytes = await readFile(join(prepared.directory, frame.id));
       const asset = receipt.assets.find((a) => a.name === frame.id);
       totalBytes += bytes.length;
@@ -371,6 +388,7 @@ export async function processAssistantJob(
         evidence,
       },
       frames.map((f) => `data:image/jpeg;base64,${f.data}`),
+      { signal: active },
     );
     await request("source_finish", {
       id,
@@ -399,11 +417,16 @@ export async function processAssistantJob(
         repositoryId,
       });
       if (!bundle.cached) {
-        const result = await client.structured(evaluationJson, {
-          ...bundle,
-          instruction:
-            "Evaluate this source's supplied ideas for the selected project. Use exact supplied source references and only inspected repository excerpts. Explain no fit or already implemented when appropriate. Do not propose unrelated work.",
-        });
+        const result = await client.structured(
+          evaluationJson,
+          {
+            ...bundle,
+            instruction:
+              "Evaluate this source's supplied ideas for the selected project. Use exact supplied source references and only inspected repository excerpts. Explain no fit or already implemented when appropriate. Do not propose unrelated work.",
+          },
+          [],
+          { signal: active },
+        );
         await request("evaluation_finish", {
           id: bundle.id,
           output: result.output,

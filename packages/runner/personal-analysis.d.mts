@@ -1,7 +1,9 @@
+import type { SubscriptionCapabilities } from "./subscription-capabilities.mjs";
 export class OfficialPersonalClient {
   constructor(official: any);
   status(): Promise<{ profileBinding: string }>;
   models(): Promise<{ slug: string; displayName: string }[]>;
+  capabilities(): Promise<SubscriptionCapabilities>;
   respond(options: any): Promise<{ text: string }>;
 }
 export function processPersonalJob(

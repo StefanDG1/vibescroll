@@ -1,3 +1,4 @@
+import type { SubscriptionCapabilities } from "./subscription-capabilities.mjs";
 export function hash(value: unknown): string;
 export function idleDelay(empty: number): number;
 export function strictSchema(value: any): any;
@@ -8,13 +9,14 @@ export class OfficialAssistantClient {
   server: any;
   static connect(session: any): Promise<OfficialAssistantClient>;
   check(): Promise<void>;
+  capabilities(): Promise<SubscriptionCapabilities>;
   structured(
     schema: any,
     input: any,
     frames?: string[],
     options?: {
       model?: string;
-      effort?: "low" | "medium" | "high";
+      effort?: string;
       signal?: AbortSignal;
     },
   ): Promise<{ output: any; inputHash: string; outputHash: string }>;

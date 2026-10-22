@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import schema from "../../contracts/insight.schema.json" with { type: "json" };
 import typedSchema from "../../contracts/source-insight-v2.schema.json" with { type: "json" };
 import { preparePersonalInput } from "./personal-media.mjs";
+import { readSubscriptionCapabilities } from "./subscription-capabilities.mjs";
 
 // Production uses only the verified isolated official client, with no HTTP fallback.
 export class OfficialPersonalClient {
@@ -14,25 +15,20 @@ export class OfficialPersonalClient {
     return { profileBinding: this.official.session.profileBinding };
   }
   async models() {
+    const capabilities = await this.capabilities();
+    return capabilities.models.map(({ slug, displayName }) => ({
+      slug,
+      displayName,
+    }));
+  }
+  async capabilities() {
+    if (this.official.capabilities) return this.official.capabilities();
     await this.official.check();
-    const catalogue = await this.official.server.models();
-    return (catalogue.data ?? [])
-      .filter((entry) =>
-        entry.supportedReasoningEfforts?.some((level) =>
-          ["low", "medium", "high"].includes(level.reasoningEffort),
-        ),
-      )
-      .map((entry) => ({
-        slug: entry.model ?? entry.id,
-        displayName: entry.displayName ?? entry.model ?? entry.id,
-      }))
-      .filter(
-        (entry) =>
-          /^[a-zA-Z0-9_.:-]{1,100}$/.test(entry.slug ?? "") &&
-          typeof entry.displayName === "string" &&
-          entry.displayName.length <= 120,
-      )
-      .slice(0, 50);
+    const capabilities = await readSubscriptionCapabilities(
+      this.official.server,
+    );
+    await this.official.check();
+    return capabilities;
   }
   async respond(options) {
     const result = await this.official.structured(
@@ -168,6 +164,7 @@ export async function processPersonalJob(
     combined.throwIfAborted();
     stage = "profile";
     const status = await client.status();
+    combined.throwIfAborted();
     const profileId = status.activeProfileId;
     if (
       (status.profileBinding ??
@@ -238,8 +235,15 @@ export async function processPersonalJob(
       }))
         outputSchema.properties[field] = { type: "string", const: value };
     }
-    if (mediaInput)
-      await request("heartbeat", { ...reference, stage: "analyzing" });
+    if (mediaInput) {
+      const lease = await request("heartbeat", {
+        ...reference,
+        stage: "analyzing",
+      });
+      if (lease.valid !== true || lease.deadline !== job.deadline)
+        throw new Error("PERSONAL_LEASE_INVALID");
+    }
+    combined.throwIfAborted();
     const response = await client.respond({
       model: job.model,
       reasoningEffort: job.effort,

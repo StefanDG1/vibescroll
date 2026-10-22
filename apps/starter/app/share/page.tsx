@@ -21,6 +21,7 @@ export default async function Share({
       </p>
       <pre>{(q.url ?? q.text ?? "").slice(0, 2048)}</pre>
       <Link
+        prefetch={false}
         className="primary"
         href={`/sign-in?returnTo=${encodeURIComponent(returnTo)}`}
       >

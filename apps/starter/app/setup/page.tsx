@@ -38,7 +38,9 @@ export default function Page() {
         See docs/local-development.md for the exact steps and environment
         variables.
       </p>
-      <Link href="/sign-in">Continue to sign in</Link>
+      <Link prefetch={false} href="/sign-in">
+        Continue to sign in
+      </Link>
     </main>
   );
 }

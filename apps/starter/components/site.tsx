@@ -5,7 +5,11 @@ import { AppTheme } from "./app-theme";
 import "../app/public.css";
 export function Brand({ href = "/" }: { href?: string }) {
   return (
-    <Link href={href} className="brand">
+    <Link
+      href={href}
+      prefetch={href.startsWith("/app") ? false : undefined}
+      className="brand"
+    >
       <span className="brand-icon" aria-hidden="true">
         <Image src="/icon.svg" alt="" width={30} height={30} />
       </span>
@@ -23,7 +27,7 @@ export function SiteHeader() {
         <Link href="/help">Help</Link>
         <Link href="/open-source">Open source</Link>
         <a href="https://github.com/StefanDG1/vibescroll">GitHub</a>
-        <Link className="primary" href="/app">
+        <Link className="primary" href="/app" prefetch={false}>
           Start your library
         </Link>
       </nav>

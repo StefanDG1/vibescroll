@@ -17,7 +17,7 @@ export default function Home() {
             your library and review what fits the projects you care about.
           </p>
           <div className="row">
-            <Link className="primary" href="/app">
+            <Link prefetch={false} className="primary" href="/app">
               Try one post
             </Link>
             <Link className="secondary" href="/example">

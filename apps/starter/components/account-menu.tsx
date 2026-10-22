@@ -124,7 +124,7 @@ export function AccountMenu({
             Alpha · {process.env.NEXT_PUBLIC_APP_VERSION}
           </Menu.Label>
           <Menu.Item asChild className="menu-item">
-            <Link href={demo ? "/app" : "/account"}>
+            <Link href={demo ? "/app" : "/account"} prefetch={false}>
               <LogOut size={17} />
               {demo ? "Open your library" : "Account & sign out"}
             </Link>

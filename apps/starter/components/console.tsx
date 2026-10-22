@@ -1147,6 +1147,7 @@ export function Console({
               </span>
               <Link
                 href={demo ? "/demo" : "/app/workspaces"}
+                prefetch={false}
                 title={
                   data.workspaceName ??
                   (demo ? "Demo workspace" : "Current workspace")
@@ -1233,6 +1234,7 @@ export function Console({
                 link remains on this page.
               </p>
               <Link
+                prefetch={false}
                 href={`/sign-in?reauth=true&returnTo=${encodeURIComponent(`/app/${organizationId}/`)}`}
               >
                 Sign in again
@@ -2629,12 +2631,17 @@ export function Console({
                       Export workspace content
                     </a>
                     <Link
+                      prefetch={false}
                       className="secondary"
                       href={`/app/${organizationId}/settings`}
                     >
                       Delete workspace
                     </Link>
-                    <Link className="secondary" href="/account">
+                    <Link
+                      prefetch={false}
+                      className="secondary"
+                      href="/account"
+                    >
                       Account export & deletion
                     </Link>
                   </div>
@@ -2673,6 +2680,7 @@ export function Console({
                       View six catalogue prices and allowances
                     </Link>
                     <Link
+                      prefetch={false}
                       className="secondary"
                       href={`/app/${organizationId}/billing`}
                     >
@@ -2689,7 +2697,9 @@ export function Console({
               {view === "menu" && (
                 <section className="panel" aria-label="All application pages">
                   <h2>Account</h2>
-                  <Link href="/account">Profile and sign out</Link>
+                  <Link prefetch={false} href="/account">
+                    Profile and sign out
+                  </Link>
                   <AppTheme control />
                   <MotionPreference control />
                   <nav aria-label="All mobile pages" className="form-grid">

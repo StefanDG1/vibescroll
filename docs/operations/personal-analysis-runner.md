@@ -1,27 +1,63 @@
 # Use the personal analysis runner
 
-This route is a restricted personal alpha. It analyzes permitted videos, selected frames and supplied text through your own connected ChatGPT plan. Local Whisper automatically transcribes audio after isolated decoding. Supported public links use the bounded acquisition worker; private, blocked and unsupported posts can require a permitted-media fallback. No paid inference fallback is used. Coding requires separate approval and verified isolation. See [the video guide](../PERSONAL-VIDEO-GUIDE.md) for the current automatic route.
+This restricted personal alpha analyzes permitted supplied text and prepared media through your own eligible ChatGPT plan. It uses `OfficialAssistantClient` with the isolated official Codex controller. No paid inference fallback is used. Source evidence, account eligibility and coding authorization remain separate checks.
 
-## Prepare the laptop
+## Prepare the computer
 
-Use Node 24 and the repository's pinned pnpm version. Sign in with `pnpm chatgpt:local connect`, review OpenAI consent, and check `pnpm chatgpt:local models`. Choose an actual available model. GPT-6.1 Sol was absent from the owner's tested catalogue; GPT-5.6 Sol supported the tested image request.
+Use the project's pinned Node 24 runtime and supported Windows computer. Keep the existing Docker Desktop Linux engine available through its local named pipe. The personal runner accepts only `npipe:////./pipe/dockerdesktoplinuxengine` or `npipe:////./pipe/docker_engine`, including any `DOCKER_HOST` override. A remote daemon is refused. Do not restart, upgrade or reset Docker, delete its data, or stop existing user workers to make this check pass.
 
-Copy [the runner configuration](../../packages/runner/config.example.json) to an ignored private local file. Set `server` to the dedicated environment's HTTPS `*.convex.site` origin, `workspaceId` to your app workspace, and `deviceName` to your computer's name. Keep `credentialVaultAdapter` as `windows-credential-manager`. Do not put OpenAI credentials in this file. Isolation fields do not activate coding for this separate text route.
+The protected controller needs the already prepared official-client image pinned by SHA-256 in `subscription-images.json`. See [the subscription trial guide](subscription-analysis-trials.md) for the bounded preparation context. Existing image presence and a saved connection are prerequisites, not proof of a working session. Do not replace a pinned image with a mutable tag or weaken isolation. Any missing runtime or image preparation needs separate review before downloading or building it.
 
-Run `node packages/runner/pair.mjs C:\absolute\private\config.json`. In the app's Computers screen, paste the public request, compare the fingerprint and confirm. A fresh app sign-in is required. The device credential remains in Windows Credential Manager.
+Copy [the runner configuration](../../packages/runner/config.example.json) to an ignored private local file only if this computer does not already have the correct paired configuration. Set `server` to the matching HTTPS `*.convex.site` origin, `workspaceId` to the chosen workspace and `deviceName` to this computer's name. Keep `credentialVaultAdapter` as `windows-credential-manager`. Never put account tokens or API keys in this file.
 
-The operator must activate only the verified owner's WorkOS subject through `PERSONAL_ALPHA_SUBJECTS_JSON` in the matching Convex environment. Do not copy a staging subject into production or use an email address as a substitute. Leave this gate empty for customer access until its provider eligibility is verified.
+For an installed package, use its existing absolute `VIBESCROLL_COMPANION_CONFIG_ROOT` outside the installation tree. It selects controller metadata and prepared work files; it does not replace the explicit device configuration argument. A source checkout without this variable uses its legacy `private` directory. Preserve the existing configuration location, Windows credential target and protected official connection. Do not override `HOME` or `CODEX_HOME` on the host.
 
-Run `pnpm runner:personal C:\absolute\private\config.json`. Keep the computer awake. The runner uses outbound HTTPS; no inbound port or browser access to a local socket is needed. Stop it with Ctrl+C. The runner writes neither prompts nor model output to its console.
+If pairing is needed, run this from the checkout or verified package root, with the real absolute configuration path:
 
-## Approve from your phone or laptop
+```powershell
+node packages/runner/pair.mjs "C:\absolute\private\config.json"
+```
 
-1. Sign in and use Add source to submit a supported public link, import a reviewed Saved export, or choose the permitted-media fallback. Select automatic personal analysis and review its rights and own-plan consent.
-2. Open the source. Under Use your ChatGPT plan, select your online computer and an available account model.
-3. Check the own-plan permission and approve the personal analysis. The interface selects medium reasoning. Reauthenticate if requested.
-4. Wait for the source summary. Review the main points, transcript, private frames and coverage. Frames are sampled; supplied post text alone does not establish audio or visual coverage.
-5. Cancel from the source screen or revoke the computer if needed. Started work may still count against OpenAI's allowance. Check the official plan usage screen before retrying an uncertain request.
+In the signed-in app, open Computers, paste the public request, compare the fingerprint and confirm. Reauthenticate if requested. The request expires ten minutes after browser submission. The device credential stays in Windows Credential Manager. The pairing CLI refuses a configuration that already has a credential target; do not delete that target or overwrite a working pairing to bypass the refusal. Verify that the paired device belongs to the same account and workspace as the source.
 
-Approval expires after 15 minutes if unclaimed. The runner never switches to another model, API key or another user's account. Platform storage and future cloud decoding have their own allowances. This personal route does not replace the normal hosted product's metered cloud option.
+The operator must allow only the verified owner's WorkOS subject through `PERSONAL_ALPHA_SUBJECTS_JSON` in the matching backend. `DISABLE_PERSONAL_ANALYSIS=true` blocks this route. An email address, saved preference or staging subject cannot grant production eligibility. Keep customer access closed until the applicable provider requirements pass.
 
-The [owner testing guide](owner-testing-guide.md) records which production and video tests remain. Do not treat successful unit tests or the standalone Whisper sample as completion of those tests.
+## Check prerequisites and start the personal worker
+
+A metadata-only local prerequisite report is available with:
+
+```powershell
+node scripts/companion.mjs preflight "C:\absolute\private\config.json"
+```
+
+This report checks local configuration, Docker, pinned image presence, saved protected connection presence, disk and media prerequisites. It opens no account credentials and starts no worker. It deliberately returns `processingReady: "unverified"`. Its full companion checks include offline transcription and a media image, even for a proposed text-only test. A blocked media prerequisite is not proof that text analysis failed, and a passed report does not verify account access, pairing, model availability or a cited result.
+
+Start the personal worker explicitly with:
+
+```powershell
+node packages/runner/personal-runner.mjs "C:\absolute\private\config.json"
+```
+
+In a source checkout with the pinned pnpm runtime, `pnpm runner:personal "C:\absolute\private\config.json"` invokes the same entry point. `node scripts/companion.mjs run ...` starts the separate assistant-intake worker, so it is not a substitute for the personal runner.
+
+The personal worker starts `node scripts/start-subscription-session.mjs --personal-library` itself, waits for its new protected four-hour session and connects through `OfficialAssistantClient`. Do not start a second standalone controller alongside it. The controller exclusively locks its protected connection, uses network-isolated read-only task containers and a bounded proxy, then cleans up its own resources. An existing controller or user worker must not be killed and its uncertain lock must not be removed to force another session.
+
+If the controller cannot reuse the protected connection, follow only its official device-code sign-in when it offers one. Keep the displayed user code private. A stale or revoked saved connection can require explicit reconnect; stop and review the reported failure rather than deleting protected state automatically. The controller's `own_account_connected` status confirms that controller connection only. The personal worker must then advertise its current account profile and models to the matching backend before browser approval becomes available. The legacy `chatgpt:local connect`, `chatgpt:local models` or `LocalChatGPT.status()` route is not readiness evidence for this controller.
+
+Keep the computer awake and the worker in its foreground terminal. Stop only this worker with Ctrl+C. Its stop path closes its client and sends stop to its own controller. Do not enable startup or launch another inference worker for a one-source canary. The worker prints bounded completion/failure messages, not prompts or model output. It polls for approved work while running; keep the canary scope to one explicitly selected source and do not leave it unattended with unrelated queued approvals.
+
+## Approve one supplied-text source
+
+1. Sign in to the intended private library. Save one rights-cleared source without automatic cloud analysis. To retain typed GitHub provenance, save its repository URL, open the source and choose Supply permitted text instead. Paste the permitted excerpt and choose Save supplied evidence only. This is recovery supplied by you, not verified direct retrieval. A plain text source is also supported, although the Save form currently calls its source type Supplied transcript; label non-transcript material accurately in its title and text.
+2. Open the saved source. Under Use your ChatGPT plan, choose your computer and an actually available account model. The computer must be paired to this account and workspace, have a personal-runner heartbeat within 60 seconds, and advertise its current profile binding and model list. A saved connection or ordinary companion heartbeat alone is insufficient.
+3. Check Use my connected ChatGPT plan for this source with medium reasoning, then choose Analyze with my plan. Reauthenticate if requested. Approval binds the current source generation, device, account profile and chosen model. An unclaimed approval expires after 15 minutes.
+4. Review the actual completed summary, claims, citations and uncertainty. Supplied text uses no media preparation credits and establishes no audio, frame or direct-provider coverage. OpenAI plan limits still apply. Do not switch to cloud processing or an API key after a refusal or uncertain result.
+5. Cancel from the source screen if needed. Started work may count against the plan. Check the actual source state and official plan usage before any retry. A completed source is engineering evidence for this one run, not a quality benchmark or customer outcome.
+
+For a public README canary, retain the exact repository commit, applicable licence notice and permitted excerpt. After actual analysis, separately review publication rights, selected insights, permission expiry and the exact edition payload/hash. Source submission or own-plan consent does not approve public publication or reuse. Direct retrieval, a visible contributor globe, independent usefulness and customer permission cannot be inferred from this test.
+
+## Media and remaining verification
+
+The separate permitted-media route can transcribe locally and analyze sampled frames. It requires verified media capability and explicit maximum compute-credit approval before preparation. Use [the video guide](../PERSONAL-VIDEO-GUIDE.md) for that workflow. Text-only approval does not authorize a video job.
+
+The [owner testing guide](owner-testing-guide.md) records remaining production and video acceptance. Local prerequisites, unit tests, a standalone transcription sample and a successful protected connection are different observations. None replaces a fresh browser approval and actual current cited result.

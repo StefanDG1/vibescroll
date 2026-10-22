@@ -29,6 +29,7 @@ export default async function Page({
         <div className="project-grid">
           {data.organizations.map((o) => (
             <Link
+              prefetch={false}
               href={
                 `/app?workspace=${o.id}` +
                 (continuation ? `&${continuation}` : "")

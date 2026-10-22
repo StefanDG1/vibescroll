@@ -22,7 +22,9 @@ export default async function Page({
             Only you can access this library. Invitations and ownership transfer
             are unavailable here.
           </p>
-          <Link href="/app/workspaces">Choose or create a team workspace</Link>
+          <Link prefetch={false} href="/app/workspaces">
+            Choose or create a team workspace
+          </Link>
         </Card>
       </>
     );

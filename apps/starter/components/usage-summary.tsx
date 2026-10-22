@@ -82,6 +82,7 @@ export function UsageSummary({
           <p className="fine">Trial account. No automatic paid conversion.</p>
         )}
         <Link
+          prefetch={false}
           className="button secondary"
           href={`/app/${organizationId}/billing`}
         >

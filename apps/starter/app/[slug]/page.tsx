@@ -130,7 +130,11 @@ export default async function Page({
                   execution, when verified
                 </li>
               </ul>
-              <Link className="primary" href={`/app?view=billing&tier=${tier}`}>
+              <Link
+                prefetch={false}
+                className="primary"
+                href={`/app?view=billing&tier=${tier}`}
+              >
                 View {tier === "pro" ? "Pro" : "Starter"} plans
               </Link>
             </article>

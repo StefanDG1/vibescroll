@@ -1,5 +1,11 @@
 # VibeScroll complete product and launch plan
 
+## Latest live contrast verification, October 22
+
+Latest production evidence: [PR 132](https://github.com/StefanDG1/vibescroll/pull/132) is merged and canonical frontend `3e831ae4`, alpha `0.1.0-alpha.20261022212012.g3e831ae461aa`, passed exact-head/main CI, staged/canonical health and eight hydrated public synthetic-demo width/theme/state cases. Both source-detail controls have 13.92:1 light and 13.02:1 dark contrast, verified native keyboard behavior, at least 44-pixel targets and no overflow. Backend `abfdeff67` is unchanged and compatible. The complete offline sequence passed 915 tests with three hosted skips. Launch PRs 120–129, 131 and 132 are merged; unrelated dependency PR 130 remains unmerged with failing CI. This does not close pending provider, signed distribution, human public-content review or independent acceptance. Earlier dated receipts retain their actual versions.
+
+[Production receipt](../../operations/evidence/launch-20261022-source-contrast-production.json) records exact commits, all 58 requests and failed helper attempts. The cumulative US$2 cap includes all attempts and retained unknown holds; no new Convex or model calls ran in this correction. [F039](../../foundational/README.md) synchronizes the four foundations.
+
 Status: all 16 work packages have implementation and local evidence across merged launch PRs 120–129. The latest integrated suite passed 915 local tests with three hosted skips. Canonical frontend `77da4ad7` and compatible backend source `abfdeff67`, with application code equal to `77da4ad7`, serve the result. The additional SDK backend update passed its guarded deployment and two read-only postchecks. One real official own-account GPT-6.1 Sol Medium turn produced seven cited founder supplied-text insights, revalidated in production at desktop/mobile widths and both themes. [The latest rollout receipt](RUN-STATUS.md#latest-integrated-production-verification-october-22) separates actual live results, controlled-browser limits and remaining provider, signing, public-review and independent-human gates. All 16 packages are engineered, not 16 fully live-accepted packages.
 
 ## Outcome

@@ -47,58 +47,93 @@ it("does not dispatch restored deletion work while the recovery destination is l
   expect(state.row?.attempts).toBe(0);
   expect(state.scheduled).toHaveLength(0);
 });
-it("refuses external callbacks and background dispatch while locked even with configured credentials", async () => {
-  const { t, org } = await setup();
-  vi.stubEnv("RESTORE_LOCK", "true");
-  vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_synthetic_unit_only");
-  vi.stubEnv("GITHUB_WEBHOOK_SECRET", "synthetic_unit_only");
-  vi.stubEnv("EMAIL_REAL_DELIVERY_ENABLED", "true");
-  vi.stubEnv("RESEND_API_KEY", "synthetic_unit_only");
-  vi.stubEnv("RESEND_FROM", "synthetic@example.test");
-  vi.stubEnv("APP_URL", "https://synthetic.example.test");
-  const fetch = vi
-    .spyOn(globalThis, "fetch")
-    .mockRejectedValue(new Error("External dispatch must not run"));
-  try {
-    expect(
-      await t.action(internal.reconciliation.stripeEvent, {
-        body: "{}",
-        signature: "synthetic",
-      }),
-    ).toMatchObject({ status: 503 });
-    expect(
-      await t.action(internal.payments.webhook, {
-        body: "{}",
-        signature: "synthetic",
-      }),
-    ).toMatchObject({ status: 503 });
-    expect(
-      await t.action(internal.githubEvents.webhook, {
-        body: "{}",
-        signature: "synthetic",
-        delivery: "synthetic-delivery",
-      }),
-    ).toMatchObject({ status: 503 });
-    await t.action(internal.reconciliation.allBilling, {});
-    await t.action(internal.payments.reconcile, {});
-    await t.action(internal.integrations.reconcilePRs, {});
-    await t.action(internal.integrations.deleteObject, {
-      key: "synthetic/object",
-    });
-    expect(
-      await t.mutation(internal.email.notify, {
-        organizationId: org,
-        key: "synthetic",
-      }),
-    ).toMatchObject({ sent: false });
-    await expect(
-      t.mutation(internal.email.stagingDeliveryTest, {}),
-    ).rejects.toThrow("recovery");
-    expect(fetch).not.toHaveBeenCalled();
-  } finally {
-    fetch.mockRestore();
-  }
-});
+it.each([
+  "stripeEvent",
+  "paymentWebhook",
+  "githubWebhook",
+  "billingReconcile",
+  "paymentReconcile",
+  "pullRequestReconcile",
+  "objectDeletion",
+  "email",
+  "stagingEmail",
+])(
+  "refuses %s while recovery is locked, even with configured credentials",
+  async (boundary) => {
+    const { t, org } = await setup();
+    vi.stubEnv("RESTORE_LOCK", "true");
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_synthetic_unit_only");
+    vi.stubEnv("GITHUB_WEBHOOK_SECRET", "synthetic_unit_only");
+    vi.stubEnv("EMAIL_REAL_DELIVERY_ENABLED", "true");
+    vi.stubEnv("RESEND_API_KEY", "synthetic_unit_only");
+    vi.stubEnv("RESEND_FROM", "synthetic@example.test");
+    vi.stubEnv("APP_URL", "https://synthetic.example.test");
+    const fetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("External dispatch must not run"));
+    try {
+      switch (boundary) {
+        case "stripeEvent":
+          expect(
+            await t.action(internal.reconciliation.stripeEvent, {
+              body: "{}",
+              signature: "synthetic",
+            }),
+          ).toMatchObject({ status: 503 });
+          break;
+        case "paymentWebhook":
+          expect(
+            await t.action(internal.payments.webhook, {
+              body: "{}",
+              signature: "synthetic",
+            }),
+          ).toMatchObject({ status: 503 });
+          break;
+        case "githubWebhook":
+          expect(
+            await t.action(internal.githubEvents.webhook, {
+              body: "{}",
+              signature: "synthetic",
+              delivery: "synthetic-delivery",
+            }),
+          ).toMatchObject({ status: 503 });
+          break;
+        case "billingReconcile":
+          await t.action(internal.reconciliation.allBilling, {});
+          break;
+        case "paymentReconcile":
+          await t.action(internal.payments.reconcile, {});
+          break;
+        case "pullRequestReconcile":
+          await t.action(internal.integrations.reconcilePRs, {});
+          break;
+        case "objectDeletion":
+          await t.action(internal.integrations.deleteObject, {
+            key: "synthetic/object",
+          });
+          break;
+        case "email":
+          expect(
+            await t.mutation(internal.email.notify, {
+              organizationId: org,
+              key: "synthetic",
+            }),
+          ).toMatchObject({ sent: false });
+          break;
+        case "stagingEmail":
+          await expect(
+            t.mutation(internal.email.stagingDeliveryTest, {}),
+          ).rejects.toThrow("recovery");
+          break;
+        default:
+          throw new Error("Unknown recovery boundary");
+      }
+      expect(fetch).not.toHaveBeenCalled();
+    } finally {
+      fetch.mockRestore();
+    }
+  },
+);
 it("blocks private access during restoration and reapplies a latest source marker without touching a foreign workspace", async () => {
   const { t, a, org, other } = await setup();
   const ids = await t.run(async (ctx) => {

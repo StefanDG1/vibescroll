@@ -69,7 +69,7 @@ it("bounds argument elements before schema validation or backend dispatch", asyn
     ["knowledge:read"],
   );
   expect(JSON.stringify(await packet(response))).toContain(
-    "maximum of 1024 elements",
+    "maximum of 256 elements",
   );
   expect(invoke).not.toHaveBeenCalled();
 });

@@ -55,5 +55,25 @@
     "Fixed Basic queued45minute maxdocsbuild, no other new spending; later unused reservation release requires actual completed receipt"
   ],
   "initialReservationState": "reserved before dispatch; no new backend call yet",
-  "currentState": "Backend publication confirmed and two read-only canaries passed. Full backend envelope remains held for unknown reporting/uncertainty. Documentation CI/merge outcome pending."
+  "currentState": "Backend publication confirmed and two read-only canaries passed. Full backend envelope remains held for unknown reporting/uncertainty. Documentation CI/merge outcome pending.",
+  "automatedDependencyPreviewAccounting": {
+    "recordedAt": "2026-10-22T20:48:24.463389+00:00",
+    "scope": "Conservatively include automatic existing Dependabot preview, without modifying its unrelated PR",
+    "pr": 130,
+    "deployment": "dpl_BW72hVVC1rpHJsJWEvCron6mUwJm",
+    "commit": "0217a66edaea6194dff6419ecf1d1f31d704c690",
+    "readyState": "READY",
+    "buildSeconds": 55.461,
+    "buildingAt": 1792699573806,
+    "ready": 1792699629267,
+    "conservativeTwoBasicMinuteHoldUSD": 0.014,
+    "previousCombinedMaximumUSD": 1.8597009555199924,
+    "combinedMaximumUSD": 1.8737009555199924,
+    "headroomUSD": 0.12629904448000762,
+    "noManualPreviewDispatch": true,
+    "noUnrelatedPRModification": true,
+    "settledInvoice": false
+  },
+  "currentConservativeMaximumUSD": 1.8737009555199924,
+  "currentHeadroomUSD": 0.12629904448000762
 }

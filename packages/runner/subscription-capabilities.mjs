@@ -159,3 +159,43 @@ export function assertSubscriptionInput(
       throw Error("ASSISTANT_LOCAL_INPUT_LIMIT");
   }
 }
+// Metadata can refuse work; it cannot establish entitlement to a future turn.
+export function assertReportedAllowance(limits) {
+  const buckets = limits?.rateLimitsByLimitId ?? { codex: limits?.rateLimits };
+  if (!buckets || typeof buckets !== "object" || Array.isArray(buckets))
+    throw Error("ASSISTANT_LOCAL_ALLOWANCE_UNAVAILABLE");
+  const windows = Object.values(buckets).filter(Boolean);
+  if (
+    !windows.length ||
+    windows.length > 64 ||
+    windows.some((snapshot) => {
+      if (
+        typeof snapshot !== "object" ||
+        snapshot.rateLimitReachedType != null ||
+        snapshot.spendControlReached
+      )
+        return true;
+      const periods = [snapshot.primary, snapshot.secondary].filter(
+        (v) => v != null,
+      );
+      if (
+        (!periods.length && snapshot.credits?.unlimited !== true) ||
+        periods.some(
+          (v) =>
+            !Number.isInteger(v.usedPercent) ||
+            v.usedPercent < 0 ||
+            v.usedPercent >= 100,
+        )
+      )
+        return true;
+      const individual = snapshot.individualLimit;
+      return (
+        individual != null &&
+        (!Number.isInteger(individual.remainingPercent) ||
+          individual.remainingPercent <= 0 ||
+          individual.remainingPercent > 100)
+      );
+    })
+  )
+    throw Error("ASSISTANT_LOCAL_ALLOWANCE_UNAVAILABLE");
+}

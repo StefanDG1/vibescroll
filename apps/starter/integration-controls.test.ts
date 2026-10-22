@@ -212,15 +212,15 @@ it("optional setup acknowledgement persists only a review and local startup inst
   )!;
   await companion.props.onAction("startup_enable");
   tree = view();
-  expect(text(tree)).toContain("ABSOLUTE_CONFIG_PATH --start-at-sign-in");
+  expect(text(tree)).toContain('"ABSOLUTE_CONFIG_PATH" --start-at-sign-in');
   expect(call.mock.calls.every(([op]) => op === "setupJourney")).toBe(true);
   await companion.props.onAction("worker");
   tree = view();
   expect(text(tree)).toContain(
-    "node scripts/companion.mjs run ABSOLUTE_CONFIG_PATH",
+    'node scripts/companion.mjs run "ABSOLUTE_CONFIG_PATH"',
   );
   expect(text(tree)).not.toContain(
-    "run ABSOLUTE_CONFIG_PATH --allow-approved-work",
+    'run "ABSOLUTE_CONFIG_PATH" --allow-approved-work',
   );
   await button(tree, "I reviewed my preferences").props.onClick();
   expect(call).toHaveBeenCalledWith("saveSetupJourney", {
@@ -233,6 +233,61 @@ it("optional setup acknowledgement persists only a review and local startup inst
       ["setupJourney", "saveSetupJourney"].includes(op),
     ),
   ).toBe(true);
+});
+it("withholds another workspace's configuration while current setup is loading", async () => {
+  const snapshot = { route: "local", sampleCited: false };
+  let resolveCurrent!: (value: any) => void;
+  const pending = new Promise((resolve) => {
+    resolveCurrent = resolve;
+  });
+  const configuration = (workspaceId: string) => ({
+    server: "https://fixture.convex.site/",
+    workspaceId,
+    protocolVersion: "1.0.0",
+    credentialVaultAdapter: "windows-credential-manager",
+    deviceName: "Fixture computer",
+  });
+  const call = vi.fn(async (_operation: string, args: any) =>
+    args.organizationId === "first-workspace"
+      ? {
+          version: 1,
+          snapshot,
+          pairingConfiguration: configuration("first-workspace"),
+        }
+      : pending,
+  );
+  const props = {
+    organizationId: "first-workspace",
+    call,
+    onNavigate: vi.fn(),
+    onSave: vi.fn(),
+  };
+  render(SetupJourney, props);
+  for (const effect of hooks.effects.splice(0)) effect();
+  await flush();
+  expect(
+    button(render(SetupJourney, props), "Download new computer configuration")
+      .props.disabled,
+  ).toBe(false);
+  props.organizationId = "current-workspace";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    expect(text(render(SetupJourney, props))).not.toContain(
+      "Download new computer configuration",
+    );
+    for (const effect of hooks.effects.splice(0)) effect();
+    await flush();
+  }
+  resolveCurrent({
+    version: 7,
+    snapshot,
+    pairingConfiguration: configuration("current-workspace"),
+  });
+  await flush();
+  expect(
+    button(render(SetupJourney, props), "Download new computer configuration")
+      .props.disabled,
+  ).toBe(false);
+  expect(call).toHaveBeenCalledTimes(2);
 });
 it("failed setup saves do not mark a review complete or suppress its error", async () => {
   const snapshot = {

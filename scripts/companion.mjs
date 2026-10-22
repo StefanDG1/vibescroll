@@ -141,7 +141,7 @@ function paths(configPath) {
 async function runCompanion(p) {
   if (await present(p.pause)) throw Error("COMPANION_PAUSED");
   const report = await inspectCompanion(p.config);
-  if (!report.readyForLocalStart) {
+  if (!report.readyForLocalStart && !report.readyToConnect) {
     console.log(JSON.stringify(report, null, 2));
     throw Error("COMPANION_PREREQUISITES_BLOCKED");
   }
@@ -159,7 +159,9 @@ async function runCompanion(p) {
         cwd: root,
         shell: false,
         windowsHide: true,
-        stdio: ["ignore", "ignore", "ignore", "ipc"],
+        // A deliberate terminal run must show normal official account consent
+        // and safe diagnostics. Never write these streams into a support log.
+        stdio: ["ignore", "inherit", "inherit", "ipc"],
       },
     );
     process.once("SIGINT", stop);

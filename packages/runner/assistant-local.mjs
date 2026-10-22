@@ -14,6 +14,7 @@ import {
   readSubscriptionCapabilities,
   assertSubscriptionInput,
   subscriptionInputLimits,
+  assertReportedAllowance,
 } from "./subscription-capabilities.mjs";
 export const hash = (value) =>
   createHash("sha256")
@@ -186,19 +187,7 @@ export class OfficialAssistantClient {
     try {
       options.signal?.throwIfAborted();
       const limits = await this.server.request("account/rateLimits/read");
-      const windows = Object.values(
-        limits.rateLimitsByLimitId ?? { codex: limits.rateLimits },
-      ).filter(Boolean);
-      if (
-        !windows.length ||
-        windows.some(
-          (w) =>
-            w.primary?.usedPercent >= 100 ||
-            w.secondary?.usedPercent >= 100 ||
-            w.spendControlReached,
-        )
-      )
-        throw Error("ASSISTANT_LOCAL_ALLOWANCE_UNAVAILABLE");
+      assertReportedAllowance(limits);
       options.signal?.throwIfAborted();
       const turn = await this.server.request("turn/start", {
         threadId: thread.thread.id,

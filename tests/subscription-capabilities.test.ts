@@ -218,6 +218,23 @@ it("rejects unavailable legacy defaults and text-only image requests before crea
   ).rejects.toThrow("MODALITY_UNAVAILABLE");
   expect(server.request).not.toHaveBeenCalled();
 });
+it("retains xhigh-only capability metadata without widening standalone legacy model choices", async () => {
+  const client = new OfficialPersonalClient(
+    new OfficialAssistantClient(
+      session(),
+      serverFor(
+        model({
+          defaultReasoningEffort: "xhigh",
+          supportedReasoningEfforts: [{ reasoningEffort: "xhigh" }],
+        }),
+      ),
+    ),
+  );
+  expect((await client.capabilities()).models[0].reasoningEfforts).toEqual([
+    "xhigh",
+  ]);
+  expect(await client.models()).toEqual([]);
+});
 it("enforces canonical UTF8 text, decoded frame, count and aggregate limits before dispatch", () => {
   const selected = capabilities();
   const check = (input: any, frames: any) =>

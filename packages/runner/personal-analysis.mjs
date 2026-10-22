@@ -16,10 +16,13 @@ export class OfficialPersonalClient {
   }
   async models() {
     const capabilities = await this.capabilities();
-    return capabilities.models.map(({ slug, displayName }) => ({
-      slug,
-      displayName,
-    }));
+    return capabilities.models
+      .filter((entry) =>
+        entry.reasoningEfforts.some((effort) =>
+          ["low", "medium", "high"].includes(effort),
+        ),
+      )
+      .map(({ slug, displayName }) => ({ slug, displayName }));
   }
   async capabilities() {
     if (this.official.capabilities) return this.official.capabilities();

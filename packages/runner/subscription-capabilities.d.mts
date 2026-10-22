@@ -23,6 +23,7 @@ export const subscriptionInputLimits: Readonly<
 >;
 export function safeModel(value: unknown): value is string;
 export function safeEffort(value: unknown): value is string;
+export function assertReportedAllowance(limits: unknown): void;
 export function normalizeSubscriptionCapabilities(
   catalogue: unknown,
 ): SubscriptionCapabilities;

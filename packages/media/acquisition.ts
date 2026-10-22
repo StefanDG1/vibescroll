@@ -1,11 +1,13 @@
 import { PolicyError } from "../policy";
 import { AcquisitionPolicyError } from "./acquisition-policy.mjs";
-import { acquisitionPolicy as policy } from "./acquisition-runtime.ts";
-export {
-  downloaderRelease,
-  acquisitionManifest,
-  acquisitionMessage,
+import {
+  acquisitionPolicy as policy,
+  createAcquisitionManifest,
 } from "./acquisition-runtime.ts";
+import release from "../../infra/downloader.json";
+export { acquisitionMessage } from "./acquisition-runtime.ts";
+export const downloaderRelease = release;
+export const acquisitionManifest = createAcquisitionManifest(release.version);
 // Keep Convex's public error adapter out of the local companion module graph.
 export function acquisitionPolicy(raw: string) {
   try {

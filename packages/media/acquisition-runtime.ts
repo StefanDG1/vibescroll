@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { safeSourceUrl, ensure } from "./acquisition-policy.mjs";
 import { containsSecret } from "../policy/secrets.mjs";
-import release from "../../infra/downloader.json" with { type: "json" };
-
-export const downloaderRelease = release;
 
 // Only supported post identifiers enter the isolated downloader. A platform
 // home page, arbitrary URL path, playlist or supplied CDN URL is not a job.
@@ -83,48 +80,50 @@ export function acquisitionPolicy(raw: string) {
   return { url: url.toString(), platform, domains };
 }
 
-export const acquisitionManifest = z
-  .object({
-    schemaVersion: z.literal("1.0.0"),
-    status: z.enum([
-      "acquired",
-      "downloaded",
-      "needs_auth",
-      "rate_limited",
-      "unavailable",
-      "unsupported",
-      "over_limit",
-      "failed",
-    ]),
-    title: z.string().max(160),
-    description: z.string().max(6000),
-    publishedAt: z.number().int().min(1).max(4102444800000).optional(),
-    durationSeconds: z.number().min(0).max(600).optional(),
-    byteLength: z.number().int().min(1).max(250000000).optional(),
-    extractor: z.string().max(80),
-    downloaderVersion: z.literal(downloaderRelease.version),
-  })
-  .strict()
-  .superRefine((value, ctx) => {
-    if (containsSecret(value.title) || containsSecret(value.description))
-      ctx.addIssue({
-        code: "custom",
-        message: "Source metadata contains a credential.",
-      });
-    if (
-      value.status === "acquired" &&
-      (!value.byteLength || !value.durationSeconds)
-    )
-      ctx.addIssue({
-        code: "custom",
-        message: "Acquired media needs verified bounds.",
-      });
-    if (value.status === "downloaded" && !value.byteLength)
-      ctx.addIssue({
-        code: "custom",
-        message: "Downloaded media needs a bounded byte count.",
-      });
-  });
+export function createAcquisitionManifest(downloaderVersion: string) {
+  return z
+    .object({
+      schemaVersion: z.literal("1.0.0"),
+      status: z.enum([
+        "acquired",
+        "downloaded",
+        "needs_auth",
+        "rate_limited",
+        "unavailable",
+        "unsupported",
+        "over_limit",
+        "failed",
+      ]),
+      title: z.string().max(160),
+      description: z.string().max(6000),
+      publishedAt: z.number().int().min(1).max(4102444800000).optional(),
+      durationSeconds: z.number().min(0).max(600).optional(),
+      byteLength: z.number().int().min(1).max(250000000).optional(),
+      extractor: z.string().max(80),
+      downloaderVersion: z.literal(downloaderVersion),
+    })
+    .strict()
+    .superRefine((value, ctx) => {
+      if (containsSecret(value.title) || containsSecret(value.description))
+        ctx.addIssue({
+          code: "custom",
+          message: "Source metadata contains a credential.",
+        });
+      if (
+        value.status === "acquired" &&
+        (!value.byteLength || !value.durationSeconds)
+      )
+        ctx.addIssue({
+          code: "custom",
+          message: "Acquired media needs verified bounds.",
+        });
+      if (value.status === "downloaded" && !value.byteLength)
+        ctx.addIssue({
+          code: "custom",
+          message: "Downloaded media needs a bounded byte count.",
+        });
+    });
+}
 
 export function acquisitionMessage(status: string) {
   return (

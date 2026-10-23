@@ -55,6 +55,48 @@
   ],
   "articles": [
     {
+      "slug": "share-a-post",
+      "title": "Send a post explicitly to VibeScroll",
+      "summary": "Distinguish processing from tool connection, explicitly invoke VibeScroll and use the web fallback.",
+      "file": "share-a-post.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed implementation candidate; native-device and supported-host walkthrough pending",
+      "lastVerifiedCommit": "58df6ec",
+      "dependencies": [
+        "apps/starter/components/companion-setup.tsx",
+        "apps/starter/components/assistant-connections.tsx",
+        "packages/onboarding/project-builder-journey.ts",
+        "apps/starter/components/project-builder-guide.tsx"
+      ],
+      "related": [
+        "getting-started",
+        "connect-your-computer",
+        "first-useful-insight"
+      ],
+      "assets": []
+    },
+    {
+      "slug": "instagram-export-guide",
+      "title": "Learn how to bring Instagram Saved links",
+      "summary": "Complete export education without requesting an archive; keep actual import and processing separate.",
+      "file": "instagram-export-guide.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed implementation candidate with text-equivalent steps; native Meta screens and independent comprehension pending",
+      "lastVerifiedCommit": "58df6ec",
+      "dependencies": [
+        "apps/starter/components/companion-setup.tsx",
+        "apps/starter/components/setup-journey.tsx",
+        "packages/onboarding/project-builder-journey.ts",
+        "convex/setupJourney.ts",
+        "convex/librarySpacesSchema.ts",
+        "packages/instagram-import.ts",
+        "packages/instagram-zip.ts",
+        "apps/starter/components/project-builder-guide.tsx"
+      ],
+      "related": ["getting-started", "imports-and-data", "share-a-post"],
+      "assets": []
+    },
+    {
       "slug": "connect-your-computer",
       "title": "Connect your computer for own-plan work",
       "summary": "Prepare, pair, connect and run one companion without confusing local checks with a cited result.",
@@ -87,8 +129,8 @@
       "summary": "Choose a first task and a processing route without connecting everything at once.",
       "file": "getting-started.md",
       "status": "approved",
-      "reviewMode": "source-reviewed October 23 candidate; prior illustrations retain original capture versions; portable runtime and native/live/independent setup pending",
-      "lastVerifiedCommit": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
+      "reviewMode": "source-reviewed N5/N6 candidate; prior illustrations retain original versions; native/device and independent walkthrough pending",
+      "lastVerifiedCommit": "58df6ec",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
@@ -96,7 +138,8 @@
         "apps/starter/components/setup-journey.tsx",
         "convex/setupJourney.ts",
         "packages/onboarding/preflight-report.ts",
-        "packages/onboarding/companion-setup.ts"
+        "packages/onboarding/companion-setup.ts",
+        "apps/starter/components/project-builder-guide.tsx"
       ],
       "related": [
         "first-useful-insight",
@@ -193,8 +236,8 @@
       "summary": "Preview metadata, inspect duplicates and find export or deletion controls.",
       "file": "imports-and-data.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed N5/N6 candidate; prior illustrations retain original versions; native/device and independent walkthrough pending",
+      "lastVerifiedCommit": "58df6ec",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
@@ -276,5 +319,17 @@
       "processing-and-recovery"
     ],
     "limits": "Ordered pairing/connection/full-check instructions, workspace-safe configuration and serial existing source/assistant dispatch source-reviewed/local-tested. Eight static SSR cases passed; native browser failed before task-tab creation. No actual processing, installation or independent walkthrough. Full portable runtime preparation and project/plan route integration remain pending."
+  },
+  "chapterReview": {
+    "date": "2026-10-23",
+    "baseline": "58df6ec",
+    "status": "source-reviewed-candidate",
+    "updated": [
+      "getting-started",
+      "imports-and-data",
+      "share-a-post",
+      "instagram-export-guide"
+    ],
+    "limits": "Versioned opt-in chapter state and mandatory static/manual education implemented and locally tested. Request intent is self-reported; no import, account, native share target, installation, following or cited result is manufactured. Native-device and live/independent acceptance remain pending."
   }
 }

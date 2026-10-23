@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## Current brief, October 23: F043 authorization
+
+[F043](idea-backlog.md#f043-authorized-creator-and-onboarding-implementation-october-23) synchronizes the four foundations after explicit N0-N7 implementation authorization. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes the earlier planning-only boundary. Implementation continues through existing systems. Provider rights, the original cumulative US$2 cap, privacy, release and actual live/independent acceptance remain separate gates. No new result or benefit is claimed. Earlier briefs below remain historical.
+
 ## F042: local companion and source-gate corrections, October 23
 
 The application tree committed as `58df6ec` passed 1,001 local tests with three hosted skips, all types, zero-warning lint and both production builds. It separates GitHub/Reddit release gates, validates advertised account capabilities and reported quota, serializes existing app-source and assistant work through one owned controller, halts after uncertain dispatch, and separates pairing/connection/full-check setup with workspace-safe configuration. [The receipt](../operations/evidence/launch-20261023-local-completion.json) preserves the corrected review finding, earlier test failures, unchanged formatting failures and blocked native browser review.

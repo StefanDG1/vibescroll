@@ -8,6 +8,20 @@ import {
   actorCurrent,
 } from "../knowledge";
 export async function improvementCurrent(ctx: QueryCtx, p: Doc<"proposals">) {
+  if (p.localEvaluationId) {
+    const e = await ctx.db.get(p.localEvaluationId);
+    if (
+      !e ||
+      e.state !== "ready" ||
+      e.organizationId !== p.organizationId ||
+      e.repositoryId !== p.repositoryId ||
+      e.baseSha !== p.baseSha ||
+      e.profileVersion !== p.profileVersion ||
+      JSON.stringify(e.references) !== JSON.stringify(p.references) ||
+      !(await evaluationCurrent(ctx, e))
+    )
+      return false;
+  }
   if (p.detail?.schemaVersion === "2.0.0") {
     const source = await ctx.db.get(p.sourceId);
     const row = source?.currentRevisionId

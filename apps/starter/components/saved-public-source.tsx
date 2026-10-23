@@ -2,9 +2,13 @@
 import { useState } from "react";
 import { PublicEditionContent } from "./public-edition-content";
 import type { PublicEdition } from "@/lib/public-knowledge-display";
+import type { SharedOrderedAnalysis } from "@/lib/shared-ordered-analysis-display";
+import { SharedOrderedAnalysisContent } from "./shared-ordered-analysis-content";
 type Detail = {
   available: boolean;
   edition: PublicEdition | null;
+  origin?: "edition" | "service";
+  service?: SharedOrderedAnalysis | null;
   privateNote: string;
   corrections: { insightId: string; text: string }[];
   updatedAt: number;
@@ -33,7 +37,7 @@ function Saved({ sourceId, call, readOnly = false, enabled = false }: Props) {
     setSaved(false);
     try {
       const result = await call("savedPublicDetail", { sourceId });
-      if (!result) throw Error("This saved public reference is unavailable.");
+      if (!result) throw Error("This saved shared reference is unavailable.");
       setDetail(result);
       setNote(result.privateNote);
       setCorrections(
@@ -51,7 +55,7 @@ function Saved({ sourceId, call, readOnly = false, enabled = false }: Props) {
       setError(
         failure instanceof Error
           ? failure.message
-          : "Public reference could not be loaded.",
+          : "Shared reference could not be loaded.",
       );
     } finally {
       setBusy(false);
@@ -60,16 +64,16 @@ function Saved({ sourceId, call, readOnly = false, enabled = false }: Props) {
   if (!enabled)
     return (
       <section className="panel">
-        <h2>Saved public reference</h2>
+        <h2>Saved shared reference</h2>
         <p>
-          Public-artifact reading is awaiting release review. No previous
+          Shared-artifact reading is awaiting release review. No previous
           private or public output is displayed as current.
         </p>
       </section>
     );
   return (
     <section className="panel">
-      <h2>Public evidence, your private interpretation</h2>
+      <h2>Shared evidence, your private interpretation</h2>
       <p>
         The source-level artifact is checked when opened. Your notes and
         corrections stay in your private layer; they are not published or shared
@@ -82,12 +86,14 @@ function Saved({ sourceId, call, readOnly = false, enabled = false }: Props) {
       )}
       <button disabled={busy} onClick={() => void load()}>
         {detail
-          ? "Check the current public reference"
-          : "Open current public reference"}
+          ? "Check the current shared reference"
+          : "Open current shared reference"}
       </button>
       {detail && (
         <>
-          {detail.available && detail.edition ? (
+          {detail.available && detail.origin === "service" && detail.service ? (
+            <SharedOrderedAnalysisContent analysis={detail.service} />
+          ) : detail.available && detail.edition ? (
             <>
               <p>
                 Public edition version {detail.edition.version}. Original public
@@ -98,7 +104,7 @@ function Saved({ sourceId, call, readOnly = false, enabled = false }: Props) {
             </>
           ) : (
             <output>
-              The original public edition has changed, expired or been
+              The original shared evidence has changed, expired or been
               withdrawn. Its evidence is unavailable. Your saved private notes
               are retained.
             </output>
@@ -148,22 +154,24 @@ function Saved({ sourceId, call, readOnly = false, enabled = false }: Props) {
               />
             </label>
             {detail.available &&
-              detail.edition?.insights.map((insight) => (
-                <label key={insight.id}>
-                  Your correction to “{insight.title}”
-                  <textarea
-                    maxLength={2000}
-                    value={corrections[insight.id] ?? ""}
-                    readOnly={readOnly || !detail.canEdit}
-                    onChange={(event) =>
-                      setCorrections((current) => ({
-                        ...current,
-                        [insight.id]: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              ))}
+              (detail.service?.insights ?? detail.edition?.insights ?? []).map(
+                (insight) => (
+                  <label key={insight.id}>
+                    Your correction to “{insight.title}”
+                    <textarea
+                      maxLength={2000}
+                      value={corrections[insight.id] ?? ""}
+                      readOnly={readOnly || !detail.canEdit}
+                      onChange={(event) =>
+                        setCorrections((current) => ({
+                          ...current,
+                          [insight.id]: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                ),
+              )}
             {detail.canEdit ? (
               <button
                 type="submit"

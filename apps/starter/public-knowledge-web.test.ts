@@ -24,6 +24,8 @@ import {
 } from "./lib/public-knowledge";
 import { POST } from "./app/api/public-knowledge/report/route";
 import { PublicEditionContent } from "./components/public-edition-content";
+import { SharedOrderedAnalysisContent } from "./components/shared-ordered-analysis-content";
+import type { SharedOrderedAnalysis } from "./lib/shared-ordered-analysis-display";
 import Edition from "./app/editions/[slug]/page";
 import Collection from "./app/collections/[slug]/page";
 import type { PublicEdition } from "./lib/public-knowledge-display";
@@ -172,6 +174,42 @@ function publicEdition(): PublicEdition & { corrections: [] } {
     ],
   };
 }
+it("renders honest supplied-text provenance in actual edition and collection content", async () => {
+  vi.stubEnv("PUBLIC_KNOWLEDGE_WEB_ENABLED", "true");
+  const edition = {
+    ...publicEdition(),
+    coverage: "source_text",
+    sourceProvenance: "supplied_text_unverified" as const,
+    sourceUrl: `https://github.com/example/project/blob/${"a".repeat(40)}/README.md`,
+  };
+  mock.query.mockResolvedValueOnce(edition);
+  const page = renderToStaticMarkup(
+    await Edition({ params: Promise.resolve({ slug: edition.slug }) }),
+  );
+  mock.query.mockResolvedValueOnce({
+    slug: "supplied-collection",
+    title: "Reviewed supplied text",
+    description: "Reviewable references",
+    topic: "Evidence",
+    editions: [edition],
+  });
+  const collection = renderToStaticMarkup(
+    await Collection({
+      params: Promise.resolve({ slug: "supplied-collection" }),
+    }),
+  );
+  expect(page).toContain("Coverage: Text");
+  expect(page).toContain("supplied text with untimed references");
+  expect(page).toContain("Open the publisher-supplied reference");
+  expect(collection).toContain(
+    "Text with publisher-supplied, untimed references",
+  );
+  expect(collection).toContain("Review the supplied reference and claims");
+  for (const html of [page, collection]) {
+    expect(html).not.toContain("Coverage: caption only");
+    expect(html).not.toContain("Open the original source");
+  }
+});
 
 it("discloses AI generation visibly on the actual edition page before its claims", async () => {
   vi.stubEnv("PUBLIC_KNOWLEDGE_WEB_ENABLED", "true");
@@ -224,4 +262,91 @@ it("labels generated summaries on the actual collection page and links to source
   expect(mock.query).toHaveBeenCalledTimes(1);
   expect(mock.setAuth).not.toHaveBeenCalled();
   expect(mock.mutation).not.toHaveBeenCalled();
+});
+
+function sharedAnalysis(): SharedOrderedAnalysis {
+  return {
+    title: "Instagram post",
+    summary: "Synthetic neutral summary",
+    sourceUrl: "https://www.instagram.com/p/fixture/",
+    coverage: "ordered_media",
+    language: "en",
+    pipelineVersion: "ordered-social-v1",
+    schemaVersion: "3.0.0",
+    warnings: ["Later slides were not inspected."],
+    acquisitionCoverage: "partial",
+    expectedAssetCount: null,
+    inspectedAssetCount: 1,
+    insights: [
+      {
+        id: "idea1",
+        kind: "idea",
+        title: "Read the original",
+        claim: "Synthetic claim",
+        interpretation: "Synthetic interpretation",
+        confidence: "uncertain",
+        uncertainty: ["Check context"],
+        citations: [
+          {
+            id: "visible1",
+            kind: "image_observation",
+            url: "https://www.instagram.com/p/fixture/",
+            label: "Image 3",
+            startMs: null,
+            endMs: null,
+            assetId: "slide3",
+            assetIndex: 2,
+            postRevisionHash: "a".repeat(64),
+            textHash: "b".repeat(64),
+            basis: "ocr",
+            uncertainty: "Small text",
+            crop: { x: 0.1, y: 0.2, width: 0.5, height: 0.4 },
+          },
+        ],
+      },
+    ],
+  };
+}
+it("renders service evidence as ordered untimed images, actual crop and uncertainty without invented edition authority", () => {
+  const html = renderToStaticMarkup(
+    createElement(SharedOrderedAnalysisContent, { analysis: sharedAnalysis() }),
+  );
+  expect(html).toContain("AI-generated analysis may contain errors");
+  expect(html).toContain("total asset count is unknown");
+  expect(html).toContain("Complete source coverage has not been established");
+  expect(html).toContain("Image 3");
+  expect(html).toContain("Asset 3, ocr");
+  expect(html).toContain("Untimed image reference");
+  expect(html).toContain("Crop: x 0.1, y 0.2, width 0.5, height 0.4");
+  expect(html).toContain("Small text");
+  expect(html).toContain("Later slides were not inspected");
+  expect(html).not.toMatch(
+    /Public edition version|Published by|0–0s|human.reviewed/,
+  );
+  expect(mock.query).not.toHaveBeenCalled();
+  expect(mock.mutation).not.toHaveBeenCalled();
+});
+it("renders actual video ranges and escapes untrusted analysis without allowing active source URLs", () => {
+  const analysis = sharedAnalysis();
+  analysis.sourceUrl = "javascript:alert(1)";
+  analysis.insights[0].claim = "<script>alert('fixture')</script>";
+  analysis.insights[0].citations = [
+    {
+      ...analysis.insights[0].citations[0],
+      kind: "video_observation",
+      label: "Video 2–4s",
+      startMs: 2000,
+      endMs: 4000,
+      url: "javascript:alert(1)",
+      crop: undefined,
+    },
+  ];
+  const html = renderToStaticMarkup(
+    createElement(SharedOrderedAnalysisContent, { analysis }),
+  );
+  expect(html).toContain("2–4s");
+  expect(html).not.toContain("Untimed image reference");
+  expect(html).toContain("&lt;script&gt;");
+  expect(html).not.toContain("<script>");
+  expect(html).not.toContain("href=");
 });

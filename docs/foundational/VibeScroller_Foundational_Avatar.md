@@ -1,5 +1,13 @@
 # VibeScroll foundational avatar
 
+## F043: authorized creator and onboarding implementation, October 23
+
+The owner explicitly authorized N0-N7 and all remaining work in both plans. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes F041's planning-only boundary. Extend the existing setup progress, source intake, jobs and public artifact/reuse families. Daily public TikTok/Instagram discovery, ordered video/image/carousel evidence, eligible generic analysis with private personalization and both approved processing routes are implementation scope. They are not newly verified production capabilities.
+
+The requested project-builder chapters preserve optional GitHub and skill installation, explicit VibeScroll invocation with a copy/paste fallback, required Instagram export education, and optional creator following. Guide acknowledgement does not claim an export request, import, connected account or cited result. Existing libraries remain accessible. The seven reviewed README insights retain exact-edition publication/save/reuse approval.
+
+The original cumulative US$2 ceiling, US$1.679289 conservative retained amount and unresolved holds remain unchanged. No supplier purchase, account, recurring spend, provider approval, customer, independent test or measured benefit is invented. New capabilities stay gated where verified rights, complete cost bounds or live acceptance are absent. Audience, prices, allowances and six beliefs remain unchanged.
+
 ## F042: local companion and source-gate corrections, October 23
 
 The application tree committed as `58df6ec` passed 1,001 local tests with three hosted skips, all types, zero-warning lint and both production builds. It separates GitHub/Reddit release gates, validates advertised account capabilities and reported quota, serializes existing app-source and assistant work through one owned controller, halts after uncertain dispatch, and separates pairing/connection/full-check setup with workspace-safe configuration. [The receipt](../operations/evidence/launch-20261023-local-completion.json) preserves the corrected review finding, earlier test failures, unchanged formatting failures and blocked native browser review.

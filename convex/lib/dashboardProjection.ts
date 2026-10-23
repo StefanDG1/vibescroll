@@ -33,6 +33,7 @@ function fields(
       sourceKind: row.kind,
       sourceAuthorityVersion: 2,
       sourceRetentionUntil: row.sourceRetentionUntil,
+      creatorRights: row.creatorRights,
       coverage: row.coverage,
       generation: row.generation,
       rightsAttested: row.rightsAttested,

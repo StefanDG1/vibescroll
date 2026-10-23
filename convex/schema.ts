@@ -1,4 +1,5 @@
 import { assistantTables } from "./assistantSchema";
+import { creatorTables } from "./creatorSchema";
 import { librarySpacesTables } from "./librarySpacesSchema";
 import { productTables } from "./productSchema";
 import { knowledgeTables } from "./knowledgeSchema";
@@ -19,6 +20,7 @@ export const role = v.union(
 );
 export default defineSchema({
   ...assistantTables,
+  ...creatorTables,
   ...librarySpacesTables,
   ...productTables,
   ...knowledgeTables,

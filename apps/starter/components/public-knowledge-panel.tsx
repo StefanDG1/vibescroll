@@ -12,6 +12,8 @@ export type PublishableSource = {
   updatedAt: number;
   title: string;
   state: string;
+  kind?: string;
+  sourceRevision?: { sourceType: string };
   publicImportId?: string;
   analysis?: { insights: { id: string; title: string }[] };
 };
@@ -180,6 +182,15 @@ function Panel({
               permissionExpiresAt: new Date(
                 String(fields.get("expires")),
               ).getTime(),
+              ...(fields.get("suppliedReference")
+                ? {
+                    suppliedReference: {
+                      url: fields.get("suppliedReference"),
+                      explicitlyReviewed:
+                        fields.get("referenceReviewed") === "on",
+                    },
+                  }
+                : {}),
             });
             if (result) {
               setPreview(result);
@@ -243,6 +254,31 @@ function Panel({
             Permission record, without private credentials
             <input name="permissionReference" required maxLength={500} />
           </label>
+          {(source.kind === "text" ||
+            source.sourceRevision?.sourceType === "supplied_text") && (
+            <fieldset>
+              <legend>Optional reference for supplied text</legend>
+              <label>
+                GitHub file URL pinned to its full commit
+                <input
+                  name="suppliedReference"
+                  type="url"
+                  maxLength={2048}
+                  placeholder="https://github.com/owner/repo/blob/40-character-commit/README.md"
+                />
+              </label>
+              <label className="check">
+                <input name="referenceReviewed" type="checkbox" />I reviewed
+                this exact reference against my supplied text. It is an
+                owner-supplied reference, not verified provider retrieval.
+              </label>
+              <p>
+                The reference and selected claims are included in the exact
+                preview you approve. Leave it blank when no supported reference
+                is available.
+              </p>
+            </fieldset>
+          )}
           <label>
             Review permission by
             <input name="expires" type="date" required />

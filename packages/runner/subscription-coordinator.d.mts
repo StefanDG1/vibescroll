@@ -20,6 +20,7 @@ export function createSubscriptionCoordinator(options: {
   requestAssistant: (operation: string, args?: any) => Promise<any>;
   processPersonal: (job: any, dependencies: any) => Promise<any>;
   processAssistant: (job: any, dependencies: any) => Promise<any>;
+  processTask?: (job: any, dependencies: any) => Promise<any>;
   config: any;
   signal: AbortSignal;
   now?: () => number;
@@ -36,3 +37,11 @@ export function createSubscriptionCoordinator(options: {
     delayMs: number;
   }>;
 };
+export function processSubscriptionTask(
+  job: any,
+  dependencies: {
+    client: any;
+    request: (operation: string, args?: any) => Promise<any>;
+    signal?: AbortSignal;
+  },
+): Promise<{ completed: boolean }>;

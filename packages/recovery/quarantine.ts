@@ -5,12 +5,17 @@
 // sourceRelationships contains only user-authored opaque links, grants no
 // authority and rechecks both source memberships/retention on every read.
 export const recoveryQuarantineSections = [
+  "creatorWatches",
+  "creatorPosts",
+  "creatorSubscriptions",
+  "creatorDeliveries",
   "assistantSubscriptions",
   "assistantDeliveries",
   "assistantGrants",
   "assistantIntakes",
   "connections",
   "devices",
+  "localLibraryRuns",
   "githubLinks",
   "githubBindings",
   "runs",
@@ -23,6 +28,7 @@ export const recoveryQuarantineSections = [
   "publicEditions",
   "publicCollections",
   "publicReports",
+  "publicModerationBlocks",
   "publicCorrections",
   "publicArtifacts",
   "publicImports",

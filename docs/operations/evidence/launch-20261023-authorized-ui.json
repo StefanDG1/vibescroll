@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-23T00:27:48.778223+00:00",
+  "environment": "Local Windows, existing default browser-harness daemon, project Node 24.22.1, credential-free loopback fixture. Agent-operated native browser review.",
+  "classification": {
+    "actualComponents": true,
+    "syntheticStateAndResponses": true,
+    "production": false,
+    "independentHumanAcceptance": false,
+    "hostedProviderCalls": 0,
+    "newHostedSpendingUsd": 0
+  },
+  "scope": [
+    "SetupJourney and CompanionSetup chapter orchestration",
+    "ProjectBuilderGuide mandatory export education, optional project/skills/following, confirmed progress",
+    "CreatorFollowing and CreatorDigest pending status, bounded metadata review and explicit saves",
+    "OwnPlanTaskControls advertised synthetic model/effort, consent and explicit existing-task recovery"
+  ],
+  "snapshotTiming": "The shared working tree was changing. 41 layout cases and guide interactions preceded the class-only correction and task-resume addition. 12 button cases retested the corrected classes; 4 final resume cases tested the rebuilt resume component. Latest bundle hashes below bind the final resume fixture, not a whole-commit or whole-app acceptance claim.",
+  "latestBundleSourceSha256": {
+    "apps/starter/components/setup-journey.tsx": "847121ceace603d438e2cd8900afd42dde36e008d8c4244a93390c6604671044",
+    "apps/starter/components/companion-setup.tsx": "bce9313e8d15962510d715612732a3ef7ceb4216f13e33d7eff7c3524aace03f",
+    "apps/starter/components/project-builder-guide.tsx": "7a665518454ea1b5bae10a33c753d0e3aa0746f153f50dde06ac5446a419fd8b",
+    "apps/starter/components/creator-following.tsx": "bf45b14b57d6245ebaeb7133e93703c239977754daf83fb298e8f2c74256bb89",
+    "apps/starter/components/creator-digest.tsx": "05051199c344dbe5ebec7ad546de4019f761e22cb0d47de97727321143dc2667",
+    "apps/starter/components/own-plan-task-controls.tsx": "2a8500c863bdcd12e2e40ab529a9bdeb1e86f50a2217a77435fc42f7f1d37c9f",
+    "apps/starter/components/motion-preference.tsx": "d099b64039a87c32670e5986ba5cbad6fabcf72389007f43f374dbf4a0a2044b",
+    "packages/onboarding/project-builder-journey.ts": "05c3e2afc05ba6105653d4df8ea339efeff80ca4a8f787905c3044c4ca3f6c8a",
+    "packages/onboarding/skill-catalog.ts": "7fb0e54ed17e12d079229c19b932e88d46d786b854792a48d839fbaa43a4e8cc",
+    "apps/starter/app/product.css": "4d5e2ac647ac5c5a74167e67d4ac025237b6b405946dd08e899da8bf396899fc",
+    "apps/starter/app/studio.css": "258c808320a3871b8049e502a311b6bf6ce69104e2e8351fa8315743b7beb5ec",
+    "apps/starter/app/atlas.css": "85e3e7e2391db828670d4963c2f676695e4c12b524fcd97c64faf11640432a2f",
+    "apps/starter/app/public.css": "2017a6ed738faaee2e397b6adcd87903a3ecdb8d11d2c7da47ee3e3f2daf46e1"
+  },
+  "nativeResults": {
+    "layout": {
+      "passed": 41,
+      "standardCases": 36,
+      "standardWidths": [390, 1440],
+      "themes": ["light", "dark"],
+      "narrowLargeTextCases": 5,
+      "narrowWidth": 320,
+      "textScale": "150% fixture font size; not browser accessibility zoom",
+      "documentOverflow": false,
+      "hydrationOrRuntimeErrors": 0
+    },
+    "interactionGroups": {
+      "passed": 8,
+      "coverage": [
+        "Failed save preserves confirmed chapter",
+        "Optional GitHub/skills and three reviewed catalogue recommendations with unknown installation state",
+        "Mandatory final lesson acknowledgement via native Tab/Enter; archive and following remain optional",
+        "Confirmed journey survives actual page reload",
+        "Delayed workspace switch removes previous configuration and journey",
+        "Shown bounded backfill subset requires incomplete-coverage acknowledgement and exact quote hash",
+        "Explicit post metadata save starts no inference",
+        "Synthetic own-plan advertised selection and explicit consent"
+      ]
+    },
+    "correctedButtonCases": {
+      "passed": 12,
+      "minimumObservedHeightPx": 44,
+      "themes": ["light", "dark"],
+      "widths": [390, 1440],
+      "keyboard": "Native Tab/Shift+Tab/Enter, visible focus and no document overflow"
+    },
+    "existingTaskRecovery": {
+      "passed": 4,
+      "themes": ["light", "dark"],
+      "widths": [390, 1440],
+      "behavior": "Explicit Find existing tasks and Open task status before/after reload; synthetic queued task; lookup/status only and no approval request"
+    },
+    "motion": {
+      "reducedMotion": "Passed: actual reduced-motion media query, static illustration, disabled animation actions, zero running animations",
+      "pause": "Passed after actual finite native hover/focus transitions settled: illustration transforms none, zero running animations",
+      "backgroundPage": "Pending: activating owned blank tabs did not change document.hidden from false in this Chrome session; no visibility property spoofing or fabricated pass"
+    }
+  },
+  "scopedAutomatedTests": {
+    "command": "node scripts/run-offline.mjs pnpm exec vitest run --config apps/starter/vitest.public-knowledge.config.ts apps/starter/creator-ui.test.ts apps/starter/own-plan-task-ui.test.ts",
+    "passed": 16,
+    "creatorUi": 10,
+    "ownPlanUi": 6
+  },
+  "finding": {
+    "before": "Following, digest and own-plan action buttons lacked existing button classes and measured 31.59px in the native fixture.",
+    "correction": "Existing primary/secondary classes added without changing handlers. Subsequent native cases measured at least 44.27px. Original captures retained."
+  },
+  "failedAttemptsRetained": [
+    "Stale active-tab current_tab failed; correct new_tab(loopback) entry succeeded. This was not evidence that owner intervention was required.",
+    "Private fixture build required exact Next Image export interop and browser environment definitions. These were fixture corrections, not application defects.",
+    "Immediate pause assertion counted finite native button CSS transitions; settled measurement passed.",
+    "Actual background-page visibility remained unverified."
+  ],
+  "evidenceRetention": {
+    "privateScreenshots": 63,
+    "harnessAndSyntheticFixtureRetained": true,
+    "publicScreenshotAssetsAdded": true,
+    "publicScreenshots": [
+      "launch-20261023-synthetic-following-desktop.png",
+      "launch-20261023-synthetic-own-plan-mobile.png"
+    ],
+    "publicScreenshotScope": "Reviewed synthetic fixture captures at the recorded observation time, before later integration fixes. These do not show production or certify the final application head."
+  },
+  "cleanup": {
+    "ownedTabsClosed": true,
+    "loopbackServerStopped": true,
+    "browserDaemonAndUserTabsPreserved": true,
+    "emulationRestored": true
+  },
+  "limits": [
+    "Not full authenticated application, live backend, provider, model, pairing, import, first-result or customer evidence.",
+    "Actual product/studio/atlas/public CSS was loaded, with a minimal fixture frame and system font; the full application shell and generated Tailwind globals were not mounted.",
+    "No external Help, catalogue or post links were followed; Help targets were inspected against the local allowlist.",
+    "Background-page behavior, full application composition, real-device and independent acceptance remain pending."
+  ]
+}

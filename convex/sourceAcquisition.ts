@@ -130,7 +130,7 @@ async function requiresRightsReview(ctx: QueryCtx, source: Doc<"sources">) {
     revision.revision?.retention?.retainUntil <= Date.now()
   );
 }
-async function scrubUnusableBase(
+export async function scrubUnusableBase(
   ctx: Parameters<typeof invalidatePublicSource>[0],
   source: Doc<"sources">,
   now: number,
@@ -139,6 +139,9 @@ async function scrubUnusableBase(
   // New rights never reauthorize retained provider bytes or their old analysis.
   await ctx.db.patch(source._id, {
     currentRevisionId: undefined,
+    orderedMedia: undefined,
+    orderedPreparation: undefined,
+    serviceIntent: undefined,
     text: undefined,
     summary: undefined,
     analysis: undefined,

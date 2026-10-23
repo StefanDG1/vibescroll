@@ -99,7 +99,7 @@ export async function runtimeSourceInventory(source) {
     )
       throw Error("PACKAGE_UNSUPPORTED_AUTH_ADAPTER");
     if (
-      !/^(?:scripts\/|packages\/(?:runner|companion|contracts|knowledge|media)\/|packages\/policy\/secrets\.mjs$|infra\/downloader\.json$|contracts\/|package\.json$|pnpm-lock\.yaml$|LICENSE$)/.test(
+      !/^(?:scripts\/|packages\/(?:runner|companion|contracts|knowledge|media)\/|packages\/plans\/contract\.mjs$|packages\/social\/identity\.mjs$|packages\/policy\/secrets\.mjs$|infra\/downloader\.json$|contracts\/|package\.json$|pnpm-lock\.yaml$|LICENSE$)/.test(
         path,
       )
     )

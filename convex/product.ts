@@ -1,5 +1,9 @@
 import { presentAnalysis } from "../packages/insights/presentation";
 import { classifySourceUrl } from "../packages/sources/classify";
+import {
+  socialPostUrl,
+  socialPostAliases,
+} from "../packages/social/identity.mjs";
 import { validateEvidenceRegistry } from "../packages/sources/evidence";
 import { sourcePolicyCurrent } from "./lib/sourcePolicy";
 import { retainedSourceRevision, sourceRetained } from "./lib/sourceAuthority";
@@ -8,6 +12,8 @@ import {
   type SourceProposal,
 } from "../packages/proposals/evidence";
 import { sharedTypedCitations } from "./lib/sourceCitations";
+import { currentOrderedSource } from "./lib/orderedSource";
+import { socialPipelineVersion } from "../packages/social/prompts";
 import { invalidatePublicSource } from "./publicKnowledge";
 import { filing } from "./librarySpaces";
 import { repositoryContent } from "./lib/repositoryContent";
@@ -526,11 +532,7 @@ export const library = query({
     const page = [];
     for (const source of result.page) {
       if (!source || (sourceState && source.state !== sourceState)) continue;
-      if (
-        source.sourceRetentionUntil &&
-        source.sourceRetentionUntil <= Date.now()
-      )
-        continue;
+      if (!sourceRetained(source)) continue;
       if (notAnalyzed && source.state === "ready") continue;
       if (inProgress && !["queued", "processing"].includes(source.state))
         continue;
@@ -602,7 +604,7 @@ export const detail = query({
       fail("Source unavailable.");
     const reader = await access(ctx, s.organizationId);
     ensure(
-      !s.sourceRetentionUntil || s.sourceRetentionUntil > Date.now(),
+      sourceRetained(s),
       "SOURCE_UNAVAILABLE",
       "The retained source evidence expired. Recover it with permitted supplied text.",
     );
@@ -841,6 +843,13 @@ export async function captureAuthorized(
       : a.kind === "text"
         ? `text:${await digest(a.text ?? "")}`
         : `object:${a.objectKey}`;
+  if (a.kind === "url" && classified?.sourceType === "media") {
+    try {
+      canonical = socialPostUrl(canonical).canonical;
+    } catch {
+      /* Other supported media retains its existing canonical form. */
+    }
+  }
   ensure(
     !a.text || (a.text.length <= 60000 && !containsSecret(a.text)),
     "POLICY_BLOCKED",
@@ -879,6 +888,44 @@ export async function captureAuthorized(
     )
     .unique();
   if (dup && dup.state !== "deleted") return dup._id;
+  let socialIdentity:
+    { platform: "instagram" | "tiktok"; postKey: string } | undefined;
+  if (a.kind === "url" && classified?.sourceType === "media") {
+    try {
+      const identity = socialPostUrl(canonical);
+      socialIdentity = {
+        platform: identity.platform,
+        postKey: identity.postKey,
+      };
+    } catch {
+      /* Other supported media keeps its existing identity. */
+    }
+    if (socialIdentity) {
+      const stable = await ctx.db
+        .query("sources")
+        .withIndex("by_social_identity", (q) =>
+          q
+            .eq("organizationId", a.organizationId)
+            .eq("socialIdentity.platform", socialIdentity!.platform)
+            .eq("socialIdentity.postKey", socialIdentity!.postKey),
+        )
+        .unique();
+      if (stable && stable.state !== "deleted") return stable._id;
+      for (const alias of socialPostAliases(canonical)) {
+        if (alias === canonical) continue;
+        const legacy = await ctx.db
+          .query("sources")
+          .withIndex("by_canonical", (q) =>
+            q.eq("organizationId", a.organizationId).eq("canonical", alias),
+          )
+          .unique();
+        if (legacy && legacy.state !== "deleted") {
+          await ctx.db.patch(legacy._id, { socialIdentity });
+          return legacy._id;
+        }
+      }
+    }
+  }
   const w = await wallet(ctx, a.organizationId);
   let counts = await ctx.db
     .query("sourceCounts")
@@ -919,6 +966,7 @@ export async function captureAuthorized(
   const id = await ctx.db.insert("sources", {
     ...a,
     canonical,
+    ...(socialIdentity ? { socialIdentity } : {}),
     sourceType:
       classified?.sourceType ?? (a.kind === "text" ? "supplied_text" : "media"),
     ...(classified && classified.sourceType !== "media"
@@ -950,7 +998,12 @@ export async function captureAuthorized(
       .query("assets")
       .withIndex("by_key", (q) => q.eq("key", a.objectKey!))
       .unique();
-    if (asset) await ctx.db.patch(asset._id, { sourceId: id, updatedAt: now });
+    if (asset)
+      await ctx.db.patch(asset._id, {
+        sourceId: id,
+        sourceGeneration: 0,
+        updatedAt: now,
+      });
   }
   await audit(ctx, a.organizationId, actor.actor._id, "source.captured", id);
   if (
@@ -1054,6 +1107,11 @@ export async function startSource(
     "POLICY_BLOCKED",
     "Open the current saved public artifact. Saving it does not start inference.",
   );
+  ensure(
+    !s.orderedMedia && !s.orderedPreparation && !s.serviceIntent,
+    "POLICY_BLOCKED",
+    "Ordered posts require their reviewed ordered-media route and current rights. No legacy media fallback was used.",
+  );
   const typedRevision = s.currentRevisionId
     ? await ctx.db.get(s.currentRevisionId)
     : null;
@@ -1072,7 +1130,7 @@ export async function startSource(
     );
     ensure(
       registry.revision.contentHash === typedRevision.contentHash &&
-        sourceRetained(s.sourceRetentionUntil),
+        sourceRetained(s),
       "INVALID_EVIDENCE",
       "The current retained content changed.",
     );
@@ -1277,7 +1335,7 @@ export const workerSourceRevision = internalQuery({
     );
     ensure(
       registry.revision.contentHash === row!.contentHash &&
-        sourceRetained(source.sourceRetentionUntil),
+        sourceRetained(source),
       "INVALID_EVIDENCE",
       "The retained source content changed.",
     );
@@ -1369,11 +1427,16 @@ export const commitAnalysis = internalMutation({
         "INVALID_EVIDENCE",
         "A typed source cannot fall back to legacy media evidence.",
       );
-      analysis = presentAnalysis(
-        (typedRevision ? sourceInsightOutput : insightOutput).parse(
-          a.output,
-        ) as any,
+      const ordered = Boolean(
+        s.orderedMedia || a.output?.schemaVersion === "3.0.0",
       );
+      analysis = ordered
+        ? (await currentOrderedSource(s, a.output)).analysis
+        : presentAnalysis(
+            (typedRevision ? sourceInsightOutput : insightOutput).parse(
+              a.output,
+            ) as any,
+          );
       ensure(
         analysis.sourceId === s._id &&
           analysis.processingRunId === `${s._id}:${a.generation}`,
@@ -1381,12 +1444,14 @@ export const commitAnalysis = internalMutation({
         "Wrong source reference.",
       );
       ensure(
-        typedRevision
-          ? analysis.coverage === "source_text"
-          : s.kind === "text"
-            ? analysis.coverage === "caption_only"
-            : ["upload", "url"].includes(s.kind) &&
-              analysis.coverage === s.mediaCoverage,
+        ordered
+          ? analysis.coverage === "ordered_media"
+          : typedRevision
+            ? analysis.coverage === "source_text"
+            : s.kind === "text"
+              ? analysis.coverage === "caption_only"
+              : ["upload", "url"].includes(s.kind) &&
+                analysis.coverage === s.mediaCoverage,
         "INVALID_EVIDENCE",
         "Analysis coverage does not match verified processing.",
       );
@@ -1397,7 +1462,7 @@ export const commitAnalysis = internalMutation({
       );
       if (typedRevision) {
         ensure(
-          s.rightsAttested && sourceRetained(s.sourceRetentionUntil),
+          s.rightsAttested && sourceRetained(s),
           "RIGHTS_REQUIRED",
           "Source rights or retention changed before completion.",
         );
@@ -1423,7 +1488,7 @@ export const commitAnalysis = internalMutation({
         );
         ensure(
           registry.revision.contentHash === typedRevision.contentHash &&
-            sourceRetained(s.sourceRetentionUntil),
+            sourceRetained(s),
           "INVALID_EVIDENCE",
           "The retained source content changed.",
         );
@@ -1460,7 +1525,7 @@ export const commitAnalysis = internalMutation({
       for (const i of analysis.insights)
         for (const e of i.evidence)
           ensure(
-            typedRevision
+            ordered || typedRevision
               ? true
               : s.kind === "text"
                 ? e.id === "supplied_text" &&
@@ -1510,9 +1575,11 @@ export const commitAnalysis = internalMutation({
       state: analysis ? "ready" : "failed",
       analysis,
       analysisPipelineVersion: analysis
-        ? s.currentRevisionId
-          ? "cited-source-v2"
-          : "legacy-media-text-v1"
+        ? s.orderedMedia
+          ? (s.serviceIntent?.pipelineVersion ?? socialPipelineVersion)
+          : s.currentRevisionId
+            ? "cited-source-v2"
+            : "legacy-media-text-v1"
         : undefined,
       summary: analysis?.summary,
       searchable: [s.title, analysis?.summary, s.text, ...s.tags]
@@ -1723,7 +1790,11 @@ export const attachSource = mutation({
         "UPLOAD_INVALID",
         "Upload unavailable.",
       );
-      await ctx.db.patch(asset._id, { sourceId: s._id, updatedAt: Date.now() });
+      await ctx.db.patch(asset._id, {
+        sourceId: s._id,
+        sourceGeneration: s.generation + 1,
+        updatedAt: Date.now(),
+      });
     }
     const proposals = await ctx.db
       .query("proposals")
@@ -1777,6 +1848,9 @@ export const attachSource = mutation({
       speechProvenance: undefined,
       mediaEvidence: undefined,
       originalMediaEvidence: undefined,
+      orderedMedia: undefined,
+      orderedPreparation: undefined,
+      serviceIntent: undefined,
       mediaCoverage: undefined,
       error: undefined,
       generation: s.generation + 1,
@@ -1870,6 +1944,10 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
   await ctx.db.patch(id, {
     state: "deleted",
     canonical: `deleted:${id}`,
+    socialIdentity: undefined,
+    orderedMedia: undefined,
+    orderedPreparation: undefined,
+    serviceIntent: undefined,
     key: `deleted:${id}`,
     title: "Deleted source",
     searchable: "",
@@ -2217,7 +2295,7 @@ export async function currentMatchingProposal(
     job.sourceRevision !== source.updatedAt ||
     source.state !== "ready" ||
     !source.rightsAttested ||
-    !sourceRetained(source.sourceRetentionUntil) ||
+    !sourceRetained(source) ||
     !(await actorCurrent(ctx, source.organizationId, job.actor))
   )
     return null;
@@ -2359,7 +2437,7 @@ export const addProposal = internalMutation({
           matchingJob.sourceRevision === s.updatedAt &&
           s.state === "ready" &&
           s.rightsAttested &&
-          sourceRetained(s.sourceRetentionUntil) &&
+          sourceRetained(s) &&
           r.confirmed,
         "APPROVAL_STALE",
         "Matching authority or source context changed.",

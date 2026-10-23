@@ -28,6 +28,8 @@ export const sourceAnalysis = workflow
           v.literal("media"),
           v.literal("text"),
           v.literal("source_text"),
+          v.literal("ordered_media"),
+          v.literal("ordered_prepare"),
         ),
       ),
     },
@@ -35,10 +37,20 @@ export const sourceAnalysis = workflow
   })
   .handler(async (step, a): Promise<null> => {
     try {
+      if (a.route === "ordered_prepare") {
+        const prepared = await step.runAction(
+          internal.orderedMedia.prepare,
+          { id: a.id, generation: a.generation },
+          { retry: false, name: "bounded-ordered-preparation-v1" },
+        );
+        if (!prepared.prepared) return null;
+      }
       await step.runAction(
-        (a.route ?? (a.media ? "media" : "text")) === "media"
-          ? internal.media.analyze
-          : internal.integrations.analyze,
+        a.route === "ordered_media" || a.route === "ordered_prepare"
+          ? internal.serviceArtifactInference.analyze
+          : (a.route ?? (a.media ? "media" : "text")) === "media"
+            ? internal.media.analyze
+            : internal.integrations.analyze,
         { id: a.id, generation: a.generation },
         { retry: false, name: "bounded-source-analysis-v1" },
       );

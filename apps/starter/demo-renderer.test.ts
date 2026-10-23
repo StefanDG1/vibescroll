@@ -48,6 +48,42 @@ it("preserves viewer read-only Save restrictions in an actual workspace", () => 
   expect(buttons.every((match) => match[1].includes("disabled"))).toBe(true);
   expect(html).toContain("Viewer access.");
 });
+it.each(["orderedPreparation", "orderedMedia", "serviceIntent"])(
+  "does not offer legacy cloud analysis for an ordered source marked by %s",
+  (field) => {
+    const source = {
+      _id: "synthetic-ordered",
+      kind: "url",
+      state: "saved",
+      generation: 1,
+      title: "Synthetic ordered source",
+      url: "https://www.instagram.com/p/synthetic/",
+      [field]: { state: "pending" },
+    };
+    const html = renderToStaticMarkup(
+      createElement(Console, {
+        initial: {
+          ...initial,
+          aiPreference: {
+            cloudAnalysisEnabled: true,
+            personalAlphaEnabled: false,
+            preferChatGPTPlan: false,
+            hostedStatus: "synthetic",
+            active: true,
+          },
+        },
+        organizationId: "synthetic-workspace",
+        initialView: "source",
+        initialSource: source,
+      }),
+    );
+    expect(html).toContain(
+      "Ordered-media analysis is awaiting its supported route",
+    );
+    expect(html).not.toContain("Analyze in cloud, up to 10 credits");
+    expect(html).not.toContain("Transcribe and analyze video");
+  },
+);
 
 async function renderDemo(params: {
   view?: string;

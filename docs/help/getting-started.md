@@ -24,6 +24,8 @@ An enabled managed route uses VibeScroll credits and explicit limits. A cloud ro
 
 ## Continue setup without starting work
 
+The optional project-builder guide extends your existing saved answers into six chapters: processing, optional GitHub and skills, scrolling, explicit sharing, Instagram export education and optional following. Choosing this guide requires completing its export lesson, not making an export request or importing an archive. You can return to Library at any time. Existing users are not locked out, and completion never turns a waiting task into a cited result. [Learn explicit sharing](/help/share-a-post) or [read the static export lesson](/help/instagram-export-guide).
+
 Your private library's **Continue setup** control remembers the selected route and optional reviews. Choosing a route, reviewing preferences or pasting a local prerequisite report starts no analysis and grants no startup permission. A local report is your supplied metadata, not an independently verified installation. Pairing, account access, an available worker and a cited sample are separate steps.
 
 You can keep saving while a processing route is unavailable. New direct-source, public-community and installer features may still be release-gated. [Open-source setup](/open-source) distinguishes source preparation from available signed downloads; local package tests alone do not establish a released installer.

@@ -51,6 +51,15 @@ export default async function Collection({
                   </Link>
                 </h2>
                 <p>{edition.summary}</p>
+                {edition.sourceProvenance === "supplied_text_unverified" && (
+                  <p>
+                    Text with publisher-supplied, untimed references.{" "}
+                    <Link href={`/editions/${edition.slug}`}>
+                      Review the supplied reference and claims
+                    </Link>
+                    .
+                  </p>
+                )}
                 <p>
                   Edition {edition.version}, published by {edition.publisher}
                 </p>

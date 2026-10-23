@@ -13,8 +13,13 @@ export function prepareLocalUrl(options: {
   sourceId: string;
   image: string;
   privateRoot: string;
-  run?: (args: string[], timeout?: number) => Promise<string>;
+  run?: (
+    args: string[],
+    timeout?: number,
+    signal?: AbortSignal,
+  ) => Promise<string>;
   scheduleCleanup?: (directory: string) => Promise<void>;
+  signal?: AbortSignal;
 }): Promise<{
   sourceId: string;
   status: string;

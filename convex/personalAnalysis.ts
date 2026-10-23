@@ -18,11 +18,15 @@ import { releaseUnstarted } from "./personalMediaState";
 import { syncCategories, vocabulary } from "./categories";
 import { acquisitionPolicy } from "../packages/media/acquisition";
 import { workflow } from "./workflows";
+import { subscriptionCapabilitiesValue } from "./localLibrarySchema";
+import { capabilitySnapshot } from "./lib/localTaskAuthority";
+import { safeEffort } from "../packages/runner/subscription-capabilities.mjs";
+import { reusablePersonalPreparation } from "./lib/personalPreparation";
 
 export const personalApprovalFields = {
   deviceId: v.id("devices"),
   model: v.string(),
-  effort: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+  effort: v.string(),
   useOwnPlan: v.boolean(),
   maxComputeCredits: v.optional(v.number()),
 };
@@ -31,10 +35,37 @@ export type PersonalApproval = {
   generation: number;
   deviceId: Id<"devices">;
   model: string;
-  effort: "low" | "medium" | "high";
+  effort: string;
   useOwnPlan: boolean;
   maxComputeCredits?: number;
 };
+
+export function sourceCapabilityCurrent(
+  device: Doc<"devices">,
+  model: string,
+  effort: string,
+  profileBinding: string,
+  needsImage: boolean,
+  capabilityHash?: string,
+) {
+  const snapshot = device.subscriptionCapabilities;
+  if (!snapshot)
+    return !capabilityHash && ["low", "medium", "high"].includes(effort);
+  return (
+    safeEffort(effort) &&
+    snapshot.expiresAt > Date.now() &&
+    snapshot.sessionExpiresAt > Date.now() &&
+    snapshot.profileBinding === profileBinding &&
+    (!capabilityHash || snapshot.hash === capabilityHash) &&
+    snapshot.value.models.some(
+      (entry) =>
+        entry.slug === model &&
+        entry.reasoningEfforts.includes(effort) &&
+        entry.inputModalities.includes("text") &&
+        (!needsImage || entry.inputModalities.includes("image")),
+    )
+  );
+}
 
 async function typedSource(
   ctx: QueryCtx,
@@ -48,9 +79,7 @@ async function typedSource(
     source.analysis?.schemaVersion === "2.0.0" ||
     !!bound?.sourceRevisionId;
   ensure(
-    !source.publicImportId &&
-      source.rightsAttested &&
-      sourceRetained(source.sourceRetentionUntil),
+    !source.publicImportId && source.rightsAttested && sourceRetained(source),
     "SOURCE_UNAVAILABLE",
     "Source rights or retained evidence changed.",
   );
@@ -250,6 +279,11 @@ export async function approvePersonalCore(
     "APPROVAL_STALE",
     "Review the current source state before approving.",
   );
+  ensure(
+    !source.orderedMedia && !source.orderedPreparation && !source.serviceIntent,
+    "POLICY_BLOCKED",
+    "This ordered source needs its reviewed own-subscription route. No legacy video or paid fallback was used.",
+  );
   const registry = await typedSource(ctx, source, null);
   ensure(
     (registry ||
@@ -279,8 +313,23 @@ export async function approvePersonalCore(
   }
   const generation = source.generation + 1;
   const media = source.kind !== "text" && !registry;
+  const reusedPreparation = media
+    ? await reusablePersonalPreparation(ctx, source)
+    : null;
+  const prepareMedia = media && !reusedPreparation;
+  ensure(
+    sourceCapabilityCurrent(
+      device,
+      a.model,
+      a.effort,
+      device.personalProfileBinding!,
+      media,
+    ),
+    "APPROVAL_STALE",
+    "Reconnect your account and select a currently advertised model, effort and input type.",
+  );
   if (source.kind === "url" && !registry) acquisitionPolicy(source.url!);
-  if (media) {
+  if (prepareMedia) {
     const unresolved = await ctx.db
       .query("reservations")
       .withIndex("by_org", (q) => q.eq("organizationId", source.organizationId))
@@ -328,9 +377,9 @@ export async function approvePersonalCore(
   );
   await ctx.db.patch(source._id, {
     generation,
-    state: media ? "processing" : "queued",
+    state: prepareMedia ? "processing" : "queued",
     managedAnalysisActor: undefined,
-    personalMedia: undefined,
+    personalMedia: reusedPreparation ?? undefined,
     error: undefined,
     personalAnalysis: {
       deviceId: device._id,
@@ -345,17 +394,20 @@ export async function approvePersonalCore(
           }
         : {}),
       effort: a.effort,
-      state: media ? "preparing" : "queued",
+      ...(device.subscriptionCapabilities
+        ? { capabilityHash: device.subscriptionCapabilities.hash }
+        : {}),
+      state: prepareMedia ? "preparing" : "queued",
       approvedAt: Date.now(),
       expiresAt: Date.now() + 900000,
       leaseUntil: 0,
       deadline: 0,
-      stage: media ? "preparing" : "analyzing",
+      stage: prepareMedia ? "preparing" : "analyzing",
     },
     updatedAt: Date.now(),
   });
   if (registry) await ctx.db.patch(registry.id, { generation });
-  if (media)
+  if (prepareMedia)
     await workflow.start(
       ctx,
       internal.workflows.personalPreparation,
@@ -366,7 +418,7 @@ export async function approvePersonalCore(
         startAsync: true,
       },
     );
-  if (media)
+  if (prepareMedia)
     await ctx.scheduler.runAfter(900000, internal.personalMediaState.expire, {
       id: source._id,
       generation,
@@ -449,6 +501,8 @@ export const dispatch = internalMutation({
       v.array(v.object({ slug: v.string(), displayName: v.string() })),
     ),
     profileBinding: v.optional(v.string()),
+    capabilities: v.optional(subscriptionCapabilitiesValue),
+    sessionExpiresAt: v.optional(v.number()),
     id: v.optional(v.id("sources")),
     generation: v.optional(v.number()),
     output: v.optional(v.any()),
@@ -479,12 +533,33 @@ export const dispatch = internalMutation({
         "INVALID_INPUT",
         "Invalid model catalogue.",
       );
+      if (a.capabilities) {
+        ensure(
+          a.capabilities.models.length === a.models!.length &&
+            a.capabilities.models.every((entry) =>
+              a.models!.some((model) => model.slug === entry.slug),
+            ),
+          "INVALID_INPUT",
+          "The announced model catalogue changed.",
+        );
+        await capabilitySnapshot(
+          ctx,
+          device,
+          a.capabilities,
+          a.profileBinding!,
+          a.sessionExpiresAt!,
+        );
+      }
       await ctx.db.patch(device._id, {
         personalModels: a.models,
         personalProfileBinding: a.profileBinding,
         personalSeenAt: now,
       });
-      return { online: true, workspaceId: device.organizationId };
+      return {
+        online: true,
+        workspaceId: device.organizationId,
+        ...(a.capabilities ? { capabilityProtocolVersion: "1.0.0" } : {}),
+      };
     }
     await ctx.db.patch(device._id, { personalSeenAt: now });
     if (a.operation === "poll") {
@@ -540,6 +615,14 @@ export const dispatch = internalMutation({
           job.actor !== device.owner ||
           job.profileBinding !== device.personalProfileBinding ||
           source.organizationId !== device.organizationId ||
+          !sourceCapabilityCurrent(
+            device,
+            job.model,
+            job.effort,
+            job.profileBinding,
+            !!source.personalMedia?.frames?.length,
+            job.capabilityHash,
+          ) ||
           !device.personalModels?.some((m) => m.slug === job.model)
         ) {
           await ctx.db.patch(source._id, {
@@ -581,6 +664,9 @@ export const dispatch = internalMutation({
             model: job.model,
             effort: job.effort,
             profileBinding: job.profileBinding,
+            ...(job.capabilityHash
+              ? { capabilityHash: job.capabilityHash }
+              : {}),
             ...(registry
               ? { sourceRevisionRegistry: registry }
               : { text: source.text }),
@@ -638,6 +724,25 @@ export const dispatch = internalMutation({
       await ctx.db.patch(device._id, { activePersonalSource: undefined });
       return { stopped: true };
     }
+    let currentDevice = device;
+    if (
+      a.operation === "heartbeat" &&
+      a.capabilities &&
+      job?.capabilityHash &&
+      job.deviceId === device._id &&
+      job.generation === a.generation &&
+      job.profileBinding === device.personalProfileBinding &&
+      device.subscriptionCapabilities
+    ) {
+      const snapshot = await capabilitySnapshot(
+        ctx,
+        device,
+        a.capabilities,
+        job.profileBinding,
+        device.subscriptionCapabilities.sessionExpiresAt,
+      );
+      currentDevice = { ...device, subscriptionCapabilities: snapshot };
+    }
     ensure(
       source &&
         source.organizationId === device.organizationId &&
@@ -646,6 +751,14 @@ export const dispatch = internalMutation({
         job?.deviceId === device._id &&
         job.actor === device.owner &&
         job.profileBinding === device.personalProfileBinding &&
+        sourceCapabilityCurrent(
+          currentDevice,
+          job.model,
+          job.effort,
+          job.profileBinding,
+          !!source.personalMedia?.frames?.length,
+          job.capabilityHash,
+        ) &&
         device.personalModels?.some((entry) => entry.slug === job.model) &&
         job.state === "running" &&
         source.generation === a.generation &&
@@ -895,6 +1008,8 @@ export const mediaLease = internalQuery({
     ensure(
       device.activePersonalSource === a.id &&
         source?.organizationId === device.organizationId &&
+        source.rightsAttested &&
+        sourceRetained(source) &&
         source.generation === a.generation &&
         source.state === "processing" &&
         job?.deviceId === device._id &&
@@ -927,6 +1042,12 @@ export const mediaLease = internalQuery({
         "Private media expired or changed.",
       );
     }
-    return source.personalMedia;
+    return {
+      ...source.personalMedia,
+      sourceAuthority: {
+        sourceRetentionUntil: source.sourceRetentionUntil,
+        creatorRights: source.creatorRights,
+      },
+    };
   },
 });

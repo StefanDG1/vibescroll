@@ -2,6 +2,7 @@ import { storageUsage, insertAsset, deleteAsset } from "./lib/storageUsage";
 import { query } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
+import { sourceRetained } from "./lib/sourceAuthority";
 import { access, limit, fail, writeAccess } from "./lib";
 import { ensure } from "../packages/policy";
 import { internal } from "./_generated/api";
@@ -182,6 +183,7 @@ export const evidence = query({
       if (
         !source ||
         source.organizationId !== asset.organizationId ||
+        !sourceRetained(source) ||
         source.state === "deleted"
       )
         fail("Evidence unavailable.");
@@ -204,6 +206,7 @@ export const registerEvidence = internalMutation({
       !source ||
       source.state === "deleted" ||
       source.generation !== a.generation ||
+      !sourceRetained(source) ||
       (source.managedAnalysisActor && !(await hostedSourceAllowed(ctx, source)))
     ) {
       await queueDeletion(ctx, a.key);
@@ -249,6 +252,7 @@ export const registerEvidence = internalMutation({
     return insertAsset(ctx, {
       organizationId: source.organizationId,
       sourceId: source._id,
+      sourceGeneration: source.generation,
       key: a.key,
       size: a.size,
       etag: a.etag,
@@ -273,7 +277,8 @@ export const registerNormalized = internalMutation({
     if (
       !source ||
       source.state === "deleted" ||
-      source.generation !== a.generation
+      source.generation !== a.generation ||
+      !sourceRetained(source)
     ) {
       await queueDeletion(ctx, a.key);
       return null;
@@ -319,6 +324,7 @@ export const registerNormalized = internalMutation({
     const id = await insertAsset(ctx, {
       organizationId: source.organizationId,
       sourceId: source._id,
+      sourceGeneration: source.generation,
       key: a.key,
       size: a.size,
       etag: a.etag,

@@ -1,6 +1,8 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { sourceType, retrievalState } from "./sourceSchema";
+import { subscriptionCapabilitiesValue } from "./localLibrarySchema";
+import { creatorRightsValue } from "./creatorSchema";
 import {
   revertEvidenceValidator,
   revertStatusValidator,
@@ -236,6 +238,7 @@ export const productTables = {
     ...tenant,
     key: v.string(),
     sourceId: v.optional(v.id("sources")),
+    sourceGeneration: v.optional(v.number()),
     size: v.number(),
     type: v.string(),
     state: v.string(),
@@ -251,10 +254,17 @@ export const productTables = {
     ...tenant,
     sourceType: v.optional(sourceType),
     currentRevisionId: v.optional(v.id("sourceRevisions")),
+    socialIdentity: v.optional(
+      v.object({
+        platform: v.union(v.literal("instagram"), v.literal("tiktok")),
+        postKey: v.string(),
+      }),
+    ),
     retrievalState: v.optional(retrievalState),
     publicImportId: v.optional(v.id("publicImports")),
     analysisPipelineVersion: v.optional(v.string()),
     sourceRetentionUntil: v.optional(v.number()),
+    creatorRights: v.optional(creatorRightsValue),
     typedAnalysisActor: v.optional(v.id("users")),
     localAnalysisReceipt: v.optional(v.any()),
     processingStartedAt: v.optional(v.number()),
@@ -287,6 +297,56 @@ export const productTables = {
       }),
     ),
     personalMedia: v.optional(v.any()),
+    orderedMedia: v.optional(v.any()),
+    orderedPreparation: v.optional(
+      v.object({
+        schemaVersion: v.literal("ordered-preparation-v1"),
+        generation: v.number(),
+        bindingHash: v.string(),
+        language: v.string(),
+        pipelineVersion: v.string(),
+        phase: v.union(
+          v.literal("queued"),
+          v.literal("preparing"),
+          v.literal("prepared"),
+          v.literal("inference"),
+        ),
+        deadline: v.number(),
+        metadata: v.any(),
+        assets: v.any(),
+        computeCreditsPerSecond: v.number(),
+        computeCredits: v.number(),
+        inferenceMicros: v.number(),
+        inputTokens: v.number(),
+        outputTokens: v.number(),
+        usageUnconfirmed: v.boolean(),
+        warnings: v.array(v.string()),
+        omissions: v.array(
+          v.object({
+            id: v.string(),
+            index: v.number(),
+            reason: v.literal("decode_unavailable"),
+          }),
+        ),
+        inferenceDispatchedAt: v.optional(v.number()),
+      }),
+    ),
+    serviceIntent: v.optional(
+      v.object({
+        schemaVersion: v.literal("service-social-v1"),
+        generation: v.number(),
+        pipelineVersion: v.string(),
+        model: v.string(),
+        language: v.string(),
+        route: v.literal("managed_api"),
+        promptHash: v.string(),
+        settingsHash: v.string(),
+        postRevisionHash: v.string(),
+        evidenceHash: v.string(),
+        rightsHash: v.string(),
+        compatibilityKey: v.string(),
+      }),
+    ),
     managedAnalysisActor: v.optional(v.id("users")),
     personalAnalysis: v.optional(
       v.object({
@@ -297,11 +357,8 @@ export const productTables = {
         profileBinding: v.string(),
         sourceRevisionId: v.optional(v.id("sourceRevisions")),
         sourceContentHash: v.optional(v.string()),
-        effort: v.union(
-          v.literal("low"),
-          v.literal("medium"),
-          v.literal("high"),
-        ),
+        effort: v.string(),
+        capabilityHash: v.optional(v.string()),
         state: v.string(),
         approvedAt: v.number(),
         expiresAt: v.number(),
@@ -365,6 +422,11 @@ export const productTables = {
     ])
     .index("by_key", ["organizationId", "key"])
     .index("by_canonical", ["organizationId", "canonical"])
+    .index("by_social_identity", [
+      "organizationId",
+      "socialIdentity.platform",
+      "socialIdentity.postKey",
+    ])
     .searchIndex("source_search", {
       searchField: "searchable",
       filterFields: ["organizationId", "state"],
@@ -508,11 +570,14 @@ export const productTables = {
     planDraftVersion: v.optional(v.number()),
     planDraftKey: v.optional(v.string()),
     planDraftActor: v.optional(v.id("users")),
+    localPlanRunId: v.optional(v.id("localLibraryRuns")),
+    localEvaluationId: v.optional(v.id("knowledgeEvaluations")),
     planHash: v.optional(v.string()),
     version: v.number(),
   })
     .index("by_org", ["organizationId"])
-    .index("by_source", ["sourceId"]),
+    .index("by_source", ["sourceId"])
+    .index("by_local_evaluation", ["localEvaluationId"]),
   runs: defineTable({
     ...tenant,
     automationPolicyId: v.optional(v.id("improvementPolicies")),
@@ -666,6 +731,16 @@ export const productTables = {
     activeRunId: v.optional(v.id("runs")),
     personalModels: v.optional(
       v.array(v.object({ slug: v.string(), displayName: v.string() })),
+    ),
+    subscriptionCapabilities: v.optional(
+      v.object({
+        value: subscriptionCapabilitiesValue,
+        hash: v.string(),
+        revision: v.number(),
+        expiresAt: v.number(),
+        profileBinding: v.string(),
+        sessionExpiresAt: v.number(),
+      }),
     ),
     personalSeenAt: v.optional(v.number()),
     personalProfileBinding: v.optional(v.string()),

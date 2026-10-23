@@ -12,6 +12,7 @@ export function processPersonalJob(
     client: {
       respond: (options: any) => Promise<any>;
       status: () => Promise<any>;
+      capabilities?: () => Promise<SubscriptionCapabilities>;
     };
     request: (operation: string, args: any) => Promise<any>;
     signal?: AbortSignal;

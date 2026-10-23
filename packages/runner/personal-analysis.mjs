@@ -3,7 +3,11 @@ import { createHash } from "node:crypto";
 import schema from "../../contracts/insight.schema.json" with { type: "json" };
 import typedSchema from "../../contracts/source-insight-v2.schema.json" with { type: "json" };
 import { preparePersonalInput } from "./personal-media.mjs";
-import { readSubscriptionCapabilities } from "./subscription-capabilities.mjs";
+import {
+  readSubscriptionCapabilities,
+  safeEffort,
+  assertSubscriptionInput,
+} from "./subscription-capabilities.mjs";
 
 // Production uses only the verified isolated official client, with no HTTP fallback.
 export class OfficialPersonalClient {
@@ -128,7 +132,10 @@ export async function processPersonalJob(
           job.text.length > 60000 ||
           job.coverage !== "caption_only") ||
     !/^[a-zA-Z0-9_.:-]{1,100}$/.test(job.model ?? "") ||
-    !["low", "medium", "high"].includes(job.effort) ||
+    !safeEffort(job.effort) ||
+    (!job.capabilityHash && !["low", "medium", "high"].includes(job.effort)) ||
+    (job.capabilityHash !== undefined &&
+      !/^[a-f0-9]{64}$/.test(job.capabilityHash)) ||
     !Number.isFinite(job.deadline) ||
     job.deadline <= Date.now() ||
     job.deadline > Date.now() + (job.media ? 905000 : 185000)
@@ -151,10 +158,29 @@ export async function processPersonalJob(
   const reference = { id: job.id, generation: job.generation };
   let timer,
     stopped = false,
-    stage = "lease";
+    stage = "lease",
+    capabilityReadAt = 0;
   async function heartbeat() {
     try {
-      const status = await request("heartbeat", reference);
+      let capabilities;
+      if (job.capabilityHash && Date.now() - capabilityReadAt >= 60000) {
+        if (typeof client.capabilities !== "function")
+          throw Error("PERSONAL_CAPABILITIES_UNAVAILABLE");
+        capabilities = await client.capabilities();
+        assertSubscriptionInput(capabilities, job.model, job.effort, {}, []);
+        if (
+          job.media?.frames?.length &&
+          !capabilities.models
+            .find((model) => model.slug === job.model)
+            ?.inputModalities.includes("image")
+        )
+          throw Error("PERSONAL_CAPABILITIES_UNAVAILABLE");
+        capabilityReadAt = Date.now();
+      }
+      const status = await request("heartbeat", {
+        ...reference,
+        ...(capabilities ? { capabilities } : {}),
+      });
       if (status.valid !== true || status.deadline !== job.deadline)
         throw new Error("PERSONAL_LEASE_INVALID");
       if (!stopped) timer = setTimeout(heartbeat, 10000);

@@ -220,6 +220,44 @@ it("publishes only source-level typed citations with canonical lines and no priv
   expect(Object.keys(own.editions[0].payload)).toEqual(["title"]);
   expect(JSON.stringify(own)).not.toContain("Reviewed supported claim");
 });
+it("refuses supplied reference overrides on direct acquisition and preserves honest typed fallback provenance", async () => {
+  const url = `https://github.com/example/project/blob/${"b".repeat(40)}/README.md`;
+  const direct = await setup();
+  await expect(
+    direct.owner.mutation(api.publicKnowledge.prepareEdition, {
+      ...direct.prepareArgs,
+      suppliedReference: { url, explicitlyReviewed: true },
+    }),
+  ).rejects.toThrow("INVALID_SUPPLIED_REFERENCE");
+  const supplied = await setup("supplied");
+  const draft = await supplied.owner.mutation(
+    api.publicKnowledge.prepareEdition,
+    {
+      ...supplied.prepareArgs,
+      suppliedReference: { url, explicitlyReviewed: true },
+    },
+  );
+  expect(draft.payload).toMatchObject({
+    sourceUrl: url,
+    sourceProvenance: "supplied_text_unverified",
+    coverage: "source_text",
+  });
+  expect(draft.payload.insights[0].citations[0]).toMatchObject({
+    kind: "supplied_text",
+    url,
+    label: "User-supplied excerpt, not provider-verified",
+  });
+  expect(draft.payload.insights[0].citations[0].label).not.toContain("seconds");
+  await supplied.publish(draft);
+  expect(
+    await supplied.t.query(api.publicKnowledge.readEdition, {
+      slug: supplied.prepareArgs.slug,
+    }),
+  ).toMatchObject({
+    sourceUrl: url,
+    sourceProvenance: "supplied_text_unverified",
+  });
+});
 const malformed = [
   "hash",
   "revision",
@@ -405,7 +443,8 @@ it("finds the newest compatible public artifact beyond ten historical versions a
       .query("publicImports")
       .withIndex("by_source", (q) => q.eq("sourceId", saved.sourceId))
       .unique();
-    expect((await ctx.db.get(imported!.artifactId))!.editionVersion).toBe(12);
+    const artifact = (await ctx.db.get(imported!.artifactId))!;
+    expect(artifact.origin !== "service" && artifact.editionVersion).toBe(12);
   });
   const exported = await s.owner.query(api.jobs.exportPage, {
     organizationId: s.organizationId,

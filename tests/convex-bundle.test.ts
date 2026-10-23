@@ -67,6 +67,8 @@ it("bundles the installed Convex app, schemas and every discovered component wit
     },
     windowsHide: true,
     maxBuffer: 1024 * 1024,
+  }).catch((error) => {
+    throw new Error(`${error.message}\n${error.stderr ?? ""}`);
   });
   const result = JSON.parse(stdout.trim());
   expect(result).toMatchObject({ bundled: true });

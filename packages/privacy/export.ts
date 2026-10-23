@@ -7,6 +7,8 @@ export const contentExportSections = [
   "subscriptionTrials",
   "localLibraryRuns",
   "localSourceImports",
+  "creatorSubscriptions",
+  "creatorDeliveries",
   "sources",
   "proposals",
   "feedback",
@@ -36,6 +38,7 @@ export type ContentExportSection = (typeof contentExportSections)[number];
 
 const privateFields = new Set([
   "objectKey",
+  "orderedPreparation",
   "ciphertext",
   "signedUrl",
   "uploadUrl",
@@ -49,6 +52,11 @@ const privateFields = new Set([
   "profileDraftActor",
   "inspected",
   "lease",
+  "leaseToken",
+  "inspectionManifest",
+  "profileBinding",
+  "capabilityHash",
+  "approvalHash",
   "credentialHash",
   "codeHash",
 ]);
@@ -92,6 +100,12 @@ export function exportRecord(
           .filter(
             ([key]) =>
               !privateFields.has(key) &&
+              !(
+                section === "localLibraryRuns" &&
+                ["deviceId", "leaseGeneration", "leaseUntil", "key"].includes(
+                  key,
+                )
+              ) &&
               !(root && section === "publicReports" && key === "key") &&
               !(
                 root &&

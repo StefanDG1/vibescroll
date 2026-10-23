@@ -46,6 +46,45 @@ it("supplies provider-required types throughout the real structured insight sche
   expect(idleDelay(0)).toBe(30000);
   expect(idleDelay(20)).toBe(300000);
 });
+
+it("passes deadline and controller cancellation through the actual local preparation seam", async () => {
+  const abort = new AbortController();
+  const client = {
+    session: { profileBinding: "a".repeat(64) },
+    structured: vi.fn(),
+  };
+  const request = vi.fn();
+  const prepare = vi.fn(async (options: any) => {
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+    expect(options.signal.aborted).toBe(false);
+    abort.abort(new Error("CONTROLLER_STOPPED"));
+    expect(options.signal.aborted).toBe(true);
+    options.signal.throwIfAborted();
+    return { status: "prepared", directory: "unused" };
+  });
+  await expect(
+    processAssistantJob(
+      {
+        profileBinding: client.session.profileBinding,
+        expiresAt: Date.now() + 10000,
+        extract: true,
+        runId: "run",
+        sourceId: "source",
+        url: "https://youtube.com/watch?v=abcdefghijk",
+      },
+      {
+        client,
+        request,
+        config: { mediaImage: "synthetic" },
+        prepare,
+        signal: abort.signal,
+      },
+    ),
+  ).rejects.toThrow("CONTROLLER_STOPPED");
+  expect(prepare).toHaveBeenCalledOnce();
+  expect(client.structured).not.toHaveBeenCalled();
+  expect(request).not.toHaveBeenCalled();
+});
 it("processes an isolated prepared frame into a cited zero-credit import and never evaluates projects by default", async () => {
   const directory = await mkdtemp(join(tmpdir(), "vibescroll-assistant-test-"));
   try {

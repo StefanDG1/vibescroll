@@ -9,7 +9,7 @@ export const inferencePayload = z.strictObject({
         z.strictObject({ text: z.string().max(200000) }),
         z.strictObject({
           inlineData: z.strictObject({
-            mimeType: z.enum(["image/jpeg", "audio/mpeg"]),
+            mimeType: z.enum(["image/jpeg", "audio/mpeg", "audio/wav"]),
             data: z
               .string()
               .min(4)

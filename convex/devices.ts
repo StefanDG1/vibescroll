@@ -23,6 +23,8 @@ export const list = query({
           d.state === "paired" &&
           (d.personalSeenAt ?? 0) > Date.now() - 60000,
         personalModels: d.owner === actor._id ? d.personalModels : undefined,
+        subscriptionCapabilities:
+          d.owner === actor._id ? d.subscriptionCapabilities : undefined,
       }),
     );
   },
@@ -110,6 +112,7 @@ export const revoke = mutation({
       personalModels: undefined,
       personalSeenAt: undefined,
       personalProfileBinding: undefined,
+      subscriptionCapabilities: undefined,
     });
     for (const state of ["preparing", "queued", "running"]) {
       const sources = await ctx.db

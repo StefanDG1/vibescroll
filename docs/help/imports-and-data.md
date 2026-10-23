@@ -2,6 +2,8 @@
 
 A saved-link export is an inventory. It does not contain permission to retrieve every source or a completed analysis.
 
+If you need an Instagram export, [read the complete lesson](/help/instagram-export-guide). The new setup guide records education separately from a self-reported request and an actual import. You can finish the lesson without an Instagram account or file, and return when a real download is available. Never upload the complete archive into ChatGPT as the tutorial's import mechanism.
+
 ## Before you start
 
 Use an export you are allowed to process and a role that permits import. Keep the archive private. Start with a small preview before requesting any batch processing.

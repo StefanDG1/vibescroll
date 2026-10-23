@@ -6,9 +6,20 @@ import type {
   SetupAction,
 } from "../../../packages/onboarding/companion-setup";
 import type { pairingConfiguration } from "../../../packages/onboarding/pairing-configuration";
+import type {
+  ProjectBuilderJourney,
+  SkillRecommendation,
+} from "../../../packages/onboarding/project-builder-journey";
+import { journeyStateSchema } from "../../../packages/onboarding/project-builder-journey";
 type Progress = {
   version: number;
   snapshot: SetupSnapshot;
+  journey?: ProjectBuilderJourney | null;
+  skillRecommendations?: {
+    status: "ready" | "unavailable" | "needs_context";
+    recommendations: readonly SkillRecommendation[];
+    explanation: string;
+  };
   pairingConfiguration?: ReturnType<typeof pairingConfiguration>;
   localPreflight?: {
     readyToConnect?: boolean;
@@ -24,12 +35,18 @@ export function SetupJourney({
   onNavigate,
   onSave,
   disabled = false,
+  skillRecommendations,
+  skillRecommendationStatus,
+  followingAvailable = false,
 }: {
   organizationId: string;
   call: (operation: string, args: any) => Promise<any>;
   onNavigate: (view: string) => void;
   onSave: () => void;
   disabled?: boolean;
+  skillRecommendations?: readonly SkillRecommendation[];
+  skillRecommendationStatus?: "ready" | "unavailable" | "needs_context";
+  followingAvailable?: boolean;
 }) {
   const [loaded, setLoaded] = useState<{
     organizationId: string;
@@ -48,7 +65,11 @@ export function SetupJourney({
       throw Error(
         "Setup progress is unavailable. Check your current workspace access.",
       );
-    setLoaded({ organizationId, value: result });
+    setLoaded((current) =>
+      current?.organizationId === organizationId
+        ? { organizationId, value: result }
+        : current,
+    );
   }
   async function save(changes: Record<string, unknown>) {
     if (!progress || disabled || saving) return false;
@@ -64,7 +85,25 @@ export function SetupJourney({
         throw Error(
           "The setup change was not confirmed. Reload current progress before retrying.",
         );
-      await reload();
+      if (
+        changes.journeyAction !== undefined &&
+        Object.keys(changes).length === 1 &&
+        result.journey &&
+        result.version === progress.version + 1
+      ) {
+        const journey = journeyStateSchema.parse(result.journey);
+        // Confirmed metadata only, never an optimistic readiness update. Ignore
+        // late replies after workspace/version changes and avoid a broad read.
+        setLoaded((current) =>
+          current?.organizationId === organizationId &&
+          current.value?.version === progress.version
+            ? {
+                organizationId,
+                value: { ...current.value, version: result.version, journey },
+              }
+            : current,
+        );
+      } else await reload();
       return true;
     } catch (failure) {
       setError(
@@ -72,6 +111,14 @@ export function SetupJourney({
           ? failure.message
           : "Setup could not be saved. Review current progress.",
       );
+      if (changes.journeyAction !== undefined) {
+        // Reconcile a stale/failed metadata save once; never retry the mutation.
+        try {
+          await reload();
+        } catch {
+          /* Keep the original actionable error. */
+        }
+      }
       return false;
     } finally {
       setSaving(false);
@@ -79,6 +126,7 @@ export function SetupJourney({
   }
   useEffect(() => {
     let active = true;
+    setLoaded({ organizationId, value: null });
     call("setupJourney", { organizationId })
       .then((value) => {
         if (active) setLoaded({ organizationId, value });
@@ -128,7 +176,16 @@ export function SetupJourney({
     );
   }
   return (
-    <details className="panel" open={!progress?.snapshot.sampleCited}>
+    <details
+      className="panel"
+      open={
+        !progress?.snapshot.sampleCited ||
+        Boolean(
+          progress.journey &&
+          (!progress.journey.finishedAt || progress.journey.chapter !== 5),
+        )
+      }
+    >
       <summary>Continue setup</summary>
       <p>
         Use the browser to save, review and approve work. The own-plan route
@@ -161,11 +218,60 @@ export function SetupJourney({
           Availability still requires the task's current checks and approval.
         </p>
       )}
+      {progress && !progress.journey && (
+        <section
+          className="form-grid"
+          aria-label="Optional project-builder guide"
+        >
+          <h3>Build your source-to-project workflow</h3>
+          <p>
+            Review processing, optional GitHub and skills, sharing and the
+            Instagram export lesson in six saved chapters. The lesson is
+            required only if you choose this new guide; existing Library access
+            and optional imports stay available.
+          </p>
+          <button
+            type="button"
+            className="secondary"
+            disabled={disabled || saving || !progress.snapshot.purposeSaved}
+            onClick={() => void save({ journeyAction: { type: "start" } })}
+          >
+            Start project-builder guide
+          </button>
+          {!progress.snapshot.purposeSaved && (
+            <p>
+              Save your library purpose first so the guide can extend your
+              existing setup.
+            </p>
+          )}
+        </section>
+      )}
       {progress && (
         <CompanionSetup
           snapshot={progress.snapshot}
           onAction={act}
           disabled={disabled || saving}
+          journey={progress.journey}
+          onJourneyAction={async (action) => {
+            if (!(await save({ journeyAction: action })))
+              throw Error("Journey save not confirmed");
+          }}
+          onJourneyNavigate={(view) => {
+            if (view === "home") void act("purpose");
+            else onNavigate(view);
+          }}
+          onJourneySave={onSave}
+          skillRecommendations={
+            skillRecommendations ??
+            progress.skillRecommendations?.recommendations
+          }
+          skillRecommendationStatus={
+            skillRecommendationStatus ?? progress.skillRecommendations?.status
+          }
+          skillRecommendationExplanation={
+            progress.skillRecommendations?.explanation
+          }
+          followingAvailable={followingAvailable}
         />
       )}
       {routeReview && progress && (

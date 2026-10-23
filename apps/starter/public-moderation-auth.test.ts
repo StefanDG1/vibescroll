@@ -80,6 +80,35 @@ it("denies anonymous and cross-origin moderation API access before backend dispa
 it.each([
   ["publicModerationReports", {}, "publicKnowledge:reports", "query"],
   [
+    "publicModerationBlocks",
+    { cursor: null },
+    "publicKnowledge:moderationBlocks",
+    "query",
+  ],
+  [
+    "publicReleaseModerationBlock",
+    {
+      id: "block-1",
+      expectedVersion: 2,
+      note: "Reviewed evidence",
+      explicitlyApproved: true,
+    },
+    "publicKnowledge:releaseModerationBlock",
+    "mutation",
+  ],
+  [
+    "publicRepairLegacyModeration",
+    {
+      editionId: "edition-1",
+      expectedEditionVersion: 2,
+      canonicalHash: "a".repeat(64),
+      note: "Recovered identity",
+      explicitlyApproved: true,
+    },
+    "publicKnowledge:repairLegacyModeration",
+    "mutation",
+  ],
+  [
     "publicModerationInspect",
     { id: "report-1" },
     "publicKnowledge:inspectReport",

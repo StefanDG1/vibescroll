@@ -133,6 +133,8 @@ it("serves both existing queues serially and alternates busy routes without clai
       { slug: "alternative", displayName: "alternative" },
     ],
     profileBinding: binding,
+    capabilities: caps(),
+    sessionExpiresAt: h.official.session.expiresAt,
   });
 });
 it("rejects concurrent coordinator ownership while a processor is pending", async () => {
@@ -158,6 +160,44 @@ it("rejects concurrent coordinator ownership while a processor is pending", asyn
   finish();
   await first;
 });
+it("dispatches versioned tasks with their approved model and halts after uncertain task failure", async () => {
+  const h = harness({
+    processTask: vi.fn(async () => {
+      throw Error("TASK_START_UNKNOWN");
+    }),
+  });
+  h.official.capabilities.mockResolvedValue(
+    caps([advertised("task-only", ["xhigh"], ["text"])]),
+  );
+  h.requestAssistant.mockImplementation(async (operation: string) =>
+    operation === "hello"
+      ? { workspaceId: "workspace", taskProtocolVersion: "1.0.0" }
+      : operation === "claim"
+        ? {
+            job: {
+              ...ajob(),
+              taskProtocolVersion: "1.0.0",
+              workload: "plan_draft",
+              model: "task-only",
+              effort: "xhigh",
+              leaseGeneration: 2,
+              leaseToken: "opaque",
+            },
+          }
+        : { stopped: true },
+  );
+  await expect(h.coordinator.step()).rejects.toThrow("TASK_START_UNKNOWN");
+  expect(h.processTask).toHaveBeenCalledOnce();
+  expect(h.processAssistant).not.toHaveBeenCalled();
+  expect(h.requestAssistant).toHaveBeenCalledWith("task_fail", {
+    runId: "run",
+    leaseGeneration: 2,
+    leaseToken: "opaque",
+  });
+  const count = h.requestAssistant.mock.calls.length;
+  await expect(h.coordinator.step()).rejects.toThrow("COORDINATOR_HALTED");
+  expect(h.requestAssistant.mock.calls).toHaveLength(count);
+});
 it("polls each idle route at most once per step with a bounded 30 second idle delay", async () => {
   const h = harness();
   expect(await h.coordinator.step()).toEqual({ worked: false, delayMs: 30000 });
@@ -173,7 +213,7 @@ it("polls each idle route at most once per step with a bounded 30 second idle de
   expect(h.calls).toContain("personal:poll");
   expect(h.calls).toContain("assistant:claim");
 });
-it("keeps personal alternatives running without advertising unsupported Sol/medium or xhigh-only legacy models", async () => {
+it("announces actual personal capabilities without advertising unsupported legacy Sol/medium", async () => {
   const h = harness();
   h.official.capabilities.mockResolvedValue(
     caps([
@@ -183,12 +223,25 @@ it("keeps personal alternatives running without advertising unsupported Sol/medi
   );
   h.jobs(pjob(), ajob());
   await h.coordinator.step();
-  expect(h.requestAssistant).not.toHaveBeenCalled();
+  expect(
+    h.requestAssistant.mock.calls.some(
+      ([operation]: any) => operation === "claim",
+    ),
+  ).toBe(false);
+  expect(h.requestAssistant.mock.calls[0][1]).not.toHaveProperty("model");
   expect(h.requestPersonal.mock.calls[0]).toEqual([
     "hello",
     {
-      models: [{ slug: "alternative", displayName: "alternative" }],
+      models: [
+        { slug: "alternative", displayName: "alternative" },
+        { slug: "xhigh-only", displayName: "xhigh-only" },
+      ],
       profileBinding: binding,
+      capabilities: caps([
+        advertised("alternative", ["high"], ["text"]),
+        advertised("xhigh-only", ["xhigh"]),
+      ]),
+      sessionExpiresAt: h.official.session.expiresAt,
     },
   ]);
   expect(h.processPersonal).toHaveBeenCalledOnce();

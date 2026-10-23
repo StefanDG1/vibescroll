@@ -14,6 +14,7 @@ import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { retainedSourceRevision } from "./lib/sourceAuthority";
 import { sourcePolicyCurrent } from "./lib/sourcePolicy";
+import { sharedTypedCitations } from "./lib/sourceCitations";
 import { organizeTopicAutomatically } from "./lib/topicHierarchy";
 import {
   assertReferences,
@@ -99,14 +100,20 @@ export async function referencesCurrent(
       !s ||
       s.organizationId !== organizationId ||
       s.state !== "ready" ||
-      !sourceRetained(s.sourceRetentionUntil) ||
+      !sourceRetained(s) ||
       !s.rightsAttested ||
       s.generation !== r.generation ||
       s.updatedAt !== r.revision ||
       !s.analysis?.insights?.some((i: any) => i.id === r.insightId)
     )
       return false;
-    if (
+    if (s.orderedMedia || s.analysis?.schemaVersion === "3.0.0") {
+      try {
+        if (!(await sharedTypedCitations(ctx, s))) return false;
+      } catch {
+        return false;
+      }
+    } else if (
       s.currentRevisionId ||
       ["github_repository", "reddit_thread"].includes(s.sourceType ?? "") ||
       s.analysis?.schemaVersion === "2.0.0"
@@ -245,9 +252,7 @@ export async function syncKnowledge(
     .collect();
   const touched = new Set<Id<"knowledgeTopics">>();
   const points =
-    source.state === "ready" &&
-    source.rightsAttested &&
-    sourceRetained(source.sourceRetentionUntil)
+    source.state === "ready" && source.rightsAttested && sourceRetained(source)
       ? (source.analysis?.insights ?? [])
           .filter((i: any) => typeof i.id === "string")
           .slice(0, 20)

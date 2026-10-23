@@ -425,9 +425,20 @@ export class JobSandbox {
         "Artifact ownership could not be established.",
       );
     },
-    read: async (path: string, options?: { format: "bytes" }): Promise<any> => {
+    read: async (
+      path: string,
+      options?: { format?: "bytes"; maxBytes?: number },
+    ): Promise<any> => {
       pathInJob(path);
-      const limit = options?.format === "bytes" ? 19500000 : 20000;
+      const limit =
+        options?.maxBytes ?? (options?.format === "bytes" ? 19500000 : 20000);
+      ensure(
+        Number.isSafeInteger(limit) &&
+          limit > 0 &&
+          limit <= (options?.format === "bytes" ? 19500000 : 100000),
+        "INVALID_MEDIA_MANIFEST",
+        "Artifact read exceeded the bounded format allowance.",
+      );
       // Descriptor-relative O_NOFOLLOW reads reject raced symlinks, hardlinks,
       // nonregular files and anything owned by a privileged broker.
       const result = await this.sdk.runCommand({

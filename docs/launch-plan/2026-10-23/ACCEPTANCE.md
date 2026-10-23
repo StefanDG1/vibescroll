@@ -2,6 +2,23 @@
 
 Status: October 23 audit and local implementation checkpoint. Read the [complete plan](README.md) and original [dated evidence](../2026-10-22/ACCEPTANCE.md). Existing 915 local passes and three hosted skips remain dated evidence. The integrated application tree committed as `58df6ec` passed 1,001 local tests with three hosted skips, lint, types and both builds. [The receipt](../../operations/evidence/launch-20261023-local-completion.json) preserves earlier failures, the unchanged formatting baseline and blocked native browser review. No creator/storyboard addition was implemented or tested.
 
+## Subsequent authorized integration
+
+The owner subsequently authorized N0-N7 under ADR 119. The preceding paragraph and audit tables below preserve the earlier checkpoint; they do not describe the newer candidate. The following table records the current local work. None of these new changes is attributed to the serving production version. Final integrated checks, review and exact-head CI remain required before release.
+
+| Scope               | Implemented and exercised locally in this stage                                                                                                                             | Still required                                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| R2 and N2 authority | Durable moderator restrictions, exact supplied-reference provenance, service artifact compatibility, private imports/overlays and real managed workflow/settlement fixtures | Authorized actual publication/save lifecycle, funded service activation and live deletion evidence                                |
+| R3-R5               | Server capabilities, model/effort approval, existing queue serialization, selected-project evaluation, proposals, plan drafts and explicit persisted task resume            | Complete eligible-user provider activation and real source/project/plan production journey                                        |
+| N0                  | Dated primary provider evidence and pure candidate metadata normalizer                                                                                                      | Supplier selection, permission evidence, complete cost bound and actual permitted cohort                                          |
+| N1                  | Ordered identities, actual image/mixed-video decoder, hash-bound observations and strict schema 3 citations                                                                 | Complete acquisition and both actual processing entry points, current isolated image acceptance and real permitted source results |
+| N3                  | Private subscriptions, shared watch coordination, bounded delivery/backfill, current rights/read fences and paginated cleanup                                               | Reviewed operational transport, daily live completeness/cost evidence and physical deletion acceptance                            |
+| N4                  | Existing own-subscription project tasks and guarded managed neutral artifact producer                                                                                       | Complete ordered local processing, recurring workload authority and both route/race production checks                             |
+| N5-N7               | Persisted chapters, verified skill candidates, mandatory export education, sharing fallback, private following/digest and mobile layout/keyboard fixture checks             | Actual host/device sharing, independent users, hidden-tab confirmation and production deployment                                  |
+| R6/R12              | Local preparation cancellation reaches owned workers; CI compiles verified project-scoped media tools and runs real synthetic decoder bytes                                 | Compatible retry reuse, complete maintained runtime preparation and supported distribution acceptance                             |
+
+The [local UI receipt](../../operations/evidence/launch-20261023-authorized-ui.json) distinguishes actual browser interaction with synthetic data from production and human acceptance. The Linux prerequisite smoke compiled the pinned FFmpeg source and exercised six actual decoder cases without skips. A full integration run initially found three URL normalization regressions and one bundle failure during concurrent writes; the focused fifteen-case rerun passed after preserving legacy import/retrieval URLs. Earlier failures remain retained. The integrated pass and final source commit will be recorded separately.
+
 ## New work and newly identified defects
 
 | Requirement                    | Current evidence or defect                                                                                                 | Required completion evidence                                                                                                                                      | State                                                                    |
@@ -50,9 +67,11 @@ Status: October 23 audit and local implementation checkpoint. Read the [complete
 | P14 Both direct source adapters           | R1/R9             | GitHub independently accepted first under the superseding decision; Reddit later after approval, retention/deletion and actual retrieval                                                                        |
 | P15 Existing V1 and operational readiness | R0-R13            | Preserve the complete V1; actual isolation/credential, security, billing/deletion/restore and disaster recovery; current model/budget/login readiness, reviewed integration, rollback and clean pushed checkout |
 
-## Planning-only additions
+<a id="planning-only-additions"></a>
 
-These N0-N7 scenarios reconcile A01-A24 in the supplied creator-following plan. None is an executed acceptance result. Implementation authorization remains pending. Existing R work and the owner's exact seven-insight reuse approval remain valid. Root owns contracts, integration, budget and final review; [the plan](README.md#owners-dependencies-and-review-stages) assigns bounded implementation/review roles and dependencies.
+## Authorized creator and onboarding additions
+
+These N0-N7 scenarios reconcile A01-A24 in the supplied creator-following plan. None is an executed acceptance result. Implementation was authorized October 23 under ADR 119; provider activation and live acceptance remain gated. Existing R work and the owner's exact seven-insight reuse approval remain valid. Root owns contracts, integration, budget and final review; [the plan](README.md#owners-dependencies-and-review-stages) assigns bounded implementation/review roles and dependencies.
 
 | Input ID | Package  | Required evidence after implementation authorization                                                       | Current state                                     |
 | -------- | -------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |

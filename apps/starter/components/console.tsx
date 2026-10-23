@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useEffectEvent } from "react";
+import { useState, useEffect, useRef, useEffectEvent, useId } from "react";
 import { useRouter } from "next/navigation";
 import { usePolling } from "@/lib/use-polling";
 import { AssistantConnections } from "./assistant-connections";
@@ -58,6 +58,9 @@ import { policyRelease } from "../../../packages/policy/publication";
 import { EvidenceViewer } from "./evidence-viewer";
 import { AnalysisReview } from "./analysis-review";
 import { SetupJourney } from "./setup-journey";
+import { CreatorFollowing } from "./creator-following";
+import { CreatorDigest } from "./creator-digest";
+import { OwnPlanTaskControls } from "./own-plan-task-controls";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
 import { TypedSourceEvidence } from "./typed-source-evidence";
 import { PublicKnowledgePanel } from "./public-knowledge-panel";
@@ -312,6 +315,14 @@ export function Console({
   const seenNotifications = useRef(new Set(initial.notifications.map(id)));
   const captureDialog = useRef<HTMLDialogElement>(null);
   const [sharedDraft, setSharedDraft] = useState(initialSharedDraft);
+  const [followingRequested, setFollowingRequested] = useState(false);
+  const followingPanel = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (view === "library" && followingRequested && followingPanel.current) {
+      followingPanel.current.open = true;
+      followingPanel.current.querySelector("summary")?.focus();
+    }
+  }, [view, followingRequested]);
   const [analysisSettingsOpen, setAnalysisSettingsOpen] = useState(false);
   const libraryRequest = useRef(0);
   const libraryAbort = useRef<AbortController | null>(null);
@@ -859,6 +870,22 @@ export function Console({
           "subscriptionTrialList",
           "subscriptionTrialBundle",
           "setupJourney",
+          "saveSetupJourney",
+          "creatorFollowing",
+          "creatorDigest",
+          "creatorFollow",
+          "creatorFollowChange",
+          "creatorSuppress",
+          "creatorPreviewBackfill",
+          "creatorApproveBackfill",
+          "localTaskCapabilities",
+          "localTaskResume",
+          "serviceArtifactPreview",
+          "localTaskQuote",
+          "localTaskStatus",
+          "localTaskApprove",
+          "localTaskCancel",
+          "localTaskReconcile",
           "acquisitionStatus",
           "publicOwn",
           "savedPublicDetail",
@@ -970,6 +997,10 @@ export function Console({
   }, []);
   const interfaceMotion = useInterfaceMotion();
   const go = (v: string) => {
+    if (v === "following") {
+      setFollowingRequested(true);
+      v = "library";
+    } else if (v !== "library") setFollowingRequested(false);
     if (!demo && v === "billing") {
       router.push(`/app/${organizationId}/billing`);
       return;
@@ -1291,6 +1322,16 @@ export function Console({
                   }
                 />
               )}
+              {view === "library" && !demo && data.privateLibrary && (
+                <details className="panel" id="following" ref={followingPanel}>
+                  <summary>Following</summary>
+                  <CreatorFollowing
+                    organizationId={organizationId}
+                    call={strictCall}
+                    disabled={readOnly}
+                  />
+                </details>
+              )}
               {view === "library" && (
                 <>
                   <details
@@ -1378,6 +1419,15 @@ export function Console({
                       call={strictCall}
                       onNavigate={go}
                       onSave={() => void openCapture()}
+                      disabled={readOnly}
+                      followingAvailable
+                    />
+                  )}
+                  {data.privateLibrary && !demo && (
+                    <CreatorDigest
+                      organizationId={organizationId}
+                      call={strictCall}
+                      onOpenSource={findSource}
                       disabled={readOnly}
                     />
                   )}
@@ -1744,6 +1794,7 @@ export function Console({
                   cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
                   call={call}
                   strictCall={strictCall}
+                  onRefresh={refreshData}
                   journey={journey}
                   onProposal={(p: any) => {
                     setSelected(p);
@@ -1969,6 +2020,25 @@ export function Console({
               )}
               {view === "proposal" && selected && (
                 <>
+                  {!demo && selected.review === "accepted" && (
+                    <OwnPlanTaskControls
+                      organizationId={organizationId}
+                      call={strictCall}
+                      proposal={{
+                        id: id(selected),
+                        title: selected.title,
+                        version: selected.version,
+                        review: selected.review,
+                      }}
+                      repositories={data.repositories
+                        .filter((repo) => id(repo) === selected.repositoryId)
+                        .map((repo) => ({ id: id(repo), name: repo.fullName }))}
+                      disabled={readOnly}
+                      onComplete={async () => {
+                        await refreshData();
+                      }}
+                    />
+                  )}
                   <ProposalTrail
                     proposal={selected}
                     runs={data.runs.filter(
@@ -2830,11 +2900,7 @@ function CaptureForm({
     personalEnabled ? "personal" : "cloud",
   );
   const eligible = devices.filter(
-    (d: any) =>
-      d.personalOwned &&
-      d.state === "paired" &&
-      d.personalOnline &&
-      d.personalModels?.length,
+    (d: any) => d.personalOwned && d.state === "paired" && d.personalOnline,
   );
   const [chosenDevice, setChosenDevice] = useState(
     eligible.length === 1 ? id(eligible[0]) : "",
@@ -3494,6 +3560,7 @@ function SourceDetail({
   cloudEnabled,
   call,
   strictCall,
+  onRefresh,
   journey,
   onProposal,
 }: any) {
@@ -3506,6 +3573,9 @@ function SourceDetail({
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const transcript = useRef<HTMLDetailsElement>(null);
   const sourceId = id(source);
+  const orderedSource = Boolean(
+    detail.orderedPreparation || detail.orderedMedia || detail.serviceIntent,
+  );
   const proposalRevision = (source.proposals ?? [])
     .map(
       (proposal: any) =>
@@ -3710,6 +3780,18 @@ function SourceDetail({
           </span>
           <ArrowRight size={20} aria-hidden="true" />
         </a>
+      )}
+      {!demo && detail.state === "ready" && (
+        <OwnPlanTaskControls
+          organizationId={org}
+          call={strictCall}
+          source={{ id: sourceId, title: detail.title }}
+          repositories={repos
+            .filter((repo: any) => repo.enabled && repo.confirmed)
+            .map((repo: any) => ({ id: id(repo), name: repo.fullName }))}
+          disabled={readOnly}
+          onComplete={onRefresh}
+        />
       )}
       {detail.assistantIntake && (
         <AssistantIntakeStatus
@@ -4453,14 +4535,26 @@ function SourceDetail({
             source={detail}
             devices={devices}
             linkAnalysisEnabled={linkAnalysisEnabled}
-            call={call}
+            call={strictCall}
+            readOnly={readOnly || detailLoading}
           />
         )}
         {detail.error && <p role="alert">{detail.error}</p>}
-        {cloudEnabled && detail.state !== "ready" && (
+        {orderedSource && !personalEnabled && detail.state !== "ready" && (
+          <p>
+            Ordered-media analysis is awaiting its supported route. Legacy video
+            and cloud analysis are unavailable for this source.
+          </p>
+        )}
+        {cloudEnabled && !orderedSource && detail.state !== "ready" && (
           <button
             className="primary"
-            disabled={busy || ["queued", "processing"].includes(detail.state)}
+            disabled={
+              readOnly ||
+              detailLoading ||
+              busy ||
+              ["queued", "processing"].includes(detail.state)
+            }
             onClick={() => call("process", { id: id(source), maxCredits: 10 })}
           >
             Analyze in cloud, up to 10 credits
@@ -4487,16 +4581,21 @@ function SourceDetail({
     </>
   );
 }
-function PersonalSourceAnalysis({
+export function PersonalSourceAnalysis({
   source,
   devices,
   call,
   linkAnalysisEnabled,
+  readOnly = false,
 }: any) {
+  const controlId = useId();
   const [deviceId, setDeviceId] = useState(""),
     [model, setModel] = useState(""),
-    [consent, setConsent] = useState(false),
+    [effort, setEffort] = useState(""),
+    [consent, setConsent] = useState(""),
     [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [catalogueTime, setCatalogueTime] = useState(() => Date.now());
   const eligible = devices.filter(
     (d: any) =>
       d.personalOwned &&
@@ -4505,18 +4604,50 @@ function PersonalSourceAnalysis({
       d.personalModels?.length,
   );
   const device = eligible.find((d: any) => id(d) === deviceId);
+  const catalogueExpiry = Math.min(
+    device?.subscriptionCapabilities?.expiresAt ?? 0,
+    device?.subscriptionCapabilities?.sessionExpiresAt ?? 0,
+  );
+  useEffect(() => {
+    if (!catalogueExpiry) return;
+    const timer = setTimeout(
+      () => setCatalogueTime(Date.now()),
+      Math.max(1, catalogueExpiry - Date.now() + 1),
+    );
+    return () => clearTimeout(timer);
+  }, [catalogueExpiry]);
   const typedSource = Boolean(source.currentRevisionId);
+  const orderedSource = Boolean(
+    source.orderedPreparation || source.orderedMedia || source.serviceIntent,
+  );
+  const textSource = source.kind === "text" || typedSource;
+  const currentCatalogue =
+    catalogueExpiry > catalogueTime
+      ? device.subscriptionCapabilities.value
+      : null;
+  const models = currentCatalogue
+    ? currentCatalogue.models.filter(
+        (entry: any) =>
+          entry.inputModalities.includes("text") &&
+          (textSource || entry.inputModalities.includes("image")),
+      )
+    : [];
+  const selectedModel = models.find((item: any) => item.slug === model);
+  const efforts: string[] = selectedModel ? selectedModel.reasoningEfforts : [];
+  const selectionKey = `${id(source)}:${source.generation}:${deviceId}:${model}:${effort}:${device?.subscriptionCapabilities?.hash ?? ""}`;
+  const consented = consent === selectionKey;
+  const locked = readOnly || busy;
   const typedRequired =
     typedSource ||
     ["github_repository", "reddit_thread"].includes(source.sourceType);
-  const textSource = source.kind === "text" || typedSource;
   const running = ["preparing", "queued", "running"].includes(
     source.personalAnalysis?.state,
   );
   return (
     <section aria-label="Personal ChatGPT analysis" className="panel">
       <h3>Use your ChatGPT plan</h3>
-      {running && (
+      {error && <p role="alert">{error}</p>}
+      {running && !orderedSource && (
         <ol
           className="processing-steps"
           aria-label="Analysis progress"
@@ -4574,10 +4705,19 @@ function PersonalSourceAnalysis({
       {running ? (
         <Button
           busy={busy}
+          disabled={readOnly}
           onClick={async () => {
+            if (locked) return;
             setBusy(true);
+            setError("");
             try {
               await call("cancelPersonalAnalysis", { id: id(source) });
+            } catch (failure) {
+              setError(
+                failure instanceof Error
+                  ? failure.message
+                  : "Cancellation was not confirmed. Refresh current status before retrying.",
+              );
             } finally {
               setBusy(false);
             }
@@ -4585,6 +4725,11 @@ function PersonalSourceAnalysis({
         >
           Cancel personal analysis
         </Button>
+      ) : orderedSource ? (
+        <p>
+          Ordered-media analysis is awaiting its supported route. Legacy video
+          and cloud analysis are unavailable for this source.
+        </p>
       ) : typedRequired && !typedSource ? (
         <p>
           Review and acquire the current permitted source evidence above before
@@ -4613,19 +4758,22 @@ function PersonalSourceAnalysis({
             </p>
             {!eligible.length ? (
               <p>
-                Start the personal runner on your paired laptop to see its
-                available models.
+                Start your paired companion and connect your eligible account,
+                then refresh account status to see its advertised models.
               </p>
             ) : (
               <>
-                <label>
+                <label htmlFor={`${controlId}-computer`}>
                   Computer
                   <ChoiceSelect
+                    id={`${controlId}-computer`}
+                    disabled={locked}
                     value={deviceId}
                     onValueChange={(value) => {
                       setDeviceId(value);
                       setModel("");
-                      setConsent(false);
+                      setEffort("");
+                      setConsent("");
                     }}
                   >
                     <option value="">Choose your computer</option>
@@ -4636,19 +4784,41 @@ function PersonalSourceAnalysis({
                     ))}
                   </ChoiceSelect>
                 </label>
-                <label>
+                <label htmlFor={`${controlId}-model`}>
                   Account model
                   <ChoiceSelect
+                    id={`${controlId}-model`}
+                    disabled={locked || !currentCatalogue}
                     value={model}
                     onValueChange={(value) => {
                       setModel(value);
-                      setConsent(false);
+                      setEffort("");
+                      setConsent("");
                     }}
                   >
                     <option value="">Choose an available model</option>
-                    {device?.personalModels.map((m: any) => (
+                    {models.map((m: any) => (
                       <option key={m.slug} value={m.slug}>
                         {m.displayName}
+                      </option>
+                    ))}
+                  </ChoiceSelect>
+                </label>
+                <label htmlFor={`${controlId}-effort`}>
+                  Reasoning effort
+                  <ChoiceSelect
+                    id={`${controlId}-effort`}
+                    disabled={locked || !selectedModel}
+                    value={effort}
+                    onValueChange={(value) => {
+                      setEffort(value);
+                      setConsent("");
+                    }}
+                  >
+                    <option value="">Choose an available effort</option>
+                    {efforts.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
                       </option>
                     ))}
                   </ChoiceSelect>
@@ -4656,34 +4826,62 @@ function PersonalSourceAnalysis({
                 <label className="check-label">
                   <input
                     type="checkbox"
-                    checked={consent}
-                    onChange={(e) => setConsent(e.target.checked)}
+                    checked={consented}
+                    disabled={
+                      locked || !selectedModel || !efforts.includes(effort)
+                    }
+                    onChange={(e) =>
+                      setConsent(e.target.checked ? selectionKey : "")
+                    }
                   />
-                  Use my connected ChatGPT plan for this source with medium
-                  reasoning.
+                  Use my connected ChatGPT plan for this source with the
+                  selected model and reasoning effort.
                 </label>
                 <Button
                   primary
                   busy={busy}
                   disabled={
-                    !consent ||
+                    readOnly ||
+                    !consented ||
                     !device ||
                     !model ||
+                    !efforts.includes(effort) ||
                     ["queued", "processing"].includes(source.state)
                   }
                   onClick={async () => {
+                    if (
+                      locked ||
+                      !consented ||
+                      !device ||
+                      !selectedModel ||
+                      !efforts.includes(effort) ||
+                      catalogueExpiry <= Date.now() ||
+                      orderedSource
+                    ) {
+                      setError(
+                        "Review the current account catalogue, model and effort before approving this source.",
+                      );
+                      return;
+                    }
                     setBusy(true);
+                    setError("");
                     try {
                       await call("approvePersonalAnalysis", {
                         id: id(source),
                         generation: source.generation,
                         deviceId,
                         model,
-                        effort: "medium",
+                        effort,
                         useOwnPlan: true,
                         ...(!textSource ? { maxComputeCredits: 10 } : {}),
                       });
-                      setConsent(false);
+                      setConsent("");
+                    } catch (failure) {
+                      setError(
+                        failure instanceof Error
+                          ? failure.message
+                          : "Analysis approval was not confirmed. Refresh account status before retrying.",
+                      );
                     } finally {
                       setBusy(false);
                     }
@@ -4698,6 +4896,13 @@ function PersonalSourceAnalysis({
                   Reauthentication may be required. There is no automatic model
                   or paid-provider fallback.
                 </p>
+                {!currentCatalogue && (
+                  <p>
+                    Current account choices are unavailable or expired.
+                    Reconnect your eligible account on the paired companion and
+                    refresh status. No model or reasoning effort is assumed.
+                  </p>
+                )}
               </>
             )}
           </>

@@ -600,6 +600,8 @@ test("runtime inventory follows the actual Node graph and materializes only pinn
   for (const path of [
     "scripts/start-subscription-session.mjs",
     "packages/runner/assistant-runner.mjs",
+    "packages/runner/subscription-coordinator.mjs",
+    "packages/plans/contract.mjs",
     "packages/runner/vault.ps1",
     "packages/runner/chatgpt-storage.ps1",
     "packages/media/local_whisper.py",

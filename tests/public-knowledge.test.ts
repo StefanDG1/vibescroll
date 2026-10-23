@@ -3,6 +3,7 @@ import { convexTest, type TestConvex } from "convex-test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
+import { wallet } from "../convex/product";
 
 const modules = import.meta.glob("../convex/**/*.ts");
 type Test = TestConvex<typeof schema>;
@@ -230,8 +231,516 @@ it("returns an anonymous source-level DTO without private content, internal iden
   ])
     expect(dto).not.toHaveProperty(field);
   expect(dto!.insights[0].citations).toEqual([
-    { kind: "user_note", label: "Untimed source evidence", url: null },
+    {
+      kind: "user_note",
+      label: "User-supplied text and reference, not provider-verified",
+      url: null,
+    },
   ]);
+});
+it("keeps moderator restrictions across slugs, recapture, publisher workspaces and workspace administrators", async () => {
+  const s = await setup();
+  const edition = await published(s);
+  const stale = await prepare(s);
+  const imported = await save(s, edition);
+  await s.t.mutation(api.publicKnowledge.report, {
+    slug: edition.slug,
+    key: "durable-moderation-report",
+    reason: "privacy",
+  });
+  const report = (
+    await s.t.run((ctx) => ctx.db.query("publicReports").collect())
+  )[0];
+  vi.stubEnv(
+    "PUBLIC_MODERATOR_SUBJECTS_JSON",
+    JSON.stringify([s.recipient.subject]),
+  );
+  await s.recipient.client.mutation(api.publicKnowledge.moderate, {
+    reportId: report._id,
+    action: "remove",
+  });
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  await s.publisher.client.mutation(api.publicKnowledge.withdrawEdition, {
+    id: edition.id,
+    version: edition.version,
+  });
+  await expect(prepare(s)).rejects.toThrow("PUBLIC_MODERATION_BLOCKED");
+  await expect(
+    s.publisher.client.mutation(api.publicKnowledge.publishEdition, {
+      id: stale.id,
+      version: stale.version,
+      hash: stale.hash,
+      explicitlyApproved: true,
+    }),
+  ).rejects.toThrow("PUBLIC_MODERATION_BLOCKED");
+  expect(
+    await s.t.query(api.publicKnowledge.readEdition, { slug: edition.slug }),
+  ).toBeNull();
+  expect(
+    await s.recipient.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: imported.sourceId,
+    }),
+  ).toMatchObject({ available: false, edition: null });
+  const recaptured = await makeSource(s.t, s.publisher, {
+    canonical: source.canonical,
+  });
+  await expect(prepare(s, recaptured)).rejects.toThrow(
+    "PUBLIC_MODERATION_BLOCKED",
+  );
+  const otherOrg = await s.publisher.client.mutation(api.organizations.create, {
+    name: "Another publisher workspace",
+  });
+  await s.t.run(async (ctx) => {
+    const current = await wallet(ctx, otherOrg);
+    await ctx.db.patch(current._id, { granted: 100 });
+  });
+  const moved = await makeSource(
+    s.t,
+    { ...s.publisher, org: otherOrg },
+    { canonical: source.canonical },
+  );
+  await expect(prepare(s, moved)).rejects.toThrow("PUBLIC_MODERATION_BLOCKED");
+  const admin = await makeActor(s.t, "moderation-admin");
+  await s.t.run((ctx) =>
+    ctx.db.insert("memberships", {
+      organizationId: s.publisher.org,
+      userId: admin.id,
+      role: "admin",
+    }),
+  );
+  const adminSource = await makeSource(
+    s.t,
+    { ...admin, org: s.publisher.org },
+    { canonical: source.canonical },
+  );
+  await expect(
+    prepare({ ...s, publisher: admin }, adminSource),
+  ).rejects.toThrow("PUBLIC_MODERATION_BLOCKED");
+  const unrelated = await makeSource(s.t, s.recipient, {
+    canonical: source.canonical,
+  });
+  await expect(
+    prepare({ ...s, publisher: s.recipient }, unrelated),
+  ).resolves.toHaveProperty("hash");
+});
+it("requires fresh explicit versioned moderator release and never republishes automatically", async () => {
+  const s = await setup(),
+    edition = await published(s);
+  await s.t.mutation(api.publicKnowledge.report, {
+    slug: edition.slug,
+    key: "release-moderation-report",
+    reason: "copyright",
+  });
+  const report = (
+    await s.t.run((ctx) => ctx.db.query("publicReports").collect())
+  )[0];
+  vi.stubEnv(
+    "PUBLIC_MODERATOR_SUBJECTS_JSON",
+    JSON.stringify([s.recipient.subject]),
+  );
+  await s.recipient.client.mutation(api.publicKnowledge.moderate, {
+    reportId: report._id,
+    action: "remove",
+  });
+  const blocks = await s.recipient.client.query(
+    api.publicKnowledge.moderationBlocks,
+    { cursor: null },
+  );
+  const block = blocks.page[0];
+  expect(Object.keys(block).sort()).toEqual(
+    [
+      "_id",
+      "reportId",
+      "reason",
+      "state",
+      "version",
+      "createdAt",
+      "updatedAt",
+    ].sort(),
+  );
+  const release = {
+    id: block._id,
+    expectedVersion: block.version,
+    note: "Rights evidence reviewed; publisher must prepare a fresh edition.",
+    explicitlyApproved: true as const,
+  };
+  await expect(
+    s.publisher.client.mutation(
+      api.publicKnowledge.releaseModerationBlock,
+      release,
+    ),
+  ).rejects.toThrow("FORBIDDEN");
+  await expect(
+    s.t
+      .withIdentity({
+        subject: s.recipient.subject,
+        auth_time: Math.floor(Date.now() / 1000) - 301,
+      })
+      .mutation(api.publicKnowledge.releaseModerationBlock, release),
+  ).rejects.toThrow(/Sign in again/);
+  await expect(
+    s.recipient.client.mutation(api.publicKnowledge.releaseModerationBlock, {
+      ...release,
+      expectedVersion: 0,
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  await expect(
+    s.recipient.client.mutation(api.publicKnowledge.releaseModerationBlock, {
+      ...release,
+      note: "",
+    }),
+  ).rejects.toThrow();
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await expect(
+    s.recipient.client.mutation(
+      api.publicKnowledge.releaseModerationBlock,
+      release,
+    ),
+  ).rejects.toThrow(/Recovery is in progress/);
+  vi.stubEnv("RESTORE_LOCK", "false");
+  await s.recipient.client.mutation(
+    api.publicKnowledge.releaseModerationBlock,
+    release,
+  );
+  expect(
+    await s.t.query(api.publicKnowledge.readEdition, { slug: edition.slug }),
+  ).toBeNull();
+  await expect(
+    s.recipient.client.mutation(
+      api.publicKnowledge.releaseModerationBlock,
+      release,
+    ),
+  ).rejects.toThrow("APPROVAL_STALE");
+  const fresh = await published(s, s.sourceId, { slug: edition.slug });
+  expect(
+    await s.t.query(api.publicKnowledge.readEdition, { slug: fresh.slug }),
+  ).toHaveProperty("version", fresh.version);
+});
+it("normalizes legacy removal with an indexed global barrier and leaves missing identities for explicit repair", async () => {
+  const s = await setup(),
+    edition = await published(s);
+  const otherSource = await makeSource(s.t, s.publisher);
+  const original = (await s.t.run((ctx) => ctx.db.get(otherSource)))!;
+  await s.t.run(async (ctx) => {
+    await ctx.db.patch(edition.id, {
+      state: "removed",
+      removalReason: "privacy",
+    });
+    await ctx.db.insert("publicReports", {
+      organizationId: s.publisher.org,
+      editionId: edition.id,
+      key: "legacy-removed-report",
+      reason: "privacy",
+      state: "removed",
+      reviewedBy: s.recipient.id,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+  await expect(prepare(s, otherSource)).rejects.toThrow(
+    "PUBLIC_MODERATION_BLOCKED",
+  );
+  const normalized = await s.t.mutation(
+    internal.publicKnowledge.normalizeLegacyModeration,
+    {},
+  );
+  expect(normalized).toMatchObject({
+    normalized: 1,
+    done: true,
+    pendingReports: [],
+    pendingEditions: [],
+  });
+  await expect(prepare(s, otherSource)).resolves.toHaveProperty("hash");
+  await expect(prepare(s)).rejects.toThrow("PUBLIC_MODERATION_BLOCKED");
+  const second = await published(s, otherSource);
+  const reportId = await s.t.run(async (ctx) => {
+    await ctx.db.patch(second.id, {
+      state: "removed",
+      removalReason: "privacy",
+    });
+    await ctx.db.delete(otherSource);
+    return ctx.db.insert("publicReports", {
+      organizationId: s.publisher.org,
+      editionId: second.id,
+      key: "missing-identity-report",
+      reason: "privacy",
+      state: "removed",
+      reviewedBy: s.recipient.id,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+  expect(
+    await s.t.mutation(internal.publicKnowledge.normalizeLegacyModeration, {}),
+  ).toMatchObject({ done: false, pendingReports: [reportId] });
+  vi.stubEnv(
+    "PUBLIC_MODERATOR_SUBJECTS_JSON",
+    JSON.stringify([s.recipient.subject]),
+  );
+  const { excerptHash } = await import("../packages/sources/evidence");
+  await s.recipient.client.mutation(
+    api.publicKnowledge.repairLegacyModeration,
+    {
+      editionId: second.id,
+      reportId,
+      expectedEditionVersion: second.version,
+      canonicalHash: await excerptHash(original.canonical),
+      note: "Original canonical identity recovered from retained review evidence.",
+      explicitlyApproved: true,
+    },
+  );
+  expect(
+    await s.t.mutation(internal.publicKnowledge.normalizeLegacyModeration, {}),
+  ).toMatchObject({ done: true });
+});
+it("retains genuine legacy removals before source invalidation or workspace purge without inventing report actors", async () => {
+  for (const cleanup of ["source", "workspace"] as const) {
+    const s = await setup(),
+      edition = await published(s);
+    await s.t.run((ctx) =>
+      ctx.db.patch(edition.id, { state: "removed", removalReason: "privacy" }),
+    );
+    if (cleanup === "source")
+      await s.publisher.client.mutation(api.product.deleteSource, {
+        id: s.sourceId,
+      });
+    else {
+      await s.t.run((ctx) =>
+        ctx.db.patch(s.publisher.org, { status: "deleting" }),
+      );
+      await s.t.mutation(internal.maintenance.purgeOrganization, {
+        organizationId: s.publisher.org,
+      });
+    }
+    const blocks = await s.t.run((ctx) =>
+      ctx.db.query("publicModerationBlocks").collect(),
+    );
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      origin: "legacy_removal",
+      publisher: s.publisher.id,
+      sourceId: s.sourceId,
+      organizationId: s.publisher.org,
+      state: "active",
+      reason: "privacy",
+    });
+    expect(blocks[0]).not.toHaveProperty("moderator");
+    expect(blocks[0]).not.toHaveProperty("reportId");
+  }
+});
+it("preserves legacy restriction identity before restore quarantine overwrites edition metadata", async () => {
+  const s = await setup(),
+    edition = await published(s);
+  const canonical = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.canonical;
+  await s.t.run((ctx) =>
+    ctx.db.patch(edition.id, { state: "removed", removalReason: "privacy" }),
+  );
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.mutation(internal.recovery.quarantinePage, {
+    section: "publicEditions",
+    cursor: null,
+  });
+  const block = (
+    await s.t.run((ctx) => ctx.db.query("publicModerationBlocks").collect())
+  )[0];
+  expect(block).toMatchObject({
+    origin: "legacy_removal",
+    state: "active",
+    reason: "privacy",
+    publisher: s.publisher.id,
+  });
+  await s.t.mutation(internal.recovery.quarantinePage, {
+    section: "publicModerationBlocks",
+    cursor: null,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(block._id))).toEqual(block);
+  await s.t.mutation(internal.recovery.quarantinePage, {
+    section: "sources",
+    cursor: null,
+  });
+  vi.stubEnv("RESTORE_LOCK", "false");
+  expect(
+    await s.t.query(api.publicKnowledge.readEdition, { slug: edition.slug }),
+  ).toBeNull();
+  const fresh = await makeSource(s.t, s.publisher, { canonical });
+  await expect(prepare(s, fresh)).rejects.toThrow("PUBLIC_MODERATION_BLOCKED");
+});
+it("bounds legacy normalization at five reports and keeps authority closed until the remaining row is normalized", async () => {
+  const s = await setup(),
+    edition = await published(s);
+  await s.t.run(async (ctx) => {
+    await ctx.db.patch(edition.id, {
+      state: "removed",
+      removalReason: "privacy",
+    });
+    for (let i = 0; i < 6; i++)
+      await ctx.db.insert("publicReports", {
+        organizationId: s.publisher.org,
+        editionId: edition.id,
+        key: `legacy-many-report-${i}`,
+        reason: "privacy",
+        state: "removed",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+  });
+  expect(
+    await s.t.mutation(internal.publicKnowledge.normalizeLegacyModeration, {}),
+  ).toMatchObject({ normalized: 5, done: false });
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("publicReports")
+        .withIndex("by_state_block", (q) =>
+          q.eq("state", "removed").eq("moderationBlockId", undefined),
+        )
+        .collect(),
+    ),
+  ).toHaveLength(1);
+  expect(
+    await s.t.mutation(internal.publicKnowledge.normalizeLegacyModeration, {}),
+  ).toMatchObject({ normalized: 1, done: true });
+  expect(
+    await s.t.run((ctx) => ctx.db.query("publicModerationBlocks").collect()),
+  ).toHaveLength(1);
+});
+it("refuses destructive legacy cleanup without canonical identity until an explicit moderator repair", async () => {
+  const s = await setup(),
+    edition = await published(s);
+  const { excerptHash } = await import("../packages/sources/evidence");
+  const canonicalHash = await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.sourceId))!;
+    await ctx.db.patch(edition.id, {
+      state: "removed",
+      removalReason: "privacy",
+    });
+    await ctx.db.delete(source._id);
+    await ctx.db.patch(s.publisher.org, { status: "deleting" });
+    return excerptHash(source.canonical);
+  });
+  await expect(
+    s.t.mutation(internal.maintenance.purgeOrganization, {
+      organizationId: s.publisher.org,
+    }),
+  ).rejects.toThrow("MODERATION_REPAIR_REQUIRED");
+  expect(await s.t.run((ctx) => ctx.db.get(edition.id))).not.toBeNull();
+  vi.stubEnv(
+    "PUBLIC_MODERATOR_SUBJECTS_JSON",
+    JSON.stringify([s.recipient.subject]),
+  );
+  await s.recipient.client.mutation(
+    api.publicKnowledge.repairLegacyModeration,
+    {
+      editionId: edition.id,
+      expectedEditionVersion: edition.version,
+      canonicalHash,
+      note: "Recovered original canonical identity from archived moderation metadata.",
+      explicitlyApproved: true,
+    },
+  );
+  await s.t.mutation(internal.maintenance.purgeOrganization, {
+    organizationId: s.publisher.org,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(edition.id))).toBeNull();
+  const blocks = await s.t.run((ctx) =>
+    ctx.db.query("publicModerationBlocks").collect(),
+  );
+  expect(blocks).toHaveLength(1);
+  expect(blocks[0].canonicalHash).toBe(canonicalHash);
+});
+it("preserves minimal restrictions through source and organization content purge", async () => {
+  const s = await setup(),
+    edition = await published(s);
+  await s.t.mutation(api.publicKnowledge.report, {
+    slug: edition.slug,
+    key: "purge-moderation-report",
+    reason: "privacy",
+  });
+  const report = (
+    await s.t.run((ctx) => ctx.db.query("publicReports").collect())
+  )[0];
+  vi.stubEnv(
+    "PUBLIC_MODERATOR_SUBJECTS_JSON",
+    JSON.stringify([s.recipient.subject]),
+  );
+  await s.recipient.client.mutation(api.publicKnowledge.moderate, {
+    reportId: report._id,
+    action: "remove",
+  });
+  const before = (
+    await s.t.run((ctx) => ctx.db.query("publicModerationBlocks").collect())
+  )[0];
+  await s.publisher.client.mutation(api.product.deleteSource, {
+    id: s.sourceId,
+  });
+  await s.t.run((ctx) => ctx.db.patch(s.publisher.org, { status: "deleting" }));
+  await s.t.mutation(internal.maintenance.purgeOrganization, {
+    organizationId: s.publisher.org,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(before._id))).toEqual(before);
+  expect(JSON.stringify(before)).not.toContain("PRIVATE RAW");
+  expect(JSON.stringify(before)).not.toContain("https://");
+});
+it("binds an explicitly reviewed pinned supplied reference to the exact text-only preview without retrieval", async () => {
+  const s = await setup();
+  const url = `https://github.com/example/project/blob/${"a".repeat(40)}/README.md`;
+  const preview = await prepare(s, s.sourceId, {
+    suppliedReference: { url, explicitlyReviewed: true },
+  });
+  expect(preview.payload).toMatchObject({
+    sourceUrl: url,
+    sourceProvenance: "supplied_text_unverified",
+    coverage: "source_text",
+  });
+  expect(preview.payload.insights[0].citations).toEqual([
+    {
+      kind: "user_note",
+      label: "User-supplied text and reference, not provider-verified",
+      url,
+    },
+  ]);
+  const changed = await prepare(s, s.sourceId, {
+    slug: (await s.t.run((ctx) => ctx.db.get(preview.id)))!.slug,
+    suppliedReference: {
+      url: url.replace("a".repeat(40), "b".repeat(40)),
+      explicitlyReviewed: true,
+    },
+  });
+  expect(changed.hash).not.toBe(preview.hash);
+  await expect(
+    s.publisher.client.mutation(api.publicKnowledge.publishEdition, {
+      id: preview.id,
+      version: preview.version,
+      hash: preview.hash,
+      explicitlyApproved: true,
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  await s.publisher.client.mutation(api.publicKnowledge.publishEdition, {
+    id: changed.id,
+    version: changed.version,
+    hash: changed.hash,
+    explicitlyApproved: true,
+  });
+  for (const bad of [
+    url.replace("a".repeat(40), "main"),
+    url + "?token=private",
+    url + "#private",
+    url.replace("https://", "http://"),
+    url.replace("github.com", "github.com.evil.invalid"),
+    url.replace("/README.md", "/../secret"),
+    url.replace("README.md", ".env"),
+  ])
+    await expect(
+      prepare(s, s.sourceId, {
+        suppliedReference: { url: bad, explicitlyReviewed: true },
+      }),
+    ).rejects.toThrow("INVALID_SUPPLIED_REFERENCE");
+  expect(
+    await s.t.run(async (ctx) => ({
+      requests: (await ctx.db.query("sourceAcquisitions").collect()).length,
+      reservations: (await ctx.db.query("reservations").collect()).length,
+    })),
+  ).toEqual({ requests: 0, reservations: 0 });
 });
 it("rejects legacy-pipeline reuse while allowing a separately reviewed nonreusable public edition", async () => {
   const s = await setup();
@@ -581,6 +1090,10 @@ it("deduplicates anonymous reports and limits moderation to fresh allowlisted id
   expect(
     await s.t.query(api.publicKnowledge.readEdition, { slug: edition.slug }),
   ).toBeNull();
+  await expect(prepare(s, s.sourceId, { slug: edition.slug })).rejects.toThrow(
+    "PUBLIC_MODERATION_BLOCKED",
+  );
+  await expect(prepare(s)).rejects.toThrow("PUBLIC_MODERATION_BLOCKED");
 });
 it("counts distinct current voluntary contributors, hides groups below five and returns only broad aggregate geography", async () => {
   const s = await setup();

@@ -514,7 +514,7 @@ export const reserveMatch = mutation({
       fail("Matching context unavailable.");
     const { actor } = await writeAccess(ctx, source.organizationId);
     ensure(
-      source.rightsAttested && sourceRetained(source.sourceRetentionUntil),
+      source.rightsAttested && sourceRetained(source),
       "SOURCE_CHANGED",
       "Source evidence is no longer available.",
     );
@@ -1277,13 +1277,10 @@ export const exportPage = query({
         const registryCurrent = row.currentRevisionId
           ? !!registry && sourcePolicyCurrent(registry.revision)
           : !registryRequired;
-        if (
-          !row.rightsAttested ||
-          !sourceRetained(row.sourceRetentionUntil) ||
-          !registryCurrent
-        ) {
+        if (!row.rightsAttested || !sourceRetained(row) || !registryCurrent) {
           permitted.push({
             ...row,
+            title: "Unavailable source",
             state: "needs_upload",
             coverage: "metadata_only",
             text: undefined,
@@ -1293,6 +1290,11 @@ export const exportPage = query({
             mediaEvidence: undefined,
             originalMediaEvidence: undefined,
             personalMedia: undefined,
+            orderedMedia: undefined,
+            serviceIntent: undefined,
+            speechProvenance: undefined,
+            processingReceipt: undefined,
+            localAnalysisReceipt: undefined,
             acquisition: undefined,
             searchable: undefined,
             repositorySelection: undefined,

@@ -483,6 +483,20 @@ it("keeps ambiguous creation compute held and never records a known zero-cost su
         deadline: 0,
       },
     });
+    await ctx.db.insert("assets", {
+      organizationId,
+      sourceId: source,
+      sourceGeneration: 0,
+      key: `${organizationId}/synthetic-owned`,
+      type: "video/mp4",
+      size: 100,
+      state: "complete",
+      kind: "original",
+      etag: "synthetic-original-etag",
+      expiresAt: now + 3600000,
+      createdAt: now,
+      updatedAt: now,
+    });
     const reservation = await ctx.db.insert("reservations", {
       organizationId,
       key: `personal-media:${source}:1`,

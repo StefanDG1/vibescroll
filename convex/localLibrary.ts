@@ -34,6 +34,7 @@ import { snapshotScopeCurrent } from "../packages/repositories/scope";
 import { z } from "zod";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { queueDeletion } from "./assets";
+import { taskBindingsCurrent } from "./lib/localTaskAuthority";
 import {
   acquisitionManifest,
   acquisitionPolicy,
@@ -93,7 +94,10 @@ async function activeRun(
     ? await ctx.db.get(actorId)
     : (await access(ctx, run.organizationId, ["owner", "admin"])).actor;
   ensure(actor, "FORBIDDEN", "Actor unavailable.");
-  if (actorId) {
+  if (run.task) {
+    ensure(actorId, "FORBIDDEN", "Use the paired executor's exact task lease.");
+    await taskBindingsCurrent(ctx, run, actor._id);
+  } else if (actorId) {
     await validateLocalRun(ctx, run, actorId);
   }
   ensure(
@@ -191,6 +195,17 @@ export const list = query({
       .filter((r) => r.actor === actor._id)
       .map((r) => ({
         ...r,
+        ...(r.task
+          ? {
+              task: {
+                workload: r.task.workload,
+                fundingRoute: r.task.fundingRoute,
+                deadline: r.task.deadline,
+                evaluationIds: r.task.evaluationIds,
+                proposalIds: r.task.proposalIds,
+              },
+            }
+          : {}),
         state:
           r.state === "active" && r.expiresAt <= Date.now()
             ? "expired"
@@ -213,8 +228,31 @@ export const expire = internalMutation({
   args: runArgs,
   handler: async (ctx, a) => {
     const run = await ctx.db.get(a.runId);
-    if (run && run.expiresAt <= Date.now() && run.state === "active") {
-      await ctx.db.patch(run._id, { state: "expired", updatedAt: Date.now() });
+    if (
+      run &&
+      run.expiresAt <= Date.now() &&
+      ["active", "queued"].includes(run.state)
+    ) {
+      await ctx.db.patch(run._id, {
+        state: "expired",
+        updatedAt: Date.now(),
+        ...(run.task
+          ? {
+              task: {
+                ...run.task,
+                leaseUntil: 0,
+                leaseToken: undefined,
+                inspected: undefined,
+                inspectionManifest: undefined,
+              },
+            }
+          : {}),
+      });
+      if (run.state === "queued" && run.task?.proposal) {
+        const p = await ctx.db.get(run.task.proposal.id);
+        if (p?.localPlanRunId === run._id)
+          await ctx.db.patch(p._id, { localPlanRunId: undefined });
+      }
       await ctx.scheduler.runAfter(0, internal.localLibrary.cleanPending, {
         runId: run._id,
         cursor: null,
@@ -849,6 +887,15 @@ export async function evaluationPrepareCore(
   const run = await activeRun(ctx, a.runId, actorId),
     topic = await ctx.db.get(a.topicId),
     repo = await repositoryContent(ctx, await ctx.db.get(a.repositoryId));
+  if (run.task)
+    ensure(
+      run.task.workload === "project_evaluation" &&
+        a.topicId === run.task.topicId &&
+        !a.cursor &&
+        JSON.stringify(a.members) === JSON.stringify(run.task.members),
+      "APPROVAL_STALE",
+      "Evaluate only the exact approved ideas.",
+    );
   ensure(
     topic?.organizationId === run.organizationId &&
       !topic.redirect &&
@@ -1090,7 +1137,7 @@ export async function evaluationFinishCore(
     state: "ready",
     output,
     credits: 0,
-    model: "gpt-6.1-sol",
+    model: run.model,
     updatedAt: Date.now(),
   });
   return { saved: true, cached: false };

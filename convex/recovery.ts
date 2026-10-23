@@ -12,6 +12,7 @@ import type { Doc } from "./_generated/dataModel";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { sourceAuthority, sourceRetained } from "./lib/sourceAuthority";
 import { recoveryQuarantineSections } from "../packages/recovery/quarantine";
+import { preserveLegacyEditionModeration } from "./lib/publicModeration";
 
 export async function retainedFrame(ctx: QueryCtx, key: string, asOf: number) {
   ensure(
@@ -39,7 +40,7 @@ export async function retainedFrame(ctx: QueryCtx, key: string, asOf: number) {
     !source ||
     source.organizationId !== asset.organizationId ||
     source.state === "deleted" ||
-    !sourceRetained(source.sourceRetentionUntil) ||
+    !sourceRetained(source) ||
     organization?.status !== "active"
   )
     return null;
@@ -306,10 +307,17 @@ export const applyMarkers = internalMutation({
 
 async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
   const provider =
+    Boolean(source.orderedMedia || source.orderedPreparation) ||
     source.sourceType === "github_repository" ||
     source.sourceType === "reddit_thread" ||
     source.sourceRetentionUntil !== undefined;
-  if (!provider && !source.currentRevisionId && !source.publicImportId) return;
+  if (!provider && !source.currentRevisionId && !source.publicImportId) {
+    // Retained local preparation is temporary execution state, including on
+    // otherwise preserved uploads. A restored snapshot cannot authorize reuse.
+    if (source.personalMedia?.preparation)
+      await ctx.db.patch(source._id, { personalMedia: undefined });
+    return;
+  }
   const retainedContent =
     source.currentRevisionId ||
     source.analysis ||
@@ -328,6 +336,9 @@ async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
     return;
   await ctx.db.patch(source._id, {
     currentRevisionId: undefined,
+    orderedMedia: undefined,
+    orderedPreparation: undefined,
+    serviceIntent: undefined,
     sourceRetentionUntil: undefined,
     state:
       source.state === "deleted"
@@ -369,7 +380,54 @@ export const quarantinePage = internalMutation({
       .query(a.section)
       .paginate({ cursor: a.cursor, numItems: 25 });
     for (const row of page.page) {
-      if (a.section === "pilotPaymentObservations") {
+      if (a.section === "creatorWatches") {
+        const watch = row as Doc<"creatorWatches">;
+        await ctx.db.patch(watch._id, {
+          state: "quarantined",
+          generation: watch.generation + 1,
+          lease: undefined,
+          leaseUntil: undefined,
+          checkpoint: undefined,
+          reservationKey: undefined,
+          updatedAt: Date.now(),
+        });
+      } else if (a.section === "creatorPosts") {
+        await ctx.db.patch(row._id as Doc<"creatorPosts">["_id"], {
+          state: "removed",
+          metadata: { removed: true },
+          updatedAt: Date.now(),
+        });
+      } else if (a.section === "creatorSubscriptions") {
+        await ctx.db.patch(row._id as Doc<"creatorSubscriptions">["_id"], {
+          state: "quarantined",
+          watchId: undefined,
+          rightsAttested: false,
+          catchUpSince: undefined,
+          updatedAt: Date.now(),
+        });
+      } else if (a.section === "creatorDeliveries") {
+        await ctx.db.patch(row._id as Doc<"creatorDeliveries">["_id"], {
+          state: "withdrawn",
+          reason: "recovery_quarantined",
+          updatedAt: Date.now(),
+        });
+      } else if (a.section === "localLibraryRuns") {
+        const run = row as Doc<"localLibraryRuns">;
+        if (run.task?.proposal) {
+          const p = await ctx.db.get(run.task.proposal.id);
+          if (p?.localPlanRunId === run._id)
+            await ctx.db.patch(p._id, { localPlanRunId: undefined });
+        }
+        await ctx.db.patch(run._id, {
+          state: "canceled",
+          task: undefined,
+          updatedAt: Date.now(),
+        });
+      } else if (a.section === "devices") {
+        // Includes new catalogue/profile snapshots: restored devices never
+        // retain pairing, account readiness or task dispatch authority.
+        await ctx.db.delete(row._id);
+      } else if (a.section === "pilotPaymentObservations") {
         // Keep the opaque dedup key: old verified webhook replay must not
         // recreate an observation that restoration has withdrawn.
         await ctx.db.patch(row._id as Doc<"pilotPaymentObservations">["_id"], {
@@ -379,6 +437,7 @@ export const quarantinePage = internalMutation({
       } else if (
         a.section === "publicImports" ||
         a.section === "publicReports" ||
+        a.section === "publicModerationBlocks" ||
         a.section === "publicCorrections"
       ) {
         // Preserve authored personal layers/report history. Their restored base
@@ -386,6 +445,7 @@ export const quarantinePage = internalMutation({
         continue;
       } else if (a.section === "publicEditions") {
         const edition = row as Doc<"publicEditions">;
+        await preserveLegacyEditionModeration(ctx, edition);
         await ctx.db.patch(edition._id, {
           state: "removed",
           payload: {

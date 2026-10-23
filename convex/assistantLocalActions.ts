@@ -3,6 +3,9 @@ import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { uploadLocalFrame, localEvaluationBundle } from "./localLibraryActions";
+import { authorizeRepository } from "./lib/githubAuthorization";
+import { retrieveContext } from "../packages/providers/github";
+import { repositoryCheckContext } from "../packages/plans/repository-checks";
 export const frame = internalAction({
   args: {
     credentialHash: v.string(),
@@ -40,5 +43,50 @@ export const evaluation = internalAction({
         args,
       }),
     );
+  },
+});
+export const taskContext = internalAction({
+  args: { credentialHash: v.string(), args: v.any() },
+  handler: async (ctx, a): Promise<any> => {
+    const c = await ctx.runMutation(internal.assistantLocal.operation, {
+      credentialHash: a.credentialHash,
+      operation: "task_context_prepare",
+      args: a.args,
+    });
+    if (c.workload === "project_evaluation")
+      return localEvaluationBundle(ctx, c, (record) =>
+        ctx.runMutation(internal.assistantLocal.operation, {
+          credentialHash: a.credentialHash,
+          operation: "task_record_evaluation_inspection",
+          args: { ...a.args, ...record },
+        }),
+      );
+    await authorizeRepository(ctx, c.repo, c.repo.sha);
+    const inspected = await retrieveContext(
+      c.repo,
+      JSON.stringify({ title: c.proposal.title, detail: c.proposal.detail }),
+      c.proposal.detail.repositoryEvidence ?? [],
+      "planning",
+    );
+    await authorizeRepository(ctx, c.repo, c.repo.sha);
+    const paths = new Set(inspected.excerpts.map((e) => e.path));
+    await ctx.runMutation(internal.assistantLocal.operation, {
+      credentialHash: a.credentialHash,
+      operation: "task_record_inspection",
+      args: {
+        ...a.args,
+        inspected: inspected.excerpts,
+        manifest: inspected.manifestEntries.filter((f) => paths.has(f.path)),
+      },
+    });
+    return {
+      proposal: c.proposal.detail,
+      reviewerCorrection: c.proposal.reviewerCorrection,
+      businessProfile: c.repo.profile,
+      baseSha: c.repo.sha,
+      excerpts: inspected.excerpts,
+      inspectedTree: inspected.tree,
+      checks: repositoryCheckContext(inspected.excerpts),
+    };
   },
 });

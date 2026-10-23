@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 23: authorize complete creator and onboarding implementation
+
+[ADR 119](adr/119-authorized-complete-creator-and-onboarding-implementation.md) records explicit owner authorization for N0-N7 and all remaining launch work. It supersedes ADR 118's planning-only boundary while preserving existing-system reuse, original spending limits and every release/provider/privacy gate. Build and test independently while external or unfunded live checks wait. No supplier activation or new recurring allowance follows merely from implementation authorization.
+
 ## October 23: creator and onboarding planning boundary
 
 [ADR 118](adr/118-creator-and-guided-onboarding-planning-boundary.md) records the owner's future public-creator, ordered-media, eligible shared-analysis and project-builder onboarding direction. Extend existing setup, source/jobs and public artifact/reuse systems. The required Instagram export guide is separate from later export request/import. The [single remaining-work plan](launch-plan/2026-10-23/README.md#creator-and-onboarding-reconciliation) marks N0-N7 planning-only until a subsequent implementation instruction. Previously authorized R0-R13 work continues. No provider activation, automatic private-data reuse, recurring spend or release permission follows.

@@ -270,6 +270,7 @@ export async function processAssistantJob(
       url: job.url,
       sourceId: job.sourceId,
       image: config.mediaImage,
+      signal: active,
       privateRoot: join(
         dirname(companionPrivatePath("subscription-session.json")),
         "subscription-prepared",

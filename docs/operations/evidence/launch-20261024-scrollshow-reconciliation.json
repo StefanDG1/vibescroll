@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-23T23:28:48.051221+00:00",
+  "scope": "Planning-only reconciliation of supplied final ScrollShow handoff with all launch/creator/Cloud/Pro work",
+  "parentCommit": "b30ce52ead61666eab4ce934bcda72c2589129c6",
+  "remoteMainObserved": "d8e97a393fb86fce57ee17d47c0779f02c554cfe",
+  "source": {
+    "workspaceRelativePath": "outputs/scroll-audit/2026-10-24/FINAL-IMPLEMENTATION-PLAN.md",
+    "sha256": "4f4e549e01caf693724b745907a7ceb2fd0ad8a72d49ab677ba619d679532a74",
+    "sourcePlanSnapshot": "be5d582c0bf2fee3c5d147f38ebfcf054981d5bc",
+    "archiveStatus": "Local owner-supplied research package; not copied into public repository",
+    "olderDraftsSuperseded": true
+  },
+  "coverage": [
+    "P0-P15",
+    "R0-R13",
+    "N0-N7",
+    "C0-C10",
+    "M0-M7",
+    "Issues5/118/119",
+    "C11explicit_future_roadmap"
+  ],
+  "decisions": {
+    "adr": 123,
+    "publicDesign": "Original A hero and B source-to-private-project scenes, scoped white/charcoal/emerald/mint; app Atlas preserved",
+    "catalog": "ADR122 proprietary Pro only, all-plan eligible contribution and saved-copy continuity",
+    "futureOfferEur": {
+      "monthly": 35,
+      "yearly": 350,
+      "ongoingOnce": 800
+    },
+    "monthlyAllowance": "Required for every choice; exact sustainable amount/workload/funding/renewal/limits pending concrete review",
+    "newThreeYearOfferTarget": "superseded; historical worksheet and valid prior contracts retained",
+    "implementationAuthority": "Planning update only; existing authorized engineering is not withdrawn; no new live billing/policy/deployment authority"
+  },
+  "sourceInspection": [
+    "Public page and supporting route owners",
+    "Shared public shell and product-media",
+    "Existing safe app sign-in/callback return",
+    "Current Help manifest",
+    "Current Starter/Pro weekly/monthly/annual pricing and top-up payment lifecycle",
+    "Dormant36monthfoundingpass"
+  ],
+  "verification": {
+    "runtime": "Project Node24.22.1, credential-free offline validation",
+    "command": "node scripts/run-offline.mjs pnpm validate",
+    "documents": 306,
+    "skillSnapshots": 12,
+    "changedDocumentFormatting": "passed",
+    "independentHighReview": "no blockers",
+    "exactHeadCi": "required after commit",
+    "noNewRuntimeAcceptance": true
+  },
+  "retainedInspectionErrors": [
+    "Initial search ran at supplied workspace root, which holds outputs/worktrees rather than a Git checkout; subsequent Git/code inspection used the existing launch-foundation-verify checkout",
+    "One source-path search named nonexistent checkout API path; actual payment handlers were inspected in convex/billingV1.ts, not inferred from that path"
+  ],
+  "budget": {
+    "cumulativeCapUsd": "2",
+    "conservativeRetainedAccountedUsd": "1.7592885298898517",
+    "unallocatedUsd": "0.2407114701101483",
+    "unknownHoldsPreserved": true,
+    "settledInvoice": false,
+    "newConvexCalls": 0,
+    "newProviderInferenceCalls": 0,
+    "purchasesUsd": 0
+  },
+  "release": {
+    "applicationChanged": false,
+    "catalogChanged": false,
+    "policyBytesChanged": false,
+    "entitlementChanged": false,
+    "merged": false,
+    "deployed": false,
+    "sentMarketing": false,
+    "newPaidAssetGeneration": false
+  },
+  "remaining": [
+    "Exact allowance economics, ongoing terms/remedies and legacy migration proposal/review",
+    "All actual Cloud/provider/source/catalog/creator/project/Help integration and original acceptance not already verified",
+    "Bounded production release and independent human/device/pilot evidence"
+  ]
+}

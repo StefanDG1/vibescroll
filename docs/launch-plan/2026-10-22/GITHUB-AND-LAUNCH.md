@@ -1,5 +1,7 @@
 # GitHub presentation and customer acquisition
 
+October 24 offer/design override: [ADR 123](../../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) integrates the final ScrollShow M0-M7 handoff into the existing C9/C10 work. The future Pro EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing-access offer includes a defined monthly AI allowance for every choice and supersedes the new fixed three-year-pass target below. Exact economics/terms/legacy migration and all original acceptance remain. See [the integrated order](../2026-10-23/SCROLLSHOW-INTEGRATION.md); no live billing or runtime changes follow.
+
 Current access override, October 24: [ADR 122](../../adr/122-proprietary-pro-insight-catalog.md) makes the shared insight database proprietary and Pro-only. All plans may contribute; saved private copies/notes remain readable after cancellation. Original collections/reuse/discovery/globe scope continues with Pro catalog access and separate exact approved public demos. Software MIT is unchanged. Read the [current plan](../2026-10-23/README.md) and [owner checklist](../2026-10-23/OWNER-CHECKLIST.md) before treating dated public-library language below as current access policy. No runtime enforcement is claimed by this note.
 
 Status: included in the owner-approved plan, October 22, 2026. This file prepares work and distribution. It does not authorize posting, account creation, paid promotion or public release during the planning task.

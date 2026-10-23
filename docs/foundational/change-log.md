@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F046: ScrollShow handoff and ongoing Pro offer, October 24
+
+Reconciled the final supplied ScrollShow handoff with the original launch, creator/onboarding, Cloud and proprietary Pro plans. Added ADR 123 and a complete conflict/code/dependency/acceptance crosswalk. Updated all four foundations, current brief, backlog, single plan entry points, C9/C10 scope, owner register and unsent draft precedence. Recorded the future EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing Pro choices with a defined monthly allowance for every choice. Superseded only the new three-year-offer target and older initial-balance-only recommendation; preserved historical scenarios, valid purchases/balances, existing app styling and every original R/P/N feature/acceptance gate. No actual prices, application, billing, policy bytes, assets, provider permissions, deployment or public posts changed. Root owns sustainable allowance/terms/migration proposals and final integration.
+
 ## F045: proprietary Pro insight catalog, October 24
 
 Recorded the owner's Pro-only proprietary catalog decision and resolved all-plan contribution/retained-copy choices. Added ADR 122 and the single owner/external action register. Updated all four briefs, current brief, idea backlog, Cloud-first C4/C8/C9 scope, acceptance, provider workload brief and unsent marketing concepts. Marked F044/ADR 121's free public dataset direction as superseded without rewriting dated proof. Retained existing stores/queues/setup, private work, exact approved demo permissions, software MIT, all original R/P/N acceptance and budget/provider/release gates. No application, live policy, billing or deployment change; paid demand and defensibility remain unvalidated.

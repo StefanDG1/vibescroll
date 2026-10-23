@@ -1,5 +1,7 @@
 # Shared insight library message drafts
 
+Current marketing handoff: [F046](../foundational/idea-backlog.md#f046-scrollshow-handoff-and-ongoing-pro-offer-october-24) and [the ScrollShow integration](../launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) control final selected copy and product-first A/B presentation. These retained unsent concepts support that C9 work; they do not define a separate website, dataset or new live offer. Future Pro prices/ongoing monthly allowance require the full reviewed catalog/terms migration before sale.
+
 Mode: reference. Unsent concepts, updated October 24, 2026, Europe/Berlin. Read [F045](../foundational/idea-backlog.md#f045-proprietary-pro-insight-catalog-october-24) and the [Cloud-first release gates](../launch-plan/2026-10-23/CLOUD-FIRST.md). These are copy hypotheses, not statements that the new route or Pro catalog is available. [ADR 122](../adr/122-proprietary-pro-insight-catalog.md) supersedes the free public dataset proposal; software MIT remains unchanged.
 
 ## Proposed central message

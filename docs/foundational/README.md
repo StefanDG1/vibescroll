@@ -1,6 +1,10 @@
 # VibeScroller foundational document process
 
-## Current brief, October 24: F045 proprietary Pro catalog
+## Current brief, October 24: F046 integrated marketing and offer
+
+[F046](idea-backlog.md#f046-scrollshow-handoff-and-ongoing-pro-offer-october-24) and [ADR 123](../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) integrate the final supplied ScrollShow handoff. Original A/B scenes, scoped public emerald/mint design and the product-first story preserve existing app behavior and all launch requirements. The future Pro EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing-access choices each include a defined monthly AI allowance. This replaces the new three-year-pass target and older initial-balance-only draft; concrete sustainable allowance/terms/legacy migration remain gated. ADR 122, existing prices/purchases, privacy, approved demos and cumulative US$2 remain. The [integration record](../launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) supplies conflicts, ownership, parallel execution and acceptance. No application, offer activation or production result is implied.
+
+## Earlier brief, October 24: F045 proprietary Pro catalog
 
 [F045](idea-backlog.md#f045-proprietary-pro-insight-catalog-october-24) and [ADR 122](../adr/122-proprietary-pro-insight-catalog.md) synchronize all four briefs for proprietary Pro-only catalog access, all-plan contribution and readable saved copies after cancellation. New catalog access/reuse/updates require current Pro. F044's free public dataset direction is historical and superseded; official user-owned Cloud, private work, exact approved demo editions, software MIT and full launch acceptance remain. The [owner checklist](../launch-plan/2026-10-23/OWNER-CHECKLIST.md) separates human/provider prerequisites from root engineering. This is a product decision and copy hypothesis, not deployed entitlements, measured demand or new spending.
 

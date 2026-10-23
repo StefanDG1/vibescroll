@@ -1,5 +1,13 @@
 # Foundational idea backlog
 
+## F046: ScrollShow handoff and ongoing Pro offer, October 24
+
+Source: owner request to find and reconcile the ScrollShow implementation plan with every launch plan, preserving features and an efficient order. The controlling supplied FINAL-IMPLEMENTATION-PLAN.md already incorporates ADR 122 and supersedes earlier audit/offer drafts. Its selected ongoing EUR 800 offer includes a monthly allowance; it is not the old three-year pass or an initial-credit-only purchase.
+
+Decision: [ADR 123](../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) records source precedence and the future visual/commercial direction. [The integration record](../launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) maps M0-M7 inside C9/C10, reuses existing code owners and retains every R/P/N requirement. The source handoff remains planning-only; no runtime, live offer, policy or deployment changes follow.
+
+Review: Research treats the competitor audit as design evidence, not paid demand. Avatar preserves library-only/non-coding users and optional project GitHub. Offer records all three Pro payment choices with recurring allowances, sustainable economics/terms and legacy preservation. Beliefs retain inspected evidence/control/continuity. Counterarguments include personal-user comprehension, gated capabilities, copyable catalog outputs and indefinite allowance liabilities. No measured conversion, instant processing, universal platform support or margin result is claimed. Update all four briefs, C9/C10 acceptance, owner checklist and unsent copy together. Root prepares concrete release inputs rather than reopening settled choices.
+
 ## F045: proprietary Pro insight catalog, October 24
 
 Source: October 24 owner decision to keep the shared database proprietary and Pro-only, followed by explicit answers allowing all plans to contribute and keeping existing saved copies after cancellation.

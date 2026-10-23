@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 24: integrate the final ScrollShow handoff and future ongoing offer
+
+[ADR 123](adr/123-scrollshow-handoff-and-integrated-offer-planning.md) incorporates the final supplied marketing plan, superseding older drafts in that audit folder. Preserve A hero/B source-to-private-product artwork, white/charcoal/emerald/mint public composition, existing mark, app Atlas behavior and the complete launch scope. Its proposed Pro EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing-access choices each include a defined monthly AI allowance. This supersedes the new fixed three-year founding-pass target and earlier initial-balance-only recommendation. Exact sustainable allowance, service/remedy terms and catalog/legacy migration remain release inputs. No runtime, price, policy, live billing or deployment changes follow. The [integrated execution order](launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) maps M0-M7 within C9/C10 and preserves all R/P/N work, ADR 122, private data, provider rights and the cumulative US$2 cap.
+
 ## October 24: proprietary Pro catalog, all-plan contribution and retained copies
 
 [ADR 122](adr/122-proprietary-pro-insight-catalog.md) supersedes ADR 121's free public dataset direction. Only Pro may access or newly save/reuse the proprietary shared catalog. All plans may contribute eligible general analysis and separately authorized own-subscription capacity. Contribution grants no catalog access. Already saved private copies and notes remain readable after cancellation; further catalog access and updates stop. Own validly processed results keep their existing plan rules. Software MIT, private work, source/provider rights, exact approved demo editions and the cumulative US$2 cap remain unchanged. The [single owner checklist](launch-plan/2026-10-23/OWNER-CHECKLIST.md) separates actual human/provider prerequisites from root-owned engineering. This records the target, not deployed enforcement or new billing prices.

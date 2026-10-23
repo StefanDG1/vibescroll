@@ -1,5 +1,15 @@
 # VibeScroll foundational beliefs
 
+## F046: ScrollShow handoff and ongoing Pro offer, October 24
+
+[ADR 123](../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) and [the full integration record](../launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) reconcile the final supplied ScrollShow handoff into C9/C10 while retaining all R0-R13/P0-P15/N0-N7 work. The final handoff supersedes older audit/draft recommendations. Select original A hero/B source-to-private-product scenes, white/charcoal/emerald/mint, the real mark and scoped public styling; preserve the app's chosen Atlas/Library design and behavior.
+
+The selected future offer is Pro EUR 35 monthly, EUR 350 yearly or EUR 800 once for ongoing app access, with a defined monthly AI allowance for every choice. This supersedes the new three-year founding-pass target and older initial-balance-only recommendation. Exact allowance, funding/renewal/limits, sustainable long-retention costs, ongoing service/remedy terms and legacy migration are release inputs. Existing prices, valid purchased terms and balances remain unchanged. Do not inherit six hundred credits, promise unlimited inference or treat user subscription quota as company-funded allowance.
+
+ADR 122's proprietary Pro-only catalog, all-plan eligible contribution, own-result authority, readable saved copies after cancellation and private project layers remain. Product improvement leads the story without making GitHub a condition for sign-in, own-library use or approved examples. Cloud/following claims await actual release acceptance. The private Reel and competitor references are not new public proof. No paid generation, application, billing, live policy, deployment or outreach change follows from this planning reconciliation; original US$2 cap and all unknown holds remain.
+
+The six beliefs remain evidence, context, a useful decision, continuity, control and personally demonstrated value. A product recommendation must show fit, already implemented or no fit, with separate plan/coding approval. Original motion, price geometry or exclusive access cannot serve as proof of usefulness. Inspectable examples, private next steps, preserved saved copies, explicit funding and honest ongoing obligations must support the argument before a stronger claim is published.
+
 ## F045: proprietary Pro insight catalog, October 24
 
 [ADR 122](../adr/122-proprietary-pro-insight-catalog.md) supersedes F044's free public dataset and open-data-license direction. The shared insight catalog is proprietary and Pro-only. All plans may contribute under explicit valid authority, but contribution grants no catalog access. Already saved private copies and notes remain readable after cancellation; further catalog access, new reuse and updates stop. Own validly processed results keep existing plan rules. Software MIT and exact approved public demo editions remain separate. No runtime enforcement, new price or live policy change is claimed.

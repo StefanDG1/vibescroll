@@ -199,7 +199,7 @@ export function validateManifest(manifest, trust) {
     for (const dependency of dependencies) {
       keys(dependency, ["name", "version", "lockIntegrity", "inventorySha256"]);
       const { name } = dependency;
-      const version = { jose: "6.2.12", zod: "4.6.1" }[name];
+      const version = { jose: "6.2.12", zod: "4.6.6" }[name];
       const inventory = manifest.package.files
         .filter((file) => file.path.startsWith(`node_modules/${name}/`))
         .sort((a, b) => a.path.localeCompare(b.path));

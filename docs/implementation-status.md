@@ -1,5 +1,9 @@
 # October 22 launch implementation candidate
 
+## Zod security correction, October 23
+
+A fresh dependency audit reported high-severity GHSA-mrhx-c7xc-m3w5 against Zod 4.6.1 and 4.6.5. The isolated patch pins all workspace/transitive copies and the companion runtime/release contract to upstream 4.6.6 without changing archive integrity checks. The offline negative control visits all 10,000 elements before rejecting an oversized constrained array on 4.6.1, and visits none on 4.6.6. Four regression cases and fourteen installer/runtime checks pass. The complete offline check on project Node 24.22.1 passed 1,405 tests with three hosted skips, zero-warning lint, all types and both production builds. The post-patch dependency audit reports zero advisories. Independent High source review found no blocking defect. Signed companion update/rollback, exact-head CI and production rollout remain separate acceptance; no release or live pass is inferred. The [security receipt](operations/evidence/launch-20261023-zod-security.json) retains the original advisory, import timeout and stale runtime-pin failure. Unrelated Dependabot PR 130 remains untouched.
+
 ## Authorized creator and onboarding integration, October 23
 
 The owner subsequently authorized N0-N7 implementation under [ADR 119](adr/119-authorized-complete-creator-and-onboarding-implementation.md). That instruction supersedes the historical planning-only paragraph below. The current completion branch extends the existing setup progress, private source and task queues, public artifact/import tables, and Help. It does not create a second onboarding or inference system. The application changes in this stage are local candidates, not the serving production version.

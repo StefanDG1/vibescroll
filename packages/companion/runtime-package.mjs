@@ -8,7 +8,7 @@ import { parseAst } from "vite";
 
 export const runtimeDependencies = Object.freeze({
   jose: "6.2.12",
-  zod: "4.6.1",
+  zod: "4.6.6",
 });
 export const runtimeEntrypoints = Object.freeze([
   "scripts/companion.mjs",

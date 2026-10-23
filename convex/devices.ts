@@ -25,6 +25,8 @@ export const list = query({
         personalModels: d.owner === actor._id ? d.personalModels : undefined,
         subscriptionCapabilities:
           d.owner === actor._id ? d.subscriptionCapabilities : undefined,
+        personalInputProtocols:
+          d.owner === actor._id ? d.personalInputProtocols : undefined,
       }),
     );
   },
@@ -113,6 +115,7 @@ export const revoke = mutation({
       personalSeenAt: undefined,
       personalProfileBinding: undefined,
       subscriptionCapabilities: undefined,
+      personalInputProtocols: undefined,
     });
     for (const state of ["preparing", "queued", "running"]) {
       const sources = await ctx.db

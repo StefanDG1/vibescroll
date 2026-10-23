@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { socialPostUrl } from "./identity.mjs";
+import { providedMediaMetadata } from "./contracts.ts";
 
 const stableId = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
 const timestamp = z.number().int().nonnegative().max(8_640_000_000_000_000);
@@ -64,5 +65,23 @@ export const orderedIntakeAssets = z
       ctx.addIssue({
         code: "custom",
         message: "Changed ordered asset identity/order/byte bound",
+      });
+  });
+
+export const personalOrderedInputSchema = z
+  .strictObject({
+    schemaVersion: z.literal("ordered-personal-input-v1"),
+    metadata: z.union([orderedIntakeMetadata, providedMediaMetadata]),
+    assets: orderedIntakeAssets,
+  })
+  .superRefine((value, ctx) => {
+    if (
+      value.metadata.schemaVersion === "provided-media-v1" &&
+      (value.assets.length !== value.metadata.expectedAssetCount ||
+        value.assets.some((asset, index) => asset.index !== index))
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Incomplete supplied upload order",
       });
   });

@@ -61,6 +61,7 @@ import { SetupJourney } from "./setup-journey";
 import { CreatorFollowing } from "./creator-following";
 import { CreatorDigest } from "./creator-digest";
 import { OwnPlanTaskControls } from "./own-plan-task-controls";
+import { OrderedFileUpload } from "./ordered-file-upload";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
 import { TypedSourceEvidence } from "./typed-source-evidence";
 import { PublicKnowledgePanel } from "./public-knowledge-panel";
@@ -94,6 +95,7 @@ type Initial = {
     personalAlphaEnabled?: boolean;
     linkAnalysisEnabled?: boolean;
     cloudAnalysisEnabled?: boolean;
+    orderedPersonalAnalysisEnabled?: boolean;
   };
   sources: any[];
   selectedSource?: any;
@@ -1791,6 +1793,9 @@ export function Console({
                     !demo && data.aiPreference?.personalAlphaEnabled === true
                   }
                   linkAnalysisEnabled={data.aiPreference?.linkAnalysisEnabled}
+                  orderedPersonalEnabled={
+                    data.aiPreference?.orderedPersonalAnalysisEnabled === true
+                  }
                   cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
                   call={call}
                   strictCall={strictCall}
@@ -2862,14 +2867,15 @@ export function Console({
               demo={demo}
               organizationId={organizationId}
               call={call}
-              onDone={(sourceId?: string) => {
+              orderedCall={strictCall}
+              onDone={(sourceId?: string, savedOnly = false) => {
                 setCaptureOpen(false);
                 setSharedDraft("");
                 if (sourceId)
                   findSource({
                     _id: sourceId,
                     title: "New upload",
-                    state: "processing",
+                    state: savedOnly ? "saved" : "processing",
                     coverage: "metadata_only",
                   });
               }}
@@ -2880,10 +2886,19 @@ export function Console({
     </div>
   );
 }
-function CaptureForm({
+// Called only while submitting an approval. UI expiry uses the state timer below.
+function checkCaptureCatalogueAtSubmission(expiresAt: number) {
+  if (expiresAt <= Date.now())
+    throw new Error(
+      "Account choices expired. Refresh before approving analysis.",
+    );
+}
+
+export function CaptureForm({
   demo,
   organizationId,
   call,
+  orderedCall = call,
   onDone,
   existingSourceId,
   existingGeneration,
@@ -2907,13 +2922,38 @@ function CaptureForm({
   );
   const computer = eligible.find((d: any) => id(d) === chosenDevice);
   const [chosenModel, setChosenModel] = useState("");
-  const effectiveModel =
-    chosenModel ||
-    computer?.personalModels.find(
-      (m: any) => m.slug === "gpt-6.1-sol" || m.slug === "gpt-5.6-sol",
-    )?.slug ||
-    computer?.personalModels[0]?.slug ||
-    "";
+  const [chosenEffort, setChosenEffort] = useState("");
+  const [captureCatalogueTime, setCaptureCatalogueTime] = useState(() =>
+    Date.now(),
+  );
+  const captureCatalogueExpiry = Math.min(
+    computer?.subscriptionCapabilities?.expiresAt ?? 0,
+    computer?.subscriptionCapabilities?.sessionExpiresAt ?? 0,
+  );
+  useEffect(() => {
+    if (!captureCatalogueExpiry) return;
+    const timer = setTimeout(
+      () => setCaptureCatalogueTime(Date.now()),
+      Math.max(1, captureCatalogueExpiry - Date.now() + 1),
+    );
+    return () => clearTimeout(timer);
+  }, [captureCatalogueExpiry]);
+  const captureModels =
+    captureCatalogueExpiry > captureCatalogueTime
+      ? computer.subscriptionCapabilities.value.models.filter(
+          (entry: any) =>
+            entry.inputModalities.includes("text") &&
+            entry.inputModalities.includes("image"),
+        )
+      : [];
+  const captureModel = captureModels.find(
+    (entry: any) => entry.slug === chosenModel,
+  );
+  const effectiveModel = captureModel?.slug ?? "";
+  const captureEfforts: string[] = captureModel?.reasoningEfforts ?? [];
+  const effectiveEffort = captureEfforts.includes(chosenEffort)
+    ? chosenEffort
+    : "";
   const personalAutomatic =
     personalEnabled &&
     analysisRoute === "personal" &&
@@ -2931,7 +2971,7 @@ function CaptureForm({
   const approval = {
     deviceId: chosenDevice,
     model: effectiveModel,
-    effort: "medium",
+    effort: effectiveEffort,
     useOwnPlan: true,
     maxComputeCredits: 10,
   };
@@ -2939,10 +2979,16 @@ function CaptureForm({
     if (cloudAutomatic && f.get("cloudCredits") !== "on")
       throw new Error("Approve the processing-credit maximum before analysis.");
     if (!personalAutomatic) return;
-    if (!computer || !effectiveModel || f.get("ownPlan") !== "on")
+    if (
+      !computer ||
+      !effectiveModel ||
+      !effectiveEffort ||
+      f.get("ownPlan") !== "on"
+    )
       throw new Error(
         "Choose your online computer and approve using your ChatGPT plan.",
       );
+    checkCaptureCatalogueAtSubmission(captureCatalogueExpiry);
     const fresh = await call("checkPersonalSession", { organizationId });
     if (fresh !== true)
       throw new Error(
@@ -2957,6 +3003,35 @@ function CaptureForm({
   const [importOffset, setImportOffset] = useState(0);
   const importAbort = useRef<AbortController | null>(null);
   useEffect(() => () => importAbort.current?.abort(), []);
+  const sourceTypeChoice = (
+    <label>
+      Source type
+      <ChoiceSelect disabled={importBusy} value={kind} onValueChange={setKind}>
+        {!existingSourceId && <option value="url">Video URL</option>}
+        {!existingSourceId && (
+          <option value="import">Instagram export or link import</option>
+        )}
+        {!existingSourceId && (
+          <option value="ordered">Images, videos or carousel</option>
+        )}
+        <option value="upload">Single video or audio</option>
+        <option value="text">Supplied transcript</option>
+      </ChoiceSelect>
+    </label>
+  );
+  if (kind === "ordered")
+    return (
+      <div className="form-grid">
+        {sourceTypeChoice}
+        <OrderedFileUpload
+          key={organizationId}
+          organizationId={organizationId}
+          call={orderedCall}
+          demo={demo}
+          onDone={(sourceId) => onDone(sourceId, true)}
+        />
+      </div>
+    );
   return (
     <form
       className="form-grid"
@@ -3119,7 +3194,7 @@ function CaptureForm({
                 generation: existingSourceId ? existingGeneration + 1 : 0,
                 deviceId: chosenDevice,
                 model: effectiveModel,
-                effort: "medium",
+                effort: effectiveEffort,
                 useOwnPlan: true,
                 maxComputeCredits: 10,
               });
@@ -3194,21 +3269,7 @@ function CaptureForm({
         }
       }}
     >
-      <label>
-        Source type
-        <ChoiceSelect
-          disabled={importBusy}
-          value={kind}
-          onValueChange={(value) => setKind(value)}
-        >
-          {!existingSourceId && <option value="url">Video URL</option>}
-          {!existingSourceId && (
-            <option value="import">Instagram export or link import</option>
-          )}
-          <option value="upload">Permitted media upload</option>
-          <option value="text">Supplied transcript</option>
-        </ChoiceSelect>
-      </label>
+      {sourceTypeChoice}
       {!existingSourceId && kind !== "import" && (
         <label>
           Title
@@ -3401,6 +3462,7 @@ function CaptureForm({
                     onValueChange={(value) => {
                       setChosenDevice(value);
                       setChosenModel("");
+                      setChosenEffort("");
                     }}
                   >
                     <option value="">Choose an online computer</option>
@@ -3415,24 +3477,54 @@ function CaptureForm({
                   ChatGPT model
                   <ChoiceSelect
                     value={effectiveModel}
-                    onValueChange={(value) => setChosenModel(value)}
+                    onValueChange={(value) => {
+                      setChosenModel(value);
+                      setChosenEffort("");
+                    }}
                   >
-                    {!computer && (
-                      <option value="">Connect your computer first</option>
-                    )}
-                    {computer?.personalModels.map((m: any) => (
+                    <option value="">
+                      Choose an available image-capable model
+                    </option>
+                    {captureModels.map((m: any) => (
                       <option key={m.slug} value={m.slug}>
                         {m.displayName}
                       </option>
                     ))}
                   </ChoiceSelect>
                 </label>
+                <label>
+                  Reasoning effort
+                  <ChoiceSelect
+                    value={effectiveEffort}
+                    disabled={!captureModel}
+                    onValueChange={setChosenEffort}
+                  >
+                    <option value="">Choose an available effort</option>
+                    {captureEfforts.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </ChoiceSelect>
+                </label>
                 <label className="check">
-                  <input name="ownPlan" type="checkbox" required />
-                  Use my ChatGPT plan with medium reasoning. Reserve up to 10
-                  compute credits per video
+                  <input
+                    key={`${chosenDevice}:${effectiveModel}:${effectiveEffort}:${computer?.subscriptionCapabilities?.hash ?? ""}`}
+                    name="ownPlan"
+                    type="checkbox"
+                    required
+                    disabled={!effectiveModel || !effectiveEffort}
+                  />
+                  Use my ChatGPT plan with the selected model and reasoning
+                  effort. Reserve up to 10 compute credits per video
                   {kind === "import" ? ", up to five videos per batch" : ""}.
                 </label>
+                {!captureModels.length && (
+                  <p className="fine">
+                    Current account choices are unavailable or expired. Refresh
+                    account status or save without automatic analysis.
+                  </p>
+                )}
                 <p className="fine">
                   Audio is transcribed locally on your laptop. Sampled frames
                   and the transcript go to your connected OpenAI account. No
@@ -3557,6 +3649,7 @@ function SourceDetail({
   devices,
   personalEnabled,
   linkAnalysisEnabled,
+  orderedPersonalEnabled,
   cloudEnabled,
   call,
   strictCall,
@@ -3574,7 +3667,10 @@ function SourceDetail({
   const transcript = useRef<HTMLDetailsElement>(null);
   const sourceId = id(source);
   const orderedSource = Boolean(
-    detail.orderedPreparation || detail.orderedMedia || detail.serviceIntent,
+    detail.personalOrderedInput ||
+    detail.orderedPreparation ||
+    detail.orderedMedia ||
+    detail.serviceIntent,
   );
   const proposalRevision = (source.proposals ?? [])
     .map(
@@ -3589,6 +3685,27 @@ function SourceDetail({
     detail.mediaEvidence ??
     []
   ).filter((e: any) => e.kind === "frame");
+  const suppliedMetadata =
+    detail.personalOrderedInput?.metadata?.schemaVersion === "provided-media-v1"
+      ? detail.personalOrderedInput.metadata
+      : detail.orderedMedia?.post?.schemaVersion === "provided-media-v1"
+        ? detail.orderedMedia.post
+        : null;
+  const suppliedReference = (() => {
+    if (typeof suppliedMetadata?.originalUrl !== "string") return null;
+    try {
+      const reference = new URL(suppliedMetadata.originalUrl);
+      return reference.protocol === "https:" &&
+        !reference.username &&
+        !reference.password &&
+        !reference.port &&
+        !reference.hash
+        ? reference.href
+        : null;
+    } catch {
+      return null;
+    }
+  })();
   const untimedImages =
     detail.coverage === "visual_only" &&
     savedFrames.length > 1 &&
@@ -3780,6 +3897,37 @@ function SourceDetail({
           </span>
           <ArrowRight size={20} aria-hidden="true" />
         </a>
+      )}
+      {suppliedMetadata && (
+        <section className="panel form-grid" aria-label="Provided files">
+          <h2>Provided images and videos</h2>
+          <p>
+            {suppliedMetadata.expectedAssetCount} files saved in your chosen
+            order. Creator identity, publication date and post completeness are
+            unverified.
+          </p>
+          {suppliedReference && (
+            <a
+              href={suppliedReference}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Original link supplied by you
+            </a>
+          )}
+          {suppliedMetadata.caption && (
+            <div>
+              <h3>Your caption or context</h3>
+              <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                {suppliedMetadata.caption}
+              </p>
+            </div>
+          )}
+          <p className="fine">
+            Saving these files did not start analysis. Processing status and
+            inspected evidence are shown separately.
+          </p>
+        </section>
       )}
       {!demo && detail.state === "ready" && (
         <OwnPlanTaskControls
@@ -4535,6 +4683,7 @@ function SourceDetail({
             source={detail}
             devices={devices}
             linkAnalysisEnabled={linkAnalysisEnabled}
+            orderedPersonalEnabled={orderedPersonalEnabled}
             call={strictCall}
             readOnly={readOnly || detailLoading}
           />
@@ -4586,6 +4735,7 @@ export function PersonalSourceAnalysis({
   devices,
   call,
   linkAnalysisEnabled,
+  orderedPersonalEnabled = false,
   readOnly = false,
 }: any) {
   const controlId = useId();
@@ -4596,12 +4746,16 @@ export function PersonalSourceAnalysis({
     [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [catalogueTime, setCatalogueTime] = useState(() => Date.now());
+  const orderedInput =
+    source.personalOrderedInput?.schemaVersion === "ordered-personal-input-v1";
   const eligible = devices.filter(
     (d: any) =>
       d.personalOwned &&
       d.state === "paired" &&
       d.personalOnline &&
-      d.personalModels?.length,
+      d.personalModels?.length &&
+      (!orderedInput ||
+        d.personalInputProtocols?.includes("ordered-personal-v1")),
   );
   const device = eligible.find((d: any) => id(d) === deviceId);
   const catalogueExpiry = Math.min(
@@ -4618,7 +4772,9 @@ export function PersonalSourceAnalysis({
   }, [catalogueExpiry]);
   const typedSource = Boolean(source.currentRevisionId);
   const orderedSource = Boolean(
-    source.orderedPreparation || source.orderedMedia || source.serviceIntent,
+    source.orderedPreparation ||
+    source.serviceIntent ||
+    (source.orderedMedia && !orderedInput),
   );
   const textSource = source.kind === "text" || typedSource;
   const currentCatalogue =
@@ -4647,7 +4803,16 @@ export function PersonalSourceAnalysis({
     <section aria-label="Personal ChatGPT analysis" className="panel">
       <h3>Use your ChatGPT plan</h3>
       {error && <p role="alert">{error}</p>}
-      {running && !orderedSource && (
+      {running && orderedInput && !orderedSource && (
+        <output>
+          {source.personalAnalysis.ordered?.phase === "preflight"
+            ? "Waiting for your paired computer to check its current account, selected model and local audio tools. Media preparation has not started."
+            : source.personalAnalysis.ordered?.phase === "preparing"
+              ? "Preparing the supplied files in isolation. Your computer will inspect the available images and transcribe any supported audio."
+              : "Your paired computer is inspecting the prepared images and audio, then saving cited insights."}
+        </output>
+      )}
+      {running && !orderedSource && !orderedInput && (
         <ol
           className="processing-steps"
           aria-label="Analysis progress"
@@ -4725,7 +4890,7 @@ export function PersonalSourceAnalysis({
         >
           Cancel personal analysis
         </Button>
-      ) : orderedSource ? (
+      ) : orderedSource || (orderedInput && !orderedPersonalEnabled) ? (
         <p>
           Ordered-media analysis is awaiting its supported route. Legacy video
           and cloud analysis are unavailable for this source.
@@ -4748,11 +4913,13 @@ export function PersonalSourceAnalysis({
         source.state !== "ready" && (
           <>
             <p>
-              {!textSource
-                ? "Your laptop transcribes audio locally, then sends sampled frames and the transcript to your ChatGPT account. Media preparation reserves up to 10 compute credits."
-                : typedSource
-                  ? "Your laptop sends only the reviewed file or discussion excerpts to your ChatGPT account. This source uses text citations and no media preparation credits."
-                  : "Your laptop sends this text to your ChatGPT account."}{" "}
+              {orderedInput
+                ? "Your paired computer first checks its actual account, selected image-capable model and local audio tools. Only then can isolated file preparation reserve up to 10 compute credits. It inspects prepared images and transcribes supported audio using your account and local tools."
+                : !textSource
+                  ? "Your laptop transcribes audio locally, then sends sampled frames and the transcript to your ChatGPT account. Media preparation reserves up to 10 compute credits."
+                  : typedSource
+                    ? "Your laptop sends only the reviewed file or discussion excerpts to your ChatGPT account. This source uses text citations and no media preparation credits."
+                    : "Your laptop sends this text to your ChatGPT account."}{" "}
               No VibeScroll inference credits or paid AI fallback. Your ChatGPT
               limits apply.
             </p>
@@ -4856,7 +5023,12 @@ export function PersonalSourceAnalysis({
                       !selectedModel ||
                       !efforts.includes(effort) ||
                       catalogueExpiry <= Date.now() ||
-                      orderedSource
+                      orderedSource ||
+                      (orderedInput && !orderedPersonalEnabled) ||
+                      (orderedInput &&
+                        !device.personalInputProtocols?.includes(
+                          "ordered-personal-v1",
+                        ))
                     ) {
                       setError(
                         "Review the current account catalogue, model and effort before approving this source.",
@@ -4887,9 +5059,11 @@ export function PersonalSourceAnalysis({
                     }
                   }}
                 >
-                  {!textSource
-                    ? "Transcribe and analyze video"
-                    : "Analyze with my plan"}
+                  {orderedInput
+                    ? "Check account and analyze files"
+                    : !textSource
+                      ? "Transcribe and analyze video"
+                      : "Analyze with my plan"}
                 </Button>
                 <p className="fine">
                   Approval expires after 15 minutes if unclaimed.

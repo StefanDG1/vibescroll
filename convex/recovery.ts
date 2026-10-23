@@ -307,7 +307,11 @@ export const applyMarkers = internalMutation({
 
 async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
   const provider =
-    Boolean(source.orderedMedia || source.orderedPreparation) ||
+    Boolean(
+      source.orderedMedia ||
+      source.orderedPreparation ||
+      source.personalOrderedInput,
+    ) ||
     source.sourceType === "github_repository" ||
     source.sourceType === "reddit_thread" ||
     source.sourceRetentionUntil !== undefined;
@@ -319,6 +323,8 @@ async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
     return;
   }
   const retainedContent =
+    source.personalOrderedInput ||
+    source.orderedPreparation ||
     source.currentRevisionId ||
     source.analysis ||
     source.summary ||
@@ -335,8 +341,16 @@ async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
   )
     return;
   await ctx.db.patch(source._id, {
+    rightsAttested: provider ? false : source.rightsAttested,
+    objectKey:
+      source.personalOrderedInput ||
+      source.orderedMedia ||
+      source.orderedPreparation
+        ? undefined
+        : source.objectKey,
     currentRevisionId: undefined,
     orderedMedia: undefined,
+    personalOrderedInput: undefined,
     orderedPreparation: undefined,
     serviceIntent: undefined,
     sourceRetentionUntil: undefined,

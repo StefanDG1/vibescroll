@@ -26,12 +26,118 @@ vi.mock("react", async (original) => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }));
-import { PersonalSourceAnalysis } from "./components/console";
+import { PersonalSourceAnalysis, CaptureForm } from "./components/console";
 type Node = ReactElement<Record<string, any>>;
 afterEach(() => {
   hooks.values = [];
   hooks.index = 0;
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+it("uses actual selected effort for automatic URL capture and rejects missing choices before saving", async () => {
+  const h = harness();
+  h.device.subscriptionCapabilities.value.models[1].reasoningEfforts = ["high"];
+  const call = vi.fn(async (operation) =>
+    operation === "checkPersonalSession"
+      ? true
+      : operation === "capture"
+        ? "captured-source"
+        : { started: true },
+  );
+  const props = {
+    organizationId: "workspace",
+    devices: [h.device],
+    personalEnabled: true,
+    linkAnalysisEnabled: true,
+    call,
+    onDone: vi.fn(),
+  };
+  const view = () => {
+    hooks.index = 0;
+    return CaptureForm(props);
+  };
+  vi.stubGlobal(
+    "FormData",
+    class {
+      get(name: string) {
+        return (
+          {
+            url: "https://www.instagram.com/p/Example/",
+            title: "Synthetic source",
+            ownPlan: "on",
+            rights: "on",
+          } as Record<string, string>
+        )[name];
+      }
+    },
+  );
+  await view().props.onSubmit({ preventDefault() {}, currentTarget: {} });
+  expect(call).not.toHaveBeenCalled();
+  const choose = (value: string) =>
+    elements(view())
+      .find(
+        (node) =>
+          typeof node.props.onValueChange === "function" &&
+          elements(node.props.children).some(
+            (option) =>
+              option.type === "option" && option.props.value === value,
+          ),
+      )!
+      .props.onValueChange(value);
+  expect(text(view())).not.toContain("Actual text model");
+  expect(text(view())).not.toContain("Legacy echo");
+  choose("advertised-image");
+  choose("high");
+  await view().props.onSubmit({ preventDefault() {}, currentTarget: {} });
+  expect(call).toHaveBeenCalledWith("approvePersonalBatch", {
+    deviceId: "owned-device",
+    model: "advertised-image",
+    effort: "high",
+    useOwnPlan: true,
+    maxComputeCredits: 10,
+    sources: [{ id: "captured-source", generation: 0 }],
+  });
+});
+it("blocks expired automatic capture choices before a new source or upload grant", async () => {
+  const h = harness();
+  const call = vi.fn();
+  const props = {
+    organizationId: "workspace",
+    devices: [h.device],
+    personalEnabled: true,
+    linkAnalysisEnabled: true,
+    call,
+    onDone: vi.fn(),
+  };
+  const view = () => {
+    hooks.index = 0;
+    return CaptureForm(props);
+  };
+  const choose = (value: string) =>
+    elements(view())
+      .find(
+        (node) =>
+          typeof node.props.onValueChange === "function" &&
+          elements(node.props.children).some(
+            (option) =>
+              option.type === "option" && option.props.value === value,
+          ),
+      )!
+      .props.onValueChange(value);
+  choose("advertised-image");
+  choose("medium");
+  const form = view();
+  vi.stubGlobal(
+    "FormData",
+    class {
+      get() {
+        return "on";
+      }
+    },
+  );
+  vi.spyOn(Date, "now").mockReturnValue(Date.now() + 600001);
+  await form.props.onSubmit({ preventDefault() {}, currentTarget: {} });
+  expect(call).not.toHaveBeenCalled();
 });
 function render(props: any) {
   hooks.index = 0;
@@ -94,6 +200,7 @@ function harness(extra: any = {}) {
     devices: [device],
     call,
     linkAnalysisEnabled: true,
+    orderedPersonalEnabled: true,
     ...extra,
   };
   const view = () => render(props);
@@ -201,6 +308,87 @@ it.each(["orderedPreparation", "orderedMedia", "serviceIntent"])(
     });
   },
 );
+it("offers ordered private analysis only to a current protocol runner and image-capable advertised model", async () => {
+  const h = harness({
+    source: {
+      _id: "ordered-upload",
+      kind: "upload",
+      generation: 2,
+      state: "saved",
+      personalOrderedInput: { schemaVersion: "ordered-personal-input-v1" },
+    },
+  });
+  expect(text(h.view())).toContain("Start your paired companion");
+  expect(text(h.view())).not.toContain("Check account and analyze files");
+  (h.device as any).personalInputProtocols = ["ordered-personal-v1"];
+  h.choose(0, "owned-device");
+  expect(text(h.view())).not.toContain("Actual text model");
+  expect(text(h.view())).toContain("Actual image model");
+  h.choose(1, "advertised-image");
+  h.choose(2, "medium");
+  h.consent();
+  const action = elements(h.view()).find(
+    (node) => text(node) === "Check account and analyze files",
+  )!;
+  expect(action.props.disabled).toBe(false);
+  await action.props.onClick();
+  await flush();
+  expect(h.call).toHaveBeenCalledWith("approvePersonalAnalysis", {
+    id: "ordered-upload",
+    generation: 2,
+    deviceId: "owned-device",
+    model: "advertised-image",
+    effort: "medium",
+    useOwnPlan: true,
+    maxComputeCredits: 10,
+  });
+  h.props.source.personalAnalysis = {
+    state: "queued",
+    ordered: { phase: "preflight" },
+  };
+  expect(text(h.view())).toContain("Media preparation has not started");
+  expect(text(h.view())).toContain("Cancel personal analysis");
+});
+it("shows the closed ordered-processing gate without offering an approval", () => {
+  const h = harness({
+    orderedPersonalEnabled: false,
+    source: {
+      _id: "ordered-upload",
+      kind: "upload",
+      generation: 2,
+      state: "saved",
+      personalOrderedInput: { schemaVersion: "ordered-personal-input-v1" },
+    },
+  });
+  (h.device as any).personalInputProtocols = ["ordered-personal-v1"];
+  expect(text(h.view())).toContain(
+    "Ordered-media analysis is awaiting its supported route",
+  );
+  expect(text(h.view())).not.toContain("Check account and analyze files");
+});
+it("refuses an ordered approval if its selected runner loses protocol support after render", async () => {
+  const h = harness({
+    source: {
+      _id: "ordered-upload",
+      kind: "upload",
+      generation: 2,
+      state: "saved",
+      personalOrderedInput: { schemaVersion: "ordered-personal-input-v1" },
+    },
+  });
+  (h.device as any).personalInputProtocols = ["ordered-personal-v1"];
+  h.choose(0, "owned-device");
+  h.choose(1, "advertised-image");
+  h.choose(2, "medium");
+  h.consent();
+  const action = elements(h.view()).find(
+    (node) => text(node) === "Check account and analyze files",
+  )!;
+  (h.device as any).personalInputProtocols = [];
+  await action.props.onClick();
+  await flush();
+  expect(h.call).not.toHaveBeenCalled();
+});
 it("keeps failed approval consent reviewable and displays the actual error; viewers cannot approve", async () => {
   const h = harness();
   h.call.mockImplementation(async () => {

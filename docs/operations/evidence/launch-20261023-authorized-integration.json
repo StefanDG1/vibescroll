@@ -94,6 +94,12 @@
     "production": false,
     "independentHumanAcceptance": false,
     "completeProduct": false,
-    "exactHeadCi": "pending"
+    "exactHeadCi": {
+      "verifiedHead": "d4d8e4a0dab45a913c9770f2c825cd8124042f48",
+      "runId": 39883595855,
+      "result": "success",
+      "recheckedAt": "2026-10-23T19:18:53Z",
+      "scope": "Pushed integration stage only; subsequent ordered-file and runtime changes are separate uncommitted work."
+    }
   }
 }

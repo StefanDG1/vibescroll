@@ -1,7 +1,11 @@
 import { z } from "zod";
-import { validateSocialEvidence, type SocialEvidence } from "./contracts";
+import {
+  validateOrderedEvidence,
+  socialPostSchema,
+  type SocialEvidence,
+} from "./contracts.ts";
 import { containsSecret } from "../policy/secrets.mjs";
-import { insightIconKeys } from "../insights/presentation";
+import { insightIconKeys } from "../insights/presentation.ts";
 
 const id = z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/);
 const citation = z.strictObject({
@@ -93,6 +97,17 @@ export async function validateSocialAnalysis(
   prepared: unknown,
   binding: { sourceId: string; generation: number },
 ) {
+  const validated = await validateOrderedAnalysis(output, prepared, binding);
+  // Reusable service artifacts accept verified social posts only. Supplied
+  // private media cannot gain redistribution rights through this validator.
+  const post = socialPostSchema.parse(validated.prepared.post);
+  return { ...validated, prepared: { ...validated.prepared, post } };
+}
+export async function validateOrderedAnalysis(
+  output: unknown,
+  prepared: unknown,
+  binding: { sourceId: string; generation: number },
+) {
   if (
     new TextEncoder().encode(JSON.stringify({ output, prepared })).length >
       512 * 1024 ||
@@ -100,7 +115,7 @@ export async function validateSocialAnalysis(
   )
     throw Error("ORDERED_MEDIA_SIZE_OR_SECRET");
   const raw = orderedMediaSchema.parse(prepared);
-  const media = await validateSocialEvidence(raw.post, raw.evidence);
+  const media = await validateOrderedEvidence(raw.post, raw.evidence);
   const analysis = socialAnalysisOutput.parse(output);
   if (
     analysis.sourceId !== binding.sourceId ||

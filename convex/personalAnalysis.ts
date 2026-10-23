@@ -22,6 +22,15 @@ import { subscriptionCapabilitiesValue } from "./localLibrarySchema";
 import { capabilitySnapshot } from "./lib/localTaskAuthority";
 import { safeEffort } from "../packages/runner/subscription-capabilities.mjs";
 import { reusablePersonalPreparation } from "./lib/personalPreparation";
+import {
+  orderedInput,
+  orderedInputHash,
+  orderedPrepared,
+  orderedCompletion,
+} from "./lib/personalOrdered";
+import { socialHash } from "../packages/social/contracts";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { personalOrderedInputSchema } from "../packages/social/ordered-intake";
 
 export const personalApprovalFields = {
   deviceId: v.id("devices"),
@@ -280,6 +289,118 @@ export async function approvePersonalCore(
     "Review the current source state before approving.",
   );
   ensure(
+    !source.personalOrderedInput || !authorization,
+    "POLICY_BLOCKED",
+    "Ordered media requires its own explicit source approval.",
+  );
+  if (source.personalOrderedInput) {
+    const { input, rows } = await orderedInput(ctx, source);
+    ensure(
+      device.subscriptionCapabilities &&
+        device.personalInputProtocols?.includes("ordered-personal-v1") &&
+        (device.personalSeenAt ?? 0) > Date.now() - 60000 &&
+        /^[a-f0-9]{64}$/.test(device.personalProfileBinding ?? "") &&
+        sourceCapabilityCurrent(
+          device,
+          a.model,
+          a.effort,
+          device.personalProfileBinding!,
+          true,
+        ),
+      "SETUP_REQUIRED",
+      "Connect the current ordered-media runner and choose an available image-capable model and effort.",
+    );
+    ensure(
+      a.maxComputeCredits === 10 &&
+        process.env.MEDIA_VERIFIED === "true" &&
+        process.env.ORDERED_MEDIA_VERIFIED === "true",
+      "SETUP_REQUIRED",
+      "Approve the verified ordered media worker's maximum 10 compute credits.",
+    );
+    const rate = Number(process.env.SANDBOX_CREDITS_PER_SECOND);
+    ensure(
+      Number.isFinite(rate) && rate > 0 && Math.ceil(300 * rate) <= 10,
+      "QUOTE_CHANGED",
+      "The bounded compute quote is unavailable.",
+    );
+    const prior =
+      source.personalAnalysis &&
+      (await ctx.db
+        .query("reservations")
+        .withIndex("by_key", (q) =>
+          q
+            .eq("organizationId", source.organizationId)
+            .eq(
+              "key",
+              `personal-media:${source._id}:${source.personalAnalysis!.generation}`,
+            ),
+        )
+        .unique());
+    ensure(
+      prior?.state !== "active",
+      "COST_RECONCILIATION_REQUIRED",
+      "Reconcile earlier compute before retrying.",
+    );
+    const generation = source.generation + 1,
+      now = Date.now();
+    await reserve(
+      ctx,
+      source.organizationId,
+      `source:${source._id}:${generation}`,
+      0,
+    );
+    for (const row of rows)
+      await ctx.db.patch(row._id, { sourceGeneration: generation });
+    await ctx.db.patch(source._id, {
+      generation,
+      state: "queued",
+      managedAnalysisActor: undefined,
+      personalMedia: undefined,
+      orderedMedia: undefined,
+      analysis: undefined,
+      summary: undefined,
+      error: undefined,
+      personalAnalysis: {
+        deviceId: device._id,
+        actor: actor._id,
+        generation,
+        model: a.model,
+        profileBinding: device.personalProfileBinding!,
+        effort: a.effort,
+        capabilityHash: device.subscriptionCapabilities.hash,
+        state: "queued",
+        approvedAt: now,
+        expiresAt: now + 900000,
+        leaseUntil: 0,
+        deadline: 0,
+        stage: "preflight",
+        ordered: {
+          schemaVersion: "ordered-personal-v1",
+          phase: "preflight",
+          inputBinding: await orderedInputHash(
+            source,
+            input,
+            rows.map((row) => ({ ...row, sourceGeneration: generation })),
+            generation,
+          ),
+        },
+      },
+      updatedAt: now,
+    });
+    await ctx.scheduler.runAfter(900000, internal.personalMediaState.expire, {
+      id: source._id,
+      generation,
+    });
+    await audit(
+      ctx,
+      source.organizationId,
+      actor._id,
+      "personal_ordered_approved",
+      `${source._id}:${generation}`,
+    );
+    return;
+  }
+  ensure(
     !source.orderedMedia && !source.orderedPreparation && !source.serviceIntent,
     "POLICY_BLOCKED",
     "This ordered source needs its reviewed own-subscription route. No legacy video or paid fallback was used.",
@@ -464,6 +585,32 @@ export const cancel = mutation({
       `source:${id}:${source.personalAnalysis.generation}`,
       0,
     );
+    if (source.personalAnalysis.ordered && source.personalOrderedInput) {
+      // Cancellation fences execution immediately, while an explicit later
+      // approval may still review the same retained original private objects.
+      const input = personalOrderedInputSchema.parse(
+        source.personalOrderedInput,
+      );
+      for (const item of input.assets) {
+        const row = await ctx.db
+          .query("assets")
+          .withIndex("by_key", (q) => q.eq("key", item.key))
+          .unique();
+        if (
+          row?.organizationId === source.organizationId &&
+          row.sourceId === source._id &&
+          row.sourceGeneration === source.generation
+        )
+          await ctx.db.patch(row._id, {
+            sourceGeneration: source.generation + 1,
+          });
+      }
+    }
+    if (source.personalAnalysis.ordered) {
+      const d = await ctx.db.get(source.personalAnalysis.deviceId);
+      if (d?.activePersonalSource === id)
+        await ctx.db.patch(d._id, { activePersonalSource: undefined });
+    }
     await ctx.db.patch(id, {
       state: "failed",
       generation: source.generation + 1,
@@ -496,6 +643,7 @@ export const dispatch = internalMutation({
       v.literal("heartbeat"),
       v.literal("complete"),
       v.literal("fail"),
+      v.literal("ordered_preflight"),
     ),
     models: v.optional(
       v.array(v.object({ slug: v.string(), displayName: v.string() })),
@@ -503,6 +651,10 @@ export const dispatch = internalMutation({
     profileBinding: v.optional(v.string()),
     capabilities: v.optional(subscriptionCapabilitiesValue),
     sessionExpiresAt: v.optional(v.number()),
+    inputProtocols: v.optional(v.array(v.literal("ordered-personal-v1"))),
+    claimToken: v.optional(v.string()),
+    localAsrReady: v.optional(v.boolean()),
+    orderedEvidence: v.optional(v.any()),
     id: v.optional(v.id("sources")),
     generation: v.optional(v.number()),
     output: v.optional(v.any()),
@@ -554,6 +706,10 @@ export const dispatch = internalMutation({
         personalModels: a.models,
         personalProfileBinding: a.profileBinding,
         personalSeenAt: now,
+        personalInputProtocols:
+          a.capabilities && a.inputProtocols?.length === 1
+            ? a.inputProtocols
+            : undefined,
       });
       return {
         online: true,
@@ -588,6 +744,12 @@ export const dispatch = internalMutation({
           reconcile: {
             id: device.activePersonalSource,
             generation: active?.personalAnalysis?.generation ?? null,
+            ...(active?.personalAnalysis?.ordered
+              ? {
+                  inputKind: "ordered-personal-v1",
+                  claimToken: active.personalAnalysis.ordered.leaseToken,
+                }
+              : {}),
           },
         };
       }
@@ -620,10 +782,13 @@ export const dispatch = internalMutation({
             job.model,
             job.effort,
             job.profileBinding,
-            !!source.personalMedia?.frames?.length,
+            !!job.ordered || !!source.personalMedia?.frames?.length,
             job.capabilityHash,
           ) ||
-          !device.personalModels?.some((m) => m.slug === job.model)
+          !device.personalModels?.some((m) => m.slug === job.model) ||
+          (!!job.ordered &&
+            (!device.personalInputProtocols?.includes("ordered-personal-v1") ||
+              !job.capabilityHash))
         ) {
           await ctx.db.patch(source._id, {
             personalAnalysis: { ...job, state: "expired" },
@@ -640,8 +805,27 @@ export const dispatch = internalMutation({
           continue;
         }
         const leaseUntil = now + 40000,
-          deadline =
-            now + (source.kind !== "text" && !registry ? 900000 : 180000);
+          deadline = Math.min(
+            job.expiresAt,
+            now +
+              (job.ordered?.phase === "preflight"
+                ? 180000
+                : source.kind !== "text" && !registry
+                  ? 900000
+                  : 180000),
+          );
+        const claimToken = job.ordered ? crypto.randomUUID() : undefined;
+        if (job.ordered) {
+          const bound = await orderedInput(ctx, source);
+          ensure(
+            job.ordered.inputBinding ===
+              (await orderedInputHash(source, bound.input, bound.rows)),
+            "APPROVAL_STALE",
+            "Ordered input changed.",
+          );
+          if (job.ordered.phase === "analysis")
+            await orderedPrepared(ctx, source);
+        }
         await ctx.db.patch(source._id, {
           state: "processing",
           personalAnalysis: {
@@ -653,10 +837,38 @@ export const dispatch = internalMutation({
                 : "analyzing",
             leaseUntil,
             deadline,
+            ...(job.ordered
+              ? { ordered: { ...job.ordered, leaseToken: claimToken } }
+              : {}),
           },
           updatedAt: now,
         });
         await ctx.db.patch(device._id, { activePersonalSource: source._id });
+        if (job.ordered) {
+          const bound = await orderedInput(ctx, source);
+          return {
+            job: {
+              inputKind: "ordered-personal-v1",
+              phase: job.ordered.phase,
+              id: source._id,
+              generation: job.generation,
+              model: job.model,
+              effort: job.effort,
+              profileBinding: job.profileBinding,
+              capabilityHash: job.capabilityHash,
+              claimToken,
+              inputBinding: job.ordered.inputBinding,
+              needsAudio: bound.input.assets.some(
+                (asset) => asset.kind === "video",
+              ),
+              ...(job.ordered.phase === "analysis"
+                ? { media: source.personalMedia }
+                : {}),
+              leaseUntil,
+              deadline,
+            },
+          };
+        }
         return {
           job: {
             id: source._id,
@@ -691,6 +903,44 @@ export const dispatch = internalMutation({
       }
       return { job: null };
     }
+    // A duplicate confirmed preflight ACK can observe its own committed handoff,
+    // but cannot schedule another preparation or affect a later analysis claim.
+    if (a.operation === "ordered_preflight" && a.id) {
+      const prior = await ctx.db.get(a.id),
+        j = prior?.personalAnalysis;
+      if (
+        prior &&
+        prior.generation === a.generation &&
+        prior.organizationId === device.organizationId &&
+        j?.deviceId === device._id &&
+        j.actor === device.owner &&
+        j.ordered?.phase === "preparing" &&
+        j.ordered.preflightHash &&
+        typeof a.claimToken === "string"
+      ) {
+        const candidate = await socialHash(
+          canonicalJson({
+            id: prior._id,
+            generation: j.generation,
+            claimToken: a.claimToken,
+            inputBinding: j.ordered.inputBinding,
+            capabilityHash: j.capabilityHash,
+            profileBinding: j.profileBinding,
+            model: j.model,
+            effort: j.effort,
+          }),
+        );
+        const input = await orderedInput(ctx, prior);
+        ensure(
+          candidate === j.ordered.preflightHash &&
+            j.ordered.inputBinding ===
+              (await orderedInputHash(prior, input.input, input.rows)),
+          "APPROVAL_STALE",
+          "The preflight handoff changed.",
+        );
+        return { accepted: true, deferred: true };
+      }
+    }
     ensure(
       a.id && device.activePersonalSource === a.id,
       "APPROVAL_STALE",
@@ -698,6 +948,16 @@ export const dispatch = internalMutation({
     );
     const source = await ctx.db.get(a.id);
     const job = source?.personalAnalysis;
+    ensure(
+      !job?.ordered ||
+        (["preflight", "analysis"].includes(job.ordered.phase) &&
+          ["running", "expired"].includes(job.state) &&
+          a.claimToken === job.ordered.leaseToken &&
+          typeof a.claimToken === "string" &&
+          source?.generation === a.generation),
+      "APPROVAL_STALE",
+      "The ordered phase lease changed.",
+    );
     if (a.operation === "fail") {
       ensure(
         !source ||
@@ -721,12 +981,18 @@ export const dispatch = internalMutation({
           updatedAt: now,
         });
       }
+      ensure(
+        device.activePersonalSource === a.id &&
+          (!job || job.generation === a.generation),
+        "APPROVAL_STALE",
+        "The active device job changed.",
+      );
       await ctx.db.patch(device._id, { activePersonalSource: undefined });
       return { stopped: true };
     }
     let currentDevice = device;
     if (
-      a.operation === "heartbeat" &&
+      ["heartbeat", "ordered_preflight"].includes(a.operation) &&
       a.capabilities &&
       job?.capabilityHash &&
       job.deviceId === device._id &&
@@ -756,7 +1022,7 @@ export const dispatch = internalMutation({
           job.model,
           job.effort,
           job.profileBinding,
-          !!source.personalMedia?.frames?.length,
+          !!job.ordered || !!source.personalMedia?.frames?.length,
           job.capabilityHash,
         ) &&
         device.personalModels?.some((entry) => entry.slug === job.model) &&
@@ -769,6 +1035,134 @@ export const dispatch = internalMutation({
       "Personal lease was canceled, expired or changed.",
     );
     const registry = await typedSource(ctx, source);
+    if (job.ordered) {
+      const bound = await orderedInput(ctx, source);
+      ensure(
+        job.ordered.inputBinding ===
+          (await orderedInputHash(source, bound.input, bound.rows)) &&
+          device.personalInputProtocols?.includes("ordered-personal-v1"),
+        "APPROVAL_STALE",
+        "Ordered input or runner changed.",
+      );
+      if (a.operation === "ordered_preflight") {
+        ensure(
+          job.ordered.phase === "preflight" &&
+            a.capabilities &&
+            a.profileBinding === job.profileBinding &&
+            a.localAsrReady === true &&
+            currentDevice.subscriptionCapabilities?.hash === job.capabilityHash,
+          "APPROVAL_STALE",
+          "The selected actual account catalogue or local ASR changed.",
+        );
+        const rate = Number(process.env.SANDBOX_CREDITS_PER_SECOND);
+        ensure(
+          process.env.MEDIA_VERIFIED === "true" &&
+            process.env.ORDERED_MEDIA_VERIFIED === "true" &&
+            Number.isFinite(rate) &&
+            rate > 0 &&
+            Math.ceil(300 * rate) <= 10,
+          "SETUP_REQUIRED",
+          "Verified ordered preparation is unavailable.",
+        );
+        await reserve(
+          ctx,
+          source.organizationId,
+          `personal-media:${source._id}:${job.generation}`,
+          10,
+        );
+        const preflightHash = await socialHash(
+          canonicalJson({
+            id: source._id,
+            generation: job.generation,
+            claimToken: a.claimToken,
+            inputBinding: job.ordered.inputBinding,
+            capabilityHash: job.capabilityHash,
+            profileBinding: job.profileBinding,
+            model: job.model,
+            effort: job.effort,
+          }),
+        );
+        await ctx.db.patch(source._id, {
+          personalAnalysis: {
+            ...job,
+            state: "preparing",
+            stage: "preparing",
+            leaseUntil: 0,
+            deadline: 0,
+            ordered: {
+              ...job.ordered,
+              phase: "preparing",
+              leaseToken: undefined,
+              preflightHash,
+            },
+          },
+          updatedAt: now,
+        });
+        await ctx.db.patch(device._id, { activePersonalSource: undefined });
+        await workflow.start(
+          ctx,
+          internal.workflows.personalPreparation,
+          { id: source._id, generation: job.generation, ordered: true },
+          {
+            onComplete: internal.workflows.completed,
+            context: null,
+            startAsync: true,
+          },
+        );
+        return { accepted: true, deferred: true };
+      }
+      ensure(
+        a.operation === "heartbeat" || job.ordered.phase === "analysis",
+        "APPROVAL_STALE",
+        "Finish fresh preflight before analysing.",
+      );
+      if (job.ordered.phase === "analysis") await orderedPrepared(ctx, source);
+      if (a.operation === "complete") {
+        const validated = await orderedCompletion(
+            ctx,
+            source,
+            a.orderedEvidence,
+            a.output,
+          ),
+          output = validated.analysis;
+        ensure(
+          !a.usage ||
+            [a.usage.inputTokens, a.usage.outputTokens].every(
+              (n) => Number.isSafeInteger(n) && n >= 0 && n <= 10000000,
+            ),
+          "INVALID_INPUT",
+          "Invalid plan usage.",
+        );
+        await settle(
+          ctx,
+          source.organizationId,
+          `source:${source._id}:${job.generation}`,
+          0,
+        );
+        await ctx.db.patch(source._id, {
+          state: "ready",
+          orderedMedia: validated.prepared,
+          analysis: output,
+          analysisPipelineVersion: "official-personal-ordered-v1",
+          summary: output.summary,
+          coverage: "ordered_media",
+          personalAnalysis: { ...job, state: "completed", ...a.usage },
+          error: undefined,
+          updatedAt: now,
+        });
+        await syncCategories(ctx, (await ctx.db.get(source._id))!, output);
+        await syncKnowledge(ctx, (await ctx.db.get(source._id))!, {
+          enqueue: false,
+        });
+        await ctx.db.patch(device._id, { activePersonalSource: undefined });
+        return { accepted: true };
+      }
+    } else
+      ensure(
+        a.orderedEvidence === undefined && a.operation !== "ordered_preflight",
+        "INVALID_INPUT",
+        "Ordered evidence requires its own approved protocol.",
+      );
     const media = source.kind !== "text" && !registry;
     if (a.operation === "heartbeat") {
       ensure(
@@ -1049,5 +1443,46 @@ export const mediaLease = internalQuery({
         creatorRights: source.creatorRights,
       },
     };
+  },
+});
+export const orderedMediaLease = internalQuery({
+  args: {
+    credentialHash: v.string(),
+    id: v.id("sources"),
+    generation: v.number(),
+    claimToken: v.string(),
+  },
+  handler: async (ctx, a) => {
+    const device = await authorizedDevice(ctx, a.credentialHash),
+      source = await ctx.db.get(a.id),
+      j = source?.personalAnalysis;
+    ensure(
+      source &&
+        device.activePersonalSource === source._id &&
+        source.organizationId === device.organizationId &&
+        source.state === "processing" &&
+        source.generation === a.generation &&
+        j?.state === "running" &&
+        j.deviceId === device._id &&
+        j.actor === device.owner &&
+        j.profileBinding === device.personalProfileBinding &&
+        j.ordered?.phase === "analysis" &&
+        j.ordered.leaseToken === a.claimToken &&
+        j.leaseUntil > Date.now() &&
+        j.deadline > Date.now() &&
+        j.capabilityHash &&
+        device.personalInputProtocols?.includes("ordered-personal-v1") &&
+        sourceCapabilityCurrent(
+          device,
+          j.model,
+          j.effort,
+          j.profileBinding,
+          true,
+          j.capabilityHash,
+        ),
+      "APPROVAL_STALE",
+      "Ordered media lease changed.",
+    );
+    return (await orderedPrepared(ctx, source)).media;
   },
 });

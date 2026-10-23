@@ -89,7 +89,13 @@ export function createRunnerRequest({
   return async (operation, args = {}) => {
     signal.throwIfAborted();
     const body = JSON.stringify({ protocolVersion: "1.0.0", operation, args });
-    if (Buffer.byteLength(body) > (route === "personal" ? 150000 : 1000000))
+    const maxBody =
+      route === "personal"
+        ? operation === "complete" && args.orderedEvidence !== undefined
+          ? 512 * 1024
+          : 150000
+        : 1000000;
+    if (Buffer.byteLength(body) > maxBody)
       throw Error("ASSISTANT_REQUEST_LIMIT");
     const response = await fetchImpl(endpoint, {
       method: "POST",
@@ -198,6 +204,7 @@ export function createSubscriptionCoordinator({
                 profileBinding: official.session.profileBinding,
                 capabilities,
                 sessionExpiresAt: official.session.expiresAt,
+                inputProtocols: ["ordered-personal-v1"],
               }
             : {
                 ...(assistant ? { model: "gpt-6.1-sol" } : {}),
@@ -260,6 +267,9 @@ export function createSubscriptionCoordinator({
               ...(response.reconcile.generation === null
                 ? {}
                 : { generation: response.reconcile.generation }),
+              ...(response.reconcile.inputKind === "ordered-personal-v1"
+                ? { claimToken: response.reconcile.claimToken }
+                : {}),
             });
             return { worked: true, route, delayMs: 1000 };
           }
@@ -278,7 +288,9 @@ export function createSubscriptionCoordinator({
           )
             throw Error("ASSISTANT_JOB_INVALID");
           const identity =
-            route === "personal" ? `${job.id}:${job.generation}` : job.runId;
+            route === "personal"
+              ? `${job.id}:${job.generation}${job.inputKind === "ordered-personal-v1" ? `:${job.phase}` : ""}`
+              : job.runId;
           if (!identity || attempted.has(`${route}:${identity}`))
             throw Error("ASSISTANT_DUPLICATE_CLAIM");
           attempted.add(`${route}:${identity}`);
@@ -296,7 +308,8 @@ export function createSubscriptionCoordinator({
             assertSubscriptionInput(capabilities, model, effort, {}, []);
             if (
               (route === "personal"
-                ? job.media?.frames?.length
+                ? job.inputKind === "ordered-personal-v1" ||
+                  job.media?.frames?.length
                 : job.extract) &&
               !capabilities.models
                 .find((m) => m.slug === model)
@@ -341,7 +354,13 @@ export function createSubscriptionCoordinator({
                 ? "task_fail"
                 : "fail",
               route === "personal"
-                ? { id: job.id, generation: job.generation }
+                ? {
+                    id: job.id,
+                    generation: job.generation,
+                    ...(job.inputKind === "ordered-personal-v1"
+                      ? { claimToken: job.claimToken }
+                      : {}),
+                  }
                 : {
                     runId: job.runId,
                     ...(job.taskProtocolVersion === "1.0.0"

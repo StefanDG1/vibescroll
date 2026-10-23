@@ -87,6 +87,8 @@ export async function runtimeSourceInventory(source) {
     "package.json",
     "pnpm-lock.yaml",
     "LICENSE",
+    "packages/media/asr-model.lock.json",
+    "packages/media/asr_verification.py",
   ];
   const files = new Map(),
     external = new Set();
@@ -99,7 +101,7 @@ export async function runtimeSourceInventory(source) {
     )
       throw Error("PACKAGE_UNSUPPORTED_AUTH_ADAPTER");
     if (
-      !/^(?:scripts\/|packages\/(?:runner|companion|contracts|knowledge|media)\/|packages\/plans\/contract\.mjs$|packages\/social\/identity\.mjs$|packages\/policy\/secrets\.mjs$|infra\/downloader\.json$|contracts\/|package\.json$|pnpm-lock\.yaml$|LICENSE$)/.test(
+      !/^(?:scripts\/|packages\/(?:runner|companion|contracts|knowledge|media)\/|packages\/plans\/contract\.mjs$|packages\/social\/identity\.mjs$|packages\/social\/(?:analysis|contracts|preparation|diagnostics|ordered-intake)\.ts$|packages\/insights\/presentation\.ts$|packages\/policy\/secrets\.mjs$|infra\/downloader\.json$|contracts\/|package\.json$|pnpm-lock\.yaml$|LICENSE$)/.test(
         path,
       )
     )

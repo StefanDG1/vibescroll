@@ -1,7 +1,9 @@
 import type { Doc } from "../_generated/dataModel";
 import { creatorConfiguration } from "./creatorPolicy";
 import { requireSocialRights } from "../../packages/social/contracts";
-import { validateSocialAnalysis } from "../../packages/social/analysis";
+import { validateOrderedAnalysis } from "../../packages/social/analysis";
+import { personalOrderedInputSchema } from "../../packages/social/ordered-intake";
+import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { sourceRetained } from "./sourceAuthority";
 
 export async function currentOrderedSource(
@@ -15,10 +17,40 @@ export async function currentOrderedSource(
     source.currentRevisionId
   )
     throw Error("ORDERED_SOURCE_UNAVAILABLE");
-  const validated = await validateSocialAnalysis(output, source.orderedMedia, {
+  const validated = await validateOrderedAnalysis(output, source.orderedMedia, {
     sourceId: source._id,
     generation: source.generation,
   });
+  if (validated.prepared.post.schemaVersion === "provided-media-v1") {
+    const input = personalOrderedInputSchema.parse(source.personalOrderedInput);
+    const {
+      assets: _assets,
+      captionHash: _captionHash,
+      revisionHash: _revisionHash,
+      coverage: _coverage,
+      ...metadata
+    } = validated.prepared.post;
+    if (
+      source.kind !== "upload" ||
+      source.creatorRights ||
+      source.serviceIntent ||
+      validated.prepared.post.observedAt > Date.now() ||
+      source.canonical !== `provided:${validated.prepared.post.submissionId}` ||
+      canonicalJson(metadata) !== canonicalJson(input.metadata) ||
+      !validated.prepared.post.assets.every((asset) =>
+        input.assets.some(
+          (original) =>
+            original.id === asset.id &&
+            original.index === asset.index &&
+            original.kind === asset.kind &&
+            original.bytes === asset.bytes &&
+            original.sha256 === asset.contentHash,
+        ),
+      )
+    )
+      throw Error("PROVIDED_MEDIA_SOURCE_CHANGED");
+    return validated;
+  }
   const now = Date.now(),
     policy = creatorConfiguration(now);
   if (

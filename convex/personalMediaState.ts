@@ -14,7 +14,9 @@ import {
   personalPreparationInput,
   personalPreparationInputBinding,
   personalPreparationBinding,
+  personalPreparationPipeline,
 } from "./lib/personalPreparation";
+import { creationProvenanceCurrent } from "../packages/providers/preparation-runtime";
 import {
   acquisitionManifest,
   acquisitionMessage,
@@ -79,14 +81,17 @@ export const inputSnapshot = internalQuery({
     if (!source) return null;
     const input = await personalPreparationInput(ctx, source);
     if (!input) return null;
+    const runtime = await personalPreparationPipeline(ctx);
     return {
       source,
       inputBinding: await personalPreparationInputBinding(input),
-      cacheBinding: await personalPreparationBinding(source, input),
+      cacheBinding: await personalPreparationBinding(source, input, runtime),
+      runtime,
       expiresAt: Math.min(
         Date.now() + 3600000,
         input.raw?.expiresAt ?? Infinity,
         source.sourceRetentionUntil ?? Infinity,
+        runtime?.route === "broker" ? runtime.authority.expiresAt : Infinity,
       ),
     };
   },
@@ -179,13 +184,16 @@ export const finish = internalMutation({
       const inputBinding =
         input && (await personalPreparationInputBinding(input));
       const stamp = a.media.preparation;
+      const runtime = await personalPreparationPipeline(ctx);
       const cacheBinding =
-        input && (await personalPreparationBinding(s, input));
+        input && (await personalPreparationBinding(s, input, runtime));
       if (
         !input ||
         (a.inputBinding && a.inputBinding !== inputBinding) ||
         (stamp &&
           (!cacheBinding ||
+            !runtime ||
+            !creationProvenanceCurrent(stamp.creationProvenance, runtime) ||
             stamp.inputBinding !== inputBinding ||
             stamp.binding !== cacheBinding ||
             stamp.generation !== a.generation ||
@@ -199,6 +207,9 @@ export const finish = internalMutation({
                 stamp.preparedAt + 3600000,
                 input.raw?.expiresAt ?? Infinity,
                 s.sourceRetentionUntil ?? Infinity,
+                runtime?.route === "broker"
+                  ? runtime.authority.expiresAt
+                  : Infinity,
               )))
       ) {
         await settle(
@@ -283,6 +294,7 @@ export const expire = internalMutation({
       j.expiresAt > Date.now()
     )
       return;
+    await releaseUnstarted(ctx, s.organizationId, s._id, a.generation);
     await settle(ctx, s.organizationId, `source:${s._id}:${a.generation}`, 0);
     await ctx.db.patch(s._id, {
       state: "failed",

@@ -14,6 +14,9 @@ import {
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { currentOrderedSource } from "./lib/orderedSource";
 import { socialPipelineVersion } from "../packages/social/prompts";
+import { personalOrderedInputSchema } from "../packages/social/ordered-intake";
+import { providedMediaMetadata } from "../packages/social/contracts";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { invalidatePublicSource } from "./publicKnowledge";
 import { filing } from "./librarySpaces";
 import { repositoryContent } from "./lib/repositoryContent";
@@ -553,6 +556,7 @@ export const library = query({
           text: _text,
           analysis,
           objectKey: _objectKey,
+          personalOrderedInput: _personalOrderedInput,
           searchable: _searchable,
           ...source
         }) => ({
@@ -770,6 +774,187 @@ export const capture = mutation({
   },
   handler: (ctx, a) => captureOne(ctx, a),
 });
+export const captureOrdered = mutation({
+  args: {
+    ...org,
+    key: v.string(),
+    title: v.string(),
+    assets: v.array(
+      v.object({ key: v.string(), index: v.number(), sha256: v.string() }),
+    ),
+    originalUrl: v.optional(v.string()),
+    caption: v.optional(v.string()),
+    rightsAttested: v.boolean(),
+  },
+  handler: async (ctx, a) => {
+    const actor = await writeAccess(ctx, a.organizationId);
+    ensure(
+      process.env.DISABLE_CAPTURE !== "true",
+      "POLICY_BLOCKED",
+      "Capture is paused.",
+    );
+    ensure(
+      a.rightsAttested,
+      "RIGHTS_REQUIRED",
+      "Confirm that you may submit this content.",
+    );
+    ensure(
+      a.key.length >= 8 &&
+        a.key.length <= 100 &&
+        a.title.length > 0 &&
+        a.title.length <= 160 &&
+        a.assets.length >= 1 &&
+        a.assets.length <= 35 &&
+        a.assets.every(
+          (asset, index) =>
+            asset.index === index &&
+            /^[a-f0-9]{64}$/.test(asset.sha256) &&
+            asset.key.startsWith(`${a.organizationId}/`) &&
+            asset.key.length <= 1024,
+        ) &&
+        new Set(a.assets.map((asset) => asset.key)).size === a.assets.length,
+      "INVALID_INPUT",
+      "Use between one and 35 distinct ordered files.",
+    );
+    const caption = a.caption ?? "";
+    ensure(
+      caption.length <= 60000 &&
+        !containsSecret(caption) &&
+        !containsSecret(a.title),
+      "POLICY_BLOCKED",
+      "Supplied text is too large or contains a credential.",
+    );
+    ensure(
+      !a.originalUrl ||
+        (a.originalUrl.length <= 2048 && !containsSecret(a.originalUrl)),
+      "INVALID_INPUT",
+      "The original reference is invalid or contains a credential.",
+    );
+    const originalUrl = a.originalUrl ? new URL(a.originalUrl).href : null;
+    const old = await ctx.db
+      .query("sources")
+      .withIndex("by_key", (q) =>
+        q.eq("organizationId", a.organizationId).eq("key", a.key),
+      )
+      .unique();
+    if (old) {
+      const prior = personalOrderedInputSchema.safeParse(
+        old.personalOrderedInput,
+      );
+      ensure(
+        old.state !== "deleted" &&
+          prior.success &&
+          prior.data.metadata.schemaVersion === "provided-media-v1" &&
+          old.title === a.title &&
+          prior.data.metadata.caption === caption &&
+          prior.data.metadata.originalUrl === originalUrl &&
+          canonicalJson(
+            prior.data.assets.map(({ key, index, sha256 }) => ({
+              key,
+              index,
+              sha256,
+            })),
+          ) === canonicalJson(a.assets),
+        "INPUT_CHANGED",
+        "This save key already belongs to a different submission. Start a new save.",
+      );
+      return old._id;
+    }
+    const now = Date.now();
+    const rows = [];
+    for (const item of a.assets) {
+      const row = await ctx.db
+        .query("assets")
+        .withIndex("by_key", (q) => q.eq("key", item.key))
+        .unique();
+      ensure(
+        row &&
+          row.organizationId === a.organizationId &&
+          row.state === "complete" &&
+          !row.sourceId &&
+          row.kind === undefined &&
+          row.etag &&
+          row.etag.length <= 512 &&
+          Number.isSafeInteger(row.size) &&
+          row.size > 0 &&
+          row.size <= 250000000 &&
+          row.expiresAt !== undefined &&
+          row.expiresAt > now &&
+          [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "video/mp4",
+            "video/webm",
+          ].includes(row.type) &&
+          !(await ctx.db
+            .query("objectDeletions")
+            .withIndex("by_key", (q) => q.eq("key", item.key))
+            .unique()),
+        "UPLOAD_INVALID",
+        "Complete each unbound, current upload in this workspace first.",
+      );
+      rows.push(row);
+    }
+    ensure(
+      rows.reduce((sum, row) => sum + row.size, 0) <= 250000000,
+      "UNSUPPORTED_UPLOAD",
+      "The ordered files together must fit within 250 MB.",
+    );
+    const submissionId = crypto.randomUUID();
+    const metadata = providedMediaMetadata.parse({
+      schemaVersion: "provided-media-v1",
+      submissionId,
+      originalUrl,
+      publishedAt: null,
+      observedAt: now,
+      dateReliability: "unknown",
+      provenance: "user_supplied_unverified",
+      caption,
+      expectedAssetCount: rows.length,
+    });
+    const input = personalOrderedInputSchema.parse({
+      schemaVersion: "ordered-personal-input-v1",
+      metadata,
+      assets: rows.map((row, index) => ({
+        id: `child_${index}`,
+        index,
+        kind: row.type.startsWith("image/") ? "image" : "video",
+        key: row.key,
+        bytes: row.size,
+        sha256: a.assets[index].sha256,
+      })),
+    });
+    // Reuse the existing source allowance, counter, capture audit and upload
+    // binding. This operation schedules neither preparation nor inference.
+    const id = await captureAuthorized(
+      ctx,
+      {
+        organizationId: a.organizationId,
+        key: a.key,
+        title: a.title,
+        kind: "upload",
+        objectKey: rows[0].key,
+        rightsAttested: true,
+      },
+      actor,
+      false,
+      true,
+    );
+    await ctx.db.patch(id, {
+      canonical: `provided:${submissionId}`,
+      personalOrderedInput: input,
+      searchable: [a.title, caption].filter(Boolean).join(" "),
+    });
+    for (const row of rows)
+      await ctx.db.patch(row._id, {
+        sourceId: id,
+        sourceGeneration: 0,
+        updatedAt: now,
+      });
+    return id;
+  },
+});
 export async function captureOne(
   ctx: MutationCtx,
   a: {
@@ -876,10 +1061,33 @@ export async function captureAuthorized(
         asset.organizationId === a.organizationId &&
         asset.state === "complete" &&
         asset.expiresAt !== undefined &&
-        asset.expiresAt > Date.now(),
+        asset.expiresAt > Date.now() &&
+        !(await ctx.db
+          .query("objectDeletions")
+          .withIndex("by_key", (q) => q.eq("key", asset.key))
+          .unique()),
       "UPLOAD_INVALID",
       "Complete a verified upload first.",
     );
+    if (asset.sourceId) {
+      const bound = await ctx.db.get(asset.sourceId);
+      ensure(
+        bound &&
+          bound.organizationId === a.organizationId &&
+          bound.state !== "deleted" &&
+          bound.kind === "upload" &&
+          bound.objectKey === asset.key &&
+          bound.canonical === `object:${asset.key}` &&
+          !bound.personalOrderedInput &&
+          !bound.orderedMedia &&
+          !bound.orderedPreparation &&
+          !bound.serviceIntent &&
+          sourceRetained(bound),
+        "UPLOAD_INVALID",
+        "This upload already belongs to a source. Open that source instead.",
+      );
+      return bound._id;
+    }
   }
   const dup = await ctx.db
     .query("sources")
@@ -1108,7 +1316,10 @@ export async function startSource(
     "Open the current saved public artifact. Saving it does not start inference.",
   );
   ensure(
-    !s.orderedMedia && !s.orderedPreparation && !s.serviceIntent,
+    !s.orderedMedia &&
+      !s.orderedPreparation &&
+      !s.serviceIntent &&
+      !s.personalOrderedInput,
     "POLICY_BLOCKED",
     "Ordered posts require their reviewed ordered-media route and current rights. No legacy media fallback was used.",
   );
@@ -1849,6 +2060,7 @@ export const attachSource = mutation({
       mediaEvidence: undefined,
       originalMediaEvidence: undefined,
       orderedMedia: undefined,
+      personalOrderedInput: undefined,
       orderedPreparation: undefined,
       serviceIntent: undefined,
       mediaCoverage: undefined,
@@ -1946,6 +2158,7 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     canonical: `deleted:${id}`,
     socialIdentity: undefined,
     orderedMedia: undefined,
+    personalOrderedInput: undefined,
     orderedPreparation: undefined,
     serviceIntent: undefined,
     key: `deleted:${id}`,

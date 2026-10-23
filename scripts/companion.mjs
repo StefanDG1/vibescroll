@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 import { isAbsolute, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { companionPrivatePath } from "../packages/companion/config-root.mjs";
+import { inspectLocalAsr } from "../packages/runner/asr-preflight.mjs";
 import {
   companionPreflight,
   startupLauncher,
@@ -107,6 +108,7 @@ export async function inspectCompanion(configPath) {
     codexImagePinned: pinned.test(images.codex ?? ""),
     pythonPresent: await present(config.localAsr?.pythonPath),
     asrModelPresent: await present(config.localAsr?.modelDirectory, true),
+    ...(await inspectLocalAsr(config.localAsr)),
     savedConnectionPresent: await present(saved),
     freeBytes: disk ? Number(disk.bavail) * Number(disk.bsize) : undefined,
   });

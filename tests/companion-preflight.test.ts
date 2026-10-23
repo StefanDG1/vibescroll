@@ -35,6 +35,8 @@ const observed = {
   codexImagePresent: true,
   pythonPresent: true,
   asrModelPresent: true,
+  asrRuntimeVerified: true,
+  asrModelVerified: true,
   savedConnectionPresent: true,
   freeBytes: 4 * 1024 ** 3,
 };
@@ -82,6 +84,9 @@ it("blocks missing isolation, wrong runtime, unsafe server, absent account and l
     { codexImagePinned: false },
     { pythonPresent: false },
     { asrModelPresent: false },
+    { asrRuntimeVerified: false },
+    { asrModelVerified: false },
+    { asrRuntimeVerified: undefined },
     { savedConnectionPresent: false },
     { freeBytes: 0 },
     { freeBytes: undefined },

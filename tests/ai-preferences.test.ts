@@ -77,6 +77,7 @@ it("keeps plan preference personal, off by default and independent of hosted aut
     hostedStatus: "awaiting_commercial_access",
     active: false,
     personalAlphaEnabled: false,
+    orderedPersonalAnalysisEnabled: false,
     linkAnalysisEnabled: false,
     cloudAnalysisEnabled: false,
   });

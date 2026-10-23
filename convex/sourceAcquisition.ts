@@ -140,6 +140,7 @@ export async function scrubUnusableBase(
   await ctx.db.patch(source._id, {
     currentRevisionId: undefined,
     orderedMedia: undefined,
+    personalOrderedInput: undefined,
     orderedPreparation: undefined,
     serviceIntent: undefined,
     text: undefined,

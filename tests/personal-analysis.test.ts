@@ -335,6 +335,11 @@ async function retainedPreparation(
       generation: 1,
       binding: snapshot!.cacheBinding,
       inputBinding: snapshot!.inputBinding,
+      creationProvenance: {
+        version: "sandbox-create-receipt-v1",
+        selection: snapshot!.runtime!,
+        sandboxId: "vercel:synthetic-preparation",
+      },
       preparedAt: Date.now(),
       expiresAt: snapshot!.expiresAt,
     },
@@ -354,6 +359,139 @@ async function retainedPreparation(
   }
   return { id, assetId: assetId!, media, snapshot: snapshot! };
 }
+async function brokerRuntime(s: Awaited<ReturnType<typeof setup>>) {
+  vi.stubEnv("VERCEL_SANDBOX_TOKEN", "");
+  vi.stubEnv(
+    "SANDBOX_BRIDGE_URL",
+    "https://example.test/api/internal/sandbox-credentials",
+  );
+  vi.stubEnv("SANDBOX_BRIDGE_ENABLED", "true");
+  vi.stubEnv("VERCEL_SANDBOX_TEAM_ID", "team_synthetic");
+  vi.stubEnv("VERCEL_SANDBOX_PROJECT_ID", "prj_synthetic");
+  return s.t.run((ctx) =>
+    ctx.db.insert("sandboxToolSnapshots", {
+      kind: "media",
+      snapshotId: "snap_brokerSelected123",
+      parentSnapshotId: "snap_brokerParent123",
+      projectId: "prj_synthetic",
+      teamId: "team_synthetic",
+      expiresAt: Date.now() + 86400000,
+      updatedAt: Date.now(),
+    }),
+  );
+}
+it("reuses exact broker-selected preparation despite stale configured static images without repeated compute", async () => {
+  const s = await setup();
+  await brokerRuntime(s);
+  const f = await retainedPreparation(s);
+  expect(f.media.preparation.creationProvenance.selection).toMatchObject({
+    route: "broker",
+    authority: {
+      snapshotId: "snap_brokerSelected123",
+      projectId: "prj_synthetic",
+      teamId: "team_synthetic",
+    },
+  });
+  expect(
+    await s.t.run(
+      async (ctx) =>
+        !!(await reusablePersonalPreparation(ctx, (await ctx.db.get(f.id))!)),
+    ),
+  ).toBe(true);
+  await s.a.mutation(api.personalAnalysis.approve, {
+    id: f.id,
+    generation: 1,
+    deviceId: s.device,
+    model: "synthetic-model",
+    effort: "medium",
+    useOwnPlan: true,
+    maxComputeCredits: 10,
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(f.id)))?.personalMedia.preparation,
+  ).toEqual(f.media.preparation);
+  expect(
+    (await s.t.run((ctx) => ctx.db.query("reservations").collect())).filter(
+      (r) => r.key.startsWith(`personal-media:${f.id}:`),
+    ),
+  ).toHaveLength(1);
+});
+it.each([
+  "snapshot",
+  "revision",
+  "parent",
+  "team",
+  "project",
+  "expiry",
+  "missing",
+  "provenance",
+] as const)(
+  "invalidates broker cache on changed %s authority",
+  async (change) => {
+    const s = await setup(),
+      row = await brokerRuntime(s),
+      f = await retainedPreparation(s);
+    await s.t.run(async (ctx) => {
+      if (change === "snapshot")
+        await ctx.db.patch(row, { snapshotId: "snap_rotatedSelected123" });
+      if (change === "revision")
+        await ctx.db.patch(row, { updatedAt: Date.now() - 1 });
+      if (change === "parent")
+        await ctx.db.patch(row, { parentSnapshotId: "snap_otherParent123" });
+      if (change === "team")
+        await ctx.db.patch(row, { teamId: "team_foreign" });
+      if (change === "project")
+        await ctx.db.patch(row, { projectId: "prj_foreign" });
+      if (change === "expiry")
+        await ctx.db.patch(row, { expiresAt: Date.now() + 30000 });
+      if (change === "missing") await ctx.db.delete(row);
+      if (change === "provenance")
+        await ctx.db.patch(f.id, {
+          personalMedia: {
+            ...f.media,
+            preparation: {
+              ...f.media.preparation,
+              creationProvenance: undefined,
+            },
+          },
+        });
+      expect(
+        await reusablePersonalPreparation(ctx, (await ctx.db.get(f.id))!),
+      ).toBeNull();
+    });
+  },
+);
+it("denies a stale broker receipt at finish while settling measured preparation usage", async () => {
+  const s = await setup(),
+    row = await brokerRuntime(s),
+    f = await retainedPreparation(s, false, true);
+  await s.t.run((ctx) =>
+    ctx.db.patch(row, { snapshotId: "snap_rotatedSelected123" }),
+  );
+  expect(
+    await s.t.mutation(internal.personalMediaState.finish, {
+      id: f.id,
+      generation: 1,
+      organizationId: s.org,
+      computeCredits: 2,
+      media: f.media,
+      inputBinding: f.snapshot.inputBinding,
+    }),
+  ).toBe(false);
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(f.id)))?.personalMedia,
+  ).toBeUndefined();
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("reservations")
+        .withIndex("by_key", (q) =>
+          q.eq("organizationId", s.org).eq("key", `personal-media:${f.id}:1`),
+        )
+        .unique(),
+    ),
+  ).toMatchObject({ state: "settled", settled: 2 });
+});
 it("reuses retained compatible preparation after inference failure with fresh approval and no repeated compute reservation", async () => {
   const s = await setup(),
     f = await retainedPreparation(s);

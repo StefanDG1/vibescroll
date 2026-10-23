@@ -116,6 +116,74 @@ export const socialPostSchema = z
   });
 export type SocialPost = z.infer<typeof socialPostSchema>;
 
+/** A supplied link is a user's reference, not evidence of platform retrieval. */
+export const providedMediaMetadata = z.strictObject({
+  schemaVersion: z.literal("provided-media-v1"),
+  submissionId: stableId,
+  originalUrl: z
+    .string()
+    .max(2048)
+    .nullable()
+    .refine((value) => {
+      if (value === null) return true;
+      try {
+        const url = new URL(value);
+        return (
+          url.protocol === "https:" &&
+          !url.username &&
+          !url.password &&
+          !url.port &&
+          !url.hash &&
+          url.href === value
+        );
+      } catch {
+        return false;
+      }
+    }, "Invalid supplied HTTPS reference"),
+  publishedAt: z.null(),
+  observedAt: timestamp,
+  dateReliability: z.literal("unknown"),
+  provenance: z.literal("user_supplied_unverified"),
+  caption: z.string().max(60_000),
+  expectedAssetCount: z.number().int().min(1).max(35),
+});
+export const providedMediaSchema = providedMediaMetadata
+  .extend({
+    captionHash: sha256,
+    assets: z.array(orderedAsset).min(1).max(35),
+    coverage: z.enum(["complete_manifest", "partial", "unknown"]),
+    revisionHash: sha256,
+  })
+  .superRefine((post, ctx) => {
+    if (
+      new Set(post.assets.map((a) => a.id)).size !== post.assets.length ||
+      new Set(post.assets.map((a) => a.index)).size !== post.assets.length ||
+      post.assets.some(
+        (a, i) => i > 0 && post.assets[i - 1].index >= a.index,
+      ) ||
+      post.assets.reduce((n, a) => n + a.bytes, 0) > 250_000_000 ||
+      post.assets.reduce(
+        (n, a) => n + (a.kind === "video" ? a.durationMs : 0),
+        0,
+      ) > 600_000 ||
+      post.assets.length > post.expectedAssetCount ||
+      post.assets.some((a) => a.index >= post.expectedAssetCount) ||
+      (post.coverage === "complete_manifest" &&
+        (post.assets.length !== post.expectedAssetCount ||
+          post.assets.some((a, i) => a.index !== i)))
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Invalid supplied ordered manifest",
+      });
+  });
+export type ProvidedMedia = z.infer<typeof providedMediaSchema>;
+export const orderedPostSchema = z.union([
+  socialPostSchema,
+  providedMediaSchema,
+]);
+export type OrderedPost = z.infer<typeof orderedPostSchema>;
+
 const evidenceBase = {
   id: stableId,
   postRevisionHash: sha256,
@@ -163,17 +231,52 @@ export async function socialRevisionHash(
     }),
   );
 }
+export async function orderedRevisionHash(
+  post:
+    | Omit<SocialPost, "revisionHash">
+    | SocialPost
+    | Omit<ProvidedMedia, "revisionHash">
+    | ProvidedMedia,
+) {
+  if (post.schemaVersion === "social-post-v1") return socialRevisionHash(post);
+  return socialHash(
+    canonicalJson({
+      version: post.schemaVersion,
+      submissionId: post.submissionId,
+      originalUrl: post.originalUrl,
+      provenance: post.provenance,
+      captionHash: post.captionHash,
+      assets: post.assets.map(({ inspected: _inspected, ...asset }) =>
+        asset.kind === "video"
+          ? (({ audioInspected: _audio, ...rest }) => rest)(asset)
+          : asset,
+      ),
+      expectedAssetCount: post.expectedAssetCount,
+      coverage: post.coverage,
+    }),
+  );
+}
 export async function validateSocialEvidence(
   postValue: unknown,
   evidenceValue: unknown,
 ) {
   const post = socialPostSchema.parse(postValue);
+  return validateOrderedEvidence(post, evidenceValue).then((value) => ({
+    ...value,
+    post,
+  }));
+}
+export async function validateOrderedEvidence(
+  postValue: unknown,
+  evidenceValue: unknown,
+) {
+  const post = orderedPostSchema.parse(postValue);
   const evidence = z.array(socialEvidenceSchema).max(200).parse(evidenceValue);
   if (new Set(evidence.map((e) => e.id)).size !== evidence.length)
     throw Error("DUPLICATE_SOCIAL_EVIDENCE");
   if (
     (await socialHash(post.caption)) !== post.captionHash ||
-    (await socialRevisionHash(post)) !== post.revisionHash
+    (await orderedRevisionHash(post)) !== post.revisionHash
   )
     throw Error("SOCIAL_CONTENT_HASH_MISMATCH");
   for (const e of evidence) {

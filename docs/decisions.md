@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 23: private ordered intake and current-account preflight
+
+[ADR 120](adr/120-private-ordered-intake-and-current-account-preflight.md) keeps supplied uploads separate from verified creator identities, extends the existing capture and personal job systems, and requires actual account checks before ordered preparation. It records raw asset ownership, restore revocation, strict private result binding and broker-selected preparation provenance. Existing provider, budget and live acceptance gates remain.
+
 ## October 23: authorize complete creator and onboarding implementation
 
 [ADR 119](adr/119-authorized-complete-creator-and-onboarding-implementation.md) records explicit owner authorization for N0-N7 and all remaining launch work. It supersedes ADR 118's planning-only boundary while preserving existing-system reuse, original spending limits and every release/provider/privacy gate. Build and test independently while external or unfunded live checks wait. No supplier activation or new recurring allowance follows merely from implementation authorization.

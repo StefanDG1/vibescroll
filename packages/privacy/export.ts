@@ -39,6 +39,7 @@ export type ContentExportSection = (typeof contentExportSections)[number];
 const privateFields = new Set([
   "objectKey",
   "orderedPreparation",
+  "personalMedia",
   "ciphertext",
   "signedUrl",
   "uploadUrl",
@@ -74,6 +75,28 @@ export function exportRecord(
   section: ContentExportSection,
   value: unknown,
 ): unknown {
+  if (section === "sources" && value && typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    const input = source.personalOrderedInput;
+    if (
+      input &&
+      typeof input === "object" &&
+      "assets" in input &&
+      Array.isArray(input.assets)
+    ) {
+      value = {
+        ...source,
+        personalOrderedInput: {
+          ...input,
+          assets: input.assets.map((asset: Record<string, unknown>) =>
+            Object.fromEntries(
+              Object.entries(asset).filter(([key]) => key !== "key"),
+            ),
+          ),
+        },
+      };
+    }
+  }
   if (section === "publicImports" && value && typeof value === "object") {
     // Actor ownership is enforced by the export query. Keep authored notes,
     // never a copied base artifact, permission/compatibility key or another actor.

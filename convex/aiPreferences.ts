@@ -15,6 +15,13 @@ export const read = query({
       hostedStatus: "awaiting_commercial_access" as const,
       active: false as const,
       personalAlphaEnabled: personalAllowed(actor.subject),
+      orderedPersonalAnalysisEnabled:
+        personalAllowed(actor.subject) &&
+        process.env.MEDIA_VERIFIED === "true" &&
+        process.env.ORDERED_MEDIA_VERIFIED === "true" &&
+        Number.isFinite(Number(process.env.SANDBOX_CREDITS_PER_SECOND)) &&
+        Number(process.env.SANDBOX_CREDITS_PER_SECOND) > 0 &&
+        Math.ceil(300 * Number(process.env.SANDBOX_CREDITS_PER_SECOND)) <= 10,
       cloudAnalysisEnabled:
         process.env.DISABLE_INFERENCE !== "true" &&
         ((process.env.MANAGED_INFERENCE_ROUTE === "cloudflare_free" &&

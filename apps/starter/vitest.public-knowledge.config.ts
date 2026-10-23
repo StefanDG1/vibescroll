@@ -17,6 +17,8 @@ export default defineConfig({
       "apps/starter/creator-ui.test.ts",
       "apps/starter/own-plan-task-ui.test.ts",
       "apps/starter/personal-source-ui.test.ts",
+      "apps/starter/ordered-file-upload.test.ts",
+      "apps/starter/upload-batch-route.test.ts",
       "apps/starter/demo-renderer.test.ts",
     ],
     environment: "node",

@@ -1,3 +1,4 @@
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 // @vitest-environment node
 import { expect, it, vi } from "vitest";
 import {
@@ -135,6 +136,7 @@ it("serves both existing queues serially and alternates busy routes without clai
     profileBinding: binding,
     capabilities: caps(),
     sessionExpiresAt: h.official.session.expiresAt,
+    inputProtocols: ["ordered-personal-v1"],
   });
 });
 it("rejects concurrent coordinator ownership while a processor is pending", async () => {
@@ -242,6 +244,7 @@ it("announces actual personal capabilities without advertising unsupported legac
         advertised("xhigh-only", ["xhigh"]),
       ]),
       sessionExpiresAt: h.official.session.expiresAt,
+      inputProtocols: ["ordered-personal-v1"],
     },
   ]);
   expect(h.processPersonal).toHaveBeenCalledOnce();
@@ -636,3 +639,77 @@ it("uses the unchanged route envelopes with bounded reads, shared cancellation a
   await expect(request("poll")).rejects.toThrow();
   expect(fetchImpl).toHaveBeenCalledTimes(4);
 });
+
+it("services each ordered phase once on the same source generation without treating preparation handoff as a duplicate", async () => {
+  const h = harness(),
+    base = {
+      ...pjob(),
+      inputKind: "ordered-personal-v1",
+      claimToken: "old-claim",
+    };
+  h.jobs({ ...base, phase: "preflight" }, null);
+  await h.coordinator.step();
+  h.jobs({ ...base, phase: "analysis", claimToken: "new-claim" }, null);
+  await h.coordinator.step();
+  expect(h.processPersonal.mock.calls.map(([job]: any) => job.phase)).toEqual([
+    "preflight",
+    "analysis",
+  ]);
+  await expect(h.coordinator.step()).rejects.toThrow("DUPLICATE_CLAIM");
+  expect(h.processPersonal).toHaveBeenCalledTimes(2);
+});
+it.each([true, false])(
+  "an unknown ordered preflight handoff acknowledgement permanently halts even if fail acknowledgement is %s",
+  async (acknowledged) => {
+    const capabilities = caps(),
+      job = {
+        ...pjob(),
+        inputKind: "ordered-personal-v1",
+        phase: "preflight",
+        needsAudio: false,
+        inputBinding: "b".repeat(64),
+        capabilityHash: hash(canonicalJson(capabilities)),
+        claimToken: "12345678-1234-1234-1234-123456789abc",
+        deadline: Date.now() + 180000,
+      };
+    const client = {
+      status: async () => ({ profileBinding: binding }),
+      capabilities: async () => capabilities,
+      respond: vi.fn(),
+      preflight: vi.fn(async () => ({
+        profileBinding: binding,
+        capabilities,
+        localAsrReady: true,
+      })),
+    };
+    const h = harness({
+      personal: client,
+      processPersonal: processPersonalJob,
+    });
+    h.jobs(job, ajob());
+    const original = h.requestPersonal.getMockImplementation()!;
+    h.requestPersonal.mockImplementation(async (op: string, args?: any) => {
+      if (op === "heartbeat") return { valid: true, deadline: job.deadline };
+      if (op === "ordered_preflight")
+        throw Error("ordered handoff acknowledgement lost");
+      if (op === "fail") {
+        if (!acknowledged) throw Error("fail acknowledgement lost");
+        return { stopped: true };
+      }
+      return original(op, args);
+    });
+    await expect(h.coordinator.step()).rejects.toThrow(
+      "handoff acknowledgement lost",
+    );
+    expect(h.requestPersonal).toHaveBeenCalledWith("fail", {
+      id: job.id,
+      generation: job.generation,
+      claimToken: job.claimToken,
+    });
+    const calls = h.requestPersonal.mock.calls.length;
+    await expect(h.coordinator.step()).rejects.toThrow("COORDINATOR_HALTED");
+    expect(h.requestPersonal.mock.calls).toHaveLength(calls);
+    expect(client.respond).not.toHaveBeenCalled();
+    expect(h.processAssistant).not.toHaveBeenCalled();
+  },
+);

@@ -13,6 +13,7 @@ import {
 import { acquirer } from "../media/acquirer";
 import { hardenAcquisition } from "./acquisition-isolation";
 import type { z } from "zod";
+import type { PreparationRuntime } from "./preparation-runtime";
 type Acquisition = z.infer<typeof acquisitionManifest>;
 export class MediaPreparationError extends Error {
   constructor(
@@ -30,6 +31,7 @@ export async function prepareMedia(
   input: string | { url: string },
   decoder: string,
   normalizedPcm = false,
+  options: { expectedRuntime?: PreparationRuntime } = {},
 ) {
   const link =
     typeof input === "string" ? undefined : acquisitionPolicy(input.url);
@@ -51,6 +53,7 @@ export async function prepareMedia(
     link ? "acquisition" : "media",
     300,
     link?.domains,
+    options,
   );
   try {
     if (link) {
@@ -181,6 +184,9 @@ export async function prepareMedia(
       frames,
       ...(acquisition ? { acquisition } : {}),
       computeSeconds: Math.ceil((Date.now() - started) / 1000),
+      ...(sandbox.creationProvenance
+        ? { creationProvenance: sandbox.creationProvenance }
+        : {}),
     };
   } catch {
     try {

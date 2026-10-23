@@ -1,12 +1,14 @@
 import { z } from "zod";
-import { orderedDecoderManifest } from "../media/manifest";
+import { orderedDecoderManifest } from "../media/manifest.ts";
 import {
   socialHash,
-  socialRevisionHash,
+  orderedRevisionHash,
+  orderedPostSchema,
+  providedMediaMetadata,
+  validateOrderedEvidence,
   socialPostSchema,
-  validateSocialEvidence,
   type SocialEvidence,
-} from "./contracts";
+} from "./contracts.ts";
 
 const observations = z
   .array(
@@ -30,10 +32,12 @@ const transcript = z
 type Decoded = ReturnType<typeof orderedDecoderManifest>;
 type Asset = Decoded["assets"][number];
 type Representation = Asset["representations"][number];
-type Metadata = Omit<
-  z.input<typeof socialPostSchema>,
-  "assets" | "captionHash" | "revisionHash" | "coverage"
->;
+type Metadata =
+  | z.input<typeof providedMediaMetadata>
+  | Omit<
+      z.input<typeof socialPostSchema>,
+      "assets" | "captionHash" | "revisionHash" | "coverage"
+    >;
 
 /** One bounded observation pipeline for both routes. Callbacks must perform the
  * actual authorized model/ASR operation; this helper never invents observations. */
@@ -94,7 +98,6 @@ export async function inspectOrderedMedia(
   );
   const postWithoutRevision = {
     ...metadata,
-    schemaVersion: "social-post-v1" as const,
     assets,
     captionHash: await socialHash(metadata.caption),
     coverage: manifest.omitted.length
@@ -105,10 +108,10 @@ export async function inspectOrderedMedia(
         : ("unknown" as const),
   };
   // Validate untrusted metadata and aggregate media bounds before any model call.
-  const post = socialPostSchema.parse({
+  const post = orderedPostSchema.parse({
     ...postWithoutRevision,
-    revisionHash: await socialRevisionHash(
-      postWithoutRevision as Parameters<typeof socialRevisionHash>[0],
+    revisionHash: await orderedRevisionHash(
+      postWithoutRevision as Parameters<typeof orderedRevisionHash>[0],
     ),
   });
   const evidence: SocialEvidence[] = [];
@@ -196,7 +199,7 @@ export async function inspectOrderedMedia(
   await authorize();
   return {
     schemaVersion: "ordered-media-v1" as const,
-    ...(await validateSocialEvidence(post, evidence)),
+    ...(await validateOrderedEvidence(post, evidence)),
     omissions: manifest.omitted,
     warnings: [
       ...(manifest.omitted.length

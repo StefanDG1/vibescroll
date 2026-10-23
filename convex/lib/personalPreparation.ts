@@ -5,6 +5,11 @@ import { acquirer } from "../../packages/media/acquirer";
 import { downloaderRelease } from "../../packages/media/acquisition";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { sourceRetained } from "./sourceAuthority";
+import {
+  preparationRuntime,
+  creationProvenanceCurrent,
+  type PreparationRuntime,
+} from "../../packages/providers/preparation-runtime";
 
 async function hash(value: string) {
   return Array.from(
@@ -14,10 +19,40 @@ async function hash(value: string) {
     (b) => b.toString(16).padStart(2, "0"),
   ).join("");
 }
-export function personalPreparationPipeline() {
-  // The broker may select a different snapshot than these environment values.
-  // Until its actual executed identity is returned and bound, do not cache it.
-  if (process.env.SANDBOX_BRIDGE_URL) return null;
+export async function personalPreparationPipeline(
+  ctx?: QueryCtx,
+): Promise<PreparationRuntime | null> {
+  if (
+    process.env.MEDIA_VERIFIED !== "true" ||
+    process.env.RESTORE_LOCK === "true"
+  )
+    return null;
+  if (!process.env.VERCEL_SANDBOX_TOKEN && process.env.SANDBOX_BRIDGE_URL) {
+    if (!ctx || process.env.SANDBOX_BRIDGE_ENABLED !== "true") return null;
+    const row = await ctx.db
+      .query("sandboxToolSnapshots")
+      .withIndex("by_kind", (q) => q.eq("kind", "media"))
+      .unique();
+    if (
+      !row ||
+      row.projectId !== process.env.VERCEL_SANDBOX_PROJECT_ID ||
+      row.teamId !== process.env.VERCEL_SANDBOX_TEAM_ID
+    )
+      return null;
+    return preparationRuntime({
+      version: "preparation-runtime-v1",
+      route: "broker",
+      authority: {
+        kind: row.kind,
+        snapshotId: row.snapshotId,
+        expiresAt: row.expiresAt,
+        updatedAt: row.updatedAt,
+        parentSnapshotId: row.parentSnapshotId ?? null,
+        projectId: row.projectId,
+        teamId: row.teamId,
+      },
+    });
+  }
   const snapshot = process.env.VERCEL_MEDIA_SNAPSHOT;
   const image = process.env.VERCEL_MEDIA_IMAGE;
   const identity = snapshot
@@ -27,7 +62,17 @@ export function personalPreparationPipeline() {
     : image && /^[A-Za-z0-9/_.-]+@sha256:[a-f0-9]{64}$/.test(image)
       ? { image }
       : null;
-  return process.env.MEDIA_VERIFIED === "true" && identity ? identity : null;
+  return identity
+    ? preparationRuntime({
+        version: "preparation-runtime-v1",
+        route: "static",
+        kind: "media",
+        source:
+          "snapshot" in identity
+            ? { type: "snapshot", snapshotId: identity.snapshot }
+            : { type: "image", image: identity.image },
+      })
+    : null;
 }
 
 /** Original upload identity is independent of the new analysis generation. */
@@ -91,8 +136,12 @@ export async function personalPreparationInputBinding(
 export async function personalPreparationBinding(
   source: Doc<"sources">,
   input: NonNullable<Awaited<ReturnType<typeof personalPreparationInput>>>,
+  runtime?: PreparationRuntime | null,
 ) {
-  const pipeline = personalPreparationPipeline();
+  const pipeline =
+    runtime === undefined
+      ? await personalPreparationPipeline()
+      : preparationRuntime(runtime);
   if (!pipeline) return null;
   return hash(
     canonicalJson({
@@ -120,6 +169,7 @@ export async function reusablePersonalPreparation(
     stamp = media?.preparation;
   const now = Date.now();
   const input = await personalPreparationInput(ctx, source);
+  const runtime = await personalPreparationPipeline(ctx);
   if (
     process.env.MEDIA_VERIFIED !== "true" ||
     process.env.RESTORE_LOCK === "true" ||
@@ -145,7 +195,12 @@ export async function reusablePersonalPreparation(
     !input ||
     !stamp.binding ||
     stamp.inputBinding !== (await personalPreparationInputBinding(input)) ||
-    stamp.binding !== (await personalPreparationBinding(source, input)) ||
+    !runtime ||
+    !creationProvenanceCurrent(stamp.creationProvenance, runtime) ||
+    stamp.binding !==
+      (await personalPreparationBinding(source, input, runtime)) ||
+    (runtime.route === "broker" &&
+      stamp.expiresAt > runtime.authority.expiresAt) ||
     (input.raw && stamp.expiresAt > input.raw.expiresAt) ||
     (source.sourceRetentionUntil !== undefined &&
       stamp.expiresAt > source.sourceRetentionUntil) ||

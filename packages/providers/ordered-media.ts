@@ -55,13 +55,21 @@ export async function prepareOrderedMedia(
     "Verify the isolated ordered decoder image before processing.",
   );
   const started = Date.now();
+  const canceled = new AbortController();
   const signal = AbortSignal.any([
+    canceled.signal,
     AbortSignal.timeout(300_000),
     ...(options.signal ? [options.signal] : []),
   ]);
+  let authorityRead: Promise<void> | undefined;
   const authorize = async () => {
     signal.throwIfAborted();
-    await options.authorize();
+    authorityRead ??= Promise.resolve()
+      .then(options.authorize)
+      .finally(() => {
+        authorityRead = undefined;
+      });
+    await authorityRead;
     signal.throwIfAborted();
   };
   await authorize();
@@ -69,15 +77,43 @@ export async function prepareOrderedMedia(
     throw new OrderedMediaPreparationError(undefined);
   });
   let killed = false;
+  let stopping: Promise<void> | undefined;
   // Abort also reaches sandbox termination while a command or upload is pending.
   const stop = async () => {
-    await sandbox.kill();
-    killed = true;
+    if (killed) return;
+    stopping ??= (async () => {
+      await sandbox.kill();
+      killed = true;
+    })().finally(() => {
+      stopping = undefined;
+    });
+    await stopping;
   };
   const onAbort = () => {
     void stop().catch(() => {});
   };
   signal.addEventListener("abort", onAbort, { once: true });
+  let watching = true,
+    watchChecks = 0,
+    watchTimer: ReturnType<typeof setTimeout> | undefined;
+  // This owned VM's existing 300-second job permits at most 30 extra active
+  // authority reads. Live database cost/latency acceptance remains pending.
+  const watch = async () => {
+    watchChecks++;
+    try {
+      await authorize();
+    } catch (error) {
+      canceled.abort(error);
+      return;
+    }
+    if (watching && watchChecks < 30 && Date.now() - started < 300000)
+      watchTimer = setTimeout(() => {
+        void watch();
+      }, 10000);
+  };
+  watchTimer = setTimeout(() => {
+    void watch();
+  }, 10000);
   try {
     await authorize();
     await hardenSandbox(sandbox);
@@ -153,13 +189,24 @@ export async function prepareOrderedMedia(
       orderedDecoder,
       { user: "user" },
     );
-    const command = await sandbox.commands.run(
+    const commandResult = sandbox.commands.run(
       "python3 /home/user/media/decode-ordered.py",
       {
         user: "user",
         timeoutMs: Math.max(1, 300_000 - (Date.now() - started)),
       },
     );
+    let abortCommand: (() => void) | undefined;
+    const command = await Promise.race([
+      commandResult,
+      new Promise<never>((_resolve, reject) => {
+        abortCommand = () => reject(signal.reason);
+        if (signal.aborted) abortCommand();
+        else signal.addEventListener("abort", abortCommand, { once: true });
+      }),
+    ]).finally(() => {
+      if (abortCommand) signal.removeEventListener("abort", abortCommand);
+    });
     ensure(
       command.exitCode === 0,
       "MEDIA_UNAVAILABLE",
@@ -239,6 +286,8 @@ export async function prepareOrderedMedia(
         : undefined,
     );
   } finally {
+    watching = false;
+    clearTimeout(watchTimer);
     signal.removeEventListener("abort", onAbort);
     if (!killed) {
       try {

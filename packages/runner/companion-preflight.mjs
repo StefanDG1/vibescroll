@@ -68,8 +68,11 @@ export function companionPreflight(observed) {
   );
   check(
     "offline_transcription",
-    observed.pythonPresent === true && observed.asrModelPresent === true,
-    "Select the installed local transcription runtime and model directory.",
+    observed.pythonPresent === true &&
+      observed.asrModelPresent === true &&
+      observed.asrRuntimeVerified === true &&
+      observed.asrModelVerified === true,
+    "Verify the supported local transcription runtime and reviewed model files using the setup guide. Paths alone do not verify their contents.",
   );
   check(
     "saved_account",

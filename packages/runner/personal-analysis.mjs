@@ -7,7 +7,10 @@ import {
   readSubscriptionCapabilities,
   safeEffort,
   assertSubscriptionInput,
+  assertReportedAllowance,
 } from "./subscription-capabilities.mjs";
+import { checkOrderedAsr } from "./personal-ordered-preflight.mjs";
+import { processPersonalOrderedJob } from "./personal-ordered.mjs";
 
 // Production uses only the verified isolated official client, with no HTTP fallback.
 export class OfficialPersonalClient {
@@ -49,6 +52,27 @@ export class OfficialPersonalClient {
       },
     );
     return { text: JSON.stringify(result.output) };
+  }
+  async preflight({ model, effort, needsAudio, asr, signal }) {
+    signal?.throwIfAborted();
+    const status = await this.status(),
+      capabilities = await this.capabilities();
+    assertSubscriptionInput(capabilities, model, effort, {}, []);
+    if (
+      !capabilities.models
+        .find((entry) => entry.slug === model)
+        ?.inputModalities.includes("image")
+    )
+      throw Error("PERSONAL_MODALITY_UNAVAILABLE");
+    assertReportedAllowance(
+      await this.official.server.request("account/rateLimits/read"),
+    );
+    const localAsrReady = needsAudio
+      ? await checkOrderedAsr(asr, signal)
+      : true;
+    await this.official.check();
+    signal?.throwIfAborted();
+    return { ...status, capabilities, localAsrReady };
   }
 }
 function sourceRegistry(job) {
@@ -114,8 +138,25 @@ function sourceRegistry(job) {
 
 export async function processPersonalJob(
   job,
-  { client, request, signal, asr, prepareInput = preparePersonalInput },
+  {
+    client,
+    request,
+    signal,
+    asr,
+    prepareInput = preparePersonalInput,
+    fetchImpl,
+    transcribe,
+  },
 ) {
+  if (job?.inputKind === "ordered-personal-v1")
+    return processPersonalOrderedJob(job, {
+      client,
+      request,
+      signal,
+      asr,
+      fetchImpl,
+      transcribe,
+    });
   const registry = sourceRegistry(job);
   if (
     !job ||

@@ -605,6 +605,14 @@ test("runtime inventory follows the actual Node graph and materializes only pinn
     "packages/runner/vault.ps1",
     "packages/runner/chatgpt-storage.ps1",
     "packages/media/local_whisper.py",
+    "packages/media/asr_verification.py",
+    "packages/media/asr-model.lock.json",
+    "packages/runner/personal-ordered.mjs",
+    "packages/runner/personal-ordered-preflight.mjs",
+    "packages/media/personal-ordered.ts",
+    "packages/social/analysis.ts",
+    "packages/social/contracts.ts",
+    "packages/social/preparation.ts",
   ])
     assert.ok(graph.files.has(path), path);
   const lock = await readFile(join(repo, "pnpm-lock.yaml"), "utf8");
@@ -627,6 +635,8 @@ test("native Node imports companion and assistant modules without starting a wor
   const assistant = await import("../packages/runner/assistant-local.mjs");
   const personal = await import("../packages/runner/personal-analysis.mjs");
   const companion = await import("../scripts/companion.mjs");
+  const ordered = await import("../packages/runner/personal-ordered.mjs");
+  assert.equal(typeof ordered.processPersonalOrderedJob, "function");
   assert.equal(typeof assistant.strictSchema, "function");
   assert.equal(typeof personal.OfficialPersonalClient, "function");
   assert.equal(typeof companion.inspectCompanion, "function");
@@ -688,7 +698,7 @@ test("runtime builder includes the complete real module graph and pinned depende
         "--no-addons",
         "--input-type=module",
         "--eval",
-        'await import("./packages/runner/assistant-local.mjs"); await import("./packages/runner/personal-analysis.mjs"); await import("./scripts/companion.mjs"); console.log("isolated-package-import-passed");',
+        'await import("./packages/runner/assistant-local.mjs"); await import("./packages/runner/personal-analysis.mjs"); const ordered = await import("./packages/runner/personal-ordered.mjs"); if(typeof ordered.processPersonalOrderedJob!=="function") throw Error("ordered-native-import-failed"); await import("./scripts/companion.mjs"); console.log("isolated-package-import-passed");',
       ],
       {
         cwd: directory,

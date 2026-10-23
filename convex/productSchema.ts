@@ -297,6 +297,7 @@ export const productTables = {
       }),
     ),
     personalMedia: v.optional(v.any()),
+    personalOrderedInput: v.optional(v.any()),
     orderedMedia: v.optional(v.any()),
     orderedPreparation: v.optional(
       v.object({
@@ -359,6 +360,20 @@ export const productTables = {
         sourceContentHash: v.optional(v.string()),
         effort: v.string(),
         capabilityHash: v.optional(v.string()),
+        ordered: v.optional(
+          v.object({
+            schemaVersion: v.literal("ordered-personal-v1"),
+            phase: v.union(
+              v.literal("preflight"),
+              v.literal("preparing"),
+              v.literal("analysis"),
+            ),
+            inputBinding: v.string(),
+            leaseToken: v.optional(v.string()),
+            preflightHash: v.optional(v.string()),
+            preparedHash: v.optional(v.string()),
+          }),
+        ),
         state: v.string(),
         approvedAt: v.number(),
         expiresAt: v.number(),
@@ -731,6 +746,9 @@ export const productTables = {
     activeRunId: v.optional(v.id("runs")),
     personalModels: v.optional(
       v.array(v.object({ slug: v.string(), displayName: v.string() })),
+    ),
+    personalInputProtocols: v.optional(
+      v.array(v.literal("ordered-personal-v1")),
     ),
     subscriptionCapabilities: v.optional(
       v.object({

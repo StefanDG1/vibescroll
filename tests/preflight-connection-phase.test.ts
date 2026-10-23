@@ -13,6 +13,8 @@ const observed = {
   codexImagePresent: true,
   pythonPresent: true,
   asrModelPresent: true,
+  asrRuntimeVerified: true,
+  asrModelVerified: true,
   savedConnectionPresent: false,
   freeBytes: 4 * 1024 ** 3,
   config: {

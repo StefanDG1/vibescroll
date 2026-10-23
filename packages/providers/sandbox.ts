@@ -7,6 +7,14 @@ import { publicProxy, publicBridge } from "../media/public-proxy";
 import { ensure } from "../policy";
 import { toolSnapshot, type ToolSnapshot } from "../policy/tool-snapshots";
 import { singleSandboxCreationFetch } from "./sandbox-creation";
+import {
+  snapshotAuthoritySchema,
+  preparationRuntime,
+  samePreparationRuntime,
+  type SnapshotAuthority,
+  type PreparationRuntime,
+  type SandboxCreationProvenance,
+} from "./preparation-runtime";
 
 type Options = {
   user?: "user" | "root";
@@ -79,6 +87,7 @@ export async function sandboxCredentials(): Promise<{
   teamId?: string;
   projectId?: string;
   snapshots?: Partial<Record<"media" | "coding", ToolSnapshot>>;
+  snapshotAuthorities?: Partial<Record<"media" | "coding", SnapshotAuthority>>;
 }> {
   const token = process.env.VERCEL_SANDBOX_TOKEN;
   if (!token) {
@@ -137,11 +146,43 @@ export async function sandboxCredentials(): Promise<{
       "POLICY_BLOCKED",
       "Sandbox project identity changed.",
     );
+    const authorities: Partial<Record<"media" | "coding", SnapshotAuthority>> =
+      {};
+    if (credentials.snapshotAuthorities !== undefined) {
+      ensure(
+        credentials.snapshotAuthorities &&
+          typeof credentials.snapshotAuthorities === "object" &&
+          !Array.isArray(credentials.snapshotAuthorities) &&
+          Object.keys(credentials.snapshotAuthorities).length <= 2,
+        "POLICY_BLOCKED",
+        "Sandbox source provenance changed.",
+      );
+      for (const [kind, value] of Object.entries(
+        credentials.snapshotAuthorities,
+      )) {
+        const authority = snapshotAuthoritySchema.parse(value);
+        ensure(
+          (kind === "media" || kind === "coding") &&
+            authority.kind === kind &&
+            authority.projectId === credentials.projectId &&
+            authority.teamId === credentials.teamId &&
+            credentials.snapshots?.[kind]?.snapshotId ===
+              authority.snapshotId &&
+            credentials.snapshots?.[kind]?.expiresAt === authority.expiresAt,
+          "POLICY_BLOCKED",
+          "Sandbox source scope changed.",
+        );
+        authorities[kind] = authority;
+      }
+    }
     return {
       token: credentials.token as string,
       teamId: credentials.teamId as string,
       projectId: credentials.projectId as string,
       ...(credentials.snapshots ? { snapshots: credentials.snapshots } : {}),
+      ...(credentials.snapshotAuthorities
+        ? { snapshotAuthorities: authorities }
+        : {}),
     };
   }
   ensure(
@@ -248,6 +289,7 @@ export class JobSandbox {
     private readonly sdk: Sandbox,
     acquisition: boolean,
     private readonly domains: string[] = [],
+    readonly creationProvenance: SandboxCreationProvenance | null = null,
   ) {
     this.sandboxId = `vercel:${sdk.name}`;
     this.online = acquisition;
@@ -544,6 +586,7 @@ export async function createJobSandbox(
   kind: "coding" | "media" | "acquisition",
   seconds: number,
   domains: string[] = [],
+  options: { expectedRuntime?: PreparationRuntime } = {},
 ) {
   ensure(
     (process.env.CLOUD_SANDBOX_PROVIDER ?? "vercel") === "vercel",
@@ -554,7 +597,10 @@ export async function createJobSandbox(
     process.env[
       kind === "coding" ? "VERCEL_CODING_IMAGE" : "VERCEL_MEDIA_IMAGE"
     ];
-  const { snapshots, ...credentials } = await sandboxCredentials();
+  const usingBroker =
+    !process.env.VERCEL_SANDBOX_TOKEN && !!process.env.SANDBOX_BRIDGE_URL;
+  const { snapshots, snapshotAuthorities, ...credentials } =
+    await sandboxCredentials();
   const kindSnapshot = snapshots?.[kind === "coding" ? "coding" : "media"];
   const snapshotId = kindSnapshot
     ? toolSnapshot(kindSnapshot).snapshotId
@@ -568,6 +614,42 @@ export async function createJobSandbox(
     "SETUP_REQUIRED",
     "Configure the pinned and tested isolated tool image.",
   );
+  const toolKind = kind === "coding" ? "coding" : "media";
+  const selection = preparationRuntime(
+    usingBroker
+      ? snapshotAuthorities?.[toolKind]
+        ? {
+            version: "preparation-runtime-v1",
+            route: "broker",
+            authority: snapshotAuthorities[toolKind],
+          }
+        : null
+      : {
+          version: "preparation-runtime-v1",
+          route: "static",
+          kind: toolKind,
+          source: snapshotId
+            ? { type: "snapshot", snapshotId }
+            : { type: "image", image },
+        },
+  );
+  ensure(
+    !selection ||
+      (selection.route === "broker"
+        ? selection.authority.snapshotId === snapshotId
+        : true),
+    "POLICY_BLOCKED",
+    "Sandbox selected source changed.",
+  );
+  // Missing provenance preserves legacy execution with no reusable stamp.
+  // A known changed selection refuses before VM dispatch, never a fallback.
+  ensure(
+    !options.expectedRuntime ||
+      !selection ||
+      samePreparationRuntime(selection, options.expectedRuntime),
+    "APPROVAL_STALE",
+    "The selected preparation runtime changed before dispatch.",
+  );
   const sdk = await Sandbox.create({
     ...credentials,
     ...sandboxPolicy(kind, seconds, domains),
@@ -577,8 +659,31 @@ export async function createJobSandbox(
       ? { source: { type: "snapshot" as const, snapshotId } }
       : { image }),
   });
-  const sandbox = new JobSandbox(sdk, kind === "acquisition", domains);
+  const receipt: SandboxCreationProvenance | null =
+    selection && /^[A-Za-z0-9_-]{1,128}$/.test(sdk.name)
+      ? Object.freeze({
+          version: "sandbox-create-receipt-v1",
+          selection: Object.freeze(
+            selection.route === "broker"
+              ? {
+                  ...selection,
+                  authority: Object.freeze({ ...selection.authority }),
+                }
+              : {
+                  ...selection,
+                  source: Object.freeze({ ...selection.source }),
+                },
+          ),
+          sandboxId: `vercel:${sdk.name}`,
+        })
+      : null;
+  const sandbox = new JobSandbox(sdk, kind === "acquisition", domains, receipt);
   try {
+    ensure(
+      snapshotId || sdk.image === undefined || sdk.image === image,
+      "POLICY_BLOCKED",
+      "The provider returned a different image identity.",
+    );
     const setup = await sandbox.commands.run(
       'set -eu; if ! id user >/dev/null 2>&1; then useradd -m -u 1001 user; fi; test "$(id -u user)" = 1001; chmod 700 /home/ubuntu /root; chown user:ubuntu /home/user; chmod 770 /home/user; command -v unshare; command -v setpriv',
       { user: "root", timeoutMs: 15000 },

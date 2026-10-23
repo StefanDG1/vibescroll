@@ -12,6 +12,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { ensure } from "../packages/policy";
 import { exactArrayBuffer } from "../packages/providers/binary";
 import { sourceRetained } from "./lib/sourceAuthority";
+import { creationProvenanceCurrent } from "../packages/providers/preparation-runtime";
 
 export const prepare = internalAction({
   args: { id: v.id("sources"), generation: v.number() },
@@ -48,6 +49,7 @@ export const prepare = internalAction({
         source.kind === "url" ? { url: source.url! } : source.objectKey!,
         personalDecoder,
         true,
+        input.runtime ? { expectedRuntime: input.runtime } : {},
       );
       computeCredits = Math.ceil(prepared.computeSeconds * rate);
       ensure(
@@ -70,13 +72,16 @@ export const prepare = internalAction({
         durationMs: Math.round(prepared.manifest.durationSeconds * 1000),
         coverage: prepared.manifest.coverage,
         frames: [],
-        ...(input.cacheBinding
+        ...(input.cacheBinding &&
+        input.runtime &&
+        creationProvenanceCurrent(prepared.creationProvenance, input.runtime)
           ? {
               preparation: {
                 version: "personal-preparation-v1",
                 generation: a.generation,
                 binding: input.cacheBinding,
                 inputBinding: input.inputBinding,
+                creationProvenance: prepared.creationProvenance,
                 preparedAt,
                 expiresAt: input.expiresAt,
               },

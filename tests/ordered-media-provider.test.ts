@@ -103,8 +103,108 @@ beforeEach(() => {
   );
 });
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
+});
+it.each([false, true])(
+  "revoked authority stops a pending decoder and retains unknown termination: unknown=%s",
+  async (unknown) => {
+    vi.useFakeTimers();
+    let decoding!: () => void;
+    const started = new Promise<void>((resolve) => {
+      decoding = resolve;
+    });
+    sandbox.commands.run.mockImplementation(async (command: string) => {
+      if (command.startsWith("mkdir")) return { exitCode: 0 };
+      decoding();
+      return new Promise(() => {});
+    });
+    if (unknown) sandbox.kill.mockRejectedValue(Error("termination unknown"));
+    let revoked = false;
+    const authorize = vi.fn(async () => {
+      if (revoked) throw Error("rights revoked");
+    });
+    const result = prepareOrderedMedia(input, { authorize }).catch(
+      (error) => error,
+    );
+    await started;
+    revoked = true;
+    await vi.advanceTimersByTimeAsync(10000);
+    const error = await result;
+    expect(error).toBeInstanceOf(OrderedMediaPreparationError);
+    expect(error.computeSeconds).toBe(unknown ? undefined : 10);
+    expect(sandbox.kill).toHaveBeenCalled();
+    expect(sandbox.files.read).not.toHaveBeenCalled();
+    expect(mocks.create).toHaveBeenCalledOnce();
+    const checks = authorize.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(300000);
+    expect(authorize).toHaveBeenCalledTimes(checks);
+  },
+);
+it("shares an in-flight authority read with the decoder completion checkpoint", async () => {
+  vi.useFakeTimers();
+  let complete!: (value: { exitCode: number }) => void,
+    decoding!: () => void,
+    refuse!: (error: Error) => void;
+  const started = new Promise<void>((resolve) => {
+    decoding = resolve;
+  });
+  sandbox.commands.run.mockImplementation(async (command: string) => {
+    if (command.startsWith("mkdir")) return { exitCode: 0 };
+    decoding();
+    return new Promise((resolve) => {
+      complete = resolve;
+    });
+  });
+  let pending = false;
+  const authorize = vi.fn(async () => {
+    if (pending)
+      return new Promise<void>((_resolve, reject) => {
+        refuse = reject;
+      });
+  });
+  const result = prepareOrderedMedia(input, { authorize }).catch(
+    (error) => error,
+  );
+  await started;
+  pending = true;
+  await vi.advanceTimersByTimeAsync(10000);
+  const checks = authorize.mock.calls.length;
+  complete({ exitCode: 0 });
+  await vi.advanceTimersByTimeAsync(20000);
+  expect(authorize).toHaveBeenCalledTimes(checks);
+  refuse(Error("revoked while read was pending"));
+  expect(await result).toBeInstanceOf(OrderedMediaPreparationError);
+  expect(sandbox.kill).toHaveBeenCalledOnce();
+  expect(sandbox.files.read).not.toHaveBeenCalled();
+});
+it("bounds active watchdog reads to thirty and clears them after the job stops", async () => {
+  vi.useFakeTimers();
+  const abort = new AbortController();
+  let decoding!: () => void;
+  const started = new Promise<void>((resolve) => {
+    decoding = resolve;
+  });
+  sandbox.commands.run.mockImplementation(async (command: string) => {
+    if (command.startsWith("mkdir")) return { exitCode: 0 };
+    decoding();
+    return new Promise(() => {});
+  });
+  const authorize = vi.fn(async () => {});
+  const result = prepareOrderedMedia(input, {
+    authorize,
+    signal: abort.signal,
+  }).catch((error) => error);
+  await started;
+  const checkpoints = authorize.mock.calls.length;
+  await vi.advanceTimersByTimeAsync(600000);
+  expect(authorize).toHaveBeenCalledTimes(checkpoints + 30);
+  abort.abort();
+  expect(await result).toBeInstanceOf(OrderedMediaPreparationError);
+  await vi.advanceTimersByTimeAsync(600000);
+  expect(authorize).toHaveBeenCalledTimes(checkpoints + 30);
+  expect(sandbox.kill).toHaveBeenCalledOnce();
 });
 it("keeps ordered image coordinates untimed and verifies real input/output hashes before returning", async () => {
   const authorize = vi.fn().mockResolvedValue(undefined);

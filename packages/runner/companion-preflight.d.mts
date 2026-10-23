@@ -23,6 +23,8 @@ export function companionPreflight(observed: {
   codexImagePresent?: boolean;
   pythonPresent?: boolean;
   asrModelPresent?: boolean;
+  asrRuntimeVerified?: boolean;
+  asrModelVerified?: boolean;
   savedConnectionPresent?: boolean;
   freeBytes?: number;
 }): CompanionReport;

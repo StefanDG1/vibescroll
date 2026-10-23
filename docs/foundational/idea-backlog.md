@@ -1,5 +1,15 @@
 # Foundational idea backlog
 
+## F044: Codex Cloud first and a public insight library, October 23
+
+A later personal real-link Cloud test succeeded with actual audio transcription and ten natively inspected sampled frames after a separate bounded quality review. This establishes one bounded technical example; source coverage, independent quality, app write-back, host-event execution, commercial permission and public-release controls remain separate. No new result is published and no customer or savings claim follows.
+
+Source: explicit owner instruction to investigate/test official user-owned Cloud with real links, prefer it over local/managed processing if it works, make eligible generic insights a free public library without a per-result private toggle, retain private advanced reanalysis and proposals, coordinate creator subscribers, and use shared reuse as a major marketing angle. Other subscriptions and video editing/style imitation are future scope.
+
+Decision: adopt the product direction and bounded investigation/planning in [ADR 121](../adr/121-codex-cloud-first-and-public-neutral-library.md). [The complete sequence](../launch-plan/2026-10-23/CLOUD-FIRST.md) extends existing queues, artifacts, creator coordination, exploration and setup. No public activation, legacy migration, credential pooling or recurring spend follows. Explicit user subscription authority, provider approval for the orchestration/selection model, permitted source/output rights, public data license, applicable manual review and privacy/removal safeguards remain gates.
+
+Research records an unvalidated shared-learning/reuse hypothesis and a failed first Cloud runtime probe. Avatar records mobile own-subscription use and untested contributor comprehension. Offer separates planned Cloud/public features from current availability and remaining service costs. Beliefs preserve evidence and control. Counterargument: compulsory generic publication may deter private use; quota, cold starts, acquisition and human moderation can undermine the promised simplicity. Test actual real-post coverage/result return, host events, private boundaries, compatible reuse and later usefulness with denominators before marketing results. No customer, savings, pricing change or universal access claim is adopted.
+
 ## F043: authorized creator and onboarding implementation, October 23
 
 The owner explicitly authorized N0-N7 and all remaining work in both plans. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes F041's planning-only boundary. Extend the existing setup progress, source intake, jobs and public artifact/reuse families. Daily public TikTok/Instagram discovery, ordered video/image/carousel evidence, eligible generic analysis with private personalization and both approved processing routes are implementation scope. They are not newly verified production capabilities.

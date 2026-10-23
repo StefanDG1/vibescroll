@@ -1,5 +1,15 @@
 # VibeScroll foundational avatar
 
+## F044: Codex Cloud first and a public insight library, October 23
+
+A later personal real-link Cloud test succeeded with actual audio transcription and ten natively inspected sampled frames after a separate bounded quality review. This establishes one bounded technical example; source coverage, independent quality, app write-back, host-event execution, commercial permission and public-release controls remain separate. No new result is published and no customer or savings claim follows.
+
+The owner now prioritizes a person using their own ChatGPT subscription from a mobile-friendly browser without keeping a computer awake. Library-only use, optional project GitHub and skippable skills remain. Official Cloud readiness must be observed rather than inferred from account identity. [The current plan](../launch-plan/2026-10-23/CLOUD-FIRST.md) preserves the mandatory export guide and whole original scope.
+
+The intended generic public mode has no per-result privacy toggle after clear disclosure and valid rights. That preference does not describe existing users' consent. Never migrate their private results, expose follows or contributor identity, or publish personal prompts, skills, proposals, repositories or notes. Private advanced reanalysis remains available as a separate authorized workload. Applicable removal/privacy rights and provider review survive the public mode.
+
+A shared-learning audience and willingness to contribute subscription capacity are unvalidated. Test comprehension and refusal as well as successful use. Random subscriber execution is a provider-gated proposal; it is not authorized account pooling. No new demographic, customer, measured benefit, price or testimonial follows. [ADR 121](../adr/121-codex-cloud-first-and-public-neutral-library.md) records conditional local-route deferral after Cloud succeeds.
+
 ## F043: authorized creator and onboarding implementation, October 23
 
 The owner explicitly authorized N0-N7 and all remaining work in both plans. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes F041's planning-only boundary. Extend the existing setup progress, source intake, jobs and public artifact/reuse families. Daily public TikTok/Instagram discovery, ordered video/image/carousel evidence, eligible generic analysis with private personalization and both approved processing routes are implementation scope. They are not newly verified production capabilities.

@@ -1,5 +1,11 @@
 # Foundational document change log
 
+## F044: Codex Cloud first and a public insight library, October 23
+
+A later personal real-link Cloud test succeeded with actual audio transcription and ten natively inspected sampled frames after a separate bounded quality review. This establishes one bounded technical example; source coverage, independent quality, app write-back, host-event execution, commercial permission and public-release controls remain separate. No new result is published and no customer or savings claim follows.
+
+Updated all four briefs, the idea backlog and current brief for the owner's Cloud-first real-link processing and eligible public generic library direction. [ADR 121](../adr/121-codex-cloud-first-and-public-neutral-library.md) and [C0-C10](../launch-plan/2026-10-23/CLOUD-FIRST.md) retain full launch scope, private customization, conditional local/managed deferral and honest failed/pending Cloud evidence. Added the shared-reuse marketing hypothesis and counterarguments without claiming tested savings, instant response, all-platform access or an existing community. Contributor subscription selection/failover, source/output rights, public licensing, review, privacy/removal, whole-job budget and real host/device acceptance remain explicit. No live policy bytes, prices, application flags, provider account or production behavior changed.
+
 ## F043: authorized creator and onboarding implementation, October 23
 
 The owner explicitly authorized N0-N7 and all remaining work in both plans. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes F041's planning-only boundary. Extend the existing setup progress, source intake, jobs and public artifact/reuse families. Daily public TikTok/Instagram discovery, ordered video/image/carousel evidence, eligible generic analysis with private personalization and both approved processing routes are implementation scope. They are not newly verified production capabilities.

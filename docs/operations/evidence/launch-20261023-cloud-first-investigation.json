@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-23T22:09:32.760844+00:00",
+  "mode": "Cloud-first investigation and remaining-work planning; no application deployment",
+  "applicationBaseline": "94ad16885c48053a3001b8b8c4527a3a475fffa3",
+  "changes": "Cloud-first documentation/remaining scope/owner decisions/unsent message drafts; separate prerequisite security patch is stacked and evidenced",
+  "personalCloudProbe": {
+    "status": "failed_before_execution",
+    "model": "GPT-6.1 Sol",
+    "effort": "High",
+    "attempts": 1,
+    "source": "reviewed synthetic silent overview",
+    "framesInspected": 0,
+    "submissionToFailureResponseSeconds": 38.435747,
+    "failure": "Readiness reported ready; exec_command reported no usable execution environment.",
+    "fullMediaAcceptance": false
+  },
+  "followup": {
+    "demoPreparation": "blocked by automatic approval review without a specific reason; not submitted",
+    "ownerSelected": "Use a real unanalyzed saved production-account post",
+    "productionSelection": {
+      "mcpProfileOperations": 1,
+      "guardedLibraryQueries": 2,
+      "guardedControlCalls": 4,
+      "itemsInBoundedPage": 30,
+      "ready": 29,
+      "unanalyzed": 1,
+      "unanalyzedProvider": "TikTok",
+      "unanalyzedHasInsights": false,
+      "unanalyzedHasPersonalAnalysisJob": false,
+      "sourceRightsAttested": true,
+      "wholeLibraryScanned": false,
+      "ownerSelectedInstagramReel": "Fresh exact owner-supplied source verified needs_upload,0insights,generation0,no personalAnalysis job; private identity association omitted",
+      "firstPageLibraryResponseBytes": 177646,
+      "secondPageLibraryResponseBytes": "Not summarized; exact selected page retained only in private guarded evidence",
+      "byteLimitPerResponse": 32000000
+    },
+    "network": "Existing Instagram policy retained; no TikTok/new host widening",
+    "nextInput": "Owner supplied exact new Instagram Reel; no further link is requested",
+    "cloudTasksDispatched": 1,
+    "sourceJobPublicationWrites": 0,
+    "realPostPhases": [
+      {
+        "phase": "initial runtime",
+        "status": "blocked_network_enforcement_unknown",
+        "revision": 2,
+        "sourceAttempts": 0,
+        "agentMeasuredSeconds": 33
+      },
+      {
+        "phase": "readiness diagnosis",
+        "status": "enforced_current_matched",
+        "revision": 3,
+        "sourceAttempts": 0,
+        "agentMeasuredSeconds": 14
+      },
+      {
+        "phase": 3,
+        "status": "blocked_downloader_size_limit",
+        "agentMeasuredSeconds": 126,
+        "bodyBytes": 33554433,
+        "sizeCheckOverreadBytes": 1,
+        "sourceAttempts": 0,
+        "firstPreparationError": "Local Operation not permitted",
+        "downloaderExecuted": false
+      },
+      {
+        "phase": 4,
+        "status": "blocked_acquisition_transport_dns_guard",
+        "agentMeasuredSeconds": 160.35,
+        "downloaderBytes": 40446224,
+        "downloaderSHA256": "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a",
+        "sourceAttempts": 1,
+        "originConnections": 0,
+        "sourceBytes": 0,
+        "firstVersionCheckError": "ELF passed to Python, then direct version check passed"
+      },
+      {
+        "phase": 5,
+        "status": "blocked_current_network_enforcement_unknown",
+        "agentMeasuredSeconds": 38.56,
+        "revision": 11,
+        "sourceAttempts": 0
+      },
+      {
+        "phase": 6,
+        "status": "blocked_media_tls_certificate_validation",
+        "agentMeasuredSeconds": 162.47,
+        "sourceAttempts": 1,
+        "offlineFilterCases": 22,
+        "metadataRetrieved": true,
+        "mediaBytes": 0,
+        "framesInspected": 0,
+        "transcription": false,
+        "networkBeforeRevision": 21,
+        "networkAfterRevision": 22,
+        "networkState": "enforced",
+        "failure": "CDN CERTIFICATE_VERIFY_FAILED, self-signed certificate in certificate chain; no Instagram access denial established",
+        "cumulativeConservativeBytes": 74204733
+      },
+      {
+        "phase": 7,
+        "status": "completed_audio_and_sampled_visual_analysis",
+        "agentMeasuredSeconds": 577.924094,
+        "dispatchToWorkCompletionSeconds": 588.924094,
+        "maximumWorkSeconds": 600,
+        "workCompletedUTC": "2026-10-23T21:52:43.924094Z",
+        "reportAndCleanupFinishedLater": true,
+        "sourceInvocations": 1,
+        "totalSourceInvocations": 3,
+        "mediaBytes": 3667745,
+        "durationSeconds": 46.901451,
+        "mediaHashVerifiedAndRetainedPrivately": true,
+        "caSelection": "Documented system trust selection via --compat-options no-certifi; CERT_REQUIRED and hostname verification retained, no trust root added",
+        "asr": {
+          "version": "faster-whisper1.2.1",
+          "device": "CPU/int8/offline",
+          "segments": 18,
+          "seconds": 7.717127561569214,
+          "pinnedWheelsAndModelFilesHashVerified": true
+        },
+        "nativeImageViewRecords": 8,
+        "framesSeconds": [0, 6, 12, 18, 24, 30, 36, 42],
+        "frameWidth": 720,
+        "networkBefore": "revision29/current/matched/restricted/enforced",
+        "networkAfter": "revision34/current/matched/unknown; no later network",
+        "cumulativeConservativeDownloadRelayBytes": 691818564,
+        "privateDiskBytesApprox": 1349342877,
+        "trackedRepositoriesClean": true,
+        "knownTaskProcessesRemaining": 0,
+        "acquisitionSeconds": 5.489766572000008,
+        "decodeSeconds": 0.30194520950317383
+      }
+    ],
+    "personalRealPostRuntime": {
+      "usableShell": true,
+      "python": "3.12.14",
+      "ffmpeg": "7.1.5-0+deb13u1",
+      "networkReadiness": "Changes across actual observed revisions, no config changes by task; require current enforced snapshot",
+      "model": "GPT-6.1 Sol High selected in official UI; no independently attested model claim",
+      "asrWeightsDownloaded": true,
+      "rawMediaTransferred": true,
+      "output": "Private technical example; not written back to app or publicly released"
+    },
+    "mediaFetchedBytes": 3667745
+  },
+  "localTests": {
+    "focused": {
+      "command": "Node24.22.1 scripts/run-offline.mjs pnpm exec vitest run tests/assistant-events.test.ts tests/assistant-event-runtime.test.ts tests/assistant-event-credentials.test.ts tests/service-artifacts.test.ts tests/service-artifact-producer.test.ts tests/creator-following.test.ts tests/subscription-trials.test.ts --maxWorkers=1",
+      "passed": 87,
+      "failed": 0,
+      "files": 7
+    },
+    "guard": {
+      "command": "node --test outputs/launch-run/convex-read-canary-budget.test.mjs",
+      "passed": 5,
+      "failed": 0
+    },
+    "retainedFailures": [
+      "First focused attempt on global Node24.12.0 with two workers:86passed,1timed out at forged-provider test and scheduled-function teardown warning. No application code changed; pinned24.22.1 focused rerun8passed, then complete targeted87passed.",
+      "First private CLI startup rejected raw Windows --import path before network; corrected to file URL. Second local startup had no deployment configured; guard recorded zero dispatch. Explicit supported deployment selection then completed the single guarded query."
+    ],
+    "productionOrHostAcceptance": false,
+    "integratedSecurityDependencyCheck": {
+      "command": "Node24.22.1 scripts/run-offline.mjs pnpm check",
+      "passed": 1405,
+      "hostedSkipped": 3,
+      "lintTypesBothBuilds": "passed",
+      "exactHeadCi": "94ad168 /40029035652 success"
+    },
+    "documentationValidation": {
+      "documents": 302,
+      "skillSnapshots": 12,
+      "status": "passed after final source review"
+    }
+  },
+  "acceptance": {
+    "runtime": "Working shell/verified downloader in personal real-post task; account setup/commercial controls remain separate",
+    "fullLinkAnalysis": "One real 46.9s Reel: actual complete-audio ASR, all18 returned segments reviewed, ten sampled native frame views and cited neutral analysis. Complete visual inspection, independent listening, other-format benchmark and production adapter remain unverified",
+    "hostEvents": "not attempted; existing local completion-event tests only",
+    "commercialSubscriberOrchestration": "provider permission unverified",
+    "compulsoryPublicGeneric": "target policy; rights/review/license/privacy release gates retained",
+    "privateCustomization": "planned extension of existing private systems",
+    "originalScope": "R0-R13, P0-P15, N0-N7 retained; local/managed deferral conditional on Cloud success",
+    "customerIndependentResults": "not invented",
+    "coverageLimits": [
+      "Automatic transcript not independently checked by listened audio",
+      "Intervening visual frames and final approximately0.40s not inspected",
+      "One public Reel only; no image/photo/mixed-carousel/other-platform benchmark",
+      "No event-to-execution or source-to-app writeback",
+      "No independent usefulness or commercial/public release permission"
+    ],
+    "initialPhaseCoverageLimits": [
+      "Automatic transcript not independently checked against listened audio",
+      "Intervening visual frames and final4.9s not inspected",
+      "One public Reel only; no image/photo/mixed-carousel/other-platform benchmark",
+      "No event-to-execution or source-to-app writeback",
+      "No independent usefulness or commercial/public release permission"
+    ]
+  },
+  "budget": {
+    "originalMaximumUSD": 2,
+    "baselineRetainedUSD": 1.6792885298898517,
+    "additionalMetadataEnvelopeUSD": 0.08,
+    "totalConservativeRetainedUSD": 1.7592885298898517,
+    "unallocatedUSD": 0.2407114701101483,
+    "originalUnknownBackendHoldUSD": 0.3,
+    "purchases": 0,
+    "newPaidAPIJobs": 0,
+    "newDeployments": 0,
+    "providerFlagsChanged": false,
+    "unknownHoldsReleased": false,
+    "settledInvoice": false,
+    "notes": "One MCP profile and two guarded application metadata queries have real service usage within retained envelopes, plus ordinary auth/throttle overhead. Exact invoice unresolved; all original holds retained. Personal Cloud uses included account allowance and no purchased credits or paid API fallback.",
+    "secondExactSourceEnvelopeUSD": 0.02,
+    "accountUsageObservation": {
+      "usedPercent": 13,
+      "windowMinutes": 10080,
+      "purchasedCredits": "0",
+      "ordinaryUsageAllowed": true,
+      "attribution": "Account-wide; includes other activity, not attributable solely to this experiment"
+    },
+    "dateCarryforward": "Crossing into October24EuropeBerlin does not reset this run ceiling"
+  },
+  "review": {
+    "independentRole": "GPT-6.1 Sol High read-only audit/review",
+    "correctionsApplied": [
+      "Personal test separated from commercial/no-GitHub release gates",
+      "Hosted Work Events separated from unproved Codex Cloud execution bridge",
+      "Public creator attribution separated from private contributor identity",
+      "Review quarantine labeled product release control pending applicability",
+      "Original benchmark/pilot/founding-pass acceptance repeated",
+      "Bounded production snapshot and pending real input recorded",
+      "Honest no-insight processing separated from measured usefulness",
+      "Externally enforced unattended execution/cancellation gates required",
+      "Cloud skill provenance/runtime compatibility and installation/tool authority separated",
+      "Cloud task/files/log retention distinguished from deleting VibeScroll association"
+    ],
+    "nativeFrameProof": "Root inspected actual imageView records for eight initial frames plus two audit tail frames, command returncodes and hash-verified media/ASR receipts"
+  },
+  "sources": [
+    "https://developers.openai.com/plugins/build/mcp-events",
+    "https://learn.chatgpt.com/docs/environments/cloud-environments",
+    "https://learn.chatgpt.com/docs/cli/reference",
+    "https://learn.chatgpt.com/docs/app-server",
+    "https://developers.openai.com/siwc/token-sharing-open-source",
+    "https://developers.openai.com/api/docs/guides/agents-api/overview",
+    "https://openai.com/policies/eu-terms-of-use/",
+    "https://openai.com/policies/sharing-publication-policy/",
+    "https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/README.md",
+    "https://github.com/yt-dlp/yt-dlp/blob/2026.08.19/yt_dlp/networking/_helper.py"
+  ],
+  "release": {
+    "merged": false,
+    "deployed": false,
+    "publiclyPosted": false,
+    "legalPolicyBytesChanged": false
+  },
+  "securityCorrection": {
+    "pullRequest": "https://github.com/StefanDG1/vibescroll/pull/136",
+    "commit": "94ad16885c48053a3001b8b8c4527a3a475fffa3",
+    "advisory": "GHSA-mrhx-c7xc-m3w5",
+    "upstreamVersion": "4.6.6",
+    "fullOfflineTestsPassed": 1405,
+    "hostedSkipped": 3,
+    "dependencyAudit": "zero counts",
+    "scope": "Isolated prerequisite security patch, not Cloud product implementation",
+    "exactHeadCi": {
+      "head": "94ad16885c48053a3001b8b8c4527a3a475fffa3",
+      "runId": 40029035652,
+      "result": "success"
+    }
+  },
+  "initialApplicationBaseline": "9a8ee1751c76b7bb72ac8596a6257004b54efe7a",
+  "cleanup": {
+    "taskProcesses": "No known source/downloader/install/model/ASR sessions remain; loopback listener closed",
+    "cloudTrackedFiles": "Both worktrees clean and unchanged",
+    "providerArtifacts": "Retained privately in user-owned Cloud task; app association removal does not erase them",
+    "ownedBrowserTab": "Exact task-owned target verified by task URL and closed; unrelated tabs and shared browser daemon preserved"
+  },
+  "applicationBaselineRole": "Local authoring/integration validation baseline, not the code snapshot executed in the personal Cloud media proof",
+  "cloudExecutorCheckouts": {
+    "processingHelperSnapshot": "d8e97a393fb86fce57ee17d47c0779f02c554cfe",
+    "additionalAttachedCheckout": "1ec908a490f71c1888afd5d5b6ee5e6cebd542f9",
+    "bothCleanAndUnchanged": true,
+    "currentApplicationAdapterExecuted": false
+  },
+  "offlineQualityAudit": {
+    "status": "completed_full_transcript_review_and_two_tail_frame_views",
+    "networkRequests": 0,
+    "newSourceAcquisitions": 0,
+    "downloads": 0,
+    "installs": 0,
+    "segmentsReviewed": 18,
+    "wordsReviewed": 123,
+    "newNativeFrameSeconds": [44, 46.5],
+    "rootVerifiedNewImageViewRecords": 2,
+    "totalDistinctFramesIncludingInitialPhase": 10,
+    "nativeFrameWidth": 720,
+    "workCompletedUTC": "2026-10-23T22:03:52.249806Z",
+    "dispatchToWorkCompletionSeconds": 157.249806,
+    "maximumWorkSeconds": 180,
+    "originalArtifactsPreserved": true,
+    "knownFrameSubprocessesExited": true,
+    "newListeners": 0,
+    "publicInsightsPublished": false
+  }
+}

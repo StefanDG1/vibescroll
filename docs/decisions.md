@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 23: Codex Cloud first and eligible public generic insights
+
+[ADR 121](adr/121-codex-cloud-first-and-public-neutral-library.md) records the owner's preference for official user-owned Codex Cloud link processing, an eligible public generic insight library, private customization and daily creator updates. The [current plan addendum](launch-plan/2026-10-23/CLOUD-FIRST.md) retains every unfinished R/P/N requirement. Local and managed-credit work can leave the immediate critical path only after Cloud succeeds. Subscriber selection/failover, automatic public release and commercial orchestration remain subject to verified provider, rights, privacy, review and budget contracts. No private migration or live activation follows from this direction.
+
 ## October 23: private ordered intake and current-account preflight
 
 [ADR 120](adr/120-private-ordered-intake-and-current-account-preflight.md) keeps supplied uploads separate from verified creator identities, extends the existing capture and personal job systems, and requires actual account checks before ordered preparation. It records raw asset ownership, restore revocation, strict private result binding and broker-selected preparation provenance. Existing provider, budget and live acceptance gates remain.

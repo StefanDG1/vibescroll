@@ -1,5 +1,15 @@
 # VibeScroll foundational offer
 
+## F044: Codex Cloud first and a public insight library, October 23
+
+A later personal real-link Cloud test succeeded with actual audio transcription and ten natively inspected sampled frames after a separate bounded quality review. This establishes one bounded technical example; source coverage, independent quality, app write-back, host-event execution, commercial permission and public-release controls remain separate. No new result is published and no customer or savings claim follows.
+
+The owner-selected next route is official user-owned Codex Cloud for permitted link acquisition, preparation and cited generic analysis, with an eligible free public insight library and private customization. [ADR 121](../adr/121-codex-cloud-first-and-public-neutral-library.md) supersedes the immediate local-first preference only when Cloud passes the [new acceptance stages](../launch-plan/2026-10-23/CLOUD-FIRST.md). No working Cloud video route is advertised yet; the first actual probe failed before shell execution.
+
+The proposed public generic mode requires clear disclosure, permitted source/output rights, applicable review, a separate data license, moderation and removal. No per-result private toggle within that mode means neither automatic publication of private/legacy data nor waiver of legal rights. Custom prompts/skills, project evaluations, proposals and plans stay private. Contributor selection and failover remain provider-gated, explicitly authorized and bounded; no shared credentials or rate-limit circumvention.
+
+Marketing may test the benefit of reusing compatible cited general analysis. It cannot promise instant or unlimited processing, no operating costs, a measured bill reduction or an existing global library. The platform still has discovery, storage, moderation and delivery costs. Existing catalogue/allowances remain unchanged. Other provider subscriptions and editing-style generation are future scope. New copy drafts remain unsent until claims match deployed acceptance.
+
 ## F043: authorized creator and onboarding implementation, October 23
 
 The owner explicitly authorized N0-N7 and all remaining work in both plans. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes F041's planning-only boundary. Extend the existing setup progress, source intake, jobs and public artifact/reuse families. Daily public TikTok/Instagram discovery, ordered video/image/carousel evidence, eligible generic analysis with private personalization and both approved processing routes are implementation scope. They are not newly verified production capabilities.

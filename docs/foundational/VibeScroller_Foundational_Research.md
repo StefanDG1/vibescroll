@@ -1,5 +1,15 @@
 # VibeScroll foundational research
 
+## F044: Codex Cloud first and a public insight library, October 23
+
+A later personal real-link Cloud test succeeded with actual audio transcription and ten natively inspected sampled frames after a separate bounded quality review. This establishes one bounded technical example; source coverage, independent quality, app write-back, host-event execution, commercial permission and public-release controls remain separate. No new result is published and no customer or savings claim follows.
+
+The owner proposes a free public library of generalized cited insights, with official user-owned Codex Cloud processing of permitted links and shared reuse instead of repeated analysis. This is a product and marketing hypothesis, not measured demand, savings or an existing community. [ADR 121](../adr/121-codex-cloud-first-and-public-neutral-library.md) and the [current plan](../launch-plan/2026-10-23/CLOUD-FIRST.md) retain the complete launch scope and actual test gates.
+
+Test whether people can connect the official host, receive a real useful result from a previously unanalyzed post, understand public generic contribution and keep personalized work private. The initial Cloud dispatch failed before execution and established no media success; the later personal audio-plus-sampled-visual example above is separate evidence. Random subscriber selection/failover requires provider permission and explicit contributor authority. Generalized output can still contain personal or protected source material. Preserve rights, publication review, deletion and private-data boundaries. Source discovery, hosting, storage and moderation costs remain even when inference uses a subscription.
+
+Counterevidence to investigate: compulsory public contribution may deter private savers; Cloud setup may still require repository access; source acquisition and cold starts can dominate latency; few contributors or incompatible versions can limit reuse. Measure first result, actual coverage, failure/retry burden, compatible hit rate and private comprehension with denominators. Do not claim platform-wide trends from a sampled library. Prices, audience and six beliefs remain unchanged; local/managed completion can be deferred only after Cloud succeeds.
+
 ## F043: authorized creator and onboarding implementation, October 23
 
 The owner explicitly authorized N0-N7 and all remaining work in both plans. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes F041's planning-only boundary. Extend the existing setup progress, source intake, jobs and public artifact/reuse families. Daily public TikTok/Instagram discovery, ordered video/image/carousel evidence, eligible generic analysis with private personalization and both approved processing routes are implementation scope. They are not newly verified production capabilities.

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "observedAt": "2026-10-23T19:33:00Z",
-  "applicationTreeCommit": null,
+  "applicationTreeCommit": "786fb25c7581c7cdf0bf2169da31c910630828d4",
   "parentCommit": "d4d8e4a0dab45a913c9770f2c825cd8124042f48",
   "branch": "codex/launch-20261022-ordered-files-20261023",
   "environment": "Local Windows, project Node 24.22.1, pnpm 12.3.4, Python 3.14.0 test interpreter, credential-free checkout and offline Node network guard",
@@ -40,7 +40,7 @@
       "unresolved": 0,
       "limitation": "Current registry response does not establish an upstream fix for a previously reported advisory; existing local patch and security history remain."
     },
-    "secretScan": "Gitleaks 8.30.1 default staged scan, 294461 bytes, no leaks; receipt-only follow-up scan required"
+    "secretScan": "Gitleaks 8.30.1 default staged scan, 294539 bytes, no leaks; later receipt-only changes receive a delta scan"
   },
   "review": {
     "root": "integration and supplied-media authority/lifecycle/UI review",

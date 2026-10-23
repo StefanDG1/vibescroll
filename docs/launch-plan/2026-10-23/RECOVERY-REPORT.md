@@ -4,7 +4,7 @@ Status checked October 23, 2026. Root remains integration owner. Read [the remai
 
 ## What survived and what is live
 
-The interruption did not discard the implementation. [Draft PR 134](https://github.com/StefanDG1/vibescroll/pull/134) is pushed. Its exact head `d4d8e4a0dab45a913c9770f2c825cd8124042f48` passed [CI 39883595855](https://github.com/StefanDG1/vibescroll/actions/runs/39883595855). Its application tree passed 1,290 local tests with three hosted skips. The subsequent ordered-file stage has its own branch and evidence; earlier results do not certify its newer tree.
+The interruption did not discard the implementation. [Draft PR 134](https://github.com/StefanDG1/vibescroll/pull/134) is pushed. Its exact head `d4d8e4a0dab45a913c9770f2c825cd8124042f48` passed [CI 39883595855](https://github.com/StefanDG1/vibescroll/actions/runs/39883595855). Its application tree passed 1,290 local tests with three hosted skips. The subsequent ordered-file application commit `786fb25c7581c7cdf0bf2169da31c910630828d4` passed 1,401 local tests with three hosted skips, all types/lint, offline backend bundling and both builds. Its exact-head CI is separate. [The receipt](../../operations/evidence/launch-20261023-ordered-integration.json) retains earlier failures and review limits.
 
 Vercel deployment metadata rechecked at 19:18:53 UTC reports the [public website](https://scroll.companynerve.com) READY at `3e831ae461aa4cb2b8577a3c81e18952b45bceae`. This is metadata, not a fresh functional test. Neither PR 134 nor the ordered-file stage is deployed there. Earlier launch PRs 120-129, 131 and 132 were merged. Unrelated dependency PR 130 is preserved.
 

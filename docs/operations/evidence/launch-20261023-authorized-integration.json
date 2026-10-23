@@ -99,7 +99,7 @@
       "runId": 39883595855,
       "result": "success",
       "recheckedAt": "2026-10-23T19:18:53Z",
-      "scope": "Pushed integration stage only; subsequent ordered-file and runtime changes are separate uncommitted work."
+      "scope": "Pushed integration stage only; subsequent ordered-file/runtime work is application commit 786fb25 on a separate stacked branch."
     }
   }
 }

@@ -1,10 +1,14 @@
 # VibeScroller foundational document process
 
-## Current brief, October 23: F044 Cloud-first direction
+## Current brief, October 24: F045 proprietary Pro catalog
+
+[F045](idea-backlog.md#f045-proprietary-pro-insight-catalog-october-24) and [ADR 122](../adr/122-proprietary-pro-insight-catalog.md) synchronize all four briefs for proprietary Pro-only catalog access, all-plan contribution and readable saved copies after cancellation. New catalog access/reuse/updates require current Pro. F044's free public dataset direction is historical and superseded; official user-owned Cloud, private work, exact approved demo editions, software MIT and full launch acceptance remain. The [owner checklist](../launch-plan/2026-10-23/OWNER-CHECKLIST.md) separates human/provider prerequisites from root engineering. This is a product decision and copy hypothesis, not deployed entitlements, measured demand or new spending.
+
+## Earlier brief, October 23: F044 Cloud-first direction
 
 [F044](idea-backlog.md#f044-codex-cloud-first-and-a-public-insight-library-october-23) synchronizes all four foundations for official user-owned Codex Cloud, permitted real-link analysis, eligible public generic contribution and private customization. [ADR 121](../adr/121-codex-cloud-first-and-public-neutral-library.md) and the [current remaining-work addendum](../launch-plan/2026-10-23/CLOUD-FIRST.md) preserve provider/rights/review/budget gates and every original R/P/N requirement. Subscriber selection/failover and benefit claims need evidence. Local/managed work is conditionally deferred only after Cloud succeeds. Earlier briefs retain their dated evidence and route priorities.
 
-## Current brief, October 23: F043 authorization
+## Earlier brief, October 23: F043 authorization
 
 [F043](idea-backlog.md#f043-authorized-creator-and-onboarding-implementation-october-23) synchronizes the four foundations after explicit N0-N7 implementation authorization. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes the earlier planning-only boundary. Implementation continues through existing systems. Provider rights, the original cumulative US$2 cap, privacy, release and actual live/independent acceptance remain separate gates. No new result or benefit is claimed. Earlier briefs below remain historical.
 

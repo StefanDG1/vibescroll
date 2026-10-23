@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 24: proprietary Pro catalog, all-plan contribution and retained copies
+
+[ADR 122](adr/122-proprietary-pro-insight-catalog.md) supersedes ADR 121's free public dataset direction. Only Pro may access or newly save/reuse the proprietary shared catalog. All plans may contribute eligible general analysis and separately authorized own-subscription capacity. Contribution grants no catalog access. Already saved private copies and notes remain readable after cancellation; further catalog access and updates stop. Own validly processed results keep their existing plan rules. Software MIT, private work, source/provider rights, exact approved demo editions and the cumulative US$2 cap remain unchanged. The [single owner checklist](launch-plan/2026-10-23/OWNER-CHECKLIST.md) separates actual human/provider prerequisites from root-owned engineering. This records the target, not deployed enforcement or new billing prices.
+
 ## October 23: Codex Cloud first and eligible public generic insights
 
 [ADR 121](adr/121-codex-cloud-first-and-public-neutral-library.md) records the owner's preference for official user-owned Codex Cloud link processing, an eligible public generic insight library, private customization and daily creator updates. The [current plan addendum](launch-plan/2026-10-23/CLOUD-FIRST.md) retains every unfinished R/P/N requirement. Local and managed-credit work can leave the immediate critical path only after Cloud succeeds. Subscriber selection/failover, automatic public release and commercial orchestration remain subject to verified provider, rights, privacy, review and budget contracts. No private migration or live activation follows from this direction.

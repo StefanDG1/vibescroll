@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F045: proprietary Pro insight catalog, October 24
+
+Recorded the owner's Pro-only proprietary catalog decision and resolved all-plan contribution/retained-copy choices. Added ADR 122 and the single owner/external action register. Updated all four briefs, current brief, idea backlog, Cloud-first C4/C8/C9 scope, acceptance, provider workload brief and unsent marketing concepts. Marked F044/ADR 121's free public dataset direction as superseded without rewriting dated proof. Retained existing stores/queues/setup, private work, exact approved demo permissions, software MIT, all original R/P/N acceptance and budget/provider/release gates. No application, live policy, billing or deployment change; paid demand and defensibility remain unvalidated.
+
 ## F044: Codex Cloud first and a public insight library, October 23
 
 A later personal real-link Cloud test succeeded with actual audio transcription and ten natively inspected sampled frames after a separate bounded quality review. This establishes one bounded technical example; source coverage, independent quality, app write-back, host-event execution, commercial permission and public-release controls remain separate. No new result is published and no customer or savings claim follows.

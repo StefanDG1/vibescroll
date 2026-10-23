@@ -1,5 +1,7 @@
 # VibeScroll complete product and launch plan
 
+Current access override, October 24: [ADR 122](../../adr/122-proprietary-pro-insight-catalog.md) makes the shared insight database proprietary and Pro-only. All plans may contribute; saved private copies/notes remain readable after cancellation. Original collections/reuse/discovery/globe scope continues with Pro catalog access and separate exact approved public demos. Software MIT is unchanged. Read the [current plan](../2026-10-23/README.md) and [owner checklist](../2026-10-23/OWNER-CHECKLIST.md) before treating dated public-library language below as current access policy. No runtime enforcement is claimed by this note.
+
 October 23 continuation: the owner changed release order to GitHub first/Reddit later, approved the seven actual README insights and requested complete per-user subscription-funded video/project/proposal/plan workflows. Follow the [completion plan](../2026-10-23/README.md) and [ADR 117](../../adr/117-github-first-and-complete-own-subscription-workflows.md) for superseding decisions and new gaps. This original package and unfinished acceptance remain in scope.
 
 ## Latest live contrast verification, October 22

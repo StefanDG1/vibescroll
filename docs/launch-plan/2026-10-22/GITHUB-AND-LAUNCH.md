@@ -1,5 +1,7 @@
 # GitHub presentation and customer acquisition
 
+Current access override, October 24: [ADR 122](../../adr/122-proprietary-pro-insight-catalog.md) makes the shared insight database proprietary and Pro-only. All plans may contribute; saved private copies/notes remain readable after cancellation. Original collections/reuse/discovery/globe scope continues with Pro catalog access and separate exact approved public demos. Software MIT is unchanged. Read the [current plan](../2026-10-23/README.md) and [owner checklist](../2026-10-23/OWNER-CHECKLIST.md) before treating dated public-library language below as current access policy. No runtime enforcement is claimed by this note.
+
 Status: included in the owner-approved plan, October 22, 2026. This file prepares work and distribution. It does not authorize posting, account creation, paid promotion or public release during the planning task.
 
 ## Current repository observations

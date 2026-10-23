@@ -1,5 +1,9 @@
 # Prefer user-owned Codex Cloud and an eligible public insight library
 
+## October 24 access revision
+
+The free public dataset, open-license and anonymous catalog direction below is superseded by [ADR 122](122-proprietary-pro-insight-catalog.md). The catalog is proprietary and Pro-only, all plans may contribute, and already saved private copies/notes remain readable after cancellation. Cloud-first investigation and the remaining provider/privacy/budget gates are retained. The dated decision below remains historical evidence.
+
 Mode: decision. Date: October 23, 2026. Status: owner-selected direction and authorized investigation/planning; production activation remains gated. Read the [current implementation sequence](../launch-plan/2026-10-23/CLOUD-FIRST.md).
 
 ## Decision

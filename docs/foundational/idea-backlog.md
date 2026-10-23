@@ -1,5 +1,13 @@
 # Foundational idea backlog
 
+## F045: proprietary Pro insight catalog, October 24
+
+Source: October 24 owner decision to keep the shared database proprietary and Pro-only, followed by explicit answers allowing all plans to contribute and keeping existing saved copies after cancellation.
+
+Decision: accept under [ADR 122](../adr/122-proprietary-pro-insight-catalog.md), superseding F044's free corpus/open-data-license proposal. The existing software remains MIT. Contribution grants no catalog access; own validly processed results keep existing rules. Saved copies/notes remain readable after Pro ends, with no further catalog access, reuse or updates. Preserve private layers, exact approved public demos, provider/source rights, review/removal and the cumulative US$2 cap.
+
+Review: Research now tests paid demand, contributor comprehension, useful coverage and retention. Avatar needs a clear contribution/access distinction and optional project setup. Offer becomes the Pro library with private next steps and retained copies. Beliefs retain evidence/control/continuity. Counterargument: a paywall does not prevent copying or prove quality, and free contributors may decline. No tested willingness, customer count, guaranteed moat, price change or live feature is claimed. Root owns enforcement/terms/tests, while the [owner checklist](../launch-plan/2026-10-23/OWNER-CHECKLIST.md) records concrete human/provider dependencies. All four briefs, current plan, acceptance and unsent message drafts are synchronized; historical F044 is preserved.
+
 ## F044: Codex Cloud first and a public insight library, October 23
 
 A later personal real-link Cloud test succeeded with actual audio transcription and ten natively inspected sampled frames after a separate bounded quality review. This establishes one bounded technical example; source coverage, independent quality, app write-back, host-event execution, commercial permission and public-release controls remain separate. No new result is published and no customer or savings claim follows.

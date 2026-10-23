@@ -1,5 +1,13 @@
 # VibeScroll foundational research
 
+## F045: proprietary Pro insight catalog, October 24
+
+[ADR 122](../adr/122-proprietary-pro-insight-catalog.md) supersedes F044's free public dataset and open-data-license direction. The shared insight catalog is proprietary and Pro-only. All plans may contribute under explicit valid authority, but contribution grants no catalog access. Already saved private copies and notes remain readable after cancellation; further catalog access, new reuse and updates stop. Own validly processed results keep existing plan rules. Software MIT and exact approved public demo editions remain separate. No runtime enforcement, new price or live policy change is claimed.
+
+Official user-owned Cloud, private customization and all original R/P/N work remain the target under the [current plan](../launch-plan/2026-10-23/CLOUD-FIRST.md). Personal processing success does not establish commercial orchestration, source/output rights, customer acceptance or a funded production release. The [owner checklist](../launch-plan/2026-10-23/OWNER-CHECKLIST.md) assigns provider confirmations to providers, implementation/research to root and exact prepared reviews/real consent/later testing to people. The cumulative US$2 cap and unknown holds remain. Prices, allowances, audience and six beliefs do not change.
+
+The paid-library offer is owner-selected, not demand validation. Test willingness to pay, comprehension of all-plan contribution without access, useful coverage, citation quality, compatible reuse, first-result latency and later retention. A paywall does not make the corpus impossible to copy. Quality, freshness, provenance and useful project application are candidate advantages; record counterevidence such as contribution refusal, low coverage or low value. Source/platform costs and commercial rights remain even when inference uses a personal subscription.
+
 ## F044: Codex Cloud first and a public insight library, October 23
 
 A later personal real-link Cloud test succeeded with actual audio transcription and ten natively inspected sampled frames after a separate bounded quality review. This establishes one bounded technical example; source coverage, independent quality, app write-back, host-event execution, commercial permission and public-release controls remain separate. No new result is published and no customer or savings claim follows.

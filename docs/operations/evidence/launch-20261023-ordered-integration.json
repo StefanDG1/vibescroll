@@ -4,6 +4,13 @@
   "applicationTreeCommit": "786fb25c7581c7cdf0bf2169da31c910630828d4",
   "parentCommit": "d4d8e4a0dab45a913c9770f2c825cd8124042f48",
   "branch": "codex/launch-20261022-ordered-files-20261023",
+  "pullRequest": "https://github.com/StefanDG1/vibescroll/pull/135",
+  "exactHeadCi": {
+    "verifiedHead": "7dde7c3b666896ad96ea7e485ae1c939ac6aaba9",
+    "runId": 40012550698,
+    "result": "success",
+    "scope": "Application plus initial receipts. Later documentation clarification head must get its own result."
+  },
   "environment": "Local Windows, project Node 24.22.1, pnpm 12.3.4, Python 3.14.0 test interpreter, credential-free checkout and offline Node network guard",
   "command": "node scripts/run-offline.mjs pnpm check",
   "result": "passed",

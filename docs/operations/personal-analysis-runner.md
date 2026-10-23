@@ -10,6 +10,8 @@ The protected controller needs the already prepared official-client image pinned
 
 Copy [the runner configuration](../../packages/runner/config.example.json) to an ignored private local file only if this computer does not already have the correct paired configuration. Set `server` to the matching HTTPS `*.convex.site` origin, `workspaceId` to the chosen workspace and `deviceName` to this computer's name. Keep `credentialVaultAdapter` as `windows-credential-manager`. Never put account tokens or API keys in this file.
 
+The template alone is not a startable media configuration. Add the reviewed `mediaImage` SHA-256 digest and the absolute `localAsr.pythonPath` and `localAsr.modelDirectory` from the prepared runtime. Follow [the ASR setup/inspection guide](local-asr-setup.md), preserve the existing pinned image and verify local prerequisites before starting. The full companion check currently requires these settings even for text-only work. If reviewed runtime/image settings are unavailable, keep processing blocked; do not invent a digest, bypass the check or assume a complete portable bootstrap has shipped.
+
 For an installed package, use its existing absolute `VIBESCROLL_COMPANION_CONFIG_ROOT` outside the installation tree. It selects controller metadata and prepared work files; it does not replace the explicit device configuration argument. A source checkout without this variable uses its legacy `private` directory. Preserve the existing configuration location, Windows credential target and protected official connection. Do not override `HOME` or `CODEX_HOME` on the host.
 
 If pairing is needed, run this from the checkout or verified package root, with the real absolute configuration path:

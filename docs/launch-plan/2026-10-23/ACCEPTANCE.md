@@ -1,5 +1,17 @@
 # Remaining acceptance and completion ledger
 
+Current follow-up: the supported existing-plugin tool refresh returned HTTP200 without disconnecting OAuth; this chat still has its old cached definition, so a fresh official Work Cloud turn is checking metadata only. A complete October24 usage read and completed public-check reconciliation released only explicitly justified holds. After a separate metadata allowance, the cumulative ledger retains USD2.5963302151024803 with USD0.4036697848975197 unreserved. This is not an invoice or permission to start an unfunded video. The one-time app policy review and complete real-media return remain pending.
+
+## Published private MCP request controls, October 25
+
+[PR 167](https://github.com/StefanDG1/vibescroll/pull/167) and [compatible PR 168](https://github.com/StefanDG1/vibescroll/pull/168) are merged with passing exact-head CI. Compatible frontend and backend `f2495e7`, version `0.1.0-alpha.20261024225317.gf2495e71eea8`, are live at [VibeScroll](https://scroll.companynerve.com). The fresh guarded publication confirmed exactly two optional grant fields, 12 components, 131 tables and 273 unchanged indexes, with no scans/backfills. Staged health/Help and canonical health passed; fixed Basic, normal queue, Git suppression and original domain settings are preserved. [The production receipt](../../operations/evidence/launch-20261025-cloud-mcp-production.json) binds source, tests, actual publication and remaining gaps.
+
+Main's combined offline check passed 1,940 tests and compatible checks passed 1,135, each with three hosted skips. Native synthetic-account review covered the actual connection control on desktop and 320px mobile. Main Verify, versioning and alpha publication passed. These checks establish the new request/permission controls, not a production Cloud video result.
+
+Account acceptance is still pending: refresh the existing host tool metadata, review the new one-time Cloud policy in the existing private library with recent app authentication, then run one whole-budgeted real source through Cloud and verify its cited result. Existing OAuth reconnection is complete. The older saved-link workspace retains team authority and its sources were not moved or relabeled. Automatic dispatch, general paid access, neutral catalog contribution and full-main migrations remain open. The reserved owner-test post is untouched.
+
+The cumulative USD3 ledger at this checkpoint retains USD2.6424438943301745 and leaves USD0.35755610566982554. These are conservative maxima, not a settled invoice. An eight-call test plus required grant already exceeds that headroom before writes/storage/transfer; root must reconcile completed usage or leave the test pending. No paid API fallback or cap increase follows.
+
 ## Link-first Home/Library acceptance, October 24
 
 The [current execution index](README.md), [ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md) and [page/loading specification](APP-MAP-AND-LOADING.md) add pending acceptance for: one-time standing authority/event subscription; no per-post phone action; current cache reuse with zero inference; one job for duplicates; actual host/media/citations/commit; stage changes and automatic display; Home metrics/card targets; extracted-insight default and Posts controls; projection I/O, cursor/cache isolation, stale-response races; every main page/action loader; and laptop-off runs with/without GitHub. Manual approval is a fallback, not normal-flow acceptance. No new runtime or live success is claimed.

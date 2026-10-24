@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## October 25: published F070 controls, acceptance pending
+
+Root reconciled F070 across the four briefs and index with the [actual compatible production receipt](../operations/evidence/launch-20261025-cloud-mcp-production.json). Exact MCP request controls are live; actual Cloud video, automatic dispatch, public commercial use and speed are not verified. No new audience, price, allowance, campaign or customer claim follows. The same USD3 cap and all provider/privacy gates remain.
+
 ## F069: share a link and follow its result, October 24
 
 The owner requires link-only normal processing after one-time supported standing setup: current eligible reuse or one Cloud job, truthful visible stages and automatic post-page result display. Home owns lightweight analytics and recent expandable/direct-open cards; Library defaults to extracted insights with Posts/search/filter/sort, while project evaluations stay with Projects. Require bounded projected reads, protected cache invalidation and matching page/action loaders.

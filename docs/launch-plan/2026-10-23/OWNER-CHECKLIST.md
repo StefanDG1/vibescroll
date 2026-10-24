@@ -1,5 +1,21 @@
 # What help is still needed to finish the plan
 
+Current follow-up: the supported existing-plugin tool refresh returned HTTP200 without disconnecting OAuth; this chat still has its old cached definition, so a fresh official Work Cloud turn is checking metadata only. A complete October24 usage read and completed public-check reconciliation released only explicitly justified holds. After a separate metadata allowance, the cumulative ledger retains USD2.5963302151024803 with USD0.4036697848975197 unreserved. This is not an invoice or permission to start an unfunded video. The one-time app policy review and complete real-media return remain pending.
+
+## Current live MCP setup, October 25
+
+The new private Cloud-request control is live at source `f2495e7`; merged PRs 167/168 and exact-head CI passed. [The receipt](../../operations/evidence/launch-20261025-cloud-mcp-production.json) separates publication from the pending real-video result. This checkpoint supersedes old candidate/connection/budget wording below.
+
+No new post link, GitHub account or blanket OAuth reconnection is requested. The six execution tools are already connected. Root is preparing these exact remaining steps:
+
+1. Refresh the existing VibeScroll connection's tools in ChatGPT Plugins, preserving its account and scopes. The observed control is Manage > Refresh tools. A new conversation may be needed for updated metadata. Review any actual tool-change confirmation; do not uninstall or create a duplicate connection.
+2. Once root has reserved the complete setup/test cost, open the existing private library's Connections. Review the default-off exact Cloud-request policy, both request/execution actions and intended library/source scope. Saving may ask for a fresh app sign-in. No password or token belongs in chat.
+3. Root runs one non-reserved real source through an actual restricted Work Cloud environment and verifies media, citations and canonical return. Only actual provider Internet/sign-in/consent that requires the owner should interrupt this stage. No whole test is currently fiscally cleared.
+
+The older saved posts retain team authority and cannot pass the current private-only route merely because the workspace is named Personal. Root owns safe internal routing; the owner is not asked to move posts or bypass this control. Automatic link dispatch, public customer readiness, general paid entry, catalog contribution and original external acceptance remain open. The reserved post stays untouched.
+
+At the release checkpoint the same USD3 cap retains USD2.6424438943301745 with USD0.35755610566982554 headroom. The minimum whole test plus mandatory grant exceeds this before writes/storage/transfer. Root must first reconcile completed usage or leave live testing pending. No cap increase is requested and an owner-triggered run cannot bypass the task budget.
+
 ## Automatic link-only target, October 24
 
 The direction is settled in [ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md). Root owns the [current plan](README.md) and [page/loading map](APP-MAP-AND-LOADING.md). Normal capture needs only a link after one-time supported connection, standing consent and actual Cloud monitoring setup. No per-source approval, copied prompt, GitHub or awake laptop is accepted. Existing manual controls remain diagnostic.

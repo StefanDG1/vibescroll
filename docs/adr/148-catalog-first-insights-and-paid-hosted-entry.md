@@ -8,6 +8,8 @@ Generic video analysis must not ask the hosted user which workspace receives its
 
 After account creation, the hosted user must pay before entering the product. Unpaid accounts retain their account and saved data but cannot read or use the app until payment resumes. A month without payment does not delete the account or its library. Subscription lapse alone must not schedule content deletion. Explicit user deletion, source-rights expiry, already-approved evidence retention and safety/takedown rules remain distinct from billing status.
 
+Ordinary saved insights must not inherit the experimental private Cloud protocol's 30-day expiry as a substitute for this retention promise. Review and test that lifecycle before general paid Cloud release. Disclose finite experimental retention separately; do not claim a temporary experiment is persistent hosted-library storage. Nonpayment beyond 31 days must preserve ordinary saved data for resubscription, subject to independent source/privacy obligations.
+
 The owner clarified paid hosted entry, rather than approving anonymous access to the catalog. Preserve ADR 122's existing Pro-only catalog entitlement, valid own-result origin and saved-copy rules. While unpaid, retained copies are stored but app access is locked; a valid paid entitlement restores access under the applicable tier. Do not invent a new price, free trial, lifetime offer or subscription credit from this decision.
 
 ## Teams and private state

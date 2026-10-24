@@ -34,7 +34,7 @@
   },
   "review": {
     "independentInitial": "two P2 findings, finite privacy retry and handoff persistence; corrected",
-    "finalIndependent": "pending",
+    "finalIndependent": "High re-review cleared both P2 fixes; no new P1/P2 on cd305460",
     "focusedFinalBackend": 80,
     "focusedFinalUi": 38
   },
@@ -54,7 +54,13 @@
     ],
     "productionRequests": 0
   },
-  "exactHeadCI": "pending",
+  "exactHeadCI": {
+    "firstSource": "cd30546086d1dd1d99690a473617d6bea24a82e7",
+    "firstRun": 40112458809,
+    "result": "failed: Actions shallow checkout omitted pinned old schema commit",
+    "repair": "fetch exact immutable346 baseline before offlinechecks, comparator preserved",
+    "nextRun": "pending"
+  },
   "hostReadiness": {
     "scope": "one owner-operated official Cloud task with no Git repository selected",
     "preparationReady": true,
@@ -92,5 +98,12 @@
   "secretScan": {
     "staged": true,
     "findings": 0
+  },
+  "subsequentAliasRepair": {
+    "scope": "Normalize accepted private Instagram /reels/ identity while preserving stored legacy canonical keys and creator/social validators",
+    "focusedBackendTestsPassed": 47,
+    "existingAcquisitionPolicyTestsPassed": 6,
+    "lintAndFormat": "passed",
+    "fullOfflineReceiptPrecedesOnlyThisPureHelperAndCiSetupChange": true
   }
 }

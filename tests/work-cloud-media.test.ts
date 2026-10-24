@@ -1286,3 +1286,35 @@ it("keeps bounded old-generation derivative cleanup even after the original sour
   ).toHaveLength(1);
   expect(jobs.filter((job) => job.state.kind === "pending")).toEqual([]);
 });
+
+it.each(["reel", "reels"])(
+  "accepts the stored legacy Instagram %s alias without rewriting its canonical key",
+  async (alias) => {
+    const url = `https://www.instagram.com/${alias}/Abcdef12345/`;
+    const s = await setup(url);
+    await s.t.run((ctx) => ctx.db.patch(s.sourceId, { canonical: url }));
+    const lease = await s.claim(),
+      p = await receipt(s, lease);
+    expect(p.post.canonical).toBe("https://www.instagram.com/p/Abcdef12345/");
+    await prepare(s, lease, p);
+    await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+      ...lease,
+      operation: "complete",
+      output: output(lease, p),
+    });
+    const saved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+    expect(saved.canonical).toBe(url);
+    await expect(currentOrderedSource(saved)).resolves.toMatchObject({
+      prepared: { post: { canonical: p.post.canonical } },
+    });
+  },
+);
+it("rejects a different stored Instagram identity before approval even when both URLs are supported", async () => {
+  const s = await setup("https://www.instagram.com/reel/Abcdef12345/");
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      canonical: "https://www.instagram.com/reel/Different12345/",
+    }),
+  );
+  await expect(s.preview()).rejects.toThrow("APPROVAL_STALE");
+});

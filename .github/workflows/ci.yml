@@ -18,5 +18,7 @@ jobs:
           node-version: 24.22.1
       - run: npm install --global pnpm@12.3.4
       - run: pnpm install --frozen-lockfile
+      - name: Fetch immutable schema compatibility baseline
+        run: git fetch --no-tags --depth=1 origin 346b718baf91ba9847fbb707be7bbe069df57257
       - run: node scripts/run-offline.mjs pnpm check
       - run: node scripts/audit-dependencies.mjs

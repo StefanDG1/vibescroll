@@ -181,9 +181,14 @@ export const providedMediaSchema = providedMediaMetadata
 export type ProvidedMedia = z.infer<typeof providedMediaSchema>;
 export function privateCloudMediaIdentity(url: string) {
   const input = acquisitionPolicy(url);
-  return ["instagram", "tiktok"].includes(input.platform)
-    ? acquisitionPolicy(socialPostUrl(input.url).canonical)
-    : input;
+  if (!["instagram", "tiktok"].includes(input.platform)) return input;
+  const identityUrl = new URL(input.url);
+  // The existing single-video acquisition policy accepts /reels/ as a reel
+  // alias. Normalize only this private handoff's identity, without changing
+  // creator/social manifest validation or granting another acquisition route.
+  if (input.platform === "instagram")
+    identityUrl.pathname = identityUrl.pathname.replace(/^\/reels\//, "/reel/");
+  return acquisitionPolicy(socialPostUrl(identityUrl.href).canonical);
 }
 // Private observations reported through one authenticated Cloud lease. These
 // are not a supplier receipt or independently verified media acquisition.

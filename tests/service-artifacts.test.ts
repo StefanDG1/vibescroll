@@ -1,5 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { convexTest } from "convex-test";
+import { grantPaidPeriod } from "./allowance-fixture";
+import { monthlyAnchor } from "../packages/policy";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
@@ -639,7 +641,11 @@ it("has no public mutation for minting service artifacts", async () => {
   expect(artifactModule.commit.isInternal).toBe(true);
 });
 
-async function recipient(s: Fixture, name = "recipient") {
+async function recipient(
+  s: Fixture,
+  name = "recipient",
+  grantAllowance = true,
+) {
   const actor = await s.t.mutation(internal.accounts.syncUser, {
     subject: name,
     email: `${name}@example.test`,
@@ -654,7 +660,7 @@ async function recipient(s: Fixture, name = "recipient") {
   const grant = await s.t.run(async (ctx) => {
     await wallet(ctx, org);
     const now = Date.now();
-    const periodEnd = now + 86400000;
+    const periodEnd = monthlyAnchor(now, 1);
     await ctx.db.insert("billing", {
       organizationId: org,
       customerId: `synthetic-${name}`,
@@ -667,15 +673,16 @@ async function recipient(s: Fixture, name = "recipient") {
     });
     return { start: now, end: periodEnd };
   });
-  await s.t.mutation(internal.commerce.grantPeriod, {
-    organizationId: org,
-    subscription: `subscription-${name}`,
-    tier: "pro",
-    interval: "monthly",
-    ...grant,
-    verifiedPayment: true,
-    billingRevision: 1,
-  });
+  if (grantAllowance)
+    await grantPaidPeriod(s.t, {
+      organizationId: org,
+      subscription: `subscription-${name}`,
+      tier: "pro",
+      interval: "monthly",
+      ...grant,
+      verifiedPayment: true,
+      billingRevision: 1,
+    });
   return { actor, client, org };
 }
 
@@ -1326,18 +1333,22 @@ it.each([
 it("accepts annual Pro reconciled into a monthly allowance and binds that grant to the verified subscription", async () => {
   const s = await setup();
   const a = await commit(s);
-  const r = await recipient(s);
+  const r = await recipient(s, "recipient", false);
   vi.stubEnv("STRIPE_SECRET_KEY", "rk_test_synthetic_only");
   vi.stubEnv("STRIPE_ACCOUNT_ID", "account-synthetic");
   vi.stubEnv("STRIPE_PRO_ANNUAL_PRICE_ID", "price-pro-annual");
   stripeMocks.account.mockResolvedValue({ id: "account-synthetic" });
   stripeMocks.customer.mockResolvedValue({ id: "synthetic-recipient" });
   const start = Math.floor(s.now / 1000);
-  const annualEnd = start + 365 * 86400;
+  const annualEnd = monthlyAnchor(start * 1000, 12) / 1000;
   stripeMocks.subscriptions.mockResolvedValue({
+    has_more: false,
     data: [
       {
         id: "subscription-annual",
+        billing_cycle_anchor: start,
+        customer: "synthetic-recipient",
+        livemode: false,
         status: "active",
         created: start,
         metadata: { product: "vibescroller" },
@@ -1345,15 +1356,57 @@ it("accepts annual Pro reconciled into a monthly allowance and binds that grant 
           id: "invoice-annual",
           status: "paid",
           created: start,
+          customer: "synthetic-recipient",
+          currency: "eur",
+          livemode: false,
+          parent: {
+            type: "subscription_details",
+            subscription_details: { subscription: "subscription-annual" },
+          },
+          lines: {
+            has_more: false,
+            data: [
+              {
+                amount: 39000,
+                quantity: 1,
+                parent: {
+                  type: "subscription_item_details",
+                  subscription_item_details: {
+                    subscription: "subscription-annual",
+                    subscription_item: "si_annual",
+                    proration: false,
+                  },
+                },
+                pricing: {
+                  type: "price_details",
+                  price_details: { price: "price-pro-annual" },
+                },
+                period: { start, end: annualEnd },
+              },
+            ],
+          },
         },
         items: {
+          has_more: false,
           data: [
             {
+              id: "si_annual",
+              quantity: 1,
               current_period_start: start,
               current_period_end: annualEnd,
               price: {
                 id: "price-pro-annual",
-                metadata: { tier: "pro", interval: "annual" },
+                livemode: false,
+                currency: "eur",
+                tax_behavior: "inclusive",
+                unit_amount: 39000,
+                recurring: { interval: "year", interval_count: 1 },
+                metadata: {
+                  product: "vibescroller",
+                  catalogue: "1.1.0",
+                  tier: "pro",
+                  interval: "annual",
+                },
               },
             },
           ],

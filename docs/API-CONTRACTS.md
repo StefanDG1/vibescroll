@@ -1,5 +1,9 @@
 # Interface contracts
 
+## Purchased allowance candidate
+
+`AllowancePolicy` version `allowance-policy-v1` binds policy/catalogue/price, tier, billing interval, grant schedule, credits per grant and recorded acceptance or explicit `legacy_not_reconstructed` provenance. `PaidAllowance` version `paid-allowance-v1` binds provider account/mode, subscription/item, paid start/end, original UTC anchor, base policy/invoice and optional existing upgrade-change ID. These are internal server contracts, not client-provided quantities. Checkout metadata carries only the locator for an exact server-created legal acceptance. Reconciliation verifies complete provider records and paid invoice coverage before persisting the commitment; `commerce.grantPeriod` rechecks commitment/revision/environment and the current grant period. See [ADR 134](adr/134-purchased-allowance-commitments.md).
+
 ## Work Cloud text handoff candidate
 
 [ADR 129](adr/129-gated-work-cloud-text-handoff.md) defines the private, default-off `work-cloud-text-v1` route. App `workCloudAnalysis.preview` and `approve` bind a recent owner's exact input/grant/model/effort approval. MCP `work_cloud_claim`, `work_cloud_input`, `work_cloud_heartbeat`, `work_cloud_complete` and `work_cloud_fail` require the new `analysis:execute` OAuth and app scope. A first claim returns its lease token once; subsequent operations require the same task/consent/token and current authority. Canonical output schema, run and evidence are supplied in the bounded input. Complete accepts `resultJson`, at most 120,000 UTF-8 bytes, then uses existing insight validators. Only completion gets the 262,144-byte envelope limit; ordinary MCP/backend limits remain 32,768/8,192 bytes. No source acquisition, media, repository authority, public artifact or paid fallback follows. Official host and production acceptance remain pending.

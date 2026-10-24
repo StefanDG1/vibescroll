@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { personalAnalysisValue } from "./personalAnalysisSchema";
 import { v } from "convex/values";
+import { allowancePolicyValue } from "../packages/billing/allowance-policy";
 import { sourceType, retrievalState } from "./sourceSchema";
 import { subscriptionCapabilitiesValue } from "./localLibrarySchema";
 import { creatorRightsValue } from "./creatorSchema";
@@ -224,6 +225,12 @@ export const productTables = {
     actor: v.id("users"),
     termsVersion: v.string(),
     immediateService: v.boolean(),
+    checkoutKey: v.optional(v.string()),
+    checkoutCustomerId: v.optional(v.string()),
+    providerAccountId: v.optional(v.string()),
+    providerMode: v.optional(v.union(v.literal("test"), v.literal("live"))),
+    allowancePolicy: v.optional(allowancePolicyValue),
+    paidSubscriptionId: v.optional(v.string()),
   }).index("by_org", ["organizationId"]),
   refundRequests: defineTable({
     ...tenant,
@@ -827,6 +834,8 @@ export const productTables = {
     end: v.number(),
     credits: v.number(),
     allowanceCeiling: v.optional(v.number()),
+    allowancePolicy: v.optional(allowancePolicyValue),
+    upgradeChangeId: v.optional(v.id("billingChanges")),
     subscription: v.string(),
   })
     .index("by_org", ["organizationId"])
@@ -851,6 +860,8 @@ export const productTables = {
     expiresAt: v.number(),
     state: v.string(),
     invoiceId: v.optional(v.string()),
+    sourcePolicy: v.optional(allowancePolicyValue),
+    targetPolicy: v.optional(allowancePolicyValue),
   })
     .index("by_org", ["organizationId"])
     .index("by_subscription", ["subscriptionId"]),

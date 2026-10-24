@@ -1,5 +1,9 @@
 # Data model
 
+## Purchased allowance candidate
+
+[ADR 134](adr/134-purchased-allowance-commitments.md) adds optional `paidAllowance` and pending `checkoutAllowance` to existing billing records, append-only offered policy/provider/customer/first-subscription binding on existing legal acceptances, copied `allowancePolicy` on billing periods, and source/target policies on existing billing changes. No table, index, wallet or queue is added. Frozen quantities and exact provider identifiers are server-derived. Original annual base and paid-upgrade invoices remain separate `creditFunding` contributions, including future monthly grants and refunds. Missing legacy evidence is not fabricated.
+
 ## Personal source executor candidate
 
 [ADR 129](adr/129-gated-work-cloud-text-handoff.md) makes `sources.personalAnalysis` a strict union. Existing jobs retain required device/profile fields and an optional paired discriminator, preserving their index. Work Cloud jobs have a required executor and versioned grant/client/input/policy/funding/consent/task/lease-hash/completion binding; paired authority fields can only be absent or null. No new job, reusable-analysis or trial store is introduced. Replacing nondeleted input preserves an unresolved claimed attempt's metadata as unknown; privacy deletion and recovery still scrub runtime authority. Flags remain off and the schema is not deployed.

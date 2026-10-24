@@ -4,7 +4,7 @@ Mode: decision proposal. Prepared October 24, 2026, Europe/Berlin. **Review only
 
 The future monthly and annual prices are EUR 35 and EUR 350. The monthly AI allowance remains unselected. The existing 600-credit quantity is a legacy commitment and a sensitivity input, not the proposed new quantity. Lifetime and ongoing-access offers are later work under [ADR 125](../../adr/125-resumed-budget-and-repository-free-cloud-probe.md).
 
-This packet supplies draft mechanics, exact unsent wording, reproducible scenarios and migration requirements for M0/M5. It changes no checkout, price, Stripe object, entitlement, published policy or provider permission. The owner should review concrete economics and wording after the missing bounds are supplied; choosing a quantity without those bounds would not close this proposal.
+This packet supplies draft mechanics, exact unsent wording, reproducible scenarios and migration requirements for M0/M5. It selects no new price, quantity, Stripe object, published policy or provider permission. [ADR 134](../../adr/134-purchased-allowance-commitments.md) separately implements the existing-contract protection described below; integrated and live acceptance remain separate. The owner should review concrete economics and wording after the missing bounds are supplied; choosing a quantity without those bounds would not close this proposal.
 
 ## Decision and source record
 
@@ -133,7 +133,7 @@ After those records exist, calculate a quantity across the agreed conservative c
 
 ## Legacy and in-flight migration contract
 
-The existing [commerce grant](../../../convex/commerce.ts) derives each period's credits from global `pricing.tiers[tier].monthly_credits` or `weekly_credits`. A `billingPeriods` row records granted `credits`/`allowanceCeiling`, and subscription/start deduplicates the grant. That preserves already-created periods but does not bind every **future monthly grant of an already-paid annual purchase** to its purchased allowance. Changing the global 600 value alone can therefore reduce a legacy buyer's remaining paid-year grants.
+The pre-ADR134 [commerce grant](../../../convex/commerce.ts) derived each period's credits from global `pricing.tiers[tier].monthly_credits` or `weekly_credits`. Its `billingPeriods` row recorded granted `credits`/`allowanceCeiling`, and subscription/start deduplicated the grant. That preserved already-created periods but did not bind every **future monthly grant of an already-paid annual purchase** to its purchased allowance. Changing the global 600 value alone could therefore reduce a legacy buyer's remaining paid-year grants. The ADR134 candidate replaces that authority with a frozen verified purchase commitment, copied period policy and separate base/upgrade invoice funding. It changes no current quantity or future offer; production migration and real payment acceptance remain pending.
 
 Before a new sale, extend existing commerce/catalog authority rather than creating a second wallet or trial store:
 

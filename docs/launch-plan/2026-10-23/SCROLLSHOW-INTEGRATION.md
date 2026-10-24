@@ -1,5 +1,9 @@
 # Integrate the ScrollShow handoff with the full launch
 
+## M5 legacy protection candidate, October 24
+
+[ADR 134](../../adr/134-purchased-allowance-commitments.md) extends existing purchase/billing/period/change/funding owners with frozen quantities and paid-term evidence. It prepares the legacy-protection prerequisite without selecting a future quantity, price, term or catalogue. Exact live payment/portal, migration and provider acceptance remain pending. Media PR147 passed exact-head CI40066131115; prepared M2 assets do not establish live capability or native playback.
+
 ## Product, Library and social media candidate, October 24
 
 [ADR 133](../../adr/133-reviewed-product-library-and-social-edits.md) prepares forty/twenty-four/twenty-second product/Library/social edits in desktop/mobile forms, captions, transcripts, posters, static walkthroughs and codec alternatives. Root reviewed actual frames and corrected issue-draft-as-plan captions in both the old overview and ninety-second setup guide, with exact originals archived for reproduction. These use approved synthetic captures, not new processing or customer evidence. Native playback/device, final integration and production acceptance remain separate. The [future Pro allowance packet](PRO-ALLOWANCE-PROPOSAL.md) is review only: quantity remains blocked, current contracts stay unchanged and lifetime remains later.

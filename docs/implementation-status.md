@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Purchased allowance candidate, October 24
+
+[ADR 134](adr/134-purchased-allowance-commitments.md) implements frozen purchased policies, durable checkout acceptance, immutable paid-term/calendar evidence, copied period policies and separate annual base/upgrade funding through existing billing records. No new table/index/wallet/queue or price/quantity/SDK change. Root and an independent High reviewer found and corrected durable price-rotation, scheduled-renewal replay and monthly-boundary upgrade defects; the final pre-deletion account/mode guard passed54 focused cases and actual root/Convex types. The existing refresh form now explains held evidence without suggesting a duplicate purchase.
+
+The integrated offline `node scripts/run-offline.mjs pnpm check` passed 1,603 tests with three hosted skips, 320 documents/twelve snapshots, seventeen finance invariants, zero-warning lint, all types and both production builds. This full pass preceded the final namespace guard. [The receipt](operations/evidence/launch-20261024-purchased-allowance.json) records54 final focused passes, root/Convex types, lint and formatting after that guard. Exact-head CI remains required for the final committed source. Build warnings about dynamic Help tracing were retained for a separate scoped public-site fix, not suppressed. Initial fixture and return-type inference failures remain recorded. Production, live billing, provider and independent-user acceptance remain pending. No new hosted request or purchase occurred; the cumulative US$3 cap and all prior unknown holds remain.
+
 ## Integrated media and offer preparation candidate, October 24
 
 [ADR 133](adr/133-reviewed-product-library-and-social-edits.md) prepares six product/Library/social edits, codec alternatives and accessible text/still versions. Actual-frame review corrected issue-draft-as-plan captions in both overview and ninety-second setup footage, with exact historical inputs archived. The [review-only Pro allowance packet](launch-plan/2026-10-23/PRO-ALLOWANCE-PROPOSAL.md) leaves quantity unselected and current prices/contracts/policy unchanged; its seventeen economic invariants now run in standard validation.

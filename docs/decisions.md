@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: purchased allowance commitments
+
+[ADR 134](adr/134-purchased-allowance-commitments.md) separates frozen purchased quantities from editable pricing, binds checkout acceptance and exact paid terms, and preserves original annual base/upgrade invoice funding. Existing records and wallets remain the owners. Unknown legacy evidence holds new unissued grants, never retroactively reprices valid issued pools. Current prices, future unselected allowance, lifetime deferral and production gates remain unchanged.
+
 ## October 24: accurate prepared media and a review-only offer packet
 
 [ADR 133](adr/133-reviewed-product-library-and-social-edits.md) preserves approved captures and corrects issue-draft/plan semantics across product, Library, social and setup edits. The [future allowance packet](launch-plan/2026-10-23/PRO-ALLOWANCE-PROPOSAL.md) changes no price, entitlement or policy; quantity stays unselected until fully consumed workloads and retained-data costs are bounded. Preserve old annual promises and current terms. Lifetime remains deferred.

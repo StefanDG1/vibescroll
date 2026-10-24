@@ -20,11 +20,15 @@ const appUrl = () => {
   if (!url) throw new Error("Application URL is missing.");
   return new URL(url).origin;
 };
-async function refresh(ctx: ActionCtx, customerId: string, eventId?: string) {
+type RefreshResult = { allowance: "held" | "not_due" } | null | void;
+async function refresh(
+  ctx: ActionCtx,
+  customerId: string,
+  eventId?: string,
+): Promise<RefreshResult> {
   // The exported legacy catalogue must never overwrite V1 allowance state.
   if (process.env.STRIPE_V1_WEBHOOK_SECRET) {
-    await ctx.runAction(internal.reconciliation.customer, { customerId });
-    return;
+    return ctx.runAction(internal.reconciliation.customer, { customerId });
   }
   const reservation = await ctx.runMutation(internal.billing.reserveRefresh, {
     customerId,
@@ -87,10 +91,10 @@ export const portal = action({
 });
 export const refreshBilling = action({
   args: { organizationId: v.id("organizations") },
-  handler: async (ctx, { organizationId }) => {
+  handler: async (ctx, { organizationId }): Promise<RefreshResult> => {
     const auth = await ctx.runQuery(api.billing.authorize, { organizationId });
     await ctx.runMutation(internal.billing.throttle, { organizationId });
-    if (auth.billing) await refresh(ctx, auth.billing.customerId);
+    if (auth.billing) return refresh(ctx, auth.billing.customerId);
   },
 });
 export const webhook = internalAction({

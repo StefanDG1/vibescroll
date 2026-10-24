@@ -2,6 +2,11 @@ import workflowTest from "@convex-dev/workflow/test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import { describe, it, expect, vi } from "vitest";
 import { convexTest } from "convex-test";
+import {
+  grantPaidPeriod,
+  preparePaidGrant,
+  allowanceFixturePolicy,
+} from "./allowance-fixture";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import { reserve } from "../convex/product";
@@ -863,7 +868,7 @@ describe("VibeScroller product boundaries", () => {
   it("reverses only the refunded invoice's allowance contribution and does not revive annual grants", async () => {
     const { t, org } = await setup();
     const start = Date.now(),
-      end = start + 30 * 86400000;
+      end = monthlyAnchor(start, 1);
     const base = {
       organizationId: org,
       subscription: "sub_invoice_refund",
@@ -872,12 +877,12 @@ describe("VibeScroller product boundaries", () => {
       interval: "monthly" as const,
       verifiedPayment: true,
     };
-    await t.mutation(internal.commerce.grantPeriod, {
+    await grantPaidPeriod(t, {
       ...base,
       tier: "starter",
       invoiceId: "in_initial",
     });
-    await t.mutation(internal.commerce.grantPeriod, {
+    await grantPaidPeriod(t, {
       ...base,
       tier: "pro",
       upgradeAt: start + (end - start) / 2,
@@ -904,10 +909,10 @@ describe("VibeScroller product boundaries", () => {
       refunded: 19000,
       invoiceTotal: 19000,
     });
-    await t.mutation(internal.commerce.grantPeriod, {
+    await grantPaidPeriod(t, {
       ...base,
       start: end,
-      end: end + 30 * 86400000,
+      end: monthlyAnchor(end, 1),
       tier: "starter",
       invoiceId: "in_initial",
     });
@@ -962,7 +967,7 @@ describe("VibeScroller product boundaries", () => {
   it("aggregates several refunded payments against the invoice total and preserves reversals on later allowances", async () => {
     const { t, org } = await setup();
     const start = Date.now(),
-      end = start + 30 * 86400000;
+      end = monthlyAnchor(start, 1);
     const grant = {
       organizationId: org,
       subscription: "sub_synthetic_multi",
@@ -973,7 +978,7 @@ describe("VibeScroller product boundaries", () => {
       verifiedPayment: true,
       invoiceId: "in_synthetic_multi",
     };
-    await t.mutation(internal.commerce.grantPeriod, grant);
+    await grantPaidPeriod(t, grant);
     const refund = {
       organizationId: org,
       invoiceId: grant.invoiceId,
@@ -1014,23 +1019,23 @@ describe("VibeScroller product boundaries", () => {
         refunded: 500,
       });
     expect((await pool()).revoked).toBe(250);
-    await t.mutation(internal.commerce.grantPeriod, {
+    await grantPaidPeriod(t, {
       ...grant,
       start: end,
-      end: end + 30 * 86400000,
+      end: monthlyAnchor(end, 1),
     });
     const all = await t.run((ctx) => ctx.db.query("creditPools").collect());
     expect(all.every((p) => p.revoked === p.granted)).toBe(true);
     expect(
       await t.run((ctx) => ctx.db.query("billingReversals").collect()),
     ).toHaveLength(2);
-    await t.mutation(internal.commerce.grantPeriod, {
+    await grantPaidPeriod(t, {
       ...grant,
       subscription: "sub_exact_synthetic",
       tier: "pro",
       invoiceId: "in_exact_synthetic",
-      start: end + 30 * 86400000,
-      end: end + 60 * 86400000,
+      start: monthlyAnchor(end, 1),
+      end: monthlyAnchor(end, 2),
     });
     await t.mutation(internal.commerce.reversePayment, {
       organizationId: org,
@@ -1059,17 +1064,28 @@ describe("VibeScroller product boundaries", () => {
     const args = {
       organizationId: org,
       subscriptionId: "sub_synthetic",
-      itemId: "si_synthetic",
-      oldPrice: "price_old",
-      newPrice: "price_new",
+      itemId: "si_fixture",
+      oldPrice: allowanceFixturePolicy("starter", "monthly").priceId,
+      newPrice: allowanceFixturePolicy("pro", "monthly").priceId,
       tier: "pro" as const,
       interval: "monthly" as const,
       prorationDate: now,
-      periodStart: now - 86400,
-      periodEnd: now + 86400,
+      periodStart: now,
+      periodEnd: monthlyAnchor(now * 1000, 1) / 1000,
       amount: 200,
       currency: "eur",
+      sourcePolicy: allowanceFixturePolicy("starter", "monthly"),
+      targetPolicy: allowanceFixturePolicy("pro", "monthly"),
     };
+    await preparePaidGrant(t, {
+      organizationId: org,
+      subscription: args.subscriptionId,
+      tier: "starter",
+      interval: "monthly",
+      start: args.periodStart * 1000,
+      end: args.periodEnd * 1000,
+      verifiedPayment: true,
+    });
     const quoteId = await a.mutation(internal.billingChanges.create, args);
     await expect(
       b.query(api.billingChanges.quote, { id: quoteId }),
@@ -1262,13 +1278,13 @@ describe("VibeScroller product boundaries", () => {
   it("imports a full 500-row paid batch and deduplicates it without per-row credit use", async () => {
     const { t, a, org } = await setup();
     const start = Date.now();
-    await t.mutation(internal.commerce.grantPeriod, {
+    await grantPaidPeriod(t, {
       organizationId: org,
       subscription: "sub_bulk_test",
       tier: "pro",
       interval: "monthly",
       start,
-      end: start + 31 * 86400000,
+      end: monthlyAnchor(start, 1),
       verifiedPayment: true,
     });
     const rows = Array.from({ length: 500 }, (_, i) => ({
@@ -1328,6 +1344,10 @@ describe("VibeScroller product boundaries", () => {
   });
   it("grants paid upgrade differences once and blocks new work on failed payment", async () => {
     const { t, a, org } = await setup();
+    await t.mutation(internal.billing.attach, {
+      organizationId: org,
+      customerId: "cus_synthetic",
+    });
     const start = Date.now(),
       end = start + 7 * 86400000;
     const base = {
@@ -1338,18 +1358,18 @@ describe("VibeScroller product boundaries", () => {
       end,
       verifiedPayment: true,
     };
-    await t.mutation(internal.commerce.grantPeriod, {
+    await grantPaidPeriod(t, {
       ...base,
       tier: "starter",
     });
     await Promise.all([
-      t.mutation(internal.commerce.grantPeriod, {
+      grantPaidPeriod(t, {
         ...base,
         tier: "pro",
         upgradeAt: start + (end - start) / 2,
         invoiceId: "in_paid_synthetic",
       }),
-      t.mutation(internal.commerce.grantPeriod, {
+      grantPaidPeriod(t, {
         ...base,
         tier: "pro",
         upgradeAt: start + (end - start) / 2,
@@ -1361,7 +1381,7 @@ describe("VibeScroller product boundaries", () => {
       expect(pool.granted).toBe(107);
       expect((await ctx.db.query("billingPeriods").collect()).length).toBe(1);
     });
-    await t.mutation(internal.commerce.grantPeriod, {
+    await grantPaidPeriod(t, {
       ...base,
       tier: "starter",
     });

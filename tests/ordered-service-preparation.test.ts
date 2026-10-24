@@ -1,5 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { convexTest } from "convex-test";
+import { grantPaidPeriod } from "./allowance-fixture";
+import { monthlyAnchor } from "../packages/policy";
 import workflowTest from "@convex-dev/workflow/test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
@@ -407,7 +409,7 @@ it("prepares actual hash-bound private assets and final analysis under one gener
     const contributor = await wallet(ctx, s.org);
     expect(contributor.tier).toBe("trial");
     const w = await wallet(ctx, privateOrg);
-    const periodEnd = Date.now() + 86400000;
+    const periodEnd = monthlyAnchor(Date.now(), 1);
     await ctx.db.patch(w._id, { granted: 100 });
     await ctx.db.insert("billing", {
       organizationId: privateOrg,
@@ -420,13 +422,13 @@ it("prepares actual hash-bound private assets and final analysis under one gener
       appliedRevision: 1,
     });
   });
-  await s.t.mutation(internal.commerce.grantPeriod, {
+  await grantPaidPeriod(s.t, {
     organizationId: privateOrg,
     subscription: "synthetic-catalog-subscription",
     tier: "pro",
     interval: "monthly",
     start: Date.now(),
-    end: Date.now() + 86400000,
+    end: monthlyAnchor(Date.now(), 1),
     verifiedPayment: true,
     billingRevision: 1,
   });

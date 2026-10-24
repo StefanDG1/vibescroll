@@ -1,5 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { convexTest } from "convex-test";
+import { preparePaidGrant } from "./allowance-fixture";
+import { monthlyAnchor } from "../packages/policy";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import type { PilotProviderEvent } from "../convex/lib/pilotPayments";
@@ -30,7 +32,7 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 async function setup(consented = true) {
-  const now = Date.now();
+  const now = Math.floor(Date.now() / 1000) * 1000;
   vi.stubEnv("STRIPE_MODE", "test");
   vi.stubEnv("STRIPE_ACCOUNT_ID", "acct_pilot_synthetic");
   vi.stubEnv("STRIPE_SECRET_KEY", "rk_test_synthetic");
@@ -91,7 +93,7 @@ async function setup(consented = true) {
     tier: "starter" as const,
     interval: "monthly" as const,
     start: now - 1000,
-    end: now + 31 * 86400000,
+    end: monthlyAnchor(now - 1000, 1),
     verifiedPayment: true,
     invoiceId: "in_paid_synthetic",
     billingRevision: 0,
@@ -103,7 +105,14 @@ async function setup(consented = true) {
     deleted: false,
   });
   mocks.subscriptions.mockResolvedValue({ data: [] });
-  return { t, user, organizationId, evidence, grant, now };
+  return {
+    t,
+    user,
+    organizationId,
+    evidence,
+    grant: await preparePaidGrant(t, grant),
+    now,
+  };
 }
 it("atomically records one minimal observation for an accepted monthly ledger settlement, including concurrent/replayed events", async () => {
   const { t, grant } = await setup();
@@ -255,22 +264,45 @@ it("withdraws pending observations on refund or consent revocation and retains r
 });
 it("wires only the signature/account/mode-verified paid monthly webhook to the actual accepted entitlement transaction", async () => {
   const { t, now } = await setup();
+  // This case establishes the purchase from the provider graph, rather than
+  // the synthetic commitment used by direct ledger tests.
+  await t.run(async (ctx) => {
+    const bill = (await ctx.db.query("billing").first())!;
+    await ctx.db.patch(bill._id, { paidAllowance: undefined });
+  });
   mocks.subscriptions.mockResolvedValue({
+    has_more: false,
     data: [
       {
         id: "sub_pilot_synthetic",
+        billing_cycle_anchor: Math.floor(now / 1000) - 1,
+        customer: "cus_pilot_synthetic",
         created: Math.floor(now / 1000) - 100,
         livemode: false,
         status: "active",
         metadata: { product: "vibescroller", billingRoute: "managed_payments" },
         items: {
+          has_more: false,
           data: [
             {
+              id: "si_pilot",
+              quantity: 1,
               current_period_start: Math.floor(now / 1000) - 1,
-              current_period_end: Math.floor(now / 1000) + 31 * 86400,
+              current_period_end:
+                monthlyAnchor((Math.floor(now / 1000) - 1) * 1000, 1) / 1000,
               price: {
                 id: "price_monthly_synthetic",
-                metadata: { tier: "starter", interval: "monthly" },
+                livemode: false,
+                currency: "eur",
+                tax_behavior: "inclusive",
+                unit_amount: 1900,
+                recurring: { interval: "month", interval_count: 1 },
+                metadata: {
+                  product: "vibescroller",
+                  catalogue: "1.1.0",
+                  tier: "starter",
+                  interval: "monthly",
+                },
               },
             },
           ],
@@ -280,6 +312,39 @@ it("wires only the signature/account/mode-verified paid monthly webhook to the a
           status: "paid",
           amount_paid: 1900,
           livemode: false,
+          customer: "cus_pilot_synthetic",
+          currency: "eur",
+          parent: {
+            type: "subscription_details",
+            subscription_details: { subscription: "sub_pilot_synthetic" },
+          },
+          lines: {
+            has_more: false,
+            data: [
+              {
+                amount: 1900,
+                quantity: 1,
+                parent: {
+                  type: "subscription_item_details",
+                  subscription_item_details: {
+                    subscription: "sub_pilot_synthetic",
+                    subscription_item: "si_pilot",
+                    proration: false,
+                  },
+                },
+                pricing: {
+                  type: "price_details",
+                  price_details: { price: "price_monthly_synthetic" },
+                },
+                period: {
+                  start: Math.floor(now / 1000) - 1,
+                  end:
+                    monthlyAnchor((Math.floor(now / 1000) - 1) * 1000, 1) /
+                    1000,
+                },
+              },
+            ],
+          },
         },
       },
     ],

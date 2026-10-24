@@ -1,5 +1,9 @@
 # VibeScroll complete product and launch plan
 
+## October 24 existing-contract protection candidate
+
+[ADR 134](../../adr/134-purchased-allowance-commitments.md) preserves frozen paid allowances through the existing billing and refund records, including future monthly grants of a paid annual term. The [current integrated plan](../2026-10-23/README.md) retains all unfinished R/P/N/C/M acceptance. No new price, quantity, live policy or deployment follows. Media PR147 passed exact-head CI40066131115; full backend release remains held on the same cumulative US$3 budget proof.
+
 October24 current execution follows [ADR125](../../adr/125-resumed-budget-and-repository-free-cloud-probe.md): resumed full implementation withinUS$3 cumulative with old holds retained, lifetime/ongoing offer deferred, and repository-free Work Cloud readiness only. Read the [current completion ledger](../2026-10-23/ACCEPTANCE.md) for candidate, production and external evidence. The older offer/cap paragraphs below remain historical and do not activate a lifetime sale.
 
 October 24 offer/design override: [ADR 123](../../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) integrates the final ScrollShow M0-M7 handoff into the existing C9/C10 work. The future Pro EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing-access offer includes a defined monthly AI allowance for every choice and supersedes the new fixed three-year-pass target below. Exact economics/terms/legacy migration and all original acceptance remain. See [the integrated order](../2026-10-23/SCROLLSHOW-INTEGRATION.md); no live billing or runtime changes follow.

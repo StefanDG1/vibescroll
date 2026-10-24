@@ -1,5 +1,9 @@
 # What help is still needed to finish the plan
 
+## Existing-contract protection candidate, October 24
+
+[ADR 134](../../adr/134-purchased-allowance-commitments.md) implements frozen purchased allowances and exact paid-term evidence through the existing billing records. No current price, quantity or published policy changes. Root owns verification and conservative reconciliation of incomplete legacy history; no new product decision is requested. Future offer quantity/economics and real payment/portal acceptance remain separate. Media PR147 now passed exact-head CI40066131115; fresh browser/native-device acceptance is still pending.
+
 Connection status, October 24: the Stripe documentation connector returned reauthentication required. Reconnect the Stripe app through Codex when present; root continues against the installed SDK and offline fixtures. No keys should be sent in chat. Chrome is not currently connected; the previous handshake expired, so root must arrange a fresh prompt when the owner is available rather than ask for an old prompt to be clicked. These are separate from general implementation/release permissions already granted.
 
 The [review-only Pro allowance packet](PRO-ALLOWANCE-PROPOSAL.md) now contains proposed mechanics, exact unsent copy/terms and reproducible full-consumption/retention scenarios. It selects no quantity and changes no sale or live policy. Root still owns missing cost bounds and versioned legacy allowance engineering; the owner is not asked to guess a quantity. Prepared media now has accurate issue-draft captions and explicit synthetic/capture provenance. Native browser review and exact-edition publication remain separate pending steps.

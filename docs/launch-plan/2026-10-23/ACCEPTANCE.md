@@ -1,5 +1,11 @@
 # Remaining acceptance and completion ledger
 
+## Latest candidate delta, October 24
+
+[ADR 134](../../adr/134-purchased-allowance-commitments.md) implements the M5 existing-contract prerequisite through frozen paid allowances and existing billing owners. Price rotation, delayed checkout, annual boundary/renewal, upgrade/refund attribution and unknown-history holds require the integrated receipt before acceptance. The future offer quantity, live catalogue/terms, real payment/portal acceptance and deployment remain pending. No original R/P/N/C/M acceptance is removed.
+
+Media and offer preparation at09c088c passed exact-head CI40066131115, with 1,551 offline passes, three hosted skips and17 finance invariants. C9/M2 has actual prepared assets and static alternatives; native playback, comprehension and production verification remain open. These latest facts supersede older “unimplemented” labels only for these exact slices.
+
 ## Product, Library and social media candidate, October 24
 
 [ADR 133](../../adr/133-reviewed-product-library-and-social-edits.md) prepares forty/twenty-four/twenty-second product/Library/social edits in desktop/mobile forms, captions, transcripts, posters, static walkthroughs and codec alternatives. Root reviewed actual frames and corrected issue-draft-as-plan captions in both the old overview and ninety-second setup guide, with exact originals archived for reproduction. These use approved synthetic captures, not new processing or customer evidence. Native playback/device, final integration and production acceptance remain separate. The [future Pro allowance packet](PRO-ALLOWANCE-PROPOSAL.md) is review only: quantity remains blocked, current contracts stay unchanged and lifetime remains later.

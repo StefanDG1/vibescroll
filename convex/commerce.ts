@@ -4,7 +4,12 @@ import { v } from "convex/values";
 import { access, writeAccess, audit, recentAuthentication, limit } from "./lib";
 import { requireInvoiceOperator } from "./lib/invoiceOperator";
 import { wallet } from "./product";
-import { pricing, ensure } from "../packages/policy";
+import { pricing, ensure, monthlyAnchor } from "../packages/policy";
+import {
+  validatePaidAllowance,
+  validateAllowancePolicy,
+  paidTermMonthOffset,
+} from "../packages/billing/allowance-policy";
 import { billingReadiness } from "../packages/providers/billing-readiness";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
@@ -81,7 +86,16 @@ async function fundInvoice(
     .query("creditFunding")
     .withIndex("by_key", (q) => q.eq("key", key))
     .unique();
-  if (old) return old.revoked;
+  if (old) {
+    ensure(
+      old.organizationId === organizationId &&
+        old.poolId === poolId &&
+        old.credits === credits,
+      "REFUND_RECONCILIATION_REQUIRED",
+      "The invoice contribution changed.",
+    );
+    return old.revoked;
+  }
   const revoked = revokedCredits(
     credits,
     await invoiceRefundFraction(ctx, organizationId, invoiceId),
@@ -115,6 +129,75 @@ export const catalogue = query({
     };
   },
 });
+export const allowanceBaseInvoice = internalQuery({
+  args: {
+    organizationId: v.id("organizations"),
+    subscription: v.string(),
+    start: v.number(),
+    upgradeInvoice: v.string(),
+  },
+  handler: async (ctx, a) => {
+    const key = `${a.subscription}:${a.start}`;
+    const period = await ctx.db
+      .query("billingPeriods")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+    const pool = await ctx.db
+      .query("creditPools")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+    if (
+      !period ||
+      !pool ||
+      period.organizationId !== a.organizationId ||
+      pool.organizationId !== a.organizationId
+    )
+      return null;
+    const funding = await ctx.db
+      .query("creditFunding")
+      .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
+      .filter((q) => q.eq(q.field("poolId"), pool._id))
+      .take(3);
+    if (funding.length >= 3) return null;
+    const candidates = funding.filter(
+      (row) => row.invoiceId !== a.upgradeInvoice && row.credits > 0,
+    );
+    return candidates.length === 1 ? candidates[0].invoiceId : null;
+  },
+});
+export const checkoutAllowance = internalQuery({
+  args: {
+    organizationId: v.id("organizations"),
+    acceptanceId: v.string(),
+    key: v.string(),
+    customerId: v.string(),
+    subscriptionId: v.string(),
+    providerAccountId: v.string(),
+    mode: v.union(v.literal("test"), v.literal("live")),
+  },
+  handler: async (ctx, a) => {
+    const id = ctx.db.normalizeId("legalAcceptances", a.acceptanceId);
+    const row = id ? await ctx.db.get(id) : null;
+    const policy = row?.allowancePolicy;
+    if (
+      !row ||
+      !policy ||
+      row.organizationId !== a.organizationId ||
+      row.checkoutKey !== a.key ||
+      row.checkoutCustomerId !== a.customerId ||
+      row.providerAccountId !== a.providerAccountId ||
+      row.providerMode !== a.mode ||
+      (row.paidSubscriptionId !== undefined &&
+        row.paidSubscriptionId !== a.subscriptionId) ||
+      policy.acceptance.kind !== "recorded" ||
+      policy.acceptance.acceptanceId !== row._id ||
+      policy.acceptance.policyReleaseId !== row.termsVersion
+    )
+      return null;
+    validateAllowancePolicy(policy);
+    return { policy, providerAccountId: a.providerAccountId, mode: a.mode };
+  },
+});
 export const grantPeriod = internalMutation({
   args: {
     organizationId: v.id("organizations"),
@@ -130,35 +213,132 @@ export const grantPeriod = internalMutation({
     pilotEvent: v.optional(pilotProviderEvent),
   },
   handler: async (ctx, a) => {
-    if (a.billingRevision !== undefined) {
-      const current = await ctx.db
-        .query("billing")
-        .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
-        .unique();
-      if (
-        !current ||
-        current.providerDeletedAt ||
-        current.status !== "active" ||
-        current.subscriptionId !== a.subscription ||
-        current.appliedRevision !== a.billingRevision
-      )
-        return;
-    }
     ensure(
-      a.verifiedPayment && a.end > a.start,
-      "PAYMENT_REQUIRED",
-      "Verified payment is required.",
+      process.env.RESTORE_LOCK !== "true",
+      "RESTORE_LOCK",
+      "Allowance grants are paused during recovery.",
     );
     const key = `${a.subscription}:${a.start}`;
     const existing = await ctx.db
       .query("billingPeriods")
       .withIndex("by_key", (q) => q.eq("key", key))
       .unique();
+    if (existing)
+      ensure(
+        existing.organizationId === a.organizationId && existing.end === a.end,
+        "STALE_BILLING",
+        "Entitlement identity mismatch.",
+      );
+    const current = await ctx.db
+      .query("billing")
+      .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
+      .unique();
+    if (
+      current &&
+      (current.providerDeletedAt ||
+        current.status !== "active" ||
+        current.subscriptionId !== a.subscription ||
+        (a.billingRevision !== undefined &&
+          current.appliedRevision !== a.billingRevision))
+    )
+      return;
+    if (!current || a.billingRevision === undefined) {
+      if (existing) return;
+      ensure(
+        false,
+        "ALLOWANCE_RECONCILIATION_REQUIRED",
+        "Verify the purchased allowance before granting a new period.",
+      );
+    }
+    ensure(
+      current.paidAllowance,
+      "ALLOWANCE_RECONCILIATION_REQUIRED",
+      "The paid allowance has no verified commitment.",
+    );
+    const commitment = validatePaidAllowance(current.paidAllowance);
+    const basePolicy = commitment.base.policy;
+    ensure(
+      commitment.subscriptionId === a.subscription &&
+        commitment.providerAccountId === process.env.STRIPE_ACCOUNT_ID &&
+        commitment.mode ===
+          (process.env.STRIPE_MODE === "live" ? "live" : "test"),
+      "ALLOWANCE_RECONCILIATION_REQUIRED",
+      "The allowance funding account changed.",
+    );
+    const upgrade = commitment.upgradeChangeId
+      ? await ctx.db.get(commitment.upgradeChangeId)
+      : null;
+    let policy = basePolicy;
+    if (upgrade) {
+      ensure(
+        upgrade.state === "applied" &&
+          upgrade.invoiceId &&
+          upgrade.sourcePolicy &&
+          upgrade.targetPolicy &&
+          upgrade.organizationId === a.organizationId &&
+          upgrade.subscriptionId === a.subscription &&
+          upgrade.itemId === commitment.itemId &&
+          upgrade.periodStart * 1000 === commitment.paidStart &&
+          upgrade.periodEnd * 1000 === commitment.paidEnd &&
+          upgrade.prorationDate * 1000 >= commitment.paidStart &&
+          upgrade.prorationDate * 1000 < commitment.paidEnd &&
+          upgrade.sourcePolicy.policyId === basePolicy.policyId &&
+          upgrade.oldPrice === basePolicy.priceId &&
+          upgrade.targetPolicy.priceId === upgrade.newPrice &&
+          upgrade.targetPolicy.billingInterval === basePolicy.billingInterval &&
+          upgrade.targetPolicy.creditsPerGrant > basePolicy.creditsPerGrant &&
+          upgrade.invoiceId !== commitment.base.invoiceId,
+        "ALLOWANCE_RECONCILIATION_REQUIRED",
+        "The paid upgrade contribution cannot be verified.",
+      );
+      policy = validateAllowancePolicy(upgrade.targetPolicy);
+    } else
+      ensure(
+        !commitment.upgradeChangeId,
+        "ALLOWANCE_RECONCILIATION_REQUIRED",
+        "The paid upgrade record is unavailable.",
+      );
+    let expectedPeriod =
+      basePolicy.billingInterval !== "annual"
+        ? a.start === commitment.paidStart && a.end === commitment.paidEnd
+        : false;
+    if (basePolicy.billingInterval === "annual") {
+      const periods = 12;
+      const offset = paidTermMonthOffset(commitment);
+      for (let n = 0; n < periods; n++)
+        if (
+          a.start === monthlyAnchor(commitment.anchor, offset + n) &&
+          a.end ===
+            Math.min(
+              commitment.paidEnd,
+              monthlyAnchor(commitment.anchor, offset + n + 1),
+            )
+        )
+          expectedPeriod = true;
+    }
+    ensure(
+      a.verifiedPayment &&
+        a.end > a.start &&
+        expectedPeriod &&
+        a.start <= Date.now() &&
+        a.end > Date.now() &&
+        a.tier === policy.tier &&
+        a.interval ===
+          (policy.billingInterval === "weekly" ? "weekly" : "monthly"),
+      "PAYMENT_REQUIRED",
+      "Verified payment and its current allowance period are required.",
+    );
     const w = await wallet(ctx, a.organizationId);
-    const credits =
-      a.interval === "weekly"
-        ? pricing.tiers[a.tier].weekly_credits
-        : pricing.tiers[a.tier].monthly_credits;
+    const baseCredits = basePolicy.creditsPerGrant;
+    const upgradedAt = upgrade ? upgrade.prorationDate * 1000 : a.end;
+    const upgradeCredits = upgrade
+      ? Math.floor(
+          ((policy.creditsPerGrant - baseCredits) *
+            Math.max(0, a.end - Math.max(a.start, upgradedAt))) /
+            (a.end - a.start),
+        )
+      : 0;
+    const credits = baseCredits + upgradeCredits;
     if (existing) {
       ensure(
         existing.organizationId === a.organizationId && existing.end === a.end,
@@ -166,16 +346,14 @@ export const grantPeriod = internalMutation({
         "Entitlement identity mismatch.",
       );
       const ceiling = existing.allowanceCeiling ?? existing.credits;
-      if (credits > ceiling) {
-        if (a.upgradeAt === undefined || !a.invoiceId) return;
+      if (policy.creditsPerGrant > ceiling) {
+        if (!upgrade?.invoiceId) return;
         ensure(
-          a.upgradeAt >= a.start && a.upgradeAt < a.end,
+          upgradedAt < a.end && ceiling === baseCredits,
           "STALE_BILLING",
           "Upgrade outside its paid period.",
         );
-        const delta = Math.floor(
-          ((credits - ceiling) * (a.end - a.upgradeAt)) / (a.end - a.start),
-        );
+        const delta = upgradeCredits;
         const pool = await ctx.db
           .query("creditPools")
           .withIndex("by_key", (q) => q.eq("key", key))
@@ -185,11 +363,22 @@ export const grantPeriod = internalMutation({
           "LEDGER_INVALID",
           "Entitlement pool unavailable.",
         );
+        const oldContribution = await ctx.db
+          .query("creditFunding")
+          .withIndex("by_key", (q) =>
+            q.eq("key", `${pool._id}:${upgrade.invoiceId}`),
+          )
+          .unique();
+        ensure(
+          !oldContribution,
+          "ALLOWANCE_RECONCILIATION_REQUIRED",
+          "The upgrade funding and period snapshots disagree.",
+        );
         const revoked = await fundInvoice(
           ctx,
           a.organizationId,
           pool._id,
-          a.invoiceId,
+          upgrade.invoiceId,
           delta,
         );
         await ctx.db.patch(pool._id, {
@@ -199,7 +388,8 @@ export const grantPeriod = internalMutation({
         });
         await ctx.db.patch(existing._id, {
           credits: existing.credits + delta,
-          allowanceCeiling: credits,
+          allowanceCeiling: policy.creditsPerGrant,
+          upgradeChangeId: upgrade._id,
           updatedAt: Date.now(),
         });
         await ctx.db.patch(w._id, {
@@ -230,7 +420,9 @@ export const grantPeriod = internalMutation({
       end: a.end,
       key,
       credits,
-      allowanceCeiling: credits,
+      allowanceCeiling: policy.creditsPerGrant,
+      allowancePolicy: basePolicy,
+      ...(upgrade ? { upgradeChangeId: upgrade._id } : {}),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -249,14 +441,25 @@ export const grantPeriod = internalMutation({
       ctx,
       a.organizationId,
       poolId,
-      a.invoiceId,
-      credits,
+      commitment.base.invoiceId,
+      baseCredits,
     );
-    if (revoked) await ctx.db.patch(poolId, { revoked });
+    const upgradeRevoked =
+      upgrade?.invoiceId && upgradeCredits > 0
+        ? await fundInvoice(
+            ctx,
+            a.organizationId,
+            poolId,
+            upgrade.invoiceId,
+            upgradeCredits,
+          )
+        : 0;
+    if (revoked + upgradeRevoked)
+      await ctx.db.patch(poolId, { revoked: revoked + upgradeRevoked });
     await ctx.db.patch(w._id, {
       tier: a.tier,
       interval: a.interval,
-      granted: w.granted + credits - revoked,
+      granted: w.granted + credits - revoked - upgradeRevoked,
       periodEnd: a.end,
       updatedAt: Date.now(),
     });
@@ -371,7 +574,7 @@ export const recordAcceptance = internalMutation({
   },
   handler: async (ctx, a) => {
     const actor = await writeAccess(ctx, a.organizationId, ["owner"]);
-    await ctx.db.insert("legalAcceptances", {
+    return ctx.db.insert("legalAcceptances", {
       ...a,
       actor: actor.actor._id,
       createdAt: Date.now(),

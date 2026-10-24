@@ -1,5 +1,9 @@
 # State machines
 
+## Purchased allowance candidate
+
+An accepted checkout keeps its offered policy after the short reservation expires. A verified paid subscription binds that acceptance to its first subscription and creates an immutable paid-term commitment. Renewal creates a new verified term; annual monthly grants retain the original calendar anchor and base invoice. An accepted paid upgrade adds its separate contribution without rewriting the base. Unknown/ambiguous purchase evidence holds new grants or changes for reconciliation while issued pools and private work remain. Provider deletion, refund revocation, restore locks and stale revisions retain their existing authority. See [ADR 134](adr/134-purchased-allowance-commitments.md).
+
 ## Work Cloud text candidate
 
 The existing personal source job moves approved/queued to one claimed/running lease, then completed or unknown. Approval expires after fifteen minutes; execution has a fixed three-minute deadline and forty-second renewable leases. Expired, canceled, revoked or changed work cannot reclaim itself. A completed result retry only acknowledges its identical stored hash while authority remains current. A reported failure records unknown host usage; source replacement cannot clear that uncertainty into new executor authority. Privacy deletion and recovery remain available. App revocation does not attest provider cancellation. See [ADR 129](adr/129-gated-work-cloud-text-handoff.md); both runtime flags remain off.

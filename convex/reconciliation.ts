@@ -3,7 +3,19 @@ import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import Stripe from "stripe";
-import { ensure, monthlyAnchor } from "../packages/policy";
+import type { Doc } from "./_generated/dataModel";
+import { ensure, monthlyAnchor, PolicyError } from "../packages/policy";
+import {
+  resolveAllowancePolicy,
+  validatePaidAllowance,
+  validateAllowancePolicy,
+  verifyAllowanceInvoice,
+  stripeObjectId,
+  sameAllowancePolicy,
+  paidTermMonthOffset,
+  type PaidAllowance,
+  type AllowancePolicy,
+} from "../packages/billing/allowance-policy";
 import {
   missingStripeCustomer,
   confirmStripeCustomerDeleted,
@@ -63,7 +75,8 @@ export const stripeEvent = internalAction({
       object.payment_status === "paid" &&
       object.metadata?.product === "vibescroller" &&
       typeof object.metadata.checkoutKey === "string" &&
-      typeof object.customer === "string"
+      typeof object.customer === "string" &&
+      object.mode === "payment"
     )
       await ctx.runMutation(internal.billing.checkoutCompleted, {
         customerId: object.customer,
@@ -196,6 +209,22 @@ export const stripeEvent = internalAction({
             }
           : {}),
       });
+    if (
+      [
+        "checkout.session.completed",
+        "checkout.session.async_payment_succeeded",
+      ].includes(event.type) &&
+      object.mode === "subscription" &&
+      object.payment_status === "paid" &&
+      typeof object.customer === "string" &&
+      typeof object.subscription === "string" &&
+      typeof object.metadata?.checkoutKey === "string"
+    )
+      await ctx.runMutation(internal.billing.checkoutCompleted, {
+        customerId: object.customer,
+        key: object.metadata.checkoutKey,
+        subscriptionId: object.subscription,
+      });
     await ctx.runMutation(internal.privacy.receipt, {
       provider: "stripe",
       key: event.id,
@@ -210,13 +239,31 @@ export const customer = internalAction({
     pilotInvoiceId: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
+    if (process.env.RESTORE_LOCK === "true") return;
     if (!process.env.STRIPE_SECRET_KEY) return;
+    const mode = process.env.STRIPE_MODE ?? "test";
+    ensure(
+      ["test", "live"].includes(mode) &&
+        new RegExp(`^[sr]k_${mode}_`).test(process.env.STRIPE_SECRET_KEY),
+      "BILLING_UNAVAILABLE",
+      "The provider credential and configured mode must match.",
+    );
     const client = new Stripe(process.env.STRIPE_SECRET_KEY);
     const reserved = await ctx.runMutation(internal.billing.reserveRefresh, {
       customerId: a.customerId,
     });
     if (!reserved) return;
     const account = process.env.STRIPE_ACCOUNT_ID;
+    // Absence in another provider namespace is not deletion of this purchase.
+    for (const authority of [
+      reserved.paidAllowance,
+      reserved.checkoutAllowance,
+    ])
+      if (
+        authority &&
+        (authority.providerAccountId !== account || authority.mode !== mode)
+      )
+        return { allowance: "held" as const };
     ensure(
       account && (await client.accounts.retrieve(null)).id === account,
       "BILLING_UNAVAILABLE",
@@ -247,70 +294,335 @@ export const customer = internalAction({
       });
       return;
     }
-    const sub = all.data
-      .filter((s) => s.metadata.product === "vibescroller")
-      .sort((a, b) => b.created - a.created)[0];
-    const end = sub
-      ? Math.max(...sub.items.data.map((i) => i.current_period_end)) * 1000
-      : 0;
-    await ctx.runMutation(internal.billing.apply, {
+    if (all.has_more !== false) return { allowance: "held" as const };
+    const own = all.data.filter((s) => s.metadata.product === "vibescroller");
+    const current = own.filter(
+      (s) => !["canceled", "incomplete_expired"].includes(s.status),
+    );
+    if (current.length > 1) return { allowance: "held" as const };
+    const sub = current[0] ?? own.sort((a, b) => b.created - a.created)[0];
+    const live = process.env.STRIPE_MODE === "live";
+    if (
+      sub &&
+      (sub.livemode !== live ||
+        stripeObjectId(sub.customer) !== a.customerId ||
+        sub.items.has_more !== false ||
+        sub.items.data.length !== 1 ||
+        sub.items.data[0].quantity !== 1 ||
+        sub.items.data[0].price.livemode !== live)
+    )
+      return { allowance: "held" as const };
+    const item = sub?.items.data[0];
+    const end = item ? item.current_period_end * 1000 : 0;
+    const begin = item ? item.current_period_start * 1000 : 0;
+    let commitment: PaidAllowance | undefined;
+    let invoice: Stripe.Invoice | undefined;
+    let settlementInvoice: Stripe.Invoice | undefined;
+    let upgrade: Doc<"billingChanges"> | null = null;
+    const invoiceById = async (id: string) => {
+      const latest = sub?.latest_invoice;
+      return latest && typeof latest !== "string" && latest.id === id
+        ? latest
+        : client.invoices.retrieve(id);
+    };
+    if (sub?.status === "active" && item) {
+      try {
+        ensure(
+          Number.isSafeInteger(begin) &&
+            Number.isSafeInteger(end) &&
+            begin <= Date.now() &&
+            end > Date.now(),
+          "ALLOWANCE_RECONCILIATION_REQUIRED",
+          "The paid term is not current.",
+        );
+        const previous = reserved.paidAllowance;
+        const observedAnchor = sub.billing_cycle_anchor * 1000;
+        const anchor =
+          previous?.subscriptionId === sub.id
+            ? previous.anchor
+            : observedAnchor;
+        ensure(
+          anchor === observedAnchor,
+          "ALLOWANCE_RECONCILIATION_REQUIRED",
+          "The provider billing calendar anchor changed.",
+        );
+        const sameTerm =
+          previous?.subscriptionId === sub.id &&
+          previous.itemId === item.id &&
+          previous.paidStart === begin &&
+          previous.paidEnd === end;
+        const priorUpgrade = previous?.upgradeChangeId
+          ? await ctx.runQuery(internal.billingChanges.byId, {
+              id: previous.upgradeChangeId,
+            })
+          : null;
+        const priorPolicy = priorUpgrade?.targetPolicy ?? previous?.base.policy;
+        const changes = await ctx.runQuery(
+          internal.billingChanges.allowanceChange,
+          {
+            organizationId: reserved.organizationId,
+            subscriptionId: sub.id,
+            itemId: item.id,
+            price: item.price.id,
+            interval: item.price.metadata.interval ?? "",
+            periodStart: item.current_period_start,
+            periodEnd: item.current_period_end,
+          },
+        );
+        ensure(
+          changes.state === "ok",
+          "ALLOWANCE_RECONCILIATION_REQUIRED",
+          "The bounded allowance change history requires reconciliation.",
+        );
+        upgrade = changes.upgrade;
+        const renewal = changes.renewal;
+        const locator =
+          sub.metadata.allowanceAcceptanceId || sub.metadata.checkoutKey;
+        const acceptedOffer = locator
+          ? await ctx.runQuery(internal.commerce.checkoutAllowance, {
+              organizationId: reserved.organizationId,
+              acceptanceId: sub.metadata.allowanceAcceptanceId ?? "",
+              key: sub.metadata.checkoutKey ?? "",
+              customerId: a.customerId,
+              subscriptionId: sub.id,
+              providerAccountId: account,
+              mode: live ? "live" : "test",
+            })
+          : null;
+        ensure(
+          !locator || acceptedOffer,
+          "ALLOWANCE_RECONCILIATION_REQUIRED",
+          "The purchase acceptance cannot be verified.",
+        );
+        const pending = acceptedOffer?.policy;
+        const approvalId =
+          pending?.priceId === item.price.id
+            ? pending.priceId
+            : previous?.subscriptionId === sub.id &&
+                priorPolicy?.priceId === item.price.id
+              ? priorPolicy.priceId
+              : (upgrade?.targetPolicy?.priceId ??
+                renewal?.targetPolicy?.priceId ??
+                process.env[
+                  `STRIPE_${item.price.metadata.tier?.toUpperCase()}_${item.price.metadata.interval?.toUpperCase()}_PRICE_ID`
+                ]);
+        const priorAcceptance =
+          previous?.subscriptionId === sub.id
+            ? previous.base.policy.acceptance
+            : undefined;
+        const observed = resolveAllowancePolicy(
+          item.price,
+          approvalId,
+          pending?.priceId === item.price.id
+            ? pending.acceptance
+            : (upgrade?.targetPolicy?.acceptance ??
+                renewal?.targetPolicy?.acceptance ??
+                priorAcceptance ?? { kind: "legacy_not_reconstructed" }),
+        );
+        if (renewal) {
+          ensure(
+            renewal.sourcePolicy &&
+              renewal.targetPolicy &&
+              renewal.sourcePolicy.tier === "pro" &&
+              observed.tier === "starter" &&
+              renewal.sourcePolicy.priceId === renewal.oldPrice &&
+              renewal.targetPolicy.priceId === renewal.newPrice &&
+              renewal.sourcePolicy.billingInterval ===
+                observed.billingInterval &&
+              sameAllowancePolicy(renewal.targetPolicy, observed) &&
+              (previous?.subscriptionId !== sub.id ||
+                (sameTerm
+                  ? sameAllowancePolicy(previous.base.policy, observed)
+                  : previous.itemId === item.id &&
+                    previous.paidEnd === begin &&
+                    previous.paidStart === renewal.periodStart * 1000 &&
+                    priorPolicy &&
+                    sameAllowancePolicy(renewal.sourcePolicy, priorPolicy))),
+            "ALLOWANCE_RECONCILIATION_REQUIRED",
+            "The scheduled renewal does not match its accepted allowance change.",
+          );
+          validateAllowancePolicy(renewal.sourcePolicy);
+        }
+        let basePolicy: AllowancePolicy = observed;
+        let baseInvoiceId = stripeObjectId(sub.latest_invoice);
+        if (sameTerm) {
+          validatePaidAllowance(previous);
+          ensure(
+            previous.providerAccountId === account &&
+              previous.mode === (live ? "live" : "test"),
+            "ALLOWANCE_RECONCILIATION_REQUIRED",
+            "The paid commitment belongs to another provider environment.",
+          );
+          basePolicy = previous.base.policy;
+          baseInvoiceId = previous.base.invoiceId;
+          if (item.price.id !== basePolicy.priceId)
+            ensure(
+              upgrade,
+              "ALLOWANCE_RECONCILIATION_REQUIRED",
+              "The price changed without a verified paid change.",
+            );
+          if (previous.upgradeChangeId)
+            ensure(
+              upgrade?._id === previous.upgradeChangeId,
+              "ALLOWANCE_RECONCILIATION_REQUIRED",
+              "The paid upgrade changed.",
+            );
+        } else if (upgrade?.invoiceId) {
+          const old = await client.prices.retrieve(upgrade.oldPrice);
+          basePolicy = resolveAllowancePolicy(
+            old,
+            upgrade.sourcePolicy?.priceId ??
+              process.env[
+                `STRIPE_${old.metadata.tier?.toUpperCase()}_${old.metadata.interval?.toUpperCase()}_PRICE_ID`
+              ],
+            upgrade.sourcePolicy?.acceptance ?? {
+              kind: "legacy_not_reconstructed",
+            },
+          );
+          ensure(
+            !upgrade.sourcePolicy ||
+              sameAllowancePolicy(upgrade.sourcePolicy, basePolicy),
+            "ALLOWANCE_RECONCILIATION_REQUIRED",
+            "The original upgrade policy differs from its verified price.",
+          );
+          baseInvoiceId =
+            (await ctx.runQuery(internal.commerce.allowanceBaseInvoice, {
+              organizationId: reserved.organizationId,
+              subscription: sub.id,
+              start: begin,
+              upgradeInvoice: upgrade.invoiceId,
+            })) ?? undefined;
+        }
+        ensure(
+          baseInvoiceId,
+          "ALLOWANCE_RECONCILIATION_REQUIRED",
+          "The original paid invoice is unknown.",
+        );
+        invoice = await invoiceById(baseInvoiceId);
+        verifyAllowanceInvoice(invoice, {
+          customerId: a.customerId,
+          subscriptionId: sub.id,
+          itemId: item.id,
+          priceId: basePolicy.priceId,
+          start: begin,
+          end,
+          live,
+          proration: false,
+        });
+        settlementInvoice = invoice;
+        if (upgrade) {
+          ensure(
+            upgrade.invoiceId &&
+              upgrade.oldPrice === basePolicy.priceId &&
+              upgrade.newPrice === observed.priceId &&
+              upgrade.organizationId === reserved.organizationId &&
+              upgrade.itemId === item.id &&
+              basePolicy.tier === "starter" &&
+              observed.tier === "pro" &&
+              observed.billingInterval === basePolicy.billingInterval &&
+              upgrade.prorationDate * 1000 >= begin &&
+              upgrade.prorationDate * 1000 < end,
+            "ALLOWANCE_RECONCILIATION_REQUIRED",
+            "The upgrade does not match this paid term.",
+          );
+          const paidUpgradeInvoice = await invoiceById(upgrade.invoiceId);
+          verifyAllowanceInvoice(paidUpgradeInvoice, {
+            customerId: a.customerId,
+            subscriptionId: sub.id,
+            itemId: item.id,
+            priceId: observed.priceId,
+            start: upgrade.prorationDate * 1000,
+            end,
+            live,
+            proration: true,
+          });
+          settlementInvoice = paidUpgradeInvoice;
+          ensure(
+            (!upgrade.sourcePolicy ||
+              sameAllowancePolicy(upgrade.sourcePolicy, basePolicy)) &&
+              (!upgrade.targetPolicy ||
+                sameAllowancePolicy(upgrade.targetPolicy, observed)),
+            "ALLOWANCE_RECONCILIATION_REQUIRED",
+            "The paid change policy differs from its accepted quote.",
+          );
+          if (!upgrade.sourcePolicy || !upgrade.targetPolicy)
+            await ctx.runMutation(internal.billingChanges.bindLegacyPolicies, {
+              id: upgrade._id,
+              sourcePolicy: basePolicy,
+              targetPolicy: observed,
+            });
+        }
+        commitment = validatePaidAllowance({
+          version: "paid-allowance-v1",
+          providerAccountId: account,
+          mode: live ? "live" : "test",
+          subscriptionId: sub.id,
+          itemId: item.id,
+          paidStart: begin,
+          paidEnd: end,
+          anchor,
+          base: { policy: basePolicy, invoiceId: baseInvoiceId },
+          ...(upgrade ? { upgradeChangeId: upgrade._id } : {}),
+        });
+      } catch (error) {
+        if (
+          !(error instanceof PolicyError) ||
+          error.code !== "ALLOWANCE_RECONCILIATION_REQUIRED"
+        )
+          throw error;
+      }
+    }
+    const applied = await ctx.runMutation(internal.billing.apply, {
       customerId: a.customerId,
       subscriptionId: sub?.id,
       status: sub?.status ?? "free",
       periodEnd: end,
       revision: reserved.revision,
+      ...(commitment ? { paidAllowance: commitment } : {}),
     });
-    if (!sub || sub.status !== "active") return;
-    const invoice = sub.latest_invoice as Stripe.Invoice;
-    if (!invoice || invoice.status !== "paid") return;
-    const tier = sub.items.data[0]?.price.metadata.tier,
-      interval = sub.items.data[0]?.price.metadata.interval;
-    if (
-      !["starter", "pro"].includes(tier) ||
-      !["weekly", "monthly", "annual"].includes(interval)
-    )
-      return;
-    const price =
-      process.env[
-        `STRIPE_${tier.toUpperCase()}_${interval.toUpperCase()}_PRICE_ID`
-      ];
-    if (!sub.items.data.some((i) => i.price.id === price)) return;
-    const item = sub.items.data[0];
-    let start = item.current_period_start * 1000,
-      periodEnd = item.current_period_end * 1000;
+    if (!applied) return { allowance: "held" as const };
+    if (!sub || sub.status !== "active")
+      return { allowance: "not_due" as const };
+    if (!item || !commitment || !invoice || !settlementInvoice)
+      return { allowance: "held" as const };
+    const policy = upgrade?.targetPolicy ?? commitment.base.policy;
+    // A reconstructed legacy upgrade was just bound; its observed policy is the
+    // effective Pro policy, while the original base policy remains immutable.
+    const tier = upgrade ? "pro" : policy.tier;
+    const interval = commitment.base.policy.billingInterval;
+    let start = begin,
+      periodEnd = end;
     if (interval === "annual") {
-      const base = start,
-        now = Date.now();
       let n = 0;
-      while (n < 12 && monthlyAnchor(base, n + 1) <= now) n++;
-      start = monthlyAnchor(base, n);
-      periodEnd = Math.min(end, monthlyAnchor(base, n + 1));
+      const offset = paidTermMonthOffset(commitment);
+      while (
+        n < 12 &&
+        monthlyAnchor(commitment.anchor, offset + n + 1) <= Date.now()
+      )
+        n++;
+      start = monthlyAnchor(commitment.anchor, offset + n);
+      periodEnd = Math.min(
+        end,
+        monthlyAnchor(commitment.anchor, offset + n + 1),
+      );
     }
-    const upgrade = await ctx.runQuery(internal.billingChanges.paidUpgrade, {
-      subscriptionId: sub.id,
-      invoiceId: invoice.id,
-      price: item.price.id,
-    });
     if (periodEnd > Date.now())
       await ctx.runMutation(internal.commerce.grantPeriod, {
         organizationId: reserved.organizationId,
         subscription: sub.id,
-        tier: tier as "starter" | "pro",
+        tier,
         interval: interval === "weekly" ? "weekly" : "monthly",
         start,
         end: periodEnd,
         verifiedPayment: true,
-        upgradeAt: upgrade
-          ? Math.max(start, upgrade.prorationDate * 1000)
-          : undefined,
-        invoiceId: invoice.id,
+        invoiceId: upgrade?.invoiceId ?? invoice.id,
         billingRevision: reserved.revision,
         ...(a.pilotEvent &&
         interval === "monthly" &&
-        a.pilotInvoiceId === invoice.id &&
-        invoice.amount_paid > 0 &&
+        a.pilotInvoiceId === settlementInvoice.id &&
+        settlementInvoice.amount_paid > 0 &&
         sub.livemode === (a.pilotEvent.mode === "live") &&
-        invoice.livemode === (a.pilotEvent.mode === "live")
+        settlementInvoice.livemode === (a.pilotEvent.mode === "live")
           ? { pilotEvent: a.pilotEvent }
           : {}),
       });
@@ -320,8 +632,8 @@ export const customer = internalAction({
     )
       await ctx.runMutation(internal.privacy.invoiceTask, {
         organizationId: reserved.organizationId,
-        invoiceId: invoice.id,
-        issuedAt: invoice.created * 1000,
+        invoiceId: settlementInvoice.id,
+        issuedAt: settlementInvoice.created * 1000,
       });
   },
 });

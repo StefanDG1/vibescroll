@@ -1,5 +1,11 @@
 # VibeScroll foundational avatar
 
+## F057: purchased allowances and honest offer limits, October 24
+
+[ADR 134](../adr/134-purchased-allowance-commitments.md) prepares immutable paid allowance policies through existing billing, acceptance, period and change records. Current quantities remain frozen independently of presentation changes, annual base and upgrade invoices keep separate refund attribution, and unknown purchase evidence holds new grants for reconciliation. This is an implementation candidate, not a live billing migration, independent payment acceptance or customer outcome.
+
+Keep the current audience, EUR35/350 proposal with unselected quantity, deferred lifetime feature and every provider/privacy/release gate. No new sale, published terms, charge or spending is authorized. The same US$3 cap and all prior holds remain.
+
 ## F056: accurate prepared media and offer limits, October 24
 
 [ADR 133](../adr/133-reviewed-product-library-and-social-edits.md) uses approved synthetic captures for product, Library and social edits with desktop/mobile alternatives and complete text access. Root corrected captions that mislabeled issue drafts as plans, including the setup video's final scene. Original UI/timing and dated capture provenance remain; historical sources are archived. No new analysis, customer, actual setup or measured latency is shown.

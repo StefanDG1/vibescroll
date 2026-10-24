@@ -1,5 +1,11 @@
 # Complete the launch and own-subscription workflows
 
+## Paid allowance protection candidate, October 24
+
+[ADR 134](../../adr/134-purchased-allowance-commitments.md) extends existing purchase, billing-period, change and credit-funding records with frozen allowance policies and exact paid-term commitments. Durable accepted terms survive price configuration changes; annual monthly grants retain their calendar anchor and base/upgrade refund attribution. Unknown legacy evidence holds new grants with an explanation through the existing billing refresh form. Current prices/quantities remain unchanged, the future quantity remains unselected and lifetime stays deferred. Root owns integration and final evidence; exact-head CI, real payment/portal and production migration acceptance remain separate.
+
+Latest media candidate [PR147](https://github.com/StefanDG1/vibescroll/pull/147) passed exact-head CI40066131115 at09c088c. PR145/146 also passed their recorded exact-head checks. All remain undeployed; production is still the narrow PR141 frontend with unchanged backend. No new provider or production requests follow from these offline stages.
+
 ## Product, Library and social media candidate, October 24
 
 [ADR 133](../../adr/133-reviewed-product-library-and-social-edits.md) prepares forty/twenty-four/twenty-second product/Library/social edits in desktop/mobile forms, captions, transcripts, posters, static walkthroughs and codec alternatives. Root reviewed actual frames and corrected issue-draft-as-plan captions in both the old overview and ninety-second setup guide, with exact originals archived for reproduction. These use approved synthetic captures, not new processing or customer evidence. Native playback/device, final integration and production acceptance remain separate. The [future Pro allowance packet](PRO-ALLOWANCE-PROPOSAL.md) is review only: quantity remains blocked, current contracts stay unchanged and lifetime remains later.

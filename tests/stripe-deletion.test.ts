@@ -1,4 +1,6 @@
 import { convexTest } from "convex-test";
+import { grantPaidPeriod } from "./allowance-fixture";
+import { monthlyAnchor } from "../packages/policy";
 import { afterEach, expect, it, vi } from "vitest";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
@@ -72,8 +74,8 @@ it("recognizes only a provider-confirmed missing customer, not permissions or ou
 it("ends included credits on deletion, preserves purchased credits and membership, ignores stale grants, and can relink", async () => {
   const { t, organizationId, user } = await setup();
   const start = Date.now() - 1000,
-    end = Date.now() + 86400000;
-  await t.mutation(internal.commerce.grantPeriod, {
+    end = monthlyAnchor(start, 1);
+  await grantPaidPeriod(t, {
     organizationId,
     subscription: "sub_synthetic",
     tier: "pro",

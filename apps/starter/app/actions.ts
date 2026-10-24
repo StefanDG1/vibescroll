@@ -283,9 +283,14 @@ export async function billingPortal(_: FormState, d: FormData) {
 }
 export async function refreshBilling(_: FormState, d: FormData) {
   return run(async () => {
-    await (
+    const result = await (
       await backend()
     ).action(api.payments.refreshBilling, { organizationId: org(d) });
+    if (result?.allowance === "held")
+      return {
+        message:
+          "We could not verify a new allowance from the purchase records. Existing issued credits and saved work are unchanged. Contact support before buying again.",
+      };
     return { message: "Billing refreshed from Stripe." };
   });
 }

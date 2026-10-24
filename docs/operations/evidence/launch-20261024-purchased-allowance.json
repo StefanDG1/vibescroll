@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T05:53:46.306439+00:00",
+  "baseCommit": "09c088cd2fc5591dbd3c41950264de95c0dce5aa",
+  "mode": "offline implementation candidate; no activation",
+  "verification": {
+    "fullCommand": "node scripts/run-offline.mjs pnpm check",
+    "fullPassed": 1603,
+    "hostedSkipped": 3,
+    "documents": 320,
+    "skillSnapshots": 12,
+    "financeChecks": 17,
+    "lint": "zero warnings/errors",
+    "types": "root, actual Convex, both apps passed",
+    "builds": "both passed; existing dynamic Help trace warnings retained for separate fix",
+    "fullScopeLimit": "Full pass precedes final four namespace guard regressions; exact-head CI must verify committed final source.",
+    "finalFocusedTests": 54,
+    "finalRootConvexTypes": "passed",
+    "finalLintFormatDiff": "passed",
+    "earlierCoreFocusedTests": 187,
+    "billingActionTests": 5,
+    "fullLogSha256": "dbfeac763083d827d17e1847f86c91f33a4d09c75e076d4680c53ebc5673dc88",
+    "finalScopedLogSha256": "e2c658f6ea92a773e7f6fd60eb557fa98f6026c4d733945e70a1587dfe2ece15",
+    "nativeBrowser": "pending fresh Chrome connection",
+    "livePaymentsPortal": "not run; connector reauthentication and live gates pending"
+  },
+  "review": {
+    "root": "shared contracts, source review, integration, final namespace guard and generic refresh outcome",
+    "independentHigh": "durable price rotation, annual monthly boundary, namespace deletion ordering found; accepted fixes implemented",
+    "resolved": [
+      "delayed checkout durable price after config rotation",
+      "recorded annual upgrade source policy after config rotation",
+      "scheduled downgrade transition, replay and subsequent monthly grant",
+      "quote crossing annual monthly grant boundary",
+      "complete bounded change history rejects overflow and ambiguity",
+      "archived and discounted/zero-paid paid-invoice positives",
+      "paid and pending namespace mismatches halt before lookup",
+      "normal canceled/no-subscription not_due distinct from held"
+    ]
+  },
+  "preservedFailures": [
+    "Initial41fixture failures and2fixture/type mismatches corrected with explicit synthetic purchased commitments, not permissive fallback",
+    "Anchor fixture failures corrected against original provider UTC reference",
+    "Refresh result propagation introduced TypeScript inference cycle; explicit result annotations fixed it",
+    "Two dynamic Help filesystem tracing build warnings retained for separate public-site hardening"
+  ],
+  "release": {
+    "pricesChanged": false,
+    "quantitiesChanged": false,
+    "newTablesIndexesWalletsQueues": 0,
+    "sdkOrLockChanged": false,
+    "newProductionConvexCalls": 0,
+    "newProviderJobs": 0,
+    "purchases": 0,
+    "production": "frontend fba56d4/backend abfdeff67 unchanged",
+    "backendDeployment": "held on missing whole-operation fiscal proof",
+    "cumulativeCapUSD": 3,
+    "conservativeReservationsUSD": "2.8092885298898517",
+    "unallocatedUSD": "0.1907114701101483",
+    "allUnknownHoldsPreserved": true,
+    "settledInvoice": false
+  },
+  "sourceHashes": [
+    {
+      "path": "apps/starter/app/actions.ts",
+      "sha256": "1b7bd142009b6652d309d8868d2f7f7dd308f1722d2356f069ad0a27fa6a52fd"
+    },
+    {
+      "path": "apps/starter/billing-actions.test.ts",
+      "sha256": "d4174b5f1aafb5387e743747f7e643c9e0da20c3086626dfcdf04a9abbb71a55"
+    },
+    {
+      "path": "convex/billing.ts",
+      "sha256": "f88b4151fb12a5f4ee5b7b6cb226ca26bbd0224e6608126ffd3d90737cf3a613"
+    },
+    {
+      "path": "convex/billingChanges.ts",
+      "sha256": "e3af145d88ae45ba3028caa17b4249879f02f58160ea6e309ad67a8cafa9a76b"
+    },
+    {
+      "path": "convex/billingV1.ts",
+      "sha256": "7580b6940ed874b493e3465b1e3d9b84ef54d35a304d2cfbdfb174750628033e"
+    },
+    {
+      "path": "convex/commerce.ts",
+      "sha256": "ff5b31166f6a8be969fe4c41c9740dae99dce8512b53d62c2b5fd0a907c06984"
+    },
+    {
+      "path": "convex/payments.ts",
+      "sha256": "52500ef9168ed8f9d78a8322a011bbbe7e3028fdd1cf9252ed7d2edbd510f537"
+    },
+    {
+      "path": "convex/productSchema.ts",
+      "sha256": "609251af535ba6d1cfb51f4f6186daff251015cdc1fd5569cce903ac9d7a3226"
+    },
+    {
+      "path": "convex/reconciliation.ts",
+      "sha256": "0010413ba65a2685432828a6ca3ca1640c81e093cc05d82d4eaca3e2aebf07b4"
+    },
+    {
+      "path": "convex/schema.ts",
+      "sha256": "2e16f0b240f1831da65a35a9609842ed96d49c72129b57b76b6e8595a4e33e14"
+    },
+    {
+      "path": "packages/billing/allowance-policy.ts",
+      "sha256": "e4d896d52a9ab7097a4ba3393f8755e7116ba8ce95c3c1b11779d12b1cb0f45c"
+    },
+    {
+      "path": "tests/allowance-commitments.test.ts",
+      "sha256": "d9e1957e70c37b9498f0271a02df59bc4c528d6c22bf39cee82069263171ec2c"
+    },
+    {
+      "path": "tests/allowance-fixture.ts",
+      "sha256": "ff5485156ef889699df7a9c963156a6a0b8818f0eb983ea70bbf6ac244af9d87"
+    },
+    {
+      "path": "tests/ordered-service-preparation.test.ts",
+      "sha256": "b2df87b7d89210f86695da696dbd965b9fdc5095ba7a1e2c2f5bcc221e0fb7e1"
+    },
+    {
+      "path": "tests/pilot-payment-settlement.test.ts",
+      "sha256": "4412a5584cffb171de1c93f4201fec48b632021b07616a6474a36e528e12f843"
+    },
+    {
+      "path": "tests/product.test.ts",
+      "sha256": "bb5d0fb723bace32428ec130815689b296e09abf17174efd9f7db8615cdf67d0"
+    },
+    {
+      "path": "tests/service-artifacts.test.ts",
+      "sha256": "86ad9c9dbab346da00544587d318be1d9590ae8adb33972258440d219fa8021c"
+    },
+    {
+      "path": "tests/stripe-deletion.test.ts",
+      "sha256": "81b4c5a79a2327c48db5620e023808235ff784ba8502efe81a5efc800f6c33ee"
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## October 24: purchased allowance candidate
+
+[F057](idea-backlog.md#f057-purchased-allowances-and-honest-offer-limits-october-24) and [ADR 134](../adr/134-purchased-allowance-commitments.md) keep purchased quantities independent of future offer edits through the existing billing owners. All four briefs preserve current contracts and distinguish offline protection from live payment acceptance. No quantity, new price or published policy is selected.
+
 Current candidate brief: [F056](idea-backlog.md#f056-accurate-prepared-media-and-offer-limits-october-24) records truthful media preparation and the review-only allowance packet. F050 remains the latest narrow production checkpoint.
 
 Current candidate brief: [F055](idea-backlog.md#f055-verified-ordered-preparation-reuse-candidate-october-24) records exact media reuse under fresh preflight, not free model inference or a production pass.

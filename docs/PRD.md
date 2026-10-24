@@ -1,5 +1,9 @@
 # Product requirements
 
+## October 24 requirement update
+
+[ADR 148](adr/148-catalog-first-insights-and-paid-hosted-entry.md) requires payment after hosted signup and before product access. A billing lapse preserves stored account/data and locks access until verified payment resumes. Generic analysis uses the existing shared catalog without a workspace destination choice; preserve Pro catalog entitlement, private project work and internal execution authority. Default inviteable Full Name's team and additional named teams remain collaboration controls. These changes are authorized requirements with implementation/production acceptance pending; they supersede conflicting earlier free-entry or visible insight-destination assumptions, without opening the dataset or changing prices.
+
 Mode: reference. Product: VibeScroller. Release: V1. Specification: 1.0.0.
 
 ## Product purpose

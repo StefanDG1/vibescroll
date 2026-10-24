@@ -1,5 +1,9 @@
 # Foundational idea backlog
 
+## F068: catalog-first insights and paid hosted entry, October 24
+
+Source: the owner's October 24 account-access and workspace clarification. Need: reduce destination confusion, retain unpaid data and make the paid hosted product distinct from self-hosted code. Decision: adopt ADR 148 for implementation, preserving Pro catalog access and private project work. Counterargument: hiding tenancy cannot weaken authorization, and a neutral-analysis label does not remove private context or confer publication rights. Test unpaid/API/MCP denial, resubscription with unchanged data, repeat team/internal-home provisioning, collaborator isolation, strict neutral contribution and a real laptop-off Cloud return. Those acceptance tests are pending. Update all four briefs together; preserve pricing, allowances, release gates and uncertainty.
+
 ## F067: live controls and pending Cloud results, October 24
 
 Source: owner-authorized reconnection, exact-head CI, compatible publication and bounded normal-cookie account checks. Need: complete the no-GitHub source-to-cited-result journey through existing systems. Decision: record tool exposure and reuse the active existing private library. Counterargument: working configuration can hide missing source grants, media access and fiscal authority. Test: one approved real-source claim, acquisition, sampled evidence and canonical cited return with finite retention/cleanup and the reserved post untouched. That test is pending. Preserve all four briefs, private/proprietary catalog rules and release gates; no marketing outcome is inferred.

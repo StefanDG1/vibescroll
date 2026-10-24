@@ -1,5 +1,9 @@
 # Remaining acceptance and completion ledger
 
+## Paid-entry and catalog-first acceptance, October 24
+
+[ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md) adds pending acceptance for: payment before hosted UI/API/MCP/data access; stored-but-locked unpaid data and exact resubscription recovery; stable internal processing identity with an inviteable named default team; existing additional teams and collaborator isolation; no generic-analysis destination chooser; neutral-only contribution through the current artifact pipeline with Pro access; and a real laptop-off Cloud source-to-cited-result run with/without GitHub. Root owns all checks. No runtime change or new production test occurred while recording this direction. Preserve original acceptance and gates below.
+
 ## Published checkpoint, October 24 at 20:10 UTC
 
 [The production receipt](../../operations/evidence/launch-20261024-private-library-production.json) verifies compatible source `63a071d`, merged PRs 162/163, exact-head CI, unchanged schema/indexes and staged/canonical health. Normal reconnection exposes six Cloud tools. The privacy preview correctly refused a second private library, and an active existing private library was confirmed. No source, grant, ownership or analysis mutation followed. Real Cloud video return, GitHub/no-GitHub acceptance and measured speed remain pending. The reserved post stays untouched. The same US$3 cap retains US$2.8581559473235747; no whole run starts without its setup, retention and cleanup bound. Full-main and all original/reconciled acceptance remain open where not independently verified. Earlier checkpoints below are historical.

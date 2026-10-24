@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: catalog-first insight intake and paid hosted entry
+
+[ADR 148](adr/148-catalog-first-insights-and-paid-hosted-entry.md) records the removal of workspace destination choices from generic analysis, an inviteable default Full Name's team, named teams and private project boundaries. Hosted account creation precedes mandatory payment; unpaid accounts keep their data with product access locked until payment resumes. The prior Pro-only proprietary catalog rule remains. Internal execution/grant isolation, existing data, source rights and release/provider/budget gates are preserved. Implementation and production acceptance are pending.
+
 ## October 24: private source text results on runs
 
 [ADR 138](adr/138-private-source-text-results-on-existing-runs.md) keeps private text outputs on existing runs with small source pointers, strict v2 local admission and independent earned-result reading. Preserve canonical source fields, exact evidence and private rights; no media/Cloud/skills/project-reference claim. One new source index and one changed device/state index need separately funded migration evidence.

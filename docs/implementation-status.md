@@ -1,5 +1,9 @@
 # October 22 launch implementation candidate
 
+## Authorized paid-entry and catalog-first changes, October 24
+
+[ADR 148](adr/148-catalog-first-insights-and-paid-hosted-entry.md) records the new paid-before-app rule, saved unpaid data, shared generic-insight destination, internal processing home and inviteable named default team. No runtime code or live billing state has changed in this stage. Existing named-team/invitation code is available, but current default provisioning and private-only Cloud output need integrated extensions. Root owns the sequence and server-wide access tests. The real production Cloud result remains pending; no new requests or spending are authorized by recording these requirements.
+
 ## Live private-library checkpoint, October 24 at 20:10 UTC
 
 Compatible frontend/backend `63a071d`, version `0.1.0-alpha.20261024193841.g63a071d6ad74`, is published. PRs 162 and 163 are merged with passing exact-head CI. Staged health/Help and canonical health passed after exact-build promotion. [The production receipt](operations/evidence/launch-20261024-private-library-production.json) preserves the independently explained post-commit verifier failure and no retry. No tables, indexes or backfills changed. Fixed Basic builds, original Git suppression and automatic domain assignment remain.

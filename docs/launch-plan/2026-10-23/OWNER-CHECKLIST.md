@@ -1,5 +1,11 @@
 # What help is still needed to finish the plan
 
+## Latest owner decision, October 24
+
+Paid hosted entry and retention are settled in [ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md): create account, pay, enter app; unpaid data remains stored and app access returns after verified payment. Keep earlier Pro-only catalog access, with no workspace destination choice for generic insights. Default teams must support invitations; private execution and project data remain protected internally. No more product-choice or repeat OAuth question is needed now.
+
+Root owns the implementation and whole-run fiscal proof. The only useful phone readiness check now is whether Work and the connected VibeScroll app are available in the owner's mobile ChatGPT app. No new source link or processing request is needed. When a funded integrated test is ready, root supplies the exact source/handoff and asks only for actual sign-in, Internet permission or checkout interaction that cannot be completed without the owner. A payment must be real or separately explicitly authorized as an audited complimentary entitlement; never fabricate Stripe acceptance. Current Cloud video return remains unverified and the reserved post stays untouched.
+
 ## Current account checkpoint, October 24 at 20:10 UTC
 
 VibeScroll reconnection is complete and exposes six Cloud execution tools. No further reconnection or private-adoption answer is needed now. The published preview correctly refused a second private library; use the active existing private library for the next source-scoped experiment. No ownership or content was changed. Root owns the remaining fiscal proof, sensitive app authentication when needed, grant/source approval and actual cited Cloud return. Do not ask the owner to repeat settled permission or product answers.

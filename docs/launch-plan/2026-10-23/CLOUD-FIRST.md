@@ -1,5 +1,9 @@
 # Finish the launch with user-owned Codex Cloud
 
+## Paid-entry and catalog-first dependency update, October 24
+
+[ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md) makes hosted payment a prerequisite for product/Cloud access while preserving unpaid stored data. Generic insight intake has no workspace destination choice; eligible neutral own-subscription output needs a contribution adapter into existing artifacts, with private source/job/grant authority intact. The visible default team supports invitations; private execution resolves internally. Preserve the Pro catalog, existing customer billing, source IDs and all C0-C10/R/P/N/M scope. This is authorized implementation work, not a live Cloud success. Root must close account billing authority, team/internal-home routing and contribution isolation before the integrated phone test. The same USD 3 cap and existing provider/privacy gates remain.
+
 ## Private media-v2 checkpoint, October 24
 
 [ADR 143](../../adr/143-private-work-cloud-media-observations.md) freezes a default-off private single-video candidate on the existing source job, OAuth execution grant and same-job lease. It accepts four supported platforms and authenticated client-reported sampled observations, with raw media in the provider task. It adds no automatic dispatch, paid fallback or catalog publication. Host policy, runtime, model, bytes and provider cleanup remain independently unverified. Ninety-eight focused tests passed before review; the native extension finding is corrected and final combined checks remain pending.

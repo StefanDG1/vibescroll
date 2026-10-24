@@ -1,5 +1,9 @@
 # Complete the launch and own-subscription workflows
 
+## Ordered preparation reuse candidate, October 24
+
+[ADR 132](../../adr/132-ordered-preparation-reuse.md) extends the same paired source job with optional immutable preparation provenance and prepared-object ETags. Exact current input/runtime/rights/retention and settled origin compute can avoid duplicate preparation after an eligible terminal failure, while fresh explicit account/model/ASR preflight remains mandatory. Old unstamped, canceled, unknown and mismatched-generation work is not retroactively reused. [Local evidence](../../operations/evidence/launch-20261024-ordered-preparation-reuse.json) records 1,533 passing tests, three hosted skips, actual native packaging, types and builds before forwarding to the separately tested public-controls parent. No new provider, queue, paid fallback or production activation follows.
+
 ## Public example controls candidate, October 24
 
 [ADR 131](../../adr/131-public-example-navigation-and-motion.md) extends the existing hero with navigation to five existing examples/guides and explicit desktop cycling. The default stays static, ordinary links work without JavaScript, and focus/visibility/reduced-motion controls prevent unattended rotation. No processing, new result/media, pricing change or hosted request follows. This is part of M1/M6; remaining motion/media, native browser and production acceptance are still open. Parent [PR 144](https://github.com/StefanDG1/vibescroll/pull/144) passed exact-head CI 40060302528 at 9c25514; it remains undeployed.

@@ -10,6 +10,7 @@ import { signedObject, objectMetadata } from "../packages/providers/storage";
 import { randomUUID, createHash } from "node:crypto";
 import { exactArrayBuffer } from "../packages/providers/binary";
 import { ensure } from "../packages/policy";
+import { creationProvenanceCurrent } from "../packages/providers/preparation-runtime";
 
 export const prepare = internalAction({
   args: { id: v.id("sources"), generation: v.number() },
@@ -36,6 +37,7 @@ export const prepare = internalAction({
       };
       const decoded = await prepareOrderedMedia(first.input.assets, {
         authorize,
+        ...(first.runtime ? { expectedRuntime: first.runtime } : {}),
       });
       computeCredits = Math.ceil(decoded.computeSeconds * rate);
       await authorize();
@@ -44,6 +46,9 @@ export const prepare = internalAction({
           now + 3600000,
           first.source.sourceRetentionUntil ?? Infinity,
           ...first.rows.map((r) => r.expiresAt ?? Infinity),
+          first.runtime?.route === "broker"
+            ? first.runtime.authority.expiresAt
+            : Infinity,
         );
       const objects = [];
       for (const asset of decoded.manifest.assets)
@@ -100,6 +105,7 @@ export const prepare = internalAction({
             size: bytes.length,
             sha256: createHash("sha256").update(bytes).digest("hex"),
             type,
+            ...(metadata.etag ? { etag: metadata.etag } : {}),
           });
         }
       const warnings = [
@@ -128,6 +134,19 @@ export const prepare = internalAction({
         omissions: decoded.manifest.omitted,
         preparedAt: now,
         expiresAt,
+        ...(first.runtime &&
+        first.preparationBinding &&
+        objects.every((object) => object.etag) &&
+        creationProvenanceCurrent(decoded.creationProvenance, first.runtime)
+          ? {
+              preparation: {
+                version: "personal-ordered-preparation-v1",
+                generation: a.generation,
+                ...first.preparationBinding,
+                creationProvenance: decoded.creationProvenance,
+              },
+            }
+          : {}),
       };
       if (
         await ctx.runMutation(internal.personalOrderedMediaState.finish, {
@@ -166,8 +185,9 @@ export const lease = internalAction({
       internal.personalAnalysis.orderedMediaLease,
       a,
     );
+    const { preparation: _preparation, ...media } = value;
     return {
-      ...value,
+      ...media,
       objects: value.objects.map((o: any) => ({
         file: o.file,
         id: o.assetId,

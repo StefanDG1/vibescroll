@@ -27,6 +27,8 @@ import {
   orderedInputHash,
   orderedPrepared,
   orderedCompletion,
+  reusablePersonalOrderedPreparation,
+  reconciledOrderedCompute,
 } from "./lib/personalOrdered";
 import { socialHash } from "../packages/social/contracts";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
@@ -296,6 +298,7 @@ export async function approvePersonalCore(
   );
   if (source.personalOrderedInput) {
     const { input, rows } = await orderedInput(ctx, source);
+    const retained = await reusablePersonalOrderedPreparation(ctx, source);
     ensure(
       device.subscriptionCapabilities &&
         device.personalInputProtocols?.includes("ordered-personal-v1") &&
@@ -352,11 +355,25 @@ export async function approvePersonalCore(
     );
     for (const row of rows)
       await ctx.db.patch(row._id, { sourceGeneration: generation });
+    const inputBinding = await orderedInputHash(
+      source,
+      input,
+      rows.map((row) => ({ ...row, sourceGeneration: generation })),
+      generation,
+    );
+    const reusedMedia = retained
+      ? { ...retained, generation, inputBinding }
+      : undefined;
+    if (retained)
+      for (const object of retained.objects) {
+        const id = ctx.db.normalizeId("assets", object.assetId)!;
+        await ctx.db.patch(id, { sourceGeneration: generation });
+      }
     await ctx.db.patch(source._id, {
       generation,
       state: "queued",
       managedAnalysisActor: undefined,
-      personalMedia: undefined,
+      personalMedia: reusedMedia,
       orderedMedia: undefined,
       analysis: undefined,
       summary: undefined,
@@ -378,12 +395,10 @@ export async function approvePersonalCore(
         ordered: {
           schemaVersion: "ordered-personal-v1",
           phase: "preflight",
-          inputBinding: await orderedInputHash(
-            source,
-            input,
-            rows.map((row) => ({ ...row, sourceGeneration: generation })),
-            generation,
-          ),
+          inputBinding,
+          ...(reusedMedia
+            ? { preparedHash: await socialHash(canonicalJson(reusedMedia)) }
+            : {}),
         },
       },
       updatedAt: now,
@@ -916,7 +931,9 @@ export const dispatch = internalMutation({
         prior.organizationId === device.organizationId &&
         j?.deviceId === device._id &&
         j.actor === device.owner &&
-        j.ordered?.phase === "preparing" &&
+        (j.ordered?.phase === "preparing" ||
+          (j.ordered?.phase === "analysis" &&
+            prior.personalMedia?.preparation)) &&
         j.ordered.preflightHash &&
         typeof a.claimToken === "string"
       ) {
@@ -933,6 +950,7 @@ export const dispatch = internalMutation({
           }),
         );
         const input = await orderedInput(ctx, prior);
+        if (j.ordered.phase === "analysis") await orderedPrepared(ctx, prior);
         ensure(
           candidate === j.ordered.preflightHash &&
             j.ordered.inputBinding ===
@@ -1066,12 +1084,6 @@ export const dispatch = internalMutation({
           "SETUP_REQUIRED",
           "Verified ordered preparation is unavailable.",
         );
-        await reserve(
-          ctx,
-          source.organizationId,
-          `personal-media:${source._id}:${job.generation}`,
-          10,
-        );
         const preflightHash = await socialHash(
           canonicalJson({
             id: source._id,
@@ -1083,6 +1095,35 @@ export const dispatch = internalMutation({
             model: job.model,
             effort: job.effort,
           }),
+        );
+        if (source.personalMedia?.preparation && job.ordered.preparedHash) {
+          await reconciledOrderedCompute(ctx, source, true);
+          await orderedPrepared(ctx, source);
+          await ctx.db.patch(source._id, {
+            state: "queued",
+            personalAnalysis: {
+              ...job,
+              state: "queued",
+              stage: "analyzing",
+              leaseUntil: 0,
+              deadline: 0,
+              ordered: {
+                ...job.ordered,
+                phase: "analysis",
+                leaseToken: undefined,
+                preflightHash,
+              },
+            },
+            updatedAt: now,
+          });
+          await ctx.db.patch(device._id, { activePersonalSource: undefined });
+          return { accepted: true, deferred: true };
+        }
+        await reserve(
+          ctx,
+          source.organizationId,
+          `personal-media:${source._id}:${job.generation}`,
+          10,
         );
         await ctx.db.patch(source._id, {
           personalAnalysis: {

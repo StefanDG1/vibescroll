@@ -17,6 +17,13 @@ import { creatorConfiguration } from "./creatorPolicy";
 import { sourceRetained } from "./sourceAuthority";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { containsSecret } from "../../packages/policy/secrets.mjs";
+import { orderedDecoder } from "../../packages/media/decoder-ordered";
+import { personalPreparationPipeline } from "./personalPreparation";
+import {
+  creationProvenanceCurrent,
+  type PreparationRuntime,
+} from "../../packages/providers/preparation-runtime";
+import { pairedPersonalJob } from "../personalAnalysisSchema";
 
 export { personalOrderedMediaSchema } from "../../packages/media/personal-ordered";
 import { personalOrderedMediaSchema } from "../../packages/media/personal-ordered";
@@ -128,6 +135,146 @@ export function orderedInputHash(
     }),
   );
 }
+// Reuse identity preserves original bytes, order, policy and retention while
+// excluding only the mutable execution generations.
+export function orderedPreparationInput(
+  source: Doc<"sources">,
+  input: unknown,
+  rows: Doc<"assets">[],
+) {
+  return {
+    sourceId: source._id,
+    organizationId: source.organizationId,
+    canonical: source.canonical,
+    input,
+    rights: source.creatorRights ?? null,
+    retentionUntil: source.sourceRetentionUntil ?? null,
+    assets: rows.map((row) => ({
+      assetId: row._id,
+      key: row.key,
+      etag: row.etag,
+      size: row.size,
+      type: row.type,
+      expiresAt: row.expiresAt,
+    })),
+  };
+}
+export async function orderedPreparationBinding(
+  source: Doc<"sources">,
+  input: unknown,
+  rows: Doc<"assets">[],
+  runtime: PreparationRuntime,
+) {
+  const inputBinding = await socialHash(
+    canonicalJson(orderedPreparationInput(source, input, rows)),
+  );
+  return {
+    inputBinding,
+    binding: await socialHash(
+      canonicalJson({
+        version: "personal-ordered-preparation-v1",
+        decoder: await socialHash(orderedDecoder),
+        manifest: "ordered-decoder-v1",
+        maximumLifetimeMs: 3600000,
+        runtime,
+        inputBinding,
+      }),
+    ),
+  };
+}
+export async function reconciledOrderedCompute(
+  ctx: QueryCtx,
+  source: Doc<"sources">,
+  currentPreflight = false,
+) {
+  const prefix = `personal-media:${source._id}:`;
+  const rows = await ctx.db
+    .query("reservations")
+    .withIndex("by_key", (q) =>
+      q
+        .eq("organizationId", source.organizationId)
+        .gte("key", prefix)
+        .lt("key", `${prefix}\uffff`),
+    )
+    .take(101);
+  // The current ledger has only active -> settled. Expiry/release labels from
+  // legacy or restored rows do not establish settlement of dispatched compute.
+  if (rows.length > 100 || rows.some((row) => row.state !== "settled"))
+    throw Error("COST_RECONCILIATION_REQUIRED");
+  const prior = source.personalAnalysis;
+  if (!currentPreflight && pairedPersonalJob(prior)) {
+    const device = await ctx.db.get(prior.deviceId);
+    if (device?.activePersonalSource === source._id)
+      throw Error("COST_RECONCILIATION_REQUIRED");
+  }
+}
+async function orderedStampCurrent(
+  ctx: QueryCtx,
+  source: Doc<"sources">,
+  input: unknown,
+  rows: Doc<"assets">[],
+  media: z.infer<typeof personalOrderedMediaSchema>,
+) {
+  const stamp = media.preparation;
+  if (!stamp) return;
+  const runtime = await personalPreparationPipeline(ctx);
+  const binding =
+    runtime && (await orderedPreparationBinding(source, input, rows, runtime));
+  const origin = await ctx.db
+    .query("reservations")
+    .withIndex("by_key", (q) =>
+      q
+        .eq("organizationId", source.organizationId)
+        .eq("key", `personal-media:${source._id}:${stamp.generation}`),
+    )
+    .unique();
+  if (
+    !runtime ||
+    !binding ||
+    !creationProvenanceCurrent(stamp.creationProvenance, runtime) ||
+    stamp.generation > source.generation ||
+    stamp.inputBinding !== binding.inputBinding ||
+    stamp.binding !== binding.binding ||
+    !Number.isSafeInteger(media.preparedAt) ||
+    media.preparedAt > Date.now() ||
+    media.expiresAt > media.preparedAt + 3600000 ||
+    media.expiresAt >
+      Math.min(
+        ...rows.map((row) => row.expiresAt ?? 0),
+        runtime.route === "broker" ? runtime.authority.expiresAt : Infinity,
+      ) ||
+    media.objects.some((object) => !object.etag) ||
+    origin?.state !== "settled" ||
+    origin.dispatchedAt === undefined
+  )
+    throw Error("PERSONAL_ORDERED_PREPARATION_CHANGED");
+}
+export async function reusablePersonalOrderedPreparation(
+  ctx: QueryCtx,
+  source: Doc<"sources">,
+) {
+  await reconciledOrderedCompute(ctx, source);
+  const job = source.personalAnalysis;
+  const rebasedPreflight =
+    pairedPersonalJob(job) &&
+    job.ordered?.phase === "preflight" &&
+    !!job.ordered.preparedHash &&
+    source.personalMedia?.preparation?.generation < job.generation;
+  if (
+    source.state !== "failed" ||
+    !pairedPersonalJob(job) ||
+    !["failed", "expired"].includes(job.state) ||
+    job.generation !== source.generation ||
+    (job.ordered?.phase !== "analysis" && !rebasedPreflight) ||
+    !source.personalMedia?.preparation
+  )
+    return null;
+  try {
+    return (await orderedPrepared(ctx, source)).media;
+  } catch {
+    return null;
+  }
+}
 export async function orderedPrepared(ctx: QueryCtx, source: Doc<"sources">) {
   const { input, rows } = await orderedInput(ctx, source),
     media = personalOrderedMediaSchema.parse(source.personalMedia);
@@ -194,12 +341,16 @@ export async function orderedPrepared(ctx: QueryCtx, source: Doc<"sources">) {
       object.size !== file.bytes ||
       object.sha256 !== file.sha256 ||
       row.type !== object.type ||
+      (object.etag !== undefined && row.etag !== object.etag) ||
+      row.kind !==
+        (object.type === "audio/wav" ? "normalized_audio" : "evidence") ||
       row.expiresAt === undefined ||
       row.expiresAt <= Date.now() ||
       row.expiresAt < media.expiresAt
     )
       throw Error("PERSONAL_ORDERED_EVIDENCE_CHANGED");
   }
+  await orderedStampCurrent(ctx, source, input, rows, media);
   return { input, media, manifest };
 }
 export async function orderedCompletion(

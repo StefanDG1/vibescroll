@@ -1,5 +1,17 @@
 import { z } from "zod";
 import { orderedDiagnostics } from "../social/diagnostics.ts";
+import { preparationRuntimeSchema } from "../contracts/preparation-runtime.ts";
+const preparation = z.strictObject({
+  version: z.literal("personal-ordered-preparation-v1"),
+  generation: z.number().int().positive(),
+  inputBinding: z.string().regex(/^[a-f0-9]{64}$/),
+  binding: z.string().regex(/^[a-f0-9]{64}$/),
+  creationProvenance: z.strictObject({
+    version: z.literal("sandbox-create-receipt-v1"),
+    selection: preparationRuntimeSchema,
+    sandboxId: z.string().regex(/^vercel:[A-Za-z0-9_-]{1,128}$/),
+  }),
+});
 const common = {
   schemaVersion: z.literal("personal-ordered-media-v1"),
   generation: z.number().int().nonnegative(),
@@ -19,12 +31,14 @@ const file = {
 };
 export const personalOrderedMediaSchema = z.strictObject({
   ...common,
+  preparation: preparation.optional(),
   objects: z
     .array(
       z.strictObject({
         ...file,
         assetId: z.string().min(1).max(100),
         key: z.string().max(1024),
+        etag: z.string().min(1).max(1024).optional(),
       }),
     )
     .max(83),

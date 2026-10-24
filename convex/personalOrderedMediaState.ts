@@ -13,7 +13,9 @@ import {
   orderedInputHash,
   orderedPrepared,
   personalOrderedMediaSchema,
+  orderedPreparationBinding,
 } from "./lib/personalOrdered";
+import { personalPreparationPipeline } from "./lib/personalPreparation";
 import { socialHash } from "../packages/social/contracts";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import type { QueryCtx } from "./_generated/server";
@@ -76,7 +78,11 @@ export async function currentPersonalOrdered(
     (await orderedInputHash(source, bound.input, bound.rows))
   )
     return null;
-  return { source, ...bound };
+  const runtime = await personalPreparationPipeline(ctx);
+  const preparationBinding =
+    runtime &&
+    (await orderedPreparationBinding(source, bound.input, bound.rows, runtime));
+  return { source, ...bound, runtime, preparationBinding };
 }
 export const snapshot = internalQuery({
   args: { id: v.id("sources"), generation: v.number() },

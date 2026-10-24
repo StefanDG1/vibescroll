@@ -1,5 +1,7 @@
 # VibeScroller foundational document process
 
+Current candidate brief: [F055](idea-backlog.md#f055-verified-ordered-preparation-reuse-candidate-october-24) records exact media reuse under fresh preflight, not free model inference or a production pass.
+
 Current candidate brief: [F054](idea-backlog.md#f054-inspect-existing-examples-with-controlled-motion-october-24) records navigation/motion over existing examples, without new processing or outcome claims. F050 remains the latest narrow production receipt.
 
 Current candidate brief: [F053](idea-backlog.md#f053-gated-text-handoff-and-honest-creator-progress-october-24) distinguishes private text execution, actual host/media acceptance and current creator status. F050 remains the latest narrow production checkpoint.

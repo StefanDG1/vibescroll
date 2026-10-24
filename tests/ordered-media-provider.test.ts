@@ -68,6 +68,7 @@ function output() {
   };
 }
 let sandbox: {
+  creationProvenance?: unknown;
   kill: ReturnType<typeof vi.fn>;
   commands: { run: ReturnType<typeof vi.fn> };
   files: { write: ReturnType<typeof vi.fn>; read: ReturnType<typeof vi.fn> };
@@ -106,6 +107,31 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
+});
+it("passes the expected pinned runtime to actual sandbox creation and returns its original creation receipt", async () => {
+  const expectedRuntime = {
+    version: "preparation-runtime-v1" as const,
+    route: "static" as const,
+    kind: "media" as const,
+    source: {
+      type: "snapshot" as const,
+      snapshotId: "snap_ordered_fixture_12345",
+    },
+  };
+  const receipt = {
+    version: "sandbox-create-receipt-v1",
+    selection: expectedRuntime,
+    sandboxId: "vercel:ordered-fixture-1",
+  };
+  sandbox.creationProvenance = receipt;
+  const value = await prepareOrderedMedia(input, {
+    authorize: async () => {},
+    expectedRuntime,
+  });
+  expect(mocks.create).toHaveBeenCalledWith("media", 300, [], {
+    expectedRuntime,
+  });
+  expect(value.creationProvenance).toBe(receipt);
 });
 it.each([false, true])(
   "revoked authority stops a pending decoder and retains unknown termination: unknown=%s",

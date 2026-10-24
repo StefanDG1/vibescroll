@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: immutable ordered preparation reuse
+
+[ADR 132](adr/132-ordered-preparation-reuse.md) adds reuse only for newly stamped exact preparations under fresh preflight and reconciled cost/device authority. Preserve original receipt/expiry, old unstamped behavior, unknown holds and the provider-path package guard. No new inference, provider activation or observed saving is implied.
+
 ## October 24: existing examples with explicit motion controls
 
 [ADR 131](adr/131-public-example-navigation-and-motion.md) adds a static-by-default example chooser through existing routes. Desktop cycling requires explicit consent and current motion/visibility eligibility; alternatives remain usable without JavaScript. This does not process content or complete the remaining ScrollShow media/production acceptance.

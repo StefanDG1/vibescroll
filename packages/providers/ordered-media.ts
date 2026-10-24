@@ -6,6 +6,7 @@ import { orderedDecoder } from "../media/decoder-ordered";
 import { createJobSandbox } from "./sandbox";
 import { hardenSandbox } from "./isolation";
 import { signedObject } from "./storage";
+import type { PreparationRuntime } from "./preparation-runtime";
 
 const assetInput = z.strictObject({
   id: z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),
@@ -45,7 +46,11 @@ export class OrderedMediaPreparationError extends Error {
 /** Private objects only. Source URLs and supplier credentials never enter the VM. */
 export async function prepareOrderedMedia(
   value: unknown,
-  options: { authorize: () => Promise<void>; signal?: AbortSignal },
+  options: {
+    authorize: () => Promise<void>;
+    signal?: AbortSignal;
+    expectedRuntime?: PreparationRuntime;
+  },
 ) {
   const inputs = orderedMediaInput.parse(value);
   ensure(
@@ -73,7 +78,12 @@ export async function prepareOrderedMedia(
     signal.throwIfAborted();
   };
   await authorize();
-  const sandbox = await createJobSandbox("media", 300).catch(() => {
+  const sandbox = await createJobSandbox(
+    "media",
+    300,
+    [],
+    options.expectedRuntime ? { expectedRuntime: options.expectedRuntime } : {},
+  ).catch(() => {
     throw new OrderedMediaPreparationError(undefined);
   });
   let killed = false;
@@ -273,6 +283,9 @@ export async function prepareOrderedMedia(
       manifest,
       files,
       computeSeconds: Math.min(300, Math.ceil((Date.now() - started) / 1000)),
+      ...(sandbox.creationProvenance
+        ? { creationProvenance: sandbox.creationProvenance }
+        : {}),
     };
   } catch {
     try {

@@ -13,6 +13,8 @@ import {
 } from "../packages/runner/personal-analysis.mjs";
 import { checkOrderedAsr } from "../packages/runner/personal-ordered-preflight.mjs";
 import { orderedRevisionHash } from "../packages/social/contracts";
+import { reusablePersonalOrderedPreparation } from "../convex/lib/personalOrdered";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 const mocks = vi.hoisted(() => ({
   decode: vi.fn(),
   metadata: vi.fn(),
@@ -40,12 +42,18 @@ afterEach(() => {
   mocks.metadata.mockReset();
   mocks.google.mockReset();
 });
-async function setup(kind: "image" | "video" = "image", count = 1) {
+async function setup(
+  kind: "image" | "video" = "image",
+  count = 1,
+  stamped = false,
+) {
   vi.useFakeTimers();
   vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", '["ordered-owner"]');
   vi.stubEnv("MEDIA_VERIFIED", "true");
   vi.stubEnv("ORDERED_MEDIA_VERIFIED", "true");
   vi.stubEnv("SANDBOX_CREDITS_PER_SECOND", "0.01");
+  if (stamped)
+    vi.stubEnv("VERCEL_MEDIA_SNAPSHOT", "snap_ordered_fixture_12345");
   const t = convexTest(schema, modules);
   rateLimiterTest.register(t);
   workflowTest.register(t);
@@ -125,10 +133,10 @@ async function setup(kind: "image" | "video" = "image", count = 1) {
       inputProtocols: ["ordered-personal-v1"],
     });
   await hello();
-  const approve = () =>
+  const approve = async () =>
     owner.mutation(api.personalAnalysis.approve, {
       id,
-      generation: 0,
+      generation: (await t.run((ctx) => ctx.db.get(id)))!.generation,
       deviceId: device,
       model: "synthetic-image-model",
       effort: "high",
@@ -221,6 +229,15 @@ async function setup(kind: "image" | "video" = "image", count = 1) {
     });
     return {
       computeSeconds: 2,
+      ...(options.expectedRuntime
+        ? {
+            creationProvenance: {
+              version: "sandbox-create-receipt-v1",
+              selection: options.expectedRuntime,
+              sandboxId: "vercel:ordered-fixture-1",
+            },
+          }
+        : {}),
       files,
       manifest: {
         schemaVersion: "ordered-decoder-v1",
@@ -478,6 +495,363 @@ async function prepared(s: Awaited<ReturnType<typeof setup>>) {
   });
   return { preflight, job: await s.poll() };
 }
+async function failedPrepared(stamped = true) {
+  const s = await setup("image", 1, stamped),
+    p = await prepared(s);
+  await s.dispatch({
+    operation: "fail",
+    id: s.id,
+    generation: p.job.generation,
+    claimToken: p.job.claimToken,
+  });
+  return s;
+}
+it("reuses original stamped preparation after explicit failure review and fresh preflight without another compute reservation", async () => {
+  const s = await failedPrepared();
+  const original = (await s.t.run((ctx) => ctx.db.get(s.id)))!.personalMedia;
+  expect(original.preparation).toMatchObject({
+    version: "personal-ordered-preparation-v1",
+    generation: 1,
+    creationProvenance: { sandboxId: "vercel:ordered-fixture-1" },
+  });
+  for (const generation of [2, 3]) {
+    await s.approve();
+    const pending = (await s.t.run((ctx) => ctx.db.get(s.id)))!;
+    expect(pending.personalMedia).toMatchObject({
+      generation,
+      preparedAt: original.preparedAt,
+      expiresAt: original.expiresAt,
+      preparation: original.preparation,
+    });
+    expect(pending.personalAnalysis?.ordered?.phase).toBe("preflight");
+    for (const asset of await s.t.run((ctx) =>
+      ctx.db.query("assets").collect(),
+    ))
+      expect(asset.sourceGeneration).toBe(generation);
+    const preflight = await s.poll();
+    expect(preflight).not.toHaveProperty("media");
+    const ack = {
+      operation: "ordered_preflight",
+      id: s.id,
+      generation,
+      claimToken: preflight.claimToken,
+      profileBinding: s.profileBinding,
+      capabilities: s.caps,
+      localAsrReady: true,
+    };
+    await expect(s.dispatch({ ...ack, localAsrReady: false })).rejects.toThrow(
+      "APPROVAL_STALE",
+    );
+    await processPersonalJob(preflight, {
+      client: s.client,
+      request: s.request,
+    });
+    expect(await s.dispatch(ack)).toEqual({ accepted: true, deferred: true });
+    const analysis = await s.poll();
+    expect(analysis.phase).toBe("analysis");
+    expect(await s.dispatch(ack)).toEqual({ accepted: true, deferred: true });
+    expect(
+      (await s.t.run((ctx) => ctx.db.get(s.device)))?.activePersonalSource,
+    ).toBe(s.id);
+    if (generation === 2)
+      await s.dispatch({
+        operation: "fail",
+        id: s.id,
+        generation,
+        claimToken: analysis.claimToken,
+      });
+    else
+      await processPersonalJob(analysis, {
+        client: s.client,
+        request: s.request,
+        fetchImpl: s.fetchImpl,
+      });
+  }
+  expect(mocks.decode).toHaveBeenCalledTimes(1);
+  const final = (await s.t.run((ctx) => ctx.db.get(s.id)))!;
+  expect(final.state).toBe("ready");
+  expect(final.personalMedia.preparation).toEqual(original.preparation);
+  expect(
+    (await s.t.run((ctx) => ctx.db.query("reservations").collect())).filter(
+      (r) => r.key.startsWith(`personal-media:${s.id}:`),
+    ),
+  ).toMatchObject([
+    {
+      key: `personal-media:${s.id}:1`,
+      state: "settled",
+      dispatchedAt: expect.any(Number),
+    },
+  ]);
+  expect(mocks.google).not.toHaveBeenCalled();
+});
+it("reuses prepared media after unclaimed analysis approval expiry but requires reconciliation of an expired active model claim", async () => {
+  const s = await setup("image", 1, true);
+  await s.approve();
+  const preflight = await s.poll();
+  await processPersonalJob(preflight, { client: s.client, request: s.request });
+  await s.t.action(internal.personalOrderedMedia.prepare, {
+    id: s.id,
+    generation: 1,
+  });
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.id))!;
+    await ctx.db.patch(s.id, {
+      personalAnalysis: {
+        ...source.personalAnalysis!,
+        expiresAt: Date.now() - 1,
+      },
+    });
+  });
+  await s.t.mutation(internal.personalMediaState.expire, {
+    id: s.id,
+    generation: 1,
+  });
+  await s.approve();
+  const retry = await s.poll();
+  await processPersonalJob(retry, { client: s.client, request: s.request });
+  const analysis = await s.poll();
+  vi.advanceTimersByTime(40001);
+  await s.dispatch({ operation: "poll" });
+  await expect(s.approve()).rejects.toThrow("COST_RECONCILIATION_REQUIRED");
+  await s.dispatch({
+    operation: "fail",
+    id: s.id,
+    generation: analysis.generation,
+    claimToken: analysis.claimToken,
+  });
+  await s.hello();
+  await expect(s.approve()).resolves.toBeNull();
+  expect(mocks.decode).toHaveBeenCalledTimes(1);
+});
+it("refuses a retained-object rewrite after reuse approval without reserving a new paid preparation", async () => {
+  const s = await failedPrepared();
+  await s.approve();
+  const preflight = await s.poll();
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.id))!;
+    const object = source.personalMedia.objects[0];
+    await ctx.db.patch(ctx.db.normalizeId("assets", object.assetId)!, {
+      etag: "rewritten-after-approval",
+    });
+  });
+  await expect(
+    processPersonalJob(preflight, { client: s.client, request: s.request }),
+  ).rejects.toThrow("PERSONAL_ORDERED_EVIDENCE_CHANGED");
+  const reservations = await s.t.run((ctx) =>
+    ctx.db.query("reservations").collect(),
+  );
+  expect(
+    reservations.filter((row) => row.key.startsWith(`personal-media:${s.id}:`)),
+  ).toHaveLength(1);
+  expect(mocks.decode).toHaveBeenCalledTimes(1);
+  expect(s.official.structured).not.toHaveBeenCalled();
+});
+it("retains exact reused media after a reconciled fresh preflight refusal and requires another explicit approval", async () => {
+  const s = await failedPrepared();
+  const original = (await s.t.run((ctx) => ctx.db.get(s.id)))!.personalMedia;
+  await s.approve();
+  const refused = await s.poll();
+  await s.dispatch({
+    operation: "fail",
+    id: s.id,
+    generation: refused.generation,
+    claimToken: refused.claimToken,
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.id)))!.personalAnalysis,
+  ).toMatchObject({ state: "failed", ordered: { phase: "preflight" } });
+  await s.approve();
+  const fresh = await s.poll();
+  expect(fresh.phase).toBe("preflight");
+  expect(fresh.generation).toBe(3);
+  expect(fresh.claimToken).not.toBe(refused.claimToken);
+  await processPersonalJob(fresh, { client: s.client, request: s.request });
+  const analysis = await s.poll();
+  expect(analysis.phase).toBe("analysis");
+  await processPersonalJob(analysis, {
+    client: s.client,
+    request: s.request,
+    fetchImpl: s.fetchImpl,
+  });
+  const source = (await s.t.run((ctx) => ctx.db.get(s.id)))!;
+  expect(source.state).toBe("ready");
+  expect(source.personalMedia.preparation).toEqual(original.preparation);
+  expect(source.personalMedia.expiresAt).toBe(original.expiresAt);
+  expect(mocks.decode).toHaveBeenCalledTimes(1);
+  expect(
+    (await s.t.run((ctx) => ctx.db.query("reservations").collect())).filter(
+      (r) => r.key.startsWith("personal-media:"),
+    ),
+  ).toHaveLength(1);
+});
+it("does not treat an unstamped terminal preflight copy as reusable preparation", async () => {
+  const s = await failedPrepared();
+  await s.approve();
+  const preflight = await s.poll();
+  await s.dispatch({
+    operation: "fail",
+    id: s.id,
+    generation: preflight.generation,
+    claimToken: preflight.claimToken,
+  });
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.id))!,
+      job = source.personalAnalysis;
+    if (!job || job.executor === "work_cloud" || !job.ordered)
+      throw Error("Expected ordered fixture");
+    const { preparation: _preparation, ...legacy } = source.personalMedia;
+    await ctx.db.patch(s.id, {
+      personalMedia: legacy,
+      personalAnalysis: {
+        ...job,
+        ordered: { ...job.ordered, preparedHash: sha(canonicalJson(legacy)) },
+      },
+    });
+  });
+  expect(
+    await s.t.run(async (ctx) =>
+      reusablePersonalOrderedPreparation(ctx, (await ctx.db.get(s.id))!),
+    ),
+  ).toBeNull();
+  await s.approve();
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.id)))?.personalMedia,
+  ).toBeUndefined();
+});
+it.each([
+  "raw-etag",
+  "prepared-etag",
+  "order",
+  "manifest",
+  "rights",
+  "expiry",
+  "runtime",
+  "origin-ledger",
+  "unstamped",
+  "canceled",
+])("does not reuse %s preparation authority", async (change) => {
+  const s = await failedPrepared();
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.id))!,
+      media = source.personalMedia;
+    if (change === "raw-etag") {
+      const row = (await ctx.db
+        .query("assets")
+        .withIndex("by_key", (q) => q.eq("key", s.key))
+        .unique())!;
+      await ctx.db.patch(row._id, { etag: "rewritten-raw" });
+    }
+    if (change === "prepared-etag")
+      await ctx.db.patch(
+        ctx.db.normalizeId("assets", media.objects[0].assetId)!,
+        { etag: "rewritten-prepared" },
+      );
+    if (change === "order")
+      await ctx.db.patch(s.id, {
+        personalOrderedInput: {
+          ...source.personalOrderedInput,
+          assets: source.personalOrderedInput.assets.map((a: any) => ({
+            ...a,
+            index: a.index + 1,
+          })),
+        },
+      });
+    if (change === "manifest")
+      await ctx.db.patch(s.id, {
+        personalMedia: {
+          ...media,
+          warnings: [...media.warnings, "Changed preparation"],
+        },
+      });
+    if (change === "rights")
+      await ctx.db.patch(s.id, { rightsAttested: false });
+    if (change === "expiry")
+      await ctx.db.patch(s.id, {
+        personalMedia: { ...media, expiresAt: Date.now() - 1 },
+      });
+    if (change === "origin-ledger") {
+      const row = (await ctx.db.query("reservations").collect()).find(
+        (r) => r.key === `personal-media:${s.id}:1`,
+      )!;
+      await ctx.db.patch(row._id, { dispatchedAt: undefined });
+    }
+    if (change === "unstamped") {
+      const { preparation: _stamp, ...legacy } = media;
+      const job = source.personalAnalysis;
+      if (!job || job.executor === "work_cloud" || !job.ordered)
+        throw Error("Expected paired ordered fixture");
+      await ctx.db.patch(s.id, {
+        personalMedia: legacy,
+        personalAnalysis: {
+          ...job,
+          ordered: {
+            ...job.ordered,
+            preparedHash: sha(JSON.stringify(legacy)),
+          },
+        },
+      });
+    }
+    if (change === "canceled")
+      await ctx.db.patch(s.id, {
+        personalAnalysis: { ...source.personalAnalysis!, state: "canceled" },
+      });
+  });
+  if (change === "runtime")
+    vi.stubEnv("VERCEL_MEDIA_SNAPSHOT", "snap_changed_fixture_12345");
+  await expect(
+    s.t.run(async (ctx) =>
+      reusablePersonalOrderedPreparation(ctx, (await ctx.db.get(s.id))!),
+    ),
+  ).resolves.toBeNull();
+});
+it("preserves ordinary unstamped preparation and refuses older active compute or an incomplete bounded ledger", async () => {
+  const s = await failedPrepared(false);
+  await s.approve();
+  const preflight = await s.poll();
+  await processPersonalJob(preflight, { client: s.client, request: s.request });
+  await s.t.action(internal.personalOrderedMedia.prepare, {
+    id: s.id,
+    generation: preflight.generation,
+  });
+  expect(mocks.decode).toHaveBeenCalledTimes(2);
+  const current = (await s.t.run((ctx) => ctx.db.get(s.id)))!;
+  expect(current.personalMedia.preparation).toBeUndefined();
+  const t = await failedPrepared();
+  await t.t.run(async (ctx) => {
+    const origin = (await ctx.db.query("reservations").collect()).find((r) =>
+      r.key.startsWith("personal-media:"),
+    )!;
+    const { _id, _creationTime, ...row } = origin;
+    await ctx.db.insert("reservations", {
+      ...row,
+      key: `personal-media:${t.id}:0`,
+      state: "active",
+    });
+  });
+  await expect(t.approve()).rejects.toThrow("COST_RECONCILIATION_REQUIRED");
+  for (const state of ["expired", "released", "unknown"]) {
+    await t.t.run(async (ctx) => {
+      const old = (await ctx.db.query("reservations").collect()).find(
+        (r) => r.key === `personal-media:${t.id}:0`,
+      )!;
+      await ctx.db.patch(old._id, { state, expiresAt: Date.now() - 1 });
+    });
+    await expect(t.approve()).rejects.toThrow("COST_RECONCILIATION_REQUIRED");
+  }
+  await t.t.run(async (ctx) => {
+    const rows = await ctx.db.query("reservations").collect(),
+      origin = rows.find((r) => r.key === `personal-media:${t.id}:1`)!;
+    for (const r of rows)
+      if (r.key === `personal-media:${t.id}:0`) await ctx.db.delete(r._id);
+    const { _id, _creationTime, ...row } = origin;
+    for (let n = 2; n <= 101; n++)
+      await ctx.db.insert("reservations", {
+        ...row,
+        key: `personal-media:${t.id}:${n}`,
+      });
+  });
+  await expect(t.approve()).rejects.toThrow("COST_RECONCILIATION_REQUIRED");
+});
 it("late preflight callbacks cannot clear a different active source claim", async () => {
   const s = await setup();
   await s.approve();

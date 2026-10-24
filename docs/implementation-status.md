@@ -1,5 +1,9 @@
 # October 22 launch implementation candidate
 
+## Ordered preparation reuse candidate, October 24
+
+[ADR 132](adr/132-ordered-preparation-reuse.md) and [the receipt](operations/evidence/launch-20261024-ordered-preparation-reuse.json) record optional immutable provenance/ETags, fresh retry preflight, settled-compute authority, generation-safe reuse and the shared native contract. The whole offline check passed 1,533 tests with three hosted skips, 314 documents/twelve snapshots, zero-warning lint, root/Convex/app types and both builds. Actual native packaging tests passed without expanding its provider allowlist. Import, package-path and fixture failures remain recorded. Forwarding to separately tested parent69dc577 changes no ordered code; exact combined-head CI remains pending. New hosted/provider requests and purchases were zero; original US$3 cap/unknown holds and production backend hold remain.
+
 ## Public example controls candidate, October 24
 
 [ADR 131](adr/131-public-example-navigation-and-motion.md) adds native navigation to existing examples/Help, static by default with explicit desktop cycling and motion/visibility/focus controls. It creates no analysis or network request. Existing synthetic, recorded and instructional labels remain. The complete offline check passed 1,530 tests with three hosted skips, 315 documents/twelve snapshots, all types, zero-warning lint and both builds. [The receipt](operations/evidence/launch-20261024-public-example-controls.json) preserves the fixed test callback typing failure and pending native-browser/production acceptance. Parent PR 144 passed exact-head CI 40060302528 at 9c25514, including dependency audit. Source/pricing/provider gates and the same US$3 budget/unknown holds remain unchanged.

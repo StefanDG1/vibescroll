@@ -1,5 +1,11 @@
 # Foundational document change log
 
+## F055: verified ordered preparation reuse candidate, October 24
+
+[ADR 132](../adr/132-ordered-preparation-reuse.md) preserves original preparation provenance and expiry while allowing an eligible failed analysis to reuse exact retained media under fresh account/model/ASR preflight. Old unstamped, canceled and unknown work is not blessed. The runtime package keeps its provider-code exclusion through a shared pure contract. No new queue, inference or hosted activation follows.
+
+Source: authorized complete launch recovery scope and code review. All four briefs updated together. Counterpoint: invalid or missing provenance must require ordinary reviewed preparation; do not market every retry as free. Native/provider/independent production acceptance remains distinct.
+
 ## F054: inspect existing examples with controlled motion, October 24
 
 [ADR 131](../adr/131-public-example-navigation-and-motion.md) adds navigation through existing evidence, project-decision, founder-capture, Library and Help routes. Each keeps its synthetic, recorded or instructional label. The selector starts no processing. Optional desktop cycling is explicit, pauses on focus and respects visibility and reduced motion; server-rendered links remain available without JavaScript.

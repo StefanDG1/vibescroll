@@ -5,12 +5,20 @@ const hooks = vi.hoisted(() => ({
   values: [] as any[],
   index: 0,
   real: false,
+  mounted: false,
+  cleanup: null as null | (() => void),
 }));
 vi.mock("react", async (original) => {
   const real = await original<typeof import("react")>();
   return {
     ...real,
-    useEffect: () => {},
+    useEffect: (effect: () => void | (() => void)) => {
+      if (hooks.real) return;
+      if (!hooks.mounted) {
+        hooks.cleanup = effect() ?? null;
+        hooks.mounted = true;
+      }
+    },
     useRef: (value: unknown) => {
       if (hooks.real) return real.useRef(value);
       const index = hooks.index++;
@@ -40,6 +48,9 @@ import {
 import { normalizeSubscriptionCapabilities } from "../../packages/runner/subscription-capabilities.mjs";
 type Node = ReactElement<Record<string, any>>;
 afterEach(() => {
+  hooks.cleanup?.();
+  hooks.cleanup = null;
+  hooks.mounted = false;
   hooks.values = [];
   hooks.index = 0;
   hooks.real = false;
@@ -874,4 +885,262 @@ it("source history explicitly selects its workload and opens only a chosen resul
   expect(viewResult).not.toHaveBeenCalled();
   await h.click("View private result version 1");
   expect(viewResult).toHaveBeenCalledExactlyOnceWith("history-run");
+});
+function variantHarness() {
+  const h = harness();
+  h.props.privateLibrary = true;
+  h.props.privateVariantSelection = {
+    schemaVersion: "private-source-variant-v1",
+    runId: "earned-run" as any,
+    version: 4,
+    outputHash: "c".repeat(64),
+    insightIds: ["idea-a", "idea-z"],
+  };
+  h.props.privateVariantReadUntil = Date.now() + 60000;
+  const base = h.calls.getMockImplementation()!;
+  h.calls.mockImplementation(async (op, args): Promise<any> => {
+    const value = await base(op, args);
+    if (op === "localTaskCapabilities")
+      return value.map((item: any) => ({
+        ...item,
+        admittedRuntime: {
+          value: {
+            schemaVersion: "local-task-runtime-v1",
+            features: [
+              "source_reanalysis_text_v1",
+              "project_private_variant_v1",
+            ],
+          },
+          hash: "d".repeat(64),
+          profileBinding: "e".repeat(64),
+          expiresAt: Date.now() + 300000,
+          sessionExpiresAt: Date.now() + 3600000,
+        },
+      }));
+    if (op === "localTaskQuote")
+      return {
+        ...value,
+        payload: {
+          ...value.payload,
+          privateVariantSelection: args.privateVariantSelection,
+        },
+      };
+    return value;
+  });
+  return h;
+}
+it("quotes and approves private variant references through existing project controls without extra brief or client result text", async () => {
+  const h = variantHarness();
+  await h.choose();
+  expect(textarea(h.view())).toBeUndefined();
+  await h.click("Review own-subscription quote");
+  consentToQuote(h);
+  await h.click("Approve on my paired computer");
+  for (const [op, args] of h.calls.mock.calls)
+    if (op === "localTaskQuote" || op === "localTaskApprove") {
+      expect(args).toMatchObject({
+        workload: "project_evaluation",
+        sourceId: "source",
+        repositoryIds: ["repo"],
+        privateVariantSelection: h.props.privateVariantSelection,
+      });
+      for (const field of [
+        "members",
+        "privateEvaluationBrief",
+        "privateSourceBrief",
+        "summary",
+        "claim",
+        "interpretation",
+      ])
+        expect(args).not.toHaveProperty(field);
+    }
+});
+it("separates private variant keys/history and rejects a changed quote echo", async () => {
+  const h = variantHarness();
+  const originalKey = OwnPlanTaskControls(h.props).key;
+  expect(
+    OwnPlanTaskControls({
+      ...h.props,
+      privateVariantSelection: {
+        ...h.props.privateVariantSelection!,
+        insightIds: ["idea-a"],
+      },
+    }).key,
+  ).not.toBe(originalKey);
+  const base = h.calls.getMockImplementation()!;
+  h.calls.mockImplementation(async (op, args): Promise<any> =>
+    op === "localTaskResume"
+      ? { items: [], next: null }
+      : op === "localTaskQuote"
+        ? {
+            ...(await base(op, args)),
+            payload: {
+              privateVariantSelection: {
+                ...args.privateVariantSelection,
+                insightIds: ["other"],
+              },
+            },
+          }
+        : base(op, args),
+  );
+  await h.click("Find existing tasks");
+  expect(h.calls).toHaveBeenCalledWith("localTaskResume", {
+    organizationId: "org",
+    sourceId: "source",
+    cursor: null,
+    privateVariantSelection: h.props.privateVariantSelection,
+  });
+  await h.choose();
+  await h.click("Review own-subscription quote");
+  expect(button(h.view(), "Approve on my paired computer")).toBeUndefined();
+});
+it("requires the private-project runtime feature and checks result rights expiry again at approval", async () => {
+  const h = variantHarness();
+  const base = h.calls.getMockImplementation()!;
+  h.calls.mockImplementation(async (op, args): Promise<any> => {
+    const value = await base(op, args);
+    return op === "localTaskCapabilities"
+      ? value.map((item: any) => ({
+          ...item,
+          admittedRuntime: {
+            ...item.admittedRuntime,
+            value: {
+              ...item.admittedRuntime.value,
+              features: ["source_reanalysis_text_v1"],
+            },
+          },
+        }))
+      : value;
+  });
+  await h.choose();
+  expect(button(h.view(), "Review own-subscription quote").props.disabled).toBe(
+    true,
+  );
+  h.calls.mockImplementation(base);
+  await h.choose();
+  await h.click("Review own-subscription quote");
+  consentToQuote(h);
+  const approve = button(h.view(), "Approve on my paired computer");
+  vi.spyOn(Date, "now").mockReturnValue(h.props.privateVariantReadUntil! + 1);
+  approve.props.onClick();
+  await flush();
+  expect(h.calls.mock.calls.some(([op]) => op === "localTaskApprove")).toBe(
+    false,
+  );
+});
+it("labels inherited private-variant plans without allowing a caller-selected variant or extra brief", async () => {
+  const h = harness();
+  h.props.privateLibrary = true;
+  delete h.props.source;
+  const base = h.calls.getMockImplementation()!;
+  h.calls.mockImplementation(async (op, args): Promise<any> => {
+    const value = await base(op, args);
+    return op === "localTaskCapabilities"
+      ? value.map((item: any) => ({
+          ...item,
+          admittedRuntime: {
+            value: {
+              schemaVersion: "local-task-runtime-v1",
+              features: ["project_private_variant_v1"],
+            },
+            hash: "d".repeat(64),
+            profileBinding: "e".repeat(64),
+            expiresAt: Date.now() + 300000,
+            sessionExpiresAt: Date.now() + 3600000,
+          },
+        }))
+      : value;
+  });
+  h.props.proposal = {
+    id: "proposal",
+    title: "Private variant proposal",
+    version: 3,
+    review: "accepted",
+    privateEvaluationOrigin: {
+      schemaVersion: "2.0.0",
+      kind: "private_source_variant",
+      ownerId: "owner" as any,
+      sourceId: "source" as any,
+      runId: "earned-run" as any,
+      version: 4,
+      outputHash: "a".repeat(64),
+      baseHash: "b".repeat(64),
+      briefHash: null,
+      model: "actual-only",
+      effort: "xhigh",
+      insightIds: ["idea"],
+    },
+  };
+  await h.click("Load account choices");
+  h.select(0, "owned-device");
+  h.select(1, "actual-only");
+  h.select(2, "xhigh");
+  expect(text(h.view())).toContain("Private source result version");
+  expect(textarea(h.view())).toBeUndefined();
+  await h.click("Review own-subscription quote");
+  consentToQuote(h);
+  await h.click("Approve on my paired computer");
+  for (const [op, args] of h.calls.mock.calls)
+    if (op === "localTaskQuote" || op === "localTaskApprove") {
+      expect(args.workload).toBe("plan_draft");
+      expect(args).not.toHaveProperty("privateVariantSelection");
+      expect(args).not.toHaveProperty("privateEvaluationBrief");
+    }
+});
+it("fences a captured variant approval handler and pending quote after controls unmount on a changed selection", async () => {
+  const h = variantHarness();
+  await h.choose();
+  await h.click("Review own-subscription quote");
+  consentToQuote(h);
+  const staleApprove = button(h.view(), "Approve on my paired computer");
+  hooks.cleanup!();
+  staleApprove.props.onClick();
+  await flush();
+  expect(h.calls.mock.calls.some(([op]) => op === "localTaskApprove")).toBe(
+    false,
+  );
+});
+it("ignores a pending private-variant quote after its selection controls unmount", async () => {
+  const h = variantHarness();
+  await h.choose();
+  const base = h.calls.getMockImplementation()!;
+  let release: (() => void) | undefined;
+  h.calls.mockImplementation(async (op, args): Promise<any> => {
+    if (op === "localTaskQuote")
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+    return base(op, args);
+  });
+  button(h.view(), "Review own-subscription quote").props.onClick();
+  await flush();
+  hooks.cleanup!();
+  release!();
+  await flush();
+  expect(button(h.view(), "Approve on my paired computer")).toBeUndefined();
+});
+it("compares private quote selection fields independently of object property order", async () => {
+  const h = variantHarness();
+  const base = h.calls.getMockImplementation()!;
+  h.calls.mockImplementation(async (op, args): Promise<any> => {
+    const value = await base(op, args);
+    if (op !== "localTaskQuote") return value;
+    const selection = args.privateVariantSelection;
+    return {
+      ...value,
+      payload: {
+        ...value.payload,
+        privateVariantSelection: {
+          insightIds: selection.insightIds,
+          outputHash: selection.outputHash,
+          version: selection.version,
+          runId: selection.runId,
+          schemaVersion: selection.schemaVersion,
+        },
+      },
+    };
+  });
+  await h.choose();
+  await h.click("Review own-subscription quote");
+  expect(button(h.view(), "Approve on my paired computer")).toBeDefined();
 });

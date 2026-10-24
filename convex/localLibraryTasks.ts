@@ -1,3 +1,11 @@
+import {
+  privateVariantSelectionValue,
+  type PrivateVariantSelection,
+} from "../packages/contracts/private-project-variant";
+import {
+  quotePrivateVariantTask,
+  variantOrigin,
+} from "./lib/privateProjectVariant";
 import { query, type QueryCtx } from "./_generated/server";
 import { mutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
@@ -25,6 +33,7 @@ export const resume = query({
     sourceId: v.optional(v.id("sources")),
     proposalId: v.optional(v.id("proposals")),
     cursor: v.union(v.string(), v.null()),
+    privateVariantSelection: v.optional(privateVariantSelectionValue),
     workload: v.optional(
       v.union(
         v.literal("project_evaluation"),
@@ -40,7 +49,9 @@ export const resume = query({
       "Choose one source evaluation or proposal plan history.",
     );
     const page =
-      a.workload === "source_reanalysis_text" && a.sourceId
+      (a.workload === "source_reanalysis_text" ||
+        !!a.privateVariantSelection) &&
+      a.sourceId
         ? await ctx.db
             .query("localLibraryRuns")
             .withIndex("by_source_reanalysis", (q) =>
@@ -63,8 +74,13 @@ export const resume = query({
           (run) =>
             run.actor === actor._id &&
             run.task &&
+            (a.privateVariantSelection
+              ? run.task.schemaVersion === "3.0.0" &&
+                canonicalJson(run.task.privateVariantSelection) ===
+                  canonicalJson(a.privateVariantSelection)
+              : run.task.schemaVersion !== "3.0.0" || !!a.proposalId) &&
             (a.proposalId
-              ? run.task.schemaVersion === "1.0.0" &&
+              ? run.task.schemaVersion !== "2.0.0" &&
                 run.task.proposal?.id === a.proposalId
               : run.task.workload === (a.workload ?? "project_evaluation") &&
                 run.sources.includes(a.sourceId!)),
@@ -81,16 +97,16 @@ export const resume = query({
           effort: run.effort,
           deadline: run.task!.deadline,
           proposalIds:
-            run.task!.schemaVersion === "1.0.0" ? run.task!.proposalIds : [],
+            run.task!.schemaVersion !== "2.0.0" ? run.task!.proposalIds : [],
           evaluationIds:
-            run.task!.schemaVersion === "1.0.0" ? run.task!.evaluationIds : [],
+            run.task!.schemaVersion !== "2.0.0" ? run.task!.evaluationIds : [],
           ...(run.task!.schemaVersion === "2.0.0"
             ? {
                 privateVersion: run.sourceTaskResult?.version ?? null,
                 resultAvailable: !!run.sourceTaskResult,
               }
             : {}),
-          ...(run.task!.schemaVersion === "1.0.0" &&
+          ...(run.task!.schemaVersion !== "2.0.0" &&
           run.task!.privateEvaluationOrigin
             ? { privateEvaluationOrigin: run.task!.privateEvaluationOrigin }
             : {}),
@@ -118,6 +134,7 @@ export const localTaskArgs = {
   proposalId: v.optional(v.id("proposals")),
   proposalVersion: v.optional(v.number()),
   privateEvaluationBrief: v.optional(v.string()),
+  privateVariantSelection: v.optional(privateVariantSelectionValue),
   privateSourceBrief: v.optional(v.string()),
   expectedPrivateVersion: v.optional(v.number()),
 };
@@ -134,6 +151,7 @@ type Selection = {
   proposalId?: Id<"proposals">;
   proposalVersion?: number;
   privateEvaluationBrief?: string;
+  privateVariantSelection?: PrivateVariantSelection;
 };
 
 export async function localTaskQuote(
@@ -141,6 +159,12 @@ export async function localTaskQuote(
   a: Selection,
   expiresAt: number,
 ) {
+  const inherited = a.proposalId ? await ctx.db.get(a.proposalId) : null;
+  if (
+    a.privateVariantSelection ||
+    variantOrigin(inherited?.privateEvaluationOrigin)
+  )
+    return quotePrivateVariantTask(ctx, a, expiresAt);
   ensure(
     !a.members ||
       (a.members.length > 0 &&
@@ -419,6 +443,12 @@ export const quote = query({
       "INVALID_INPUT",
       "Source reanalysis context belongs to its own task.",
     );
+    ensure(
+      a.workload !== "source_reanalysis_text" ||
+        a.privateVariantSelection === undefined,
+      "INVALID_INPUT",
+      "A source text task cannot select a project variant.",
+    );
     const expiresAt = Date.now() + 300000,
       q =
         a.workload === "source_reanalysis_text"
@@ -447,8 +477,14 @@ export const approve = mutation({
     maxInferenceCredits: v.literal(0),
   },
   handler: async (ctx, a) => {
-    if (a.workload === "source_reanalysis_text")
+    if (a.workload === "source_reanalysis_text") {
+      ensure(
+        a.privateVariantSelection === undefined,
+        "INVALID_INPUT",
+        "A source text task cannot select a project variant.",
+      );
       return approveSourceTask(ctx, a);
+    }
     ensure(
       a.privateSourceBrief === undefined &&
         a.expectedPrivateVersion === undefined,
@@ -605,18 +641,18 @@ export const status = query({
       effort: r!.effort,
       deadline: r!.task!.deadline,
       evaluationIds:
-        r!.task!.schemaVersion === "1.0.0" ? r!.task!.evaluationIds : [],
+        r!.task!.schemaVersion !== "2.0.0" ? r!.task!.evaluationIds : [],
       ...(r!.task!.schemaVersion === "2.0.0"
         ? {
             privateVersion: r!.sourceTaskResult?.version ?? null,
             resultAvailable: !!r!.sourceTaskResult,
           }
         : {}),
-      ...(r!.task!.schemaVersion === "1.0.0" && r!.task!.privateEvaluationOrigin
+      ...(r!.task!.schemaVersion !== "2.0.0" && r!.task!.privateEvaluationOrigin
         ? { privateEvaluationOrigin: r!.task!.privateEvaluationOrigin }
         : {}),
       proposalIds:
-        r!.task!.schemaVersion === "1.0.0" ? r!.task!.proposalIds : [],
+        r!.task!.schemaVersion !== "2.0.0" ? r!.task!.proposalIds : [],
       maxInferenceCredits: 0,
     };
   },
@@ -638,7 +674,7 @@ export const cancel = mutation({
         leaseGeneration: run!.task!.leaseGeneration + 1,
         leaseToken: undefined,
         leaseUntil: 0,
-        ...(run!.task!.schemaVersion === "1.0.0"
+        ...(run!.task!.schemaVersion !== "2.0.0"
           ? { inspected: undefined, inspectionManifest: undefined }
           : {}),
       },
@@ -646,7 +682,7 @@ export const cancel = mutation({
     if (run!.state === "queued") await releaseSourcePointer(ctx, run!);
     if (
       run!.state === "queued" &&
-      run!.task!.schemaVersion === "1.0.0" &&
+      run!.task!.schemaVersion !== "2.0.0" &&
       run!.task!.proposal
     ) {
       const p = await ctx.db.get(run!.task!.proposal.id);
@@ -678,7 +714,7 @@ export const reconcile = mutation({
       "Wait for the original task deadline and review its uncertain usage before granting new work.",
     );
     await releaseSourcePointer(ctx, run!);
-    if (run!.task!.schemaVersion === "1.0.0" && run!.task!.proposal) {
+    if (run!.task!.schemaVersion !== "2.0.0" && run!.task!.proposal) {
       const p = await ctx.db.get(run!.task!.proposal.id);
       if (p?.localPlanRunId === run!._id)
         await ctx.db.patch(p._id, { localPlanRunId: undefined });
@@ -690,7 +726,7 @@ export const reconcile = mutation({
         ...run!.task!,
         leaseUntil: 0,
         leaseToken: undefined,
-        ...(run!.task!.schemaVersion === "1.0.0"
+        ...(run!.task!.schemaVersion !== "2.0.0"
           ? { inspected: undefined, inspectionManifest: undefined }
           : {}),
       },

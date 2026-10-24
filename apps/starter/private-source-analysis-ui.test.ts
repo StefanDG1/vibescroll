@@ -503,3 +503,126 @@ it("rejects a private result whose output processing run differs from its proven
   expect(text(h.view())).not.toContain("Private summary");
   expect(button(h.view(), "Export private result JSON")).toBeUndefined();
 });
+function variantControls(tree: unknown) {
+  return elements(tree).find(
+    (node) =>
+      node.type === OwnPlanTaskControls && !!node.props.privateVariantSelection,
+  );
+}
+function selectPrivateIdea(
+  h: ReturnType<typeof harness>,
+  index: number,
+  checked = true,
+) {
+  const input = elements(h.view()).filter(
+    (node) => node.type === "input" && node.props.type === "checkbox",
+  )[index];
+  input.props.onChange({ target: { checked } });
+}
+it("selects actual private insights explicitly and opens reused project controls with sorted references only", async () => {
+  const h = harness();
+  h.props.disabled = false;
+  h.props.repositories = [{ id: "confirmed-repo", name: "owned/project" }];
+  await h.load();
+  expect(variantControls(h.view())).toBeUndefined();
+  expect(
+    button(h.view(), "Review selected ideas for projects").props.disabled,
+  ).toBe(true);
+  selectPrivateIdea(h, 0);
+  expect(variantControls(h.view())).toBeUndefined();
+  button(h.view(), "Review selected ideas for projects").props.onClick();
+  const controls = variantControls(h.view())!;
+  expect(controls.props.privateVariantSelection).toEqual({
+    schemaVersion: "private-source-variant-v1",
+    runId: "completed-run",
+    version: 1,
+    outputHash: "a".repeat(64),
+    insightIds: ["idea"],
+  });
+  expect(controls.props.repositories).toEqual(h.props.repositories);
+  expect(controls.props).not.toHaveProperty("privateEvaluationBrief");
+  expect(h.call).toHaveBeenCalledTimes(1);
+  selectPrivateIdea(h, 0, false);
+  expect(variantControls(h.view())).toBeUndefined();
+});
+it("caps private selection at twelve actual distinct IDs and sends lexical ordering", async () => {
+  const h = harness();
+  h.props.disabled = false;
+  const value = result();
+  value.output.insights = Array.from({ length: 13 }, (_, index) => ({
+    ...value.output.insights[0],
+    id: `idea-${index}`,
+    title: `Idea ${index}`,
+  }));
+  h.call.mockResolvedValueOnce(value);
+  await h.load();
+  for (let index = 0; index < 12; index++) selectPrivateIdea(h, index);
+  expect(
+    elements(h.view()).filter((node) => node.type === "input")[12].props
+      .disabled,
+  ).toBe(true);
+  selectPrivateIdea(h, 12);
+  button(h.view(), "Review selected ideas for projects").props.onClick();
+  expect(
+    variantControls(h.view())!.props.privateVariantSelection.insightIds,
+  ).toEqual(Array.from({ length: 12 }, (_, index) => `idea-${index}`).sort());
+});
+it("clears project review when another private result starts loading and fences old selection events", async () => {
+  const h = harness();
+  h.props.disabled = false;
+  await h.load();
+  const oldCheckbox = elements(h.view()).find((node) => node.type === "input")!;
+  selectPrivateIdea(h, 0);
+  button(h.view(), "Review selected ideas for projects").props.onClick();
+  expect(variantControls(h.view())).toBeDefined();
+  const next = result();
+  next.version = 2;
+  next.output.processingRunId = "next-run";
+  next.provenance.runId = "next-run";
+  next.provenance.outputHash = "b".repeat(64);
+  h.call.mockResolvedValueOnce(next);
+  button(h.view(), "Load private text result").props.onClick();
+  expect(variantControls(h.view())).toBeUndefined();
+  await flush();
+  oldCheckbox.props.onChange({ target: { checked: true } });
+  expect(
+    button(h.view(), "Review selected ideas for projects").props.disabled,
+  ).toBe(true);
+  expect(variantControls(h.view())).toBeUndefined();
+});
+it("removes project approval at the effective read deadline and after canonical metadata changes", async () => {
+  vi.useFakeTimers();
+  const h = harness();
+  h.props.disabled = false;
+  h.call.mockResolvedValueOnce({ ...result(), readUntil: Date.now() + 1000 });
+  await h.load();
+  selectPrivateIdea(h, 0);
+  button(h.view(), "Review selected ideas for projects").props.onClick();
+  expect(variantControls(h.view())).toBeDefined();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(variantControls(h.view())).toBeUndefined();
+  await h.load();
+  selectPrivateIdea(h, 0);
+  button(h.view(), "Review selected ideas for projects").props.onClick();
+  expect(variantControls(h.view())).toBeDefined();
+  h.props.sourceUpdatedAt += 1;
+  expect(variantControls(h.view())).toBeUndefined();
+});
+it("keeps an ambiguous earned result readable but blocks duplicate insight IDs from project selection", async () => {
+  const h = harness();
+  h.props.disabled = false;
+  const value = result();
+  value.output.insights = [
+    value.output.insights[0],
+    { ...value.output.insights[0], title: "Another idea with the same ID" },
+  ];
+  h.call.mockResolvedValueOnce(value);
+  await h.load();
+  expect(text(h.view())).toContain("Private summary");
+  expect(
+    button(h.view(), "Review selected ideas for projects").props.disabled,
+  ).toBe(true);
+  selectPrivateIdea(h, 0);
+  button(h.view(), "Review selected ideas for projects").props.onClick();
+  expect(variantControls(h.view())).toBeUndefined();
+});

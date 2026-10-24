@@ -432,7 +432,11 @@ export const quarantinePage = internalMutation({
         });
       } else if (a.section === "localLibraryRuns") {
         const run = row as Doc<"localLibraryRuns">;
-        if (run.task?.schemaVersion === "1.0.0" && run.task.proposal) {
+        if (
+          run.task &&
+          run.task.schemaVersion !== "2.0.0" &&
+          run.task.proposal
+        ) {
           const p = await ctx.db.get(run.task.proposal.id);
           if (p?.localPlanRunId === run._id)
             await ctx.db.patch(p._id, { localPlanRunId: undefined });
@@ -523,7 +527,11 @@ export const quarantinePage = internalMutation({
           state: "paused",
           version: row.version + 1,
         });
-      else if ("topicVersion" in row || "policyVersion" in row)
+      else if (
+        a.section === "knowledgeEvaluations" ||
+        "topicVersion" in row ||
+        "policyVersion" in row
+      )
         await ctx.db.patch(row._id, {
           state: "quarantined",
           output: undefined,

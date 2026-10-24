@@ -126,7 +126,7 @@ export const operation = internalMutation({
     const versioned =
       (input.operation === "hello" && !!a.capabilities) ||
       (input.operation === "claim" &&
-        ["1.0.0", "2.0.0"].includes(a.taskProtocolVersion)) ||
+        ["1.0.0", "2.0.0", "3.0.0"].includes(a.taskProtocolVersion)) ||
       input.operation.startsWith("task_");
     const device = await assistantDevice(ctx, input.credentialHash, versioned);
     const now = Date.now();
@@ -167,6 +167,11 @@ export const operation = internalMutation({
           ...(localRuntime
             ? {
                 sourceTaskProtocolVersion: "2.0.0",
+                ...(localRuntime.value.features.includes(
+                  "project_private_variant_v1",
+                )
+                  ? { projectPrivateVariantProtocolVersion: "3.0.0" }
+                  : {}),
                 localRuntimeHash: localRuntime.hash,
               }
             : {}),
@@ -203,20 +208,34 @@ export const operation = internalMutation({
       return { workspaceId: device.organizationId };
     }
     if (input.operation === "claim") {
-      const runtimeHash =
-        a.taskProtocolVersion === "2.0.0" ? a.localRuntimeHash : undefined;
+      const runtimeHash = ["2.0.0", "3.0.0"].includes(a.taskProtocolVersion)
+        ? a.localRuntimeHash
+        : undefined;
       ensure(
-        a.taskProtocolVersion !== "2.0.0" ||
+        !["2.0.0", "3.0.0"].includes(a.taskProtocolVersion) ||
           (typeof runtimeHash === "string" &&
             runtimeCurrent(device, runtimeHash)),
         "APPROVAL_STALE",
         "Reconnect the current local source runtime before claiming.",
       );
+      ensure(
+        a.taskProtocolVersion !== "3.0.0" ||
+          device.localTaskRuntime?.value.features.includes(
+            "project_private_variant_v1",
+          ),
+        "APPROVAL_STALE",
+        "Reconnect the private project runtime.",
+      );
       if (
-        ["1.0.0", "2.0.0"].includes(a.taskProtocolVersion) &&
+        ["1.0.0", "2.0.0", "3.0.0"].includes(a.taskProtocolVersion) &&
         a.preferTasks !== false
       ) {
-        const task = await claimLocalTask(ctx, device, runtimeHash);
+        const task = await claimLocalTask(
+          ctx,
+          device,
+          runtimeHash,
+          a.taskProtocolVersion === "3.0.0",
+        );
         if (task) return task;
       }
       if (
@@ -228,7 +247,12 @@ export const operation = internalMutation({
           ))
       )
         return (
-          (await claimLocalTask(ctx, device, runtimeHash)) ?? { job: null }
+          (await claimLocalTask(
+            ctx,
+            device,
+            runtimeHash,
+            a.taskProtocolVersion === "3.0.0",
+          )) ?? { job: null }
         );
       ensure(
         (device.assistantSeenAt ?? 0) > now - 360000,
@@ -256,7 +280,12 @@ export const operation = internalMutation({
         return { job: null, rotate: true };
       if (!device.assistantPending)
         return versioned
-          ? ((await claimLocalTask(ctx, device, runtimeHash)) ?? { job: null })
+          ? ((await claimLocalTask(
+              ctx,
+              device,
+              runtimeHash,
+              a.taskProtocolVersion === "3.0.0",
+            )) ?? { job: null })
           : { job: null };
       const waiting = await ctx.db
         .query("assistantIntakes")
@@ -355,7 +384,12 @@ export const operation = internalMutation({
       if (!waiting.length)
         await ctx.db.patch(device._id, { assistantPending: false });
       return versioned
-        ? ((await claimLocalTask(ctx, device, runtimeHash)) ?? { job: null })
+        ? ((await claimLocalTask(
+            ctx,
+            device,
+            runtimeHash,
+            a.taskProtocolVersion === "3.0.0",
+          )) ?? { job: null })
         : { job: null };
     }
     await boundOperation(ctx, device, input.operation, a);

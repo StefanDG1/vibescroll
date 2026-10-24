@@ -99,3 +99,7 @@ Prepare starts inventory/running without inference; complete pagination moves to
 ## Reviewed improvement
 
 A current reviewed issue can create a bounded plan proposal. Plan acceptance and execution are separate. Passing job checks permit independent review; routine publication and merge additionally require current policy, exact reviewed patch/head and protected required GitHub checks. A durable pending merge intent prevents blind retry after an unknown write. Merge does not imply deployment or benefit. Append-only owner judgment/data requires a declared or verified deployed context, and measured data has completed nonoverlapping periods and real samples. Monthly renewal refuses unresolved work or active reservations before resetting a new period.
+
+## Private variant project references, October 24
+
+Private variant selection is explicit and currentness-bound. Quote/approval/claim/context/heartbeat/finish recheck the earned result and runtime. Unsupported workers cannot claim task3.0.0. Source removal and restore quarantine include private project tasks and no-topic evaluation rows. Unknown execution retains its hold.

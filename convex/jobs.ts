@@ -1199,7 +1199,8 @@ export const exportPage = query({
       if (a.section === "localLibraryRuns" && "sources" in row) {
         const run = row as Doc<"localLibraryRuns">;
         if (
-          (run.task?.schemaVersion === "2.0.0" || run.sourceTaskResult) &&
+          ((run.task && ["2.0.0", "3.0.0"].includes(run.task.schemaVersion)) ||
+            run.sourceTaskResult) &&
           run.actor !== actor._id
         )
           continue;
@@ -1355,7 +1356,14 @@ export const exportPage = query({
       if (
         "references" in row &&
         row.references !== undefined &&
-        !(await referencesCurrent(ctx, a.organizationId, row.references))
+        !(await referencesCurrent(
+          ctx,
+          a.organizationId,
+          row.references,
+          "privateEvaluationOrigin" in row
+            ? row.privateEvaluationOrigin
+            : undefined,
+        ))
       ) {
         permitted.push({
           ...row,

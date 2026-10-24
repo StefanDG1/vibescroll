@@ -1,3 +1,4 @@
+import { variantTaskEvidence } from "./privateProjectVariant";
 import type { PrivateEvaluationOrigin } from "../../packages/contracts/private-evaluation-context";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { containsSecret, ensure } from "../../packages/policy";
@@ -55,9 +56,9 @@ export async function privateEvaluationOwnerCurrent(
     organization.privateOwnerId === origin.ownerId &&
     owner?.status === "active" &&
     !!member &&
-    origin.schemaVersion === "1.0.0" &&
-    origin.kind === "private_evaluation_brief" &&
-    /^[a-f0-9]{64}$/.test(origin.briefHash) &&
+    (origin.kind === "private_source_variant"
+      ? origin.briefHash === null
+      : /^[a-f0-9]{64}$/.test(origin.briefHash)) &&
     origin.model.length > 0 &&
     origin.effort.length > 0
   );
@@ -68,7 +69,25 @@ export async function privateEvaluationTaskCurrent(
   run: Doc<"localLibraryRuns">,
 ) {
   const task = run.task;
-  if (!task || task.schemaVersion !== "1.0.0") return false;
+  if (!task || task.schemaVersion === "2.0.0") return false;
+  if (task.schemaVersion === "3.0.0") {
+    try {
+      await variantTaskEvidence(ctx, run);
+    } catch {
+      return false;
+    }
+    if (task.workload === "plan_draft") {
+      const p = task.proposal && (await ctx.db.get(task.proposal.id));
+      return (
+        !!p &&
+        samePrivateEvaluationOrigin(
+          task.privateEvaluationOrigin,
+          p.privateEvaluationOrigin,
+        )
+      );
+    }
+    return true;
+  }
   const origin = task.privateEvaluationOrigin,
     text = task.privateEvaluationBrief;
   if (task.workload === "plan_draft") {
@@ -81,6 +100,7 @@ export async function privateEvaluationTaskCurrent(
       return false;
   }
   if (!origin) return text === undefined;
+  if (origin.kind !== "private_evaluation_brief") return false;
   if (
     origin.ownerId !== run.actor ||
     !(await privateEvaluationOwnerCurrent(ctx, run.organizationId, origin))

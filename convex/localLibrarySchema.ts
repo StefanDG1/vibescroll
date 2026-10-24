@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
+import { privateVariantSelectionValue } from "../packages/contracts/private-project-variant";
 import {
   sourceReanalysisTaskValue,
   sourceTaskResultValue,
@@ -82,6 +83,17 @@ const task = v.object({
   inspected: v.optional(v.any()),
   inspectionManifest: v.optional(v.any()),
 });
+const privateVariantTask = v.object({
+  ...task.fields,
+  schemaVersion: v.literal("3.0.0"),
+  localRuntimeHash: v.string(),
+  privateVariantSelection: privateVariantSelectionValue,
+  // Truthful indexed privacy locator, not a C6b inference-input binding.
+  sourceReanalysisBinding: v.object({
+    sourceId: v.id("sources"),
+    generation: v.number(),
+  }),
+});
 export const localLibraryTables = {
   localLibraryRuns: defineTable({
     ...tenant,
@@ -92,7 +104,9 @@ export const localLibraryTables = {
     repositories: v.array(v.id("repositories")),
     model: v.string(),
     effort: v.string(),
-    task: v.optional(v.union(task, sourceReanalysisTaskValue)),
+    task: v.optional(
+      v.union(task, sourceReanalysisTaskValue, privateVariantTask),
+    ),
     sourceTaskResult: v.optional(sourceTaskResultValue),
     expiresAt: v.number(),
     state: v.string(),

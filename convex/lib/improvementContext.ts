@@ -56,7 +56,12 @@ export async function improvementCurrent(ctx: QueryCtx, p: Doc<"proposals">) {
       p.detail.sourceRevisionId !== row._id ||
       p.detail.sourceContentHash !== row.contentHash ||
       !p.references?.length ||
-      !(await referencesCurrent(ctx, p.organizationId, p.references))
+      !(await referencesCurrent(
+        ctx,
+        p.organizationId,
+        p.references,
+        p.privateEvaluationOrigin,
+      ))
     )
       return false;
   }
@@ -93,7 +98,12 @@ export async function improvementCurrent(ctx: QueryCtx, p: Doc<"proposals">) {
     d.hash === i.issueHash &&
     d.version === i.issueVersion &&
     (await evaluationCurrent(ctx, e)) &&
-    (await referencesCurrent(ctx, i.organizationId, i.references))
+    (await referencesCurrent(
+      ctx,
+      i.organizationId,
+      i.references,
+      i.privateEvaluationOrigin,
+    ))
   );
 }
 export async function runPolicyCurrent(ctx: QueryCtx, run: Doc<"runs">) {

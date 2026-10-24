@@ -148,7 +148,12 @@ export const list = query({
         repo = await ctx.db.get(i.repositoryId);
       const surviving =
         i.state !== "deleted" &&
-        (await referencesCurrent(ctx, i.organizationId, i.references));
+        (await referencesCurrent(
+          ctx,
+          i.organizationId,
+          i.references,
+          i.privateEvaluationOrigin,
+        ));
       const current = !!p && (await improvementCurrent(ctx, p));
       const runs = await ctx.db
         .query("runs")
@@ -277,7 +282,12 @@ export const outcome = mutation({
     ensure(
       i.version === a.version &&
         i.state !== "deleted" &&
-        (await referencesCurrent(ctx, i.organizationId, i.references)),
+        (await referencesCurrent(
+          ctx,
+          i.organizationId,
+          i.references,
+          i.privateEvaluationOrigin,
+        )),
       "APPROVAL_STALE",
       "Review the current improvement.",
     );

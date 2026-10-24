@@ -646,7 +646,10 @@ export async function scrubSourceResults(
     )
     .paginate({ cursor, numItems: 5 });
   for (const run of page.page) {
-    const task = sourceTask(run);
+    const task =
+      run.task?.schemaVersion === "2.0.0" || run.task?.schemaVersion === "3.0.0"
+        ? run.task
+        : null;
     if (
       task &&
       (maxGeneration === undefined ||
@@ -662,7 +665,9 @@ export async function scrubSourceResults(
               : run.state,
         task: {
           ...task,
-          privateSourceBrief: undefined,
+          ...(task.schemaVersion === "2.0.0"
+            ? { privateSourceBrief: undefined }
+            : { privateEvaluationBrief: undefined }),
           leaseToken: undefined,
           leaseUntil: 0,
         },

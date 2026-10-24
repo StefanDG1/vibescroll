@@ -408,3 +408,7 @@ The owner authorized an explicit assistant grant lasting until they turn it off,
 ## F036: automatic assistant intake, October 20
 
 Source: owner discussion and implementation request. Adopt one reviewed connection preference for explicit links, automatic local extraction/organization, offline waiting with optional quoted credits and reconciled receipts. Project evaluation is explicit by name or best-match request; coding/publication remain separate. This is compatible with the project-owner and library-only audience. Update all four briefs, README, assistant setup and implementation evidence. Validate queue/account/grant/credit races locally and the visible states with labelled synthetic browser data. No measured usability, demand or savings claim follows; live personal-account activation and model execution require their own receipts.
+
+## F062: private variant project integration, October 24
+
+The four foundational documents record explicitly selected earned private text insights for existing project evaluation and plans. [ADR 139](../adr/139-private-variant-project-references.md) defines actual run/output provenance, separate runtime admission and privacy. Candidate implementation is in progress; real model usefulness, media/skills/Cloud and production remain unverified. This is not a shared catalog contribution or marketing outcome.

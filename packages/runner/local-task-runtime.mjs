@@ -4,14 +4,29 @@ export const sourceTextRuntime = Object.freeze({
   schemaVersion: "local-task-runtime-v1",
   features: Object.freeze(["source_reanalysis_text_v1"]),
 });
+export const projectVariantRuntime = Object.freeze({
+  schemaVersion: "local-task-runtime-v1",
+  features: Object.freeze([
+    "source_reanalysis_text_v1",
+    "project_private_variant_v1",
+  ]),
+});
+export function projectVariantTask(job) {
+  return (
+    job?.taskProtocolVersion === "3.0.0" &&
+    ["project_evaluation", "plan_draft"].includes(job.workload)
+  );
+}
 export function validLocalTaskRuntime(value) {
   return (
     !!value &&
     Object.keys(value).sort().join(",") === "features,schemaVersion" &&
     value.schemaVersion === sourceTextRuntime.schemaVersion &&
     Array.isArray(value.features) &&
-    value.features.length === 1 &&
-    value.features[0] === "source_reanalysis_text_v1"
+    [1, 2].includes(value.features.length) &&
+    value.features[0] === "source_reanalysis_text_v1" &&
+    (value.features.length === 1 ||
+      value.features[1] === "project_private_variant_v1")
   );
 }
 export function sourceTextTask(job) {
@@ -23,6 +38,7 @@ export function sourceTextTask(job) {
 export function versionedTask(job) {
   return (
     sourceTextTask(job) ||
+    projectVariantTask(job) ||
     (job?.taskProtocolVersion === "1.0.0" &&
       ["project_evaluation", "plan_draft"].includes(job.workload))
   );

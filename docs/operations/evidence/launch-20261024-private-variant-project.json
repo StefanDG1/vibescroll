@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T08:57:16.895452+00:00",
+  "baseCommit": "a0c5044518de131d3e09d9b6c442610a2047fbfc",
+  "mode": "offline private text-variant project evaluation/proposal/plan candidate; no official Cloud or live proof",
+  "verification": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "exitCode": 0,
+    "completedAt": "2026-10-24T08:54:28.4725185+00:00",
+    "totalPassed": 1761,
+    "core": 1461,
+    "auth": 40,
+    "publicUi": 208,
+    "other": 52,
+    "hostedSkipped": 3,
+    "documents": 325,
+    "skillSnapshots": 12,
+    "financeChecks": 17,
+    "lint": "zero warnings/errors",
+    "types": "root/actual Convex/both apps passed",
+    "builds": "both passed",
+    "fullLogSha256": "f77ca4ca4c71b5046a62175236c597043cff63afd558c1e9654f5980eac0e78c",
+    "exitReceiptSha256": "2cd4f36e1c1a37f514ee8b28747dcbf1b3ba2f406ff2f2d69658604a99d7e33f",
+    "focused": "101 backend checks before retention correction; final affected47 after correction; 57 UI and5 contract checks. All are subsets of full totals.",
+    "browserActualModelProduction": "pending; no native screenshot or real host/usefulness claim",
+    "finalFixtureCorrection": "After fullcheck, only synthetic task key renamed; affected inherited-plan completion passed. Exact-head CI required for final tree."
+  },
+  "contract": {
+    "selection": "strict earned run/version/outputHash and1..12 distinct sorted actual insight IDs; server resolves output, no client text",
+    "references": "separate private evaluation reference namespace; canonical reference/synthesis/evaluation schemas and ordinary keys unchanged",
+    "origin": "server-authored private_source_variant owner/source/run/version/base/output/model/effort/selection; no additional private evaluation brief in variant mode",
+    "topics": "no fabricated knowledgeMembers/topics; absent eval/issue topic permitted only for private variant origin under server currentness guards",
+    "lineage": "same approved repository base/profile/context and existing evaluation/proposal/issue/editable plan; separate coding/spending/publication authority",
+    "runtime": "task3.0.0 and project_private_variant_v1 admission through same controller and existing schema-version index; old workers skip it",
+    "privacy": "private outputs excluded from neutral synthesis/history/MCP/standing automation; ordinary source analysis unchanged",
+    "cleanup": "truthful minimal source/generation locator reuses inherited source-erasure index; superseded revision expiry schedules source and derived cleanup before early return",
+    "ui": "unchecked selected private insights open existing project controls only on explicit action; selection/result/base/rights/deadline changes invalidate consent; earned reads/export remain independent of execution"
+  },
+  "review": {
+    "independentHigh": "no remaining substantiated P1/P2 after frozen UI/backend/runtime/privacy and retention-fix review; source inspection, no duplicate tests",
+    "root": "shared contracts/schemas, namespace regression, dashboard schema integration, labels, Help/foundations, combined checks, budget and final integration"
+  },
+  "preservedFailures": [
+    "Initial legacy78/79 cold-transform default5000ms C6b timeout; unchanged isolated24/24 rerun passed. No timeout or assertion weakened.",
+    "Initial new8/10 cases failed actual proposal insertion because dashboardCards still used canonical-only refs; root extended its derived validator without stripping private identity.",
+    "Expanded21/22 run needed missing repository manifestEntries in fixture; fixture corrected before101/101 pass.",
+    "Initial unused-import lint warning removed; final zero-warning checks passed.",
+    "Independent shared-validator review found suffix reference-key collision, with production reachability unproved because actual Convex IDs differ. Root used a leading namespace/structured tuple and added a substitution negative control; canonical keys unchanged.",
+    "Independent privacyP2 reproduced22/23: superseded provider expiry failed to schedule physical derived erasure. Moved existing generation-bounded scheduling before early return; final47/47 affected cases prove old output/issue/proposal erasure, replacement source preservation and unknown claimed usage retained.",
+    "A root documentation patch initially missed the existing heading and applied no change; corrected without altering product behavior.",
+    "Staged Gitleaks flagged a synthetic task identifier, not a credential. A first shorter identifier still matched the detector; a repetitive valid12-character fixture passed the unchanged scan. Actual inherited-plan completion passed after the final rename with22filtered. No scan rule or product control changed."
+  ],
+  "dependencyAudit": {
+    "observedAt": "2026-10-24T08:54:44.753Z",
+    "policyPassed": true,
+    "registryCounts": {
+      "info": 0,
+      "low": 2,
+      "moderate": 2,
+      "high": 0,
+      "critical": 0
+    },
+    "unresolved": []
+  },
+  "release": {
+    "parentPr152Ci": "40077647549 success ata0c5044518de131d3e09d9b6c442610a2047fbfc",
+    "newTablesQueuesStoresIndexes": 0,
+    "inheritedIndexes": "source-erasure addition and device/state/schema change remain separately bounded migration gates",
+    "sdkLockPricesQuantitiesChanged": false,
+    "newProductionConvexCalls": 0,
+    "newProviderJobs": 0,
+    "purchases": 0,
+    "cumulativeCapUSD": 3,
+    "conservativeReservationsUSD": "2.8092885298898517",
+    "unallocatedUSD": "0.1907114701101483",
+    "allUnknownHoldsPreserved": true,
+    "settledInvoice": false,
+    "production": "frontendfba56d4/backendabfdeff67 unchanged; full backend fiscal proof held; exact-head CI pending"
+  },
+  "sourceHashes": [
+    {
+      "path": "apps/starter/components/console.tsx",
+      "sha256": "35b714d34432900001fa2a6c2717543903153157c4476d5761d4b85b223f4735"
+    },
+    {
+      "path": "apps/starter/components/knowledge-library.tsx",
+      "sha256": "c94139f4cbec34a8d5a663280cf8d6d636f2b79b8cf24aaaca640250b3f4516d"
+    },
+    {
+      "path": "apps/starter/components/own-plan-task-controls.tsx",
+      "sha256": "851881b0c28a462a1f2095c826dfcd2c5a8308914902305d4118300c2b06d1a9"
+    },
+    {
+      "path": "apps/starter/components/private-source-analysis.tsx",
+      "sha256": "916d1b2ccfd504f3636b383349d94190f9295461556c253ea9e5c488d4832f59"
+    },
+    {
+      "path": "apps/starter/own-plan-task-ui.test.ts",
+      "sha256": "984ac6dad10433ce9d45804a1e4b0ad209484f22dcb039468a22007c60070364"
+    },
+    {
+      "path": "apps/starter/private-source-analysis-ui.test.ts",
+      "sha256": "f06db5b39cb9b7ee9beea247dc416e2dbff8a625ade418a6c90d75ddf7d54f53"
+    },
+    {
+      "path": "convex/assistant.ts",
+      "sha256": "bf669ea416b35132043273744e7ad7c65bb70130e5605d7c68fd716b682f7b89"
+    },
+    {
+      "path": "convex/assistantLocal.ts",
+      "sha256": "9906279eaab34db94205542a7b3c11a9455e2e53e66b090992430a190e77056d"
+    },
+    {
+      "path": "convex/dashboard.ts",
+      "sha256": "0fbecaf2b9a6a73f864f248443d46008eea368802270d5e3ff2cc4f776ed38a4"
+    },
+    {
+      "path": "convex/dashboardSchema.ts",
+      "sha256": "48b601274481173778c812a2c59c7a989dffefbea8895c384a4e72ea2ecbd286"
+    },
+    {
+      "path": "convex/improvementSchema.ts",
+      "sha256": "f0fa985bda581d849a54d1735684016deede69b97d93a07fbe3cda3f6501b934"
+    },
+    {
+      "path": "convex/improvements.ts",
+      "sha256": "d5e77d7f33df6a8c17ffbe422f404513b86ddc1fae319056febf2955690d49d1"
+    },
+    {
+      "path": "convex/issues.ts",
+      "sha256": "0dc133b3af753aed80bb63475d4d2cc0bd15ec463ccd543708084be91fc57648"
+    },
+    {
+      "path": "convex/jobs.ts",
+      "sha256": "3001bddf847c64cd7354eb0d77a6b554345272d2d8ee68d2c47fb5c1577069a0"
+    },
+    {
+      "path": "convex/knowledge.ts",
+      "sha256": "b138462d84e040c2b95f1cc3e3f81bc3bb543a8c949084e98b3d522f5980922e"
+    },
+    {
+      "path": "convex/knowledgeExplore.ts",
+      "sha256": "01dfdf8f8a6d4357b57ad5de826946b0fdb196fcccc245b70dccf82ffec31a33"
+    },
+    {
+      "path": "convex/knowledgeSchema.ts",
+      "sha256": "9d919c850409f94dbd9fe1ff1e218d1ba9462f0d16f8e1ef19908bf28cc6aaaf"
+    },
+    {
+      "path": "convex/lib/improvementContext.ts",
+      "sha256": "b9800a9d9b5b91036de2b3d203d8055f68511a6c4db840d2ae8a8ebbdff63fe9"
+    },
+    {
+      "path": "convex/lib/localTaskAuthority.ts",
+      "sha256": "165da3ea2a5dfe0ac2c07b64881b2af8b170f6b321eed859bef4664985a1928d"
+    },
+    {
+      "path": "convex/lib/privateEvaluationContext.ts",
+      "sha256": "05804e740c43e514f0337494bfee04944a7f95266b0084aca308dd7d4ffa91ef"
+    },
+    {
+      "path": "convex/lib/privateProjectVariant.ts",
+      "sha256": "a79212b23369e492d4fc3ef39dbb86ea2893b581a4d148f3b8387544646616f0"
+    },
+    {
+      "path": "convex/lib/privateSourceAnalysis.ts",
+      "sha256": "1f185b3df6cca838d0601c91ab81b0162bb8fa4e6778103a828b83ed2ce5938e"
+    },
+    {
+      "path": "convex/localLibrary.ts",
+      "sha256": "2dad01db1701193b17c8959e112c7b0cb8bc0b412c3defde93c0ffe646c01ae2"
+    },
+    {
+      "path": "convex/localLibrarySchema.ts",
+      "sha256": "758da0f6cb1ec3ccc517bf964d318708dd37df9e7cb2b92d49ab81cd8c6a5cc3"
+    },
+    {
+      "path": "convex/localLibraryTaskRuntime.ts",
+      "sha256": "128bfd153e2bdb5c9156e38ae4ecef4efb6ac8370a988b6c49de4aa30841e80b"
+    },
+    {
+      "path": "convex/localLibraryTasks.ts",
+      "sha256": "a3f65731f43124f8e1099e4d1d7ceff69411b421758a854f7287632d4287bfe8"
+    },
+    {
+      "path": "convex/product.ts",
+      "sha256": "a0cdec7faeb05d0a299f44bdc925822af1dfd95d65185f4ac06ad845c394f13e"
+    },
+    {
+      "path": "convex/productSchema.ts",
+      "sha256": "b6a61d56350ca018efcc4d3e2418a2489f7757c0713f42f2f3ed33c49e5a0a66"
+    },
+    {
+      "path": "convex/recovery.ts",
+      "sha256": "4fe77cb1c81b16766337bb8620b2f53fe2fa327aadb87fe2ecb59e2530c499e8"
+    },
+    {
+      "path": "convex/sourceAcquisition.ts",
+      "sha256": "d2453c6b1420931e45399cf84b69cb7b9d5bd9a0d72c02b2cbe365d5c7d75182"
+    },
+    {
+      "path": "packages/contracts/private-evaluation-context.ts",
+      "sha256": "31ab115c685ac55658c0275408ebb95c7ece62f1015d4ecd13d7ea8d19e35cd6"
+    },
+    {
+      "path": "packages/contracts/private-project-variant.ts",
+      "sha256": "57f232470347c3963ce40038957a2a8bbdf3c20c0dc987f774f3a8e9d9c037b7"
+    },
+    {
+      "path": "packages/contracts/private-source-analysis.ts",
+      "sha256": "cdf02c6fa6dbee19db365350c1db84e3df8ff8100ad043fda61ca2d631dc6215"
+    },
+    {
+      "path": "packages/knowledge/contracts.ts",
+      "sha256": "252bf8d3a94612085b7448a176a1657b29e9a5d0929c206c752223b128a34889"
+    },
+    {
+      "path": "packages/runner/local-task-runtime.d.mts",
+      "sha256": "4a5519fc3f170e1c141815d4e8ba53a4935a90f189b8761b1f9394cdf2a5f304"
+    },
+    {
+      "path": "packages/runner/local-task-runtime.mjs",
+      "sha256": "0ba39ad61755d05a404f4d2377ceafb706cd2007443ba5f61f763675485d2795"
+    },
+    {
+      "path": "packages/runner/subscription-coordinator.mjs",
+      "sha256": "2d406d17103bb01d3ca03ee678f7d50bb0b9a5a6ed08287ae6bd33d7ea7e5b87"
+    },
+    {
+      "path": "tests/private-project-contracts.test.ts",
+      "sha256": "50c23c4bb7eb94045779607dbb9df98490d5ea784453fdfd0932664f9888c534"
+    },
+    {
+      "path": "tests/private-variant-project.test.ts",
+      "sha256": "9df38b65d79b0818a58c67ef744e2bc0f134ed22b99bb4aa3d933eb7a8cde783"
+    }
+  ]
+}

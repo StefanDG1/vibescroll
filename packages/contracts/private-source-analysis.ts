@@ -74,7 +74,12 @@ export const privateSourcePointerValue = v.object({
 // Our local runtime reports this feature; it is not an official model claim.
 export const localTaskRuntimeValue = v.object({
   schemaVersion: v.literal("local-task-runtime-v1"),
-  features: v.array(v.literal("source_reanalysis_text_v1")),
+  features: v.array(
+    v.union(
+      v.literal("source_reanalysis_text_v1"),
+      v.literal("project_private_variant_v1"),
+    ),
+  ),
 });
 export const localTaskRuntimeSnapshotValue = v.object({
   value: localTaskRuntimeValue,

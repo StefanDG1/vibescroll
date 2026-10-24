@@ -2,6 +2,7 @@ import { defineTable } from "convex/server";
 import { personalAnalysisValue } from "./personalAnalysisSchema";
 import { v } from "convex/values";
 import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
+import { evaluationEvidenceRef } from "./knowledgeSchema";
 import {
   privateSourcePointerValue,
   localTaskRuntimeSnapshotValue,
@@ -535,16 +536,7 @@ export const productTables = {
     ...tenant,
     privateEvaluationOrigin: v.optional(privateEvaluationOriginValue),
     improvementId: v.optional(v.id("improvements")),
-    references: v.optional(
-      v.array(
-        v.object({
-          sourceId: v.id("sources"),
-          generation: v.number(),
-          revision: v.number(),
-          insightId: v.string(),
-        }),
-      ),
-    ),
+    references: v.optional(v.array(evaluationEvidenceRef)),
     sourceId: v.id("sources"),
     repositoryId: v.id("repositories"),
     baseSha: v.string(),

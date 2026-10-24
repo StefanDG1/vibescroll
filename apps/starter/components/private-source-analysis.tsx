@@ -12,6 +12,7 @@ import type {
 import { OwnPlanTaskControls } from "./own-plan-task-controls";
 import { TypedSourceEvidence } from "./typed-source-evidence";
 import { downloadText } from "@/lib/download";
+import type { PrivateVariantSelection } from "../../../packages/contracts/private-project-variant";
 
 type Output = {
   sourceId: string;
@@ -63,6 +64,7 @@ export type PrivateSourceAnalysisProps = {
   sourceRetentionUntil?: number;
   currentRevisionId?: string;
   analysisHash?: string;
+  repositories?: { id: string; name: string }[];
   eligibility: {
     available: boolean;
     inputKind: "supplied_text" | "retained_text" | null;
@@ -120,6 +122,14 @@ export function PrivateSourceAnalysisPanel(props: PrivateSourceAnalysisProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [observedAt, setObservedAt] = useState(Date.now);
+  const [selectedIdeas, setSelectedIdeas] = useState<{
+    identity: string;
+    ids: string[];
+  } | null>(null);
+  const [projectReview, setProjectReview] = useState<{
+    identity: string;
+    selection: PrivateVariantSelection;
+  } | null>(null);
   const alive = useRef(true),
     request = useRef(0);
   const scope = readScope(props);
@@ -134,6 +144,32 @@ export function PrivateSourceAnalysisPanel(props: PrivateSourceAnalysisProps) {
     storedResult?.readUntil != null
       ? Math.min(parentDeadline ?? Infinity, storedResult.readUntil)
       : parentDeadline;
+  const resultIdentity = result
+    ? JSON.stringify([
+        scope,
+        result.provenance.runId,
+        result.version,
+        result.provenance.outputHash,
+      ])
+    : "";
+  const actualIds = new Set(
+    result?.output.insights.map((idea) => idea.id) ?? [],
+  );
+  const unambiguousIdeas =
+    !result || actualIds.size === result.output.insights.length;
+  const selectedIds = [
+    ...new Set(
+      selectedIdeas?.identity === resultIdentity ? selectedIdeas.ids : [],
+    ),
+  ]
+    .filter((idea) => actualIds.has(idea))
+    .sort();
+  const reviewed =
+    projectReview?.identity === resultIdentity &&
+    JSON.stringify(projectReview.selection.insightIds) ===
+      JSON.stringify(selectedIds)
+      ? projectReview
+      : null;
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -165,6 +201,8 @@ export function PrivateSourceAnalysisPanel(props: PrivateSourceAnalysisProps) {
     };
   }, [result, deadline]);
   async function load(runId?: string) {
+    setProjectReview(null);
+    setSelectedIdeas(null);
     setObservedAt(Date.now());
     if (!readCurrent(props)) {
       setResult(null);
@@ -285,8 +323,44 @@ export function PrivateSourceAnalysisPanel(props: PrivateSourceAnalysisProps) {
               ))}
             </ul>
           )}
-          {result.output.insights.map((item) => (
-            <article key={item.id}>
+          {result.output.insights.map((item, index) => (
+            <article key={`${item.id}:${index}`}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  minHeight: 44,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(item.id)}
+                  disabled={
+                    props.disabled ||
+                    !unambiguousIdeas ||
+                    busy ||
+                    (!selectedIds.includes(item.id) && selectedIds.length >= 12)
+                  }
+                  onChange={(event) => {
+                    if (!unambiguousIdeas) return;
+                    setProjectReview(null);
+                    setSelectedIdeas((old) => {
+                      const ids =
+                        old?.identity === resultIdentity ? old.ids : [];
+                      return {
+                        identity: resultIdentity,
+                        ids: event.target.checked
+                          ? ids.includes(item.id) || ids.length >= 12
+                            ? ids
+                            : [...ids, item.id]
+                          : ids.filter((value) => value !== item.id),
+                      };
+                    });
+                  }}
+                />
+                Select {item.title} for project review
+              </label>
               <h4>{item.title}</h4>
               <p>{item.claim}</p>
               <p>Private interpretation: {item.interpretation}</p>
@@ -318,6 +392,68 @@ export function PrivateSourceAnalysisPanel(props: PrivateSourceAnalysisProps) {
               </ul>
             </article>
           ))}
+          <p>
+            {selectedIds.length} of up to 12 private ideas selected. Project
+            evaluation uses your confirmed repository context and requires a
+            separate approval.
+          </p>
+          {!unambiguousIdeas && (
+            <p role="alert">
+              This result cannot be selected reliably for project review. Its
+              text remains available to inspect.
+            </p>
+          )}
+          <button
+            type="button"
+            className="secondary"
+            disabled={
+              props.disabled ||
+              !unambiguousIdeas ||
+              busy ||
+              selectedIds.length < 1 ||
+              selectedIds.length > 12
+            }
+            onClick={() => {
+              if (
+                !alive.current ||
+                !unambiguousIdeas ||
+                busy ||
+                !readCurrent(props) ||
+                result.readScope !== readScope(props) ||
+                (result.readUntil !== null && result.readUntil <= Date.now()) ||
+                selectedIds.length < 1 ||
+                selectedIds.length > 12
+              )
+                return;
+              setProjectReview({
+                identity: resultIdentity,
+                selection: {
+                  schemaVersion: "private-source-variant-v1",
+                  runId: result.provenance
+                    .runId as PrivateVariantSelection["runId"],
+                  version: result.version,
+                  outputHash: result.provenance.outputHash,
+                  insightIds: selectedIds,
+                },
+              });
+            }}
+          >
+            Review selected ideas for projects
+          </button>
+          {reviewed && (
+            <OwnPlanTaskControls
+              key={`${resultIdentity}:${JSON.stringify(reviewed.selection.insightIds)}`}
+              organizationId={props.organizationId}
+              call={props.call}
+              source={{ id: props.sourceId, title: props.title }}
+              repositories={props.repositories ?? []}
+              privateLibrary={props.privateLibrary === true}
+              privateVariantSelection={reviewed.selection}
+              privateVariantReadUntil={deadline ?? null}
+              disabled={props.disabled || !readCurrent(props, observedAt)}
+              onComplete={props.onComplete}
+            />
+          )}
           {result.provenance.inputKind === "retained_text" && (
             <TypedSourceEvidence
               evidenceRegistry={evidence}

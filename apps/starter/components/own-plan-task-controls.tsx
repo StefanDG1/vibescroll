@@ -3,6 +3,20 @@ import { useEffect, useRef, useState } from "react";
 import type { SubscriptionCapabilities } from "../../../packages/runner/subscription-capabilities.mjs";
 import type { PrivateEvaluationOrigin } from "../../../packages/contracts/private-evaluation-context";
 import type { LocalTaskRuntimeSnapshot } from "../../../packages/contracts/private-source-analysis";
+import type { PrivateVariantSelection } from "../../../packages/contracts/private-project-variant";
+function variantIdentity(value?: PrivateVariantSelection) {
+  return JSON.stringify(
+    value
+      ? [
+          value.schemaVersion,
+          value.runId,
+          value.version,
+          value.outputHash,
+          value.insightIds,
+        ]
+      : null,
+  );
+}
 
 type Device = {
   id: string;
@@ -38,6 +52,7 @@ type Selection = {
   privateEvaluationBrief?: string;
   expectedPrivateVersion?: number;
   privateSourceBrief?: string;
+  privateVariantSelection?: PrivateVariantSelection;
 };
 type Quote = {
   hash: string;
@@ -50,6 +65,7 @@ type Quote = {
     privateSourceBrief?: string;
     sourceId?: string;
     expectedPrivateVersion?: number;
+    privateVariantSelection?: PrivateVariantSelection;
   };
   maxInferenceCredits: number;
 };
@@ -71,6 +87,8 @@ export type OwnPlanTaskProps = {
     pendingRunId?: string | null;
   };
   onViewPrivateResult?: (runId: string) => void;
+  privateVariantSelection?: PrivateVariantSelection;
+  privateVariantReadUntil?: number | null;
   repositories: { id: string; name: string }[];
   disabled?: boolean;
   onComplete?: () => unknown | Promise<unknown>;
@@ -79,7 +97,7 @@ export type OwnPlanTaskProps = {
 export function OwnPlanTaskControls(props: OwnPlanTaskProps) {
   return (
     <OwnPlanTaskPanel
-      key={`${props.organizationId}:${props.source?.id ?? ""}:${props.proposal?.id ?? ""}:${props.proposal?.version ?? ""}${props.privateLibrary === true ? ":private" : ""}${props.sourceReanalysis ? `:source-text-v2:${props.sourceReanalysis.expectedPrivateVersion}` : ""}`}
+      key={`${props.organizationId}:${props.source?.id ?? ""}:${props.proposal?.id ?? ""}:${props.proposal?.version ?? ""}${props.privateLibrary === true ? ":private" : ""}${props.sourceReanalysis ? `:source-text-v2:${props.sourceReanalysis.expectedPrivateVersion}` : ""}${props.privateVariantSelection ? `:private-variant:${JSON.stringify(props.privateVariantSelection)}:${props.privateVariantReadUntil ?? ""}` : ""}`}
       {...props}
     />
   );
@@ -93,6 +111,8 @@ export function OwnPlanTaskPanel({
   privateLibrary,
   sourceReanalysis,
   onViewPrivateResult,
+  privateVariantSelection,
+  privateVariantReadUntil,
   disabled = false,
   onComplete,
 }: OwnPlanTaskProps) {
@@ -102,6 +122,7 @@ export function OwnPlanTaskPanel({
     alive.current = true;
     return () => {
       alive.current = false;
+      requestRevision.current += 1;
     };
   }, []);
   const [devices, setDevices] = useState<Device[] | null>(null),
@@ -125,7 +146,22 @@ export function OwnPlanTaskPanel({
   const [historyNext, setHistoryNext] = useState<string | null>(null);
   const [privateBrief, setPrivateBrief] = useState("");
   const sourceMode = !!sourceReanalysis && !proposal;
-  const privateBriefAllowed = privateLibrary === true && !!source && !proposal;
+  const variantMode = !!privateVariantSelection && !sourceMode && !proposal;
+  const requiresVariantRuntime =
+    variantMode ||
+    proposal?.privateEvaluationOrigin?.kind === "private_source_variant";
+  const variantCurrent = (now = observedAt) =>
+    !variantMode ||
+    (privateLibrary === true &&
+      !!source &&
+      privateVariantSelection!.schemaVersion === "private-source-variant-v1" &&
+      privateVariantSelection!.insightIds.length >= 1 &&
+      privateVariantSelection!.insightIds.length <= 12 &&
+      new Set(privateVariantSelection!.insightIds).size ===
+        privateVariantSelection!.insightIds.length &&
+      (privateVariantReadUntil == null || privateVariantReadUntil > now));
+  const privateBriefAllowed =
+    privateLibrary === true && !!source && !proposal && !variantMode;
   const privateBriefBytes = new TextEncoder().encode(privateBrief).length;
   const briefOverLimit = privateBriefAllowed && privateBriefBytes > 4000;
   const device = devices?.find((item) => item.id === deviceId),
@@ -134,11 +170,13 @@ export function OwnPlanTaskPanel({
     accepted = !proposal || proposal.review === "accepted",
     currentCatalogue = !!device?.catalogue && device.expiresAt > observedAt,
     runtimeCurrent = (item: Device | undefined, now = observedAt) =>
-      !sourceMode ||
+      (!sourceMode && !requiresVariantRuntime) ||
       (!!item?.admittedRuntime &&
         item.admittedRuntime.value.schemaVersion === "local-task-runtime-v1" &&
         item.admittedRuntime.value.features.includes(
-          "source_reanalysis_text_v1",
+          requiresVariantRuntime
+            ? "project_private_variant_v1"
+            : "source_reanalysis_text_v1",
         ) &&
         item.admittedRuntime.expiresAt > now &&
         item.admittedRuntime.sessionExpiresAt > now),
@@ -152,7 +190,7 @@ export function OwnPlanTaskPanel({
     setError("");
   }
   async function action(work: () => Promise<void>) {
-    if (disabled || busy) return;
+    if (!alive.current || disabled || busy) return;
     setBusy(true);
     setObservedAt(Date.now());
     setError("");
@@ -183,6 +221,7 @@ export function OwnPlanTaskPanel({
         organizationId,
         ...(proposal ? { proposalId: proposal.id } : { sourceId: source?.id }),
         ...(sourceMode ? { workload: "source_reanalysis_text" } : {}),
+        ...(variantMode ? { privateVariantSelection } : {}),
         cursor,
       },
     );
@@ -225,6 +264,13 @@ export function OwnPlanTaskPanel({
           private focus.
         </p>
       )}
+      {proposal?.privateEvaluationOrigin?.kind === "private_source_variant" && (
+        <p>
+          Private source result version{" "}
+          {proposal.privateEvaluationOrigin.version}. This plan inherits the
+          accepted proposal's selected private ideas.
+        </p>
+      )}
       <p>
         Model choices are advertised by your connected account. A completed
         request verifies access. Inference uses 0 app credits; media preparation
@@ -236,6 +282,13 @@ export function OwnPlanTaskPanel({
           analysis or shared catalog. Update the local runtime if text
           reanalysis is unavailable; signing in again is not required just to
           update it.
+        </p>
+      )}
+      {variantMode && (
+        <p>
+          Evaluate {privateVariantSelection!.insightIds.length} selected ideas
+          from private result version {privateVariantSelection!.version}. The
+          source analysis and shared catalog stay unchanged.
         </p>
       )}
       {!accepted && (
@@ -262,6 +315,9 @@ export function OwnPlanTaskPanel({
                   {task.privateEvaluationOrigin?.kind ===
                     "private_evaluation_brief" &&
                     "Private evaluation context. "}
+                  {task.privateEvaluationOrigin?.kind ===
+                    "private_source_variant" &&
+                    `Private source result version ${task.privateEvaluationOrigin.version}. `}
                 </span>
                 {sourceMode && task.resultAvailable && onViewPrivateResult && (
                   <button
@@ -403,7 +459,9 @@ export function OwnPlanTaskPanel({
                 >
                   {item.name}
                   {!runtimeCurrent(item)
-                    ? " (text runtime update required)"
+                    ? requiresVariantRuntime
+                      ? " (private project runtime update required)"
+                      : " (text runtime update required)"
                     : ""}
                   {!item.catalogue || item.expiresAt <= observedAt
                     ? " (reconnect required)"
@@ -495,6 +553,8 @@ export function OwnPlanTaskPanel({
         type="button"
         disabled={
           locked ||
+          !variantCurrent() ||
+          (requiresVariantRuntime && !runtimeCurrent(device)) ||
           (sourceMode &&
             (privateLibrary !== true ||
               !sourceReanalysis?.available ||
@@ -514,6 +574,8 @@ export function OwnPlanTaskPanel({
               );
             if (
               !currentCatalogue ||
+              !variantCurrent(Date.now()) ||
+              (requiresVariantRuntime && !runtimeCurrent(device, Date.now())) ||
               (sourceMode &&
                 (privateLibrary !== true ||
                   !sourceReanalysis?.available ||
@@ -557,6 +619,7 @@ export function OwnPlanTaskPanel({
                   : {
                       sourceId: source!.id,
                       repositoryIds: [...selected],
+                      ...(variantMode ? { privateVariantSelection } : {}),
                       ...(privateBriefAllowed && privateBrief.trim().length > 0
                         ? { privateEvaluationBrief: privateBrief }
                         : {}),
@@ -569,6 +632,9 @@ export function OwnPlanTaskPanel({
               value.expiresAt <= Date.now() ||
               value.payload.privateEvaluationBrief !==
                 selection.privateEvaluationBrief ||
+              (variantMode &&
+                variantIdentity(value.payload.privateVariantSelection) !==
+                  variantIdentity(selection.privateVariantSelection)) ||
               (sourceMode &&
                 (value.payload.privateSourceBrief !==
                   selection.privateSourceBrief ||
@@ -593,6 +659,14 @@ export function OwnPlanTaskPanel({
             inference credits: 0. Approval expires{" "}
             {new Date(quote.value.expiresAt).toLocaleTimeString()}.
           </p>
+          {variantMode && (
+            <p>
+              Private result version {privateVariantSelection!.version}.
+              Selected insight IDs:{" "}
+              {privateVariantSelection!.insightIds.join(", ")}. Review the
+              selected claims in the private result above.
+            </p>
+          )}
           {(quote.selection.privateEvaluationBrief !== undefined ||
             quote.selection.privateSourceBrief !== undefined) && (
             <section
@@ -616,6 +690,15 @@ export function OwnPlanTaskPanel({
               "private_evaluation_brief" && (
               <p>
                 Private evaluation context inherited from the approved proposal.
+              </p>
+            )}
+          {proposal &&
+            quote.value.payload.privateEvaluationOrigin?.kind ===
+              "private_source_variant" && (
+              <p>
+                Private source result version{" "}
+                {quote.value.payload.privateEvaluationOrigin.version}, inherited
+                from the accepted proposal.
               </p>
             )}
           <ul>
@@ -665,9 +748,27 @@ export function OwnPlanTaskPanel({
             onClick={() =>
               void action(async () => {
                 const now = Date.now();
+                if (requiresVariantRuntime && !runtimeCurrent(device, now)) {
+                  invalidate();
+                  throw Error(
+                    "Private project runtime changed. Review current account choices and a new quote.",
+                  );
+                }
                 if (requestRevision.current !== quote.revision) {
                   invalidate();
                   throw Error("Task choices changed. Review a new quote.");
+                }
+                if (
+                  variantMode &&
+                  (!variantCurrent(now) ||
+                    !runtimeCurrent(device, now) ||
+                    variantIdentity(quote.selection.privateVariantSelection) !==
+                      variantIdentity(privateVariantSelection))
+                ) {
+                  invalidate();
+                  throw Error(
+                    "Private result selection, rights or runtime changed. Review a new quote.",
+                  );
                 }
                 if (
                   sourceMode &&
@@ -744,6 +845,14 @@ export function OwnPlanTaskPanel({
             <p>
               Private evaluation context. The private brief is retained with its
               approved task.
+            </p>
+          )}
+          {status?.privateEvaluationOrigin?.kind ===
+            "private_source_variant" && (
+            <p>
+              Private source result version{" "}
+              {status.privateEvaluationOrigin.version}. Selected private ideas
+              remain separate from the source analysis.
             </p>
           )}
           <button

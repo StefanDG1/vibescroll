@@ -184,6 +184,7 @@ export async function exploreScope(
   const cards = new Map<string, Promise<Doc<"dashboardCards"> | null>>();
   const permitted = async (refs: Reference[]) => {
     if (
+      refs.some((ref) => "schemaVersion" in ref) ||
       !refs.length ||
       refs.length > 128 ||
       (!metadataOnly && !(await referencesCurrent(ctx, organizationId, refs)))
@@ -665,7 +666,9 @@ export const helped = query({
         !(await scope.permitted(evaluation.references))
       )
         continue;
-      const topic = await ctx.db.get(evaluation.topicId);
+      const topic = evaluation.topicId
+        ? await ctx.db.get(evaluation.topicId)
+        : null;
       if (!topic || topic.organizationId !== a.organizationId || topic.redirect)
         continue;
       const sourceIds = new Set(outcome.references.map((r) => r.sourceId));

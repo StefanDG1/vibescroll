@@ -218,13 +218,17 @@
       "summary": "Compare cited knowledge with confirmed project context and retain a private next step.",
       "file": "evaluate-an-idea-for-a-project.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed private text-variant candidate; prior synthetic illustrations retained; new native browser/model/production and independent walkthrough pending",
+      "lastVerifiedCommit": "a0c5044518de131d3e09d9b6c442610a2047fbfc",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
         "docs/HOSTED-TUTORIAL.md",
-        "apps/starter/components/repository-checklist.tsx"
+        "apps/starter/components/repository-checklist.tsx",
+        "apps/starter/components/private-source-analysis.tsx",
+        "apps/starter/components/own-plan-task-controls.tsx",
+        "convex/lib/privateProjectVariant.ts",
+        "packages/contracts/private-project-variant.ts"
       ],
       "related": ["getting-started", "processing-and-recovery"],
       "assets": ["/help/project-draft.png", "/help/no-fit.png"]
@@ -387,5 +391,12 @@
     ],
     "unaffectedArticleText": "Existing textual setup/capture/publication instructions remain; new media are edited synthetic captures and not live setup proof. Asset manifest binds exact bytes.",
     "limits": "Root actual exported-frame review and offline full decodes; native playback/independent acceptance pending."
+  },
+  "privateVariantProjectReview": {
+    "date": "2026-10-24",
+    "baseline": "a0c5044518de131d3e09d9b6c442610a2047fbfc",
+    "status": "source-reviewed-candidate",
+    "updated": ["evaluate-an-idea-for-a-project"],
+    "limits": "Explicit earned private text insight selection through existing project/plan controls only. No media reanalysis, skills or official Cloud claim. Focused tests are separate from native browser, real provider, production and independent acceptance."
   }
 }

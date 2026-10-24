@@ -1,3 +1,4 @@
+import { variantTaskEvidence } from "./lib/privateProjectVariant";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { ensure } from "../packages/policy";
@@ -30,6 +31,7 @@ export async function claimLocalTask(
   ctx: MutationCtx,
   device: Doc<"devices">,
   localRuntimeHash?: string,
+  allowPrivateVariant = false,
 ) {
   // A new worker session cannot erase the previous session's uncertain turn.
   for (const state of ["unknown", "canceled", "expired"]) {
@@ -68,7 +70,7 @@ export async function claimLocalTask(
           ...active.task,
           leaseUntil: 0,
           leaseToken: undefined,
-          ...(active.task.schemaVersion === "1.0.0"
+          ...(active.task.schemaVersion !== "2.0.0"
             ? { inspected: undefined, inspectionManifest: undefined }
             : {}),
         },
@@ -76,7 +78,7 @@ export async function claimLocalTask(
       return { job: null, reconcileTask: true };
     }
     if (
-      sourceTask(active) &&
+      (sourceTask(active) || active.task.schemaVersion === "3.0.0") &&
       (!localRuntimeHash || !runtimeCurrent(device, localRuntimeHash))
     )
       return { job: null, upgradeRequired: true };
@@ -103,12 +105,33 @@ export async function claimLocalTask(
           )
           .take(5)
       : [];
-  const candidates = [...legacy, ...sourceCandidates].sort(
+  const privateCandidates =
+    allowPrivateVariant &&
+    localRuntimeHash &&
+    runtimeCurrent(device, localRuntimeHash) &&
+    device.localTaskRuntime!.value.features.includes(
+      "project_private_variant_v1",
+    )
+      ? await ctx.db
+          .query("localLibraryRuns")
+          .withIndex("by_device_state", (q) =>
+            q
+              .eq("task.deviceId", device._id)
+              .eq("state", "queued")
+              .eq("task.schemaVersion", "3.0.0"),
+          )
+          .take(5)
+      : [];
+  const candidates = [
+    ...legacy,
+    ...sourceCandidates,
+    ...privateCandidates,
+  ].sort(
     (a, b) => a._creationTime - b._creationTime || a._id.localeCompare(b._id),
   );
   for (const run of candidates) {
     if (
-      sourceTask(run) &&
+      (sourceTask(run) || run.task?.schemaVersion === "3.0.0") &&
       (!localRuntimeHash || !runtimeCurrent(device, localRuntimeHash))
     )
       continue;
@@ -117,7 +140,7 @@ export async function claimLocalTask(
     } catch {
       await ctx.db.patch(run._id, { state: "expired", updatedAt: Date.now() });
       await releaseSourcePointer(ctx, run);
-      if (run.task?.schemaVersion === "1.0.0" && run.task.proposal) {
+      if (run.task && run.task.schemaVersion !== "2.0.0" && run.task.proposal) {
         const p = await ctx.db.get(run.task.proposal.id);
         if (p?.localPlanRunId === run._id)
           await ctx.db.patch(p._id, { localPlanRunId: undefined });
@@ -148,6 +171,9 @@ export async function claimLocalTask(
         deadline: task.deadline,
         leaseGeneration: task.leaseGeneration,
         leaseToken: task.leaseToken,
+        ...(task.schemaVersion === "3.0.0"
+          ? { localRuntimeHash: task.localRuntimeHash }
+          : {}),
         ...(task.schemaVersion === "2.0.0"
           ? {
               sourceId: task.sourceReanalysisBinding.sourceId,
@@ -204,6 +230,34 @@ export async function localTaskOperation(
       "Use the exact private text operation contract.",
     );
   }
+  if (initial.task.schemaVersion === "3.0.0") {
+    const extra: Record<string, string[]> = {
+      task_context_prepare: ["repositoryId"],
+      task_heartbeat: ["capabilities", "localTaskRuntime"],
+      task_record_evaluation_inspection: ["id", "inspected"],
+      task_evaluation_finish: ["id", "output"],
+      task_record_inspection: ["inspected", "manifest"],
+      task_finish:
+        initial.task.workload === "plan_draft" ? ["plan"] : ["evaluationIds"],
+      task_fail: [],
+    };
+    ensure(
+      !!extra[operation] &&
+        Object.keys(a).every((key) =>
+          [
+            "runId",
+            "leaseGeneration",
+            "leaseToken",
+            ...extra[operation],
+          ].includes(key),
+        ) &&
+        (operation !== "task_heartbeat" ||
+          (a.capabilities === undefined) ===
+            (a.localTaskRuntime === undefined)),
+      "INVALID_INPUT",
+      "Use the exact private variant task operation.",
+    );
+  }
   if (operation === "task_fail") {
     ensure(
       initial.task.leaseGeneration === a.leaseGeneration &&
@@ -219,7 +273,7 @@ export async function localTaskOperation(
         ...initial.task,
         leaseUntil: 0,
         leaseToken: undefined,
-        ...(initial.task.schemaVersion === "1.0.0"
+        ...(initial.task.schemaVersion !== "2.0.0"
           ? { inspected: undefined, inspectionManifest: undefined }
           : {}),
       },
@@ -246,7 +300,7 @@ export async function localTaskOperation(
       "APPROVAL_STALE",
       "The approved catalogue changed.",
     );
-    if (sourceTask(initial)) {
+    if (sourceTask(initial) || initial.task.schemaVersion === "3.0.0") {
       const runtime = await admitLocalRuntime(
         ctx,
         device,
@@ -255,7 +309,12 @@ export async function localTaskOperation(
         device.subscriptionCapabilities!.sessionExpiresAt,
       );
       ensure(
-        runtime && runtime.hash === sourceTask(initial)!.localRuntimeHash,
+        runtime &&
+          runtime.hash ===
+            (initial.task.schemaVersion === "2.0.0" ||
+            initial.task.schemaVersion === "3.0.0"
+              ? initial.task.localRuntimeHash
+              : ""),
         "APPROVAL_STALE",
         "The local source runtime changed.",
       );
@@ -319,7 +378,7 @@ export async function localTaskOperation(
           ctx,
           {
             runId: run._id,
-            topicId: task.topicId!,
+            ...(task.topicId ? { topicId: task.topicId } : {}),
             repositoryId: a.repositoryId,
             members: task.members,
           },
@@ -443,12 +502,15 @@ export async function localTaskOperation(
       "INVALID_EVIDENCE",
       "Complete each selected repository once.",
     );
-    const evidence = await memberEvidence(
-      ctx,
-      (await Promise.all(task.members.map((id) => ctx.db.get(id)))).filter(
-        (m): m is Doc<"knowledgeMembers"> => !!m,
-      ),
-    );
+    const evidence =
+      task.schemaVersion === "3.0.0"
+        ? (await variantTaskEvidence(ctx, run)).evidence
+        : await memberEvidence(
+            ctx,
+            (
+              await Promise.all(task.members.map((id) => ctx.db.get(id)))
+            ).filter((m): m is Doc<"knowledgeMembers"> => !!m),
+          );
     const expected = new Set(evidence.map((e) => canonicalJson(e.reference))),
       repositories = new Set(),
       proposalIds: Id<"proposals">[] = [];

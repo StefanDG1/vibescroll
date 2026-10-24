@@ -2,11 +2,16 @@ import {
   assertSubscriptionInput,
   assertReportedAllowance,
 } from "./subscription-capabilities.mjs";
-import { evaluationJson } from "../knowledge/contracts.ts";
+import {
+  evaluationJson,
+  privateEvaluationJson,
+} from "../knowledge/contracts.ts";
 import { planInput } from "../plans/contract.mjs";
 import { z } from "zod";
 import {
   sourceTextRuntime,
+  projectVariantRuntime,
+  projectVariantTask,
   sourceTextTask,
   versionedTask,
   sourceStructuredBytes,
@@ -183,6 +188,7 @@ export function createSubscriptionCoordinator({
     announcedAt = null,
     taskProtocol = false,
     sourceProtocol = false,
+    variantProtocol = false,
     localRuntimeHash,
     preferTasks = true,
     enabled = { personal: false, assistant: false };
@@ -222,7 +228,7 @@ export function createSubscriptionCoordinator({
                 profileBinding: official.session.profileBinding,
                 expiresAt: official.session.expiresAt,
                 capabilities,
-                localTaskRuntime: sourceTextRuntime,
+                localTaskRuntime: projectVariantRuntime,
               },
         );
         signal.throwIfAborted();
@@ -233,6 +239,9 @@ export function createSubscriptionCoordinator({
           sourceProtocol =
             hello.sourceTaskProtocolVersion === "2.0.0" &&
             /^[a-f0-9]{64}$/.test(hello.localRuntimeHash ?? "");
+          variantProtocol =
+            hello.projectPrivateVariantProtocolVersion === "3.0.0" &&
+            sourceProtocol;
           localRuntimeHash = sourceProtocol
             ? hello.localRuntimeHash
             : undefined;
@@ -269,7 +278,11 @@ export function createSubscriptionCoordinator({
             route === "personal" ? "poll" : "claim",
             route === "assistant" && taskProtocol
               ? {
-                  taskProtocolVersion: sourceProtocol ? "2.0.0" : "1.0.0",
+                  taskProtocolVersion: variantProtocol
+                    ? "3.0.0"
+                    : sourceProtocol
+                      ? "2.0.0"
+                      : "1.0.0",
                   preferTasks,
                   ...(sourceProtocol ? { localRuntimeHash } : {}),
                 }
@@ -322,8 +335,9 @@ export function createSubscriptionCoordinator({
             if (job.taskProtocolVersion && !taskProtocol)
               throw Error("ASSISTANT_JOB_INVALID");
             if (
-              sourceTextTask(job) &&
-              (!sourceProtocol || job.localRuntimeHash !== localRuntimeHash)
+              (sourceTextTask(job) || projectVariantTask(job)) &&
+              (!(projectVariantTask(job) ? variantProtocol : sourceProtocol) ||
+                job.localRuntimeHash !== localRuntimeHash)
             )
               throw Error("ASSISTANT_LOCAL_RUNTIME_CHANGED");
             if (job.profileBinding !== official.session.profileBinding)
@@ -355,7 +369,12 @@ export function createSubscriptionCoordinator({
                 asr: config.localAsr,
               });
             else if (task)
-              await processTask(job, { client: official, request, signal });
+              await processTask(job, {
+                client: official,
+                request,
+                signal,
+                localTaskRuntime: projectVariantRuntime,
+              });
             else
               await processAssistant(job, {
                 client: official,
@@ -425,10 +444,23 @@ export function createSubscriptionCoordinator({
 
 export async function processSubscriptionTask(
   job,
-  { client, request, signal },
+  {
+    client,
+    request,
+    signal,
+    localTaskRuntime = projectVariantTask(job)
+      ? projectVariantRuntime
+      : sourceTextRuntime,
+  },
 ) {
   if (
     !versionedTask(job) ||
+    (projectVariantTask(job) &&
+      (!/^[a-f0-9]{64}$/.test(job.localRuntimeHash ?? "") ||
+        !localTaskRuntime.features.includes("project_private_variant_v1") ||
+        createHash("sha256")
+          .update(canonicalJson(localTaskRuntime))
+          .digest("hex") !== job.localRuntimeHash)) ||
     typeof job.runId !== "string" ||
     job.runId.length < 1 ||
     job.runId.length > 100 ||
@@ -483,8 +515,8 @@ export async function processSubscriptionTask(
       const lease = await request("task_heartbeat", {
         ...reference,
         ...(capabilities ? { capabilities } : {}),
-        ...(capabilities && sourceTextTask(job)
-          ? { localTaskRuntime: sourceTextRuntime }
+        ...(capabilities && (sourceTextTask(job) || projectVariantTask(job))
+          ? { localTaskRuntime }
           : {}),
       });
       if (
@@ -563,7 +595,7 @@ export async function processSubscriptionTask(
       if (job.workload === "project_evaluation") {
         if (!bundle.cached) {
           const result = await client.structured(
-            evaluationJson,
+            projectVariantTask(job) ? privateEvaluationJson : evaluationJson,
             {
               ...bundle,
               instruction:

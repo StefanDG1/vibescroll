@@ -4,7 +4,9 @@ export const sourceTextRuntime: Readonly<{
 }>;
 export function validLocalTaskRuntime(value: unknown): value is {
   schemaVersion: "local-task-runtime-v1";
-  features: ["source_reanalysis_text_v1"];
+  features:
+    | ["source_reanalysis_text_v1"]
+    | ["source_reanalysis_text_v1", "project_private_variant_v1"];
 };
 export function sourceTextTask(job: unknown): boolean;
 export function versionedTask(job: unknown): boolean;
@@ -25,3 +27,12 @@ export function sourceStructuredBytes(
   model: string,
   effort: string,
 ): number;
+
+export const projectVariantRuntime: Readonly<{
+  schemaVersion: "local-task-runtime-v1";
+  features: readonly [
+    "source_reanalysis_text_v1",
+    "project_private_variant_v1",
+  ];
+}>;
+export function projectVariantTask(job: unknown): boolean;

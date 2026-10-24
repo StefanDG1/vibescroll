@@ -1,5 +1,11 @@
 # Finish the launch with user-owned Codex Cloud
 
+Current verification supersedes earlier pending-CI notes below. Draft PR148 passed CI40068095705, PR149 CI40068663644, PR150 CI40070908440, PR151 CI40072087033 and PR152 CI40077647549 at their recorded exact heads. None of these drafts is serving in production; only the narrow PR141 frontend is live.
+
+## Private text and project candidates, October 24
+
+C6b private source-text results are pushed in draft PR152 at a0c5044 with passing exact-head CI40077647549. C6c now connects explicitly selected earned private insights to the existing evaluation/proposal/plan path under [ADR 139](../../adr/139-private-variant-project-references.md). Root owns integration, High backend/runtime and Medium reused UI; independent review and combined checks remain required. These candidates preserve the Cloud-first target. They do not prove official hosted execution, full media/skills, commercial eligibility or production acceptance. The cumulative US$3 cap and prior holds remain; full backend/index publication is still held.
+
 ## Work Cloud text and current creator status candidate, October 24
 
 [ADR 129](../../adr/129-gated-work-cloud-text-handoff.md) implements an explicit, default-off text execution handoff through the existing source job and assistant grants. [ADR 130](../../adr/130-current-creator-digest-processing.md) makes the existing creator digest reflect current authorized source progress and evidence coverage. Neither publishes a shared artifact, dispatches a provider or passes real-video/official-host/production acceptance. The same US$3 cap and all prior holds remain. Backend deployment remains held because archive/read/retention costs are not defensibly bounded; independent engineering continues.

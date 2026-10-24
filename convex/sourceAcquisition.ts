@@ -877,6 +877,13 @@ export const expire = internalMutation({
       maxGeneration: revision.generation,
       cursor: null,
     });
+    await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
+      organizationId: revision.organizationId,
+      sourceId: revision.sourceId,
+      section: "knowledgeJobs",
+      cursor: null,
+      maxGeneration: revision.generation,
+    });
     if (
       !source ||
       source.organizationId !== revision.organizationId ||
@@ -917,13 +924,6 @@ export const expire = internalMutation({
       enqueue: false,
     });
     await invalidatePublicSource(ctx, source._id);
-    await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
-      organizationId: source.organizationId,
-      sourceId: source._id,
-      section: "knowledgeJobs",
-      cursor: null,
-      maxGeneration: source.generation,
-    });
     return { expired: true };
   },
 });

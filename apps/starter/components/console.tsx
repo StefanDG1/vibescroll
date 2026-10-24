@@ -1995,6 +1995,13 @@ export function Console({
                             Private evaluation focus
                           </span>
                         )}
+                        {p.privateEvaluationOrigin?.kind ===
+                          "private_source_variant" && (
+                          <span className="status">
+                            Private source result version{" "}
+                            {p.privateEvaluationOrigin.version}
+                          </span>
+                        )}
                         <h2>{p.title}</h2>
                         <p>{p.detail?.currentProblem}</p>
                         <p>{label(p.review)}</p>
@@ -2088,6 +2095,15 @@ export function Console({
                     <p className="notice">
                       Private evaluation focus. Review this personalized project
                       assessment before approving a plan or publication.
+                    </p>
+                  )}
+                  {selected.privateEvaluationOrigin?.kind ===
+                    "private_source_variant" && (
+                    <p className="notice">
+                      Private source result version{" "}
+                      {selected.privateEvaluationOrigin.version}. This
+                      assessment uses selected private ideas. Review it before
+                      approving a plan or publication.
                     </p>
                   )}
                   {selected.reviewerCorrection && (
@@ -3984,6 +4000,9 @@ function SourceDetail({
             currentRevisionId={detail.currentRevisionId}
             analysisHash={detail.analysisHash}
             eligibility={detail.privateSourceEligibility}
+            repositories={repos
+              .filter((repo: any) => repo.enabled && repo.confirmed)
+              .map((repo: any) => ({ id: id(repo), name: repo.fullName }))}
             evidenceRegistry={detail.evidenceRegistry}
             sourceRevision={detail.sourceRevision}
             call={strictCall}

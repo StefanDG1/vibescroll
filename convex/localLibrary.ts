@@ -1,3 +1,7 @@
+import {
+  prepareVariantEvaluation,
+  variantOrigin,
+} from "./lib/privateProjectVariant";
 import { presentAnalysis } from "../packages/insights/presentation";
 import { repositoryContent } from "./lib/repositoryContent";
 import {
@@ -26,6 +30,7 @@ import {
 import {
   synthesis,
   evaluation,
+  privateEvaluation,
   assertReferences,
   limits,
   processingVersion,
@@ -205,9 +210,9 @@ export const list = query({
                 fundingRoute: r.task.fundingRoute,
                 deadline: r.task.deadline,
                 evaluationIds:
-                  r.task.schemaVersion === "1.0.0" ? r.task.evaluationIds : [],
+                  r.task.schemaVersion !== "2.0.0" ? r.task.evaluationIds : [],
                 proposalIds:
-                  r.task.schemaVersion === "1.0.0" ? r.task.proposalIds : [],
+                  r.task.schemaVersion !== "2.0.0" ? r.task.proposalIds : [],
               },
             }
           : {}),
@@ -247,7 +252,7 @@ export const expire = internalMutation({
                 ...run.task,
                 leaseUntil: 0,
                 leaseToken: undefined,
-                ...(run.task.schemaVersion === "1.0.0"
+                ...(run.task.schemaVersion !== "2.0.0"
                   ? { inspected: undefined, inspectionManifest: undefined }
                   : {}),
               },
@@ -257,7 +262,8 @@ export const expire = internalMutation({
       if (run.state === "queued") await releaseSourcePointer(ctx, run);
       if (
         run.state === "queued" &&
-        run.task?.schemaVersion === "1.0.0" &&
+        run.task &&
+        run.task.schemaVersion !== "2.0.0" &&
         run.task.proposal
       ) {
         const p = await ctx.db.get(run.task.proposal.id);
@@ -888,15 +894,23 @@ export async function evaluationPrepareCore(
   ctx: MutationCtx,
   a: {
     runId: Id<"localLibraryRuns">;
-    topicId: Id<"knowledgeTopics">;
+    topicId?: Id<"knowledgeTopics">;
     repositoryId: Id<"repositories">;
     cursor?: string;
     members?: Id<"knowledgeMembers">[];
   },
   actorId?: Id<"users">,
 ) {
-  const run = await activeRun(ctx, a.runId, actorId),
-    topic = await ctx.db.get(a.topicId),
+  const run = await activeRun(ctx, a.runId, actorId);
+  if (run.task?.schemaVersion === "3.0.0") {
+    ensure(
+      a.topicId === undefined && !a.cursor && a.members?.length === 0,
+      "INVALID_INPUT",
+      "Private variants have no canonical topic or memberships.",
+    );
+    return prepareVariantEvaluation(ctx, run, a.repositoryId);
+  }
+  const topic = a.topicId ? await ctx.db.get(a.topicId) : null,
     repo = await repositoryContent(ctx, await ctx.db.get(a.repositoryId));
   if (run.task)
     ensure(
@@ -1142,7 +1156,7 @@ export async function evaluationFinishCore(
       e.actor === run.actor &&
       samePrivateEvaluationOrigin(
         e.privateEvaluationOrigin,
-        run.task?.schemaVersion === "1.0.0"
+        run.task && run.task.schemaVersion !== "2.0.0"
           ? run.task.privateEvaluationOrigin
           : undefined,
       ) &&
@@ -1157,7 +1171,9 @@ export async function evaluationFinishCore(
     "CONTEXT_REQUIRED",
     "Prepare repository evidence first.",
   );
-  const output = evaluation.parse(a.output);
+  const output = (
+    variantOrigin(e.privateEvaluationOrigin) ? privateEvaluation : evaluation
+  ).parse(a.output);
   assertReferences([output], e.references);
   ensure(
     !containsSecret(JSON.stringify(output)),

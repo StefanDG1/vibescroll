@@ -314,3 +314,7 @@ The owner authorized an explicit assistant grant lasting until they turn it off,
 ## F036: automatic assistant intake, October 20
 
 Updated all four briefs for the owner's link-to-local-extraction default, one-time connection permission, offline queue, optional explicit credits and project opt-in. [ADR 109](../adr/109-automatic-assistant-intake.md) preserves current access, funding and publication boundaries. The implementation plan and dated status distinguish local/synthetic checks from actual deployment, account activation and model completion. No new audience, pricing, provider access, customer benefit or measured savings is claimed.
+
+## F062: private variant project integration, October 24
+
+The four foundational documents record explicitly selected earned private text insights for existing project evaluation and plans. [ADR 139](../adr/139-private-variant-project-references.md) defines actual run/output provenance, separate runtime admission and privacy. Candidate implementation is in progress; real model usefulness, media/skills/Cloud and production remain unverified. This is not a shared catalog contribution or marketing outcome.

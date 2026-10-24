@@ -26,7 +26,12 @@ export async function draftCurrent(ctx: QueryCtx, d: Doc<"issueDrafts">) {
       d.privateEvaluationOrigin,
     ) &&
     (await evaluationCurrent(ctx, e)) &&
-    (await referencesCurrent(ctx, d.organizationId, d.references)) &&
+    (await referencesCurrent(
+      ctx,
+      d.organizationId,
+      d.references,
+      d.privateEvaluationOrigin,
+    )) &&
     e.topicVersion === d.topicVersion &&
     e.baseSha === d.baseSha &&
     e.profileVersion === d.profileVersion
@@ -108,9 +113,10 @@ export async function createIssueCore(
       : "- No additional item established.";
   const origin = process.env.SITE_URL ?? "https://scroll.companynerve.com";
   const refs = output.references
-    .map(
-      (r: any) =>
-        `- [Private source evidence](${origin}/app/${e.organizationId}/library/${r.sourceId}), insight ${r.insightId}. Requires workspace membership.`,
+    .map((r: any) =>
+      r.schemaVersion === "private-source-reference-v1"
+        ? `- [Private source evidence](${origin}/app/${e.organizationId}/library/${r.sourceId}), private variant ${r.privateVersion}, run ${r.runId}, output SHA256 ${r.outputHash}, insight ${r.insightId}. Requires the original private owner.`
+        : `- [Private source evidence](${origin}/app/${e.organizationId}/library/${r.sourceId}), insight ${r.insightId}. Requires workspace membership.`,
     )
     .join("\n");
   const repoEvidence =
@@ -217,6 +223,7 @@ export const list = query({
         ctx,
         d.organizationId,
         d.references,
+        d.privateEvaluationOrigin,
       );
       items.push({
         ...d,
@@ -456,7 +463,12 @@ export const attemptContext = query({
       repo,
       draft:
         draft &&
-        (await referencesCurrent(ctx, draft.organizationId, draft.references))
+        (await referencesCurrent(
+          ctx,
+          draft.organizationId,
+          draft.references,
+          draft.privateEvaluationOrigin,
+        ))
           ? draft
           : null,
     };

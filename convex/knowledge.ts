@@ -1,3 +1,8 @@
+import {
+  evaluationReferencesCurrent,
+  variantOrigin,
+} from "./lib/privateProjectVariant";
+import type { PrivateEvaluationOrigin } from "../packages/contracts/private-evaluation-context";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { repositoryContent } from "./lib/repositoryContent";
 import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
@@ -27,6 +32,7 @@ import {
   synthesis,
   evaluation,
   type Reference,
+  type EvaluationReference,
 } from "../packages/knowledge/contracts";
 const org = { organizationId: v.id("organizations") };
 const month = () => new Date().toISOString().slice(0, 7);
@@ -96,8 +102,14 @@ export async function actorCurrent(
 export async function referencesCurrent(
   ctx: QueryCtx,
   organizationId: Id<"organizations">,
-  refs: Reference[],
-) {
+  refs: EvaluationReference[],
+  origin?: PrivateEvaluationOrigin,
+): Promise<boolean> {
+  if (refs.some((ref) => "schemaVersion" in ref))
+    return (
+      !!variantOrigin(origin) &&
+      evaluationReferencesCurrent(ctx, organizationId, refs, origin)
+    );
   for (const r of refs) {
     const s = await ctx.db.get(r.sourceId as Id<"sources">);
     if (
@@ -1243,7 +1255,7 @@ export const evaluationCurrent = async (
     )
       return false;
   }
-  const t = await ctx.db.get(e.topicId),
+  const t = e.topicId ? await ctx.db.get(e.topicId) : null,
     r = await ctx.db.get(e.repositoryId);
   const preference = await ctx.db
     .query("improvementPreferences")
@@ -1267,9 +1279,17 @@ export const evaluationCurrent = async (
     r.sha === e.baseSha &&
     r.profileVersion === e.profileVersion &&
     (r.selectionVersion ?? 0) === (e.selectionVersion ?? 0) &&
-    t?.version === e.topicVersion &&
-    !t.redirect &&
-    (await referencesCurrent(ctx, e.organizationId, e.references))
+    (variantOrigin(e.privateEvaluationOrigin)
+      ? e.topicId === undefined &&
+        e.topicVersion === undefined &&
+        !e.topicBindings?.length
+      : !!t && t.version === e.topicVersion && !t.redirect) &&
+    (await referencesCurrent(
+      ctx,
+      e.organizationId,
+      e.references,
+      e.privateEvaluationOrigin,
+    ))
   );
 };
 export const claimEvaluation = internalMutation({
@@ -1440,6 +1460,7 @@ export const evaluations = query({
         ctx,
         e.organizationId,
         e.references,
+        e.privateEvaluationOrigin,
       );
       items.push({
         ...e,
@@ -1506,7 +1527,8 @@ export const redactDerived = internalMutation({
     const affected = (proposal: Doc<"proposals">) =>
       proposal.organizationId === a.organizationId &&
       proposal.sourceId === a.sourceId &&
-      proposal.detail?.schemaVersion === "2.0.0" &&
+      (proposal.detail?.schemaVersion === "2.0.0" ||
+        !!variantOrigin(proposal.privateEvaluationOrigin)) &&
       proposal.references?.some(
         (ref) =>
           ref.sourceId === a.sourceId &&

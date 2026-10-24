@@ -351,7 +351,12 @@ export const libraryContext = query({
     for (const p of proposals)
       if (
         !p.references ||
-        (await referencesCurrent(ctx, organizationId, p.references))
+        (await referencesCurrent(
+          ctx,
+          organizationId,
+          p.references,
+          p.privateEvaluationOrigin,
+        ))
       )
         current.push({ _id: p._id, review: p.review });
     return {
@@ -708,7 +713,12 @@ export const detail = query({
           proposals.map(async (p) =>
             p.organizationId === s.organizationId &&
             (!p.references ||
-              (await referencesCurrent(ctx, s.organizationId, p.references)))
+              (await referencesCurrent(
+                ctx,
+                s.organizationId,
+                p.references,
+                p.privateEvaluationOrigin,
+              )))
               ? p
               : null,
           ),
@@ -2341,7 +2351,12 @@ export const proposals = query({
     for (const p of rows) {
       if (
         p.references &&
-        !(await referencesCurrent(ctx, p.organizationId, p.references))
+        !(await referencesCurrent(
+          ctx,
+          p.organizationId,
+          p.references,
+          p.privateEvaluationOrigin,
+        ))
       )
         continue;
       permitted.push(p);
@@ -2357,7 +2372,12 @@ export const proposal = query({
     await access(ctx, p.organizationId);
     ensure(
       !p.references ||
-        (await referencesCurrent(ctx, p.organizationId, p.references)),
+        (await referencesCurrent(
+          ctx,
+          p.organizationId,
+          p.references,
+          p.privateEvaluationOrigin,
+        )),
       "FORBIDDEN",
       "Proposal evidence unavailable.",
     );

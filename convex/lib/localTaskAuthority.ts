@@ -1,3 +1,4 @@
+import { variantTaskEvidence } from "./privateProjectVariant";
 import type { QueryCtx, MutationCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
 import { ensure } from "../../packages/policy";
@@ -175,7 +176,7 @@ export async function taskBindingsCurrent(
   );
   ensure(
     t &&
-      t.schemaVersion === "1.0.0" &&
+      ["1.0.0", "3.0.0"].includes(t.schemaVersion) &&
       run.actor === actorId &&
       ["queued", "active"].includes(run.state) &&
       run.expiresAt > Date.now() &&
@@ -207,6 +208,17 @@ export async function taskBindingsCurrent(
     "APPROVAL_STALE",
     "The account, catalogue or task lease changed.",
   );
+  if (t!.schemaVersion === "3.0.0") {
+    await variantTaskEvidence(ctx, run);
+    ensure(
+      runtimeCurrent(device, t.localRuntimeHash) &&
+        device.localTaskRuntime!.value.features.includes(
+          "project_private_variant_v1",
+        ),
+      "APPROVAL_STALE",
+      "Reconnect the approved private project runtime.",
+    );
+  }
   for (const b of t!.sourceBindings) {
     const s = await ctx.db.get(b.sourceId);
     ensure(
@@ -216,16 +228,17 @@ export async function taskBindingsCurrent(
         s.generation === b.generation &&
         s.updatedAt === b.revision &&
         (await digest(canonicalJson(s.analysis))) === b.analysisHash &&
-        (await referencesCurrent(
-          ctx,
-          run.organizationId,
-          (s.analysis?.insights ?? []).slice(0, 20).map((i: any) => ({
-            sourceId: s._id,
-            generation: s.generation,
-            revision: s.updatedAt,
-            insightId: i.id,
-          })),
-        )),
+        (t!.schemaVersion === "3.0.0" ||
+          (await referencesCurrent(
+            ctx,
+            run.organizationId,
+            (s.analysis?.insights ?? []).slice(0, 20).map((i: any) => ({
+              sourceId: s._id,
+              generation: s.generation,
+              revision: s.updatedAt,
+              insightId: i.id,
+            })),
+          ))),
       "APPROVAL_STALE",
       "Source evidence or permission changed.",
     );

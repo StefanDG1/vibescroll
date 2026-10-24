@@ -178,3 +178,7 @@ The document check verifies four deliverables, original template coverage, six b
 Next evidence needed is recurring customer behavior, willingness to pay, a comparative workflow pilot, source-access reliability, a benchmark on rights-cleared sources, complete production and funding-route tests, and the remaining applicable tax and publication confirmation. Original operator records remain private. No research interview, paying-customer quote, measured time saving, conversion rate, or achieved operating margin was manufactured to close those gaps.
 
 October 3 current scope: individuals and businesses may buy Starter or Pro through verified tax-covered Managed Payments markets when release gates pass. Custom Business scope remains enquiry-only; no direct-billing fallback or enterprise entitlement follows. See [F006](idea-backlog.md) and [ADR 039](../adr/039-managed-individual-and-business-buyers.md).
+
+## F062: private variant project integration, October 24
+
+The four foundational documents record explicitly selected earned private text insights for existing project evaluation and plans. [ADR 139](../adr/139-private-variant-project-references.md) defines actual run/output provenance, separate runtime admission and privacy. Candidate implementation is in progress; real model usefulness, media/skills/Cloud and production remain unverified. This is not a shared catalog contribution or marketing outcome.

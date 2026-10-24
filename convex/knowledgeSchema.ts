@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
+import { privateVariantReferenceValue } from "../packages/contracts/private-project-variant";
 const tenant = {
   organizationId: v.id("organizations"),
   createdAt: v.number(),
@@ -12,6 +13,10 @@ export const evidenceRef = v.object({
   revision: v.number(),
   insightId: v.string(),
 });
+export const evaluationEvidenceRef = v.union(
+  evidenceRef,
+  privateVariantReferenceValue,
+);
 export const knowledgeTables = {
   knowledgePolicies: defineTable({
     ...tenant,
@@ -116,14 +121,14 @@ export const knowledgeTables = {
       v.array(v.object({ id: v.id("knowledgeTopics"), version: v.number() })),
     ),
     localRunId: v.optional(v.id("localLibraryRuns")),
-    topicId: v.id("knowledgeTopics"),
+    topicId: v.optional(v.id("knowledgeTopics")),
     repositoryId: v.id("repositories"),
     actor: v.id("users"),
-    topicVersion: v.number(),
+    topicVersion: v.optional(v.number()),
     baseSha: v.string(),
     profileVersion: v.number(),
     selectionVersion: v.optional(v.number()),
-    references: v.array(evidenceRef),
+    references: v.array(evaluationEvidenceRef),
     sourceSetHash: v.string(),
     preferenceVersion: v.optional(v.number()),
     key: v.string(),
@@ -149,12 +154,12 @@ export const knowledgeTables = {
     privateEvaluationOrigin: v.optional(privateEvaluationOriginValue),
     evaluationId: v.id("knowledgeEvaluations"),
     repositoryId: v.id("repositories"),
-    topicId: v.id("knowledgeTopics"),
-    topicVersion: v.number(),
+    topicId: v.optional(v.id("knowledgeTopics")),
+    topicVersion: v.optional(v.number()),
     baseSha: v.string(),
     profileVersion: v.number(),
     selectionVersion: v.optional(v.number()),
-    references: v.array(evidenceRef),
+    references: v.array(evaluationEvidenceRef),
     title: v.string(),
     body: v.string(),
     hash: v.string(),

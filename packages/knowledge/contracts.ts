@@ -14,6 +14,16 @@ export const reference = z.strictObject({
   revision: z.number().int().nonnegative(),
   insightId: z.string().min(1).max(120),
 });
+export const privateVariantReference = reference.extend({
+  schemaVersion: z.literal("private-source-reference-v1"),
+  runId: z.string().min(1).max(100),
+  privateVersion: z.number().int().positive(),
+  outputHash: z.string().regex(/^[a-f0-9]{64}$/),
+});
+export const evaluationReference = z.union([
+  reference,
+  privateVariantReference,
+]);
 const text = z.string().min(1).max(1200);
 export const synthesis = z.strictObject({
   explanation: text,
@@ -69,6 +79,11 @@ export const evaluation = z.strictObject({
     .max(12),
 });
 export type Reference = z.infer<typeof reference>;
+export type EvaluationReference = z.infer<typeof evaluationReference>;
+// Canonical evaluation/synthesis schemas retain their original wire format.
+export const privateEvaluation = evaluation.extend({
+  references: z.array(evaluationReference).min(1).max(12),
+});
 export const issueApproval = z.strictObject({
   id: z.string().min(1).max(100),
   version: z.number().int().positive(),
@@ -76,11 +91,15 @@ export const issueApproval = z.strictObject({
   visibility: z.enum(["public", "private"]),
   publicationRights: z.literal(true),
 });
-export const referenceKey = (r: Reference) =>
-  `${r.sourceId}:${r.generation}:${r.revision}:${r.insightId}`;
+export const referenceKey = (r: EvaluationReference) => {
+  const base = `${r.sourceId}:${r.generation}:${r.revision}:${r.insightId}`;
+  return "schemaVersion" in r
+    ? `private-source-reference-v1:${JSON.stringify([r.sourceId, r.generation, r.revision, r.insightId, r.runId, r.privateVersion, r.outputHash])}`
+    : base;
+};
 export function assertReferences(
-  output: { references: Reference[] }[],
-  allowed: Reference[],
+  output: { references: EvaluationReference[] }[],
+  allowed: EvaluationReference[],
 ) {
   const keys = new Set(allowed.map(referenceKey));
   if (output.some((c) => c.references.some((r) => !keys.has(referenceKey(r)))))
@@ -88,4 +107,5 @@ export function assertReferences(
 }
 export const synthesisJson = z.toJSONSchema(synthesis);
 export const evaluationJson = z.toJSONSchema(evaluation);
+export const privateEvaluationJson = z.toJSONSchema(privateEvaluation);
 export const processingVersion = "knowledge-v1.2";

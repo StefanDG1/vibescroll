@@ -73,6 +73,8 @@ Embedding records include workspace, entity ID, model, dimensions, and content h
 
 ## Corrections and deletion
 
+Service-origin `publicImports` optionally carry an immutable `service-import-v1` snapshot in the existing table. It contains the sanitized cited DTO, its hash, original artifact/source revision and compatibility/content/evidence/rights bindings, saved rights, save time and retention deadline. Only an explicit currently authorized Pro save creates it. Legacy references do not acquire a snapshot on reads. Notes and corrections remain separately authored. Cancellation and benign newer source metadata do not replace or remove the earned copy; durable rights, moderation, deletion, expiry and restore quarantine still apply. The same-table snapshot-expiry index and existing privacy scheduler perform bounded cleanup. No second analysis store is introduced.
+
 Never overwrite raw transcription silently. Store a correction event and update the current projection. A new processing version can replace the current display only with provenance intact.
 
 Deleting a source removes its raw media, transcript, frames, insights, and searchable content. Preserve a minimal redacted link from a historical PR if needed to explain that its source was deleted. Deleting an app record does not silently delete a user's GitHub PR.

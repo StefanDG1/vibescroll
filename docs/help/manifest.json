@@ -26,7 +26,7 @@
       "path": "/help/save-form.png",
       "status": "approved",
       "alt": "Save form with source type, title, URL and permission checkbox.",
-      "caption": "Synthetic Save form. Saving does not start analysis.",
+      "caption": "Synthetic Save form with manual analysis. Automatic processing requires its own current permission and a ready route.",
       "width": 390,
       "height": 700,
       "captureCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",

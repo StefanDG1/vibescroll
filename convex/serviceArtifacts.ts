@@ -12,6 +12,10 @@ import {
   invalidateServiceSource,
   serviceArtifactCurrent,
   serviceArtifactDto,
+  serviceArtifactSnapshot,
+  requireProCatalogAccess,
+  scrubServiceArtifactCopies,
+  sweepRetainedServiceArtifactCopies,
 } from "./lib/serviceArtifacts";
 
 export const commit = internalMutation({
@@ -35,6 +39,17 @@ export const invalidateSource = internalMutation({
   args: { sourceId: v.id("sources"), maxGeneration: v.number() },
   handler: (ctx, a) =>
     invalidateServiceSource(ctx, a.sourceId, a.maxGeneration),
+});
+export const scrubCopies = internalMutation({
+  args: {
+    artifactId: v.id("publicArtifacts"),
+    cursor: v.union(v.string(), v.null()),
+  },
+  handler: scrubServiceArtifactCopies,
+});
+export const sweepCopies = internalMutation({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: (ctx, a) => sweepRetainedServiceArtifactCopies(ctx, a.cursor),
 });
 
 const importArgs = {
@@ -63,6 +78,7 @@ export const preview = query({
   args: importArgs,
   handler: async (ctx, a) => {
     await privateOwner(ctx, a.organizationId);
+    await requireProCatalogAccess(ctx, a.organizationId);
     const current = await serviceArtifactCurrent(
       ctx,
       await ctx.db.get(a.artifactId),
@@ -74,6 +90,7 @@ export const preview = query({
 });
 export async function saveServiceArtifactCore(ctx: MutationCtx, a: ImportArgs) {
   const authorization = await privateOwner(ctx, a.organizationId);
+  await requireProCatalogAccess(ctx, a.organizationId);
   await limit(ctx, `service-artifact-save:${authorization.actor._id}`, 30);
   const base = await serviceArtifactCurrent(
     ctx,
@@ -94,7 +111,7 @@ export async function saveServiceArtifactCore(ctx: MutationCtx, a: ImportArgs) {
     (row) =>
       row.origin === "service" && row.organizationId === a.organizationId,
   );
-  if (same) {
+  if (same?.origin === "service") {
     const source = await ctx.db.get(same.sourceId);
     ensure(
       source &&
@@ -105,6 +122,11 @@ export async function saveServiceArtifactCore(ctx: MutationCtx, a: ImportArgs) {
       "SOURCE_UNAVAILABLE",
       "The removed saved source cannot be recreated.",
     );
+    if (!same.snapshot)
+      await ctx.db.patch(same._id, {
+        snapshot: await serviceArtifactSnapshot(base),
+        updatedAt: Math.max(Date.now(), same.updatedAt + 1),
+      });
     return {
       sourceId: source._id,
       reused: true as const,
@@ -119,7 +141,7 @@ export async function saveServiceArtifactCore(ctx: MutationCtx, a: ImportArgs) {
       key: `service:${authorization.actor._id}:${a.artifactId}`,
       kind: "text",
       title: "Saved shared analysis",
-      text: `Shared artifact reference ${a.artifactId} for ${authorization.actor._id}. Open the current permitted artifact.`,
+      text: `Saved insight copy ${a.artifactId} for ${authorization.actor._id}.`,
       rightsAttested: true,
     },
     authorization,
@@ -140,6 +162,7 @@ export async function saveServiceArtifactCore(ctx: MutationCtx, a: ImportArgs) {
     sourceId,
     artifactId: a.artifactId,
     compatibilityKey: a.expectedCompatibilityKey,
+    snapshot: await serviceArtifactSnapshot(base),
     privateNote: "",
     corrections: [],
     createdAt: now,

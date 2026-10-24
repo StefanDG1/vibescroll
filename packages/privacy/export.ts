@@ -98,8 +98,9 @@ export function exportRecord(
     }
   }
   if (section === "publicImports" && value && typeof value === "object") {
-    // Actor ownership is enforced by the export query. Keep authored notes,
-    // never a copied base artifact, permission/compatibility key or another actor.
+    // Actor ownership and retained-copy currentness are enforced by the query.
+    // Keep authored notes and its computed savedAnalysis projection, never the
+    // raw snapshot, live base artifact, grant keys or another actor's content.
     const layer = value as Record<string, unknown>;
     value = Object.fromEntries(
       [
@@ -110,6 +111,7 @@ export function exportRecord(
         "corrections",
         "createdAt",
         "updatedAt",
+        ...(layer.origin === "service" ? ["savedAnalysis"] : []),
       ]
         .filter((key) => key in layer)
         .map((key) => [key, layer[key]]),

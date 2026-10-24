@@ -8,6 +8,7 @@ import {
   serviceCompatibility,
   lookupServiceArtifact,
   sweepExpiredServiceArtifacts,
+  sweepRetainedServiceArtifactCopies,
 } from "../convex/lib/serviceArtifacts";
 import { reusableArtifact } from "../convex/lib/publicKnowledge";
 import { wallet } from "../convex/product";
@@ -17,15 +18,29 @@ import {
   type SocialPost,
   type SocialRights,
 } from "../packages/social/contracts";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import {
   googleCostPolicy,
   googleInferenceModel,
 } from "../packages/providers/google-inference";
 
 const modules = import.meta.glob("../convex/**/*.ts");
+const stripeMocks = vi.hoisted(() => ({
+  account: vi.fn(),
+  customer: vi.fn(),
+  subscriptions: vi.fn(),
+}));
+vi.mock("stripe", () => ({
+  default: class {
+    accounts = { retrieve: stripeMocks.account };
+    customers = { retrieve: stripeMocks.customer };
+    subscriptions = { list: stripeMocks.subscriptions };
+  },
+}));
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.useRealTimers();
+  vi.resetAllMocks();
 });
 
 async function setup() {
@@ -630,13 +645,490 @@ async function recipient(s: Fixture, name = "recipient") {
     auth_time: Math.floor(Date.now() / 1000),
   });
   const org = await client.mutation(api.organizations.createPrivate, {});
-  await s.t.run(async (ctx) => {
-    const w = await wallet(ctx, org);
-    await ctx.db.patch(w._id, { granted: 100 });
+  const grant = await s.t.run(async (ctx) => {
+    await wallet(ctx, org);
+    const now = Date.now();
+    const periodEnd = now + 86400000;
+    await ctx.db.insert("billing", {
+      organizationId: org,
+      customerId: `synthetic-${name}`,
+      subscriptionId: `subscription-${name}`,
+      status: "active",
+      periodEnd,
+      verifiedAt: now,
+      revision: 1,
+      appliedRevision: 1,
+    });
+    return { start: now, end: periodEnd };
+  });
+  await s.t.mutation(internal.commerce.grantPeriod, {
+    organizationId: org,
+    subscription: `subscription-${name}`,
+    tier: "pro",
+    interval: "monthly",
+    ...grant,
+    verifiedPayment: true,
+    billingRevision: 1,
   });
   return { actor, client, org };
 }
-it("saves one opaque reference in a private library without reserving/analysing and retains authored overlays on withdrawal", async () => {
+
+async function savedCopy(s: Fixture) {
+  const artifact = await commit(s);
+  const r = await recipient(s);
+  const args = {
+    organizationId: r.org,
+    artifactId: artifact.artifactId,
+    expectedCompatibilityKey: s.args.compatibilityKey,
+  };
+  const saved = await r.client.mutation(api.serviceArtifacts.save, args);
+  const source = (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))!;
+  const layer = (await s.t.run((ctx) => ctx.db.get(source.publicImportId!)))!;
+  if (layer.origin !== "service") throw Error("fixture");
+  return { r, args, saved, layer };
+}
+
+it.each([
+  "free",
+  "starter",
+  "stale verification",
+  "future verification",
+  "canceled",
+  "provider deletion",
+  "expired billing",
+  "expired wallet",
+  "mismatched period",
+  "different subscription",
+])(
+  "denies fresh catalog preview and save with %s entitlement",
+  async (condition) => {
+    const s = await setup();
+    const artifact = await commit(s);
+    const r = await recipient(s);
+    await s.t.run(async (ctx) => {
+      const billing = (await ctx.db
+        .query("billing")
+        .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+        .unique())!;
+      const w = (await ctx.db
+        .query("wallets")
+        .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+        .unique())!;
+      if (condition === "free" || condition === "starter")
+        await ctx.db.patch(w._id, { tier: condition });
+      if (condition === "stale verification")
+        await ctx.db.patch(billing._id, { verifiedAt: s.now - 86400000 });
+      if (condition === "future verification")
+        await ctx.db.patch(billing._id, { verifiedAt: s.now + 1 });
+      if (condition === "canceled")
+        await ctx.db.patch(billing._id, { status: "canceled" });
+      if (condition === "provider deletion")
+        await ctx.db.patch(billing._id, { providerDeletedAt: s.now });
+      if (condition === "expired billing")
+        await ctx.db.patch(billing._id, { periodEnd: s.now });
+      if (condition === "expired wallet")
+        await ctx.db.patch(w._id, { periodEnd: s.now });
+      if (condition === "mismatched period")
+        await ctx.db.patch(w._id, { periodEnd: billing.periodEnd + 1 });
+      if (condition === "different subscription")
+        await ctx.db.patch(billing._id, {
+          subscriptionId: "different-paid-subscription",
+        });
+    });
+    const args = {
+      organizationId: r.org,
+      artifactId: artifact.artifactId,
+      expectedCompatibilityKey: s.args.compatibilityKey,
+    };
+    await expect(
+      r.client.query(api.serviceArtifacts.preview, args),
+    ).rejects.toThrow("Pro");
+    await expect(
+      r.client.mutation(api.serviceArtifacts.save, args),
+    ).rejects.toThrow("Pro");
+    expect(
+      await s.t.run((ctx) => ctx.db.query("publicImports").collect()),
+    ).toHaveLength(0);
+    await expect(s.t.query(api.serviceArtifacts.preview, args)).rejects.toThrow(
+      "Sign in",
+    );
+  },
+);
+
+it("accepts annual Pro reconciled into a monthly allowance and binds that grant to the verified subscription", async () => {
+  const s = await setup();
+  const a = await commit(s);
+  const r = await recipient(s);
+  vi.stubEnv("STRIPE_SECRET_KEY", "rk_test_synthetic_only");
+  vi.stubEnv("STRIPE_ACCOUNT_ID", "account-synthetic");
+  vi.stubEnv("STRIPE_PRO_ANNUAL_PRICE_ID", "price-pro-annual");
+  stripeMocks.account.mockResolvedValue({ id: "account-synthetic" });
+  stripeMocks.customer.mockResolvedValue({ id: "synthetic-recipient" });
+  const start = Math.floor(s.now / 1000);
+  const annualEnd = start + 365 * 86400;
+  stripeMocks.subscriptions.mockResolvedValue({
+    data: [
+      {
+        id: "subscription-annual",
+        status: "active",
+        created: start,
+        metadata: { product: "vibescroller" },
+        latest_invoice: {
+          id: "invoice-annual",
+          status: "paid",
+          created: start,
+        },
+        items: {
+          data: [
+            {
+              current_period_start: start,
+              current_period_end: annualEnd,
+              price: {
+                id: "price-pro-annual",
+                metadata: { tier: "pro", interval: "annual" },
+              },
+            },
+          ],
+        },
+      },
+    ],
+  });
+  await s.t.action(internal.reconciliation.customer, {
+    customerId: "synthetic-recipient",
+  });
+  const entitlement = await s.t.run(async (ctx) => ({
+    billing: await ctx.db
+      .query("billing")
+      .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+      .unique(),
+    wallet: await ctx.db
+      .query("wallets")
+      .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+      .unique(),
+  }));
+  expect(entitlement.billing!.periodEnd).toBe(annualEnd * 1000);
+  expect(entitlement.wallet!.tier).toBe("pro");
+  expect(entitlement.wallet!.periodEnd).toBeLessThan(
+    entitlement.billing!.periodEnd,
+  );
+  const args = {
+    organizationId: r.org,
+    artifactId: a.artifactId,
+    expectedCompatibilityKey: s.args.compatibilityKey,
+  };
+  expect(
+    await r.client.query(api.serviceArtifacts.preview, args),
+  ).not.toBeNull();
+  await expect(
+    r.client.mutation(api.serviceArtifacts.save, args),
+  ).resolves.toMatchObject({ processingStarted: false });
+  await s.t.run((ctx) =>
+    ctx.db.patch(entitlement.billing!._id, {
+      subscriptionId: "forged-replacement",
+    }),
+  );
+  await expect(
+    r.client.query(api.serviceArtifacts.preview, args),
+  ).rejects.toThrow("Pro");
+});
+
+it("retains the original copy through operational pauses and missing provider configuration, including a privacy sweep", async () => {
+  const s = await setup();
+  const { r, saved, layer } = await savedCopy(s);
+  const original = await r.client.query(api.publicKnowledge.savedDetail, {
+    sourceId: saved.sourceId,
+  });
+  for (const flag of ["DISABLE_INFERENCE", "DISABLE_CAPTURE"])
+    vi.stubEnv(flag, "true");
+  for (const flag of [
+    "CREATOR_FOLLOWING_ENABLED",
+    "CREATOR_SERVICE_REUSE_ENABLED",
+    "HOSTED_MEDIA_ACCEPTANCE_ENABLED",
+  ])
+    vi.stubEnv(flag, "false");
+  vi.stubEnv("CREATOR_PROVIDER_CONFIGURATION", "temporarily invalid");
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toEqual(original);
+  await s.t.mutation(internal.privacy.sweep, {});
+  await s.t.mutation(internal.serviceArtifacts.sweepCopies, { cursor: null });
+  expect((await s.t.run((ctx) => ctx.db.get(layer._id)))?.origin).toBe(
+    "service",
+  );
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).toEqual(layer);
+  vi.stubEnv("CREATOR_PROVIDER_CONFIGURATION", "");
+  await s.t.mutation(internal.serviceArtifacts.sweepCopies, { cursor: null });
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toEqual(original);
+  for (const flag of ["DISABLE_INFERENCE", "DISABLE_CAPTURE"])
+    vi.stubEnv(flag, "false");
+  for (const flag of [
+    "CREATOR_FOLLOWING_ENABLED",
+    "CREATOR_SERVICE_REUSE_ENABLED",
+    "HOSTED_MEDIA_ACCEPTANCE_ENABLED",
+  ])
+    vi.stubEnv(flag, "true");
+  vi.stubEnv("CREATOR_PROVIDER_CONFIGURATION", JSON.stringify(s.configuration));
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toEqual(original);
+});
+
+it("preserves the original saved DTO through benign upstream edits and newer analysis without automatic updates", async () => {
+  const s = await setup();
+  const { r, saved, layer } = await savedCopy(s);
+  const original = await r.client.query(api.publicKnowledge.savedDetail, {
+    sourceId: saved.sourceId,
+  });
+  vi.setSystemTime(s.now + 1);
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      title: "Updated upstream metadata",
+      updatedAt: Date.now(),
+      generation: 2,
+      analysis: {
+        ...s.result,
+        summary: "New upstream analysis must not replace the saved copy",
+      },
+    }),
+  );
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toEqual(original);
+  await s.t.mutation(internal.serviceArtifacts.sweepCopies, { cursor: null });
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).toEqual(layer);
+});
+
+it("keeps an immutable saved copy and private edits after cancellation while refusing new catalog access", async () => {
+  const s = await setup();
+  const { r, args, saved, layer } = await savedCopy(s);
+  const before = await r.client.query(api.publicKnowledge.savedDetail, {
+    sourceId: saved.sourceId,
+  });
+  vi.setSystemTime(s.now + 1);
+  await r.client.mutation(api.serviceArtifacts.save, args);
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).toEqual(layer);
+  await s.t.run(async (ctx) => {
+    const billing = (await ctx.db
+      .query("billing")
+      .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+      .unique())!;
+    await ctx.db.patch(billing._id, { status: "canceled" });
+    const w = (await ctx.db
+      .query("wallets")
+      .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+      .unique())!;
+    await ctx.db.patch(w._id, { tier: "free" });
+  });
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toEqual(before);
+  await expect(
+    r.client.query(api.serviceArtifacts.preview, args),
+  ).rejects.toThrow("Pro");
+  await expect(
+    r.client.mutation(api.serviceArtifacts.save, args),
+  ).rejects.toThrow("Pro");
+  await r.client.mutation(api.publicKnowledge.savePersonalLayer, {
+    sourceId: saved.sourceId,
+    expectedUpdatedAt: before!.updatedAt,
+    note: "Private note after cancellation",
+    corrections: [{ insightId: "idea1", text: "Private clarification" }],
+  });
+  const exported = await r.client.query(api.jobs.exportPage, {
+    organizationId: r.org,
+    section: "publicImports",
+    cursor: null,
+    asOf: Date.now(),
+  });
+  expect(exported.page[0]).toMatchObject({
+    savedAnalysis: before!.service,
+    privateNote: "Private note after cancellation",
+  });
+  expect(exported.page[0]).not.toHaveProperty("snapshot");
+  expect(JSON.stringify(exported)).not.toContain("A visible synthetic label");
+});
+
+it("does not read or backfill legacy references without an explicit current-Pro save", async () => {
+  const s = await setup();
+  const { r, args, saved, layer } = await savedCopy(s);
+  await s.t.run(async (ctx) => {
+    await ctx.db.patch(layer._id, { snapshot: undefined });
+    const w = (await ctx.db
+      .query("wallets")
+      .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+      .unique())!;
+    await ctx.db.patch(w._id, { tier: "free" });
+  });
+  const detail = await r.client.query(api.publicKnowledge.savedDetail, {
+    sourceId: saved.sourceId,
+  });
+  expect(detail).toMatchObject({ available: false, service: null });
+  await expect(
+    r.client.mutation(api.serviceArtifacts.save, args),
+  ).rejects.toThrow("Pro");
+  await r.client.mutation(api.publicKnowledge.savePersonalLayer, {
+    sourceId: saved.sourceId,
+    expectedUpdatedAt: detail!.updatedAt,
+    note: "Legacy private note",
+    corrections: [],
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).not.toHaveProperty(
+    "snapshot",
+  );
+  await s.t.run(async (ctx) => {
+    const w = (await ctx.db
+      .query("wallets")
+      .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+      .unique())!;
+    await ctx.db.patch(w._id, { tier: "pro" });
+  });
+  await r.client.mutation(api.serviceArtifacts.save, args);
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toMatchObject({ available: true, privateNote: "Legacy private note" });
+});
+
+it("fences altered retained DTOs even with a recomputed DTO hash, scrubs them and exports only authored data", async () => {
+  const s = await setup();
+  const { r, saved, layer } = await savedCopy(s);
+  const dto = { ...layer.snapshot!.dto, summary: "Unbound replacement" };
+  const dtoHash = await socialHash(canonicalJson(dto));
+  await s.t.run((ctx) =>
+    ctx.db.patch(layer._id, {
+      privateNote: "Keep authored note",
+      snapshot: { ...layer.snapshot!, dto, dtoHash },
+    }),
+  );
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toMatchObject({
+    available: false,
+    service: null,
+    privateNote: "Keep authored note",
+  });
+  const exported = await r.client.query(api.jobs.exportPage, {
+    organizationId: r.org,
+    section: "publicImports",
+    cursor: null,
+    asOf: s.now,
+  });
+  expect(exported.page[0]).not.toHaveProperty("savedAnalysis");
+  expect(JSON.stringify(exported)).not.toContain("Unbound replacement");
+  await s.t.run((ctx) => sweepRetainedServiceArtifactCopies(ctx));
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).not.toHaveProperty(
+    "snapshot",
+  );
+});
+
+it("quarantines restored copies and preserves authored overlays without regranting catalog access", async () => {
+  const s = await setup();
+  const { r, saved, layer } = await savedCopy(s);
+  await s.t.run((ctx) =>
+    ctx.db.patch(layer._id, {
+      privateNote: "Restored private note",
+      corrections: [{ insightId: "idea1", text: "Restored correction" }],
+    }),
+  );
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.mutation(internal.recovery.quarantinePage, {
+    section: "publicImports",
+    cursor: null,
+  });
+  vi.stubEnv("RESTORE_LOCK", "false");
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toMatchObject({
+    available: false,
+    service: null,
+    privateNote: "Restored private note",
+    corrections: [{ insightId: "idea1", text: "Restored correction" }],
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).not.toHaveProperty(
+    "snapshot",
+  );
+});
+
+it("fences removed copies immediately and resumes bounded physical cleanup after an interrupted callback", async () => {
+  const s = await setup();
+  const { r, args, saved, layer } = await savedCopy(s);
+  for (let i = 0; i < 6; i++) {
+    const extra = await recipient(s, `extra${i}`);
+    await extra.client.mutation(api.serviceArtifacts.save, {
+      ...args,
+      organizationId: extra.org,
+    });
+  }
+  await s.t.run((ctx) =>
+    ctx.db.patch(layer._id, { privateNote: "Keep after removal" }),
+  );
+  await s.t.mutation(internal.serviceArtifacts.invalidateSource, {
+    sourceId: s.sourceId,
+    maxGeneration: 1,
+  });
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toMatchObject({
+    available: false,
+    service: null,
+    privateNote: "Keep after removal",
+  });
+  await expect(
+    r.client.mutation(api.publicKnowledge.savePersonalLayer, {
+      sourceId: saved.sourceId,
+      expectedUpdatedAt: layer.updatedAt,
+      note: "Keep after removal",
+      corrections: [],
+    }),
+  ).resolves.toEqual({ saved: true });
+  await s.t.mutation(internal.serviceArtifacts.scrubCopies, {
+    artifactId: args.artifactId,
+    cursor: null,
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.query("publicImports").collect())).filter(
+      (row) => row.origin === "service" && row.snapshot,
+    ),
+  ).toHaveLength(2);
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.finishAllScheduledFunctions(() => vi.runOnlyPendingTimers(), 20);
+  vi.stubEnv("RESTORE_LOCK", "false");
+  await s.t.mutation(internal.privacy.sweep, {});
+  await s.t.finishAllScheduledFunctions(() => vi.runOnlyPendingTimers(), 30);
+  expect(
+    (await s.t.run((ctx) => ctx.db.query("publicImports").collect())).filter(
+      (row) => row.origin === "service" && row.snapshot,
+    ),
+  ).toHaveLength(0);
+  const exported = await r.client.query(api.jobs.exportPage, {
+    organizationId: r.org,
+    section: "publicImports",
+    cursor: null,
+    asOf: Date.now(),
+  });
+  expect(exported.page[0]).toMatchObject({ privateNote: "Keep after removal" });
+  expect(exported.page[0]).not.toHaveProperty("savedAnalysis");
+});
+it("saves one sanitized private copy without processing and retains authored overlays on withdrawal", async () => {
   const s = await setup();
   const a = await commit(s);
   const r = await recipient(s);
@@ -687,7 +1179,13 @@ it("saves one opaque reference in a private library without reserving/analysing 
     note: "Authored private note",
     corrections: [{ insightId: "idea1", text: "Authored correction" }],
   });
-  vi.stubEnv("CREATOR_SERVICE_REUSE_ENABLED", "false");
+  vi.stubEnv(
+    "CREATOR_PROVIDER_CONFIGURATION",
+    JSON.stringify({
+      ...s.configuration,
+      rights: { ...s.rights, crossCustomerReuse: false },
+    }),
+  );
   expect(
     await r.client.query(api.publicKnowledge.savedDetail, {
       sourceId: saved.sourceId,

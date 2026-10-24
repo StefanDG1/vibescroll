@@ -5,6 +5,32 @@ import { api, internal } from "../convex/_generated/api";
 import { exportRecord } from "../packages/privacy/export";
 const modules = import.meta.glob("../convex/**/*.ts");
 
+it("exports only the query-projected saved service analysis and authored notes", () => {
+  const layer = {
+    origin: "service",
+    sourceId: "private-copy",
+    privateNote: "My own note",
+    corrections: [],
+    snapshot: { payload: "unvalidated internal snapshot" },
+    artifactId: "catalog-artifact",
+    compatibilityKey: "private-policy-binding",
+    savedAnalysis: { summary: "Validated saved copy", insights: [] },
+  };
+  expect(exportRecord("publicImports", layer)).toEqual({
+    sourceId: "private-copy",
+    privateNote: "My own note",
+    corrections: [],
+    savedAnalysis: { summary: "Validated saved copy", insights: [] },
+  });
+  expect(
+    exportRecord("publicImports", { ...layer, origin: "edition" }),
+  ).toEqual({
+    sourceId: "private-copy",
+    privateNote: "My own note",
+    corrections: [],
+  });
+});
+
 it("retains user plans and PR evidence without exporting repository raw context or nested bearer material", () => {
   const repo = exportRecord("repositories", {
     fullName: "owned/synthetic",

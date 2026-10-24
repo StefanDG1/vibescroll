@@ -1,5 +1,11 @@
 # VibeScroll foundational offer
 
+## F048: resumed budget, direct Work Cloud candidate and later lifetime offer, October 24
+
+[ADR 125](../adr/125-resumed-budget-and-repository-free-cloud-probe.md) records the resumed full implementation within US$3 cumulative, retaining all earlier holds. Defer lifetime/ongoing access to a later feature; current prices, allowances and valid purchases remain unchanged. Monthly/yearly implementation, the complete product scope and provider/privacy gates remain.
+
+A separate Work Cloud task ran without GitHub and reported shell/media executables. Network enforcement, model settings, actual video processing and app result return were not verified. This is readiness evidence, not a frictionless setup, live processing or conversion claim. Keep audience and the six beliefs unchanged; measure real no-GitHub first-result use before strengthening copy.
+
 ## F047: recommended GitHub and minimal analysis setup, October 24
 
 [ADR 124](../adr/124-recommended-github-and-minimal-processing-setup.md) records the owner's explicit direction: recommend GitHub for project builders, offer Skip for now, and allow supported source analysis without any user GitHub account or repository. Source evidence quality does not depend on connecting a project. Repository-specific recommendations need authorized context; do not invent fit when it is absent.

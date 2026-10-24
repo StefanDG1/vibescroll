@@ -1,5 +1,7 @@
 # Remaining acceptance and completion ledger
 
+Current execution follows [ADR 125](../../adr/125-resumed-budget-and-repository-free-cloud-probe.md). The owner resumed implementation and raised the same cumulative cap to US$3; all retained holds remain, with US$1.2407114701101483 unallocated before new reservations. Ongoing/lifetime access is deferred to a later feature. Preserve every other R/P/N/C/M requirement. The no-GitHub Work Cloud readiness probe completed, but network enforcement, model settings, actual media and canonical app return remain unverified.
+
 ## No-GitHub processing acceptance, October 24
 
 [ADR 124](../../adr/124-recommended-github-and-minimal-processing-setup.md) requires C0/C3/C7 and N5/N6 to pass with a fresh user who has no GitHub account, linked GitHub identity or repository. Skip the recommended project connection and optional skill installation, complete required export education, submit a permitted source and receive cited general analysis. Do not dispatch project evaluation or fabricate fit. Verify later GitHub connection, resume/reload, workspace/account boundaries and unchanged Pro/own-result/retained-copy access. Record actual active actions, context switches, elapsed setup and interventions. The current repository-backed personal proof and synthetic setup fixtures do not pass this acceptance; no new live test ran.

@@ -402,8 +402,33 @@ it("prepares actual hash-bound private assets and final analysis under one gener
     {},
   );
   await s.t.run(async (ctx) => {
+    // Processing above used the service owner's trial wallet. Only importing
+    // another catalog result into a private library needs current Pro access.
+    const contributor = await wallet(ctx, s.org);
+    expect(contributor.tier).toBe("trial");
     const w = await wallet(ctx, privateOrg);
+    const periodEnd = Date.now() + 86400000;
     await ctx.db.patch(w._id, { granted: 100 });
+    await ctx.db.insert("billing", {
+      organizationId: privateOrg,
+      customerId: "synthetic-catalog-recipient",
+      subscriptionId: "synthetic-catalog-subscription",
+      status: "active",
+      periodEnd,
+      verifiedAt: Date.now(),
+      revision: 1,
+      appliedRevision: 1,
+    });
+  });
+  await s.t.mutation(internal.commerce.grantPeriod, {
+    organizationId: privateOrg,
+    subscription: "synthetic-catalog-subscription",
+    tier: "pro",
+    interval: "monthly",
+    start: Date.now(),
+    end: Date.now() + 86400000,
+    verifiedPayment: true,
+    billingRevision: 1,
   });
   const args = {
     organizationId: privateOrg,

@@ -1,5 +1,13 @@
 # Foundational idea backlog
 
+## F048: resumed budget, direct Work Cloud candidate and later lifetime offer, October 24
+
+[ADR 125](../adr/125-resumed-budget-and-repository-free-cloud-probe.md) records the resumed full implementation within US$3 cumulative, retaining all earlier holds. Defer lifetime/ongoing access to a later feature; current prices, allowances and valid purchases remain unchanged. Monthly/yearly implementation, the complete product scope and provider/privacy gates remain.
+
+A separate Work Cloud task ran without GitHub and reported shell/media executables. Network enforcement, model settings, actual video processing and app result return were not verified. This is readiness evidence, not a frictionless setup, live processing or conversion claim. Keep audience and the six beliefs unchanged; measure real no-GitHub first-result use before strengthening copy.
+
+Source: latest owner instructions and one expressly authorized Work Cloud probe. Decision: adopt the cumulative cap and later-offer order; investigate the direct hosted runtime. Counterevidence: missing host policy/model observability and no real media or app return. Test: bounded current-policy real-link acquisition, native evidence review and canonical cited result in a no-GitHub account, followed by actual beginner observation. Preserve every external gate.
+
 ## F047: recommended GitHub and minimal analysis setup, October 24
 
 Source: the owner explicitly confirmed skipping GitHub, source analysis without any repo/GitHub connection, recommended project connection during onboarding, and minimal automated setup. Accept under [ADR 124](../adr/124-recommended-github-and-minimal-processing-setup.md). Preserve general evidence quality, personal-library use, optional skills and required export education. Only project-specific work needs repository context.

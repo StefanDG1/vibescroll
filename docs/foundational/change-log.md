@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F048: resumed budget, direct Work Cloud candidate and later lifetime offer, October 24
+
+Synchronized all four briefs and current plan entry points with ADR 125. Recorded the raised US$3 cumulative ceiling without releasing holds, owner-authorized High continuation, later lifetime-offer ordering and the separate no-GitHub Work Cloud readiness report. Preserved network/model/media/return gaps, provider gates, monthly/yearly scope, actual prices and historical receipts. No live offer, provider activation or production acceptance follows.
+
 ## F047: recommended GitHub and minimal analysis setup, October 24
 
 Recorded ADR 124 and synchronized all four briefs, current plan/Cloud/ScrollShow entry points, acceptance, owner register and exact provider question. GitHub is recommended for project-specific value but cannot gate general source analysis, directly or through Cloud setup. Added fresh no-GitHub cited-result and beginner-friction acceptance, preserving consent, rights, evidence quality, existing systems and spending/release gates. No code, live copy/policies, prices, provider call or deployment changed.

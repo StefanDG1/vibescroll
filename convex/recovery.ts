@@ -448,8 +448,13 @@ export const quarantinePage = internalMutation({
           state: "withdrawn",
           updatedAt: Date.now(),
         });
+      } else if (a.section === "publicImports") {
+        const layer = row as Doc<"publicImports">;
+        if (layer.origin === "service")
+          await ctx.db.patch(layer._id, { snapshot: undefined });
+        // Authored notes survive restoration. A restored retained copy cannot
+        // bypass the quarantined source, artifact or provider authority.
       } else if (
-        a.section === "publicImports" ||
         a.section === "publicReports" ||
         a.section === "publicModerationBlocks" ||
         a.section === "publicCorrections"

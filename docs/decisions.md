@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: resume within US$3 and test repository-free Work Cloud
+
+[ADR 125](adr/125-resumed-budget-and-repository-free-cloud-probe.md) records the resumed run, unchanged holds under the raised cumulative ceiling, verified root High exception, later lifetime-offer deferral and the narrowly completed no-GitHub Work Cloud readiness probe. No media, canonical app return, provider approval or production success follows from runtime readiness.
+
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
 ## October 24: recommended GitHub, optional for source analysis, minimal setup

@@ -29,8 +29,7 @@ import { validateEvidenceRegistry } from "../packages/sources/evidence";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { sourceRetained } from "./lib/sourceAuthority";
 import {
-  serviceArtifactCurrent,
-  serviceArtifactDto,
+  retainedServiceArtifactCopy,
   invalidateServiceSource,
 } from "./lib/serviceArtifacts";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
@@ -579,18 +578,13 @@ export const savedDetail = query({
         "FORBIDDEN",
         "These saved insights belong to another user.",
       );
-      const current = await serviceArtifactCurrent(
-        ctx,
-        await ctx.db.get(layer.artifactId),
-      );
-      const available =
-        !!current &&
-        current.artifact.compatibilityKey === layer.compatibilityKey;
+      const service = await retainedServiceArtifactCopy(ctx, layer);
+      const available = !!service;
       return {
         origin: "service" as const,
         available,
         edition: null,
-        service: available ? serviceArtifactDto(current!) : null,
+        service,
         privateNote: layer.privateNote,
         corrections: layer.corrections,
         updatedAt: layer.updatedAt,
@@ -652,29 +646,31 @@ export const savePersonalLayer = mutation({
     );
     const service =
       layer.origin === "service"
-        ? await serviceArtifactCurrent(ctx, await ctx.db.get(layer.artifactId))
+        ? await retainedServiceArtifactCopy(ctx, layer)
         : null;
     const base =
       layer.origin !== "service"
         ? await reusableArtifact(ctx, layer.artifactId)
         : null;
-    const insights =
-      service?.artifact.compatibilityKey === layer.compatibilityKey
-        ? service.analysis.insights
-        : base &&
-            layer.origin !== "service" &&
-            base.edition.version === layer.editionVersion &&
-            base.artifact.compatibilityKey === layer.compatibilityKey
-          ? base.edition.payload.insights
-          : null;
+    const insights = service
+      ? service.insights
+      : base &&
+          layer.origin !== "service" &&
+          base.edition.version === layer.editionVersion &&
+          base.artifact.compatibilityKey === layer.compatibilityKey
+        ? base.edition.payload.insights
+        : null;
     ensure(
-      insights &&
-        a.corrections.every(
-          (c) =>
-            insights.some((i) => i.id === c.insightId) &&
-            c.text.length <= 2000 &&
-            !containsSecret(c.text),
-        ),
+      (layer.origin === "service" &&
+        !insights &&
+        canonicalJson(a.corrections) === canonicalJson(layer.corrections)) ||
+        (insights &&
+          a.corrections.every(
+            (c) =>
+              insights.some((i) => i.id === c.insightId) &&
+              c.text.length <= 2000 &&
+              !containsSecret(c.text),
+          )),
       "INVALID_EVIDENCE",
       "Correct only current published insights.",
     );

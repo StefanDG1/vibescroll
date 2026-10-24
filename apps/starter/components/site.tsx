@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CookieSettings } from "./consent";
 import { AppTheme } from "./app-theme";
+import { ScrollShowNavigation } from "./scrollshow-navigation";
 import "../app/public.css";
 export function Brand({ href = "/" }: { href?: string }) {
   return (
@@ -21,16 +22,7 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <Brand />
-      <nav aria-label="Website">
-        <Link href="/how-it-works">How it works</Link>
-        <Link href="/pricing">Pricing</Link>
-        <Link href="/help">Help</Link>
-        <Link href="/open-source">Open source</Link>
-        <a href="https://github.com/StefanDG1/vibescroll">GitHub</a>
-        <Link className="primary" href="/app" prefetch={false}>
-          Start your library
-        </Link>
-      </nav>
+      <ScrollShowNavigation />
     </header>
   );
 }
@@ -39,9 +31,13 @@ export function SiteFooter() {
     <footer className="site-footer">
       <Brand />
       <p>Make scrolling useful.</p>
+      <p>Cited insights for better-informed product decisions.</p>
       <AppTheme control />
       <nav aria-label="Footer">
         {[
+          "how-it-works",
+          "example",
+          "pricing",
           "about",
           "contact",
           "status",
@@ -74,13 +70,13 @@ export function SiteFooter() {
 }
 export function PublicPage({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className="public-site">
       <AppTheme />
       <SiteHeader />
       <main id="main" className="public-content">
         {children}
       </main>
       <SiteFooter />
-    </>
+    </div>
   );
 }

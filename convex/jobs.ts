@@ -25,6 +25,7 @@ import {
   publicEdition,
   reusableArtifact,
 } from "./lib/publicKnowledge";
+import { retainedServiceArtifactCopy } from "./lib/serviceArtifacts";
 import { internal } from "./_generated/api";
 import { workflow } from "./workflows";
 import { actorCurrent, referencesCurrent } from "./knowledge";
@@ -1198,6 +1199,20 @@ export const exportPage = query({
         row.actor !== actor._id
       )
         continue;
+      if (
+        a.section === "publicImports" &&
+        "origin" in row &&
+        row.origin === "service"
+      ) {
+        // Cancellation does not revoke an earned private copy. Export only the
+        // validated retained DTO, never a fresh catalog read or internal grant.
+        const savedAnalysis = await retainedServiceArtifactCopy(
+          ctx,
+          row as Extract<Doc<"publicImports">, { origin: "service" }>,
+        );
+        permitted.push({ ...row, savedAnalysis: savedAnalysis ?? undefined });
+        continue;
+      }
       if (
         a.section === "sourceRevisions" &&
         "evidence" in row &&

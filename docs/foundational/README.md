@@ -1,5 +1,7 @@
 # VibeScroller foundational document process
 
+Current brief: [F048](idea-backlog.md#f048-resumed-budget-direct-work-cloud-candidate-and-later-lifetime-offer-october-24) records ADR 125, the resumed US$3 cumulative ceiling, later lifetime offer and partial no-GitHub Work Cloud readiness. It supersedes earlier cap/lifetime launch ordering only; production processing and market claims still require evidence.
+
 ## Current brief, October 24: F047 minimal setup and optional GitHub
 
 [F047](idea-backlog.md#f047-recommended-github-and-minimal-analysis-setup-october-24) and [ADR 124](../adr/124-recommended-github-and-minimal-processing-setup.md) require recommended-but-skippable GitHub and supported source analysis with no user GitHub account/repository. Preserve repository-specific permission boundaries and all source/provider/privacy/Pro/budget controls. Root minimizes setup through supported automation, real readiness and explicit consent. No-GitHub Cloud and beginner usability remain pending actual acceptance. All other F046/F045 scope remains; no runtime or live offer change follows.

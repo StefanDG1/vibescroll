@@ -239,6 +239,24 @@ export const publicTables = {
         sourceId: v.id("sources"),
         artifactId: v.id("publicArtifacts"),
         compatibilityKey: v.string(),
+        snapshot: v.optional(
+          v.object({
+            version: v.literal("service-import-v1"),
+            dto: v.any(),
+            dtoHash: v.string(),
+            contentHash: v.string(),
+            compatibilityKey: v.string(),
+            evidenceHash: v.string(),
+            rightsHash: v.string(),
+            rights: v.optional(v.any()),
+            policyEvidenceId: v.string(),
+            sourceId: v.id("sources"),
+            generation: v.number(),
+            sourceRevision: v.number(),
+            savedAt: v.number(),
+            retainUntil: v.number(),
+          }),
+        ),
         privateNote: v.string(),
         corrections: v.array(
           v.object({ insightId: v.string(), text: v.string() }),
@@ -249,7 +267,8 @@ export const publicTables = {
     .index("by_org", ["organizationId"])
     .index("by_source", ["sourceId"])
     .index("by_artifact", ["artifactId"])
-    .index("by_actor_artifact", ["actor", "artifactId"]),
+    .index("by_actor_artifact", ["actor", "artifactId"])
+    .index("by_service_snapshot_expiry", ["origin", "snapshot.retainUntil"]),
   publicGeography: defineTable({
     ...tenant,
     actor: v.id("users"),

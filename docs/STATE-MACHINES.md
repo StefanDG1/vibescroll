@@ -54,6 +54,8 @@ Reversal evidence uses the bounded immutable-tree comparison in [ADR 024](adr/02
 
 ## Billing and jobs
 
+A Pro catalog save creates an immutable retained private copy under its original rights and retention deadline. Subscription cancellation blocks new catalog access and reuse, while the earned copy and authored notes remain readable. Operational processing/following pauses and benign upstream edits do not authorize physical deletion or refresh. Durable removal, rights withdrawal, expiry and recovery quarantine fence the copy immediately; bounded existing privacy callbacks scrub its derived payload while preserving authored overlays. Unknown database/crypto failures fence reads without granting cleanup authority.
+
 Credit reservations are `active`, `settled`, `released`, or `expired`. Settlement and release are mutually exclusive. A partially consumed reservation settles actual usage and releases the remainder in one transaction.
 
 Subscription access derives from a verified provider state and the product's grace policy. Cancellation at period end retains the current paid entitlement until that end. It does not grant a new period. Renewal events and reconciliation converge on one period record.

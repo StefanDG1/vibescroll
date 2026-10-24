@@ -1,5 +1,9 @@
 # VibeScroll complete product and launch plan
 
+## Current execution entry point
+
+Use the [single reconciled remaining-work plan](../2026-10-23/README.md), [page inventory/loading specification](../2026-10-23/APP-MAP-AND-LOADING.md) and [ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md). The latest target is automatic processing after a link share within one-time standing authority, current eligible reuse, honest status/automatic display, Home analytics/recent cards and extracted-insight Library. All original P0-P15, R0-R13, N0-N7, C0-C10 and M0-M7 acceptance remains. Older dated checkpoints below are historical, not current completion claims.
+
 ## Catalog-first insights and paid entry, October 24
 
 [ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md) and [the consolidated remaining plan](../2026-10-23/README.md) retain all scope while adding paid hosted entry, preserved unpaid data, one shared generic-insight destination, private project work and inviteable named teams. Internal source/execution isolation remains. No private-data migration, catalog publication or live billing change is inferred. Implementation and the real laptop-off Cloud result remain pending under the same USD 3 cap.

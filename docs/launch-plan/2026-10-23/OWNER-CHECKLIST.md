@@ -1,5 +1,11 @@
 # What help is still needed to finish the plan
 
+## Automatic link-only target, October 24
+
+The direction is settled in [ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md). Root owns the [current plan](README.md) and [page/loading map](APP-MAP-AND-LOADING.md). Normal capture needs only a link after one-time supported connection, standing consent and actual Cloud monitoring setup. No per-source approval, copied prompt, GitHub or awake laptop is accepted. Existing manual controls remain diagnostic.
+
+No new link or repeated OAuth consent is needed now. A concrete one-time event/standing permission or provider Internet/sign-in step may need the owner after root prepares it; connected tools alone are insufficient. Do not ask for a per-post handoff and report that as normal-flow success. Preserve USD3, the reserved test post, payment review and all other human/provider gates. No automation or recurring task was activated by this planning change.
+
 ## Latest owner decision, October 24
 
 Paid hosted entry and retention are settled in [ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md): create account, pay, enter app; unpaid data remains stored and app access returns after verified payment. Keep earlier Pro-only catalog access, with no workspace destination choice for generic insights. Default teams must support invitations; private execution and project data remain protected internally. No more product-choice or repeat OAuth question is needed now.

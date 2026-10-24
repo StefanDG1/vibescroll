@@ -1,5 +1,9 @@
 # Remaining acceptance and completion ledger
 
+## Link-first Home/Library acceptance, October 24
+
+The [current execution index](README.md), [ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md) and [page/loading specification](APP-MAP-AND-LOADING.md) add pending acceptance for: one-time standing authority/event subscription; no per-post phone action; current cache reuse with zero inference; one job for duplicates; actual host/media/citations/commit; stage changes and automatic display; Home metrics/card targets; extracted-insight default and Posts controls; projection I/O, cursor/cache isolation, stale-response races; every main page/action loader; and laptop-off runs with/without GitHub. Manual approval is a fallback, not normal-flow acceptance. No new runtime or live success is claimed.
+
 ## Paid-entry and catalog-first acceptance, October 24
 
 [ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md) adds pending acceptance for: payment before hosted UI/API/MCP/data access; stored-but-locked unpaid data and exact resubscription recovery; stable internal processing identity with an inviteable named default team; existing additional teams and collaborator isolation; no generic-analysis destination chooser; neutral-only contribution through the current artifact pipeline with Pro access; and a real laptop-off Cloud source-to-cited-result run with/without GitHub. Root owns all checks. No runtime change or new production test occurred while recording this direction. Preserve original acceptance and gates below.

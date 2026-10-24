@@ -1,5 +1,11 @@
 # VibeScroll foundational offer
 
+## F069: share a link and follow its result, October 24
+
+The owner requires link-only normal processing after one-time supported standing setup: current eligible reuse or one Cloud job, truthful visible stages and automatic post-page result display. Home owns lightweight analytics and recent expandable/direct-open cards; Library defaults to extracted insights with Posts/search/filter/sort, while project evaluations stay with Projects. Require bounded projected reads, protected cache invalidation and matching page/action loaders.
+
+[ADR 149](../adr/149-automatic-link-analysis-and-insight-first-navigation.md) and the [current execution index](../launch-plan/2026-10-23/README.md) preserve all original P/R/N/C/M scope. Existing completion-only events, manual handoff and cached tools do not establish automatic execution. Keep one-time consent, private project data, paid/Pro boundaries, source rights and USD3. These are authorized requirements, not live capability, measured latency or customer evidence. No new audience, price, allowance or campaign follows.
+
 ## F068: catalog-first insights and paid hosted entry, October 24
 
 The owner requires payment after account creation and before hosted app access. Nonpayment locks product access while preserving account/data for a later return. Generic analysis should use the existing shared catalog without a workspace destination choice; keep the earlier Pro-only catalog rule, private project/personal work and open-source deployment isolation. An inviteable default Full Name's team and existing additional named teams support collaboration behind that simpler journey.

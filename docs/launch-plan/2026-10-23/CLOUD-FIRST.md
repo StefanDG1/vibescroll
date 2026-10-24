@@ -1,5 +1,9 @@
 # Finish the launch with user-owned Codex Cloud
 
+## Current normal-flow requirement
+
+[ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md) and the [current index](README.md) supersede manual per-post approval/copying as the default target. After supported one-time standing processing/monitoring setup, a link must reuse an eligible current artifact or create one bounded Cloud job, honest stages and automatic post-page display. Extend grants/jobs/events/artifacts; current `analysis_completed` notification alone cannot wake processing. Preserve paid/Pro/private authority and all C0-C10 scope. Manual handoff remains diagnostic evidence. Actual event-to-host/media/return needs implementation and a funded live test.
+
 ## Paid-entry and catalog-first dependency update, October 24
 
 [ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md) makes hosted payment a prerequisite for product/Cloud access while preserving unpaid stored data. Generic insight intake has no workspace destination choice; eligible neutral own-subscription output needs a contribution adapter into existing artifacts, with private source/job/grant authority intact. The visible default team supports invitations; private execution resolves internally. Preserve the Pro catalog, existing customer billing, source IDs and all C0-C10/R/P/N/M scope. This is authorized implementation work, not a live Cloud success. Root must close account billing authority, team/internal-home routing and contribution isolation before the integrated phone test. The same USD 3 cap and existing provider/privacy gates remain.

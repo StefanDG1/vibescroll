@@ -287,3 +287,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## Private variant project references, October 24
 
 [ADR 139](adr/139-private-variant-project-references.md) selects exact earned private result references for the existing project/plan flow. Do not manufacture canonical memberships/topics or share personalization. Implementation is authorized; production and provider/fiscal gates remain.
+
+## Public main and stop checkpoint, October 24
+
+[ADR 140](adr/140-public-main-consolidation-with-deployment-hold.md) records the owner-requested ancestry-preserving consolidation with main Git deployment temporarily disabled. Full CI and immutable source releases continue. The owner removes an extra discretionary OpenAI reply requirement, while actual provider eligibility and technical acceptance remain. No new feature work or live activation follows the requested stop.

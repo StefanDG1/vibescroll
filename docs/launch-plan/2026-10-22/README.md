@@ -1,5 +1,9 @@
 # VibeScroll complete product and launch plan
 
+## Consolidated stop checkpoint, October 24
+
+Read the [combined completion report](../2026-10-23/COMPLETION-REPORT-2026-10-24.md) and [ADR 140](../../adr/140-public-main-consolidation-with-deployment-hold.md). The owner requested the reviewed source in public main and then a stop. Approximate implementation is70%; expanded production acceptance is roughly10-20%, not100%. Main source publication does not deploy the held backend or complete the public Cloud/Stripe journey.
+
 ## Private variant project integration, October 24
 
 [ADR 139](../../adr/139-private-variant-project-references.md) extends the existing project evaluation/proposal/plan path to explicitly selected earned private text insights. Actual run/version/output hashes replace any fabricated canonical membership. Separate runtime admission prevents old workers from spending on unsupported references. Root owns contracts and integration; High owns backend/runtime, Medium the existing controls, and independent High review precedes combined checks. The integrated offline check passed with exit0, 1,761 tests and three hosted skips, zero-warning lint, all types and both builds. Independent High review found no remaining P1/P2 after the superseded-provider retention fix. See the [receipt](../../operations/evidence/launch-20261024-private-variant-project.json). Exact-head CI and native/provider/production acceptance remain pending. Full media, approved skills, trusted creator acquisition/contribution, official Cloud and original external acceptance remain open; no live activation follows.

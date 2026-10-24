@@ -1,5 +1,9 @@
 # Integrate the ScrollShow handoff with the full launch
 
+## Owner-requested stop and public main consolidation, October 24
+
+The owner requested finishing the current checks, consolidating all reviewed source into public main and stopping feature work. [The completion report](COMPLETION-REPORT-2026-10-24.md) records approximately70% implementation and roughly10-20% expanded production acceptance, with an explicit estimate method. [ADR 140](../../adr/140-public-main-consolidation-with-deployment-hold.md) adds a temporary main deployment hold while keeping full CI/versioning. The owner does not require an extra discretionary OpenAI confirmation; actual provider contracts and missing Cloud execution/return capabilities are not bypassed. Public main and the serving production build remain distinct.
+
 ## Private variant project integration, October 24
 
 [ADR 139](../../adr/139-private-variant-project-references.md) extends the existing project evaluation/proposal/plan path to explicitly selected earned private text insights. Actual run/version/output hashes replace any fabricated canonical membership. Separate runtime admission prevents old workers from spending on unsupported references. Root owns contracts and integration; High owns backend/runtime, Medium the existing controls, and independent High review precedes combined checks. The integrated offline check passed with exit0, 1,761 tests and three hosted skips, zero-warning lint, all types and both builds. Independent High review found no remaining P1/P2 after the superseded-provider retention fix. See the [receipt](../../operations/evidence/launch-20261024-private-variant-project.json). Exact-head CI and native/provider/production acceptance remain pending. Full media, approved skills, trusted creator acquisition/contribution, official Cloud and original external acceptance remain open; no live activation follows.

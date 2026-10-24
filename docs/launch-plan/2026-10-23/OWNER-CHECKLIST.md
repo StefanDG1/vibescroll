@@ -1,5 +1,9 @@
 # What help is still needed to finish the plan
 
+## Owner-requested stop and public main consolidation, October 24
+
+The owner requested finishing the current checks, consolidating all reviewed source into public main and stopping feature work. [The completion report](COMPLETION-REPORT-2026-10-24.md) records approximately70% implementation and roughly10-20% expanded production acceptance, with an explicit estimate method. [ADR 140](../../adr/140-public-main-consolidation-with-deployment-hold.md) adds a temporary main deployment hold while keeping full CI/versioning. The owner does not require an extra discretionary OpenAI confirmation; actual provider contracts and missing Cloud execution/return capabilities are not bypassed. Public main and the serving production build remain distinct.
+
 Current verification supersedes earlier pending-CI notes below. Draft PR148 passed CI40068095705, PR149 CI40068663644, PR150 CI40070908440, PR151 CI40072087033 and PR152 CI40077647549 at their recorded exact heads. None of these drafts is serving in production; only the narrow PR141 frontend is live.
 
 ## Private variant project integration, October 24

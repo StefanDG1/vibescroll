@@ -56,18 +56,21 @@
   "articles": [
     {
       "slug": "work-cloud-text-review",
-      "title": "Review an experimental Work Cloud text request",
-      "summary": "Review exact private text authority, distinguish queued work from execution and recover without a silent paid fallback.",
+      "title": "Use experimental Work Cloud analysis",
+      "summary": "Set up exact private video requests through MCP, or review a separate diagnostic handoff.",
       "file": "work-cloud-text-review.md",
       "status": "approved",
-      "reviewMode": "Source-reviewed default-off candidate; official host, real media, browser and independent walkthrough pending",
-      "lastVerifiedCommit": "5bddde1",
+      "reviewMode": "Source-reviewed private candidate; production media/host return and independent walkthrough pending",
+      "lastVerifiedCommit": "a687552",
       "dependencies": [
         "convex/workCloudAnalysis.ts",
-        "convex/personalAnalysisSchema.ts",
+        "convex/assistant.ts",
+        "convex/assistantGrants.ts",
+        "convex/assistantSchema.ts",
         "packages/contracts/work-cloud-text.ts",
-        "apps/starter/components/work-cloud-text.tsx",
-        "apps/starter/components/console.tsx"
+        "packages/mcp/server.ts",
+        "apps/starter/components/assistant-connections.tsx",
+        "apps/starter/components/work-cloud-text.tsx"
       ],
       "related": [
         "processing-and-recovery",

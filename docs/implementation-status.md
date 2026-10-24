@@ -1,5 +1,13 @@
 # October 22 launch implementation candidate
 
+## Distinct processing setup integration, October 24
+
+[ADR 137](adr/137-distinct-processing-availability-in-setup.md) distinguishes experimental text-review availability from paired subscription and managed credits in existing setup. A gate never marks the host connected or video processing ready, and legacy missing fields remain unverified. No new read, saved route, chapter completion, permission or dispatch.
+
+The integrated offline check passed 1,674 tests with three hosted skips, 323 documents/twelve snapshots, seventeen finance checks, zero-warning lint, all types and both builds. After the final legacy-label correction, all seventeen affected UI cases plus lint/format passed. [The receipt](operations/evidence/launch-20261024-distinct-setup-routes.json) retains exact source hashes, corrected link/copy issues and installation/check runtime provenance. Native browser, actual host and production acceptance remain pending; exact-head CI is required for final source.
+
+Parent private-focus PR150 passed exact-head CI 40070908440 at 732f4a5. The same cumulative US$3 cap and all earlier unknown holds remain. No new production/provider request, purchase, price activation or deployment occurred. C5 still needs a trusted acquisition-to-current-creator-epoch binding, and C6 separate private source output remains an engineering task; neither is replaced by this setup slice.
+
 ## Private evaluation focus integration, October 24
 
 [ADR 136](adr/136-private-evaluation-brief-origin.md) adds optional exact private evaluation focus through the existing owner-private task flow. Approval/cache/currentness and evaluation/proposal/issue/improvement origins remain bound; generic analysis and neutral histories remain separate. Reviewed issue publication and separately approved editable plans stay available; standing routine automation excludes custom results. No new table/index/store/queue or provider/protocol authority. Existing Help explains the field, connected-account data flow and review.

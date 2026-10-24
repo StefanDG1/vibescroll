@@ -1,5 +1,9 @@
 # Interface contracts
 
+## Setup text-review availability candidate
+
+`SetupSnapshot.workCloudTextState?` is `unavailable` or `available_unverified`. The existing private-owner setup query uses the existing subject/feature gate and performs no extra read. It grants no account, host or source authority. Missing legacy values are conservative. Existing `cloudAvailable` and `local/cloud/save_only` continue to represent their original managed/paired/save routes. See [ADR 137](adr/137-distinct-processing-availability-in-setup.md).
+
 ## Private evaluation brief candidate
 
 [ADR 136](adr/136-private-evaluation-brief-origin.md) adds only optional caller `privateEvaluationBrief` to the existing project task quote/approval. A server-owned private workspace is required. Validate exact non-whitespace, well-formed text up to4,000 UTF-8 bytes, unsafe controls and secrets. Server origin `{schemaVersion:"1.0.0",kind:"private_evaluation_brief",ownerId,briefHash,model,effort}` is immutable and client text supplies no authority. Plan draft input rejects a new brief and inherits the current accepted proposal origin under a separate approval. Default keys/operations remain unchanged. Raw text belongs only to the approved task/leased context; status exposes origin only.

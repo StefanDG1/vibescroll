@@ -1,5 +1,11 @@
 # VibeScroll foundational offer
 
+## F060: distinct setup availability, October 24
+
+[ADR 137](../adr/137-distinct-processing-availability-in-setup.md) distinguishes paired-computer subscription, managed credits and experimental text-review availability in the existing setup. A text feature gate reports available but unverified, not a connected host or working video route. Short guidance reuses existing Help and changes no chapter completion, saved route, grant or processing behavior.
+
+Keep managed credits separate from own-subscription text availability. No new price, allowance, provider entitlement or Cloud/video promise is introduced.
+
 ## F059: private evaluation context, October 24
 
 [ADR 136](../adr/136-private-evaluation-brief-origin.md) extends the existing own-subscription project task with an optional owner-private focus brief. Exact approval, cache identity and derived evaluation/proposal/issue/improvement origin remain separate from generic source analysis. Neutral histories and automatic standing-policy work cannot absorb the custom result. Existing reviewed issue publication and separately approved editable plans remain available.

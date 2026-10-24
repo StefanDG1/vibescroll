@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { motion } from "motion/react";
 import type { SetupSnapshot } from "../../../packages/onboarding/companion-setup";
@@ -287,9 +288,24 @@ export function ProjectBuilderGuide({
               <h3>Connect processing</h3>
               <p>
                 Choose an available own-account or managed route in the setup
-                controls below. Your own plan needs your eligible account and an
-                awake paired computer. Cloud processing needs its own
-                entitlement and approved maximum.
+                controls below. The paired-computer own-plan route needs your
+                eligible account and an awake paired computer. Managed cloud
+                uses its existing credits, entitlement and approved maximum.
+              </p>
+              <p>
+                Experimental Work Cloud text:{" "}
+                {snapshot.workCloudTextState === "available_unverified"
+                  ? "Available for text review; processing connection unverified."
+                  : snapshot.workCloudTextState === "unavailable"
+                    ? "Not available for this account."
+                    : "Text-review availability unverified."}{" "}
+                Review a supported text handoff without GitHub or a paired
+                computer. Successful host execution and video processing remain
+                unverified.{" "}
+                <Link href="/help/work-cloud-text-review" prefetch={false}>
+                  Read the text handoff guide
+                </Link>
+                .
               </p>
               <p>
                 Paired: {snapshot.paired ? "yes" : "not yet"}. Current account

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CompanionSetup } from "./companion-setup";
 import type {
@@ -188,11 +189,11 @@ export function SetupJourney({
     >
       <summary>Continue setup</summary>
       <p>
-        Use the browser to save, review and approve work. The own-plan route
-        needs your eligible account and an awake paired Windows computer with
-        its supported isolated runtime. Your subscription allowance does not
-        cover every preparation, storage or platform cost. Review each task's
-        route and maximum before approval.
+        Use the browser to save, review and approve work. The paired-computer
+        own-plan route needs your eligible account and an awake paired Windows
+        computer with its supported isolated runtime. Your subscription
+        allowance does not cover every preparation, storage or platform cost.
+        Review each task's route and maximum before approval.
       </p>
       <a
         href="/help/connect-your-computer"
@@ -202,21 +203,37 @@ export function SetupJourney({
         Set up your computer step by step
       </a>
       {progress && (
-        <p>
-          Saved route:{" "}
-          {progress.snapshot.route === "local"
-            ? "Your paired computer"
-            : progress.snapshot.route === "cloud"
-              ? "Managed cloud"
-              : progress.snapshot.route === "save_only"
-                ? "Save for later"
-                : "Not selected"}
-          . Own-plan account eligibility:{" "}
-          {progress.snapshot.localEligible ? "available" : "unavailable"}.
-          Managed processing:{" "}
-          {progress.snapshot.cloudAvailable ? "available" : "unavailable"}.
-          Availability still requires the task's current checks and approval.
-        </p>
+        <>
+          <p>
+            Saved route:{" "}
+            {progress.snapshot.route === "local"
+              ? "Your paired computer"
+              : progress.snapshot.route === "cloud"
+                ? "Managed cloud"
+                : progress.snapshot.route === "save_only"
+                  ? "Save for later"
+                  : "Not selected"}
+            . Own-plan account eligibility:{" "}
+            {progress.snapshot.localEligible ? "available" : "unavailable"}.
+            Managed processing:{" "}
+            {progress.snapshot.cloudAvailable ? "available" : "unavailable"}.
+            Availability still requires the task's current checks and approval.
+          </p>
+          <p>
+            Experimental Work Cloud text:{" "}
+            {progress.snapshot.workCloudTextState === "available_unverified"
+              ? "Available for text review; processing connection unverified."
+              : progress.snapshot.workCloudTextState === "unavailable"
+                ? "Not available for this account."
+                : "Text-review availability unverified."}{" "}
+            Review a supported text handoff without GitHub or a paired computer.
+            Successful host execution and video processing remain unverified.{" "}
+            <Link href="/help/work-cloud-text-review" prefetch={false}>
+              Read the text handoff guide
+            </Link>
+            .
+          </p>
+        </>
       )}
       {progress && !progress.journey && (
         <section

@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: distinct processing availability
+
+[ADR 137](adr/137-distinct-processing-availability-in-setup.md) adds an optional conservative text-review availability state to the existing setup snapshot. Saved routes, managed funding, chapter completion and source-specific approval stay unchanged. No host, media or execution readiness follows from a feature gate.
+
 ## October 24: private evaluation brief origin
 
 [ADR 136](adr/136-private-evaluation-brief-origin.md) keeps optional personalized project judgments in the existing private-owner task/evaluation lineage, with exact origin/cache separation, neutral-history isolation and manual review preserved. Team-private overlays, skills and official Cloud project authority remain separate unfinished work. No source analysis, artifact, funding or price is changed.

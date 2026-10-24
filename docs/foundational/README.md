@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## October 24: distinct setup availability
+
+[F060](idea-backlog.md#f060-distinct-setup-availability-october-24) and [ADR 137](../adr/137-distinct-processing-availability-in-setup.md) keep paired subscription, managed media and experimental text review distinct. All four briefs retain current claims and the difference between feature availability and actual host execution.
+
 ## October 24: private evaluation context candidate
 
 [F059](idea-backlog.md#f059-private-evaluation-context-october-24) and [ADR 136](../adr/136-private-evaluation-brief-origin.md) synchronize private personalization with neutral source evidence, cache/history isolation and existing explicit review. All four briefs preserve current claims, offer and provider/release gates.

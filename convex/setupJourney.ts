@@ -3,7 +3,7 @@ import { mutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
 import { access, limit } from "./lib";
 import { ensure } from "../packages/policy";
-import { personalAllowed } from "./lib/personalAccess";
+import { personalAllowed, workCloudTextAllowed } from "./lib/personalAccess";
 import { hostedMediaAllowed } from "./lib/hostedMediaAccess";
 import { privateLibrary } from "./librarySpaces";
 import { pairingConfiguration } from "../packages/onboarding/pairing-configuration";
@@ -70,6 +70,9 @@ export const status = query({
         sourceSaved: sources.some((s) => s.state !== "deleted"),
         route: setup?.processingRoute,
         cloudAvailable: hostedMediaAllowed(actor.subject),
+        workCloudTextState: workCloudTextAllowed(actor.subject)
+          ? ("available_unverified" as const)
+          : ("unavailable" as const),
         localEligible: personalAllowed(actor.subject),
         // The web has no trusted local prerequisite/startup bridge. A heartbeat
         // proves availability only; it never certifies a local installation.

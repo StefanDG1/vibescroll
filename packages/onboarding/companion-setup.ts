@@ -20,6 +20,8 @@ export type SetupSnapshot = {
   sourceSaved: boolean;
   route?: "local" | "cloud" | "save_only";
   cloudAvailable: boolean;
+  // Feature availability only; never host, account, execution or media readiness.
+  workCloudTextState?: "unavailable" | "available_unverified";
   localEligible: boolean;
   prerequisitesChecked: boolean;
   connectionPrerequisitesChecked?: boolean;

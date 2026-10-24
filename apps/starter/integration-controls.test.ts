@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { isValidElement, type ReactElement } from "react";
+import { createElement, isValidElement, type ReactElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 const hooks = vi.hoisted(() => ({
   cells: [] as unknown[],
   index: 0,
@@ -37,6 +38,7 @@ vi.mock("react", async (original) => ({
 import { PublicKnowledgePanel } from "./components/public-knowledge-panel";
 import { PublicSaveContinuation } from "./components/public-save-continuation";
 import { SetupJourney } from "./components/setup-journey";
+import { ProjectBuilderGuide } from "./components/project-builder-guide";
 import { advanceJourney } from "../../packages/onboarding/project-builder-journey";
 type Node = ReactElement<Record<string, any>>;
 it("uses confirmed journey metadata without broad setup queries or readiness changes", async () => {
@@ -663,4 +665,115 @@ it("local prerequisite reports require explicit bounded JSON submission and pres
     .props.onSubmit({ preventDefault() {} });
   expect(call.mock.calls.length).toBe(before);
   expect(text(view())).toContain("local report is invalid");
+});
+it.each([undefined, "unavailable", "available_unverified"] as const)(
+  "discloses experimental text state %s without another request or a saved route change",
+  async (state) => {
+    const snapshot = {
+      route: "cloud",
+      cloudAvailable: false,
+      localEligible: false,
+      sampleCited: false,
+      paired: false,
+      accountConnected: false,
+      workerAvailable: false,
+      workCloudTextState: state,
+    };
+    const call = vi.fn(async (_operation: string, _args: any) => ({
+      version: 1,
+      snapshot,
+    }));
+    const props = {
+      organizationId: "distinct-route-owner",
+      call,
+      onNavigate: vi.fn(),
+      onSave: vi.fn(),
+    };
+    render(SetupJourney, props);
+    for (const effect of hooks.effects.splice(0)) effect();
+    await flush();
+    const tree = render(SetupJourney, props);
+    const copy = text(tree);
+    expect(copy).toContain("Saved route:");
+    expect(copy).toContain("Managed cloud");
+    expect(copy).toContain("Managed processing:");
+    expect(copy).toContain("unavailable");
+    expect(copy).toContain(
+      state === "available_unverified"
+        ? "Available for text review; processing connection unverified."
+        : state === "unavailable"
+          ? "Not available for this account."
+          : "Text-review availability unverified.",
+    );
+    expect(copy).toContain("without GitHub or a paired computer");
+    expect(copy).toContain(
+      "Successful host execution and video processing remain unverified",
+    );
+    expect(
+      elements(tree).some(
+        (node) =>
+          node.props.href === "/help/work-cloud-text-review" &&
+          node.props.prefetch === false,
+      ),
+    ).toBe(true);
+    expect(call).toHaveBeenCalledExactlyOnceWith("setupJourney", {
+      organizationId: "distinct-route-owner",
+    });
+    expect(props.onNavigate).not.toHaveBeenCalled();
+    expect(props.onSave).not.toHaveBeenCalled();
+  },
+);
+it("keeps the processing chapter's experimental text guidance distinct without advancing or connecting anything", () => {
+  const started = advanceJourney(undefined, { type: "start" }, 100);
+  const journey = advanceJourney(started, { type: "next" }, 200);
+  const onAction = vi.fn(async () => {});
+  for (const state of [
+    undefined,
+    "unavailable",
+    "available_unverified",
+  ] as const) {
+    const html = renderToStaticMarkup(
+      createElement(ProjectBuilderGuide, {
+        journey,
+        onAction,
+        onNavigate: vi.fn(),
+        onSave: vi.fn(),
+        snapshot: {
+          purposeSaved: true,
+          sourceSaved: false,
+          route: "save_only",
+          cloudAvailable: false,
+          workCloudTextState: state,
+          localEligible: false,
+          prerequisitesChecked: false,
+          paired: false,
+          accountConnected: false,
+          workerAvailable: false,
+          sampleCited: false,
+          assistantReviewed: false,
+          projectConfirmed: false,
+          importReviewed: false,
+          preferencesReviewed: false,
+          paused: false,
+          startupEnabled: false,
+        },
+      }),
+    );
+    expect(html).toContain("Connect processing");
+    expect(html).toContain("Managed cloud uses its existing credits");
+    expect(html).toContain(
+      state === "available_unverified"
+        ? "Available for text review; processing connection unverified."
+        : state === "unavailable"
+          ? "Not available for this account."
+          : "Text-review availability unverified.",
+    );
+    expect(html).toContain("without GitHub or a paired computer");
+    expect(html).toContain(
+      "Successful host execution and video processing remain unverified",
+    );
+    expect(html).toContain('href="/help/work-cloud-text-review"');
+    expect(journey).toEqual(advanceJourney(started, { type: "next" }, 200));
+    expect(onAction).not.toHaveBeenCalled();
+  }
 });

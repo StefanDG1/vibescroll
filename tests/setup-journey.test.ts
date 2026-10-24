@@ -219,3 +219,67 @@ it("persists connection prerequisites without certifying processing and expires 
     await client.query(api.setupJourney.status, { organizationId: org }),
   ).toMatchObject({ pairingConfiguration: null });
 });
+it.each([
+  ["off", { WORK_CLOUD_TEXT_ENABLED: "false" }, "unavailable"],
+  ["unverified policy", { WORK_CLOUD_TEXT_VERIFIED: "false" }, "unavailable"],
+  ["inference disabled", { DISABLE_INFERENCE: "true" }, "unavailable"],
+  [
+    "personal route disabled",
+    { DISABLE_PERSONAL_ANALYSIS: "true" },
+    "unavailable",
+  ],
+  [
+    "other subject",
+    { PERSONAL_ALPHA_SUBJECTS_JSON: '["someone-else"]' },
+    "unavailable",
+  ],
+  ["invalid subjects", { PERSONAL_ALPHA_SUBJECTS_JSON: "{" }, "unavailable"],
+  ["gated text review", {}, "available_unverified"],
+] as const)(
+  "projects %s independently of managed media without creating readiness or work",
+  async (_name, changes, state) => {
+    vi.stubEnv("WORK_CLOUD_TEXT_ENABLED", "true");
+    vi.stubEnv("WORK_CLOUD_TEXT_VERIFIED", "true");
+    vi.stubEnv("DISABLE_INFERENCE", "false");
+    vi.stubEnv("DISABLE_PERSONAL_ANALYSIS", "false");
+    vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", '["setup-fixture"]');
+    vi.stubEnv("HOSTED_MEDIA_ANALYSIS_VERIFIED", "false");
+    vi.stubEnv("HOSTED_MEDIA_ACCEPTANCE_ENABLED", "false");
+    vi.stubEnv("HOSTED_MEDIA_PUBLIC_RELEASE_APPROVED", "false");
+    for (const [key, value] of Object.entries(changes)) vi.stubEnv(key, value);
+    const { t, client, org } = await fixture();
+    const result = await client.query(api.setupJourney.status, {
+      organizationId: org,
+    });
+    expect(result?.snapshot).toMatchObject({
+      workCloudTextState: state,
+      cloudAvailable: false,
+      paired: false,
+      accountConnected: false,
+      workerAvailable: false,
+      sampleCited: false,
+    });
+    expect(result?.snapshot.route).toBeUndefined();
+    expect(result?.journey).toBeNull();
+    expect(
+      await t.run(async (ctx) => ({
+        grants: (await ctx.db.query("assistantGrants").collect()).length,
+        sources: (await ctx.db.query("sources").collect()).length,
+        reservations: (await ctx.db.query("reservations").collect()).length,
+        setup: (await ctx.db.query("librarySetup").collect()).length,
+      })),
+    ).toEqual({ grants: 0, sources: 0, reservations: 0, setup: 0 });
+  },
+);
+it("keeps managed media eligibility separate when experimental text is disabled", async () => {
+  vi.stubEnv("WORK_CLOUD_TEXT_ENABLED", "false");
+  vi.stubEnv("HOSTED_MEDIA_ANALYSIS_VERIFIED", "true");
+  vi.stubEnv("HOSTED_MEDIA_PUBLIC_RELEASE_APPROVED", "true");
+  vi.stubEnv("DISABLE_INFERENCE", "false");
+  vi.stubEnv("RESTORE_LOCK", "false");
+  const { client, org } = await fixture();
+  expect(
+    (await client.query(api.setupJourney.status, { organizationId: org }))
+      ?.snapshot,
+  ).toMatchObject({ cloudAvailable: true, workCloudTextState: "unavailable" });
+});

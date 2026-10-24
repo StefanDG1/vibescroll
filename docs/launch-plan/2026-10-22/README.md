@@ -1,5 +1,9 @@
 # VibeScroll complete product and launch plan
 
+## Distinct setup availability candidate, October 24
+
+[ADR 137](../../adr/137-distinct-processing-availability-in-setup.md) completes a C7a projection/guidance slice through the existing setup. Paired subscription, managed credits and experimental text review remain distinct. Text gate availability stays unverified and cannot complete a chapter, start work or imply video/host readiness. The integrated check passed 1,674 tests with three hosted skips, all types and both builds. The final legacy-copy correction passed seventeen UI cases; exact-head CI remains pending. Keep all unfinished original R/P/N/C/M acceptance, the US$3 cumulative cap and prior holds. Production remains the narrow PR141 frontend with unchanged backend.
+
 ## Private evaluation focus candidate, October 24
 
 [ADR 136](../../adr/136-private-evaluation-brief-origin.md) extends the existing R5 project task with an optional C6a private-owner focus brief. It binds exact text/owner/model/effort to quote, cache and derived origin, preserves canonical generic analysis and reviewed issue/plan flows, and excludes personalized results from neutral histories and standing automatic execution. No new queue/store/executor or team-wide ACL. Backend 90 focused and UI 23 focused cases passed, with types/lint/format; independent High review found no P1/P2. The integrated check passed 1,659 tests with three hosted skips, all types and both builds; exact-head CI remains pending. Team-private overlays, skills, official Cloud project/video authority, real model usefulness and production/independent acceptance remain open. The same US$3 cap and all prior holds remain.

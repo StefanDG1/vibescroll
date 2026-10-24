@@ -127,3 +127,27 @@ it("supports cloud without requiring a computer and keeps save-only complete wit
   expect(saved.every((s) => s.complete && !s.blocked)).toBe(true);
   expect(saved.some((s) => s.action === "sample")).toBe(false);
 });
+it.each(["local", "cloud", "save_only"] as const)(
+  "experimental text availability cannot alter %s route steps or completion",
+  (route) => {
+    const baseline = {
+      ...snapshot,
+      route,
+      prerequisitesChecked: false,
+      paired: false,
+      accountConnected: false,
+      workerAvailable: false,
+      sampleCited: false,
+    };
+    const expected = companionSetupSteps(baseline, true);
+    for (const state of [
+      undefined,
+      "unavailable",
+      "available_unverified",
+    ] as const) {
+      expect(
+        companionSetupSteps({ ...baseline, workCloudTextState: state }, true),
+      ).toEqual(expected);
+    }
+  },
+);

@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: readable emphasis and scoped Help
+
+[ADR 135](adr/135-optional-readable-scroll-emphasis.md) confines opt-in reveals/emphasis to the existing explanation, preserves all readable/static defaults and scopes Help reads through literal approved prefixes. No tracing-warning suppression, new content store, dependency or processing capability follows.
+
 ## October 24: purchased allowance commitments
 
 [ADR 134](adr/134-purchased-allowance-commitments.md) separates frozen purchased quantities from editable pricing, binds checkout acceptance and exact paid terms, and preserves original annual base/upgrade invoice funding. Existing records and wallets remain the owners. Unknown legacy evidence holds new unissued grants, never retroactively reprices valid issued pools. Current prices, future unselected allowance, lifetime deferral and production gates remain unchanged.

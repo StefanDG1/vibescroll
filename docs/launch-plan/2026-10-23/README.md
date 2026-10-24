@@ -1,5 +1,9 @@
 # Complete the launch and own-subscription workflows
 
+## Readable public-site candidate, October 24
+
+[ADR 135](../../adr/135-optional-readable-scroll-emphasis.md) completes a bounded M1 motion slice through explicit Play/Pause/Replay over the existing explanation. Text stays fully readable; mobile/reduced-motion/default views stay static. Literal approved Help reads also remove whole-checkout tracing without suppressing warnings. Focused UI/Help checks and the fixed starter build passed; final combined verification, exact-head CI and native-browser/production acceptance remain separate. No original R/P/N/C/M requirement is removed and no new provider/production request is made.
+
 ## Paid allowance protection candidate, October 24
 
 [ADR 134](../../adr/134-purchased-allowance-commitments.md) extends existing purchase, billing-period, change and credit-funding records with frozen allowance policies and exact paid-term commitments. Durable accepted terms survive price configuration changes; annual monthly grants retain their calendar anchor and base/upgrade refund attribution. Unknown legacy evidence holds new grants with an explanation through the existing billing refresh form. Current prices/quantities remain unchanged, the future quantity remains unselected and lifetime stays deferred. Root owns integration and final evidence; exact-head CI, real payment/portal and production migration acceptance remain separate.

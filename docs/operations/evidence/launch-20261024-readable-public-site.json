@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T06:01:50.519709+00:00",
+  "baseCommit": "e8e274c5bd8c15b4338619d59a33a8dbb98f15ef",
+  "mode": "offline public-site candidate",
+  "verification": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "result": "passed on unchanged-source retry after isolated timeout reproduction",
+    "totalPassed": 1625,
+    "core": 1376,
+    "auth": 40,
+    "publicUi": 157,
+    "other": 52,
+    "hostedSkipped": 3,
+    "documents": 321,
+    "skillSnapshots": 12,
+    "financeChecks": 17,
+    "lint": "zero warnings/errors",
+    "types": "all root/Convex/app checks passed",
+    "builds": "both passed; zero whole-project Help tracing warnings",
+    "fullLogSha256": "527c05906d67096eaab0149c44c76a0cd865561d6daba37d7a480695b72e8480",
+    "focusedEmphasis": 15,
+    "focusedHelp": 7,
+    "productReproduction": 38,
+    "nativeBrowser": "pending fresh Chrome consent; fixtures/build traces are not actual browser usability"
+  },
+  "motion": {
+    "scope": "existing three-card explanation",
+    "default": "static and all text readable in SSR",
+    "activation": "explicit desktop Play/Pause/Replay with existing device/interface/visibility preferences",
+    "reveal": "6px/240ms once per replay; full text opacity and unchanged color",
+    "emphasis": "genuinely visible cards; no invented singular workflow progress",
+    "cleanup": "focus/keyboard/hidden/offscreen/disabled/unmount remove effects and fence late observers",
+    "timersQueriesAssetsDependencies": 0
+  },
+  "helpTrace": {
+    "fix": "separate literal approved root/app Help directory prefixes; original manifest and filename allowlist preserved",
+    "baselineWarnings": 2,
+    "fixedWarnings": 0,
+    "tracesAudited": 81,
+    "detailFilesBefore": 440,
+    "detailFilesAfter": 164,
+    "indexFilesBefore": 437,
+    "indexFilesAfter": 161,
+    "sitemapFilesBefore": 416,
+    "sitemapFilesAfter": 140,
+    "nonDependencyNonBuildSourceBefore": 287,
+    "nonDependencyNonBuildSourceAfter": 11,
+    "intendedMarkdownFiles": 13,
+    "outputsEnvironmentGitOutsideCheckoutReferencesAfter": 0,
+    "nextConfigChanged": false
+  },
+  "preservedFailures": [
+    "Initial emphasis test fixture children-prop lint warning corrected without weakening lint",
+    "Initial private trace-inspection decoder assumed UTF16 on non-BOM log; corrected BOM-aware read, no repeated fixed build",
+    "First integrated check: product refund aggregation case exceeded existing5000ms timeout; stopped before later groups. Unchanged product file38/38 passed in isolation, failing case485ms. Unchanged full-source retry passed; no timeout/assertion/config change."
+  ],
+  "release": {
+    "parentPr148Ci": "40068095705 success at exact e8e274c5bd8c15b4338619d59a33a8dbb98f15ef",
+    "newProductionConvexCalls": 0,
+    "newProviderJobs": 0,
+    "purchases": 0,
+    "cumulativeCapUSD": 3,
+    "conservativeReservationsUSD": "2.8092885298898517",
+    "unallocatedUSD": "0.1907114701101483",
+    "allUnknownHoldsPreserved": true,
+    "settledInvoice": false,
+    "production": "frontend fba56d4/backend abfdeff67 unchanged; full backend fiscal proof held"
+  },
+  "sourceHashes": [
+    {
+      "path": "apps/starter/app/page.tsx",
+      "sha256": "c6f29f79ab5bc6bca5239a7ecd72d5cc7d1e20d568262f5a2127f39db5125f36"
+    },
+    {
+      "path": "apps/starter/app/public.css",
+      "sha256": "0828c64fdffcbbdb94428d10fec441552f7e495bdd2a5804174a1156b70d6602"
+    },
+    {
+      "path": "apps/starter/components/scrollshow-emphasis.tsx",
+      "sha256": "2c2fbfdecce8a3e02e7d4f0ad291b09a8c990570672d59f27facd6e821ad9156"
+    },
+    {
+      "path": "apps/starter/lib/help-content.ts",
+      "sha256": "6de825e8d0dbdb2a5975187123f18b85d14afb8dc9cbb2973a24c8af04ca7c0f"
+    },
+    {
+      "path": "apps/starter/scrollshow-emphasis-ui.test.ts",
+      "sha256": "7ccea087f3f7fd70931e9122c2901f20e7c0c2bfbe7e3e1c4179839949656e6e"
+    },
+    {
+      "path": "apps/starter/vitest.public-knowledge.config.ts",
+      "sha256": "c4be87bc2e2bcab83663355119cf2450fe4c75d788cd4a1d9dc49a7c4043f3f2"
+    },
+    {
+      "path": "tests/help-content.test.ts",
+      "sha256": "9beaf9e12bf8717c95eaf03cdee97d2ac1e86cd350537fec43aaf51fec3f5c31"
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 # Remaining acceptance and completion ledger
 
+## Readable public-site candidate, October 24
+
+[ADR 135](../../adr/135-optional-readable-scroll-emphasis.md) completes a bounded M1 motion slice through explicit Play/Pause/Replay over the existing explanation. Text stays fully readable; mobile/reduced-motion/default views stay static. Literal approved Help reads also remove whole-checkout tracing without suppressing warnings. Focused UI/Help checks and the fixed starter build passed; final combined verification, exact-head CI and native-browser/production acceptance remain separate. No original R/P/N/C/M requirement is removed and no new provider/production request is made.
+
 ## Latest candidate delta, October 24
 
 [ADR 134](../../adr/134-purchased-allowance-commitments.md) implements the M5 existing-contract prerequisite through frozen paid allowances and existing billing owners. Price rotation, delayed checkout, annual boundary/renewal, upgrade/refund attribution and unknown-history holds require the integrated receipt before acceptance. The future offer quantity, live catalogue/terms, real payment/portal acceptance and deployment remain pending. No original R/P/N/C/M acceptance is removed.

@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## October 24: readable public explanations
+
+[F058](idea-backlog.md#f058-readable-explanations-and-scoped-help-reads-october-24) and [ADR 135](../adr/135-optional-readable-scroll-emphasis.md) synchronize the four briefs for opt-in readable emphasis and bounded Help build tracing. Keep static alternatives and separate native-browser/production acceptance.
+
 ## October 24: purchased allowance candidate
 
 [F057](idea-backlog.md#f057-purchased-allowances-and-honest-offer-limits-october-24) and [ADR 134](../adr/134-purchased-allowance-commitments.md) keep purchased quantities independent of future offer edits through the existing billing owners. All four briefs preserve current contracts and distinguish offline protection from live payment acceptance. No quantity, new price or published policy is selected.

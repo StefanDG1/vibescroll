@@ -1,5 +1,11 @@
 # VibeScroll foundational avatar
 
+## F058: readable explanations and scoped Help reads, October 24
+
+[ADR 135](../adr/135-optional-readable-scroll-emphasis.md) adds optional desktop emphasis to the existing three-card explanation while keeping every word readable, static defaults and reduced-motion/mobile behavior. The same public-site slice constrains Help reads to literal approved document prefixes rather than whole-project build tracing. No new provider, task, query, asset, price or permission follows.
+
+These are local implementation and build-scope observations, not independent comprehension, conversion, native playback or production acceptance. Keep current claims, offer gates, cumulative US$3 cap and all unknown holds unchanged.
+
 ## F057: purchased allowances and honest offer limits, October 24
 
 [ADR 134](../adr/134-purchased-allowance-commitments.md) prepares immutable paid allowance policies through existing billing, acceptance, period and change records. Current quantities remain frozen independently of presentation changes, annual base and upgrade invoices keep separate refund attribution, and unknown purchase evidence holds new grants for reconciliation. This is an implementation candidate, not a live billing migration, independent payment acceptance or customer outcome.

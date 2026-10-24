@@ -33,14 +33,17 @@ export async function readHelpArticle(slug: string) {
   const article = helpArticle(slug);
   if (!article || !/^[a-z][a-z-]*\.md$/.test(article.file)) return null;
   // Only manifest entries can select a file. No request text becomes a path.
-  const content = await readFile(
-    resolve(
-      process.cwd(),
-      basename(process.cwd()) === "starter" ? "../../docs/help" : "docs/help",
-      article.file,
-    ),
-    "utf8",
-  );
+  // Keep each filesystem read's Help prefix static for production tracing.
+  const content =
+    basename(process.cwd()) === "starter"
+      ? await readFile(
+          resolve(process.cwd(), "../../docs/help", article.file),
+          "utf8",
+        )
+      : await readFile(
+          resolve(process.cwd(), "docs/help", article.file),
+          "utf8",
+        );
   return { article, content };
 }
 export function safeHelpUrl(value: string) {

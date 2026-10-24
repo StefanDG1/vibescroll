@@ -1,5 +1,9 @@
 # VibeScroll complete product and launch plan
 
+## Readable public-site candidate, October 24
+
+[ADR 135](../../adr/135-optional-readable-scroll-emphasis.md) completes a bounded M1 motion slice through explicit Play/Pause/Replay over the existing explanation. Text stays fully readable; mobile/reduced-motion/default views stay static. Literal approved Help reads also remove whole-checkout tracing without suppressing warnings. Focused UI/Help checks and the fixed starter build passed; final combined verification, exact-head CI and native-browser/production acceptance remain separate. No original R/P/N/C/M requirement is removed and no new provider/production request is made.
+
 ## October 24 existing-contract protection candidate
 
 [ADR 134](../../adr/134-purchased-allowance-commitments.md) preserves frozen paid allowances through the existing billing and refund records, including future monthly grants of a paid annual term. The [current integrated plan](../2026-10-23/README.md) retains all unfinished R/P/N/C/M acceptance. No new price, quantity, live policy or deployment follows. Media PR147 passed exact-head CI40066131115; full backend release remains held on the same cumulative US$3 budget proof.

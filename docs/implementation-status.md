@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Readable public-site integration, October 24
+
+[ADR 135](adr/135-optional-readable-scroll-emphasis.md) finishes optional readable emphasis through the existing explanation and scopes approved Help filesystem reads without warning suppression. Root reviewed source and actual build-trace evidence. The combined offline check passed 1,625 tests with three hosted skips, 321 documents/twelve snapshots, seventeen finance checks, zero-warning lint, all types and both production builds without whole-project Help warnings. [The receipt](operations/evidence/launch-20261024-readable-public-site.json) preserves the initial unrelated product-test timeout, unchanged38-case reproduction and unchanged full-source retry. Timeouts, assertions and configuration were not weakened.
+
+Parent allowance PR148 passed exact-head CI40068095705 at e8e274c, including the final namespace guard. This integrated full check now includes that guard plus M1/Help. Native browser/theme/width/zoom and production acceptance remain pending. No new hosted/provider request, purchase, price change or release occurred. The same US$3 cumulative cap, US$2.8092885298898517 retained reservations and unknown holds remain; backend deployment remains held on missing fiscal proof.
+
 ## Purchased allowance candidate, October 24
 
 [ADR 134](adr/134-purchased-allowance-commitments.md) implements frozen purchased policies, durable checkout acceptance, immutable paid-term/calendar evidence, copied period policies and separate annual base/upgrade funding through existing billing records. No new table/index/wallet/queue or price/quantity/SDK change. Root and an independent High reviewer found and corrected durable price-rotation, scheduled-renewal replay and monthly-boundary upgrade defects; the final pre-deletion account/mode guard passed54 focused cases and actual root/Convex types. The existing refresh form now explains held evidence without suggesting a duplicate purchase.

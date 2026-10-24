@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { convexTest } from "convex-test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
+import workflowTest from "@convex-dev/workflow/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import { createEvidence, registryHash } from "../packages/sources/evidence";
@@ -776,4 +777,99 @@ it("uses the exact retained text registry, advances its generation once and vali
       output,
     }),
   ).rejects.toThrow("INVALID_EVIDENCE");
+});
+
+it("recovers only the owner's current unclaimed approval with active exact grant, settings and input", async () => {
+  const s = await setup(),
+    approved = await s.approve();
+  const first = await s.owner.query(api.product.detail, { id: s.sourceId });
+  expect(first.workCloudHandoff).toMatchObject({
+    sourceId: s.sourceId,
+    generation: approved.generation,
+    inputHash: approved.inputHash,
+    model: "synthetic-model",
+    effort: "high",
+    media: false,
+    grantVersion: s.grant.version,
+  });
+  expect(JSON.stringify(first.workCloudHandoff)).not.toContain("leaseToken");
+  await expect(
+    s.t
+      .withIdentity({ subject: "another-owner" })
+      .query(api.product.detail, { id: s.sourceId }),
+  ).rejects.toThrow();
+  vi.stubEnv("WORK_CLOUD_TEXT_ENABLED", "false");
+  expect(
+    (await s.owner.query(api.product.detail, { id: s.sourceId }))
+      .workCloudHandoff,
+  ).toBeNull();
+  vi.stubEnv("WORK_CLOUD_TEXT_ENABLED", "true");
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, { text: "Changed source input" }),
+  );
+  expect(
+    (await s.owner.query(api.product.detail, { id: s.sourceId }))
+      .workCloudHandoff,
+  ).toBeNull();
+  await s.t.run((ctx) => ctx.db.patch(s.sourceId, { text: s.source.text }));
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    sourceId: s.sourceId,
+    generation: approved.generation,
+    taskId: "claim-after-reload",
+    operation: "claim",
+  });
+  expect(
+    (await s.owner.query(api.product.detail, { id: s.sourceId }))
+      .workCloudHandoff,
+  ).toBeNull();
+});
+it.each(["expired", "revoked", "version"])(
+  "does not recover a queued handoff after %s authority",
+  async (change) => {
+    const s = await setup();
+    await s.approve();
+    if (change === "expired") vi.setSystemTime(Date.now() + 900001);
+    else
+      await s.t.run(async (ctx) => {
+        const g = (await ctx.db.get(s.grant.id))!;
+        await ctx.db.patch(
+          g._id,
+          change === "revoked"
+            ? { state: "revoked" }
+            : { version: g.version + 1 },
+        );
+      });
+    expect(
+      (await s.owner.query(api.product.detail, { id: s.sourceId }))
+        .workCloudHandoff,
+    ).toBeNull();
+  },
+);
+
+it("cannot switch an unknown claimed Cloud attempt to the managed executor", async () => {
+  const s = await setup(),
+    lease = await s.claim();
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...lease,
+    operation: "fail",
+  });
+  workflowTest.register(s.t);
+  const before = await s.t.run(async (ctx) => ({
+    source: await ctx.db.get(s.sourceId),
+    reservations: await ctx.db.query("reservations").collect(),
+    scheduled: await ctx.db.system.query("_scheduled_functions").collect(),
+  }));
+  await expect(
+    s.owner.mutation(api.product.processSource, {
+      id: s.sourceId,
+      maxCredits: 10,
+    }),
+  ).rejects.toThrow("COST_RECONCILIATION_REQUIRED");
+  expect(
+    await s.t.run(async (ctx) => ({
+      source: await ctx.db.get(s.sourceId),
+      reservations: await ctx.db.query("reservations").collect(),
+      scheduled: await ctx.db.system.query("_scheduled_functions").collect(),
+    })),
+  ).toEqual(before);
 });

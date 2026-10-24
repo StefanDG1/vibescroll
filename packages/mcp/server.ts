@@ -250,7 +250,7 @@ export function createKnowledgeHandler(
         register(
           "work_cloud_claim",
           workCloudMedia
-            ? "Claim one exact request already approved in VibeScroll. Generate one unique correlation UUID in this session and pass it as taskId; it is not a provider-attested identity. Keep that ID and the once-returned lease token unchanged. Media acquisition requires its own approved media-v2 input. Send heartbeats between bounded steps; stop on a negative or unknown response. No paid API or project authority. Do not retry a lost claim."
+            ? "Before claiming media, prepare verified cached tools/model, obtain supported Internet permission and verify current restricted host/resource controls; stop if unavailable. Claim one exact request already approved in VibeScroll. Generate one unique correlation UUID in this session and pass it as taskId; it is not a provider-attested identity. Keep that ID and the once-returned lease token unchanged. Media acquisition requires its own approved media-v2 input. Send heartbeats between bounded steps; stop on a negative or unknown response. No paid API or project authority. Do not retry a lost claim."
             : "Claim one exact text-analysis request already approved in VibeScroll. Generate one unique correlation UUID in this session as taskId, not a provider-attested identity. Returns its lease token once. No GitHub, source acquisition, media, paid API or project authority is granted. Do not retry a lost or rejected claim; review its status in the app.",
           "analysis:execute",
           workCloudClaimInput,

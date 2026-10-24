@@ -1,0 +1,65 @@
+{
+  "recordedAt": "2026-10-24T16:49:36.9352695Z",
+  "stage": "main integration candidate; not production acceptance",
+  "baseCommit": "78e98ca7f763e90413b50cc1db974d7bc4b65447",
+  "scope": [
+    "finite Cloud expiry and32-page derived cleanup",
+    "owner-current handoff after refresh/revocation",
+    "supported preparation before claim",
+    "legacy IG identity aliases",
+    "deny managed executor while prior Cloud usage unresolved"
+  ],
+  "schemaIndexDependencyChanges": false,
+  "fullOffline": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "exitCode": 0,
+    "unit": 1541,
+    "auth": 40,
+    "ui": 228,
+    "totalJavaScript": 1809,
+    "hostedSkipped": 3,
+    "native": 19,
+    "python": 33,
+    "types": "passed",
+    "lint": "zero warnings/errors",
+    "bothBuilds": "passed"
+  },
+  "priorFocused": {
+    "firstPass": 202,
+    "firstFailure": "unchanged private-variant case hit original5s timeout",
+    "unchangedIsolatedSuitePassed": 24,
+    "all203DistinctCasesObservedPassing": true,
+    "uiPassed": 38
+  },
+  "dependencyAudit": {
+    "at": "2026-10-24T16:50:57.838Z",
+    "passed": true,
+    "high": 0,
+    "critical": 0,
+    "moderate": 2,
+    "low": 2
+  },
+  "nativeBrowser": {
+    "reusedReviewedSyntheticEvidence": true,
+    "actualComponentAndAllFourCssFilesByteIdenticalToCompatibleCandidate": true,
+    "widths": [320, 1280],
+    "themes": ["dark", "light"],
+    "reducedMotion": true,
+    "noOverflow": true,
+    "expiredMismatchedInstructionsHidden": true,
+    "ownedFixtureTabAndServerClosed": true
+  },
+  "reviews": {
+    "compatibleCore": "independent High re-review cleared two P2s with no remaining P1/P2",
+    "mainIntegration": "root reviewed preserving private variants/groups and exact generation fence"
+  },
+  "exactHeadCI": "pending",
+  "production": "unchanged; Cloud real-video acceptance pending",
+  "budget": {
+    "capUSD": 3,
+    "conservativeHeldUSD": 2.2288707111015746,
+    "unreservedUSD": 0.7711292888984254,
+    "settledInvoice": false,
+    "allOlderUnknownAndFutureHoldsPreserved": true
+  }
+}

@@ -39,7 +39,7 @@ import { sourceRetained } from "./lib/sourceAuthority";
 import { commitPersonalOrdered } from "./lib/personalOrderedCommit";
 import { currentOrderedSource } from "./lib/orderedSource";
 import { syncCategories } from "./categories";
-import { syncKnowledge } from "./knowledge";
+import { syncKnowledge, recordRetentionAttention } from "./knowledge";
 import insightSchema from "../contracts/insight.schema.json";
 import sourceInsightSchema from "../contracts/source-insight-v2.schema.json";
 
@@ -163,7 +163,7 @@ async function sourceInput(
     );
     const acquisition = privateCloudMediaIdentity(source.url!);
     ensure(
-      acquisition.url === source.canonical &&
+      acquisition.url === privateCloudMediaIdentity(source.canonical).url &&
         (!source.orderedMedia || !!bound?.cloud.media?.preparationHash),
       "APPROVAL_STALE",
       "The original video identity or preparation changed.",
@@ -280,6 +280,106 @@ async function sourceInput(
     policyHash,
     inputHash: await digest(serialized),
   };
+}
+export type UnclaimedCloudHandoff = {
+  sourceId: Id<"sources">;
+  organizationId: Id<"organizations">;
+  generation: number;
+  revision: number;
+  expiresAt: number;
+  inputHash: string;
+  model: string;
+  effort: string;
+  media: boolean;
+  grantId: Id<"assistantGrants">;
+  grantVersion: number;
+};
+// An app owner may recover only a still-unclaimed, exactly current approval.
+// This projection never creates a claim, token, approval or new execution.
+export async function unclaimedCloudHandoff(
+  ctx: QueryCtx,
+  source: Doc<"sources">,
+  actor: Doc<"users">,
+  organization: Doc<"organizations">,
+): Promise<UnclaimedCloudHandoff | undefined> {
+  const job = source.personalAnalysis;
+  if (
+    process.env.MCP_ENABLED !== "true" ||
+    process.env.RESTORE_LOCK === "true" ||
+    source.state !== "queued" ||
+    job?.executor !== "work_cloud" ||
+    job.state !== "queued" ||
+    source.generation !== job.generation ||
+    job.actor !== actor._id ||
+    organization.privateOwnerId !== actor._id ||
+    job.expiresAt <= Date.now() ||
+    job.cloud.taskId ||
+    job.cloud.leaseTokenHash ||
+    job.cloud.claimedAt !== undefined ||
+    job.cloud.consentId ||
+    !safeModel(job.model) ||
+    !["low", "medium", "high", "xhigh"].includes(job.effort)
+  )
+    return;
+  try {
+    const media = !!job.cloud.media;
+    enabled(actor.subject, media);
+    const grant = await ctx.db.get(job.cloud.grantId);
+    const client = assistantClients().find((c) => c.id === grant?.clientId);
+    if (
+      !grant ||
+      grant.organizationId !== organization._id ||
+      grant.actor !== actor._id ||
+      grant.version !== job.cloud.grantVersion ||
+      grant.clientId !== job.cloud.clientId ||
+      !assistantGrantActive(grant) ||
+      !grant.scopes.includes("analysis:execute") ||
+      !client?.scopes.includes("analysis:execute")
+    )
+      return;
+    if (grant.libraryScope) {
+      if (
+        !(await sourceWithinAssistantScope(
+          ctx,
+          grant,
+          organization,
+          actor._id,
+          source,
+          false,
+        ))
+      )
+        return;
+    } else if (
+      !grant.sources.some(
+        (ref) =>
+          ref.sourceId === source._id &&
+          ref.generation === job.cloud.selectedGeneration &&
+          ref.revision === job.cloud.selectedRevision,
+      )
+    )
+      return;
+    const current = await sourceInput(ctx, source, job.generation, job);
+    if (
+      current.inputHash !== job.cloud.inputHash ||
+      current.policyHash !== job.cloud.policyHash
+    )
+      return;
+    return {
+      sourceId: source._id,
+      organizationId: source.organizationId,
+      generation: source.generation,
+      revision: source.updatedAt,
+      expiresAt: job.expiresAt,
+      inputHash: job.cloud.inputHash,
+      model: job.model,
+      effort: job.effort,
+      media,
+      grantId: grant._id,
+      grantVersion: grant.version,
+    };
+  } catch {
+    return;
+  }
 }
 async function approvable(ctx: QueryCtx, source: Doc<"sources">) {
   ensure(
@@ -1000,28 +1100,42 @@ export const expire = internalMutation({
     organizationId: v.id("organizations"),
     generation: v.number(),
     retainUntil: v.number(),
+    deferredAttempt: v.optional(v.number()),
   },
   handler: async (ctx, a) => {
     const source = await ctx.db.get(a.sourceId),
       job = source?.personalAnalysis;
     if (
-      !source ||
-      source.organizationId !== a.organizationId ||
+      (source && source.organizationId !== a.organizationId) ||
       a.retainUntil > Date.now()
     )
       return;
-    if (process.env.RESTORE_LOCK === "true") {
-      await ctx.scheduler.runAfter(60000, internal.workCloudAnalysis.expire, a);
-      return;
-    }
-    await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
-      organizationId: a.organizationId,
-      sourceId: source._id,
-      section: "knowledgeJobs",
-      cursor: null,
-      maxGeneration: a.generation,
-    });
+    const attempt = a.deferredAttempt ?? 0;
+    ensure(
+      Number.isSafeInteger(attempt) &&
+        attempt >= 0 &&
+        attempt <= 2 &&
+        Number.isSafeInteger(a.generation) &&
+        a.generation >= 0 &&
+        Number.isSafeInteger(a.retainUntil),
+      "INVALID_INPUT",
+      "Invalid finite retention deferral.",
+    );
+    // Superseded generations still need derivative cleanup. Start that distinct
+    // bounded chain once, even when this source no longer needs primary scrub.
+    if (attempt === 0)
+      await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
+        organizationId: a.organizationId,
+        sourceId: a.sourceId,
+        section: "knowledgeJobs",
+        cursor: null,
+        maxGeneration: a.generation,
+        deferredAttempt: 0,
+        pagesRemaining: 32,
+      });
     if (
+      !source ||
+      source.state === "deleted" ||
       source.generation !== a.generation ||
       job?.executor !== "work_cloud" ||
       job.generation !== a.generation ||
@@ -1029,6 +1143,31 @@ export const expire = internalMutation({
       job.cloud.media.retainUntil !== a.retainUntil
     )
       return;
+    if (process.env.RESTORE_LOCK === "true") {
+      if (attempt < 2)
+        await ctx.scheduler.runAfter(60000, internal.workCloudAnalysis.expire, {
+          ...a,
+          deferredAttempt: attempt + 1,
+        });
+      else {
+        await recordRetentionAttention(
+          ctx,
+          {
+            organizationId: a.organizationId,
+            sourceId: a.sourceId,
+            maxGeneration: a.generation,
+          },
+          "restore_deferrals_exhausted",
+        );
+        await ctx.db.patch(source._id, {
+          personalAnalysis: { ...job, stage: "retention_cleanup_deferred" },
+          error:
+            "Private Cloud retention expired. App reads are blocked; physical cleanup requires operator attention after recovery.",
+          updatedAt: Math.max(Date.now(), source.updatedAt + 1),
+        });
+      }
+      return;
+    }
     await ctx.db.patch(source._id, {
       state: "failed",
       orderedMedia: undefined,

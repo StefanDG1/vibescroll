@@ -323,9 +323,7 @@ export function WorkCloudTextPanel({
       finish(ticket);
     }
   }
-  const instructions = queued
-    ? `In this official Work Cloud session, use the VibeScroll plugin to analyze sourceId ${queued.sourceId}, generation ${queued.generation}. Create one unique correlation UUID for this attempt and pass it as taskId to work_cloud_claim. This is a client correlation identifier, not a provider-attested task ID. Keep it and the returned lease token unchanged for input, heartbeat, ${media ? "prepare, " : ""}complete or fail. Follow the returned ${kind} policy and requested model/effort. ${media ? "Verify current restricted network policy and host resource controls before acquiring the exact source. Reuse only verified cached tools/models. Inspect actual speech and sampled frames, bind the evidence with work_cloud_prepare, then submit cited final analysis through work_cloud_complete. " : ""}Stop if tools, source rights, host controls or requested settings are unavailable; report the actual failure without a paid fallback or substitute result. Do not disclose credentials, lease tokens or private source bytes in the chat. This approval does not launch a host automatically. Host execution, model settings, cancellation and retention are not provider-attested by VibeScroll.`
-    : "";
+  const instructions = queued ? workCloudInstructions(queued, media) : "";
   return (
     <section
       className="panel"
@@ -540,4 +538,118 @@ export function WorkCloudTextPanel({
       )}
     </section>
   );
+}
+
+export function workCloudInstructions(
+  receipt: { sourceId: string; generation: number },
+  media: boolean,
+) {
+  const kind = media ? "video" : "text";
+  return `In this official Work Cloud session, ${media ? "before work_cloud_claim, prepare verified cached tools/model, obtain the host’s supported Internet permission and verify current restricted host/resource controls. Do not claim while setup is pending. Then " : ""}use the VibeScroll plugin to analyze sourceId ${receipt.sourceId}, generation ${receipt.generation}. Create one unique correlation UUID for this attempt and pass it as taskId to work_cloud_claim. This is a client correlation identifier, not a provider-attested task ID. Keep it and the returned lease token unchanged for input, heartbeat, ${media ? "prepare, " : ""}complete or fail. Follow the returned ${kind} policy and requested model/effort. ${media ? "Verify current restricted network policy and host resource controls before acquiring the exact source. Reuse only verified cached tools/models. Inspect actual speech and sampled frames, bind the evidence with work_cloud_prepare, then submit cited final analysis through work_cloud_complete. " : ""}Stop if tools, source rights, host controls or requested settings are unavailable; report the actual failure without a paid fallback or substitute result. Do not disclose credentials, lease tokens or private source bytes in the chat. This approval does not launch a host automatically. Host execution, model settings, cancellation and retention are not provider-attested by VibeScroll.`;
+}
+const recoveredHandoffSchema = z.strictObject({
+  sourceId: z.string().min(1).max(256),
+  organizationId: z.string().min(1).max(256),
+  generation: z.number().int().nonnegative(),
+  revision: z.number().int().nonnegative(),
+  expiresAt: z.number().int().positive(),
+  inputHash: hash,
+  model: z.string().regex(/^[a-zA-Z0-9_.:-]{1,100}$/),
+  effort: effortSchema,
+  media: z.boolean(),
+  grantId: z.string().min(1).max(256),
+  grantVersion: z.number().int().positive(),
+});
+export function PersistedWorkCloudHandoff({
+  receipt,
+  sourceId,
+  organizationId,
+  generation,
+  revision,
+}: {
+  receipt: unknown;
+  sourceId: string;
+  organizationId: string;
+  generation: number;
+  revision: number;
+}) {
+  const parsed = recoveredHandoffSchema.safeParse(receipt);
+  if (
+    !parsed.success ||
+    parsed.data.sourceId !== sourceId ||
+    parsed.data.organizationId !== organizationId ||
+    parsed.data.generation !== generation ||
+    parsed.data.revision !== revision ||
+    parsed.data.expiresAt <= observedTime()
+  )
+    return null;
+  return (
+    <UnclaimedHandoff key={JSON.stringify(parsed.data)} receipt={parsed.data} />
+  );
+}
+function UnclaimedHandoff({
+  receipt,
+}: {
+  receipt: z.infer<typeof recoveredHandoffSchema>;
+}) {
+  const [expired, setExpired] = useState(
+    () => receipt.expiresAt <= observedTime(),
+  );
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setExpired(true),
+      Math.max(0, Math.min(900000, receipt.expiresAt - observedTime())),
+    );
+    return () => clearTimeout(timer);
+  }, [receipt.expiresAt]);
+  if (expired)
+    return (
+      <p>
+        This unclaimed approval expired. Review current source status before
+        another approval.
+      </p>
+    );
+  return (
+    <section
+      className="panel"
+      aria-label="Persisted unclaimed Work Cloud handoff"
+    >
+      <h3>Resume this unclaimed Work Cloud handoff</h3>
+      <p>
+        Requested settings: {receipt.model}, {receipt.effort}. Approval expires
+        at {new Date(receipt.expiresAt).toISOString()}.
+      </p>
+      <label>
+        Instructions for your current official Work Cloud task
+        <textarea
+          readOnly
+          rows={7}
+          value={workCloudInstructions(receipt, receipt.media)}
+          style={{ width: "100%", minWidth: 0, maxWidth: "100%" }}
+        />
+      </label>
+      <p>
+        This recovers the existing approval only. No claim or token was created.
+        The host task must stop if its input, grant or lease is rejected.
+      </p>
+    </section>
+  );
+}
+
+export function workCloudHandoffKey(value: any) {
+  return value
+    ? JSON.stringify([
+        value.sourceId,
+        value.organizationId,
+        value.generation,
+        value.revision,
+        value.expiresAt,
+        value.inputHash,
+        value.model,
+        value.effort,
+        value.media,
+        value.grantId,
+        value.grantVersion,
+      ])
+    : "none";
 }

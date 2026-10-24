@@ -30,6 +30,14 @@ triggers.register("sources", async (ctx, change) => {
   )
     return;
   const job = next.personalAnalysis;
+  ensure(
+    !(
+      ["queued", "processing", "ready"].includes(next.state) &&
+      next.generation !== prior.generation
+    ),
+    "COST_RECONCILIATION_REQUIRED",
+    "Reconcile earlier Cloud usage before starting another executor.",
+  );
   if (
     job?.executor === "work_cloud" &&
     job.generation === prior.generation &&

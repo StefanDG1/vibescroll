@@ -1,3 +1,4 @@
+import { unclaimedCloudHandoff } from "./workCloudAnalysis";
 import { presentAnalysis } from "../packages/insights/presentation";
 import { classifySourceUrl } from "../packages/sources/classify";
 import {
@@ -692,6 +693,15 @@ export const detail = query({
       workCloudMediaEnabled:
         reader.organization.privateOwnerId === reader.actor._id &&
         workCloudMediaAllowed(reader.actor.subject),
+      workCloudHandoff:
+        reader.membership.role === "owner"
+          ? ((await unclaimedCloudHandoff(
+              ctx,
+              s,
+              reader.actor,
+              reader.organization,
+            )) ?? null)
+          : null,
       sourceRevision: typedRegistry?.revision,
       evidenceRegistry: typedRegistry?.evidence,
       spaces: reader.organization.privateOwnerId

@@ -239,7 +239,7 @@
       "summary": "Distinguish waiting work, unavailable accounts, reservations and settled usage.",
       "file": "processing-and-recovery.md",
       "status": "approved",
-      "reviewMode": "source-reviewed C6b text-only private-result candidate against0c71c98parent and implementationreceipt; actualhost/model/native/production acceptancepending",
+      "reviewMode": "source-reviewed private Cloud handoff candidate; existing local/private-layer guidance preserved; real Cloud video and independent setup pending",
       "lastVerifiedCommit": "0c71c9810484b45786769528f571e0b8fda49e77",
       "dependencies": [
         "apps/starter/components/console.tsx",
@@ -260,7 +260,11 @@
         "convex/privateSourceAnalysis.ts",
         "convex/lib/privateSourceAnalysis.ts",
         "packages/contracts/private-source-analysis.ts",
-        "packages/runner/local-task-runtime.mjs"
+        "packages/runner/local-task-runtime.mjs",
+        "convex/workCloudAnalysis.ts",
+        "apps/starter/components/work-cloud-text.tsx",
+        "packages/contracts/work-cloud-text.ts",
+        "docs/adr/146-compatible-private-work-cloud-release.md"
       ],
       "related": ["getting-started", "connect-your-computer"],
       "assets": []

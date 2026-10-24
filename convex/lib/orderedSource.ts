@@ -39,7 +39,7 @@ export async function currentOrderedSource(
       post.observedAt > Date.now() ||
       post.retainUntil <= Date.now() ||
       privateCloudMediaIdentity(source.url).url !== post.canonical ||
-      source.canonical !== post.canonical ||
+      privateCloudMediaIdentity(source.canonical).url !== post.canonical ||
       job?.executor !== "work_cloud" ||
       job.state !== "completed" ||
       job.generation !== source.generation ||

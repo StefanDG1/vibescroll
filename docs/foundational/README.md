@@ -190,3 +190,7 @@ October 3 current scope: individuals and businesses may buy Starter or Pro throu
 ## F062: private variant project integration, October 24
 
 The four foundational documents record explicitly selected earned private text insights for existing project evaluation and plans. [ADR 139](../adr/139-private-variant-project-references.md) defines actual run/output provenance, separate runtime admission and privacy. Candidate implementation is in progress; real model usefulness, media/skills/Cloud and production remain unverified. This is not a shared catalog contribution or marketing outcome.
+
+## F064: compatible private Cloud preparation, October 24
+
+The owner requested the smallest no-GitHub Cloud setup with supported internet permission and structured prerequisite reporting. The compatible candidate reuses the existing source job, grants, citations and status refresh; it adds no queue or retained analysis store. Preparation precedes the finite execution lease, and current unclaimed instructions survive refresh. This is implementation and host-readiness evidence, not a completed production video or public commercial availability. Preserve the audience, prices, six beliefs, provider gates, private reports and separate execution/publication authority. See [ADR 146](../adr/146-compatible-private-work-cloud-release.md).

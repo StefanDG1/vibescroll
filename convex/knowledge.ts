@@ -1,3 +1,4 @@
+import { currentOrderedSource } from "./lib/workCloudMediaSource";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { repositoryContent } from "./lib/repositoryContent";
 import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
@@ -5,7 +6,7 @@ import { internalMutation, mutation } from "./lib/projectedMutations";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { access, writeAccess, limit } from "./lib";
+import { access, writeAccess, limit, audit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { reserve, settle, digest } from "./product";
 import { categoryKey, categoryName } from "../packages/categories";
@@ -106,6 +107,13 @@ export async function referencesCurrent(
       !s.analysis?.insights?.some((i: any) => i.id === r.insightId)
     )
       return false;
+    if (s.orderedMedia || s.analysis?.schemaVersion === "3.0.0") {
+      try {
+        await currentOrderedSource(s);
+      } catch {
+        return false;
+      }
+    }
     if (
       s.currentRevisionId ||
       ["github_repository", "reddit_thread"].includes(s.sourceType ?? "") ||
@@ -1439,11 +1447,35 @@ export const decide = mutation({
     await ctx.db.patch(e._id, { decision: a.decision, updatedAt: Date.now() });
   },
 });
+// Existing audit records are the durable operator handoff; no automatic retry
+// restarts a chain once its finite lock or page budget has been exhausted.
+export async function recordRetentionAttention(
+  ctx: MutationCtx,
+  a: {
+    organizationId: Id<"organizations">;
+    sourceId: Id<"sources">;
+    maxGeneration?: number;
+    section?: string;
+  },
+  reason: "restore_deferrals_exhausted" | "page_budget_exhausted",
+) {
+  const organization = await ctx.db.get(a.organizationId);
+  if (!organization) return;
+  await audit(
+    ctx,
+    a.organizationId,
+    organization.privateOwnerId ?? organization.createdBy,
+    "source_retention.manual_cleanup_required",
+    `${a.sourceId}:${a.maxGeneration ?? "all"}:${a.section ?? "source"}:${reason}`,
+  );
+}
 export const redactDerived = internalMutation({
   args: {
     ...org,
     sourceId: v.id("sources"),
     maxGeneration: v.optional(v.number()),
+    deferredAttempt: v.optional(v.number()),
+    pagesRemaining: v.optional(v.number()),
     section: v.union(
       v.literal("knowledgeJobs"),
       v.literal("knowledgeEvaluations"),
@@ -1456,18 +1488,39 @@ export const redactDerived = internalMutation({
     cursor: v.union(v.string(), v.null()),
   },
   handler: async (ctx, a) => {
-    if (process.env.RESTORE_LOCK === "true") {
-      // Preserve this serial, bounded continuation across an operator lock.
-      // No provider call, content read or redaction runs while locked.
-      await ctx.scheduler.runAfter(60000, internal.knowledge.redactDerived, a);
-      return;
-    }
     ensure(
       a.maxGeneration === undefined ||
         (Number.isSafeInteger(a.maxGeneration) && a.maxGeneration >= 0),
       "INVALID_INPUT",
       "Invalid source generation cleanup bound.",
     );
+    const attempt = a.deferredAttempt ?? 0;
+    ensure(
+      Number.isSafeInteger(attempt) &&
+        attempt >= 0 &&
+        attempt <= 2 &&
+        (a.pagesRemaining === undefined ||
+          (Number.isSafeInteger(a.pagesRemaining) &&
+            a.pagesRemaining >= 0 &&
+            a.pagesRemaining <= 32)),
+      "INVALID_INPUT",
+      "Invalid finite retention cleanup budget.",
+    );
+    if (a.pagesRemaining === 0) {
+      await recordRetentionAttention(ctx, a, "page_budget_exhausted");
+      return;
+    }
+    if (process.env.RESTORE_LOCK === "true") {
+      // One global deferral allowance travels through every page and section.
+      if (attempt < 2)
+        await ctx.scheduler.runAfter(60000, internal.knowledge.redactDerived, {
+          ...a,
+          deferredAttempt: attempt + 1,
+        });
+      else
+        await recordRetentionAttention(ctx, a, "restore_deferrals_exhausted");
+      return;
+    }
     const page = await ctx.db
       .query(a.section)
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
@@ -1591,14 +1644,24 @@ export const redactDerived = internalMutation({
           });
       }
     }
+    const continuation = {
+      ...a,
+      ...(a.pagesRemaining === undefined
+        ? {}
+        : { pagesRemaining: a.pagesRemaining - 1 }),
+    };
+    if ((!page.isDone || a.section !== "proposals") && a.pagesRemaining === 1) {
+      await recordRetentionAttention(ctx, a, "page_budget_exhausted");
+      return;
+    }
     if (!page.isDone)
       await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
-        ...a,
+        ...continuation,
         cursor: page.continueCursor,
       });
     else if (a.section !== "proposals")
       await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
-        ...a,
+        ...continuation,
         section:
           a.section === "knowledgeJobs"
             ? "knowledgeEvaluations"

@@ -1,4 +1,5 @@
-import { presentAnalysis } from "../packages/insights/presentation";
+import { pairedPersonalJob } from "./personalAnalysisSchema";
+import { typedSource, completePersonalSource } from "./lib/workCloudSource";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { query, internalQuery } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
@@ -8,14 +9,10 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { access, writeAccess, recentAuthentication, limit, audit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
-import { insightOutput, sourceInsightOutput } from "../packages/contracts";
-import { retainedSourceRevision, sourceRetained } from "./lib/sourceAuthority";
-import { sourcePolicyCurrent } from "./lib/sourcePolicy";
-import { syncKnowledge } from "./knowledge";
 import { reserve, settle } from "./product";
 import { personalAllowed } from "./lib/personalAccess";
 import { releaseUnstarted } from "./personalMediaState";
-import { syncCategories, vocabulary } from "./categories";
+import { vocabulary } from "./categories";
 import { acquisitionPolicy } from "../packages/media/acquisition";
 import { workflow } from "./workflows";
 
@@ -35,55 +32,6 @@ export type PersonalApproval = {
   useOwnPlan: boolean;
   maxComputeCredits?: number;
 };
-
-async function typedSource(
-  ctx: QueryCtx,
-  source: Doc<"sources">,
-  bound: Doc<"sources">["personalAnalysis"] | null = source.personalAnalysis ??
-    null,
-) {
-  const required =
-    !!source.currentRevisionId ||
-    ["github_repository", "reddit_thread"].includes(source.sourceType ?? "") ||
-    source.analysis?.schemaVersion === "2.0.0" ||
-    !!bound?.sourceRevisionId;
-  ensure(
-    !source.publicImportId &&
-      source.rightsAttested &&
-      sourceRetained(source.sourceRetentionUntil),
-    "SOURCE_UNAVAILABLE",
-    "Source rights or retained evidence changed.",
-  );
-  if (!required) return null;
-  const row = source.currentRevisionId
-    ? await ctx.db.get(source.currentRevisionId)
-    : null;
-  const registry = row ? await retainedSourceRevision(ctx, row) : null;
-  ensure(
-    row &&
-      row.sourceId === source._id &&
-      row.organizationId === source.organizationId &&
-      row.generation === source.generation &&
-      registry &&
-      sourcePolicyCurrent(registry.revision) &&
-      (!bound ||
-        (bound.sourceRevisionId === row._id &&
-          bound.sourceContentHash === row.contentHash)),
-    "INVALID_EVIDENCE",
-    "Review the exact current retained source evidence.",
-  );
-  ensure(
-    registry.evidence.map((record) => record.excerpt).join("\n").length <=
-      60000,
-    "INVALID_EVIDENCE",
-    "Source excerpts exceed the approved text bound.",
-  );
-  return {
-    id: row._id,
-    revision: registry.revision,
-    evidence: registry.evidence,
-  };
-}
 
 // A personal alpha is explicitly bound to verified WorkOS subjects. Email or
 // a saved preference cannot activate subscription permission for hosted users.
@@ -126,8 +74,7 @@ async function authorizedDevice(ctx: QueryCtx, hash: string) {
   );
   return device;
 }
-// Check the sensitive authorization before uploading bytes. Approval still
-// repeats this check, because a long upload can outlast the fresh session.
+
 export const checkSession = query({
   args: { organizationId: v.id("organizations") },
   handler: async (ctx, a) => {
@@ -491,6 +438,7 @@ export const dispatch = internalMutation({
       if (device.activePersonalSource) {
         const active = await ctx.db.get(device.activePersonalSource);
         if (
+          pairedPersonalJob(active?.personalAnalysis) &&
           active?.personalAnalysis?.state === "running" &&
           active.personalAnalysis.leaseUntil <= now
         ) {
@@ -526,6 +474,7 @@ export const dispatch = internalMutation({
         .take(20);
       for (const source of queued) {
         const job = source.personalAnalysis!;
+        if (!pairedPersonalJob(job)) continue;
         let registry;
         try {
           registry = await typedSource(ctx, source);
@@ -612,6 +561,11 @@ export const dispatch = internalMutation({
     );
     const source = await ctx.db.get(a.id);
     const job = source?.personalAnalysis;
+    ensure(
+      !job || pairedPersonalJob(job),
+      "APPROVAL_STALE",
+      "Use the approved executor.",
+    );
     if (a.operation === "fail") {
       ensure(
         !source ||
@@ -656,7 +610,6 @@ export const dispatch = internalMutation({
       "Personal lease was canceled, expired or changed.",
     );
     const registry = await typedSource(ctx, source);
-    const media = source.kind !== "text" && !registry;
     if (a.operation === "heartbeat") {
       ensure(
         !registry || a.stage !== "transcribing",
@@ -672,175 +625,8 @@ export const dispatch = internalMutation({
       });
       return { valid: true, deadline: job.deadline };
     }
-    const output: any = presentAnalysis(
-      (registry ? sourceInsightOutput : insightOutput).parse(a.output) as any,
-    );
-    if (media)
-      output.warnings = [
-        ...new Set([
-          "Video frames are sampled; short scenes can be missed. Automatic transcription can contain errors.",
-          ...output.warnings,
-        ]),
-      ].slice(0, 20);
-    ensure(
-      JSON.stringify(output).length <= 120000 &&
-        !containsSecret(JSON.stringify(output)) &&
-        output.sourceId === source._id &&
-        output.processingRunId === `${source._id}:${job.generation}` &&
-        output.coverage ===
-          (registry
-            ? "source_text"
-            : media
-              ? source.personalMedia?.coverage
-              : "caption_only"),
-      "INVALID_EVIDENCE",
-      "Invalid personal source output.",
-    );
-    ensure(
-      !registry ||
-        (output.sourceRevisionId === registry.id &&
-          output.sourceContentHash === registry.revision.contentHash),
-      "INVALID_EVIDENCE",
-      "Output is bound to a different retained revision.",
-    );
-    const transcript = media
-      ? validateTranscript(a.transcript, source.personalMedia)
-      : [];
-    const evidenceList = registry
-      ? registry.evidence.map((record) => ({
-          kind: record.kind,
-          id: record.id,
-          startMs: null,
-          endMs: null,
-        }))
-      : media
-        ? [
-            ...transcript.map((s: any) => ({
-              kind: "transcript",
-              id: s.id,
-              startMs: s.startMs,
-              endMs: s.endMs,
-            })),
-            ...source.personalMedia.frames.map((f: any) => ({
-              kind: "frame",
-              id: f.assetId,
-              startMs: f.timestampMs,
-              endMs: f.timestampMs,
-            })),
-          ]
-        : [
-            {
-              kind: "user_note",
-              id: "supplied_text",
-              startMs: null,
-              endMs: null,
-            },
-          ];
-    if (!registry && source.acquisition?.description)
-      evidenceList.push({
-        kind: "caption",
-        id: "post_caption",
-        startMs: null,
-        endMs: null,
-      });
-    if (media)
-      for (const frame of source.personalMedia.frames) {
-        const assetId = ctx.db.normalizeId("assets", frame.assetId);
-        const asset = assetId ? await ctx.db.get(assetId) : null;
-        ensure(
-          asset?.sourceId === source._id &&
-            asset.organizationId === source.organizationId &&
-            asset.state === "complete" &&
-            asset.kind === "evidence",
-          "INVALID_EVIDENCE",
-          "Frame evidence is unavailable.",
-        );
-      }
-    for (const insight of output.insights) {
-      ensure(
-        !registry || insight.evidence.length > 0,
-        "INVALID_EVIDENCE",
-        "Each typed claim needs current source evidence.",
-      );
-      for (const evidence of insight.evidence)
-        ensure(
-          evidenceList.some(
-            (e: any) =>
-              e.kind === evidence.kind &&
-              e.id === evidence.id &&
-              e.startMs === evidence.startMs &&
-              e.endMs === evidence.endMs,
-          ),
-          "INVALID_EVIDENCE",
-          "Unverified evidence reference.",
-        );
-    }
-    ensure(
-      !a.usage ||
-        [a.usage.inputTokens, a.usage.outputTokens].every(
-          (n) => Number.isSafeInteger(n) && n >= 0 && n <= 10000000,
-        ),
-      "INVALID_INPUT",
-      "Invalid plan usage.",
-    );
-    await settle(
-      ctx,
-      device.organizationId,
-      `source:${source._id}:${job.generation}`,
-      0,
-    );
-    await ctx.db.patch(source._id, {
-      state: "ready",
-      analysis: output,
-      analysisPipelineVersion: registry
-        ? "official-personal-cited-source-v2"
-        : "official-personal-media-text-v1",
-      ...(media
-        ? {
-            text: transcript.map((s: any) => s.text).join(" "),
-            mediaCoverage: output.coverage,
-            mediaEvidence: evidenceList,
-            originalMediaEvidence: evidenceList,
-          }
-        : {}),
-      summary: output.summary,
-      coverage: output.coverage,
-      tags: [
-        ...new Set([
-          ...source.tags,
-          ...output.insights.flatMap((i: any) => i.categories),
-        ]),
-      ].slice(0, 20),
-      searchable: [
-        source.title,
-        source.text,
-        ...transcript.map((s: any) => s.text),
-        output.summary,
-        ...source.tags,
-        ...output.insights.flatMap((i: any) => i.categories),
-      ].join(" "),
-      personalAnalysis: { ...job, state: "completed", ...a.usage },
-      error: undefined,
-      updatedAt: now,
-    });
-    await syncCategories(ctx, (await ctx.db.get(source._id))!, output);
-    await syncKnowledge(ctx, (await ctx.db.get(source._id))!, {
-      enqueue: false,
-    });
+    await completePersonalSource(ctx, source, job, a, registry, now);
     await ctx.db.patch(device._id, { activePersonalSource: undefined });
-    if (media)
-      await ctx.scheduler.runAfter(0, internal.assets.expireOriginal, {
-        sourceId: source._id,
-        generation: source.generation,
-      });
-    await ctx.db.insert("notifications", {
-      organizationId: device.organizationId,
-      key: `source:${source._id}:${job.generation}`,
-      message: "A source summary is ready.",
-      read: false,
-      createdAt: now,
-      updatedAt: now,
-    });
     return { accepted: true };
   },
 });

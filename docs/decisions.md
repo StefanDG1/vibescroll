@@ -199,3 +199,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## October 22: typed sources, resumable setup and unreleased launch candidate
 
 [ADR 111](adr/111-typed-source-and-public-knowledge-authority.md) records typed source revision/citation authority, bounded retrieval/renewal, current exact public reuse/withdrawal and conservative lifecycle recovery. [ADR 112](adr/112-persisted-setup-and-verified-companion-packages.md) distinguishes user-provided setup reports from working processing and adds official isolated personal runtime packaging, signature-verified staging/rollback and unsigned-refusing bootstrap preparation. [ADR 113](adr/113-source-reviewed-help-and-consented-pilot-evidence.md) records source-reviewed Help/synthetic examples and minimal consented payment evidence, with unsent launch material and disabled founding-pass policy. These are implemented candidate decisions; [implementation status](implementation-status.md) retains exact-commit, release, provider/signing, independent-human/device and measured-value gates. They authorize no deployment, campaign, paid action or gate activation.
+
+## October 24: compatible private Work Cloud release
+
+[ADR 146](adr/146-compatible-private-work-cloud-release.md) defines a no-new-index release over the serving schema for the existing private Cloud job/grant workflow. It preserves all main product requirements and the US$3 cumulative cap. Real video, exact-head publication and general commercial availability remain separate gates.

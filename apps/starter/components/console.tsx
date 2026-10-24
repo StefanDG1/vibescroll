@@ -2,6 +2,12 @@
 import { useState, useEffect, useRef, useEffectEvent } from "react";
 import { useRouter } from "next/navigation";
 import { usePolling } from "@/lib/use-polling";
+import { socialCitation } from "../../../packages/social/analysis";
+import {
+  WorkCloudText,
+  PersistedWorkCloudHandoff,
+  workCloudHandoffKey,
+} from "./work-cloud-text";
 import { AssistantConnections } from "./assistant-connections";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
 import { UsageSummary } from "./usage-summary";
@@ -852,6 +858,8 @@ export function Console({
       }
       if (
         [
+          "workCloudTextPreview",
+          "workCloudTextApprove",
           "checkPersonalSession",
           "subscriptionTrialList",
           "subscriptionTrialBundle",
@@ -3475,7 +3483,7 @@ function CaptureForm({
     </form>
   );
 }
-function SourceDetail({
+export function SourceDetail({
   source,
   sources,
   readOnly,
@@ -3509,7 +3517,7 @@ function SourceDetail({
     )
     .sort()
     .join("|");
-  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${proposalRevision}`;
+  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
   const savedFrames = (
     detail.originalMediaEvidence ??
     detail.mediaEvidence ??
@@ -3915,6 +3923,37 @@ function SourceDetail({
                       </li>
                     ))}
                   </ul>
+                  {detail.orderedMedia && (
+                    <ul>
+                      {i.evidence.map((ref: any) => {
+                        const citation = socialCitation(
+                          ref,
+                          detail.orderedMedia.evidence,
+                        );
+
+                        const record = detail.orderedMedia.evidence.find(
+                          (e: any) => e.id === ref.id && e.kind === ref.kind,
+                        );
+
+                        return (
+                          <li key={ref.id}>
+                            <p>
+                              Observed video - {ref.kind} -{" "}
+                              {ref.startMs === null
+                                ? "untimed"
+                                : `${(ref.startMs / 1000).toFixed(1)}s`}{" "}
+                              - {citation.basis}
+                            </p>
+                            <p>{record?.text}</p>
+                            {citation.uncertainty && (
+                              <p>{citation.uncertainty}</p>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+
                   {detail.evidenceRegistry && (
                     <TypedSourceEvidence
                       evidenceRegistry={detail.evidenceRegistry.filter(
@@ -4428,6 +4467,25 @@ function SourceDetail({
             )}
           </details>
         )}
+        {detail.orderedMedia?.post.schemaVersion ===
+          "work-cloud-observed-media-v1" && (
+          <section className="panel">
+            <h3>Private host-reported media observations</h3>
+            <p>
+              Partial sampled video evidence. Acquisition, transcript, model
+              settings and raw-media deletion are unverified. Original frame
+              bytes are provider-local and cannot be opened here.
+            </p>
+            <p>
+              App result retained until{" "}
+              {new Date(detail.orderedMedia.post.retainUntil).toLocaleString()}.
+            </p>
+            {detail.orderedMedia.post.caption && (
+              <p>{detail.orderedMedia.post.caption}</p>
+            )}
+          </section>
+        )}
+
         {detail.speechProvenance && (
           <details>
             <summary>Transcription details</summary>
@@ -4441,15 +4499,106 @@ function SourceDetail({
             )}
           </details>
         )}
-        {personalEnabled && (
-          <PersonalSourceAnalysis
-            key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
-            source={detail}
-            devices={devices}
-            linkAnalysisEnabled={linkAnalysisEnabled}
-            call={call}
-          />
+        {(detail.workCloudTextEnabled || detail.workCloudMediaEnabled) &&
+          !detail.publicImportId &&
+          ((detail.workCloudTextEnabled &&
+            (detail.kind === "text" || detail.currentRevisionId)) ||
+            (detail.workCloudMediaEnabled &&
+              detail.kind === "url" &&
+              !detail.currentRevisionId)) &&
+          !["ready", "queued", "processing"].includes(detail.state) && (
+            <WorkCloudText
+              sourceId={id(detail)}
+              organizationId={org}
+              generation={detail.generation}
+
+              revision={detail.updatedAt}
+              media={detail.kind === "url" && !detail.currentRevisionId}
+
+              retentionUntil={detail.sourceRetentionUntil}
+              call={strictCall}
+              disabled={readOnly || detailLoading}
+            />
+          )}
+
+        {!demo &&
+          !readOnly &&
+          !detailLoading &&
+          detail.state === "queued" &&
+          source.state === "queued" &&
+          id(detail) === sourceId &&
+          detail.generation === source.generation &&
+          detail.updatedAt === source.updatedAt &&
+          detail.organizationId === org &&
+          detail.workCloudHandoff &&
+          source.workCloudHandoff !== null &&
+          (source.workCloudHandoff === undefined ||
+            workCloudHandoffKey(source.workCloudHandoff) ===
+              workCloudHandoffKey(detail.workCloudHandoff)) &&
+          (detail.workCloudHandoff.media
+            ? source.workCloudMediaEnabled !== false
+            : source.workCloudTextEnabled !== false) &&
+          (detail.workCloudHandoff.media
+            ? detail.workCloudMediaEnabled
+            : detail.workCloudTextEnabled) && (
+            <PersistedWorkCloudHandoff
+              receipt={detail.workCloudHandoff}
+              sourceId={sourceId}
+              organizationId={org}
+              generation={detail.generation}
+              revision={detail.updatedAt}
+            />
+          )}
+        {detail.personalAnalysis?.executor === "work_cloud" && (
+          <section className="panel">
+            <h3>Private Work Cloud request</h3>
+
+            <p>
+              State: {detail.personalAnalysis.state}. Funding: your own
+              subscription; API allowance 0 USD.
+            </p>
+
+            <p>
+              Host execution, model settings, subscription usage and raw-media
+              retention are unverified. The task ID is a client correlation
+              UUID, not host attestation.
+            </p>
+
+            {["queued", "running"].includes(detail.personalAnalysis.state) && (
+              <button
+                className="secondary"
+                disabled={readOnly || detailLoading || busy}
+                onClick={() =>
+                  call("cancelPersonalAnalysis", { id: id(detail) })
+                }
+              >
+                Revoke app access to this request
+              </button>
+            )}
+
+            <p>
+              Stop the host task separately. Revocation does not confirm host
+              cancellation or restore allowance. No alternate provider starts
+              automatically.
+            </p>
+          </section>
         )}
+
+        {personalEnabled &&
+          detail.personalAnalysis?.executor !== "work_cloud" && (
+            <PersonalSourceAnalysis
+              key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
+
+              source={detail}
+
+              devices={devices}
+
+              linkAnalysisEnabled={linkAnalysisEnabled}
+
+              call={call}
+            />
+          )}
+
         {detail.error && <p role="alert">{detail.error}</p>}
         {cloudEnabled && detail.state !== "ready" && (
           <button

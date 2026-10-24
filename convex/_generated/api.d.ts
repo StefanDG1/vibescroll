@@ -130,6 +130,7 @@ import type * as sourcePreviewState from "../sourcePreviewState.js";
 import type * as subscriptionTrials from "../subscriptionTrials.js";
 import type * as toolMaintenance from "../toolMaintenance.js";
 import type * as usageMaintenance from "../usageMaintenance.js";
+import type * as workCloudAnalysis from "../workCloudAnalysis.js";
 import type * as workflows from "../workflows.js";
 
 import type {
@@ -139,6 +140,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  workCloudAnalysis: typeof workCloudAnalysis;
   accounts: typeof accounts;
   aiPreferences: typeof aiPreferences;
   assets: typeof assets;

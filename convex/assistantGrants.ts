@@ -1,3 +1,7 @@
+import {
+  workCloudTextAllowed,
+  workCloudMediaAllowed,
+} from "./lib/personalAccess";
 import { query } from "./_generated/server";
 import { mutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
@@ -40,6 +44,12 @@ export const setup = query({
         process.env.MCP_ENABLED === "true" &&
         !!assistantIssuer(process.env.MCP_AUTH_ISSUER),
       privateLibrary: organization.privateOwnerId === actor._id,
+      workCloudTextEnabled:
+        organization.privateOwnerId === actor._id &&
+        workCloudTextAllowed(actor.subject),
+      workCloudMediaEnabled:
+        organization.privateOwnerId === actor._id &&
+        workCloudMediaAllowed(actor.subject),
       eventsEnabled: process.env.MCP_EVENTS_ENABLED === "true",
       devices: (
         await ctx.db

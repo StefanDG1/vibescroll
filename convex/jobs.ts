@@ -1274,13 +1274,23 @@ export const exportPage = query({
         const registry = revision
           ? await retainedSourceRevision(ctx, revision)
           : null;
+        let orderedCurrent = true;
+        if (row.orderedMedia || row.analysis?.schemaVersion === "3.0.0") {
+          try {
+            orderedCurrent =
+              row.state === "ready" && !!(await sharedTypedCitations(ctx, row));
+          } catch {
+            orderedCurrent = false;
+          }
+        }
         const registryCurrent = row.currentRevisionId
           ? !!registry && sourcePolicyCurrent(registry.revision)
           : !registryRequired;
         if (
           !row.rightsAttested ||
           !sourceRetained(row.sourceRetentionUntil) ||
-          !registryCurrent
+          !registryCurrent ||
+          !orderedCurrent
         ) {
           permitted.push({
             ...row,
@@ -1293,6 +1303,7 @@ export const exportPage = query({
             mediaEvidence: undefined,
             originalMediaEvidence: undefined,
             personalMedia: undefined,
+            orderedMedia: undefined,
             acquisition: undefined,
             searchable: undefined,
             repositorySelection: undefined,

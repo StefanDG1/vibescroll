@@ -20,3 +20,22 @@ export function personalSubjectAllowed(subject: string) {
     return false;
   }
 }
+
+export function workCloudTextAllowed(subject: string) {
+  return (
+    process.env.WORK_CLOUD_TEXT_ENABLED === "true" &&
+    process.env.WORK_CLOUD_TEXT_VERIFIED === "true" &&
+    process.env.DISABLE_INFERENCE !== "true" &&
+    personalAllowed(subject)
+  );
+}
+
+export function workCloudMediaAllowed(subject: string) {
+  return (
+    process.env.WORK_CLOUD_MEDIA_ENABLED === "true" &&
+    process.env.WORK_CLOUD_MEDIA_VERIFIED === "true" &&
+    process.env.DISABLE_INFERENCE !== "true" &&
+    process.env.RESTORE_LOCK !== "true" &&
+    personalAllowed(subject)
+  );
+}

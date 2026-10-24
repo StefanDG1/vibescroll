@@ -1,5 +1,15 @@
 # October 22 launch implementation candidate
 
+## Compatible private Work Cloud candidate, October 24 at 16:29 UTC
+
+[ADR 146](adr/146-compatible-private-work-cloud-release.md) and [the receipt](operations/evidence/launch-20261024-cloud-compatible-candidate.json) record the no-new-index Cloud slice over compatible base346b718. It preserves the old paired validator, existing source jobs/grants/citations, finite execution leases and private results. Final review fixes bound restore deferrals/32-page cleanup and recover current unclaimed instructions across source-page refresh. No full product requirement was removed from main.
+
+The full offline `node scripts/run-offline.mjs pnpm check` passed with916 unit,35 auth and68 UI checks, three hosted skips,19 native and15 Python checks, zero-warning lint, all types and both builds. Registry policy audit passed with zero high/critical findings, two moderate and two low records. The preceding focused80 backend/38 UI checks passed. Native actual-component layout passed at320/dark/reduced-motion and1280/light, with expired/mismatched instructions hidden and no overflow. Its tab/server were closed. Staged secret scan found no leaks. Final independent review and exact-head CI remain separately pending.
+
+One owner-operated no-GitHub Cloud task is prepared with29 hash-verified artifacts,24 pinned dependency versions and offline CPU-int8 transcription-model initialization. Supported turn-scoped internet permission preserved restricted networking and TLS. Preparation took209.50 seconds of measured execution across attempts, not a warm video-processing benchmark. No source video or production call ran during preparation, and actual model settings remain independently unverified.
+
+This candidate is not serving production and proves no Cloud video completion or general customer availability. The same cumulative US$3 ceiling conservatively retains US$2.2288707111015746 after independently reviewed completed metadata reconciliation; US$0.7711292888984254 is unreserved. This is not a settled invoice. Older unknowns and future cleanup/storage holds remain. Publication and actual video checks need their own bounded reservations. Full-main index backfill remains held.
+
 ## Compatible public/security release preparation, October 24
 
 A separate branch from main d8e97a3 backports the reviewed public composition, captures and manual-analysis caption context from product candidate48a53f1/PR140, plus the security fixes reviewed in PRs136/138/139. Convex source/schema is byte-identical to the last verified backendabfdeff; only its dependency bundle changes. The full product candidate and all its remaining acceptance stay open. [ADR126](adr/126-compatible-public-and-security-release.md) explains the release order.

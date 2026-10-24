@@ -196,7 +196,7 @@ it("retries a locked derived continuation without erasing fresh references or fi
     ctx.db.system.query("_scheduled_functions").collect(),
   );
   const retry = after.find((job) => !before.some((old) => old._id === job._id));
-  expect(retry?.args[0]).toEqual(args);
+  expect(retry?.args[0]).toEqual({ ...args, deferredAttempt: 1 });
   vi.stubEnv("RESTORE_LOCK", "false");
   await s.t.mutation(internal.knowledge.redactDerived, args);
   await s.t.run(async (ctx) => {

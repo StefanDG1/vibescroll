@@ -136,7 +136,7 @@
       "summary": "Distinguish waiting work, unavailable accounts, reservations and settled usage.",
       "file": "processing-and-recovery.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
+      "reviewMode": "source-reviewed compatible private Cloud candidate; existing local guidance preserved; real Cloud video and independent setup pending",
       "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
       "dependencies": [
         "apps/starter/components/console.tsx",
@@ -147,7 +147,11 @@
         "convex/setupJourney.ts",
         "scripts/companion.mjs",
         "packages/companion/README.md",
-        "apps/starter/components/source-acquisition-panel.tsx"
+        "apps/starter/components/source-acquisition-panel.tsx",
+        "convex/workCloudAnalysis.ts",
+        "apps/starter/components/work-cloud-text.tsx",
+        "packages/contracts/work-cloud-text.ts",
+        "docs/adr/146-compatible-private-work-cloud-release.md"
       ],
       "related": ["getting-started"],
       "assets": []

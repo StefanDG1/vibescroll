@@ -1,3 +1,6 @@
+import { sourceRetained } from "./sourceAuthority";
+import { currentOrderedSource } from "./workCloudMediaSource";
+import { socialCitation } from "../../packages/social/analysis";
 import type { QueryCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
 import { retainedSourceRevision } from "./sourceAuthority";
@@ -18,6 +21,64 @@ export async function sharedTypedCitations(
     `shared-source-citations:${source._id}:${source.generation}:${source.updatedAt}`,
     async () => {
       if (source.state !== "ready") return null;
+      if (source.orderedMedia || source.analysis?.schemaVersion === "3.0.0") {
+        ensure(
+          sourceRetained(source.sourceRetentionUntil) &&
+            source.rightsAttested &&
+            source.orderedMedia &&
+            source.analysis?.schemaVersion === "3.0.0",
+          "FORBIDDEN",
+          "Ordered source rights or evidence changed.",
+        );
+        const validated = await currentOrderedSource(source);
+        const post = validated.prepared.post;
+        const omitted = new Set(
+          post.assets
+            .filter((asset) => !asset.inspected)
+            .map((asset) => asset.index),
+        );
+        if (post.expectedAssetCount !== null)
+          for (let index = 0; index < post.expectedAssetCount; index++)
+            if (!post.assets.some((asset) => asset.index === index))
+              omitted.add(index);
+        return {
+          sourceRevisionId: null,
+          sourceContentHash: validated.prepared.post.revisionHash,
+          coverage: {
+            method: "ordered_media",
+            retrieved: validated.prepared.post.assets.filter(
+              (asset) => asset.inspected,
+            ).length,
+            omitted: omitted.size,
+            omissions: [
+              ...[...omitted]
+                .sort((a, b) => a - b)
+                .map(
+                  (index) =>
+                    `Child ${index + 1} was unavailable or not inspected.`,
+                ),
+              ...(post.coverage === "complete_manifest"
+                ? []
+                : [
+                    post.schemaVersion === "work-cloud-observed-media-v1"
+                      ? "Private authenticated host-reported acquisition; sampled frames, model execution and provider retention are unverified."
+                      : post.schemaVersion === "provided-media-v1"
+                        ? "Some supplied files were unavailable or not inspected. The original post and publication date are unverified."
+                        : "The provider's child manifest is incomplete or unknown.",
+                  ]),
+            ],
+          },
+          summarize: (evidence: InsightCitation[]) =>
+            evidence
+              .slice(0, 10)
+              .map((ref) =>
+                socialCitation(
+                  ref as Parameters<typeof socialCitation>[0],
+                  validated.prepared.evidence,
+                ),
+              ),
+        };
+      }
       const typedRequired =
         source.currentRevisionId ||
         source.analysis?.schemaVersion === "2.0.0" ||

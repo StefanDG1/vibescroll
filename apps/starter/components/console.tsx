@@ -48,6 +48,10 @@ import { motion } from "motion/react";
 import { useInterfaceMotion } from "./motion-preference";
 import { mobileNavigationGroup } from "@/lib/mobile-navigation";
 import { clearLibraryPlaces } from "@/lib/library-place";
+import {
+  libraryPageAfterContext,
+  sourceCoverageLabel,
+} from "@/lib/library-sources";
 import { ProposalTrail } from "./proposal-trail";
 import { AppTheme } from "./app-theme";
 import { MotionPreference } from "./motion-preference";
@@ -133,14 +137,6 @@ type Initial = {
 };
 const id = (o: any) => o._id ?? o.id;
 const label = (s: string) => s.replaceAll("_", " ");
-const coverageLabel = (s: string) =>
-  ({
-    full_sampled: "Audio + sampled frames",
-    audio_only: "Audio",
-    visual_only: "Images",
-    caption_only: "Text",
-    metadata_only: "Link",
-  })[s] ?? label(s);
 const blankPlan = {
   scope: "",
   nonGoals: [],
@@ -293,7 +289,7 @@ export function Console({
     [busy, setBusy] = useState(false),
     [libraryLoading, setLibraryLoading] = useState(
       (demo && demoState === "loading") ||
-        (!demo && initial.workspaceSlice === "library"),
+        (!demo && (initial.compact || initial.workspaceSlice === "library")),
     ),
     [libraryError, setLibraryError] = useState(
       demo && demoState === "error"
@@ -393,6 +389,8 @@ export function Console({
       if (generation !== libraryRequest.current) return;
       setData((current) => ({
         ...current,
+        compact: false,
+        ...(current.compact ? { workspaceSlice: "library" as const } : {}),
         sources: append
           ? [
               ...current.sources,
@@ -516,8 +514,7 @@ export function Console({
       setData((current) => ({
         ...current,
         ...next,
-        sources: current.sources,
-        libraryNext: current.libraryNext,
+        ...libraryPageAfterContext(current),
       }));
       notify(next.notifications);
       return;
@@ -1669,7 +1666,7 @@ export function Console({
                             <h2>{s.title}</h2>
                             <div className="row spread">
                               <span className="coverage">
-                                {coverageLabel(s.coverage)}
+                                {sourceCoverageLabel(s.coverage)}
                               </span>
                             </div>
                             {!demo && s.state !== "ready" && (
@@ -4033,9 +4030,7 @@ function SourceDetail({
         />
       )}
       <div className="panel">
-        <span className="coverage">
-          {coverageLabel(detail.coverage ?? "metadata_only")}
-        </span>
+        <span className="coverage">{sourceCoverageLabel(detail.coverage)}</span>
         <h2>AI summary</h2>
         <p>{overview}</p>
         {detail.error && (

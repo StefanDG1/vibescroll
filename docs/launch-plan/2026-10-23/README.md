@@ -1,5 +1,11 @@
 # Complete the launch and own-subscription workflows
 
+## Resumed page and local media recovery, October 24
+
+The owner resumed work after the stop checkpoint below to recover a production Posts crash and complete one selected local media analysis. [ADR 141](../../adr/141-posts-navigation-and-native-media-recovery.md) and the [sanitized receipt](../../operations/evidence/launch-20261024-video-page-recovery.json) record reviewed repair `e2fd30b`, actual Console navigation and response-order regressions, and a successful private-only local preparation/inference run. No canonical production result has been saved. The full offline check preceded the final small race fixes; final focused/types/format checks passed and exact-head CI remains pending.
+
+The compatible `e2e25b9` cherry-pick is prepared but unpushed. Neither repair is deployed, and the full-main hold remains. After reconciling the earlier Vercel US$0.65 against covered credits, retained reservations are US$2.2692885298898517 under the same US$3 cap, with US$0.7307114701101483 remaining and all Convex unknown holds preserved. Older dated checkpoints below remain historical records.
+
 ## Owner-requested stop and public main consolidation, October 24
 
 The owner requested finishing the current checks, consolidating all reviewed source into public main and stopping feature work. [The completion report](COMPLETION-REPORT-2026-10-24.md) records approximately70% implementation and roughly10-20% expanded production acceptance, with an explicit estimate method. [ADR 140](../../adr/140-public-main-consolidation-with-deployment-hold.md) adds a temporary main deployment hold while keeping full CI/versioning. The owner does not require an extra discretionary OpenAI confirmation; actual provider contracts and missing Cloud execution/return capabilities are not bypassed. Public main and the serving production build remain distinct.

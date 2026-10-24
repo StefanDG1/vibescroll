@@ -153,7 +153,7 @@ function fixture(sequence = 1, distribution = "source") {
   if (distribution === "runtime")
     for (const [name, version] of [
       ["jose", "6.2.12"],
-      ["zod", "4.6.1"],
+      ["zod", "4.6.6"],
     ]) {
       const files = [
         {

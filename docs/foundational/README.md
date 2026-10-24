@@ -1,5 +1,7 @@
 # VibeScroller foundational document process
 
+Current release brief: [F049](idea-backlog.md#f049-compatible-public-experience-and-security-release-october-24) applies ADR 126 to the compatible public/security stage. Complete newer product work remains in [PR 140](https://github.com/StefanDG1/vibescroll/pull/140), with provider, migration, production and independent evidence still distinct.
+
 ## F039: live contrast verification, October 22
 
 Canonical frontend `3e831ae461aa4cb2b8577a3c81e18952b45bceae`, version `0.1.0-alpha.20261022212012.g3e831ae461aa`, now includes the source-detail contrast correction. PR 132 passed exact-head CI 39856055089, main CI 39856416737 and alpha publication 39856628535. The fixed Basic build passed staged/canonical health before and after exact-build promotion. Backend `abfdeff6779a2fc7790d4441152117262965fe60` remains compatible; this CSS correction required no backend deployment or inference. The full offline suite passed 915 tests with three hosted skips.

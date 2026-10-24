@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F049: compatible public experience and security release, October 24
+
+Updated all four briefs for ADR 126 and the compatible release order. Preserved the complete PR 140 product scope, current prices and later lifetime feature. Recorded scoped public design, reviewed synthetic captures, optional GitHub and manual-analysis context with honest pending Cloud/catalog/following claims. No new provider approval, campaign, customer or deployment is asserted by this documentation.
+
 ## F039: live contrast verification, October 22
 
 Canonical frontend `3e831ae461aa4cb2b8577a3c81e18952b45bceae`, version `0.1.0-alpha.20261022212012.g3e831ae461aa`, now includes the source-detail contrast correction. PR 132 passed exact-head CI 39856055089, main CI 39856416737 and alpha publication 39856628535. The fixed Basic build passed staged/canonical health before and after exact-build promotion. Backend `abfdeff6779a2fc7790d4441152117262965fe60` remains compatible; this CSS correction required no backend deployment or inference. The full offline suite passed 915 tests with three hosted skips.

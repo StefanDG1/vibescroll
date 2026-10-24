@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: compatible public/security release before bounded product migration
+
+[ADR 126](adr/126-compatible-public-and-security-release.md) separates the reviewed public design and dependency fixes from the full product candidate while its populated-index migration bound remains unresolved. Preserve the entire full launch scope in PR 140. The same cumulative cap is US$3, old holds remain, lifetime access is later, and no provider/privacy gate changes.
+
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
 ## October 20: automatic assistant intake

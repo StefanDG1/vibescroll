@@ -1,5 +1,11 @@
 # VibeScroll foundational offer
 
+## F049: compatible public experience and security release, October 24
+
+[ADR 126](../adr/126-compatible-public-and-security-release.md) prepares a compatible public-site/security release from the existing production baseline while the full product candidate remains under review in PR 140. The owner resumed the full scope within US$3 cumulative, preserving all old holds. Defer lifetime/ongoing access; current subscription prices, allowances and purchased terms remain unchanged.
+
+Use the selected product-first mint/charcoal public composition, original artwork and reviewed synthetic candidate captures. Explain that general source analysis does not require GitHub, while project-specific decisions require authorized context. Manual-analysis walkthroughs are distinct from explicitly approved automatic processing. The proprietary Pro catalog, creator following and computer-free own-account Cloud remain pending release acceptance. Public layout or dependency checks are not evidence of a working Cloud adapter, accuracy, independent use or customer value. The fresh component prediction is incomplete after a dependency-path change, so backend redeployment stays held. Only the compatible frontend can publish; do not imply every live runtime is patched. Keep the audience and six beliefs unchanged.
+
 ## F039: live contrast verification, October 22
 
 Canonical frontend `3e831ae461aa4cb2b8577a3c81e18952b45bceae`, version `0.1.0-alpha.20261022212012.g3e831ae461aa`, now includes the source-detail contrast correction. PR 132 passed exact-head CI 39856055089, main CI 39856416737 and alpha publication 39856628535. The fixed Basic build passed staged/canonical health before and after exact-build promotion. Backend `abfdeff6779a2fc7790d4441152117262965fe60` remains compatible; this CSS correction required no backend deployment or inference. The full offline suite passed 915 tests with three hosted skips.

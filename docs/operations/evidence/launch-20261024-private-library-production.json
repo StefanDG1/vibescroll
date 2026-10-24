@@ -1,0 +1,122 @@
+{
+  "recordedAt": "2026-10-24T20:10:00Z",
+  "stage": "compatible controls published; real Cloud video acceptance pending",
+  "productionURL": "https://scroll.companynerve.com",
+  "frontendSource": "63a071d6ad746f26c878dfccaa52783f9a9ad8e4",
+  "frontendVersion": "0.1.0-alpha.20261024193841.g63a071d6ad74",
+  "deploymentId": "dpl_J2KYPVCFgH1TvDTbK7Lfm2jSUv98",
+  "backendSource": "63a071d6ad746f26c878dfccaa52783f9a9ad8e4",
+  "backendFinishAcknowledgedAt": "2026-10-24T19:58:21.565Z",
+  "sourcePRs": [
+    {
+      "number": 162,
+      "exactHeadCI": 40124984536,
+      "result": "success",
+      "mergedMain": "691b3693cbab66a437c9cd3d2704d3ef4bb0243a"
+    },
+    {
+      "number": 163,
+      "exactHeadCI": 40126265804,
+      "result": "success",
+      "mergedCompatible": "501ccbd4ff2ed90f74cfa34979181c1b26297b95"
+    }
+  ],
+  "compatibleOffline": {
+    "passed": 1093,
+    "javascript": 1059,
+    "native": 19,
+    "python": 15,
+    "hostedSkipped": 3,
+    "types": "passed",
+    "lint": "zero warnings",
+    "bothBuilds": "passed"
+  },
+  "mainOffline": {
+    "passed": 1898,
+    "javascript": 1846,
+    "native": 19,
+    "python": 33,
+    "hostedSkipped": 3,
+    "types": "passed",
+    "lint": "zero warnings",
+    "bothBuilds": "passed",
+    "finalConditionalSignInLink": "22 focused UI tests plus starter types/lint and final exact-head CI passed"
+  },
+  "preflight": {
+    "components": 12,
+    "tables": 131,
+    "indexes": 273,
+    "newDefinitions": 0,
+    "allocations": 0,
+    "schemaChanges": 0,
+    "indexChanges": 0,
+    "credentialFileDeletedBeforeMetadataDispatch": true,
+    "configuredLogSinks": 0
+  },
+  "publicationFailure": {
+    "guardHaltedAfterAcknowledgedFinish": true,
+    "reason": "Guard incorrectly expected generated dependency replacements in the public-only finish module diff.",
+    "pinnedProducer": "https://github.com/get-convex/convex-backend/blob/7b7b58ed4afa1f9d07fa0b67b871ef8771c868eb/crates/model/src/config/types.rs#L318-L338",
+    "offlineIndependentReview": "Official SDK parser and every other original finish check pass. Pinned producer excludes dependency/system paths. Whole request and exact dependency hashes remain bound.",
+    "retry": false,
+    "originalHaltAndEvidencePreserved": true,
+    "entireOperationHoldRetained": true
+  },
+  "frontendChecks": [
+    {
+      "step": "staged health",
+      "status": 200,
+      "at": "2026-10-24T19:58:23.403Z"
+    },
+    {
+      "step": "staged static Help",
+      "status": 200,
+      "at": "2026-10-24T19:58:48.965Z"
+    },
+    {
+      "step": "canonical health after promotion",
+      "status": 200,
+      "at": "2026-10-24T20:04:03.102Z"
+    }
+  ],
+  "hosting": {
+    "fixedBasic": true,
+    "elasticConcurrency": false,
+    "automaticDomainAssignmentRestored": true,
+    "existingGitSuppressionPreserved": true,
+    "builds": 1
+  },
+  "accountAcceptance": {
+    "reconnection": "Owner completed normal OAuth consent; all six actual Cloud execution tools are exposed.",
+    "legacyAdoptionPreview": "HTTP200; refused other_private_workspace. No ownership mutation sent.",
+    "existingPrivateLibrary": "An active owner-private library was confirmed through one normal-cookie server document. No second library created.",
+    "originalPosts": "Untouched by these reads.",
+    "reservedUserTestPost": "Untouched and unanalyzed.",
+    "grantOrSourceWrites": 0,
+    "cloudProductionMediaJobs": 0,
+    "actualCitedCloudReturn": "pending",
+    "githubRequirement": "No repository needed for video processing. Existing project connections preserved.",
+    "next": "Use the existing private library and exact source grant/approval after setup, whole run, retention and cleanup fit the cumulative cap."
+  },
+  "securityRecovery": {
+    "taskCreatedPreviewBypass": "One credential accidentally appeared in private diagnostic output. It was revoked/replaced through supported controls and verified absent.",
+    "applicationKeysExposed": false,
+    "applicationKeysChanged": false
+  },
+  "gatesPreserved": [
+    "founder-only private Cloud experiment",
+    "commercial provider approval",
+    "no paid API fallback",
+    "no subscription pooling",
+    "no catalog publication",
+    "full-main five-table/37-index migration",
+    "independent user acceptance"
+  ],
+  "budget": {
+    "capUSD": 3,
+    "retainedMaximumUSD": 2.8581559473235747,
+    "unallocatedUSD": 0.1418440526764253,
+    "settledInvoice": false,
+    "oldUnknownNodeReadComputeFutureHoldsPreserved": true
+  }
+}

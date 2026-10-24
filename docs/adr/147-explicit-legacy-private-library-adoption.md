@@ -1,6 +1,6 @@
 # ADR 147: explicit private-library adoption for older sole-owner workspaces
 
-Date: October 24, 2026. Status: reviewed implementation candidate; live adoption pending.
+Date: October 24, 2026. Status: compatible controls published; founder adoption refused because another private library exists.
 
 ## Problem
 
@@ -19,3 +19,7 @@ The existing private-workspace read, invite acceptance/creation and ownership-tr
 The backend focused suite passes 26 cases, including source/ID preservation, authority denial, stale snapshots, newly added members/invitations, restore lock and private invitation refusal. Eight UI cases exercise explicit review/acknowledgement, invalid/expired replies, failures and duplicate suppression. Native synthetic review covers 320 dark/reduced-motion and 1280 light, keyboard acknowledgement, exact payload and refusal without overflow. Independent High review found no P1/P2. Root owns the combined checks, compatible publication and live acceptance; their receipts remain separate.
 
 A live mutation still needs a fresh eligible production preview and the operator's concrete private-only approval. Keep the original US$3 cumulative cap and retained unknown/future holds. The full-main index migration, public commercial Cloud access, shared catalog publication and actual real-video return remain separate gates. No permission is weakened to pass this test.
+
+## Production check
+
+Compatible source `63a071d` is published with passing exact-head CI and staged/canonical checks. The founder preview refused `other_private_workspace`; a separate normal-cookie workspace document confirmed an active owner-private library. No adoption mutation was dispatched. Use that existing library for the next bounded experiment. Preserve this control for eligible older sole-owner workspaces; do not weaken the single-private-library rule or migrate content to satisfy the test. Actual Cloud video return remains pending.

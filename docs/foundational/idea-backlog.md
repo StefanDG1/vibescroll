@@ -1,5 +1,9 @@
 # Foundational idea backlog
 
+## F067: live controls and pending Cloud results, October 24
+
+Source: owner-authorized reconnection, exact-head CI, compatible publication and bounded normal-cookie account checks. Need: complete the no-GitHub source-to-cited-result journey through existing systems. Decision: record tool exposure and reuse the active existing private library. Counterargument: working configuration can hide missing source grants, media access and fiscal authority. Test: one approved real-source claim, acquisition, sampled evidence and canonical cited return with finite retention/cleanup and the reserved post untouched. That test is pending. Preserve all four briefs, private/proprietary catalog rules and release gates; no marketing outcome is inferred.
+
 ## F066: preserve older saved posts through explicit privacy repair, October 24
 
 A real connected account can expose Cloud tools while an older workspace still has team permissions. Its name does not establish privacy. [ADR 147](../adr/147-explicit-legacy-private-library-adoption.md) prepares an explicit original-creator/sole-owner upgrade using the existing workspace and unchanged post/project IDs. Current membership, invitations, recent authentication and another private library are checked again before adoption. Team collaboration uses a separate workspace.

@@ -1,5 +1,11 @@
 # Foundational document change log
 
+## F067: live controls and pending Cloud results, October 24
+
+Compatible source `63a071d` is published. Reconnection exposes six Cloud execution tools. The live preview correctly refused a second private library; an active private library already exists. Reuse it. No source, ownership, grant or analysis mutation followed. [The production receipt](../operations/evidence/launch-20261024-private-library-production.json) separates publication from the still-pending real source-to-cited-result test.
+
+Keep optional GitHub, explicit source authority and the same US$3 cap. A connected tool does not prove analyzed media, speed, commercial availability or beginner success. Full-main, provider and independent acceptance remain separate. Audience, prices, allowances, beliefs and proprietary catalog decisions are unchanged. No campaign or customer outcome follows.
+
 ## F066: preserve older saved posts through explicit privacy repair, October 24
 
 Updated the four briefs and index together for [F066](idea-backlog.md#f066-preserve-older-saved-posts-through-explicit-privacy-repair-october-24) and ADR 147. Recorded the actual legacy-workspace blocker, guarded unchanged-ID repair candidate and separate live/privacy consent. Preserved dissent about collaborators and all existing prices, allowances, audience, beliefs and external gates. No production adoption, video success, customer or campaign was claimed.

@@ -24,6 +24,11 @@ export function ProductMedia({
         navigation and review, with no live processing, sign-in, pairing or
         successful sample run.
       </p>
+      <p>
+        This recording uses manual analysis. With automatic analysis off, saving
+        leaves the post ready for a later decision. Automatic processing
+        requires its own current permission and an available processing route.
+      </p>
       <div className={styles.overview}>
         <figure className={styles.figure}>
           <video

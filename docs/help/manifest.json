@@ -26,7 +26,7 @@
       "path": "/help/save-form.png",
       "status": "approved",
       "alt": "Save form with source type, title, URL and permission checkbox.",
-      "caption": "Synthetic Save form. Saving does not start analysis.",
+      "caption": "Synthetic Save form with manual analysis. Automatic processing requires its own current permission and a ready route.",
       "width": 390,
       "height": 700,
       "captureCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
@@ -203,6 +203,27 @@
       "lastVerifiedCommit": "472c6e1",
       "dependencies": [],
       "related": [],
+      "assets": []
+    },
+    {
+      "slug": "share-a-post",
+      "title": "Send a post explicitly to VibeScroll",
+      "summary": "Choose VibeScroll explicitly in a supported ChatGPT surface, or copy the link into web Save.",
+      "file": "share-a-post.md",
+      "status": "approved",
+      "reviewMode": "Root source-reviewed compatible release; actual native-device and independent comprehension pending",
+      "lastVerifiedCommit": "d8e97a393fb86fce57ee17d47c0779f02c554cfe",
+      "dependencies": [
+        "apps/starter/components/assistant-connections.tsx",
+        "convex/assistantHttp.ts",
+        "packages/mcp/server.ts",
+        "apps/starter/components/console.tsx"
+      ],
+      "related": [
+        "getting-started",
+        "first-useful-insight",
+        "processing-and-recovery"
+      ],
       "assets": []
     }
   ],

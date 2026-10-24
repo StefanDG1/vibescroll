@@ -108,10 +108,15 @@
       "role": "anonymous reader of public guide or synthetic demo",
       "reviewer": "root GPT-6.1 Sol xhigh",
       "status": "approved for prepared draft",
-      "bytes": 1086,
-      "sha256": "420a6286a7db06703eefb40b8311725e44aa66ae0618846fcfb217ea2c347964",
+      "bytes": 1314,
+      "sha256": "c58fd88ae26a0ef1796ecc7f61dbccf13a6d73a4fb4e4bb2f314e37d47af7a33",
       "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
-      "kind": "caption-or-text-alternative"
+      "kind": "caption-or-text-alternative",
+      "captionContextReview": {
+        "date": "2026-10-24",
+        "reviewer": "root GPT-6.1 Sol High",
+        "scope": "Manual-analysis context clarified; original video and captured interface unchanged"
+      }
     },
     {
       "path": "/product/overview.mp4",
@@ -134,10 +139,15 @@
       "role": "anonymous reader of public guide or synthetic demo",
       "reviewer": "root GPT-6.1 Sol xhigh",
       "status": "approved for prepared draft",
-      "bytes": 636,
-      "sha256": "1d378e0b2b96ade17fed3cae13a823939cfbfde70e05f11b52c8ed1ce808397e",
+      "bytes": 646,
+      "sha256": "881a7ad5e6e0a68b384dd4c7df68d6006cf6effb826b42620b5b9070b24e2edc",
       "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
-      "kind": "caption-or-text-alternative"
+      "kind": "caption-or-text-alternative",
+      "captionContextReview": {
+        "date": "2026-10-24",
+        "reviewer": "root GPT-6.1 Sol High",
+        "scope": "Manual-analysis context clarified; original video and captured interface unchanged"
+      }
     },
     {
       "path": "/product/setup-poster.png",
@@ -227,7 +237,7 @@
       "path": "/help/save-form.png",
       "status": "approved",
       "alt": "Save form with source type, title, URL and permission checkbox.",
-      "caption": "Synthetic Save form. Saving does not start analysis.",
+      "caption": "Synthetic Save form with manual analysis. Automatic processing requires its own current permission and a ready route.",
       "width": 390,
       "height": 700,
       "captureCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",

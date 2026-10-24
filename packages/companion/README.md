@@ -2,7 +2,7 @@
 
 This package implements explicit package preparation, staging, activation and rollback for Windows x64 under the current user. It does not contain a production signing key, a release signature, a verified Node archive checksum or an enabled update feed. Installation refuses missing or invalid trust evidence. The companion remains optional for the browser Library.
 
-The executable runtime flavor contains the official-client companion's literal module graph and its materialized `zod@4.6.1` production dependency. The legacy direct OAuth client and its CLI are explicitly refused by the runtime graph. No package manager runs during installation or startup. A separate source flavor can be staged for inspection but cannot launch through the installer.
+The executable runtime flavor contains the official-client companion's literal module graph and its materialized `zod@4.6.6` production dependency. The legacy direct OAuth client and its CLI are explicitly refused by the runtime graph. No package manager runs during installation or startup. A separate source flavor can be staged for inspection but cannot launch through the installer.
 
 ## Prepare a release
 

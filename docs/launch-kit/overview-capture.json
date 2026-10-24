@@ -55,5 +55,10 @@
       "observedAt": "2026-10-22T12:33:41Z"
     }
   ],
-  "editing": "Reordered individually reviewed native captures. No real job or continuous recording."
+  "editing": "Reordered individually reviewed native captures. No real job or continuous recording.",
+  "captionContextReview": {
+    "date": "2026-10-24",
+    "scope": "The original scene ledger and video are preserved. Current VTT/transcript clarify manual-analysis mode; automatic processing needs a current grant and ready route.",
+    "assets": ["/product/overview.vtt", "/product/overview-transcript.txt"]
+  }
 }

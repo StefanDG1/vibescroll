@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Compatible public/security release preparation, October 24
+
+A separate branch from main d8e97a3 backports the reviewed public composition, captures and manual-analysis caption context from product candidate48a53f1/PR140, plus the security fixes reviewed in PRs136/138/139. Convex source/schema is byte-identical to the last verified backendabfdeff; only its dependency bundle changes. The full product candidate and all its remaining acceptance stay open. [ADR126](adr/126-compatible-public-and-security-release.md) explains the release order.
+
+Initial branch-switch validation found stale generated production/development route types. Automatic approval review rejected removal of generated build directories; supported Next typegen and a brief offline development startup regenerated the correct types instead. No application test or control was weakened. The fresh audit passes policy with0 high/critical and2 low/2 moderate findings. Complete offline validation passed924 tests with3 hosted skips, zero-warning lint, all types and both production builds. The later compatible sharing guide passed4 focused Help checks, approved-link validation and final builds; documentation validation passed286 documents/12 skill snapshots. Exact-head CI, current schema prediction, reservation and production verification remain separately required. No deployment is implied by this entry.
+
 ## Latest live contrast verification, October 22
 
 Latest production evidence: [PR 132](https://github.com/StefanDG1/vibescroll/pull/132) is merged and canonical frontend `3e831ae4`, alpha `0.1.0-alpha.20261022212012.g3e831ae461aa`, passed exact-head/main CI, staged/canonical health and eight hydrated public synthetic-demo width/theme/state cases. Both source-detail controls have 13.92:1 light and 13.02:1 dark contrast, verified native keyboard behavior, at least 44-pixel targets and no overflow. Backend `abfdeff67` is unchanged and compatible. The complete offline sequence passed 915 tests with three hosted skips. Launch PRs 120–129, 131 and 132 are merged; unrelated dependency PR 130 remains unmerged with failing CI. This does not close pending provider, signed distribution, human public-content review or independent acceptance. Earlier dated receipts retain their actual versions.

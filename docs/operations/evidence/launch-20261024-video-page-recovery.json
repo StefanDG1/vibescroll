@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T12:17:21.9510630Z",
+  "scope": "Reviewed Posts navigation and native local media recovery; not deployed and no canonical production result save",
+  "repairCommit": "e2fd30bea0191a71ae0441beca753ba8fc76b3ee",
+  "compatibleHotfix": {
+    "commit": "e2e25b996ca9eac0e81c05f070bf5c2435c4a7ef",
+    "branch": "launch-foundation-verify",
+    "pushed": false,
+    "deployed": false
+  },
+  "productionAtCheckpoint": {
+    "frontendCommit": "fba56d44c484260dc98e27174e943ee5ed21af51",
+    "backendCommit": "abfdeff6779a2fc7790d4441152117262965fe60",
+    "fullMainLive": false,
+    "deploymentHold": "ADR 140 remains in force"
+  },
+  "pageError": {
+    "observed": "TypeError: Cannot read properties of undefined (reading 'replaceAll')",
+    "location": "Console coverageLabel during Posts source-list rendering",
+    "provenance": "Compact Home display cards omit coverage; Library context cleared compact while retaining those preview rows before the full Library page arrived",
+    "repair": "Discard compact preview rows and preview cursor, preserve full rows and real cursor, mark successful page provenance, retain partial workspace context for Save, and show Coverage not recorded for absent display metadata",
+    "backendContractChanged": false
+  },
+  "nativeCli": {
+    "observed": "ERR_INVALID_URL_SCHEME before Docker or acquisition",
+    "provenance": "Runtime Vite bundling rewrote the cleanup helper file URL into a data URL",
+    "repair": "Direct native import of the existing prepareLocalUrl implementation",
+    "preserved": [
+      "10000-byte configuration limit",
+      "redacted errors and command exit contract",
+      "source policy, cleanup scheduling and isolated media preparation"
+    ]
+  },
+  "verification": {
+    "environment": "Windows, portable Node 24.22.1; offline wrapper for local checks",
+    "fullOffline": {
+      "command": "node scripts/run-offline.mjs pnpm check",
+      "exitCode": 0,
+      "endedAt": "2026-10-24T11:46:44.1874838+00:00",
+      "finalSourceCoverage": "Passed before the final small page/context and Save-marker race fixes; not an exact-final-source full-check claim",
+      "logSha256": "1e8c3f74fad19e4e9c9ea0c94b4184f44beeeca49c26f000448207f2bdbbe3d0",
+      "exitReceiptSha256": "79c65ef455f0b23389f350cefa3cb0992d3cd3c8e5b5a2a9096fe6c14858bd33"
+    },
+    "finalFocused": {
+      "command": "node scripts/run-offline.mjs pnpm exec vitest run tests/library-sources.test.ts tests/workspace-slices.test.ts --maxWorkers=2",
+      "passed": 7,
+      "lint": "zero warnings/errors on affected source and tests",
+      "starterTypes": "passed in final focused verification",
+      "format": "passed"
+    },
+    "cliRegression": "Actual native child CLI resolves the cleanup helper and rejects unsupported sources and oversized configuration with all subprocess/network attempts blocked",
+    "nativeBrowser": {
+      "implementation": "Actual Console and React hydration, minimal Next adapters, authored synthetic API responses, loopback-only fixture",
+      "before": "Reproduced undefined.replaceAll crash",
+      "fixed": [
+        "Home to Library to Posts shows loading while the page is held, with no preview row or fake continuation",
+        "Loaded full row and cursor survive a context refresh",
+        "Missing display coverage has an honest label without an exception",
+        "Page-before-context response order retains rows, cursor and completed loading state",
+        "Save before delayed context requests full editor context and opens capture",
+        "320 CSS pixel check has no horizontal overflow"
+      ],
+      "resultSha256": "5c114d5ac76c4bbe2dc0d296a5a87949e17993e50a3ed2673151639f5020d602",
+      "limit": "Local regression evidence, not a hydrated production acceptance pass"
+    },
+    "exactHeadCi": "pending",
+    "deployment": "not performed"
+  },
+  "privateOwnerRun": {
+    "preparationSeconds": 130.217,
+    "sampledFrames": 48,
+    "speechSegments": 27,
+    "officialOwnSubscriptionInferenceSeconds": 41.7217,
+    "insights": 7,
+    "inferenceRuns": 1,
+    "paidApiFallback": false,
+    "resultRetention": "private only",
+    "canonicalProductionResultSaved": false,
+    "limit": "One local owner run; content quality and official Cloud acceptance are not established"
+  },
+  "retainedFailures": [
+    "Original production client exception",
+    "Native preparation CLI file-URL failure before the repair",
+    "Initial standalone browser fixture lacked environment inlining and failed before navigation; fixture corrected and failure retained",
+    "First reversed-order fixture assertion failure retained; final page/context and Save regression passed"
+  ],
+  "budget": {
+    "currency": "USD",
+    "cumulativeCap": "3.00",
+    "retainedReservations": "2.2692885298898517",
+    "remainingHeadroom": "0.7307114701101483",
+    "reconciliation": "Previously retained Vercel US$0.65 reconciled against covered credits",
+    "allConvexUnknownHoldsPreserved": true,
+    "settledInvoice": false,
+    "newPurchaseAuthorized": false
+  },
+  "publicDataPolicy": "No source identifiers, titles, source URLs, transcripts, frames, model content or credentials included",
+  "excludedWork": "Separate uncommitted cleanup edits are not covered by this repair or verification receipt"
+}

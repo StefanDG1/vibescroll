@@ -1,5 +1,13 @@
 # October 22 launch implementation candidate
 
+## Resumed Posts and native media recovery, October 24
+
+[ADR 141](adr/141-posts-navigation-and-native-media-recovery.md) records reviewed repair `e2fd30bea0191a71ae0441beca753ba8fc76b3ee`. Compact Home cards no longer reach Posts as full source rows; reversed page/context order preserves completed pages and Save's full-editor refresh. The local media CLI imports the native preparation implementation directly, avoiding Vite's invalid cleanup URL. Actual Console hydration/navigation and native CLI regressions passed. The complete Windows/Node 24.22.1 offline `pnpm check` exited 0 at 11:46:44 UTC before the final small race fixes; final focused tests, types, lint and formatting passed. Exact-head CI remains pending. The [sanitized receipt](operations/evidence/launch-20261024-video-page-recovery.json) preserves commands, hashes, failures and limits.
+
+One real local preparation took 130.217 seconds with 48 sampled frames and 27 speech segments. One official own-subscription inference took 41.7217 seconds and produced seven privately retained insights, with no paid API fallback or canonical production result save. This is one local run, not official Cloud or content-quality acceptance. The compatible `e2e25b9` cherry-pick remains unpushed and neither repair is deployed. Serving frontend `fba56d4`, backend `abfdeff67`, the full-main deployment hold and unrelated cleanup work remain separate.
+
+The same US$3 cap retains US$2.2692885298898517 after reconciling the earlier Vercel US$0.65 against covered credits; US$0.7307114701101483 remains. All Convex unknown holds are preserved. This is reservation accounting, not a settled invoice. Earlier dated entries retain their original scope and results.
+
 ## Distinct processing setup integration, October 24
 
 [ADR 137](adr/137-distinct-processing-availability-in-setup.md) distinguishes experimental text-review availability from paired subscription and managed credits in existing setup. A gate never marks the host connected or video processing ready, and legacy missing fields remain unverified. No new read, saved route, chapter completion, permission or dispatch.

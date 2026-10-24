@@ -1,0 +1,172 @@
+{
+  "recordedAtUtc": "2026-10-24T23:17:41Z",
+  "stage": "Private explicit MCP request controls published; real Cloud video return pending",
+  "productionURL": "https://scroll.companynerve.com",
+  "frontendSource": "f2495e71eea8c246acef676e1c4e0403734f2b23",
+  "backendSource": "f2495e71eea8c246acef676e1c4e0403734f2b23",
+  "frontendVersion": "0.1.0-alpha.20261024225317.gf2495e71eea8",
+  "deploymentId": "dpl_C4L4XBCZAbZzMDgjUGcddMqoTb1x",
+  "pullRequests": [
+    {
+      "number": 167,
+      "head": "5610ba66d6a777145fc57e92bfd6456821cd23d6",
+      "exactHeadCI": 40140057382,
+      "result": "success",
+      "mergedMain": "2322d31d7ef80dd8bb57ae6875c6e0719e6af557"
+    },
+    {
+      "number": 168,
+      "head": "f2495e71eea8c246acef676e1c4e0403734f2b23",
+      "exactHeadCI": 40140476234,
+      "result": "success",
+      "mergedCompatible": "5cfcf9544e2b51979e1368193b5c14167a98a726"
+    }
+  ],
+  "mainChecks": {
+    "verify": 40140424568,
+    "version": 40140424583,
+    "alphaPublication": 40140682560,
+    "result": "success"
+  },
+  "localVerification": {
+    "mainPassed": 1940,
+    "compatiblePassed": 1135,
+    "hostedSkippedPerSuite": 3,
+    "lint": "zero warnings",
+    "types": "passed",
+    "bothBuilds": "passed",
+    "independentReview": "No P1/P2 in new permission boundary and final guard delta",
+    "native": "Actual connection component, desktop light and 320px dark/reduced-motion; synthetic account only"
+  },
+  "backend": {
+    "publishedAtUtc": "2026-10-24T23:14:58.713Z",
+    "finishAcknowledged": true,
+    "phase": "finished",
+    "components": 12,
+    "tables": 131,
+    "indexes": 273,
+    "changedValidators": ["assistantGrants: two optional policy fields"],
+    "newTables": 0,
+    "newIndexes": 0,
+    "indexBackfills": 0,
+    "completeNoScanPredictions": true,
+    "configuredLogSinks": 0,
+    "preparedCredentialFileDeletedBeforeMetadata": true,
+    "candidateDigest": "420e3155b724fe98e287ea6c525d7246707a8c586c4b0f621fe558a42ab36a4e",
+    "metadataDigest": "6d6f55a017ae9d4ea3a86eae22f18ee90653e1b32cf4a69323c7f3cb1387978a",
+    "privatePublicationReceiptSHA256": "ceb250c53fe9b8efdc788b23651d91520ee0397ec667c4e3136c27dfa4693ca7"
+  },
+  "guardVerification": {
+    "focusedPassed": 85,
+    "actualInstalledCliSyntheticPassed": 1,
+    "syntheticPhysicalCalls": 38,
+    "syntheticSystemQueries": 26,
+    "syntheticMaximumConcurrency": 1,
+    "lostResponseRetry": "One physical attempt then permanent halt",
+    "pinnedPublicModuleProducer": "https://github.com/get-convex/convex-backend/blob/7b7b58ed4afa1f9d07fa0b67b871ef8771c868eb/crates/model/src/config/types.rs#L318-L338",
+    "syntheticLogSHA256": "5da6cf7611031404a188c99a2ffc8599db534d318a285dd0d6f4fe9c683e831d",
+    "syntheticIsNotProductionEvidence": true
+  },
+  "frontendChecks": [
+    {
+      "step": "staged health",
+      "status": 200,
+      "atUtc": "2026-10-24T23:05:25.442Z",
+      "bytes": 145,
+      "exactVersion": true
+    },
+    {
+      "step": "staged static processing Help",
+      "status": 200,
+      "atUtc": "2026-10-24T23:05:27Z",
+      "bytes": 37316,
+      "newGuideText": true
+    },
+    {
+      "step": "canonical health after exact-build promotion",
+      "status": 200,
+      "atUtc": "2026-10-24T23:17:34.640Z",
+      "bytes": 145,
+      "exactVersion": true
+    }
+  ],
+  "hosting": {
+    "fixedBasic": true,
+    "normalQueue": true,
+    "elasticConcurrency": false,
+    "builds": 1,
+    "providerBuildSeconds": 29.655,
+    "automaticDomainAssignmentRestoredAndVerifiedAtUtc": "2026-10-24T23:17:41Z",
+    "gitDeploymentSuppressionPreserved": true,
+    "fullMainPublished": false
+  },
+  "accountAcceptance": {
+    "newGrantWrites": 0,
+    "newVideoJobs": 0,
+    "privateProfileRead": "Current authorization unavailable; no source/grant/job changed",
+    "oneTimeCloudPolicyReview": "pending",
+    "hostToolMetadataRefresh": "pending",
+    "restrictedNetworkReadiness": "Official Work Cloud status reports restricted enforced Instagram destinations; resource bounds and actual model not attested",
+    "actualMediaAndCitedReturn": "pending",
+    "githubAndNoGithubMediaAcceptance": "pending",
+    "measuredProcessingSpeed": "pending",
+    "reservedOwnerTestPost": "Untouched",
+    "oldTeamWorkspaceSources": "Untouched; cannot silently reinterpret as private sources"
+  },
+  "remainingScope": [
+    "Automatic waiting-work dispatch and phone-only link acceptance",
+    "Neutral shared-catalog contribution and general paid hosted entry",
+    "Internal processing identity for legacy team-owned posts",
+    "Full-main migrations and whole-post transcript/images/proposal controls",
+    "All unclosed original and reconciled R/P/N/C/M acceptance"
+  ],
+  "preservedFailures": [
+    "Compatible frozen schema test initially rejected optional fields; exact validator comparison now permits only the two intended additions, preserving all other schema/index checks",
+    "One unchanged webhook test timed out during parallel work; unchanged targeted and full backend reruns passed",
+    "Compatible Help manifest initially linked a guide absent from that older baseline; corrected to existing guides",
+    "Guard draft initially used target schema as baseline; rejected and recaptured before publication",
+    "Synthetic installed CLI expectations were corrected to actual public-only module diff and control count; prior logs retained"
+  ],
+  "budget": {
+    "capUSD": 3,
+    "retainedMaximumAtCheckpointUSD": 2.6424438943301745,
+    "headroomAtCheckpointUSD": 0.35755610566982554,
+    "invoiceSettled": false,
+    "analysisApiSpend": 0,
+    "newPurchase": false,
+    "wholeLiveVideoTest": "Not fiscally cleared at checkpoint; setup, execution, storage and cleanup must fit together",
+    "allOldUnknownStorageFutureHoldsPreserved": true
+  },
+  "followUp": {
+    "currentUsageRead": {
+      "atUtc": "2026-10-24T23:31:19.105Z",
+      "seedStatus": "complete",
+      "worstRateWholeOct24KnownCategoriesUSD": 0.17538462308276154,
+      "administrativeControls": 2,
+      "usageGet": 1,
+      "applicationCalls": 0,
+      "newHoldUSD": 0.005,
+      "replacedOnlyEnumeratedCompletedReadAndComputeCaps": true
+    },
+    "completedReconciliation": {
+      "netConvexReleasedUSD": 0.055381947216960825,
+      "netPublicHealthTransferReleasedUSD": 0.05573173201073334,
+      "allOldUnknownStorageFutureHoldsPreserved": true
+    },
+    "hostMetadataRefresh": {
+      "existingConnection": true,
+      "nativeProviderResponseStatus": 200,
+      "nativeProviderDurationMs": 6947.299999952316,
+      "taskGrantSourceWrites": 0,
+      "newMetadataAllowanceUSD": 0.06,
+      "rootToolSchema": "Still cached old definition; fresh official Work Cloud turn pending"
+    },
+    "budget": {
+      "capUSD": 3,
+      "retainedMaximumUSD": 2.5963302151024803,
+      "headroomUSD": 0.4036697848975197,
+      "invoiceSettled": false,
+      "wholeVideoTestCleared": false
+    }
+  }
+}

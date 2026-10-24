@@ -2,6 +2,8 @@
 
 Mode: current execution index. Owner direction October 24; reconciled October 25, 2026, Europe/Berlin. Root owns implementation, integration, contracts, budget and final review. This is the single starting point for all remaining work, including the original October 22 launch, creator/onboarding plans, ScrollShow, paid entry, catalog-first insights and automatic link processing. Linked files supply detail; they are not competing plans or new queues.
 
+Current follow-up: the supported existing-plugin tool refresh returned HTTP200 without disconnecting OAuth; this chat still has its old cached definition, so a fresh official Work Cloud turn is checking metadata only. A complete October24 usage read and completed public-check reconciliation released only explicitly justified holds. After a separate metadata allowance, the cumulative ledger retains USD2.5963302151024803 with USD0.4036697848975197 unreserved. This is not an invoice or permission to start an unfunded video. The one-time app policy review and complete real-media return remain pending.
+
 ## Start here
 
 - [Automatic link processing, Home, Library and loading specification](APP-MAP-AND-LOADING.md), including the complete current page inventory and recommended placement.
@@ -14,13 +16,15 @@ The former chronological front page is preserved in [historical checkpoints](HIS
 
 ## Current status, not a completion claim
 
-[ADR 150](../../adr/150-explicit-mcp-cloud-analysis-requests.md) adds a private experimental implementation stage: one reviewed connection opt-in permits exact video requests through MCP without per-post app approval. It reuses current jobs/leases and keeps old grants unchanged. Automatic dispatch, paid hosted entry, neutral contribution and actual Cloud media return remain unfinished. Optional grant-schema additions need their own bounded publication proof; this is not a live acceptance claim.
+[ADR 150](../../adr/150-explicit-mcp-cloud-analysis-requests.md) is now published as private experimental controls. One reviewed connection opt-in permits exact video requests through MCP without per-post app approval, using the current jobs/leases. Old grants remain unchanged. [The production receipt](../../operations/evidence/launch-20261025-cloud-mcp-production.json) records frontend/backend `f2495e7`, version `0.1.0-alpha.20261024225317.gf2495e71eea8`, merged PRs 167/168, exact-head CI, fresh no-scan optional-field publication, staged Help/health and canonical version verification. Full main's other migrations remain held.
 
-The last verified compatible frontend/backend is `63a071d`, with the Posts repair and experimental private Work Cloud controls. Six execution tools are exposed after normal reconnection. The main baseline inspected for this plan revision is `7ded1e1`; its PR, main checks, versioning and alpha publication passed. Main contains additional product code that is not established live merely because its routes also exist in the compatible release.
+Main `2322d31` passed Verify, versioning and alpha publication. Its combined offline check passed 1,940 tests; the compatible suite passed 1,135, each with three hosted skips. Native actual-component review covered desktop and 320px mobile with synthetic data. This establishes the new request controls, not actual Cloud media acceptance.
 
-Not verified in production: complete Cloud video-to-cited-result return, automatic event-to-processing dispatch, neutral subscription contribution to the shared catalog, the new global paid-entry gate and workspace-free insight journey, the requested Home cards/insight feed, and general customer readiness. These remain implementation/acceptance work. The specifically reserved owner-test post remains unanalyzed.
+Still pending: refresh the existing host's tool metadata; review the new one-time Cloud permission in the existing private library with recent app authentication; then prove a whole-budgeted real video-to-cited-result return. The old saved-link workspace has team authority and its posts were not moved or relabeled. Root owns the internal-routing extension needed for those original posts. No additional source links or blanket OAuth reconnection are needed now.
 
-The same cumulative USD 3 cap retains USD 2.5354438943301747, leaving USD 0.4645561056698253 after evidence-backed completed-work reconciliation. These are conservative holds, not a settled invoice. Do not spend this remainder on an incomplete production experiment: reserve setup, execution, storage, delivery, failure recovery and future cleanup together. No paid API fallback, new purchase, automatic cap increase or reset at midnight.
+Not verified in production: complete Cloud video return and speed, automatic waiting-work dispatch, neutral subscription contribution to the shared catalog, global paid-before-app access, the workspace-free insight journey, requested Home cards/insight feed, full-main whole-post application and general customer readiness. The specifically reserved owner-test post remains unanalyzed. Preserve all R/P/N/C/M work below.
+
+At the published checkpoint the same cumulative USD3 cap retains USD2.6424438943301745, leaving USD0.35755610566982554. These are conservative holds, not a settled invoice. A minimum test plus required grant already exceeds this remainder before storage/writes/transfer. Root is reconciling completed usage; do not start or ask the owner to start an unfunded test. Reserve setup, execution, storage, delivery, failure recovery and future cleanup together. No paid API fallback, purchase or budget reset.
 
 ## Owner decisions and unresolved constraints
 

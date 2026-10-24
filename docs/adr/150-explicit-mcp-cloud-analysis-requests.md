@@ -1,6 +1,6 @@
 # ADR 150: request private Cloud video analysis through MCP
 
-Date: October 25, 2026, Europe/Berlin. Status: implementation candidate; offline and release evidence are recorded separately.
+Date: October 25, 2026, Europe/Berlin. Status: private experimental controls published; real Cloud video acceptance remains pending.
 
 ## Problem
 
@@ -25,3 +25,9 @@ Focused backend tests cover legacy denial, authority boundaries, exact identity,
 The two optional grant fields change one existing table validator, with no new table or index. Publication needs a fresh bounded schema-impact proof for that exact candidate; the earlier unchanged-schema receipt is insufficient. Full main's other migrations remain held.
 
 This is a private experimental request route, not commercial subscription eligibility, automatic dispatch, shared-catalog contribution or a successful production video result. Keep the cumulative USD3 cap and reserved owner-test post. One bounded private-profile MCP read returned unavailable authorization and changed no source, grant or job. Prepare the concrete supported connection step before asking the owner to test.
+
+## Published checkpoint
+
+[The production receipt](../operations/evidence/launch-20261025-cloud-mcp-production.json) records merged PRs 167/168 and live compatible frontend/backend `f2495e7`. Fresh schema prediction and actual finish acknowledged only the two optional fields, with all 273 indexes unchanged. Exact-head CI, main versioning/alpha publication, staged health/Help and canonical version checks passed. Automatic domain assignment was restored and verified. Full main was not published.
+
+Current owner acceptance still needs a supported host tool refresh and the new one-time private-library connection review with recent app authentication. The real video/cited-return and speed checks remain pending until the complete run fits the same USD3 ceiling. Old team-owned sources were not moved. All automatic/public/catalog/full-main gates remain.

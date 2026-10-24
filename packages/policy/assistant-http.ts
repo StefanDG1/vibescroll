@@ -2,6 +2,7 @@ import { assistantResource } from "./assistant";
 export async function readAssistantBody(
   request: Request | Response,
   maximum = 32768,
+  operationMaximum?: (value: unknown) => number,
 ) {
   const length = request.headers.get("content-length");
   if (length && (!/^\d+$/.test(length) || Number(length) > maximum))
@@ -27,7 +28,12 @@ export async function readAssistantBody(
     data.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(data));
+  const value: unknown = JSON.parse(
+    new TextDecoder("utf-8", { fatal: true }).decode(data),
+  );
+  if (operationMaximum && size > operationMaximum(value))
+    throw Error("Request too large for this operation.");
+  return value as any;
 }
 export function validateAssistantUserinfo(value: unknown, subject: string) {
   return (

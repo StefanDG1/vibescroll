@@ -1,3 +1,9 @@
+import { unclaimedCloudHandoff } from "./workCloudAnalysis";
+import { currentOrderedSource } from "./lib/workCloudMediaSource";
+import {
+  workCloudTextAllowed,
+  workCloudMediaAllowed,
+} from "./lib/personalAccess";
 import { presentAnalysis } from "../packages/insights/presentation";
 import { classifySourceUrl } from "../packages/sources/classify";
 import { validateEvidenceRegistry } from "../packages/sources/evidence";
@@ -633,6 +639,13 @@ export const detail = query({
         "The retained source permission expired or changed.",
       );
     }
+    if (s.personalAnalysis?.executor === "work_cloud")
+      ensure(
+        s.rightsAttested,
+        "SOURCE_UNAVAILABLE",
+        "Source permission changed.",
+      );
+    if (s.orderedMedia && s.state === "ready") await currentOrderedSource(s);
     const analysisHash = s.analysis
       ? await digest(JSON.stringify(s.analysis))
       : undefined;
@@ -660,12 +673,27 @@ export const detail = query({
       .collect();
     return {
       ...s,
+      workCloudHandoff:
+        reader.membership.role === "owner"
+          ? ((await unclaimedCloudHandoff(
+              ctx,
+              s,
+              reader.actor,
+              reader.organization,
+            )) ?? null)
+          : null,
       sourceRevision: typedRegistry?.revision,
       evidenceRegistry: typedRegistry?.evidence,
       spaces: reader.organization.privateOwnerId
         ? await filing(ctx, id)
         : undefined,
       privateLibrary: Boolean(reader.organization.privateOwnerId),
+      workCloudTextEnabled:
+        reader.organization.privateOwnerId === reader.actor._id &&
+        workCloudTextAllowed(reader.actor.subject),
+      workCloudMediaEnabled:
+        reader.organization.privateOwnerId === reader.actor._id &&
+        workCloudMediaAllowed(reader.actor.subject),
       analysisHash,
       analysisReview: currentReview?.qualityVerdict
         ? {
@@ -1156,6 +1184,7 @@ export async function startSource(
   );
   await ctx.db.patch(s._id, {
     state: "queued",
+    orderedMedia: undefined,
     generation: s.generation + 1,
     managedAnalysisActor:
       s.kind !== "text" && !typedRevision ? actor._id : undefined,
@@ -1771,6 +1800,7 @@ export const attachSource = mutation({
       searchable: [s.title, a.text, ...s.tags].filter(Boolean).join(" "),
       personalAnalysis: undefined,
       personalMedia: undefined,
+      orderedMedia: undefined,
       acquisition: undefined,
       processingReceipt: undefined,
       processingStartedAt: undefined,
@@ -1887,6 +1917,7 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     correctionAuthor: undefined,
     personalAnalysis: undefined,
     personalMedia: undefined,
+    orderedMedia: undefined,
     acquisition: undefined,
     currentRevisionId: undefined,
     retrievalState: undefined,

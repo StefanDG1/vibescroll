@@ -23,6 +23,7 @@ async function current(
     !s ||
     s.state !== "processing" ||
     s.generation !== a.generation ||
+    j?.executor === "work_cloud" ||
     j?.state !== "preparing" ||
     j.expiresAt <= Date.now()
   )

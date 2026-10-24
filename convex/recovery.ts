@@ -344,6 +344,7 @@ async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
     mediaEvidence: undefined,
     originalMediaEvidence: undefined,
     personalMedia: undefined,
+    orderedMedia: undefined,
     acquisition: undefined,
     personalAnalysis: undefined,
     repositorySelection: undefined,

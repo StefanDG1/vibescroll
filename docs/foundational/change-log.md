@@ -192,3 +192,7 @@ The owner authorized an explicit assistant grant lasting until they turn it off,
 ## F036: automatic assistant intake, October 20
 
 Updated all four briefs for the owner's link-to-local-extraction default, one-time connection permission, offline queue, optional explicit credits and project opt-in. [ADR 109](../adr/109-automatic-assistant-intake.md) preserves current access, funding and publication boundaries. The implementation plan and dated status distinguish local/synthetic checks from actual deployment, account activation and model completion. No new audience, pricing, provider access, customer benefit or measured savings is claimed.
+
+## F064: compatible private Cloud preparation, October 24
+
+The owner requested the smallest no-GitHub Cloud setup with supported internet permission and structured prerequisite reporting. The compatible candidate reuses the existing source job, grants, citations and status refresh; it adds no queue or retained analysis store. Preparation precedes the finite execution lease, and current unclaimed instructions survive refresh. This is implementation and host-readiness evidence, not a completed production video or public commercial availability. Preserve the audience, prices, six beliefs, provider gates, private reports and separate execution/publication authority. See [ADR 146](../adr/146-compatible-private-work-cloud-release.md).

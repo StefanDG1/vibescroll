@@ -1,3 +1,4 @@
+import { personalAnalysisValue } from "./personalAnalysisSchema";
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { sourceType, retrievalState } from "./sourceSchema";
@@ -288,30 +289,14 @@ export const productTables = {
     ),
     personalMedia: v.optional(v.any()),
     managedAnalysisActor: v.optional(v.id("users")),
-    personalAnalysis: v.optional(
+    orderedMedia: v.optional(
       v.object({
-        deviceId: v.id("devices"),
-        actor: v.id("users"),
-        generation: v.number(),
-        model: v.string(),
-        profileBinding: v.string(),
-        sourceRevisionId: v.optional(v.id("sourceRevisions")),
-        sourceContentHash: v.optional(v.string()),
-        effort: v.union(
-          v.literal("low"),
-          v.literal("medium"),
-          v.literal("high"),
-        ),
-        state: v.string(),
-        approvedAt: v.number(),
-        expiresAt: v.number(),
-        leaseUntil: v.number(),
-        deadline: v.number(),
-        stage: v.optional(v.string()),
-        inputTokens: v.optional(v.number()),
-        outputTokens: v.optional(v.number()),
+        schemaVersion: v.literal("ordered-media-v1"),
+        post: v.any(),
+        evidence: v.array(v.any()),
       }),
     ),
+    personalAnalysis: v.optional(personalAnalysisValue),
     repositorySelection: v.optional(v.any()),
     selectionPendingKey: v.optional(v.string()),
     selectionActor: v.optional(v.id("users")),

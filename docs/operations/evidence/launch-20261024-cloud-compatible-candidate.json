@@ -1,0 +1,109 @@
+{
+  "recordedAt": "2026-10-24T16:29:15.0987076Z",
+  "stage": "compatible private Cloud candidate, not production acceptance",
+  "baseCommit": "346b718baf91ba9847fbb707be7bbe069df57257",
+  "scope": [
+    "Existing private source job/OAuth/lease Cloud text and single-video protocol",
+    "Sources validator widening with no new table, index, dependency or cron",
+    "Current unclaimed handoff survives refresh and authority changes",
+    "Finite Cloud expiry and derived cleanup with manual attention on exhaustion"
+  ],
+  "integratedOffline": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "exitCode": 0,
+    "unitTests": 916,
+    "authTests": 35,
+    "uiTests": 68,
+    "totalJavaScriptTests": 1019,
+    "hostedTestsSkipped": 3,
+    "nativeTests": 19,
+    "pythonTests": 15,
+    "types": "passed",
+    "lint": "zero errors and warnings",
+    "marketingAndStarterBuilds": "passed"
+  },
+  "dependencyAudit": {
+    "command": "node scripts/audit-dependencies.mjs",
+    "observedAt": "2026-10-24T16:28:30.023Z",
+    "passed": true,
+    "high": 0,
+    "critical": 0,
+    "moderate": 2,
+    "low": 2,
+    "policyUnresolved": []
+  },
+  "review": {
+    "independentInitial": "two P2 findings, finite privacy retry and handoff persistence; corrected",
+    "finalIndependent": "High re-review cleared both P2 fixes; no new P1/P2 on cd305460",
+    "focusedFinalBackend": 80,
+    "focusedFinalUi": 38
+  },
+  "nativeBrowser": {
+    "synthetic": true,
+    "actualComponentAndCss": true,
+    "widths": [320, 1280],
+    "themes": ["dark", "light"],
+    "reducedMotion": true,
+    "noHorizontalOverflow": true,
+    "expiredAndMismatchedHandoffHidden": true,
+    "ownedTabClosed": true,
+    "ownedServerStopped": true,
+    "screenshots": [
+      "assets/cloud-handoff-mobile.png",
+      "assets/cloud-handoff-desktop.png"
+    ],
+    "productionRequests": 0
+  },
+  "exactHeadCI": {
+    "firstSource": "cd30546086d1dd1d99690a473617d6bea24a82e7",
+    "firstRun": 40112458809,
+    "result": "failed: Actions shallow checkout omitted pinned old schema commit",
+    "repair": "fetch exact immutable346 baseline before offlinechecks, comparator preserved",
+    "nextRun": "pending"
+  },
+  "hostReadiness": {
+    "scope": "one owner-operated official Cloud task with no Git repository selected",
+    "preparationReady": true,
+    "verifiedArtifacts": 29,
+    "pinnedDependencies": 24,
+    "observedSetupExecutionSeconds": 209.5,
+    "model": "small.en CPU int8",
+    "network": "supported turn-scoped permission with restricted proxy/CA/TLS preserved",
+    "videoProcessingOrProductionCallsDuringPreparation": 0,
+    "actualModelSettingsIndependentlyVerified": false
+  },
+  "release": {
+    "productionPublished": false,
+    "generalPublicEnabled": false,
+    "newCloudVideoResultVerified": false,
+    "schemaPredictionAndPublication": "pending separate bounded exact-source guard"
+  },
+  "budget": {
+    "cumulativeCapUSD": 3,
+    "conservativelyRetainedMaximumUSD": 2.2288707111015746,
+    "unreservedUSD": 0.7711292888984254,
+    "settledInvoice": false,
+    "unknownOlderAndFutureHoldsPreserved": true,
+    "noNewHostedOperationReservedByThisReceipt": true
+  },
+  "remaining": [
+    "Exact-head CI and reviewed publication",
+    "One real post-claim video analysis and canonical/MCP readback",
+    "Public/commercial provider gates and independent setup",
+    "Full main index migration cost proof",
+    "All unfinished product/marketing/provider acceptance from unified plan retained"
+  ],
+  "sourceContentPublished": false,
+  "credentialsPublished": false,
+  "secretScan": {
+    "staged": true,
+    "findings": 0
+  },
+  "subsequentAliasRepair": {
+    "scope": "Normalize accepted private Instagram /reels/ identity while preserving stored legacy canonical keys and creator/social validators",
+    "focusedBackendTestsPassed": 47,
+    "existingAcquisitionPolicyTestsPassed": 6,
+    "lintAndFormat": "passed",
+    "fullOfflineReceiptPrecedesOnlyThisPureHelperAndCiSetupChange": true
+  }
+}

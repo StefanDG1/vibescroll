@@ -1,5 +1,13 @@
 # Foundational document change log
 
+## F050: compatible frontend live, October 24
+
+Synchronized all four briefs for PR 141 canonical frontend publication, exact-head/main CI and narrowly bounded public reads. Preserved the held backend, complete PR 140 scope, current prices, lifetime deferral and all provider/privacy/human gates. Linked actual failures and conservative reservations without treating them as settled billing or customer acceptance.
+
+## F049: compatible public experience and security release, October 24
+
+Updated all four briefs for ADR 126 and the compatible release order. Preserved the complete PR 140 product scope, current prices and later lifetime feature. Recorded scoped public design, reviewed synthetic captures, optional GitHub and manual-analysis context with honest pending Cloud/catalog/following claims. No new provider approval, campaign, customer or deployment is asserted by this documentation.
+
 ## F048: resumed budget, direct Work Cloud candidate and later lifetime offer, October 24
 
 Synchronized all four briefs and current plan entry points with ADR 125. Recorded the raised US$3 cumulative ceiling without releasing holds, owner-authorized High continuation, later lifetime-offer ordering and the separate no-GitHub Work Cloud readiness report. Preserved network/model/media/return gaps, provider gates, monthly/yearly scope, actual prices and historical receipts. No live offer, provider activation or production acceptance follows.

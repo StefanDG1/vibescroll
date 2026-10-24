@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+Current live evidence: [F050](idea-backlog.md#f050-compatible-frontend-live-october-24) records the narrowly verified PR 141 frontend publication. F048/F049 and the full product plan remain; backend and new route acceptance are still pending.
+
+Current release brief: [F049](idea-backlog.md#f049-compatible-public-experience-and-security-release-october-24) applies ADR 126 to the compatible public/security stage. Complete newer product work remains in [PR 140](https://github.com/StefanDG1/vibescroll/pull/140), with provider, migration, production and independent evidence still distinct.
+
 Current brief: [F048](idea-backlog.md#f048-resumed-budget-direct-work-cloud-candidate-and-later-lifetime-offer-october-24) records ADR 125, the resumed US$3 cumulative ceiling, later lifetime offer and partial no-GitHub Work Cloud readiness. It supersedes earlier cap/lifetime launch ordering only; production processing and market claims still require evidence.
 
 ## Current brief, October 24: F047 minimal setup and optional GitHub

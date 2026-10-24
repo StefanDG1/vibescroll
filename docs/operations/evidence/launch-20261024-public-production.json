@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T01:55:08.709Z",
+  "scope": "Compatible frontend publication, not complete product or real source-processing acceptance",
+  "pr": 141,
+  "testedHead": "efcf29cae0957986f49bf4c65df6ad1cd09e737e",
+  "headCi": 40050795332,
+  "mergeCommit": "fba56d44c484260dc98e27174e943ee5ed21af51",
+  "mergeTreeMatchesTestedHead": true,
+  "mainCi": 40051452151,
+  "mainCiConclusion": "success",
+  "alphaPublicationCi": 40051604718,
+  "alpha": "v0.1.0-alpha.20261024014829.gfba56d44c484",
+  "frontend": {
+    "deployment": "dpl_FphHKWRbyef8xxqt18ozoxVxpFqs",
+    "target": "production",
+    "buildMachine": "fixed Basic, 2 vCPU, 8 GB",
+    "buildSeconds": 38.994,
+    "elasticConcurrency": false,
+    "canonical": "https://scroll.companynerve.com",
+    "exactStagedBuildPromoted": true,
+    "canonicalAliasMappingVerified": true,
+    "domainAutoAssignmentRestored": true,
+    "stagedHealth": { "status": 200, "bytes": 145, "exactCommit": true },
+    "stagedHome": { "status": 200, "bytes": 57674 },
+    "stagedShareGuide": { "status": 200, "bytes": 26015 },
+    "canonicalHealth": { "status": 200, "bytes": 145, "exactCommit": true },
+    "checkMode": "Four sequential plain HTTP GETs, no scripts/assets/cookies/redirects/retries, 20-second native curl deadline and 1 MiB file ceiling each",
+    "browserAcceptance": "Prior local production-browser UI receipt reused after exact source equality; this rollout did not add hydrated production-browser acceptance"
+  },
+  "backend": {
+    "deployment": "bold-lemur-667",
+    "unchangedCommit": "abfdeff6779a2fc7790d4441152117262965fe60",
+    "pushPerformed": false,
+    "applicationCalls": 0,
+    "reasonHeld": "Fresh schema prediction returned five new physical component definition paths and seven incomplete component schemas; unchanged deployment guard refused the push",
+    "runtimeDependencyPatchAcceptance": "pending; frontend dependency backports do not update the deployed backend bundle"
+  },
+  "retainedFailures": [
+    "Initial health command exited2 without HTTP status/body: Vercel CLI65.2.0's custom curl parser forwards advertised --non-interactive to native curl. Exact extracted parser and native --version negative control reproduced this offline. Original receipt/halt and full uncertainty hold remain; one independently reviewed recovery omitted that forwarded flag.",
+    "Share guide returned200 with the correct current heading, but the checker expected a different title. Offline review of the saved response verified the exact source heading and fallback/pending-Cloud content without another request. Original automated failure remains.",
+    "A .cmd shim split a control-plane deployment-list query at ampersands. Direct Node invocation corrected argument transport; no deployment was dispatched by that listing.",
+    "A raw hosting diagnostic accidentally included an automation bypass credential in tool output. The supported API immediately revoked/regenerated it; old key absence, one replacement and preserved isEnvVar were verified. Replacement was not printed; credential-bearing local response files were removed or sanitized."
+  ],
+  "budget": {
+    "sameCumulativeCapUsd": "3",
+    "priorRetainedUsd": "1.7592885298898517",
+    "conditionalReleaseEnvelopeUsd": "1.05",
+    "combinedReservationUsd": "2.8092885298898517",
+    "unallocatedUsd": "0.1907114701101483",
+    "oldUnknownHoldsPreserved": true,
+    "newBackendPortionUnspentAndHeldUsd": ".30",
+    "frontendEnvelopeIncludingBuildUsd": ".65",
+    "full45MinuteBuildHoldRetainedUsd": ".315",
+    "maximumDynamicAttemptsIncludingUnknown": 3,
+    "settledInvoice": false,
+    "inferenceJobs": 0,
+    "purchases": 0,
+    "billingSettingsChanged": false
+  },
+  "remaining": [
+    "Complete product candidate PR140 and other open launch work",
+    "Supported complete backend migration prediction and conservative migration bound",
+    "No-GitHub real-link processing and canonical app result return",
+    "Commercial Cloud, source/provider, sharing and recurring contributor approvals",
+    "Pro catalog browse/search/graph and complete lifecycle acceptance",
+    "Creator acquisition/processing/delivery, broader media and recovery acceptance",
+    "New actual product media, independent users/devices and human usefulness"
+  ]
+}

@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: compatible public/security release before bounded product migration
+
+[ADR 126](adr/126-compatible-public-and-security-release.md) separates the reviewed public design and dependency fixes from the full product candidate while its populated-index migration bound remains unresolved. Preserve the entire full launch scope in PR 140. The same cumulative cap is US$3, old holds remain, lifetime access is later, and no provider/privacy gate changes.
+
 ## October 24: resume within US$3 and test repository-free Work Cloud
 
 [ADR 125](adr/125-resumed-budget-and-repository-free-cloud-probe.md) records the resumed run, unchanged holds under the raised cumulative ceiling, verified root High exception, later lifetime-offer deferral and the narrowly completed no-GitHub Work Cloud readiness probe. No media, canonical app return, provider approval or production success follows from runtime readiness.

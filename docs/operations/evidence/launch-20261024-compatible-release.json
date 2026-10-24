@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-24T01:22:23.456Z",
+  "baseCommit": "d8e97a393fb86fce57ee17d47c0779f02c554cfe",
+  "sourceProductCandidate": "48a53f118adb1ad2cdc6e44a0736fef306e31917",
+  "scope": "Compatible public home/shell/media Help and reviewed dependency-security backports; complete product candidate remains separate",
+  "securitySources": {
+    "zod": "94ad16885c48053a3001b8b8c4527a3a475fffa3",
+    "bodyParser": "2928ebc8d39c413a78c893915a27b7fa2634acd1",
+    "undici": "a55298f7f8001160e1f4d59eec9771e2288d745a"
+  },
+  "backend": {
+    "sourceByteIdenticalTo": "abfdeff6779a2fc7790d4441152117262965fe60",
+    "schemaChanges": 0,
+    "dependencyBundleChanged": true,
+    "freshHostedPrediction": {
+      "status": "failed unchanged guard; no push",
+      "preparedBytes": 21114508,
+      "responseBytes": 66386,
+      "components": 12,
+      "rootTables": 89,
+      "rootIndexes": 239,
+      "newDefinitions": 5,
+      "incompleteComponentSchemas": 7,
+      "explanation": "PNPM peer-context physical path drift and definition-path predictor lookup blind spot; metadata zeros do not prove empty instances",
+      "controlRequests": 5,
+      "evaluationRequests": 1,
+      "credentialFileDeleted": true
+    }
+  },
+  "verification": {
+    "completeOfflineCheck": "passed924 tests,3 hosted skips;zero-warning lint;all types;both production builds",
+    "laterHelpAddition": "All home/scene Help hrefs resolve;4 Help tests and final two-app build passed;286 documents/12 skill snapshots validated",
+    "auditObservedAt": "2026-10-24T01:16:04.722Z",
+    "audit": "Policy passed;high0critical0low2moderate2;no newexceptions",
+    "browser": "Reused local production-browser receipt from48a53f1; exact public UI source equality verified; screenshot directory is included",
+    "review": "Original High dependency reviews retained; compatible release review and exact-head CI required",
+    "secretScan": "required before commit",
+    "failures": [
+      "Prior branch generated production/dev route validator referred to absent batch-grant route",
+      "Automatic approval review blocked deletion of generated build directories; Next typegen and brief offline dev startup regenerated supported route types instead",
+      "Supported Next typegen alone refreshed production types but not stale dev types; normal dev startup resolved the remaining reference"
+    ],
+    "warnings": [
+      "Two existing filesystem-tracing build warnings",
+      "Node type-stripping experimental warning"
+    ]
+  },
+  "budget": {
+    "cumulativeCapUsd": "3",
+    "retainedBeforeNewReleaseUsd": "1.7592885298898517",
+    "unallocatedBeforeNewReleaseUsd": "1.2407114701101483",
+    "proposedEnvelope": "Reserve exact backend/build/canary/cleanup before dispatch; no prior holds released",
+    "convexCallsThisStage": "5 bounded control-plane requests and1 schema-only prediction;0 application functions",
+    "purchases": 0,
+    "settledInvoice": false,
+    "reservation": {
+      "newMaximumUsd": "1.05",
+      "combinedMaximumUsd": "2.8092885298898517",
+      "unallocatedUsd": "0.1907114701101483",
+      "metadataUsd": ".03",
+      "backendConditionalUsd": ".30",
+      "vercelIncludingBuildUsd": ".65",
+      "cleanupResidualUsd": ".07"
+    }
+  },
+  "release": {
+    "merged": false,
+    "deployed": false,
+    "providerGatesUnchanged": true,
+    "publicCatalogReleased": false,
+    "ownAccountCloudReleased": false,
+    "creatorMonitoringReleased": false,
+    "frontendOnly": true,
+    "backendRedeployment": "held; existing runtime dependency bundle unchanged"
+  },
+  "remaining": "All full PR140 R/P/N/C/M acceptance remains; this release is not the complete product or a live source-to-result proof."
+}

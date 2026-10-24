@@ -1,5 +1,21 @@
 # Foundational idea backlog
 
+## F050: compatible frontend live, October 24
+
+[PR 141](https://github.com/StefanDG1/vibescroll/pull/141) published only the compatible public experience and frontend dependency backports. Canonical frontend `fba56d4`, alpha `0.1.0-alpha.20261024014829.gfba56d44c484`, passed exact-head/main CI, staged public reads and canonical health after exact-build promotion. Backend `abfdeff67` remains unchanged because its fresh prediction was incomplete. [The production receipt](../operations/evidence/launch-20261024-public-production.json) preserves failures, a remediated diagnostic credential exposure and conservative US$2.8092885298898517 reservations under the same US$3 cap.
+
+This is public-site publication, not no-GitHub source processing, catalog/creator availability, independent usefulness or customer evidence. Full product candidate PR 140 remains intact. Prices, valid purchases, audience, six beliefs and provider/privacy gates remain unchanged; lifetime access stays later.
+
+Source: exact CI, fixed Basic deployment metadata, bounded staged/canonical responses and root ledger. Decision: use these facts for public-site availability only. Counterevidence: unchanged backend, incomplete migration prediction and no new source-to-result or independent observation. Test: continue the full product and route acceptance before stronger claims. No campaign or new purchase follows.
+
+## F049: compatible public experience and security release, October 24
+
+[ADR 126](../adr/126-compatible-public-and-security-release.md) prepares a compatible public-site/security release from the existing production baseline while the full product candidate remains under review in PR 140. The owner resumed the full scope within US$3 cumulative, preserving all old holds. Defer lifetime/ongoing access; current subscription prices, allowances and purchased terms remain unchanged.
+
+Use the selected product-first mint/charcoal public composition, original artwork and reviewed synthetic candidate captures. Explain that general source analysis does not require GitHub, while project-specific decisions require authorized context. Manual-analysis walkthroughs are distinct from explicitly approved automatic processing. The proprietary Pro catalog, creator following and computer-free own-account Cloud remain pending release acceptance. Public layout or dependency checks are not evidence of a working Cloud adapter, accuracy, independent use or customer value. Keep the audience and six beliefs unchanged.
+
+Source: resumed owner instruction, reviewed product candidate and static migration-cost review. Decision: release the independently compatible public/security subset first without dropping the rest. Counterargument: a product-first page may imply routes are already public; keep availability and synthetic labels explicit. Test the exact production build with bounded public reads, then separately verify real source-to-result and beginner use when its gates pass. No new campaign or paid acquisition follows.
+
 ## F048: resumed budget, direct Work Cloud candidate and later lifetime offer, October 24
 
 [ADR 125](../adr/125-resumed-budget-and-repository-free-cloud-probe.md) records the resumed full implementation within US$3 cumulative, retaining all earlier holds. Defer lifetime/ongoing access to a later feature; current prices, allowances and valid purchases remain unchanged. Monthly/yearly implementation, the complete product scope and provider/privacy gates remain.

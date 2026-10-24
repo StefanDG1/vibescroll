@@ -29,9 +29,163 @@ import type { SharedOrderedAnalysis } from "./lib/shared-ordered-analysis-displa
 import Edition from "./app/editions/[slug]/page";
 import Collection from "./app/collections/[slug]/page";
 import type { PublicEdition } from "./lib/public-knowledge-display";
+import { ProductMedia } from "./components/product-media";
+import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "https://synthetic.convex.cloud");
   vi.stubEnv("APP_URL", "https://synthetic.example.test");
+});
+
+it("renders all prepared media with explicit native controls, ordered codec fallbacks and desktop disclosures", () => {
+  const html = renderToStaticMarkup(
+    createElement(ProductMedia, { idPrefix: "media-check" }),
+  );
+  const videos = [...html.matchAll(/<video\b([^>]*)>([\s\S]*?)<\/video>/g)];
+  expect(videos).toHaveLength(7);
+  for (const video of videos) {
+    expect(video[1]).toContain('preload="none"');
+    expect(video[1]).toContain("controls");
+    expect(video[1]).toContain("playsInline");
+    expect(video[1]).not.toMatch(/autoplay|loop|onplay/i);
+    expect(video[2]).toContain('kind="captions"');
+    expect(video[1]).toContain('poster="/product/');
+    if (!video[2].includes("setup-walkthrough.mp4")) {
+      expect(video[2].indexOf('type="video/mp4"')).toBeLessThan(
+        video[2].indexOf('type="video/webm"'),
+      );
+      expect(video[2]).not.toContain("media=");
+    }
+  }
+  expect(html.match(/<details\b/g)).toHaveLength(3);
+  expect(html).toContain("not an implementation plan");
+  expect(html).toContain("24 seconds");
+  expect(html).toContain("20 seconds");
+  expect(html).toContain('src="/product/setup-walkthrough.mp4"');
+  for (const name of ["overview", "library", "social"]) {
+    expect(html).toContain(`href="/product/${name}-transcript.txt"`);
+    expect(html).toContain(`href="/product/${name}-storyboard.txt"`);
+  }
+});
+
+it("keeps the overview variant concise with its canonical phone route, desktop alternative and existing gallery", () => {
+  const html = renderToStaticMarkup(
+    createElement(ProductMedia, {
+      variant: "overview",
+      idPrefix: "compact-media",
+    }),
+  );
+  expect(html.match(/<video\b/g)).toHaveLength(2);
+  expect(html).toContain('src="/product/overview.mp4"');
+  expect(html).toContain('src="/product/overview-desktop.mp4"');
+  expect(html).toContain('height="900"');
+  expect(html).not.toContain('src="/product/library-mobile.mp4"');
+  expect(html).not.toContain('src="/product/social-mobile.mp4"');
+  expect(html).not.toContain('src="/product/setup-walkthrough.mp4"');
+  expect(html).toContain("library-light-1440.png");
+  expect(html).toContain("library-dark-390.png");
+});
+
+it("binds every current public media asset to actual bytes and preserves the historical source and setup", () => {
+  type Asset = {
+    path: string;
+    bytes: number;
+    sha256: string;
+    history?: Asset[];
+    sourceCommit?: string | null;
+    sourceCommitStatus?: string;
+  };
+  const manifest = JSON.parse(
+    readFileSync(
+      new URL("../../docs/launch-kit/assets.json", import.meta.url),
+      "utf8",
+    ),
+  ) as { assets: Asset[] };
+  for (const asset of manifest.assets) {
+    const data = readFileSync(
+      new URL(`./public${asset.path}`, import.meta.url),
+    );
+    expect(data.byteLength, asset.path).toBe(asset.bytes);
+    expect(createHash("sha256").update(data).digest("hex"), asset.path).toBe(
+      asset.sha256,
+    );
+    if (/\.(vtt|txt)$/.test(asset.path)) {
+      expect(data.includes(13), `${asset.path} must use LF`).toBe(false);
+      expect(data.subarray(0, 3).equals(Buffer.from([239, 187, 191]))).toBe(
+        false,
+      );
+    }
+  }
+  const overview = manifest.assets.find(
+    (asset) => asset.path === "/product/overview.mp4",
+  )!;
+  expect(overview.history?.[0].sha256).toBe(
+    "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+  );
+  const archive = readFileSync(
+    new URL(
+      "../../docs/launch-kit/media-m2-recipe/sources/overview-76ec7bf.mp4",
+      import.meta.url,
+    ),
+  );
+  expect(createHash("sha256").update(archive).digest("hex")).toBe(
+    overview.history?.[0].sha256,
+  );
+  const setup = manifest.assets.find(
+    (asset) => asset.path === "/product/setup-walkthrough.mp4",
+  )!;
+  expect(setup.history?.[0].sha256).toBe(
+    "94da2151b29b1406bc6b1dd10cc2f52ca4714f0772e86e476a082b24cb7f40a0",
+  );
+  expect(setup.sha256).toBe(
+    "9b47855eed43b2e35070d2699356479b5908be8f8cb5c41dc4e7444760545026",
+  );
+  const setupArchive = readFileSync(
+    new URL(
+      "../../docs/launch-kit/media-m2-recipe/sources/setup-76ec7bf.mp4",
+      import.meta.url,
+    ),
+  );
+  expect(createHash("sha256").update(setupArchive).digest("hex")).toBe(
+    setup.history?.[0].sha256,
+  );
+  const founder = manifest.assets.find(
+    (asset) => asset.path === "/product/production-summary.png",
+  )!;
+  expect(founder.sourceCommit).toBeNull();
+  expect(founder.sourceCommitStatus).toContain("not independently verified");
+});
+
+it("keeps caption, transcript and static walkthrough semantics accurate and excludes active/private content", () => {
+  for (const family of ["overview", "library", "social"]) {
+    const files = [".vtt", "-transcript.txt", "-storyboard.txt"].map((suffix) =>
+      readFileSync(
+        new URL(`./public/product/${family}${suffix}`, import.meta.url),
+        "utf8",
+      ),
+    );
+    for (const content of files) {
+      expect(content).not.toContain("Keep an editable private plan");
+      expect(content).not.toMatch(/<script|file:\/\/|C:\\Users|\.worktrees/i);
+    }
+  }
+  const caption = readFileSync(
+    new URL("./public/product/overview.vtt", import.meta.url),
+    "utf8",
+  );
+  expect(caption).toContain("00:00:22.000 --> 00:00:28.000");
+  expect(caption).toContain(
+    "Review a private issue draft. Publication needs separate approval.",
+  );
+  expect(caption).toContain("Manual analysis is shown");
+  expect(caption).toContain("No processing job is running");
+  const setupCaption = readFileSync(
+    new URL("./public/product/setup-walkthrough.vtt", import.meta.url),
+    "utf8",
+  );
+  expect(setupCaption).toContain("00:01:20.000 --> 00:01:30.000");
+  expect(setupCaption).toContain("Inspect a private issue draft");
+  expect(setupCaption).not.toContain("Inspect a retained private plan");
 });
 afterEach(() => {
   vi.unstubAllEnvs();

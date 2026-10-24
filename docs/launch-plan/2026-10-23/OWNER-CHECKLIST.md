@@ -1,5 +1,9 @@
 # What help is still needed to finish the plan
 
+Connection status, October 24: the Stripe documentation connector returned reauthentication required. Reconnect the Stripe app through Codex when present; root continues against the installed SDK and offline fixtures. No keys should be sent in chat. Chrome is not currently connected; the previous handshake expired, so root must arrange a fresh prompt when the owner is available rather than ask for an old prompt to be clicked. These are separate from general implementation/release permissions already granted.
+
+The [review-only Pro allowance packet](PRO-ALLOWANCE-PROPOSAL.md) now contains proposed mechanics, exact unsent copy/terms and reproducible full-consumption/retention scenarios. It selects no quantity and changes no sale or live policy. Root still owns missing cost bounds and versioned legacy allowance engineering; the owner is not asked to guess a quantity. Prepared media now has accurate issue-draft captions and explicit synthetic/capture provenance. Native browser review and exact-edition publication remain separate pending steps.
+
 ## Work Cloud text and current creator status candidate, October 24
 
 [ADR 129](../../adr/129-gated-work-cloud-text-handoff.md) implements an explicit, default-off text execution handoff through the existing source job and assistant grants. [ADR 130](../../adr/130-current-creator-digest-processing.md) makes the existing creator digest reflect current authorized source progress and evidence coverage. Neither publishes a shared artifact, dispatches a provider or passes real-video/official-host/production acceptance. The same US$3 cap and all prior holds remain. Backend deployment remains held because archive/read/retention costs are not defensibly bounded; independent engineering continues.

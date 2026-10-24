@@ -1,0 +1,14 @@
+VibeScroll product static walkthrough
+
+Edited synthetic candidate captures from October 22, 2026, source commit 76ec7bf0b9812e670207cba199b8d07cc07839fd. Editorial holds are not measured processing time. No real processing, customer result, repository inspection or publication is shown.
+
+Scene 1, 0-5 seconds: Make scrolling useful. Actual candidate interface with synthetic data.
+Scene 2, 5-11 seconds: Save permitted material. Manual analysis is shown; automatic processing needs its own permission.
+Scene 3, 11-15 seconds: Simulated waiting fixture. No processing job is running.
+Scene 4, 15-22 seconds: Inspect the source evidence. Check coverage before acting.
+Scene 5, 22-28 seconds: Review a private issue draft. Publication needs separate approval.
+Scene 6, 28-34 seconds: No fit is a useful decision. An idea need not become code.
+Scene 7, 34-40 seconds: Return to the source. Explore the labelled example.
+
+The issue draft is not an implementation plan. Source permissions and hashes are recorded in docs/launch-kit/assets.json. No private Reel, founder crop, generated UI, music or voice was used.
+Desktop presentations use uncropped scaling and letterboxing. Mobile presentations retain the original source width with a caption band.

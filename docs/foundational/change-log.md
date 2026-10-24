@@ -1,5 +1,11 @@
 # Foundational document change log
 
+## F056: accurate prepared media and offer limits, October 24
+
+[ADR 133](../adr/133-reviewed-product-library-and-social-edits.md) uses approved synthetic captures for product, Library and social edits with desktop/mobile alternatives and complete text access. Root corrected captions that mislabeled issue drafts as plans, including the setup video's final scene. Original UI/timing and dated capture provenance remain; historical sources are archived. No new analysis, customer, actual setup or measured latency is shown.
+
+Source: complete launch/ScrollShow scope, actual approved captures and media audit. All four briefs updated together. Counterpoint: polished editing can imply unsupported speed or success; label editorial holds and do not use these clips as plan, provider or independent acceptance. The proposed allowance stays blocked on workload/storage/retention/fee bounds, with legacy protections explicit. No new price, policy, campaign, provider or spending permission follows.
+
 ## F055: verified ordered preparation reuse candidate, October 24
 
 [ADR 132](../adr/132-ordered-preparation-reuse.md) preserves original preparation provenance and expiry while allowing an eligible failed analysis to reuse exact retained media under fresh account/model/ASR preflight. Old unstamped, canceled and unknown work is not blessed. The runtime package keeps its provider-code exclusion through a shared pure contract. No new queue, inference or hosted activation follows.

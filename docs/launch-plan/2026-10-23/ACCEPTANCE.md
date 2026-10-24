@@ -1,5 +1,9 @@
 # Remaining acceptance and completion ledger
 
+## Product, Library and social media candidate, October 24
+
+[ADR 133](../../adr/133-reviewed-product-library-and-social-edits.md) prepares forty/twenty-four/twenty-second product/Library/social edits in desktop/mobile forms, captions, transcripts, posters, static walkthroughs and codec alternatives. Root reviewed actual frames and corrected issue-draft-as-plan captions in both the old overview and ninety-second setup guide, with exact originals archived for reproduction. These use approved synthetic captures, not new processing or customer evidence. Native playback/device, final integration and production acceptance remain separate. The [future Pro allowance packet](PRO-ALLOWANCE-PROPOSAL.md) is review only: quantity remains blocked, current contracts stay unchanged and lifetime remains later.
+
 ## Ordered preparation reuse candidate, October 24
 
 [ADR 132](../../adr/132-ordered-preparation-reuse.md) extends the same paired source job with optional immutable preparation provenance and prepared-object ETags. Exact current input/runtime/rights/retention and settled origin compute can avoid duplicate preparation after an eligible terminal failure, while fresh explicit account/model/ASR preflight remains mandatory. Old unstamped, canceled, unknown and mismatched-generation work is not retroactively reused. [Local evidence](../../operations/evidence/launch-20261024-ordered-preparation-reuse.json) records 1,533 passing tests, three hosted skips, actual native packaging, types and builds before forwarding to the separately tested public-controls parent. No new provider, queue, paid fallback or production activation follows.

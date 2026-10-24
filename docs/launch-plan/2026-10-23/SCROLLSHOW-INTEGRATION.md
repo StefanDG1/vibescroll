@@ -1,5 +1,9 @@
 # Integrate the ScrollShow handoff with the full launch
 
+## Product, Library and social media candidate, October 24
+
+[ADR 133](../../adr/133-reviewed-product-library-and-social-edits.md) prepares forty/twenty-four/twenty-second product/Library/social edits in desktop/mobile forms, captions, transcripts, posters, static walkthroughs and codec alternatives. Root reviewed actual frames and corrected issue-draft-as-plan captions in both the old overview and ninety-second setup guide, with exact originals archived for reproduction. These use approved synthetic captures, not new processing or customer evidence. Native playback/device, final integration and production acceptance remain separate. The [future Pro allowance packet](PRO-ALLOWANCE-PROPOSAL.md) is review only: quantity remains blocked, current contracts stay unchanged and lifetime remains later.
+
 ## Public example controls candidate, October 24
 
 [ADR 131](../../adr/131-public-example-navigation-and-motion.md) extends the existing hero with navigation to five existing examples/guides and explicit desktop cycling. The default stays static, ordinary links work without JavaScript, and focus/visibility/reduced-motion controls prevent unattended rotation. No processing, new result/media, pricing change or hosted request follows. This is part of M1/M6; remaining motion/media, native browser and production acceptance are still open. Parent [PR 144](https://github.com/StefanDG1/vibescroll/pull/144) passed exact-head CI 40060302528 at 9c25514; it remains undeployed.

@@ -360,5 +360,23 @@
     "status": "source-reviewed-candidate",
     "updated": ["work-cloud-text-review", "processing-and-recovery"],
     "limits": "Default-off text/retained-source handoff only; no hosted/provider call, real video, official-host readiness, browser or independent walkthrough. Current creator digest separates delivery and source progress."
+  },
+  "orderedPreparationReview": {
+    "date": "2026-10-24",
+    "baseline": "30d7218",
+    "status": "source-reviewed-candidate",
+    "updated": ["processing-and-recovery"],
+    "limits": "Eligible newly stamped recovery only under fresh preflight. Inference/transcription not promised free. Native/package tests passed; actual provider, browser and production acceptance pending."
+  },
+  "mediaPreparationReview": {
+    "date": "2026-10-24",
+    "status": "source-reviewed-candidate",
+    "updated": [
+      "product overview media",
+      "setup final caption",
+      "library/social alternatives"
+    ],
+    "unaffectedArticleText": "Existing textual setup/capture/publication instructions remain; new media are edited synthetic captures and not live setup proof. Asset manifest binds exact bytes.",
+    "limits": "Root actual exported-frame review and offline full decodes; native playback/independent acceptance pending."
   }
 }

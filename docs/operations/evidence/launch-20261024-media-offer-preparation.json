@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T05:21:50.402019+00:00",
+  "baseCommit": "30d72185eeed70a08e2a81860457183a7fb38063",
+  "mode": "Integrated offline media/offer preparation; no production activation",
+  "verification": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "result": "passed",
+    "environment": "Windows Node24.22.1/pnpm12.3.4; credential stripping and nonloopback denial",
+    "unitIntegration": 1319,
+    "authApi": 38,
+    "publicUi": 142,
+    "installer": 14,
+    "pythonPcm": 15,
+    "pythonProxy": 6,
+    "pythonSampling": 3,
+    "pythonOrdered": 9,
+    "buildPolicy": 5,
+    "totalPassed": 1551,
+    "hostedSkipped": 3,
+    "offerScenarioChecks": 17,
+    "documents": 319,
+    "skillSnapshots": 12,
+    "lint": "zero warnings/errors",
+    "types": "root, actual Convex and both apps passed",
+    "builds": "both production builds passed",
+    "finalTextCorrection": "After full check, canonical UTF8/LF normalization and portable text-only reproduction were corrected; scoped14web tests, starter types/lint passed. Final Help/receipt edits passed validation. Exact-head CI still required.",
+    "stagedAssets": 42,
+    "stagedAssetIntegrity": "git-show index bytes/SHA exactly match all42 ledger records",
+    "textArtifacts": "11publicTXT/VTT UTF8LF/noBOM; raw vs Git-normalized hash equal; nine portable alternatives match byte-for-byte",
+    "videoBinaryStability": "27 video/poster/archive binary hashes unchanged during text correction",
+    "nativeBrowser": "pending fresh Chrome connection; actual exported frames are not browser playback"
+  },
+  "media": {
+    "productSeconds": 40,
+    "librarySeconds": 24,
+    "socialSeconds": 20,
+    "setupSeconds": 90,
+    "presentations": 6,
+    "codecs": "six H264MP4 primary/ six VP9WebM fallback; setup H264",
+    "newVideosTotalBytes": 3137131,
+    "fullDecodes": "all12M2 exports plus corrected90s setup passed offline",
+    "rootFrameReview": "actual frames from all6presentations plus original/correctedsetup82s reviewed; caption semantics/labels verified",
+    "source": "approved synthetic76ec7bf capture, October22; no new source/model/customer/voice/music/privateReel",
+    "semanticFix": "issue-draft scenes mislabeled as plans corrected in overview/setup; original inputs archived nonpublic",
+    "accessibility": "native controls/preloadnone/deliberate playback, extracted posters, matching captions/transcripts/statictext, explicit desktop/phone alternatives",
+    "efficiency": "fallbacks larger at chosen settings; no savings/latency claim"
+  },
+  "offerPacket": {
+    "mode": "review-only/no sale",
+    "futureMonthlyEur": 35,
+    "futureAnnualEur": 350,
+    "quantity": null,
+    "lifetime": "deferred",
+    "legacyCurrent": "39/390 and600Procredits unchanged; valid legacy periods/topups/reservations protected by proposed migration",
+    "sources": "dated saved assumptions, not fresh fee/tax/workload/retention quotes",
+    "newValidation": "17 reproducible invariants included in standard pnpm validate",
+    "remaining": "verified complete workload/retention/storage/support/fee/funding bounds, numericQ/operator terms review and current paid-contract snapshot engineering remain"
+  },
+  "review": {
+    "root": "Reviewed actual media frames, metadata/destination/code/recipe/policy limits and staged bytes",
+    "remaining": "Native browser/mobile/independent media/setup and final release review remain"
+  },
+  "preservedFailures": [
+    "Private preparation invalid -ss .2 syntax corrected to0.2",
+    "Multiline drawtext newline glyphs corrected with separate one-line overlays",
+    "Post-full-check review caught Git CRLF normalization vs asset hashes; public text normalizedLF and final staged hashes verified",
+    "Portable public TXT storyboards were initially missing from producer mapping; text-only reproduction now matches all9alternatives"
+  ],
+  "parentEvidence": {
+    "pr": "https://github.com/StefanDG1/vibescroll/pull/146",
+    "head": "30d72185eeed70a08e2a81860457183a7fb38063",
+    "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/40063384861",
+    "result": "success; includes prior public-controls integration and dependency audit"
+  },
+  "budget": {
+    "sameCumulativeCapUsd": "3",
+    "combinedReservationsUsd": "2.8092885298898517",
+    "unallocatedUsd": "0.1907114701101483",
+    "newProductionConvexCalls": 0,
+    "newProviderJobs": 0,
+    "newPurchases": 0,
+    "allUnknownHoldsRetained": true,
+    "settledInvoice": false
+  },
+  "release": {
+    "deployed": false,
+    "posted": false,
+    "liveBillingChanged": false,
+    "servingFrontend": "fba56d44c484260dc98e27174e943ee5ed21af51",
+    "servingBackend": "abfdeff6779a2fc7790d4441152117262965fe60",
+    "remaining": "Whole R/P/N/C/M completion, Cloud actual media/events/canonical return, creator acquisition/contribution, allowance migration and all provider/human/production gates remain."
+  },
+  "candidateSourceSha256": [
+    {
+      "path": "apps/starter/components/product-media.tsx",
+      "sha256": "1b312946d21db6b5f47a3e8fca34cb7bc7ea3a706dd92b578bbc85149225cda8"
+    },
+    {
+      "path": "apps/starter/components/product-media.module.css",
+      "sha256": "1232daf24b614a8cea46e73810d2175ceac46f59caa94fdbd23affad6c959cfb"
+    },
+    {
+      "path": "apps/starter/public-knowledge-web.test.ts",
+      "sha256": "e249c6b035ba3ea9c9664b28710e79159355e12ddd97e7d3b75eb57864e1df11"
+    },
+    {
+      "path": "docs/launch-kit/assets.json",
+      "sha256": "d419730a10aa28b00b1c7286cfb6be31c53d31b4a252c062f225c6af32ee7340"
+    },
+    {
+      "path": "docs/launch-kit/media-m2-recipe/render.py",
+      "sha256": "8bc1475bd8085b86eab68d2b1b00e3a987da3e792fcfbc8b9e2741e7b0f7b12b"
+    },
+    {
+      "path": "docs/launch-kit/media-m2-recipe/repair-setup.py",
+      "sha256": "bf656ce5ffd2959a9def62170752699e755c30ad924010da98201864675790bf"
+    },
+    {
+      "path": "finance/pro-offer-20261024-calculate.mjs",
+      "sha256": "c6aa8f415f4cd99f69324114adb7d60d0aacb35f4074f385461cd09ba82118b4"
+    },
+    {
+      "path": "finance/pro-offer-20261024-assumptions.json",
+      "sha256": "488c127bcbdbbdd61097b9882d6a5b83cf65bfca82439c37e16f30c07f35ec65"
+    },
+    {
+      "path": "package.json",
+      "sha256": "20ce3b4fda0c955482fc7a2a5401af2cef7200c6d4e11eead40e6458523ab43b"
+    }
+  ]
+}

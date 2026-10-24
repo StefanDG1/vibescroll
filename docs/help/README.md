@@ -13,3 +13,5 @@ Keep screenshots outside `public` until individual review. An approved manifest 
 The three initial journeys require independent beginner walkthroughs, contextual discovery, Help-and-return draft preservation, image-failure reading and the stated accessibility widths. Targeted route/manifest tests supplement those checks. They do not replace them.
 
 October 24 source review against `5bddde1` adds the default-off text handoff guide and distinguishes it from paired recovery. Its implementation and current creator digest passed the combined offline check; official-host, real-video, native browser and independent acceptance remain pending. No new screenshot or enabled production route is claimed.
+
+October 24 media preparation corrects the overview and setup final scene from implementation-plan wording to the actual private issue draft. The setup sequence stays ninety seconds; its actual UI and timing are preserved semantically, with re-encoded pixels and exact historical originals archived. Product/Library/social edits retain source dates, synthetic labels, native controls and text alternatives. Native playback and independent setup acceptance remain pending.

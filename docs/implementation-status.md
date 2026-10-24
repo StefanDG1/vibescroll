@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Integrated media and offer preparation candidate, October 24
+
+[ADR 133](adr/133-reviewed-product-library-and-social-edits.md) prepares six product/Library/social edits, codec alternatives and accessible text/still versions. Actual-frame review corrected issue-draft-as-plan captions in both overview and ninety-second setup footage, with exact historical inputs archived. The [review-only Pro allowance packet](launch-plan/2026-10-23/PRO-ALLOWANCE-PROPOSAL.md) leaves quantity unselected and current prices/contracts/policy unchanged; its seventeen economic invariants now run in standard validation.
+
+The combined offline check passed 1,551 tests with three hosted skips, 319 documents/twelve snapshots, zero-warning lint, all types and both builds. [The receipt](operations/evidence/launch-20261024-media-offer-preparation.json) records final text-only normalization/reproduction corrections and focused checks, all forty-two exact staged asset hashes, twelve M2 plus one setup full decode, actual frame review and retained failures. Native playback/device, final-head CI, official-host/production and independent acceptance remain separate. PR146 exact-head CI40063384861 passed30d7218. Same US$3 cap and all prior holds remain; no new hosted/provider request, purchase, live billing or posting occurred.
+
 ## Ordered preparation reuse candidate, October 24
 
 [ADR 132](adr/132-ordered-preparation-reuse.md) and [the receipt](operations/evidence/launch-20261024-ordered-preparation-reuse.json) record optional immutable provenance/ETags, fresh retry preflight, settled-compute authority, generation-safe reuse and the shared native contract. The whole offline check passed 1,533 tests with three hosted skips, 314 documents/twelve snapshots, zero-warning lint, root/Convex/app types and both builds. Actual native packaging tests passed without expanding its provider allowlist. Import, package-path and fixture failures remain recorded. Forwarding to separately tested parent69dc577 changes no ordered code; exact combined-head CI remains pending. New hosted/provider requests and purchases were zero; original US$3 cap/unknown holds and production backend hold remain.

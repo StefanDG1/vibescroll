@@ -1,26 +1,25 @@
-VibeScroll overview walkthrough
+VibeScroll product edit
 
-Edited native screen captures of candidate 76ec7bf0b9812e670207cba199b8d07cc07839fd. Synthetic data. Silent captions; no processing, sign-in, pairing or successful sample run. Waiting is an explicitly labelled fixture. Frames are reordered for explanation; durations are editorial holds, not measured processing time.
+Reordered approved native still captures with editorial holds. No real processing, live account connection, customer result, repository inspection or measured latency. Product issue-draft scene is not a plan. Separate setup walkthrough keeps its original UI sequence and 90-second duration; its final issue-draft caption was corrected.
+Synthetic candidate 76ec7bf0b9812e670207cba199b8d07cc07839fd, captured October 22, 2026.
 
-Caption context reviewed October 24, 2026. This example uses manual analysis. Automatic processing requires its own current permission and a ready route. The original video bytes and recorded interface are unchanged.
+00:00:00.000 Make scrolling useful. Actual candidate interface with synthetic data.
+Source: /product/overview.mp4 at 0.25 seconds, top 390x700 native UI region
 
-00:00:00.000 Make scrolling useful. Actual UI with synthetic data.
-Screen: /demo?view=library
+00:00:05.000 Save permitted material. Manual analysis is shown; automatic processing needs its own permission.
+Source: /product/overview.mp4 at 5.25 seconds, top 390x700 native UI region
 
-00:00:05.000 Save permitted material. Automatic analysis is off in this example.
-Screen: /demo?view=library
+00:00:11.000 Simulated waiting fixture. No processing job is running.
+Source: /product/overview.mp4 at 11.25 seconds, top 390x700 native UI region
 
-00:00:11.000 Simulated waiting state. No processing job is running.
-Screen: /demo?view=library&uiState=loading
+00:00:15.000 Inspect the source evidence. Check coverage before acting.
+Source: /product/overview.mp4 at 15.25 seconds, top 390x700 native UI region
 
-00:00:15.000 Open the source evidence. Check coverage before acting.
-Screen: /demo?view=library&source=demo-0
-
-00:00:22.000 Keep an editable private plan. Coding needs separate approval.
-Screen: /demo?view=projects&proposal=demo-proposal-draft
+00:00:22.000 Review a private issue draft. Publication needs separate approval.
+Source: /product/overview.mp4 at 22.25 seconds, top 390x700 native UI region
 
 00:00:28.000 No fit is a useful decision. An idea need not become code.
-Screen: /example
+Source: /product/overview.mp4 at 28.25 seconds, top 390x700 native UI region
 
-00:00:34.000 Find the source again. Explore the labelled example.
-Screen: /demo?view=library
+00:00:34.000 Return to the source. Explore the labelled example.
+Source: /product/overview.mp4 at 34.25 seconds, top 390x700 native UI region

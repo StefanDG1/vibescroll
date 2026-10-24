@@ -50,3 +50,9 @@ For a GitHub or Reddit source, explicitly check the request status, recorded req
 The source has a clear saved, waiting, ready or actionable failure state, and you know the next repair and any approved maximum.
 
 **Tip:** For support, record the app version, UTC time and safe error code. Describe the state without sending the source itself.
+
+## Retrying ordered media
+
+Newly prepared ordered media can be reused after an eligible failed analysis when its original provenance, exact files, current rights, expiry and preparation runtime still match. Your source history must have settled compute and no active prior device claim. You still approve your own account/model/effort and pass a fresh account/audio-tool check. Inference and local transcription may consume resources again; this is not a free model retry.
+
+Old preparations without the new verification stamp are not retroactively trusted. Canceled, unknown or changed-generation work cannot use this recovery shortcut. Unknown usage needs reconciliation. An eligible reused preparation keeps its original expiry; a new approval does not extend it. If preparation cannot be reused, review the ordinary available route and quote. The current production version and route readiness still determine which controls are available.

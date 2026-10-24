@@ -1,5 +1,7 @@
 # VibeScroller foundational document process
 
+Current candidate brief: [F056](idea-backlog.md#f056-accurate-prepared-media-and-offer-limits-october-24) records truthful media preparation and the review-only allowance packet. F050 remains the latest narrow production checkpoint.
+
 Current candidate brief: [F055](idea-backlog.md#f055-verified-ordered-preparation-reuse-candidate-october-24) records exact media reuse under fresh preflight, not free model inference or a production pass.
 
 Current candidate brief: [F054](idea-backlog.md#f054-inspect-existing-examples-with-controlled-motion-october-24) records navigation/motion over existing examples, without new processing or outcome claims. F050 remains the latest narrow production receipt.

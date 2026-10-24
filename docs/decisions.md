@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: accurate prepared media and a review-only offer packet
+
+[ADR 133](adr/133-reviewed-product-library-and-social-edits.md) preserves approved captures and corrects issue-draft/plan semantics across product, Library, social and setup edits. The [future allowance packet](launch-plan/2026-10-23/PRO-ALLOWANCE-PROPOSAL.md) changes no price, entitlement or policy; quantity stays unselected until fully consumed workloads and retained-data costs are bounded. Preserve old annual promises and current terms. Lifetime remains deferred.
+
 ## October 24: immutable ordered preparation reuse
 
 [ADR 132](adr/132-ordered-preparation-reuse.md) adds reuse only for newly stamped exact preparations under fresh preflight and reconciled cost/device authority. Preserve original receipt/expiry, old unstamped behavior, unknown holds and the provider-path package guard. No new inference, provider activation or observed saving is implied.

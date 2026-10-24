@@ -6,6 +6,10 @@ Keep the saved source while you repair the smallest missing prerequisite.
 
 Open the existing source/status link and **Connections**. Check which workspace and account you are using. Never send tokens, pairing secrets, signed links or private transcripts to support.
 
+## Experimental Work Cloud text
+
+A separately enabled [Work Cloud text review](/help/work-cloud-text-review) can handle approved supplied or retained cited text without a paired computer. It is disabled by default and does not establish video processing or automatic background execution. A queued request, tool connection and actual host execution are different states. Revoking app access does not prove that the host stopped; unknown usage blocks silent retries or executor changes.
+
 ## Computer unavailable
 
 1. Start your supported paired computer and its [single companion](/help/connect-your-computer). Do not start separate conflicting source/assistant workers.

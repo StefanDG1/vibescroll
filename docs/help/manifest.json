@@ -55,6 +55,28 @@
   ],
   "articles": [
     {
+      "slug": "work-cloud-text-review",
+      "title": "Review an experimental Work Cloud text request",
+      "summary": "Review exact private text authority, distinguish queued work from execution and recover without a silent paid fallback.",
+      "file": "work-cloud-text-review.md",
+      "status": "approved",
+      "reviewMode": "Source-reviewed default-off candidate; official host, real media, browser and independent walkthrough pending",
+      "lastVerifiedCommit": "5bddde1",
+      "dependencies": [
+        "convex/workCloudAnalysis.ts",
+        "convex/personalAnalysisSchema.ts",
+        "packages/contracts/work-cloud-text.ts",
+        "apps/starter/components/work-cloud-text.tsx",
+        "apps/starter/components/console.tsx"
+      ],
+      "related": [
+        "processing-and-recovery",
+        "share-a-post",
+        "connect-your-computer"
+      ],
+      "assets": []
+    },
+    {
       "slug": "share-a-post",
       "title": "Send a post explicitly to VibeScroll",
       "summary": "Distinguish processing from tool connection, explicitly invoke VibeScroll and use the web fallback.",
@@ -331,5 +353,12 @@
       "instagram-export-guide"
     ],
     "limits": "Versioned opt-in chapter state and mandatory static/manual education implemented and locally tested. Request intent is self-reported; no import, account, native share target, installation, following or cited result is manufactured. Native-device and live/independent acceptance remain pending."
+  },
+  "workCloudTextReview": {
+    "date": "2026-10-24",
+    "baseline": "5bddde1",
+    "status": "source-reviewed-candidate",
+    "updated": ["work-cloud-text-review", "processing-and-recovery"],
+    "limits": "Default-off text/retained-source handoff only; no hosted/provider call, real video, official-host readiness, browser or independent walkthrough. Current creator digest separates delivery and source progress."
   }
 }

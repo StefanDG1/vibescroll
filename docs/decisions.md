@@ -2,6 +2,10 @@
 
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
 
+## October 24: recommended GitHub, optional for source analysis, minimal setup
+
+[ADR 124](adr/124-recommended-github-and-minimal-processing-setup.md) confirms that users may skip the recommended GitHub step and analyze supported sources without a GitHub account, authorization or repository. Only repository-specific work needs authorized project context. Make supported setup as small and automated as possible, retaining real user consent/MFA and actual readiness. A Cloud environment's hidden GitHub prerequisite does not satisfy the requirement. No-GitHub Cloud processing and beginner friction need real acceptance; the existing personal proof does not establish them. All provider/privacy/budget/Pro controls remain.
+
 ## October 24: integrate the final ScrollShow handoff and future ongoing offer
 
 [ADR 123](adr/123-scrollshow-handoff-and-integrated-offer-planning.md) incorporates the final supplied marketing plan, superseding older drafts in that audit folder. Preserve A hero/B source-to-private-product artwork, white/charcoal/emerald/mint public composition, existing mark, app Atlas behavior and the complete launch scope. Its proposed Pro EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing-access choices each include a defined monthly AI allowance. This supersedes the new fixed three-year founding-pass target and earlier initial-balance-only recommendation. Exact sustainable allowance, service/remedy terms and catalog/legacy migration remain release inputs. No runtime, price, policy, live billing or deployment changes follow. The [integrated execution order](launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) maps M0-M7 within C9/C10 and preserves all R/P/N work, ADR 122, private data, provider rights and the cumulative US$2 cap.

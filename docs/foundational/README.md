@@ -1,6 +1,10 @@
 # VibeScroller foundational document process
 
-## Current brief, October 24: F046 integrated marketing and offer
+## Current brief, October 24: F047 minimal setup and optional GitHub
+
+[F047](idea-backlog.md#f047-recommended-github-and-minimal-analysis-setup-october-24) and [ADR 124](../adr/124-recommended-github-and-minimal-processing-setup.md) require recommended-but-skippable GitHub and supported source analysis with no user GitHub account/repository. Preserve repository-specific permission boundaries and all source/provider/privacy/Pro/budget controls. Root minimizes setup through supported automation, real readiness and explicit consent. No-GitHub Cloud and beginner usability remain pending actual acceptance. All other F046/F045 scope remains; no runtime or live offer change follows.
+
+## Earlier brief, October 24: F046 integrated marketing and offer
 
 [F046](idea-backlog.md#f046-scrollshow-handoff-and-ongoing-pro-offer-october-24) and [ADR 123](../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) integrate the final supplied ScrollShow handoff. Original A/B scenes, scoped public emerald/mint design and the product-first story preserve existing app behavior and all launch requirements. The future Pro EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing-access choices each include a defined monthly AI allowance. This replaces the new three-year-pass target and older initial-balance-only draft; concrete sustainable allowance/terms/legacy migration remain gated. ADR 122, existing prices/purchases, privacy, approved demos and cumulative US$2 remain. The [integration record](../launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) supplies conflicts, ownership, parallel execution and acceptance. No application, offer activation or production result is implied.
 

@@ -1,5 +1,7 @@
 # Integrate the ScrollShow handoff with the full launch
 
+October 24 setup clarification: [ADR 124](../../adr/124-recommended-github-and-minimal-processing-setup.md) records the owner's no-GitHub analysis requirement. Recommend GitHub for project builders, with a clear Skip for now action. Users must be able to analyze supported sources without a GitHub account or repository; only authorized repository-specific work needs connected project context. Minimize setup actions through supported preparation/readiness checks. A hidden Cloud-environment GitHub prerequisite fails this acceptance. The no-GitHub Cloud path remains unverified; this is a requirement, not a new enabled capability.
+
 Mode: implementation-plan reconciliation. Updated October 24, 2026, Europe/Berlin. Root owns integration, contracts, budget and final review. Read this through the [single plan entry point](README.md), [Cloud-first sequence](CLOUD-FIRST.md), [ADR 122](../../adr/122-proprietary-pro-insight-catalog.md) and [ADR 123](../../adr/123-scrollshow-handoff-and-integrated-offer-planning.md). This update changes planning documents only.
 
 ## Found source and inspected baseline

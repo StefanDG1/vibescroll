@@ -1,5 +1,11 @@
 # Foundational idea backlog
 
+## F047: recommended GitHub and minimal analysis setup, October 24
+
+Source: the owner explicitly confirmed skipping GitHub, source analysis without any repo/GitHub connection, recommended project connection during onboarding, and minimal automated setup. Accept under [ADR 124](../adr/124-recommended-github-and-minimal-processing-setup.md). Preserve general evidence quality, personal-library use, optional skills and required export education. Only project-specific work needs repository context.
+
+Root extends the existing persisted setup, tools and Help. No duplicate wizard or hidden Cloud-GitHub prerequisite. Measure real beginner actions, switches, time and interventions; ease/conversion claims remain unvalidated. Provider support and no-GitHub Cloud acceptance are pending. All four briefs and current plans/acceptance/provider brief are synchronized without live implementation or new spending.
+
 ## F046: ScrollShow handoff and ongoing Pro offer, October 24
 
 Source: owner request to find and reconcile the ScrollShow implementation plan with every launch plan, preserving features and an efficient order. The controlling supplied FINAL-IMPLEMENTATION-PLAN.md already incorporates ADR 122 and supersedes earlier audit/offer drafts. Its selected ongoing EUR 800 offer includes a monthly allowance; it is not the old three-year pass or an initial-credit-only purchase.

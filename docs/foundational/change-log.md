@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F047: recommended GitHub and minimal analysis setup, October 24
+
+Recorded ADR 124 and synchronized all four briefs, current plan/Cloud/ScrollShow entry points, acceptance, owner register and exact provider question. GitHub is recommended for project-specific value but cannot gate general source analysis, directly or through Cloud setup. Added fresh no-GitHub cited-result and beginner-friction acceptance, preserving consent, rights, evidence quality, existing systems and spending/release gates. No code, live copy/policies, prices, provider call or deployment changed.
+
 ## F046: ScrollShow handoff and ongoing Pro offer, October 24
 
 Reconciled the final supplied ScrollShow handoff with the original launch, creator/onboarding, Cloud and proprietary Pro plans. Added ADR 123 and a complete conflict/code/dependency/acceptance crosswalk. Updated all four foundations, current brief, backlog, single plan entry points, C9/C10 scope, owner register and unsent draft precedence. Recorded the future EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing Pro choices with a defined monthly allowance for every choice. Superseded only the new three-year-offer target and older initial-balance-only recommendation; preserved historical scenarios, valid purchases/balances, existing app styling and every original R/P/N feature/acceptance gate. No actual prices, application, billing, policy bytes, assets, provider permissions, deployment or public posts changed. Root owns sustainable allowance/terms/migration proposals and final integration.

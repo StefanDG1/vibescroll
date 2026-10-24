@@ -1,5 +1,9 @@
 # Remaining acceptance and completion ledger
 
+## No-GitHub processing acceptance, October 24
+
+[ADR 124](../../adr/124-recommended-github-and-minimal-processing-setup.md) requires C0/C3/C7 and N5/N6 to pass with a fresh user who has no GitHub account, linked GitHub identity or repository. Skip the recommended project connection and optional skill installation, complete required export education, submit a permitted source and receive cited general analysis. Do not dispatch project evaluation or fabricate fit. Verify later GitHub connection, resume/reload, workspace/account boundaries and unchanged Pro/own-result/retained-copy access. Record actual active actions, context switches, elapsed setup and interventions. The current repository-backed personal proof and synthetic setup fixtures do not pass this acceptance; no new live test ran.
+
 October 24 complete-scope integration: [ADR 123](../../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) and [the ScrollShow crosswalk](SCROLLSHOW-INTEGRATION.md) add M0-M7 inside C9/C10. The selected future ongoing-Pro offer supersedes the new three-year founding-pass target, preserves legacy purchases and requires its own catalog/allowance/terms migration acceptance. Historical dated tests remain unchanged. Planning this work passes no application, pricing or production stage.
 
 ## Current Cloud-first acceptance

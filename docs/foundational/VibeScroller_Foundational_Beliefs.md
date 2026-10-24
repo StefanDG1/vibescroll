@@ -1,5 +1,13 @@
 # VibeScroll foundational beliefs
 
+## F047: recommended GitHub and minimal analysis setup, October 24
+
+[ADR 124](../adr/124-recommended-github-and-minimal-processing-setup.md) records the owner's explicit direction: recommend GitHub for project builders, offer Skip for now, and allow supported source analysis without any user GitHub account or repository. Source evidence quality does not depend on connecting a project. Repository-specific recommendations need authorized context; do not invent fit when it is absent.
+
+Root owns supported automatic preparation, readiness and recovery, minimizing active steps and external switches. Preserve user consent/MFA, source/provider rights, Pro/own-result/retained-copy access and the cumulative US$2 cap. The no-GitHub Cloud path remains unverified and must be tested with real beginners. Do not disguise a required technical GitHub connection as optional, promise one-click setup or treat the founder's repository-backed proof as acceptance. This update changes planning only.
+
+Preserve control and personally demonstrated value through a usable skip path and genuine cited result. Recommendation is not execution authority, and a source summary without repository context must not pretend to be a project evaluation.
+
 ## F046: ScrollShow handoff and ongoing Pro offer, October 24
 
 [ADR 123](../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) and [the full integration record](../launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) reconcile the final supplied ScrollShow handoff into C9/C10 while retaining all R0-R13/P0-P15/N0-N7 work. The final handoff supersedes older audit/draft recommendations. Select original A hero/B source-to-private-product scenes, white/charcoal/emerald/mint, the real mark and scoped public styling; preserve the app's chosen Atlas/Library design and behavior.

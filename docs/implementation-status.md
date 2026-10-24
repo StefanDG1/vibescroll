@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Optional GitHub and minimal setup decision, October 24
+
+[ADR 124](adr/124-recommended-github-and-minimal-processing-setup.md) and F047 record the owner's confirmed requirement: GitHub recommended with Skip for now, supported source analysis without a user GitHub account/repository, and minimal supported setup automation. Current plan/Cloud/ScrollShow entry points, acceptance, provider question and owner checklist now distinguish that requirement from the unverified no-GitHub Cloud route. A fresh user's cited-result acceptance cannot be replaced by the founder's repository-backed proof. Repository-specific processing still requires authorized project context.
+
+This is a planning-only clarification, with no application, billing, live policy, provider/Convex call, purchase or deployment change. Original cumulative US$2 retained/accounted remains US$1.7592885298898517 with US$0.2407114701101483 unallocated and all unknown holds preserved, not a settled invoice. On project Node 24.22.1, offline pnpm validate passed 307 documents/12 skill snapshots; changed-document formatting, staged whitespace and Gitleaks passed with zero leaks across 16,324 staged bytes. New exact-head CI is recorded separately on the PR; no new processing capability is claimed.
+
 ## ScrollShow plan reconciliation, October 24
 
 The owner requested integration of the supplied final ScrollShow marketing handoff with every launch plan. Root inspected candidate `b30ce52`, confirmed remote main `d8e97a3`, and reviewed the actual public page/shell/media, Help, sign-in, pricing, billing and dormant thirty-six-month offer. The [reconciliation and dependency crosswalk](launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md), [ADR 123](adr/123-scrollshow-handoff-and-integrated-offer-planning.md), current C9/C10 plan/acceptance and F046 foundations preserve the complete original R/P/N scope. The final supplied handoff controls older drafts; its ongoing-Pro monthly allowance supersedes initial-balance-only and new three-year-offer assumptions. No application or sale behavior is newly implemented.

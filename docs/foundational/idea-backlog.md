@@ -1,5 +1,9 @@
 # Foundational idea backlog
 
+## F069: share a link and follow its result, October 24
+
+Source: the owner's link-only Cloud and Home/Library/loading request, plus a read-only main/compatible route and data-flow audit. Need: remove routine phone handoff friction, separate source insights from project evaluations and keep Convex work bounded. Decision: implement ADR149 through existing jobs/grants/events/artifacts/projections and request/cache owners. Counterargument: webhook receipt is not runtime execution, list clipping is not reduced database I/O and fake progress hides missing host authority. Test a real laptop-off automatic result, no-inference reuse, duplicate/expired/unpaid authority, exact card targets, correct insight feed, compact/authoritative response races, measured read payloads and all main loaders. All remain pending. Preserve original scope and proprietary/private boundaries; make no speed or release promise.
+
 ## F068: catalog-first insights and paid hosted entry, October 24
 
 Source: the owner's October 24 account-access and workspace clarification. Need: reduce destination confusion, retain unpaid data and make the paid hosted product distinct from self-hosted code. Decision: adopt ADR 148 for implementation, preserving Pro catalog access and private project work. Counterargument: hiding tenancy cannot weaken authorization, and a neutral-analysis label does not remove private context or confer publication rights. Test unpaid/API/MCP denial, resubscription with unchanged data, repeat team/internal-home provisioning, collaborator isolation, strict neutral contribution and a real laptop-off Cloud return. Those acceptance tests are pending. Update all four briefs together; preserve pricing, allowances, release gates and uncertainty.

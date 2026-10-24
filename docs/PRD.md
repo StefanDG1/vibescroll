@@ -1,5 +1,9 @@
 # Product requirements
 
+## October 24 link-first and navigation update
+
+[ADR 149](adr/149-automatic-link-analysis-and-insight-first-navigation.md) requires automatic link-to-result work within one-time standing authority, current eligible catalog reuse, visible Cloud stages and automatic post-page completion. Manual per-post approval/copying is not the normal product. Home owns quick metrics and recent expandable/direct-open cards; Library defaults to extracted insights with Posts/search/filter/sort. Preserve private project decisions, exact permissions, projected list contracts, authenticated cache invalidation and skeleton/action loading. [The current index](launch-plan/2026-10-23/README.md) retains all original scope. These are requirements, not production acceptance.
+
 ## October 24 requirement update
 
 [ADR 148](adr/148-catalog-first-insights-and-paid-hosted-entry.md) requires payment after hosted signup and before product access. A billing lapse preserves stored account/data and locks access until verified payment resumes. Generic analysis uses the existing shared catalog without a workspace destination choice; preserve Pro catalog entitlement, private project work and internal execution authority. Default inviteable Full Name's team and additional named teams remain collaboration controls. These changes are authorized requirements with implementation/production acceptance pending; they supersede conflicting earlier free-entry or visible insight-destination assumptions, without opening the dataset or changing prices.

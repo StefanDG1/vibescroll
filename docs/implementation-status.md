@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Link-first/navigation source audit, October 24
+
+[ADR 149](adr/149-automatic-link-analysis-and-insight-first-navigation.md) and the [current execution index](launch-plan/2026-10-23/README.md) record automatic link processing, current reuse, status/automatic display, Home recent cards, extracted-insight Library and bounded loading/cache work. [The complete page map](launch-plan/2026-10-23/APP-MAP-AND-LOADING.md) distinguishes identical route sets from different main/compatible panels. No runtime or production analysis changed in this stage.
+
+Reusable code includes compact projections, cursor/filter/sort queries, request-generation guards and terminal detail refresh. Gaps include non-expandable Home rows; Explore/project-evaluation views rather than a generic insight feed; broad source-list spreads; inconsistent loaders; a detail revision excluding stage/ordered phase; and a completion-only MCP event. Extend those existing owners with standing authority, waiting-work delivery and neutral contribution. Docs are not host/media/result proof. Current retained maximum is USD2.510443894330175 of USD3, leaving USD0.4895561056698252, with old unknown/storage/future holds preserved.
+
 ## Authorized paid-entry and catalog-first changes, October 24
 
 [ADR 148](adr/148-catalog-first-insights-and-paid-hosted-entry.md) records the new paid-before-app rule, saved unpaid data, shared generic-insight destination, internal processing home and inviteable named default team. No runtime code or live billing state has changed in this stage. Existing named-team/invitation code is available, but current default provisioning and private-only Cloud output need integrated extensions. Root owns the sequence and server-wide access tests. The real production Cloud result remains pending; no new requests or spending are authorized by recording these requirements.

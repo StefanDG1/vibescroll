@@ -1,5 +1,9 @@
 # Integrate the ScrollShow handoff with the full launch
 
+## Current navigation and processing direction
+
+[ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md), [ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md) and the [current index](README.md) retain all M0-M7 work while updating the target to paid hosted entry, shared generic insights, link-only Cloud after one-time setup, Home recent posts and an insight-first Library. Preserve private project work, all P/R/N/C scope and this handoff's design/media requirements. Do not advertise automatic execution, instant misses, measured savings or a working phone journey before actual acceptance. Manual handoff stays diagnostic.
+
 ## Owner-requested stop and public main consolidation, October 24
 
 The owner requested finishing the current checks, consolidating all reviewed source into public main and stopping feature work. [The completion report](COMPLETION-REPORT-2026-10-24.md) records approximately70% implementation and roughly10-20% expanded production acceptance, with an explicit estimate method. [ADR 140](../../adr/140-public-main-consolidation-with-deployment-hold.md) adds a temporary main deployment hold while keeping full CI/versioning. The owner does not require an extra discretionary OpenAI confirmation; actual provider contracts and missing Cloud execution/return capabilities are not bypassed. Public main and the serving production build remain distinct.
@@ -43,6 +47,8 @@ Current execution follows [ADR 125](../../adr/125-resumed-budget-and-repository-
 October 24 setup clarification: [ADR 124](../../adr/124-recommended-github-and-minimal-processing-setup.md) records the owner's no-GitHub analysis requirement. Recommend GitHub for project builders, with a clear Skip for now action. Users must be able to analyze supported sources without a GitHub account or repository; only authorized repository-specific work needs connected project context. Minimize setup actions through supported preparation/readiness checks. A hidden Cloud-environment GitHub prerequisite fails this acceptance. The no-GitHub Cloud path remains unverified; this is a requirement, not a new enabled capability.
 
 Mode: implementation-plan reconciliation. Updated October 24, 2026, Europe/Berlin. Root owns integration, contracts, budget and final review. Read this through the [single plan entry point](README.md), [Cloud-first sequence](CLOUD-FIRST.md), [ADR 122](../../adr/122-proprietary-pro-insight-catalog.md) and [ADR 123](../../adr/123-scrollshow-handoff-and-integrated-offer-planning.md). This update changes planning documents only.
+
+Lifetime/ongoing purchase implementation remains deferred under the owner's subsequent decision. Historical offer scenarios below do not authorize activation or a new price migration.
 
 ## Found source and inspected baseline
 

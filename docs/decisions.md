@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: link-only Cloud processing and insight-first navigation
+
+[ADR 149](adr/149-automatic-link-analysis-and-insight-first-navigation.md) makes a permitted shared link the complete normal action after one-time bounded standing setup. Eligible reuse is immediate; otherwise use one existing Cloud job with truthful status and automatic result display. No routine per-post approval, handoff copying, GitHub or awake computer. Home owns metrics/expandable recent posts; Library opens extracted insights with Posts/filter/sort. Reuse projections, pagination, cache/request owners and loading primitives. Preserve paid/Pro/private boundaries and all release/provider/budget gates. Implementation and automatic production proof remain pending.
+
 ## October 24: catalog-first insight intake and paid hosted entry
 
 [ADR 148](adr/148-catalog-first-insights-and-paid-hosted-entry.md) records the removal of workspace destination choices from generic analysis, an inviteable default Full Name's team, named teams and private project boundaries. Hosted account creation precedes mandatory payment; unpaid accounts keep their data with product access locked until payment resumes. The prior Pro-only proprietary catalog rule remains. Internal execution/grant isolation, existing data, source rights and release/provider/budget gates are preserved. Implementation and production acceptance are pending.

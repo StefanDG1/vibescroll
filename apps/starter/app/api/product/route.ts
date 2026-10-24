@@ -3,6 +3,8 @@ import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
+  previewPrivateAdoption: ["query", api.organizations.previewPrivateAdoption],
+  adoptPrivateLibrary: ["mutation", api.organizations.adoptPrivate],
   workCloudTextPreview: ["query", api.workCloudAnalysis.preview],
   workCloudTextApprove: ["mutation", api.workCloudAnalysis.approve],
   publicModerationReports: ["query", api.publicKnowledge.reports],

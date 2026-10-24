@@ -203,3 +203,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## October 24: compatible private Work Cloud release
 
 [ADR 146](adr/146-compatible-private-work-cloud-release.md) defines a no-new-index release over the serving schema for the existing private Cloud job/grant workflow. It preserves all main product requirements and the US$3 cumulative cap. Real video, exact-head publication and general commercial availability remain separate gates.
+
+## Explicit legacy private-library repair, October 24
+
+[ADR 147](adr/147-explicit-legacy-private-library-adoption.md) adds a reviewed opt-in for an older original-creator sole-owner workspace. It preserves IDs/content and refuses other members, active invitations and another private library. Existing Cloud privacy and funding gates remain; no automatic production migration follows.

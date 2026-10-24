@@ -365,3 +365,7 @@ This is an owner-approved interaction change, not new demand, comprehension or s
 ## F062: private insights for project review
 
 An owner can explicitly select an earned private text insight for the existing repository evaluation and plan workflow in the candidate implementation. Its real run and output remain private provenance, not generic shared analysis. Keep claims limited to tested text input; full video, skills, official Cloud and production acceptance are separate. Selection does not approve coding, spending or publication.
+
+## F064: compatible private Cloud preparation, October 24
+
+The owner requested the smallest no-GitHub Cloud setup with supported internet permission and structured prerequisite reporting. The compatible candidate reuses the existing source job, grants, citations and status refresh; it adds no queue or retained analysis store. Preparation precedes the finite execution lease, and current unclaimed instructions survive refresh. This is implementation and host-readiness evidence, not a completed production video or public commercial availability. Preserve the audience, prices, six beliefs, provider gates, private reports and separate execution/publication authority. See [ADR 146](../adr/146-compatible-private-work-cloud-release.md).

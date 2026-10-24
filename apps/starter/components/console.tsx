@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import { usePolling } from "@/lib/use-polling";
 import { AssistantConnections } from "./assistant-connections";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
-import { WorkCloudText } from "./work-cloud-text";
+import {
+  WorkCloudText,
+  PersistedWorkCloudHandoff,
+  workCloudHandoffKey,
+} from "./work-cloud-text";
 import { UsageSummary } from "./usage-summary";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 import Link from "next/link";
@@ -3689,7 +3693,7 @@ export function CaptureForm({
     </form>
   );
 }
-function SourceDetail({
+export function SourceDetail({
   source,
   sources,
   readOnly,
@@ -3733,7 +3737,7 @@ function SourceDetail({
     )
     .sort()
     .join("|");
-  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${proposalRevision}`;
+  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
   const savedFrames = (
     detail.originalMediaEvidence ??
     detail.mediaEvidence ??
@@ -4784,37 +4788,43 @@ function SourceDetail({
             )}
           </details>
         )}
+        {!demo &&
+          !readOnly &&
+          !detailLoading &&
+          detail.state === "queued" &&
+          source.state === "queued" &&
+          id(detail) === sourceId &&
+          detail.generation === source.generation &&
+          detail.updatedAt === source.updatedAt &&
+          detail.organizationId === org &&
+          detail.workCloudHandoff &&
+          source.workCloudHandoff !== null &&
+          (source.workCloudHandoff === undefined ||
+            workCloudHandoffKey(source.workCloudHandoff) ===
+              workCloudHandoffKey(detail.workCloudHandoff)) &&
+          (detail.workCloudHandoff.media
+            ? source.workCloudMediaEnabled !== false
+            : source.workCloudTextEnabled !== false) &&
+          (detail.workCloudHandoff.media
+            ? detail.workCloudMediaEnabled
+            : detail.workCloudTextEnabled) && (
+            <PersistedWorkCloudHandoff
+              receipt={detail.workCloudHandoff}
+              sourceId={sourceId}
+              organizationId={org}
+              generation={detail.generation}
+              revision={detail.updatedAt}
+            />
+          )}
         {detail.personalAnalysis?.executor === "work_cloud" && (
-          <section
-            className="panel"
-            aria-label="Work Cloud text analysis status"
-          >
-            <h3>Work Cloud text analysis</h3>
+          <section className="panel" aria-label="Work Cloud analysis status">
+            <h3>Work Cloud analysis</h3>
             <p>
               {label(detail.personalAnalysis.state)}. Requested{" "}
               {detail.personalAnalysis.model}, {detail.personalAnalysis.effort}{" "}
               reasoning. Host execution settings and subscription usage are not
               verified by VibeScroll.
             </p>
-            {detail.personalAnalysis.state === "queued" && (
-              <>
-                <p>
-                  In your supported Work chat, explicitly invoke VibeScroll's
-                  work_cloud_claim tool for this request, using that chat's
-                  actual task ID.
-                </p>
-                <pre>
-                  {JSON.stringify(
-                    {
-                      sourceId: id(detail),
-                      generation: detail.personalAnalysis.generation,
-                    },
-                    null,
-                    2,
-                  )}
-                </pre>
-              </>
-            )}
             {["queued", "running"].includes(detail.personalAnalysis.state) && (
               <button
                 className="secondary"

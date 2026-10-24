@@ -933,3 +933,274 @@ it.each(["heartbeat", "complete"] as const)(
     expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(unknown);
   },
 );
+
+async function completedForCleanup() {
+  const s = await setup(),
+    lease = await s.claim(),
+    p = await receipt(s, lease);
+  await prepare(s, lease, p);
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...lease,
+    operation: "complete",
+    output: output(lease, p),
+  });
+  await s.t.run(async (ctx) => {
+    for (const job of await ctx.db.system
+      .query("_scheduled_functions")
+      .collect())
+      if (job.name.endsWith("workCloudAnalysis:expire"))
+        await ctx.scheduler.cancel(job._id);
+  });
+  return { ...s, lease };
+}
+it("limits restore deferrals in both Cloud cleanup chains and hands exhausted work to operator audit", async () => {
+  const s = await completedForCleanup();
+  vi.setSystemTime(s.retainUntil + 1);
+  vi.stubEnv("RESTORE_LOCK", "true");
+  const args = {
+    sourceId: s.sourceId,
+    organizationId: s.org,
+    generation: s.lease.generation,
+    retainUntil: s.retainUntil,
+  };
+  await s.t.mutation(internal.workCloudAnalysis.expire, args);
+  await s.t.finishAllScheduledFunctions(() => vi.runOnlyPendingTimers(), 12);
+  const result = await s.t.run(async (ctx) => ({
+    source: await ctx.db.get(s.sourceId),
+    jobs: await ctx.db.system.query("_scheduled_functions").collect(),
+    audit: await ctx.db.query("audit").collect(),
+  }));
+  expect(result.source?.personalAnalysis).toMatchObject({
+    state: "completed",
+    stage: "retention_cleanup_deferred",
+  });
+  expect(result.source?.analysis).toBeDefined();
+  expect(result.jobs.filter((job) => job.state.kind === "pending")).toEqual([]);
+  expect(
+    result.jobs.filter((job) => job.name.endsWith("workCloudAnalysis:expire")),
+  ).toHaveLength(3); // cancelled original + two finite retries
+  expect(
+    result.jobs.filter((job) => job.name.endsWith("knowledge:redactDerived")),
+  ).toHaveLength(3);
+  expect(
+    result.audit.filter(
+      (row) => row.action === "source_retention.manual_cleanup_required",
+    ),
+  ).toHaveLength(2);
+  vi.stubEnv("RESTORE_LOCK", "false");
+  await expect(
+    s.owner.query(api.product.detail, { id: s.sourceId }),
+  ).rejects.toThrow("SOURCE_UNAVAILABLE");
+  // Explicit operator recovery starts a new finite pass; unlocking alone starts nothing.
+  await s.t.mutation(internal.workCloudAnalysis.expire, args);
+  await s.t.finishAllScheduledFunctions(() => vi.runOnlyPendingTimers(), 12);
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.analysis,
+  ).toBeUndefined();
+});
+it("starts superseded-generation derivative cleanup once without retrying an unrelated source under restore", async () => {
+  const s = await completedForCleanup();
+  await s.owner.mutation(api.product.attachSource, {
+    id: s.sourceId,
+    text: "Fresh separately supplied source",
+    rightsAttested: true,
+  });
+  const fresh = await s.t.run((ctx) => ctx.db.get(s.sourceId));
+  vi.setSystemTime(s.retainUntil + 1);
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.mutation(internal.workCloudAnalysis.expire, {
+    sourceId: s.sourceId,
+    organizationId: s.org,
+    generation: s.lease.generation,
+    retainUntil: s.retainUntil,
+  });
+  const initial = await s.t.run((ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect(),
+  );
+  expect(
+    initial.filter((job) => job.name.endsWith("knowledge:redactDerived")),
+  ).toHaveLength(1);
+  expect(
+    initial.find((job) => job.name.endsWith("knowledge:redactDerived"))
+      ?.args[0],
+  ).toMatchObject({
+    maxGeneration: s.lease.generation,
+    pagesRemaining: 32,
+    deferredAttempt: 0,
+  });
+  await s.t.finishAllScheduledFunctions(() => vi.runOnlyPendingTimers(), 10);
+  const jobs = await s.t.run((ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect(),
+  );
+  expect(
+    jobs.filter((job) => job.name.endsWith("workCloudAnalysis:expire")),
+  ).toHaveLength(1); // cancelled original only
+  expect(
+    jobs.filter((job) => job.name.endsWith("knowledge:redactDerived")),
+  ).toHaveLength(3);
+  expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(fresh);
+});
+it("caps Cloud derivative cleanup at exactly 32 pages without implicit continuation", async () => {
+  const s = await completedForCleanup();
+  await s.t.run(async (ctx) => {
+    const actor = (await ctx.db.query("users").first())!._id;
+    const topic = await ctx.db.insert("knowledgeTopics", {
+      organizationId: s.org,
+      name: "Bounded fixture",
+      key: "bounded-fixture",
+      state: "ready",
+      version: 1,
+      pinned: true,
+      insightCount: 0,
+      sourceCount: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    for (let i = 0; i < 961; i++)
+      await ctx.db.insert("knowledgeJobs", {
+        organizationId: s.org,
+        topicId: topic,
+        actor,
+        version: 1,
+        policyVersion: 1,
+        cursor: null,
+        next: null,
+        done: true,
+        processingVersion: "fixture",
+        references: [
+          {
+            sourceId: s.sourceId,
+            generation: s.lease.generation,
+            revision: Date.now(),
+            insightId: "point",
+          },
+        ],
+        key: `bounded-${i}`,
+        state: "ready",
+        output: { summary: "Old derived private text" },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+  });
+  await s.t.mutation(internal.knowledge.redactDerived, {
+    organizationId: s.org,
+    sourceId: s.sourceId,
+    maxGeneration: s.lease.generation,
+    section: "knowledgeJobs",
+    cursor: null,
+    pagesRemaining: 32,
+    deferredAttempt: 2,
+  });
+  await s.t.finishAllScheduledFunctions(() => vi.runOnlyPendingTimers(), 40);
+  const result = await s.t.run(async (ctx) => ({
+    rows: await ctx.db.query("knowledgeJobs").collect(),
+    jobs: await ctx.db.system.query("_scheduled_functions").collect(),
+    audit: await ctx.db.query("audit").collect(),
+  }));
+  expect(result.rows.filter((row) => row.output)).toHaveLength(1);
+  expect(
+    result.jobs.filter((job) => job.name.endsWith("knowledge:redactDerived")),
+  ).toHaveLength(31);
+  expect(result.jobs.filter((job) => job.state.kind === "pending")).toEqual([]);
+  expect(
+    result.audit.some((row) =>
+      row.target.endsWith("knowledgeJobs:page_budget_exhausted"),
+    ),
+  ).toBe(true);
+});
+it("carries one global restore/page budget across derivative cleanup sections", async () => {
+  const s = await completedForCleanup();
+  await s.t.mutation(internal.knowledge.redactDerived, {
+    organizationId: s.org,
+    sourceId: s.sourceId,
+    maxGeneration: s.lease.generation,
+    section: "knowledgeJobs",
+    cursor: null,
+    pagesRemaining: 2,
+    deferredAttempt: 2,
+  });
+  const scheduled = await s.t.run((ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect(),
+  );
+  expect(
+    scheduled.find((job) => job.name.endsWith("knowledge:redactDerived"))
+      ?.args[0],
+  ).toMatchObject({
+    section: "knowledgeEvaluations",
+    pagesRemaining: 1,
+    deferredAttempt: 2,
+  });
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.finishAllScheduledFunctions(() => vi.runOnlyPendingTimers(), 5);
+  const jobs = await s.t.run((ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect(),
+  );
+  expect(
+    jobs.filter((job) => job.name.endsWith("knowledge:redactDerived")),
+  ).toHaveLength(1);
+  expect(jobs.filter((job) => job.state.kind === "pending")).toEqual([]);
+});
+
+it("keeps bounded old-generation derivative cleanup even after the original source row was removed", async () => {
+  const s = await completedForCleanup();
+  await s.t.run((ctx) => ctx.db.delete(s.sourceId));
+  vi.setSystemTime(s.retainUntil + 1);
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.mutation(internal.workCloudAnalysis.expire, {
+    sourceId: s.sourceId,
+    organizationId: s.org,
+    generation: s.lease.generation,
+    retainUntil: s.retainUntil,
+  });
+  const initial = await s.t.run((ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect(),
+  );
+  expect(
+    initial.find((job) => job.name.endsWith("knowledge:redactDerived"))
+      ?.args[0],
+  ).toMatchObject({
+    sourceId: s.sourceId,
+    maxGeneration: s.lease.generation,
+    pagesRemaining: 32,
+  });
+  await s.t.finishAllScheduledFunctions(() => vi.runOnlyPendingTimers(), 10);
+  const jobs = await s.t.run((ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect(),
+  );
+  expect(
+    jobs.filter((job) => job.name.endsWith("workCloudAnalysis:expire")),
+  ).toHaveLength(1);
+  expect(jobs.filter((job) => job.state.kind === "pending")).toEqual([]);
+});
+
+it.each(["reel", "reels"])(
+  "accepts the stored legacy Instagram %s alias without rewriting its canonical key",
+  async (alias) => {
+    const url = `https://www.instagram.com/${alias}/Abcdef12345/`;
+    const s = await setup(url);
+    await s.t.run((ctx) => ctx.db.patch(s.sourceId, { canonical: url }));
+    const lease = await s.claim(),
+      p = await receipt(s, lease);
+    expect(p.post.canonical).toBe("https://www.instagram.com/p/Abcdef12345/");
+    await prepare(s, lease, p);
+    await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+      ...lease,
+      operation: "complete",
+      output: output(lease, p),
+    });
+    const saved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+    expect(saved.canonical).toBe(url);
+    await expect(currentOrderedSource(saved)).resolves.toMatchObject({
+      prepared: { post: { canonical: p.post.canonical } },
+    });
+  },
+);
+it("rejects a different stored Instagram identity before approval even when both URLs are supported", async () => {
+  const s = await setup("https://www.instagram.com/reel/Abcdef12345/");
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      canonical: "https://www.instagram.com/reel/Different12345/",
+    }),
+  );
+  await expect(s.preview()).rejects.toThrow("APPROVAL_STALE");
+});

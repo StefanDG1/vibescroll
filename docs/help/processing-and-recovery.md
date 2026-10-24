@@ -74,3 +74,16 @@ The source has a clear saved, waiting, ready or actionable failure state, and yo
 Newly prepared ordered media can be reused after an eligible failed analysis when its original provenance, exact files, current rights, expiry and preparation runtime still match. Your source history must have settled compute and no active prior device claim. You still approve your own account/model/effort and pass a fresh account/audio-tool check. Inference and local transcription may consume resources again; this is not a free model retry.
 
 Old preparations without the new verification stamp are not retroactively trusted. Canceled, unknown or changed-generation work cannot use this recovery shortcut. Unknown usage needs reconciliation. An eligible reused preparation keeps its original expiry; a new approval does not extend it. If preparation cannot be reused, review the ordinary available route and quote. The current production version and route readiness still determine which controls are available.
+
+## Experimental Work Cloud preparation
+
+This private test route appears only for eligible configured accounts. General public Cloud access remains unavailable until its separate release checks pass. You do not need GitHub or a paired computer to analyze a source in an eligible official Work Cloud task.
+
+1. Open your own official Work Cloud task and select the requested supported model. GitHub is optional for source analysis.
+2. Before approving a post, ask the task to check shell access, current restricted network policy, Python, FFmpeg and the pinned downloader/transcription prerequisites. Ask it to request internet access through the host's normal permission flow when needed. Keep the host's network and isolation controls enabled.
+3. Ask for a metadata-only readiness report with `state`, `missing`, `networkPolicy`, `tools`, `requestedModel` and `reportedModel`. Use `unknown` for settings the host cannot verify. Do not include tokens, cookies, private paths or raw source content. This report describes the host; it is not a VibeScroll processing receipt.
+4. Once ready, open the post in VibeScroll, review the eligible Work Cloud route and explicitly approve the exact connection, source and requested settings. Copy the generated instructions into the prepared task.
+5. Keep that task open while it claims the approval, acquires the permitted source and returns cited analysis through the VibeScroll plugin. The video deadline is fifteen minutes, including its active lease. The task must stop on missing access or unsupported media rather than invent evidence or spend API credits.
+6. Refresh the existing post after completion. Inspect its coverage and citations. A queued approval or a message in chat is not a saved result. Refreshing the page can recover instructions while that approval is still unclaimed and current.
+
+The first environment preparation can download a model and take longer than a warm run. Reuse verified cached prerequisites where supported. Source access, speech quality, sampled image coverage, provider retention and subscription limits still apply. VibeScroll does not automatically launch or wake a Cloud task. A missing plugin permission requires the supported reconnection/consent flow, never a copied token.

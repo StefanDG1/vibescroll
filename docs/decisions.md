@@ -295,3 +295,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## Whole-post project application, October 24
 
 [ADR 145](adr/145-whole-post-project-content-and-distinct-proposals.md) records the owner-approved default-on retained transcript/images toggle and distinct separately reviewed proposals per post/project. Existing jobs, private references, funding, retention, coding approval and release gates remain. Candidate and production acceptance stay separate.
+
+## October 24: compatible private Work Cloud release
+
+[ADR 146](adr/146-compatible-private-work-cloud-release.md) records the no-new-index compatibility release and its separate private video acceptance. Main retains the full product and its pending index migration. The same US$3 cumulative cap and prior holds remain.

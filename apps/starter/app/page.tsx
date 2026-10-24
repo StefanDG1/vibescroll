@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ProductMedia } from "@/components/product-media";
 import { PublicPage } from "@/components/site";
 import { ScrollShowScenes } from "@/components/scrollshow-scenes";
+import { ScrollShowPrompts } from "@/components/scrollshow-prompts";
 
 export const metadata = {
   title: "Make scrolling useful",
@@ -56,6 +57,7 @@ export default function Home() {
           <Link className="ss-example-link" href="/example">
             View an example without signing in
           </Link>
+          <ScrollShowPrompts />
         </section>
         <section
           id="product-demo"

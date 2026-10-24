@@ -17,6 +17,7 @@ export default defineConfig({
       "apps/starter/creator-ui.test.ts",
       "apps/starter/service-catalog-ui.test.ts",
       "apps/starter/work-cloud-text-ui.test.ts",
+      "apps/starter/scrollshow-prompts-ui.test.ts",
       "apps/starter/own-plan-task-ui.test.ts",
       "apps/starter/personal-source-ui.test.ts",
       "apps/starter/ordered-file-upload.test.ts",

@@ -1,5 +1,7 @@
 # VibeScroller foundational document process
 
+Current candidate brief: [F054](idea-backlog.md#f054-inspect-existing-examples-with-controlled-motion-october-24) records navigation/motion over existing examples, without new processing or outcome claims. F050 remains the latest narrow production receipt.
+
 Current candidate brief: [F053](idea-backlog.md#f053-gated-text-handoff-and-honest-creator-progress-october-24) distinguishes private text execution, actual host/media acceptance and current creator status. F050 remains the latest narrow production checkpoint.
 
 Current candidate brief: [F052](idea-backlog.md#f052-pro-discovery-candidate-and-honest-coverage-october-24) records generic search and checked-page map/list implementation with its actual coverage and release gaps. F050 remains the latest narrow production checkpoint.

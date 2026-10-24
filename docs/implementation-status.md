@@ -1,5 +1,9 @@
 # October 22 launch implementation candidate
 
+## Public example controls candidate, October 24
+
+[ADR 131](adr/131-public-example-navigation-and-motion.md) adds native navigation to existing examples/Help, static by default with explicit desktop cycling and motion/visibility/focus controls. It creates no analysis or network request. Existing synthetic, recorded and instructional labels remain. The complete offline check passed 1,530 tests with three hosted skips, 315 documents/twelve snapshots, all types, zero-warning lint and both builds. [The receipt](operations/evidence/launch-20261024-public-example-controls.json) preserves the fixed test callback typing failure and pending native-browser/production acceptance. Parent PR 144 passed exact-head CI 40060302528 at 9c25514, including dependency audit. Source/pricing/provider gates and the same US$3 budget/unknown holds remain unchanged.
+
 ## Gated text handoff and current creator status candidate, October 24
 
 [ADR 129](adr/129-gated-work-cloud-text-handoff.md) extends existing personal source jobs and OAuth grants with explicit text approval, one-use claims, current authority/input checks and canonical private completion. It creates no shared artifact or host dispatch. [ADR 130](adr/130-current-creator-digest-processing.md) separates current source progress/coverage from delivery, discovery and private digest insertion. Both route flags stay off; source/video/official-host acceptance remains open.

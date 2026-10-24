@@ -1,5 +1,9 @@
 # Complete the launch and own-subscription workflows
 
+## Public example controls candidate, October 24
+
+[ADR 131](../../adr/131-public-example-navigation-and-motion.md) extends the existing hero with navigation to five existing examples/guides and explicit desktop cycling. The default stays static, ordinary links work without JavaScript, and focus/visibility/reduced-motion controls prevent unattended rotation. No processing, new result/media, pricing change or hosted request follows. This is part of M1/M6; remaining motion/media, native browser and production acceptance are still open. Parent [PR 144](https://github.com/StefanDG1/vibescroll/pull/144) passed exact-head CI 40060302528 at 9c25514; it remains undeployed.
+
 ## Work Cloud text and current creator status candidate, October 24
 
 [ADR 129](../../adr/129-gated-work-cloud-text-handoff.md) implements an explicit, default-off text execution handoff through the existing source job and assistant grants. [ADR 130](../../adr/130-current-creator-digest-processing.md) makes the existing creator digest reflect current authorized source progress and evidence coverage. Neither publishes a shared artifact, dispatches a provider or passes real-video/official-host/production acceptance. The same US$3 cap and all prior holds remain. Backend deployment remains held because archive/read/retention costs are not defensibly bounded; independent engineering continues.

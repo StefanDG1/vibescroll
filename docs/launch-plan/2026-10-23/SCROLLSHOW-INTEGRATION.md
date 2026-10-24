@@ -1,5 +1,9 @@
 # Integrate the ScrollShow handoff with the full launch
 
+## Public example controls candidate, October 24
+
+[ADR 131](../../adr/131-public-example-navigation-and-motion.md) extends the existing hero with navigation to five existing examples/guides and explicit desktop cycling. The default stays static, ordinary links work without JavaScript, and focus/visibility/reduced-motion controls prevent unattended rotation. No processing, new result/media, pricing change or hosted request follows. This is part of M1/M6; remaining motion/media, native browser and production acceptance are still open. Parent [PR 144](https://github.com/StefanDG1/vibescroll/pull/144) passed exact-head CI 40060302528 at 9c25514; it remains undeployed.
+
 Current execution follows [ADR 125](../../adr/125-resumed-budget-and-repository-free-cloud-probe.md). The owner resumed implementation and raised the same cumulative cap to US$3; all retained holds remain, with US$1.2407114701101483 unallocated before new reservations. Ongoing/lifetime access is deferred to a later feature. Preserve every other R/P/N/C/M requirement. The no-GitHub Work Cloud readiness probe completed, but network enforcement, model settings, actual media and canonical app return remain unverified.
 
 October 24 setup clarification: [ADR 124](../../adr/124-recommended-github-and-minimal-processing-setup.md) records the owner's no-GitHub analysis requirement. Recommend GitHub for project builders, with a clear Skip for now action. Users must be able to analyze supported sources without a GitHub account or repository; only authorized repository-specific work needs connected project context. Minimize setup actions through supported preparation/readiness checks. A hidden Cloud-environment GitHub prerequisite fails this acceptance. The no-GitHub Cloud path remains unverified; this is a requirement, not a new enabled capability.

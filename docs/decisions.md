@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: existing examples with explicit motion controls
+
+[ADR 131](adr/131-public-example-navigation-and-motion.md) adds a static-by-default example chooser through existing routes. Desktop cycling requires explicit consent and current motion/visibility eligibility; alternatives remain usable without JavaScript. This does not process content or complete the remaining ScrollShow media/production acceptance.
+
 ## October 24: current source progress in the creator digest
 
 [ADR 130](adr/130-current-creator-digest-processing.md) keeps delivery separate from current authorized processing and coverage, with distinct discovery and private-digest insertion times. No new discovery, inference, store or provider permission follows.

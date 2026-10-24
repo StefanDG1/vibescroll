@@ -1,5 +1,11 @@
 # Foundational document change log
 
+## F054: inspect existing examples with controlled motion, October 24
+
+[ADR 131](../adr/131-public-example-navigation-and-motion.md) adds navigation through existing evidence, project-decision, founder-capture, Library and Help routes. Each keeps its synthetic, recorded or instructional label. The selector starts no processing. Optional desktop cycling is explicit, pauses on focus and respects visibility and reduced motion; server-rendered links remain available without JavaScript.
+
+Source: the authorized ScrollShow integration, existing approved destinations and root review. All four briefs updated together. Counterpoint: rotating navigation can distract; keep it off initially, pause on focus and provide the static list. Actual usability remains unobserved. Same US$3 cap and prior holds; no new processing, campaign or provider activation.
+
 ## F053: gated text handoff and honest creator progress, October 24
 
 [ADR 129](../adr/129-gated-work-cloud-text-handoff.md) adds an explicit private text handoff through existing source jobs and assistant grants. Route flags stay off; no real-video or official-host acceptance follows. [ADR 130](../adr/130-current-creator-digest-processing.md) separates current source status/coverage from delivery and discovery in the existing digest. No source bytes, private follows or contributor identity enter public copy.

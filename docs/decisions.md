@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: private evaluation brief origin
+
+[ADR 136](adr/136-private-evaluation-brief-origin.md) keeps optional personalized project judgments in the existing private-owner task/evaluation lineage, with exact origin/cache separation, neutral-history isolation and manual review preserved. Team-private overlays, skills and official Cloud project authority remain separate unfinished work. No source analysis, artifact, funding or price is changed.
+
 ## October 24: readable emphasis and scoped Help
 
 [ADR 135](adr/135-optional-readable-scroll-emphasis.md) confines opt-in reveals/emphasis to the existing explanation, preserves all readable/static defaults and scopes Help reads through literal approved prefixes. No tracing-warning suppression, new content store, dependency or processing capability follows.

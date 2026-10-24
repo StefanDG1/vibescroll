@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { personalAnalysisValue } from "./personalAnalysisSchema";
 import { v } from "convex/values";
+import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
 import { allowancePolicyValue } from "../packages/billing/allowance-policy";
 import { sourceType, retrievalState } from "./sourceSchema";
 import { subscriptionCapabilitiesValue } from "./localLibrarySchema";
@@ -526,6 +527,7 @@ export const productTables = {
     .index("by_github", ["installationId", "providerId"]),
   proposals: defineTable({
     ...tenant,
+    privateEvaluationOrigin: v.optional(privateEvaluationOriginValue),
     improvementId: v.optional(v.id("improvements")),
     references: v.optional(
       v.array(

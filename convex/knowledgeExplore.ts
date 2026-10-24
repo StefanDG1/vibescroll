@@ -605,6 +605,9 @@ export const journey = query({
       }
       items.push({
         id: evaluation._id,
+        ...(evaluation.privateEvaluationOrigin
+          ? { privateEvaluationOrigin: evaluation.privateEvaluationOrigin }
+          : {}),
         sources,
         repository: repository.fullName,
         current,

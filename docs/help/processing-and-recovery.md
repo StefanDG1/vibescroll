@@ -33,6 +33,14 @@ The companion package/update engine is candidate code. Do not treat local packag
 
 Reconnect through the supported sign-in flow when required. Review assistant preferences after a recent app sign-in. Existing grants do not gain automatic-analysis authority merely because the application was upgraded. Never reuse another person's account or credentials.
 
+## Review a project with a private focus
+
+In your private Library, open a ready source and the existing own-subscription project review. Select the confirmed projects you want to evaluate. Under **Advanced: private evaluation focus**, optionally describe what matters for this review. Keep the brief under the displayed limit and omit credentials. Review the exact text in the quote before approving it; editing the brief requires a new quote and consent.
+
+This focus produces a separate private project judgment. It does not replace the source's generic analysis or change the shared catalog. It is currently available only in the owner's private workspace, through the existing eligible paired-computer route. Your approved brief joins the source and repository context sent to your connected account for this evaluation.
+
+Review the resulting proposal as usual. An accepted proposal can supply its private context to a separately approved plan; edit that plan before any coding approval. Issue drafting and publication still need their existing explicit review. Standing automatic execution policies do not pick these personalized improvements. A private-context label records the origin; status/history do not repeat the brief.
+
 ## Understand the credit display
 
 An estimate predicts possible usage. A reservation holds allowance before work. Settled usage records accepted costs. Pending or uncertain usage is not a final charge. Check **Usage** for remaining unexpired allowance and outstanding holds.

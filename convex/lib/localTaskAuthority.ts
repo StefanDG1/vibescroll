@@ -12,6 +12,7 @@ import { workspaceReadable } from "./workspacePrivacy";
 import { referencesCurrent } from "../knowledge";
 import { snapshotScopeCurrent } from "../../packages/repositories/scope";
 import { improvementCurrent } from "./improvementContext";
+import { privateEvaluationTaskCurrent } from "./privateEvaluationContext";
 
 export async function capabilitySnapshot(
   ctx: MutationCtx,
@@ -163,6 +164,11 @@ export async function taskBindingsCurrent(
     t!.deviceId,
     run.model,
     run.effort,
+  );
+  ensure(
+    await privateEvaluationTaskCurrent(ctx, run),
+    "APPROVAL_STALE",
+    "The approved private evaluation context changed.",
   );
   ensure(
     device.subscriptionCapabilities!.hash === t!.capabilityHash &&

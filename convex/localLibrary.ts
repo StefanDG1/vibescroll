@@ -35,6 +35,7 @@ import { z } from "zod";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { queueDeletion } from "./assets";
 import { taskBindingsCurrent } from "./lib/localTaskAuthority";
+import { samePrivateEvaluationOrigin } from "./lib/privateEvaluationContext";
 import {
   acquisitionManifest,
   acquisitionPolicy,
@@ -983,7 +984,11 @@ export async function evaluationPrepareCore(
       .withIndex("by_org", (q) => q.eq("organizationId", run.organizationId))
       .unique(),
     preferenceVersion = preferences?.version ?? 0,
-    key = `knowledge-evaluation:${processingVersion}:insight-first-project-context-v3:${topic._id}:${topic.version}:${repo._id}:${repo.sha}:${repo.profileVersion}:${repo.selectionVersion ?? 0}:${sourceSetHash}:${preferenceVersion}`;
+    baseKey = `knowledge-evaluation:${processingVersion}:insight-first-project-context-v3:${topic._id}:${topic.version}:${repo._id}:${repo.sha}:${repo.profileVersion}:${repo.selectionVersion ?? 0}:${sourceSetHash}:${preferenceVersion}`,
+    origin = run.task?.privateEvaluationOrigin,
+    key = origin
+      ? `${baseKey}:private-brief-v1:${await digest(canonicalJson(origin))}`
+      : baseKey;
   const previous = await ctx.db
     .query("knowledgeEvaluations")
     .withIndex("by_topic_repo", (q) =>
@@ -996,6 +1001,8 @@ export async function evaluationPrepareCore(
     if (
       old.state === "ready" &&
       old.output &&
+      samePrivateEvaluationOrigin(old.privateEvaluationOrigin, origin) &&
+      (!origin || old.actor === origin.ownerId) &&
       ["rejected", "deferred"].includes(old.decision) &&
       (await referencesCurrent(ctx, run.organizationId, old.references))
     )
@@ -1014,6 +1021,12 @@ export async function evaluationPrepareCore(
     .unique();
   if (old) {
     ensure(
+      samePrivateEvaluationOrigin(old.privateEvaluationOrigin, origin) &&
+        (!origin || old.actor === run.actor),
+      "APPROVAL_STALE",
+      "The cached evaluation has different private context.",
+    );
+    ensure(
       old.state === "ready" ||
         (old.state === "local_prepared" && old.localRunId === run._id),
       "SOURCE_BUSY",
@@ -1026,6 +1039,12 @@ export async function evaluationPrepareCore(
       repo,
       preference: preferences?.note ?? "",
       reviewHistory,
+      ...(origin
+        ? {
+            privateEvaluationOrigin: origin,
+            privateEvaluationBrief: run.task!.privateEvaluationBrief,
+          }
+        : {}),
       next: page.isDone ? null : page.continueCursor,
     };
   }
@@ -1044,6 +1063,7 @@ export async function evaluationPrepareCore(
     sourceSetHash,
     preferenceVersion,
     localRunId: run._id,
+    ...(origin ? { privateEvaluationOrigin: origin } : {}),
     topicBindings,
     key,
     state: "local_prepared",
@@ -1062,6 +1082,12 @@ export async function evaluationPrepareCore(
     repo,
     preference: preferences?.note ?? "",
     reviewHistory,
+    ...(origin
+      ? {
+          privateEvaluationOrigin: origin,
+          privateEvaluationBrief: run.task!.privateEvaluationBrief,
+        }
+      : {}),
     next: page.isDone ? null : page.continueCursor,
   };
 }
@@ -1104,6 +1130,10 @@ export async function evaluationFinishCore(
   ensure(
     e.organizationId === run.organizationId &&
       e.actor === run.actor &&
+      samePrivateEvaluationOrigin(
+        e.privateEvaluationOrigin,
+        run.task?.privateEvaluationOrigin,
+      ) &&
       run.repositories.includes(e.repositoryId) &&
       (await evaluationCurrent(ctx, e)),
     "APPROVAL_STALE",

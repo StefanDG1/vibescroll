@@ -583,6 +583,9 @@ export const getProfile = internalQuery({
             if (granted)
               evaluations.push({
                 evaluation_id: e._id,
+                ...(e.privateEvaluationOrigin
+                  ? { privateEvaluationOrigin: e.privateEvaluationOrigin }
+                  : {}),
                 evaluation_hash: await digest(JSON.stringify(e.output)),
                 title: parsed.data.title,
                 disposition: parsed.data.disposition,

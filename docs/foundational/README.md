@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## October 24: private evaluation context candidate
+
+[F059](idea-backlog.md#f059-private-evaluation-context-october-24) and [ADR 136](../adr/136-private-evaluation-brief-origin.md) synchronize private personalization with neutral source evidence, cache/history isolation and existing explicit review. All four briefs preserve current claims, offer and provider/release gates.
+
 ## October 24: readable public explanations
 
 [F058](idea-backlog.md#f058-readable-explanations-and-scoped-help-reads-october-24) and [ADR 135](../adr/135-optional-readable-scroll-emphasis.md) synchronize the four briefs for opt-in readable emphasis and bounded Help build tracing. Keep static alternatives and separate native-browser/production acceptance.

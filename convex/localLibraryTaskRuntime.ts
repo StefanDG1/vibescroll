@@ -16,6 +16,7 @@ import { evaluationCurrent, memberEvidence } from "./knowledge";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { validateDraftPlan } from "./planning";
 import { validateInspectedContext } from "../packages/repositories/retrieval";
+import { samePrivateEvaluationOrigin } from "./lib/privateEvaluationContext";
 
 export async function claimLocalTask(ctx: MutationCtx, device: Doc<"devices">) {
   // A new worker session cannot erase the previous session's uncertain turn.
@@ -340,6 +341,10 @@ export async function localTaskOperation(
       ensure(
         e?.organizationId === run.organizationId &&
           e.state === "ready" &&
+          samePrivateEvaluationOrigin(
+            e.privateEvaluationOrigin,
+            task.privateEvaluationOrigin,
+          ) &&
           e.output &&
           run.repositories.includes(e.repositoryId) &&
           !repositories.has(e.repositoryId) &&
@@ -356,12 +361,24 @@ export async function localTaskOperation(
           q.eq("localEvaluationId", e!._id),
         )
         .unique();
+      ensure(
+        !p ||
+          samePrivateEvaluationOrigin(
+            p.privateEvaluationOrigin,
+            e!.privateEvaluationOrigin,
+          ),
+        "APPROVAL_STALE",
+        "The existing proposal has different private context.",
+      );
       if (!p) {
         const output = e!.output;
         const proposalId = await ctx.db.insert("proposals", {
           organizationId: run.organizationId,
           sourceId: e!.references[0].sourceId,
           localEvaluationId: e!._id,
+          ...(e!.privateEvaluationOrigin
+            ? { privateEvaluationOrigin: e!.privateEvaluationOrigin }
+            : {}),
           references: e!.references,
           repositoryId: e!.repositoryId,
           baseSha: e!.baseSha,

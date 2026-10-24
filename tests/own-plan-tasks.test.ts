@@ -8,6 +8,10 @@ import { normalizeSubscriptionCapabilities } from "../packages/runner/subscripti
 import { exportRecord } from "../packages/privacy/export";
 import { localTaskQuote } from "../convex/localLibraryTasks";
 import type { Id } from "../convex/_generated/dataModel";
+import { validatePrivateEvaluationBrief } from "../convex/lib/privateEvaluationContext";
+import { improvementCurrent } from "../convex/lib/improvementContext";
+import { digest } from "../convex/product";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 const modules = import.meta.glob("../convex/**/*.ts");
 it("keeps account capability catalogues private to the device owner in a shared workspace", async () => {
   const f = await setup();
@@ -105,7 +109,7 @@ const plan = {
   rollback: "Revert",
   unknowns: [],
 };
-async function setup() {
+async function setup(privateLibrary = false) {
   const t = convexTest(schema, modules);
   rateLimiterTest.register(t);
   const actor = await t.mutation(internal.accounts.syncUser, {
@@ -128,9 +132,11 @@ async function setup() {
       subject: "other",
       auth_time: Math.floor(Date.now() / 1000),
     });
-  const org = await owner.mutation(api.organizations.create, {
-    name: "Owned workspace",
-  });
+  const org = privateLibrary
+    ? await owner.mutation(api.organizations.createPrivate, {})
+    : await owner.mutation(api.organizations.create, {
+        name: "Owned workspace",
+      });
   const otherOrg = await other.mutation(api.organizations.create, {
     name: "Other workspace",
   });
@@ -719,4 +725,555 @@ it("exports decisions without executor tokens/context and quarantines restored l
   expect(restored?.state).toBe("canceled");
   expect(restored?.task).toBeUndefined();
   expect(await s.t.run((ctx) => ctx.db.get(s.device))).toBeNull();
+});
+
+const privateBrief =
+  "Prioritize a short explanation for my private review workflow.";
+async function privateTask(
+  s: Awaited<ReturnType<typeof setup>>,
+  key = "private-evaluation-task-001",
+) {
+  const approved = await s.approve({
+    ...s.selection,
+    key,
+    privateEvaluationBrief: privateBrief,
+  });
+  const { job } = await s.claim();
+  return { approved, job };
+}
+it.each([
+  { label: "whitespace", text: " " },
+  { label: "UTF-8 overflow", text: "é".repeat(2001) },
+  { label: "NUL", text: "unsafe\u0000text" },
+  { label: "C1 control", text: "unsafe\u0085text" },
+  { label: "lone high surrogate", text: "lone\ud800" },
+  { label: "lone low surrogate", text: "lone\udc00" },
+  { label: "credential pattern", text: `sk-${"synthetic".repeat(5)}` },
+])(
+  "rejects a private brief containing $label without logging or normalizing it",
+  ({ text }) =>
+    expect(() => validatePrivateEvaluationBrief(text)).toThrow("INVALID_INPUT"),
+);
+it("accepts exact UTF-8 limits and valid Unicode pairs without trimming the brief", () => {
+  const text = ` ${"📝".repeat(999)} \n`;
+  expect(new TextEncoder().encode(text).length).toBe(3999);
+  expect(validatePrivateEvaluationBrief(text)).toBe(text);
+  expect(validatePrivateEvaluationBrief("é".repeat(2000))).toHaveLength(2000);
+});
+it("keeps ordinary team tasks available while rejecting private briefs and caller-authored origin fields", async () => {
+  const s = await setup();
+  const q = await s.owner.query(api.localLibraryTasks.quote, s.selection);
+  expect(q.payload).not.toHaveProperty("privateEvaluationOrigin");
+  await expect(
+    s.approve({ ...s.selection, privateEvaluationBrief: privateBrief }),
+  ).rejects.toThrow("FORBIDDEN");
+  await expect(
+    s.owner.query(api.localLibraryTasks.quote, {
+      ...s.selection,
+      privateEvaluationOrigin: { ownerId: s.actor },
+    } as any),
+  ).rejects.toThrow();
+});
+it("carries a private brief through the actual leased evaluation and preserves canonical source analysis", async () => {
+  const s = await setup(true),
+    before = await s.t.run((ctx) => ctx.db.get(s.source)),
+    { approved, job } = await privateTask(s);
+  const origin = approved.quote.payload.privateEvaluationOrigin!;
+  expect(origin).toEqual({
+    schemaVersion: "1.0.0",
+    kind: "private_evaluation_brief",
+    ownerId: s.actor,
+    briefHash: await digest(privateBrief),
+    model: "synthetic-model",
+    effort: "xhigh",
+  });
+  const context = await s.dispatch("task_context_prepare", {
+    ...ref(job),
+    repositoryId: s.repo,
+  });
+  expect(context).toMatchObject({
+    privateEvaluationBrief: privateBrief,
+    privateEvaluationOrigin: origin,
+  });
+  const done = await finishEvaluation(s, job),
+    proposal = (await s.t.run((ctx) =>
+      ctx.db.get(done.proposalIds[0] as Id<"proposals">),
+    ))!;
+  const evaluation = (await s.t.run((ctx) =>
+    ctx.db.get(proposal.localEvaluationId!),
+  ))!;
+  expect(evaluation.privateEvaluationOrigin).toEqual(origin);
+  expect(proposal.privateEvaluationOrigin).toEqual(origin);
+  expect(proposal).not.toHaveProperty("privateEvaluationBrief");
+  expect(evaluation).not.toHaveProperty("privateEvaluationBrief");
+  expect((await s.t.run((ctx) => ctx.db.get(s.source)))?.analysis).toEqual(
+    before?.analysis,
+  );
+  expect(
+    await s.t.run((ctx) => ctx.db.query("publicArtifacts").collect()),
+  ).toEqual([]);
+  const status = await s.owner.query(api.localLibraryTasks.status, {
+    runId: job.runId,
+  });
+  expect(status.privateEvaluationOrigin).toEqual(origin);
+  expect(JSON.stringify(status)).not.toContain(privateBrief);
+  const history = await s.owner.query(api.localLibraryTasks.resume, {
+    organizationId: s.org,
+    sourceId: s.source,
+    cursor: null,
+  });
+  expect(JSON.stringify(history)).not.toContain(privateBrief);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual([]);
+});
+it("separates custom caches by exact brief and model settings while leaving the neutral key unchanged", async () => {
+  const s = await setup(true);
+  await s.approve();
+  const { job: neutral } = await s.claim();
+  const neutralDone = await finishEvaluation(s, neutral);
+  const p = (await s.t.run((ctx) =>
+    ctx.db.get(neutralDone.proposalIds[0] as Id<"proposals">),
+  ))!;
+  const ordinary = (await s.t.run((ctx) => ctx.db.get(p.localEvaluationId!)))!;
+  expect(ordinary.key).toBe(
+    `knowledge-evaluation:${ordinary.processingVersion}:insight-first-project-context-v3:${ordinary.topicId}:${ordinary.topicVersion}:${ordinary.repositoryId}:${ordinary.baseSha}:${ordinary.profileVersion}:${ordinary.selectionVersion ?? 0}:${ordinary.sourceSetHash}:${ordinary.preferenceVersion}`,
+  );
+  const { approved, job } = await privateTask(s);
+  const context = await s.dispatch("task_context_prepare", {
+    ...ref(job),
+    repositoryId: s.repo,
+  });
+  expect(context.cached).toBe(false);
+  const custom = (await s.t.run((ctx) =>
+    ctx.db.get(context.id as Id<"knowledgeEvaluations">),
+  ))!;
+  expect(custom.key).toBe(
+    `${ordinary.key}:private-brief-v1:${await digest(canonicalJson(approved.quote.payload.privateEvaluationOrigin))}`,
+  );
+  await finishEvaluation(s, job);
+  await s.approve({
+    ...s.selection,
+    key: "private-reuse-task-002",
+    privateEvaluationBrief: privateBrief,
+  });
+  const { job: reused } = await s.claim();
+  expect(
+    await s.dispatch("task_context_prepare", {
+      ...ref(reused),
+      repositoryId: s.repo,
+    }),
+  ).toMatchObject({ id: context.id, cached: true });
+  await finishEvaluation(s, reused);
+  await s.approve({
+    ...s.selection,
+    key: "private-effort-task-003",
+    effort: "high",
+    privateEvaluationBrief: privateBrief,
+  });
+  const { job: changed } = await s.claim();
+  expect(
+    await s.dispatch("task_context_prepare", {
+      ...ref(changed),
+      repositoryId: s.repo,
+    }),
+  ).toMatchObject({ cached: false });
+});
+it("binds exact brief bytes in the quote and fences a changed approved task before input delivery", async () => {
+  const s = await setup(true),
+    input = { ...s.selection, privateEvaluationBrief: privateBrief };
+  const quote = await s.owner.query(api.localLibraryTasks.quote, input);
+  await expect(
+    s.owner.mutation(api.localLibraryTasks.approve, {
+      ...input,
+      privateEvaluationBrief: `${privateBrief} `,
+      quoteHash: quote.hash,
+      quoteExpiresAt: quote.expiresAt,
+      useOwnPlan: true,
+      maxInferenceCredits: 0,
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  const approved = await s.approve(input);
+  await s.t.run(async (ctx) => {
+    const run = (await ctx.db.get(approved.runId))!;
+    await ctx.db.patch(run._id, {
+      task: { ...run.task!, privateEvaluationBrief: "Changed after approval" },
+    });
+  });
+  expect((await s.claim()).job).toBeNull();
+  expect((await s.t.run((ctx) => ctx.db.get(approved.runId)))?.state).toBe(
+    "expired",
+  );
+});
+it("rejects a custom result offered to a neutral task with identical source and repository bindings", async () => {
+  const s = await setup(true),
+    { job } = await privateTask(s);
+  const done = await finishEvaluation(s, job);
+  const proposal = (await s.t.run((ctx) =>
+    ctx.db.get(done.proposalIds[0] as Id<"proposals">),
+  ))!;
+  await s.approve({ ...s.selection, key: "neutral-after-custom-001" });
+  const { job: neutral } = await s.claim();
+  await expect(
+    s.dispatch("task_finish", {
+      ...ref(neutral),
+      evaluationIds: [proposal.localEvaluationId],
+    }),
+  ).rejects.toThrow("INVALID_EVIDENCE");
+});
+it("does not expose custom derivatives or authored briefs to another member of the private library", async () => {
+  const s = await setup(true),
+    { job } = await privateTask(s);
+  const done = await finishEvaluation(s, job);
+  await s.t.run(async (ctx) => {
+    const other = (await ctx.db
+      .query("users")
+      .withIndex("by_subject", (q) => q.eq("subject", "other"))
+      .unique())!;
+    await ctx.db.insert("memberships", {
+      organizationId: s.org,
+      userId: other._id,
+      role: "owner",
+    });
+  });
+  await expect(
+    s.other.query(api.product.proposal, { id: done.proposalIds[0] }),
+  ).rejects.toThrow();
+  await expect(
+    s.other.query(api.knowledge.evaluations, { organizationId: s.org }),
+  ).rejects.toThrow();
+  await expect(
+    s.other.query(api.jobs.exportPage, {
+      organizationId: s.org,
+      section: "localLibraryRuns",
+      cursor: null,
+      asOf: Date.now(),
+    }),
+  ).rejects.toThrow();
+});
+it("uses only same-origin review history and excludes private derivatives from neutral profile generation", async () => {
+  const s = await setup(true),
+    { job } = await privateTask(s);
+  const done = await finishEvaluation(s, job);
+  const p = (await s.t.run((ctx) =>
+    ctx.db.get(done.proposalIds[0] as Id<"proposals">),
+  ))!;
+  await s.owner.mutation(api.knowledge.decide, {
+    id: p.localEvaluationId!,
+    decision: "deferred",
+  });
+  await s.approve({
+    ...s.selection,
+    key: "private-history-same-001",
+    privateEvaluationBrief: privateBrief,
+  });
+  const { job: same } = await s.claim();
+  expect(
+    (
+      await s.dispatch("task_context_prepare", {
+        ...ref(same),
+        repositoryId: s.repo,
+      })
+    ).reviewHistory,
+  ).toHaveLength(1);
+  await finishEvaluation(s, same);
+  await s.approve({
+    ...s.selection,
+    key: "private-history-other-001",
+    privateEvaluationBrief: "A different private objective.",
+  });
+  const { job: different } = await s.claim();
+  expect(
+    (
+      await s.dispatch("task_context_prepare", {
+        ...ref(different),
+        repositoryId: s.repo,
+      })
+    ).reviewHistory,
+  ).toEqual([]);
+  await finishEvaluation(s, different);
+  await s.approve({ ...s.selection, key: "neutral-history-task-001" });
+  const { job: neutral } = await s.claim();
+  expect(
+    (
+      await s.dispatch("task_context_prepare", {
+        ...ref(neutral),
+        repositoryId: s.repo,
+      })
+    ).reviewHistory,
+  ).toEqual([]);
+  const profile = await s.owner.mutation(api.profiles.start, {
+    id: s.repo,
+    key: "neutral-profile-task-001",
+    maxCredits: 10,
+  });
+  expect(profile.reviewHistory).toEqual([]);
+});
+it("excludes custom results from actual managed evaluation history and refuses dispatching them as neutral jobs", async () => {
+  const s = await setup(true),
+    { job } = await privateTask(s);
+  const done = await finishEvaluation(s, job),
+    proposal = (await s.t.run((ctx) =>
+      ctx.db.get(done.proposalIds[0] as Id<"proposals">),
+    ))!;
+  await s.owner.mutation(api.knowledge.decide, {
+    id: proposal.localEvaluationId!,
+    decision: "deferred",
+  });
+  const id = await s.t.run(async (ctx) => {
+    const row = (await ctx.db.get(proposal.localEvaluationId!))!;
+    const {
+      _id,
+      _creationTime,
+      privateEvaluationOrigin,
+      localRunId,
+      output,
+      inspected,
+      ...base
+    } = row;
+    void [
+      _id,
+      _creationTime,
+      privateEvaluationOrigin,
+      localRunId,
+      output,
+      inspected,
+    ];
+    return ctx.db.insert("knowledgeEvaluations", {
+      ...base,
+      key: "synthetic-neutral-managed-history",
+      state: "queued",
+      decision: "new",
+    });
+  });
+  const claimed = await s.t.mutation(internal.knowledge.claimEvaluation, {
+    id,
+  });
+  expect(claimed?.reviewHistory).toEqual([]);
+  await s.t.run((ctx) =>
+    ctx.db.patch(proposal.localEvaluationId!, { state: "queued" }),
+  );
+  expect(
+    await s.t.mutation(internal.knowledge.claimEvaluation, {
+      id: proposal.localEvaluationId!,
+    }),
+  ).toBeNull();
+});
+it("preserves private issue and improvement provenance while excluding standing routine execution", async () => {
+  const s = await setup(true),
+    { job, approved } = await privateTask(s);
+  const done = await finishEvaluation(s, job),
+    p = (await s.t.run((ctx) =>
+      ctx.db.get(done.proposalIds[0] as Id<"proposals">),
+    ))!;
+  const draftId = await s.owner.mutation(api.issues.create, {
+    id: p.localEvaluationId!,
+    followUp: false,
+  });
+  const draft = (await s.owner.query(api.issues.context, { id: draftId }))
+    .draft;
+  expect(draft.privateEvaluationOrigin).toEqual(
+    approved.quote.payload.privateEvaluationOrigin,
+  );
+  const id = await s.owner.mutation(api.improvements.create, {
+    issueId: draftId,
+    goal: "Review my private goal with exact evidence",
+  });
+  const improvement = (await s.t.run((ctx) => ctx.db.get(id)))!;
+  expect(improvement.privateEvaluationOrigin).toEqual(
+    draft.privateEvaluationOrigin,
+  );
+  const proposal = (await s.t.run((ctx) =>
+    ctx.db.get(improvement.proposalId),
+  ))!;
+  expect(proposal.privateEvaluationOrigin).toEqual(
+    draft.privateEvaluationOrigin,
+  );
+  expect(await s.t.run((ctx) => improvementCurrent(ctx, proposal))).toBe(true);
+  const policy = await s.t.run(async (ctx) => {
+    await ctx.db.patch(improvement._id, { category: "documentation" });
+    await ctx.db.patch(proposal._id, { planDraft: plan, planDraftVersion: 1 });
+    return ctx.db.insert("improvementPolicies", {
+      organizationId: s.org,
+      repositoryId: s.repo,
+      actor: s.actor,
+      mode: "routine",
+      categories: ["documentation"],
+      monthlyCredits: 100,
+      perRunCredits: 20,
+      requiredChecks: ["printf synthetic"],
+      merge: false,
+      deploy: false,
+      paused: false,
+      status: "active",
+      version: 1,
+      period: new Date().toISOString().slice(0, 7),
+      used: 0,
+      reserved: 0,
+      selectionVersion: 0,
+      expiresAt: Date.now() + 600000,
+      leaseKey: "synthetic-routine",
+      leaseUntil: Date.now() + 60000,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+  expect(
+    await s.t.query(internal.improvementPolicies.candidate, { id: policy }),
+  ).toBeNull();
+  await expect(
+    s.t.mutation(internal.improvementPolicies.start, {
+      id: policy,
+      key: "synthetic-routine",
+      improvementId: id,
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual([]);
+  // Mocked permission verification only. Approval records an attempt but does not call a provider.
+  await s.t.mutation(internal.issues.prepared, {
+    id: draftId,
+    hash: draft.hash,
+    visibility: "public",
+  });
+  await expect(
+    s.owner.mutation(api.issues.approve, {
+      id: draftId,
+      version: draft.version,
+      hash: draft.hash,
+      visibility: "public",
+      publicationRights: false,
+    }),
+  ).rejects.toThrow("RIGHTS_REQUIRED");
+  const attemptId = await s.owner.mutation(api.issues.approve, {
+    id: draftId,
+    version: draft.version,
+    hash: draft.hash,
+    visibility: "public",
+    publicationRights: true,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(attemptId))).toMatchObject({
+    draftId,
+    hash: draft.hash,
+    state: "approved",
+  });
+  await s.t.run((ctx) =>
+    ctx.db.patch(draftId, { privateEvaluationOrigin: undefined }),
+  );
+  expect(await s.t.run((ctx) => improvementCurrent(ctx, proposal))).toBe(false);
+});
+it("inherits immutable private origin into a newly approved plan without accepting a new plan brief", async () => {
+  const s = await setup(true),
+    { job, approved } = await privateTask(s);
+  const done = await finishEvaluation(s, job),
+    id = done.proposalIds[0] as Id<"proposals">;
+  await s.owner.mutation(api.product.decide, {
+    id,
+    version: 1,
+    decision: "accepted",
+    note: "",
+  });
+  const selection = {
+    organizationId: s.org,
+    workload: "plan_draft",
+    deviceId: s.device,
+    model: "synthetic-model",
+    effort: "high",
+    key: "private-plan-task-001",
+    proposalId: id,
+    proposalVersion: 1,
+  };
+  await expect(
+    s.approve({ ...selection, privateEvaluationBrief: privateBrief }),
+  ).rejects.toThrow("FORBIDDEN");
+  const planApproval = await s.approve(selection);
+  expect(planApproval.quote.payload.privateEvaluationOrigin).toEqual(
+    approved.quote.payload.privateEvaluationOrigin,
+  );
+  const { job: planJob } = await s.claim();
+  const context = await s.dispatch("task_context_prepare", {
+    ...ref(planJob),
+    repositoryId: s.repo,
+  });
+  expect(context.proposal.privateEvaluationOrigin).toEqual(
+    approved.quote.payload.privateEvaluationOrigin,
+  );
+  await s.dispatch("task_record_inspection", {
+    ...ref(planJob),
+    inspected: [s.excerpt],
+    manifest: context.repo.manifestEntries,
+  });
+  await s.dispatch("task_finish", { ...ref(planJob), plan });
+  expect((await s.t.run((ctx) => ctx.db.get(id)))?.planDraft).toEqual(plan);
+});
+it("fences retained custom results if their original approved brief or private ownership changes", async () => {
+  const s = await setup(true),
+    { job } = await privateTask(s);
+  const done = await finishEvaluation(s, job),
+    proposal = (await s.t.run((ctx) =>
+      ctx.db.get(done.proposalIds[0] as Id<"proposals">),
+    ))!;
+  expect(await s.t.run((ctx) => improvementCurrent(ctx, proposal))).toBe(true);
+  const run = (await s.t.run((ctx) =>
+    ctx.db.get(job.runId as Id<"localLibraryRuns">),
+  ))!;
+  await s.t.run((ctx) =>
+    ctx.db.patch(run._id, {
+      task: { ...run.task!, privateEvaluationBrief: "Changed original text" },
+    }),
+  );
+  expect(await s.t.run((ctx) => improvementCurrent(ctx, proposal))).toBe(false);
+  await s.t.run((ctx) => ctx.db.patch(run._id, { task: run.task }));
+  expect(await s.t.run((ctx) => improvementCurrent(ctx, proposal))).toBe(true);
+  await s.t.run((ctx) => ctx.db.patch(s.org, { privateOwnerId: undefined }));
+  expect(await s.t.run((ctx) => improvementCurrent(ctx, proposal))).toBe(false);
+});
+it("exports private authored context only to its owner and quarantines its authority without converting the result to neutral", async () => {
+  const s = await setup(true),
+    { job, approved } = await privateTask(s);
+  const done = await finishEvaluation(s, job),
+    proposal = (await s.t.run((ctx) =>
+      ctx.db.get(done.proposalIds[0] as Id<"proposals">),
+    ))!;
+  const exported = await s.owner.query(api.jobs.exportPage, {
+    organizationId: s.org,
+    section: "localLibraryRuns",
+    cursor: null,
+    asOf: Date.now(),
+  });
+  expect(JSON.stringify(exported)).toContain(privateBrief);
+  expect(JSON.stringify(exported)).not.toContain(job.leaseToken);
+  expect(JSON.stringify(exported)).not.toContain("approvalHash");
+  const exportedEvaluations = await s.owner.query(api.jobs.exportPage, {
+    organizationId: s.org,
+    section: "knowledgeEvaluations",
+    cursor: null,
+    asOf: Date.now(),
+  });
+  expect(exportedEvaluations.page[0]).toMatchObject({
+    privateEvaluationOrigin: approved.quote.payload.privateEvaluationOrigin,
+  });
+  expect(JSON.stringify(exportedEvaluations)).not.toContain(privateBrief);
+  vi.stubEnv("RESTORE_LOCK", "true");
+  for (const section of ["localLibraryRuns", "knowledgeEvaluations"] as const)
+    await s.t.mutation(internal.recovery.quarantinePage, {
+      section,
+      cursor: null,
+    });
+  const restored = (await s.t.run((ctx) =>
+    ctx.db.get(job.runId as Id<"localLibraryRuns">),
+  ))!;
+  const evaluation = (await s.t.run((ctx) =>
+    ctx.db.get(proposal.localEvaluationId!),
+  ))!;
+  expect(restored.task).toBeUndefined();
+  expect(evaluation.state).toBe("quarantined");
+  expect(evaluation.output).toBeUndefined();
+  expect(evaluation.privateEvaluationOrigin).toEqual(
+    approved.quote.payload.privateEvaluationOrigin,
+  );
+  vi.stubEnv("RESTORE_LOCK", "false");
+  await expect(s.dispatch("task_heartbeat", ref(job))).rejects.toThrow();
+  expect(await s.t.run((ctx) => improvementCurrent(ctx, proposal))).toBe(false);
 });

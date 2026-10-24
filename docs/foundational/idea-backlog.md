@@ -1,5 +1,11 @@
 # Foundational idea backlog
 
+## F059: private evaluation context, October 24
+
+[ADR 136](../adr/136-private-evaluation-brief-origin.md) extends the existing own-subscription project task with an optional owner-private focus brief. Exact approval, cache identity and derived evaluation/proposal/issue/improvement origin remain separate from generic source analysis. Neutral histories and automatic standing-policy work cannot absorb the custom result. Existing reviewed issue publication and separately approved editable plans remain available.
+
+Source: owner-authorized private personalization scope and audit of existing R5 producers, cache/history and issue/improvement lineage. All four briefs updated together. Counterpoint: a prompt field without identity separation would reuse the wrong result or contaminate neutral history; the first slice is private-owner-only. No customer outcome, live check, campaign or new spending is inferred.
+
 ## F058: readable explanations and scoped Help reads, October 24
 
 [ADR 135](../adr/135-optional-readable-scroll-emphasis.md) adds optional desktop emphasis to the existing three-card explanation while keeping every word readable, static defaults and reduced-motion/mobile behavior. The same public-site slice constrains Help reads to literal approved document prefixes rather than whole-project build tracing. No new provider, task, query, asset, price or permission follows.

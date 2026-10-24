@@ -1,5 +1,11 @@
 # VibeScroll foundational beliefs
 
+## F059: private evaluation context, October 24
+
+[ADR 136](../adr/136-private-evaluation-brief-origin.md) extends the existing own-subscription project task with an optional owner-private focus brief. Exact approval, cache identity and derived evaluation/proposal/issue/improvement origin remain separate from generic source analysis. Neutral histories and automatic standing-policy work cannot absorb the custom result. Existing reviewed issue publication and separately approved editable plans remain available.
+
+A personalized project judgment is not a neutral shared insight. Preserve that provenance through review, and keep source/repository/brief text unable to grant spending, tools or publication authority.
+
 ## F058: readable explanations and scoped Help reads, October 24
 
 [ADR 135](../adr/135-optional-readable-scroll-emphasis.md) adds optional desktop emphasis to the existing three-card explanation while keeping every word readable, static defaults and reduced-motion/mobile behavior. The same public-site slice constrains Help reads to literal approved document prefixes rather than whole-project build tracing. No new provider, task, query, asset, price or permission follows.

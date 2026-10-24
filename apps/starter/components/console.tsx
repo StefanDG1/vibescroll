@@ -1987,6 +1987,12 @@ export function Console({
                     data.proposals.map((p) => (
                       <article className="panel" key={id(p)}>
                         <span className="status">{label(p.disposition)}</span>
+                        {p.privateEvaluationOrigin?.kind ===
+                          "private_evaluation_brief" && (
+                          <span className="status">
+                            Private evaluation focus
+                          </span>
+                        )}
                         <h2>{p.title}</h2>
                         <p>{p.detail?.currentProblem}</p>
                         <p>{label(p.review)}</p>
@@ -2050,11 +2056,14 @@ export function Console({
                     <OwnPlanTaskControls
                       organizationId={organizationId}
                       call={strictCall}
+                      privateLibrary={data.privateLibrary === true}
                       proposal={{
                         id: id(selected),
                         title: selected.title,
                         version: selected.version,
                         review: selected.review,
+                        privateEvaluationOrigin:
+                          selected.privateEvaluationOrigin,
                       }}
                       repositories={data.repositories
                         .filter((repo) => id(repo) === selected.repositoryId)
@@ -2072,6 +2081,13 @@ export function Console({
                     )}
                   />
                   <span className="status">{label(selected.disposition)}</span>
+                  {selected.privateEvaluationOrigin?.kind ===
+                    "private_evaluation_brief" && (
+                    <p className="notice">
+                      Private evaluation focus. Review this personalized project
+                      assessment before approving a plan or publication.
+                    </p>
+                  )}
                   {selected.reviewerCorrection && (
                     <p className="notice">
                       Reviewer correction:{" "}
@@ -3955,6 +3971,7 @@ function SourceDetail({
           organizationId={org}
           call={strictCall}
           source={{ id: sourceId, title: detail.title }}
+          privateLibrary={detail.privateLibrary === true}
           repositories={repos
             .filter((repo: any) => repo.enabled && repo.confirmed)
             .map((repo: any) => ({ id: id(repo), name: repo.fullName }))}

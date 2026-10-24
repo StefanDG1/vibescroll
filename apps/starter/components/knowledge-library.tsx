@@ -975,6 +975,10 @@ export function KnowledgeLibrary(p: Props) {
               </summary>
               <article className="panel">
                 <h3>{e.output?.title ?? "Evaluation pending"}</h3>
+                {e.privateEvaluationOrigin?.kind ===
+                  "private_evaluation_brief" && (
+                  <p className="fine">Private evaluation focus</p>
+                )}
                 <p>
                   {p.repositories.find((r) => r._id === e.repositoryId)
                     ?.fullName ?? "Unavailable project"}{" "}

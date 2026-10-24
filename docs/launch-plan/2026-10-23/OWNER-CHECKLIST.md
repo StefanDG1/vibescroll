@@ -1,5 +1,11 @@
 # What help is still needed to finish the plan
 
+## Private evaluation focus candidate, October 24
+
+[ADR 136](../../adr/136-private-evaluation-brief-origin.md) extends the existing R5 project task with an optional C6a private-owner focus brief. It binds exact text/owner/model/effort to quote, cache and derived origin, preserves canonical generic analysis and reviewed issue/plan flows, and excludes personalized results from neutral histories and standing automatic execution. No new queue/store/executor or team-wide ACL. Backend 90 focused and UI 23 focused cases passed, with types/lint/format; independent High review found no P1/P2. The integrated check passed 1,659 tests with three hosted skips, all types and both builds; exact-head CI remains pending. Team-private overlays, skills, official Cloud project/video authority, real model usefulness and production/independent acceptance remain open. The same US$3 cap and all prior holds remain.
+
+Parent public-site PR149 passed exact-head CI 40068663644 at b73211f. Its integrated local check passed 1,625 cases with three hosted skips with both builds. Production remains the narrow PR141 frontend and unchanged backend; no new live request or deployment follows.
+
 ## Readable public-site candidate, October 24
 
 [ADR 135](../../adr/135-optional-readable-scroll-emphasis.md) completes a bounded M1 motion slice through explicit Play/Pause/Replay over the existing explanation. Text stays fully readable; mobile/reduced-motion/default views stay static. Literal approved Help reads also remove whole-checkout tracing without suppressing warnings. Focused UI/Help checks and the fixed starter build passed; final combined verification, exact-head CI and native-browser/production acceptance remain separate. No original R/P/N/C/M requirement is removed and no new provider/production request is made.

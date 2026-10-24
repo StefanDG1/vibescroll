@@ -1,5 +1,9 @@
 # Data model
 
+## Private evaluation context candidate
+
+The existing `localLibraryRuns.task` may retain exact approved `privateEvaluationBrief` plus server `privateEvaluationOrigin`. The same optional origin is copied without raw text to existing knowledge evaluations, proposals, private issue drafts and improvements. No new table, index, store or queue. A custom cache key extends the old key with the origin hash; default keys stay unchanged. Neutral histories exclude custom origin, while currentness checks bind derived lineage. Existing export/deletion/recovery must retain privacy and never restore task authority. See [ADR 136](adr/136-private-evaluation-brief-origin.md).
+
 ## Purchased allowance candidate
 
 [ADR 134](adr/134-purchased-allowance-commitments.md) adds optional `paidAllowance` and pending `checkoutAllowance` to existing billing records, append-only offered policy/provider/customer/first-subscription binding on existing legal acceptances, copied `allowancePolicy` on billing periods, and source/target policies on existing billing changes. No table, index, wallet or queue is added. Frozen quantities and exact provider identifiers are server-derived. Original annual base and paid-upgrade invoices remain separate `creditFunding` contributions, including future monthly grants and refunds. Missing legacy evidence is not fabricated.

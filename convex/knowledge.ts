@@ -15,6 +15,10 @@ import { sourceRetained } from "./lib/sourceAuthority";
 import { retainedSourceRevision } from "./lib/sourceAuthority";
 import { sourcePolicyCurrent } from "./lib/sourcePolicy";
 import { sharedTypedCitations } from "./lib/sourceCitations";
+import {
+  privateEvaluationTaskCurrent,
+  samePrivateEvaluationOrigin,
+} from "./lib/privateEvaluationContext";
 import { organizeTopicAutomatically } from "./lib/topicHierarchy";
 import {
   assertReferences,
@@ -1222,6 +1226,23 @@ export const evaluationCurrent = async (
   ctx: QueryCtx,
   e: Doc<"knowledgeEvaluations">,
 ) => {
+  if (e.privateEvaluationOrigin) {
+    const run = e.localRunId ? await ctx.db.get(e.localRunId) : null;
+    if (
+      !run?.task ||
+      run.task.workload !== "project_evaluation" ||
+      run.organizationId !== e.organizationId ||
+      run.actor !== e.actor ||
+      e.actor !== e.privateEvaluationOrigin.ownerId ||
+      !samePrivateEvaluationOrigin(
+        e.privateEvaluationOrigin,
+        run.task.privateEvaluationOrigin,
+      ) ||
+      (e.state === "ready" && e.model !== e.privateEvaluationOrigin.model) ||
+      !(await privateEvaluationTaskCurrent(ctx, run))
+    )
+      return false;
+  }
   const t = await ctx.db.get(e.topicId),
     r = await ctx.db.get(e.repositoryId);
   const preference = await ctx.db
@@ -1256,7 +1277,7 @@ export const claimEvaluation = internalMutation({
   handler: async (ctx, a) => {
     if (!workersEnabled()) return null;
     const e = await ctx.db.get(a.id);
-    if (!e || e.state !== "queued") return null;
+    if (!e || e.state !== "queued" || e.privateEvaluationOrigin) return null;
     if (await running(ctx, "knowledgeEvaluations", e.organizationId))
       return null;
     if (
@@ -1291,6 +1312,7 @@ export const claimEvaluation = internalMutation({
         old._id !== e._id &&
         old.state === "ready" &&
         old.output &&
+        !old.privateEvaluationOrigin &&
         ["rejected", "deferred"].includes(old.decision) &&
         (await referencesCurrent(ctx, e.organizationId, old.references))
       )

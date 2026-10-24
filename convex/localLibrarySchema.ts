@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
 const tenant = {
   organizationId: v.id("organizations"),
   createdAt: v.number(),
@@ -32,6 +33,8 @@ export const subscriptionCapabilitiesValue = v.object({
 });
 const task = v.object({
   schemaVersion: v.literal("1.0.0"),
+  privateEvaluationBrief: v.optional(v.string()),
+  privateEvaluationOrigin: v.optional(privateEvaluationOriginValue),
   workload: v.union(v.literal("project_evaluation"), v.literal("plan_draft")),
   fundingRoute: v.literal("chatgpt_subscription"),
   maxInferenceCredits: v.literal(0),

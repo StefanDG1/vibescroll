@@ -11,6 +11,8 @@ import { referencesCurrent, memberEvidence } from "./knowledge";
 import { improvementCurrent } from "./lib/improvementContext";
 import { taskDevice } from "./lib/localTaskAuthority";
 import { snapshotScopeCurrent } from "../packages/repositories/scope";
+import type { PrivateEvaluationOrigin } from "../packages/contracts/private-evaluation-context";
+import { validatePrivateEvaluationBrief } from "./lib/privateEvaluationContext";
 
 export const resume = query({
   args: {
@@ -55,6 +57,9 @@ export const resume = query({
           deadline: run.task!.deadline,
           proposalIds: run.task!.proposalIds,
           evaluationIds: run.task!.evaluationIds,
+          ...(run.task!.privateEvaluationOrigin
+            ? { privateEvaluationOrigin: run.task!.privateEvaluationOrigin }
+            : {}),
           maxInferenceCredits: 0,
         })),
       next: page.isDone ? null : page.continueCursor,
@@ -74,6 +79,7 @@ export const localTaskArgs = {
   members: v.optional(v.array(v.id("knowledgeMembers"))),
   proposalId: v.optional(v.id("proposals")),
   proposalVersion: v.optional(v.number()),
+  privateEvaluationBrief: v.optional(v.string()),
 };
 type Selection = {
   organizationId: Id<"organizations">;
@@ -87,6 +93,7 @@ type Selection = {
   members?: Id<"knowledgeMembers">[];
   proposalId?: Id<"proposals">;
   proposalVersion?: number;
+  privateEvaluationBrief?: string;
 };
 
 export async function localTaskQuote(
@@ -102,11 +109,29 @@ export async function localTaskQuote(
     "INVALID_INPUT",
     "Choose up to twelve distinct ideas.",
   );
-  const { actor } = await access(ctx, a.organizationId, [
+  const { actor, organization } = await access(ctx, a.organizationId, [
     "owner",
     "admin",
     "member",
   ]);
+  let privateEvaluationOrigin: PrivateEvaluationOrigin | undefined;
+  if (a.privateEvaluationBrief !== undefined) {
+    ensure(
+      a.workload === "project_evaluation" &&
+        organization.privateOwnerId === actor._id,
+      "FORBIDDEN",
+      "Private evaluation briefs require your own private library and a source evaluation.",
+    );
+    validatePrivateEvaluationBrief(a.privateEvaluationBrief);
+    privateEvaluationOrigin = {
+      schemaVersion: "1.0.0",
+      kind: "private_evaluation_brief",
+      ownerId: actor._id,
+      briefHash: await digest(a.privateEvaluationBrief),
+      model: a.model,
+      effort: a.effort,
+    };
+  }
   await recentAuthentication(ctx);
   ensure(
     /^[a-zA-Z0-9_-]{12,80}$/.test(a.key) &&
@@ -279,6 +304,17 @@ export async function localTaskQuote(
     .query("improvementPreferences")
     .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
     .unique();
+  if (proposal) {
+    const selected = (await ctx.db.get(proposal.id))!;
+    privateEvaluationOrigin = selected.privateEvaluationOrigin;
+    ensure(
+      !privateEvaluationOrigin ||
+        (organization.privateOwnerId === actor._id &&
+          privateEvaluationOrigin.ownerId === actor._id),
+      "FORBIDDEN",
+      "This private proposal belongs to its original private library owner.",
+    );
+  }
   const payload = {
     schemaVersion: "1.0.0" as const,
     workload: a.workload,
@@ -299,6 +335,10 @@ export async function localTaskQuote(
     preferenceVersion: preference?.version ?? 0,
     ...(topicId ? { topicId } : {}),
     ...(proposal ? { proposal } : {}),
+    ...(a.privateEvaluationBrief !== undefined
+      ? { privateEvaluationBrief: a.privateEvaluationBrief }
+      : {}),
+    ...(privateEvaluationOrigin ? { privateEvaluationOrigin } : {}),
     quoteExpiresAt: expiresAt,
   };
   return { payload, hash: await digest(canonicalJson(payload)) };
@@ -401,6 +441,9 @@ export const approve = mutation({
           repositoryBindings: p.repositoryBindings,
           proposal: p.proposal,
           preferenceVersion: p.preferenceVersion,
+          ...(p.privateEvaluationOrigin
+            ? { privateEvaluationOrigin: p.privateEvaluationOrigin }
+            : {}),
         });
         const existing = recent.find(
           (run) =>
@@ -417,6 +460,9 @@ export const approve = mutation({
               repositoryBindings: run.task.repositoryBindings,
               proposal: run.task.proposal,
               preferenceVersion: run.task.preferenceVersion,
+              ...(run.task.privateEvaluationOrigin
+                ? { privateEvaluationOrigin: run.task.privateEvaluationOrigin }
+                : {}),
             }) === expected,
         );
         ensure(
@@ -492,6 +538,9 @@ export const status = query({
       effort: r!.effort,
       deadline: r!.task!.deadline,
       evaluationIds: r!.task!.evaluationIds,
+      ...(r!.task!.privateEvaluationOrigin
+        ? { privateEvaluationOrigin: r!.task!.privateEvaluationOrigin }
+        : {}),
       proposalIds: r!.task!.proposalIds,
       maxInferenceCredits: 0,
     };

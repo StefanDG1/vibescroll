@@ -1,29 +1,40 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { isValidElement, type ReactElement } from "react";
-const hooks = vi.hoisted(() => ({ values: [] as any[], index: 0 }));
-vi.mock("react", async (original) => ({
-  ...(await original<typeof import("react")>()),
-  useEffect: () => {},
-  useRef: (value: unknown) => {
-    const index = hooks.index++;
-    return (hooks.values[index] ??= { current: value });
-  },
-  useState: (value: unknown) => {
-    const index = hooks.index++;
-    if (!(index in hooks.values))
-      hooks.values[index] =
-        typeof value === "function" ? (value as () => unknown)() : value;
-    return [
-      hooks.values[index],
-      (next: any) => {
-        hooks.values[index] =
-          typeof next === "function" ? next(hooks.values[index]) : next;
-      },
-    ];
-  },
+import { createElement, isValidElement, type ReactElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+const hooks = vi.hoisted(() => ({
+  values: [] as any[],
+  index: 0,
+  real: false,
 }));
+vi.mock("react", async (original) => {
+  const real = await original<typeof import("react")>();
+  return {
+    ...real,
+    useEffect: () => {},
+    useRef: (value: unknown) => {
+      if (hooks.real) return real.useRef(value);
+      const index = hooks.index++;
+      return (hooks.values[index] ??= { current: value });
+    },
+    useState: (value: unknown) => {
+      if (hooks.real) return real.useState(value);
+      const index = hooks.index++;
+      if (!(index in hooks.values))
+        hooks.values[index] =
+          typeof value === "function" ? (value as () => unknown)() : value;
+      return [
+        hooks.values[index],
+        (next: any) => {
+          hooks.values[index] =
+            typeof next === "function" ? next(hooks.values[index]) : next;
+        },
+      ];
+    },
+  };
+});
 import {
   OwnPlanTaskPanel,
+  OwnPlanTaskControls,
   type OwnPlanTaskProps,
 } from "./components/own-plan-task-controls";
 import { normalizeSubscriptionCapabilities } from "../../packages/runner/subscription-capabilities.mjs";
@@ -31,6 +42,7 @@ type Node = ReactElement<Record<string, any>>;
 afterEach(() => {
   hooks.values = [];
   hooks.index = 0;
+  hooks.real = false;
   vi.restoreAllMocks();
 });
 function render(props: OwnPlanTaskProps) {
@@ -85,6 +97,9 @@ function harness() {
         expiresAt: Date.now() + 300000,
         maxInferenceCredits: 0,
         payload: {
+          ...(args.privateEvaluationBrief !== undefined
+            ? { privateEvaluationBrief: args.privateEvaluationBrief }
+            : {}),
           sourceBindings: [{ sourceId: "source", generation: 4 }],
           repositoryBindings: [
             { repositoryId: "repo", baseSha: "a".repeat(40) },
@@ -428,3 +443,246 @@ it.each(["catalogue", "quote"])(
     expect(button(h.view(), "Approve on my paired computer")).toBeUndefined();
   },
 );
+function textarea(tree: unknown) {
+  return elements(tree).find((node) => node.type === "textarea");
+}
+function setBrief(h: ReturnType<typeof harness>, value: string) {
+  textarea(h.view())!.props.onChange({ target: { value } });
+}
+function consentToQuote(h: ReturnType<typeof harness>) {
+  elements(h.view())
+    .filter((node) => node.type === "input" && node.props.type === "checkbox")
+    .at(-1)!
+    .props.onChange({ target: { checked: true } });
+}
+const privateOrigin = {
+  schemaVersion: "1.0.0" as const,
+  kind: "private_evaluation_brief" as const,
+  ownerId: "owner" as any,
+  briefHash: "a".repeat(64),
+  model: "actual-only",
+  effort: "xhigh",
+};
+it("SSR keeps the advanced private brief optional, empty and request-free", () => {
+  const h = harness();
+  hooks.real = true;
+  const html = renderToStaticMarkup(
+    createElement(OwnPlanTaskControls, { ...h.props, privateLibrary: true }),
+  );
+  expect(html).toContain("Advanced: private evaluation focus");
+  expect(html).toContain("<textarea");
+  expect(html).toContain("0 / 4000 UTF-8 bytes");
+  expect(html).toContain(
+    "does not change the generic source analysis or shared catalog",
+  );
+  expect(html).not.toContain("<details open");
+  expect(h.calls).not.toHaveBeenCalled();
+});
+it.each([undefined, false])(
+  "omits private controls and arguments for privateLibrary=%s",
+  async (flag) => {
+    const h = harness();
+    h.props.privateLibrary = flag;
+    expect(textarea(h.view())).toBeUndefined();
+    await h.choose();
+    await h.click("Review own-subscription quote");
+    expect(
+      h.calls.mock.calls.find(([op]) => op === "localTaskQuote")![1],
+    ).not.toHaveProperty("privateEvaluationBrief");
+  },
+);
+it("preserves the default scope key and remounts the private mode without retaining a brief across scopes", () => {
+  const h = harness();
+  expect(OwnPlanTaskControls(h.props).key).toBe("org:source::");
+  expect(OwnPlanTaskControls({ ...h.props, privateLibrary: true }).key).toBe(
+    "org:source:::private",
+  );
+  expect(
+    OwnPlanTaskControls({
+      ...h.props,
+      organizationId: "other",
+      privateLibrary: true,
+    }).key,
+  ).not.toBe(OwnPlanTaskControls({ ...h.props, privateLibrary: true }).key);
+});
+it("binds exact untrimmed private text to quote review and approval", async () => {
+  const h = harness();
+  h.props.privateLibrary = true;
+  const brief = "  Focus on café 🌱.\nKeep this exact spacing.  ";
+  await h.choose();
+  setBrief(h, brief);
+  await h.click("Review own-subscription quote");
+  const quoteArgs = h.calls.mock.calls.find(
+    ([op]) => op === "localTaskQuote",
+  )![1];
+  expect(quoteArgs.privateEvaluationBrief).toBe(brief);
+  const reviewed = elements(h.view()).find(
+    (node) =>
+      node.props["aria-label"] === "Private evaluation brief in this quote",
+  )!;
+  expect(
+    elements(reviewed).find((node) => node.type === "p")!.props.children,
+  ).toBe(brief);
+  expect(button(h.view(), "Approve on my paired computer").props.disabled).toBe(
+    true,
+  );
+  consentToQuote(h);
+  await h.click("Approve on my paired computer");
+  expect(
+    h.calls.mock.calls.find(([op]) => op === "localTaskApprove")![1]
+      .privateEvaluationBrief,
+  ).toBe(brief);
+});
+it.each(["", " \n\t "])(
+  "omits an empty private brief from quote and approval",
+  async (brief) => {
+    const h = harness();
+    h.props.privateLibrary = true;
+    await h.choose();
+    setBrief(h, brief);
+    await h.click("Review own-subscription quote");
+    consentToQuote(h);
+    await h.click("Approve on my paired computer");
+    for (const [op, args] of h.calls.mock.calls)
+      if (op === "localTaskQuote" || op === "localTaskApprove")
+        expect(args).not.toHaveProperty("privateEvaluationBrief");
+  },
+);
+it("counts UTF-8 bytes and blocks quote review above 4000 bytes without truncating input", async () => {
+  const h = harness();
+  h.props.privateLibrary = true;
+  await h.choose();
+  setBrief(h, "é".repeat(2000));
+  expect(text(h.view())).toMatch(/4000\s+\/ 4000 UTF-8 bytes/);
+  expect(button(h.view(), "Review own-subscription quote").props.disabled).toBe(
+    false,
+  );
+  const over = "é".repeat(2000) + "🌱";
+  setBrief(h, over);
+  expect(textarea(h.view())!.props.value).toBe(over);
+  expect(textarea(h.view())!.props["aria-invalid"]).toBe(true);
+  expect(text(h.view())).toMatch(/4004\s+\/ 4000 UTF-8 bytes/);
+  expect(button(h.view(), "Review own-subscription quote").props.disabled).toBe(
+    true,
+  );
+  expect(h.calls.mock.calls.some(([op]) => op === "localTaskQuote")).toBe(
+    false,
+  );
+});
+it("invalidates consent on every brief edit and rejects an already captured stale approval handler", async () => {
+  const h = harness();
+  h.props.privateLibrary = true;
+  await h.choose();
+  setBrief(h, "First focus");
+  await h.click("Review own-subscription quote");
+  consentToQuote(h);
+  const stale = button(h.view(), "Approve on my paired computer");
+  setBrief(h, "Second focus");
+  expect(button(h.view(), "Approve on my paired computer")).toBeUndefined();
+  stale.props.onClick();
+  await flush();
+  expect(h.calls.mock.calls.some(([op]) => op === "localTaskApprove")).toBe(
+    false,
+  );
+  await h.click("Review own-subscription quote");
+  expect(button(h.view(), "Approve on my paired computer").props.disabled).toBe(
+    true,
+  );
+});
+it("does not resurrect an in-flight quote after the brief changes", async () => {
+  const h = harness();
+  h.props.privateLibrary = true;
+  const base = h.calls.getMockImplementation()!;
+  let release: (() => void) | undefined;
+  h.calls.mockImplementation(async (op, args): Promise<any> => {
+    if (op === "localTaskQuote")
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+    return base(op, args);
+  });
+  await h.choose();
+  setBrief(h, "First focus");
+  button(h.view(), "Review own-subscription quote").props.onClick();
+  await flush();
+  setBrief(h, "Changed focus");
+  release!();
+  await flush();
+  expect(button(h.view(), "Approve on my paired computer")).toBeUndefined();
+  expect(text(h.view())).not.toContain("Review this exact request");
+});
+it("rejects a quote that does not bind the exact private brief", async () => {
+  const h = harness();
+  h.props.privateLibrary = true;
+  const base = h.calls.getMockImplementation()!;
+  h.calls.mockImplementation(async (op, args): Promise<any> => {
+    const result = await base(op, args);
+    return op === "localTaskQuote"
+      ? {
+          ...result,
+          payload: {
+            ...result.payload,
+            privateEvaluationBrief: "Different focus",
+          },
+        }
+      : result;
+  });
+  await h.choose();
+  setBrief(h, "My exact focus");
+  await h.click("Review own-subscription quote");
+  expect(button(h.view(), "Approve on my paired computer")).toBeUndefined();
+  expect(h.calls.mock.calls.some(([op]) => op === "localTaskApprove")).toBe(
+    false,
+  );
+});
+it("keeps inherited plan origin read-only and never sends a brief argument for a plan", async () => {
+  const h = harness();
+  h.props.privateLibrary = true;
+  h.props.proposal = {
+    id: "proposal",
+    title: "Private proposal",
+    version: 2,
+    review: "accepted",
+    privateEvaluationOrigin: privateOrigin,
+  };
+  delete h.props.source;
+  expect(textarea(h.view())).toBeUndefined();
+  expect(text(h.view())).toContain(
+    "inherits the proposal's approved private focus",
+  );
+  await h.click("Load account choices");
+  h.select(0, "owned-device");
+  h.select(1, "actual-only");
+  h.select(2, "xhigh");
+  await h.click("Review own-subscription quote");
+  consentToQuote(h);
+  await h.click("Approve on my paired computer");
+  for (const [op, args] of h.calls.mock.calls)
+    if (op === "localTaskQuote" || op === "localTaskApprove")
+      expect(args).not.toHaveProperty("privateEvaluationBrief");
+});
+it("renders only origin labels in resumed task and status views without raw private text", async () => {
+  const h = harness();
+  h.calls.mockImplementation(async (op): Promise<any> => {
+    const task = {
+      id: "private-task",
+      state: "completed",
+      model: "actual-only",
+      effort: "xhigh",
+      privateEvaluationOrigin: privateOrigin,
+      privateEvaluationBrief: "RAW_PRIVATE_DO_NOT_RENDER",
+      proposalIds: [],
+      evaluationIds: [],
+      deadline: Date.now() + 1000,
+    };
+    if (op === "localTaskResume") return { items: [task], next: null };
+    if (op === "localTaskStatus") return task;
+    throw Error("Unexpected call");
+  });
+  await h.click("Find existing tasks");
+  expect(text(h.view())).toContain("Private evaluation context");
+  expect(text(h.view())).not.toContain("RAW_PRIVATE_DO_NOT_RENDER");
+  await h.click("Open task status");
+  expect(text(h.view())).toContain("Private evaluation context");
+  expect(text(h.view())).not.toContain("RAW_PRIVATE_DO_NOT_RENDER");
+});

@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
 import { evidenceRef } from "./knowledgeSchema";
 const tenant = {
   organizationId: v.id("organizations"),
@@ -28,6 +29,7 @@ export const improvementTables = {
   }).index("by_org", ["organizationId"]),
   improvements: defineTable({
     ...tenant,
+    privateEvaluationOrigin: v.optional(privateEvaluationOriginValue),
     repositoryId: v.id("repositories"),
     evaluationId: v.id("knowledgeEvaluations"),
     issueDraftId: v.id("issueDrafts"),

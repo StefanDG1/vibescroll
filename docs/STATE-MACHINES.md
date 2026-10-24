@@ -1,5 +1,9 @@
 # State machines
 
+## Private evaluation context candidate
+
+Changing a private focus brief invalidates the existing quote and consent. Approval captures exact text/hash, owner and selected model/effort; lease/context/completion preserve that origin. An accepted proposal can inherit it into a separately approved plan. Manual issue publication and coding retain their existing exact reviews. Standing-policy automatic work rejects custom-origin derivatives before reservation. Unknown-state reconciliation, source/repository currentness and restore fences stay unchanged; a changed brief cannot erase prior unknown usage. See [ADR 136](adr/136-private-evaluation-brief-origin.md).
+
 ## Purchased allowance candidate
 
 An accepted checkout keeps its offered policy after the short reservation expires. A verified paid subscription binds that acceptance to its first subscription and creates an immutable paid-term commitment. Renewal creates a new verified term; annual monthly grants retain the original calendar anchor and base invoice. An accepted paid upgrade adds its separate contribution without rewriting the base. Unknown/ambiguous purchase evidence holds new grants or changes for reconciliation while issued pools and private work remain. Provider deletion, refund revocation, restore locks and stale revisions retain their existing authority. See [ADR 134](adr/134-purchased-allowance-commitments.md).

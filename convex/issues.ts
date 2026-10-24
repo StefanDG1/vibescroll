@@ -8,6 +8,7 @@ import { digest } from "./product";
 import { internal } from "./_generated/api";
 import { issueApproval } from "../packages/knowledge/contracts";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
+import { samePrivateEvaluationOrigin } from "./lib/privateEvaluationContext";
 import {
   evaluationCurrent,
   actorCurrent,
@@ -20,6 +21,10 @@ export async function draftCurrent(ctx: QueryCtx, d: Doc<"issueDrafts">) {
   const e = await ctx.db.get(d.evaluationId);
   return (
     !!e &&
+    samePrivateEvaluationOrigin(
+      e.privateEvaluationOrigin,
+      d.privateEvaluationOrigin,
+    ) &&
     (await evaluationCurrent(ctx, e)) &&
     (await referencesCurrent(ctx, d.organizationId, d.references)) &&
     e.topicVersion === d.topicVersion &&
@@ -124,6 +129,9 @@ export async function createIssueCore(
   return ctx.db.insert("issueDrafts", {
     organizationId: e.organizationId,
     evaluationId: e._id,
+    ...(e.privateEvaluationOrigin
+      ? { privateEvaluationOrigin: e.privateEvaluationOrigin }
+      : {}),
     repositoryId: e.repositoryId,
     topicId: e.topicId,
     topicVersion: e.topicVersion,

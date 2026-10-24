@@ -104,6 +104,31 @@ it("reuses an authorized compatible evaluation without a generic model turn", as
     "task_evaluation_finish",
   );
 });
+it("passes the server-bound private brief and origin into the existing official structured turn", async () => {
+  const s = setup(),
+    original = s.request.getMockImplementation()!;
+  const context = {
+    privateEvaluationBrief: "Prioritize my private review workflow.",
+    privateEvaluationOrigin: {
+      schemaVersion: "1.0.0",
+      kind: "private_evaluation_brief",
+      ownerId: "owner",
+      briefHash: "a".repeat(64),
+      model: s.job.model,
+      effort: s.job.effort,
+    },
+  };
+  s.request.mockImplementation(async (operation, args) => ({
+    ...(await original(operation, args)),
+    ...(operation === "task_context" ? context : {}),
+  }));
+  await processSubscriptionTask(s.job, s);
+  expect(s.client.structured.mock.calls[0][1]).toMatchObject(context);
+  expect(s.client.structured.mock.calls[0][2]).toEqual([]);
+  expect(s.request.mock.calls.at(-1)?.[1]).toMatchObject({
+    evaluationIds: ["evaluation"],
+  });
+});
 it("uses the shared exact editable-plan schema and submits only a draft under the task lease", async () => {
   const s = setup("plan_draft");
   await processSubscriptionTask(s.job, s);

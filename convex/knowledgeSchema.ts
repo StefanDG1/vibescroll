@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
 const tenant = {
   organizationId: v.id("organizations"),
   createdAt: v.number(),
@@ -110,6 +111,7 @@ export const knowledgeTables = {
     .index("by_key", ["key"]),
   knowledgeEvaluations: defineTable({
     ...tenant,
+    privateEvaluationOrigin: v.optional(privateEvaluationOriginValue),
     topicBindings: v.optional(
       v.array(v.object({ id: v.id("knowledgeTopics"), version: v.number() })),
     ),
@@ -144,6 +146,7 @@ export const knowledgeTables = {
     .index("by_key", ["key"]),
   issueDrafts: defineTable({
     ...tenant,
+    privateEvaluationOrigin: v.optional(privateEvaluationOriginValue),
     evaluationId: v.id("knowledgeEvaluations"),
     repositoryId: v.id("repositories"),
     topicId: v.id("knowledgeTopics"),

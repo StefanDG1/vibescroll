@@ -235,8 +235,8 @@
       "summary": "Distinguish waiting work, unavailable accounts, reservations and settled usage.",
       "file": "processing-and-recovery.md",
       "status": "approved",
-      "reviewMode": "source-reviewed October 23 candidate; prior illustrations retain original capture versions; portable runtime and native/live/independent setup pending",
-      "lastVerifiedCommit": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
+      "reviewMode": "source-reviewed C6a private-focus candidate against b73211f parent and implementation receipt; prior illustration provenance retained; actual model, native and production acceptance pending",
+      "lastVerifiedCommit": "b73211ff2e9f0513cebfe0d4455b0c15c3ccc114",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
@@ -247,7 +247,11 @@
         "scripts/companion.mjs",
         "packages/companion/README.md",
         "apps/starter/components/source-acquisition-panel.tsx",
-        "packages/onboarding/companion-setup.ts"
+        "packages/onboarding/companion-setup.ts",
+        "apps/starter/components/own-plan-task-controls.tsx",
+        "convex/localLibraryTasks.ts",
+        "convex/lib/privateEvaluationContext.ts",
+        "packages/contracts/private-evaluation-context.ts"
       ],
       "related": ["getting-started", "connect-your-computer"],
       "assets": []

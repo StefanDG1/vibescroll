@@ -1,5 +1,9 @@
 # VibeScroll complete product and launch plan
 
+## Catalog-first insights and paid entry, October 24
+
+[ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md) and [the consolidated remaining plan](../2026-10-23/README.md) retain all scope while adding paid hosted entry, preserved unpaid data, one shared generic-insight destination, private project work and inviteable named teams. Internal source/execution isolation remains. No private-data migration, catalog publication or live billing change is inferred. Implementation and the real laptop-off Cloud result remain pending under the same USD 3 cap.
+
 ## Published checkpoint, October 24 at 20:10 UTC
 
 Compatible frontend/backend `63a071d` is live. PRs 162/163 passed exact-head CI and are merged. Staged health/Help and canonical health passed. [The production receipt](../../operations/evidence/launch-20261024-private-library-production.json) records the post-commit verifier defect without retry. Reconnection exposes six Cloud tools. The privacy preview refused a second private library; an active private library already exists. Reuse it without moving original posts. No source, grant, ownership or analysis mutation was sent.

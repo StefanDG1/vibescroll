@@ -1,5 +1,9 @@
 # Complete the launch and own-subscription workflows
 
+## Catalog-first insights and paid entry, October 24
+
+[ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md) adds the owner's paid-before-app rule and removes generic insight destination choices. Unpaid accounts retain data and regain app access after verified payment. Keep the proprietary Pro catalog, private personalization/project work, an internal processing home and an inviteable default Full Name's team. Existing named-team controls remain. Root owns the dependency order: paid account authority, internal processing/visible team resolution, eligible neutral contribution through existing artifacts, unified Library/setup/API/MCP gates, then the bounded laptop-off phone test. These are authorized requirements, not live features. All original R/P/N/C/M work and gates remain.
+
 ## Published checkpoint, October 24 at 20:10 UTC
 
 Compatible frontend/backend `63a071d` is live. PRs 162/163 passed exact-head CI and are merged. Staged health/Help and canonical health passed. [The production receipt](../../operations/evidence/launch-20261024-private-library-production.json) records the post-commit verifier defect without retry. Reconnection exposes six Cloud tools. The privacy preview refused a second private library; an active private library already exists. Reuse it without moving original posts. No source, grant, ownership or analysis mutation was sent.

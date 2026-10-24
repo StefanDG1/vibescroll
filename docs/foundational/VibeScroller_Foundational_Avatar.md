@@ -1,5 +1,11 @@
 # VibeScroll foundational avatar
 
+## F068: catalog-first insights and paid hosted entry, October 24
+
+The owner requires payment after account creation and before hosted app access. Nonpayment locks product access while preserving account/data for a later return. Generic analysis should use the existing shared catalog without a workspace destination choice; keep the earlier Pro-only catalog rule, private project/personal work and open-source deployment isolation. An inviteable default Full Name's team and existing additional named teams support collaboration behind that simpler journey.
+
+[ADR 148](../adr/148-catalog-first-insights-and-paid-hosted-entry.md) records the integrated account/billing/processing/contribution dependencies. This is authorized direction, not implemented access or completed Cloud acceptance. Preserve existing private material, consent, rights/retention rules and the same USD 3 cap. No new price, allowance, customer outcome, speed or campaign claim follows.
+
 ## F067: live controls and pending Cloud results, October 24
 
 Compatible source `63a071d` is published. Reconnection exposes six Cloud execution tools. The live preview correctly refused a second private library; an active private library already exists. Reuse it. No source, ownership, grant or analysis mutation followed. [The production receipt](../operations/evidence/launch-20261024-private-library-production.json) separates publication from the still-pending real source-to-cited-result test.

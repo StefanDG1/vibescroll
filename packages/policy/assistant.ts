@@ -5,6 +5,7 @@ export const assistantScopes = [
   "links:save",
   "jobs:read",
   "analysis:request",
+  "analysis:execute",
   "feedback:write",
   "suggestions:draft",
   "events:subscribe",

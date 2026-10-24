@@ -54,6 +54,8 @@ const scopeNames: Record<string, string> = {
   "jobs:read": "Read status of work in my chosen scope",
   "analysis:request":
     "Use my saved local analysis preferences; use credits only when I choose them",
+  "analysis:execute":
+    "Read approved text and return its private analysis through a reviewed Work Cloud connection",
   "feedback:write": "Record feedback I explicitly state",
   "suggestions:draft": "Prepare private project suggestions",
   "events:subscribe": "Notify me about completed work in my chosen scope",

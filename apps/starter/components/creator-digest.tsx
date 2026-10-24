@@ -13,6 +13,13 @@ export type CreatorDelivery = {
   caption: string;
   publishedAt: number | null;
   observedAt: number;
+  discoveredAt?: number;
+  deliveredAt?: number;
+  sourceStatus?: {
+    state:
+      "saved" | "needs_upload" | "queued" | "processing" | "ready" | "failed";
+    coverage: string | null;
+  } | null;
   mediaKinds: string[];
   assetCount: number | null;
   revisionKey: string;
@@ -22,6 +29,29 @@ export type CreatorDelivery = {
   reason: string | null;
 };
 type Page = { items: CreatorDelivery[]; next: string | null };
+const sourceLabels = {
+  saved: "Saved; processing has not started",
+  needs_upload: "Waiting for permitted input",
+  queued: "Queued",
+  processing: "Processing",
+  ready: "Ready",
+  failed: "Failed; review the saved source",
+};
+const coverageLabels: Record<string, string> = {
+  full_sampled: "Sampled audio and visuals",
+  audio_only: "Audio only",
+  visual_only: "Visuals only",
+  caption_only: "Caption or supplied text only",
+  metadata_only: "Metadata only",
+  source_text: "Retained source text",
+  ordered_media: "Ordered media; inspect evidence coverage",
+};
+function recordedLabel(
+  labels: Record<string, string>,
+  value: string | null | undefined,
+) {
+  return value && Object.hasOwn(labels, value) ? labels[value] : "Not recorded";
+}
 export function CreatorDigest(props: Parameters<typeof CreatorDigestPanel>[0]) {
   return <CreatorDigestPanel key={props.organizationId} {...props} />;
 }
@@ -115,7 +145,7 @@ export function CreatorDigestPanel({
       if (!current.current) return;
       setNotice(
         operation === "creatorSavePost"
-          ? "Post metadata saved to your Library. Analysis has not started."
+          ? "Post metadata saved to your Library. Saving metadata does not start analysis."
           : "This post is excluded from future additions for you.",
       );
       if (
@@ -145,8 +175,9 @@ export function CreatorDigestPanel({
       <h2>Creator digest</h2>
       <p>
         Review observed posts before saving. Discovery can be incomplete. A
-        digest date groups additions in your chosen timezone; it is not the
-        publication date.
+        digest date groups additions to this digest in your chosen timezone; it
+        is not the publication or discovery date. Source status reflects your
+        current saved source and does not confirm complete media coverage.
       </p>
       <button className="secondary" disabled={busy} onClick={() => void load()}>
         Refresh creator digest
@@ -183,13 +214,30 @@ export function CreatorDigestPanel({
             </a>
           )}
           <p>
-            Published: {creatorDate(item.publishedAt)}. Observed:{" "}
-            {creatorDate(item.observedAt)}.
+            Published: {creatorDate(item.publishedAt)}. Discovered:{" "}
+            {creatorDate(item.discoveredAt ?? null)}. Added to digest:{" "}
+            {creatorDate(item.deliveredAt ?? null)}.
           </p>
           <p>
             Digest: {item.day} ({item.timezone}). Media:{" "}
             {item.mediaKinds.length ? item.mediaKinds.join(", ") : "Unknown"}.
-            Assets: {item.assetCount ?? "Unknown"}. State: {item.state}.
+            Assets: {item.assetCount ?? "Unknown"}. Delivery: {item.state}.
+          </p>
+          <p>
+            Source:{" "}
+            {item.sourceStatus
+              ? recordedLabel(sourceLabels, item.sourceStatus.state)
+              : item.sourceId
+                ? "Status not recorded; open the saved source"
+                : "Not saved"}
+            .
+            {item.sourceId && (
+              <>
+                {" "}
+                Coverage:{" "}
+                {recordedLabel(coverageLabels, item.sourceStatus?.coverage)}.
+              </>
+            )}
           </p>
           {item.incomplete && (
             <p>Incomplete coverage. Some posts or assets may be missing.</p>

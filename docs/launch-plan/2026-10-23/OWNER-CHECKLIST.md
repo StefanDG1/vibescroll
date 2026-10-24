@@ -1,5 +1,9 @@
 # What help is still needed to finish the plan
 
+## Work Cloud text and current creator status candidate, October 24
+
+[ADR 129](../../adr/129-gated-work-cloud-text-handoff.md) implements an explicit, default-off text execution handoff through the existing source job and assistant grants. [ADR 130](../../adr/130-current-creator-digest-processing.md) makes the existing creator digest reflect current authorized source progress and evidence coverage. Neither publishes a shared artifact, dispatches a provider or passes real-video/official-host/production acceptance. The same US$3 cap and all prior holds remain. Backend deployment remains held because archive/read/retention costs are not defensibly bounded; independent engineering continues.
+
 Prepared human step: the exact local README public-edition preview is open in the task side panel. The seven-claim review remains complete. Only the proposed title/publisher/attribution/reuse and November 23, 2026 rights-review settings await preview approval. Nothing is published; fresh source checks, compatible backend capability, recent sign-in and release/budget gates still apply. Fresh Chrome consent for the synthetic local UI review is also pending. No passwords or new post links are requested.
 
 Latest production checkpoint, October 24: [PR 141](https://github.com/StefanDG1/vibescroll/pull/141) published compatible frontend `fba56d4` after exact-head/main CI and bounded staged/canonical verification. Backend `abfdeff67` is unchanged and held after incomplete migration prediction. [The receipt](../../operations/evidence/launch-20261024-public-production.json) records the narrow scope and failures. Current combined conservative reservations are US$2.8092885298898517 under the same US$3 cap, with US$0.1907114701101483 unallocated; no prior unknown hold was released. Full R/P/N/C/M execution continues on PR 140. This checkpoint does not complete Cloud processing, catalog release or independent acceptance.

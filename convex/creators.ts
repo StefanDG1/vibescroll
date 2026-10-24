@@ -27,6 +27,23 @@ import {
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { queueDeletion } from "./assets";
+import { sourceRetained } from "./lib/sourceAuthority";
+import insightSchema from "../contracts/insight.schema.json";
+import sourceInsightSchema from "../contracts/source-insight-v2.schema.json";
+
+const digestSourceStates = new Set([
+  "saved",
+  "needs_upload",
+  "queued",
+  "processing",
+  "ready",
+  "failed",
+]);
+const digestSourceCoverage = new Set<string>([
+  ...insightSchema.properties.coverage.enum,
+  sourceInsightSchema.properties.coverage.const,
+  "ordered_media",
+]);
 
 async function postRecipientCapacity(
   ctx: QueryCtx,
@@ -448,8 +465,10 @@ export const digest = query({
       if (
         !sub ||
         sub.actor !== actor._id ||
+        sub.organizationId !== a.organizationId ||
         !["active", "paused"].includes(sub.state) ||
         !post ||
+        sub.watchId !== post.watchId ||
         post.state !== "available" ||
         post.retainUntil <= Date.now() ||
         row.revisionKey !== post.revisionKey ||
@@ -458,7 +477,13 @@ export const digest = query({
       )
         continue;
       const watch = await ctx.db.get(post.watchId);
-      if (!watch || !creatorPermission(watch.platform, watch.creatorId))
+      if (
+        !watch ||
+        watch.platform !== sub.platform ||
+        post.rights.platform !== watch.platform ||
+        post.rights.creatorId !== watch.creatorId ||
+        !creatorPermission(watch.platform, watch.creatorId)
+      )
         continue;
       const source = row.sourceId ? await ctx.db.get(row.sourceId) : null;
       if (
@@ -466,7 +491,12 @@ export const digest = query({
         (!source ||
           source.organizationId !== a.organizationId ||
           source.state === "deleted" ||
-          (source.creatorRights && !creatorRightsCurrent(source.creatorRights)))
+          !source.rightsAttested ||
+          !sourceRetained(source) ||
+          (source.creatorRights &&
+            (source.creatorRights.platform !== watch.platform ||
+              source.creatorRights.creatorId !== watch.creatorId)) ||
+          !digestSourceStates.has(source.state))
       )
         continue;
       if (source) {
@@ -481,7 +511,15 @@ export const digest = query({
           continue;
         }
       }
-      const metadata = discoveredPostSchema.parse(post.metadata);
+      const parsed = discoveredPostSchema.safeParse(post.metadata);
+      if (!parsed.success) continue;
+      const metadata = parsed.data;
+      if (
+        metadata.platform !== watch.platform ||
+        metadata.creatorId !== watch.creatorId ||
+        metadata.canonical !== post.canonical
+      )
+        continue;
       items.push({
         id: row._id,
         state: row.state,
@@ -490,6 +528,16 @@ export const digest = query({
         caption: metadata.caption.slice(0, 500),
         publishedAt: metadata.publishedAt,
         observedAt: metadata.observedAt,
+        discoveredAt: post.observedAt,
+        deliveredAt: row.createdAt,
+        sourceStatus: source
+          ? {
+              state: source.state,
+              coverage: digestSourceCoverage.has(source.coverage)
+                ? source.coverage
+                : null,
+            }
+          : null,
         mediaKinds: metadata.mediaKinds,
         assetCount: metadata.assetCount,
         revisionKey: row.revisionKey,

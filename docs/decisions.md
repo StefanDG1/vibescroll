@@ -1,5 +1,13 @@
 # Product decisions
 
+## October 24: current source progress in the creator digest
+
+[ADR 130](adr/130-current-creator-digest-processing.md) keeps delivery separate from current authorized processing and coverage, with distinct discovery and private-digest insertion times. No new discovery, inference, store or provider permission follows.
+
+## October 24: gated private Work Cloud text handoff
+
+[ADR 129](adr/129-gated-work-cloud-text-handoff.md) extends the existing personal source state with explicit text execution authority, one-use claims and canonical private result return. Legacy paired behavior remains. Both route flags stay off; local text tests do not pass official-host, real-video, commercial or production acceptance. Unresolved claimed work cannot silently switch executors.
+
 ## October 24: indexed generic discovery and page-limited maps
 
 [ADR 128](adr/128-pro-catalog-search-and-page-map.md) adds a bounded search projection/index to existing service artifacts and a map/list derived only from the currently checked Pro page. Keep immutable saved copies, private taxonomy, own results and public demos separate. Explicit manual backfill, migration cost, real mixed-record search, browser and provider/live acceptance remain pending.

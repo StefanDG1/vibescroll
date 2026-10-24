@@ -1,5 +1,9 @@
 # State machines
 
+## Work Cloud text candidate
+
+The existing personal source job moves approved/queued to one claimed/running lease, then completed or unknown. Approval expires after fifteen minutes; execution has a fixed three-minute deadline and forty-second renewable leases. Expired, canceled, revoked or changed work cannot reclaim itself. A completed result retry only acknowledges its identical stored hash while authority remains current. A reported failure records unknown host usage; source replacement cannot clear that uncertainty into new executor authority. Privacy deletion and recovery remain available. App revocation does not attest provider cancellation. See [ADR 129](adr/129-gated-work-cloud-text-handoff.md); both runtime flags remain off.
+
 Mode: reference. These state names are canonical for the specification.
 
 ## Source processing

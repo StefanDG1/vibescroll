@@ -1,5 +1,11 @@
 # Foundational document change log
 
+## F053: gated text handoff and honest creator progress, October 24
+
+[ADR 129](../adr/129-gated-work-cloud-text-handoff.md) adds an explicit private text handoff through existing source jobs and assistant grants. Route flags stay off; no real-video or official-host acceptance follows. [ADR 130](../adr/130-current-creator-digest-processing.md) separates current source status/coverage from delivery and discovery in the existing digest. No source bytes, private follows or contributor identity enter public copy.
+
+Source: the authorized complete launch implementation and current code review. All four briefs updated together. This is compatible implementation evidence, not a new audience, price, campaign, permission or outcome. Counterpoint: a manual text handoff does not meet the requested automatic video experience; keep that requirement open and the route disabled pending actual host/provider acceptance. Same US$3 cap and all prior holds remain.
+
 ## F052: Pro discovery candidate and honest coverage, October 24
 
 Synchronized all four briefs for generic full-text search, public provenance, page-only filters and the optional accessible category map. Recorded actual local checks, mock/browser gaps, unactivated backfill/index and preserved private/saved-copy/provider boundaries. Kept public availability and market claims pending.

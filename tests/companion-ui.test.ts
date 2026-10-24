@@ -10,6 +10,9 @@ const { createElement } = requireApp("react");
 const { renderToStaticMarkup } = requireApp("react-dom/server");
 const receiptModule = "../apps/starter/components/assistant-intake-status.tsx";
 const setupModule = "../apps/starter/components/companion-setup.tsx";
+// Load JSX during collection. These cases check rendering and permission, not
+// the first Vite transform competing with other test workers.
+const { CompanionSetup, ProjectBuilderGuide } = await import(setupModule);
 import {
   advanceJourney,
   instagramGuideSteps,
@@ -76,7 +79,6 @@ it("renders an actionable initial status error and disables duplicate actions du
   expect(waiting).toMatch(/disabled=""[^>]*>Cancel waiting analysis/);
 });
 it("keeps local startup unchecked and inactive until a user opts in", async () => {
-  const { CompanionSetup } = await import(setupModule);
   const snapshot: SetupSnapshot = {
     purposeSaved: true,
     sourceSaved: true,
@@ -105,7 +107,6 @@ it("keeps local startup unchecked and inactive until a user opts in", async () =
   expect(html).not.toContain("Your first result is ready");
 });
 it("renders mandatory text education with no archive/account requirement or premature export action", async () => {
-  const { ProjectBuilderGuide } = await import(setupModule);
   const snapshot = {
     purposeSaved: true,
     sourceSaved: false,

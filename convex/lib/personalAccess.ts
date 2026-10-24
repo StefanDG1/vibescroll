@@ -20,3 +20,14 @@ export function personalSubjectAllowed(subject: string) {
     return false;
   }
 }
+
+// A narrow testing gate, not commercial subscription eligibility or verified
+// media execution. Enabling requires a separately reviewed official-host route.
+export function workCloudTextAllowed(subject: string) {
+  return (
+    process.env.WORK_CLOUD_TEXT_ENABLED === "true" &&
+    process.env.WORK_CLOUD_TEXT_VERIFIED === "true" &&
+    process.env.DISABLE_INFERENCE !== "true" &&
+    personalAllowed(subject)
+  );
+}

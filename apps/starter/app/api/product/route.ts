@@ -19,6 +19,8 @@ const operations = {
   saveSourceRelationship: ["mutation", api.sourceRelationships.save],
   removeSourceRelationship: ["mutation", api.sourceRelationships.remove],
   setupJourney: ["query", api.setupJourney.status],
+  workCloudTextPreview: ["query", api.workCloudAnalysis.preview],
+  workCloudTextApprove: ["mutation", api.workCloudAnalysis.approve],
   saveSetupJourney: ["mutation", api.setupJourney.save],
   creatorFollowing: ["query", api.creators.list],
   creatorFollow: ["mutation", api.creators.follow],

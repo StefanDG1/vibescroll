@@ -50,7 +50,7 @@ import {
   processingReceipt,
   speechProvenance,
 } from "../packages/media/provenance";
-import { personalAllowed } from "./lib/personalAccess";
+import { personalAllowed, workCloudTextAllowed } from "./lib/personalAccess";
 import {
   hostedMediaAllowed,
   hostedSourceAllowed,
@@ -666,6 +666,9 @@ export const detail = query({
       .collect();
     return {
       ...s,
+      workCloudTextEnabled:
+        reader.organization.privateOwnerId === reader.actor._id &&
+        workCloudTextAllowed(reader.actor.subject),
       sourceRevision: typedRegistry?.revision,
       evidenceRegistry: typedRegistry?.evidence,
       spaces: reader.organization.privateOwnerId

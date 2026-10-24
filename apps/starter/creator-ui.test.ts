@@ -112,6 +112,9 @@ const delivery = {
   caption: "A real supplied caption <script>",
   publishedAt: null,
   observedAt: 100,
+  discoveredAt: 100,
+  deliveredAt: 200,
+  sourceStatus: null,
   mediaKinds: ["image"],
   assetCount: null,
   revisionKey: "revision",
@@ -271,10 +274,90 @@ it("saves metadata explicitly without opening or processing it, then opens only 
   await button(tree, "Save post metadata").props.onClick();
   await flush();
   tree = render(CreatorDigest, props);
-  expect(text(tree)).toContain("Analysis has not started");
+  expect(text(tree)).toContain("Saving metadata does not start analysis");
   expect(onOpenSource).not.toHaveBeenCalled();
   button(tree, "Open saved source").props.onClick();
   expect(onOpenSource).toHaveBeenCalledWith("source-confirmed");
+});
+it("refreshes current saved-source readiness separately from delivery and discovery times without starting work", async () => {
+  let state = "needs_upload",
+    coverage: string | null = "metadata_only";
+  const call = vi.fn(async () => ({
+    items: [
+      {
+        ...delivery,
+        state: "saved",
+        sourceId: "saved-source",
+        sourceStatus: { state, coverage },
+      },
+    ],
+    next: null,
+  }));
+  const onOpenSource = vi.fn(),
+    props = { organizationId: "workspace", call, onOpenSource };
+  let tree = await mount(CreatorDigest, props);
+  expect(text(tree)).toContain("Discovered: 1970-01-01T00:00:00.100Z");
+  expect(text(tree)).toContain("Added to digest: 1970-01-01T00:00:00.200Z");
+  expect(text(tree)).toContain("Source: Waiting for permitted input");
+  expect(text(tree)).toContain("Coverage: Metadata only");
+  for (const [nextState, nextCoverage, label] of [
+    ["queued", "caption_only", "Queued"],
+    ["processing", "audio_only", "Processing"],
+    ["ready", "full_sampled", "Ready"],
+    ["ready", "ordered_media", "Ready"],
+    ["failed", "__proto__", "Failed; review the saved source"],
+  ] as const) {
+    state = nextState;
+    coverage = nextCoverage;
+    await button(tree, "Refresh creator digest").props.onClick();
+    await flush();
+    tree = render(CreatorDigest, props);
+    expect(text(tree)).toContain("Delivery: saved");
+    expect(text(tree)).toContain(`Source: ${label}`);
+    if (nextCoverage === "ordered_media")
+      expect(text(tree)).toContain(
+        "Coverage: Ordered media; inspect evidence coverage",
+      );
+  }
+  expect(text(tree)).toContain("Coverage: Not recorded");
+  expect(onOpenSource).not.toHaveBeenCalled();
+  expect(call).toHaveBeenCalledTimes(6);
+  expect(call).toHaveBeenLastCalledWith("creatorDigest", {
+    organizationId: "workspace",
+    cursor: null,
+  });
+  expect(text(tree)).toContain("does not confirm complete media coverage");
+});
+it("shows missing legacy readiness honestly and retains the empty-digest activity disclaimer", async () => {
+  let empty = false;
+  const call = vi.fn(async () => ({
+    items: empty
+      ? []
+      : [
+          {
+            ...delivery,
+            sourceId: "legacy-source",
+            sourceStatus: undefined,
+            discoveredAt: undefined,
+            deliveredAt: undefined,
+          },
+        ],
+    next: null,
+  }));
+  const props = { organizationId: "workspace", call, onOpenSource: vi.fn() };
+  let tree = await mount(CreatorDigest, props);
+  expect(text(tree)).toContain("Status not recorded; open the saved source");
+  expect(text(tree)).toContain(
+    "Discovered: Not recorded. Added to digest: Not recorded",
+  );
+  expect(text(tree)).toContain("Coverage: Not recorded");
+  empty = true;
+  await button(tree, "Refresh creator digest").props.onClick();
+  await flush();
+  tree = render(CreatorDigest, props);
+  expect(text(tree)).toContain(
+    "This does not confirm that creators have posted nothing new",
+  );
 });
 it("paginates only on request, deduplicates deliveries and sends private suppression explicitly", async () => {
   const call = vi.fn(async (_op: string, args: Record<string, unknown>) => ({

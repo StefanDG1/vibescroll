@@ -1,5 +1,11 @@
 # VibeScroll foundational offer
 
+## F053: gated text handoff and honest creator progress, October 24
+
+[ADR 129](../adr/129-gated-work-cloud-text-handoff.md) adds an explicit private text handoff through existing source jobs and assistant grants. Route flags stay off; no real-video or official-host acceptance follows. [ADR 130](../adr/130-current-creator-digest-processing.md) separates current source status/coverage from delivery and discovery in the existing digest. No source bytes, private follows or contributor identity enter public copy.
+
+Keep current prices, allowance, buyer terms and lifetime deferral. Do not sell Cloud availability, shared contribution or instant video results from a gated text candidate. Existing paired and managed behavior remains.
+
 ## F052: Pro discovery candidate and honest coverage, October 24
 
 [ADR 128](../adr/128-pro-catalog-search-and-page-map.md) adds an indexed generic-search candidate, current-page categories/topics/public creator provenance and an optional static membership map with a primary list. It uses the existing artifact family, keeps immutable saved copies separate and adds no inference or private-context sharing. [The receipt](../operations/evidence/launch-20261024-catalog-discovery.json) records 1,456 passing local tests, three hosted skips, types/lint/builds and independent review, with a retained mixed-record mock gap and pending native browser check.

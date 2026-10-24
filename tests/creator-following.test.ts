@@ -432,6 +432,168 @@ it("saves source metadata through capture idempotently, keeps it on unfollow and
   );
   await noProcessing(s.t);
 });
+it("projects current source readiness and bounded coverage while preserving the delivery lifecycle", async () => {
+  const s = await setup();
+  await resolve(s.t);
+  await follow(s.a);
+  await discover(s, [post("readiness")]);
+  const digest = () =>
+    s.a.client.query(api.creators.digest, {
+      organizationId: s.a.org,
+      cursor: null,
+    });
+  const delivery = (await digest()).items[0];
+  expect(delivery.sourceStatus).toBeNull();
+  const saved = await s.a.client.mutation(api.creators.savePost, {
+    id: delivery.id,
+  });
+  expect((await digest()).items[0]).toMatchObject({
+    state: "saved",
+    sourceStatus: { state: "needs_upload", coverage: "metadata_only" },
+  });
+  let generation = (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))!
+    .generation;
+  for (const [state, coverage] of [
+    ["saved", "caption_only"],
+    ["queued", "caption_only"],
+    ["processing", "audio_only"],
+    ["ready", "full_sampled"],
+    ["ready", "ordered_media"],
+    ["failed", "unverified-provider-value"],
+  ] as const) {
+    await s.t.run((ctx) =>
+      ctx.db.patch(saved.sourceId, {
+        state,
+        coverage,
+        generation: ++generation,
+        text: "PRIVATE_SOURCE_PAYLOAD",
+        summary: "PRIVATE_SUMMARY_PAYLOAD",
+      }),
+    );
+    const page = await digest();
+    expect(page.items[0]).toMatchObject({
+      state: "saved",
+      sourceId: saved.sourceId,
+      sourceStatus: {
+        state,
+        coverage: coverage === "unverified-provider-value" ? null : coverage,
+      },
+    });
+    expect(JSON.stringify(page)).not.toContain("PRIVATE_");
+  }
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(delivery.id)))?.sourceGeneration,
+  ).toBeLessThan(generation);
+  await noProcessing(s.t);
+});
+it("distinguishes first discovery from later private digest insertion without inferring publication or host delivery", async () => {
+  const s = await setup();
+  await resolve(s.t);
+  await follow(s.a);
+  const found = await discover(s, [post("delivery_time")]);
+  // Recreate only the private delivery after a delay through the existing bounded fanout.
+  await s.t.run(async (ctx) => {
+    for (const row of await ctx.db.query("creatorDeliveries").collect())
+      await ctx.db.delete(row._id);
+  });
+  vi.setSystemTime(NOW + 120000);
+  const stored = found.stored[0];
+  await s.t.mutation(internal.creators.deliverPage, {
+    postId: stored._id,
+    generation: found.claim.generation,
+    revisionKey: stored.revisionKey,
+    reservationKey: stored.deliveryReservationKey!,
+    page: 0,
+    cursor: null,
+  });
+  const row = (
+    await s.a.client.query(api.creators.digest, {
+      organizationId: s.a.org,
+      cursor: null,
+    })
+  ).items[0];
+  expect(row).toMatchObject({
+    discoveredAt: NOW,
+    observedAt: NOW,
+    deliveredAt: NOW + 120000,
+    publishedAt: NOW + 1000,
+    day: "2026-10-23",
+  });
+  expect(row.sourceStatus).toBeNull();
+  await noProcessing(s.t);
+});
+it.each([
+  "source_expired",
+  "source_unattested",
+  "foreign_source",
+  "foreign_subscription",
+  "wrong_creator",
+  "wrong_source_creator",
+  "malformed_post",
+  "changed_canonical",
+])(
+  "withholds digest readiness when %s authority is invalid",
+  async (change) => {
+    const s = await setup();
+    await resolve(s.t);
+    const subscriptionId = await follow(s.a);
+    const found = await discover(s, [post("invalid_readiness")]);
+    const row = (
+      await s.a.client.query(api.creators.digest, {
+        organizationId: s.a.org,
+        cursor: null,
+      })
+    ).items[0];
+    const saved = await s.a.client.mutation(api.creators.savePost, {
+      id: row.id,
+    });
+    await s.t.run(async (ctx) => {
+      if (change === "source_expired")
+        await ctx.db.patch(saved.sourceId, { sourceRetentionUntil: NOW - 1 });
+      if (change === "source_unattested")
+        await ctx.db.patch(saved.sourceId, { rightsAttested: false });
+      if (change === "wrong_source_creator") {
+        const source = (await ctx.db.get(saved.sourceId))!;
+        await ctx.db.patch(source._id, {
+          creatorRights: {
+            ...source.creatorRights!,
+            creatorId: "another-creator",
+          },
+        });
+      }
+      if (change === "foreign_source")
+        await ctx.db.patch(saved.sourceId, { organizationId: s.b.org });
+      if (change === "foreign_subscription")
+        await ctx.db.patch(subscriptionId, { organizationId: s.b.org });
+      if (change === "wrong_creator")
+        await ctx.db.patch(found.stored[0]._id, {
+          metadata: post("invalid_readiness", { creatorId: "another-creator" }),
+        });
+      if (change === "malformed_post")
+        await ctx.db.patch(found.stored[0]._id, {
+          metadata: { caption: "PRIVATE_MALFORMED_METADATA" },
+        });
+      if (change === "changed_canonical")
+        await ctx.db.patch(saved.sourceId, {
+          url: "https://www.instagram.com/p/another_post/",
+        });
+    });
+    expect(
+      (
+        await s.a.client.query(api.creators.digest, {
+          organizationId: s.a.org,
+          cursor: null,
+        })
+      ).items,
+    ).toEqual([]);
+    await expect(
+      s.b.client.query(api.creators.digest, {
+        organizationId: s.a.org,
+        cursor: null,
+      }),
+    ).rejects.toThrow();
+  },
+);
 it("preserves suppression and deleted-source tombstones during rediscovery", async () => {
   const s = await setup();
   const watch = await resolve(s.t);

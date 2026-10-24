@@ -5,6 +5,7 @@ import { internal } from "./_generated/api";
 import { settle } from "./product";
 import { releaseUnstarted } from "./personalMediaState";
 import { sourceCapabilityCurrent } from "./personalAnalysis";
+import { pairedPersonalJob } from "./personalAnalysisSchema";
 import { personalAllowed } from "./lib/personalAccess";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import {
@@ -28,7 +29,8 @@ export async function currentPersonalOrdered(
     !source ||
     source.generation !== a.generation ||
     source.state !== "processing" ||
-    j?.state !== "preparing" ||
+    !pairedPersonalJob(j) ||
+    j.state !== "preparing" ||
     j.ordered?.phase !== "preparing" ||
     !j.ordered.preflightHash ||
     j.expiresAt <= Date.now() ||
@@ -165,7 +167,8 @@ export const finish = internalMutation({
       !source ||
       source.organizationId !== a.organizationId ||
       source.generation !== a.generation ||
-      j?.ordered?.phase !== "preparing" ||
+      !pairedPersonalJob(j) ||
+      j.ordered?.phase !== "preparing" ||
       j.state !== "preparing"
     )
       return false;

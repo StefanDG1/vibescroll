@@ -10,6 +10,7 @@ import type { Id } from "./_generated/dataModel";
 import { personalAllowed } from "./lib/personalAccess";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { sourceCapabilityCurrent } from "./personalAnalysis";
+import { pairedPersonalJob } from "./personalAnalysisSchema";
 import {
   personalPreparationInput,
   personalPreparationInputBinding,
@@ -34,7 +35,8 @@ async function current(
     !sourceRetained(s) ||
     s.state !== "processing" ||
     s.generation !== a.generation ||
-    j?.state !== "preparing" ||
+    !pairedPersonalJob(j) ||
+    j.state !== "preparing" ||
     j.expiresAt <= Date.now()
   )
     return null;

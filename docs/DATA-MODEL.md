@@ -1,5 +1,9 @@
 # Data model
 
+## Personal source executor candidate
+
+[ADR 129](adr/129-gated-work-cloud-text-handoff.md) makes `sources.personalAnalysis` a strict union. Existing jobs retain required device/profile fields and an optional paired discriminator, preserving their index. Work Cloud jobs have a required executor and versioned grant/client/input/policy/funding/consent/task/lease-hash/completion binding; paired authority fields can only be absent or null. No new job, reusable-analysis or trial store is introduced. Replacing nondeleted input preserves an unresolved claimed attempt's metadata as unknown; privacy deletion and recovery still scrub runtime authority. Flags remain off and the schema is not deployed.
+
 Mode: reference. Names describe proposed Convex tables and serialized concepts.
 
 ## Shared fields

@@ -111,6 +111,7 @@ import type * as operatorAcceptance from "../operatorAcceptance.js";
 import type * as organizations from "../organizations.js";
 import type * as payments from "../payments.js";
 import type * as personalAnalysis from "../personalAnalysis.js";
+import type * as personalAnalysisSchema from "../personalAnalysisSchema.js";
 import type * as personalOrderedMedia from "../personalOrderedMedia.js";
 import type * as personalOrderedMediaState from "../personalOrderedMediaState.js";
 import type * as personalMedia from "../personalMedia.js";
@@ -141,6 +142,7 @@ import type * as sourcePreviewState from "../sourcePreviewState.js";
 import type * as subscriptionTrials from "../subscriptionTrials.js";
 import type * as toolMaintenance from "../toolMaintenance.js";
 import type * as usageMaintenance from "../usageMaintenance.js";
+import type * as workCloudAnalysis from "../workCloudAnalysis.js";
 import type * as workflows from "../workflows.js";
 
 import type {
@@ -253,6 +255,7 @@ declare const fullApi: ApiFromModules<{
   organizations: typeof organizations;
   payments: typeof payments;
   personalAnalysis: typeof personalAnalysis;
+  personalAnalysisSchema: typeof personalAnalysisSchema;
   personalOrderedMedia: typeof personalOrderedMedia;
   personalOrderedMediaState: typeof personalOrderedMediaState;
   personalMedia: typeof personalMedia;
@@ -283,6 +286,7 @@ declare const fullApi: ApiFromModules<{
   subscriptionTrials: typeof subscriptionTrials;
   toolMaintenance: typeof toolMaintenance;
   usageMaintenance: typeof usageMaintenance;
+  workCloudAnalysis: typeof workCloudAnalysis;
   workflows: typeof workflows;
 }>;
 

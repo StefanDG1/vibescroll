@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Gated text handoff and current creator status candidate, October 24
+
+[ADR 129](adr/129-gated-work-cloud-text-handoff.md) extends existing personal source jobs and OAuth grants with explicit text approval, one-use claims, current authority/input checks and canonical private completion. It creates no shared artifact or host dispatch. [ADR 130](adr/130-current-creator-digest-processing.md) separates current source progress/coverage from delivery, discovery and private digest insertion. Both route flags stay off; source/video/official-host acceptance remains open.
+
+The complete offline check passed 1,516 tests with three hosted skips, validation of 313 documents/twelve snapshots, zero-warning lint, all types and both builds. [The receipt](operations/evidence/launch-20261024-work-cloud-text.json) records commands, source hashes, independent High review, corrected P2s and retained lint/fixture/serialization/cold-import failures. The UI test loads JSX during collection; assertions and timeouts remain unchanged. Dependencies/lock are unchanged. Native browser and exact-head CI are separate; production remains frontend fba56d4/backend abfdeff67. No new hosted request, model job or purchase occurred. Same US$3 cap, US$2.8092885298898517 conservative reservations and all unknown holds remain.
+
 ## Pro catalog search and checked-page map candidate, October 24
 
 [ADR 128](adr/128-pro-catalog-search-and-page-map.md) extends the same service artifact family with an 8,192-byte generic search projection, strict v2 cards, current-Pro search and a bounded manual reindex operation. Removal scrubs the projection; restore deletes the artifact. Immutable saved-copy DTOs remain unchanged. Explicit search and checked-page filtering fence old responses, while the optional static map/list represents only current generic category membership. It starts no analysis, polling or extra graph request.

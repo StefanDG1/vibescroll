@@ -1,4 +1,5 @@
 import { defineTable } from "convex/server";
+import { personalAnalysisValue } from "./personalAnalysisSchema";
 import { v } from "convex/values";
 import { sourceType, retrievalState } from "./sourceSchema";
 import { subscriptionCapabilitiesValue } from "./localLibrarySchema";
@@ -349,41 +350,7 @@ export const productTables = {
       }),
     ),
     managedAnalysisActor: v.optional(v.id("users")),
-    personalAnalysis: v.optional(
-      v.object({
-        deviceId: v.id("devices"),
-        actor: v.id("users"),
-        generation: v.number(),
-        model: v.string(),
-        profileBinding: v.string(),
-        sourceRevisionId: v.optional(v.id("sourceRevisions")),
-        sourceContentHash: v.optional(v.string()),
-        effort: v.string(),
-        capabilityHash: v.optional(v.string()),
-        ordered: v.optional(
-          v.object({
-            schemaVersion: v.literal("ordered-personal-v1"),
-            phase: v.union(
-              v.literal("preflight"),
-              v.literal("preparing"),
-              v.literal("analysis"),
-            ),
-            inputBinding: v.string(),
-            leaseToken: v.optional(v.string()),
-            preflightHash: v.optional(v.string()),
-            preparedHash: v.optional(v.string()),
-          }),
-        ),
-        state: v.string(),
-        approvedAt: v.number(),
-        expiresAt: v.number(),
-        leaseUntil: v.number(),
-        deadline: v.number(),
-        stage: v.optional(v.string()),
-        inputTokens: v.optional(v.number()),
-        outputTokens: v.optional(v.number()),
-      }),
-    ),
+    personalAnalysis: v.optional(personalAnalysisValue),
     repositorySelection: v.optional(v.any()),
     selectionPendingKey: v.optional(v.string()),
     selectionActor: v.optional(v.id("users")),

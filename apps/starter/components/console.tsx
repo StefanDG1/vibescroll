@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { usePolling } from "@/lib/use-polling";
 import { AssistantConnections } from "./assistant-connections";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
+import { WorkCloudText } from "./work-cloud-text";
 import { UsageSummary } from "./usage-summary";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 import Link from "next/link";
@@ -885,6 +886,8 @@ export function Console({
           "localTaskResume",
           "serviceArtifactPreview",
           "serviceArtifactBrowse",
+          "workCloudTextPreview",
+          "workCloudTextApprove",
           "localTaskQuote",
           "localTaskStatus",
           "localTaskApprove",
@@ -4695,17 +4698,82 @@ function SourceDetail({
             )}
           </details>
         )}
-        {personalEnabled && (
-          <PersonalSourceAnalysis
-            key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
-            source={detail}
-            devices={devices}
-            linkAnalysisEnabled={linkAnalysisEnabled}
-            orderedPersonalEnabled={orderedPersonalEnabled}
-            call={strictCall}
-            readOnly={readOnly || detailLoading}
-          />
+        {detail.personalAnalysis?.executor === "work_cloud" && (
+          <section
+            className="panel"
+            aria-label="Work Cloud text analysis status"
+          >
+            <h3>Work Cloud text analysis</h3>
+            <p>
+              {label(detail.personalAnalysis.state)}. Requested{" "}
+              {detail.personalAnalysis.model}, {detail.personalAnalysis.effort}{" "}
+              reasoning. Host execution settings and subscription usage are not
+              verified by VibeScroll.
+            </p>
+            {detail.personalAnalysis.state === "queued" && (
+              <>
+                <p>
+                  In your supported Work chat, explicitly invoke VibeScroll's
+                  work_cloud_claim tool for this request, using that chat's
+                  actual task ID.
+                </p>
+                <pre>
+                  {JSON.stringify(
+                    {
+                      sourceId: id(detail),
+                      generation: detail.personalAnalysis.generation,
+                    },
+                    null,
+                    2,
+                  )}
+                </pre>
+              </>
+            )}
+            {["queued", "running"].includes(detail.personalAnalysis.state) && (
+              <button
+                className="secondary"
+                disabled={readOnly || detailLoading || busy}
+                onClick={() =>
+                  call("cancelPersonalAnalysis", { id: id(detail) })
+                }
+              >
+                Revoke this request's app access
+              </button>
+            )}
+            <p>
+              Revocation blocks further input and result return. Stop the host
+              task too. VibeScroll cannot confirm that the host stopped or
+              restore subscription allowance. No alternate provider starts
+              automatically.
+            </p>
+          </section>
         )}
+        {detail.workCloudTextEnabled &&
+          !orderedSource &&
+          !detail.publicImportId &&
+          (detail.kind === "text" || detail.currentRevisionId) &&
+          !["ready", "queued", "processing"].includes(detail.state) && (
+            <WorkCloudText
+              sourceId={id(detail)}
+              organizationId={org}
+              generation={detail.generation}
+              revision={detail.updatedAt}
+              call={strictCall}
+              disabled={readOnly || detailLoading}
+            />
+          )}
+        {personalEnabled &&
+          detail.personalAnalysis?.executor !== "work_cloud" && (
+            <PersonalSourceAnalysis
+              key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
+              source={detail}
+              devices={devices}
+              linkAnalysisEnabled={linkAnalysisEnabled}
+              orderedPersonalEnabled={orderedPersonalEnabled}
+              call={strictCall}
+              readOnly={readOnly || detailLoading}
+            />
+          )}
         {detail.error && <p role="alert">{detail.error}</p>}
         {orderedSource && !personalEnabled && detail.state !== "ready" && (
           <p>

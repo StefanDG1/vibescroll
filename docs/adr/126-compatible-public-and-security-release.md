@@ -1,6 +1,6 @@
 # ADR 126: compatible public and dependency-security release
 
-Status: accepted for bounded preparation. Date: October 24, 2026, Europe/Berlin.
+Status: accepted for bounded frontend publication; backend redeployment held. Date: October 24, 2026, Europe/Berlin.
 
 ## Decision
 
@@ -10,6 +10,10 @@ Prepare a separate compatible release from current main `d8e97a393fb86fce57ee17d
 
 There are no Convex source, table or index changes in this release. Dependency bundling still requires fresh schema prediction and reviewed transport controls before a backend push; source equality alone does not prove the deployment state. Reuse the existing zero-populated-backfill guard only if its exact component/table/index predictions pass. Do not loosen it for the larger candidate.
 
+The fresh metadata-only inspection did not pass that guard. Updated PNPM peer-context paths produce five new component definition identities. The predictor looks up existing persisted definition paths and reports incomplete schemas for seven instances. Actual deployment would apply the new definitions to existing namespaces; those zeros are not proof of zero migration work. Keep the backend unchanged, including its previously deployed dependency bundle, until a supported complete prediction or identity mapping is available. Do not rewrite requests, spoof package directories, remount components or weaken validation.
+
+Publish only the compatible frontend against that existing backend. The web dependency tree contains the reviewed patches; backend runtime patch acceptance remains pending. This source-level security backport is not a claim that every live service has received the patch. No frontend build script invokes a Convex deployment.
+
 ## Product and copy boundaries
 
 Keep current prices and valid purchased terms. Lifetime/ongoing access is a later feature. GitHub remains optional for general source analysis; repository-specific work requires authorized context. The public pages label the proprietary Pro catalog, computer-free own-account Cloud and automatic following as pending acceptance. The app keeps its existing Atlas design and five mobile actions. Software MIT and exact approved public demos remain separate from any future proprietary catalog.
@@ -18,6 +22,6 @@ The four foundational briefs receive F049 for this actual release subset. No new
 
 ## Release controls
 
-The compatible release needs its own offline check, fresh audit, secret scan, review and exact-head CI. Reserve the whole backend, one fixed Basic build, bounded health/canonical checks and cleanup inside the same US$3 ledger before dispatch. Verify the existing team/project, Basic queued configuration, available included credit and domain-promotion hold. Deploy compatible backend before frontend; verify and promote the exact staged production build. Do not publish a preview or relax provider/privacy gates.
+The compatible release needs its own offline check, fresh audit, secret scan, review and exact-head CI. Root reserved US$1.05 for the whole conditional operation, retaining all prior holds, for a combined maximum of US$2.8092885298898517. The backend portion remains unspent and held after the predictor stopped publication. Verify the existing team/project, Basic queued configuration, function limits, available included credit and domain-promotion hold. Verify and promote the exact staged production frontend against the unchanged compatible backend. Do not publish a preview or relax provider/privacy gates.
 
 The full R/P/N/C/M product scope remains open. In particular, Pro catalog browse/search/graph, actual no-GitHub link processing and app return, recurring creator/provider authorization, broader media/recovery acceptance, new live media, independent participants and applicable commercial release evidence are not completed by this release.

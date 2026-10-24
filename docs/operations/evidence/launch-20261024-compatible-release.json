@@ -13,7 +13,20 @@
     "sourceByteIdenticalTo": "abfdeff6779a2fc7790d4441152117262965fe60",
     "schemaChanges": 0,
     "dependencyBundleChanged": true,
-    "freshHostedPrediction": "pending; no publish authorized from source equality alone"
+    "freshHostedPrediction": {
+      "status": "failed unchanged guard; no push",
+      "preparedBytes": 21114508,
+      "responseBytes": 66386,
+      "components": 12,
+      "rootTables": 89,
+      "rootIndexes": 239,
+      "newDefinitions": 5,
+      "incompleteComponentSchemas": 7,
+      "explanation": "PNPM peer-context physical path drift and definition-path predictor lookup blind spot; metadata zeros do not prove empty instances",
+      "controlRequests": 5,
+      "evaluationRequests": 1,
+      "credentialFileDeleted": true
+    }
   },
   "verification": {
     "completeOfflineCheck": "passed924 tests,3 hosted skips;zero-warning lint;all types;both production builds",
@@ -38,9 +51,18 @@
     "retainedBeforeNewReleaseUsd": "1.7592885298898517",
     "unallocatedBeforeNewReleaseUsd": "1.2407114701101483",
     "proposedEnvelope": "Reserve exact backend/build/canary/cleanup before dispatch; no prior holds released",
-    "convexCallsThisStage": 0,
+    "convexCallsThisStage": "5 bounded control-plane requests and1 schema-only prediction;0 application functions",
     "purchases": 0,
-    "settledInvoice": false
+    "settledInvoice": false,
+    "reservation": {
+      "newMaximumUsd": "1.05",
+      "combinedMaximumUsd": "2.8092885298898517",
+      "unallocatedUsd": "0.1907114701101483",
+      "metadataUsd": ".03",
+      "backendConditionalUsd": ".30",
+      "vercelIncludingBuildUsd": ".65",
+      "cleanupResidualUsd": ".07"
+    }
   },
   "release": {
     "merged": false,
@@ -48,7 +70,9 @@
     "providerGatesUnchanged": true,
     "publicCatalogReleased": false,
     "ownAccountCloudReleased": false,
-    "creatorMonitoringReleased": false
+    "creatorMonitoringReleased": false,
+    "frontendOnly": true,
+    "backendRedeployment": "held; existing runtime dependency bundle unchanged"
   },
   "remaining": "All full PR140 R/P/N/C/M acceptance remains; this release is not the complete product or a live source-to-result proof."
 }

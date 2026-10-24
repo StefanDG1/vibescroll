@@ -59,6 +59,8 @@ Versioned records include `schemaVersion` and an immutable content hash. Public 
 
 ## Dashboard projections
 
+Catalog v2 adds optional `catalogSearchVersion`, `catalogSearchHash` and bounded `catalogSearchText` fields only to service artifacts, plus `service_catalog_search`. Their deterministic digest covers version, artifact content hash and projected text. These fields are outside `artifact.data` and immutable saved-copy hashes. Missing projections preserve legacy browsing; explicit search covers indexed generic text only. Removal scrubs them and restore deletes the artifact row. No new table or job family is introduced. The index/backfill is not activated by its schema declaration.
+
 The Pro service catalog is a read projection of existing service-variant `publicArtifacts`. Its card contract is separate from the immutable `service-import-v1` DTO stored in `publicImports`; adding browse metadata cannot rewrite or invalidate saved copies. Browse uses the existing service-expiry index with one five-candidate page per request. It creates no store, index, queue, processing intent or contributor record. The existing explicit save creates the requesting actor's private import/source pair under current Pro; retained-copy rules continue after cancellation.
 
 A `sourceCard` query returns a summary, at most three preview main points, coverage, tags, related repo count, proposal counts, and PR counts. It also returns counts for no-fit, already-implemented, unsupported, and unreviewed matches. The detail query loads the full list.

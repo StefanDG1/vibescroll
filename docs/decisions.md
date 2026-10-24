@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: indexed generic discovery and page-limited maps
+
+[ADR 128](adr/128-pro-catalog-search-and-page-map.md) adds a bounded search projection/index to existing service artifacts and a map/list derived only from the currently checked Pro page. Keep immutable saved copies, private taxonomy, own results and public demos separate. Explicit manual backfill, migration cost, real mixed-record search, browser and provider/live acceptance remain pending.
+
 ## October 24: browse the Pro catalog through existing service artifacts
 
 [ADR 127](adr/127-bounded-pro-catalog-browsing.md) adds bounded on-demand browse/inspect/save inside Library. Current Pro and source authority are checked before disclosure, saved-copy DTOs remain separate, and no new queue/store/index or hosted processing route is introduced. Search, graph, provider activation and production catalog acceptance remain open.

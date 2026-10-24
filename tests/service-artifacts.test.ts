@@ -22,6 +22,10 @@ import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { browseServiceArtifactsCore } from "../convex/serviceArtifacts";
 import { serviceCatalogPage } from "../packages/social/catalog";
 import {
+  serviceCatalogProjection,
+  serviceCatalogSearchMaxBytes,
+} from "../packages/social/catalog-search";
+import {
   googleCostPolicy,
   googleInferenceModel,
 } from "../packages/providers/google-inference";
@@ -723,9 +727,10 @@ it("authorizes catalog browsing before reading global artifacts for anonymous, n
         return original(table);
       });
       try {
-        await expect(browseServiceArtifactsCore(ctx, args)).rejects.toThrow(
-          message,
-        );
+        for (const query of [undefined, "label"])
+          await expect(
+            browseServiceArtifactsCore(ctx, { ...args, query }),
+          ).rejects.toThrow(message);
         expect(globalReads).toEqual([]);
       } finally {
         spy.mockRestore();
@@ -759,7 +764,7 @@ it("returns bounded validated catalog cards and preserves paging as time advance
   expect(serviceCatalogPage.parse(first)).toEqual(first);
   expect(first.page).toHaveLength(5);
   expect(first).toMatchObject({
-    version: "service-catalog-v1",
+    version: "service-catalog-v2",
     availability: "ready",
     isDone: false,
   });
@@ -775,6 +780,10 @@ it("returns bounded validated catalog cards and preserves paging as time advance
     language: "en",
     insightCount: 1,
     availableUntil: s.prepared.post.observedAt + s.rights.maxRetentionMs,
+    categories: ["general_advice"],
+    topics: [],
+    creatorId: "creator1",
+    publishedAt: null,
   });
   vi.setSystemTime(s.now + 1);
   const second = await r.client.query(api.serviceArtifacts.browse, {
@@ -796,7 +805,6 @@ it("returns bounded validated catalog cards and preserves paging as time advance
     s.sourceId,
     "A visible synthetic label",
     "processingRunId",
-    "categories",
     "citations",
     "fundingOwner",
   ])
@@ -860,11 +868,13 @@ it("reports unavailable configuration after authorization and rejects empty or o
         cursor: null,
       }),
     ).toEqual({
-      version: "service-catalog-v1",
+      version: "service-catalog-v2",
       availability: "unavailable",
       page: [],
       continueCursor: null,
       isDone: true,
+      query: null,
+      searchCoverage: "indexed-eligible-generic-analysis",
     });
     await expect(
       s.t.query(api.serviceArtifacts.browse, {
@@ -913,6 +923,337 @@ it("keeps contribution available on trial and rechecks Pro on each browse contin
       sourceId: saved.sourceId,
     }),
   ).toEqual(detail);
+});
+
+it("builds a deterministic UTF8-bounded projection from generic analysis and binds its exact text to content", async () => {
+  const s = await setup();
+  const analysis = {
+    ...s.result,
+    insights: Array.from({ length: 5 }, (_, index) => ({
+      ...s.result.insights[0],
+      id: `idea${index}`,
+      claim: "🐢".repeat(400),
+      interpretation: "bounded generic interpretation ".repeat(50),
+      topics: ["Generic topic"],
+    })),
+  };
+  const projection = await serviceCatalogProjection(analysis, "a".repeat(64));
+  expect(await serviceCatalogProjection(analysis, "a".repeat(64))).toEqual(
+    projection,
+  );
+  expect(
+    new TextEncoder().encode(projection.catalogSearchText).length,
+  ).toBeLessThanOrEqual(serviceCatalogSearchMaxBytes);
+  expect(
+    new TextDecoder().decode(
+      new TextEncoder().encode(projection.catalogSearchText),
+    ),
+  ).toBe(projection.catalogSearchText);
+  expect(projection.catalogSearchText).not.toContain(
+    "A visible synthetic label",
+  );
+  expect(projection.catalogSearchText).not.toContain(s.sourceId);
+  expect(
+    (await serviceCatalogProjection(analysis, "b".repeat(64)))
+      .catalogSearchHash,
+  ).not.toBe(projection.catalogSearchHash);
+});
+
+it("searches the actual mocked Convex index with five-card pagination and validated public discovery metadata", async () => {
+  const s = await setup();
+  s.result.insights[0] = {
+    ...s.result.insights[0],
+    categories: ["coding", "general_advice"],
+  };
+  const analysis = {
+    ...s.result,
+    insights: [
+      { ...s.result.insights[0], topics: ["Testing", "Accessibility"] },
+    ],
+  };
+  s.args.result = analysis;
+  await s.t.run((ctx) => ctx.db.patch(s.sourceId, { analysis }));
+  await catalogArtifacts(s, 7);
+  const r = await recipient(s);
+  const first = await r.client.query(api.serviceArtifacts.browse, {
+    organizationId: r.org,
+    cursor: null,
+    query: "  label  ",
+  });
+  expect(first).toMatchObject({
+    version: "service-catalog-v2",
+    query: "label",
+    searchCoverage: "indexed-eligible-generic-analysis",
+    isDone: false,
+  });
+  expect(first.page).toHaveLength(5);
+  expect(first.page[0]).toMatchObject({
+    categories: ["coding", "general_advice"],
+    topics: ["Accessibility", "Testing"],
+    creatorId: "creator1",
+    publishedAt: null,
+  });
+  const second = await r.client.query(api.serviceArtifacts.browse, {
+    organizationId: r.org,
+    cursor: first.continueCursor,
+    query: "label",
+  });
+  expect(second.page).toHaveLength(2);
+  expect(
+    new Set([...first.page, ...second.page].map((card) => card.artifactId))
+      .size,
+  ).toBe(7);
+  expect(second).toMatchObject({ isDone: true, continueCursor: null });
+  for (const field of [
+    "catalogSearchText",
+    "catalogSearchHash",
+    "fundingOwner",
+    "processingRunId",
+    "A visible synthetic label",
+  ])
+    expect(JSON.stringify(first)).not.toContain(field);
+  for (const query of [" ", "x".repeat(201)])
+    await expect(
+      r.client.query(api.serviceArtifacts.browse, {
+        organizationId: r.org,
+        cursor: null,
+        query,
+      }),
+    ).rejects.toThrow("valid catalog search");
+});
+
+it("rejects forged projection text or hashes, reindexes only current generic content and leaves saved copies unchanged", async () => {
+  const s = await setup();
+  const { r, args, layer } = await savedCopy(s);
+  const search = (query = "label") =>
+    r.client.query(api.serviceArtifacts.browse, {
+      organizationId: r.org,
+      cursor: null,
+      query,
+    });
+  expect((await search()).page).toHaveLength(1);
+  const artifact = (await s.t.run((ctx) => ctx.db.get(args.artifactId)))!;
+  if (artifact.origin !== "service") throw Error("fixture");
+  const text = artifact.catalogSearchText + "\npoisonedprivateword";
+  const hash = await socialHash(
+    canonicalJson({
+      version: "service-catalog-search-v1",
+      contentHash: artifact.contentHash,
+      text,
+    }),
+  );
+  await s.t.run((ctx) =>
+    ctx.db.patch(artifact._id, {
+      catalogSearchText: text,
+      catalogSearchHash: hash,
+    }),
+  );
+  expect((await search("poisonedprivateword")).page).toEqual([]);
+  await s.t.run((ctx) =>
+    ctx.db.patch(artifact._id, {
+      catalogSearchText: artifact.catalogSearchText,
+      catalogSearchHash: "b".repeat(64),
+    }),
+  );
+  expect((await search()).page).toEqual([]);
+  await s.t.mutation(internal.serviceArtifacts.reindexCatalog, {
+    cursor: null,
+  });
+  expect((await search()).page).toHaveLength(1);
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).toEqual(layer);
+  await s.t.run((ctx) => ctx.db.patch(s.sourceId, { generation: 2 }));
+  expect((await search()).page).toEqual([]);
+  await s.t.mutation(internal.serviceArtifacts.reindexCatalog, {
+    cursor: null,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(artifact._id))).not.toHaveProperty(
+    "catalogSearchText",
+  );
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).toEqual(layer);
+});
+
+it("keeps unindexed legacy artifacts browsable and projects them only on explicit reuse or bounded manual reindex", async () => {
+  const s = await setup();
+  const ids = await catalogArtifacts(s, 7);
+  await s.t.run(async (ctx) => {
+    for (const id of ids)
+      await ctx.db.patch(id, {
+        catalogSearchVersion: undefined,
+        catalogSearchHash: undefined,
+        catalogSearchText: undefined,
+      });
+    await ctx.db.patch(ids[0], {
+      state: "blocked",
+      catalogSearchText: "stale projection",
+    });
+  });
+  const r = await recipient(s);
+  expect(
+    (
+      await r.client.query(api.serviceArtifacts.browse, {
+        organizationId: r.org,
+        cursor: null,
+      })
+    ).page,
+  ).toHaveLength(5);
+  // convex-test's search evaluator calls .split on missing optional fields.
+  // Verify legacy exclusion through persisted projection state here; actual
+  // search/pagination is exercised above with indexed fixture records.
+  expect(await s.t.run((ctx) => ctx.db.get(ids[1]))).not.toHaveProperty(
+    "catalogSearchText",
+  );
+  const before = await s.t.run((ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect(),
+  );
+  vi.stubEnv("RESTORE_LOCK", "true");
+  expect(
+    await s.t.mutation(internal.serviceArtifacts.reindexCatalog, {
+      cursor: null,
+    }),
+  ).toMatchObject({
+    availability: "unavailable",
+    paused: true,
+    indexed: 0,
+    cleared: 0,
+  });
+  vi.stubEnv("RESTORE_LOCK", "false");
+  vi.stubEnv("CREATOR_SERVICE_REUSE_ENABLED", "false");
+  expect(
+    await s.t.mutation(internal.serviceArtifacts.reindexCatalog, {
+      cursor: null,
+    }),
+  ).toMatchObject({ availability: "unavailable", indexed: 0, cleared: 0 });
+  vi.stubEnv("CREATOR_SERVICE_REUSE_ENABLED", "true");
+  const first = await s.t.mutation(internal.serviceArtifacts.reindexCatalog, {
+    cursor: null,
+  });
+  expect(first.indexed + first.cleared).toBe(5);
+  expect(first.isDone).toBe(false);
+  const second = await s.t.mutation(internal.serviceArtifacts.reindexCatalog, {
+    cursor: first.continueCursor,
+  });
+  expect(second.indexed + second.cleared).toBe(2);
+  expect(second).toMatchObject({ isDone: true, continueCursor: null });
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db.system.query("_scheduled_functions").collect(),
+    ),
+  ).toEqual(before);
+  expect(await s.t.run((ctx) => ctx.db.get(ids[0]))).not.toHaveProperty(
+    "catalogSearchText",
+  );
+  await s.t.run(async (ctx) => {
+    for (const id of ids.slice(1))
+      await ctx.db.patch(id, {
+        catalogSearchVersion: undefined,
+        catalogSearchHash: undefined,
+        catalogSearchText: undefined,
+      });
+  });
+  const reused = await commit(s);
+  expect(reused.reused).toBe(true);
+  expect(await s.t.run((ctx) => ctx.db.get(reused.artifactId))).toHaveProperty(
+    "catalogSearchVersion",
+    "service-catalog-search-v1",
+  );
+});
+
+it("clears search projection on source invalidation and deletes it during actual restore quarantine", async () => {
+  const s = await setup();
+  const artifact = await commit(s);
+  await s.t.mutation(internal.serviceArtifacts.invalidateSource, {
+    sourceId: s.sourceId,
+    maxGeneration: 1,
+  });
+  const scrubbed = await s.t.run((ctx) => ctx.db.get(artifact.artifactId));
+  for (const field of [
+    "data",
+    "catalogSearchVersion",
+    "catalogSearchText",
+    "catalogSearchHash",
+  ])
+    expect(scrubbed).not.toHaveProperty(field);
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.mutation(internal.recovery.quarantinePage, {
+    section: "publicArtifacts",
+    cursor: null,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(artifact.artifactId))).toBeNull();
+});
+
+it("keeps a valid near-limit artifact reusable when its optional search projection has no byte budget", async () => {
+  const s = await setup();
+  const first = await commit(s);
+  const original = (await s.t.run((ctx) => ctx.db.get(first.artifactId)))!;
+  if (original.origin !== "service") throw Error("fixture");
+  const {
+    _id,
+    _creationTime,
+    catalogSearchText: _catalogSearchText,
+    catalogSearchHash: _catalogSearchHash,
+    catalogSearchVersion: _catalogSearchVersion,
+    ...base
+  } = original;
+  const result = {
+    ...s.result,
+    summary: "s".repeat(1500),
+    insights: [
+      {
+        ...s.result.insights[0],
+        claim: "c".repeat(2000),
+        interpretation: "i".repeat(2000),
+      },
+    ],
+  };
+  const textHash = await socialHash("e".repeat(6000));
+  const prepared = {
+    ...s.prepared,
+    evidence: Array.from({ length: 82 }, (_, i) => ({
+      ...s.prepared.evidence[0],
+      id: i === 0 ? "visible1" : `extra${i}`,
+      text: "e".repeat(6000),
+      textHash,
+    })),
+  };
+  const size = new TextEncoder().encode(
+    canonicalJson({ ...base, data: { analysis: result, prepared } }),
+  ).length;
+  const excess = size - (512 * 1024 - 256 - 1000);
+  expect(excess).toBeGreaterThanOrEqual(0);
+  expect(excess).toBeLessThan(6000);
+  const last = prepared.evidence[prepared.evidence.length - 1];
+  last.text = last.text.slice(0, last.text.length - excess);
+  last.textHash = await socialHash(last.text);
+  const compatibility = await serviceCompatibility(
+    prepared,
+    "en",
+    s.rights,
+    s.now,
+  );
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      orderedMedia: prepared,
+      analysis: result,
+      serviceIntent: {
+        schemaVersion: "service-social-v1",
+        generation: 1,
+        ...compatibility,
+      },
+    }),
+  );
+  const args = {
+    ...s.args,
+    result,
+    compatibilityKey: compatibility.compatibilityKey,
+  };
+  const committed = await s.t.mutation(internal.serviceArtifacts.commit, args);
+  const artifact = await s.t.run((ctx) => ctx.db.get(committed.artifactId));
+  expect(artifact).not.toHaveProperty("catalogSearchText");
+  expect(await read(s, committed.artifactId)).not.toBeNull();
+  expect(await s.t.mutation(internal.serviceArtifacts.commit, args)).toEqual({
+    ...committed,
+    reused: true,
+  });
 });
 
 it.each([

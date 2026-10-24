@@ -25,6 +25,7 @@ import {
 import { billingFor } from "../lib";
 import { isPaid } from "../../packages/company-config";
 import { ensure } from "../../packages/policy";
+import { serviceCatalogProjection } from "../../packages/social/catalog-search";
 import {
   orderedDiagnostics,
   emptyOrderedDiagnostics,
@@ -555,6 +556,99 @@ export async function retainedServiceArtifactCopy(
   return (await retainedServiceArtifactState(ctx, layer)).copy;
 }
 
+const clearedCatalogProjection = {
+  catalogSearchVersion: undefined,
+  catalogSearchHash: undefined,
+  catalogSearchText: undefined,
+};
+async function boundedCatalogProjection(
+  artifact: Omit<ServiceArtifact, "_id" | "_creationTime">,
+  analysis: Parameters<typeof serviceCatalogProjection>[0],
+) {
+  const projection = await serviceCatalogProjection(
+    analysis,
+    artifact.contentHash,
+  );
+  const candidate = { ...artifact, ...projection };
+  return new TextEncoder().encode(canonicalJson(candidate)).length <=
+    maxBytes - 256
+    ? projection
+    : clearedCatalogProjection;
+}
+export async function serviceArtifactCatalogProjectionCurrent(
+  current: NonNullable<Awaited<ReturnType<typeof serviceArtifactCurrent>>>,
+) {
+  const projection = await serviceCatalogProjection(
+    current.analysis,
+    current.artifact.contentHash,
+  );
+  return (
+    current.artifact.catalogSearchVersion === projection.catalogSearchVersion &&
+    current.artifact.catalogSearchHash === projection.catalogSearchHash &&
+    current.artifact.catalogSearchText === projection.catalogSearchText
+  );
+}
+export async function projectServiceArtifactCatalog(
+  ctx: MutationCtx,
+  current: NonNullable<Awaited<ReturnType<typeof serviceArtifactCurrent>>>,
+) {
+  const { _id, _creationTime, ...artifact } = current.artifact;
+  const projection = await boundedCatalogProjection(artifact, current.analysis);
+  await ctx.db.patch(_id, projection);
+  return projection.catalogSearchVersion !== undefined;
+}
+
+export async function reindexServiceArtifactCatalog(
+  ctx: MutationCtx,
+  cursor: string | null,
+) {
+  if (process.env.RESTORE_LOCK === "true")
+    return {
+      availability: "unavailable" as const,
+      paused: true,
+      continueCursor: cursor,
+      isDone: false,
+      indexed: 0,
+      cleared: 0,
+    };
+  if (
+    process.env.CREATOR_SERVICE_REUSE_ENABLED !== "true" ||
+    !creatorConfiguration()
+  )
+    return {
+      availability: "unavailable" as const,
+      paused: false,
+      continueCursor: cursor,
+      isDone: false,
+      indexed: 0,
+      cleared: 0,
+    };
+  const rows = await ctx.db
+    .query("publicArtifacts")
+    .withIndex("by_service_expiry", (q) => q.eq("origin", "service"))
+    .paginate({ cursor, numItems: batchSize });
+  let indexed = 0,
+    cleared = 0;
+  for (const row of rows.page) {
+    if (row.origin !== "service") continue;
+    const current = await serviceArtifactCurrent(ctx, row);
+    if (current && (await projectServiceArtifactCatalog(ctx, current)))
+      indexed++;
+    else {
+      await ctx.db.patch(row._id, clearedCatalogProjection);
+      cleared++;
+    }
+  }
+  return {
+    availability: "ready" as const,
+    paused: false,
+    continueCursor: rows.isDone ? null : rows.continueCursor,
+    isDone: rows.isDone,
+    indexed,
+    cleared,
+  };
+}
+
 export async function commitServiceArtifact(
   ctx: MutationCtx,
   args: {
@@ -576,7 +670,10 @@ export async function commitServiceArtifact(
   if (args.compatibilityKey !== resolved.compatibility.compatibilityKey)
     throw Error("SERVICE_COMPATIBILITY_CHANGED");
   const previous = await lookupServiceArtifact(ctx, args.compatibilityKey);
-  if (previous) return { artifactId: previous.artifact._id, reused: true };
+  if (previous) {
+    await projectServiceArtifactCatalog(ctx, previous);
+    return { artifactId: previous.artifact._id, reused: true };
+  }
   const now = Date.now();
   const row: Omit<ServiceArtifact, "_id" | "_creationTime"> = {
     organizationId: resolved.org._id,
@@ -608,7 +705,14 @@ export async function commitServiceArtifact(
   // Reserve a little room for Convex's immutable system fields as well.
   if (new TextEncoder().encode(canonicalJson(row)).length > maxBytes - 256)
     throw Error("SERVICE_ARTIFACT_TOO_LARGE");
-  const artifactId = await ctx.db.insert("publicArtifacts", row);
+  const projection = await boundedCatalogProjection(
+    row,
+    resolved.validated.analysis,
+  );
+  const artifactId = await ctx.db.insert("publicArtifacts", {
+    ...row,
+    ...projection,
+  });
   await ctx.scheduler.runAt(row.retainUntil, internal.serviceArtifacts.expire, {
     id: artifactId,
     retainUntil: row.retainUntil,
@@ -620,6 +724,9 @@ async function scrub(ctx: MutationCtx, row: ServiceArtifact) {
   await ctx.db.patch(row._id, {
     state: "blocked",
     data: undefined,
+    catalogSearchVersion: undefined,
+    catalogSearchHash: undefined,
+    catalogSearchText: undefined,
     updatedAt: Date.now(),
   });
   await ctx.scheduler.runAfter(0, internal.serviceArtifacts.scrubCopies, {

@@ -9,11 +9,13 @@ import { creatorConfiguration } from "./lib/creatorPolicy";
 import {
   serviceCatalogCard,
   serviceCatalogCursor,
+  serviceCatalogQuery,
   serviceCatalogPage,
   serviceCatalogPageSize,
   serviceCatalogSummaryLimit,
   type ServiceCatalogCard,
 } from "../packages/social/catalog";
+import { serviceCatalogTopics } from "../packages/social/catalog-search";
 import {
   commitServiceArtifact,
   expireServiceArtifact,
@@ -25,6 +27,8 @@ import {
   requireProCatalogAccess,
   scrubServiceArtifactCopies,
   sweepRetainedServiceArtifactCopies,
+  serviceArtifactCatalogProjectionCurrent,
+  reindexServiceArtifactCatalog,
 } from "./lib/serviceArtifacts";
 
 export const commit = internalMutation({
@@ -60,6 +64,18 @@ export const sweepCopies = internalMutation({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: (ctx, a) => sweepRetainedServiceArtifactCopies(ctx, a.cursor),
 });
+export const reindexCatalog = internalMutation({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: (ctx, a) => {
+    const cursor = serviceCatalogCursor.safeParse(a.cursor);
+    ensure(
+      cursor.success,
+      "INVALID_INPUT",
+      "Use a valid catalog continuation.",
+    );
+    return reindexServiceArtifactCatalog(ctx, cursor.data);
+  },
+});
 
 const importArgs = {
   organizationId: v.id("organizations"),
@@ -85,34 +101,61 @@ async function privateOwner(
 }
 export async function browseServiceArtifactsCore(
   ctx: QueryCtx,
-  a: { organizationId: Id<"organizations">; cursor: string | null },
+  a: {
+    organizationId: Id<"organizations">;
+    cursor: string | null;
+    query?: string;
+  },
 ) {
   await privateOwner(ctx, a.organizationId);
   await requireProCatalogAccess(ctx, a.organizationId);
   const cursor = serviceCatalogCursor.safeParse(a.cursor);
   ensure(cursor.success, "INVALID_INPUT", "Use a valid catalog continuation.");
+  const parsedQuery = serviceCatalogQuery.optional().safeParse(a.query);
+  ensure(
+    parsedQuery.success,
+    "INVALID_INPUT",
+    "Use a valid catalog search query.",
+  );
+  const search = parsedQuery.data;
   if (
     process.env.CREATOR_SERVICE_REUSE_ENABLED !== "true" ||
     !creatorConfiguration()
   )
     return serviceCatalogPage.parse({
-      version: "service-catalog-v1",
+      version: "service-catalog-v2",
       availability: "unavailable",
       page: [],
       continueCursor: null,
       isDone: true,
+      query: search ?? null,
+      searchCoverage: "indexed-eligible-generic-analysis",
     });
-  const rows = await ctx.db
-    .query("publicArtifacts")
-    .withIndex("by_service_expiry", (q) =>
-      q.eq("origin", "service").eq("state", "eligible"),
-    )
-    .order("desc")
-    .paginate({ cursor: cursor.data, numItems: serviceCatalogPageSize });
+  const candidates = search
+    ? ctx.db
+        .query("publicArtifacts")
+        .withSearchIndex("service_catalog_search", (q) =>
+          q
+            .search("catalogSearchText", search)
+            .eq("origin", "service")
+            .eq("state", "eligible"),
+        )
+    : ctx.db
+        .query("publicArtifacts")
+        .withIndex("by_service_expiry", (q) =>
+          q.eq("origin", "service").eq("state", "eligible"),
+        )
+        .order("desc");
+  const rows = await candidates.paginate({
+    cursor: cursor.data,
+    numItems: serviceCatalogPageSize,
+  });
   const page: ServiceCatalogCard[] = [];
   for (const row of rows.page) {
     const current = await serviceArtifactCurrent(ctx, row);
     if (!current) continue;
+    if (search && !(await serviceArtifactCatalogProjectionCurrent(current)))
+      continue;
     const dto = serviceArtifactDto(current);
     const card = serviceCatalogCard.safeParse({
       artifactId: row._id,
@@ -125,21 +168,27 @@ export async function browseServiceArtifactsCore(
       language: dto.language,
       insightCount: dto.insights.length,
       availableUntil: current.artifact.retainUntil,
+      ...serviceCatalogTopics(current.analysis),
+      creatorId: current.prepared.post.creatorId,
+      publishedAt: current.prepared.post.publishedAt,
     });
     if (card.success) page.push(card.data);
   }
   return serviceCatalogPage.parse({
-    version: "service-catalog-v1",
+    version: "service-catalog-v2",
     availability: "ready",
     page,
     continueCursor: rows.isDone ? null : rows.continueCursor,
     isDone: rows.isDone,
+    query: search ?? null,
+    searchCoverage: "indexed-eligible-generic-analysis",
   });
 }
 export const browse = query({
   args: {
     organizationId: v.id("organizations"),
     cursor: v.union(v.string(), v.null()),
+    query: v.optional(v.string()),
   },
   handler: browseServiceArtifactsCore,
 });

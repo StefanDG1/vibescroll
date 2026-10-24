@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { isValidElement, type ReactElement } from "react";
+import type { ServiceCatalogCard } from "../../packages/social/catalog";
 const hooks = vi.hoisted(() => ({
   cells: [] as any[],
   index: 0,
@@ -43,9 +44,10 @@ import {
   ServiceCatalogPanel,
   type ServiceCatalogProps,
 } from "./components/service-catalog";
+import { ServiceCatalogMap } from "./components/service-catalog-map";
 type Node = ReactElement<Record<string, any>>;
 const now = 1_800_000_000_000;
-const card = {
+const card: ServiceCatalogCard = {
   artifactId: "artifact-one",
   compatibilityKey: "a".repeat(64),
   title: "Cited idea",
@@ -56,13 +58,19 @@ const card = {
   language: "en",
   insightCount: 1,
   availableUntil: now + 60000,
+  categories: ["product_design"],
+  topics: ["first useful screen"],
+  creatorId: "public-creator-123",
+  publishedAt: now - 86400000,
 };
 const page = {
-  version: "service-catalog-v1",
+  version: "service-catalog-v2",
   availability: "ready",
   page: [card],
   continueCursor: null,
   isDone: true,
+  query: null,
+  searchCoverage: "indexed-eligible-generic-analysis",
 };
 const detail = {
   title: card.title,
@@ -286,7 +294,7 @@ it("ignores in-flight data after workspace unmount without more requests", async
   response.resolve(page);
   await flush();
   expect(
-    hooks.cells.some((value) => value?.version === "service-catalog-v1"),
+    hooks.cells.some((value) => value?.version === "service-catalog-v2"),
   ).toBe(false);
   expect(call).toHaveBeenCalledTimes(1);
 });
@@ -356,4 +364,162 @@ it("blocks disabled or duplicate pending requests, including captured handlers a
   expect(call).toHaveBeenCalledTimes(1);
   response.resolve(page);
   await flush();
+});
+
+function searchInput(tree: unknown) {
+  const input = elements(tree).find(
+    (node) => node.type === "input" && node.props.type === "search",
+  );
+  expect(input).toBeDefined();
+  return input!;
+}
+async function submit(tree: unknown) {
+  const form = elements(tree).find((node) => node.type === "form");
+  expect(form).toBeDefined();
+  form!.props.onSubmit({ preventDefault: vi.fn() });
+  await flush();
+}
+it("searches only on submission, drops old continuation, and ignores an in-flight prior query", async () => {
+  const old = deferred();
+  const call = vi
+    .fn()
+    .mockResolvedValueOnce({
+      ...page,
+      continueCursor: "old-page",
+      isDone: false,
+    })
+    .mockReturnValueOnce(old.promise)
+    .mockResolvedValueOnce({ ...page, query: "new phrase" });
+  const props = { organizationId: "private", call };
+  await click(render(props), "Browse catalog");
+  const oldNext = button(render(props), "Next catalog page");
+  searchInput(render(props)).props.onChange({
+    target: { value: "old phrase" },
+  });
+  expect(call).toHaveBeenCalledTimes(1);
+  await submit(render(props));
+  searchInput(render(props)).props.onChange({
+    target: { value: "new phrase" },
+  });
+  expect(text(render(props))).not.toContain(card.summary);
+  oldNext.props.onClick();
+  await flush();
+  expect(call).toHaveBeenCalledTimes(2);
+  await submit(render(props));
+  old.resolve({
+    ...page,
+    query: "old phrase",
+    page: [{ ...card, summary: "Stale prior query" }],
+  });
+  await flush();
+  expect(text(render(props))).not.toContain("Stale prior query");
+  expect(text(render(props))).toContain("Search phrase: new phrase");
+  expect(call.mock.calls[2]).toEqual([
+    "serviceArtifactBrowse",
+    { organizationId: "private", cursor: null, query: "new phrase" },
+  ]);
+});
+it("binds search pagination to its phrase and resets to browse with no cursor", async () => {
+  const call = vi
+    .fn()
+    .mockResolvedValueOnce(page)
+    .mockResolvedValueOnce({
+      ...page,
+      query: "design",
+      page: [],
+      continueCursor: "search-page",
+      isDone: false,
+    })
+    .mockResolvedValueOnce({ ...page, query: "design" })
+    .mockResolvedValueOnce(page);
+  const props = { organizationId: "private", call };
+  await click(render(props), "Browse catalog");
+  searchInput(render(props)).props.onChange({ target: { value: " design " } });
+  await submit(render(props));
+  expect(text(render(props))).toContain("Another catalog page is available");
+  await click(render(props), "Next catalog page");
+  expect(call.mock.calls[2][1]).toEqual({
+    organizationId: "private",
+    cursor: "search-page",
+    query: "design",
+  });
+  await click(render(props), "Reset search");
+  expect(call.mock.calls[3][1]).toEqual({
+    organizationId: "private",
+    cursor: null,
+  });
+  expect(searchInput(render(props)).props.value).toBe("");
+});
+it("shows generic public provenance and filters only the checked page without requests", async () => {
+  const other = {
+    ...card,
+    artifactId: "second",
+    title: "Other idea",
+    categories: ["coding"],
+    topics: [],
+    creatorId: "another-public-id",
+    publishedAt: null,
+  };
+  const call = vi.fn().mockResolvedValue({ ...page, page: [card, other] });
+  const props = { organizationId: "private", call };
+  await click(render(props), "Browse catalog");
+  let tree = render(props);
+  expect(text(tree)).toContain("Public creator reference: public-creator-123");
+  expect(text(tree)).toContain("Publication date unverified");
+  expect(text(tree)).toContain("Generic topics: first useful screen");
+  const filter = elements(tree).find((node) => node.type === "select");
+  expect(text(tree)).toContain("Filter only this checked page");
+  filter!.props.onChange({ target: { value: "product_design" } });
+  tree = render(props);
+  expect(text(tree)).toContain(card.summary);
+  expect(text(tree)).not.toContain("Other idea");
+  expect(call).toHaveBeenCalledTimes(1);
+  const map = elements(tree).find((node) => node.type === ServiceCatalogMap);
+  expect(map!.props.cards).toHaveLength(1);
+});
+it("builds a bounded category membership list and optional static map with no private identity inputs", () => {
+  const cards = Array.from({ length: 5 }, (_, index) => ({
+    ...card,
+    artifactId: `artifact-${index}`,
+    title: `Analysis ${index}`,
+    categories: [
+      `category-${index}`,
+      ...Array.from({ length: 8 }, (_, category) => `shared-${category}`),
+    ],
+  }));
+  const tree = ServiceCatalogMap({ cards });
+  expect(text(tree)).toContain("not a similarity judgment");
+  expect(text(tree)).toContain("first nine categories");
+  expect(text(tree)).toContain("Analysis 4");
+  const svg = elements(tree).find((node) => node.type === "svg");
+  expect(svg!.props["aria-hidden"]).toBe("true");
+  expect(elements(tree).filter((node) => node.type === "circle")).toHaveLength(
+    9,
+  );
+  expect(elements(tree).filter((node) => node.type === "rect")).toHaveLength(5);
+  expect(text(tree)).not.toContain(card.creatorId);
+});
+it("clears metadata and map on denial and refuses legacy or mismatched-query search responses", async () => {
+  const call = vi
+    .fn()
+    .mockResolvedValueOnce(page)
+    .mockRejectedValueOnce(Error("Pro ended"))
+    .mockResolvedValueOnce({ ...page, version: "service-catalog-v1" })
+    .mockResolvedValueOnce({ ...page, query: "unexpected" });
+  const props = { organizationId: "private", call };
+  await click(render(props), "Browse catalog");
+  expect(
+    elements(render(props)).some((node) => node.type === ServiceCatalogMap),
+  ).toBe(true);
+  await click(render(props), "Refresh catalog");
+  expect(
+    elements(render(props)).some((node) => node.type === ServiceCatalogMap),
+  ).toBe(false);
+  expect(text(render(props))).not.toContain(card.creatorId);
+  await click(render(props), "Refresh catalog");
+  expect(text(render(props))).toContain(
+    "Catalog access could not be confirmed",
+  );
+  await click(render(props), "Refresh catalog");
+  expect(text(render(props))).not.toContain(card.summary);
 });

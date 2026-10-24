@@ -207,6 +207,11 @@ export const publicTables = {
         deletionWithinMs: v.number(),
         state: v.union(v.literal("eligible"), v.literal("blocked")),
         data: v.optional(v.any()),
+        catalogSearchVersion: v.optional(
+          v.literal("service-catalog-search-v1"),
+        ),
+        catalogSearchHash: v.optional(v.string()),
+        catalogSearchText: v.optional(v.string()),
       }),
     ),
   )
@@ -216,7 +221,11 @@ export const publicTables = {
     .index("by_service_compatibility", ["origin", "compatibilityKey", "state"])
     .index("by_service_expiry", ["origin", "state", "retainUntil"])
     .index("by_service_policy", ["origin", "rightsHash", "state"])
-    .index("by_service_source", ["origin", "sourceId", "state", "generation"]),
+    .index("by_service_source", ["origin", "sourceId", "state", "generation"])
+    .searchIndex("service_catalog_search", {
+      searchField: "catalogSearchText",
+      filterFields: ["origin", "state"],
+    }),
   publicImports: defineTable(
     v.union(
       v.object({

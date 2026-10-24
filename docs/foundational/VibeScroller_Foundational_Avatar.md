@@ -1,5 +1,11 @@
 # VibeScroll foundational avatar
 
+## F052: Pro discovery candidate and honest coverage, October 24
+
+[ADR 128](../adr/128-pro-catalog-search-and-page-map.md) adds an indexed generic-search candidate, current-page categories/topics/public creator provenance and an optional static membership map with a primary list. It uses the existing artifact family, keeps immutable saved copies separate and adds no inference or private-context sharing. [The receipt](../operations/evidence/launch-20261024-catalog-discovery.json) records 1,456 passing local tests, three hosted skips, types/lint/builds and independent review, with a retained mixed-record mock gap and pending native browser check.
+
+Search covers indexed eligible analyses; manual backfill and the new index are not activated. The map describes only currently checked analyses, not platform-wide trends, creator usefulness or community traction. Keep public catalog claims pending actual provider/content/live acceptance. No price, audience, belief, lifetime-order, campaign, customer or budget permission changes. Same US$3 cap and old holds remain.
+
 ## F051: bounded Pro catalog candidate, October 24
 
 [ADR 127](../adr/127-bounded-pro-catalog-browsing.md) adds an on-demand Pro browse/inspect/save candidate inside Library, using existing artifacts/imports and preserving immutable saved copies after cancellation. The [local receipt](../operations/evidence/launch-20261024-catalog-browse.json) records 1,445 passing offline tests, three hosted skips, both builds and independent review. Native browser consent, exact-head CI and live catalog lifecycle remain pending. Search, categories/graph and verified Cloud contribution are still required.

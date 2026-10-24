@@ -3,6 +3,7 @@ import { z } from "zod";
 // Catalog cards are separate from immutable service-import-v1 saved DTOs.
 export const serviceCatalogPageSize = 5;
 export const serviceCatalogSummaryLimit = 1200;
+export const serviceCatalogQuery = z.string().trim().min(1).max(200);
 export const serviceCatalogCursor = z.string().min(1).max(8192).nullable();
 export const serviceCatalogCard = z.strictObject({
   artifactId: z.string().min(1).max(256),
@@ -18,14 +19,20 @@ export const serviceCatalogCard = z.strictObject({
   language: z.string().min(1).max(100),
   insightCount: z.number().int().min(0).max(1000),
   availableUntil: z.number().finite().positive(),
+  categories: z.array(z.string().min(1).max(48)).max(9),
+  topics: z.array(z.string().min(1).max(48)).max(20),
+  creatorId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),
+  publishedAt: z.number().int().nonnegative().nullable(),
 });
 export const serviceCatalogPage = z
   .strictObject({
-    version: z.literal("service-catalog-v1"),
+    version: z.literal("service-catalog-v2"),
     availability: z.enum(["ready", "unavailable"]),
     page: z.array(serviceCatalogCard).max(serviceCatalogPageSize),
     continueCursor: serviceCatalogCursor,
     isDone: z.boolean(),
+    query: serviceCatalogQuery.nullable(),
+    searchCoverage: z.literal("indexed-eligible-generic-analysis"),
   })
   .superRefine((value, ctx) => {
     if (

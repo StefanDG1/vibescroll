@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import {
   serviceCatalogPage,
+  serviceCatalogQuery,
   type ServiceCatalogCard,
   type ServiceCatalogPage,
 } from "../../../packages/social/catalog";
 import type { SharedOrderedAnalysis } from "@/lib/shared-ordered-analysis-display";
 import { publicCitationUrl } from "@/lib/public-knowledge-display";
 import { SharedOrderedAnalysisContent } from "./shared-ordered-analysis-content";
+import { ServiceCatalogMap } from "./service-catalog-map";
 
 function observedTime() {
   return Date.now();
@@ -48,11 +50,16 @@ export function ServiceCatalogPanel({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [now, setNow] = useState(() => observedTime());
+  const [queryDraft, setQueryDraft] = useState("");
+  const [category, setCategory] = useState("");
+  const [pageRevision, setPageRevision] = useState(0);
   const alive = useRef(true);
   const generation = useRef(0);
   const pending = useRef(false);
   const opened = useRef(false);
   const selection = useRef("");
+  const query = useRef<string | null>(null);
+  const pageScope = useRef(0);
 
   useEffect(() => {
     alive.current = true;
@@ -98,6 +105,8 @@ export function ServiceCatalogPanel({
     setSelected(null);
     setDetail(null);
     selection.current = "";
+    setCategory("");
+    setPageRevision(++pageScope.current);
     setError(
       "Catalog access could not be confirmed. Check your current Pro access and try again. Your own Library and previously saved copies are separate.",
     );
@@ -114,9 +123,40 @@ export function ServiceCatalogPanel({
     setError("");
     setNotice("");
     setBusy(false);
+    setQueryDraft("");
+    query.current = null;
+    setCategory("");
   }
-  async function browse(cursor: string | null) {
+  function changeQuery(value: string) {
+    generation.current++;
+    pending.current = false;
+    selection.current = "";
+    query.current = value.trim() || null;
+    setPageRevision(++pageScope.current);
+    setQueryDraft(value);
+    setCategory("");
+    setPage(null);
+    setSelected(null);
+    setDetail(null);
+    setBusy(false);
+    setError("");
+    setNotice("");
+  }
+  async function browse(
+    cursor: string | null,
+    requestedQuery = query.current,
+    revision?: number,
+  ) {
     if (!alive.current || disabled || pending.current) return;
+    if (requestedQuery !== query.current) return;
+    if (cursor !== null && revision !== pageScope.current) return;
+    if (
+      requestedQuery !== null &&
+      !serviceCatalogQuery.safeParse(requestedQuery).success
+    ) {
+      setError("Use a search phrase of no more than 200 characters.");
+      return;
+    }
     opened.current = true;
     setOpen(true);
     const ticket = begin();
@@ -124,11 +164,18 @@ export function ServiceCatalogPanel({
     setSelected(null);
     setDetail(null);
     selection.current = "";
+    setCategory("");
+    setPageRevision(++pageScope.current);
     try {
       const result = serviceCatalogPage.parse(
-        await call("serviceArtifactBrowse", { organizationId, cursor }),
+        await call("serviceArtifactBrowse", {
+          organizationId,
+          cursor,
+          ...(requestedQuery ? { query: requestedQuery } : {}),
+        }),
       );
       if (!current(ticket)) return;
+      if (result.query !== requestedQuery) throw Error("Catalog query changed");
       setNow(observedTime());
       setPage(result);
     } catch {
@@ -137,12 +184,21 @@ export function ServiceCatalogPanel({
       finish(ticket);
     }
   }
-  async function preview(card: ServiceCatalogCard) {
+
+  const categories = [
+    ...new Set(page?.page.flatMap((card) => card.categories) ?? []),
+  ].sort();
+  const cards =
+    page?.page.filter(
+      (card) => !category || card.categories.includes(category),
+    ) ?? [];
+  async function preview(card: ServiceCatalogCard, revision: number) {
     if (
       !alive.current ||
       !opened.current ||
       disabled ||
       pending.current ||
+      revision !== pageScope.current ||
       card.availableUntil <= observedTime()
     ) {
       setNow(observedTime());
@@ -229,6 +285,7 @@ export function ServiceCatalogPanel({
       className="panel"
       aria-label="Pro insight catalog"
       aria-busy={busy}
+      style={{ minWidth: 0, overflowWrap: "anywhere" }}
     >
       <h2>Pro insight catalog</h2>
       <p>
@@ -251,6 +308,46 @@ export function ServiceCatalogPanel({
         </button>
       ) : (
         <>
+          <form
+            className="form-grid"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void browse(null);
+            }}
+          >
+            <label>
+              Search indexed generic analyses
+              <input
+                type="search"
+                style={{ width: "100%", minWidth: 0, maxWidth: "100%" }}
+                value={queryDraft}
+                maxLength={200}
+                disabled={disabled}
+                onChange={(event) => changeQuery(event.target.value)}
+              />
+            </label>
+            <p>
+              Search covers indexed eligible generic analyses. Older entries may
+              await indexing. Results do not represent every post, platform or
+              creator.
+            </p>
+            <div className="row">
+              <button type="submit" disabled={disabled || busy}>
+                Search catalog
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                disabled={disabled}
+                onClick={() => {
+                  changeQuery("");
+                  void browse(null, null);
+                }}
+              >
+                Reset search
+              </button>
+            </div>
+          </form>
           <div className="row">
             <button
               type="button"
@@ -274,6 +371,33 @@ export function ServiceCatalogPanel({
           )}
           {page?.availability === "ready" && (
             <>
+              <p>
+                {page.query
+                  ? `Search phrase: ${page.query}`
+                  : "Browsing indexed generic analyses."}
+              </p>
+              {page.page.length > 0 && (
+                <label>
+                  Filter only this checked page by category
+                  <select
+                    style={{ width: "100%", minWidth: 0, maxWidth: "100%" }}
+                    value={category}
+                    disabled={disabled || busy}
+                    onChange={(event) => {
+                      dismissDetail();
+                      setCategory(event.target.value);
+                      setPageRevision(++pageScope.current);
+                    }}
+                  >
+                    <option value="">All categories on this page</option>
+                    {categories.map((name) => (
+                      <option key={name} value={name}>
+                        {name.replaceAll("_", " ")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               {page.page.length === 0 && (
                 <p>
                   {page.isDone
@@ -281,9 +405,14 @@ export function ServiceCatalogPanel({
                     : "No current analyses were returned in this batch. Another catalog page is available."}
                 </p>
               )}
-              {page.page.length > 0 && (
+              {page.page.length > 0 && cards.length === 0 && (
+                <p>
+                  No analyses match this category on the current checked page.
+                </p>
+              )}
+              {cards.length > 0 && (
                 <ul className="form-grid" aria-label="Current catalog analyses">
-                  {page.page.map((card) => {
+                  {cards.map((card) => {
                     const source = publicCitationUrl(card.sourceUrl);
                     const expired = card.availableUntil <= now;
                     return (
@@ -303,6 +432,31 @@ export function ServiceCatalogPanel({
                               : "TikTok"}{" "}
                             · {card.language} · {card.insightCount} insights
                           </p>
+                          <p>
+                            Public creator reference: {card.creatorId}.{" "}
+                            {card.publishedAt === null ||
+                            !Number.isFinite(
+                              new Date(card.publishedAt).getTime(),
+                            )
+                              ? "Publication date unverified."
+                              : `Published ${new Date(card.publishedAt).toISOString().slice(0, 10)} UTC.`}
+                          </p>
+                          <p>
+                            Generic categories:{" "}
+                            {card.categories.length
+                              ? card.categories
+                                  .map((name) => name.replaceAll("_", " "))
+                                  .join(", ")
+                              : "None recorded"}
+                            .
+                          </p>
+                          <p>
+                            Generic topics:{" "}
+                            {card.topics.length
+                              ? card.topics.join(", ")
+                              : "None recorded"}
+                            .
+                          </p>
                           {source && (
                             <a href={source} rel="noreferrer">
                               Open source post
@@ -316,7 +470,7 @@ export function ServiceCatalogPanel({
                           <button
                             type="button"
                             disabled={disabled || busy || expired}
-                            onClick={() => void preview(card)}
+                            onClick={() => void preview(card, pageRevision)}
                           >
                             Inspect {card.title}
                           </button>
@@ -326,12 +480,20 @@ export function ServiceCatalogPanel({
                   })}
                 </ul>
               )}
+              {cards.length > 0 && (
+                <ServiceCatalogMap
+                  key={pageRevision}
+                  cards={cards.filter((card) => card.availableUntil > now)}
+                />
+              )}
               {!page.isDone && (
                 <button
                   type="button"
                   className="secondary"
                   disabled={disabled || busy}
-                  onClick={() => void browse(page.continueCursor)}
+                  onClick={() =>
+                    void browse(page.continueCursor, page.query, pageRevision)
+                  }
                 >
                   Next catalog page
                 </button>

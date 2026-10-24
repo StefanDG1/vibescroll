@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F052: Pro discovery candidate and honest coverage, October 24
+
+Synchronized all four briefs for generic full-text search, public provenance, page-only filters and the optional accessible category map. Recorded actual local checks, mock/browser gaps, unactivated backfill/index and preserved private/saved-copy/provider boundaries. Kept public availability and market claims pending.
+
 ## F051: bounded Pro catalog candidate, October 24
 
 Synchronized all four briefs for the bounded Pro Library panel, existing immutable saved-copy behavior and passing integrated local checks. Preserved browser/production/provider/search/graph gaps, original audience/prices/valid purchases and conservative cumulative reservations. No campaign or live catalog claim was added.

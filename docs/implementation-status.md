@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Pro catalog search and checked-page map candidate, October 24
+
+[ADR 128](adr/128-pro-catalog-search-and-page-map.md) extends the same service artifact family with an 8,192-byte generic search projection, strict v2 cards, current-Pro search and a bounded manual reindex operation. Removal scrubs the projection; restore deletes the artifact. Immutable saved-copy DTOs remain unchanged. Explicit search and checked-page filtering fence old responses, while the optional static map/list represents only current generic category membership. It starts no analysis, polling or extra graph request.
+
+The complete offline check passed 1,456 tests with three hosted skips, zero-warning lint, all types and both production builds. Validation covered 311 documents/twelve snapshots; unchanged dependencies reuse the earlier passing audit. Independent High review found no P1. [The receipt](operations/evidence/launch-20261024-catalog-discovery.json) retains the fixed test literal typing error, mock missing-search-field failure and its exact official source evidence. The mixed legacy/indexed hosted case and fresh Chrome/native-browser check remain pending. Neither the new index/backfill nor this frontend has been deployed. The same US$3 cap and all existing holds remain.
+
 ## Bounded Pro catalog candidate, October 24
 
 The full branch now exposes on-demand browse, inspect and explicit save through the existing service artifact/import family inside Library. Private ownership/current verified Pro are checked before global artifact reads. One fixed-range five-candidate page returns only validated generic cards; currentness, unavailable configuration, empty filtered continuation and cancellation-safe saved copies retain their existing boundaries. No store, queue, index, cron or processing call was added. [ADR 127](adr/127-bounded-pro-catalog-browsing.md) defines the contract.

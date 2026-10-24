@@ -1,7 +1,12 @@
 import { v } from "convex/values";
 import { z } from "zod";
 import { internal } from "./_generated/api";
-import { query, internalQuery, type QueryCtx } from "./_generated/server";
+import {
+  query,
+  internalQuery,
+  type QueryCtx,
+  type MutationCtx,
+} from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import type { Doc, Id } from "./_generated/dataModel";
 import { access, recentAuthentication, limit, audit } from "./lib";
@@ -27,6 +32,7 @@ import {
   validateWorkCloudMediaOutput,
   workCloudMediaPolicy,
   workCloudMediaPreparation,
+  workCloudMcpRequestOptions,
 } from "../packages/contracts/work-cloud-text";
 import {
   socialAnalysisOutput,
@@ -473,15 +479,6 @@ export const approve = mutation({
       "Retention is explicit only for the media protocol.",
     );
     await recentAuthentication(ctx);
-    await approvable(ctx, owned.source);
-    ensure(
-      Number.isSafeInteger(a.generation) &&
-        owned.source.generation === a.generation &&
-        safeModel(a.model) &&
-        ["low", "medium", "high", "xhigh"].includes(a.effort),
-      "APPROVAL_STALE",
-      "Review the current source, requested model and effort.",
-    );
     const grant = await selectedGrant(
       ctx,
       owned.source,
@@ -489,102 +486,275 @@ export const approve = mutation({
       owned.organization,
       a.grantId,
     );
-    ensure(
-      grant.version === a.grantVersion,
-      "APPROVAL_STALE",
-      "The execution grant changed.",
-    );
-    const generation = a.generation + 1;
-    const input = await sourceInput(
-      ctx,
-      owned.source,
-      generation,
-      null,
-      a.inputKind === "media" ? { retainUntil: a.retainUntil! } : undefined,
-    );
-    ensure(
-      a.expectedInputHash === input.inputHash,
-      "APPROVAL_STALE",
-      "The approved source input changed.",
-    );
-    await limit(ctx, `work-cloud-approval:${owned.actor._id}`, 6);
-    const now = Date.now();
-    const job: WorkCloudJob = {
-      executor: "work_cloud",
-      actor: owned.actor._id,
-      generation,
-      model: a.model,
-      effort: a.effort,
-      state: "queued",
-      approvedAt: now,
-      expiresAt: now + 900000,
-      leaseUntil: 0,
-      deadline: 0,
-      stage: a.inputKind === "media" ? "acquiring" : "analyzing",
-      ...(input.registry
-        ? {
-            sourceRevisionId: input.registry.id,
-            sourceContentHash: input.registry.revision.contentHash,
-          }
-        : {}),
-      cloud: {
-        grantId: grant._id,
-        grantVersion: grant.version,
-        clientId: grant.clientId,
-        selectedGeneration: owned.source.generation,
-        selectedRevision: owned.source.updatedAt,
-        inputHash: input.inputHash,
-        policyHash: input.policyHash,
-        funding: "own_subscription",
-        maxApiUsd: 0,
-        ...(input.input.inputKind === "media"
-          ? {
-              schemaVersion: "work-cloud-media-v2" as const,
-              media: {
-                canonicalUrl: input.input.canonicalUrl,
-                toolchainHash: input.input.toolchainHash,
-                retainUntil: input.input.retainUntil,
-              },
-            }
-          : { schemaVersion: "work-cloud-text-v1" as const }),
-      },
-    };
-    await reserve(
-      ctx,
-      owned.organization._id,
-      `source:${a.sourceId}:${generation}`,
-      0,
-    );
-    await ctx.db.patch(a.sourceId, {
-      generation,
-      state: "queued",
-      personalAnalysis: job,
-      ...(job.cloud.media
-        ? { sourceRetentionUntil: job.cloud.media.retainUntil }
-        : {}),
-      managedAnalysisActor: undefined,
-      analysis: undefined,
-      summary: undefined,
-      error: undefined,
-      updatedAt: Math.max(now, owned.source.updatedAt + 1),
-    });
-    if (input.registry) await ctx.db.patch(input.registry.id, { generation });
-    await audit(
-      ctx,
-      owned.organization._id,
-      owned.actor._id,
-      "work_cloud.text_approved",
-      `${a.sourceId}:${generation}`,
-    );
-    return {
-      sourceId: a.sourceId,
-      generation,
-      state: "queued" as const,
-      expiresAt: job.expiresAt,
-      inputHash: input.inputHash,
-    };
+    return approveExactCloudSource(ctx, owned, grant, a);
   },
 });
+
+type CloudApproval = {
+  sourceId: Id<"sources">;
+  generation: number;
+  grantVersion: number;
+  expectedInputHash?: string;
+  model: string;
+  effort: string;
+  inputKind?: "media";
+  retainUntil?: number;
+};
+// Both entry points bind the same exact source/input/lease. The app wrapper
+// retains recent authentication; MCP creation requires a separately reviewed
+// versioned connection policy, never merely the two older OAuth scopes.
+async function approveExactCloudSource(
+  ctx: MutationCtx,
+  owned: Awaited<ReturnType<typeof ownedSource>>,
+  grant: Doc<"assistantGrants">,
+  a: CloudApproval,
+) {
+  await approvable(ctx, owned.source);
+  ensure(
+    Number.isSafeInteger(a.generation) &&
+      owned.source.generation === a.generation &&
+      safeModel(a.model) &&
+      ["low", "medium", "high", "xhigh"].includes(a.effort),
+    "APPROVAL_STALE",
+    "Review the current source, requested model and effort.",
+  );
+  ensure(
+    grant.version === a.grantVersion,
+    "APPROVAL_STALE",
+    "The execution grant changed.",
+  );
+  const generation = a.generation + 1;
+  const input = await sourceInput(
+    ctx,
+    owned.source,
+    generation,
+    null,
+    a.inputKind === "media" ? { retainUntil: a.retainUntil! } : undefined,
+  );
+  ensure(
+    a.expectedInputHash === undefined ||
+      a.expectedInputHash === input.inputHash,
+    "APPROVAL_STALE",
+    "The approved source input changed.",
+  );
+  await limit(ctx, `work-cloud-approval:${owned.actor._id}`, 6);
+  const now = Date.now();
+  const job: WorkCloudJob = {
+    executor: "work_cloud",
+    actor: owned.actor._id,
+    generation,
+    model: a.model,
+    effort: a.effort,
+    state: "queued",
+    approvedAt: now,
+    expiresAt: now + 900000,
+    leaseUntil: 0,
+    deadline: 0,
+    stage: a.inputKind === "media" ? "acquiring" : "analyzing",
+    ...(input.registry
+      ? {
+          sourceRevisionId: input.registry.id,
+          sourceContentHash: input.registry.revision.contentHash,
+        }
+      : {}),
+    cloud: {
+      grantId: grant._id,
+      grantVersion: grant.version,
+      clientId: grant.clientId,
+      selectedGeneration: owned.source.generation,
+      selectedRevision: owned.source.updatedAt,
+      inputHash: input.inputHash,
+      policyHash: input.policyHash,
+      funding: "own_subscription",
+      maxApiUsd: 0,
+      ...(input.input.inputKind === "media"
+        ? {
+            schemaVersion: "work-cloud-media-v2" as const,
+            media: {
+              canonicalUrl: input.input.canonicalUrl,
+              toolchainHash: input.input.toolchainHash,
+              retainUntil: input.input.retainUntil,
+            },
+          }
+        : { schemaVersion: "work-cloud-text-v1" as const }),
+    },
+  };
+  await reserve(
+    ctx,
+    owned.organization._id,
+    `source:${a.sourceId}:${generation}`,
+    0,
+  );
+  await ctx.db.patch(a.sourceId, {
+    generation,
+    state: "queued",
+    personalAnalysis: job,
+    ...(job.cloud.media
+      ? { sourceRetentionUntil: job.cloud.media.retainUntil }
+      : {}),
+    managedAnalysisActor: undefined,
+    analysis: undefined,
+    summary: undefined,
+    error: undefined,
+    updatedAt: Math.max(now, owned.source.updatedAt + 1),
+  });
+  if (input.registry) await ctx.db.patch(input.registry.id, { generation });
+  await audit(
+    ctx,
+    owned.organization._id,
+    owned.actor._id,
+    "work_cloud.text_approved",
+    `${a.sourceId}:${generation}`,
+  );
+  return {
+    sourceId: a.sourceId,
+    generation,
+    state: "queued" as const,
+    expiresAt: job.expiresAt,
+    inputHash: input.inputHash,
+  };
+}
+
+export async function requestCloudFromAssistant(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  request: {
+    generation: number;
+    revision: number;
+    grantVersion: number;
+    cloud: z.infer<typeof workCloudMcpRequestOptions>;
+  },
+) {
+  const a = await assistantGrant(
+    ctx,
+    source.organizationId,
+    "analysis:execute",
+  );
+  enabled(a.actor.subject, true);
+  const options = workCloudMcpRequestOptions.parse(request.cloud);
+  const currentPolicyHash = await digest(canonicalJson(workCloudMediaPolicy));
+  ensure(
+    a.scopes.includes("analysis:request") &&
+      a.client.scopes.includes("analysis:request") &&
+      a.grant.scopes.includes("analysis:request") &&
+      a.organization.privateOwnerId === a.actor._id &&
+      a.membership.role === "owner" &&
+      a.grant.cloudRequestPolicy === "explicit_per_source_v1" &&
+      a.grant.cloudRequestPolicyHash === currentPolicyHash &&
+      a.grant.version === request.grantVersion &&
+      !a.grant.analysisDefaults?.enabled,
+    "SETUP_REQUIRED",
+    "Review private Cloud requests once in Connections. Existing execution permission alone cannot approve new work.",
+  );
+  ensure(
+    Number.isSafeInteger(request.generation) &&
+      request.generation >= 0 &&
+      Number.isSafeInteger(request.revision) &&
+      request.revision >= 0 &&
+      safeModel(options.model),
+    "INVALID_INPUT",
+    "Use the exact current post, model and grant version.",
+  );
+  const job = source.personalAnalysis;
+  if (job?.executor === "work_cloud" && source.state === "queued") {
+    const pending = await unclaimedCloudHandoff(
+      ctx,
+      source,
+      a.actor,
+      a.organization,
+    );
+    ensure(
+      pending &&
+        ((job.cloud.selectedGeneration === request.generation &&
+          job.cloud.selectedRevision === request.revision) ||
+          (source.generation === request.generation &&
+            source.updatedAt === request.revision)) &&
+        job.model === options.model &&
+        job.effort === options.effort &&
+        job.cloud.media?.retainUntil === options.retainUntil,
+      "APPROVAL_STALE",
+      "The queued Cloud request changed or may already have been claimed.",
+    );
+    return cloudRequestReceipt(pending, true);
+  }
+  ensure(
+    source.generation === request.generation &&
+      source.updatedAt === request.revision &&
+      (await sourceWithinAssistantScope(
+        ctx,
+        a.grant,
+        a.organization,
+        a.actor._id,
+        source,
+      )),
+    "APPROVAL_STALE",
+    "The source or its selected execution scope changed.",
+  );
+  // Six fresh requests per actor per hour, across OAuth clients. Queued replays
+  // return above and cannot consume another generation or reservation.
+  const key = `work-cloud-mcp-hour:${a.actor._id}`;
+  const window = Math.floor(Date.now() / 3600000);
+  const row = await ctx.db
+    .query("limits")
+    .withIndex("by_key", (q) => q.eq("key", key))
+    .unique();
+  ensure(
+    row?.window !== window || row.count < 6,
+    "QUOTA_EXCEEDED",
+    "The six-request hourly Cloud limit is reached.",
+  );
+  const approved = await approveExactCloudSource(
+    ctx,
+    { source, ...a },
+    a.grant,
+    {
+      sourceId: source._id,
+      generation: request.generation,
+      grantVersion: request.grantVersion,
+      model: options.model,
+      effort: options.effort,
+      inputKind: "media",
+      retainUntil: options.retainUntil,
+    },
+  );
+  const counter = { window, count: row?.window === window ? row.count + 1 : 1 };
+  if (row) await ctx.db.patch(row._id, counter);
+  else await ctx.db.insert("limits", { key, ...counter });
+  return cloudRequestReceipt(
+    { ...approved, model: options.model, effort: options.effort },
+    false,
+  );
+}
+function cloudRequestReceipt(
+  value: {
+    sourceId: Id<"sources">;
+    generation: number;
+    expiresAt: number;
+    inputHash: string;
+    model: string;
+    effort: string;
+  },
+  reused: boolean,
+) {
+  return {
+    source_id: value.sourceId,
+    generation: value.generation,
+    status: "waiting_for_cloud",
+    analysis_started: false,
+    reused_request: reused,
+    cloud: {
+      protocol: "work-cloud-media-v2",
+      input_hash: value.inputHash,
+      model: value.model,
+      effort: value.effort,
+      expires_at: value.expiresAt,
+      funding: "own_subscription",
+      max_api_usd: 0,
+      publication: "private_only",
+    },
+    next: "Prepare supported tools and restricted Internet access in your own Work Cloud task, then call work_cloud_claim for this exact source and generation. No GitHub is required. This receipt does not launch the host or prove execution.",
+  };
+}
 
 async function current(
   ctx: QueryCtx,

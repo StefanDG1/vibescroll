@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { productTables } from "../convex/productSchema";
+import { assistantTables } from "../convex/assistantSchema";
 import { sourceType, retrievalState } from "../convex/sourceSchema";
 import {
   revertEvidenceValidator,
@@ -10,7 +11,7 @@ import {
 } from "../convex/lib/prObservation";
 import { readFileSync } from "node:fs";
 const base = "346b718baf91ba9847fbb707be7bbe069df57257";
-it("adds no table/index/config and widens only the exact old personal job and private ordered receipt", () => {
+it("adds no table/index/config and widens only the exact personal job, ordered receipt and Cloud request opt-in", () => {
   const old = execFileSync("git", ["show", `${base}:convex/productSchema.ts`], {
     encoding: "utf8",
   });
@@ -57,7 +58,6 @@ it("adds no table/index/config and widens only the exact old personal job and pr
   }
   for (const file of [
     "schema.ts",
-    "assistantSchema.ts",
     "sourceSchema.ts",
     "knowledgeSchema.ts",
     "improvementSchema.ts",
@@ -75,5 +75,34 @@ it("adds no table/index/config and widens only the exact old personal job and pr
         encoding: "utf8",
       }).replace(/\r\n/g, "\n"),
     );
+  }
+  const oldAssistant = execFileSync(
+    "git",
+    ["show", `${base}:convex/assistantSchema.ts`],
+    { encoding: "utf8" },
+  );
+  const beforeAssistant = new Function(
+    "defineTable",
+    "v",
+    oldAssistant.replace(/^import[\s\S]*?;/gm, "").replace(/^export /gm, "") +
+      "; return assistantTables;",
+  )(defineTable, v);
+  expect(Object.keys(assistantTables)).toEqual(Object.keys(beforeAssistant));
+  for (const [name, table] of Object.entries(assistantTables)) {
+    const current = (table as any).export(),
+      prior = beforeAssistant[name].export();
+    if (name === "assistantGrants") {
+      expect(current.documentType.value.cloudRequestPolicy).toEqual({
+        fieldType: { type: "literal", value: "explicit_per_source_v1" },
+        optional: true,
+      });
+      expect(current.documentType.value.cloudRequestPolicyHash).toEqual({
+        fieldType: { type: "string" },
+        optional: true,
+      });
+      delete current.documentType.value.cloudRequestPolicy;
+      delete current.documentType.value.cloudRequestPolicyHash;
+    }
+    expect(current).toEqual(prior);
   }
 });

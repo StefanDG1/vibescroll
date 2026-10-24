@@ -1,0 +1,41 @@
+{
+  "recordedAtUtc": "2026-10-24T22:53:14.853421+00:00",
+  "scope": "Narrow compatible private MCP request candidate on63a071d; no full-main migration",
+  "mainImplementationPR": 167,
+  "validation": {
+    "javascriptPassed": 1101,
+    "nodePassed": 19,
+    "pythonPassed": 15,
+    "totalPassed": 1135,
+    "hostedSkipped": 3,
+    "lint": "zero warnings/errors",
+    "types": "passed",
+    "bothProductionBuilds": "passed",
+    "validation": "passed",
+    "dependencies": "same pinned lock as freshly audited main; no high/critical or unresolved findings",
+    "nativeUI": "Main component/CSS fixture passed; compatible component is now identical. Actual production account remains unverified."
+  },
+  "failuresPreserved": [
+    "Initial compatibility test correctly rejected unreviewed grant-validator changes; replaced exact byte freeze only for assistant schema with exact exported two-optional-field comparison and unchanged all-table/index checks.",
+    "One initial webhook test exceeded5s while concurrent work ran; unchanged focused test and subsequent full backend suite passed.",
+    "Help entry initially referenced a guide absent from this compatible release; related links now contain only existing guides.",
+    "New UI test initially encountered the older execution label; the accurate existing main label was backported and all89 compatible UI tests passed."
+  ],
+  "evidenceLogs": {
+    "cloud-mcp-compatible-check.log": "6c4bc44040ab533551d941aa2f1812d38677e739d97ec093afa97ca9e07122f8",
+    "cloud-mcp-compatible-final-check.log": "4ca8e5de6f2698c9a78cbb8b16ecad47652bf633ccd49ff4d0da2c8a260e2d8a",
+    "cloud-mcp-compatible-final-v2-check.log": "2ab9c23e6b57a06d26a2cc8f8899999d2b7effd0a58cf2ea815159793b56e202",
+    "cloud-mcp-compatible-ui-final.log": "5032b2c800c3ca9f1c8e0ba4056d4cf1ee5ce1bc2b3ff85f1c89cb009945598a",
+    "cloud-mcp-compatible-final-remainder.log": "477fa7dfd9903aad994726890b39afe3e20e64fa0f99098806cd7b081b0533b0"
+  },
+  "publication": {
+    "exactHeadCI": "pending",
+    "backend": "pending fresh bounded no-scan two-field schema prediction",
+    "frontend": "not deployed",
+    "actualCloudVideo": "pending",
+    "automaticDispatch": "pending",
+    "sharedContribution": "pending",
+    "generalPaidAccess": "pending"
+  },
+  "gates": "Original cumulativeUSD3, existing provider/privacy gates and reserved owner-test post preserved."
+}

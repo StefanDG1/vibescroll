@@ -1,5 +1,9 @@
 # Interface contracts
 
+## Explicit experimental MCP Cloud requests
+
+[ADR 150](adr/150-explicit-mcp-cloud-analysis-requests.md) adds `request_analysis(mode=work_cloud)` with required current `generation`, `revision`, `grantVersion` and strict `cloud:{model,effort,useOwnPlan:true,maxApiUsd:0,retainUntil}`. It requires the reviewed `explicit_per_source_v1` app-grant policy, server-owned current media-policy hash, both request/execution scopes and owner-private media authority. Old grants do not acquire approval authority. Identical unclaimed replay is idempotent; claimed/unknown work cannot be replaced. `get_job_status` returns compact identities and Cloud state/stage. This does not launch a host, dispatch future links, publish catalog data or authorize paid processing.
+
 Mode: reference. These are proposed application interfaces, not existing provider endpoints.
 
 ## Public and authenticated HTTP boundaries

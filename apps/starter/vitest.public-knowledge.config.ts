@@ -13,6 +13,7 @@ export default defineConfig({
     include: [
       "apps/starter/private-library-upgrade-ui.test.ts",
       "apps/starter/work-cloud-text-ui.test.ts",
+      "apps/starter/assistant-connections-cloud-ui.test.ts",
       "apps/starter/work-cloud-parent-ui.test.ts",
       "apps/starter/public-knowledge-web.test.ts",
       "apps/starter/source-acquisition-ui.test.ts",

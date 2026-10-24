@@ -225,20 +225,41 @@ export function createKnowledgeHandler(
         .strict();
       register(
         "get_job_status",
-        "Read short current status of selected or explicitly saved work. Never returns provider logs, transcripts or media.",
+        "Read short current status of selected or explicitly saved work, including the current generation, revision and grant_version for an exact Cloud request. Never returns provider logs, transcripts or media.",
         "jobs:read",
         sourceRequest,
       );
       register(
         "request_analysis",
-        "Request supported media local extraction, optional project evaluation, or cancellation of waiting work. GitHub, Reddit and typed source revisions return an app review link for retrieval, analysis and project approval; local/credits/projects modes never route them into the media workflow. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without a mode returns the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it.",
+        "Request supported media local extraction, optional project evaluation, or cancellation of waiting work. GitHub, Reddit and typed source revisions return an app review link for retrieval, analysis and project approval; local/credits/projects modes never route them into the media workflow. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without a mode returns the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it." +
+          (workCloudMedia
+            ? " Use mode=work_cloud only for an exact supported video the user requests after the new one-time reviewed private app connection opt-in. Read get_job_status first and pass its current generation, revision and grant_version as grantVersion, plus the requested cloud settings. Cloud uses the user's own subscription with useOwnPlan=true and maxApiUsd=0, with no paid API fallback, repository access or publication authority. The host task must verify its tools and network permission before claiming work. The app records waiting work and does not automatically launch a host task or enable background processing."
+            : ""),
         "analysis:request",
         z
           .object({
             sourceId: z.string().min(1).max(100),
             profileId: z.string().max(100).optional(),
-            mode: z.enum(["local", "credits", "projects", "cancel"]).optional(),
+            mode: z
+              .enum(
+                workCloudMedia
+                  ? ["local", "credits", "projects", "cancel", "work_cloud"]
+                  : ["local", "credits", "projects", "cancel"],
+              )
+              .optional(),
             generation: z.number().int().nonnegative().optional(),
+            revision: z.number().int().nonnegative().optional(),
+            grantVersion: z.number().int().positive().optional(),
+            cloud: z
+              .object({
+                model: z.string().min(1).max(100),
+                effort: z.enum(["low", "medium", "high", "xhigh"]),
+                useOwnPlan: z.literal(true),
+                maxApiUsd: z.literal(0),
+                retainUntil: z.number().int().positive(),
+              })
+              .strict()
+              .optional(),
             maxCredits: z.number().int().nonnegative().optional(),
             project: z.string().min(1).max(200).optional(),
             bestProjects: z.boolean().optional(),

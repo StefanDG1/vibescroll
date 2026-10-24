@@ -262,6 +262,8 @@ async function setup(privateLibrary = false) {
   };
   const approve = async (input: any = selection) => {
     const quote = await fresh().query(api.localLibraryTasks.quote, input);
+    if (quote.payload.schemaVersion !== "1.0.0")
+      throw Error("Legacy fixture requires a v1 quote.");
     const approved = await fresh().mutation(api.localLibraryTasks.approve, {
       ...input,
       quoteHash: quote.hash,
@@ -269,7 +271,7 @@ async function setup(privateLibrary = false) {
       useOwnPlan: true,
       maxInferenceCredits: 0,
     });
-    return { quote, ...approved };
+    return { quote: { ...quote, payload: quote.payload }, ...approved };
   };
   const claim = () =>
     dispatch("claim", { taskProtocolVersion: "1.0.0", preferTasks: true });
@@ -896,6 +898,8 @@ it("binds exact brief bytes in the quote and fences a changed approved task befo
   const approved = await s.approve(input);
   await s.t.run(async (ctx) => {
     const run = (await ctx.db.get(approved.runId))!;
+    if (run.task?.schemaVersion !== "1.0.0")
+      throw Error("Legacy fixture requires a v1 task.");
     await ctx.db.patch(run._id, {
       task: { ...run.task!, privateEvaluationBrief: "Changed after approval" },
     });
@@ -1218,9 +1222,15 @@ it("fences retained custom results if their original approved brief or private o
   const run = (await s.t.run((ctx) =>
     ctx.db.get(job.runId as Id<"localLibraryRuns">),
   ))!;
+  if (run.task?.schemaVersion !== "1.0.0")
+    throw Error("Legacy fixture requires a v1 task.");
+  const originalTask = run.task;
   await s.t.run((ctx) =>
     ctx.db.patch(run._id, {
-      task: { ...run.task!, privateEvaluationBrief: "Changed original text" },
+      task: {
+        ...originalTask,
+        privateEvaluationBrief: "Changed original text",
+      },
     }),
   );
   expect(await s.t.run((ctx) => improvementCurrent(ctx, proposal))).toBe(false);

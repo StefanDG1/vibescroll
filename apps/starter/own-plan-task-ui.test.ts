@@ -64,7 +64,9 @@ function text(value: any): string {
 }
 function button(tree: any, label: string) {
   return elements(tree).find(
-    (node) => node.type === "button" && text(node) === label,
+    (node) =>
+      node.type === "button" &&
+      text(node).replace(/\s+/g, " ").trim() === label,
   )!;
 }
 async function flush() {
@@ -685,4 +687,191 @@ it("renders only origin labels in resumed task and status views without raw priv
   await h.click("Open task status");
   expect(text(h.view())).toContain("Private evaluation context");
   expect(text(h.view())).not.toContain("RAW_PRIVATE_DO_NOT_RENDER");
+});
+function sourceHarness() {
+  const h = harness();
+  h.props.privateLibrary = true;
+  h.props.sourceReanalysis = { available: true, expectedPrivateVersion: 2 };
+  const base = h.calls.getMockImplementation()!;
+  h.calls.mockImplementation(async (op, args): Promise<any> => {
+    const result = await base(op, args);
+    if (op === "localTaskCapabilities")
+      return result.map((item: any) => ({
+        ...item,
+        admittedRuntime: {
+          value: {
+            schemaVersion: "local-task-runtime-v1",
+            features: ["source_reanalysis_text_v1"],
+          },
+          hash: "a".repeat(64),
+          profileBinding: "b".repeat(64),
+          expiresAt: Date.now() + 300000,
+          sessionExpiresAt: Date.now() + 3600000,
+        },
+      }));
+    if (op === "localTaskQuote")
+      return {
+        ...result,
+        payload: {
+          sourceId: args.sourceId,
+          expectedPrivateVersion: args.expectedPrivateVersion,
+          ...(args.privateSourceBrief !== undefined
+            ? { privateSourceBrief: args.privateSourceBrief }
+            : {}),
+        },
+      };
+    return result;
+  });
+  const chooseSource = async () => {
+    await h.click("Load account choices");
+    h.select(0, "owned-device");
+    h.select(1, "actual-only");
+    h.select(2, "xhigh");
+  };
+  return { ...h, chooseSource };
+}
+it("source text mode binds only exact source version/context without project or plan selectors", async () => {
+  const h = sourceHarness();
+  await h.chooseSource();
+  const brief = "  Inspect this text focus.\nKeep spacing.  ";
+  setBrief(h, brief);
+  await h.click("Review own-subscription quote");
+  consentToQuote(h);
+  await h.click("Approve on my paired computer");
+  for (const [op, args] of h.calls.mock.calls)
+    if (op === "localTaskQuote" || op === "localTaskApprove") {
+      expect(args).toMatchObject({
+        workload: "source_reanalysis_text",
+        sourceId: "source",
+        expectedPrivateVersion: 2,
+        privateSourceBrief: brief,
+        deviceId: "owned-device",
+        model: "actual-only",
+        effort: "xhigh",
+      });
+      for (const field of [
+        "repositoryIds",
+        "members",
+        "proposalId",
+        "proposalVersion",
+        "privateEvaluationBrief",
+      ])
+        expect(args).not.toHaveProperty(field);
+    }
+  expect(OwnPlanTaskControls(h.props).key).toContain(":source-text-v2:2");
+});
+it.each(["missing", "expired", "old feature"])(
+  "keeps %s text runtime unavailable without forcing sign-in",
+  async (condition) => {
+    const h = sourceHarness();
+    const base = h.calls.getMockImplementation()!;
+    h.calls.mockImplementation(async (op, args): Promise<any> => {
+      const result = await base(op, args);
+      if (op === "localTaskCapabilities")
+        return result.map((item: any) => ({
+          ...item,
+          admittedRuntime:
+            condition === "missing"
+              ? null
+              : {
+                  ...item.admittedRuntime,
+                  ...(condition === "expired"
+                    ? { expiresAt: Date.now() - 1 }
+                    : {
+                        value: {
+                          schemaVersion: "local-task-runtime-v1",
+                          features: [],
+                        },
+                      }),
+                },
+        }));
+      return result;
+    });
+    await h.chooseSource();
+    expect(
+      button(h.view(), "Review own-subscription quote").props.disabled,
+    ).toBe(true);
+    expect(text(h.view())).toContain("text runtime update required");
+    expect(h.calls.mock.calls.some(([op]) => op === "localTaskQuote")).toBe(
+      false,
+    );
+  },
+);
+it("source mode omits an empty brief and invalidates late quotes and stale approval after edits", async () => {
+  const h = sourceHarness();
+  await h.chooseSource();
+  await h.click("Review own-subscription quote");
+  expect(
+    h.calls.mock.calls.find(([op]) => op === "localTaskQuote")![1],
+  ).not.toHaveProperty("privateSourceBrief");
+  consentToQuote(h);
+  const old = button(h.view(), "Approve on my paired computer");
+  setBrief(h, "New focus");
+  old.props.onClick();
+  await flush();
+  expect(h.calls.mock.calls.some(([op]) => op === "localTaskApprove")).toBe(
+    false,
+  );
+  await h.click("Review own-subscription quote");
+  expect(button(h.view(), "Approve on my paired computer").props.disabled).toBe(
+    true,
+  );
+});
+it("source mode refuses an expired admitted runtime at the actual approval event", async () => {
+  const h = sourceHarness();
+  const now = Date.now();
+  const base = h.calls.getMockImplementation()!;
+  h.calls.mockImplementation(async (op, args): Promise<any> => {
+    const result = await base(op, args);
+    return op === "localTaskCapabilities"
+      ? result.map((item: any) => ({
+          ...item,
+          admittedRuntime: { ...item.admittedRuntime, expiresAt: now + 1000 },
+        }))
+      : result;
+  });
+  await h.chooseSource();
+  await h.click("Review own-subscription quote");
+  consentToQuote(h);
+  const approve = button(h.view(), "Approve on my paired computer");
+  vi.spyOn(Date, "now").mockReturnValue(now + 1001);
+  approve.props.onClick();
+  await flush();
+  expect(h.calls.mock.calls.some(([op]) => op === "localTaskApprove")).toBe(
+    false,
+  );
+});
+it("source history explicitly selects its workload and opens only a chosen result run", async () => {
+  const h = sourceHarness();
+  const viewResult = vi.fn();
+  h.props.onViewPrivateResult = viewResult;
+  const base = h.calls.getMockImplementation()!;
+  h.calls.mockImplementation(async (op, args): Promise<any> =>
+    op === "localTaskResume"
+      ? {
+          items: [
+            {
+              id: "history-run",
+              workload: "source_reanalysis_text",
+              state: "completed",
+              model: "actual-only",
+              effort: "xhigh",
+              privateVersion: 1,
+              resultAvailable: true,
+            },
+          ],
+          next: null,
+        }
+      : base(op, args),
+  );
+  await h.click("Find existing tasks");
+  expect(h.calls).toHaveBeenCalledWith("localTaskResume", {
+    organizationId: "org",
+    sourceId: "source",
+    cursor: null,
+    workload: "source_reanalysis_text",
+  });
+  expect(viewResult).not.toHaveBeenCalled();
+  await h.click("View private result version 1");
+  expect(viewResult).toHaveBeenCalledExactlyOnceWith("history-run");
 });

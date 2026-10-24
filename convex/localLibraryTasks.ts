@@ -13,6 +13,11 @@ import { taskDevice } from "./lib/localTaskAuthority";
 import { snapshotScopeCurrent } from "../packages/repositories/scope";
 import type { PrivateEvaluationOrigin } from "../packages/contracts/private-evaluation-context";
 import { validatePrivateEvaluationBrief } from "./lib/privateEvaluationContext";
+import { quoteSourceTask, approveSourceTask } from "./lib/sourceReanalysisTask";
+import {
+  releaseSourcePointer,
+  runtimeCurrent,
+} from "./lib/privateSourceAnalysis";
 
 export const resume = query({
   args: {
@@ -20,6 +25,12 @@ export const resume = query({
     sourceId: v.optional(v.id("sources")),
     proposalId: v.optional(v.id("proposals")),
     cursor: v.union(v.string(), v.null()),
+    workload: v.optional(
+      v.union(
+        v.literal("project_evaluation"),
+        v.literal("source_reanalysis_text"),
+      ),
+    ),
   },
   handler: async (ctx, a) => {
     const { actor } = await access(ctx, a.organizationId);
@@ -28,11 +39,24 @@ export const resume = query({
       "INVALID_INPUT",
       "Choose one source evaluation or proposal plan history.",
     );
-    const page = await ctx.db
-      .query("localLibraryRuns")
-      .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
-      .order("desc")
-      .paginate({ cursor: a.cursor, numItems: 20 });
+    const page =
+      a.workload === "source_reanalysis_text" && a.sourceId
+        ? await ctx.db
+            .query("localLibraryRuns")
+            .withIndex("by_source_reanalysis", (q) =>
+              q
+                .eq("organizationId", a.organizationId)
+                .eq("task.sourceReanalysisBinding.sourceId", a.sourceId!),
+            )
+            .order("desc")
+            .paginate({ cursor: a.cursor, numItems: 5 })
+        : await ctx.db
+            .query("localLibraryRuns")
+            .withIndex("by_org", (q) =>
+              q.eq("organizationId", a.organizationId),
+            )
+            .order("desc")
+            .paginate({ cursor: a.cursor, numItems: 20 });
     return {
       items: page.page
         .filter(
@@ -40,8 +64,9 @@ export const resume = query({
             run.actor === actor._id &&
             run.task &&
             (a.proposalId
-              ? run.task.proposal?.id === a.proposalId
-              : run.task.workload === "project_evaluation" &&
+              ? run.task.schemaVersion === "1.0.0" &&
+                run.task.proposal?.id === a.proposalId
+              : run.task.workload === (a.workload ?? "project_evaluation") &&
                 run.sources.includes(a.sourceId!)),
         )
         .map((run) => ({
@@ -55,9 +80,18 @@ export const resume = query({
           model: run.model,
           effort: run.effort,
           deadline: run.task!.deadline,
-          proposalIds: run.task!.proposalIds,
-          evaluationIds: run.task!.evaluationIds,
-          ...(run.task!.privateEvaluationOrigin
+          proposalIds:
+            run.task!.schemaVersion === "1.0.0" ? run.task!.proposalIds : [],
+          evaluationIds:
+            run.task!.schemaVersion === "1.0.0" ? run.task!.evaluationIds : [],
+          ...(run.task!.schemaVersion === "2.0.0"
+            ? {
+                privateVersion: run.sourceTaskResult?.version ?? null,
+                resultAvailable: !!run.sourceTaskResult,
+              }
+            : {}),
+          ...(run.task!.schemaVersion === "1.0.0" &&
+          run.task!.privateEvaluationOrigin
             ? { privateEvaluationOrigin: run.task!.privateEvaluationOrigin }
             : {}),
           maxInferenceCredits: 0,
@@ -69,7 +103,11 @@ export const resume = query({
 
 export const localTaskArgs = {
   organizationId: v.id("organizations"),
-  workload: v.union(v.literal("project_evaluation"), v.literal("plan_draft")),
+  workload: v.union(
+    v.literal("project_evaluation"),
+    v.literal("plan_draft"),
+    v.literal("source_reanalysis_text"),
+  ),
   deviceId: v.id("devices"),
   model: v.string(),
   effort: v.string(),
@@ -80,6 +118,8 @@ export const localTaskArgs = {
   proposalId: v.optional(v.id("proposals")),
   proposalVersion: v.optional(v.number()),
   privateEvaluationBrief: v.optional(v.string()),
+  privateSourceBrief: v.optional(v.string()),
+  expectedPrivateVersion: v.optional(v.number()),
 };
 type Selection = {
   organizationId: Id<"organizations">;
@@ -365,14 +405,29 @@ export const capabilities = query({
         profileBinding: d.subscriptionCapabilities?.profileBinding,
         expiresAt: d.subscriptionCapabilities?.expiresAt ?? 0,
         access: "advertised_not_verified" as const,
+        admittedRuntime: runtimeCurrent(d) ? d.localTaskRuntime! : null,
       }));
   },
 });
 export const quote = query({
   args: localTaskArgs,
   handler: async (ctx, a) => {
+    ensure(
+      a.workload === "source_reanalysis_text" ||
+        (a.privateSourceBrief === undefined &&
+          a.expectedPrivateVersion === undefined),
+      "INVALID_INPUT",
+      "Source reanalysis context belongs to its own task.",
+    );
     const expiresAt = Date.now() + 300000,
-      q = await localTaskQuote(ctx, a, expiresAt);
+      q =
+        a.workload === "source_reanalysis_text"
+          ? await quoteSourceTask(ctx, a, expiresAt)
+          : await localTaskQuote(
+              ctx,
+              { ...a, workload: a.workload },
+              expiresAt,
+            );
     return {
       ...q,
       expiresAt,
@@ -392,7 +447,19 @@ export const approve = mutation({
     maxInferenceCredits: v.literal(0),
   },
   handler: async (ctx, a) => {
-    const q = await localTaskQuote(ctx, a, a.quoteExpiresAt);
+    if (a.workload === "source_reanalysis_text")
+      return approveSourceTask(ctx, a);
+    ensure(
+      a.privateSourceBrief === undefined &&
+        a.expectedPrivateVersion === undefined,
+      "INVALID_INPUT",
+      "Source reanalysis context belongs to its own task.",
+    );
+    const q = await localTaskQuote(
+      ctx,
+      { ...a, workload: a.workload },
+      a.quoteExpiresAt,
+    );
     ensure(
       q.hash === a.quoteHash,
       "APPROVAL_STALE",
@@ -537,11 +604,19 @@ export const status = query({
       model: r!.model,
       effort: r!.effort,
       deadline: r!.task!.deadline,
-      evaluationIds: r!.task!.evaluationIds,
-      ...(r!.task!.privateEvaluationOrigin
+      evaluationIds:
+        r!.task!.schemaVersion === "1.0.0" ? r!.task!.evaluationIds : [],
+      ...(r!.task!.schemaVersion === "2.0.0"
+        ? {
+            privateVersion: r!.sourceTaskResult?.version ?? null,
+            resultAvailable: !!r!.sourceTaskResult,
+          }
+        : {}),
+      ...(r!.task!.schemaVersion === "1.0.0" && r!.task!.privateEvaluationOrigin
         ? { privateEvaluationOrigin: r!.task!.privateEvaluationOrigin }
         : {}),
-      proposalIds: r!.task!.proposalIds,
+      proposalIds:
+        r!.task!.schemaVersion === "1.0.0" ? r!.task!.proposalIds : [],
       maxInferenceCredits: 0,
     };
   },
@@ -563,11 +638,17 @@ export const cancel = mutation({
         leaseGeneration: run!.task!.leaseGeneration + 1,
         leaseToken: undefined,
         leaseUntil: 0,
-        inspected: undefined,
-        inspectionManifest: undefined,
+        ...(run!.task!.schemaVersion === "1.0.0"
+          ? { inspected: undefined, inspectionManifest: undefined }
+          : {}),
       },
     });
-    if (run!.state === "queued" && run!.task!.proposal) {
+    if (run!.state === "queued") await releaseSourcePointer(ctx, run!);
+    if (
+      run!.state === "queued" &&
+      run!.task!.schemaVersion === "1.0.0" &&
+      run!.task!.proposal
+    ) {
       const p = await ctx.db.get(run!.task!.proposal.id);
       if (p?.localPlanRunId === run!._id)
         await ctx.db.patch(p._id, { localPlanRunId: undefined });
@@ -596,7 +677,8 @@ export const reconcile = mutation({
       "APPROVAL_STALE",
       "Wait for the original task deadline and review its uncertain usage before granting new work.",
     );
-    if (run!.task!.proposal) {
+    await releaseSourcePointer(ctx, run!);
+    if (run!.task!.schemaVersion === "1.0.0" && run!.task!.proposal) {
       const p = await ctx.db.get(run!.task!.proposal.id);
       if (p?.localPlanRunId === run!._id)
         await ctx.db.patch(p._id, { localPlanRunId: undefined });
@@ -608,8 +690,9 @@ export const reconcile = mutation({
         ...run!.task!,
         leaseUntil: 0,
         leaseToken: undefined,
-        inspected: undefined,
-        inspectionManifest: undefined,
+        ...(run!.task!.schemaVersion === "1.0.0"
+          ? { inspected: undefined, inspectionManifest: undefined }
+          : {}),
       },
     });
     return {

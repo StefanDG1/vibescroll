@@ -2,6 +2,10 @@ import { defineTable } from "convex/server";
 import { personalAnalysisValue } from "./personalAnalysisSchema";
 import { v } from "convex/values";
 import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
+import {
+  privateSourcePointerValue,
+  localTaskRuntimeSnapshotValue,
+} from "../packages/contracts/private-source-analysis";
 import { allowancePolicyValue } from "../packages/billing/allowance-policy";
 import { sourceType, retrievalState } from "./sourceSchema";
 import { subscriptionCapabilitiesValue } from "./localLibrarySchema";
@@ -261,6 +265,8 @@ export const productTables = {
     .index("by_expiry", ["expiresAt"]),
   sources: defineTable({
     ...tenant,
+    privateSourceAnalysis: v.optional(privateSourcePointerValue),
+    privateSourceAnalysisRunId: v.optional(v.id("localLibraryRuns")),
     sourceType: v.optional(sourceType),
     currentRevisionId: v.optional(v.id("sourceRevisions")),
     socialIdentity: v.optional(
@@ -709,6 +715,7 @@ export const productTables = {
     .index("by_provider", ["organizationId", "provider"]),
   devices: defineTable({
     ...tenant,
+    localTaskRuntime: v.optional(localTaskRuntimeSnapshotValue),
     owner: v.id("users"),
     name: v.string(),
     fingerprint: v.string(),

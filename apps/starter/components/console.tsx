@@ -66,6 +66,7 @@ import { OwnPlanTaskControls } from "./own-plan-task-controls";
 import { OrderedFileUpload } from "./ordered-file-upload";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
 import { TypedSourceEvidence } from "./typed-source-evidence";
+import { PrivateSourceAnalysis } from "./private-source-analysis";
 import { PublicKnowledgePanel } from "./public-knowledge-panel";
 import { SavedPublicSource } from "./saved-public-source";
 import { PublicSaveContinuation } from "./public-save-continuation";
@@ -890,6 +891,7 @@ export function Console({
           "workCloudTextApprove",
           "localTaskQuote",
           "localTaskStatus",
+          "privateSourceAnalysisDetail",
           "localTaskApprove",
           "localTaskCancel",
           "localTaskReconcile",
@@ -3966,6 +3968,30 @@ function SourceDetail({
           </p>
         </section>
       )}
+      {!demo &&
+        !detailLoading &&
+        detail.privateLibrary === true &&
+        detail.privateSourceEligibility && (
+          <PrivateSourceAnalysis
+            privateLibrary
+            organizationId={org}
+            sourceId={sourceId}
+            title={detail.title}
+            generation={detail.generation}
+            sourceUpdatedAt={detail.updatedAt}
+            rightsAttested={detail.rightsAttested === true}
+            sourceRetentionUntil={detail.sourceRetentionUntil}
+            currentRevisionId={detail.currentRevisionId}
+            analysisHash={detail.analysisHash}
+            eligibility={detail.privateSourceEligibility}
+            evidenceRegistry={detail.evidenceRegistry}
+            sourceRevision={detail.sourceRevision}
+            call={strictCall}
+            disabled={readOnly}
+            onComplete={onRefresh}
+            onOpenOriginal={() => setTranscriptOpen(true)}
+          />
+        )}
       {!demo && detail.state === "ready" && (
         <OwnPlanTaskControls
           organizationId={org}

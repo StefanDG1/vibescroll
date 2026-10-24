@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: private source text results on runs
+
+[ADR 138](adr/138-private-source-text-results-on-existing-runs.md) keeps private text outputs on existing runs with small source pointers, strict v2 local admission and independent earned-result reading. Preserve canonical source fields, exact evidence and private rights; no media/Cloud/skills/project-reference claim. One new source index and one changed device/state index need separately funded migration evidence.
+
 ## October 24: distinct processing availability
 
 [ADR 137](adr/137-distinct-processing-availability-in-setup.md) adds an optional conservative text-review availability state to the existing setup snapshot. Saved routes, managed funding, chapter completion and source-specific approval stay unchanged. No host, media or execution readiness follows from a feature gate.

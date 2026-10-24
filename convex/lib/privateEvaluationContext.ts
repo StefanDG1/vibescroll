@@ -67,8 +67,9 @@ export async function privateEvaluationTaskCurrent(
   ctx: QueryCtx,
   run: Doc<"localLibraryRuns">,
 ) {
-  const task = run.task!,
-    origin = task.privateEvaluationOrigin,
+  const task = run.task;
+  if (!task || task.schemaVersion !== "1.0.0") return false;
+  const origin = task.privateEvaluationOrigin,
     text = task.privateEvaluationBrief;
   if (task.workload === "plan_draft") {
     const proposal = task.proposal && (await ctx.db.get(task.proposal.id));

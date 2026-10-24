@@ -138,6 +138,8 @@ export async function scrubUnusableBase(
   // Authored filing, notes and knowledge corrections are separate records.
   // New rights never reauthorize retained provider bytes or their old analysis.
   await ctx.db.patch(source._id, {
+    privateSourceAnalysis: undefined,
+    privateSourceAnalysisRunId: undefined,
     currentRevisionId: undefined,
     orderedMedia: undefined,
     personalOrderedInput: undefined,
@@ -166,6 +168,12 @@ export async function scrubUnusableBase(
     updatedAt: Math.max(now, source.updatedAt + 1),
   });
   await invalidatePublicSource(ctx, source._id);
+  await ctx.scheduler.runAfter(0, internal.privateSourceAnalysis.scrub, {
+    organizationId: source.organizationId,
+    sourceId: source._id,
+    maxGeneration: source.generation,
+    cursor: null,
+  });
   for (const request of await ctx.db
     .query("sourceAcquisitions")
     .withIndex("by_source", (q) => q.eq("sourceId", source._id))
@@ -863,6 +871,12 @@ export const expire = internalMutation({
       retentionScheduledAt: undefined,
       updatedAt: now,
     });
+    await ctx.scheduler.runAfter(0, internal.privateSourceAnalysis.scrub, {
+      organizationId: revision.organizationId,
+      sourceId: revision.sourceId,
+      maxGeneration: revision.generation,
+      cursor: null,
+    });
     if (
       !source ||
       source.organizationId !== revision.organizationId ||
@@ -887,6 +901,8 @@ export const expire = internalMutation({
       processingStartedAt: undefined,
       searchable: "",
       title: "Expired source",
+      privateSourceAnalysis: undefined,
+      privateSourceAnalysisRunId: undefined,
       state: "failed",
       rightsAttested: false,
       retrievalState: "unavailable",

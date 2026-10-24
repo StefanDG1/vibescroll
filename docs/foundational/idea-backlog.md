@@ -1,5 +1,11 @@
 # Foundational idea backlog
 
+## F061: separate private text reanalysis, October 24
+
+[ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) reuses existing task runs for separately approved private text results and retains only small version pointers on the source. Generic source analysis and citations remain unchanged. A distinct local runtime protocol excludes unsupported older workers. Original rights, result identity, current read scope and privacy cleanup remain authoritative.
+
+Source: owner-authorized private reanalysis, existing source/run ownership audit and independent privacy/protocol review. All four briefs updated together. Counterpoint: storing a full output on every source amplifies routine reads, and metadata alone is not source evidence. Store one result on its run, retain strict version/rights proofs, and leave media/skills/private project references unfinished until separately implemented.
+
 ## F060: distinct setup availability, October 24
 
 [ADR 137](../adr/137-distinct-processing-availability-in-setup.md) distinguishes paired-computer subscription, managed credits and experimental text-review availability in the existing setup. A text feature gate reports available but unverified, not a connected host or working video route. Short guidance reuses existing Help and changes no chapter completion, saved route, grant or processing behavior.

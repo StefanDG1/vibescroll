@@ -114,6 +114,7 @@ import type * as personalAnalysis from "../personalAnalysis.js";
 import type * as personalAnalysisSchema from "../personalAnalysisSchema.js";
 import type * as personalOrderedMedia from "../personalOrderedMedia.js";
 import type * as personalOrderedMediaState from "../personalOrderedMediaState.js";
+import type * as privateSourceAnalysis from "../privateSourceAnalysis.js";
 import type * as personalMedia from "../personalMedia.js";
 import type * as personalMediaState from "../personalMediaState.js";
 import type * as pilotPaymentMaintenance from "../pilotPaymentMaintenance.js";
@@ -258,6 +259,7 @@ declare const fullApi: ApiFromModules<{
   personalAnalysisSchema: typeof personalAnalysisSchema;
   personalOrderedMedia: typeof personalOrderedMedia;
   personalOrderedMediaState: typeof personalOrderedMediaState;
+  privateSourceAnalysis: typeof privateSourceAnalysis;
   personalMedia: typeof personalMedia;
   personalMediaState: typeof personalMediaState;
   pilotPaymentMaintenance: typeof pilotPaymentMaintenance;

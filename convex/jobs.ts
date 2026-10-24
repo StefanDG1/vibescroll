@@ -20,6 +20,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { sourceRetained, retainedSourceRevision } from "./lib/sourceAuthority";
 import { sourcePolicyCurrent } from "./lib/sourcePolicy";
 import { sharedTypedCitations } from "./lib/sourceCitations";
+import { readSourceTaskResult } from "./lib/privateSourceAnalysis";
 import {
   editionCurrent,
   publicEdition,
@@ -567,6 +568,8 @@ export const reserveMatch = mutation({
     );
     const scopedSource = {
       ...source,
+      privateSourceAnalysis: undefined,
+      privateSourceAnalysisRunId: undefined,
       analysis: { ...source.analysis, insights },
     };
     const suffix =
@@ -1193,6 +1196,22 @@ export const exportPage = query({
       .paginate({ cursor: a.cursor, numItems: 5 });
     const permitted = [];
     for (const row of rows.page) {
+      if (a.section === "localLibraryRuns" && "sources" in row) {
+        const run = row as Doc<"localLibraryRuns">;
+        if (
+          (run.task?.schemaVersion === "2.0.0" || run.sourceTaskResult) &&
+          run.actor !== actor._id
+        )
+          continue;
+        const current = run.sourceTaskResult
+          ? await readSourceTaskResult(ctx, run)
+          : null;
+        permitted.push({
+          ...run,
+          sourceTaskResult: current ? run.sourceTaskResult : undefined,
+        });
+        continue;
+      }
       if (
         (a.section === "publicImports" || a.section === "publicGeography") &&
         "actor" in row &&

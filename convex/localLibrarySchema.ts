@@ -1,6 +1,10 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
+import {
+  sourceReanalysisTaskValue,
+  sourceTaskResultValue,
+} from "../packages/contracts/private-source-analysis";
 const tenant = {
   organizationId: v.id("organizations"),
   createdAt: v.number(),
@@ -88,14 +92,19 @@ export const localLibraryTables = {
     repositories: v.array(v.id("repositories")),
     model: v.string(),
     effort: v.string(),
-    task: v.optional(task),
+    task: v.optional(v.union(task, sourceReanalysisTaskValue)),
+    sourceTaskResult: v.optional(sourceTaskResultValue),
     expiresAt: v.number(),
     state: v.string(),
     jobs: v.number(),
     completed: v.number(),
   })
     .index("by_org", ["organizationId"])
-    .index("by_device_state", ["task.deviceId", "state"])
+    .index("by_source_reanalysis", [
+      "organizationId",
+      "task.sourceReanalysisBinding.sourceId",
+    ])
+    .index("by_device_state", ["task.deviceId", "state", "task.schemaVersion"])
     .index("by_task_key", ["organizationId", "task.key"]),
   localSourceImports: defineTable({
     ...tenant,

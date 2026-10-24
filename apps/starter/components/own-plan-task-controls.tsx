@@ -2,12 +2,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { SubscriptionCapabilities } from "../../../packages/runner/subscription-capabilities.mjs";
 import type { PrivateEvaluationOrigin } from "../../../packages/contracts/private-evaluation-context";
+import type { LocalTaskRuntimeSnapshot } from "../../../packages/contracts/private-source-analysis";
 
 type Device = {
   id: string;
   name: string;
   catalogue: SubscriptionCapabilities | null;
   expiresAt: number;
+  admittedRuntime?: LocalTaskRuntimeSnapshot | null;
 };
 type TaskStatus = {
   id: string;
@@ -19,10 +21,12 @@ type TaskStatus = {
   proposalIds: string[];
   evaluationIds: string[];
   privateEvaluationOrigin?: PrivateEvaluationOrigin;
+  privateVersion?: number | null;
+  resultAvailable?: boolean;
 };
 type Selection = {
   organizationId: string;
-  workload: "project_evaluation" | "plan_draft";
+  workload: "project_evaluation" | "plan_draft" | "source_reanalysis_text";
   deviceId: string;
   model: string;
   effort: string;
@@ -32,15 +36,20 @@ type Selection = {
   proposalId?: string;
   proposalVersion?: number;
   privateEvaluationBrief?: string;
+  expectedPrivateVersion?: number;
+  privateSourceBrief?: string;
 };
 type Quote = {
   hash: string;
   expiresAt: number;
   payload: {
-    sourceBindings: { sourceId: string; generation: number }[];
-    repositoryBindings: { repositoryId: string; baseSha: string }[];
+    sourceBindings?: { sourceId: string; generation: number }[];
+    repositoryBindings?: { repositoryId: string; baseSha: string }[];
     privateEvaluationBrief?: string;
     privateEvaluationOrigin?: PrivateEvaluationOrigin;
+    privateSourceBrief?: string;
+    sourceId?: string;
+    expectedPrivateVersion?: number;
   };
   maxInferenceCredits: number;
 };
@@ -56,6 +65,12 @@ export type OwnPlanTaskProps = {
     privateEvaluationOrigin?: PrivateEvaluationOrigin;
   };
   privateLibrary?: boolean;
+  sourceReanalysis?: {
+    available: boolean;
+    expectedPrivateVersion: number;
+    pendingRunId?: string | null;
+  };
+  onViewPrivateResult?: (runId: string) => void;
   repositories: { id: string; name: string }[];
   disabled?: boolean;
   onComplete?: () => unknown | Promise<unknown>;
@@ -64,7 +79,7 @@ export type OwnPlanTaskProps = {
 export function OwnPlanTaskControls(props: OwnPlanTaskProps) {
   return (
     <OwnPlanTaskPanel
-      key={`${props.organizationId}:${props.source?.id ?? ""}:${props.proposal?.id ?? ""}:${props.proposal?.version ?? ""}${props.privateLibrary === true ? ":private" : ""}`}
+      key={`${props.organizationId}:${props.source?.id ?? ""}:${props.proposal?.id ?? ""}:${props.proposal?.version ?? ""}${props.privateLibrary === true ? ":private" : ""}${props.sourceReanalysis ? `:source-text-v2:${props.sourceReanalysis.expectedPrivateVersion}` : ""}`}
       {...props}
     />
   );
@@ -76,6 +91,8 @@ export function OwnPlanTaskPanel({
   proposal,
   repositories,
   privateLibrary,
+  sourceReanalysis,
+  onViewPrivateResult,
   disabled = false,
   onComplete,
 }: OwnPlanTaskProps) {
@@ -107,6 +124,7 @@ export function OwnPlanTaskPanel({
   const [history, setHistory] = useState<TaskStatus[] | null>(null);
   const [historyNext, setHistoryNext] = useState<string | null>(null);
   const [privateBrief, setPrivateBrief] = useState("");
+  const sourceMode = !!sourceReanalysis && !proposal;
   const privateBriefAllowed = privateLibrary === true && !!source && !proposal;
   const privateBriefBytes = new TextEncoder().encode(privateBrief).length;
   const briefOverLimit = privateBriefAllowed && privateBriefBytes > 4000;
@@ -115,6 +133,15 @@ export function OwnPlanTaskPanel({
     chosen = models.find((item) => item.slug === model),
     accepted = !proposal || proposal.review === "accepted",
     currentCatalogue = !!device?.catalogue && device.expiresAt > observedAt,
+    runtimeCurrent = (item: Device | undefined, now = observedAt) =>
+      !sourceMode ||
+      (!!item?.admittedRuntime &&
+        item.admittedRuntime.value.schemaVersion === "local-task-runtime-v1" &&
+        item.admittedRuntime.value.features.includes(
+          "source_reanalysis_text_v1",
+        ) &&
+        item.admittedRuntime.expiresAt > now &&
+        item.admittedRuntime.sessionExpiresAt > now),
     pending =
       !!runId && (!status || ["queued", "active"].includes(status.state)),
     locked = disabled || busy || pending;
@@ -155,6 +182,7 @@ export function OwnPlanTaskPanel({
       {
         organizationId,
         ...(proposal ? { proposalId: proposal.id } : { sourceId: source?.id }),
+        ...(sourceMode ? { workload: "source_reanalysis_text" } : {}),
         cursor,
       },
     );
@@ -179,9 +207,11 @@ export function OwnPlanTaskPanel({
       aria-label="Use your own subscription"
     >
       <h3>
-        {proposal
-          ? "Draft a plan with your subscription"
-          : "Evaluate this source for your projects"}
+        {sourceMode
+          ? "Reanalyze this text privately"
+          : proposal
+            ? "Draft a plan with your subscription"
+            : "Evaluate this source for your projects"}
       </h3>
       <p>
         {proposal ? proposal.title : source?.title}. Your awake paired computer
@@ -200,6 +230,14 @@ export function OwnPlanTaskPanel({
         request verifies access. Inference uses 0 app credits; media preparation
         needs its separate approval. No paid API fallback is authorized.
       </p>
+      {sourceMode && (
+        <p>
+          Text evidence only. Your private result does not replace the source
+          analysis or shared catalog. Update the local runtime if text
+          reanalysis is unavailable; signing in again is not required just to
+          update it.
+        </p>
+      )}
       {!accepted && (
         <output>
           Accept the current proposal before requesting a plan draft.
@@ -225,6 +263,16 @@ export function OwnPlanTaskPanel({
                     "private_evaluation_brief" &&
                     "Private evaluation context. "}
                 </span>
+                {sourceMode && task.resultAvailable && onViewPrivateResult && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={busy}
+                    onClick={() => onViewPrivateResult(task.id)}
+                  >
+                    View private result version {task.privateVersion}
+                  </button>
+                )}
                 <button
                   className="secondary"
                   type="button"
@@ -259,15 +307,27 @@ export function OwnPlanTaskPanel({
       )}
       {privateBriefAllowed && (
         <details>
-          <summary>Advanced: private evaluation focus</summary>
+          <summary>
+            {sourceMode
+              ? "Optional private text focus"
+              : "Advanced: private evaluation focus"}
+          </summary>
           <p>
-            Optionally explain what to focus on for your selected projects. This
-            private focus does not change the generic source analysis or shared
-            catalog. Your approved text is included in the context sent to your
-            connected account. Do not include credentials.
+            {sourceMode ? (
+              "Optionally describe your private focus for this text review. Your approved brief joins the text sent to your connected account. It does not change the source analysis or shared catalog. Do not include credentials."
+            ) : (
+              <>
+                Optionally explain what to focus on for your selected projects.
+                This private focus does not change the generic source analysis
+                or shared catalog. Your approved text is included in the context
+                sent to your connected account. Do not include credentials.
+              </>
+            )}
           </p>
           <label>
-            Private evaluation brief, optional
+            {sourceMode
+              ? "Private text brief, optional"
+              : "Private evaluation brief, optional"}
             <textarea
               value={privateBrief}
               disabled={locked}
@@ -335,9 +395,16 @@ export function OwnPlanTaskPanel({
                 <option
                   key={item.id}
                   value={item.id}
-                  disabled={!item.catalogue || item.expiresAt <= observedAt}
+                  disabled={
+                    !item.catalogue ||
+                    item.expiresAt <= observedAt ||
+                    !runtimeCurrent(item)
+                  }
                 >
                   {item.name}
+                  {!runtimeCurrent(item)
+                    ? " (text runtime update required)"
+                    : ""}
                   {!item.catalogue || item.expiresAt <= observedAt
                     ? " (reconnect required)"
                     : ""}
@@ -384,7 +451,7 @@ export function OwnPlanTaskPanel({
               ))}
             </select>
           </label>
-          {!proposal && (
+          {!proposal && !sourceMode && (
             <fieldset>
               <legend>Selected repositories, up to five</legend>
               {repositories.length ? (
@@ -428,11 +495,16 @@ export function OwnPlanTaskPanel({
         type="button"
         disabled={
           locked ||
+          (sourceMode &&
+            (privateLibrary !== true ||
+              !sourceReanalysis?.available ||
+              !!sourceReanalysis.pendingRunId ||
+              !runtimeCurrent(device))) ||
           briefOverLimit ||
           !currentCatalogue ||
           !chosen?.reasoningEfforts.includes(effort) ||
           !accepted ||
-          (!proposal && (!source || !selected.length))
+          (!proposal && (!source || (!sourceMode && !selected.length)))
         }
         onClick={() =>
           void action(async () => {
@@ -442,10 +514,16 @@ export function OwnPlanTaskPanel({
               );
             if (
               !currentCatalogue ||
+              (sourceMode &&
+                (privateLibrary !== true ||
+                  !sourceReanalysis?.available ||
+                  !!sourceReanalysis.pendingRunId ||
+                  !runtimeCurrent(device, Date.now()))) ||
               briefOverLimit ||
               !chosen?.reasoningEfforts.includes(effort) ||
               !accepted ||
               (!proposal &&
+                !sourceMode &&
                 (!source || selected.length < 1 || selected.length > 5))
             )
               return;
@@ -453,20 +531,36 @@ export function OwnPlanTaskPanel({
             const revision = requestRevision.current;
             const selection: Selection = {
               organizationId,
-              workload: proposal ? "plan_draft" : "project_evaluation",
+              workload: sourceMode
+                ? "source_reanalysis_text"
+                : proposal
+                  ? "plan_draft"
+                  : "project_evaluation",
               deviceId,
               model,
               effort,
               key: `own-${crypto.randomUUID()}`,
-              ...(proposal
-                ? { proposalId: proposal.id, proposalVersion: proposal.version }
-                : {
+              ...(sourceMode
+                ? {
                     sourceId: source!.id,
-                    repositoryIds: [...selected],
+                    expectedPrivateVersion:
+                      sourceReanalysis!.expectedPrivateVersion,
                     ...(privateBriefAllowed && privateBrief.trim().length > 0
-                      ? { privateEvaluationBrief: privateBrief }
+                      ? { privateSourceBrief: privateBrief }
                       : {}),
-                  }),
+                  }
+                : proposal
+                  ? {
+                      proposalId: proposal.id,
+                      proposalVersion: proposal.version,
+                    }
+                  : {
+                      sourceId: source!.id,
+                      repositoryIds: [...selected],
+                      ...(privateBriefAllowed && privateBrief.trim().length > 0
+                        ? { privateEvaluationBrief: privateBrief }
+                        : {}),
+                    }),
             };
             const value: Quote = await call("localTaskQuote", selection);
             if (!alive.current || requestRevision.current !== revision) return;
@@ -474,7 +568,13 @@ export function OwnPlanTaskPanel({
               value.maxInferenceCredits !== 0 ||
               value.expiresAt <= Date.now() ||
               value.payload.privateEvaluationBrief !==
-                selection.privateEvaluationBrief
+                selection.privateEvaluationBrief ||
+              (sourceMode &&
+                (value.payload.privateSourceBrief !==
+                  selection.privateSourceBrief ||
+                  value.payload.sourceId !== source?.id ||
+                  value.payload.expectedPrivateVersion !==
+                    sourceReanalysis?.expectedPrivateVersion))
             )
               throw Error(
                 "The own-subscription quote is unavailable or expired.",
@@ -493,11 +593,21 @@ export function OwnPlanTaskPanel({
             inference credits: 0. Approval expires{" "}
             {new Date(quote.value.expiresAt).toLocaleTimeString()}.
           </p>
-          {quote.selection.privateEvaluationBrief !== undefined && (
-            <section aria-label="Private evaluation brief in this quote">
-              <h4>Private evaluation brief</h4>
+          {(quote.selection.privateEvaluationBrief !== undefined ||
+            quote.selection.privateSourceBrief !== undefined) && (
+            <section
+              aria-label={
+                sourceMode
+                  ? "Private text brief in this quote"
+                  : "Private evaluation brief in this quote"
+              }
+            >
+              <h4>
+                {sourceMode ? "Private text brief" : "Private evaluation brief"}
+              </h4>
               <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-                {quote.selection.privateEvaluationBrief}
+                {quote.selection.privateSourceBrief ??
+                  quote.selection.privateEvaluationBrief}
               </p>
             </section>
           )}
@@ -509,7 +619,7 @@ export function OwnPlanTaskPanel({
               </p>
             )}
           <ul>
-            {quote.value.payload.repositoryBindings.map((binding) => (
+            {(quote.value.payload.repositoryBindings ?? []).map((binding) => (
               <li key={binding.repositoryId}>
                 {repositories.find((repo) => repo.id === binding.repositoryId)
                   ?.name ?? "Proposal repository"}
@@ -518,10 +628,18 @@ export function OwnPlanTaskPanel({
             ))}
           </ul>
           <p>
-            {quote.value.payload.sourceBindings.length} current source
-            {quote.value.payload.sourceBindings.length === 1 ? "" : "s"} bound
-            to this quote. Evaluation saves every disposition for review. Plan
-            drafting saves an editable draft.
+            {sourceMode ? (
+              "This quote binds the current text evidence and private result version. It creates no project proposal or plan."
+            ) : (
+              <>
+                {quote.value.payload.sourceBindings?.length ?? 0} current source
+                {quote.value.payload.sourceBindings?.length === 1
+                  ? ""
+                  : "s"}{" "}
+                bound to this quote. Evaluation saves every disposition for
+                review. Plan drafting saves an editable draft.
+              </>
+            )}
           </p>
           <label
             style={{
@@ -550,6 +668,19 @@ export function OwnPlanTaskPanel({
                 if (requestRevision.current !== quote.revision) {
                   invalidate();
                   throw Error("Task choices changed. Review a new quote.");
+                }
+                if (
+                  sourceMode &&
+                  (!runtimeCurrent(device, now) ||
+                    quote.selection.expectedPrivateVersion !==
+                      sourceReanalysis?.expectedPrivateVersion ||
+                    quote.selection.privateSourceBrief !==
+                      (privateBrief.trim() ? privateBrief : undefined))
+                ) {
+                  invalidate();
+                  throw Error(
+                    "Text runtime or private context changed. Review a new quote.",
+                  );
                 }
                 if (
                   quote.selection.privateEvaluationBrief !== undefined &&
@@ -598,6 +729,16 @@ export function OwnPlanTaskPanel({
               ? `Task ${status.state}. ${status.model}, ${status.effort}.`
               : "Approval recorded. Refresh to see the task status."}
           </output>
+          {sourceMode && status?.resultAvailable && onViewPrivateResult && (
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy}
+              onClick={() => onViewPrivateResult(status.id)}
+            >
+              View private result version {status.privateVersion}
+            </button>
+          )}
           {status?.privateEvaluationOrigin?.kind ===
             "private_evaluation_brief" && (
             <p>
@@ -630,9 +771,11 @@ export function OwnPlanTaskPanel({
           )}
           {status?.state === "completed" && (
             <p>
-              {proposal
-                ? "Your editable plan draft is ready for review. Coding needs a separate approval."
-                : "Project evaluation is complete. Review its proposals, including no-fit and already-built decisions."}
+              {sourceMode
+                ? "Task completed. Load its private result to check current availability. The generic source analysis is unchanged."
+                : proposal
+                  ? "Your editable plan draft is ready for review. Coding needs a separate approval."
+                  : "Project evaluation is complete. Review its proposals, including no-fit and already-built decisions."}
             </p>
           )}
           {status &&

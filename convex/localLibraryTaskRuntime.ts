@@ -17,8 +17,20 @@ import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { validateDraftPlan } from "./planning";
 import { validateInspectedContext } from "../packages/repositories/retrieval";
 import { samePrivateEvaluationOrigin } from "./lib/privateEvaluationContext";
+import {
+  sourceTask,
+  sourceTaskCurrent,
+  finishSourceTask,
+  releaseSourcePointer,
+  runtimeCurrent,
+  admitLocalRuntime,
+} from "./lib/privateSourceAnalysis";
 
-export async function claimLocalTask(ctx: MutationCtx, device: Doc<"devices">) {
+export async function claimLocalTask(
+  ctx: MutationCtx,
+  device: Doc<"devices">,
+  localRuntimeHash?: string,
+) {
   // A new worker session cannot erase the previous session's uncertain turn.
   for (const state of ["unknown", "canceled", "expired"]) {
     const rows = await ctx.db
@@ -56,26 +68,56 @@ export async function claimLocalTask(ctx: MutationCtx, device: Doc<"devices">) {
           ...active.task,
           leaseUntil: 0,
           leaseToken: undefined,
-          inspected: undefined,
-          inspectionManifest: undefined,
+          ...(active.task.schemaVersion === "1.0.0"
+            ? { inspected: undefined, inspectionManifest: undefined }
+            : {}),
         },
       });
       return { job: null, reconcileTask: true };
     }
+    if (
+      sourceTask(active) &&
+      (!localRuntimeHash || !runtimeCurrent(device, localRuntimeHash))
+    )
+      return { job: null, upgradeRequired: true };
     return { job: null, busy: true };
   }
-  const candidates = await ctx.db
+  const legacy = await ctx.db
     .query("localLibraryRuns")
     .withIndex("by_device_state", (q) =>
-      q.eq("task.deviceId", device._id).eq("state", "queued"),
+      q
+        .eq("task.deviceId", device._id)
+        .eq("state", "queued")
+        .eq("task.schemaVersion", "1.0.0"),
     )
     .take(5);
+  const sourceCandidates =
+    localRuntimeHash && runtimeCurrent(device, localRuntimeHash)
+      ? await ctx.db
+          .query("localLibraryRuns")
+          .withIndex("by_device_state", (q) =>
+            q
+              .eq("task.deviceId", device._id)
+              .eq("state", "queued")
+              .eq("task.schemaVersion", "2.0.0"),
+          )
+          .take(5)
+      : [];
+  const candidates = [...legacy, ...sourceCandidates].sort(
+    (a, b) => a._creationTime - b._creationTime || a._id.localeCompare(b._id),
+  );
   for (const run of candidates) {
+    if (
+      sourceTask(run) &&
+      (!localRuntimeHash || !runtimeCurrent(device, localRuntimeHash))
+    )
+      continue;
     try {
       await taskBindingsCurrent(ctx, run, device.owner, false);
     } catch {
       await ctx.db.patch(run._id, { state: "expired", updatedAt: Date.now() });
-      if (run.task?.proposal) {
+      await releaseSourcePointer(ctx, run);
+      if (run.task?.schemaVersion === "1.0.0" && run.task.proposal) {
         const p = await ctx.db.get(run.task.proposal.id);
         if (p?.localPlanRunId === run._id)
           await ctx.db.patch(p._id, { localPlanRunId: undefined });
@@ -95,7 +137,7 @@ export async function claimLocalTask(ctx: MutationCtx, device: Doc<"devices">) {
     });
     return {
       job: {
-        taskProtocolVersion: "1.0.0",
+        taskProtocolVersion: task.schemaVersion,
         workload: task.workload,
         runId: run._id,
         profileBinding: task.profileBinding,
@@ -106,7 +148,16 @@ export async function claimLocalTask(ctx: MutationCtx, device: Doc<"devices">) {
         deadline: task.deadline,
         leaseGeneration: task.leaseGeneration,
         leaseToken: task.leaseToken,
-        ...(task.proposal ? { proposalVersion: task.proposal.version } : {}),
+        ...(task.schemaVersion === "2.0.0"
+          ? {
+              sourceId: task.sourceReanalysisBinding.sourceId,
+              localRuntimeHash: task.localRuntimeHash,
+              inputHash: task.sourceReanalysisBinding.inputHash,
+              outputSchemaHash: task.sourceReanalysisBinding.outputSchemaHash,
+            }
+          : task.proposal
+            ? { proposalVersion: task.proposal.version }
+            : {}),
       },
     };
   }
@@ -127,6 +178,32 @@ export async function localTaskOperation(
     "FORBIDDEN",
     "This task belongs to another device or actor.",
   );
+  if (sourceTask(initial!)) {
+    const keys = [
+      "runId",
+      "leaseGeneration",
+      "leaseToken",
+      ...(operation === "task_finish"
+        ? ["outputJson"]
+        : operation === "task_heartbeat"
+          ? ["capabilities", "localTaskRuntime"]
+          : []),
+    ];
+    ensure(
+      [
+        "task_context_prepare",
+        "task_heartbeat",
+        "task_finish",
+        "task_fail",
+      ].includes(operation) &&
+        Object.keys(a).every((key) => keys.includes(key)) &&
+        (operation !== "task_heartbeat" ||
+          (a.capabilities === undefined) ===
+            (a.localTaskRuntime === undefined)),
+      "INVALID_INPUT",
+      "Use the exact private text operation contract.",
+    );
+  }
   if (operation === "task_fail") {
     ensure(
       initial.task.leaseGeneration === a.leaseGeneration &&
@@ -142,8 +219,9 @@ export async function localTaskOperation(
         ...initial.task,
         leaseUntil: 0,
         leaseToken: undefined,
-        inspected: undefined,
-        inspectionManifest: undefined,
+        ...(initial.task.schemaVersion === "1.0.0"
+          ? { inspected: undefined, inspectionManifest: undefined }
+          : {}),
       },
     });
     return { recorded: true, usage: "unknown", chargedInferenceCredits: 0 };
@@ -168,6 +246,20 @@ export async function localTaskOperation(
       "APPROVAL_STALE",
       "The approved catalogue changed.",
     );
+    if (sourceTask(initial)) {
+      const runtime = await admitLocalRuntime(
+        ctx,
+        device,
+        a.localTaskRuntime,
+        initial.task.profileBinding,
+        device.subscriptionCapabilities!.sessionExpiresAt,
+      );
+      ensure(
+        runtime && runtime.hash === sourceTask(initial)!.localRuntimeHash,
+        "APPROVAL_STALE",
+        "The local source runtime changed.",
+      );
+    }
   }
   const run = await taskLease(
     ctx,
@@ -189,6 +281,30 @@ export async function localTaskOperation(
       deadline: task.deadline,
       leaseGeneration: task.leaseGeneration,
     };
+  }
+  if (task.schemaVersion === "2.0.0") {
+    if (operation === "task_context_prepare") {
+      ensure(
+        a.repositoryId === undefined,
+        "INVALID_INPUT",
+        "Text reanalysis does not accept a repository.",
+      );
+      const c = await sourceTaskCurrent(ctx, run);
+      ensure("input" in c, "APPROVAL_STALE", "Source input unavailable.");
+      return {
+        workload: task.workload,
+        ...c.input,
+        inputHash: task.sourceReanalysisBinding.inputHash,
+      };
+    }
+    ensure(
+      operation === "task_finish" &&
+        a.plan === undefined &&
+        a.evaluationIds === undefined,
+      "FORBIDDEN",
+      "This task authorizes only its private source result.",
+    );
+    return finishSourceTask(ctx, run, a.outputJson);
   }
   if (operation === "task_context_prepare") {
     ensure(

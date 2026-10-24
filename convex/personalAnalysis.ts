@@ -1229,6 +1229,72 @@ export const dispatch = internalMutation({
 
 // Both executors commit through this validator. It does not grant execution
 // authority; the caller must hold the exact current source lease.
+export function validatePersonalTextOutput(
+  source: Doc<"sources">,
+  value: unknown,
+  registry: Awaited<ReturnType<typeof typedSource>>,
+  processingRunId: string,
+) {
+  const output: any = presentAnalysis(
+    (registry ? sourceInsightOutput : insightOutput).parse(value) as any,
+  );
+  ensure(
+    JSON.stringify(output).length <= 120000 &&
+      !containsSecret(JSON.stringify(output)) &&
+      output.sourceId === source._id &&
+      output.processingRunId === processingRunId &&
+      output.coverage === (registry ? "source_text" : "caption_only"),
+    "INVALID_EVIDENCE",
+    "Invalid personal source output.",
+  );
+  ensure(
+    !registry ||
+      (output.sourceRevisionId === registry.id &&
+        output.sourceContentHash === registry.revision.contentHash),
+    "INVALID_EVIDENCE",
+    "Output is bound to a different retained revision.",
+  );
+  const allowed = registry
+    ? registry.evidence.map((record) => ({
+        kind: record.kind,
+        id: record.id,
+        startMs: null,
+        endMs: null,
+      }))
+    : [
+        { kind: "user_note", id: "supplied_text", startMs: null, endMs: null },
+        ...(source.acquisition?.description
+          ? [
+              {
+                kind: "caption",
+                id: "post_caption",
+                startMs: null,
+                endMs: null,
+              },
+            ]
+          : []),
+      ];
+  for (const insight of output.insights) {
+    ensure(
+      !registry || insight.evidence.length > 0,
+      "INVALID_EVIDENCE",
+      "Each typed claim needs current source evidence.",
+    );
+    for (const evidence of insight.evidence)
+      ensure(
+        allowed.some(
+          (e) =>
+            e.kind === evidence.kind &&
+            e.id === evidence.id &&
+            e.startMs === evidence.startMs &&
+            e.endMs === evidence.endMs,
+        ),
+        "INVALID_EVIDENCE",
+        "Unverified evidence reference.",
+      );
+  }
+  return output;
+}
 export async function completePersonalSource(
   ctx: MutationCtx,
   source: Doc<"sources">,
@@ -1243,9 +1309,16 @@ export async function completePersonalSource(
   pipelineVersion?: string,
 ) {
   const media = source.kind !== "text" && !registry;
-  const output: any = presentAnalysis(
-    (registry ? sourceInsightOutput : insightOutput).parse(a.output) as any,
-  );
+  const output: any = media
+    ? presentAnalysis(
+        (registry ? sourceInsightOutput : insightOutput).parse(a.output) as any,
+      )
+    : validatePersonalTextOutput(
+        source,
+        a.output,
+        registry,
+        `${source._id}:${job.generation}`,
+      );
   if (media)
     output.warnings = [
       ...new Set([

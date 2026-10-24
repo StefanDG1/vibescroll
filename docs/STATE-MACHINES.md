@@ -1,5 +1,9 @@
 # State machines
 
+## Private source-text result candidate
+
+Existing quoted/approved/queued/active/completed/unknown task states apply. Unsupported v1 workers leave v2 source work queued and may still claim v1 projects. Source pending pointers prevent cross-device/new-key duplicate dispatch. Queued cancellation releases pending; dispatched uncertainty requires existing explicit reconciliation and never schedules replacement. Completion compares pending run and prior private version, writes one immutable result and advances only private metadata. Keep the prior completed pointer while work is pending or fails. Privacy/rights loss fences reads and scrubs bytes with generation-safe indexed continuations; restore never revives authority. See [ADR 138](adr/138-private-source-text-results-on-existing-runs.md).
+
 ## Private evaluation context candidate
 
 Changing a private focus brief invalidates the existing quote and consent. Approval captures exact text/hash, owner and selected model/effort; lease/context/completion preserve that origin. An accepted proposal can inherit it into a separately approved plan. Manual issue publication and coding retain their existing exact reviews. Standing-policy automatic work rejects custom-origin derivatives before reservation. Unknown-state reconciliation, source/repository currentness and restore fences stay unchanged; a changed brief cannot erase prior unknown usage. See [ADR 136](adr/136-private-evaluation-brief-origin.md).

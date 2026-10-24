@@ -306,6 +306,11 @@ export const applyMarkers = internalMutation({
 });
 
 async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
+  if (source.privateSourceAnalysis || source.privateSourceAnalysisRunId)
+    await ctx.db.patch(source._id, {
+      privateSourceAnalysis: undefined,
+      privateSourceAnalysisRunId: undefined,
+    });
   const provider =
     Boolean(
       source.orderedMedia ||
@@ -427,7 +432,7 @@ export const quarantinePage = internalMutation({
         });
       } else if (a.section === "localLibraryRuns") {
         const run = row as Doc<"localLibraryRuns">;
-        if (run.task?.proposal) {
+        if (run.task?.schemaVersion === "1.0.0" && run.task.proposal) {
           const p = await ctx.db.get(run.task.proposal.id);
           if (p?.localPlanRunId === run._id)
             await ctx.db.patch(p._id, { localPlanRunId: undefined });
@@ -435,6 +440,7 @@ export const quarantinePage = internalMutation({
         await ctx.db.patch(run._id, {
           state: "canceled",
           task: undefined,
+          sourceTaskResult: undefined,
           updatedAt: Date.now(),
         });
       } else if (a.section === "devices") {

@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## October 24: private text result candidate
+
+[F061](idea-backlog.md#f061-separate-private-text-reanalysis-october-24) and [ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) keep private source results separate from generic analysis through existing run ownership, explicit v2 runtime admission and rights-aware reading/cleanup. All four briefs retain actual-text coverage, cost limits and unverified live/model acceptance.
+
 ## October 24: distinct setup availability
 
 [F060](idea-backlog.md#f060-distinct-setup-availability-october-24) and [ADR 137](../adr/137-distinct-processing-availability-in-setup.md) keep paired subscription, managed media and experimental text review distinct. All four briefs retain current claims and the difference between feature availability and actual host execution.

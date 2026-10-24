@@ -78,6 +78,7 @@ const operations = {
   exportSourceSpaces: ["query", api.librarySpaces.exportPage],
   localLibraryPrepare: ["mutation", api.localLibrary.prepare],
   localTaskCapabilities: ["query", api.localLibraryTasks.capabilities],
+  privateSourceAnalysisDetail: ["query", api.privateSourceAnalysis.detail],
   localTaskResume: ["query", api.localLibraryTasks.resume],
   localTaskQuote: ["query", api.localLibraryTasks.quote],
   localTaskApprove: ["mutation", api.localLibraryTasks.approve],

@@ -53,6 +53,7 @@ export const taskContext = internalAction({
       operation: "task_context_prepare",
       args: a.args,
     });
+    if (c.workload === "source_reanalysis_text") return c;
     if (c.workload === "project_evaluation")
       return localEvaluationBundle(ctx, c, (record) =>
         ctx.runMutation(internal.assistantLocal.operation, {

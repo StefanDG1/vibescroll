@@ -36,6 +36,7 @@ import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { queueDeletion } from "./assets";
 import { taskBindingsCurrent } from "./lib/localTaskAuthority";
 import { samePrivateEvaluationOrigin } from "./lib/privateEvaluationContext";
+import { releaseSourcePointer } from "./lib/privateSourceAnalysis";
 import {
   acquisitionManifest,
   acquisitionPolicy,
@@ -196,14 +197,17 @@ export const list = query({
       .filter((r) => r.actor === actor._id)
       .map((r) => ({
         ...r,
+        sourceTaskResult: undefined,
         ...(r.task
           ? {
               task: {
                 workload: r.task.workload,
                 fundingRoute: r.task.fundingRoute,
                 deadline: r.task.deadline,
-                evaluationIds: r.task.evaluationIds,
-                proposalIds: r.task.proposalIds,
+                evaluationIds:
+                  r.task.schemaVersion === "1.0.0" ? r.task.evaluationIds : [],
+                proposalIds:
+                  r.task.schemaVersion === "1.0.0" ? r.task.proposalIds : [],
               },
             }
           : {}),
@@ -243,13 +247,19 @@ export const expire = internalMutation({
                 ...run.task,
                 leaseUntil: 0,
                 leaseToken: undefined,
-                inspected: undefined,
-                inspectionManifest: undefined,
+                ...(run.task.schemaVersion === "1.0.0"
+                  ? { inspected: undefined, inspectionManifest: undefined }
+                  : {}),
               },
             }
           : {}),
       });
-      if (run.state === "queued" && run.task?.proposal) {
+      if (run.state === "queued") await releaseSourcePointer(ctx, run);
+      if (
+        run.state === "queued" &&
+        run.task?.schemaVersion === "1.0.0" &&
+        run.task.proposal
+      ) {
         const p = await ctx.db.get(run.task.proposal.id);
         if (p?.localPlanRunId === run._id)
           await ctx.db.patch(p._id, { localPlanRunId: undefined });
@@ -1132,7 +1142,9 @@ export async function evaluationFinishCore(
       e.actor === run.actor &&
       samePrivateEvaluationOrigin(
         e.privateEvaluationOrigin,
-        run.task?.privateEvaluationOrigin,
+        run.task?.schemaVersion === "1.0.0"
+          ? run.task.privateEvaluationOrigin
+          : undefined,
       ) &&
       run.repositories.includes(e.repositoryId) &&
       (await evaluationCurrent(ctx, e)),

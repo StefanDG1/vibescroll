@@ -37,6 +37,8 @@ export const contentExportSections = [
 export type ContentExportSection = (typeof contentExportSections)[number];
 
 const privateFields = new Set([
+  "privateSourceAnalysis",
+  "privateSourceAnalysisRunId",
   "objectKey",
   "orderedPreparation",
   "personalMedia",

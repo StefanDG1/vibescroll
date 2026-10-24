@@ -13,6 +13,7 @@ import { referencesCurrent } from "../knowledge";
 import { snapshotScopeCurrent } from "../../packages/repositories/scope";
 import { improvementCurrent } from "./improvementContext";
 import { privateEvaluationTaskCurrent } from "./privateEvaluationContext";
+import { sourceTaskCurrent, runtimeCurrent } from "./privateSourceAnalysis";
 
 export async function capabilitySnapshot(
   ctx: MutationCtx,
@@ -138,6 +139,35 @@ export async function taskBindingsCurrent(
   requireLease = true,
 ) {
   const t = run.task;
+  if (t?.schemaVersion === "2.0.0") {
+    ensure(
+      run.actor === actorId &&
+        ["queued", "active"].includes(run.state) &&
+        run.expiresAt > Date.now() &&
+        t.deadline > Date.now(),
+      "APPROVAL_STALE",
+      "This private source task expired or needs review.",
+    );
+    const device = await taskDevice(
+      ctx,
+      run.organizationId,
+      actorId,
+      t.deviceId,
+      run.model,
+      run.effort,
+    );
+    ensure(
+      device.subscriptionCapabilities!.hash === t.capabilityHash &&
+        device.subscriptionCapabilities!.profileBinding === t.profileBinding &&
+        runtimeCurrent(device, t.localRuntimeHash) &&
+        (!requireLease ||
+          (run.state === "active" && t.leaseUntil > Date.now())),
+      "APPROVAL_STALE",
+      "The approved account, runtime or lease changed.",
+    );
+    await sourceTaskCurrent(ctx, run);
+    return t;
+  }
   ensure(
     t && t.members.length <= 12 && new Set(t.members).size === t.members.length,
     "APPROVAL_STALE",

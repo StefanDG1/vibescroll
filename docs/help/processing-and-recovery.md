@@ -41,6 +41,16 @@ This focus produces a separate private project judgment. It does not replace the
 
 Review the resulting proposal as usual. An accepted proposal can supply its private context to a separately approved plan; edit that plan before any coding approval. Issue drafting and publication still need their existing explicit review. Standing automatic execution policies do not pick these personalized improvements. A private-context label records the origin; status/history do not repeat the brief.
 
+## Reanalyse text privately
+
+On a ready source in your private Library, open **Private text reanalysis**. This uses genuine supplied text or the retained source excerpts available to the task. It does not inspect video or images again. A saved catalog analysis is not original source evidence.
+
+Use a supported paired runtime with your eligible account, choose the model and effort, and optionally add a **Private text brief**. Review the exact source, focus and own-subscription quote before approving. An older worker may need an update before it can accept this task; follow [the computer setup guide](/help/connect-your-computer). GitHub is not required for this source-only task.
+
+Choose **Load private text result** to read the latest completed version. Task history can open an earlier recorded version while its original source and rights remain current. The previous result stays available while a new request is pending. Reading an earned result does not require the processing computer to be awake. Inspect the cited text, then use **Export private result JSON** if needed.
+
+Private versions leave the generic source, shared catalog and existing notes unchanged. Source changes or rights withdrawal can make an old version unavailable. Private-version insights are not yet inputs to project evaluation; use the existing reviewed project workflow separately. If execution is uncertain, reconcile its recorded state rather than start a duplicate request.
+
 ## Understand the credit display
 
 An estimate predicts possible usage. A reservation holds allowance before work. Settled usage records accepted costs. Pending or uncertain usage is not a final charge. Check **Usage** for remaining unexpired allowance and outstanding holds.

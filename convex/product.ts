@@ -51,6 +51,7 @@ import {
   speechProvenance,
 } from "../packages/media/provenance";
 import { personalAllowed, workCloudTextAllowed } from "./lib/personalAccess";
+import { sourceEligibility } from "./lib/privateSourceAnalysis";
 import {
   hostedMediaAllowed,
   hostedSourceAllowed,
@@ -555,6 +556,8 @@ export const library = query({
         ({
           text: _text,
           analysis,
+          privateSourceAnalysis: _privateSourceAnalysis,
+          privateSourceAnalysisRunId: _privateSourceAnalysisRunId,
           objectKey: _objectKey,
           personalOrderedInput: _personalOrderedInput,
           searchable: _searchable,
@@ -666,6 +669,12 @@ export const detail = query({
       .collect();
     return {
       ...s,
+      privateSourceAnalysis: undefined,
+      privateSourceAnalysisRunId: undefined,
+      privateSourceEligibility:
+        reader.organization.privateOwnerId === reader.actor._id
+          ? await sourceEligibility(ctx, s, reader.actor._id)
+          : undefined,
       workCloudTextEnabled:
         reader.organization.privateOwnerId === reader.actor._id &&
         workCloudTextAllowed(reader.actor.subject),
@@ -2086,6 +2095,13 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
   await invalidatePublicSource(ctx, id);
   const trialSource = await ctx.db.get(id);
   if (trialSource)
+    await ctx.scheduler.runAfter(0, internal.privateSourceAnalysis.scrub, {
+      organizationId: trialSource.organizationId,
+      sourceId: id,
+      maxGeneration: trialSource.generation,
+      cursor: null,
+    });
+  if (trialSource)
     await ctx.scheduler.runAfter(0, internal.subscriptionTrials.redact, {
       organizationId: trialSource.organizationId,
       sourceId: id,
@@ -2180,6 +2196,8 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     originalMediaEvidence: undefined,
     correctionAuthor: undefined,
     personalAnalysis: undefined,
+    privateSourceAnalysis: undefined,
+    privateSourceAnalysisRunId: undefined,
     personalMedia: undefined,
     acquisition: undefined,
     currentRevisionId: undefined,

@@ -1,5 +1,9 @@
 # Data model
 
+## Private source result candidate
+
+`localLibraryRuns.sourceTaskResult` is the sole full private output owner. Strict v2 task binding retains exact base/rights/context/schema/runtime metadata and optional approved brief. `sources.privateSourceAnalysis` is only latest metadata/version/hash pointers; `privateSourceAnalysisRunId` tracks pending work. Canonical state/generation/updatedAt and knowledge remain unchanged. Devices report a separate optional local runtime snapshot. Add `by_source_reanalysis` for exact source privacy/history pages and extend existing `by_device_state` by task schema version for bounded compatible claims. Both index migrations remain gated. No new table, result store or queue. See [ADR 138](adr/138-private-source-text-results-on-existing-runs.md).
+
 ## Private evaluation context candidate
 
 The existing `localLibraryRuns.task` may retain exact approved `privateEvaluationBrief` plus server `privateEvaluationOrigin`. The same optional origin is copied without raw text to existing knowledge evaluations, proposals, private issue drafts and improvements. No new table, index, store or queue. A custom cache key extends the old key with the origin hash; default keys stay unchanged. Neutral histories exclude custom origin, while currentness checks bind derived lineage. Existing export/deletion/recovery must retain privacy and never restore task authority. See [ADR 136](adr/136-private-evaluation-brief-origin.md).

@@ -16,6 +16,7 @@ import { evaluationCurrent } from "./knowledge";
 import { acquisitionMessage } from "../packages/media/acquisition";
 import { capabilitySnapshot } from "./lib/localTaskAuthority";
 import { claimLocalTask, localTaskOperation } from "./localLibraryTaskRuntime";
+import { admitLocalRuntime, runtimeCurrent } from "./lib/privateSourceAnalysis";
 import {
   sourceFingerprint,
   sourcePrepareCore,
@@ -124,7 +125,8 @@ export const operation = internalMutation({
     const a = input.args;
     const versioned =
       (input.operation === "hello" && !!a.capabilities) ||
-      (input.operation === "claim" && a.taskProtocolVersion === "1.0.0") ||
+      (input.operation === "claim" &&
+        ["1.0.0", "2.0.0"].includes(a.taskProtocolVersion)) ||
       input.operation.startsWith("task_");
     const device = await assistantDevice(ctx, input.credentialHash, versioned);
     const now = Date.now();
@@ -142,6 +144,13 @@ export const operation = internalMutation({
           a.profileBinding,
           a.expiresAt,
         );
+        const localRuntime = await admitLocalRuntime(
+          ctx,
+          device,
+          a.localTaskRuntime,
+          a.profileBinding,
+          a.expiresAt,
+        );
         const legacy = snapshot.value.models.some(
           (m: any) =>
             m.slug === "gpt-6.1-sol" && m.reasoningEfforts.includes("medium"),
@@ -155,9 +164,22 @@ export const operation = internalMutation({
         return {
           workspaceId: device.organizationId,
           taskProtocolVersion: "1.0.0",
+          ...(localRuntime
+            ? {
+                sourceTaskProtocolVersion: "2.0.0",
+                localRuntimeHash: localRuntime.hash,
+              }
+            : {}),
           legacySupported: legacy && a.model === "gpt-6.1-sol",
         };
       }
+      await admitLocalRuntime(
+        ctx,
+        device,
+        undefined,
+        a.profileBinding,
+        a.expiresAt,
+      );
       ensure(
         /^[a-f0-9]{64}$/.test(a.profileBinding ?? "") &&
           a.model === "gpt-6.1-sol" &&
@@ -181,8 +203,20 @@ export const operation = internalMutation({
       return { workspaceId: device.organizationId };
     }
     if (input.operation === "claim") {
-      if (a.taskProtocolVersion === "1.0.0" && a.preferTasks !== false) {
-        const task = await claimLocalTask(ctx, device);
+      const runtimeHash =
+        a.taskProtocolVersion === "2.0.0" ? a.localRuntimeHash : undefined;
+      ensure(
+        a.taskProtocolVersion !== "2.0.0" ||
+          (typeof runtimeHash === "string" &&
+            runtimeCurrent(device, runtimeHash)),
+        "APPROVAL_STALE",
+        "Reconnect the current local source runtime before claiming.",
+      );
+      if (
+        ["1.0.0", "2.0.0"].includes(a.taskProtocolVersion) &&
+        a.preferTasks !== false
+      ) {
+        const task = await claimLocalTask(ctx, device, runtimeHash);
         if (task) return task;
       }
       if (
@@ -193,7 +227,9 @@ export const operation = internalMutation({
               m.slug === "gpt-6.1-sol" && m.reasoningEfforts.includes("medium"),
           ))
       )
-        return (await claimLocalTask(ctx, device)) ?? { job: null };
+        return (
+          (await claimLocalTask(ctx, device, runtimeHash)) ?? { job: null }
+        );
       ensure(
         (device.assistantSeenAt ?? 0) > now - 360000,
         "SETUP_REQUIRED",
@@ -220,7 +256,7 @@ export const operation = internalMutation({
         return { job: null, rotate: true };
       if (!device.assistantPending)
         return versioned
-          ? ((await claimLocalTask(ctx, device)) ?? { job: null })
+          ? ((await claimLocalTask(ctx, device, runtimeHash)) ?? { job: null })
           : { job: null };
       const waiting = await ctx.db
         .query("assistantIntakes")
@@ -319,7 +355,7 @@ export const operation = internalMutation({
       if (!waiting.length)
         await ctx.db.patch(device._id, { assistantPending: false });
       return versioned
-        ? ((await claimLocalTask(ctx, device)) ?? { job: null })
+        ? ((await claimLocalTask(ctx, device, runtimeHash)) ?? { job: null })
         : { job: null };
     }
     await boundOperation(ctx, device, input.operation, a);

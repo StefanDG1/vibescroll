@@ -6,6 +6,8 @@ import {
   hash,
 } from "../packages/runner/assistant-local.mjs";
 import { normalizeSubscriptionCapabilities } from "../packages/runner/subscription-capabilities.mjs";
+import { sourceStructuredBytes } from "../packages/runner/local-task-runtime.mjs";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 afterEach(() => vi.useRealTimers());
 const catalogue = normalizeSubscriptionCapabilities({
   data: [
@@ -15,6 +17,33 @@ const catalogue = normalizeSubscriptionCapabilities({
       inputModalities: ["text"],
     },
   ],
+});
+it("rejects the complete source model request before thread creation even when the input text alone fits", async () => {
+  const input = {
+    schemaVersion: "private-source-reanalysis-text-v1",
+    text: "\\".repeat(30000),
+  };
+  const schema = {
+    type: "object",
+    properties: { summary: { type: "string" } },
+    additionalProperties: false,
+  };
+  expect(Buffer.byteLength(canonicalJson(input))).toBeLessThan(120000);
+  expect(
+    sourceStructuredBytes(schema, input, "task-model", "xhigh"),
+  ).toBeGreaterThan(120000);
+  const server = { request: vi.fn() },
+    official = new OfficialAssistantClient(
+      { profileBinding: "a".repeat(64) },
+      server,
+    );
+  await expect(
+    official.structured(schema, input, [], {
+      model: "task-model",
+      effort: "xhigh",
+    }),
+  ).rejects.toThrow("ASSISTANT_SOURCE_INPUT_LIMIT");
+  expect(server.request).not.toHaveBeenCalled();
 });
 function setup(workload = "project_evaluation") {
   const binding = hash("owner@example.test");

@@ -1,5 +1,11 @@
 # VibeScroll foundational avatar
 
+## F061: separate private text reanalysis, October 24
+
+[ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) reuses existing task runs for separately approved private text results and retains only small version pointers on the source. Generic source analysis and citations remain unchanged. A distinct local runtime protocol excludes unsupported older workers. Original rights, result identity, current read scope and privacy cleanup remain authoritative.
+
+Keep the same adult builder and optional advanced workflow. Users can read an earned private result in the browser without an available processing computer. New execution still needs the supported eligible route; setup is not silently completed.
+
 ## F060: distinct setup availability, October 24
 
 [ADR 137](../adr/137-distinct-processing-availability-in-setup.md) distinguishes paired-computer subscription, managed credits and experimental text-review availability in the existing setup. A text feature gate reports available but unverified, not a connected host or working video route. Short guidance reuses existing Help and changes no chapter completion, saved route, grant or processing behavior.

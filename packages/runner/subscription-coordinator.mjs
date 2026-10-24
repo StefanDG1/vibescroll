@@ -5,6 +5,15 @@ import {
 import { evaluationJson } from "../knowledge/contracts.ts";
 import { planInput } from "../plans/contract.mjs";
 import { z } from "zod";
+import {
+  sourceTextRuntime,
+  sourceTextTask,
+  versionedTask,
+  sourceStructuredBytes,
+  strictSchema,
+} from "./local-task-runtime.mjs";
+import { canonicalJson } from "../contracts/canonical-json.mjs";
+import { createHash } from "node:crypto";
 
 export function assertLocalDockerEndpoint(endpoint, override) {
   const allowed = [
@@ -173,6 +182,8 @@ export function createSubscriptionCoordinator({
     next = 0,
     announcedAt = null,
     taskProtocol = false,
+    sourceProtocol = false,
+    localRuntimeHash,
     preferTasks = true,
     enabled = { personal: false, assistant: false };
   const attempted = new Set();
@@ -211,13 +222,21 @@ export function createSubscriptionCoordinator({
                 profileBinding: official.session.profileBinding,
                 expiresAt: official.session.expiresAt,
                 capabilities,
+                localTaskRuntime: sourceTextRuntime,
               },
         );
         signal.throwIfAborted();
         if (hello?.workspaceId !== config.workspaceId)
           throw Error("ASSISTANT_WORKSPACE_CHANGED");
-        if (route === "assistant")
+        if (route === "assistant") {
           taskProtocol = hello.taskProtocolVersion === "1.0.0";
+          sourceProtocol =
+            hello.sourceTaskProtocolVersion === "2.0.0" &&
+            /^[a-f0-9]{64}$/.test(hello.localRuntimeHash ?? "");
+          localRuntimeHash = sourceProtocol
+            ? hello.localRuntimeHash
+            : undefined;
+        }
         enabled[route] = route === "personal" || assistant || taskProtocol;
       } catch (error) {
         // A team member can use personal jobs without the assistant's owner/admin grant.
@@ -249,7 +268,11 @@ export function createSubscriptionCoordinator({
           const response = await request(
             route === "personal" ? "poll" : "claim",
             route === "assistant" && taskProtocol
-              ? { taskProtocolVersion: "1.0.0", preferTasks }
+              ? {
+                  taskProtocolVersion: sourceProtocol ? "2.0.0" : "1.0.0",
+                  preferTasks,
+                  ...(sourceProtocol ? { localRuntimeHash } : {}),
+                }
               : undefined,
           );
           if (route === "assistant") preferTasks = !preferTasks;
@@ -295,10 +318,14 @@ export function createSubscriptionCoordinator({
             throw Error("ASSISTANT_DUPLICATE_CLAIM");
           attempted.add(`${route}:${identity}`);
           try {
-            const task =
-              route === "assistant" && job.taskProtocolVersion === "1.0.0";
+            const task = route === "assistant" && versionedTask(job);
             if (job.taskProtocolVersion && !taskProtocol)
               throw Error("ASSISTANT_JOB_INVALID");
+            if (
+              sourceTextTask(job) &&
+              (!sourceProtocol || job.localRuntimeHash !== localRuntimeHash)
+            )
+              throw Error("ASSISTANT_LOCAL_RUNTIME_CHANGED");
             if (job.profileBinding !== official.session.profileBinding)
               throw Error("ASSISTANT_LOCAL_JOB_CHANGED");
             const capabilities = await official.capabilities();
@@ -350,7 +377,7 @@ export function createSubscriptionCoordinator({
               ? error.mediaStatus
               : undefined;
             await request(
-              route === "assistant" && job.taskProtocolVersion === "1.0.0"
+              route === "assistant" && versionedTask(job)
                 ? "task_fail"
                 : "fail",
               route === "personal"
@@ -363,7 +390,7 @@ export function createSubscriptionCoordinator({
                   }
                 : {
                     runId: job.runId,
-                    ...(job.taskProtocolVersion === "1.0.0"
+                    ...(versionedTask(job)
                       ? {
                           leaseGeneration: job.leaseGeneration,
                           leaseToken: job.leaseToken,
@@ -401,8 +428,7 @@ export async function processSubscriptionTask(
   { client, request, signal },
 ) {
   if (
-    job?.taskProtocolVersion !== "1.0.0" ||
-    !["project_evaluation", "plan_draft"].includes(job.workload) ||
+    !versionedTask(job) ||
     typeof job.runId !== "string" ||
     job.runId.length < 1 ||
     job.runId.length > 100 ||
@@ -414,7 +440,13 @@ export async function processSubscriptionTask(
     job.deadline <= Date.now() ||
     job.deadline > Date.now() + 1805000 ||
     !Array.isArray(job.repositories) ||
-    job.repositories.length < 1 ||
+    (sourceTextTask(job)
+      ? job.repositories.length !== 0 ||
+        typeof job.sourceId !== "string" ||
+        ![job.localRuntimeHash, job.inputHash, job.outputSchemaHash].every(
+          (value) => /^[a-f0-9]{64}$/.test(value ?? ""),
+        )
+      : job.repositories.length < 1) ||
     job.repositories.length > 5 ||
     new Set(job.repositories).size !== job.repositories.length
   )
@@ -451,6 +483,9 @@ export async function processSubscriptionTask(
       const lease = await request("task_heartbeat", {
         ...reference,
         ...(capabilities ? { capabilities } : {}),
+        ...(capabilities && sourceTextTask(job)
+          ? { localTaskRuntime: sourceTextRuntime }
+          : {}),
       });
       if (
         lease.valid !== true ||
@@ -468,6 +503,54 @@ export async function processSubscriptionTask(
   }
   try {
     await heartbeat(true);
+    if (sourceTextTask(job)) {
+      const bundle = await request("task_context", reference);
+      const { workload, inputHash, ...input } = bundle;
+      const serialized = canonicalJson(input);
+      if (
+        workload !== job.workload ||
+        input.sourceId !== job.sourceId ||
+        input.runId !== job.runId ||
+        input.processingRunId !== job.runId ||
+        input.model !== job.model ||
+        input.effort !== job.effort ||
+        Buffer.byteLength(serialized) > 120000 ||
+        inputHash !== job.inputHash ||
+        createHash("sha256").update(serialized).digest("hex") !== inputHash ||
+        !["source_text", "caption_only"].includes(input.expectedCoverage)
+      )
+        throw Error("ASSISTANT_SOURCE_INPUT_CHANGED");
+      const { outputSchema: schemaJson, ...modelInput } = input;
+      const outputSchema = JSON.parse(schemaJson);
+      if (
+        createHash("sha256")
+          .update(canonicalJson(strictSchema(outputSchema)))
+          .digest("hex") !== job.outputSchemaHash
+      )
+        throw Error("ASSISTANT_SOURCE_SCHEMA_CHANGED");
+      if (
+        sourceStructuredBytes(outputSchema, modelInput, job.model, job.effort) >
+        120000
+      )
+        throw Error("ASSISTANT_SOURCE_INPUT_LIMIT");
+      const result = await client.structured(outputSchema, modelInput, [], {
+        model: job.model,
+        effort: job.effort,
+        signal: active,
+      });
+      active.throwIfAborted();
+      const outputJson = JSON.stringify(result.output);
+      if (
+        typeof outputJson !== "string" ||
+        Buffer.byteLength(outputJson) > 120000
+      )
+        throw Error("ASSISTANT_SOURCE_OUTPUT_LIMIT");
+      await heartbeat();
+      const saved = await request("task_finish", { ...reference, outputJson });
+      if (saved.accepted !== true)
+        throw Error("ASSISTANT_SOURCE_OUTPUT_REFUSED");
+      return { completed: true, privateVersion: saved.privateVersion };
+    }
     const evaluationIds = [];
     let plan;
     for (const repositoryId of job.repositories) {

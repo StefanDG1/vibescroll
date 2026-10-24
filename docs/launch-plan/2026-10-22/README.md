@@ -1,5 +1,9 @@
 # VibeScroll complete product and launch plan
 
+## Private source-text result candidate, October 24
+
+[ADR 138](../../adr/138-private-source-text-results-on-existing-runs.md) implements the next C6b text-only slice through existing task runs and small source pointers. Canonical generic results remain intact, previous private versions stay available while pending, and old workers cannot claim new source tasks. Earned reads, exact input/output/run identity, privacy cleanup and version CAS are independently reviewed. Focused verification passed; root integrated checks and exact-head CI remain pending. Media reanalysis, approved skills, private-variant project references, trusted creator acquisition/contribution and official Cloud execution remain unfinished requirements, not replaced by text fixtures. Same US$3 cumulative cap and prior holds; both index migrations and backend publication remain held.
+
 ## Distinct setup availability candidate, October 24
 
 [ADR 137](../../adr/137-distinct-processing-availability-in-setup.md) completes a C7a projection/guidance slice through the existing setup. Paired subscription, managed credits and experimental text review remain distinct. Text gate availability stays unverified and cannot complete a chapter, start work or imply video/host readiness. The integrated check passed 1,674 tests with three hosted skips, all types and both builds. The final legacy-copy correction passed seventeen UI cases; exact-head CI remains pending. Keep all unfinished original R/P/N/C/M acceptance, the US$3 cumulative cap and prior holds. Production remains the narrow PR141 frontend with unchanged backend.

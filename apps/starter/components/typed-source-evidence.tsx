@@ -7,9 +7,11 @@ import { publicCitationUrl } from "@/lib/public-knowledge-display";
 export function TypedSourceEvidence({
   evidenceRegistry,
   sourceRevision,
+  idPrefix = "evidence",
 }: {
   evidenceRegistry: readonly EvidenceRecord[];
   sourceRevision?: SourceRevision | null;
+  idPrefix?: string;
 }) {
   return (
     <section
@@ -73,7 +75,7 @@ export function TypedSourceEvidence({
               )
             : undefined;
         return (
-          <details key={record.id} id={`evidence-${record.id}`}>
+          <details key={record.id} id={`${idPrefix}-${record.id}`}>
             <summary>
               {record.kind === "github_file"
                 ? `${record.path}, lines ${record.startLine} to ${record.endLine}`
@@ -110,7 +112,9 @@ export function TypedSourceEvidence({
                   <p>
                     Parent:{" "}
                     {parent ? (
-                      <a href={`#evidence-${parent.id}`}>{record.parentId}</a>
+                      <a href={`#${idPrefix}-${parent.id}`}>
+                        {record.parentId}
+                      </a>
                     ) : (
                       <span>
                         {record.parentId}, not included in this evidence

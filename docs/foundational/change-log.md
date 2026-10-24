@@ -204,3 +204,7 @@ Updated all four briefs for the owner's link-to-local-extraction default, one-ti
 ## F064: compatible private Cloud preparation, October 24
 
 The owner requested the smallest no-GitHub Cloud setup with supported internet permission and structured prerequisite reporting. The compatible candidate reuses the existing source job, grants, citations and status refresh; it adds no queue or retained analysis store. Preparation precedes the finite execution lease, and current unclaimed instructions survive refresh. This is implementation and host-readiness evidence, not a completed production video or public commercial availability. Preserve the audience, prices, six beliefs, provider gates, private reports and separate execution/publication authority. See [ADR 146](../adr/146-compatible-private-work-cloud-release.md).
+
+## October 25: F070
+
+Updated all four foundational briefs and the index for the explicit private MCP Cloud-request candidate. Reviewed legacy-grant consent, exact job limits and unavailable production authorization. Audience, prices and six beliefs are unchanged. No automatic execution, production video or customer-value claim is published; actual deployment/host/media and paid/provider gates remain.

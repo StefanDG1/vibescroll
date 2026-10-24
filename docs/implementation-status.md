@@ -1,5 +1,17 @@
 # October 22 launch implementation candidate
 
+## Compatible private MCP request checks, October 25
+
+The narrow63a071d backport passed1,135 local checks, three hosted skips, types/lint, both builds and package/finance validation. [The compatible receipt](operations/evidence/launch-20261025-cloud-mcp-compatible.json) preserves initial failures and their corrections. The compatibility validator check permits only the exact two optional grant fields while preserving all prior table/index/config constraints. Exact-head CI, fresh no-scan publication and actual Cloud media return remain pending. Full main retains its separate implementation and migration gates.
+
+## Exact private MCP Cloud requests, October 25
+
+[ADR 150](adr/150-explicit-mcp-cloud-analysis-requests.md) implements an optional versioned connection opt-in and exact `request_analysis(mode=work_cloud)` through the existing media-v2 source job/lease. Existing grants do not acquire authority. Both scope sets, private owner, current grant/policy/source bindings, finite retention and hourly limits are enforced. Matching unclaimed replay is idempotent; claimed/unknown jobs cannot be replaced. App approval retains recent-auth/input-hash checks. No GitHub, paid fallback, new queue or catalog publication is introduced.
+
+Root ran `node scripts/run-offline.mjs pnpm exec vitest run tests/work-cloud-mcp-request.test.ts tests/work-cloud-transport.test.ts --maxWorkers=2`: 38 passed, October25 00:35 Europe/Berlin. Earlier 65 unchanged text/media tests passed; 37 focused connection/WorkCloud UI checks and types passed. Independent High review found no P1/P2 in the permission boundary. The combined check passed 1,940 local tests with three hosted skips, all types, zero-warning lint, both builds and dependency review. Native actual-component checks passed desktop light and 320px dark/reduced-motion, including keyboard approval, exact payload and no paired computer. [The receipt](operations/evidence/launch-20261025-cloud-mcp-request.json) separates this from pending exact-head CI/publication and real Cloud acceptance.
+
+One separately reserved production MCP profile read for the existing private library returned unavailable authorization, with no source/grant/job change. The original cumulative USD3 ledger retains USD2.5354438943301747, leaving USD0.4645561056698253. This is conservative reservation accounting, not an invoice. No Cloud analysis started; the reserved owner-test post remains untouched. Two optional existing-grant fields need a fresh bounded schema-impact proof before a compatible release. Full main's migration, actual media/return, automatic event dispatch, neutral contribution and public paid access remain unfinished.
+
 ## Compatible private-library repair verified locally, October 24
 
 The bounded port over bcb8662 passes 1,059 JavaScript, 19 native and 15 Python checks, with three hosted skips, all types, zero-warning lint and both builds. Only organizations/product backend source changes; validators, indexes, cron and dependencies remain unchanged. The actual panel and its four app stylesheets are byte-identical to the final native-reviewed main candidate. [The compatible receipt](operations/evidence/launch-20261024-private-library-compatible.json) separates this evidence from merged main PR162 and retains porting failures. Exact-head CI, bounded publication, fresh eligible preview, owner consent and real Cloud video return remain pending.

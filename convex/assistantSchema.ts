@@ -123,6 +123,8 @@ export const assistantTables = {
     ),
     intakePolicy: v.optional(v.literal("explicit_links")),
     analysisDefaults: v.optional(assistantAnalysisDefaults),
+    cloudRequestPolicy: v.optional(v.literal("explicit_per_source_v1")),
+    cloudRequestPolicyHash: v.optional(v.string()),
     version: v.number(),
     state: v.union(v.literal("active"), v.literal("revoked")),
     expiresAt: v.union(v.number(), v.null()),

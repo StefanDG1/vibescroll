@@ -229,6 +229,27 @@
         "processing-and-recovery"
       ],
       "assets": []
+    },
+    {
+      "slug": "work-cloud-text-review",
+      "title": "Use experimental Work Cloud analysis",
+      "summary": "Set up exact private video requests through MCP, or review a separate diagnostic handoff.",
+      "file": "work-cloud-text-review.md",
+      "status": "approved",
+      "reviewMode": "Source-reviewed private candidate; production media/host return and independent walkthrough pending",
+      "lastVerifiedCommit": "a687552",
+      "dependencies": [
+        "convex/workCloudAnalysis.ts",
+        "convex/assistant.ts",
+        "convex/assistantGrants.ts",
+        "convex/assistantSchema.ts",
+        "packages/contracts/work-cloud-text.ts",
+        "packages/mcp/server.ts",
+        "apps/starter/components/assistant-connections.tsx",
+        "apps/starter/components/work-cloud-text.tsx"
+      ],
+      "related": ["processing-and-recovery", "share-a-post"],
+      "assets": []
     }
   ],
   "candidateReview": {

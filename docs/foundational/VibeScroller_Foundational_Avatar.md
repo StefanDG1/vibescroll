@@ -1,5 +1,11 @@
 # VibeScroll foundational avatar
 
+## F070: exact private Cloud requests through MCP, October 25
+
+[ADR 150](../adr/150-explicit-mcp-cloud-analysis-requests.md) adds a reviewed connection opt-in for exact private video requests through MCP, without another app approval for each post. Old grants gain no authority. Reuse the existing job/lease, fixed media limits, zero API maximum and explicit requested settings; GitHub and a paired computer are unnecessary for this handoff. The host still needs supported tools and restricted Internet access.
+
+This is an implementation candidate, not a completed production video, automatic wake-up, public commercial release, customer result or speed claim. Preserve source/privacy, paid/Pro, provider and cumulative USD3 gates. The one private-profile read returned unavailable authorization and changed no source/job/grant. Keep the existing audience, offer and six beliefs. Root prepares the exact remaining setup and acceptance steps.
+
 ## F066: preserve older saved posts through explicit privacy repair, October 24
 
 A real connected account can expose Cloud tools while an older workspace still has team permissions. Its name does not establish privacy. [ADR 147](../adr/147-explicit-legacy-private-library-adoption.md) prepares an explicit original-creator/sole-owner upgrade using the existing workspace and unchanged post/project IDs. Current membership, invitations, recent authentication and another private library are checked again before adoption. Team collaboration uses a separate workspace.

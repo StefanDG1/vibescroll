@@ -1,5 +1,6 @@
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { createKnowledgeHandler } from "../packages/mcp/server";
+import { tools as assistantHttpTools } from "../convex/assistantHttp";
 import { readAssistantBody } from "../packages/policy/assistant-http";
 import {
   cloudCompletionEnvelope,
@@ -44,7 +45,12 @@ async function packet(response: Response) {
   }
   return response.json();
 }
-function mcp(enabled: boolean, scopes = ["analysis:execute"], media = false) {
+function mcp(
+  enabled: boolean,
+  scopes = ["analysis:execute"],
+  media = false,
+  protocol = "2025-11-25",
+) {
   const invoke = vi.fn(async () => ({
     ok: true,
     status: 200,
@@ -54,14 +60,36 @@ function mcp(enabled: boolean, scopes = ["analysis:execute"], media = false) {
   return {
     invoke,
     async call(method: string, params: unknown) {
-      const body = { jsonrpc: "2.0", id: 1, method, params };
+      const body = {
+        jsonrpc: "2.0",
+        id: 1,
+        method,
+        params:
+          protocol === "2026-07-28"
+            ? {
+                ...(params as Record<string, unknown>),
+                _meta: {
+                  "io.modelcontextprotocol/protocolVersion": protocol,
+                  "io.modelcontextprotocol/clientInfo": {
+                    name: "Synthetic Cloud",
+                    version: "1",
+                  },
+                  "io.modelcontextprotocol/clientCapabilities": {},
+                },
+              }
+            : params,
+      };
       return handler.fetch(
         new Request("https://scroll.companynerve.com/mcp", {
           method: "POST",
           headers: {
             "content-type": "application/json",
             accept: "application/json, text/event-stream",
-            "mcp-protocol-version": "2025-11-25",
+            "mcp-protocol-version": protocol,
+            "mcp-method": method,
+            ...(method === "tools/call"
+              ? { "mcp-name": String((params as { name: string }).name) }
+              : {}),
           },
           body: JSON.stringify(body),
         }),
@@ -80,6 +108,191 @@ function mcp(enabled: boolean, scopes = ["analysis:execute"], media = false) {
     },
   };
 }
+const cloudRequest = {
+  sourceId: lease.sourceId,
+  mode: "work_cloud",
+  generation: 2,
+  revision: 0,
+  grantVersion: 1,
+  cloud: {
+    model: "requested-model",
+    effort: "medium",
+    useOwnPlan: true,
+    maxApiUsd: 0,
+    retainUntil: 1800000000000,
+  },
+};
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+it.each(["2025-11-25", "2026-07-28"])(
+  "transports exact Cloud requests and preserves legacy modes over %s",
+  async (protocol) => {
+    const host = mcp(
+      false,
+      ["analysis:request", "analysis:execute"],
+      true,
+      protocol,
+    );
+    const tools = (await packet(await host.call("tools/list", {}))).result
+      .tools;
+    const request = tools.find(
+      (tool: { name: string }) => tool.name === "request_analysis",
+    );
+    expect(request.inputSchema.properties.mode.enum).toContain("work_cloud");
+    expect(request.inputSchema.properties.cloud.additionalProperties).toBe(
+      false,
+    );
+    expect(request.description).toContain(
+      "does not automatically launch a host task",
+    );
+    const response = await host.call("tools/call", {
+      name: "request_analysis",
+      arguments: cloudRequest,
+    });
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect((await packet(response)).result.structuredContent).toEqual({
+      accepted: true,
+    });
+    expect(host.invoke).toHaveBeenCalledExactlyOnceWith(
+      "request_analysis",
+      cloudRequest,
+    );
+    for (const mode of [undefined, "local", "credits", "projects", "cancel"]) {
+      host.invoke.mockClear();
+      await host.call("tools/call", {
+        name: "request_analysis",
+        arguments: { sourceId: lease.sourceId, ...(mode ? { mode } : {}) },
+      });
+      expect(host.invoke).toHaveBeenCalledOnce();
+    }
+  },
+);
+it("keeps Cloud requests unavailable by default or with only the text gate", async () => {
+  for (const host of [
+    mcp(false, ["analysis:request"]),
+    mcp(true, ["analysis:request"]),
+  ]) {
+    const tools = (await packet(await host.call("tools/list", {}))).result
+      .tools;
+    expect(
+      tools.find((tool: { name: string }) => tool.name === "request_analysis")
+        .inputSchema.properties.mode.enum,
+    ).not.toContain("work_cloud");
+    await host.call("tools/call", {
+      name: "request_analysis",
+      arguments: cloudRequest,
+    });
+    expect(host.invoke).not.toHaveBeenCalled();
+    await host.call("tools/call", {
+      name: "request_analysis",
+      arguments: { sourceId: lease.sourceId },
+    });
+    expect(host.invoke).toHaveBeenCalledOnce();
+  }
+});
+it("challenges missing request scope before invoking a Cloud request", async () => {
+  const host = mcp(false, ["analysis:execute"], true);
+  const response = await host.call("tools/call", {
+    name: "request_analysis",
+    arguments: cloudRequest,
+  });
+  expect(response.status).toBe(403);
+  expect(response.headers.get("www-authenticate")).toContain(
+    "analysis:request",
+  );
+  expect(host.invoke).not.toHaveBeenCalled();
+});
+it("rejects malformed Cloud request fields before invoking", async () => {
+  const host = mcp(false, ["analysis:request"], true);
+  for (const patch of [
+    { generation: -1 },
+    { generation: 1.5 },
+    { revision: -1 },
+    { revision: 0.5 },
+    { grantVersion: 0 },
+    { grantVersion: 1.5 },
+    ...[
+      { model: "" },
+      { model: "x".repeat(101) },
+      { effort: "ultra" },
+      { useOwnPlan: false },
+      { maxApiUsd: 1 },
+      { retainUntil: 0 },
+      { retainUntil: 1.5 },
+      { extra: true },
+    ].map((cloud) => ({ cloud: { ...cloudRequest.cloud, ...cloud } })),
+    { extra: true },
+  ]) {
+    await host.call("tools/call", {
+      name: "request_analysis",
+      arguments: { ...cloudRequest, ...patch },
+    });
+    expect(host.invoke).not.toHaveBeenCalled();
+  }
+});
+it("validates exact Cloud request fields through the authenticated HTTP adapter", async () => {
+  const issuer = "https://synthetic-test.authkit.app";
+  vi.stubEnv("MCP_ENABLED", "true");
+  vi.stubEnv("MCP_AUTH_ISSUER", issuer);
+  const provider = vi.fn(async () =>
+    Response.json({ sub: "synthetic-subject" }),
+  );
+  vi.stubGlobal("fetch", provider);
+  const runMutation = vi.fn(
+    async (_operation: unknown, args: Record<string, unknown>) =>
+      Object.keys(args).length === 0
+        ? { issuer, subject: "synthetic-subject" }
+        : { accepted: true },
+  );
+  const handler = (
+    assistantHttpTools as unknown as {
+      _handler: (
+        ctx: { runMutation: typeof runMutation },
+        request: Request,
+      ) => Promise<Response>;
+    }
+  )._handler;
+  const ctx = { runMutation };
+  const run = (args: unknown) =>
+    handler(
+      ctx,
+      new Request("https://synthetic.example/assistant-tools", {
+        method: "POST",
+        headers: { authorization: "Bearer synthetic-access-token-0123456789" },
+        body: JSON.stringify({ operation: "request_analysis", args }),
+      }),
+    );
+  const accepted = await run(cloudRequest);
+  expect(accepted.status).toBe(200);
+  expect(await accepted.json()).toEqual({ accepted: true });
+  expect(runMutation.mock.calls[1][1]).toEqual({
+    ...cloudRequest,
+    profileId: undefined,
+  });
+  for (const patch of [
+    { revision: -1 },
+    { grantVersion: 0 },
+    ...[
+      { model: "" },
+      { model: "x".repeat(101) },
+      { effort: "ultra" },
+      { useOwnPlan: false },
+      { maxApiUsd: 1 },
+      { retainUntil: 0 },
+      { retainUntil: 1.5 },
+      { extra: true },
+    ].map((cloud) => ({ cloud: { ...cloudRequest.cloud, ...cloud } })),
+    { extra: true },
+  ]) {
+    runMutation.mockClear();
+    provider.mockClear();
+    expect((await run({ ...cloudRequest, ...patch })).status).toBe(403);
+    expect(runMutation).not.toHaveBeenCalled();
+    expect(provider).not.toHaveBeenCalled();
+  }
+});
 it("keeps Cloud tools absent by default and challenges old scopes before dispatch", async () => {
   const closed = mcp(false);
   const tools = (await packet(await closed.call("tools/list", {}))).result

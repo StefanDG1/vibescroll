@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "scope": "npm Undici security upgrade; no production publication or provider activation",
+  "parentCommit": "2928ebc8d39c413a78c893915a27b7fa2634acd1",
+  "trigger": {
+    "head": "9910b1ef37ed2691cc26564a87393a142c0e28c3",
+    "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/40043849903",
+    "integratedCheck": "passed",
+    "dependencyAudit": "failed"
+  },
+  "advisory": "https://github.com/nodejs/undici/security/advisories/GHSA-xjj6-f33q-929c",
+  "upstreamFix": "https://github.com/nodejs/undici/commit/1325a87dfb3492f8e87e6b0a84b3bda4e82e3436",
+  "change": {
+    "before": ["7.29.0", "7.30.0"],
+    "after": "7.30.1",
+    "paths": [
+      "@vercel/sandbox -> undici",
+      "Miniflare development tooling -> undici"
+    ],
+    "packageManagerMetadataPreserved": true,
+    "auditExceptionsAdded": false
+  },
+  "regression": {
+    "probe": "tests/fixtures/undici-encoding-probe.mjs",
+    "test": "tests/undici-encoding.test.ts",
+    "negativeControl": "Installed npm Undici7.30.0 exits1 with unhandled ResponseContentLengthMismatchError after six response content codings and early close, despite caught fetch rejection",
+    "patched": "Same loopback child-process probe survives rejection and correctly decodes a subsequent ordinary gzip response",
+    "runtime": "Project Node24.22.1, credential-free offline wrapper, loopback only",
+    "nativeFetchLimitation": "This override and regression cover npm Undici, not Node native fetch. Sandbox imports npm Agent but defaults to globalThis.fetch. Project Node24.22.1 independently reports bundled Undici7.30.1; hosted runtime versions remain separate acceptance."
+  },
+  "verification": {
+    "focusedRegression": "passed1",
+    "auditObservedAt": "2026-10-24T00:30:31.616Z",
+    "audit": "passed existing policy; high0 critical0 low2 moderate2; no new exceptions",
+    "independentReview": "High review found no code blockers and required the native-fetch scope qualification",
+    "retainedFailure": "First integrated check passed validation, lint and types, then one unchanged CompanionSetup dynamic-import test exceeded5000ms. Focused rerun passed all5 in601ms without changing timeout or code. Remaining suite/build results recorded in implementation status.",
+    "exactHeadCi": "required after commit",
+    "remainingTestSuite": "passed all test commands:1410 passed,3 hosted skips; original timeout retained separately",
+    "productionBuilds": "passed marketing and starter; two existing filesystem-tracing warnings retained",
+    "validationLintTypes": "passed297 documents/12 skill snapshots, zero-warning lint and all TypeScript projects"
+  },
+  "release": {
+    "merged": false,
+    "deployed": false,
+    "convexCalls": 0,
+    "inferenceCalls": 0,
+    "purchases": 0,
+    "branchPreviewSuppressionRetained": true
+  },
+  "budget": {
+    "cumulativeCapUsd": "3",
+    "conservativeRetainedAccountedUsd": "1.7592885298898517",
+    "unallocatedUsd": "1.2407114701101483",
+    "unknownHoldsPreserved": true,
+    "settledInvoice": false
+  }
+}

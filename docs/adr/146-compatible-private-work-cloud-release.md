@@ -1,6 +1,6 @@
 # ADR 146: a compatible private Work Cloud release
 
-Date: October 24, 2026. Status: reviewed candidate, production video acceptance pending.
+Date: October 24, 2026. Status: compatible backend/frontend published; production video acceptance pending.
 
 ## Decision
 
@@ -27,3 +27,7 @@ Cloud expiry and its derived-data cleanup use finite restore-lock deferrals. The
 The compatible source schema test compares actual exported validators and all indexes with 346b718. A fresh server prediction must independently confirm no source table scan/backfill, unchanged existing indexes/components and no new allocation before publication. An ephemeral discarded preflight schema ID is not the published schema ID. Bind actual start, wait and finish to the same real schema ID.
 
 The final local full check passed at16:29 UTC after the review fixes, with1,019 JavaScript checks,19 native and15 Python checks, three hosted skips, types, lint and both builds. Exact-head CI and actual publication are recorded separately in implementation status. No Cloud video end-to-end production success, public customer availability or speed claim is made by this decision. Keep the reserved owner-test post unanalyzed.
+
+## Published checkpoint, October 24
+
+The [production receipt](../operations/evidence/launch-20261024-cloud-compatible-production.json) records exact compatible source `bcb8662`, acknowledged backend finish, staged checks, promotion and canonical health. The guard halt happened after the server commit and concerns the valid old/target definition-path union; no deployment retry is authorized by that halt. Private configuration is enabled for the existing allowlist. The new provider execution permission is registered, while renewed consent, host tool exposure and a real source-to-cited-result run remain pending. Full-main features and index migration remain separate.

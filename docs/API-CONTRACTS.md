@@ -114,3 +114,9 @@ Improvement operations list, start a bounded issue-linked plan, separately execu
 ## Private variant project references, October 24
 
 A strict private-source-variant selection identifies actual run/version/output hash and one to twelve insight IDs. Only private project evaluation accepts it. Its separate evaluation reference cannot enter canonical synthesis. Task3.0.0 requires project_private_variant_v1 runtime admission. No additional project brief is accepted for this mode.
+
+## Explicit legacy private-library adoption
+
+Existing product operations `previewPrivateAdoption` and `adoptPrivateLibrary` dispatch to `organizations.previewPrivateAdoption` and `organizations.adoptPrivate`. Preview input is `organizationId`. It returns organization identity/name, membership ID, eligibility/reason, `expectedVersion`, `previewedAt`, `expiresAt` and explicit post/project preservation/team-invitation restriction flags.
+
+Adoption input is `organizationId`, the exact `expectedVersion`, exact `previewedAt` and `acknowledgePrivateOnly: true`. The server rechecks current authority and eligibility, rather than trusting preview fields. Success returns the same `organizationId` and `status: adopted | already_private`. Snapshot expiry, changed state or permission failure creates no partial adoption. No processing, grant, billing or default-workspace authority follows. See [ADR 147](adr/147-explicit-legacy-private-library-adoption.md).

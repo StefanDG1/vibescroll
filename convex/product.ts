@@ -687,6 +687,10 @@ export const detail = query({
         reader.organization.privateOwnerId === reader.actor._id
           ? await sourceEligibility(ctx, s, reader.actor._id)
           : undefined,
+      workCloudPrivateLibraryRequired:
+        !reader.organization.privateOwnerId &&
+        reader.membership.role === "owner" &&
+        workCloudMediaAllowed(reader.actor.subject),
       workCloudTextEnabled:
         reader.organization.privateOwnerId === reader.actor._id &&
         workCloudTextAllowed(reader.actor.subject),

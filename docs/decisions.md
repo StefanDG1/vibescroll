@@ -299,3 +299,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## October 24: compatible private Work Cloud release
 
 [ADR 146](adr/146-compatible-private-work-cloud-release.md) records the no-new-index compatibility release and its separate private video acceptance. Main retains the full product and its pending index migration. The same US$3 cumulative cap and prior holds remain.
+
+## Explicit legacy private-library repair, October 24
+
+[ADR 147](adr/147-explicit-legacy-private-library-adoption.md) adds a reviewed opt-in for an older original-creator sole-owner workspace. It preserves IDs/content and refuses other members, active invitations and another private library. Existing Cloud privacy and funding gates remain; no automatic production migration follows.

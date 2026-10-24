@@ -1,5 +1,13 @@
 # Foundational document change log
 
+## F066: preserve older saved posts through explicit privacy repair, October 24
+
+Updated the four briefs and index together for [F066](idea-backlog.md#f066-preserve-older-saved-posts-through-explicit-privacy-repair-october-24) and ADR 147. Recorded the actual legacy-workspace blocker, guarded unchanged-ID repair candidate and separate live/privacy consent. Preserved dissent about collaborators and all existing prices, allowances, audience, beliefs and external gates. No production adoption, video success, customer or campaign was claimed.
+
+## F065: compatible publication and honest Cloud availability, October 24
+
+Updated all four briefs, their index and [F065 review](idea-backlog.md#f065-compatible-publication-and-honest-cloud-availability-october-24) together. The production receipt distinguishes the live compatible Posts/Cloud protocol from the held full-main Apply controls and from unverified Cloud media acceptance. Recorded the verified provider registration and pending consent/catalog discovery. Preserved audience, prices, allowances, six beliefs, proprietary catalog, budget and external gates. No campaign or customer evidence was added.
+
 ## F062: private Work Cloud media observations, October 24
 
 Updated Research, Avatar, Offer and Beliefs together with [F062](idea-backlog.md#f062-private-work-cloud-media-observations-october-24), [ADR 143](../adr/143-private-work-cloud-media-observations.md), the foundational README and remaining-work checkpoints. The new entries distinguish the default-off media-v2 candidate and authenticated client reports from independently verified host/runtime/model/media evidence. They retain private-only results, sampled coverage, provider-local raw data, explicit existing grant/lease authority and no automatic dispatch, fake assets/provenance, catalog publication or paid fallback.

@@ -4844,6 +4844,19 @@ export function SourceDetail({
             </p>
           </section>
         )}
+        {detail.workCloudPrivateLibraryRequired && !readOnly && (
+          <section className="card">
+            <h3>Work Cloud needs your private library</h3>
+            <p>
+              This older workspace still uses team access. Review whether it can
+              become your private library while keeping these posts and links in
+              place.
+            </p>
+            <Link prefetch={false} href={`/app/${org}/team#private-library`}>
+              Review private-library setup
+            </Link>
+          </section>
+        )}
         {(detail.workCloudTextEnabled || detail.workCloudMediaEnabled) &&
           !orderedSource &&
           !detail.publicImportId &&

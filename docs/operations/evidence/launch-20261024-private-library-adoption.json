@@ -56,7 +56,8 @@
   "failuresPreserved": [
     "Initial integrated lint rejected two p elements using role=status. Replaced with semantic output, full check rerun passed.",
     "Initial focused UI fixture clock and reused Response failures corrected in test harness.",
-    "Formatting helper rejected bracketed route path; formatted existing app directory and restored unrelated formatting-only document changes."
+    "Formatting helper rejected bracketed route path; formatted existing app directory and restored unrelated formatting-only document changes.",
+    "A documentation-only Windows default-decoding error left the first textual budget checkpoint unchanged; corrected explicitly as UTF-8 before opening the PR. No code or ledger data was lost."
   ],
   "nativeBrowser": {
     "synthetic": true,

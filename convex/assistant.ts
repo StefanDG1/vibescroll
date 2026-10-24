@@ -23,6 +23,7 @@ import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { assistantGrantActive } from "../packages/policy/assistant";
+import { requestCloudFromAssistant } from "./workCloudAnalysis";
 import {
   evaluation as evaluationContract,
   assertReferences,
@@ -325,6 +326,18 @@ export const getJobStatus = internalQuery({
       profile_id: a.organization._id,
       status: receipt?.status ?? source.state,
       source_status: source.state,
+      generation: source.generation,
+      revision: source.updatedAt,
+      grant_version: a.grant.version,
+      cloud_request_policy: a.grant.cloudRequestPolicy ?? null,
+      processing:
+        source.personalAnalysis?.executor === "work_cloud"
+          ? {
+              executor: "work_cloud",
+              state: source.personalAnalysis.state,
+              stage: source.personalAnalysis.stage,
+            }
+          : null,
       receipt,
       evidence_changed: changed,
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
@@ -344,10 +357,27 @@ export const requestAnalysis = internalMutation({
         v.literal("credits"),
         v.literal("projects"),
         v.literal("cancel"),
+        v.literal("work_cloud"),
       ),
     ),
     generation: v.optional(v.number()),
     maxCredits: v.optional(v.number()),
+    revision: v.optional(v.number()),
+    grantVersion: v.optional(v.number()),
+    cloud: v.optional(
+      v.object({
+        model: v.string(),
+        effort: v.union(
+          v.literal("low"),
+          v.literal("medium"),
+          v.literal("high"),
+          v.literal("xhigh"),
+        ),
+        useOwnPlan: v.literal(true),
+        maxApiUsd: v.literal(0),
+        retainUntil: v.number(),
+      }),
+    ),
     project: v.optional(v.string()),
     bestProjects: v.optional(v.boolean()),
   },
@@ -357,6 +387,32 @@ export const requestAnalysis = internalMutation({
       args.profileId,
       args.sourceId,
       "analysis:request",
+    );
+    if (args.mode === "work_cloud") {
+      ensure(
+        args.generation !== undefined &&
+          args.revision !== undefined &&
+          args.grantVersion !== undefined &&
+          args.cloud !== undefined &&
+          args.maxCredits === undefined &&
+          args.project === undefined &&
+          args.bestProjects === undefined,
+        "INVALID_INPUT",
+        "Use the current post generation, revision, grant version and explicit zero-API Cloud request without project or credit options.",
+      );
+      return requestCloudFromAssistant(ctx, source, {
+        generation: args.generation,
+        revision: args.revision,
+        grantVersion: args.grantVersion,
+        cloud: args.cloud,
+      });
+    }
+    ensure(
+      args.cloud === undefined &&
+        args.revision === undefined &&
+        args.grantVersion === undefined,
+      "INVALID_INPUT",
+      "Cloud request options apply only to work_cloud mode.",
     );
     const intake = await ctx.db
       .query("assistantIntakes")
@@ -610,6 +666,7 @@ export const getProfile = internalQuery({
         grant_version: grant.version,
         expires_at: grant.expiresAt,
         automatic_analysis: grant.analysisDefaults?.enabled ?? false,
+        cloud_request_policy: grant.cloudRequestPolicy ?? null,
         intake_setup_required: grant.intakePolicy !== "explicit_links",
         default_output: "extraction_and_organization",
         selected_project_count: (grant.repositories ?? []).length,

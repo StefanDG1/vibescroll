@@ -1,5 +1,9 @@
 # Interface contracts
 
+## Explicit experimental MCP Cloud requests
+
+[ADR 150](adr/150-explicit-mcp-cloud-analysis-requests.md) adds `request_analysis(mode=work_cloud)` with required current `generation`, `revision`, `grantVersion` and strict `cloud:{model,effort,useOwnPlan:true,maxApiUsd:0,retainUntil}`. It requires the reviewed `explicit_per_source_v1` app-grant policy, server-owned current media-policy hash, both request/execution scopes and owner-private media authority. Old grants do not acquire approval authority. Identical unclaimed replay is idempotent; claimed/unknown work cannot be replaced. `get_job_status` returns compact identities and Cloud state/stage. This does not launch a host, dispatch future links, publish catalog data or authorize paid processing.
+
 ## Private source-text reanalysis candidate
 
 [ADR 138](adr/138-private-source-text-results-on-existing-runs.md) adds `source_reanalysis_text` to existing task quote/approval with source ID, expected private version and optional private source brief; reject repository/member/proposal arguments. The strict task is protocol2.0.0, while project/plan1.0.0 and HTTP envelopes stay unchanged. Separately hashed local runtime admission is not an official model capability. The actual run ID binds processing/input/output hashes. `privateSourceAnalysis.detail({sourceId,runId?})` returns owner-qualified parsed output/provenance and a transient effective `readUntil`; status/history contain no raw context/output. Complete source thread/turn requests including schema/instructions are capped before model dispatch; persistent result is canonical `outputJson` only.

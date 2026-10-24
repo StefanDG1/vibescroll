@@ -56,6 +56,13 @@ const lease = {
   leaseToken: z.string().uuid(),
 };
 export const workCloudClaimInput = z.object(source).strict();
+export const workCloudMcpRequestOptions = z.strictObject({
+  model: z.string().min(1).max(100),
+  effort: z.enum(["low", "medium", "high", "xhigh"]),
+  useOwnPlan: z.literal(true),
+  maxApiUsd: z.literal(0),
+  retainUntil: z.number().int().positive(),
+});
 export const workCloudLeaseInput = z.object(lease).strict();
 export const workCloudPrepareInput = z
   .object({

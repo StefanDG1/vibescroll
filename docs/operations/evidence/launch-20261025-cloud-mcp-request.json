@@ -1,0 +1,70 @@
+{
+  "recordedAtUtc": "2026-10-24T22:39:31.156784+00:00",
+  "stage": "Experimental private explicit MCP requests; not production media acceptance",
+  "adr": "150-explicit-mcp-cloud-analysis-requests",
+  "validation": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "exitCode": 0,
+    "logSHA256": "da695a4c014b530ec91504b6cf27bfe1e079388e72e1e1f063a0fb92d25e7ec7",
+    "documents": 339,
+    "financeChecks": 17,
+    "javascriptPassed": 1888,
+    "nativeNodePassed": 19,
+    "pythonPassed": 33,
+    "totalPassed": 1940,
+    "hostedSkipped": 3,
+    "lint": "zero warnings/errors",
+    "types": "passed",
+    "bothProductionBuilds": "passed",
+    "dependencies": {
+      "high": 0,
+      "critical": 0,
+      "unresolved": 0
+    },
+    "independentHighReview": "No P1/P2 in new permission boundary"
+  },
+  "native": {
+    "actualComponent": true,
+    "sourceAppCss": true,
+    "productionRequests": 0,
+    "desktopWidth": 1280,
+    "desktopTheme": "light",
+    "desktopScrollWidth": 1270,
+    "mobileWidth": 320,
+    "mobileTheme": "dark",
+    "mobileScrollWidth": 320,
+    "reducedMotion": true,
+    "legacyPolicyUnchecked": true,
+    "nativeKeyboardAcknowledgement": true,
+    "noPairedComputerRequired": true,
+    "lostGateInvalidatesReview": true,
+    "closed": true,
+    "passed": true
+  },
+  "screenshots": [
+    "assets/cloud-mcp-request-desktop-20261025.png",
+    "assets/cloud-mcp-request-mobile-20261025.png"
+  ],
+  "production": {
+    "newVideoJobs": 0,
+    "boundedPrivateProfileRead": "Unavailable authorization; no source/grant/job changed",
+    "reservedOwnerTestPost": "Untouched",
+    "actualCloudMediaAndCitedReturn": "pending",
+    "automaticDispatch": "pending",
+    "sharedContribution": "pending",
+    "generalPaidAccess": "pending"
+  },
+  "publication": {
+    "exactHeadCI": "pending",
+    "compatibleRelease": "pending",
+    "fullMainMigration": "held",
+    "schemaChange": "Only two optional fields on existing assistantGrants; no new table/index. Fresh no-scan prediction required."
+  },
+  "budget": {
+    "capUSD": 3,
+    "retainedMaximumUSD": 2.5354438943301747,
+    "headroomUSD": 0.4645561056698253,
+    "invoiceSettled": false,
+    "newAnalysisSpend": 0
+  }
+}

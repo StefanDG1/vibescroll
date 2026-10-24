@@ -612,6 +612,7 @@ test("runtime inventory follows the actual Node graph and materializes only pinn
     "packages/media/personal-ordered.ts",
     "packages/social/analysis.ts",
     "packages/social/contracts.ts",
+    "packages/media/acquisition-runtime.ts",
     "packages/social/preparation.ts",
   ])
     assert.ok(graph.files.has(path), path);
@@ -636,6 +637,11 @@ test("native Node imports companion and assistant modules without starting a wor
   const personal = await import("../packages/runner/personal-analysis.mjs");
   const companion = await import("../scripts/companion.mjs");
   const ordered = await import("../packages/runner/personal-ordered.mjs");
+  const social = await import("../packages/social/contracts.ts");
+  assert.equal(
+    social.privateCloudMediaIdentity("https://youtu.be/abcdefghijk").platform,
+    "youtube",
+  );
   assert.equal(typeof ordered.processPersonalOrderedJob, "function");
   assert.equal(typeof assistant.strictSchema, "function");
   assert.equal(typeof personal.OfficialPersonalClient, "function");

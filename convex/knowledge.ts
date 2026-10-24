@@ -4,6 +4,7 @@ import {
 } from "./lib/privateProjectVariant";
 import type { PrivateEvaluationOrigin } from "../packages/contracts/private-evaluation-context";
 import { workspaceReadable } from "./lib/workspacePrivacy";
+import { projectApplicationContent } from "./lib/projectApplication";
 import { repositoryContent } from "./lib/repositoryContent";
 import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { internalMutation, mutation } from "./lib/projectedMutations";
@@ -1238,6 +1239,16 @@ export const evaluationCurrent = async (
   ctx: QueryCtx,
   e: Doc<"knowledgeEvaluations">,
 ) => {
+  if (e.localRunId) {
+    const run = await ctx.db.get(e.localRunId);
+    if (run?.task?.schemaVersion === "4.0.0") {
+      try {
+        await projectApplicationContent(ctx, run);
+      } catch {
+        return false;
+      }
+    }
+  }
   if (e.privateEvaluationOrigin) {
     const run = e.localRunId ? await ctx.db.get(e.localRunId) : null;
     if (
@@ -1464,7 +1475,13 @@ export const evaluations = query({
       );
       items.push({
         ...e,
-        ...(!surviving ? { output: undefined, inspected: undefined } : {}),
+        ...(!surviving
+          ? {
+              output: undefined,
+              opportunityGroup: undefined,
+              inspected: undefined,
+            }
+          : {}),
         state: (await evaluationCurrent(ctx, e)) ? e.state : "stale",
       });
     }
@@ -1528,6 +1545,7 @@ export const redactDerived = internalMutation({
       proposal.organizationId === a.organizationId &&
       proposal.sourceId === a.sourceId &&
       (proposal.detail?.schemaVersion === "2.0.0" ||
+        proposal.opportunityIndex !== undefined ||
         !!variantOrigin(proposal.privateEvaluationOrigin)) &&
       proposal.references?.some(
         (ref) =>
@@ -1632,7 +1650,12 @@ export const redactDerived = internalMutation({
               ? { title: "Unavailable improvement", goal: "" }
               : "note" in r
                 ? { note: "", measurement: undefined, deployedUrl: undefined }
-                : { output: undefined }),
+                : {
+                    output: undefined,
+                    ...("opportunityGroup" in r
+                      ? { opportunityGroup: undefined }
+                      : {}),
+                  }),
             references: [],
             ...("state" in r ? { state: "deleted" } : {}),
             ...("inspected" in r ? { inspected: undefined } : {}),

@@ -291,3 +291,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## Public main and stop checkpoint, October 24
 
 [ADR 140](adr/140-public-main-consolidation-with-deployment-hold.md) records the owner-requested ancestry-preserving consolidation with main Git deployment temporarily disabled. Full CI and immutable source releases continue. The owner removes an extra discretionary OpenAI reply requirement, while actual provider eligibility and technical acceptance remain. No new feature work or live activation follows the requested stop.
+
+## Whole-post project application, October 24
+
+[ADR 145](adr/145-whole-post-project-content-and-distinct-proposals.md) records the owner-approved default-on retained transcript/images toggle and distinct separately reviewed proposals per post/project. Existing jobs, private references, funding, retention, coding approval and release gates remain. Candidate and production acceptance stay separate.

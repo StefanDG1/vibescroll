@@ -94,6 +94,26 @@ const privateVariantTask = v.object({
     generation: v.number(),
   }),
 });
+const applicationTask = v.object({
+  ...task.fields,
+  schemaVersion: v.literal("4.0.0"),
+  workload: v.literal("project_evaluation"),
+  localRuntimeHash: v.string(),
+  includeSourceContent: v.boolean(),
+  sourceContentBindings: v.array(
+    v.object({
+      sourceId: v.id("sources"),
+      generation: v.number(),
+      revision: v.number(),
+      contentHash: v.string(),
+    }),
+  ),
+  privateVariantSelection: v.optional(privateVariantSelectionValue),
+  sourceReanalysisBinding: v.object({
+    sourceId: v.id("sources"),
+    generation: v.number(),
+  }),
+});
 export const localLibraryTables = {
   localLibraryRuns: defineTable({
     ...tenant,
@@ -105,7 +125,12 @@ export const localLibraryTables = {
     model: v.string(),
     effort: v.string(),
     task: v.optional(
-      v.union(task, sourceReanalysisTaskValue, privateVariantTask),
+      v.union(
+        task,
+        sourceReanalysisTaskValue,
+        privateVariantTask,
+        applicationTask,
+      ),
     ),
     sourceTaskResult: v.optional(sourceTaskResultValue),
     expiresAt: v.number(),

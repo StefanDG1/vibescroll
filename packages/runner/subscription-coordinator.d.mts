@@ -43,5 +43,9 @@ export function processSubscriptionTask(
     client: any;
     request: (operation: string, args?: any) => Promise<any>;
     signal?: AbortSignal;
+    localTaskRuntime?: {
+      schemaVersion: "local-task-runtime-v1";
+      features: readonly string[];
+    };
   },
 ): Promise<{ completed: boolean }>;

@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T12:57:54.0516258Z",
+  "scope": "Frozen private work-cloud-media-v2 candidate; no real Cloud media acceptance or deployment",
+  "adr": "143-private-work-cloud-media-observations",
+  "candidate": {
+    "protocol": "work-cloud-media-v2",
+    "ownership": "existing source job, OAuth execution grant and same-job lease",
+    "sources": "permitted single-video URLs from Instagram, TikTok, YouTube or Vimeo",
+    "provenance": "authenticated client-reported observations; authenticated_host_reported wire value",
+    "independentlyVerified": {
+      "hostPolicy": false,
+      "runtime": false,
+      "executedModel": false,
+      "mediaBytes": false,
+      "providerCleanup": false
+    },
+    "coverage": "sampled and partial",
+    "rawMediaLocation": "provider task only",
+    "publication": "private only",
+    "mediaFlagsDefaultOff": true,
+    "automaticDispatch": false,
+    "paidApiFallback": false,
+    "inventedAssetIdsOrProviderProvenanceAllowed": false,
+    "catalogPublication": false,
+    "declaredPolicyLimits": {
+      "sourceInvocations": 1,
+      "sourceBytes": 52428800,
+      "durationMs": 600000,
+      "sampledFrames": 48,
+      "speechSegments": 200,
+      "payloadBytes": 120000,
+      "executionMs": 900000,
+      "automaticRetries": 0,
+      "mediaLeaseMs": 180000
+    },
+    "policyLimitEvidence": "Contract declarations, not independent measurements of provider resource use"
+  },
+  "verification": {
+    "focusedPassedBeforeIndependentReview": 98,
+    "reviewFinding": "Two P2 findings fixed: native extension resolution and expiry projection cleanup. Final independent High review found no remaining P1/P2.",
+    "finalCombinedChecks": {
+      "command": "node scripts/run-offline.mjs pnpm check",
+      "exitCode": 0,
+      "completedAt": "2026-10-24T13:20:37.0474231Z",
+      "javascriptSuitesPassed": [1510, 40, 215],
+      "hostedSkips": 3,
+      "allTypesLintBothBuildsAndNativePythonChecks": "passed",
+      "scope": "Before final display-only readable date and collapsed settings polish; final27 UI checks and starter types passed after that polish. Exact-head CI remains required."
+    },
+    "exactHeadCi": "pending",
+    "actualCloudMediaAcceptance": "pending",
+    "deployed": false,
+    "focusedAfterReviewPassed": 58,
+    "uiChecksPassed": 27,
+    "nativeRuntimeGraphChecksPassed": 2,
+    "nativeBrowser": {
+      "actualReactComponent": true,
+      "actualCompiledAppCssAndAtlasAncestor": true,
+      "syntheticOnly": true,
+      "desktop": {
+        "width": 1280,
+        "theme": "light"
+      },
+      "mobile": {
+        "width": 320,
+        "theme": "dark",
+        "reducedMotion": true,
+        "scrollWidth": 320
+      },
+      "exactRetentionConsentAndQueuedHandoff": "passed",
+      "mountAndTimerPolling": "none observed",
+      "productionCalls": 0,
+      "screenshots": [
+        "assets/work-cloud-media-desktop-preview.png",
+        "assets/work-cloud-media-mobile-preview.png"
+      ],
+      "limits": "Component fixture, not an authenticated production app acceptance."
+    },
+    "fullCheckLogSha256": "4da061ba9bbfa937a0f99cdb6e57a43ff8a39954b9f1c4145db1f81e2214cc7c"
+  },
+  "capabilityProbe": {
+    "observedAt": "2026-10-24T12:46:00Z",
+    "transport": "native UI turn in an existing no-GitHub Work Cloud chat",
+    "completedTurnObserved": true,
+    "exposed": {
+      "vibeScrollMcpTools": 8,
+      "shell": true,
+      "viewImage": true,
+      "hostPolicyInspectionTool": false,
+      "officialTaskId": false
+    },
+    "uiRequestedModel": "Sol Medium",
+    "hostSelfReportedModel": "gpt6-astra-wm",
+    "modelDiscrepancy": "unresolved; neither value independently attests execution",
+    "vibeScrollMcpServiceCalls": 0,
+    "mediaOperations": 0,
+    "productionCalls": 0,
+    "earlierThreadMessageAttempt": "timed out with unknown outcome; retained separately from the subsequently observed native UI probe turn",
+    "limit": "Tool exposure and a completed probe turn establish no media result, enforced host policy or speed",
+    "laterExplicitModelSelection": "The original picker had Default selected. Explicit GPT-6.1 Sol selection then matched session-reported gpt-6.1-sol-wm; requestedMedium remains UI-observed, not independent execution attestation.",
+    "resumedOldChat": "A bounded shell attempt returned No usable execution environment; no command or media ran.",
+    "freshCloudReadiness": {
+      "noRepositorySelectedInUI": true,
+      "shellExecutedUnder10SecondTimeout": true,
+      "initial": "pending, current observations, enforcement unknown; Git-marker check stopped before policy read",
+      "later": "running, observations_current true, enforcement enforced; /workspace not initialized as Git; policyfilev1exists",
+      "configuredRepositoryCount": "not exposed",
+      "policyDestinationExtraction": "not yet established",
+      "mediaAndProductionCalls": 0,
+      "firstUserSetupAcceptance": "pending"
+    }
+  },
+  "separateOwnerEvidence": {
+    "canonicalAudioOnly": {
+      "verifiedAt": "2026-10-24T12:33:07Z",
+      "verification": "real WorkOS session",
+      "insights": 5,
+      "citations": 20,
+      "coverage": "audio only"
+    },
+    "localSampledMedia": {
+      "sampledFrames": 48,
+      "insights": 7,
+      "retention": "private only"
+    },
+    "cloudMediaAcceptance": false
+  },
+  "releaseCheckpoint": {
+    "repair": {
+      "pullRequest": 155,
+      "mergeCommit": "af3ac7f36a02e0ac94b96748b6a3f17721db9d5e",
+      "ci": 40093851347,
+      "mainCi": "passed",
+      "release": "published"
+    },
+    "compatibleRepair": {
+      "pullRequest": 156,
+      "mergeCommit": "2e840ec",
+      "sourceCommit": "e2e25b996ca9eac0e81c05f070bf5c2435c4a7ef",
+      "ci": 40094423673,
+      "deployed": false
+    },
+    "cleanup": {
+      "pullRequest": 157,
+      "firstCi": 40094884574,
+      "firstResult": "failed an old pending-under-restore assertion",
+      "correction": "expect deferred cleanup while restore lock is active",
+      "correctedHead": "8f9b91b",
+      "correctedCi": 40095321847,
+      "mergeCommit": "a943a3257f3e32ca8cf9ae09a9a61f7a1a7e732c",
+      "correctedResult": "passed and merged"
+    },
+    "fullMainLive": false
+  },
+  "remainingApplyPostGap": "Live grouping uses extracted insights and one proposal per repository evaluation; full transcript/image context per project and automatic multiple proposals per post/repository remain unfinished",
+  "budget": {
+    "currency": "USD",
+    "cumulativeCap": "3.00",
+    "retained": "2.8762037111015744",
+    "headroom": "0.1237962888984258",
+    "completedWholeDayConvexUsage": "0.07769574610772237",
+    "reconciliation": "Completed-day usage replaces only eligible worst-case holds; all Vercel, older unknown and future holds remain",
+    "sourceBillingClassification": "separate proof, not established here",
+    "newPurchaseOrSpendAuthorized": false
+  },
+  "privacy": "No source identifier, title, URL, transcript, frame content, insight content, credential or private chat/task identifier is published",
+  "finalReviewAt": "2026-10-24T14:03:29.848872+00:00",
+  "retainedFailures": [
+    "Original native TS import defect, corrected",
+    "Expiry category-summary projection regression, corrected",
+    "Intermediate missing helper integration failure, corrected",
+    "Original Default model routing and expired old Cloud executor",
+    "Local fixture virtual-input hashing and initial target timing failures",
+    "Local isolated fixture initially omitted the actual atlas-shell CSS ancestor; corrected after screenshot inspection"
+  ],
+  "latestBudgetCheckpoint": {
+    "capUSD": 3,
+    "retainedUSD": 2.2688707111015747,
+    "unallocatedUSD": 0.7311292888984253,
+    "reason": "Fresh covered-credit proof reconciles completed Vercel cash holds only; all earlier Convex unknown, residual and future holds remain. Secure backend guard reservation is a subsequent root step.",
+    "settledInvoice": false
+  }
+}

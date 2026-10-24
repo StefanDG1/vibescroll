@@ -1,5 +1,13 @@
 # VibeScroller foundational document process
 
+Current candidate brief: [F063](idea-backlog.md#f063-whole-post-context-and-distinct-project-proposals-october-24) records the authorized retained-content toggle, distinct project proposals and readiness-before-analysis ordering. Candidate tests do not establish production Cloud acceptance.
+
+## October 24: private Work Cloud media candidate
+
+[F062](idea-backlog.md#f062-private-work-cloud-media-observations-october-24) and [ADR 143](../adr/143-private-work-cloud-media-observations.md) update all four briefs for the frozen, default-off private media-v2 candidate. Authenticated client-reported sampled observations do not attest host policy, runtime, model, bytes or provider cleanup. The no-GitHub probe exposed tools but did no service/media/production operation and left a requested/reported model discrepancy unresolved. Final combined checks and actual Cloud media acceptance remain pending.
+
+Separate audio-only canonical verification and private local media output retain their narrow scope. PR 155's merged release and PR 156's compatible merge are code publication, not deployment. Whole-post extracted-insight grouping still lacks full transcript/image project context and automatic multiple proposals per post/project. Audience, prices, allowances and six beliefs remain unchanged; earlier checkpoints below are historical.
+
 ## October 24: private text result candidate
 
 [F061](idea-backlog.md#f061-separate-private-text-reanalysis-october-24) and [ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) keep private source results separate from generic analysis through existing run ownership, explicit v2 runtime admission and rights-aware reading/cleanup. All four briefs retain actual-text coverage, cost limits and unverified live/model acceptance.

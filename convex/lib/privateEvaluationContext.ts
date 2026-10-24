@@ -70,7 +70,10 @@ export async function privateEvaluationTaskCurrent(
 ) {
   const task = run.task;
   if (!task || task.schemaVersion === "2.0.0") return false;
-  if (task.schemaVersion === "3.0.0") {
+  if (
+    task.schemaVersion === "3.0.0" ||
+    (task.schemaVersion === "4.0.0" && task.privateVariantSelection)
+  ) {
     try {
       await variantTaskEvidence(ctx, run);
     } catch {

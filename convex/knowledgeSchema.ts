@@ -135,6 +135,13 @@ export const knowledgeTables = {
     state: v.string(),
     decision: v.string(),
     output: v.optional(v.any()),
+    opportunityGroup: v.optional(
+      v.object({
+        schemaVersion: v.literal("project-opportunity-group-v1"),
+        opportunities: v.array(v.any()),
+        outputHash: v.string(),
+      }),
+    ),
     credits: v.optional(v.number()),
     processingVersion: v.string(),
     model: v.optional(v.string()),

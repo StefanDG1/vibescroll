@@ -202,6 +202,16 @@ export const tools = httpAction(async (ctx, request) => {
         });
         break;
       }
+      case "work_cloud_prepare": {
+        const { preparationJson, ...args } = input.args;
+        value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+          ...args,
+          sourceId: args.sourceId as Id<"sources">,
+          operation: "prepare",
+          preparation: parseWorkCloudResult(preparationJson),
+        });
+        break;
+      }
       case "draft_project_suggestion":
         value = await ctx.runMutation(
           internal.assistant.draftProjectSuggestion,

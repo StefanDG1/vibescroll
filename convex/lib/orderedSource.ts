@@ -5,6 +5,10 @@ import { validateOrderedAnalysis } from "../../packages/social/analysis";
 import { personalOrderedInputSchema } from "../../packages/social/ordered-intake";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { sourceRetained } from "./sourceAuthority";
+import {
+  socialHash,
+  privateCloudMediaIdentity,
+} from "../../packages/social/contracts";
 
 export async function currentOrderedSource(
   source: Doc<"sources">,
@@ -21,6 +25,40 @@ export async function currentOrderedSource(
     sourceId: source._id,
     generation: source.generation,
   });
+  if (
+    validated.prepared.post.schemaVersion === "work-cloud-observed-media-v1"
+  ) {
+    const post = validated.prepared.post,
+      job = source.personalAnalysis;
+    if (
+      source.kind !== "url" ||
+      !source.url ||
+      source.creatorRights ||
+      source.serviceIntent ||
+      source.publicImportId ||
+      post.observedAt > Date.now() ||
+      post.retainUntil <= Date.now() ||
+      privateCloudMediaIdentity(source.url).url !== post.canonical ||
+      source.canonical !== post.canonical ||
+      job?.executor !== "work_cloud" ||
+      job.state !== "completed" ||
+      job.generation !== source.generation ||
+      job.cloud.schemaVersion !== "work-cloud-media-v2" ||
+      !job.cloud.media ||
+      post.canonical !== job.cloud.media.canonicalUrl ||
+      post.taskId !== job.cloud.taskId ||
+      post.inputHash !== job.cloud.inputHash ||
+      post.policyHash !== job.cloud.policyHash ||
+      post.toolchainHash !== job.cloud.media.toolchainHash ||
+      post.retainUntil !== job.cloud.media.retainUntil ||
+      job.cloud.claimedAt === undefined ||
+      post.observedAt < job.cloud.claimedAt ||
+      (await socialHash(canonicalJson(validated.prepared))) !==
+        job.cloud.media.preparationHash
+    )
+      throw Error("CLOUD_MEDIA_SOURCE_CHANGED");
+    return validated;
+  }
   if (validated.prepared.post.schemaVersion === "provided-media-v1") {
     const input = personalOrderedInputSchema.parse(source.personalOrderedInput);
     const {

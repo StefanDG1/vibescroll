@@ -1,5 +1,13 @@
 # Complete the launch and own-subscription workflows
 
+## Private Work Cloud media checkpoint, October 24
+
+[ADR 143](../../adr/143-private-work-cloud-media-observations.md), [F062](../../foundational/idea-backlog.md#f062-private-work-cloud-media-observations-october-24) and the [sanitized receipt](../../operations/evidence/launch-20261024-work-cloud-media.json) record the frozen default-off media-v2 candidate. It reuses the source job/OAuth grant/lease for private single-video reports, with sampled coverage and provider-local raw media. Client authentication does not attest host policy, runtime, model, bytes or cleanup. Ninety-eight focused tests preceded review; root corrected the native extension finding and final combined checks remain pending. The no-GitHub native probe exposed tools but made no service/media/production calls and left policy/task/model evidence unresolved. Real Cloud media acceptance and speed remain unclaimed.
+
+At 12:33:07 UTC, a real WorkOS session verified a canonical audio-only result with five insights/twenty citations. The local 48-frame/seven-insight result remains private. PR 155 merged as `af3ac7f` after CI 40093851347, passing main CI and publishing its release; compatible PR 156 merged as `2e840ec` after source CI 40094423673. Neither repair is deployed. Cleanup PR 157's restore-lock assertion failure was corrected at `8f9b91b`; its CI is pending. Full transcript/image context per project and automatic multiple proposals per post/repository remain open Apply work.
+
+Current retained budget is US$2.8762037111015744 of US$3, leaving US$0.1237962888984258 after completed-day Convex reconciliation replaces only eligible worst-case holds. All Vercel, older unknown and future holds remain; source billing classification is separate proof. Older dated sections below retain their historical scope.
+
 ## Resumed page and local media recovery, October 24
 
 The owner resumed work after the stop checkpoint below to recover a production Posts crash and complete one selected local media analysis. [ADR 141](../../adr/141-posts-navigation-and-native-media-recovery.md) and the [sanitized receipt](../../operations/evidence/launch-20261024-video-page-recovery.json) record reviewed repair `e2fd30b`, actual Console navigation and response-order regressions, and a successful private-only local preparation/inference run. No canonical production result has been saved. The full offline check preceded the final small race fixes; final focused/types/format checks passed and exact-head CI remains pending.
@@ -251,3 +259,9 @@ Selected private Exponential Education repository context uses its existing sepa
 Use [the owner checklist](OWNER-CHECKLIST.md) for every known human/provider prerequisite, its status, dependency and exact next action. The latest Pro access/contribution/cancellation choices are resolved. Earlier paired-computer preferences are historical under the conditional Cloud-first direction. No signing purchase, new link, blanket reconnect or repeated review of the seven approved insights is requested.
 
 Root owns unfinished engineering and must prepare concrete changes before requesting review. Providers supply missing contract facts; actual people supply independent observations. Existing release intent does not remove the whole-operation cost bound or provider gates. Keep [acceptance](ACCEPTANCE.md) current without turning deferred, local or private-personal evidence into production passes.
+
+## Authorized Apply extension and readiness ordering, October 24
+
+[ADR145](../../adr/145-whole-post-project-content-and-distinct-proposals.md) adds the default-on retained transcript/images input choice and one to five distinct proposals per post/project through existing evaluation/task/proposal systems. Root owns integration and release; the task author owns negotiated version-four compatibility, and independent review covers disclosure/currentness. Full source authority and privacy cleanup precede release. Off retains extracted insights/citations with separate cache and approval identity. Missing pixels never become fabricated images or automatic reacquisition.
+
+Cloud dependencies remain ordered: supported managed runtime and internet permission, verified cached prerequisites, current connection/OAuth execution grant, exact source approval, lease/claim, real acquisition/ASR/sampled visual analysis, prepare/complete, then canonical production read-back. Setup must occur before the finite analysis deadline. Structured readiness is host-reported evidence; no automatic launch or background wake is claimed. Public enablement requires actual supported-host acceptance and existing release gates. Preserve all earlier R/P/N/ScrollShow/adapter scope and the same US$3 total.

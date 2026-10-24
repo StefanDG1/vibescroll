@@ -31,3 +31,13 @@ export function workCloudTextAllowed(subject: string) {
     personalAllowed(subject)
   );
 }
+
+export function workCloudMediaAllowed(subject: string) {
+  return (
+    process.env.WORK_CLOUD_MEDIA_ENABLED === "true" &&
+    process.env.WORK_CLOUD_MEDIA_VERIFIED === "true" &&
+    process.env.DISABLE_INFERENCE !== "true" &&
+    process.env.RESTORE_LOCK !== "true" &&
+    personalAllowed(subject)
+  );
+}

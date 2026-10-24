@@ -1,5 +1,17 @@
 # VibeScroll foundational research
 
+## F063: whole-post project context, October 24
+
+[ADR145](../adr/145-whole-post-project-content-and-distinct-proposals.md) records the authorized default-on retained transcript/images choice and separate proposals per post/project. Off uses extracted insights/citations. Missing pixels and incomplete coverage stay explicit; private personalization stays private. This is an implementation candidate, with no new audience, price, provider approval, measured savings, production Cloud acceptance or customer outcome. Cloud setup must verify supported network permission before starting its finite source lease.
+
+## F062: private Work Cloud media observations, October 24
+
+[ADR 143](../adr/143-private-work-cloud-media-observations.md) freezes a default-off private single-video candidate through existing source jobs, OAuth execution grants and leases. Authenticated client-reported observations retain sampled/partial coverage and provider-local raw media. They do not independently attest host policy, runtime, model, bytes or provider cleanup. Ninety-eight focused tests preceded independent review; a native extension defect was corrected and final combined verification remains pending.
+
+A no-GitHub native UI probe exposed eight VibeScroll MCP tools, shell and `view_image`, but no host-policy inspection tool or official task ID. Requested Sol Medium and a different host self-report remain unresolved, not evidence of the executed model. The probe invoked no service/media/production operation. Separate evidence verified an audio-only canonical result with five insights/twenty citations; a 48-frame/seven-insight local result stays private. Neither establishes Cloud media acceptance, customer usefulness or speed.
+
+The existing whole-post control groups extracted insights and returns one proposal per project evaluation. Full transcript/images as project context and automatic multiple proposals per post/project remain a gap. F062 changes no audience, price, allowance or measured-outcome claim. [The review](idea-backlog.md#f062-private-work-cloud-media-observations-october-24) records the counterargument and acceptance test; earlier checkpoints remain historical.
+
 ## F061: separate private text reanalysis, October 24
 
 [ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) reuses existing task runs for separately approved private text results and retains only small version pointers on the source. Generic source analysis and citations remain unchanged. A distinct local runtime protocol excludes unsupported older workers. Original rights, result identity, current read scope and privacy cleanup remain authoritative.

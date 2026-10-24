@@ -34,6 +34,7 @@ import { socialHash } from "../packages/social/contracts";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { personalOrderedInputSchema } from "../packages/social/ordered-intake";
 import { pairedPersonalJob } from "./personalAnalysisSchema";
+import { commitPersonalOrdered } from "./lib/personalOrderedCommit";
 
 export const personalApprovalFields = {
   deviceId: v.id("devices"),
@@ -1162,41 +1163,12 @@ export const dispatch = internalMutation({
       if (job.ordered.phase === "analysis") await orderedPrepared(ctx, source);
       if (a.operation === "complete") {
         const validated = await orderedCompletion(
-            ctx,
-            source,
-            a.orderedEvidence,
-            a.output,
-          ),
-          output = validated.analysis;
-        ensure(
-          !a.usage ||
-            [a.usage.inputTokens, a.usage.outputTokens].every(
-              (n) => Number.isSafeInteger(n) && n >= 0 && n <= 10000000,
-            ),
-          "INVALID_INPUT",
-          "Invalid plan usage.",
-        );
-        await settle(
           ctx,
-          source.organizationId,
-          `source:${source._id}:${job.generation}`,
-          0,
+          source,
+          a.orderedEvidence,
+          a.output,
         );
-        await ctx.db.patch(source._id, {
-          state: "ready",
-          orderedMedia: validated.prepared,
-          analysis: output,
-          analysisPipelineVersion: "official-personal-ordered-v1",
-          summary: output.summary,
-          coverage: "ordered_media",
-          personalAnalysis: { ...job, state: "completed", ...a.usage },
-          error: undefined,
-          updatedAt: now,
-        });
-        await syncCategories(ctx, (await ctx.db.get(source._id))!, output);
-        await syncKnowledge(ctx, (await ctx.db.get(source._id))!, {
-          enqueue: false,
-        });
+        await commitPersonalOrdered(ctx, source, job, validated, a.usage, now);
         await ctx.db.patch(device._id, { activePersonalSource: undefined });
         return { accepted: true };
       }

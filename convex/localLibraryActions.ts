@@ -142,6 +142,17 @@ export async function localEvaluationBundle(
     profile: c.repo.profile,
     preference: c.preference,
     reviewHistory: c.reviewHistory,
+    ...(c.application
+      ? {
+          application: c.application,
+          ...(c.privateEvaluationOrigin
+            ? { privateEvaluationOrigin: c.privateEvaluationOrigin }
+            : {}),
+          ...(c.privateEvaluationBrief !== undefined
+            ? { privateEvaluationBrief: c.privateEvaluationBrief }
+            : {}),
+        }
+      : {}),
     excerpts: inspected.excerpts,
     tree: inspected.tree,
     coverage:

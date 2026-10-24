@@ -13,6 +13,8 @@ import {
 } from "../packages/proposals/evidence";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { currentOrderedSource } from "./lib/orderedSource";
+import { buildProjectSourceContent } from "./lib/projectSourceContent";
+import { proposalGroup } from "../packages/proposals/group";
 import { socialPipelineVersion } from "../packages/social/prompts";
 import { personalOrderedInputSchema } from "../packages/social/ordered-intake";
 import { providedMediaMetadata } from "../packages/social/contracts";
@@ -50,7 +52,11 @@ import {
   processingReceipt,
   speechProvenance,
 } from "../packages/media/provenance";
-import { personalAllowed, workCloudTextAllowed } from "./lib/personalAccess";
+import {
+  personalAllowed,
+  workCloudTextAllowed,
+  workCloudMediaAllowed,
+} from "./lib/personalAccess";
 import { sourceEligibility } from "./lib/privateSourceAnalysis";
 import {
   hostedMediaAllowed,
@@ -683,6 +689,9 @@ export const detail = query({
       workCloudTextEnabled:
         reader.organization.privateOwnerId === reader.actor._id &&
         workCloudTextAllowed(reader.actor.subject),
+      workCloudMediaEnabled:
+        reader.organization.privateOwnerId === reader.actor._id &&
+        workCloudMediaAllowed(reader.actor.subject),
       sourceRevision: typedRegistry?.revision,
       evidenceRegistry: typedRegistry?.evidence,
       spaces: reader.organization.privateOwnerId
@@ -2534,9 +2543,10 @@ export async function currentMatchingProposal(
   source: Doc<"sources">,
   repo: Doc<"repositories">,
   actorId?: Id<"users">,
+  proposalId = job.proposalId,
 ) {
   if (
-    !job.proposalId ||
+    !proposalId ||
     !job.actor ||
     (actorId && job.actor !== actorId) ||
     job.organizationId !== source.organizationId ||
@@ -2553,7 +2563,13 @@ export async function currentMatchingProposal(
     !(await actorCurrent(ctx, source.organizationId, job.actor))
   )
     return null;
-  const proposal = await ctx.db.get(job.proposalId);
+  if (
+    job.projectContentHash &&
+    (await buildProjectSourceContent(ctx, source)).binding.contentHash !==
+      job.projectContentHash
+  )
+    return null;
+  const proposal = await ctx.db.get(proposalId);
   if (
     !proposal ||
     proposal.organizationId !== source.organizationId ||
@@ -2644,162 +2660,255 @@ export const addProposal = internalMutation({
     inspectedContext: v.optional(inspectedContextValidator),
     inspectionManifest: v.optional(inspectionManifestValidator),
   },
-  handler: async (ctx, a) => {
-    const s = await ctx.db.get(a.sourceId),
-      r = await repositoryContent(ctx, await ctx.db.get(a.repositoryId));
-    const matchingJob = a.matchKey
-      ? await ctx.db
-          .query("matchingJobs")
-          .withIndex("by_key", (q) => q.eq("key", a.matchKey!))
-          .unique()
-      : null;
-    if (
-      !s ||
-      s.state === "deleted" ||
-      !r ||
-      s.organizationId !== r.organizationId ||
-      !r.enabled
-    )
-      return;
+  handler: (ctx, a) => addProposalCore(ctx, a),
+});
+type AddProposalArgs = {
+  sourceId: Id<"sources">;
+  repositoryId: Id<"repositories">;
+  detail: any;
+  matchKey?: string;
+  sourceGeneration?: number;
+  inspectedContext?: any;
+  inspectionManifest?: any;
+};
+async function addProposalCore(
+  ctx: MutationCtx,
+  a: AddProposalArgs,
+  group = false,
+) {
+  const s = await ctx.db.get(a.sourceId),
+    r = await repositoryContent(ctx, await ctx.db.get(a.repositoryId));
+  const matchingJob = a.matchKey
+    ? await ctx.db
+        .query("matchingJobs")
+        .withIndex("by_key", (q) => q.eq("key", a.matchKey!))
+        .unique()
+    : null;
+  if (
+    !s ||
+    s.state === "deleted" ||
+    !r ||
+    s.organizationId !== r.organizationId ||
+    !r.enabled
+  )
+    return;
+  ensure(
+    a.sourceGeneration === undefined || s.generation === a.sourceGeneration,
+    "APPROVAL_STALE",
+    "Source context changed during matching.",
+  );
+  const insights = (s.analysis?.insights ?? []).filter(
+    (i: any) =>
+      !matchingJob?.insightIds || matchingJob.insightIds.includes(i.id),
+  );
+  const typedRequired =
+    !!s.currentRevisionId ||
+    ["github_repository", "reddit_thread"].includes(s.sourceType ?? "") ||
+    s.analysis?.schemaVersion === "2.0.0";
+  if (typedRequired)
     ensure(
-      a.sourceGeneration === undefined || s.generation === a.sourceGeneration,
-      "APPROVAL_STALE",
-      "Source context changed during matching.",
+      await sharedTypedCitations(ctx, s),
+      "INVALID_EVIDENCE",
+      "Typed proposal context changed before completion.",
     );
-    const insights = (s.analysis?.insights ?? []).filter(
-      (i: any) =>
-        !matchingJob?.insightIds || matchingJob.insightIds.includes(i.id),
-    );
-    const typedRequired =
-      !!s.currentRevisionId ||
-      ["github_repository", "reddit_thread"].includes(s.sourceType ?? "") ||
-      s.analysis?.schemaVersion === "2.0.0";
-    if (typedRequired)
-      ensure(
-        await sharedTypedCitations(ctx, s),
-        "INVALID_EVIDENCE",
-        "Typed proposal context changed before completion.",
-      );
-    if (matchingJob) {
-      ensure(
-        matchingJob.organizationId === s.organizationId &&
-          matchingJob.sourceId === s._id &&
-          matchingJob.repositoryId === r._id &&
-          matchingJob.actor &&
-          (await actorCurrent(ctx, s.organizationId, matchingJob.actor)) &&
-          matchingJob.sourceGeneration === s.generation &&
-          matchingJob.sourceRevision === s.updatedAt &&
-          s.state === "ready" &&
-          s.rightsAttested &&
-          sourceRetained(s) &&
-          r.confirmed,
-        "APPROVAL_STALE",
-        "Matching authority or source context changed.",
-      );
-      if (matchingJob.proposalId) {
-        const cached = await currentMatchingProposal(ctx, matchingJob, s, r);
-        ensure(
-          cached,
-          "APPROVAL_STALE",
-          "The completed proposal is no longer current.",
-        );
-        return cached._id;
-      }
-      ensure(
-        matchingJob.state === "pending",
-        "APPROVAL_STALE",
-        "The matching attempt is no longer active.",
-      );
-    }
-    let d: any;
-    if (s.currentRevisionId) {
-      const row = await ctx.db.get(s.currentRevisionId);
-      const registry = row ? await retainedSourceRevision(ctx, row) : null;
-      ensure(
+  if (matchingJob) {
+    ensure(
+      matchingJob.organizationId === s.organizationId &&
+        matchingJob.sourceId === s._id &&
+        matchingJob.repositoryId === r._id &&
+        matchingJob.actor &&
+        (await actorCurrent(ctx, s.organizationId, matchingJob.actor)) &&
+        matchingJob.sourceGeneration === s.generation &&
+        matchingJob.sourceRevision === s.updatedAt &&
         s.state === "ready" &&
-          registry &&
-          sourcePolicyCurrent(registry.revision) &&
-          matchingJob?.actor &&
-          (await actorCurrent(ctx, s.organizationId, matchingJob.actor)) &&
-          matchingJob.sourceGeneration === s.generation &&
-          matchingJob.sourceRevision === s.updatedAt &&
-          matchingJob.sourceRevisionId === row!._id &&
-          matchingJob.sourceContentHash === row!.contentHash,
+        s.rightsAttested &&
+        sourceRetained(s) &&
+        r.confirmed,
+      "APPROVAL_STALE",
+      "Matching authority or source context changed.",
+    );
+    if (matchingJob.projectContentHash)
+      ensure(
+        (await buildProjectSourceContent(ctx, s)).binding.contentHash ===
+          matchingJob.projectContentHash,
         "APPROVAL_STALE",
-        "Source or matching authority changed.",
+        "The approved transcript or images changed before completion.",
       );
-      d = await validateTypedProposal(a.detail, {
-        sourceId: s._id,
-        sourceRevisionId: row!._id,
-        sourceContentHash: row!.contentHash,
-        ...registry,
-        insights,
-      });
-    } else d = proposalOutput.parse(a.detail);
     ensure(
-      d.baseSha === r.sha &&
-        d.repositoryId === r._id &&
-        d.profileVersion === r.profileVersion,
-      "BASE_CHANGED",
-      "Matching context changed.",
+      group === (matchingJob.multipleProposals === true),
+      "APPROVAL_STALE",
+      "The approved proposal mode changed.",
     );
-    if (a.inspectedContext)
-      validateInspectedContext(
-        a.inspectedContext,
-        a.inspectionManifest ?? r.manifestEntries ?? [],
+    if (matchingJob.proposalId && !group) {
+      const cached = await currentMatchingProposal(ctx, matchingJob, s, r);
+      ensure(
+        cached,
+        "APPROVAL_STALE",
+        "The completed proposal is no longer current.",
       );
-    validateRepositoryEvidence(
-      d.repositoryEvidence,
-      a.inspectedContext ?? r.contextExcerpts ?? [],
-    );
-    const insightIds = new Set(insights.map((i: any) => i.id));
-    const evidenceKey = (e: any) =>
-      JSON.stringify([e.kind, e.id, e.startMs, e.endMs]);
-    const evidence = new Set(
-      insights.flatMap((i: any) => i.evidence.map(evidenceKey)),
-    );
+      return cached._id;
+    }
     ensure(
-      d.insightIds.every((id: string) => insightIds.has(id)),
-      "INVALID_EVIDENCE",
-      "Invented insight reference.",
+      matchingJob.state === "pending",
+      "APPROVAL_STALE",
+      "The matching attempt is no longer active.",
     );
+  }
+  let d: any;
+  if (s.currentRevisionId) {
+    const row = await ctx.db.get(s.currentRevisionId);
+    const registry = row ? await retainedSourceRevision(ctx, row) : null;
     ensure(
-      d.sourceEvidence.every((e: any) => evidence.has(evidenceKey(e))),
-      "INVALID_EVIDENCE",
-      "Invented source evidence.",
+      s.state === "ready" &&
+        registry &&
+        sourcePolicyCurrent(registry.revision) &&
+        matchingJob?.actor &&
+        (await actorCurrent(ctx, s.organizationId, matchingJob.actor)) &&
+        matchingJob.sourceGeneration === s.generation &&
+        matchingJob.sourceRevision === s.updatedAt &&
+        matchingJob.sourceRevisionId === row!._id &&
+        matchingJob.sourceContentHash === row!.contentHash,
+      "APPROVAL_STALE",
+      "Source or matching authority changed.",
     );
-    const now = Date.now();
-    const proposalId = await ctx.db.insert("proposals", {
-      organizationId: s.organizationId,
-      createdAt: now,
-      updatedAt: now,
+    d = await validateTypedProposal(a.detail, {
       sourceId: s._id,
-      ...(s.currentRevisionId
-        ? {
-            references: d.insightIds.map((insightId: string) => ({
-              sourceId: s._id,
-              generation: s.generation,
-              revision: s.updatedAt,
-              insightId,
-            })),
-          }
-        : {}),
-      repositoryId: r._id,
-      baseSha: r.sha,
-      profileVersion: r.profileVersion,
-      disposition: d.disposition,
-      title: d.title,
-      detail: d,
-      review: "unreviewed",
-      version: 1,
+      sourceRevisionId: row!._id,
+      sourceContentHash: row!.contentHash,
+      ...registry,
+      insights,
     });
-    if (matchingJob)
-      await ctx.db.patch(matchingJob._id, {
-        proposalId,
-        state: "completed",
-        updatedAt: Date.now(),
-      });
-    return proposalId;
+  } else d = proposalOutput.parse(a.detail);
+  ensure(
+    d.baseSha === r.sha &&
+      d.repositoryId === r._id &&
+      d.profileVersion === r.profileVersion,
+    "BASE_CHANGED",
+    "Matching context changed.",
+  );
+  if (a.inspectedContext)
+    validateInspectedContext(
+      a.inspectedContext,
+      a.inspectionManifest ?? r.manifestEntries ?? [],
+    );
+  validateRepositoryEvidence(
+    d.repositoryEvidence,
+    a.inspectedContext ?? r.contextExcerpts ?? [],
+  );
+  const insightIds = new Set(insights.map((i: any) => i.id));
+  const evidenceKey = (e: any) =>
+    JSON.stringify([e.kind, e.id, e.startMs, e.endMs]);
+  const evidence = new Set(
+    insights
+      .filter((i: any) => d.insightIds.includes(i.id))
+      .flatMap((i: any) => i.evidence.map(evidenceKey)),
+  );
+  ensure(
+    d.insightIds.every((id: string) => insightIds.has(id)),
+    "INVALID_EVIDENCE",
+    "Invented insight reference.",
+  );
+  ensure(
+    d.sourceEvidence.every((e: any) => evidence.has(evidenceKey(e))),
+    "INVALID_EVIDENCE",
+    "Invented source evidence.",
+  );
+  const now = Date.now();
+  const proposalId = await ctx.db.insert("proposals", {
+    organizationId: s.organizationId,
+    createdAt: now,
+    updatedAt: now,
+    sourceId: s._id,
+    ...(s.currentRevisionId
+      ? {
+          references: d.insightIds.map((insightId: string) => ({
+            sourceId: s._id,
+            generation: s.generation,
+            revision: s.updatedAt,
+            insightId,
+          })),
+        }
+      : {}),
+    repositoryId: r._id,
+    baseSha: r.sha,
+    profileVersion: r.profileVersion,
+    disposition: d.disposition,
+    title: d.title,
+    detail: d,
+    review: "unreviewed",
+    version: 1,
+  });
+  if (matchingJob && !group)
+    await ctx.db.patch(matchingJob._id, {
+      proposalId,
+      state: "completed",
+      updatedAt: Date.now(),
+    });
+  return proposalId;
+}
+export const addProposalGroup = internalMutation({
+  args: {
+    sourceId: v.id("sources"),
+    repositoryId: v.id("repositories"),
+    output: v.any(),
+    matchKey: v.string(),
+    sourceGeneration: v.number(),
+    inspectedContext: inspectedContextValidator,
+    inspectionManifest: inspectionManifestValidator,
+  },
+  handler: async (ctx, a) => {
+    const details = proposalGroup(a.output);
+    const job = await ctx.db
+      .query("matchingJobs")
+      .withIndex("by_key", (q) => q.eq("key", a.matchKey))
+      .unique();
+    const source = await ctx.db.get(a.sourceId),
+      repo = await ctx.db.get(a.repositoryId);
+    ensure(
+      job?.multipleProposals &&
+        source &&
+        repo &&
+        job.sourceId === source._id &&
+        job.repositoryId === repo._id,
+      "APPROVAL_STALE",
+      "Review the exact post and project group.",
+    );
+    if (job.proposalIds?.length) {
+      ensure(
+        job.proposalIds.length === details.length,
+        "APPROVAL_STALE",
+        "The completed proposal group changed.",
+      );
+      for (let i = 0; i < job.proposalIds.length; i++) {
+        const old = await currentMatchingProposal(
+          ctx,
+          job,
+          source,
+          repo,
+          undefined,
+          job.proposalIds[i],
+        );
+        ensure(
+          old && canonicalJson(old.detail) === canonicalJson(details[i]),
+          "APPROVAL_STALE",
+          "The completed proposal group changed.",
+        );
+      }
+      return job.proposalIds;
+    }
+    const proposalIds: Id<"proposals">[] = [];
+    for (const detail of details) {
+      const id = await addProposalCore(ctx, { ...a, detail }, true);
+      ensure(id, "APPROVAL_STALE", "The post or project was removed.");
+      proposalIds.push(id);
+    }
+    await ctx.db.patch(job._id, {
+      proposalId: proposalIds[0],
+      proposalIds,
+      state: "completed",
+      updatedAt: Date.now(),
+    });
+    return proposalIds;
   },
 });
 export const reviewAnalysis = mutation({

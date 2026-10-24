@@ -535,6 +535,9 @@ export const quarantinePage = internalMutation({
         await ctx.db.patch(row._id, {
           state: "quarantined",
           output: undefined,
+          ...(a.section === "knowledgeEvaluations"
+            ? { opportunityGroup: undefined }
+            : {}),
           updatedAt: Date.now(),
         });
       else if ("draftVersion" in row)

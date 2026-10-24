@@ -1,5 +1,17 @@
 # VibeScroll foundational avatar
 
+## F063: whole-post project context, October 24
+
+[ADR145](../adr/145-whole-post-project-content-and-distinct-proposals.md) records the authorized default-on retained transcript/images choice and separate proposals per post/project. Off uses extracted insights/citations. Missing pixels and incomplete coverage stay explicit; private personalization stays private. This is an implementation candidate, with no new audience, price, provider approval, measured savings, production Cloud acceptance or customer outcome. Cloud setup must verify supported network permission before starting its finite source lease.
+
+## F062: private Work Cloud media observations, October 24
+
+[ADR 143](../adr/143-private-work-cloud-media-observations.md) prepares an explicit private single-video handoff for the same adult builder who wants to use an eligible own subscription without connecting GitHub. The candidate reuses existing grants and jobs; it does not install tools, wake a host or dispatch automatically. Media flags remain off, and neither a connected chat nor an exposed shell proves that video processing or host controls work.
+
+The current no-GitHub probe is operator capability evidence, not independent beginner acceptance. It lacks host-policy inspection and official task identity, with an unresolved requested/reported model discrepancy. Preserve minimal setup, optional GitHub and honest sampled coverage without promising computer-free success or a faster first result. The separate canonical audio-only save and private local sampled-media result do not close that gap.
+
+Users asking to apply an entire post still need clear context limits: live grouping uses extracted insights, with one proposal per repository evaluation. Full transcript/image context and automatic multiple proposals remain unfinished. [F062](idea-backlog.md#f062-private-work-cloud-media-observations-october-24) leaves audience, prices and independent usefulness tests unchanged.
+
 ## F061: separate private text reanalysis, October 24
 
 [ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) reuses existing task runs for separately approved private text results and retains only small version pointers on the source. Generic source analysis and citations remain unchanged. A distinct local runtime protocol excludes unsupported older workers. Original rights, result identity, current read scope and privacy cleanup remain authoritative.

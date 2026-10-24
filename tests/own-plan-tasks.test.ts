@@ -12,7 +12,357 @@ import { validatePrivateEvaluationBrief } from "../convex/lib/privateEvaluationC
 import { improvementCurrent } from "../convex/lib/improvementContext";
 import { digest } from "../convex/product";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { projectApplyRuntime } from "../packages/runner/local-task-runtime.mjs";
 const modules = import.meta.glob("../convex/**/*.ts");
+async function applicationFixture(includeSourceContent = true) {
+  const s = await setup(true);
+  const connected = await s.dispatch("hello", {
+    profileBinding: s.profileBinding,
+    expiresAt: Date.now() + 4 * 3600000,
+    capabilities: catalogue,
+    localTaskRuntime: projectApplyRuntime,
+  });
+  const input = { ...s.selection, includeSourceContent };
+  const approveApplication = async (extra: Record<string, unknown> = {}) => {
+    const selection = { ...input, ...extra },
+      quote = await s.fresh().query(api.localLibraryTasks.quote, selection);
+    const approved = await s.fresh().mutation(api.localLibraryTasks.approve, {
+      ...selection,
+      quoteHash: quote.hash,
+      quoteExpiresAt: quote.expiresAt,
+      useOwnPlan: true,
+      maxInferenceCredits: 0,
+    });
+    return { ...approved, quote };
+  };
+  const claimApplication = () =>
+    s.dispatch("claim", {
+      taskProtocolVersion: "4.0.0",
+      localRuntimeHash: connected.localRuntimeHash,
+      preferTasks: true,
+    });
+  return { ...s, connected, input, approveApplication, claimApplication };
+}
+function applicationOpportunity(c: any, title = "First opportunity") {
+  return {
+    disposition: "relevant",
+    title,
+    rationale: "Actual source evidence supports this proposal",
+    problem: `Missing ${title}`,
+    approach: `Explain ${title}`,
+    acceptance: ["Documentation describes the behavior"],
+    tests: ["Review documentation"],
+    risks: [],
+    alternatives: [],
+    questions: [],
+    references: c.evidence.map((e: any) => e.reference),
+    repositoryEvidence: [
+      {
+        path: "README.md",
+        startLine: 1,
+        endLine: 1,
+        explanation: "Actual inspected line",
+      },
+    ],
+  };
+}
+async function prepareApplication(
+  s: Awaited<ReturnType<typeof applicationFixture>>,
+) {
+  const approved = await s.approveApplication(),
+    { job } = await s.claimApplication();
+  const context = await s.dispatch("task_context_prepare", {
+    ...ref(job),
+    repositoryId: s.repo,
+  });
+  await s.dispatch("task_record_evaluation_inspection", {
+    ...ref(job),
+    id: context.id,
+    inspected: [{ path: "README.md", startLine: 1, endLine: 1 }],
+  });
+  return { approved, job, context };
+}
+it("v4 binds full content, excludes old workers and reuses distinct proposal ordinals without another reservation", async () => {
+  const s = await applicationFixture(),
+    approved = await s.approveApplication();
+  expect(approved.quote.payload).toMatchObject({
+    schemaVersion: "4.0.0",
+    includeSourceContent: true,
+    sourceContentBindings: [
+      { sourceId: s.source, contentHash: expect.any(String) },
+    ],
+  });
+  for (const taskProtocolVersion of ["1.0.0", "3.0.0"])
+    expect(
+      (
+        await s.dispatch("claim", {
+          taskProtocolVersion,
+          localRuntimeHash: s.connected.localRuntimeHash,
+          preferTasks: true,
+        })
+      ).job,
+    ).toBeNull();
+  const { job } = await s.claimApplication();
+  const c = await s.dispatch("task_context_prepare", {
+    ...ref(job),
+    repositoryId: s.repo,
+  });
+  expect(c.application).toMatchObject({
+    includeSourceContent: true,
+    sources: [
+      {
+        transcript: "Verify evidence before an implementation.",
+        images: [],
+        warnings: expect.any(Array),
+      },
+    ],
+  });
+  await s.dispatch("task_record_evaluation_inspection", {
+    ...ref(job),
+    id: c.id,
+    inspected: [{ path: "README.md", startLine: 1, endLine: 1 }],
+  });
+  const output = {
+    schemaVersion: "project-opportunity-group-v1",
+    opportunities: [
+      applicationOpportunity(c),
+      applicationOpportunity(c, "Second opportunity"),
+    ],
+  };
+  await expect(
+    s.dispatch("task_evaluation_finish", { ...ref(job), id: c.id, output }),
+  ).resolves.toMatchObject({ saved: true, cached: false });
+  await expect(
+    s.dispatch("task_evaluation_finish", { ...ref(job), id: c.id, output }),
+  ).resolves.toMatchObject({ saved: true, cached: true });
+  await expect(
+    s.dispatch("task_evaluation_finish", {
+      ...ref(job),
+      id: c.id,
+      output: { ...output, opportunities: output.opportunities.slice(0, 1) },
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  const result = await s.dispatch("task_finish", {
+    ...ref(job),
+    evaluationIds: [c.id],
+  });
+  expect(result.proposalIds).toHaveLength(2);
+  const proposals = await s.t.run((ctx) =>
+    ctx.db
+      .query("proposals")
+      .withIndex("by_local_evaluation", (q) => q.eq("localEvaluationId", c.id))
+      .collect(),
+  );
+  expect(proposals.map((p) => p.opportunityIndex).sort()).toEqual([0, 1]);
+  for (const p of proposals)
+    expect(await s.t.run((ctx) => improvementCurrent(ctx, p))).toBe(true);
+  await s.approveApplication({ key: "reuse-whole-post-application" });
+  const reused = (await s.claimApplication()).job;
+  expect(
+    await s.dispatch("task_context_prepare", {
+      ...ref(reused),
+      repositoryId: s.repo,
+    }),
+  ).toMatchObject({ cached: true, id: c.id });
+  expect(
+    (await s.dispatch("task_finish", { ...ref(reused), evaluationIds: [c.id] }))
+      .proposalIds,
+  ).toEqual(result.proposalIds);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual([]);
+  await s.t.mutation(internal.knowledge.redactDerived, {
+    organizationId: s.org,
+    sourceId: s.source,
+    section: "proposals",
+    cursor: null,
+    maxGeneration: 0,
+  });
+  for (const id of result.proposalIds) {
+    const scrubbed = (await s.t.run((ctx) =>
+      ctx.db.get(id as Id<"proposals">),
+    ))!;
+    expect(scrubbed.title).toBe("Unavailable source proposal");
+    expect(scrubbed.detail).toMatchObject({ sourceRetentionRedacted: true });
+  }
+});
+it("v4 off omits all raw content and refuses image access", async () => {
+  const s = await applicationFixture(false),
+    { job, context } = await prepareApplication(s);
+  expect(context.application).toEqual({
+    schemaVersion: "project-application-context-v1",
+    includeSourceContent: false,
+    sources: [],
+  });
+  await expect(
+    s.dispatch("task_source_frame_prepare", {
+      ...ref(job),
+      frameId: "unapproved",
+    }),
+  ).rejects.toThrow("FORBIDDEN");
+  expect(JSON.stringify(context.application)).not.toContain("Verify evidence");
+});
+it("v4 content hash changes fence approval and runtime even when the source revision stays equal", async () => {
+  const s = await applicationFixture(),
+    q = await s.fresh().query(api.localLibraryTasks.quote, s.input);
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.source, { text: "Different retained input" }),
+  );
+  await expect(
+    s.fresh().mutation(api.localLibraryTasks.approve, {
+      ...s.input,
+      quoteHash: q.hash,
+      quoteExpiresAt: q.expiresAt,
+      useOwnPlan: true,
+      maxInferenceCredits: 0,
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  await s.approveApplication();
+  const { job } = await s.claimApplication();
+  await s.t.run((ctx) => ctx.db.patch(s.source, { text: "Changed again" }));
+  await expect(s.dispatch("task_heartbeat", ref(job))).rejects.toThrow(
+    "APPROVAL_STALE",
+  );
+  await expect(
+    s.dispatch("task_context_prepare", { ...ref(job), repositoryId: s.repo }),
+  ).rejects.toThrow("APPROVAL_STALE");
+});
+it("v4 rejects duplicate, excessive or forged opportunities without a partial save", async () => {
+  const s = await applicationFixture(),
+    { job, context } = await prepareApplication(s),
+    good = applicationOpportunity(context);
+  for (const opportunities of [
+    [good, good],
+    Array(6).fill(good),
+    [
+      {
+        ...good,
+        repositoryEvidence: [
+          {
+            path: "uninspected.ts",
+            startLine: 1,
+            endLine: 1,
+            explanation: "Forged",
+          },
+        ],
+      },
+    ],
+  ])
+    await expect(
+      s.dispatch("task_evaluation_finish", {
+        ...ref(job),
+        id: context.id,
+        output: {
+          schemaVersion: "project-opportunity-group-v1",
+          opportunities,
+        },
+      }),
+    ).rejects.toThrow();
+  expect(
+    (await s.t.run((ctx) =>
+      ctx.db.get(context.id as Id<"knowledgeEvaluations">),
+    ))!.output,
+  ).toBeUndefined();
+  expect(
+    (await s.t.run((ctx) =>
+      ctx.db.get(context.id as Id<"knowledgeEvaluations">),
+    ))!.opportunityGroup,
+  ).toBeUndefined();
+});
+it("v4 cleanup removes every opportunity and restore does not reactivate its task", async () => {
+  const s = await applicationFixture(),
+    { job, context } = await prepareApplication(s);
+  await s.dispatch("task_evaluation_finish", {
+    ...ref(job),
+    id: context.id,
+    output: {
+      schemaVersion: "project-opportunity-group-v1",
+      opportunities: [applicationOpportunity(context)],
+    },
+  });
+  await s.t.mutation(internal.knowledge.redactDerived, {
+    organizationId: s.org,
+    sourceId: s.source,
+    section: "knowledgeEvaluations",
+    cursor: null,
+    maxGeneration: 0,
+  });
+  expect(
+    (await s.t.run((ctx) =>
+      ctx.db.get(context.id as Id<"knowledgeEvaluations">),
+    ))!.opportunityGroup,
+  ).toBeUndefined();
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.mutation(internal.recovery.quarantinePage, {
+    section: "localLibraryRuns",
+    cursor: null,
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(job.runId as Id<"localLibraryRuns">)))!
+      .task,
+  ).toBeUndefined();
+});
+it("v4 image reads authorize exact current retained assets and fence expiry or lease substitution", async () => {
+  const s = await applicationFixture();
+  const imageCatalogue = normalizeSubscriptionCapabilities({
+    data: [
+      {
+        model: "synthetic-model",
+        supportedReasoningEfforts: [{ reasoningEffort: "xhigh" }],
+        inputModalities: ["text", "image"],
+      },
+    ],
+  });
+  const hello = await s.dispatch("hello", {
+    profileBinding: s.profileBinding,
+    expiresAt: Date.now() + 4 * 3600000,
+    capabilities: imageCatalogue,
+    localTaskRuntime: projectApplyRuntime,
+  });
+  const imageId = await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.source))!;
+    return ctx.db.insert("assets", {
+      organizationId: s.org,
+      sourceId: s.source,
+      sourceGeneration: source.generation,
+      key: `${s.org}/retained-frame`,
+      kind: "evidence",
+      type: "image/jpeg",
+      state: "complete",
+      size: 6,
+      etag: "a".repeat(32),
+      expiresAt: Date.now() + 60000,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+  await s.approveApplication();
+  const { job } = await s.dispatch("claim", {
+    taskProtocolVersion: "4.0.0",
+    localRuntimeHash: hello.localRuntimeHash,
+    preferTasks: true,
+  });
+  await expect(
+    s.dispatch("task_source_frame_prepare", { ...ref(job), frameId: imageId }),
+  ).resolves.toMatchObject({ id: imageId, size: 6, etag: "a".repeat(32) });
+  await expect(
+    s.dispatch("task_source_frame_prepare", {
+      ...ref(job),
+      frameId: "https://arbitrary.example/image.jpg",
+    }),
+  ).rejects.toThrow("FORBIDDEN");
+  await expect(
+    s.dispatch("task_source_frame_prepare", {
+      ...ref(job),
+      frameId: imageId,
+      leaseToken: "0".repeat(36),
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  await s.t.run((ctx) => ctx.db.patch(imageId, { expiresAt: Date.now() - 1 }));
+  await expect(
+    s.dispatch("task_source_frame_prepare", { ...ref(job), frameId: imageId }),
+  ).rejects.toThrow("APPROVAL_STALE");
+});
 it("keeps account capability catalogues private to the device owner in a shared workspace", async () => {
   const f = await setup();
   await f.t.run(async (ctx) => {

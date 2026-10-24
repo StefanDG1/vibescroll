@@ -7,6 +7,10 @@ import {
 } from "../packages/runner/assistant-local.mjs";
 import { normalizeSubscriptionCapabilities } from "../packages/runner/subscription-capabilities.mjs";
 import { sourceStructuredBytes } from "../packages/runner/local-task-runtime.mjs";
+import {
+  projectApplyRuntime,
+  projectVariantRuntime,
+} from "../packages/runner/local-task-runtime.mjs";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 afterEach(() => vi.useRealTimers());
 const catalogue = normalizeSubscriptionCapabilities({
@@ -17,6 +21,145 @@ const catalogue = normalizeSubscriptionCapabilities({
       inputModalities: ["text"],
     },
   ],
+});
+it("v4 supplies exact retained pixels and transcript with the opportunity group schema", async () => {
+  const s = setup();
+  const bytes = Buffer.from([0xff, 0xd8, 0xff, 0, 0xff, 0xd9]),
+    sha256 = hash(bytes);
+  const job = {
+    ...s.job,
+    taskProtocolVersion: "4.0.0",
+    localRuntimeHash: hash(canonicalJson(projectApplyRuntime)),
+    includeSourceContent: true,
+  };
+  const base = s.request.getMockImplementation()!;
+  s.request.mockImplementation(async (operation, args) =>
+    operation === "task_context"
+      ? {
+          id: "evaluation",
+          cached: false,
+          application: {
+            schemaVersion: "project-application-context-v1",
+            includeSourceContent: true,
+            sources: [
+              {
+                binding: { contentHash: "e".repeat(64) },
+                transcript: "Actual retained speech",
+                caption: null,
+                images: [{ id: "frame", size: bytes.length, sha256 }],
+                warnings: [],
+              },
+            ],
+          },
+        }
+      : operation === "task_source_frame"
+        ? {
+            id: "frame",
+            data: bytes.toString("base64"),
+            mimeType: "image/jpeg",
+            size: bytes.length,
+            sha256,
+          }
+        : base(operation, args),
+  );
+  await expect(processSubscriptionTask(job, s)).resolves.toEqual({
+    completed: true,
+  });
+  expect(s.client.structured).toHaveBeenCalledWith(
+    expect.objectContaining({
+      properties: expect.objectContaining({
+        opportunities: expect.any(Object),
+      }),
+    }),
+    expect.objectContaining({
+      application: expect.objectContaining({
+        sources: [
+          expect.objectContaining({ transcript: "Actual retained speech" }),
+        ],
+      }),
+    }),
+    [`data:image/jpeg;base64,${bytes.toString("base64")}`],
+    expect.objectContaining({ model: "task-model", effort: "xhigh" }),
+  );
+});
+it("v4 off excludes raw images and an incompatible runtime cannot consume the new task", async () => {
+  const s = setup(),
+    job = {
+      ...s.job,
+      taskProtocolVersion: "4.0.0",
+      localRuntimeHash: hash(canonicalJson(projectApplyRuntime)),
+      includeSourceContent: false,
+    };
+  const base = s.request.getMockImplementation()!;
+  s.request.mockImplementation(async (operation, args) =>
+    operation === "task_context"
+      ? {
+          id: "evaluation",
+          cached: false,
+          application: {
+            schemaVersion: "project-application-context-v1",
+            includeSourceContent: false,
+            sources: [],
+          },
+        }
+      : base(operation, args),
+  );
+  await expect(
+    processSubscriptionTask(job, {
+      ...s,
+      localTaskRuntime: projectVariantRuntime,
+    }),
+  ).rejects.toThrow("ASSISTANT_TASK_INVALID");
+  await expect(processSubscriptionTask(job, s)).resolves.toMatchObject({
+    completed: true,
+  });
+  expect(s.request.mock.calls.some(([op]) => op === "task_source_frame")).toBe(
+    false,
+  );
+  expect(s.client.structured.mock.calls[0][2]).toEqual([]);
+});
+it("v4 rejects changed image bytes before any model request", async () => {
+  const s = setup(),
+    bytes = Buffer.from([0xff, 0xd8, 0xff, 0, 0xff, 0xd9]);
+  const job = {
+    ...s.job,
+    taskProtocolVersion: "4.0.0",
+    localRuntimeHash: hash(canonicalJson(projectApplyRuntime)),
+    includeSourceContent: true,
+  };
+  const base = s.request.getMockImplementation()!;
+  s.request.mockImplementation(async (operation, args) =>
+    operation === "task_context"
+      ? {
+          id: "evaluation",
+          cached: false,
+          application: {
+            schemaVersion: "project-application-context-v1",
+            includeSourceContent: true,
+            sources: [
+              {
+                binding: { contentHash: "e".repeat(64) },
+                images: [
+                  { id: "frame", size: bytes.length, sha256: "a".repeat(64) },
+                ],
+              },
+            ],
+          },
+        }
+      : operation === "task_source_frame"
+        ? {
+            id: "frame",
+            data: bytes.toString("base64"),
+            mimeType: "image/jpeg",
+            size: bytes.length,
+            sha256: hash(bytes),
+          }
+        : base(operation, args),
+  );
+  await expect(processSubscriptionTask(job, s)).rejects.toThrow(
+    "ASSISTANT_PROJECT_IMAGE_CHANGED",
+  );
+  expect(s.client.structured).not.toHaveBeenCalled();
 });
 it("rejects the complete source model request before thread creation even when the input text alone fits", async () => {
   const input = {

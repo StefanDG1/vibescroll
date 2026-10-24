@@ -16,6 +16,14 @@ Have an inspectable source and permission to connect a destination repository. Y
 6. For a useful result, review a private plan when available. Edit or export it through the plan controls. You can hand it to your preferred agent or keep it for later.
 7. Stop and decide. Accepting an idea or retaining a plan does not approve coding or public publication.
 
+## Apply a whole post
+
+Open **Applies to your projects** on an analyzed post. All extracted insights are selected initially. Use **Advanced · choose main points** to narrow them.
+
+**Include full transcript and images** starts on in the supported group-evaluation controls. It adds the retained transcript, caption and available sampled image pixels. Turn it off to use extracted insights and citations with less input usage. This does not guarantee a particular charge or speed. Missing or expired images are reported; the original post is not downloaded again. A visual observation or image hash is not an available image.
+
+Review the project and processing route before approving. One post can produce up to five distinct proposals per project, each with its own citations and review. Closely related ideas can form one proposal. No fit and already implemented remain useful results. Subscription groups require an updated compatible worker; older workers cannot claim the new tasks. A managed route can have a smaller image limit and stops rather than silently dropping images or switching providers.
+
 ## Use a private text result
 
 In your private Library, open a source's private result. Select the private insights you want to evaluate, then choose **Review selected ideas for projects**. You can select up to twelve ideas. The controls use the actual result version you loaded, not its text pasted into the generic source analysis.

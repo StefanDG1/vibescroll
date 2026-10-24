@@ -3,6 +3,10 @@ import {
   variantOrigin,
 } from "./lib/privateProjectVariant";
 import { presentAnalysis } from "../packages/insights/presentation";
+import {
+  projectApplicationBundle,
+  projectApplicationCache,
+} from "./lib/projectApplication";
 import { repositoryContent } from "./lib/repositoryContent";
 import {
   query,
@@ -31,7 +35,10 @@ import {
   synthesis,
   evaluation,
   privateEvaluation,
+  evaluationGroup,
+  privateEvaluationGroup,
   assertReferences,
+  referenceKey,
   limits,
   processingVersion,
 } from "../packages/knowledge/contracts";
@@ -902,7 +909,10 @@ export async function evaluationPrepareCore(
   actorId?: Id<"users">,
 ) {
   const run = await activeRun(ctx, a.runId, actorId);
-  if (run.task?.schemaVersion === "3.0.0") {
+  if (
+    run.task?.schemaVersion === "3.0.0" ||
+    (run.task?.schemaVersion === "4.0.0" && run.task.privateVariantSelection)
+  ) {
     ensure(
       a.topicId === undefined && !a.cursor && a.members?.length === 0,
       "INVALID_INPUT",
@@ -1013,6 +1023,7 @@ export async function evaluationPrepareCore(
     key = origin
       ? `${baseKey}:private-brief-v1:${await digest(canonicalJson(origin))}`
       : baseKey;
+  const applicationKey = key + projectApplicationCache(run);
   const previous = await ctx.db
     .query("knowledgeEvaluations")
     .withIndex("by_topic_repo", (q) =>
@@ -1041,7 +1052,7 @@ export async function evaluationPrepareCore(
   }
   const old = await ctx.db
     .query("knowledgeEvaluations")
-    .withIndex("by_key", (q) => q.eq("key", key))
+    .withIndex("by_key", (q) => q.eq("key", applicationKey))
     .unique();
   if (old) {
     ensure(
@@ -1059,6 +1070,7 @@ export async function evaluationPrepareCore(
     return {
       id: old._id,
       cached: old.state === "ready",
+      ...(await projectApplicationBundle(ctx, run)),
       evidence,
       repo,
       preference: preferences?.note ?? "",
@@ -1089,7 +1101,7 @@ export async function evaluationPrepareCore(
     localRunId: run._id,
     ...(origin ? { privateEvaluationOrigin: origin } : {}),
     topicBindings,
-    key,
+    key: applicationKey,
     state: "local_prepared",
     decision: "new",
     covered: evidence.length,
@@ -1102,6 +1114,7 @@ export async function evaluationPrepareCore(
   return {
     id,
     cached: false,
+    ...(await projectApplicationBundle(ctx, run)),
     evidence,
     repo,
     preference: preferences?.note ?? "",
@@ -1165,22 +1178,72 @@ export async function evaluationFinishCore(
     "APPROVAL_STALE",
     "Project or source evidence changed.",
   );
+  const grouped = run.task?.schemaVersion === "4.0.0";
+  const group = grouped
+    ? (variantOrigin(e.privateEvaluationOrigin)
+        ? privateEvaluationGroup
+        : evaluationGroup
+      ).parse(a.output)
+    : null;
+  if (group) {
+    const serialized = canonicalJson(group);
+    ensure(
+      new TextEncoder().encode(serialized).byteLength <= 120000 &&
+        !containsSecret(serialized),
+      "POLICY_BLOCKED",
+      "Use bounded opportunities without credentials.",
+    );
+    const identities = group.opportunities.map((o) =>
+      canonicalJson(
+        [o.title, o.problem, o.approach].map((text) =>
+          text.trim().replace(/\s+/g, " ").toLowerCase(),
+        ),
+      ),
+    );
+    ensure(
+      new Set(identities).size === identities.length,
+      "INVALID_EVIDENCE",
+      "Return distinct opportunities rather than duplicates.",
+    );
+    assertReferences(group.opportunities, e.references);
+    ensure(
+      group.opportunities.every(
+        (o) =>
+          new Set(o.references.map(referenceKey)).size === o.references.length,
+      ),
+      "INVALID_EVIDENCE",
+      "Each opportunity uses distinct registered source references.",
+    );
+    if (e.state === "ready") {
+      ensure(
+        e.opportunityGroup?.outputHash === (await digest(serialized)),
+        "APPROVAL_STALE",
+        "The completed opportunity group changed.",
+      );
+      return { saved: true, cached: true };
+    }
+  }
   if (e.state === "ready") return { saved: true, cached: true };
   ensure(
     e.state === "local_prepared" && e.inspected,
     "CONTEXT_REQUIRED",
     "Prepare repository evidence first.",
   );
-  const output = (
-    variantOrigin(e.privateEvaluationOrigin) ? privateEvaluation : evaluation
-  ).parse(a.output);
+  const output =
+    group?.opportunities[0] ??
+    (variantOrigin(e.privateEvaluationOrigin)
+      ? privateEvaluation
+      : evaluation
+    ).parse(a.output);
   assertReferences([output], e.references);
   ensure(
     !containsSecret(JSON.stringify(output)),
     "POLICY_BLOCKED",
     "Remove credentials.",
   );
-  for (const ref of output.repositoryEvidence)
+  for (const ref of (group?.opportunities ?? [output]).flatMap(
+    (o) => o.repositoryEvidence,
+  ))
     ensure(
       e.inspected.some(
         (p: any) =>
@@ -1194,6 +1257,14 @@ export async function evaluationFinishCore(
   await ctx.db.patch(e._id, {
     state: "ready",
     output,
+    ...(group
+      ? {
+          opportunityGroup: {
+            ...group,
+            outputHash: await digest(canonicalJson(group)),
+          },
+        }
+      : {}),
     credits: 0,
     model: run.model,
     updatedAt: Date.now(),

@@ -1,6 +1,15 @@
 import { cronJobs } from "convex/server";
 import { internal } from "./_generated/api";
 const crons = cronJobs();
+// Each watch owns its daily due time. The bounded dispatcher only exists in a
+// deployment whose operator separately enabled the reviewed supplier rollout.
+if (process.env.CREATOR_DISCOVERY_CRON_ENABLED === "true")
+  crons.interval(
+    "Discover reviewed public creators",
+    { hours: 1 },
+    internal.creatorDiscoveryActions.dispatch,
+    {},
+  );
 crons.interval(
   "Recover full library scans",
   { minutes: 5 },

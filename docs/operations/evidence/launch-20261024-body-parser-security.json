@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-23T22:41:22.590891+00:00",
+  "scope": "Upstream body-parser security upgrade after fresh dependency audit; no production or feature activation",
+  "parentCommit": "94ad16885c48053a3001b8b8c4527a3a475fffa3",
+  "trigger": {
+    "ciRun": "https://github.com/StefanDG1/vibescroll/actions/runs/40034403002",
+    "head": "be5d582c0bf2fee3c5d147f38ebfcf054981d5bc",
+    "integratedCheck": "passed",
+    "dependencyAudit": "failed with one high advisory"
+  },
+  "advisory": "https://github.com/expressjs/body-parser/security/advisories/GHSA-27r3-jxmh-p828",
+  "publishedAt": "2026-10-23T20:53:11Z",
+  "release": {
+    "merged": false,
+    "deployed": false,
+    "providerCalls": 0,
+    "convexCalls": 0,
+    "purchases": 0,
+    "paidApiFallback": false,
+    "branchPreviewSuppressionRetained": true
+  },
+  "before": "2.3.0",
+  "after": "2.4.0",
+  "dependencyPath": "Repomix -> @modelcontextprotocol/sdk -> Express -> body-parser; also development OpenNext tooling",
+  "exposureLimitation": "The dependency graph alone does not prove the current VibeScroll web handler invokes Express middleware",
+  "lockDelta": [
+    "Exact workspace override and sole body-parser resolution",
+    "Upstream required qs6.16.1 dependency",
+    "Preserved unrelated pnpm package-manager lock metadata"
+  ],
+  "regressions": {
+    "file": "tests/body-parser-compression.test.ts",
+    "probe": "tests/fixtures/body-parser-compression-probe.mjs",
+    "passed": 4,
+    "coverage": [
+      "Gzip trailing bytes with actual late Gunzip failure",
+      "Deflate delayed trailing bytes and full downstream body consumer",
+      "Normal gzip JSON parsing",
+      "Compressed unsupported charset415"
+    ]
+  },
+  "negativeControl": {
+    "runtime": "Project Node24.22.1, credential-free offline loopback only",
+    "version": "2.3.0",
+    "mode": "gzip-trailing",
+    "exitCode": 1,
+    "error": "Unhandled Gunzip Z_DATA_ERROR: incorrect header check",
+    "patchedExitCode": 0
+  },
+  "retainedInvestigationFailures": [
+    "Initial Windows backslash argument was refused by the offline wrapper before probe execution; corrected to supported forward-slash path",
+    "Deflate-only old-version probe did not reproduce the advisory; retained as compatibility coverage",
+    "Initial gzip fixture finalized its hash before request end and failed in Hash, not Gunzip; corrected to await hash finish before capturing actual decoder negative control"
+  ],
+  "verification": {
+    "focusedRegressions": "passed4",
+    "dependencyAudit": "passed with zero advisories at2026-10-23T22:39:04.815Z",
+    "fullOfflineCheck": "passed",
+    "review": "Independent High read-only review found no blockers",
+    "exactHeadCi": "required after commit",
+    "command": "Project Node24.22.1 scripts/run-offline.mjs pnpm check",
+    "passedTests": 1409,
+    "hostedSkipped": 3,
+    "lint": "zero warnings/errors",
+    "types": "passed all projects",
+    "productionBuilds": "passed marketing and starter",
+    "documents": 297,
+    "skillSnapshots": 12,
+    "retainedWarnings": [
+      "Node stripTypeScriptTypes experimental warning",
+      "Two existing dynamic-filesystem build tracing warnings"
+    ]
+  },
+  "budget": {
+    "cumulativeCapUsd": "2",
+    "conservativeRetainedAccountedUsd": "1.7592885298898517",
+    "unallocatedUsd": "0.2407114701101483",
+    "unknownHoldsPreserved": true,
+    "settledInvoice": false
+  }
+}

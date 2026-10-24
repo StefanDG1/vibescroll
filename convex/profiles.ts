@@ -148,6 +148,7 @@ export const start = mutation({
       .filter(
         (e) =>
           e.organizationId === repo.organizationId &&
+          !e.privateEvaluationOrigin &&
           ["rejected", "deferred"].includes(e.decision),
       )
       .map((e) => ({

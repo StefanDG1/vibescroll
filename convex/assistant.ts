@@ -556,6 +556,8 @@ export const getProfile = internalQuery({
               : [];
           const evaluations = [];
           for (const e of rows) {
+            if (e.privateEvaluationOrigin?.kind === "private_source_variant")
+              continue;
             const parsed = evaluationContract.safeParse(e.output);
             if (
               e.organizationId !== grant.organizationId ||
@@ -583,6 +585,9 @@ export const getProfile = internalQuery({
             if (granted)
               evaluations.push({
                 evaluation_id: e._id,
+                ...(e.privateEvaluationOrigin
+                  ? { privateEvaluationOrigin: e.privateEvaluationOrigin }
+                  : {}),
                 evaluation_hash: await digest(JSON.stringify(e.output)),
                 title: parsed.data.title,
                 disposition: parsed.data.disposition,
@@ -652,6 +657,7 @@ export const draftProjectSuggestion = internalMutation({
       e &&
         e.organizationId === a.organization._id &&
         e.state === "ready" &&
+        e.privateEvaluationOrigin?.kind !== "private_source_variant" &&
         e.output &&
         args.grantVersion === a.grant.version &&
         /^[a-f0-9]{64}$/.test(args.evaluationHash) &&

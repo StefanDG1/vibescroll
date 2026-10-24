@@ -11,6 +11,7 @@ import { snapshotScopeCurrent } from "../../packages/repositories/scope";
 import { sourceWithinAssistantScope } from "./assistantSourceScope";
 import { hostedMediaAllowed } from "./hostedMediaAccess";
 import { googleConfigured } from "../../packages/providers/google-inference";
+import { taskBindingsCurrent } from "./localTaskAuthority";
 
 export function intakeNeedsSourceReview(source: Doc<"sources">) {
   return (
@@ -80,6 +81,10 @@ export async function validateLocalRun(
   run: Doc<"localLibraryRuns">,
   actorId: Id<"users">,
 ) {
+  if (run.task) {
+    await taskBindingsCurrent(ctx, run, actorId);
+    return null;
+  }
   const intake = run.assistantIntakeId
     ? await ctx.db.get(run.assistantIntakeId)
     : null;

@@ -1,0 +1,16 @@
+VibeScroll social edit
+
+Reordered approved native still captures with editorial holds. No real processing, live account connection, customer result, repository inspection or measured latency. Product issue-draft scene is not a plan. Separate setup walkthrough keeps its original UI sequence and 90-second duration; its final issue-draft caption was corrected.
+Synthetic candidate 76ec7bf0b9812e670207cba199b8d07cc07839fd, captured October 22, 2026.
+
+00:00:00.000 Save permitted material. This example uses manual analysis.
+Source: /help/save-form.png
+
+00:00:05.000 Inspect the evidence. Synthetic data explains the workflow.
+Source: /help/source-evidence.png
+
+00:00:10.000 Review a private issue draft. Nothing is published here.
+Source: /help/project-draft.png
+
+00:00:15.000 No fit is useful too. Inspect the example at scroll.companynerve.com/example.
+Source: /help/no-fit.png

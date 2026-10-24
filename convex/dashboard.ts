@@ -108,7 +108,11 @@ export const home = query({
     for (const p of proposals) {
       // Legacy ideas remain in the ordinary review list. Home recommends only
       // ideas with exact evidence versions it can independently validate.
-      if (!p.references?.length) continue;
+      if (
+        !p.references?.length ||
+        p.references.some((ref) => "schemaVersion" in ref)
+      )
+        continue;
       const repo = p.repositoryId && (await card(p.repositoryId));
       if (
         !repo ||

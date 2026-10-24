@@ -16,6 +16,8 @@ Publish only the compatible frontend against that existing backend. The web depe
 
 ## Product and copy boundaries
 
+The compatible frontend was subsequently released as main `fba56d44c484260dc98e27174e943ee5ed21af51` through PR 141. Exact-head/main CI, staged public reads, exact-build promotion and canonical health passed. The backend remains held. The [production receipt](../operations/evidence/launch-20261024-public-production.json) retains failures and budget evidence; the remaining product scope below is unchanged.
+
 Keep current prices and valid purchased terms. Lifetime/ongoing access is a later feature. GitHub remains optional for general source analysis; repository-specific work requires authorized context. The public pages label the proprietary Pro catalog, computer-free own-account Cloud and automatic following as pending acceptance. The app keeps its existing Atlas design and five mobile actions. Software MIT and exact approved public demos remain separate from any future proprietary catalog.
 
 The four foundational briefs receive F049 for this actual release subset. No new customer, private source, live processing, model accuracy, native-device or independent acceptance is invented. Original video bytes remain unchanged; updated captions explain manual-analysis mode.

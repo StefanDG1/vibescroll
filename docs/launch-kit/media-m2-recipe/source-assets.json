@@ -1,0 +1,116 @@
+{
+  "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+  "sources": [
+    {
+      "path": "/product/overview.mp4",
+      "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+      "bytes": 230404,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+      "approvalStatus": "approved for prepared draft",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    },
+    {
+      "path": "/product/library-light-390.png",
+      "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+      "bytes": 48716,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+      "approvalStatus": "approved for prepared draft",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    },
+    {
+      "path": "/product/library-light-1440.png",
+      "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+      "bytes": 67643,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+      "approvalStatus": "approved for prepared draft",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    },
+    {
+      "path": "/help/source-evidence.png",
+      "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+      "bytes": 34415,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+      "approvalStatus": "approved",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    },
+    {
+      "path": "/product/library-dark-390.png",
+      "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+      "bytes": 50023,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+      "approvalStatus": "approved for prepared draft",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    },
+    {
+      "path": "/product/library-dark-1440.png",
+      "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+      "bytes": 69024,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+      "approvalStatus": "approved for prepared draft",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    },
+    {
+      "path": "/help/library-tree.png",
+      "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+      "bytes": 48716,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+      "approvalStatus": "approved",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    },
+    {
+      "path": "/help/save-form.png",
+      "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+      "bytes": 32632,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+      "approvalStatus": "approved",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    },
+    {
+      "path": "/help/project-draft.png",
+      "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+      "bytes": 40473,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+      "approvalStatus": "approved",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    },
+    {
+      "path": "/help/no-fit.png",
+      "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+      "bytes": 33449,
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "synthetic": true,
+      "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+      "approvalStatus": "approved",
+      "reviewer": "root GPT-6.1 Sol xhigh"
+    }
+  ],
+  "historicalOverview": {
+    "path": "sources/overview-76ec7bf.mp4",
+    "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+    "status": "Deprecated reproduction input only. Its historical issue-draft scene has an inaccurate burned plan caption; corrected public derivatives never reuse that caption. This archive is not served by the application."
+  },
+  "historicalSetup": {
+    "path": "sources/setup-76ec7bf.mp4",
+    "sha256": "94da2151b29b1406bc6b1dd10cc2f52ca4714f0772e86e476a082b24cb7f40a0",
+    "bytes": 811707,
+    "status": "Deprecated reproduction input only; final caption incorrectly calls an issue draft a plan. Native UI1280x720, captionbandy720..839. Corrected derivative preserves90-secondsequence."
+  }
+}

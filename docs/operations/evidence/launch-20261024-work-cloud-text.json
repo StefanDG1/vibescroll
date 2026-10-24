@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T03:52:52.985896+00:00",
+  "baseCommit": "8496d4dbd973f038ecf72766d4fd24a029833931",
+  "mode": "Offline preparatory C3a text handoff and current creator digest; route flags false; undeployed",
+  "scope": [
+    "Strict existing personal source executor union; no second queue/store",
+    "Explicit execution grant/input approval and one-use lease",
+    "Bounded OAuth/MCP text input and canonical private result return",
+    "Current creator processing/coverage separate from delivery/discovery"
+  ],
+  "verification": {
+    "environment": "Windows Node24.22.1/pnpm12.3.4; credential-stripping offline network wrapper",
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "result": "passed",
+    "unitIntegration": 1302,
+    "authApi": 38,
+    "publicUi": 124,
+    "installer": 14,
+    "pythonPcm": 15,
+    "pythonProxy": 6,
+    "pythonSampling": 3,
+    "pythonOrdered": 9,
+    "buildPolicy": 5,
+    "totalPassed": 1516,
+    "hostedSkipped": 3,
+    "documents": 313,
+    "skillSnapshots": 12,
+    "lint": "zero warnings/errors",
+    "types": "root, actual Convex and both applications passed",
+    "builds": "both production builds passed",
+    "dependencies": "lock and dependencies unchanged; prior audit valid; exact-head CI repeats registry audit",
+    "nativeBrowser": "pending fresh consent; no new browser screenshot claimed"
+  },
+  "review": {
+    "independentHigh": "no P1; three P2 corrected",
+    "fixed": [
+      "Global DISABLE_INFERENCE gate rechecked throughout new route",
+      "Strict output schema before recursive serialization/hash; deep 20000-level unknown-field regression",
+      "Ordered-media digest coverage qualified rather than silently unrecorded"
+    ]
+  },
+  "preservedFailures": [
+    "First targeted ordered test timed out on cold transform and caused a later mock-count cascade; standalone23 passed unchanged",
+    "First combined check stopped at one unused extraction variable; removed",
+    "Second combined check:1301 unit tests passed, one companion UI cold-import timeout; load actual JSX during collection, unchanged case timeout/assertions; complete rerun passed",
+    "Agent fixture mistakes corrected; JSON Schema reserved-key Convex response failure corrected with exact canonical schema string",
+    "Secret scanner matched two source SHA256 map keys and one synthetic token literal; explicit path/sha256 records and runtime-generated fixture token remove false positives without an allowlist"
+  ],
+  "contracts": {
+    "protocol": "work-cloud-text-v1",
+    "pipeline": "official-work-cloud-text-v1",
+    "scope": "analysis:execute; no implicit old-grant escalation",
+    "inputResultBytesMaximum": 120000,
+    "completionEnvelopeMaximum": 262144,
+    "ordinaryEnvelopeLimits": "32768 MCP /8192 backend preserved including raw whitespace",
+    "mcpTraversalLimit": 256,
+    "approvalMs": 900000,
+    "leaseMs": 40000,
+    "executionMs": 180000,
+    "tokenStorage": "SHA256 only; plaintext returned once",
+    "funding": "own_subscription; maximum API USD0; no external dispatch",
+    "claimedUnknown": "no silent reclaim/reapproval/executor switch; privacy deletion and restore retained",
+    "canonicalCompletion": "same source validator, category/knowledge sync and notification as paired behavior",
+    "media": "raw URL acquisition/upload/ordered media/service/public import rejected; retained source text allowed",
+    "publication": "no service artifact or catalog entry created",
+    "hostReports": "requested settings and supplied correlation only; not provider attestation"
+  },
+  "budget": {
+    "sameCumulativeCapUsd": "3",
+    "combinedReservationsUsd": "2.8092885298898517",
+    "unallocatedUsd": "0.1907114701101483",
+    "newProductionConvexCalls": 0,
+    "newInferenceJobs": 0,
+    "newPurchases": 0,
+    "allUnknownHoldsRetained": true,
+    "settledInvoice": false
+  },
+  "release": {
+    "deployed": false,
+    "flagsEnabled": false,
+    "servingFrontend": "fba56d44c484260dc98e27174e943ee5ed21af51",
+    "servingBackend": "abfdeff6779a2fc7790d4441152117262965fe60",
+    "backendHold": "Archive output/read/retry/retention cost bounds unproved; alternative private guard hard-stops before network",
+    "remaining": "Actual official-host/no-GitHub real-video result return, Events, host cancellation/resource/quota proof, C6 private Cloud producers, recurring discovery/contribution, full R/P/N/C/M and human/provider/production acceptance remain."
+  },
+  "candidateSourceSha256": [
+    {
+      "path": "apps/starter/app/api/product/route.ts",
+      "sha256": "49106023fc3b742859a1058eba1e21a84d666ffb83d5a78a6b0f3f5de0973acf"
+    },
+    {
+      "path": "apps/starter/app/mcp/route.ts",
+      "sha256": "723937f597cd2a6bc8ddb753a3098748967c5fe16e3743d047a76a5053f25924"
+    },
+    {
+      "path": "apps/starter/components/assistant-connections.tsx",
+      "sha256": "c61f0e6f87a8f661407834ce8f7f06fa872efb68feb01117c95efadb2f5c6731"
+    },
+    {
+      "path": "apps/starter/components/console.tsx",
+      "sha256": "6140da06d4581ac82c7f100bd66afb8b0cd75f746710a1f3f7050068341cbd21"
+    },
+    {
+      "path": "apps/starter/components/creator-digest.tsx",
+      "sha256": "ba3dd61096099599c2b4f3e4e30eaa58c467db3c16a8bb1a2e6fca49df981c1c"
+    },
+    {
+      "path": "apps/starter/components/work-cloud-text.tsx",
+      "sha256": "ff41c622309ae998709dcbac9783aa2a47fc7230af975d1c3881e2d9df00b5ac"
+    },
+    {
+      "path": "apps/starter/creator-ui.test.ts",
+      "sha256": "79265ae9a67a3d0db70e0ae4a3dd5d8cd803760a94053d0cbff896c1cdfd3117"
+    },
+    {
+      "path": "apps/starter/vitest.public-knowledge.config.ts",
+      "sha256": "5385e8dbf10394d6437e146bad44b8b9d6b31420a079ae16b0d539429cd34a73"
+    },
+    {
+      "path": "apps/starter/work-cloud-text-ui.test.ts",
+      "sha256": "157348d401177ffadea5bc8d374723c60196d246e82a8c98dcb7b081c907ba34"
+    },
+    {
+      "path": "convex/_generated/api.d.ts",
+      "sha256": "4d5874028d715804ae0ec0de427f9a820c44f72affd701bac6fdacc5cb908d0e"
+    },
+    {
+      "path": "convex/assistantGrants.ts",
+      "sha256": "d6f2e021f3ef1c46d0b7dd2c0cbfd5f1641915b9665d54770326d67ee935ea78"
+    },
+    {
+      "path": "convex/assistantHttp.ts",
+      "sha256": "b32710cef568471641f292e8273535a7bed2aa48eed00731338a6da4ebce824e"
+    },
+    {
+      "path": "convex/creators.ts",
+      "sha256": "a5117cf6c3ee1dbe7a09fe5e85d1daa6c284104bfa8d42e3c1009fd1bc64a198"
+    },
+    {
+      "path": "convex/lib/personalAccess.ts",
+      "sha256": "9798c445a65d474d6f4355c85ccc06c982ebee76e6adfc3bed0eb0f2814478ea"
+    },
+    {
+      "path": "convex/lib/projectedMutations.ts",
+      "sha256": "82cbf99d63eb5392c40a828c935fb455d1f59d3befbe14f48f576e49c6e8abef"
+    },
+    {
+      "path": "convex/personalAnalysis.ts",
+      "sha256": "8121ea34d2241703ada4d85173f10dd18355665ff7d3ac44db06366fe2de69e7"
+    },
+    {
+      "path": "convex/personalAnalysisSchema.ts",
+      "sha256": "58d7e07964bc8719db784ce12c19eaa25fc068558e794444fba8be777a90b56a"
+    },
+    {
+      "path": "convex/personalMediaState.ts",
+      "sha256": "7a26043827c6a288f8ec2e5c1c9f0a765461a2c65bfb61ca29ba9967ddedb6c8"
+    },
+    {
+      "path": "convex/personalOrderedMediaState.ts",
+      "sha256": "96537400eeb7e75c52ef71ebf038f243c89cf9b86b180eedffbeec31b8913a74"
+    },
+    {
+      "path": "convex/product.ts",
+      "sha256": "cea9ac00fdbce9e160d2ba9358f1633c263341e07c1b5ef8477664bf2959b90d"
+    },
+    {
+      "path": "convex/productSchema.ts",
+      "sha256": "7d18f5593eeb63f65d3752c962835a1d68366eb10c2c964068bea7b237e495c8"
+    },
+    {
+      "path": "convex/workCloudAnalysis.ts",
+      "sha256": "efbcd6cfcf64d691e2b05865eaa0c0845b80fe8211b39e53bf7b24116cf26206"
+    },
+    {
+      "path": "packages/contracts/work-cloud-text.ts",
+      "sha256": "1ebd9d1a89e4d9d92b10e09a70c1cb53108915597411db0d770877bbbcb8b5ad"
+    },
+    {
+      "path": "packages/mcp/server.ts",
+      "sha256": "68872da72d391d3b1582d686ab66a1ba6999b0af72c26c580532d98d9fb6711f"
+    },
+    {
+      "path": "packages/policy/assistant-http.ts",
+      "sha256": "8183482cd03b9ff489421a17bd487c51e0d38408e0f75aaa85493a81075d2b52"
+    },
+    {
+      "path": "packages/policy/assistant.ts",
+      "sha256": "5d6c057056462eeff204c1cd31cfc927f469a7061d0f9ccbec9a4dbce5e5d1a7"
+    },
+    {
+      "path": "tests/companion-ui.test.ts",
+      "sha256": "8f2970ce4ca3f32fd40b073875e5cd53d8d88b6a181ccbed7dd3273d177dfe59"
+    },
+    {
+      "path": "tests/creator-following.test.ts",
+      "sha256": "04682636ac0ec2c14c5ef4ed851a1969cd6f4187e9ca730ce43fd5cdf381cbd9"
+    },
+    {
+      "path": "tests/work-cloud-analysis.test.ts",
+      "sha256": "0773de9af2177d47c3d1fd459424b85768652db0ed1c1b81552e288393b808ab"
+    },
+    {
+      "path": "tests/work-cloud-transport.test.ts",
+      "sha256": "83e9256b84f9c0c1810c2e7ce2ece45ee4d910c780535a9587eba5930e4c97c3"
+    }
+  ]
+}

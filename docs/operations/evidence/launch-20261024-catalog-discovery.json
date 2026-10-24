@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T02:49:15.972Z",
+  "baseCommit": "b6ed8f0fe072cddaec9c727cf06ce2d33a9ff372",
+  "mode": "Local offline C8 candidate; migration and hosted acceptance held",
+  "scope": "Pro generic search, categories/topics/public provenance, checked-page filter and optional category membership map",
+  "contract": {
+    "wireVersion": "service-catalog-v2",
+    "savedCopyVersionUnchanged": "service-import-v1",
+    "store": "Existing publicArtifacts service variant only",
+    "projection": "SHA256 canonical version/contentHash/text, at most8192 UTF8 bytes, generic analysis only",
+    "reads": "Private owner/current Pro before one five-candidate search or browse page; every result revalidates source and exact projection",
+    "legacy": "Missing projection preserves valid legacy browsing; search covers indexed eligible text only",
+    "backfill": "Manual internal reindexCatalog, five records/call, honest continuation, restore/config pause, no scheduler/retry, unactivated",
+    "cleanup": "Removal clears projection fields; existing restore deletes artifact row",
+    "map": "Only currently shown unexpired analyses, at most5 analyses/9 categories, full-label primary HTML list, no private inputs, extra requests or trend/rating claim"
+  },
+  "verification": {
+    "environment": "Windows Node24.22.1/pnpm12.3.4; credential-stripping offline wrapper",
+    "completeCheck": "passed",
+    "mainUnit": 1264,
+    "authApi": 38,
+    "publicAndUi": 102,
+    "installer": 14,
+    "pythonPcm": 15,
+    "pythonProxy": 6,
+    "pythonSampling": 3,
+    "pythonOrderedMedia": 9,
+    "buildPolicy": 5,
+    "totalPassed": 1456,
+    "hostedSkipped": 3,
+    "documents": 311,
+    "skillSnapshots": 12,
+    "lint": "zero warnings/errors",
+    "types": "root, Convex, all workspace projects passed",
+    "productionBuilds": "both passed",
+    "focused": "64 service-artifact tests and16 catalog UI handler/lifecycle tests passed",
+    "dependencyAudit": "Reused2026-10-24T02:12:52.957Z policy pass,0 high/critical,2 low/2 moderate, no exceptions; package manifests/lock unchanged from audited b6ed8f0",
+    "independentReview": "Sol High no P1; source/currentness/projection/snapshot/privacy/map paths reviewed",
+    "browser": "Fresh Chrome consent still pending; no native browser or new screenshot acceptance claimed",
+    "exactHeadCi": "required after commit"
+  },
+  "retainedFailuresAndGaps": [
+    "First integrated run stopped at map test fixture platform widened to string. Typed fixture annotation fixed it without a cast/runtime change; complete corrected run passed.",
+    "Mixed missing-field legacy/indexed search fixture failed inside convex-test0.0.57 evaluateSearchFilter result.split. The dependency/implementation were not patched and no hosted pass is claimed. Indexed search and separate legacy browse/projection/backfill cases exercise their actual paths. The mixed-record hosted case remains pending.",
+    "Initial near-size fixture83records was itself above the intended input bound;82 records produced a valid near-limit fixture without changing production limits/assertions. Optional projection is then omitted while valid artifact/saved copy behavior is retained.",
+    "Three unused-alias lint errors were corrected before passing scoped/full lint.",
+    "Two existing filesystem tracing warnings and Node experimental type-stripping warning remain."
+  ],
+  "sourceEvidence": {
+    "official": "https://github.com/convex/convex-backend/blob/7b7b58ed4afa1f9d07fa0b67b871ef8771c868eb/crates/search/src/lib.rs#L338-L390",
+    "finding": "Missing/non-string search fields add no search text/terms; physical ID/filter metadata can remain indexed",
+    "limit": "Pinned official source supports expected behavior, not attestation of the hosted binary or a passed mixed-record live test",
+    "readScope": "Three narrow public GitHub reads, one30695-byte primary source file, no application calls"
+  },
+  "budget": {
+    "sameCumulativeCapUsd": "3",
+    "combinedReservationsUsd": "2.8092885298898517",
+    "unallocatedUsd": "0.1907114701101483",
+    "newProductionConvexCalls": 0,
+    "inferenceJobs": 0,
+    "purchases": 0,
+    "allUnknownHoldsRetained": true,
+    "settledInvoice": false
+  },
+  "release": {
+    "deployed": false,
+    "searchIndexBackfillActivated": false,
+    "providerPrivacyGatesUnchanged": true,
+    "newIndexRequiresCompletePredictionAndBound": true
+  },
+  "remaining": "Actual catalog contents and mixed-record/live lifecycle, browser/independent acceptance, verified Cloud contribution origin, recurring creator acquisition, full C0-C10/R/P/N/M and provider/human gates remain."
+}

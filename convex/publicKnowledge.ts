@@ -14,11 +14,24 @@ import {
   publicEdition,
   reusableArtifact,
   editionDto,
+  suppliedPublicReference,
 } from "./lib/publicKnowledge";
+import {
+  publicModerationBlocked,
+  recordModerationBlock,
+  moderationReasons,
+  moderationReason,
+  legacyModerationPending,
+  preserveLegacyEditionModeration,
+} from "./lib/publicModeration";
 import { sharingRegions, contributorBand } from "../packages/sources/geography";
 import { validateEvidenceRegistry } from "../packages/sources/evidence";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { sourceRetained } from "./lib/sourceAuthority";
+import {
+  retainedServiceArtifactCopy,
+  invalidateServiceSource,
+} from "./lib/serviceArtifacts";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 
@@ -53,7 +66,7 @@ async function publicationSource(ctx: QueryCtx, id: Id<"sources">) {
     source &&
       source.state === "ready" &&
       source.rightsAttested &&
-      sourceRetained(source.sourceRetentionUntil) &&
+      sourceRetained(source) &&
       !source.publicImportId,
     "SOURCE_UNAVAILABLE",
     "Choose a current original analyzed source.",
@@ -63,6 +76,11 @@ async function publicationSource(ctx: QueryCtx, id: Id<"sources">) {
     "admin",
   ]);
   await sharedTypedCitations(ctx, source);
+  ensure(
+    !(await publicModerationBlocked(ctx, source, actor._id)),
+    "PUBLIC_MODERATION_BLOCKED",
+    "A moderator must explicitly clear this publication restriction.",
+  );
   return { source: source!, actor };
 }
 async function payload(
@@ -70,6 +88,7 @@ async function payload(
   source: Doc<"sources">,
   selected: string[],
   publisher: string,
+  suppliedReference?: { url: string; explicitlyReviewed: true },
 ) {
   const analysis = source.analysis;
   ensure(
@@ -82,6 +101,7 @@ async function payload(
     "Choose current source-level insights.",
   );
   let registry: any[] = [];
+  let supplied = source.kind === "text" && !source.currentRevisionId;
   await sharedTypedCitations(ctx, source);
   if (source.currentRevisionId) {
     const revision = await ctx.db.get(source.currentRevisionId);
@@ -98,8 +118,26 @@ async function payload(
     registry = (
       await validateEvidenceRegistry(revision!.revision, revision!.evidence)
     ).evidence;
+    supplied = revision.revision.sourceType === "supplied_text";
   }
-  const sourceUrl = publicSourceUrl(source.url);
+  ensure(
+    !suppliedReference || supplied,
+    "INVALID_SUPPLIED_REFERENCE",
+    "Only supplied text can have a separately reviewed source reference.",
+  );
+  let suppliedUrl: string | null = null;
+  if (suppliedReference) {
+    try {
+      suppliedUrl = suppliedPublicReference(suppliedReference.url);
+    } catch {
+      ensure(
+        false,
+        "INVALID_SUPPLIED_REFERENCE",
+        "Use the exact HTTPS GitHub file URL pinned to its 40-character commit.",
+      );
+    }
+  }
+  const sourceUrl = suppliedUrl ?? publicSourceUrl(source.url);
   const insights = selected.map((id, index) => {
     const item = analysis.insights.find((i: any) => i.id === id);
     ensure(
@@ -131,7 +169,9 @@ async function payload(
                 : record.kind === "supplied_text"
                   ? "User-supplied excerpt, not provider-verified"
                   : `${record.role === "op" ? "Original post" : "Comment"} by ${record.author}`,
-            url: record.canonicalUrl,
+            url: supplied
+              ? (sourceUrl ?? record.canonicalUrl)
+              : record.canonicalUrl,
             kind: record.kind,
           };
         ensure(
@@ -140,9 +180,19 @@ async function payload(
           "INVALID_EVIDENCE",
           "A citation is no longer current.",
         );
+        ensure(
+          !supplied ||
+            (e.kind === "user_note" &&
+              e.id === "supplied_text" &&
+              e.startMs === null &&
+              e.endMs === null),
+          "INVALID_EVIDENCE",
+          "Supplied text requires untimed supplied evidence.",
+        );
         return {
-          label:
-            e.startMs === null
+          label: supplied
+            ? "User-supplied text and reference, not provider-verified"
+            : e.startMs === null
               ? "Untimed source evidence"
               : `Source evidence at ${Math.floor(e.startMs / 1000)} seconds`,
           url: sourceUrl,
@@ -161,7 +211,10 @@ async function payload(
     summary: clean(source.summary ?? analysis.summary, 1500),
     publisher: clean(publisher, 100),
     sourceUrl,
-    coverage: source.coverage,
+    coverage: supplied ? "source_text" : source.coverage,
+    ...(supplied
+      ? { sourceProvenance: "supplied_text_unverified" as const }
+      : {}),
     language: "en",
     pipelineVersion: source.analysisPipelineVersion ?? "legacy-unverified",
     schemaVersion: analysis.schemaVersion,
@@ -227,6 +280,9 @@ export const prepareEdition = mutation({
     ),
     permissionReference: v.string(),
     permissionExpiresAt: v.number(),
+    suppliedReference: v.optional(
+      v.object({ url: v.string(), explicitlyReviewed: v.literal(true) }),
+    ),
   },
   handler: async (ctx, a) => {
     enabled();
@@ -262,7 +318,13 @@ export const prepareEdition = mutation({
       "LIMIT_REACHED",
       "This source already has five public editions.",
     );
-    const publicData = await payload(ctx, source, a.insightIds, a.publisher);
+    const publicData = await payload(
+      ctx,
+      source,
+      a.insightIds,
+      a.publisher,
+      a.suppliedReference,
+    );
     ensure(
       !a.reuseAllowed || publicData.pipelineVersion !== "legacy-unverified",
       "PROVENANCE_REQUIRED",
@@ -441,7 +503,10 @@ export const saveEdition = mutation({
       .order("desc")
       .take(10);
     const artifact = candidates.find(
-      (a) => a.editionVersion === edition!.version && a.state === "eligible",
+      (a) =>
+        a.origin !== "service" &&
+        a.editionVersion === edition!.version &&
+        a.state === "eligible",
     );
     ensure(
       artifact && (await reusableArtifact(ctx, artifact._id)),
@@ -502,12 +567,38 @@ export const savedDetail = query({
       ? await ctx.db.get(source!.publicImportId)
       : null;
     if (!layer || source!.state === "deleted") return null;
+    if (
+      layer.sourceId !== source._id ||
+      layer.organizationId !== source.organizationId
+    )
+      return null;
+    if (layer.origin === "service") {
+      ensure(
+        layer.actor === actor._id,
+        "FORBIDDEN",
+        "These saved insights belong to another user.",
+      );
+      const service = await retainedServiceArtifactCopy(ctx, layer);
+      const available = !!service;
+      return {
+        origin: "service" as const,
+        available,
+        edition: null,
+        service,
+        privateNote: layer.privateNote,
+        corrections: layer.corrections,
+        updatedAt: layer.updatedAt,
+        canEdit: true,
+      };
+    }
     const base = await reusableArtifact(ctx, layer.artifactId);
     const available =
       !!base &&
       base.artifact.compatibilityKey === layer.compatibilityKey &&
       base.edition.version === layer.editionVersion;
     return {
+      origin: "edition" as const,
+      service: null,
       available,
       edition: available ? editionDto(base!.edition) : null,
       privateNote: layer.actor === actor._id ? layer.privateNote : "",
@@ -538,7 +629,10 @@ export const savePersonalLayer = mutation({
     ]);
     const layer = (await ctx.db.get(source!.publicImportId!))!;
     ensure(
-      layer.actor === actor._id,
+      layer &&
+        layer.sourceId === source._id &&
+        layer.organizationId === source.organizationId &&
+        layer.actor === actor._id,
       "FORBIDDEN",
       "These personal notes belong to another user.",
     );
@@ -550,15 +644,33 @@ export const savePersonalLayer = mutation({
       "APPROVAL_STALE",
       "Review the current private notes.",
     );
-    const base = await reusableArtifact(ctx, layer.artifactId);
+    const service =
+      layer.origin === "service"
+        ? await retainedServiceArtifactCopy(ctx, layer)
+        : null;
+    const base =
+      layer.origin !== "service"
+        ? await reusableArtifact(ctx, layer.artifactId)
+        : null;
+    const insights = service
+      ? service.insights
+      : base &&
+          layer.origin !== "service" &&
+          base.edition.version === layer.editionVersion &&
+          base.artifact.compatibilityKey === layer.compatibilityKey
+        ? base.edition.payload.insights
+        : null;
     ensure(
-      base &&
-        a.corrections.every(
-          (c) =>
-            base.edition.payload.insights.some((i) => i.id === c.insightId) &&
-            c.text.length <= 2000 &&
-            !containsSecret(c.text),
-        ),
+      (layer.origin === "service" &&
+        !insights &&
+        canonicalJson(a.corrections) === canonicalJson(layer.corrections)) ||
+        (insights &&
+          a.corrections.every(
+            (c) =>
+              insights.some((i) => i.id === c.insightId) &&
+              c.text.length <= 2000 &&
+              !containsSecret(c.text),
+          )),
       "INVALID_EVIDENCE",
       "Correct only current published insights.",
     );
@@ -931,18 +1043,247 @@ export const moderate = mutation({
     await recentAuthentication(ctx);
     const report = await ctx.db.get(a.reportId);
     ensure(report, "INVALID_INPUT", "Report unavailable.");
-    if (a.action === "remove")
-      await ctx.db.patch(report!.editionId, {
+    if (report.state === (a.action === "remove" ? "removed" : "dismissed"))
+      return { reviewed: true };
+    ensure(
+      report.state === "open",
+      "APPROVAL_STALE",
+      "This report was already reviewed.",
+    );
+    if (a.action === "remove") {
+      const edition = await ctx.db.get(report.editionId);
+      const source = edition ? await ctx.db.get(edition.sourceId) : null;
+      ensure(
+        edition &&
+          source &&
+          source.organizationId === edition.organizationId &&
+          report.organizationId === edition.organizationId &&
+          moderationReason(report.reason),
+        "SOURCE_UNAVAILABLE",
+        "The moderation identity requires operator repair.",
+      );
+      const blockId = await recordModerationBlock(
+        ctx,
+        edition,
+        report,
+        actor._id,
+        await digest(source.canonical),
+      );
+      await ctx.db.patch(report.editionId, {
         state: "removed",
-        removalReason: report!.reason,
+        removalReason: report.reason,
+        moderationBlockId: blockId,
         updatedAt: Date.now(),
       });
+      await ctx.db.patch(report._id, { moderationBlockId: blockId });
+    }
     await ctx.db.patch(a.reportId, {
       state: a.action === "remove" ? "removed" : "dismissed",
       reviewedBy: actor._id,
       updatedAt: Date.now(),
     });
     return { reviewed: true };
+  },
+});
+export const moderationBlocks = query({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, a) => {
+    await moderator(ctx);
+    const page = await ctx.db
+      .query("publicModerationBlocks")
+      .withIndex("by_state", (q) => q.eq("state", "active"))
+      .order("desc")
+      .paginate({ cursor: a.cursor, numItems: 25 });
+    return {
+      ...page,
+      page: page.page.map(
+        ({ _id, reportId, reason, state, version, createdAt, updatedAt }) => ({
+          _id,
+          reportId,
+          reason,
+          state,
+          version,
+          createdAt,
+          updatedAt,
+        }),
+      ),
+    };
+  },
+});
+export const releaseModerationBlock = mutation({
+  args: {
+    id: v.id("publicModerationBlocks"),
+    expectedVersion: v.number(),
+    note: v.string(),
+    explicitlyApproved: v.literal(true),
+  },
+  handler: async (ctx, a) => {
+    const actor = await moderator(ctx);
+    await recentAuthentication(ctx);
+    ensure(
+      process.env.RESTORE_LOCK !== "true",
+      "POLICY_BLOCKED",
+      "Recovery is in progress.",
+    );
+    const block = await ctx.db.get(a.id);
+    ensure(
+      block && block.state === "active" && block.version === a.expectedVersion,
+      "APPROVAL_STALE",
+      "The moderation restriction changed.",
+    );
+    const note = clean(a.note, 500);
+    ensure(
+      note.length > 0,
+      "INVALID_INPUT",
+      "Record the reason for releasing this restriction.",
+    );
+    await ctx.db.patch(block._id, {
+      state: "released",
+      version: block.version + 1,
+      releasedBy: actor._id,
+      releasedAt: Date.now(),
+      releaseNote: note,
+      updatedAt: Date.now(),
+    });
+    return { released: true };
+  },
+});
+// Run explicitly before broad activation, repeatedly until done. Missing source
+// identity is never guessed or pardoned; an operator must repair that record.
+export const normalizeLegacyModeration = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const reports = await ctx.db
+      .query("publicReports")
+      .withIndex("by_state_block", (q) =>
+        q.eq("state", "removed").eq("moderationBlockId", undefined),
+      )
+      .take(5);
+    const pendingReports: Id<"publicReports">[] = [];
+    let normalized = 0;
+    for (const report of reports) {
+      const edition = await ctx.db.get(report.editionId);
+      const source = edition ? await ctx.db.get(edition.sourceId) : null;
+      if (
+        !edition ||
+        !source ||
+        source.organizationId !== edition.organizationId ||
+        report.organizationId !== edition.organizationId ||
+        !moderationReason(report.reason)
+      ) {
+        pendingReports.push(report._id);
+        continue;
+      }
+      await preserveLegacyEditionModeration(ctx, edition, source);
+      const blockId = (await ctx.db.get(edition._id))!.moderationBlockId!;
+      await ctx.db.patch(report._id, { moderationBlockId: blockId });
+      await ctx.db.patch(edition._id, { moderationBlockId: blockId });
+      normalized++;
+    }
+    const pendingEditions: Id<"publicEditions">[] = [];
+    let remaining = 5 - reports.length;
+    for (const reason of moderationReasons) {
+      if (!remaining) break;
+      const editions = await ctx.db
+        .query("publicEditions")
+        .withIndex("by_moderation_pending", (q) =>
+          q.eq("removalReason", reason).eq("moderationBlockId", undefined),
+        )
+        .take(remaining);
+      remaining -= editions.length;
+      for (const edition of editions) {
+        const source = await ctx.db.get(edition.sourceId);
+        if (!source || source.organizationId !== edition.organizationId) {
+          pendingEditions.push(edition._id);
+          continue;
+        }
+        await preserveLegacyEditionModeration(ctx, edition, source);
+        normalized++;
+      }
+    }
+    return {
+      normalized,
+      pendingReports,
+      pendingEditions,
+      done: !(await legacyModerationPending(ctx)),
+    };
+  },
+});
+export const repairLegacyModeration = mutation({
+  args: {
+    editionId: v.id("publicEditions"),
+    reportId: v.optional(v.id("publicReports")),
+    expectedEditionVersion: v.number(),
+    canonicalHash: v.string(),
+    note: v.string(),
+    explicitlyApproved: v.literal(true),
+  },
+  handler: async (ctx, a) => {
+    const actor = await moderator(ctx);
+    await recentAuthentication(ctx);
+    ensure(
+      process.env.RESTORE_LOCK !== "true",
+      "POLICY_BLOCKED",
+      "Recovery is in progress.",
+    );
+    const edition = await ctx.db.get(a.editionId);
+    let report = a.reportId ? await ctx.db.get(a.reportId) : null;
+    ensure(
+      edition &&
+        !edition.moderationBlockId &&
+        edition.version === a.expectedEditionVersion &&
+        /^[a-f0-9]{64}$/.test(a.canonicalHash) &&
+        (a.reportId
+          ? report &&
+            report.editionId === edition._id &&
+            report.state === "removed" &&
+            !report.moderationBlockId &&
+            report.organizationId === edition.organizationId &&
+            moderationReason(report.reason)
+          : moderationReason(edition.removalReason)),
+      "APPROVAL_STALE",
+      "Recover the original report and edition identity before repair.",
+    );
+    const source = await ctx.db.get(edition.sourceId);
+    ensure(
+      !source ||
+        (source.organizationId === edition.organizationId &&
+          (await digest(source.canonical)) === a.canonicalHash),
+      "INVALID_INPUT",
+      "The repaired identity differs from the retained source.",
+    );
+    const note = clean(a.note, 500);
+    ensure(
+      note.length > 0,
+      "INVALID_INPUT",
+      "Record the identity-repair evidence without source text.",
+    );
+    if (!report) {
+      // This is a new, explicit operator repair decision, not an invented old
+      // anonymous report. The retained removal reason remains authoritative.
+      const id = await ctx.db.insert("publicReports", {
+        organizationId: edition.organizationId,
+        editionId: edition._id,
+        key: `moderator-repair-${crypto.randomUUID()}`,
+        reason: edition.removalReason!,
+        state: "removed",
+        reviewedBy: actor._id,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      report = (await ctx.db.get(id))!;
+    }
+    const blockId = await recordModerationBlock(
+      ctx,
+      edition,
+      report,
+      actor._id,
+      a.canonicalHash,
+    );
+    await ctx.db.patch(blockId, { identityRepairNote: note });
+    await ctx.db.patch(report._id, { moderationBlockId: blockId });
+    await ctx.db.patch(edition._id, { moderationBlockId: blockId });
+    return { repaired: true };
   },
 });
 export const setGeography = mutation({
@@ -1045,7 +1386,8 @@ export async function invalidatePublicEditions(
   for (const row of await ctx.db
     .query("publicEditions")
     .withIndex("by_source", (q) => q.eq("sourceId", sourceId))
-    .take(6))
+    .take(6)) {
+    await preserveLegacyEditionModeration(ctx, row);
     await ctx.db.patch(row._id, {
       state: "removed",
       payload: {
@@ -1060,6 +1402,7 @@ export async function invalidatePublicEditions(
       removalReason: "source_removed",
       updatedAt: Date.now(),
     });
+  }
 }
 export const invalidateEditions = internalMutation({
   args: { sourceId: v.id("sources") },
@@ -1069,6 +1412,9 @@ export async function invalidatePublicSource(
   ctx: MutationCtx,
   sourceId: Id<"sources">,
 ) {
+  const serviceSource = await ctx.db.get(sourceId);
+  if (serviceSource)
+    await invalidateServiceSource(ctx, sourceId, serviceSource.generation);
   await invalidatePublicEditions(ctx, sourceId);
   for (const row of await ctx.db
     .query("sourceRevisions")

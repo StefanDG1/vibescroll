@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-23T21:43:11.799189+00:00",
+  "parentCommit": "9a8ee1751c76b7bb72ac8596a6257004b54efe7a",
+  "scope": "Patch the existing Zod dependency and companion distribution pins; no Cloud processing feature or deployment",
+  "advisory": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+  "upstreamFix": "https://github.com/colinhacks/zod/commit/a0ebf970f2d752e5f58527cd2942ff48be4f46bd",
+  "verifiedRelease": "https://github.com/colinhacks/zod/releases/tag/v4.6.6",
+  "before": ["4.6.1", "4.6.5"],
+  "after": "4.6.6",
+  "changes": [
+    "Exact workspace dependencies and transitive override use the patched version",
+    "Companion runtime/release pins, real dependency fixture and instructions match the regenerated lock",
+    "Archive/hash/version validation remains mandatory",
+    "No unrelated Dependabot package updates or PR changes"
+  ],
+  "negativeControl": {
+    "command": "Node24.22.1 scripts/run-offline.mjs node outputs/launch-run/zod-security-negative-control.mjs",
+    "input": "10000 elements with max2 and an instrumented child validator",
+    "oldChildValidations": 10000,
+    "patchedChildValidations": 0,
+    "limitation": "Verifies constrained collections. This does not bound arbitrary unconstrained input or replace request limits."
+  },
+  "regressions": {
+    "file": "tests/zod-collection-bounds.test.ts",
+    "passed": 4,
+    "coverage": "Oversized array/set/map reject before child validation; bounded collections still validate normally"
+  },
+  "verification": {
+    "runtime": "Project Node24.22.1, pnpm12.3.4, Windows, credential-free offline guard",
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "status": "passed",
+    "dependencyAudit": "passed after patch; all reported severity counts zero",
+    "builds": "marketing and starter production builds passed",
+    "exactHeadCi": "required separately after commit",
+    "testsPassed": 1405,
+    "hostedSkipped": 3,
+    "lint": "zero warnings/errors",
+    "types": "all passed",
+    "documentsDuringFullRun": 301,
+    "skillSnapshots": 12,
+    "review": "Independent GPT-6.1 Sol High read-only source review found no blocking defect; root ran checks",
+    "retainedWarnings": [
+      "Native Node stripTypeScriptTypes experimental warning",
+      "Two existing dynamic-filesystem build tracing warnings"
+    ]
+  },
+  "retainedFailures": [
+    "Fresh audit failed with high advisory affecting existing Zod versions before the patch",
+    "First full check timed out importing CompanionSetup at5000ms; focused five-case rerun and next full Vitest stage passed without changing timeouts",
+    "Second check reached installer tests and rejected stale runtime dependency pins with PACKAGE_LOCK_DEPENDENCY_MISMATCH; matching runtime/release/fixture pins were updated and14 installer tests passed"
+  ],
+  "release": {
+    "merged": false,
+    "deployed": false,
+    "newConvexCalls": 0,
+    "newPaidApiCalls": 0,
+    "newPurchases": 0,
+    "previewSuppressionRetained": true
+  },
+  "remainingAcceptance": [
+    "Real signed companion update/rollback remains untested; no enabled signed public runtime/feed",
+    "Exact-head hosted CI after commit and any production rollout are separate"
+  ]
+}

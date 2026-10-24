@@ -15,12 +15,24 @@ export function PublicEditionContent({ edition }: { edition: PublicPayload }) {
       <p>{edition.summary}</p>
       <p>
         Published by {edition.publisher}. Coverage:{" "}
-        {edition.coverage.replaceAll("_", " ")}. Language: {edition.language}.
+        {edition.sourceProvenance === "supplied_text_unverified"
+          ? "Text"
+          : edition.coverage.replaceAll("_", " ")}
+        . Language: {edition.language}.
       </p>
+      {edition.sourceProvenance === "supplied_text_unverified" && (
+        <p>
+          This analysis uses supplied text with untimed references. Any linked
+          reference was supplied by the publisher; VibeScroll did not verify
+          provider retrieval or complete source coverage.
+        </p>
+      )}
       {source && (
         <p>
           <a href={source} rel="noreferrer">
-            Open the original source
+            {edition.sourceProvenance === "supplied_text_unverified"
+              ? "Open the publisher-supplied reference"
+              : "Open the original source"}
           </a>
         </p>
       )}

@@ -55,25 +55,119 @@
   ],
   "articles": [
     {
+      "slug": "work-cloud-text-review",
+      "title": "Review an experimental Work Cloud text request",
+      "summary": "Review exact private text authority, distinguish queued work from execution and recover without a silent paid fallback.",
+      "file": "work-cloud-text-review.md",
+      "status": "approved",
+      "reviewMode": "Source-reviewed default-off candidate; official host, real media, browser and independent walkthrough pending",
+      "lastVerifiedCommit": "5bddde1",
+      "dependencies": [
+        "convex/workCloudAnalysis.ts",
+        "convex/personalAnalysisSchema.ts",
+        "packages/contracts/work-cloud-text.ts",
+        "apps/starter/components/work-cloud-text.tsx",
+        "apps/starter/components/console.tsx"
+      ],
+      "related": [
+        "processing-and-recovery",
+        "share-a-post",
+        "connect-your-computer"
+      ],
+      "assets": []
+    },
+    {
+      "slug": "share-a-post",
+      "title": "Send a post explicitly to VibeScroll",
+      "summary": "Distinguish processing from tool connection, explicitly invoke VibeScroll and use the web fallback.",
+      "file": "share-a-post.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed implementation candidate; native-device and supported-host walkthrough pending",
+      "lastVerifiedCommit": "58df6ec",
+      "dependencies": [
+        "apps/starter/components/companion-setup.tsx",
+        "apps/starter/components/assistant-connections.tsx",
+        "packages/onboarding/project-builder-journey.ts",
+        "apps/starter/components/project-builder-guide.tsx"
+      ],
+      "related": [
+        "getting-started",
+        "connect-your-computer",
+        "first-useful-insight"
+      ],
+      "assets": []
+    },
+    {
+      "slug": "instagram-export-guide",
+      "title": "Learn how to bring Instagram Saved links",
+      "summary": "Complete export education without requesting an archive; keep actual import and processing separate.",
+      "file": "instagram-export-guide.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed implementation candidate with text-equivalent steps; native Meta screens and independent comprehension pending",
+      "lastVerifiedCommit": "58df6ec",
+      "dependencies": [
+        "apps/starter/components/companion-setup.tsx",
+        "apps/starter/components/setup-journey.tsx",
+        "packages/onboarding/project-builder-journey.ts",
+        "convex/setupJourney.ts",
+        "convex/librarySpacesSchema.ts",
+        "packages/instagram-import.ts",
+        "packages/instagram-zip.ts",
+        "apps/starter/components/project-builder-guide.tsx"
+      ],
+      "related": ["getting-started", "imports-and-data", "share-a-post"],
+      "assets": []
+    },
+    {
+      "slug": "connect-your-computer",
+      "title": "Connect your computer for own-plan work",
+      "summary": "Prepare, pair, connect and run one companion without confusing local checks with a cited result.",
+      "file": "connect-your-computer.md",
+      "status": "approved",
+      "reviewMode": "source-reviewed October 23 candidate; two-queue companion and phased checks locally tested; portable runtime and native/live/independent acceptance pending",
+      "lastVerifiedCommit": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
+      "dependencies": [
+        "apps/starter/components/setup-journey.tsx",
+        "packages/onboarding/companion-setup.ts",
+        "packages/onboarding/pairing-configuration.ts",
+        "packages/onboarding/preflight-report.ts",
+        "packages/runner/companion-preflight.mjs",
+        "packages/runner/pair.mjs",
+        "packages/runner/config.example.json",
+        "scripts/companion.mjs",
+        "convex/setupJourney.ts",
+        "docs/PERSONAL-VIDEO-GUIDE.md"
+      ],
+      "related": [
+        "getting-started",
+        "first-useful-insight",
+        "processing-and-recovery"
+      ],
+      "assets": []
+    },
+    {
       "slug": "getting-started",
       "title": "Get started with one saved source",
       "summary": "Choose a first task and a processing route without connecting everything at once.",
       "file": "getting-started.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed N5/N6 candidate; prior illustrations retain original versions; native/device and independent walkthrough pending",
+      "lastVerifiedCommit": "58df6ec",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
         "docs/HOSTED-TUTORIAL.md",
         "apps/starter/components/setup-journey.tsx",
         "convex/setupJourney.ts",
-        "packages/onboarding/preflight-report.ts"
+        "packages/onboarding/preflight-report.ts",
+        "packages/onboarding/companion-setup.ts",
+        "apps/starter/components/project-builder-guide.tsx"
       ],
       "related": [
         "first-useful-insight",
         "organize-your-library",
-        "evaluate-an-idea-for-a-project"
+        "evaluate-an-idea-for-a-project",
+        "connect-your-computer"
       ],
       "assets": ["/help/library-tree.png", "/help/save-form.png"]
     },
@@ -83,8 +177,8 @@
       "summary": "Review a permitted source, its processing choice and the evidence behind a ready result.",
       "file": "first-useful-insight.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed October 23 candidate; prior illustrations retain original capture versions; portable runtime and native/live/independent setup pending",
+      "lastVerifiedCommit": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
@@ -92,9 +186,14 @@
         "apps/starter/components/source-acquisition-panel.tsx",
         "apps/starter/components/typed-source-evidence.tsx",
         "convex/sourceAcquisition.ts",
-        "packages/sources/types.ts"
+        "packages/sources/types.ts",
+        "packages/onboarding/companion-setup.ts"
       ],
-      "related": ["getting-started", "processing-and-recovery"],
+      "related": [
+        "getting-started",
+        "processing-and-recovery",
+        "connect-your-computer"
+      ],
       "assets": ["/help/save-form.png", "/help/source-evidence.png"]
     },
     {
@@ -119,13 +218,17 @@
       "summary": "Compare cited knowledge with confirmed project context and retain a private next step.",
       "file": "evaluate-an-idea-for-a-project.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed private text-variant candidate; prior synthetic illustrations retained; new native browser/model/production and independent walkthrough pending",
+      "lastVerifiedCommit": "a0c5044518de131d3e09d9b6c442610a2047fbfc",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
         "docs/HOSTED-TUTORIAL.md",
-        "apps/starter/components/repository-checklist.tsx"
+        "apps/starter/components/repository-checklist.tsx",
+        "apps/starter/components/private-source-analysis.tsx",
+        "apps/starter/components/own-plan-task-controls.tsx",
+        "convex/lib/privateProjectVariant.ts",
+        "packages/contracts/private-project-variant.ts"
       ],
       "related": ["getting-started", "processing-and-recovery"],
       "assets": ["/help/project-draft.png", "/help/no-fit.png"]
@@ -136,8 +239,8 @@
       "summary": "Distinguish waiting work, unavailable accounts, reservations and settled usage.",
       "file": "processing-and-recovery.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed C6b text-only private-result candidate against0c71c98parent and implementationreceipt; actualhost/model/native/production acceptancepending",
+      "lastVerifiedCommit": "0c71c9810484b45786769528f571e0b8fda49e77",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
@@ -147,9 +250,19 @@
         "convex/setupJourney.ts",
         "scripts/companion.mjs",
         "packages/companion/README.md",
-        "apps/starter/components/source-acquisition-panel.tsx"
+        "apps/starter/components/source-acquisition-panel.tsx",
+        "packages/onboarding/companion-setup.ts",
+        "apps/starter/components/own-plan-task-controls.tsx",
+        "convex/localLibraryTasks.ts",
+        "convex/lib/privateEvaluationContext.ts",
+        "packages/contracts/private-evaluation-context.ts",
+        "apps/starter/components/private-source-analysis.tsx",
+        "convex/privateSourceAnalysis.ts",
+        "convex/lib/privateSourceAnalysis.ts",
+        "packages/contracts/private-source-analysis.ts",
+        "packages/runner/local-task-runtime.mjs"
       ],
-      "related": ["getting-started"],
+      "related": ["getting-started", "connect-your-computer"],
       "assets": []
     },
     {
@@ -158,8 +271,8 @@
       "summary": "Preview metadata, inspect duplicates and find export or deletion controls.",
       "file": "imports-and-data.md",
       "status": "approved",
-      "reviewMode": "source-reviewed unreleased candidate; reviewed synthetic illustrations and local browser checks; independent live walkthrough pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed N5/N6 candidate; prior illustrations retain original versions; native/device and independent walkthrough pending",
+      "lastVerifiedCommit": "58df6ec",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
@@ -204,27 +317,6 @@
       "dependencies": [],
       "related": [],
       "assets": []
-    },
-    {
-      "slug": "share-a-post",
-      "title": "Send a post explicitly to VibeScroll",
-      "summary": "Choose VibeScroll explicitly in a supported ChatGPT surface, or copy the link into web Save.",
-      "file": "share-a-post.md",
-      "status": "approved",
-      "reviewMode": "Root source-reviewed compatible release; actual native-device and independent comprehension pending",
-      "lastVerifiedCommit": "d8e97a393fb86fce57ee17d47c0779f02c554cfe",
-      "dependencies": [
-        "apps/starter/components/assistant-connections.tsx",
-        "convex/assistantHttp.ts",
-        "packages/mcp/server.ts",
-        "apps/starter/components/console.tsx"
-      ],
-      "related": [
-        "getting-started",
-        "first-useful-insight",
-        "processing-and-recovery"
-      ],
-      "assets": []
     }
   ],
   "candidateReview": {
@@ -250,5 +342,61 @@
         "reason": "New typed citations preserve the documented current evidence, confirmed context and separate plan/coding approvals."
       }
     ]
+  },
+  "continuationReview": {
+    "date": "2026-10-23",
+    "baseline": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
+    "status": "source-reviewed-candidate",
+    "updated": [
+      "connect-your-computer",
+      "getting-started",
+      "first-useful-insight",
+      "processing-and-recovery"
+    ],
+    "limits": "Ordered pairing/connection/full-check instructions, workspace-safe configuration and serial existing source/assistant dispatch source-reviewed/local-tested. Eight static SSR cases passed; native browser failed before task-tab creation. No actual processing, installation or independent walkthrough. Full portable runtime preparation and project/plan route integration remain pending."
+  },
+  "chapterReview": {
+    "date": "2026-10-23",
+    "baseline": "58df6ec",
+    "status": "source-reviewed-candidate",
+    "updated": [
+      "getting-started",
+      "imports-and-data",
+      "share-a-post",
+      "instagram-export-guide"
+    ],
+    "limits": "Versioned opt-in chapter state and mandatory static/manual education implemented and locally tested. Request intent is self-reported; no import, account, native share target, installation, following or cited result is manufactured. Native-device and live/independent acceptance remain pending."
+  },
+  "workCloudTextReview": {
+    "date": "2026-10-24",
+    "baseline": "5bddde1",
+    "status": "source-reviewed-candidate",
+    "updated": ["work-cloud-text-review", "processing-and-recovery"],
+    "limits": "Default-off text/retained-source handoff only; no hosted/provider call, real video, official-host readiness, browser or independent walkthrough. Current creator digest separates delivery and source progress."
+  },
+  "orderedPreparationReview": {
+    "date": "2026-10-24",
+    "baseline": "30d7218",
+    "status": "source-reviewed-candidate",
+    "updated": ["processing-and-recovery"],
+    "limits": "Eligible newly stamped recovery only under fresh preflight. Inference/transcription not promised free. Native/package tests passed; actual provider, browser and production acceptance pending."
+  },
+  "mediaPreparationReview": {
+    "date": "2026-10-24",
+    "status": "source-reviewed-candidate",
+    "updated": [
+      "product overview media",
+      "setup final caption",
+      "library/social alternatives"
+    ],
+    "unaffectedArticleText": "Existing textual setup/capture/publication instructions remain; new media are edited synthetic captures and not live setup proof. Asset manifest binds exact bytes.",
+    "limits": "Root actual exported-frame review and offline full decodes; native playback/independent acceptance pending."
+  },
+  "privateVariantProjectReview": {
+    "date": "2026-10-24",
+    "baseline": "a0c5044518de131d3e09d9b6c442610a2047fbfc",
+    "status": "source-reviewed-candidate",
+    "updated": ["evaluate-an-idea-for-a-project"],
+    "limits": "Explicit earned private text insight selection through existing project/plan controls only. No media reanalysis, skills or official Cloud claim. Focused tests are separate from native browser, real provider, production and independent acceptance."
   }
 }

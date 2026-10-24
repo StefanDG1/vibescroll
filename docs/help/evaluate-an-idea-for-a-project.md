@@ -16,6 +16,14 @@ Have an inspectable source and permission to connect a destination repository. Y
 6. For a useful result, review a private plan when available. Edit or export it through the plan controls. You can hand it to your preferred agent or keep it for later.
 7. Stop and decide. Accepting an idea or retaining a plan does not approve coding or public publication.
 
+## Use a private text result
+
+In your private Library, open a source's private result. Select the private insights you want to evaluate, then choose **Review selected ideas for projects**. You can select up to twelve ideas. The controls use the actual result version you loaded, not its text pasted into the generic source analysis.
+
+Choose a confirmed project, a compatible connected computer and an available model. Review the selected result version, project and quote before approving. The worker must support private project results. Update and reconnect it if that route is unavailable. Opening or exporting a result starts no processing.
+
+Private project decisions and plans keep their private source version. They do not update shared generic analysis. If the source, rights, selected result or project context changes, review a new quote. Accepting a proposal still does not approve coding or publication. Private text analysis without a project does not require GitHub; evaluating a destination repository needs its connected current context.
+
 ## You have finished when
 
 You can explain the decision with one source reference and current project context, and you have retained the reason or an editable next step.

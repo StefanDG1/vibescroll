@@ -182,7 +182,7 @@ http.route({
         const item = await reader.read();
         if (item.done) break;
         size += item.value.byteLength;
-        if (size > 150000) {
+        if (size > 512 * 1024) {
           await reader.cancel();
           return reply({ error: "Payload too large." }, 413);
         }
@@ -208,6 +208,14 @@ http.route({
         )
       )
         return reply({ error: "Unsupported protocol." }, 400);
+      if (
+        size > 150000 &&
+        !(
+          body.operation === "complete" &&
+          body.args.orderedEvidence !== undefined
+        )
+      )
+        return reply({ error: "Payload too large." }, 413);
       const hash = await crypto.subtle.digest(
         "SHA-256",
         new TextEncoder().encode(token),
@@ -221,11 +229,20 @@ http.route({
         operation: body.operation,
       });
       if (result.job?.media)
-        result.job.media = await ctx.runAction(internal.personalMedia.lease, {
-          credentialHash,
-          id: result.job.id,
-          generation: result.job.generation,
-        });
+        result.job.media =
+          "inputKind" in result.job &&
+          result.job.inputKind === "ordered-personal-v1"
+            ? await ctx.runAction(internal.personalOrderedMedia.lease, {
+                credentialHash,
+                id: result.job.id,
+                generation: result.job.generation,
+                claimToken: result.job.claimToken!,
+              })
+            : await ctx.runAction(internal.personalMedia.lease, {
+                credentialHash,
+                id: result.job.id,
+                generation: result.job.generation,
+              });
       return reply(result);
     } catch {
       return reply(

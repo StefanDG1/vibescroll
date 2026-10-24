@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { backend, api } from "@/lib/backend";
 import { allowedRequestOrigin } from "@/lib/request-origin";
-import { signedObject } from "../../../../../../packages/providers/storage";
+import { signedUploadObject } from "../../../../../../packages/providers/storage";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 export async function POST(req: Request) {
   if (!allowedRequestOrigin(req))
@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   try {
     const { organizationId, size, type } = await req.json();
     const key = `${organizationId}/${randomUUID()}`;
-    const url = signedObject(key, "PUT", 300);
+    const url = signedUploadObject(key, { size, type }, 300);
     await (
       await backend()
     ).mutation(api.assets.grant, {

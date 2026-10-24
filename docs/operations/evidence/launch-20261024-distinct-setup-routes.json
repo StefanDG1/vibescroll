@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T06:54:01.743008+00:00",
+  "baseCommit": "732f4a5d89066ce6267b0bbf70728f43bfa639b6",
+  "mode": "offline existing setup projection/guidance candidate",
+  "verification": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "result": "passed",
+    "totalPassed": 1674,
+    "core": 1408,
+    "auth": 40,
+    "publicUi": 174,
+    "other": 52,
+    "hostedSkipped": 3,
+    "documents": 323,
+    "skillSnapshots": 12,
+    "financeChecks": 17,
+    "lint": "zero warnings/errors",
+    "types": "root/Convex/bothapps passed",
+    "builds": "both passed",
+    "fullLogSha256": "f0b899e67e97c9a86f5be04d10dff57a4be8b62a8f36a193ac203a80e50398e8",
+    "focused": 36,
+    "finalCopyCorrection": "After full pass, root caught missing legacy field falsely rendered unavailable. Three-way labels now show unverified for missing, unavailable only for exact false gate. All17 affected UI cases/lint/format passed; exact-head CI required for final copy.",
+    "browserSupportedHostProduction": "pending, fixtures do not establish execution"
+  },
+  "contract": {
+    "optionalSnapshotField": "workCloudTextState: unavailable|available_unverified",
+    "projection": "existing private-owner status reuses workCloudTextAllowed(actor.subject); no extra reads",
+    "legacy": "missing means availabilityunverified, not knownunavailable",
+    "unchanged": [
+      "local/cloud/save_only savedroutes",
+      "cloudAvailable managed-credit eligibility",
+      "chapter order/actions/completion",
+      "GitHub/skills skips",
+      "required Instagram guide",
+      "source-specific grant/input/task approval"
+    ],
+    "authority": "availabilityonly, no ready/connection/host/media/completed state; no dispatch/polling"
+  },
+  "preservedFailures": [
+    "Two internal-anchor lint warnings fixed with NextLink prefetchfalse, no suppression",
+    "Root requested shorter copy; affectedUI cases rerun",
+    "Root corrected missing optionalfield false unavailable claim after full check; legacy cases cover all3states"
+  ],
+  "runtimeProvenance": {
+    "installation": "cached721reused/0downloaded/scriptsdisabled/lockunchanged, systemNode24.12.0 before portablepatharrived",
+    "checks": "allverifiedportableNode24.22.1 through offlinewrapper; no unnecessaryduplicateinstall"
+  },
+  "release": {
+    "parentPr150Ci": "40070908440 success at732f4a5d89066ce6267b0bbf70728f43bfa639b6",
+    "newTablesQueuesStores": 0,
+    "sdkLockPriceChanges": false,
+    "newProductionConvexCalls": 0,
+    "newProviderJobs": 0,
+    "purchases": 0,
+    "cumulativeCapUSD": 3,
+    "conservativeReservationsUSD": "2.8092885298898517",
+    "unallocatedUSD": "0.1907114701101483",
+    "allUnknownHoldsPreserved": true,
+    "settledInvoice": false,
+    "production": "frontendfba56d4/backendabfdeff67unchanged, fullbackendfiscalproofheld"
+  },
+  "sourceHashes": [
+    {
+      "path": "apps/starter/components/project-builder-guide.tsx",
+      "sha256": "afb87a8a8a8efc4954f8e31f6019bf4734ac0d0460afe5b0e7b96fe7c3d11605"
+    },
+    {
+      "path": "apps/starter/components/setup-journey.tsx",
+      "sha256": "b8c5f9f1debba55c032af9f4ef73c01ca873697160b86b38e15eec96cef9d3de"
+    },
+    {
+      "path": "apps/starter/integration-controls.test.ts",
+      "sha256": "f4f032f7a44355d7c5fd21d8a595f6d6ce7c58c9d10c31ed5800b520e08560ba"
+    },
+    {
+      "path": "convex/setupJourney.ts",
+      "sha256": "39b5c05c69612ac3a570f7a8f44fb9f195fbe4aa5ea526fb9cab7159e8858d6d"
+    },
+    {
+      "path": "packages/onboarding/companion-setup.ts",
+      "sha256": "4623ffda1c6db8fb5997f303f116758d462a4a5a4802dcca21d11644d7a9ad37"
+    },
+    {
+      "path": "tests/companion-setup.test.ts",
+      "sha256": "343c4acc05bef22119e0e4aa28c23b03c724097ed0b52adf80020b350bbde572"
+    },
+    {
+      "path": "tests/setup-journey.test.ts",
+      "sha256": "86bc4e141d56fa61c90addd8940db86a1682599617b3afea27b7cb2400ca2a2a"
+    }
+  ]
+}

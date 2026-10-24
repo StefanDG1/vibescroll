@@ -7,16 +7,63 @@ import {
   type SetupSnapshot,
 } from "../../../packages/onboarding/companion-setup";
 import type { CompanionReport } from "../../../packages/runner/companion-preflight.mjs";
+import {
+  type JourneyAction,
+  type ProjectBuilderJourney,
+  type SkillRecommendation,
+} from "../../../packages/onboarding/project-builder-journey";
+import { ProjectBuilderGuide } from "./project-builder-guide";
+export { ProjectBuilderGuide } from "./project-builder-guide";
 
 export type CompanionSetupProps = {
   snapshot: SetupSnapshot;
   diagnostics?: CompanionReport;
   onAction: (action: SetupAction) => Promise<void> | void;
   disabled?: boolean;
+  journey?: ProjectBuilderJourney | null;
+  onJourneyAction?: (action: JourneyAction) => Promise<void>;
+  onJourneyNavigate?: (view: string) => void;
+  onJourneySave?: () => void;
+  skillRecommendations?: readonly SkillRecommendation[];
+  skillRecommendationStatus?: "ready" | "unavailable" | "needs_context";
+  skillRecommendationExplanation?: string;
+  followingAvailable?: boolean;
 };
+export function CompanionSetup(props: CompanionSetupProps) {
+  if (
+    props.journey &&
+    props.onJourneyAction &&
+    props.onJourneyNavigate &&
+    props.onJourneySave
+  ) {
+    return (
+      <>
+        <ProjectBuilderGuide
+          journey={props.journey}
+          onAction={props.onJourneyAction}
+          onNavigate={props.onJourneyNavigate}
+          onSave={props.onJourneySave}
+          recommendations={props.skillRecommendations ?? []}
+          recommendationStatus={
+            props.skillRecommendationStatus ?? "unavailable"
+          }
+          recommendationExplanation={props.skillRecommendationExplanation}
+          followingAvailable={props.followingAvailable ?? false}
+          disabled={props.disabled}
+          snapshot={props.snapshot}
+        />
+        <details>
+          <summary>Computer readiness and first result</summary>
+          <CompanionReadiness {...props} />
+        </details>
+      </>
+    );
+  }
+  return <CompanionReadiness {...props} />;
+}
 // The parent supplies current saved progress and verified observations. This
 // component never turns a locally selected step into a completed connection.
-export function CompanionSetup({
+function CompanionReadiness({
   snapshot,
   diagnostics,
   onAction,

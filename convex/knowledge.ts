@@ -1,3 +1,8 @@
+import {
+  evaluationReferencesCurrent,
+  variantOrigin,
+} from "./lib/privateProjectVariant";
+import type { PrivateEvaluationOrigin } from "../packages/contracts/private-evaluation-context";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { repositoryContent } from "./lib/repositoryContent";
 import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
@@ -14,6 +19,11 @@ import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { retainedSourceRevision } from "./lib/sourceAuthority";
 import { sourcePolicyCurrent } from "./lib/sourcePolicy";
+import { sharedTypedCitations } from "./lib/sourceCitations";
+import {
+  privateEvaluationTaskCurrent,
+  samePrivateEvaluationOrigin,
+} from "./lib/privateEvaluationContext";
 import { organizeTopicAutomatically } from "./lib/topicHierarchy";
 import {
   assertReferences,
@@ -22,6 +32,7 @@ import {
   synthesis,
   evaluation,
   type Reference,
+  type EvaluationReference,
 } from "../packages/knowledge/contracts";
 const org = { organizationId: v.id("organizations") };
 const month = () => new Date().toISOString().slice(0, 7);
@@ -91,22 +102,34 @@ export async function actorCurrent(
 export async function referencesCurrent(
   ctx: QueryCtx,
   organizationId: Id<"organizations">,
-  refs: Reference[],
-) {
+  refs: EvaluationReference[],
+  origin?: PrivateEvaluationOrigin,
+): Promise<boolean> {
+  if (refs.some((ref) => "schemaVersion" in ref))
+    return (
+      !!variantOrigin(origin) &&
+      evaluationReferencesCurrent(ctx, organizationId, refs, origin)
+    );
   for (const r of refs) {
     const s = await ctx.db.get(r.sourceId as Id<"sources">);
     if (
       !s ||
       s.organizationId !== organizationId ||
       s.state !== "ready" ||
-      !sourceRetained(s.sourceRetentionUntil) ||
+      !sourceRetained(s) ||
       !s.rightsAttested ||
       s.generation !== r.generation ||
       s.updatedAt !== r.revision ||
       !s.analysis?.insights?.some((i: any) => i.id === r.insightId)
     )
       return false;
-    if (
+    if (s.orderedMedia || s.analysis?.schemaVersion === "3.0.0") {
+      try {
+        if (!(await sharedTypedCitations(ctx, s))) return false;
+      } catch {
+        return false;
+      }
+    } else if (
       s.currentRevisionId ||
       ["github_repository", "reddit_thread"].includes(s.sourceType ?? "") ||
       s.analysis?.schemaVersion === "2.0.0"
@@ -245,9 +268,7 @@ export async function syncKnowledge(
     .collect();
   const touched = new Set<Id<"knowledgeTopics">>();
   const points =
-    source.state === "ready" &&
-    source.rightsAttested &&
-    sourceRetained(source.sourceRetentionUntil)
+    source.state === "ready" && source.rightsAttested && sourceRetained(source)
       ? (source.analysis?.insights ?? [])
           .filter((i: any) => typeof i.id === "string")
           .slice(0, 20)
@@ -1217,7 +1238,24 @@ export const evaluationCurrent = async (
   ctx: QueryCtx,
   e: Doc<"knowledgeEvaluations">,
 ) => {
-  const t = await ctx.db.get(e.topicId),
+  if (e.privateEvaluationOrigin) {
+    const run = e.localRunId ? await ctx.db.get(e.localRunId) : null;
+    if (
+      !run?.task ||
+      run.task.workload !== "project_evaluation" ||
+      run.organizationId !== e.organizationId ||
+      run.actor !== e.actor ||
+      e.actor !== e.privateEvaluationOrigin.ownerId ||
+      !samePrivateEvaluationOrigin(
+        e.privateEvaluationOrigin,
+        run.task.privateEvaluationOrigin,
+      ) ||
+      (e.state === "ready" && e.model !== e.privateEvaluationOrigin.model) ||
+      !(await privateEvaluationTaskCurrent(ctx, run))
+    )
+      return false;
+  }
+  const t = e.topicId ? await ctx.db.get(e.topicId) : null,
     r = await ctx.db.get(e.repositoryId);
   const preference = await ctx.db
     .query("improvementPreferences")
@@ -1241,9 +1279,17 @@ export const evaluationCurrent = async (
     r.sha === e.baseSha &&
     r.profileVersion === e.profileVersion &&
     (r.selectionVersion ?? 0) === (e.selectionVersion ?? 0) &&
-    t?.version === e.topicVersion &&
-    !t.redirect &&
-    (await referencesCurrent(ctx, e.organizationId, e.references))
+    (variantOrigin(e.privateEvaluationOrigin)
+      ? e.topicId === undefined &&
+        e.topicVersion === undefined &&
+        !e.topicBindings?.length
+      : !!t && t.version === e.topicVersion && !t.redirect) &&
+    (await referencesCurrent(
+      ctx,
+      e.organizationId,
+      e.references,
+      e.privateEvaluationOrigin,
+    ))
   );
 };
 export const claimEvaluation = internalMutation({
@@ -1251,7 +1297,7 @@ export const claimEvaluation = internalMutation({
   handler: async (ctx, a) => {
     if (!workersEnabled()) return null;
     const e = await ctx.db.get(a.id);
-    if (!e || e.state !== "queued") return null;
+    if (!e || e.state !== "queued" || e.privateEvaluationOrigin) return null;
     if (await running(ctx, "knowledgeEvaluations", e.organizationId))
       return null;
     if (
@@ -1286,6 +1332,7 @@ export const claimEvaluation = internalMutation({
         old._id !== e._id &&
         old.state === "ready" &&
         old.output &&
+        !old.privateEvaluationOrigin &&
         ["rejected", "deferred"].includes(old.decision) &&
         (await referencesCurrent(ctx, e.organizationId, old.references))
       )
@@ -1413,6 +1460,7 @@ export const evaluations = query({
         ctx,
         e.organizationId,
         e.references,
+        e.privateEvaluationOrigin,
       );
       items.push({
         ...e,
@@ -1479,7 +1527,8 @@ export const redactDerived = internalMutation({
     const affected = (proposal: Doc<"proposals">) =>
       proposal.organizationId === a.organizationId &&
       proposal.sourceId === a.sourceId &&
-      proposal.detail?.schemaVersion === "2.0.0" &&
+      (proposal.detail?.schemaVersion === "2.0.0" ||
+        !!variantOrigin(proposal.privateEvaluationOrigin)) &&
       proposal.references?.some(
         (ref) =>
           ref.sourceId === a.sourceId &&

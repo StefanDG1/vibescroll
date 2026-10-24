@@ -18,6 +18,41 @@ import { planInput } from "../packages/contracts";
 import { reserve, settle } from "./product";
 import { validateGeneratedPackageChecks } from "../packages/plans/repository-checks";
 import { improvementCurrent } from "./lib/improvementContext";
+import type { Doc } from "./_generated/dataModel";
+export function validateDraftPlan(
+  raw: unknown,
+  repo: Pick<Doc<"repositories">, "manifest" | "contextExcerpts">,
+  inspectedContext?: any[],
+  inspectionManifest?: any[],
+) {
+  if (inspectedContext)
+    validateInspectedContext(inspectedContext, inspectionManifest ?? []);
+  const plan = planInput.parse(raw);
+  validateGeneratedPackageChecks(
+    plan.tests,
+    inspectedContext ?? repo.contextExcerpts ?? [],
+  );
+  validatePaths(
+    plan.files.map((f) => f.path),
+    plan.files.map((f) => f.path),
+    true,
+  );
+  ensure(
+    !containsSecret(JSON.stringify(plan)) &&
+      plan.files.every(
+        (f) =>
+          safePath(f.path) &&
+          (f.isNew
+            ? !repo.manifest.includes(f.path)
+            : (inspectedContext ?? repo.contextExcerpts)?.some(
+                (e) => e.path === f.path,
+              )),
+      ),
+    "INVALID_EVIDENCE",
+    "A generated plan must use inspected existing files or explicitly new safe paths.",
+  );
+  return plan;
+}
 export const start = mutation({
   args: {
     id: v.id("proposals"),
@@ -65,7 +100,7 @@ export const start = mutation({
     if (proposal.planDraft && proposal.planDraftVersion === proposal.version)
       return { cached: true, proposal, repo, key: "" };
     ensure(
-      !proposal.planDraftKey,
+      !proposal.planDraftKey && !proposal.localPlanRunId,
       "SOURCE_BUSY",
       "A plan draft is already pending. Interrupted usage needs reconciliation.",
     );
@@ -146,34 +181,11 @@ export const finish = internalMutation({
       ["owner", "admin", "member"].includes(membership.role);
     let plan;
     if (a.plan && valid) {
-      if (a.inspectedContext)
-        validateInspectedContext(
-          a.inspectedContext,
-          a.inspectionManifest ?? repo.manifestEntries ?? [],
-        );
-      plan = planInput.parse(a.plan);
-      validateGeneratedPackageChecks(
-        plan.tests,
-        a.inspectedContext ?? repo.contextExcerpts ?? [],
-      );
-      validatePaths(
-        plan.files.map((file) => file.path),
-        plan.files.map((file) => file.path),
-        true,
-      );
-      ensure(
-        !containsSecret(JSON.stringify(plan)) &&
-          plan.files.every(
-            (file) =>
-              safePath(file.path) &&
-              (file.isNew
-                ? !repo.manifest.includes(file.path)
-                : (a.inspectedContext ?? repo.contextExcerpts)?.some(
-                    (excerpt) => excerpt.path === file.path,
-                  )),
-          ),
-        "INVALID_EVIDENCE",
-        "A generated plan must use inspected existing files or explicitly new safe paths.",
+      plan = validateDraftPlan(
+        a.plan,
+        repo,
+        a.inspectedContext,
+        a.inspectionManifest ?? repo.manifestEntries ?? [],
       );
     }
     if (!a.retainReservation)

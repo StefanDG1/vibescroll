@@ -332,6 +332,8 @@ export const candidate = internalQuery({
       const proposal = await ctx.db.get(i.proposalId);
       if (
         !proposal ||
+        proposal.privateEvaluationOrigin ||
+        i.privateEvaluationOrigin ||
         runs.some((r) => r.proposalId === proposal._id) ||
         !(await improvementCurrent(ctx, proposal))
       )
@@ -359,6 +361,7 @@ export const start = internalMutation({
     ensure(
       policy &&
         i &&
+        !i.privateEvaluationOrigin &&
         policy.leaseKey === a.key &&
         (policy.leaseUntil ?? 0) > Date.now() &&
         policy.repositoryId === i.repositoryId &&
@@ -400,7 +403,9 @@ export const start = internalMutation({
     );
     let proposal = await ctx.db.get(i.proposalId);
     ensure(
-      proposal && (await improvementCurrent(ctx, proposal)),
+      proposal &&
+        !proposal.privateEvaluationOrigin &&
+        (await improvementCurrent(ctx, proposal)),
       "APPROVAL_STALE",
       "Evidence changed.",
     );

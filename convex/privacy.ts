@@ -5,6 +5,8 @@ import { v } from "convex/values";
 import { invoiceDeadline } from "../packages/policy";
 import { redactSource } from "./product";
 import { queueDeletion } from "./assets";
+import { sweepExpiredServiceArtifacts } from "./lib/serviceArtifacts";
+import { sweepCreatorRetention } from "./creators";
 export const receipt = internalMutation({
   args: { provider: v.string(), key: v.string() },
   handler: async (ctx, a) => {
@@ -56,6 +58,8 @@ export const sweep = internalMutation({
   args: {},
   handler: async (ctx) => {
     if (process.env.RESTORE_LOCK === "true") return;
+    await sweepExpiredServiceArtifacts(ctx);
+    await sweepCreatorRetention(ctx);
     for (const stage of await ctx.db
       .query("mediaStages")
       .withIndex("by_updated", (q) =>

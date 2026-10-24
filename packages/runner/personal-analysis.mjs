@@ -3,6 +3,14 @@ import { createHash } from "node:crypto";
 import schema from "../../contracts/insight.schema.json" with { type: "json" };
 import typedSchema from "../../contracts/source-insight-v2.schema.json" with { type: "json" };
 import { preparePersonalInput } from "./personal-media.mjs";
+import {
+  readSubscriptionCapabilities,
+  safeEffort,
+  assertSubscriptionInput,
+  assertReportedAllowance,
+} from "./subscription-capabilities.mjs";
+import { checkOrderedAsr } from "./personal-ordered-preflight.mjs";
+import { processPersonalOrderedJob } from "./personal-ordered.mjs";
 
 // Production uses only the verified isolated official client, with no HTTP fallback.
 export class OfficialPersonalClient {
@@ -14,25 +22,23 @@ export class OfficialPersonalClient {
     return { profileBinding: this.official.session.profileBinding };
   }
   async models() {
-    await this.official.check();
-    const catalogue = await this.official.server.models();
-    return (catalogue.data ?? [])
+    const capabilities = await this.capabilities();
+    return capabilities.models
       .filter((entry) =>
-        entry.supportedReasoningEfforts?.some((level) =>
-          ["low", "medium", "high"].includes(level.reasoningEffort),
+        entry.reasoningEfforts.some((effort) =>
+          ["low", "medium", "high"].includes(effort),
         ),
       )
-      .map((entry) => ({
-        slug: entry.model ?? entry.id,
-        displayName: entry.displayName ?? entry.model ?? entry.id,
-      }))
-      .filter(
-        (entry) =>
-          /^[a-zA-Z0-9_.:-]{1,100}$/.test(entry.slug ?? "") &&
-          typeof entry.displayName === "string" &&
-          entry.displayName.length <= 120,
-      )
-      .slice(0, 50);
+      .map(({ slug, displayName }) => ({ slug, displayName }));
+  }
+  async capabilities() {
+    if (this.official.capabilities) return this.official.capabilities();
+    await this.official.check();
+    const capabilities = await readSubscriptionCapabilities(
+      this.official.server,
+    );
+    await this.official.check();
+    return capabilities;
   }
   async respond(options) {
     const result = await this.official.structured(
@@ -46,6 +52,27 @@ export class OfficialPersonalClient {
       },
     );
     return { text: JSON.stringify(result.output) };
+  }
+  async preflight({ model, effort, needsAudio, asr, signal }) {
+    signal?.throwIfAborted();
+    const status = await this.status(),
+      capabilities = await this.capabilities();
+    assertSubscriptionInput(capabilities, model, effort, {}, []);
+    if (
+      !capabilities.models
+        .find((entry) => entry.slug === model)
+        ?.inputModalities.includes("image")
+    )
+      throw Error("PERSONAL_MODALITY_UNAVAILABLE");
+    assertReportedAllowance(
+      await this.official.server.request("account/rateLimits/read"),
+    );
+    const localAsrReady = needsAudio
+      ? await checkOrderedAsr(asr, signal)
+      : true;
+    await this.official.check();
+    signal?.throwIfAborted();
+    return { ...status, capabilities, localAsrReady };
   }
 }
 function sourceRegistry(job) {
@@ -111,8 +138,25 @@ function sourceRegistry(job) {
 
 export async function processPersonalJob(
   job,
-  { client, request, signal, asr, prepareInput = preparePersonalInput },
+  {
+    client,
+    request,
+    signal,
+    asr,
+    prepareInput = preparePersonalInput,
+    fetchImpl,
+    transcribe,
+  },
 ) {
+  if (job?.inputKind === "ordered-personal-v1")
+    return processPersonalOrderedJob(job, {
+      client,
+      request,
+      signal,
+      asr,
+      fetchImpl,
+      transcribe,
+    });
   const registry = sourceRegistry(job);
   if (
     !job ||
@@ -129,7 +173,10 @@ export async function processPersonalJob(
           job.text.length > 60000 ||
           job.coverage !== "caption_only") ||
     !/^[a-zA-Z0-9_.:-]{1,100}$/.test(job.model ?? "") ||
-    !["low", "medium", "high"].includes(job.effort) ||
+    !safeEffort(job.effort) ||
+    (!job.capabilityHash && !["low", "medium", "high"].includes(job.effort)) ||
+    (job.capabilityHash !== undefined &&
+      !/^[a-f0-9]{64}$/.test(job.capabilityHash)) ||
     !Number.isFinite(job.deadline) ||
     job.deadline <= Date.now() ||
     job.deadline > Date.now() + (job.media ? 905000 : 185000)
@@ -152,10 +199,29 @@ export async function processPersonalJob(
   const reference = { id: job.id, generation: job.generation };
   let timer,
     stopped = false,
-    stage = "lease";
+    stage = "lease",
+    capabilityReadAt = 0;
   async function heartbeat() {
     try {
-      const status = await request("heartbeat", reference);
+      let capabilities;
+      if (job.capabilityHash && Date.now() - capabilityReadAt >= 60000) {
+        if (typeof client.capabilities !== "function")
+          throw Error("PERSONAL_CAPABILITIES_UNAVAILABLE");
+        capabilities = await client.capabilities();
+        assertSubscriptionInput(capabilities, job.model, job.effort, {}, []);
+        if (
+          job.media?.frames?.length &&
+          !capabilities.models
+            .find((model) => model.slug === job.model)
+            ?.inputModalities.includes("image")
+        )
+          throw Error("PERSONAL_CAPABILITIES_UNAVAILABLE");
+        capabilityReadAt = Date.now();
+      }
+      const status = await request("heartbeat", {
+        ...reference,
+        ...(capabilities ? { capabilities } : {}),
+      });
       if (status.valid !== true || status.deadline !== job.deadline)
         throw new Error("PERSONAL_LEASE_INVALID");
       if (!stopped) timer = setTimeout(heartbeat, 10000);
@@ -168,6 +234,7 @@ export async function processPersonalJob(
     combined.throwIfAborted();
     stage = "profile";
     const status = await client.status();
+    combined.throwIfAborted();
     const profileId = status.activeProfileId;
     if (
       (status.profileBinding ??
@@ -238,8 +305,15 @@ export async function processPersonalJob(
       }))
         outputSchema.properties[field] = { type: "string", const: value };
     }
-    if (mediaInput)
-      await request("heartbeat", { ...reference, stage: "analyzing" });
+    if (mediaInput) {
+      const lease = await request("heartbeat", {
+        ...reference,
+        stage: "analyzing",
+      });
+      if (lease.valid !== true || lease.deadline !== job.deadline)
+        throw new Error("PERSONAL_LEASE_INVALID");
+    }
+    combined.throwIfAborted();
     const response = await client.respond({
       model: job.model,
       reasoningEffort: job.effort,

@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-23T19:33:00Z",
+  "applicationTreeCommit": "786fb25c7581c7cdf0bf2169da31c910630828d4",
+  "parentCommit": "d4d8e4a0dab45a913c9770f2c825cd8124042f48",
+  "branch": "codex/launch-20261022-ordered-files-20261023",
+  "pullRequest": "https://github.com/StefanDG1/vibescroll/pull/135",
+  "exactHeadCi": {
+    "verifiedHead": "7dde7c3b666896ad96ea7e485ae1c939ac6aaba9",
+    "runId": 40012550698,
+    "result": "success",
+    "scope": "Application plus initial receipts. Later documentation clarification head must get its own result."
+  },
+  "environment": "Local Windows, project Node 24.22.1, pnpm 12.3.4, Python 3.14.0 test interpreter, credential-free checkout and offline Node network guard",
+  "command": "node scripts/run-offline.mjs pnpm check",
+  "result": "passed",
+  "timing": "2026-10-23 19:29-19:31 UTC; checks ran before committing the application tree. Later receipt/report-only changes receive scoped validation. Exact-head hosted CI remains separate.",
+  "tests": {
+    "passed": 1401,
+    "hostedSkipped": 3,
+    "main": 1225,
+    "auth": 38,
+    "webHandlers": 86,
+    "installer": 14,
+    "python": 33,
+    "buildPolicy": 5
+  },
+  "checks": {
+    "documents": 296,
+    "skillSnapshots": 12,
+    "lintWarnings": 0,
+    "lintErrors": 0,
+    "types": "passed, root/Convex/workspaces",
+    "offlineConvexBundle": "passed as part of main suite",
+    "productionBuilds": "marketing and starter passed",
+    "warnings": "Two filesystem tracing build warnings and Node stripTypeScriptTypes experimental warning retained",
+    "dependencyAudit": {
+      "observedAt": "2026-10-23T19:29:05.640Z",
+      "passed": true,
+      "registryCounts": {
+        "critical": 0,
+        "high": 0,
+        "moderate": 0,
+        "low": 0,
+        "info": 0
+      },
+      "unresolved": 0,
+      "limitation": "Current registry response does not establish an upstream fix for a previously reported advisory; existing local patch and security history remain."
+    },
+    "secretScan": "Gitleaks 8.30.1 default staged scan, 294539 bytes, no leaks; later receipt-only changes receive a delta scan"
+  },
+  "review": {
+    "root": "integration and supplied-media authority/lifecycle/UI review",
+    "independent": "GPT-6.1 Sol High ordered lifecycle/cancellation and ASR runtime reviewers",
+    "corrections": [
+      "Release exact undispatched preparation holds on revoked or expired authority; preserve dispatched unknown holds",
+      "Single-flight active preparation authority checks every ten seconds, at most thirty, abort pending decoder and terminate only its owned VM",
+      "Quarantine revokes supplied-upload rights and raw/prepared bindings; legacy capture cannot rebind a retired or ordered asset",
+      "Automatic capture selects an actually advertised model/effort, resets consent and rechecks expiry at submission",
+      "Each ASR job verifies committed model revision/hashes/sizes, bounded metadata, safe paths and supported runtime",
+      "Reconcile unified candidate worker instructions with retained serving-version difference"
+    ]
+  },
+  "browser": {
+    "scope": "Actual hydrated OrderedFileUpload component with synthetic credential-free loopback responses",
+    "cases": [
+      "320 light keyboard reorder/remove",
+      "390 dark partial retry",
+      "1440 light lost-save acknowledgement",
+      "1440 dark keyboard save"
+    ],
+    "observations": "Actual File PUTs, size/MIME/hash/order, completed-upload reuse, one saved source on lost acknowledgement, no overflow/browser errors, enabled controls at least 44.273px",
+    "screenshots": [
+      {
+        "path": "launch-20261023-synthetic-ordered-upload-mobile.png",
+        "sha256": "09304ac8dcf09520c518b3f591c4af8fd834e248862a2bcb7c4220a29234618a"
+      },
+      {
+        "path": "launch-20261023-synthetic-ordered-upload-retry.png",
+        "sha256": "3bcf2940217cc0b568de7314610b12545b5549cb9e0521b3f8abe7914c2ea95d"
+      }
+    ],
+    "limitations": "System font/raw application CSS and minimal fixture frame, not full compiled authenticated Console. Synthetic 24-byte MP4 is not playable. No live R2, Convex, supplier, model or decode acceptance. Success callback observed but fixture remains mounted.",
+    "cleanup": "Owned review tab blanked and owned local server stopped after executable/command verification; unrelated tabs/workers preserved"
+  },
+  "failedAttemptsRetained": [
+    "First check stopped at lint on render-time clock use and a semantic status element; state-timed UI and event-only expiry validation corrected, semantic output used",
+    "Second lint attempt still identified inline event clock propagation; submission-only helper now separates it from render state",
+    "First complete test attempt returned 1223 passes, two failures and three skips: exact AI-preference shape lacked the new default-off flag, and unchanged companion UI cold import exceeded five seconds",
+    "Exact default-off field assertion corrected; complete default-two-worker rerun passed without timeout changes",
+    "Reviewer initially reproduced missing cancellation with default-five-second timeouts, then passed 108 scoped cases at default timeout",
+    "Earlier focused 20-second diagnostic and cold import failure remain diagnostic only, superseded by unchanged default-timeout passing runs"
+  ],
+  "budget": {
+    "cumulativeCapUsd": 2,
+    "conservativelyRetainedUsd": 1.6792885298898517,
+    "unallocatedUsd": 0.32071147011014833,
+    "unknownBackendHoldUsd": 0.3,
+    "holdReleased": false,
+    "newModelSupplierJobs": 0,
+    "newDeployments": 0,
+    "newHostedPaidWorkUsd": 0,
+    "basis": "Conservative root ledger, not settled invoice. GitHub public-repository standard CI and deployment metadata inspection use no project paid gateway. No complete new rollout/canary bound."
+  },
+  "remaining": [
+    "Supplier selection, permitted media acquisition bridge and full collection/reuse/cost evidence",
+    "Compatible artifact attachment on delivery and explicit recurring processing grants",
+    "Ordered preparation cache reuse on retry",
+    "Complete immutable Python environment/bootstrap and portable image builder",
+    "Exact-head CI, funded compatible backend/frontend rollout and current live source/project/plan canaries",
+    "Provider permission, real devices, independent users, maintained signed distribution and original acceptance"
+  ],
+  "production": false,
+  "independentHumanAcceptance": false,
+  "completeProduct": false
+}

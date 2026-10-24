@@ -2,6 +2,8 @@
 
 Status: draft for owner review. [Original issue](https://github.com/StefanDG1/vibescroll/issues/118). Baseline and common checks are in the [review index](README.md).
 
+October 23 owner update: release GitHub first and Reddit later. [ADR 117](../../adr/117-github-first-and-complete-own-subscription-workflows.md) and the [completion plan](../../launch-plan/2026-10-23/README.md) supersede the joint-release condition below. Preserve all independent Reddit permission, dedicated access, currentness and retention/deletion requirements. The October 22 paragraph remains historical.
+
 ## Outcome
 
 A user can save a public GitHub repository or Reddit discussion as a private knowledge source, inspect exactly which text was retrieved or supplied, and approve extraction. Every resulting idea retains file/excerpt or comment citations. Project evaluation remains an explicit choice against current selected projects. Saving a source never grants repository write access or permission to spend.

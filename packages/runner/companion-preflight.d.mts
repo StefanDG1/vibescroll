@@ -7,6 +7,7 @@ export type CompanionReport = {
   version: number;
   kind: string;
   readyForLocalStart: boolean;
+  readyToConnect: boolean;
   processingReady: string;
   checks: CompanionCheck[];
   limits: string[];
@@ -22,6 +23,8 @@ export function companionPreflight(observed: {
   codexImagePresent?: boolean;
   pythonPresent?: boolean;
   asrModelPresent?: boolean;
+  asrRuntimeVerified?: boolean;
+  asrModelVerified?: boolean;
   savedConnectionPresent?: boolean;
   freeBytes?: number;
 }): CompanionReport;

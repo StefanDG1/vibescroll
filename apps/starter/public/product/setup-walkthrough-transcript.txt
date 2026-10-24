@@ -1,5 +1,7 @@
 VibeScroll setup walkthrough
 
+Caption band corrected October 24, 2026. The final screen is accurately labelled a private issue draft. Original native UI sequence and 90-second timing are preserved; H.264 re-encoding changes compression pixels. Independent setup acceptance remains pending.
+
 Edited native screen captures of candidate 76ec7bf0b9812e670207cba199b8d07cc07839fd. Synthetic data. Silent captions; no processing, sign-in, pairing or successful sample run. Waiting is an explicitly labelled fixture. Frames are reordered for explanation; durations are editorial holds, not measured processing time.
 
 00:00:00.000 Start with one permitted source. GitHub is optional. This guide shows candidate Help and synthetic UI.
@@ -26,5 +28,5 @@ Screen: /help/processing-and-recovery
 00:01:10.000 An estimate, a reservation and settled usage are different. Check the existing source before retrying uncertain work.
 Screen: /help/processing-and-recovery
 
-00:01:20.000 Inspect a retained private plan. Coding and publication need separate approval. Try the written guide; independent setup acceptance is still pending.
+00:01:20.000 Inspect a private issue draft. Coding and publication need separate approval. Try the written guide; independent setup acceptance is still pending.
 Screen: /demo?view=projects&proposal=demo-proposal-draft

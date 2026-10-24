@@ -4,11 +4,17 @@ import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
 import { assistantIssuer } from "../packages/policy/assistant";
 import {
+  cloudCompletionEnvelope,
+  parseWorkCloudResult,
+  workCloudTextOperations,
+} from "../packages/contracts/work-cloud-text";
+import {
   readAssistantBody,
   validateAssistantUserinfo,
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  ...workCloudTextOperations,
   z
     .object({
       operation: z.literal("draft_project_suggestion"),
@@ -135,7 +141,11 @@ export const tools = httpAction(async (ctx, request) => {
       .get("authorization")
       ?.match(/^Bearer ([A-Za-z0-9._~-]{20,16384})$/)?.[1];
     if (!bearer || process.env.MCP_ENABLED !== "true") return deny(401);
-    const input = operations.parse(await readAssistantBody(request, 8192));
+    const input = operations.parse(
+      await readAssistantBody(request, 262144, (value) =>
+        cloudCompletionEnvelope(value) ? 262144 : 8192,
+      ),
+    );
     const expected = await ctx.runMutation(internal.assistant.throttle, {});
     const issuer = assistantIssuer(process.env.MCP_AUTH_ISSUER);
     if (!issuer || issuer !== expected.issuer) return deny(401);
@@ -162,6 +172,36 @@ export const tools = httpAction(async (ctx, request) => {
         : undefined;
     let value: unknown;
     switch (input.operation) {
+      case "work_cloud_input":
+        value = await ctx.runQuery(internal.workCloudAnalysis.input, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "work_cloud_claim":
+      case "work_cloud_heartbeat":
+      case "work_cloud_fail":
+        value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+          operation:
+            input.operation === "work_cloud_claim"
+              ? "claim"
+              : input.operation === "work_cloud_heartbeat"
+                ? "heartbeat"
+                : "fail",
+        });
+        break;
+      case "work_cloud_complete": {
+        const { resultJson, ...args } = input.args;
+        value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+          ...args,
+          sourceId: args.sourceId as Id<"sources">,
+          operation: "complete",
+          output: parseWorkCloudResult(resultJson),
+        });
+        break;
+      }
       case "draft_project_suggestion":
         value = await ctx.runMutation(
           internal.assistant.draftProjectSuggestion,

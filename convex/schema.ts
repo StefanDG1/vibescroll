@@ -1,4 +1,5 @@
 import { assistantTables } from "./assistantSchema";
+import { creatorTables } from "./creatorSchema";
 import { librarySpacesTables } from "./librarySpacesSchema";
 import { productTables } from "./productSchema";
 import { knowledgeTables } from "./knowledgeSchema";
@@ -11,6 +12,10 @@ import { sourceTables } from "./sourceSchema";
 import { pilotPaymentTables } from "./pilotPaymentSchema";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import {
+  paidAllowanceValue,
+  checkoutAllowanceValue,
+} from "../packages/billing/allowance-policy";
 export const role = v.union(
   v.literal("owner"),
   v.literal("admin"),
@@ -19,6 +24,7 @@ export const role = v.union(
 );
 export default defineSchema({
   ...assistantTables,
+  ...creatorTables,
   ...librarySpacesTables,
   ...productTables,
   ...knowledgeTables,
@@ -88,6 +94,8 @@ export default defineSchema({
     checkoutKey: v.optional(v.string()),
     checkoutIntent: v.optional(v.string()),
     checkoutExpires: v.optional(v.number()),
+    checkoutAllowance: v.optional(checkoutAllowanceValue),
+    paidAllowance: v.optional(paidAllowanceValue),
   })
     .index("by_org", ["organizationId"])
     .index("by_customer", ["customerId"]),

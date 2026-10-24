@@ -8,6 +8,16 @@ import { settle } from "./product";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { personalAllowed } from "./lib/personalAccess";
+import { sourceRetained } from "./lib/sourceAuthority";
+import { sourceCapabilityCurrent } from "./personalAnalysis";
+import { pairedPersonalJob } from "./personalAnalysisSchema";
+import {
+  personalPreparationInput,
+  personalPreparationInputBinding,
+  personalPreparationBinding,
+  personalPreparationPipeline,
+} from "./lib/personalPreparation";
+import { creationProvenanceCurrent } from "../packages/providers/preparation-runtime";
 import {
   acquisitionManifest,
   acquisitionMessage,
@@ -21,9 +31,12 @@ async function current(
     j = s?.personalAnalysis;
   if (
     !s ||
+    !s.rightsAttested ||
+    !sourceRetained(s) ||
     s.state !== "processing" ||
     s.generation !== a.generation ||
-    j?.state !== "preparing" ||
+    !pairedPersonalJob(j) ||
+    j.state !== "preparing" ||
     j.expiresAt <= Date.now()
   )
     return null;
@@ -46,6 +59,14 @@ async function current(
     device.owner !== j.actor ||
     device.organizationId !== s.organizationId ||
     device.personalProfileBinding !== j.profileBinding ||
+    !sourceCapabilityCurrent(
+      device,
+      j.model,
+      j.effort,
+      j.profileBinding,
+      true,
+      j.capabilityHash,
+    ) ||
     process.env.RESTORE_LOCK === "true"
   )
     return null;
@@ -54,6 +75,28 @@ async function current(
 export const pending = internalQuery({
   args: { id: v.id("sources"), generation: v.number() },
   handler: current,
+});
+export const inputSnapshot = internalQuery({
+  args: { id: v.id("sources"), generation: v.number() },
+  handler: async (ctx, a) => {
+    const source = await current(ctx, a);
+    if (!source) return null;
+    const input = await personalPreparationInput(ctx, source);
+    if (!input) return null;
+    const runtime = await personalPreparationPipeline(ctx);
+    return {
+      source,
+      inputBinding: await personalPreparationInputBinding(input),
+      cacheBinding: await personalPreparationBinding(source, input, runtime),
+      runtime,
+      expiresAt: Math.min(
+        Date.now() + 3600000,
+        input.raw?.expiresAt ?? Infinity,
+        source.sourceRetentionUntil ?? Infinity,
+        runtime?.route === "broker" ? runtime.authority.expiresAt : Infinity,
+      ),
+    };
+  },
 });
 export async function releaseUnstarted(
   ctx: MutationCtx,
@@ -75,7 +118,7 @@ export const begin = internalMutation({
   args: { id: v.id("sources"), generation: v.number() },
   handler: async (ctx, a) => {
     const source = await current(ctx, a);
-    if (!source) {
+    if (!source || !(await personalPreparationInput(ctx, source))) {
       const old = await ctx.db.get(a.id);
       if (old)
         await releaseUnstarted(ctx, old.organizationId, a.id, a.generation);
@@ -106,6 +149,7 @@ export const finish = internalMutation({
     computeCredits: v.optional(v.number()),
     media: v.optional(v.any()),
     acquisition: v.optional(v.any()),
+    inputBinding: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
     // Settle the independently reserved compute even if cancellation changed the source generation.
@@ -136,6 +180,55 @@ export const finish = internalMutation({
         updatedAt: Date.now(),
       });
       return false;
+    }
+    if (a.media && (a.inputBinding || a.media.preparation)) {
+      const input = await personalPreparationInput(ctx, s);
+      const inputBinding =
+        input && (await personalPreparationInputBinding(input));
+      const stamp = a.media.preparation;
+      const runtime = await personalPreparationPipeline(ctx);
+      const cacheBinding =
+        input && (await personalPreparationBinding(s, input, runtime));
+      if (
+        !input ||
+        (a.inputBinding && a.inputBinding !== inputBinding) ||
+        (stamp &&
+          (!cacheBinding ||
+            !runtime ||
+            !creationProvenanceCurrent(stamp.creationProvenance, runtime) ||
+            stamp.inputBinding !== inputBinding ||
+            stamp.binding !== cacheBinding ||
+            stamp.generation !== a.generation ||
+            stamp.version !== "personal-preparation-v1" ||
+            !Number.isSafeInteger(stamp.preparedAt) ||
+            stamp.preparedAt > Date.now() ||
+            !Number.isSafeInteger(stamp.expiresAt) ||
+            stamp.expiresAt <= Date.now() ||
+            stamp.expiresAt >
+              Math.min(
+                stamp.preparedAt + 3600000,
+                input.raw?.expiresAt ?? Infinity,
+                s.sourceRetentionUntil ?? Infinity,
+                runtime?.route === "broker"
+                  ? runtime.authority.expiresAt
+                  : Infinity,
+              )))
+      ) {
+        await settle(
+          ctx,
+          a.organizationId,
+          `source:${a.id}:${a.generation}`,
+          0,
+        );
+        await ctx.db.patch(a.id, {
+          state: "failed",
+          personalAnalysis: { ...j, state: "failed" },
+          error:
+            "The original media or preparation pipeline changed. Review the source before retrying.",
+          updatedAt: Date.now(),
+        });
+        return false;
+      }
     }
     const acquisition = a.acquisition
       ? acquisitionManifest.parse(a.acquisition)
@@ -203,6 +296,7 @@ export const expire = internalMutation({
       j.expiresAt > Date.now()
     )
       return;
+    await releaseUnstarted(ctx, s.organizationId, s._id, a.generation);
     await settle(ctx, s.organizationId, `source:${s._id}:${a.generation}`, 0);
     await ctx.db.patch(s._id, {
       state: "failed",

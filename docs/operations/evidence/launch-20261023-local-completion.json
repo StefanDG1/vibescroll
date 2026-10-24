@@ -1,0 +1,118 @@
+{
+  "observedAt": "2026-10-22T23:10:38Z",
+  "environment": "Local Windows checkout, Node 24.22.1, pnpm 12.3.4; offline network guard and no live credentials",
+  "applicationTreeCommit": "58df6ec803de816fe99d9c1b85a3cf3707fc55bc",
+  "executionTiming": "Checks ran against the working application tree immediately before its commit; local embedded build version reflects the preceding commit. Exact final-head CI is a separate required observation.",
+  "command": "node scripts/run-offline.mjs pnpm check",
+  "result": "passed",
+  "tests": {
+    "passed": 1001,
+    "hostedSkipped": 3,
+    "main": 901,
+    "auth": 35,
+    "webHandlers": 31,
+    "installer": 14,
+    "python": 15,
+    "buildPolicy": 5
+  },
+  "validation": {
+    "documents": 289,
+    "skillSnapshots": 12,
+    "lintWarnings": 0,
+    "lintErrors": 0,
+    "allTypechecks": "passed",
+    "marketingBuild": "passed",
+    "starterBuild": "passed"
+  },
+  "officialOfflineConvexBundler": {
+    "observedAt": "2026-10-22T22:55:21.805Z",
+    "isolate": {
+      "entryPoints": 104,
+      "modules": 171,
+      "externalDependencies": 0
+    },
+    "node": { "entryPoints": 26, "modules": 102, "externalDependencies": 0 },
+    "networkGuard": true,
+    "deployed": false,
+    "generatedCodeWritten": false
+  },
+  "dependencyAudit": {
+    "observedAt": "2026-10-22T22:50:52.538Z",
+    "passed": true,
+    "critical": 0,
+    "moderate": 0,
+    "high": 1,
+    "locallyMitigated": ["GHSA-vfj7-8cjw-p6xm"],
+    "unresolved": 0
+  },
+  "review": {
+    "providerCapabilitySetup": "No actionable P0/P1 found through 675a367",
+    "workerUncertaintyP1": "Lost official turn-start acknowledgement could permit subsequent dispatch; fixed with permanent halt and own-controller teardown",
+    "reReview": "P1 resolved at 58df6ec; no new actionable regression",
+    "newLiveCalls": 0
+  },
+  "staticRendering": {
+    "component": "Actual CompanionSetup with synthetic snapshots and real CSS",
+    "casesPassed": 8,
+    "nativeBrowserPass": false
+  },
+  "nativeBrowser": {
+    "status": "blocked",
+    "error": "cdp_disconnected before task-tab creation",
+    "casesExecuted": 0,
+    "screenshots": [],
+    "daemonOrChromeRestarted": false,
+    "taskTabCreated": false,
+    "ownLoopbackServerStopped": true,
+    "pending": [
+      "390/1440 theme/layout and overflow",
+      "keyboard/focus",
+      "reduced motion",
+      "hydrated setup/configuration download"
+    ]
+  },
+  "retainedFailures": [
+    {
+      "scope": "Initial 13-suite targeted run",
+      "result": "130 passed, one supplied-text test timed out at five seconds",
+      "followup": "Its isolated nine-test suite passed; subsequent full checks passed"
+    },
+    {
+      "scope": "First final integrated attempt",
+      "result": "Old renderer expectation omitted the newly required path quotes",
+      "followup": "Expectation updated to quoted commands and a workspace-configuration regression added; 31 web-handler tests and the final full sequence passed"
+    },
+    {
+      "scope": "Whole-repository prettier check",
+      "result": "56 files failed formatting; none changed from main d8e97a3",
+      "followup": "Unrelated files preserved; changed-file formatting passed"
+    }
+  ],
+  "budget": {
+    "originalCumulativeCapUSD": 2,
+    "conservativeRetainedUSD": 1.6792885298898517,
+    "unallocatedUSD": 0.32071147011014833,
+    "unknownBackendEnvelopeRetainedUSD": 0.3,
+    "newConvexCalls": 0,
+    "newModelOrSupplierJobs": 0,
+    "newDeployments": 0,
+    "hostedFlagsChanged": false,
+    "settledInvoice": false,
+    "storageHorizon": "Prior one-month allowance retained, not indefinite operating funding"
+  },
+  "planningOnly": [
+    "N0-N7 creator discovery and ordered-media/shared-analysis additions",
+    "new chapter/skill/sharing/export-guide orchestration"
+  ],
+  "remaining": [
+    "R2 moderation and supplied-public-reference fixes",
+    "complete workload/server capability policy",
+    "R5 own-plan project/proposal/plan production",
+    "R6 preparation retry reuse and cancellation",
+    "R12 complete portable runtime preparation",
+    "assistant in-flight authority renewal",
+    "budget-bounded deployment and real production scenarios",
+    "provider, signing, payment and independent observations",
+    "exact final-head CI"
+  ]
+}

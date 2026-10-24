@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T04:41:34.551690+00:00",
+  "baseCommit": "9c255147eeddcdf6e42cda1e706a5aef9b897f06",
+  "currentParent": "69dc5775506cbd2a22dbe7113cd3446865dfe89b",
+  "mode": "Offline ordered preparation reuse; no runtime/provider activation",
+  "contract": {
+    "stamp": "optional personal-ordered-preparation-v1; old unstamped rows never blessed",
+    "immutable": "original creation receipt, preparation generation, preparedAt/expiry and stable input/pipeline bindings",
+    "bindings": "same source/org, ordered input/metadata, raw and prepared asset IDs/keys/ETags/hashes/sizes/types/expiry, rights/retention and current actual runtime/decoder policy",
+    "ledger": "complete source-specific prefix up to100 rows; any nonsettled/missing origin dispatched+settled proof or active prior device blocks retry",
+    "approval": "fresh explicit own-plan model/effort/capability/ASR preflight required; new inference not free",
+    "rebase": "execution/sourceGeneration and live input/prepared hashes only; original provenance/expiry never extended",
+    "unknown": "no automatic retry; canceled, unknown and mismatched generations excluded",
+    "compatibility": "ordinary unstamped behavior preserved; pure shared preparation contract moved with old-path facade; provider-path package allowlist unchanged"
+  },
+  "verification": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "testedBase": "9c255147eeddcdf6e42cda1e706a5aef9b897f06",
+    "startedAtUtc": "2026-10-24T04:21:34.4737669Z",
+    "finishedAtUtc": "2026-10-24T04:24:29.0662415Z",
+    "fullLogSha256": "7ea42fd72adcf4bed8b5b0d185d4c68e4a5d170008ccfb6cb86d90d788402573",
+    "result": "passed",
+    "documents": 314,
+    "skillSnapshots": 12,
+    "lint": "zero warnings/errors",
+    "types": ["root", "convex", "starter", "marketing"],
+    "totalPassed": 1533,
+    "hostedSkipped": 3,
+    "unitIntegration": 1319,
+    "authApi": 38,
+    "publicUi": 124,
+    "nativePackaging": 14,
+    "python": 33,
+    "buildPolicy": 5,
+    "builds": "both production builds passed",
+    "focusedReuseProviderService": 69,
+    "nativeFocused": 5,
+    "parentForward": "After this full check the branch fast-forwarded to separately tested parent69dc577/PR145 without changing any ordered code. Exact combined-head CI remains required.",
+    "nativeBrowser": "pending"
+  },
+  "review": {
+    "root": "Reviewed all contract/authority/producer/generation/native graph changes; no P1 remaining",
+    "fixed": [
+      "Native .ts extension required by real runner",
+      "Move pure shared validator rather than weaken provider module exclusion",
+      "Unknown/expired/released cost rows fail closed; no active-only assumption"
+    ]
+  },
+  "preservedFailures": [
+    "New fixture union narrowing type error corrected",
+    "Native import failed at extensionless shared import; explicit .ts fixes it",
+    "Two packaged runtime graph tests rejected provider path; pure module moved into existing contracts owner; unchanged allowlist and actual extracted-import tests pass"
+  ],
+  "diagnostics": [
+    "Scheduled deletion fixtures: STORAGE_UNAVAILABLE before storage dispatch",
+    "Bounded media/repository refusal diagnostics",
+    "Node experimental stripTypeScriptTypes warning",
+    "Two Turbopack filesystem tracing warnings in unchanged apps/starter/lib/help-content.ts:36 and :37"
+  ],
+  "budget": {
+    "sameCumulativeCapUsd": "3",
+    "combinedReservationsUsd": "2.8092885298898517",
+    "unallocatedUsd": "0.1907114701101483",
+    "newProductionConvexCalls": 0,
+    "newProviderJobs": 0,
+    "newPurchases": 0,
+    "allUnknownHoldsRetained": true,
+    "settledInvoice": false
+  },
+  "release": {
+    "deployed": false,
+    "flagsUnchanged": true,
+    "remaining": "Actual signed/native installation and provider/runtime acceptance, canceled/unknown recovery, Cloud/media/creator/offer/independent full scope and bounded production release remain."
+  },
+  "candidateSourceSha256": [
+    {
+      "path": "convex/lib/personalOrdered.ts",
+      "sha256": "1cc22007f94892ad584e70c30915a32546d141f63ca66fc40a5602afbea25aa0"
+    },
+    {
+      "path": "convex/personalAnalysis.ts",
+      "sha256": "5b533a46f0cb63596af90853403268d8ff0323d6df1d10434aa01d63c9a4e052"
+    },
+    {
+      "path": "convex/personalOrderedMedia.ts",
+      "sha256": "9cb93b13d22afbcc50e472401c6221d7c8b0e3e48645033a00a86a995e486ed8"
+    },
+    {
+      "path": "convex/personalOrderedMediaState.ts",
+      "sha256": "6c4e2854436969e2538d28c16483076ceb78e2081d3ca14ee546000e565511c6"
+    },
+    {
+      "path": "packages/contracts/preparation-runtime.ts",
+      "sha256": "db553bc475821f6b2208fd934641437c0eff2ed99955785592beda0aca3fa4b3"
+    },
+    {
+      "path": "packages/media/personal-ordered.ts",
+      "sha256": "480e7fd3a2f19f77840a95c69cdbef0d83acf166a8349c275af508d8626c8304"
+    },
+    {
+      "path": "packages/providers/ordered-media.ts",
+      "sha256": "9cc3f861a0a9f2036e07018d39278925670cf8075087e90ca340de1798c0884b"
+    },
+    {
+      "path": "packages/providers/preparation-runtime.ts",
+      "sha256": "e3acee56b6f52d96deaeff6d66bb245ccf75e4fbce4698a9511a14d07ec537ce"
+    },
+    {
+      "path": "tests/ordered-media-provider.test.ts",
+      "sha256": "97537d5b5e259c59b659b994127145885e5c40f3b8cce018a35041b195e35d47"
+    },
+    {
+      "path": "tests/personal-ordered-analysis.test.ts",
+      "sha256": "d621b50d120cc31ca293ebcddc3bbed23f2f667738bb32e64c4f24b9b975add3"
+    }
+  ]
+}

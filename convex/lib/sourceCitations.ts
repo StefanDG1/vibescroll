@@ -1,12 +1,14 @@
 import type { QueryCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
-import { retainedSourceRevision } from "./sourceAuthority";
+import { retainedSourceRevision, sourceRetained } from "./sourceAuthority";
 import { ensure } from "../../packages/policy";
 import { typedCitationSummary } from "../../packages/sources/citations";
 import type { InsightCitation } from "../../packages/proposals/evidence";
 import { sourcePolicyCurrent } from "./sourcePolicy";
 import { queryRead } from "./knowledgeReadContext";
 import { sourceInsightOutput } from "../../packages/contracts";
+import { socialCitation } from "../../packages/social/analysis";
+import { currentOrderedSource } from "./orderedSource";
 
 // Call only after current membership and the exact assistant/team grant passed.
 export async function sharedTypedCitations(
@@ -18,6 +20,65 @@ export async function sharedTypedCitations(
     `shared-source-citations:${source._id}:${source.generation}:${source.updatedAt}`,
     async () => {
       if (source.state !== "ready") return null;
+      if (source.orderedMedia || source.analysis?.schemaVersion === "3.0.0") {
+        ensure(
+          sourceRetained(source) &&
+            source.rightsAttested &&
+            source.orderedMedia &&
+            source.analysis?.schemaVersion === "3.0.0",
+          "FORBIDDEN",
+          "Ordered source rights or evidence changed.",
+        );
+        const validated = await currentOrderedSource(source);
+        const post = validated.prepared.post;
+        const omitted = new Set(
+          post.assets
+            .filter((asset) => !asset.inspected)
+            .map((asset) => asset.index),
+        );
+        if (source.orderedPreparation?.generation === source.generation)
+          for (const item of source.orderedPreparation.omissions)
+            omitted.add(item.index);
+        if (post.expectedAssetCount !== null)
+          for (let index = 0; index < post.expectedAssetCount; index++)
+            if (!post.assets.some((asset) => asset.index === index))
+              omitted.add(index);
+        return {
+          sourceRevisionId: null,
+          sourceContentHash: validated.prepared.post.revisionHash,
+          coverage: {
+            method: "ordered_media",
+            retrieved: validated.prepared.post.assets.filter(
+              (asset) => asset.inspected,
+            ).length,
+            omitted: omitted.size,
+            omissions: [
+              ...[...omitted]
+                .sort((a, b) => a - b)
+                .map(
+                  (index) =>
+                    `Child ${index + 1} was unavailable or not inspected.`,
+                ),
+              ...(post.coverage === "complete_manifest"
+                ? []
+                : [
+                    post.schemaVersion === "provided-media-v1"
+                      ? "Some supplied files were unavailable or not inspected. The original post and publication date are unverified."
+                      : "The provider's child manifest is incomplete or unknown.",
+                  ]),
+            ],
+          },
+          summarize: (evidence: InsightCitation[]) =>
+            evidence
+              .slice(0, 10)
+              .map((ref) =>
+                socialCitation(
+                  ref as Parameters<typeof socialCitation>[0],
+                  validated.prepared.evidence,
+                ),
+              ),
+        };
+      }
       const typedRequired =
         source.currentRevisionId ||
         source.analysis?.schemaVersion === "2.0.0" ||

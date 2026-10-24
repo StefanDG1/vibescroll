@@ -2,37 +2,27 @@
 
 import argparse
 import hashlib
-from importlib.metadata import version
+import importlib.util
 import io
 import json
 import os
-import re
 from pathlib import Path
 import sys
 import wave
 
 
+# Resolve only the reviewed package helper, including when launched with -I.
+_helper = Path(__file__).absolute().with_name("asr_verification.py")
+_spec = importlib.util.spec_from_file_location("vibescroll_asr_verification", _helper)
+verification = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(verification)
+
+
 def verify_model(path):
-    manifest_path = path / "vibescroller-model.json"
-    if path.is_symlink() or path.is_junction() or not manifest_path.is_file() or manifest_path.is_symlink() or manifest_path.stat().st_size > 10000:
-        raise ValueError("LOCAL_ASR_MODEL_INVALID")
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("repository") != "Systran/faster-whisper-small.en" or not isinstance(manifest.get("revision"), str) or not re.fullmatch(r"[a-f0-9]{40}", manifest["revision"]):
-        raise ValueError("LOCAL_ASR_MODEL_INVALID")
-    files = manifest.get("files", {})
-    allowed = {"model.bin", "config.json", "tokenizer.json", "vocabulary.json", "vocabulary.txt", "preprocessor_config.json"}
-    if not isinstance(files, dict) or not {"model.bin", "config.json", "tokenizer.json"}.issubset(files) or not set(files).issubset(allowed):
-        raise ValueError("LOCAL_ASR_MODEL_INVALID")
-    for name, expected in files.items():
-        candidate = path / name
-        if candidate.is_symlink() or not candidate.is_file() or candidate.stat().st_size > 600_000_000:
-            raise ValueError("LOCAL_ASR_MODEL_INVALID")
-        with candidate.open("rb") as content:
-            if hashlib.file_digest(content, "sha256").hexdigest() != expected:
-                raise ValueError("LOCAL_ASR_MODEL_CHANGED")
-    if version("faster-whisper") != "1.2.1":
-        raise ValueError("LOCAL_ASR_RUNTIME_CHANGED")
-    return manifest["revision"]
+    lock = verification.load_lock()
+    verification.verify_directory(path, lock)
+    verification.verify_runtime(lock)
+    return lock["model"]["revision"]
 
 
 def normalized_pcm(path):

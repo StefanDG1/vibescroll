@@ -28,6 +28,8 @@ export const sourceAnalysis = workflow
           v.literal("media"),
           v.literal("text"),
           v.literal("source_text"),
+          v.literal("ordered_media"),
+          v.literal("ordered_prepare"),
         ),
       ),
     },
@@ -35,10 +37,20 @@ export const sourceAnalysis = workflow
   })
   .handler(async (step, a): Promise<null> => {
     try {
+      if (a.route === "ordered_prepare") {
+        const prepared = await step.runAction(
+          internal.orderedMedia.prepare,
+          { id: a.id, generation: a.generation },
+          { retry: false, name: "bounded-ordered-preparation-v1" },
+        );
+        if (!prepared.prepared) return null;
+      }
       await step.runAction(
-        (a.route ?? (a.media ? "media" : "text")) === "media"
-          ? internal.media.analyze
-          : internal.integrations.analyze,
+        a.route === "ordered_media" || a.route === "ordered_prepare"
+          ? internal.serviceArtifactInference.analyze
+          : (a.route ?? (a.media ? "media" : "text")) === "media"
+            ? internal.media.analyze
+            : internal.integrations.analyze,
         { id: a.id, generation: a.generation },
         { retry: false, name: "bounded-source-analysis-v1" },
       );
@@ -60,23 +72,39 @@ export const sourceAnalysis = workflow
   });
 export const personalPreparation = workflow
   .define({
-    args: { id: v.id("sources"), generation: v.number() },
+    args: {
+      id: v.id("sources"),
+      generation: v.number(),
+      ordered: v.optional(v.boolean()),
+    },
     returns: v.null(),
   })
   .handler(async (step, a): Promise<null> => {
     try {
-      await step.runAction(internal.personalMedia.prepare, a, {
-        retry: false,
-        name: "bounded-personal-media-v1",
-      });
+      await step.runAction(
+        a.ordered
+          ? internal.personalOrderedMedia.prepare
+          : internal.personalMedia.prepare,
+        { id: a.id, generation: a.generation },
+        {
+          retry: false,
+          name: "bounded-personal-media-v1",
+        },
+      );
     } catch {
       const source = await step.runQuery(internal.product.workerSource, {
         id: a.id,
       });
       if (source)
         await step.runMutation(
-          internal.personalMediaState.finish,
-          { ...a, organizationId: source.organizationId },
+          a.ordered
+            ? internal.personalOrderedMediaState.finish
+            : internal.personalMediaState.finish,
+          {
+            id: a.id,
+            generation: a.generation,
+            organizationId: source.organizationId,
+          },
           { name: "personal-media-reconciliation-v1" },
         );
     }

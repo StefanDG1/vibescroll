@@ -1,10 +1,94 @@
 # Product decisions
 
+## October 24: private source text results on runs
+
+[ADR 138](adr/138-private-source-text-results-on-existing-runs.md) keeps private text outputs on existing runs with small source pointers, strict v2 local admission and independent earned-result reading. Preserve canonical source fields, exact evidence and private rights; no media/Cloud/skills/project-reference claim. One new source index and one changed device/state index need separately funded migration evidence.
+
+## October 24: distinct processing availability
+
+[ADR 137](adr/137-distinct-processing-availability-in-setup.md) adds an optional conservative text-review availability state to the existing setup snapshot. Saved routes, managed funding, chapter completion and source-specific approval stay unchanged. No host, media or execution readiness follows from a feature gate.
+
+## October 24: private evaluation brief origin
+
+[ADR 136](adr/136-private-evaluation-brief-origin.md) keeps optional personalized project judgments in the existing private-owner task/evaluation lineage, with exact origin/cache separation, neutral-history isolation and manual review preserved. Team-private overlays, skills and official Cloud project authority remain separate unfinished work. No source analysis, artifact, funding or price is changed.
+
+## October 24: readable emphasis and scoped Help
+
+[ADR 135](adr/135-optional-readable-scroll-emphasis.md) confines opt-in reveals/emphasis to the existing explanation, preserves all readable/static defaults and scopes Help reads through literal approved prefixes. No tracing-warning suppression, new content store, dependency or processing capability follows.
+
+## October 24: purchased allowance commitments
+
+[ADR 134](adr/134-purchased-allowance-commitments.md) separates frozen purchased quantities from editable pricing, binds checkout acceptance and exact paid terms, and preserves original annual base/upgrade invoice funding. Existing records and wallets remain the owners. Unknown legacy evidence holds new unissued grants, never retroactively reprices valid issued pools. Current prices, future unselected allowance, lifetime deferral and production gates remain unchanged.
+
+## October 24: accurate prepared media and a review-only offer packet
+
+[ADR 133](adr/133-reviewed-product-library-and-social-edits.md) preserves approved captures and corrects issue-draft/plan semantics across product, Library, social and setup edits. The [future allowance packet](launch-plan/2026-10-23/PRO-ALLOWANCE-PROPOSAL.md) changes no price, entitlement or policy; quantity stays unselected until fully consumed workloads and retained-data costs are bounded. Preserve old annual promises and current terms. Lifetime remains deferred.
+
+## October 24: immutable ordered preparation reuse
+
+[ADR 132](adr/132-ordered-preparation-reuse.md) adds reuse only for newly stamped exact preparations under fresh preflight and reconciled cost/device authority. Preserve original receipt/expiry, old unstamped behavior, unknown holds and the provider-path package guard. No new inference, provider activation or observed saving is implied.
+
+## October 24: existing examples with explicit motion controls
+
+[ADR 131](adr/131-public-example-navigation-and-motion.md) adds a static-by-default example chooser through existing routes. Desktop cycling requires explicit consent and current motion/visibility eligibility; alternatives remain usable without JavaScript. This does not process content or complete the remaining ScrollShow media/production acceptance.
+
+## October 24: current source progress in the creator digest
+
+[ADR 130](adr/130-current-creator-digest-processing.md) keeps delivery separate from current authorized processing and coverage, with distinct discovery and private-digest insertion times. No new discovery, inference, store or provider permission follows.
+
+## October 24: gated private Work Cloud text handoff
+
+[ADR 129](adr/129-gated-work-cloud-text-handoff.md) extends the existing personal source state with explicit text execution authority, one-use claims and canonical private result return. Legacy paired behavior remains. Both route flags stay off; local text tests do not pass official-host, real-video, commercial or production acceptance. Unresolved claimed work cannot silently switch executors.
+
+## October 24: indexed generic discovery and page-limited maps
+
+[ADR 128](adr/128-pro-catalog-search-and-page-map.md) adds a bounded search projection/index to existing service artifacts and a map/list derived only from the currently checked Pro page. Keep immutable saved copies, private taxonomy, own results and public demos separate. Explicit manual backfill, migration cost, real mixed-record search, browser and provider/live acceptance remain pending.
+
+## October 24: browse the Pro catalog through existing service artifacts
+
+[ADR 127](adr/127-bounded-pro-catalog-browsing.md) adds bounded on-demand browse/inspect/save inside Library. Current Pro and source authority are checked before disclosure, saved-copy DTOs remain separate, and no new queue/store/index or hosted processing route is introduced. Search, graph, provider activation and production catalog acceptance remain open.
+
 ## October 24: compatible public/security release before bounded product migration
 
 [ADR 126](adr/126-compatible-public-and-security-release.md) separates the reviewed public design and dependency fixes from the full product candidate while its populated-index migration bound remains unresolved. Preserve the entire full launch scope in PR 140. The same cumulative cap is US$3, old holds remain, lifetime access is later, and no provider/privacy gate changes.
 
+## October 24: resume within US$3 and test repository-free Work Cloud
+
+[ADR 125](adr/125-resumed-budget-and-repository-free-cloud-probe.md) records the resumed run, unchanged holds under the raised cumulative ceiling, verified root High exception, later lifetime-offer deferral and the narrowly completed no-GitHub Work Cloud readiness probe. No media, canonical app return, provider approval or production success follows from runtime readiness.
+
 Mode: reference. These decisions supersede earlier alternatives in the discussion.
+
+## October 24: recommended GitHub, optional for source analysis, minimal setup
+
+[ADR 124](adr/124-recommended-github-and-minimal-processing-setup.md) confirms that users may skip the recommended GitHub step and analyze supported sources without a GitHub account, authorization or repository. Only repository-specific work needs authorized project context. Make supported setup as small and automated as possible, retaining real user consent/MFA and actual readiness. A Cloud environment's hidden GitHub prerequisite does not satisfy the requirement. No-GitHub Cloud processing and beginner friction need real acceptance; the existing personal proof does not establish them. All provider/privacy/budget/Pro controls remain.
+
+## October 24: integrate the final ScrollShow handoff and future ongoing offer
+
+[ADR 123](adr/123-scrollshow-handoff-and-integrated-offer-planning.md) incorporates the final supplied marketing plan, superseding older drafts in that audit folder. Preserve A hero/B source-to-private-product artwork, white/charcoal/emerald/mint public composition, existing mark, app Atlas behavior and the complete launch scope. Its proposed Pro EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing-access choices each include a defined monthly AI allowance. This supersedes the new fixed three-year founding-pass target and earlier initial-balance-only recommendation. Exact sustainable allowance, service/remedy terms and catalog/legacy migration remain release inputs. No runtime, price, policy, live billing or deployment changes follow. The [integrated execution order](launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) maps M0-M7 within C9/C10 and preserves all R/P/N work, ADR 122, private data, provider rights and the cumulative US$2 cap.
+
+## October 24: proprietary Pro catalog, all-plan contribution and retained copies
+
+[ADR 122](adr/122-proprietary-pro-insight-catalog.md) supersedes ADR 121's free public dataset direction. Only Pro may access or newly save/reuse the proprietary shared catalog. All plans may contribute eligible general analysis and separately authorized own-subscription capacity. Contribution grants no catalog access. Already saved private copies and notes remain readable after cancellation; further catalog access and updates stop. Own validly processed results keep their existing plan rules. Software MIT, private work, source/provider rights, exact approved demo editions and the cumulative US$2 cap remain unchanged. The [single owner checklist](launch-plan/2026-10-23/OWNER-CHECKLIST.md) separates actual human/provider prerequisites from root-owned engineering. This records the target, not deployed enforcement or new billing prices.
+
+## October 23: Codex Cloud first and eligible public generic insights
+
+[ADR 121](adr/121-codex-cloud-first-and-public-neutral-library.md) records the owner's preference for official user-owned Codex Cloud link processing, an eligible public generic insight library, private customization and daily creator updates. The [current plan addendum](launch-plan/2026-10-23/CLOUD-FIRST.md) retains every unfinished R/P/N requirement. Local and managed-credit work can leave the immediate critical path only after Cloud succeeds. Subscriber selection/failover, automatic public release and commercial orchestration remain subject to verified provider, rights, privacy, review and budget contracts. No private migration or live activation follows from this direction.
+
+## October 23: private ordered intake and current-account preflight
+
+[ADR 120](adr/120-private-ordered-intake-and-current-account-preflight.md) keeps supplied uploads separate from verified creator identities, extends the existing capture and personal job systems, and requires actual account checks before ordered preparation. It records raw asset ownership, restore revocation, strict private result binding and broker-selected preparation provenance. Existing provider, budget and live acceptance gates remain.
+
+## October 23: authorize complete creator and onboarding implementation
+
+[ADR 119](adr/119-authorized-complete-creator-and-onboarding-implementation.md) records explicit owner authorization for N0-N7 and all remaining launch work. It supersedes ADR 118's planning-only boundary while preserving existing-system reuse, original spending limits and every release/provider/privacy gate. Build and test independently while external or unfunded live checks wait. No supplier activation or new recurring allowance follows merely from implementation authorization.
+
+## October 23: creator and onboarding planning boundary
+
+[ADR 118](adr/118-creator-and-guided-onboarding-planning-boundary.md) records the owner's future public-creator, ordered-media, eligible shared-analysis and project-builder onboarding direction. Extend existing setup, source/jobs and public artifact/reuse systems. The required Instagram export guide is separate from later export request/import. The [single remaining-work plan](launch-plan/2026-10-23/README.md#creator-and-onboarding-reconciliation) marks N0-N7 planning-only until a subsequent implementation instruction. Previously authorized R0-R13 work continues. No provider activation, automatic private-data reuse, recurring spend or release permission follows.
+
+## October 23: GitHub first and complete per-user subscription workflows
+
+[ADR 117](adr/117-github-first-and-complete-own-subscription-workflows.md) adopts the seven-insight review, GitHub-first/Reddit-later release order and complete own-subscription video/project/proposal/plan requirement. It preserves provider permission, exact work/publication authority, isolation and spending controls. The [remaining-work plan](launch-plan/2026-10-23/README.md) records code gaps, deferred independent observations, signing boundaries and pending route/reuse/budget/settings answers. This supersedes joint release, not Reddit prerequisites. No activation or commercial permission is claimed.
 
 ## October 20: automatic assistant intake
 
@@ -36,35 +120,35 @@ Mode: reference. These decisions supersede earlier alternatives in the discussio
 
 [ADR 079](adr/079-atomic-home-metadata.md) uses atomic metadata triggers and a resumable ten-record backfill for bounded authorized Home reads. Full-content checks, privacy, budgets and approvals remain authoritative. Manual source/category corrections advance timestamp revisions monotonically so same-millisecond edits cannot leave old references current. Actual compact browser and serving recovery acceptance remain separate from local checks.
 
-| ID  | Decision                                                                                                                                                | Basis                                               |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| D01 | Product name VibeScroller, motto Make scrolling productive, proposed `scroll.companynerve.com`                                                          | Owner choice                                        |
-| D02 | Separate repository and provider projects derived from CompanyNerve                                                                                     | Owner choice and upstream boundary                  |
-| D03 | Responsive web app first, installable PWA optional, no required native client                                                                           | Latest owner instruction                            |
-| D04 | English interface; individuals and businesses may purchase in Managed Payments' verified tax-covered markets; direct billing retains reviewed countries | Owner approval October 3, 2026; ADR 039             |
-| D05 | URLs, uploads, bulk imports, and Telegram capture ship in V1                                                                                            | Owner-approved practical capture fallback           |
-| D06 | Automatic Instagram Saved synchronization is experimental and disabled by default                                                                       | Access, reliability, and rights are not established |
-| D07 | TikTok official portability adapter is designed but gated by approval                                                                                   | External provider requirement                       |
-| D08 | Audio plus visual evidence, original transcription preserved, no caption-only video claims                                                              | Core requirement                                    |
-| D09 | Selected repos, business profiles, no forced match, evidence-backed proposals                                                                           | Core requirement                                    |
-| D10 | Integrated draft PR creation ships in V1 after approval                                                                                                 | Latest execution decision                           |
-| D11 | Optional local Codex runner is the default coding route; explicit prepaid cloud execution is available                                                  | Cost and owner preference                           |
-| D12 | WorkOS account identity is separate from GitHub and AI authorization                                                                                    | Security architecture                               |
-| D13 | No general ChatGPT subscription inference promise outside verified official access                                                                      | Research limitation                                 |
-| D14 | Same-workspace deduplication ships. Cross-workspace cache reuse stays off                                                                               | Privacy and rights default                          |
-| D15 | MIT for V1-authored source; upstream notices preserved                                                                                                  | CV/public-source priority and later proprietary V2  |
-| D16 | Fully self-contained distribution is deferred; one personal deployment path is authorized for preparation, with independent acceptance pending          | October 3 post-V1 implementation; ADR 051           |
-| D17 | Starter and Pro with weekly, monthly, annual billing for individuals and businesses. Custom scope by contact                                            | Owner choice                                        |
-| D18 | No unlimited AI, no automatic paid fallback, no shared founder subscription                                                                             | Financial and authorization boundary                |
-| D19 | Target at least 60% operating margin before company tax, excluding salary, marketing, and development                                                   | Owner-defined metric                                |
-| D20 | Under EUR 10 incremental pre-customer spending is a target, not a claim that a new Vercel Pro plan fits                                                 | Budget conflict resolved explicitly                 |
-| D21 | Vercel remains supported. Reuse an eligible existing plan if confirmed; otherwise offer the documented budget host profile                              | Deployment policy, no silent vendor switch          |
-| D22 | Intended initial tax strategy uses the Romanian small-business exemption when the official record permits it                                            | Recommendation, not verified tax status             |
-| D23 | All legal and tax modes are concrete, but production activation needs matching evidence                                                                 | No invented legal facts                             |
-| D24 | V2-created businesses use customer-owned service and merchant accounts                                                                                  | Owner's explicit boundary                           |
-| D25 | V2 is proprietary, paid-only, and excluded from V1 implementation                                                                                       | Owner choice                                        |
-| D26 | Preserve the exact V2 mode label `full retard mode` internally, with finite permissions and spending                                                    | Owner's requested wording                           |
-| D27 | Mark Builds Brands permission is owner-attested; no unsupported affiliation or licence identification                                                   | Owner's permission statement                        |
+| ID  | Decision                                                                                                                                                                                   | Basis                                                 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| D01 | Product name VibeScroller, motto Make scrolling productive, proposed `scroll.companynerve.com`                                                                                             | Owner choice                                          |
+| D02 | Separate repository and provider projects derived from CompanyNerve                                                                                                                        | Owner choice and upstream boundary                    |
+| D03 | Responsive web app first, installable PWA optional, no required native client                                                                                                              | Latest owner instruction                              |
+| D04 | English interface; individuals and businesses may purchase in Managed Payments' verified tax-covered markets; direct billing retains reviewed countries                                    | Owner approval October 3, 2026; ADR 039               |
+| D05 | URLs, uploads, bulk imports, and Telegram capture ship in V1                                                                                                                               | Owner-approved practical capture fallback             |
+| D06 | Automatic Instagram Saved synchronization is experimental and disabled by default                                                                                                          | Access, reliability, and rights are not established   |
+| D07 | TikTok official portability adapter is designed but gated by approval                                                                                                                      | External provider requirement                         |
+| D08 | Audio plus visual evidence, original transcription preserved, no caption-only video claims                                                                                                 | Core requirement                                      |
+| D09 | Selected repos, business profiles, no forced match, evidence-backed proposals                                                                                                              | Core requirement                                      |
+| D10 | Integrated draft PR creation ships in V1 after approval                                                                                                                                    | Latest execution decision                             |
+| D11 | Optional local Codex runner is the default coding route; explicit prepaid cloud execution is available                                                                                     | Cost and owner preference                             |
+| D12 | WorkOS account identity is separate from GitHub and AI authorization                                                                                                                       | Security architecture                                 |
+| D13 | No general ChatGPT subscription inference promise outside verified official access                                                                                                         | Research limitation                                   |
+| D14 | Same-workspace deduplication ships. Arbitrary private cross-workspace reuse stays off; exact reviewed public reuse follows ADR 111. Automatic creator reuse is planning-only under ADR 118 | Privacy and rights default; explicit public exception |
+| D15 | MIT for V1-authored source; upstream notices preserved                                                                                                                                     | CV/public-source priority and later proprietary V2    |
+| D16 | Fully self-contained distribution is deferred; one personal deployment path is authorized for preparation, with independent acceptance pending                                             | October 3 post-V1 implementation; ADR 051             |
+| D17 | Starter and Pro with weekly, monthly, annual billing for individuals and businesses. Custom scope by contact                                                                               | Owner choice                                          |
+| D18 | No unlimited AI, no automatic paid fallback, no shared founder subscription                                                                                                                | Financial and authorization boundary                  |
+| D19 | Target at least 60% operating margin before company tax, excluding salary, marketing, and development                                                                                      | Owner-defined metric                                  |
+| D20 | Under EUR 10 incremental pre-customer spending is a target, not a claim that a new Vercel Pro plan fits                                                                                    | Budget conflict resolved explicitly                   |
+| D21 | Vercel remains supported. Reuse an eligible existing plan if confirmed; otherwise offer the documented budget host profile                                                                 | Deployment policy, no silent vendor switch            |
+| D22 | Intended initial tax strategy uses the Romanian small-business exemption when the official record permits it                                                                               | Recommendation, not verified tax status               |
+| D23 | All legal and tax modes are concrete, but production activation needs matching evidence                                                                                                    | No invented legal facts                               |
+| D24 | V2-created businesses use customer-owned service and merchant accounts                                                                                                                     | Owner's explicit boundary                             |
+| D25 | V2 is proprietary, paid-only, and excluded from V1 implementation                                                                                                                          | Owner choice                                          |
+| D26 | Preserve the exact V2 mode label `full retard mode` internally, with finite permissions and spending                                                                                       | Owner's requested wording                             |
+| D27 | Mark Builds Brands permission is owner-attested; no unsupported affiliation or licence identification                                                                                      | Owner's permission statement                          |
 
 ## Workspace knowledge and issue planning
 
@@ -199,3 +283,11 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## October 22: typed sources, resumable setup and unreleased launch candidate
 
 [ADR 111](adr/111-typed-source-and-public-knowledge-authority.md) records typed source revision/citation authority, bounded retrieval/renewal, current exact public reuse/withdrawal and conservative lifecycle recovery. [ADR 112](adr/112-persisted-setup-and-verified-companion-packages.md) distinguishes user-provided setup reports from working processing and adds official isolated personal runtime packaging, signature-verified staging/rollback and unsigned-refusing bootstrap preparation. [ADR 113](adr/113-source-reviewed-help-and-consented-pilot-evidence.md) records source-reviewed Help/synthetic examples and minimal consented payment evidence, with unsent launch material and disabled founding-pass policy. These are implemented candidate decisions; [implementation status](implementation-status.md) retains exact-commit, release, provider/signing, independent-human/device and measured-value gates. They authorize no deployment, campaign, paid action or gate activation.
+
+## Private variant project references, October 24
+
+[ADR 139](adr/139-private-variant-project-references.md) selects exact earned private result references for the existing project/plan flow. Do not manufacture canonical memberships/topics or share personalization. Implementation is authorized; production and provider/fiscal gates remain.
+
+## Public main and stop checkpoint, October 24
+
+[ADR 140](adr/140-public-main-consolidation-with-deployment-hold.md) records the owner-requested ancestry-preserving consolidation with main Git deployment temporarily disabled. Full CI and immutable source releases continue. The owner removes an extra discretionary OpenAI reply requirement, while actual provider eligibility and technical acceptance remain. No new feature work or live activation follows the requested stop.

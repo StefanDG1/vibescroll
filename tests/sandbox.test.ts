@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import {
   sandboxPolicy,
   namespaceCommand,
@@ -53,4 +53,36 @@ it("refuses artifact paths outside the job before invoking any privileged provid
     "/home/user/x\nq",
   ])
     await expect(sandbox.files.read(path)).rejects.toThrow("POLICY_BLOCKED");
+});
+it("keeps legacy text reads bounded while allowing an explicit bounded ordered manifest", async () => {
+  const runCommand = vi.fn(async (options: { args: string[] }) => ({
+    exitCode: 0,
+    stdout: async () =>
+      Buffer.from(
+        "x".repeat(Math.min(21000, Number(options.args.at(-1)))),
+      ).toString("base64"),
+  }));
+  const sandbox = new JobSandbox(
+    { name: "synthetic-read", runCommand } as unknown as Sandbox,
+    false,
+  );
+  expect(
+    (
+      await sandbox.files.read("/home/user/media/ordered-manifest.json", {
+        maxBytes: 100000,
+      })
+    ).length,
+  ).toBe(21000);
+  expect(runCommand.mock.calls[0][0].args.at(-1)).toBe("100000");
+  expect(
+    (await sandbox.files.read("/home/user/media/legacy-manifest.json")).length,
+  ).toBe(20000);
+  expect(runCommand.mock.calls[1][0].args.at(-1)).toBe("20000");
+  for (const maxBytes of [0, -1, 100001, Infinity, 1.5])
+    await expect(
+      sandbox.files.read("/home/user/media/ordered-manifest.json", {
+        maxBytes,
+      }),
+    ).rejects.toThrow("INVALID_MEDIA_MANIFEST");
+  expect(runCommand).toHaveBeenCalledTimes(2);
 });

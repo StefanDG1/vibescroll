@@ -5,6 +5,7 @@ import { access, writeAccess, audit, limit } from "./lib";
 import { containsSecret, ensure, sensitivePath } from "../packages/policy";
 import { evaluationCurrent, referencesCurrent } from "./knowledge";
 import { improvementCurrent } from "./lib/improvementContext";
+import { samePrivateEvaluationOrigin } from "./lib/privateEvaluationContext";
 import {
   outcomeInput,
   improvementStage,
@@ -25,6 +26,10 @@ export const create = mutation({
     const e = await ctx.db.get(d.evaluationId);
     ensure(
       e?.state === "ready" &&
+        samePrivateEvaluationOrigin(
+          e.privateEvaluationOrigin,
+          d.privateEvaluationOrigin,
+        ) &&
         e.output?.disposition === "relevant" &&
         (await evaluationCurrent(ctx, e)),
       "APPROVAL_STALE",
@@ -47,7 +52,11 @@ export const create = mutation({
       .unique();
     if (old) {
       ensure(
-        old.issueHash === d.hash &&
+        samePrivateEvaluationOrigin(
+          old.privateEvaluationOrigin,
+          e.privateEvaluationOrigin,
+        ) &&
+          old.issueHash === d.hash &&
           old.issueVersion === d.version &&
           old.state !== "deleted",
         "APPROVAL_STALE",
@@ -58,6 +67,9 @@ export const create = mutation({
     const now = Date.now(),
       output = e.output;
     const proposalId = await ctx.db.insert("proposals", {
+      ...(e.privateEvaluationOrigin
+        ? { privateEvaluationOrigin: e.privateEvaluationOrigin }
+        : {}),
       organizationId: d.organizationId,
       createdAt: now,
       updatedAt: now,
@@ -96,6 +108,9 @@ export const create = mutation({
       },
     });
     const id = await ctx.db.insert("improvements", {
+      ...(e.privateEvaluationOrigin
+        ? { privateEvaluationOrigin: e.privateEvaluationOrigin }
+        : {}),
       organizationId: d.organizationId,
       createdAt: now,
       updatedAt: now,
@@ -133,7 +148,12 @@ export const list = query({
         repo = await ctx.db.get(i.repositoryId);
       const surviving =
         i.state !== "deleted" &&
-        (await referencesCurrent(ctx, i.organizationId, i.references));
+        (await referencesCurrent(
+          ctx,
+          i.organizationId,
+          i.references,
+          i.privateEvaluationOrigin,
+        ));
       const current = !!p && (await improvementCurrent(ctx, p));
       const runs = await ctx.db
         .query("runs")
@@ -262,7 +282,12 @@ export const outcome = mutation({
     ensure(
       i.version === a.version &&
         i.state !== "deleted" &&
-        (await referencesCurrent(ctx, i.organizationId, i.references)),
+        (await referencesCurrent(
+          ctx,
+          i.organizationId,
+          i.references,
+          i.privateEvaluationOrigin,
+        )),
       "APPROVAL_STALE",
       "Review the current improvement.",
     );

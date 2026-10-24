@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T04:10:15.935973+00:00",
+  "baseCommit": "9c255147eeddcdf6e42cda1e706a5aef9b897f06",
+  "mode": "Offline M1/M6 public example-controls candidate; no hosted operation",
+  "scope": "Five existing destinations; static server-rendered navigation with explicit eligible desktop cycling",
+  "verification": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "result": "passed",
+    "environment": "Windows Node24.22.1/pnpm12.3.4; credentials stripped/nonloopback denied",
+    "unitIntegration": 1302,
+    "authApi": 38,
+    "publicUi": 138,
+    "installer": 14,
+    "pythonPcm": 15,
+    "pythonProxy": 6,
+    "pythonSampling": 3,
+    "pythonOrdered": 9,
+    "buildPolicy": 5,
+    "totalPassed": 1530,
+    "hostedSkipped": 3,
+    "documents": 315,
+    "skillSnapshots": 12,
+    "lint": "zero warnings/errors",
+    "types": "root, actual Convex and both apps passed",
+    "builds": "both production builds passed",
+    "scopedUiCases": 14,
+    "dependencies": "unchanged lock/dependencies; parent144 exact-head audit passed; next CI repeats it",
+    "browserScreenshot": "pending fresh consent; no native browser result claimed"
+  },
+  "behavior": [
+    "Existing hero/actions/routes/media/prices retained",
+    "Native selector and working initial link; all ordinary alternatives in native details plus noscript guidance",
+    "Descriptions distinguish synthetic passage/project/demo, prior founder capture and Help",
+    "Static by default; no freeform input, processing, network call or generated result",
+    "Explicit Play/Restart only with enabled interface motion, desktop fine pointer/hover, visible document and at least50percent viewport intersection",
+    "Focus/keyboard/selection pauses until explicit Play; hidden/offscreen suspends without catch-up; fresh three-second dwell",
+    "Reduced motion/mobile remain static; timers/listeners/observer cleanup and late-callback fences; no live-region cycling"
+  ],
+  "review": {
+    "root": "Reviewed actual component, scoped styles, destination content and focused SSR/state tests; no P1",
+    "remaining": "Native mobile/desktop/theme/keyboard/large-text screenshot and production acceptance remain."
+  },
+  "preservedFailures": [
+    "Initial app typecheck rejected generic vi.fn constructable/procedure union for observer disconnect; model as the actual () => void callback contract; assertions unchanged"
+  ],
+  "parentEvidence": {
+    "pr": "https://github.com/StefanDG1/vibescroll/pull/144",
+    "head": "9c255147eeddcdf6e42cda1e706a5aef9b897f06",
+    "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/40060302528",
+    "result": "success"
+  },
+  "budget": {
+    "sameCumulativeCapUsd": "3",
+    "combinedReservationsUsd": "2.8092885298898517",
+    "unallocatedUsd": "0.1907114701101483",
+    "newProductionConvexCalls": 0,
+    "newInferenceJobs": 0,
+    "newPurchases": 0,
+    "allUnknownHoldsRetained": true,
+    "settledInvoice": false
+  },
+  "release": {
+    "deployed": false,
+    "servingFrontend": "fba56d44c484260dc98e27174e943ee5ed21af51",
+    "servingBackend": "abfdeff6779a2fc7790d4441152117262965fe60",
+    "scopeComplete": false,
+    "remaining": "One-time reveals, readable scroll emphasis, original product/library/social edits and remaining R/P/N/C/M/provider/human/production acceptance stay open."
+  },
+  "candidateSourceSha256": [
+    {
+      "path": "apps/starter/components/scrollshow-prompts.tsx",
+      "sha256": "1a104616a1af506ce0547c88e56815da39605b2fb00309577b0e8e5e035f7784"
+    },
+    {
+      "path": "apps/starter/scrollshow-prompts-ui.test.ts",
+      "sha256": "ccc5205fa6819b2a2847d05a3425c4294386790014700f36627fdceee4da6423"
+    },
+    {
+      "path": "apps/starter/app/page.tsx",
+      "sha256": "282b6d1daaf4d25c743fb0100bd26c5128b3da7902c7253f9cf80ead00ded447"
+    },
+    {
+      "path": "apps/starter/app/public.css",
+      "sha256": "4cfba3508c17fe104b24811fc830f5458e38d2f16b0c304e48fadf655b3ae2d4"
+    },
+    {
+      "path": "apps/starter/vitest.public-knowledge.config.ts",
+      "sha256": "019479b8ff892aa5a2899aba94b164a91a2ed33c64b6c95e33a41866ace47428"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import {
   assistantAnalysisDefaults,
 } from "./assistantSchema";
 import { snapshotScopeCurrent } from "../packages/repositories/scope";
+import { workCloudTextAllowed } from "./lib/personalAccess";
 const binding = v.object({
   sourceId: v.id("sources"),
   generation: v.number(),
@@ -40,6 +41,9 @@ export const setup = query({
         process.env.MCP_ENABLED === "true" &&
         !!assistantIssuer(process.env.MCP_AUTH_ISSUER),
       privateLibrary: organization.privateOwnerId === actor._id,
+      workCloudTextEnabled:
+        organization.privateOwnerId === actor._id &&
+        workCloudTextAllowed(actor.subject),
       eventsEnabled: process.env.MCP_EVENTS_ENABLED === "true",
       devices: (
         await ctx.db

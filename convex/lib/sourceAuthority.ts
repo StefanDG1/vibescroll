@@ -2,11 +2,26 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import { queryRead } from "./knowledgeReadContext";
 import { validateEvidenceRegistry } from "../../packages/sources/evidence";
+import { creatorRightsCurrent } from "./creatorPolicy";
 
 export function sourceRetained(
-  retainUntil: number | undefined,
+  value:
+    | number
+    | undefined
+    | {
+        sourceRetentionUntil?: number;
+        creatorRights?: Doc<"sources">["creatorRights"];
+      },
   now = Date.now(),
 ) {
+  const retainUntil =
+    typeof value === "object" ? value.sourceRetentionUntil : value;
+  if (
+    typeof value === "object" &&
+    value.creatorRights &&
+    !creatorRightsCurrent(value.creatorRights, now)
+  )
+    return false;
   return (
     retainUntil === undefined ||
     (Number.isFinite(retainUntil) && retainUntil > now)
@@ -18,13 +33,12 @@ export async function cardSourceRetained(
   card: Doc<"dashboardCards">,
 ) {
   if (card.kind !== "source" || !card.sourceId) return false;
-  if (card.sourceAuthorityVersion === 2)
-    return sourceRetained(card.sourceRetentionUntil);
+  if (card.sourceAuthorityVersion === 2) return sourceRetained(card);
   const source = await ctx.db.get(card.sourceId);
   return (
     !!source &&
     source.organizationId === card.organizationId &&
-    sourceRetained(source.sourceRetentionUntil)
+    sourceRetained(source)
   );
 }
 
@@ -41,7 +55,7 @@ export async function retainedSourceRevision(
     source.organizationId !== revision.organizationId ||
     source.currentRevisionId !== revision._id ||
     source.generation !== revision.generation ||
-    !sourceRetained(source.sourceRetentionUntil)
+    !sourceRetained(source)
   )
     return null;
   try {
@@ -85,6 +99,7 @@ export async function sourceAuthority(ctx: QueryCtx, id: Id<"sources">) {
         state: card.state,
         generation: card.generation,
         sourceRetentionUntil: card.sourceRetentionUntil,
+        creatorRights: card.creatorRights,
       };
     const source = await ctx.db.get(id);
     return source
@@ -94,6 +109,7 @@ export async function sourceAuthority(ctx: QueryCtx, id: Id<"sources">) {
           state: source.state,
           generation: source.generation,
           sourceRetentionUntil: source.sourceRetentionUntil,
+          creatorRights: source.creatorRights,
         }
       : null;
   });

@@ -22,6 +22,11 @@ export const runner = httpAction(async (ctx, request) => {
           "evaluation_finish",
           "done",
           "fail",
+          "task_context",
+          "task_heartbeat",
+          "task_evaluation_finish",
+          "task_finish",
+          "task_fail",
         ]),
         args: z.record(z.string(), z.unknown()),
       })
@@ -43,16 +48,21 @@ export const runner = httpAction(async (ctx, request) => {
             frameId: args.frameId,
             data: args.data,
           })
-        : body.operation === "evaluation"
-          ? await ctx.runAction(internal.assistantLocalActions.evaluation, {
+        : body.operation === "task_context"
+          ? await ctx.runAction(internal.assistantLocalActions.taskContext, {
               credentialHash,
               args,
             })
-          : await ctx.runMutation(internal.assistantLocal.operation, {
-              credentialHash,
-              operation: body.operation,
-              args,
-            });
+          : body.operation === "evaluation"
+            ? await ctx.runAction(internal.assistantLocalActions.evaluation, {
+                credentialHash,
+                args,
+              })
+            : await ctx.runMutation(internal.assistantLocal.operation, {
+                credentialHash,
+                operation: body.operation,
+                args,
+              });
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return Response.json(

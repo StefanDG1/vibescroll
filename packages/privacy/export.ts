@@ -7,6 +7,8 @@ export const contentExportSections = [
   "subscriptionTrials",
   "localLibraryRuns",
   "localSourceImports",
+  "creatorSubscriptions",
+  "creatorDeliveries",
   "sources",
   "proposals",
   "feedback",
@@ -35,7 +37,11 @@ export const contentExportSections = [
 export type ContentExportSection = (typeof contentExportSections)[number];
 
 const privateFields = new Set([
+  "privateSourceAnalysis",
+  "privateSourceAnalysisRunId",
   "objectKey",
+  "orderedPreparation",
+  "personalMedia",
   "ciphertext",
   "signedUrl",
   "uploadUrl",
@@ -49,6 +55,11 @@ const privateFields = new Set([
   "profileDraftActor",
   "inspected",
   "lease",
+  "leaseToken",
+  "inspectionManifest",
+  "profileBinding",
+  "capabilityHash",
+  "approvalHash",
   "credentialHash",
   "codeHash",
 ]);
@@ -66,9 +77,32 @@ export function exportRecord(
   section: ContentExportSection,
   value: unknown,
 ): unknown {
+  if (section === "sources" && value && typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    const input = source.personalOrderedInput;
+    if (
+      input &&
+      typeof input === "object" &&
+      "assets" in input &&
+      Array.isArray(input.assets)
+    ) {
+      value = {
+        ...source,
+        personalOrderedInput: {
+          ...input,
+          assets: input.assets.map((asset: Record<string, unknown>) =>
+            Object.fromEntries(
+              Object.entries(asset).filter(([key]) => key !== "key"),
+            ),
+          ),
+        },
+      };
+    }
+  }
   if (section === "publicImports" && value && typeof value === "object") {
-    // Actor ownership is enforced by the export query. Keep authored notes,
-    // never a copied base artifact, permission/compatibility key or another actor.
+    // Actor ownership and retained-copy currentness are enforced by the query.
+    // Keep authored notes and its computed savedAnalysis projection, never the
+    // raw snapshot, live base artifact, grant keys or another actor's content.
     const layer = value as Record<string, unknown>;
     value = Object.fromEntries(
       [
@@ -79,6 +113,7 @@ export function exportRecord(
         "corrections",
         "createdAt",
         "updatedAt",
+        ...(layer.origin === "service" ? ["savedAnalysis"] : []),
       ]
         .filter((key) => key in layer)
         .map((key) => [key, layer[key]]),
@@ -92,6 +127,12 @@ export function exportRecord(
           .filter(
             ([key]) =>
               !privateFields.has(key) &&
+              !(
+                section === "localLibraryRuns" &&
+                ["deviceId", "leaseGeneration", "leaseUntil", "key"].includes(
+                  key,
+                )
+              ) &&
               !(root && section === "publicReports" && key === "key") &&
               !(
                 root &&

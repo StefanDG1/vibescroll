@@ -73,6 +73,65 @@ const inputs = () => ({
   image: `sha256:${"a".repeat(64)}`,
   privateRoot: companionPreparationRoot(),
 });
+it("refuses already cancelled preparation before creating files or workers", async () =>
+  fixture(async () => {
+    const abort = new AbortController();
+    abort.abort(new Error("LEASE_LOST"));
+    const run = mockRun(),
+      scheduleCleanup = vi.fn(async () => {});
+    await expect(
+      prepareLocalUrl({
+        ...inputs(),
+        signal: abort.signal,
+        run,
+        scheduleCleanup,
+      }),
+    ).rejects.toThrow("LEASE_LOST");
+    expect(run).not.toHaveBeenCalled();
+    expect(scheduleCleanup).not.toHaveBeenCalled();
+  }));
+it("removes only owned workers when cancellation interrupts acquisition and still performs cleanup", async () =>
+  fixture(async () => {
+    const abort = new AbortController(),
+      baseRun = mockRun();
+    const run = vi.fn(
+      async (args: string[], _timeout?: number, signal?: AbortSignal) => {
+        if (args.includes("/opt/vibe/acquire.py")) {
+          expect(signal).toBe(abort.signal);
+          abort.abort(new Error("LEASE_LOST"));
+        }
+        return baseRun(args);
+      },
+    );
+    await expect(
+      prepareLocalUrl({
+        ...inputs(),
+        signal: abort.signal,
+        run,
+        scheduleCleanup: async () => {},
+      }),
+    ).rejects.toThrow("LEASE_LOST");
+    expect(
+      run.mock.calls.some(([args]) =>
+        args.includes("/opt/vibe/decode-personal.py"),
+      ),
+    ).toBe(false);
+    const removals = run.mock.calls.filter(([args]) => args[0] === "rm");
+    expect(removals.length).toBeGreaterThanOrEqual(2);
+    for (const [args, , signal] of removals) {
+      expect(args).toEqual([
+        "rm",
+        "--force",
+        expect.stringMatching(/^vibe-trial-[a-f0-9-]+-(worker|proxy)$/),
+      ]);
+      expect(signal).toBeUndefined();
+    }
+    expect(
+      run.mock.calls.filter(
+        ([args]) => args[0] === "volume" && args[1] === "rm",
+      ),
+    ).toHaveLength(2);
+  }));
 function mockRun(unsafe?: "metadata-link" | "oversize") {
   return vi.fn(async (args: string[]) => {
     if (args[0] !== "cp") return "";

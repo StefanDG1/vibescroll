@@ -1,5 +1,87 @@
 # Foundational idea backlog
 
+## F061: separate private text reanalysis, October 24
+
+[ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) reuses existing task runs for separately approved private text results and retains only small version pointers on the source. Generic source analysis and citations remain unchanged. A distinct local runtime protocol excludes unsupported older workers. Original rights, result identity, current read scope and privacy cleanup remain authoritative.
+
+Source: owner-authorized private reanalysis, existing source/run ownership audit and independent privacy/protocol review. All four briefs updated together. Counterpoint: storing a full output on every source amplifies routine reads, and metadata alone is not source evidence. Store one result on its run, retain strict version/rights proofs, and leave media/skills/private project references unfinished until separately implemented.
+
+## F060: distinct setup availability, October 24
+
+[ADR 137](../adr/137-distinct-processing-availability-in-setup.md) distinguishes paired-computer subscription, managed credits and experimental text-review availability in the existing setup. A text feature gate reports available but unverified, not a connected host or working video route. Short guidance reuses existing Help and changes no chapter completion, saved route, grant or processing behavior.
+
+Source: C7 audit of the existing setup projection and source-specific handoff. All four briefs updated together. Counterpoint: calling every Cloud route ready would confuse funding and media capability; retain explicit availability limits without adding mandatory setup work. No new campaign, customer, live check or spending.
+
+## F059: private evaluation context, October 24
+
+[ADR 136](../adr/136-private-evaluation-brief-origin.md) extends the existing own-subscription project task with an optional owner-private focus brief. Exact approval, cache identity and derived evaluation/proposal/issue/improvement origin remain separate from generic source analysis. Neutral histories and automatic standing-policy work cannot absorb the custom result. Existing reviewed issue publication and separately approved editable plans remain available.
+
+Source: owner-authorized private personalization scope and audit of existing R5 producers, cache/history and issue/improvement lineage. All four briefs updated together. Counterpoint: a prompt field without identity separation would reuse the wrong result or contaminate neutral history; the first slice is private-owner-only. No customer outcome, live check, campaign or new spending is inferred.
+
+## F058: readable explanations and scoped Help reads, October 24
+
+[ADR 135](../adr/135-optional-readable-scroll-emphasis.md) adds optional desktop emphasis to the existing three-card explanation while keeping every word readable, static defaults and reduced-motion/mobile behavior. The same public-site slice constrains Help reads to literal approved document prefixes rather than whole-project build tracing. No new provider, task, query, asset, price or permission follows.
+
+These are local implementation and build-scope observations, not independent comprehension, conversion, native playback or production acceptance. Keep current claims, offer gates, cumulative US$3 cap and all unknown holds unchanged.
+
+Source: retained M1 requirements and actual production-build warning/trace inspection. All four briefs updated together. Counterpoint: decorative motion can distract and should remain optional; text stays fully opaque. An offline trace audit cannot prove hosted deployment or usability.
+
+## F057: purchased allowances and honest offer limits, October 24
+
+[ADR 134](../adr/134-purchased-allowance-commitments.md) prepares immutable paid allowance policies through existing billing, acceptance, period and change records. Current quantities remain frozen independently of presentation changes, annual base and upgrade invoices keep separate refund attribution, and unknown purchase evidence holds new grants for reconciliation. This is an implementation candidate, not a live billing migration, independent payment acceptance or customer outcome.
+
+Keep the current audience, EUR35/350 proposal with unselected quantity, deferred lifetime feature and every provider/privacy/release gate. No new sale, published terms, charge or spending is authorized. The same US$3 cap and all prior holds remain.
+
+Source: authorized legacy-protection work and review of the existing purchase/grant/refund owners. All four briefs updated together. Counterpoint: rejecting incomplete purchase evidence can delay a legitimate new grant; record the reconciliation hold and preserve issued entitlements rather than inventing a contract. Offline evidence and production acceptance remain separate.
+
+## F056: accurate prepared media and offer limits, October 24
+
+[ADR 133](../adr/133-reviewed-product-library-and-social-edits.md) uses approved synthetic captures for product, Library and social edits with desktop/mobile alternatives and complete text access. Root corrected captions that mislabeled issue drafts as plans, including the setup video's final scene. Original UI/timing and dated capture provenance remain; historical sources are archived. No new analysis, customer, actual setup or measured latency is shown.
+
+Source: complete launch/ScrollShow scope, actual approved captures and media audit. All four briefs updated together. Counterpoint: polished editing can imply unsupported speed or success; label editorial holds and do not use these clips as plan, provider or independent acceptance. The proposed allowance stays blocked on workload/storage/retention/fee bounds, with legacy protections explicit. No new price, policy, campaign, provider or spending permission follows.
+
+## F055: verified ordered preparation reuse candidate, October 24
+
+[ADR 132](../adr/132-ordered-preparation-reuse.md) preserves original preparation provenance and expiry while allowing an eligible failed analysis to reuse exact retained media under fresh account/model/ASR preflight. Old unstamped, canceled and unknown work is not blessed. The runtime package keeps its provider-code exclusion through a shared pure contract. No new queue, inference or hosted activation follows.
+
+Source: authorized complete launch recovery scope and code review. All four briefs updated together. Counterpoint: invalid or missing provenance must require ordinary reviewed preparation; do not market every retry as free. Native/provider/independent production acceptance remains distinct.
+
+## F054: inspect existing examples with controlled motion, October 24
+
+[ADR 131](../adr/131-public-example-navigation-and-motion.md) adds navigation through existing evidence, project-decision, founder-capture, Library and Help routes. Each keeps its synthetic, recorded or instructional label. The selector starts no processing. Optional desktop cycling is explicit, pauses on focus and respects visibility and reduced motion; server-rendered links remain available without JavaScript.
+
+Source: the authorized ScrollShow integration, existing approved destinations and root review. All four briefs updated together. Counterpoint: rotating navigation can distract; keep it off initially, pause on focus and provide the static list. Actual usability remains unobserved. Same US$3 cap and prior holds; no new processing, campaign or provider activation.
+
+## F053: gated text handoff and honest creator progress, October 24
+
+[ADR 129](../adr/129-gated-work-cloud-text-handoff.md) adds an explicit private text handoff through existing source jobs and assistant grants. Route flags stay off; no real-video or official-host acceptance follows. [ADR 130](../adr/130-current-creator-digest-processing.md) separates current source status/coverage from delivery and discovery in the existing digest. No source bytes, private follows or contributor identity enter public copy.
+
+Source: the authorized complete launch implementation and current code review. All four briefs updated together. This is compatible implementation evidence, not a new audience, price, campaign, permission or outcome. Counterpoint: a manual text handoff does not meet the requested automatic video experience; keep that requirement open and the route disabled pending actual host/provider acceptance. Same US$3 cap and all prior holds remain.
+
+## F052: Pro discovery candidate and honest coverage, October 24
+
+[ADR 128](../adr/128-pro-catalog-search-and-page-map.md) adds an indexed generic-search candidate, current-page categories/topics/public creator provenance and an optional static membership map with a primary list. It uses the existing artifact family, keeps immutable saved copies separate and adds no inference or private-context sharing. [The receipt](../operations/evidence/launch-20261024-catalog-discovery.json) records 1,456 passing local tests, three hosted skips, types/lint/builds and independent review, with a retained mixed-record mock gap and pending native browser check.
+
+Search covers indexed eligible analyses; manual backfill and the new index are not activated. The map describes only currently checked analyses, not platform-wide trends, creator usefulness or community traction. Keep public catalog claims pending actual provider/content/live acceptance. No price, audience, belief, lifetime-order, campaign, customer or budget permission changes. Same US$3 cap and old holds remain.
+
+Source: current artifact contracts, local integrated checks and primary Convex search-source review. Decision: make eligible material inspectable without leaking private taxonomy or implying exhaustive search/trends. Counterevidence: mock missing-field limitation and absent hosted/index/independent acceptance. Test real mixed-record search and beginner use before stronger claims.
+
+## F051: bounded Pro catalog candidate, October 24
+
+[ADR 127](../adr/127-bounded-pro-catalog-browsing.md) adds an on-demand Pro browse/inspect/save candidate inside Library, using existing artifacts/imports and preserving immutable saved copies after cancellation. The [local receipt](../operations/evidence/launch-20261024-catalog-browse.json) records 1,445 passing offline tests, three hosted skips, both builds and independent review. Native browser consent, exact-head CI and live catalog lifecycle remain pending. Search, categories/graph and verified Cloud contribution are still required.
+
+Keep public catalog availability pending. No new processing, contributor, provider approval, customer, saving or demand was observed. All-plan contribution does not confer catalog access; own valid results and private personalization remain separate. Current prices, audience, six beliefs, lifetime deferral and provider/privacy gates are unchanged. The same US$3 cap retains US$2.8092885298898517 in conservative reservations; this slice adds no hosted operation.
+
+Source: existing artifact contracts, integrated checks and independent review. Decision: provide inspectable Pro reuse through one existing system. Counterevidence: live provider/catalog acceptance, browser usability and market demand remain unverified. Test the real lifecycle and beginner use before stronger claims.
+
+## F050: compatible frontend live, October 24
+
+[PR 141](https://github.com/StefanDG1/vibescroll/pull/141) published only the compatible public experience and frontend dependency backports. Canonical frontend `fba56d4`, alpha `0.1.0-alpha.20261024014829.gfba56d44c484`, passed exact-head/main CI, staged public reads and canonical health after exact-build promotion. Backend `abfdeff67` remains unchanged because its fresh prediction was incomplete. [The production receipt](../operations/evidence/launch-20261024-public-production.json) preserves failures, a remediated diagnostic credential exposure and conservative US$2.8092885298898517 reservations under the same US$3 cap.
+
+This is public-site publication, not no-GitHub source processing, catalog/creator availability, independent usefulness or customer evidence. Full product candidate PR 140 remains intact. Prices, valid purchases, audience, six beliefs and provider/privacy gates remain unchanged; lifetime access stays later.
+
+Source: exact CI, fixed Basic deployment metadata, bounded staged/canonical responses and root ledger. Decision: use these facts for public-site availability only. Counterevidence: unchanged backend, incomplete migration prediction and no new source-to-result or independent observation. Test: continue the full product and route acceptance before stronger claims. No campaign or new purchase follows.
+
 ## F049: compatible public experience and security release, October 24
 
 [ADR 126](../adr/126-compatible-public-and-security-release.md) prepares a compatible public-site/security release from the existing production baseline while the full product candidate remains under review in PR 140. The owner resumed the full scope within US$3 cumulative, preserving all old holds. Defer lifetime/ongoing access; current subscription prices, allowances and purchased terms remain unchanged.
@@ -7,6 +89,76 @@
 Use the selected product-first mint/charcoal public composition, original artwork and reviewed synthetic candidate captures. Explain that general source analysis does not require GitHub, while project-specific decisions require authorized context. Manual-analysis walkthroughs are distinct from explicitly approved automatic processing. The proprietary Pro catalog, creator following and computer-free own-account Cloud remain pending release acceptance. Public layout or dependency checks are not evidence of a working Cloud adapter, accuracy, independent use or customer value. Keep the audience and six beliefs unchanged.
 
 Source: resumed owner instruction, reviewed product candidate and static migration-cost review. Decision: release the independently compatible public/security subset first without dropping the rest. Counterargument: a product-first page may imply routes are already public; keep availability and synthetic labels explicit. Test the exact production build with bounded public reads, then separately verify real source-to-result and beginner use when its gates pass. No new campaign or paid acquisition follows.
+
+## F048: resumed budget, direct Work Cloud candidate and later lifetime offer, October 24
+
+[ADR 125](../adr/125-resumed-budget-and-repository-free-cloud-probe.md) records the resumed full implementation within US$3 cumulative, retaining all earlier holds. Defer lifetime/ongoing access to a later feature; current prices, allowances and valid purchases remain unchanged. Monthly/yearly implementation, the complete product scope and provider/privacy gates remain.
+
+A separate Work Cloud task ran without GitHub and reported shell/media executables. Network enforcement, model settings, actual video processing and app result return were not verified. This is readiness evidence, not a frictionless setup, live processing or conversion claim. Keep audience and the six beliefs unchanged; measure real no-GitHub first-result use before strengthening copy.
+
+Source: latest owner instructions and one expressly authorized Work Cloud probe. Decision: adopt the cumulative cap and later-offer order; investigate the direct hosted runtime. Counterevidence: missing host policy/model observability and no real media or app return. Test: bounded current-policy real-link acquisition, native evidence review and canonical cited result in a no-GitHub account, followed by actual beginner observation. Preserve every external gate.
+
+## F047: recommended GitHub and minimal analysis setup, October 24
+
+Source: the owner explicitly confirmed skipping GitHub, source analysis without any repo/GitHub connection, recommended project connection during onboarding, and minimal automated setup. Accept under [ADR 124](../adr/124-recommended-github-and-minimal-processing-setup.md). Preserve general evidence quality, personal-library use, optional skills and required export education. Only project-specific work needs repository context.
+
+Root extends the existing persisted setup, tools and Help. No duplicate wizard or hidden Cloud-GitHub prerequisite. Measure real beginner actions, switches, time and interventions; ease/conversion claims remain unvalidated. Provider support and no-GitHub Cloud acceptance are pending. All four briefs and current plans/acceptance/provider brief are synchronized without live implementation or new spending.
+
+## F046: ScrollShow handoff and ongoing Pro offer, October 24
+
+Source: owner request to find and reconcile the ScrollShow implementation plan with every launch plan, preserving features and an efficient order. The controlling supplied FINAL-IMPLEMENTATION-PLAN.md already incorporates ADR 122 and supersedes earlier audit/offer drafts. Its selected ongoing EUR 800 offer includes a monthly allowance; it is not the old three-year pass or an initial-credit-only purchase.
+
+Decision: [ADR 123](../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) records source precedence and the future visual/commercial direction. [The integration record](../launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) maps M0-M7 inside C9/C10, reuses existing code owners and retains every R/P/N requirement. The source handoff remains planning-only; no runtime, live offer, policy or deployment changes follow.
+
+Review: Research treats the competitor audit as design evidence, not paid demand. Avatar preserves library-only/non-coding users and optional project GitHub. Offer records all three Pro payment choices with recurring allowances, sustainable economics/terms and legacy preservation. Beliefs retain inspected evidence/control/continuity. Counterarguments include personal-user comprehension, gated capabilities, copyable catalog outputs and indefinite allowance liabilities. No measured conversion, instant processing, universal platform support or margin result is claimed. Update all four briefs, C9/C10 acceptance, owner checklist and unsent copy together. Root prepares concrete release inputs rather than reopening settled choices.
+
+## F045: proprietary Pro insight catalog, October 24
+
+Source: October 24 owner decision to keep the shared database proprietary and Pro-only, followed by explicit answers allowing all plans to contribute and keeping existing saved copies after cancellation.
+
+Decision: accept under [ADR 122](../adr/122-proprietary-pro-insight-catalog.md), superseding F044's free corpus/open-data-license proposal. The existing software remains MIT. Contribution grants no catalog access; own validly processed results keep existing rules. Saved copies/notes remain readable after Pro ends, with no further catalog access, reuse or updates. Preserve private layers, exact approved public demos, provider/source rights, review/removal and the cumulative US$2 cap.
+
+Review: Research now tests paid demand, contributor comprehension, useful coverage and retention. Avatar needs a clear contribution/access distinction and optional project setup. Offer becomes the Pro library with private next steps and retained copies. Beliefs retain evidence/control/continuity. Counterargument: a paywall does not prevent copying or prove quality, and free contributors may decline. No tested willingness, customer count, guaranteed moat, price change or live feature is claimed. Root owns enforcement/terms/tests, while the [owner checklist](../launch-plan/2026-10-23/OWNER-CHECKLIST.md) records concrete human/provider dependencies. All four briefs, current plan, acceptance and unsent message drafts are synchronized; historical F044 is preserved.
+
+## F044: Codex Cloud first and a public insight library, October 23
+
+A later personal real-link Cloud test succeeded with actual audio transcription and ten natively inspected sampled frames after a separate bounded quality review. This establishes one bounded technical example; source coverage, independent quality, app write-back, host-event execution, commercial permission and public-release controls remain separate. No new result is published and no customer or savings claim follows.
+
+Source: explicit owner instruction to investigate/test official user-owned Cloud with real links, prefer it over local/managed processing if it works, make eligible generic insights a free public library without a per-result private toggle, retain private advanced reanalysis and proposals, coordinate creator subscribers, and use shared reuse as a major marketing angle. Other subscriptions and video editing/style imitation are future scope.
+
+Decision: adopt the product direction and bounded investigation/planning in [ADR 121](../adr/121-codex-cloud-first-and-public-neutral-library.md). [The complete sequence](../launch-plan/2026-10-23/CLOUD-FIRST.md) extends existing queues, artifacts, creator coordination, exploration and setup. No public activation, legacy migration, credential pooling or recurring spend follows. Explicit user subscription authority, provider approval for the orchestration/selection model, permitted source/output rights, public data license, applicable manual review and privacy/removal safeguards remain gates.
+
+Research records an unvalidated shared-learning/reuse hypothesis and a failed first Cloud runtime probe. Avatar records mobile own-subscription use and untested contributor comprehension. Offer separates planned Cloud/public features from current availability and remaining service costs. Beliefs preserve evidence and control. Counterargument: compulsory generic publication may deter private use; quota, cold starts, acquisition and human moderation can undermine the promised simplicity. Test actual real-post coverage/result return, host events, private boundaries, compatible reuse and later usefulness with denominators before marketing results. No customer, savings, pricing change or universal access claim is adopted.
+
+## F043: authorized creator and onboarding implementation, October 23
+
+The owner explicitly authorized N0-N7 and all remaining work in both plans. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes F041's planning-only boundary. Extend the existing setup progress, source intake, jobs and public artifact/reuse families. Daily public TikTok/Instagram discovery, ordered video/image/carousel evidence, eligible generic analysis with private personalization and both approved processing routes are implementation scope. They are not newly verified production capabilities.
+
+The requested project-builder chapters preserve optional GitHub and skill installation, explicit VibeScroll invocation with a copy/paste fallback, required Instagram export education, and optional creator following. Guide acknowledgement does not claim an export request, import, connected account or cited result. Existing libraries remain accessible. The seven reviewed README insights retain exact-edition publication/save/reuse approval.
+
+The original cumulative US$2 ceiling, US$1.679289 conservative retained amount and unresolved holds remain unchanged. No supplier purchase, account, recurring spend, provider approval, customer, independent test or measured benefit is invented. New capabilities stay gated where verified rights, complete cost bounds or live acceptance are absent. Audience, prices, allowances and six beliefs remain unchanged.
+
+## F042: local companion and source-gate corrections, October 23
+
+The application tree committed as `58df6ec` passed 1,001 local tests with three hosted skips, all types, zero-warning lint and both production builds. It separates GitHub/Reddit release gates, validates advertised account capabilities and reported quota, serializes existing app-source and assistant work through one owned controller, halts after uncertain dispatch, and separates pairing/connection/full-check setup with workspace-safe configuration. [The receipt](../operations/evidence/launch-20261023-local-completion.json) preserves the corrected review finding, earlier test failures, unchanged formatting failures and blocked native browser review.
+
+This is partial local engineering evidence. Complete own-plan project/plan production, retry reuse, portable runtime preparation, provider access, production and independent acceptance remain open. F041's creator/onboarding additions remain planning-only; the seven reviewed insights retain their existing publication/save/reuse approval. No new source discovery, customer, measured benefit, deployment or provider job ran. The original cumulative US$2 cap and unknown holds remain unchanged, with US$1.679289 conservatively retained. Audience, prices, allowances and six beliefs remain unchanged.
+
+## F041: creator and onboarding planning reconciliation, October 23
+
+The owner selected daily public TikTok/Instagram creator monitoring without creator cooperation, including video, image, TikTok photo and ordered/mixed carousel evidence, eligible neutral shared ideas/lessons/summaries with private personalization, eligible local own-subscription and approved cloud routes, future posts by default and optional latest ten. These are planning-only additions. [ADR 118](../adr/118-creator-and-guided-onboarding-planning-boundary.md) and the [single remaining-work plan](../launch-plan/2026-10-23/README.md#creator-and-onboarding-reconciliation) require later implementation authorization and extend existing setup, jobs, source contracts and public artifact/reuse systems.
+
+The new project-builder journey connects processing, offers optional GitHub and three verified relevant skill recommendations, introduces scrolling, teaches explicit VibeScroll invocation through ChatGPT with copy/paste fallback, completes required Instagram export education and offers optional following. Skill installation is skippable. Guide acknowledgement is separate from later export request/import, actual readiness and first useful result; returning libraries stay accessible. No new supplier, price, allowance, recurring collection, installation or spending is authorized. Existing seven-insight review/save/reuse approval and R0-R13 fixes remain valid. Provider rights, commercial subscription access, new shared-analysis lifecycle and real-device/live/independent evidence remain pending. No new demand, savings or customer outcome is claimed; audience, prices and six beliefs remain unchanged.
+
+## F040: complete per-user workflow and GitHub first, October 23
+
+The owner approved all seven actual README insights for use and allows readers to save/reuse the reviewed published insights. Exact edition preview/hash, attribution, permission expiry and private-layer exclusion still govern publication. Direct GitHub release may proceed first; Reddit remains independently gated. The owner requests each eligible user's own subscription for video analysis and selected-repository evaluation, proposals and editable plans inside VibeScroll. The immediate route uses the user's own awake paired computer; computer-free hosted use follows provider approval.
+
+The new audit found real engineering gaps in worker selection/controller ownership, first pairing, task-stage funding/model readiness, plan generation, retry preparation reuse and public moderation/provenance. These are planned corrections, not already deployed capabilities. Independent testers will be observed later in production; no independent result or customer benefit is claimed. The [October 23 completion plan](../launch-plan/2026-10-23/README.md) retains the complete original scope and [ADR 117](../adr/117-github-first-and-complete-own-subscription-workflows.md) records superseding decisions.
+
+The owner permits relevant VibeScroll and Exponential Education examples, with unrelated private material excluded. Images are optional and must explain the example without publishing private evidence. Audience, prices, allowances and six beliefs remain unchanged. Subscription allowance does not eliminate preparation/platform costs or establish commercial provider permission. The original cumulative US$2 ceiling remains; unfunded live tests stay pending. Root High is explicitly authorized for this continuation, with Ultra off.
+
+Decision: adopt the owner's scope and publication/reuse choices; implement the documented gaps and preserve provider/privacy/spending controls. Counterargument: a paired runtime and reviewed founder example still do not prove independent setup or usefulness. Validate those later with real participants and exact live evidence. No new price, campaign, public activation or spending follows from this brief.
 
 ## F039: live contrast verification, October 22
 
@@ -256,3 +408,7 @@ The owner authorized an explicit assistant grant lasting until they turn it off,
 ## F036: automatic assistant intake, October 20
 
 Source: owner discussion and implementation request. Adopt one reviewed connection preference for explicit links, automatic local extraction/organization, offline waiting with optional quoted credits and reconciled receipts. Project evaluation is explicit by name or best-match request; coding/publication remain separate. This is compatible with the project-owner and library-only audience. Update all four briefs, README, assistant setup and implementation evidence. Validate queue/account/grant/credit races locally and the visible states with labelled synthetic browser data. No measured usability, demand or savings claim follows; live personal-account activation and model execution require their own receipts.
+
+## F062: private variant project integration, October 24
+
+The four foundational documents record explicitly selected earned private text insights for existing project evaluation and plans. [ADR 139](../adr/139-private-variant-project-references.md) defines actual run/output provenance, separate runtime admission and privacy. Candidate implementation is in progress; real model usefulness, media/skills/Cloud and production remain unverified. This is not a shared catalog contribution or marketing outcome.

@@ -4,6 +4,7 @@ import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { ensure } from "../packages/policy";
+import { limit } from "./lib";
 import { personalAllowed } from "./lib/personalAccess";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import {
@@ -13,6 +14,9 @@ import {
 } from "./lib/assistantIntake";
 import { evaluationCurrent } from "./knowledge";
 import { acquisitionMessage } from "../packages/media/acquisition";
+import { capabilitySnapshot } from "./lib/localTaskAuthority";
+import { claimLocalTask, localTaskOperation } from "./localLibraryTaskRuntime";
+import { admitLocalRuntime, runtimeCurrent } from "./lib/privateSourceAnalysis";
 import {
   sourceFingerprint,
   sourcePrepareCore,
@@ -24,7 +28,11 @@ import {
   evaluationFinishCore,
 } from "./localLibrary";
 
-export async function assistantDevice(ctx: QueryCtx, hash: string) {
+export async function assistantDevice(
+  ctx: QueryCtx,
+  hash: string,
+  allowMember = false,
+) {
   ensure(
     /^[a-f0-9]{64}$/.test(hash) && process.env.RESTORE_LOCK !== "true",
     "FORBIDDEN",
@@ -52,7 +60,10 @@ export async function assistantDevice(ctx: QueryCtx, hash: string) {
       personalAllowed(actor.subject) &&
       workspaceReadable(organization, actor._id) &&
       membership &&
-      ["owner", "admin"].includes(membership.role),
+      (allowMember
+        ? ["owner", "admin", "member"]
+        : ["owner", "admin"]
+      ).includes(membership.role),
     "FORBIDDEN",
     "Use your own authorized paired computer.",
   );
@@ -82,9 +93,14 @@ async function boundOperation(
         : undefined);
   const run = runId ? await ctx.db.get(runId as Id<"localLibraryRuns">) : null;
   ensure(run?.actor === device.owner, "FORBIDDEN", "Local run unavailable.");
+  ensure(
+    !run.task,
+    "FORBIDDEN",
+    "Use the exact versioned task operation and lease.",
+  );
   const intake = await validateLocalRun(ctx, run, device.owner);
   ensure(
-    intake.deviceId === device._id,
+    intake?.deviceId === device._id,
     "FORBIDDEN",
     "This work belongs to another computer.",
   );
@@ -106,10 +122,69 @@ export const frame = internalQuery({
 export const operation = internalMutation({
   args: { credentialHash: v.string(), operation: v.string(), args: v.any() },
   handler: async (ctx, input): Promise<any> => {
-    const device = await assistantDevice(ctx, input.credentialHash);
     const a = input.args;
+    const versioned =
+      (input.operation === "hello" && !!a.capabilities) ||
+      (input.operation === "claim" &&
+        ["1.0.0", "2.0.0", "3.0.0"].includes(a.taskProtocolVersion)) ||
+      input.operation.startsWith("task_");
+    const device = await assistantDevice(ctx, input.credentialHash, versioned);
     const now = Date.now();
+    if (input.operation.startsWith("task_")) {
+      await limit(ctx, `subscription-task-device:${device._id}`, 120);
+      return localTaskOperation(ctx, device, input.operation, a);
+    }
     if (input.operation === "hello") {
+      if (a.capabilities) {
+        await limit(ctx, `subscription-catalogue:${device._id}`, 12);
+        const snapshot = await capabilitySnapshot(
+          ctx,
+          device,
+          a.capabilities,
+          a.profileBinding,
+          a.expiresAt,
+        );
+        const localRuntime = await admitLocalRuntime(
+          ctx,
+          device,
+          a.localTaskRuntime,
+          a.profileBinding,
+          a.expiresAt,
+        );
+        const legacy = snapshot.value.models.some(
+          (m: any) =>
+            m.slug === "gpt-6.1-sol" && m.reasoningEfforts.includes("medium"),
+        );
+        if (legacy && a.model === "gpt-6.1-sol")
+          await ctx.db.patch(device._id, {
+            assistantSeenAt: now,
+            assistantProfileBinding: a.profileBinding,
+            assistantSessionExpiresAt: a.expiresAt,
+          });
+        return {
+          workspaceId: device.organizationId,
+          taskProtocolVersion: "1.0.0",
+          ...(localRuntime
+            ? {
+                sourceTaskProtocolVersion: "2.0.0",
+                ...(localRuntime.value.features.includes(
+                  "project_private_variant_v1",
+                )
+                  ? { projectPrivateVariantProtocolVersion: "3.0.0" }
+                  : {}),
+                localRuntimeHash: localRuntime.hash,
+              }
+            : {}),
+          legacySupported: legacy && a.model === "gpt-6.1-sol",
+        };
+      }
+      await admitLocalRuntime(
+        ctx,
+        device,
+        undefined,
+        a.profileBinding,
+        a.expiresAt,
+      );
       ensure(
         /^[a-f0-9]{64}$/.test(a.profileBinding ?? "") &&
           a.model === "gpt-6.1-sol" &&
@@ -133,6 +208,52 @@ export const operation = internalMutation({
       return { workspaceId: device.organizationId };
     }
     if (input.operation === "claim") {
+      const runtimeHash = ["2.0.0", "3.0.0"].includes(a.taskProtocolVersion)
+        ? a.localRuntimeHash
+        : undefined;
+      ensure(
+        !["2.0.0", "3.0.0"].includes(a.taskProtocolVersion) ||
+          (typeof runtimeHash === "string" &&
+            runtimeCurrent(device, runtimeHash)),
+        "APPROVAL_STALE",
+        "Reconnect the current local source runtime before claiming.",
+      );
+      ensure(
+        a.taskProtocolVersion !== "3.0.0" ||
+          device.localTaskRuntime?.value.features.includes(
+            "project_private_variant_v1",
+          ),
+        "APPROVAL_STALE",
+        "Reconnect the private project runtime.",
+      );
+      if (
+        ["1.0.0", "2.0.0", "3.0.0"].includes(a.taskProtocolVersion) &&
+        a.preferTasks !== false
+      ) {
+        const task = await claimLocalTask(
+          ctx,
+          device,
+          runtimeHash,
+          a.taskProtocolVersion === "3.0.0",
+        );
+        if (task) return task;
+      }
+      if (
+        versioned &&
+        ((device.assistantSeenAt ?? 0) <= now - 360000 ||
+          !device.subscriptionCapabilities?.value.models.some(
+            (m) =>
+              m.slug === "gpt-6.1-sol" && m.reasoningEfforts.includes("medium"),
+          ))
+      )
+        return (
+          (await claimLocalTask(
+            ctx,
+            device,
+            runtimeHash,
+            a.taskProtocolVersion === "3.0.0",
+          )) ?? { job: null }
+        );
       ensure(
         (device.assistantSeenAt ?? 0) > now - 360000,
         "SETUP_REQUIRED",
@@ -157,7 +278,15 @@ export const operation = internalMutation({
       }
       if ((device.assistantSessionExpiresAt ?? 0) < now + 45 * 60000)
         return { job: null, rotate: true };
-      if (!device.assistantPending) return { job: null };
+      if (!device.assistantPending)
+        return versioned
+          ? ((await claimLocalTask(
+              ctx,
+              device,
+              runtimeHash,
+              a.taskProtocolVersion === "3.0.0",
+            )) ?? { job: null })
+          : { job: null };
       const waiting = await ctx.db
         .query("assistantIntakes")
         .withIndex("by_device_state", (q) =>
@@ -254,7 +383,14 @@ export const operation = internalMutation({
       }
       if (!waiting.length)
         await ctx.db.patch(device._id, { assistantPending: false });
-      return { job: null };
+      return versioned
+        ? ((await claimLocalTask(
+            ctx,
+            device,
+            runtimeHash,
+            a.taskProtocolVersion === "3.0.0",
+          )) ?? { job: null })
+        : { job: null };
     }
     await boundOperation(ctx, device, input.operation, a);
     if (input.operation === "source_prepare")
@@ -276,6 +412,7 @@ export const operation = internalMutation({
       "Local work ended.",
     );
     const intake = await validateLocalRun(ctx, run, device.owner);
+    ensure(intake, "FORBIDDEN", "Use the versioned task contract.");
     if (input.operation === "project_work") {
       const memberships = await ctx.db
         .query("knowledgeMembers")

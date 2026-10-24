@@ -19,8 +19,14 @@ import {
   redditSourceUrl,
   safeSourcePath,
 } from "../packages/sources/urls";
-import { directSourceEligibility } from "./lib/sourcePolicy";
-export { directSourceEligibility } from "./lib/sourcePolicy";
+import {
+  directSourceEnabled,
+  redditSourceEligibility,
+} from "./lib/sourcePolicy";
+export {
+  directSourceEnabled,
+  redditSourceEligibility,
+} from "./lib/sourcePolicy";
 import {
   createEvidence,
   excerptHash,
@@ -124,7 +130,7 @@ async function requiresRightsReview(ctx: QueryCtx, source: Doc<"sources">) {
     revision.revision?.retention?.retainUntil <= Date.now()
   );
 }
-async function scrubUnusableBase(
+export async function scrubUnusableBase(
   ctx: Parameters<typeof invalidatePublicSource>[0],
   source: Doc<"sources">,
   now: number,
@@ -132,7 +138,13 @@ async function scrubUnusableBase(
   // Authored filing, notes and knowledge corrections are separate records.
   // New rights never reauthorize retained provider bytes or their old analysis.
   await ctx.db.patch(source._id, {
+    privateSourceAnalysis: undefined,
+    privateSourceAnalysisRunId: undefined,
     currentRevisionId: undefined,
+    orderedMedia: undefined,
+    personalOrderedInput: undefined,
+    orderedPreparation: undefined,
+    serviceIntent: undefined,
     text: undefined,
     summary: undefined,
     analysis: undefined,
@@ -156,6 +168,12 @@ async function scrubUnusableBase(
     updatedAt: Math.max(now, source.updatedAt + 1),
   });
   await invalidatePublicSource(ctx, source._id);
+  await ctx.scheduler.runAfter(0, internal.privateSourceAnalysis.scrub, {
+    organizationId: source.organizationId,
+    sourceId: source._id,
+    maxGeneration: source.generation,
+    cursor: null,
+  });
   for (const request of await ctx.db
     .query("sourceAcquisitions")
     .withIndex("by_source", (q) => q.eq("sourceId", source._id))
@@ -192,7 +210,7 @@ async function currentLease(
     row.state !== "fetching" ||
     row.lease !== lease ||
     row.deadline <= Date.now() ||
-    !directSourceEligibility()
+    !directSourceEnabled(row.provider)
   )
     return null;
   const source = await actorCurrent(ctx, row);
@@ -219,9 +237,9 @@ export const prepare = mutation({
     const provider = providerOf(source);
     await revisionCapacity(ctx, source._id);
     ensure(
-      directSourceEligibility(),
+      directSourceEnabled(provider),
       "SETUP_REQUIRED",
-      "Both direct source adapters require current verified provider setup.",
+      "This source provider requires current verified setup and release approval.",
     );
     const recovery = await requiresRightsReview(ctx, source);
     ensure(
@@ -332,10 +350,15 @@ export const status = query({
       "Source unavailable.",
     );
     await access(ctx, source.organizationId);
+    const enabled =
+      source.sourceType === "github_repository"
+        ? directSourceEnabled("github")
+        : source.sourceType === "reddit_thread" &&
+          directSourceEnabled("reddit");
     const rightsReview = await requiresRightsReview(ctx, source);
     if (rightsReview)
       return {
-        enabled: !!directSourceEligibility(),
+        enabled,
         sourceType: source.sourceType,
         retrievalState: "unavailable" as const,
         request: null,
@@ -352,7 +375,7 @@ export const status = query({
       .order("desc")
       .first();
     return {
-      enabled: !!directSourceEligibility(),
+      enabled,
       requiresRightsReview: false,
       sourceGeneration: source.generation,
       sourceRevision: source.updatedAt,
@@ -530,7 +553,7 @@ export const select = mutation({
         row.version === a.version &&
         row.state === "saved" &&
         row.provider === "github" &&
-        directSourceEligibility() &&
+        directSourceEnabled("github") &&
         (await actorCurrent(ctx, row)),
       "STALE_APPROVAL",
       "Source or retrieval changed. Review it again.",
@@ -605,7 +628,7 @@ export const claim = internalMutation({
       actor._id === row.actor &&
         source &&
         row.version === a.version &&
-        directSourceEligibility(),
+        directSourceEnabled(row.provider),
       "STALE_APPROVAL",
       "Source retrieval authority changed.",
     );
@@ -848,6 +871,19 @@ export const expire = internalMutation({
       retentionScheduledAt: undefined,
       updatedAt: now,
     });
+    await ctx.scheduler.runAfter(0, internal.privateSourceAnalysis.scrub, {
+      organizationId: revision.organizationId,
+      sourceId: revision.sourceId,
+      maxGeneration: revision.generation,
+      cursor: null,
+    });
+    await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
+      organizationId: revision.organizationId,
+      sourceId: revision.sourceId,
+      section: "knowledgeJobs",
+      cursor: null,
+      maxGeneration: revision.generation,
+    });
     if (
       !source ||
       source.organizationId !== revision.organizationId ||
@@ -872,6 +908,8 @@ export const expire = internalMutation({
       processingStartedAt: undefined,
       searchable: "",
       title: "Expired source",
+      privateSourceAnalysis: undefined,
+      privateSourceAnalysisRunId: undefined,
       state: "failed",
       rightsAttested: false,
       retrievalState: "unavailable",
@@ -886,13 +924,6 @@ export const expire = internalMutation({
       enqueue: false,
     });
     await invalidatePublicSource(ctx, source._id);
-    await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
-      organizationId: source.organizationId,
-      sourceId: source._id,
-      section: "knowledgeJobs",
-      cursor: null,
-      maxGeneration: source.generation,
-    });
     return { expired: true };
   },
 });
@@ -1003,7 +1034,7 @@ export const finish = internalMutation({
           "Retrieved files exceed the reviewed selection.",
         );
       else {
-        const eligibility = directSourceEligibility()!;
+        const eligibility = redditSourceEligibility()!;
         ensure(
           revision.retention &&
             revision.retention.policyEvidenceId === eligibility.evidenceId &&

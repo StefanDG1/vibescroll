@@ -233,10 +233,11 @@ function Acquisition({ source, call, readOnly = false, onAnalyze }: Props) {
           <p>{acquisitionStage(status.retrievalState)}</p>
           {!status.enabled && (
             <p>
-              Direct GitHub and Reddit retrieval are released together and
-              require current verified provider setup. Direct retrieval is
-              unavailable here. Supplying permitted text below is a recovery
-              path, not a passed direct integration.
+              {github
+                ? "Direct GitHub retrieval requires its own release approval."
+                : "Direct Reddit retrieval requires its own release approval, dedicated OAuth and current workload and retention permission."}{" "}
+              Direct retrieval is unavailable here. Supplying permitted text
+              below is a recovery path, not a passed direct integration.
             </p>
           )}
           {status.reason && <p>Reason: {status.reason.replaceAll("_", " ")}</p>}

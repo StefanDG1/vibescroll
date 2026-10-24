@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-24T01:08:00.328Z",
+  "parentCommit": "30e34d2524647a442d8ceefaa02a595d0c636e2b",
+  "environment": "Windows local/offline Node24.22.1; local production Next build; no production requests",
+  "scope": "Pro service-import authority and immutable private copies, public ScrollShow composition and manual-analysis media context",
+  "implementation": {
+    "pro": "Verified current subscription + Pro allowance grant, including annual monthly allowances, before preview/save",
+    "copies": "Existing publicImports snapshots only; cancellation/operational pauses/benign edits preserve original payload; durable rights/removal/expiry/restore fence and scrub",
+    "publicSite": "Scoped existing shell; original CSS artwork; reviewed synthetic interface captures; current pricing and pending-route disclosure",
+    "media": "Caption/transcript context clarifies manual analysis; original video bytes unchanged"
+  },
+  "verification": {
+    "fullOfflineCheck": "passed1429 tests,3 hosted skips;308 documents/12 skill snapshots;zero-warning lint;all types;both production builds",
+    "focused": "126 backend/export/restore cases and27 rendered public cases at their recorded respective revisions",
+    "independentReview": "Two P1 findings corrected: annual allowance period and operational pause deletion; final retained-revision refinement approved",
+    "reactChecklist": "Static rendering and local images; no added fetch/timer/analytics; native menu with cleanup; keyboard tabs; bounded local state; no new UI dependencies",
+    "retainedFailures": [
+      "First integrated run stopped at optional darkSrc TypeScript narrowing error, corrected without assertions",
+      "Dark-mode mint scene label/link contrast corrected after actual browser inspection",
+      "127.0.0.1 dev origin denied HMR/fonts; localhost used without weakening dev-origin settings",
+      "Initial screenshot after theme switch caught transition colors; final captures await fonts and finite animations",
+      "Target.getTargetInfo returned a non-closeable bridge identifier; actual task-owned Chrome target IDs were resolved before cleanup"
+    ],
+    "buildWarnings": [
+      "Two existing dynamic-filesystem tracing warnings",
+      "Existing Node type-stripping experimental warning"
+    ],
+    "exactHeadCi": "required after commit"
+  },
+  "browser": {
+    "widths": [320, 390, 1440],
+    "themes": ["light", "dark"],
+    "overflow": false,
+    "mobileMenu": "Open, Escape and focus restore passed",
+    "tabs": "Selection, Home and End passed",
+    "noJavascript": "All six scenes readable",
+    "reducedMotion": "emulated",
+    "reviewedImageLoaded": "actual light and dark Library captures decoded1440px",
+    "mintSceneComputedColors": {
+      "label": "rgb(63,77,71)",
+      "background": "rgb(216,248,236)",
+      "link": "rgb(8,127,91)"
+    },
+    "screenshots": [
+      {
+        "path": "docs/operations/evidence/launch-20261024-public-ui/desktop-dark.png",
+        "bytes": 101663,
+        "sha256": "056a9450fcd1d9378a6d931a98880af1fa3cdccdd19ae425e03ffcf43f698830"
+      },
+      {
+        "path": "docs/operations/evidence/launch-20261024-public-ui/desktop-light.png",
+        "bytes": 101598,
+        "sha256": "4d84ef8268f8d2d808167b7b8419ac87ec3ff9eb8eea5558f695fd20d268baf4"
+      },
+      {
+        "path": "docs/operations/evidence/launch-20261024-public-ui/library-capture-mobile.png",
+        "bytes": 45303,
+        "sha256": "45cf642a66da5ff779f260bbfb885c5aae332a36d3fa1c48990d0b7e1f6f6bf7"
+      },
+      {
+        "path": "docs/operations/evidence/launch-20261024-public-ui/mobile-light.png",
+        "bytes": 37670,
+        "sha256": "a5f0dc55036d5e9e7e201f42c9f9ebb72f76422f30b823d2fcd9b1ded7562afd"
+      },
+      {
+        "path": "docs/operations/evidence/launch-20261024-public-ui/mobile-menu-light.png",
+        "bytes": 22979,
+        "sha256": "a1fa0a304f7e4dafac6fcb328fddae6b16b3fc5e0484559f35e6fa5677d50488"
+      }
+    ],
+    "limitations": [
+      "Browser emulation is not physical-device or independent-user acceptance",
+      "Remaining ScrollShow motion, new live media, complete Pro browse/search/graph and provider routes remain unfinished"
+    ]
+  },
+  "cloudReadiness": {
+    "route": "Separate expressly authorized ChatGPT Work Cloud chat, no project/repository/GitHub selected",
+    "reportedShell": "one successful bounded command",
+    "reportedPython": "3.12.14",
+    "reportedFfmpeg": "6.1.1-3ubuntu5",
+    "nativeImageTool": "exposed, not invoked in readiness probe",
+    "networkPolicy": "No host-enforced policy inspector exposed; not verified",
+    "modelEffort": "not observable; not inferred from root",
+    "sourceDownload": false,
+    "canonicalAppReturn": false,
+    "limitation": "Root observed child report, not complete shell transcript; not fresh-account or commercial acceptance"
+  },
+  "budget": {
+    "cumulativeCapUsd": "3",
+    "retainedUsd": "1.7592885298898517",
+    "unallocatedUsd": "1.2407114701101483",
+    "unknownHoldsPreserved": true,
+    "convexCalls": 0,
+    "inferenceApiCalls": 0,
+    "purchases": 0,
+    "settledInvoice": false
+  },
+  "release": {
+    "merged": false,
+    "deployed": false,
+    "backendMigration": "New tables/indexes do not pass prior zero-populated-backfill guard; fresh impact and defensible bound required",
+    "vercel": "Account signed in; included-credit display observed16.45/20 and0 on-demand. No new build triggered; not a settled invoice."
+  }
+}

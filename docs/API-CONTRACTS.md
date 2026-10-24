@@ -1,5 +1,25 @@
 # Interface contracts
 
+## Private source-text reanalysis candidate
+
+[ADR 138](adr/138-private-source-text-results-on-existing-runs.md) adds `source_reanalysis_text` to existing task quote/approval with source ID, expected private version and optional private source brief; reject repository/member/proposal arguments. The strict task is protocol2.0.0, while project/plan1.0.0 and HTTP envelopes stay unchanged. Separately hashed local runtime admission is not an official model capability. The actual run ID binds processing/input/output hashes. `privateSourceAnalysis.detail({sourceId,runId?})` returns owner-qualified parsed output/provenance and a transient effective `readUntil`; status/history contain no raw context/output. Complete source thread/turn requests including schema/instructions are capped before model dispatch; persistent result is canonical `outputJson` only.
+
+## Setup text-review availability candidate
+
+`SetupSnapshot.workCloudTextState?` is `unavailable` or `available_unverified`. The existing private-owner setup query uses the existing subject/feature gate and performs no extra read. It grants no account, host or source authority. Missing legacy values are conservative. Existing `cloudAvailable` and `local/cloud/save_only` continue to represent their original managed/paired/save routes. See [ADR 137](adr/137-distinct-processing-availability-in-setup.md).
+
+## Private evaluation brief candidate
+
+[ADR 136](adr/136-private-evaluation-brief-origin.md) adds only optional caller `privateEvaluationBrief` to the existing project task quote/approval. A server-owned private workspace is required. Validate exact non-whitespace, well-formed text up to4,000 UTF-8 bytes, unsafe controls and secrets. Server origin `{schemaVersion:"1.0.0",kind:"private_evaluation_brief",ownerId,briefHash,model,effort}` is immutable and client text supplies no authority. Plan draft input rejects a new brief and inherits the current accepted proposal origin under a separate approval. Default keys/operations remain unchanged. Raw text belongs only to the approved task/leased context; status exposes origin only.
+
+## Purchased allowance candidate
+
+`AllowancePolicy` version `allowance-policy-v1` binds policy/catalogue/price, tier, billing interval, grant schedule, credits per grant and recorded acceptance or explicit `legacy_not_reconstructed` provenance. `PaidAllowance` version `paid-allowance-v1` binds provider account/mode, subscription/item, paid start/end, original UTC anchor, base policy/invoice and optional existing upgrade-change ID. These are internal server contracts, not client-provided quantities. Checkout metadata carries only the locator for an exact server-created legal acceptance. Reconciliation verifies complete provider records and paid invoice coverage before persisting the commitment; `commerce.grantPeriod` rechecks commitment/revision/environment and the current grant period. See [ADR 134](adr/134-purchased-allowance-commitments.md).
+
+## Work Cloud text handoff candidate
+
+[ADR 129](adr/129-gated-work-cloud-text-handoff.md) defines the private, default-off `work-cloud-text-v1` route. App `workCloudAnalysis.preview` and `approve` bind a recent owner's exact input/grant/model/effort approval. MCP `work_cloud_claim`, `work_cloud_input`, `work_cloud_heartbeat`, `work_cloud_complete` and `work_cloud_fail` require the new `analysis:execute` OAuth and app scope. A first claim returns its lease token once; subsequent operations require the same task/consent/token and current authority. Canonical output schema, run and evidence are supplied in the bounded input. Complete accepts `resultJson`, at most 120,000 UTF-8 bytes, then uses existing insight validators. Only completion gets the 262,144-byte envelope limit; ordinary MCP/backend limits remain 32,768/8,192 bytes. No source acquisition, media, repository authority, public artifact or paid fallback follows. Official host and production acceptance remain pending.
+
 Mode: reference. These are proposed application interfaces, not existing provider endpoints.
 
 ## Public and authenticated HTTP boundaries
@@ -24,6 +44,12 @@ Mode: reference. These are proposed application interfaces, not existing provide
 A GET request cannot import, approve, bill, delete, or execute work. The GET share receiver only populates an uncommitted draft. Login callbacks must prevent open redirects and bind the intended draft to the current session.
 
 ## Application backend functions
+
+[ADR 128](adr/128-pro-catalog-search-and-page-map.md) advances the unreleased catalog response to `service-catalog-v2`. `browse` accepts an optional explicit search phrase; its nullable `query` binds continuation to browse versus search. `searchCoverage` remains `indexed-eligible-generic-analysis`, not a completeness count. Cards add generic categories/topics and public creator/date metadata separately from saved-copy DTOs. Search uses one five-candidate index page with the same pre-read authorization and per-result validation, plus exact projection validation. Internal `reindexCatalog` has one bounded manual page and no automatic continuation. The earlier v1 contract below records ADR 127's staged candidate, never a released production catalog.
+
+`serviceArtifacts.browse` takes the selected private `organizationId` and an opaque nullable `cursor`. It checks private ownership and current verified Pro before reading global catalog records. The versioned `service-catalog-v1` response contains at most five sanitized cards and nullable continuation, with a distinct unavailable state when operational configuration is missing. A filtered empty page can have another page; it is not an exhaustive empty-catalog claim. The fixed existing index range keeps pagination stable as time advances. Each candidate is revalidated against source, rights, settlement, moderation, revision, hashes and retention. Cards contain a clipped generic summary, original-post provenance and counts, never raw evidence, contributor identity or private taxonomy. Preview and explicit save retain their independent currentness and Pro checks. No browse starts processing.
+
+`serviceArtifacts.preview` and `save` require the caller's own private library and current verified Pro access before reading catalog content. Pro authority combines a current verified subscription with its current Pro allowance grant; an annual subscription can have a shorter monthly allowance period. Every request rechecks authority. `publicKnowledge.savedDetail`, personal note edits and owner export use only a validated immutable retained copy after cancellation, without fetching newer catalog content. An explicit Pro save can snapshot a still-valid legacy reference; a read cannot. Approved public editions retain their separate release/reuse contract. These are candidate software contracts, not a claim that the proprietary catalog is deployed or open.
 
 Assistant grant saves require `expiresAt` as either a numeric expiry within thirty days or explicit `null` for access until revoked. Profile discovery returns `expires_at: null` for that reviewed duration. Existing numeric expiries remain unchanged. See [ADR 108](adr/108-assistant-access-until-revoked.md).
 
@@ -84,3 +110,7 @@ Topic title search uses the workspace-filtered topic-name full-text/prefix index
 The authenticated, same-origin product endpoint exposes scanList, scanPrepare, scanApprove and scanPause. Prepare takes workspace and selected repository IDs and only inventories saved URL links. Approve binds scan/version, integer maximum credits and explicit funding; own_plan additionally binds a freshly authenticated paired device, advertised model and reasoning effort. Pause/cancel invalidates future dispatch while existing approved jobs and unknown reservations persist. List returns coarse progress/reasons and no credentials. Server-owned leases and frozen source/repository/profile versions prevent duplicate or stale dispatch.
 
 Improvement operations list, start a bounded issue-linked plan, separately execute an accepted plan, refresh provider receipts and append reported outcomes. Owner/admin policy operations configure or pause a repository policy; routine mode requires verified activation. Preference updates remain tenant-private and version evaluation context. Outcome validators distinguish judgment from data and require actual completed periods, samples, measures and limitations for reported data. An issue, PR or merge receipt cannot claim measured benefit.
+
+## Private variant project references, October 24
+
+A strict private-source-variant selection identifies actual run/version/output hash and one to twelve insight IDs. Only private project evaluation accepts it. Its separate evaluation reference cannot enter canonical synthesis. Task3.0.0 requires project_private_variant_v1 runtime admission. No additional project brief is accepted for this mode.

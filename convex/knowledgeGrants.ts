@@ -80,7 +80,7 @@ export async function grantedSources(
         source.organizationId !== grant.organizationId ||
         source.state === "deleted" ||
         !source.rightsAttested ||
-        !sourceRetained(source.sourceRetentionUntil) ||
+        !sourceRetained(source) ||
         source.generation !== reference.generation ||
         source.updatedAt !== reference.revision
       )
@@ -213,7 +213,7 @@ export const save = mutation({
           source.organizationId === a.organizationId &&
           source.state !== "deleted" &&
           source.rightsAttested &&
-          sourceRetained(source.sourceRetentionUntil) &&
+          sourceRetained(source) &&
           source.generation === ref.generation &&
           source.updatedAt === ref.revision,
         "STALE_APPROVAL",
@@ -353,7 +353,7 @@ export const fetchShared = query({
         source.organizationId === grant.organizationId &&
         source.state !== "deleted" &&
         source.rightsAttested &&
-        sourceRetained(source.sourceRetentionUntil) &&
+        sourceRetained(source) &&
         source.generation === current.generation &&
         source.updatedAt === current.revision,
       "FORBIDDEN",
@@ -436,7 +436,7 @@ export async function referencesGranted(
       source.organizationId !== grant.organizationId ||
       source.state !== "ready" ||
       !source.rightsAttested ||
-      !sourceRetained(source.sourceRetentionUntil) ||
+      !sourceRetained(source) ||
       source.generation !== ref.generation ||
       source.updatedAt !== ref.revision ||
       !source.analysis?.insights?.some((i: any) => i.id === ref.insightId)

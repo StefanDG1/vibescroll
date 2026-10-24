@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T08:18:40.139918+00:00",
+  "baseCommit": "0c71c9810484b45786769528f571e0b8fda49e77",
+  "mode": "offline owner-private source-text candidate on existing task runs; not media or official Cloud proof",
+  "verification": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "result": "all logged stages completed successfully; interrupted tool response did not retain aggregate process exit code",
+    "totalPassed": 1721,
+    "core": 1433,
+    "auth": 40,
+    "publicUi": 196,
+    "other": 52,
+    "hostedSkipped": 3,
+    "documents": 324,
+    "skillSnapshots": 12,
+    "financeChecks": 17,
+    "lint": "zero warnings/errors",
+    "types": "root/actual Convex/both apps passed",
+    "builds": "both completed; no whole-project Help tracing warnings",
+    "backendFocused": 170,
+    "uiFocused": 45,
+    "focusedCountsAreSubsets": true,
+    "fullLogSha256": "e551892345d750b78b8cdb83ec5d8d0844240cfbcdb253da76a9aa7aa95e6478",
+    "browserActualModelProduction": "pending; fixtures do not establish these",
+    "finalFixtureCorrection": "Only synthetic key renamed after integrated log; affected1case passed/23filtered. Exact-head CI required."
+  },
+  "contract": {
+    "source": "only latest-completed private metadata pointer and pending run ID; canonical generic analysis unchanged",
+    "output": "sole full validated outputJson on existing localLibraryRuns; <=120000 UTF8 bytes, complete serialized row <=320KiB",
+    "input": "genuine supplied text or permitted retained cited text; no public import stubs, media or invented observations",
+    "authority": "private owner; exact source generation/canonical revision/rights/evidence/context/hash; real run ID; version CAS",
+    "runtime": "separate local-task-runtime-v1 admission; new task wire2.0.0; no fabricated official model capability or GitHub requirement",
+    "queue": "same controller; separate bounded schema-version index queries prevent old-worker claims and starvation",
+    "reads": "earned result independent of execution switches/model credentials; exact provenance/current rights and server readUntil enforced",
+    "privacy": "ordinary source/history DTOs omit private result; indexed bounded erasure and restore quarantine; no automatic public sharing",
+    "projectReferences": "unfinished; viewer/export only, no invented canonical insight IDs"
+  },
+  "review": {
+    "independentHigh": "frozen final source review found no remaining P1/P2",
+    "resolved": "shared/superseded rights erasure, canonical UI stale-result fences, escaped full model request bound, old-worker queue exclusion/fairness and expired-active ordering",
+    "root": "owns contracts, schemas/generated API, integration, Help, evidence and budget"
+  },
+  "preservedFailures": [
+    "Initial new backend fixture suite lacked rateLimiter registration/lastSeenAt and narrow v2 quote handling; corrected fixtures/types without weakening authority.",
+    "Initial 12/13 roundtrip hit default5000ms timeout; unchanged isolated case passed in964ms; no timeout increase.",
+    "Combined168pass/1fail exposed required-array ordering schema hash mismatch across transport; source-only canonical transport hash corrected; final170passed.",
+    "Initial UI37/38 helper whitespace assertion corrected without trimming accepted exact text; initial lint ref and render-clock violations fixed with explicit state/events/timer.",
+    "Full log contains expected disabled-storage cleanup errors from existing offline fixtures and Node stripTypeScriptTypes experimental warning; no failed test/build stage.",
+    "Staged secret scan flagged synthetic task key after-raw-pruning-001, not a credential. Renamed fixture key; affected raw-pruning test passed. Initial filtered invocation was refused by offline wrapper because test name contained spaces; regex argument rerun passed, no bypass."
+  ],
+  "dependencyAudit": {
+    "observedAt": "2026-10-24T08:17:48.445Z",
+    "policyPassed": true,
+    "registryCounts": {
+      "info": 0,
+      "low": 2,
+      "moderate": 2,
+      "high": 0,
+      "critical": 0
+    },
+    "unresolved": [],
+    "notClaimed": "zero advisories or upstream fixes"
+  },
+  "release": {
+    "parentPr151Ci": "40072087033 success at0c71c9810484b45786769528f571e0b8fda49e77",
+    "newTablesQueuesStores": 0,
+    "indexes": [
+      "new by_source_reanalysis organizationId/task.sourceReanalysisBinding.sourceId",
+      "changed by_device_state adds task.schemaVersion"
+    ],
+    "indexMigrations": "both require separately bounded migration/backfill; not activated",
+    "sdkLockPricesQuantitiesChanged": false,
+    "newProductionConvexCalls": 0,
+    "newProviderJobs": 0,
+    "purchases": 0,
+    "cumulativeCapUSD": 3,
+    "conservativeReservationsUSD": "2.8092885298898517",
+    "unallocatedUSD": "0.1907114701101483",
+    "allUnknownHoldsPreserved": true,
+    "settledInvoice": false,
+    "production": "frontendfba56d4/backendabfdeff67 unchanged; backend fiscal proof held; exact-head CI pending"
+  },
+  "sourceHashes": [
+    {
+      "path": "apps/starter/app/api/product/route.ts",
+      "sha256": "630c9281e3dc6953b7497ccb9e9d5f9298e388bbc40842dbb9e009d2e388bc7e"
+    },
+    {
+      "path": "apps/starter/components/console.tsx",
+      "sha256": "36c9bb0667444e5f85081ca8c6d915becc8971abd77b3dffc2b38dcc48613df4"
+    },
+    {
+      "path": "apps/starter/components/own-plan-task-controls.tsx",
+      "sha256": "d7e540b830e761e0c7a1ec04e1cd70f2506fa4fd32935d3b99d5c1595ab37d4e"
+    },
+    {
+      "path": "apps/starter/components/private-source-analysis.tsx",
+      "sha256": "786fcb36759b932564b7525459497ce61e0732ddcbd6f6f72d53472d4315b808"
+    },
+    {
+      "path": "apps/starter/components/typed-source-evidence.tsx",
+      "sha256": "ecdac349ac42d2252d1b9e0d41ed832dad54997afc8990d28f7a06d0f253e664"
+    },
+    {
+      "path": "apps/starter/own-plan-task-ui.test.ts",
+      "sha256": "1d531a23adc73174aa3f1a5b7649f1c04f6146ee911246a59256b5e64720049d"
+    },
+    {
+      "path": "apps/starter/private-source-analysis-ui.test.ts",
+      "sha256": "356bb793c10caf8810864d778f4209a15bb411df0628cff3517b0633b8af6bae"
+    },
+    {
+      "path": "apps/starter/vitest.public-knowledge.config.ts",
+      "sha256": "d76b614dd71bab92a497acc8007723d3491aaf98f48e714ed6e0e0ea59f8c3e9"
+    },
+    {
+      "path": "convex/_generated/api.d.ts",
+      "sha256": "b9521ac1542763adc42458c67fd602316f42ebc0366d916383359dad5f157fad"
+    },
+    {
+      "path": "convex/assistantLocal.ts",
+      "sha256": "77181f5e23662ef670969ea637c529ba39bfdf7421e7f9b6388f5b23b96c6cc8"
+    },
+    {
+      "path": "convex/assistantLocalActions.ts",
+      "sha256": "5dac4df44946e0e51afce1842937fe2894e9e24e1d52bccb408fcd0ffc3d47ea"
+    },
+    {
+      "path": "convex/jobs.ts",
+      "sha256": "629149ea94dd147090e5362383749505e415d3d7dbc447bc78d7342a4a63d263"
+    },
+    {
+      "path": "convex/lib/localTaskAuthority.ts",
+      "sha256": "52a13d91f717412daea978e69f39479afd4efa347b20da731289166a8bd01020"
+    },
+    {
+      "path": "convex/lib/privateEvaluationContext.ts",
+      "sha256": "c9b9a17c78cd278f7da267b4795691c253ad8bdce4ad61b5e4f732db74a665ed"
+    },
+    {
+      "path": "convex/lib/privateSourceAnalysis.ts",
+      "sha256": "fc32d0b99bc0514af464e67141f6099144a4305d661cedb10a635d0c7c512dad"
+    },
+    {
+      "path": "convex/lib/sourceReanalysisTask.ts",
+      "sha256": "3121b36f83fda2a0583369bd09ce1ca68e33e4e0f682e279b4ff1cb528a5bb28"
+    },
+    {
+      "path": "convex/localLibrary.ts",
+      "sha256": "1262077e43b807c0baa0448980a643e624e5aa94487258e2f00176454120c3ac"
+    },
+    {
+      "path": "convex/localLibrarySchema.ts",
+      "sha256": "44a08d0eb1697c56370bc983af37df682143067f4364a3ce624ac886a38d18b5"
+    },
+    {
+      "path": "convex/localLibraryTaskRuntime.ts",
+      "sha256": "cca8759cc25ce6755c6c1fdbe8604c7b5a08268d90f8878d83254dcb29edfd5b"
+    },
+    {
+      "path": "convex/localLibraryTasks.ts",
+      "sha256": "34739b09213120cf04600c2d5f8ac6c0e4972cdbea524782b205112dbb8097b0"
+    },
+    {
+      "path": "convex/personalAnalysis.ts",
+      "sha256": "169565e1968339c31da8d45e155367bd1d5d916553ce1d4caaeafd07189bb67d"
+    },
+    {
+      "path": "convex/privateSourceAnalysis.ts",
+      "sha256": "c7f232477383f53dfe69c3003b3507f78e78ef667d6fa6671d60f5c3167db67a"
+    },
+    {
+      "path": "convex/product.ts",
+      "sha256": "1c1a89783bffff6ddff3d0732c906c24241b18ad0f60f62bfb19f50d03b20e56"
+    },
+    {
+      "path": "convex/productSchema.ts",
+      "sha256": "af4cf10b42e584fb13fc09682679fa881de337658b4b5b15eb87bd103d2e265a"
+    },
+    {
+      "path": "convex/recovery.ts",
+      "sha256": "d17fa63f32c08d5d7dfcd350ccec44b88ac86ce3f50c82dfdfbdcaf749769094"
+    },
+    {
+      "path": "convex/sourceAcquisition.ts",
+      "sha256": "76b18f39a6756eba00abe4d8d92143d6bdfa33ae6e6cc214670bf24af7c0f4c2"
+    },
+    {
+      "path": "packages/contracts/private-source-analysis.ts",
+      "sha256": "4fa98e59012463f597421e50b114e70148dc11875b5067f87c43ea2cb297e0ea"
+    },
+    {
+      "path": "packages/privacy/export.ts",
+      "sha256": "2af24525443c672bf545e9073a021e1c9c3bcfeadb786eb608c40d910a6823fb"
+    },
+    {
+      "path": "packages/runner/assistant-local.mjs",
+      "sha256": "07614a356bfc1952d3d8ee81c6d13c66b07880b08b6560565dd0b9707ff027c9"
+    },
+    {
+      "path": "packages/runner/local-task-runtime.d.mts",
+      "sha256": "8502b2b20a425fea897220ed19a9925324a9529d9dcbf8754df53ef641537bc7"
+    },
+    {
+      "path": "packages/runner/local-task-runtime.mjs",
+      "sha256": "dbc5622beffd888415057f76a9b1fc9843ff3e0e36c625d841571a097f9b97dd"
+    },
+    {
+      "path": "packages/runner/subscription-coordinator.mjs",
+      "sha256": "2f9700918359b3ec63fce9ba07073c5d9e8e25d081fe1b4701018cc93a8aa2d3"
+    },
+    {
+      "path": "tests/own-plan-tasks.test.ts",
+      "sha256": "8cdadf0f25d9b528af77fc3c545e5cf878ab008c98f0f415d02fb2e6f2c337a4"
+    },
+    {
+      "path": "tests/private-source-analysis.test.ts",
+      "sha256": "b962cb32095b645d4e245208fc4eb59d08ce1e2483214837c1fbae8b17f547aa"
+    },
+    {
+      "path": "tests/subscription-task-processor.test.ts",
+      "sha256": "16f810a9c8cd6fac833dc774cc98775190aca0f081180a806122660d77923a39"
+    }
+  ]
+}

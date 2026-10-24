@@ -1,12 +1,34 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import { safeSourceUrl } from "../../packages/policy";
-import { githubSourceUrl, redditSourceUrl } from "../../packages/sources/urls";
+import {
+  githubSourceUrl,
+  redditSourceUrl,
+  githubBlobUrl,
+} from "../../packages/sources/urls";
 import { excerptHash } from "../../packages/sources/evidence";
 import { sourcePolicyCurrent } from "./sourcePolicy";
 import { sharedTypedCitations } from "./sourceCitations";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { sourceRetained, retainedSourceRevision } from "./sourceAuthority";
+import { publicModerationBlocked } from "./publicModeration";
+
+export function suppliedPublicReference(raw: string) {
+  if (raw.length > 2048) throw Error("INVALID_SUPPLIED_REFERENCE");
+  const url = new URL(raw);
+  const match = /^\/([^/]+)\/([^/]+)\/blob\/([a-f0-9]{40})\/(.+)$/.exec(
+    url.pathname,
+  );
+  if (url.origin !== "https://github.com" || !match)
+    throw Error("INVALID_SUPPLIED_REFERENCE");
+  const canonical = githubBlobUrl(
+    `${match[1]}/${match[2]}`,
+    match[3],
+    decodeURIComponent(match[4]),
+  );
+  if (raw !== canonical) throw Error("INVALID_SUPPLIED_REFERENCE");
+  return canonical;
+}
 
 export const publicEnabled = () =>
   process.env.PUBLIC_KNOWLEDGE_ENABLED === "true" &&
@@ -55,7 +77,7 @@ export async function editionCurrent(
   ]);
   if (
     !source ||
-    !sourceRetained(source.sourceRetentionUntil) ||
+    !sourceRetained(source) ||
     source.state !== "ready" ||
     !source.rightsAttested ||
     source.publicImportId ||
@@ -69,6 +91,7 @@ export async function editionCurrent(
     (org.privateOwnerId && org.privateOwnerId !== actor._id)
   )
     return false;
+  if (await publicModerationBlocked(ctx, source, edition.actor)) return false;
   try {
     await sharedTypedCitations(ctx, source);
   } catch {
@@ -105,7 +128,12 @@ export async function reusableArtifact(
   id: Id<"publicArtifacts">,
 ) {
   const artifact = await ctx.db.get(id);
-  if (!artifact || artifact.state !== "eligible") return null;
+  if (
+    !artifact ||
+    artifact.origin === "service" ||
+    artifact.state !== "eligible"
+  )
+    return null;
   const edition = await publicEdition(ctx, artifact.editionId);
   if (
     !edition ||

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-23T01:20:00Z",
+  "applicationTreeCommit": "a680bc2de5793597446ce4b929b296bce85c56bb",
+  "environment": "Local Windows, project Node 24.22.1 and pnpm 12.3.4, credential-free checkout and offline network guard",
+  "executionTiming": "Full checks ran on the application tree immediately before commit. Subsequent edits only formatted the timeout fixture and renamed an unused public-document digest field. Embedded local build version reflects the preceding commit. Exact-head hosted CI is separate.",
+  "command": "node scripts/run-offline.mjs pnpm check",
+  "result": "passed",
+  "tests": {
+    "passed": 1290,
+    "hostedSkipped": 3,
+    "main": 1138,
+    "auth": 38,
+    "webHandlers": 71,
+    "installer": 14,
+    "python": 24,
+    "buildPolicy": 5
+  },
+  "validation": {
+    "documents": 294,
+    "skillSnapshots": 12,
+    "lintWarnings": 0,
+    "lintErrors": 0,
+    "allTypechecks": "passed",
+    "offlineConvexBundle": "passed, including discovered components; no deployment or credential calls",
+    "marketingBuild": "passed",
+    "starterBuild": "passed",
+    "buildWarnings": "Two dynamic filesystem tracing warnings retained",
+    "stagedSecretScan": "Gitleaks 8.30.1, no leaks found in 890524 scanned bytes"
+  },
+  "dependencyAudit": {
+    "observedAt": "2026-10-23T01:11:29.968Z",
+    "passed": true,
+    "critical": 0,
+    "moderate": 0,
+    "high": 1,
+    "locallyMitigated": ["GHSA-vfj7-8cjw-p6xm"],
+    "unresolved": 0
+  },
+  "reviewedScope": [
+    "Durable moderator restrictions, exact supplied-reference previews and private artifact imports",
+    "Own-subscription project evaluation, editable plan production, capability binding and explicit task recovery",
+    "Raw preparation binding and static-pipeline retry reuse; local preparation cancellation",
+    "Ordered social identities, actual image/video/audio decoder, strict observations and schema 3 citations",
+    "Guarded internal managed preparation, neutral analysis, measured settlement and artifact compatibility",
+    "Bounded dormant discovery, stable creator identity fences, delivery/backfill and retention cleanup",
+    "Persisted project-builder chapters, mandatory export education, sharing fallback and private following/digest"
+  ],
+  "reviewCorrections": [
+    "Preserved legacy imported/acquired URLs while canonicalizing supported social capture identities",
+    "Rejected stale repository SHA/profile and oversized selected-member approvals before reads",
+    "Bounded full ordered manifest reads instead of truncating a valid manifest",
+    "Rejected multiple audio tracks rather than silently choosing one",
+    "Paused invalid or abandoned watches without starving healthy due work",
+    "Used immutable TikTok ID and refused creator-specific Instagram handle collection",
+    "Reset stale UI task status and enforced event-time quote and capability expiry"
+  ],
+  "failedAttemptsRetained": [
+    "Initial concurrent integration exposed three URL regressions and a temporary incomplete-bundle failure; focused rerun passed after preserving legacy URLs",
+    "Sandbox budget timeout fixture lacked the now-required complete original upload asset; added the valid asset without weakening timeout protection",
+    "Installer graph assertion expected an unused social module; corrected the inventory assertion and all 14 installer cases passed",
+    "First secret scan specified a nonexistent config and did not run; default staged scan then flagged only the public FFmpeg signer-document digest label. Renamed the unused field for clarity and full staged scan passed",
+    "Offline deletion-boundary fixtures log missing-storage errors; no private storage is configured and physical hosted deletion is not claimed"
+  ],
+  "nativeBrowserReceipt": "launch-20261023-authorized-ui.json",
+  "linuxPrerequisiteSmoke": "Pinned FFmpeg source compiled locally in Linux; eight actual decoder tests and three prerequisite tests passed without skips. The later ninth probe-only regression passed in the Windows host suite; exact-head Ubuntu CI remains required.",
+  "budget": {
+    "cumulativeCapUsd": 2,
+    "conservativelyRetainedUsd": 1.6792885298898517,
+    "unallocatedUsd": 0.32071147011014833,
+    "unknownBackendHoldUsd": 0.3,
+    "holdReleased": false,
+    "newHostedCalls": 0,
+    "newModelOrSupplierJobs": 0,
+    "newDeployments": 0,
+    "newHostedSpendingUsd": 0,
+    "basis": "Conservative root-private ledger, not a final provider invoice. No rollout bound established. Public-repository standard Ubuntu CI uses no project secrets or paid gateways."
+  },
+  "remainingEngineering": [
+    "Public ordered-file intake and honest supplied-upload identity",
+    "Actual ordered own-subscription preflight, preparation, ASR, observations and completion path",
+    "Actual broker-selected snapshot provenance for retry reuse",
+    "Supplier media acquisition bridge and compatible artifact attachment on delivery",
+    "Explicit recurring processing grants, complete portable prerequisites and all remaining original R/P work"
+  ],
+  "remainingExternalAndLive": [
+    "Verified collection/reuse permissions, supplier selection and full recurring cost bound",
+    "Commercial hosted subscription approval and independent Reddit gate",
+    "Funded compatible backend, Basic frontend rollout and exact production canaries",
+    "Signed Windows distribution, real devices and independent production users",
+    "Actual live media/model quality, deletion, recurring completeness and usefulness observations"
+  ],
+  "classification": {
+    "production": false,
+    "independentHumanAcceptance": false,
+    "completeProduct": false,
+    "exactHeadCi": {
+      "verifiedHead": "d4d8e4a0dab45a913c9770f2c825cd8124042f48",
+      "runId": 39883595855,
+      "result": "success",
+      "recheckedAt": "2026-10-23T19:18:53Z",
+      "scope": "Pushed integration stage only; subsequent ordered-file/runtime work is application commit 786fb25 on a separate stacked branch."
+    }
+  }
+}

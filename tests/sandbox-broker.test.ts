@@ -80,3 +80,46 @@ it("atomically refuses replayed authorization and disables issuance during recov
     }),
   ).toBe(false);
 });
+it("returns only current project-scoped source provenance from the existing bounded broker read", async () => {
+  const t = convexTest(schema, import.meta.glob("../convex/**/*.ts"));
+  vi.stubEnv("SANDBOX_BRIDGE_SECRET", secret);
+  vi.stubEnv("SANDBOX_BRIDGE_ENABLED", "true");
+  vi.stubEnv("VERCEL_SANDBOX_PROJECT_ID", "prj_synthetic");
+  vi.stubEnv("VERCEL_SANDBOX_TEAM_ID", "team_synthetic");
+  const authority = {
+    kind: "media" as const,
+    snapshotId: "snap_syntheticCurrent123",
+    expiresAt: Date.now() + 86400000,
+    updatedAt: Date.now(),
+    projectId: "prj_synthetic",
+    teamId: "team_synthetic",
+  };
+  const id = await t.run((ctx) =>
+    ctx.db.insert("sandboxToolSnapshots", {
+      ...authority,
+      lease: "private-maintenance-lease",
+      leaseUntil: Date.now() + 1000,
+    }),
+  );
+  const body = request(),
+    signature = await signSandboxRequest(body, secret);
+  expect(
+    await t.mutation(api.sandboxBroker.consume, { body, signature }),
+  ).toEqual({
+    snapshots: {
+      media: {
+        snapshotId: authority.snapshotId,
+        expiresAt: authority.expiresAt,
+      },
+    },
+    snapshotAuthorities: { media: { ...authority, parentSnapshotId: null } },
+  });
+  await t.run((ctx) => ctx.db.patch(id, { projectId: "prj_foreign" }));
+  const next = request(Date.now(), "af".repeat(16));
+  expect(
+    await t.mutation(api.sandboxBroker.consume, {
+      body: next,
+      signature: await signSandboxRequest(next, secret),
+    }),
+  ).toBe(false);
+});

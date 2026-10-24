@@ -1,6 +1,7 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { evidenceRef } from "./knowledgeSchema";
+import { evaluationEvidenceRef } from "./knowledgeSchema";
+import { creatorRightsValue } from "./creatorSchema";
 
 export const dashboardKind = v.union(
   v.literal("source"),
@@ -31,6 +32,7 @@ export const dashboardTables = {
     sourceKind: v.optional(v.string()),
     sourceAuthorityVersion: v.optional(v.union(v.literal(1), v.literal(2))),
     sourceRetentionUntil: v.optional(v.number()),
+    creatorRights: v.optional(creatorRightsValue),
     coverage: v.optional(v.string()),
     generation: v.optional(v.number()),
     rightsAttested: v.optional(v.boolean()),
@@ -45,7 +47,7 @@ export const dashboardTables = {
     selectionVersion: v.optional(v.number()),
     review: v.optional(v.string()),
     version: v.optional(v.number()),
-    references: v.optional(v.array(evidenceRef)),
+    references: v.optional(v.array(evaluationEvidenceRef)),
   })
     .index("by_org", ["organizationId"])
     .index("by_entity", ["entityId"])

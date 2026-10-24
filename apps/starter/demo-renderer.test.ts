@@ -20,6 +20,44 @@ function saveButtons(html: string) {
     (match) => match[2].replace(/<[^>]*>/g, "").trim() === "Save",
   );
 }
+it.each(["personalOrderedInput", "orderedMedia"])(
+  "shows truthful provided-file provenance from existing %s data",
+  (field) => {
+    const metadata = {
+      schemaVersion: "provided-media-v1",
+      expectedAssetCount: 2,
+      originalUrl: "https://example.test/user-reference",
+      caption: "User <caption>",
+    };
+    const source = {
+      _id: "synthetic-provided",
+      title: "Provided files",
+      kind: "upload",
+      state: "saved",
+      generation: 0,
+      [field]:
+        field === "personalOrderedInput" ? { metadata } : { post: metadata },
+    };
+    const html = renderToStaticMarkup(
+      createElement(Console, {
+        initial,
+        organizationId: "demo",
+        demo: true,
+        readOnly: true,
+        initialView: "source",
+        initialSource: source,
+      }),
+    );
+    expect(html).toContain("2 files saved in your chosen order");
+    expect(html).toContain(
+      "publication date and post completeness are unverified",
+    );
+    expect(html).toContain('href="https://example.test/user-reference"');
+    expect(html).toContain("Original link supplied by you");
+    expect(html).toContain("User &lt;caption&gt;");
+    expect(html).not.toContain("User <caption>");
+  },
+);
 it("renders a reachable Save entry in the synthetic demo without mislabelling it viewer access", () => {
   const html = renderToStaticMarkup(
     createElement(Console, {
@@ -48,6 +86,42 @@ it("preserves viewer read-only Save restrictions in an actual workspace", () => 
   expect(buttons.every((match) => match[1].includes("disabled"))).toBe(true);
   expect(html).toContain("Viewer access.");
 });
+it.each(["orderedPreparation", "orderedMedia", "serviceIntent"])(
+  "does not offer legacy cloud analysis for an ordered source marked by %s",
+  (field) => {
+    const source = {
+      _id: "synthetic-ordered",
+      kind: "url",
+      state: "saved",
+      generation: 1,
+      title: "Synthetic ordered source",
+      url: "https://www.instagram.com/p/synthetic/",
+      [field]: { state: "pending" },
+    };
+    const html = renderToStaticMarkup(
+      createElement(Console, {
+        initial: {
+          ...initial,
+          aiPreference: {
+            cloudAnalysisEnabled: true,
+            personalAlphaEnabled: false,
+            preferChatGPTPlan: false,
+            hostedStatus: "synthetic",
+            active: true,
+          },
+        },
+        organizationId: "synthetic-workspace",
+        initialView: "source",
+        initialSource: source,
+      }),
+    );
+    expect(html).toContain(
+      "Ordered-media analysis is awaiting its supported route",
+    );
+    expect(html).not.toContain("Analyze in cloud, up to 10 credits");
+    expect(html).not.toContain("Transcribe and analyze video");
+  },
+);
 
 async function renderDemo(params: {
   view?: string;

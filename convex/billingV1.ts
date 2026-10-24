@@ -11,6 +11,11 @@ import {
 import { checkoutPaymentRoute } from "../packages/providers/stripe-checkout";
 import { managedMarketVerified } from "../packages/providers/managed-markets";
 import { policyRelease } from "../packages/policy/publication";
+import {
+  resolveAllowancePolicy,
+  validatePaidAllowance,
+  stripeObjectId,
+} from "../packages/billing/allowance-policy";
 function stripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   ensure(
@@ -59,7 +64,11 @@ export const quoteChange = action({
       sub = await client.subscriptions.retrieve(auth.billing.subscriptionId);
     ensure(
       sub.status === "active" &&
+        sub.livemode === (process.env.STRIPE_MODE === "live") &&
+        stripeObjectId(sub.customer) === auth.billing.customerId &&
         sub.metadata.product === "vibescroller" &&
+        sub.items.has_more === false &&
+        sub.items.data[0]?.quantity === 1 &&
         sub.items.data.length === 1 &&
         !sub.pending_update &&
         !sub.cancel_at_period_end,
@@ -69,6 +78,34 @@ export const quoteChange = action({
     const item = sub.items.data[0],
       interval = item.price.metadata.interval as
         "weekly" | "monthly" | "annual";
+    const commitment = auth.billing.paidAllowance;
+    ensure(
+      commitment,
+      "ALLOWANCE_RECONCILIATION_REQUIRED",
+      "Reconcile the paid allowance before requesting a plan change.",
+    );
+    validatePaidAllowance(commitment);
+    const priorUpgrade = commitment.upgradeChangeId
+      ? await ctx.runQuery(api.billingChanges.quote, {
+          id: commitment.upgradeChangeId,
+        })
+      : null;
+    const effectivePolicy =
+      priorUpgrade?.targetPolicy ?? commitment.base.policy;
+    const sourcePolicy = resolveAllowancePolicy(
+      item.price,
+      effectivePolicy.priceId,
+      effectivePolicy.acceptance,
+    );
+    ensure(
+      (!priorUpgrade || priorUpgrade.state === "applied") &&
+        commitment.subscriptionId === sub.id &&
+        commitment.itemId === item.id &&
+        commitment.paidStart === item.current_period_start * 1000 &&
+        commitment.paidEnd === item.current_period_end * 1000,
+      "ALLOWANCE_RECONCILIATION_REQUIRED",
+      "Reconcile the current paid plan before another change.",
+    );
     ensure(
       ["weekly", "monthly", "annual"].includes(interval) &&
         item.price.metadata.tier !== a.tier,
@@ -78,6 +115,19 @@ export const quoteChange = action({
     const price = priceId(a.tier, interval);
     ensure(price, "CATALOGUE_MISMATCH", "Target price unavailable.");
     const target = await client.prices.retrieve(price);
+    const targetPolicy = resolveAllowancePolicy(
+      target,
+      price,
+      sourcePolicy.acceptance,
+    );
+    ensure(
+      targetPolicy.creditsPerGrant ===
+        (interval === "weekly"
+          ? pricing.tiers[a.tier].weekly_credits
+          : pricing.tiers[a.tier].monthly_credits),
+      "CATALOGUE_MISMATCH",
+      "The displayed allowance has no reviewed policy.",
+    );
     ensure(
       target.active &&
         target.currency === "eur" &&
@@ -114,6 +164,8 @@ export const quoteChange = action({
       periodEnd: item.current_period_end,
       amount: preview?.amount_due ?? 0,
       currency: "eur",
+      sourcePolicy,
+      targetPolicy,
     });
   },
 });
@@ -291,6 +343,22 @@ export const checkout = action({
     );
     const client = await verifiedStripe();
     const actualPrice = await client.prices.retrieve(price);
+    const reviewed = resolveAllowancePolicy(actualPrice, price, {
+      kind: "legacy_not_reconstructed",
+    });
+    ensure(
+      reviewed.tier === a.tier && reviewed.billingInterval === a.interval,
+      "CATALOGUE_MISMATCH",
+      "The reviewed allowance does not match the selected plan.",
+    );
+    ensure(
+      reviewed.creditsPerGrant ===
+        (a.interval === "weekly"
+          ? pricing.tiers[a.tier].weekly_credits
+          : pricing.tiers[a.tier].monthly_credits),
+      "CATALOGUE_MISMATCH",
+      "The displayed allowance has no reviewed policy.",
+    );
     const expected = Math.round(
       pricing.tiers[a.tier][`${a.interval}_price_eur`] * 100,
     );
@@ -344,13 +412,26 @@ export const checkout = action({
       "SUBSCRIPTION_EXISTS",
       "Manage your current subscription in the billing portal.",
     );
-    await ctx.runMutation(internal.commerce.recordAcceptance, {
-      organizationId: a.organizationId,
-      termsVersion: policyRelease.id,
-      immediateService: a.immediateService,
-    });
+    const acceptanceId = await ctx.runMutation(
+      internal.commerce.recordAcceptance,
+      {
+        organizationId: a.organizationId,
+        termsVersion: policyRelease.id,
+        immediateService: a.immediateService,
+      },
+    );
+    const allowance = {
+      providerAccountId: process.env.STRIPE_ACCOUNT_ID!,
+      mode: live ? ("live" as const) : ("test" as const),
+      policy: resolveAllowancePolicy(actualPrice, price, {
+        kind: "recorded",
+        acceptanceId,
+        policyReleaseId: policyRelease.id,
+      }),
+    };
     const reserved = await ctx.runMutation(internal.billing.reserveCheckout, {
       organizationId: a.organizationId,
+      allowance,
       intent: JSON.stringify([
         price,
         route.billingCountry,
@@ -360,6 +441,12 @@ export const checkout = action({
         policyRelease.id,
       ]),
     });
+    const capturedAcceptance = reserved.allowance?.policy.acceptance;
+    ensure(
+      capturedAcceptance?.kind === "recorded",
+      "TERMS_REQUIRED",
+      "The checkout allowance acceptance is missing.",
+    );
     const session = await client.checkout.sessions.create(
       {
         customer,
@@ -381,6 +468,8 @@ export const checkout = action({
         subscription_data: {
           metadata: {
             product: "vibescroller",
+            checkoutKey: reserved.key,
+            allowanceAcceptanceId: capturedAcceptance.acceptanceId,
             tier: a.tier,
             interval: a.interval,
             organizationId: a.organizationId,

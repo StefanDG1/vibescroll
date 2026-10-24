@@ -1,5 +1,21 @@
 # Data model
 
+## Private source result candidate
+
+`localLibraryRuns.sourceTaskResult` is the sole full private output owner. Strict v2 task binding retains exact base/rights/context/schema/runtime metadata and optional approved brief. `sources.privateSourceAnalysis` is only latest metadata/version/hash pointers; `privateSourceAnalysisRunId` tracks pending work. Canonical state/generation/updatedAt and knowledge remain unchanged. Devices report a separate optional local runtime snapshot. Add `by_source_reanalysis` for exact source privacy/history pages and extend existing `by_device_state` by task schema version for bounded compatible claims. Both index migrations remain gated. No new table, result store or queue. See [ADR 138](adr/138-private-source-text-results-on-existing-runs.md).
+
+## Private evaluation context candidate
+
+The existing `localLibraryRuns.task` may retain exact approved `privateEvaluationBrief` plus server `privateEvaluationOrigin`. The same optional origin is copied without raw text to existing knowledge evaluations, proposals, private issue drafts and improvements. No new table, index, store or queue. A custom cache key extends the old key with the origin hash; default keys stay unchanged. Neutral histories exclude custom origin, while currentness checks bind derived lineage. Existing export/deletion/recovery must retain privacy and never restore task authority. See [ADR 136](adr/136-private-evaluation-brief-origin.md).
+
+## Purchased allowance candidate
+
+[ADR 134](adr/134-purchased-allowance-commitments.md) adds optional `paidAllowance` and pending `checkoutAllowance` to existing billing records, append-only offered policy/provider/customer/first-subscription binding on existing legal acceptances, copied `allowancePolicy` on billing periods, and source/target policies on existing billing changes. No table, index, wallet or queue is added. Frozen quantities and exact provider identifiers are server-derived. Original annual base and paid-upgrade invoices remain separate `creditFunding` contributions, including future monthly grants and refunds. Missing legacy evidence is not fabricated.
+
+## Personal source executor candidate
+
+[ADR 129](adr/129-gated-work-cloud-text-handoff.md) makes `sources.personalAnalysis` a strict union. Existing jobs retain required device/profile fields and an optional paired discriminator, preserving their index. Work Cloud jobs have a required executor and versioned grant/client/input/policy/funding/consent/task/lease-hash/completion binding; paired authority fields can only be absent or null. No new job, reusable-analysis or trial store is introduced. Replacing nondeleted input preserves an unresolved claimed attempt's metadata as unknown; privacy deletion and recovery still scrub runtime authority. Flags remain off and the schema is not deployed.
+
 Mode: reference. Names describe proposed Convex tables and serialized concepts.
 
 ## Shared fields
@@ -59,6 +75,10 @@ Versioned records include `schemaVersion` and an immutable content hash. Public 
 
 ## Dashboard projections
 
+Catalog v2 adds optional `catalogSearchVersion`, `catalogSearchHash` and bounded `catalogSearchText` fields only to service artifacts, plus `service_catalog_search`. Their deterministic digest covers version, artifact content hash and projected text. These fields are outside `artifact.data` and immutable saved-copy hashes. Missing projections preserve legacy browsing; explicit search covers indexed generic text only. Removal scrubs them and restore deletes the artifact row. No new table or job family is introduced. The index/backfill is not activated by its schema declaration.
+
+The Pro service catalog is a read projection of existing service-variant `publicArtifacts`. Its card contract is separate from the immutable `service-import-v1` DTO stored in `publicImports`; adding browse metadata cannot rewrite or invalidate saved copies. Browse uses the existing service-expiry index with one five-candidate page per request. It creates no store, index, queue, processing intent or contributor record. The existing explicit save creates the requesting actor's private import/source pair under current Pro; retained-copy rules continue after cancellation.
+
 A `sourceCard` query returns a summary, at most three preview main points, coverage, tags, related repo count, proposal counts, and PR counts. It also returns counts for no-fit, already-implemented, unsupported, and unreviewed matches. The detail query loads the full list.
 
 PR counts use unique provider PR IDs. A source-level `hasMergedChange` is true only when at least one linked PR has a verified merge. The UI says "1 merged PR" rather than implying that every idea from the video shipped.
@@ -72,6 +92,8 @@ Create indexes for workspace plus source capture time, workspace plus processing
 Embedding records include workspace, entity ID, model, dimensions, and content hash. Filter by workspace before returning candidate text. If a vector backend cannot enforce a tenant filter, query through separate tenant partitions or disable it. A filter after exposing results is insufficient.
 
 ## Corrections and deletion
+
+Service-origin `publicImports` optionally carry an immutable `service-import-v1` snapshot in the existing table. It contains the sanitized cited DTO, its hash, original artifact/source revision and compatibility/content/evidence/rights bindings, saved rights, save time and retention deadline. Only an explicit currently authorized Pro save creates it. Legacy references do not acquire a snapshot on reads. Notes and corrections remain separately authored. Cancellation and benign newer source metadata do not replace or remove the earned copy; durable rights, moderation, deletion, expiry and restore quarantine still apply. The same-table snapshot-expiry index and existing privacy scheduler perform bounded cleanup. No second analysis store is introduced.
 
 Never overwrite raw transcription silently. Store a correction event and update the current projection. A new processing version can replace the current display only with provenance intact.
 
@@ -98,3 +120,7 @@ knowledgeTopics has a topic-name search index with organizationId/state filters.
 Tenant-scoped libraryScans freeze the saved-link cutoff, selected repository snapshot/profile/selection versions, funding, maximum and conservative committed credits. Own-plan grants additionally bind actor/device/model/effort/account hash and expiry. Durable leases and cursors cover every source, knowledge-member and repository-evaluation page; counters distinguish analyzed, skipped, gathered, evaluated, useful drafts and no-fit. The scan references existing analysis, synthesis and evaluation jobs; it does not copy credentials or replace manual membership corrections.
 
 Improvements link current published/reviewed issue bytes, evaluation references and compatible proposals to runs. improvementOutcomes append reported judgment and/or data with deployment context, periods, samples and limitations. improvementPreferences retain private evolving owner context; improvementPolicies bind versioned explicit repository authority and ceilings. Runs optionally retain checks, independent review, durable merge intent and exact-commit provider deployment receipts. Privacy export and tenant/source deletion include the new derived records.
+
+## Private variant project references, October 24
+
+Existing derived evaluation, issue, improvement and proposal references admit a separate private run/version/output identity. Their canonical branch remains unchanged. Private-origin evaluation/issue rows may omit topic anchors; ordinary rows still require them through server invariants. Existing task source-erasure index receives a truthful source/generation locator, with no new store or index.

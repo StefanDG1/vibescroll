@@ -41,10 +41,41 @@ export const librarySpacesTables = {
     ),
     importReviewed: v.optional(v.boolean()),
     preferencesReviewed: v.optional(v.boolean()),
+    journey: v.optional(
+      v.object({
+        version: v.literal("project-builder-v1"),
+        chapter: v.number(),
+        substep: v.number(),
+        completedChapters: v.array(v.number()),
+        deferred: v.array(
+          v.union(
+            v.literal("project"),
+            v.literal("skills"),
+            v.literal("first_post"),
+            v.literal("following"),
+          ),
+        ),
+        instagramGuide: v.object({
+          version: v.literal("instagram-export-v1"),
+          step: v.number(),
+          acknowledgedAt: v.optional(v.number()),
+        }),
+        exportIntent: v.optional(
+          v.object({
+            state: v.union(v.literal("requested"), v.literal("later")),
+            reportedAt: v.number(),
+          }),
+        ),
+        startedAt: v.number(),
+        updatedAt: v.number(),
+        finishedAt: v.optional(v.number()),
+      }),
+    ),
     localPreflight: v.optional(
       v.object({
         reportedAt: v.number(),
         passed: v.boolean(),
+        readyToConnect: v.optional(v.boolean()),
         checks: v.array(
           v.object({
             id: v.string(),

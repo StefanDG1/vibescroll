@@ -1,9 +1,10 @@
 "use client";
-import { useState, useEffect, useRef, useEffectEvent } from "react";
+import { useState, useEffect, useRef, useEffectEvent, useId } from "react";
 import { useRouter } from "next/navigation";
 import { usePolling } from "@/lib/use-polling";
 import { AssistantConnections } from "./assistant-connections";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
+import { WorkCloudText } from "./work-cloud-text";
 import { UsageSummary } from "./usage-summary";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 import Link from "next/link";
@@ -58,8 +59,14 @@ import { policyRelease } from "../../../packages/policy/publication";
 import { EvidenceViewer } from "./evidence-viewer";
 import { AnalysisReview } from "./analysis-review";
 import { SetupJourney } from "./setup-journey";
+import { CreatorFollowing } from "./creator-following";
+import { ServiceCatalog } from "./service-catalog";
+import { CreatorDigest } from "./creator-digest";
+import { OwnPlanTaskControls } from "./own-plan-task-controls";
+import { OrderedFileUpload } from "./ordered-file-upload";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
 import { TypedSourceEvidence } from "./typed-source-evidence";
+import { PrivateSourceAnalysis } from "./private-source-analysis";
 import { PublicKnowledgePanel } from "./public-knowledge-panel";
 import { SavedPublicSource } from "./saved-public-source";
 import { PublicSaveContinuation } from "./public-save-continuation";
@@ -91,6 +98,7 @@ type Initial = {
     personalAlphaEnabled?: boolean;
     linkAnalysisEnabled?: boolean;
     cloudAnalysisEnabled?: boolean;
+    orderedPersonalAnalysisEnabled?: boolean;
   };
   sources: any[];
   selectedSource?: any;
@@ -312,6 +320,14 @@ export function Console({
   const seenNotifications = useRef(new Set(initial.notifications.map(id)));
   const captureDialog = useRef<HTMLDialogElement>(null);
   const [sharedDraft, setSharedDraft] = useState(initialSharedDraft);
+  const [followingRequested, setFollowingRequested] = useState(false);
+  const followingPanel = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (view === "library" && followingRequested && followingPanel.current) {
+      followingPanel.current.open = true;
+      followingPanel.current.querySelector("summary")?.focus();
+    }
+  }, [view, followingRequested]);
   const [analysisSettingsOpen, setAnalysisSettingsOpen] = useState(false);
   const libraryRequest = useRef(0);
   const libraryAbort = useRef<AbortController | null>(null);
@@ -859,6 +875,26 @@ export function Console({
           "subscriptionTrialList",
           "subscriptionTrialBundle",
           "setupJourney",
+          "saveSetupJourney",
+          "creatorFollowing",
+          "creatorDigest",
+          "creatorFollow",
+          "creatorFollowChange",
+          "creatorSuppress",
+          "creatorPreviewBackfill",
+          "creatorApproveBackfill",
+          "localTaskCapabilities",
+          "localTaskResume",
+          "serviceArtifactPreview",
+          "serviceArtifactBrowse",
+          "workCloudTextPreview",
+          "workCloudTextApprove",
+          "localTaskQuote",
+          "localTaskStatus",
+          "privateSourceAnalysisDetail",
+          "localTaskApprove",
+          "localTaskCancel",
+          "localTaskReconcile",
           "acquisitionStatus",
           "publicOwn",
           "savedPublicDetail",
@@ -970,6 +1006,10 @@ export function Console({
   }, []);
   const interfaceMotion = useInterfaceMotion();
   const go = (v: string) => {
+    if (v === "following") {
+      setFollowingRequested(true);
+      v = "library";
+    } else if (v !== "library") setFollowingRequested(false);
     if (!demo && v === "billing") {
       router.push(`/app/${organizationId}/billing`);
       return;
@@ -1291,6 +1331,32 @@ export function Console({
                   }
                 />
               )}
+              {view === "library" && !demo && data.privateLibrary && (
+                <ServiceCatalog
+                  key={organizationId}
+                  organizationId={organizationId}
+                  call={strictCall}
+                  disabled={readOnly}
+                  entitlementKey={JSON.stringify([
+                    data.usage?.wallet?.tier ?? null,
+                    data.usage?.wallet?.periodEnd ?? null,
+                    data.usage?.billing?.status ?? null,
+                    data.usage?.billing?.subscriptionId ?? null,
+                    data.usage?.billing?.verifiedAt ?? null,
+                    data.usage?.billing?.periodEnd ?? null,
+                  ])}
+                />
+              )}
+              {view === "library" && !demo && data.privateLibrary && (
+                <details className="panel" id="following" ref={followingPanel}>
+                  <summary>Following</summary>
+                  <CreatorFollowing
+                    organizationId={organizationId}
+                    call={strictCall}
+                    disabled={readOnly}
+                  />
+                </details>
+              )}
               {view === "library" && (
                 <>
                   <details
@@ -1373,10 +1439,20 @@ export function Console({
                   )}
                   {data.privateLibrary && !demo && (
                     <SetupJourney
+                      key={organizationId}
                       organizationId={organizationId}
                       call={strictCall}
                       onNavigate={go}
                       onSave={() => void openCapture()}
+                      disabled={readOnly}
+                      followingAvailable
+                    />
+                  )}
+                  {data.privateLibrary && !demo && (
+                    <CreatorDigest
+                      organizationId={organizationId}
+                      call={strictCall}
+                      onOpenSource={findSource}
                       disabled={readOnly}
                     />
                   )}
@@ -1740,9 +1816,13 @@ export function Console({
                     !demo && data.aiPreference?.personalAlphaEnabled === true
                   }
                   linkAnalysisEnabled={data.aiPreference?.linkAnalysisEnabled}
+                  orderedPersonalEnabled={
+                    data.aiPreference?.orderedPersonalAnalysisEnabled === true
+                  }
                   cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
                   call={call}
                   strictCall={strictCall}
+                  onRefresh={refreshData}
                   journey={journey}
                   onProposal={(p: any) => {
                     setSelected(p);
@@ -1909,6 +1989,19 @@ export function Console({
                     data.proposals.map((p) => (
                       <article className="panel" key={id(p)}>
                         <span className="status">{label(p.disposition)}</span>
+                        {p.privateEvaluationOrigin?.kind ===
+                          "private_evaluation_brief" && (
+                          <span className="status">
+                            Private evaluation focus
+                          </span>
+                        )}
+                        {p.privateEvaluationOrigin?.kind ===
+                          "private_source_variant" && (
+                          <span className="status">
+                            Private source result version{" "}
+                            {p.privateEvaluationOrigin.version}
+                          </span>
+                        )}
                         <h2>{p.title}</h2>
                         <p>{p.detail?.currentProblem}</p>
                         <p>{label(p.review)}</p>
@@ -1968,6 +2061,28 @@ export function Console({
               )}
               {view === "proposal" && selected && (
                 <>
+                  {!demo && selected.review === "accepted" && (
+                    <OwnPlanTaskControls
+                      organizationId={organizationId}
+                      call={strictCall}
+                      privateLibrary={data.privateLibrary === true}
+                      proposal={{
+                        id: id(selected),
+                        title: selected.title,
+                        version: selected.version,
+                        review: selected.review,
+                        privateEvaluationOrigin:
+                          selected.privateEvaluationOrigin,
+                      }}
+                      repositories={data.repositories
+                        .filter((repo) => id(repo) === selected.repositoryId)
+                        .map((repo) => ({ id: id(repo), name: repo.fullName }))}
+                      disabled={readOnly}
+                      onComplete={async () => {
+                        await refreshData();
+                      }}
+                    />
+                  )}
                   <ProposalTrail
                     proposal={selected}
                     runs={data.runs.filter(
@@ -1975,6 +2090,22 @@ export function Console({
                     )}
                   />
                   <span className="status">{label(selected.disposition)}</span>
+                  {selected.privateEvaluationOrigin?.kind ===
+                    "private_evaluation_brief" && (
+                    <p className="notice">
+                      Private evaluation focus. Review this personalized project
+                      assessment before approving a plan or publication.
+                    </p>
+                  )}
+                  {selected.privateEvaluationOrigin?.kind ===
+                    "private_source_variant" && (
+                    <p className="notice">
+                      Private source result version{" "}
+                      {selected.privateEvaluationOrigin.version}. This
+                      assessment uses selected private ideas. Review it before
+                      approving a plan or publication.
+                    </p>
+                  )}
                   {selected.reviewerCorrection && (
                     <p className="notice">
                       Reviewer correction:{" "}
@@ -2791,14 +2922,15 @@ export function Console({
               demo={demo}
               organizationId={organizationId}
               call={call}
-              onDone={(sourceId?: string) => {
+              orderedCall={strictCall}
+              onDone={(sourceId?: string, savedOnly = false) => {
                 setCaptureOpen(false);
                 setSharedDraft("");
                 if (sourceId)
                   findSource({
                     _id: sourceId,
                     title: "New upload",
-                    state: "processing",
+                    state: savedOnly ? "saved" : "processing",
                     coverage: "metadata_only",
                   });
               }}
@@ -2809,10 +2941,19 @@ export function Console({
     </div>
   );
 }
-function CaptureForm({
+// Called only while submitting an approval. UI expiry uses the state timer below.
+function checkCaptureCatalogueAtSubmission(expiresAt: number) {
+  if (expiresAt <= Date.now())
+    throw new Error(
+      "Account choices expired. Refresh before approving analysis.",
+    );
+}
+
+export function CaptureForm({
   demo,
   organizationId,
   call,
+  orderedCall = call,
   onDone,
   existingSourceId,
   existingGeneration,
@@ -2829,24 +2970,45 @@ function CaptureForm({
     personalEnabled ? "personal" : "cloud",
   );
   const eligible = devices.filter(
-    (d: any) =>
-      d.personalOwned &&
-      d.state === "paired" &&
-      d.personalOnline &&
-      d.personalModels?.length,
+    (d: any) => d.personalOwned && d.state === "paired" && d.personalOnline,
   );
   const [chosenDevice, setChosenDevice] = useState(
     eligible.length === 1 ? id(eligible[0]) : "",
   );
   const computer = eligible.find((d: any) => id(d) === chosenDevice);
   const [chosenModel, setChosenModel] = useState("");
-  const effectiveModel =
-    chosenModel ||
-    computer?.personalModels.find(
-      (m: any) => m.slug === "gpt-6.1-sol" || m.slug === "gpt-5.6-sol",
-    )?.slug ||
-    computer?.personalModels[0]?.slug ||
-    "";
+  const [chosenEffort, setChosenEffort] = useState("");
+  const [captureCatalogueTime, setCaptureCatalogueTime] = useState(() =>
+    Date.now(),
+  );
+  const captureCatalogueExpiry = Math.min(
+    computer?.subscriptionCapabilities?.expiresAt ?? 0,
+    computer?.subscriptionCapabilities?.sessionExpiresAt ?? 0,
+  );
+  useEffect(() => {
+    if (!captureCatalogueExpiry) return;
+    const timer = setTimeout(
+      () => setCaptureCatalogueTime(Date.now()),
+      Math.max(1, captureCatalogueExpiry - Date.now() + 1),
+    );
+    return () => clearTimeout(timer);
+  }, [captureCatalogueExpiry]);
+  const captureModels =
+    captureCatalogueExpiry > captureCatalogueTime
+      ? computer.subscriptionCapabilities.value.models.filter(
+          (entry: any) =>
+            entry.inputModalities.includes("text") &&
+            entry.inputModalities.includes("image"),
+        )
+      : [];
+  const captureModel = captureModels.find(
+    (entry: any) => entry.slug === chosenModel,
+  );
+  const effectiveModel = captureModel?.slug ?? "";
+  const captureEfforts: string[] = captureModel?.reasoningEfforts ?? [];
+  const effectiveEffort = captureEfforts.includes(chosenEffort)
+    ? chosenEffort
+    : "";
   const personalAutomatic =
     personalEnabled &&
     analysisRoute === "personal" &&
@@ -2864,7 +3026,7 @@ function CaptureForm({
   const approval = {
     deviceId: chosenDevice,
     model: effectiveModel,
-    effort: "medium",
+    effort: effectiveEffort,
     useOwnPlan: true,
     maxComputeCredits: 10,
   };
@@ -2872,10 +3034,16 @@ function CaptureForm({
     if (cloudAutomatic && f.get("cloudCredits") !== "on")
       throw new Error("Approve the processing-credit maximum before analysis.");
     if (!personalAutomatic) return;
-    if (!computer || !effectiveModel || f.get("ownPlan") !== "on")
+    if (
+      !computer ||
+      !effectiveModel ||
+      !effectiveEffort ||
+      f.get("ownPlan") !== "on"
+    )
       throw new Error(
         "Choose your online computer and approve using your ChatGPT plan.",
       );
+    checkCaptureCatalogueAtSubmission(captureCatalogueExpiry);
     const fresh = await call("checkPersonalSession", { organizationId });
     if (fresh !== true)
       throw new Error(
@@ -2890,6 +3058,35 @@ function CaptureForm({
   const [importOffset, setImportOffset] = useState(0);
   const importAbort = useRef<AbortController | null>(null);
   useEffect(() => () => importAbort.current?.abort(), []);
+  const sourceTypeChoice = (
+    <label>
+      Source type
+      <ChoiceSelect disabled={importBusy} value={kind} onValueChange={setKind}>
+        {!existingSourceId && <option value="url">Video URL</option>}
+        {!existingSourceId && (
+          <option value="import">Instagram export or link import</option>
+        )}
+        {!existingSourceId && (
+          <option value="ordered">Images, videos or carousel</option>
+        )}
+        <option value="upload">Single video or audio</option>
+        <option value="text">Supplied transcript</option>
+      </ChoiceSelect>
+    </label>
+  );
+  if (kind === "ordered")
+    return (
+      <div className="form-grid">
+        {sourceTypeChoice}
+        <OrderedFileUpload
+          key={organizationId}
+          organizationId={organizationId}
+          call={orderedCall}
+          demo={demo}
+          onDone={(sourceId) => onDone(sourceId, true)}
+        />
+      </div>
+    );
   return (
     <form
       className="form-grid"
@@ -3052,7 +3249,7 @@ function CaptureForm({
                 generation: existingSourceId ? existingGeneration + 1 : 0,
                 deviceId: chosenDevice,
                 model: effectiveModel,
-                effort: "medium",
+                effort: effectiveEffort,
                 useOwnPlan: true,
                 maxComputeCredits: 10,
               });
@@ -3127,21 +3324,7 @@ function CaptureForm({
         }
       }}
     >
-      <label>
-        Source type
-        <ChoiceSelect
-          disabled={importBusy}
-          value={kind}
-          onValueChange={(value) => setKind(value)}
-        >
-          {!existingSourceId && <option value="url">Video URL</option>}
-          {!existingSourceId && (
-            <option value="import">Instagram export or link import</option>
-          )}
-          <option value="upload">Permitted media upload</option>
-          <option value="text">Supplied transcript</option>
-        </ChoiceSelect>
-      </label>
+      {sourceTypeChoice}
       {!existingSourceId && kind !== "import" && (
         <label>
           Title
@@ -3334,6 +3517,7 @@ function CaptureForm({
                     onValueChange={(value) => {
                       setChosenDevice(value);
                       setChosenModel("");
+                      setChosenEffort("");
                     }}
                   >
                     <option value="">Choose an online computer</option>
@@ -3348,24 +3532,54 @@ function CaptureForm({
                   ChatGPT model
                   <ChoiceSelect
                     value={effectiveModel}
-                    onValueChange={(value) => setChosenModel(value)}
+                    onValueChange={(value) => {
+                      setChosenModel(value);
+                      setChosenEffort("");
+                    }}
                   >
-                    {!computer && (
-                      <option value="">Connect your computer first</option>
-                    )}
-                    {computer?.personalModels.map((m: any) => (
+                    <option value="">
+                      Choose an available image-capable model
+                    </option>
+                    {captureModels.map((m: any) => (
                       <option key={m.slug} value={m.slug}>
                         {m.displayName}
                       </option>
                     ))}
                   </ChoiceSelect>
                 </label>
+                <label>
+                  Reasoning effort
+                  <ChoiceSelect
+                    value={effectiveEffort}
+                    disabled={!captureModel}
+                    onValueChange={setChosenEffort}
+                  >
+                    <option value="">Choose an available effort</option>
+                    {captureEfforts.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </ChoiceSelect>
+                </label>
                 <label className="check">
-                  <input name="ownPlan" type="checkbox" required />
-                  Use my ChatGPT plan with medium reasoning. Reserve up to 10
-                  compute credits per video
+                  <input
+                    key={`${chosenDevice}:${effectiveModel}:${effectiveEffort}:${computer?.subscriptionCapabilities?.hash ?? ""}`}
+                    name="ownPlan"
+                    type="checkbox"
+                    required
+                    disabled={!effectiveModel || !effectiveEffort}
+                  />
+                  Use my ChatGPT plan with the selected model and reasoning
+                  effort. Reserve up to 10 compute credits per video
                   {kind === "import" ? ", up to five videos per batch" : ""}.
                 </label>
+                {!captureModels.length && (
+                  <p className="fine">
+                    Current account choices are unavailable or expired. Refresh
+                    account status or save without automatic analysis.
+                  </p>
+                )}
                 <p className="fine">
                   Audio is transcribed locally on your laptop. Sampled frames
                   and the transcript go to your connected OpenAI account. No
@@ -3490,9 +3704,11 @@ function SourceDetail({
   devices,
   personalEnabled,
   linkAnalysisEnabled,
+  orderedPersonalEnabled,
   cloudEnabled,
   call,
   strictCall,
+  onRefresh,
   journey,
   onProposal,
 }: any) {
@@ -3505,6 +3721,12 @@ function SourceDetail({
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const transcript = useRef<HTMLDetailsElement>(null);
   const sourceId = id(source);
+  const orderedSource = Boolean(
+    detail.personalOrderedInput ||
+    detail.orderedPreparation ||
+    detail.orderedMedia ||
+    detail.serviceIntent,
+  );
   const proposalRevision = (source.proposals ?? [])
     .map(
       (proposal: any) =>
@@ -3518,6 +3740,27 @@ function SourceDetail({
     detail.mediaEvidence ??
     []
   ).filter((e: any) => e.kind === "frame");
+  const suppliedMetadata =
+    detail.personalOrderedInput?.metadata?.schemaVersion === "provided-media-v1"
+      ? detail.personalOrderedInput.metadata
+      : detail.orderedMedia?.post?.schemaVersion === "provided-media-v1"
+        ? detail.orderedMedia.post
+        : null;
+  const suppliedReference = (() => {
+    if (typeof suppliedMetadata?.originalUrl !== "string") return null;
+    try {
+      const reference = new URL(suppliedMetadata.originalUrl);
+      return reference.protocol === "https:" &&
+        !reference.username &&
+        !reference.password &&
+        !reference.port &&
+        !reference.hash
+        ? reference.href
+        : null;
+    } catch {
+      return null;
+    }
+  })();
   const untimedImages =
     detail.coverage === "visual_only" &&
     savedFrames.length > 1 &&
@@ -3709,6 +3952,77 @@ function SourceDetail({
           </span>
           <ArrowRight size={20} aria-hidden="true" />
         </a>
+      )}
+      {suppliedMetadata && (
+        <section className="panel form-grid" aria-label="Provided files">
+          <h2>Provided images and videos</h2>
+          <p>
+            {suppliedMetadata.expectedAssetCount} files saved in your chosen
+            order. Creator identity, publication date and post completeness are
+            unverified.
+          </p>
+          {suppliedReference && (
+            <a
+              href={suppliedReference}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Original link supplied by you
+            </a>
+          )}
+          {suppliedMetadata.caption && (
+            <div>
+              <h3>Your caption or context</h3>
+              <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                {suppliedMetadata.caption}
+              </p>
+            </div>
+          )}
+          <p className="fine">
+            Saving these files did not start analysis. Processing status and
+            inspected evidence are shown separately.
+          </p>
+        </section>
+      )}
+      {!demo &&
+        !detailLoading &&
+        detail.privateLibrary === true &&
+        detail.privateSourceEligibility && (
+          <PrivateSourceAnalysis
+            privateLibrary
+            organizationId={org}
+            sourceId={sourceId}
+            title={detail.title}
+            generation={detail.generation}
+            sourceUpdatedAt={detail.updatedAt}
+            rightsAttested={detail.rightsAttested === true}
+            sourceRetentionUntil={detail.sourceRetentionUntil}
+            currentRevisionId={detail.currentRevisionId}
+            analysisHash={detail.analysisHash}
+            eligibility={detail.privateSourceEligibility}
+            repositories={repos
+              .filter((repo: any) => repo.enabled && repo.confirmed)
+              .map((repo: any) => ({ id: id(repo), name: repo.fullName }))}
+            evidenceRegistry={detail.evidenceRegistry}
+            sourceRevision={detail.sourceRevision}
+            call={strictCall}
+            disabled={readOnly}
+            onComplete={onRefresh}
+            onOpenOriginal={() => setTranscriptOpen(true)}
+          />
+        )}
+      {!demo && detail.state === "ready" && (
+        <OwnPlanTaskControls
+          organizationId={org}
+          call={strictCall}
+          source={{ id: sourceId, title: detail.title }}
+          privateLibrary={detail.privateLibrary === true}
+          repositories={repos
+            .filter((repo: any) => repo.enabled && repo.confirmed)
+            .map((repo: any) => ({ id: id(repo), name: repo.fullName }))}
+          disabled={readOnly}
+          onComplete={onRefresh}
+        />
       )}
       {detail.assistantIntake && (
         <AssistantIntakeStatus
@@ -4446,20 +4760,98 @@ function SourceDetail({
             )}
           </details>
         )}
-        {personalEnabled && (
-          <PersonalSourceAnalysis
-            key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
-            source={detail}
-            devices={devices}
-            linkAnalysisEnabled={linkAnalysisEnabled}
-            call={call}
-          />
+        {detail.personalAnalysis?.executor === "work_cloud" && (
+          <section
+            className="panel"
+            aria-label="Work Cloud text analysis status"
+          >
+            <h3>Work Cloud text analysis</h3>
+            <p>
+              {label(detail.personalAnalysis.state)}. Requested{" "}
+              {detail.personalAnalysis.model}, {detail.personalAnalysis.effort}{" "}
+              reasoning. Host execution settings and subscription usage are not
+              verified by VibeScroll.
+            </p>
+            {detail.personalAnalysis.state === "queued" && (
+              <>
+                <p>
+                  In your supported Work chat, explicitly invoke VibeScroll's
+                  work_cloud_claim tool for this request, using that chat's
+                  actual task ID.
+                </p>
+                <pre>
+                  {JSON.stringify(
+                    {
+                      sourceId: id(detail),
+                      generation: detail.personalAnalysis.generation,
+                    },
+                    null,
+                    2,
+                  )}
+                </pre>
+              </>
+            )}
+            {["queued", "running"].includes(detail.personalAnalysis.state) && (
+              <button
+                className="secondary"
+                disabled={readOnly || detailLoading || busy}
+                onClick={() =>
+                  call("cancelPersonalAnalysis", { id: id(detail) })
+                }
+              >
+                Revoke this request's app access
+              </button>
+            )}
+            <p>
+              Revocation blocks further input and result return. Stop the host
+              task too. VibeScroll cannot confirm that the host stopped or
+              restore subscription allowance. No alternate provider starts
+              automatically.
+            </p>
+          </section>
         )}
+        {detail.workCloudTextEnabled &&
+          !orderedSource &&
+          !detail.publicImportId &&
+          (detail.kind === "text" || detail.currentRevisionId) &&
+          !["ready", "queued", "processing"].includes(detail.state) && (
+            <WorkCloudText
+              sourceId={id(detail)}
+              organizationId={org}
+              generation={detail.generation}
+              revision={detail.updatedAt}
+              call={strictCall}
+              disabled={readOnly || detailLoading}
+            />
+          )}
+        {personalEnabled &&
+          detail.personalAnalysis?.executor !== "work_cloud" && (
+            <PersonalSourceAnalysis
+              key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
+              source={detail}
+              devices={devices}
+              linkAnalysisEnabled={linkAnalysisEnabled}
+              orderedPersonalEnabled={orderedPersonalEnabled}
+              call={strictCall}
+              readOnly={readOnly || detailLoading}
+            />
+          )}
         {detail.error && <p role="alert">{detail.error}</p>}
-        {cloudEnabled && detail.state !== "ready" && (
+        {orderedSource && !personalEnabled && detail.state !== "ready" && (
+          <p>
+            Ordered-media analysis is awaiting its supported route. Legacy video
+            and cloud analysis are unavailable for this source.
+          </p>
+        )}
+        {cloudEnabled && !orderedSource && detail.state !== "ready" && (
           <button
             className="primary"
-            disabled={busy || ["queued", "processing"].includes(detail.state)}
+            disabled={
+              readOnly ||
+              detailLoading ||
+              busy ||
+              ["queued", "processing"].includes(detail.state)
+            }
             onClick={() => call("process", { id: id(source), maxCredits: 10 })}
           >
             Analyze in cloud, up to 10 credits
@@ -4486,36 +4878,89 @@ function SourceDetail({
     </>
   );
 }
-function PersonalSourceAnalysis({
+export function PersonalSourceAnalysis({
   source,
   devices,
   call,
   linkAnalysisEnabled,
+  orderedPersonalEnabled = false,
+  readOnly = false,
 }: any) {
+  const controlId = useId();
   const [deviceId, setDeviceId] = useState(""),
     [model, setModel] = useState(""),
-    [consent, setConsent] = useState(false),
+    [effort, setEffort] = useState(""),
+    [consent, setConsent] = useState(""),
     [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [catalogueTime, setCatalogueTime] = useState(() => Date.now());
+  const orderedInput =
+    source.personalOrderedInput?.schemaVersion === "ordered-personal-input-v1";
   const eligible = devices.filter(
     (d: any) =>
       d.personalOwned &&
       d.state === "paired" &&
       d.personalOnline &&
-      d.personalModels?.length,
+      d.personalModels?.length &&
+      (!orderedInput ||
+        d.personalInputProtocols?.includes("ordered-personal-v1")),
   );
   const device = eligible.find((d: any) => id(d) === deviceId);
+  const catalogueExpiry = Math.min(
+    device?.subscriptionCapabilities?.expiresAt ?? 0,
+    device?.subscriptionCapabilities?.sessionExpiresAt ?? 0,
+  );
+  useEffect(() => {
+    if (!catalogueExpiry) return;
+    const timer = setTimeout(
+      () => setCatalogueTime(Date.now()),
+      Math.max(1, catalogueExpiry - Date.now() + 1),
+    );
+    return () => clearTimeout(timer);
+  }, [catalogueExpiry]);
   const typedSource = Boolean(source.currentRevisionId);
+  const orderedSource = Boolean(
+    source.orderedPreparation ||
+    source.serviceIntent ||
+    (source.orderedMedia && !orderedInput),
+  );
+  const textSource = source.kind === "text" || typedSource;
+  const currentCatalogue =
+    catalogueExpiry > catalogueTime
+      ? device.subscriptionCapabilities.value
+      : null;
+  const models = currentCatalogue
+    ? currentCatalogue.models.filter(
+        (entry: any) =>
+          entry.inputModalities.includes("text") &&
+          (textSource || entry.inputModalities.includes("image")),
+      )
+    : [];
+  const selectedModel = models.find((item: any) => item.slug === model);
+  const efforts: string[] = selectedModel ? selectedModel.reasoningEfforts : [];
+  const selectionKey = `${id(source)}:${source.generation}:${deviceId}:${model}:${effort}:${device?.subscriptionCapabilities?.hash ?? ""}`;
+  const consented = consent === selectionKey;
+  const locked = readOnly || busy;
   const typedRequired =
     typedSource ||
     ["github_repository", "reddit_thread"].includes(source.sourceType);
-  const textSource = source.kind === "text" || typedSource;
   const running = ["preparing", "queued", "running"].includes(
     source.personalAnalysis?.state,
   );
   return (
     <section aria-label="Personal ChatGPT analysis" className="panel">
       <h3>Use your ChatGPT plan</h3>
-      {running && (
+      {error && <p role="alert">{error}</p>}
+      {running && orderedInput && !orderedSource && (
+        <output>
+          {source.personalAnalysis.ordered?.phase === "preflight"
+            ? "Waiting for your paired computer to check its current account, selected model and local audio tools. Media preparation has not started."
+            : source.personalAnalysis.ordered?.phase === "preparing"
+              ? "Preparing the supplied files in isolation. Your computer will inspect the available images and transcribe any supported audio."
+              : "Your paired computer is inspecting the prepared images and audio, then saving cited insights."}
+        </output>
+      )}
+      {running && !orderedSource && !orderedInput && (
         <ol
           className="processing-steps"
           aria-label="Analysis progress"
@@ -4573,10 +5018,19 @@ function PersonalSourceAnalysis({
       {running ? (
         <Button
           busy={busy}
+          disabled={readOnly}
           onClick={async () => {
+            if (locked) return;
             setBusy(true);
+            setError("");
             try {
               await call("cancelPersonalAnalysis", { id: id(source) });
+            } catch (failure) {
+              setError(
+                failure instanceof Error
+                  ? failure.message
+                  : "Cancellation was not confirmed. Refresh current status before retrying.",
+              );
             } finally {
               setBusy(false);
             }
@@ -4584,6 +5038,11 @@ function PersonalSourceAnalysis({
         >
           Cancel personal analysis
         </Button>
+      ) : orderedSource || (orderedInput && !orderedPersonalEnabled) ? (
+        <p>
+          Ordered-media analysis is awaiting its supported route. Legacy video
+          and cloud analysis are unavailable for this source.
+        </p>
       ) : typedRequired && !typedSource ? (
         <p>
           Review and acquire the current permitted source evidence above before
@@ -4602,29 +5061,34 @@ function PersonalSourceAnalysis({
         source.state !== "ready" && (
           <>
             <p>
-              {!textSource
-                ? "Your laptop transcribes audio locally, then sends sampled frames and the transcript to your ChatGPT account. Media preparation reserves up to 10 compute credits."
-                : typedSource
-                  ? "Your laptop sends only the reviewed file or discussion excerpts to your ChatGPT account. This source uses text citations and no media preparation credits."
-                  : "Your laptop sends this text to your ChatGPT account."}{" "}
+              {orderedInput
+                ? "Your paired computer first checks its actual account, selected image-capable model and local audio tools. Only then can isolated file preparation reserve up to 10 compute credits. It inspects prepared images and transcribes supported audio using your account and local tools."
+                : !textSource
+                  ? "Your laptop transcribes audio locally, then sends sampled frames and the transcript to your ChatGPT account. Media preparation reserves up to 10 compute credits."
+                  : typedSource
+                    ? "Your laptop sends only the reviewed file or discussion excerpts to your ChatGPT account. This source uses text citations and no media preparation credits."
+                    : "Your laptop sends this text to your ChatGPT account."}{" "}
               No VibeScroll inference credits or paid AI fallback. Your ChatGPT
               limits apply.
             </p>
             {!eligible.length ? (
               <p>
-                Start the personal runner on your paired laptop to see its
-                available models.
+                Start your paired companion and connect your eligible account,
+                then refresh account status to see its advertised models.
               </p>
             ) : (
               <>
-                <label>
+                <label htmlFor={`${controlId}-computer`}>
                   Computer
                   <ChoiceSelect
+                    id={`${controlId}-computer`}
+                    disabled={locked}
                     value={deviceId}
                     onValueChange={(value) => {
                       setDeviceId(value);
                       setModel("");
-                      setConsent(false);
+                      setEffort("");
+                      setConsent("");
                     }}
                   >
                     <option value="">Choose your computer</option>
@@ -4635,19 +5099,41 @@ function PersonalSourceAnalysis({
                     ))}
                   </ChoiceSelect>
                 </label>
-                <label>
+                <label htmlFor={`${controlId}-model`}>
                   Account model
                   <ChoiceSelect
+                    id={`${controlId}-model`}
+                    disabled={locked || !currentCatalogue}
                     value={model}
                     onValueChange={(value) => {
                       setModel(value);
-                      setConsent(false);
+                      setEffort("");
+                      setConsent("");
                     }}
                   >
                     <option value="">Choose an available model</option>
-                    {device?.personalModels.map((m: any) => (
+                    {models.map((m: any) => (
                       <option key={m.slug} value={m.slug}>
                         {m.displayName}
+                      </option>
+                    ))}
+                  </ChoiceSelect>
+                </label>
+                <label htmlFor={`${controlId}-effort`}>
+                  Reasoning effort
+                  <ChoiceSelect
+                    id={`${controlId}-effort`}
+                    disabled={locked || !selectedModel}
+                    value={effort}
+                    onValueChange={(value) => {
+                      setEffort(value);
+                      setConsent("");
+                    }}
+                  >
+                    <option value="">Choose an available effort</option>
+                    {efforts.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
                       </option>
                     ))}
                   </ChoiceSelect>
@@ -4655,48 +5141,90 @@ function PersonalSourceAnalysis({
                 <label className="check-label">
                   <input
                     type="checkbox"
-                    checked={consent}
-                    onChange={(e) => setConsent(e.target.checked)}
+                    checked={consented}
+                    disabled={
+                      locked || !selectedModel || !efforts.includes(effort)
+                    }
+                    onChange={(e) =>
+                      setConsent(e.target.checked ? selectionKey : "")
+                    }
                   />
-                  Use my connected ChatGPT plan for this source with medium
-                  reasoning.
+                  Use my connected ChatGPT plan for this source with the
+                  selected model and reasoning effort.
                 </label>
                 <Button
                   primary
                   busy={busy}
                   disabled={
-                    !consent ||
+                    readOnly ||
+                    !consented ||
                     !device ||
                     !model ||
+                    !efforts.includes(effort) ||
                     ["queued", "processing"].includes(source.state)
                   }
                   onClick={async () => {
+                    if (
+                      locked ||
+                      !consented ||
+                      !device ||
+                      !selectedModel ||
+                      !efforts.includes(effort) ||
+                      catalogueExpiry <= Date.now() ||
+                      orderedSource ||
+                      (orderedInput && !orderedPersonalEnabled) ||
+                      (orderedInput &&
+                        !device.personalInputProtocols?.includes(
+                          "ordered-personal-v1",
+                        ))
+                    ) {
+                      setError(
+                        "Review the current account catalogue, model and effort before approving this source.",
+                      );
+                      return;
+                    }
                     setBusy(true);
+                    setError("");
                     try {
                       await call("approvePersonalAnalysis", {
                         id: id(source),
                         generation: source.generation,
                         deviceId,
                         model,
-                        effort: "medium",
+                        effort,
                         useOwnPlan: true,
                         ...(!textSource ? { maxComputeCredits: 10 } : {}),
                       });
-                      setConsent(false);
+                      setConsent("");
+                    } catch (failure) {
+                      setError(
+                        failure instanceof Error
+                          ? failure.message
+                          : "Analysis approval was not confirmed. Refresh account status before retrying.",
+                      );
                     } finally {
                       setBusy(false);
                     }
                   }}
                 >
-                  {!textSource
-                    ? "Transcribe and analyze video"
-                    : "Analyze with my plan"}
+                  {orderedInput
+                    ? "Check account and analyze files"
+                    : !textSource
+                      ? "Transcribe and analyze video"
+                      : "Analyze with my plan"}
                 </Button>
                 <p className="fine">
                   Approval expires after 15 minutes if unclaimed.
                   Reauthentication may be required. There is no automatic model
                   or paid-provider fallback.
                 </p>
+                {!currentCatalogue && (
+                  <p>
+                    Current account choices are unavailable or expired.
+                    Reconnect your eligible account on the paired companion and
+                    refresh status. No model or reasoning effort is assumed.
+                  </p>
+                )}
               </>
             )}
           </>

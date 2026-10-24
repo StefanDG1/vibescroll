@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ProductMedia } from "@/components/product-media";
 import { PublicPage } from "@/components/site";
 import { ScrollShowScenes } from "@/components/scrollshow-scenes";
+import { ScrollShowPrompts } from "@/components/scrollshow-prompts";
+import { ScrollShowEmphasis } from "@/components/scrollshow-emphasis";
 
 export const metadata = {
   title: "Make scrolling useful",
@@ -56,6 +58,7 @@ export default function Home() {
           <Link className="ss-example-link" href="/example">
             View an example without signing in
           </Link>
+          <ScrollShowPrompts />
         </section>
         <section
           id="product-demo"
@@ -90,40 +93,42 @@ export default function Home() {
               your private workspace.
             </p>
           </div>
-          <ol
-            className="ss-evidence-trail"
-            aria-label="Illustrative source-to-project trail"
-          >
-            <li>
-              <span>Source post</span>
-              <div className="ss-source-art" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </div>
-              <h3>Show an example first</h3>
-              <p>Supplied text for this synthetic demonstration.</p>
-            </li>
-            <li>
-              <span>Cited insight</span>
-              <div className="ss-citation-art" aria-hidden="true">
-                “<i />
-                <i />
-              </div>
-              <h3>Make the first screen useful</h3>
-              <p>Inspect the explanation and its evidence before deciding.</p>
-            </li>
-            <li>
-              <span>Private product review</span>
-              <div className="ss-project-art" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </div>
-              <h3>Does this fit my product?</h3>
-              <p>Review relevance, existing behavior and limitations.</p>
-            </li>
-          </ol>
+          <ScrollShowEmphasis>
+            <ol
+              className="ss-evidence-trail"
+              aria-label="Illustrative source-to-project trail"
+            >
+              <li>
+                <span>Source post</span>
+                <div className="ss-source-art" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <h3>Show an example first</h3>
+                <p>Supplied text for this synthetic demonstration.</p>
+              </li>
+              <li>
+                <span>Cited insight</span>
+                <div className="ss-citation-art" aria-hidden="true">
+                  “<i />
+                  <i />
+                </div>
+                <h3>Make the first screen useful</h3>
+                <p>Inspect the explanation and its evidence before deciding.</p>
+              </li>
+              <li>
+                <span>Private product review</span>
+                <div className="ss-project-art" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <h3>Does this fit my product?</h3>
+                <p>Review relevance, existing behavior and limitations.</p>
+              </li>
+            </ol>
+          </ScrollShowEmphasis>
           <p className="ss-note">
             Illustrative example. No live source retrieval, catalog access or
             repository analysis is shown.

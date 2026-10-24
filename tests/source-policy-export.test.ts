@@ -15,6 +15,8 @@ function policy(
   expiresAt = Date.now() + 86400000,
 ) {
   vi.stubEnv("DIRECT_SOURCES_ENABLED", "true");
+  vi.stubEnv("GITHUB_SOURCES_ENABLED", "true");
+  vi.stubEnv("REDDIT_SOURCES_ENABLED", "true");
   vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "fixture-only");
   vi.stubEnv(
     "REDDIT_SOURCE_ELIGIBILITY_JSON",
@@ -204,6 +206,27 @@ it.each(["changed", "expired", "workload_revoked", "oauth_revoked"])(
     }
     if (changed === "oauth_revoked")
       vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "");
+    expect(await s.exported("sourceRevisions")).toEqual([]);
+    expect(JSON.stringify(await s.exported("sources"))).not.toContain(
+      s.excerpt,
+    );
+  },
+);
+it.each(["malformed", "expired", "oauth_revoked", "disabled"])(
+  "keeps GitHub exports available with Reddit %s and revokes only the selected provider",
+  async (changed) => {
+    const s = await setup("github");
+    if (changed === "malformed")
+      vi.stubEnv("REDDIT_SOURCE_ELIGIBILITY_JSON", "{");
+    if (changed === "expired") policy("fixture-policy", Date.now() - 1);
+    if (changed === "oauth_revoked")
+      vi.stubEnv("REDDIT_SOURCE_OAUTH_TOKEN", "");
+    if (changed === "disabled") vi.stubEnv("REDDIT_SOURCES_ENABLED", "false");
+    expect(JSON.stringify(await s.exported("sourceRevisions"))).toContain(
+      s.excerpt,
+    );
+    expect(JSON.stringify(await s.exported("sources"))).toContain(s.excerpt);
+    vi.stubEnv("GITHUB_SOURCES_ENABLED", "false");
     expect(await s.exported("sourceRevisions")).toEqual([]);
     expect(JSON.stringify(await s.exported("sources"))).not.toContain(
       s.excerpt,

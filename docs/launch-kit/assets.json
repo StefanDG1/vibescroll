@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseStatus": "prepared in draft PR, not publicly released",
+  "releaseStatus": "Prepared media integration only. Original production/frontend checkpoints are separate; no new production or social posting acceptance.",
   "assets": [
     {
       "path": "/product/production-summary.png",
@@ -89,65 +89,568 @@
     },
     {
       "path": "/product/overview-poster.png",
+      "kind": "extracted-export-poster",
       "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
       "synthetic": true,
-      "role": "anonymous reader of public guide or synthetic demo",
-      "reviewer": "root GPT-6.1 Sol xhigh",
-      "status": "approved for prepared draft",
-      "bytes": 122449,
-      "sha256": "e78370ddfdef49c9b8e5398131fa99c0743cc34606c7755a2cd072ffadfe26f3",
-      "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 132407,
+      "sha256": "54d4b9f8dd8e4276effcfc2d8906d45e10e94ce11d3dc10a33b8cf53666198a2",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "product",
+      "sourceAssets": [
+        {
+          "path": "/product/overview.mp4",
+          "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+          "bytes": 230404,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
       "width": 390,
-      "height": 844,
-      "kind": "reviewed-native-capture-or-video-poster"
+      "height": 900,
+      "layout": "mobile",
+      "format": "png",
+      "history": [
+        {
+          "path": "/product/overview-poster.png",
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "role": "anonymous reader of public guide or synthetic demo",
+          "reviewer": "root GPT-6.1 Sol xhigh",
+          "status": "approved for prepared draft",
+          "bytes": 122449,
+          "sha256": "e78370ddfdef49c9b8e5398131fa99c0743cc34606c7755a2cd072ffadfe26f3",
+          "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "width": 390,
+          "height": 844,
+          "kind": "reviewed-native-capture-or-video-poster"
+        }
+      ],
+      "supersedesReason": "Corrected historical issue-draft-as-plan caption; re-edited from approved UI regions with current manual-analysis context."
     },
     {
       "path": "/product/overview-transcript.txt",
-      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
-      "synthetic": true,
-      "role": "anonymous reader of public guide or synthetic demo",
-      "reviewer": "root GPT-6.1 Sol xhigh",
-      "status": "approved for prepared draft",
-      "bytes": 1314,
-      "sha256": "c58fd88ae26a0ef1796ecc7f61dbccf13a6d73a4fb4e4bb2f314e37d47af7a33",
-      "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
       "kind": "caption-or-text-alternative",
-      "captionContextReview": {
-        "date": "2026-10-24",
-        "reviewer": "root GPT-6.1 Sol High",
-        "scope": "Manual-analysis context clarified; original video and captured interface unchanged"
-      }
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 1547,
+      "sha256": "6678705490eba644ce3151c5171b726df8db047dab12222e2942e88e3973db68",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "product",
+      "sourceAssets": [
+        {
+          "path": "/product/overview.mp4",
+          "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+          "bytes": 230404,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "format": "txt",
+      "history": [
+        {
+          "path": "/product/overview-transcript.txt",
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "role": "anonymous reader of public guide or synthetic demo",
+          "reviewer": "root GPT-6.1 Sol xhigh",
+          "status": "approved for prepared draft",
+          "bytes": 1314,
+          "sha256": "c58fd88ae26a0ef1796ecc7f61dbccf13a6d73a4fb4e4bb2f314e37d47af7a33",
+          "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "kind": "caption-or-text-alternative",
+          "captionContextReview": {
+            "date": "2026-10-24",
+            "reviewer": "root GPT-6.1 Sol High",
+            "scope": "Manual-analysis context clarified; original video and captured interface unchanged"
+          }
+        }
+      ],
+      "supersedesReason": "Corrected historical issue-draft-as-plan caption; re-edited from approved UI regions with current manual-analysis context."
     },
     {
       "path": "/product/overview.mp4",
-      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
-      "synthetic": true,
-      "role": "anonymous reader of public guide or synthetic demo",
-      "reviewer": "root GPT-6.1 Sol xhigh",
-      "status": "approved for prepared draft",
-      "bytes": 230404,
-      "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
-      "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
       "kind": "silent-captioned-edited-native-captures",
-      "durationSeconds": 40,
-      "caption": "Synthetic actual candidate UI. Editorial holds and reordered frames; no measured processing time, live pairing or sample completion."
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 263884,
+      "sha256": "96a5fa57424320444b8f06c8d6c45a5db343461553ed38fdd1a208faaba06357",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "product",
+      "sourceAssets": [
+        {
+          "path": "/product/overview.mp4",
+          "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+          "bytes": 230404,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 40.0,
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 390,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "mobile",
+      "format": "mp4",
+      "history": [
+        {
+          "path": "/product/overview.mp4",
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "role": "anonymous reader of public guide or synthetic demo",
+          "reviewer": "root GPT-6.1 Sol xhigh",
+          "status": "approved for prepared draft",
+          "bytes": 230404,
+          "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+          "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "kind": "silent-captioned-edited-native-captures",
+          "durationSeconds": 40,
+          "caption": "Synthetic actual candidate UI. Editorial holds and reordered frames; no measured processing time, live pairing or sample completion."
+        }
+      ],
+      "supersedesReason": "Corrected historical issue-draft-as-plan caption; re-edited from approved UI regions with current manual-analysis context."
     },
     {
       "path": "/product/overview.vtt",
-      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
-      "synthetic": true,
-      "role": "anonymous reader of public guide or synthetic demo",
-      "reviewer": "root GPT-6.1 Sol xhigh",
-      "status": "approved for prepared draft",
-      "bytes": 646,
-      "sha256": "881a7ad5e6e0a68b384dd4c7df68d6006cf6effb826b42620b5b9070b24e2edc",
-      "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
       "kind": "caption-or-text-alternative",
-      "captionContextReview": {
-        "date": "2026-10-24",
-        "reviewer": "root GPT-6.1 Sol High",
-        "scope": "Manual-analysis context clarified; original video and captured interface unchanged"
-      }
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 701,
+      "sha256": "17eb4e4bd339cfc901dd2a47fbca41f739affbb0ab592cc61b2be3d246d786ed",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "product",
+      "sourceAssets": [
+        {
+          "path": "/product/overview.mp4",
+          "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+          "bytes": 230404,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "format": "vtt",
+      "history": [
+        {
+          "path": "/product/overview.vtt",
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "role": "anonymous reader of public guide or synthetic demo",
+          "reviewer": "root GPT-6.1 Sol xhigh",
+          "status": "approved for prepared draft",
+          "bytes": 646,
+          "sha256": "881a7ad5e6e0a68b384dd4c7df68d6006cf6effb826b42620b5b9070b24e2edc",
+          "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "kind": "caption-or-text-alternative",
+          "captionContextReview": {
+            "date": "2026-10-24",
+            "reviewer": "root GPT-6.1 Sol High",
+            "scope": "Manual-analysis context clarified; original video and captured interface unchanged"
+          }
+        }
+      ],
+      "supersedesReason": "Corrected historical issue-draft-as-plan caption; re-edited from approved UI regions with current manual-analysis context."
     },
     {
       "path": "/product/setup-poster.png",
@@ -169,25 +672,75 @@
       "synthetic": true,
       "role": "anonymous reader of public guide or synthetic demo",
       "reviewer": "root GPT-6.1 Sol xhigh",
-      "status": "approved for prepared draft",
-      "bytes": 1884,
-      "sha256": "b2bd51364f746d31b31c0fd98866f6bd1cb3f332fdd9cc7db0fe5ebcdb3b9ba9",
+      "status": "prepared-for-review corrected setup captions; native playback pending",
+      "bytes": 2143,
+      "sha256": "33256a7ac1185f048be2f3c931e7eccd1fee6a5342c704f68665a9569fef6d89",
       "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
-      "kind": "caption-or-text-alternative"
+      "kind": "caption-or-text-alternative",
+      "captionContextReview": {
+        "date": "2026-10-24",
+        "reviewer": "root GPT-6.1 Sol High",
+        "scope": "Corrected issue-draft description matches the root-reviewed final caption-band repair. Actual setup/provider/independent acceptance remains pending."
+      },
+      "history": [
+        {
+          "path": "/product/setup-walkthrough-transcript.txt",
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "role": "anonymous reader of public guide or synthetic demo",
+          "reviewer": "root GPT-6.1 Sol xhigh",
+          "status": "approved for prepared draft",
+          "bytes": 1884,
+          "sha256": "b2bd51364f746d31b31c0fd98866f6bd1cb3f332fdd9cc7db0fe5ebcdb3b9ba9",
+          "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "kind": "caption-or-text-alternative"
+        }
+      ]
     },
     {
       "path": "/product/setup-walkthrough.mp4",
       "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
       "synthetic": true,
       "role": "anonymous reader of public guide or synthetic demo",
-      "reviewer": "root GPT-6.1 Sol xhigh",
-      "status": "approved for prepared draft",
-      "bytes": 811707,
-      "sha256": "94da2151b29b1406bc6b1dd10cc2f52ca4714f0772e86e476a082b24cb7f40a0",
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; corrected actual82-second frame reviewed; native playback pending",
+      "bytes": 975956,
+      "sha256": "9b47855eed43b2e35070d2699356479b5908be8f8cb5c41dc4e7444760545026",
       "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
       "kind": "silent-captioned-edited-native-captures",
       "durationSeconds": 90,
-      "caption": "Synthetic actual candidate UI. Editorial holds and reordered frames; no measured processing time, live pairing or sample completion."
+      "caption": "Synthetic actual candidate UI. Editorial holds and reordered frames; no measured processing time, live pairing or sample completion.",
+      "reviewDate": "2026-10-24",
+      "history": [
+        {
+          "path": "/product/setup-walkthrough.mp4",
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "role": "anonymous reader of public guide or synthetic demo",
+          "reviewer": "root GPT-6.1 Sol xhigh",
+          "status": "approved for prepared draft",
+          "bytes": 811707,
+          "sha256": "94da2151b29b1406bc6b1dd10cc2f52ca4714f0772e86e476a082b24cb7f40a0",
+          "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "kind": "silent-captioned-edited-native-captures",
+          "durationSeconds": 90,
+          "caption": "Synthetic actual candidate UI. Editorial holds and reordered frames; no measured processing time, live pairing or sample completion."
+        }
+      ],
+      "sourceSha256": "94da2151b29b1406bc6b1dd10cc2f52ca4714f0772e86e476a082b24cb7f40a0",
+      "historicalSource": "docs/launch-kit/media-m2-recipe/sources/setup-76ec7bf.mp4",
+      "captionCorrection": {
+        "seconds": [80, 90],
+        "bounds": [0, 720, 1280, 120],
+        "nativeUiBounds": [0, 0, 1280, 720],
+        "description": "Final caption now accurately labels a private issue draft. Independent setup acceptance remains pending. Original UI sequence and 90-second timing retained; H.264 re-encoding changes compression pixels."
+      },
+      "codec": "h264",
+      "profile": "High",
+      "pixelFormat": "yuv420p",
+      "width": 1280,
+      "height": 840,
+      "fullDecode": "passed"
     },
     {
       "path": "/product/setup-walkthrough.vtt",
@@ -195,11 +748,30 @@
       "synthetic": true,
       "role": "anonymous reader of public guide or synthetic demo",
       "reviewer": "root GPT-6.1 Sol xhigh",
-      "status": "approved for prepared draft",
-      "bytes": 1384,
-      "sha256": "234e3686a55399abb8dc2ecda9473cdbd3320ae58fc5e43bdb9c4a00cf9d09f3",
+      "status": "prepared-for-review corrected setup captions; native playback pending",
+      "bytes": 1382,
+      "sha256": "7f7c7ce952f6160c78adab9fccd67f05763a4dae3e076372cb925df9d5b57a90",
       "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
-      "kind": "caption-or-text-alternative"
+      "kind": "caption-or-text-alternative",
+      "captionContextReview": {
+        "date": "2026-10-24",
+        "reviewer": "root GPT-6.1 Sol High",
+        "scope": "Corrected issue-draft description matches the root-reviewed final caption-band repair. Actual setup/provider/independent acceptance remains pending."
+      },
+      "history": [
+        {
+          "path": "/product/setup-walkthrough.vtt",
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "role": "anonymous reader of public guide or synthetic demo",
+          "reviewer": "root GPT-6.1 Sol xhigh",
+          "status": "approved for prepared draft",
+          "bytes": 1384,
+          "sha256": "234e3686a55399abb8dc2ecda9473cdbd3320ae58fc5e43bdb9c4a00cf9d09f3",
+          "privacyReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "kind": "caption-or-text-alternative"
+        }
+      ]
     },
     {
       "path": "/help/library-tree.png",
@@ -292,6 +864,2431 @@
       "sha256": "38d3adcd4489ac4c7ed95dbe5fd4ba646fec6eb2629de1d2f519917f4a9d8a9e",
       "reviewer": "root GPT-6.1 Sol xhigh",
       "privacyReview": "Brand artwork only, no account or outcome claim."
+    },
+    {
+      "path": "/product/overview-desktop.mp4",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 350757,
+      "sha256": "e32443998236699514d269e3dff1246df7cea97f122233908605a89946eb3a4d",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "product",
+      "sourceAssets": [
+        {
+          "path": "/product/overview.mp4",
+          "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+          "bytes": 230404,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 40.0,
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "desktop",
+      "format": "mp4"
+    },
+    {
+      "path": "/product/overview-desktop.webm",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 445721,
+      "sha256": "21a3cb4c436371583805bdd7d2f0e8abdc746162ccb7dd940f6d20b904f867bd",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "product",
+      "sourceAssets": [
+        {
+          "path": "/product/overview.mp4",
+          "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+          "bytes": 230404,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 40.0,
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "desktop",
+      "format": "webm"
+    },
+    {
+      "path": "/product/overview-desktop-poster.png",
+      "kind": "extracted-export-poster",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 199094,
+      "sha256": "49f80c2a71b15d4b3c2d1a2a78d00f2275337a84351a78f9cac8bd2536e73557",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "product",
+      "sourceAssets": [
+        {
+          "path": "/product/overview.mp4",
+          "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+          "bytes": 230404,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "width": 1280,
+      "height": 900,
+      "layout": "desktop",
+      "format": "png"
+    },
+    {
+      "path": "/product/overview.webm",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 359598,
+      "sha256": "5e5888aeb1c9814a0eefdbb5bc78b370618260d50471a2b88abefd9a929c32a5",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "product",
+      "sourceAssets": [
+        {
+          "path": "/product/overview.mp4",
+          "sha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+          "bytes": 230404,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 40.0,
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 390,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "mobile",
+      "format": "webm"
+    },
+    {
+      "path": "/product/library-desktop.mp4",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 199849,
+      "sha256": "0fcee83610780e0e4c6fcf58adfc4e7cd28f0cecd3896138969eb59276d3777f",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "library",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 24.0,
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "desktop",
+      "format": "mp4"
+    },
+    {
+      "path": "/product/library-desktop.webm",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 257518,
+      "sha256": "bf8faf1321172065263c13ddd91cb08e50292ee65f6ed7b8a6dad81027710f05",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "library",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 24.0,
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "desktop",
+      "format": "webm"
+    },
+    {
+      "path": "/product/library-desktop-poster.png",
+      "kind": "extracted-export-poster",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 169479,
+      "sha256": "d45b0e5064ba78f383c4638509fe45460b1b220bd0829f05b2da2bd3d5e62570",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "library",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "width": 1280,
+      "height": 900,
+      "layout": "desktop",
+      "format": "png"
+    },
+    {
+      "path": "/product/library-mobile.mp4",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 178682,
+      "sha256": "f9affa4d1146a91f7c9344de96ddea6c4f5a97287258c43143e0aab132ec953a",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "library",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 24.0,
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 390,
+          "height": 1100,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "mobile",
+      "format": "mp4"
+    },
+    {
+      "path": "/product/library-mobile.webm",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 256528,
+      "sha256": "f129d3e4c628f9f8d090435844f8546fbc9498bc33aaa36059e6b682d1bd9643",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "library",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 24.0,
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 390,
+          "height": 1100,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "mobile",
+      "format": "webm"
+    },
+    {
+      "path": "/product/library-mobile-poster.png",
+      "kind": "extracted-export-poster",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 162349,
+      "sha256": "3f499c97ae2df844c9bc49dc4513ad65b35111d0d85f8d52b8704b52935fd9a5",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "library",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "width": 390,
+      "height": 1100,
+      "layout": "mobile",
+      "format": "png"
+    },
+    {
+      "path": "/product/social-desktop.mp4",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 221880,
+      "sha256": "6305db685e5a60fd55e97162339d6c9c3f904343ca975076061c4ed59cf4aada",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "social",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 20.0,
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "desktop",
+      "format": "mp4"
+    },
+    {
+      "path": "/product/social-desktop.webm",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 240206,
+      "sha256": "98c19f5c41e48c2c14dcc55e2d1cfe5e03005861234bb4de329cad39bd5104f1",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "social",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 20.0,
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 1280,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "desktop",
+      "format": "webm"
+    },
+    {
+      "path": "/product/social-desktop-poster.png",
+      "kind": "extracted-export-poster",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 133906,
+      "sha256": "74d4096c20be163b7518ba8faec310ce4377d5736fc3a5f6fbde72f7fb340f89",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "social",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "width": 1280,
+      "height": 900,
+      "layout": "desktop",
+      "format": "png"
+    },
+    {
+      "path": "/product/social-mobile.mp4",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 165098,
+      "sha256": "3fb9009e5465f34524fe8edb507812b20d9aa5f1d37c0ae1a5e2828db08abc21",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "social",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 20.0,
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "width": 390,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "mobile",
+      "format": "mp4"
+    },
+    {
+      "path": "/product/social-mobile.webm",
+      "kind": "silent-captioned-edited-native-captures",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 197410,
+      "sha256": "462809f4d1e77f9a52ecd8ec101c57f5bba330991bdc42fefafb799dc3caf58e",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "social",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "durationSeconds": 20.0,
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "codec_type": "video",
+          "width": 390,
+          "height": 900,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "12/1"
+        }
+      ],
+      "layout": "mobile",
+      "format": "webm"
+    },
+    {
+      "path": "/product/social-mobile-poster.png",
+      "kind": "extracted-export-poster",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 86529,
+      "sha256": "86e5d774500780237dafbe7cf419c5defd2e5ba7b9ac98bb5f0ea968911c1973",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "social",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "width": 390,
+      "height": 900,
+      "layout": "mobile",
+      "format": "png"
+    },
+    {
+      "path": "/product/library.vtt",
+      "kind": "caption-or-text-alternative",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 420,
+      "sha256": "7f7e59b865aa90884625cba620262547e1fe53b5bd72f7be64398c4a617fac80",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "library",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "format": "vtt"
+    },
+    {
+      "path": "/product/library-transcript.txt",
+      "kind": "caption-or-text-alternative",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 928,
+      "sha256": "c21b6099e5d8ee3e8394d4e9f28d27b902da66bfdb81869ab6d1c58dc6e7fb33",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "library",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "format": "txt"
+    },
+    {
+      "path": "/product/social.vtt",
+      "kind": "caption-or-text-alternative",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 394,
+      "sha256": "00dd1cb484fdae5f0c2521cf7ec38fcec56bccf378a818f8ac0a77de10a5feb7",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "social",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "format": "vtt"
+    },
+    {
+      "path": "/product/social-transcript.txt",
+      "kind": "caption-or-text-alternative",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "reviewer": "root GPT-6.1 Sol High",
+      "status": "prepared-for-review integration; six representative exported frames reviewed; native playback pending",
+      "reviewDate": "2026-10-24",
+      "bytes": 878,
+      "sha256": "b164a5d152f25f7d29b4570cba7f965f96de88f6ecd2a5431a3f14e634c74f9c",
+      "privacyReview": "Approved synthetic candidate captures only. No account identity, private source, token, signed URL, real repository, founder crop or customer result.",
+      "editing": "Uncropped native UI capture regions, editorial holds, accurate issue-draft captions; no live processing or measured latency.",
+      "family": "social",
+      "sourceAssets": [
+        {
+          "path": "/product/library-light-390.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-light-1440.png",
+          "sha256": "a3213f554dde2216fcb57d48a57784aabdbaeeb64c11d00b09f9bb681d2346cc",
+          "bytes": 67643,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/source-evidence.png",
+          "sha256": "ab6ec8fecb6f7ef0f1155f634e887be8cfaec015c6b93df4d12f1438f18eaeb4",
+          "bytes": 34415,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-390.png",
+          "sha256": "b1652cd311b0ac146e8edd45767150c7f7969e4f7f466fabfbb5437248d3389c",
+          "bytes": 50023,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/product/library-dark-1440.png",
+          "sha256": "525c0f5e9d105d99058bf62e7745878eb5f440c19b1175aab5a479450fb390ca",
+          "bytes": 69024,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Synthetic examples only. No account identity, private source, token, signed URL, real repository or customer result.",
+          "approvalStatus": "approved for prepared draft",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/library-tree.png",
+          "sha256": "43aa7c08dd455fdbfb5285f96347972bd71dc9992f4dbf0b33360730f8059278",
+          "bytes": 48716,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/save-form.png",
+          "sha256": "9e975ed9431a540ea84f36e9ab5cef9263f41e7e8b1fd278a719cd782e86b1d0",
+          "bytes": 32632,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/project-draft.png",
+          "sha256": "c1e3110842aa7dfc8bc5285b42583534df5ee04e5d9891371469614651dedfac",
+          "bytes": 40473,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        },
+        {
+          "path": "/help/no-fit.png",
+          "sha256": "411fe95cfdbe385c8151b3b0f99ac3e5580d7cf82a46906643d633a7c750bda2",
+          "bytes": 33449,
+          "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+          "synthetic": true,
+          "rightsReview": "Reviewed synthetic fixture only. No private account or source data.",
+          "approvalStatus": "approved",
+          "reviewer": "root GPT-6.1 Sol xhigh"
+        }
+      ],
+      "reproductionRecipe": "docs/launch-kit/media-m2-recipe/render.py",
+      "format": "txt"
+    },
+    {
+      "path": "/product/overview-storyboard.txt",
+      "kind": "static-text-walkthrough",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "family": "product",
+      "status": "prepared-for-review integration; native playback pending",
+      "reviewer": "root GPT-6.1 Sol High",
+      "reviewDate": "2026-10-24",
+      "bytes": 1247,
+      "sha256": "a7a4c32d6a3e4101c2c65f54733ec20c594da8475c97893a9e7082d650d71fed",
+      "privacyReview": "Approved synthetic candidate captures only; no private content or new processing."
+    },
+    {
+      "path": "/product/library-storyboard.txt",
+      "kind": "static-text-walkthrough",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "family": "library",
+      "status": "prepared-for-review integration; native playback pending",
+      "reviewer": "root GPT-6.1 Sol High",
+      "reviewDate": "2026-10-24",
+      "bytes": 993,
+      "sha256": "5bc18996fb00cc2a6a7fa2d05dfca4537ee6ee4604acb8190ac71c0301cd8ef2",
+      "privacyReview": "Approved synthetic candidate captures only; no private content or new processing."
+    },
+    {
+      "path": "/product/social-storyboard.txt",
+      "kind": "static-text-walkthrough",
+      "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "capturedAt": "2026-10-22",
+      "synthetic": true,
+      "family": "social",
+      "status": "prepared-for-review integration; native playback pending",
+      "reviewer": "root GPT-6.1 Sol High",
+      "reviewDate": "2026-10-24",
+      "bytes": 966,
+      "sha256": "4c4da00ffadf43a108da1e1fd66c1ddf94166ff5cb799874a3a213d270dbd48c",
+      "privacyReview": "Approved synthetic candidate captures only; no private content or new processing."
     }
-  ]
+  ],
+  "mediaM2Review": {
+    "date": "2026-10-24",
+    "reviewer": "root GPT-6.1 Sol High",
+    "scope": "Six representative actual export frames reviewed for prepared integration. All twelve video exports decoded offline, exact durations and hashes checked. Native playback, responsive integration, final CI and publication remain pending.",
+    "sourceCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+    "historicalInputArchive": "docs/launch-kit/media-m2-recipe/sources/overview-76ec7bf.mp4",
+    "historicalInputSha256": "a4b2709e931e1286d68646592486f1cf4be99b42e9b2efee5d6b4508fa6d1820",
+    "historicalInputLimit": "Deprecated reproduction input with an inaccurate burned plan caption. It is not served by the app; only native UI regions enter corrected derivatives.",
+    "encodingNote": "H.264 is primary. VP9 fallback exports are larger at these conservative quality settings; no bandwidth-saving claim.",
+    "setupCorrection": {
+      "originalSha256": "94da2151b29b1406bc6b1dd10cc2f52ca4714f0772e86e476a082b24cb7f40a0",
+      "correctedSha256": "9b47855eed43b2e35070d2699356479b5908be8f8cb5c41dc4e7444760545026",
+      "durationSeconds": 90,
+      "scope": "Caption band only during 80-90 seconds; actual corrected 82-second frame reviewed by root High. UI sequence/timing preserved semantically; compression pixels not bit-identical. Native setup acceptance remains pending."
+    }
+  }
 }

@@ -20,11 +20,13 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { sourceRetained, retainedSourceRevision } from "./lib/sourceAuthority";
 import { sourcePolicyCurrent } from "./lib/sourcePolicy";
 import { sharedTypedCitations } from "./lib/sourceCitations";
+import { readSourceTaskResult } from "./lib/privateSourceAnalysis";
 import {
   editionCurrent,
   publicEdition,
   reusableArtifact,
 } from "./lib/publicKnowledge";
+import { retainedServiceArtifactCopy } from "./lib/serviceArtifacts";
 import { internal } from "./_generated/api";
 import { workflow } from "./workflows";
 import { actorCurrent, referencesCurrent } from "./knowledge";
@@ -514,7 +516,7 @@ export const reserveMatch = mutation({
       fail("Matching context unavailable.");
     const { actor } = await writeAccess(ctx, source.organizationId);
     ensure(
-      source.rightsAttested && sourceRetained(source.sourceRetentionUntil),
+      source.rightsAttested && sourceRetained(source),
       "SOURCE_CHANGED",
       "Source evidence is no longer available.",
     );
@@ -566,6 +568,8 @@ export const reserveMatch = mutation({
     );
     const scopedSource = {
       ...source,
+      privateSourceAnalysis: undefined,
+      privateSourceAnalysisRunId: undefined,
       analysis: { ...source.analysis, insights },
     };
     const suffix =
@@ -1192,12 +1196,43 @@ export const exportPage = query({
       .paginate({ cursor: a.cursor, numItems: 5 });
     const permitted = [];
     for (const row of rows.page) {
+      if (a.section === "localLibraryRuns" && "sources" in row) {
+        const run = row as Doc<"localLibraryRuns">;
+        if (
+          ((run.task && ["2.0.0", "3.0.0"].includes(run.task.schemaVersion)) ||
+            run.sourceTaskResult) &&
+          run.actor !== actor._id
+        )
+          continue;
+        const current = run.sourceTaskResult
+          ? await readSourceTaskResult(ctx, run)
+          : null;
+        permitted.push({
+          ...run,
+          sourceTaskResult: current ? run.sourceTaskResult : undefined,
+        });
+        continue;
+      }
       if (
         (a.section === "publicImports" || a.section === "publicGeography") &&
         "actor" in row &&
         row.actor !== actor._id
       )
         continue;
+      if (
+        a.section === "publicImports" &&
+        "origin" in row &&
+        row.origin === "service"
+      ) {
+        // Cancellation does not revoke an earned private copy. Export only the
+        // validated retained DTO, never a fresh catalog read or internal grant.
+        const savedAnalysis = await retainedServiceArtifactCopy(
+          ctx,
+          row as Extract<Doc<"publicImports">, { origin: "service" }>,
+        );
+        permitted.push({ ...row, savedAnalysis: savedAnalysis ?? undefined });
+        continue;
+      }
       if (
         a.section === "sourceRevisions" &&
         "evidence" in row &&
@@ -1277,13 +1312,10 @@ export const exportPage = query({
         const registryCurrent = row.currentRevisionId
           ? !!registry && sourcePolicyCurrent(registry.revision)
           : !registryRequired;
-        if (
-          !row.rightsAttested ||
-          !sourceRetained(row.sourceRetentionUntil) ||
-          !registryCurrent
-        ) {
+        if (!row.rightsAttested || !sourceRetained(row) || !registryCurrent) {
           permitted.push({
             ...row,
+            title: "Unavailable source",
             state: "needs_upload",
             coverage: "metadata_only",
             text: undefined,
@@ -1293,6 +1325,11 @@ export const exportPage = query({
             mediaEvidence: undefined,
             originalMediaEvidence: undefined,
             personalMedia: undefined,
+            orderedMedia: undefined,
+            serviceIntent: undefined,
+            speechProvenance: undefined,
+            processingReceipt: undefined,
+            localAnalysisReceipt: undefined,
             acquisition: undefined,
             searchable: undefined,
             repositorySelection: undefined,
@@ -1319,7 +1356,14 @@ export const exportPage = query({
       if (
         "references" in row &&
         row.references !== undefined &&
-        !(await referencesCurrent(ctx, a.organizationId, row.references))
+        !(await referencesCurrent(
+          ctx,
+          a.organizationId,
+          row.references,
+          "privateEvaluationOrigin" in row
+            ? row.privateEvaluationOrigin
+            : undefined,
+        ))
       ) {
         permitted.push({
           ...row,

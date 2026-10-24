@@ -11,6 +11,8 @@ import { signedObject, objectMetadata } from "../packages/providers/storage";
 import { createHash, randomUUID } from "node:crypto";
 import { ensure } from "../packages/policy";
 import { exactArrayBuffer } from "../packages/providers/binary";
+import { sourceRetained } from "./lib/sourceAuthority";
+import { creationProvenanceCurrent } from "../packages/providers/preparation-runtime";
 
 export const prepare = internalAction({
   args: { id: v.id("sources"), generation: v.number() },
@@ -21,6 +23,21 @@ export const prepare = internalAction({
     let stage = "decode";
     const staged: string[] = [];
     try {
+      const input = await ctx.runQuery(
+        internal.personalMediaState.inputSnapshot,
+        a,
+      );
+      ensure(
+        input,
+        "APPROVAL_STALE",
+        "The original media input is unavailable.",
+      );
+      const source = input.source;
+      ensure(
+        source.rightsAttested && sourceRetained(source),
+        "APPROVAL_STALE",
+        "Source rights or retention changed before preparation.",
+      );
       const rate = Number(process.env.SANDBOX_CREDITS_PER_SECOND);
       // Bound total sandbox lifetime, not just the expected clip time.
       ensure(
@@ -32,6 +49,7 @@ export const prepare = internalAction({
         source.kind === "url" ? { url: source.url! } : source.objectKey!,
         personalDecoder,
         true,
+        input.runtime ? { expectedRuntime: input.runtime } : {},
       );
       computeCredits = Math.ceil(prepared.computeSeconds * rate);
       ensure(
@@ -39,12 +57,36 @@ export const prepare = internalAction({
         "BUDGET_EXCEEDED",
         "Compute exceeded its approved ceiling.",
       );
-      if (!(await ctx.runQuery(internal.personalMediaState.pending, a)))
+      const currentInput = await ctx.runQuery(
+        internal.personalMediaState.inputSnapshot,
+        a,
+      );
+      if (
+        !currentInput ||
+        currentInput.inputBinding !== input.inputBinding ||
+        currentInput.cacheBinding !== input.cacheBinding
+      )
         throw new Error("CANCELED");
+      const preparedAt = Date.now();
       const media: any = {
         durationMs: Math.round(prepared.manifest.durationSeconds * 1000),
         coverage: prepared.manifest.coverage,
         frames: [],
+        ...(input.cacheBinding &&
+        input.runtime &&
+        creationProvenanceCurrent(prepared.creationProvenance, input.runtime)
+          ? {
+              preparation: {
+                version: "personal-preparation-v1",
+                generation: a.generation,
+                binding: input.cacheBinding,
+                inputBinding: input.inputBinding,
+                creationProvenance: prepared.creationProvenance,
+                preparedAt,
+                expiresAt: input.expiresAt,
+              },
+            }
+          : {}),
       };
       const put = async (bytes: Uint8Array, type: string) => {
         stage = "storage_write";
@@ -131,6 +173,7 @@ export const prepare = internalAction({
           organizationId: source.organizationId,
           computeCredits,
           media,
+          inputBinding: input.inputBinding,
           ...(prepared.acquisition
             ? { acquisition: prepared.acquisition }
             : {}),
@@ -183,6 +226,11 @@ export const lease = internalAction({
   handler: async (ctx, a): Promise<any> => {
     const media = await ctx.runQuery(internal.personalAnalysis.mediaLease, a);
     ensure(media, "APPROVAL_STALE", "Media unavailable.");
+    ensure(
+      media.sourceAuthority && sourceRetained(media.sourceAuthority),
+      "APPROVAL_STALE",
+      "Source rights or retention changed before media delivery.",
+    );
     const blob = (b: any) => ({
       id: b.assetId,
       size: b.size,

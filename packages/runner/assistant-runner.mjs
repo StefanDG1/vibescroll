@@ -2,15 +2,22 @@ import { readFile, access } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
 import { companionPrivatePath } from "../companion/config-root.mjs";
 import { setTimeout as delay } from "node:timers/promises";
-import { spawn } from "node:child_process";
+import { spawn, execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { vault } from "./vault.mjs";
 import { loadAssistantRuntime } from "./assistant-runtime.mjs";
-const {
-  OfficialAssistantClient,
-  processAssistantJob,
-  idleDelay,
-  localWhisperPath,
-} = await loadAssistantRuntime();
+import {
+  OfficialPersonalClient,
+  processPersonalJob,
+} from "./personal-analysis.mjs";
+import {
+  createSubscriptionCoordinator,
+  createRunnerRequest,
+  controllerAnnouncement,
+  assertLocalDockerEndpoint,
+} from "./subscription-coordinator.mjs";
+const { OfficialAssistantClient, processAssistantJob, localWhisperPath } =
+  await loadAssistantRuntime();
 
 if (process.argv[2] === "--check") {
   await access(localWhisperPath);
@@ -49,6 +56,7 @@ try {
     url.search ||
     url.hash ||
     url.pathname !== "/" ||
+    config.protocolVersion !== "1.0.0" ||
     config.credentialVaultAdapter !== "windows-credential-manager" ||
     !config.credentialTarget ||
     !config.workspaceId ||
@@ -60,54 +68,55 @@ try {
   );
   if (!/^[A-Za-z0-9_-]{43}$/.test(secret.credential ?? ""))
     throw Error("ASSISTANT_CONFIG_INVALID");
-  const endpoint = new URL("/runner/assistant/v1", url);
-  const request = async (operation, args = {}) => {
-    const body = JSON.stringify({ protocolVersion: "1.0.0", operation, args });
-    if (Buffer.byteLength(body) > 1000000)
-      throw Error("ASSISTANT_REQUEST_LIMIT");
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${secret.credential}`,
-      },
-      redirect: "error",
-      cache: "no-store",
-      body,
-      signal: AbortSignal.any([
-        stop.signal,
-        AbortSignal.timeout(operation === "evaluation" ? 90000 : 30000),
-      ]),
-    });
-    const bytes = await response.text();
-    if (
-      !response.ok ||
-      Buffer.byteLength(bytes) > 1000000 ||
-      !response.headers.get("content-type")?.includes("application/json")
-    )
-      throw Error("ASSISTANT_REQUEST_REFUSED");
-    return JSON.parse(bytes);
-  };
+  const localDocker = await promisify(execFile)(
+    "docker",
+    ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
+    { windowsHide: true, timeout: 8000, maxBuffer: 2000 },
+  );
+  assertLocalDockerEndpoint(localDocker.stdout, process.env.DOCKER_HOST);
   // Each worker retains the existing four-hour absolute deadline. A later
   // worker restores the same saved login; no task approval is prolonged.
   while (!stop.signal.aborted) {
     const before = Date.now();
+    const sessionStop = new AbortController(),
+      announcement = controllerAnnouncement();
     controller = spawn(
       process.execPath,
-      [resolve("scripts/start-subscription-session.mjs"), "--personal-library"],
-      { windowsHide: true, stdio: ["ignore", "inherit", "inherit", "ipc"] },
+      [
+        resolve(
+          import.meta.dirname,
+          "../../scripts/start-subscription-session.mjs",
+        ),
+        "--personal-library",
+      ],
+      { windowsHide: true, stdio: ["ignore", "pipe", "inherit", "ipc"] },
     );
+    // Only this trusted controller's stdout can bind its session file. Tee the
+    // original consent output to the terminal; never persist it as diagnostics.
+    controller.stdout.on("data", (chunk) => {
+      process.stdout.write(chunk);
+      try {
+        announcement.push(chunk);
+      } catch {
+        sessionStop.abort();
+      }
+    });
     let controllerEnded = false;
     controller.once("exit", () => {
       controllerEnded = true;
+      sessionStop.abort();
     });
     controller.once("error", () => {
       controllerEnded = true;
+      sessionStop.abort();
     });
     let session;
     for (
       let attempt = 0;
-      attempt < 900 && !stop.signal.aborted && !controllerEnded;
+      attempt < 900 &&
+      !stop.signal.aborted &&
+      !sessionStop.signal.aborted &&
+      !controllerEnded;
       attempt++
     ) {
       const candidate = await readFile(
@@ -116,94 +125,75 @@ try {
       )
         .then(JSON.parse)
         .catch(() => null);
-      if (
-        candidate?.connectionSaved &&
-        candidate.startedAt >= before &&
-        candidate.expiresAt > before &&
-        candidate.expiresAt <= before + 4 * 3600000 + 30000 &&
-        candidate.profileBinding
-      ) {
+      if (announcement.accepts(candidate, before)) {
         session = candidate;
         break;
       }
-      await delay(1000, undefined, { signal: stop.signal }).catch(() => {});
+      await delay(1000, undefined, {
+        signal: AbortSignal.any([stop.signal, sessionStop.signal]),
+      }).catch(() => {});
     }
-    if (!session || stop.signal.aborted)
+    if (!session || stop.signal.aborted || sessionStop.signal.aborted)
       throw Error("ASSISTANT_CONNECTION_REQUIRED");
     client = await OfficialAssistantClient.connect(session);
-    let empty = 0,
-      announcedAt = 0;
+    const signal = AbortSignal.any([
+      stop.signal,
+      sessionStop.signal,
+      AbortSignal.timeout(Math.max(1, session.expiresAt - Date.now())),
+    ]);
+    const requests = {
+      server: url.href,
+      credential: secret.credential,
+      signal,
+    };
+    const coordinator = createSubscriptionCoordinator({
+      official: client,
+      personal: new OfficialPersonalClient(client),
+      requestPersonal: createRunnerRequest({ ...requests, route: "personal" }),
+      requestAssistant: createRunnerRequest({
+        ...requests,
+        route: "assistant",
+      }),
+      processPersonal: processPersonalJob,
+      processAssistant: processAssistantJob,
+      config,
+      signal,
+      onStatus({ route, state, mediaStatus }) {
+        console.log(
+          state === "completed"
+            ? `VibeScroll ${route === "personal" ? "personal source" : "assistant intake"} completed. Review the cited result in your library.`
+            : state === "unavailable"
+              ? `VibeScroll ${route} processing is unavailable for this account or workspace. No alternate funding route was used.`
+              : `VibeScroll ${route} work stopped${mediaStatus ? ` (${mediaStatus})` : ""}. Review its state before retrying. No alternate provider was used.`,
+        );
+      },
+    });
     while (
       !stop.signal.aborted &&
       !controllerEnded &&
       Date.now() < session.expiresAt - 60000
     ) {
-      if (Date.now() - announcedAt > 240000) {
-        await client.check();
-        const hello = await request("hello", {
-          profileBinding: session.profileBinding,
-          model: "gpt-6.1-sol",
-          expiresAt: session.expiresAt,
-        });
-        if (hello.workspaceId !== config.workspaceId)
-          throw Error("ASSISTANT_WORKSPACE_CHANGED");
-        announcedAt = Date.now();
-      }
-      const { job, rotate } = await request("claim");
-      if (rotate) break;
-      if (job) {
-        empty = 0;
-        try {
-          await processAssistantJob(job, { client, request, config });
-          console.log(
-            "VibeScroll source completed. Review the cited results in your library.",
-          );
-        } catch (error) {
-          const code =
-            /^(?:ASSISTANT|LOCAL_ASR|LOCAL_PREPARATION)_[A-Z_]+$/.test(
-              error?.message,
-            )
-              ? error.message
-              : "ASSISTANT_LOCAL_WORK_FAILED";
-          const mediaStatus = [
-            "needs_auth",
-            "rate_limited",
-            "unavailable",
-            "unsupported",
-            "over_limit",
-            "failed",
-          ].includes(error?.mediaStatus)
-            ? error.mediaStatus
-            : undefined;
-          await request("fail", {
-            runId: job.runId,
-            ...(mediaStatus ? { mediaStatus } : {}),
-          }).catch(() => {});
-          console.error(
-            mediaStatus
-              ? `VibeScroll media preparation stopped (${mediaStatus}). No AI analysis or paid fallback started. Review the source for next steps.`
-              : `VibeScroll local work stopped (${code}). No alternate provider was used; review the source before retrying.`,
-          );
-        }
-      } else empty++;
-      await delay(job ? 1000 : idleDelay(empty - 1), undefined, {
-        signal: stop.signal,
-      }).catch(() => {});
+      const result = await coordinator.step();
+      if (result.rotate) break;
+      await delay(result.delayMs, undefined, { signal }).catch(() => {});
     }
     client.close();
     client = undefined;
     if (controller.connected) controller.send("stop");
     // Let the existing controller checkpoint refreshed credentials and remove
     // its own worker. Do not kill the controller or leave expired workers live.
-    while (!controllerEnded && !stop.signal.aborted)
-      await delay(1000, undefined, { signal: stop.signal }).catch(() => {});
+    const cleanupDeadline = Date.now() + 20000;
+    while (!controllerEnded && Date.now() < cleanupDeadline) await delay(1000);
+    if (!controllerEnded) throw Error("ASSISTANT_CONTROLLER_CLEANUP_PENDING");
     controller = undefined;
   }
 } catch {
-  console.error(
-    "VibeScroll assistant runner stopped. Check pairing, saved ChatGPT login, Docker and Connections. No paid fallback ran.",
-  );
-  process.exitCode = 1;
+  if (!stop.signal.aborted) {
+    console.error(
+      "VibeScroll assistant runner stopped. Check pairing, saved ChatGPT login, Docker and Connections. No paid fallback ran.",
+    );
+    process.exitCode = 1;
+  }
 } finally {
   client?.close();
   // Its independent expiry still removes task resources if interrupted.

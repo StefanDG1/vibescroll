@@ -1,8 +1,26 @@
 # State machines
 
+## Private source-text result candidate
+
+Existing quoted/approved/queued/active/completed/unknown task states apply. Unsupported v1 workers leave v2 source work queued and may still claim v1 projects. Source pending pointers prevent cross-device/new-key duplicate dispatch. Queued cancellation releases pending; dispatched uncertainty requires existing explicit reconciliation and never schedules replacement. Completion compares pending run and prior private version, writes one immutable result and advances only private metadata. Keep the prior completed pointer while work is pending or fails. Privacy/rights loss fences reads and scrubs bytes with generation-safe indexed continuations; restore never revives authority. See [ADR 138](adr/138-private-source-text-results-on-existing-runs.md).
+
+## Private evaluation context candidate
+
+Changing a private focus brief invalidates the existing quote and consent. Approval captures exact text/hash, owner and selected model/effort; lease/context/completion preserve that origin. An accepted proposal can inherit it into a separately approved plan. Manual issue publication and coding retain their existing exact reviews. Standing-policy automatic work rejects custom-origin derivatives before reservation. Unknown-state reconciliation, source/repository currentness and restore fences stay unchanged; a changed brief cannot erase prior unknown usage. See [ADR 136](adr/136-private-evaluation-brief-origin.md).
+
+## Purchased allowance candidate
+
+An accepted checkout keeps its offered policy after the short reservation expires. A verified paid subscription binds that acceptance to its first subscription and creates an immutable paid-term commitment. Renewal creates a new verified term; annual monthly grants retain the original calendar anchor and base invoice. An accepted paid upgrade adds its separate contribution without rewriting the base. Unknown/ambiguous purchase evidence holds new grants or changes for reconciliation while issued pools and private work remain. Provider deletion, refund revocation, restore locks and stale revisions retain their existing authority. See [ADR 134](adr/134-purchased-allowance-commitments.md).
+
+## Work Cloud text candidate
+
+The existing personal source job moves approved/queued to one claimed/running lease, then completed or unknown. Approval expires after fifteen minutes; execution has a fixed three-minute deadline and forty-second renewable leases. Expired, canceled, revoked or changed work cannot reclaim itself. A completed result retry only acknowledges its identical stored hash while authority remains current. A reported failure records unknown host usage; source replacement cannot clear that uncertainty into new executor authority. Privacy deletion and recovery remain available. App revocation does not attest provider cancellation. See [ADR 129](adr/129-gated-work-cloud-text-handoff.md); both runtime flags remain off.
+
 Mode: reference. These state names are canonical for the specification.
 
 ## Source processing
+
+Catalog browsing has only transient interface states: closed, loading, page, inspecting, saving, unavailable and error. It creates no processing state or job. Closing the panel, leaving its workspace, changing entitlement scope or losing access fences pending responses. Every new page, preview and save rechecks server authority; cached browser state grants no access. A successful save uses the existing retained-copy lifecycle. Expired, removed or denied content clears from the current catalog view while the user's separately authored private work remains.
 
 `received -> validating -> queued -> acquiring -> extracting -> analyzing -> ready`
 
@@ -54,6 +72,8 @@ Reversal evidence uses the bounded immutable-tree comparison in [ADR 024](adr/02
 
 ## Billing and jobs
 
+A Pro catalog save creates an immutable retained private copy under its original rights and retention deadline. Subscription cancellation blocks new catalog access and reuse, while the earned copy and authored notes remain readable. Operational processing/following pauses and benign upstream edits do not authorize physical deletion or refresh. Durable removal, rights withdrawal, expiry and recovery quarantine fence the copy immediately; bounded existing privacy callbacks scrub its derived payload while preserving authored overlays. Unknown database/crypto failures fence reads without granting cleanup authority.
+
 Credit reservations are `active`, `settled`, `released`, or `expired`. Settlement and release are mutually exclusive. A partially consumed reservation settles actual usage and releases the remainder in one transaction.
 
 Subscription access derives from a verified provider state and the product's grace policy. Cancellation at period end retains the current paid entitlement until that end. It does not grant a new period. Renewal events and reconciliation converge on one period record.
@@ -79,3 +99,7 @@ Prepare starts inventory/running without inference; complete pagination moves to
 ## Reviewed improvement
 
 A current reviewed issue can create a bounded plan proposal. Plan acceptance and execution are separate. Passing job checks permit independent review; routine publication and merge additionally require current policy, exact reviewed patch/head and protected required GitHub checks. A durable pending merge intent prevents blind retry after an unknown write. Merge does not imply deployment or benefit. Append-only owner judgment/data requires a declared or verified deployed context, and measured data has completed nonoverlapping periods and real samples. Monthly renewal refuses unresolved work or active reservations before resetting a new period.
+
+## Private variant project references, October 24
+
+Private variant selection is explicit and currentness-bound. Quote/approval/claim/context/heartbeat/finish recheck the earned result and runtime. Unsupported workers cannot claim task3.0.0. Source removal and restore quarantine include private project tasks and no-topic evaluation rows. Unknown execution retains its hold.

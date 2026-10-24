@@ -46,11 +46,12 @@ async function readPreparedJson(path, maximum) {
     throw Error("LOCAL_PREPARATION_OUTPUT_INVALID");
   return JSON.parse(await readFile(path, "utf8"));
 }
-export async function docker(args, timeout = 20000) {
+export async function docker(args, timeout = 20000, signal) {
   const r = await execute("docker", args, {
     timeout,
     windowsHide: true,
     maxBuffer: 1000000,
+    ...(signal ? { signal } : {}),
     env: Object.fromEntries(
       ["PATH", "SystemRoot", "WINDIR", "USERPROFILE", "LOCALAPPDATA"].flatMap(
         (k) => (process.env[k] ? [[k, process.env[k]]] : []),
@@ -106,9 +107,17 @@ export async function prepareLocalUrl({
   sourceId,
   image,
   privateRoot,
-  run = docker,
+  run: command = docker,
   scheduleCleanup = scheduleLocalCleanup,
+  signal,
 }) {
+  signal?.throwIfAborted();
+  const run = async (args, timeout) => {
+    signal?.throwIfAborted();
+    const result = await command(args, timeout, signal);
+    signal?.throwIfAborted();
+    return result;
+  };
   const policy = acquisitionPolicy(url);
   if (!/^[a-zA-Z0-9_-]{1,100}$/.test(sourceId))
     throw Error("LOCAL_PREPARATION_SOURCE_INVALID");
@@ -151,6 +160,13 @@ export async function prepareLocalUrl({
   // socket to the Docker daemon, repository, browser session or provider token.
   await run(["info", "--format", "{{.ServerVersion}}"]);
   const flags = workerFlags(image, worker, volume, socket);
+  const onAbort = () => {
+    // Stopping a Docker CLI alone does not stop the isolated worker. Remove
+    // only these randomly named resources, using an uncancelled control call.
+    for (const name of [worker, proxy])
+      void command(["rm", "--force", name], 20000).catch(() => {});
+  };
+  signal?.addEventListener("abort", onAbort, { once: true });
   try {
     for (const [name, size] of [
       [volume, "450m"],
@@ -319,6 +335,7 @@ export async function prepareLocalUrl({
       boundary: "local-docker-no-host-mounts",
       retentionUntil: new Date(retentionUntil).toISOString(),
     };
+    signal?.throwIfAborted();
     await writeFile(
       join(dir, "receipt.json"),
       JSON.stringify(receipt, null, 2),
@@ -333,10 +350,11 @@ export async function prepareLocalUrl({
       computeCredits: 0,
     };
   } finally {
+    signal?.removeEventListener("abort", onAbort);
     // Only randomly named, task-owned Docker resources are removed.
     for (const name of [worker, proxy])
-      await run(["rm", "--force", name]).catch(() => {});
+      await command(["rm", "--force", name], 20000).catch(() => {});
     for (const name of [volume, socket])
-      await run(["volume", "rm", name]).catch(() => {});
+      await command(["volume", "rm", name], 20000).catch(() => {});
   }
 }

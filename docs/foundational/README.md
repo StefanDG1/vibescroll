@@ -1,6 +1,84 @@
 # VibeScroller foundational document process
 
+## October 24: private text result candidate
+
+[F061](idea-backlog.md#f061-separate-private-text-reanalysis-october-24) and [ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) keep private source results separate from generic analysis through existing run ownership, explicit v2 runtime admission and rights-aware reading/cleanup. All four briefs retain actual-text coverage, cost limits and unverified live/model acceptance.
+
+## October 24: distinct setup availability
+
+[F060](idea-backlog.md#f060-distinct-setup-availability-october-24) and [ADR 137](../adr/137-distinct-processing-availability-in-setup.md) keep paired subscription, managed media and experimental text review distinct. All four briefs retain current claims and the difference between feature availability and actual host execution.
+
+## October 24: private evaluation context candidate
+
+[F059](idea-backlog.md#f059-private-evaluation-context-october-24) and [ADR 136](../adr/136-private-evaluation-brief-origin.md) synchronize private personalization with neutral source evidence, cache/history isolation and existing explicit review. All four briefs preserve current claims, offer and provider/release gates.
+
+## October 24: readable public explanations
+
+[F058](idea-backlog.md#f058-readable-explanations-and-scoped-help-reads-october-24) and [ADR 135](../adr/135-optional-readable-scroll-emphasis.md) synchronize the four briefs for opt-in readable emphasis and bounded Help build tracing. Keep static alternatives and separate native-browser/production acceptance.
+
+## October 24: purchased allowance candidate
+
+[F057](idea-backlog.md#f057-purchased-allowances-and-honest-offer-limits-october-24) and [ADR 134](../adr/134-purchased-allowance-commitments.md) keep purchased quantities independent of future offer edits through the existing billing owners. All four briefs preserve current contracts and distinguish offline protection from live payment acceptance. No quantity, new price or published policy is selected.
+
+Current candidate brief: [F056](idea-backlog.md#f056-accurate-prepared-media-and-offer-limits-october-24) records truthful media preparation and the review-only allowance packet. F050 remains the latest narrow production checkpoint.
+
+Current candidate brief: [F055](idea-backlog.md#f055-verified-ordered-preparation-reuse-candidate-october-24) records exact media reuse under fresh preflight, not free model inference or a production pass.
+
+Current candidate brief: [F054](idea-backlog.md#f054-inspect-existing-examples-with-controlled-motion-october-24) records navigation/motion over existing examples, without new processing or outcome claims. F050 remains the latest narrow production receipt.
+
+Current candidate brief: [F053](idea-backlog.md#f053-gated-text-handoff-and-honest-creator-progress-october-24) distinguishes private text execution, actual host/media acceptance and current creator status. F050 remains the latest narrow production checkpoint.
+
+Current candidate brief: [F052](idea-backlog.md#f052-pro-discovery-candidate-and-honest-coverage-october-24) records generic search and checked-page map/list implementation with its actual coverage and release gaps. F050 remains the latest narrow production checkpoint.
+
+Current candidate brief: [F051](idea-backlog.md#f051-bounded-pro-catalog-candidate-october-24) records bounded Library browse/inspect/save and its actual local limits. F050 remains the latest narrow production receipt. No new catalog availability or market claim follows.
+
+Current live evidence: [F050](idea-backlog.md#f050-compatible-frontend-live-october-24) records the narrowly verified PR 141 frontend publication. F048/F049 and the full product plan remain; backend and new route acceptance are still pending.
+
 Current release brief: [F049](idea-backlog.md#f049-compatible-public-experience-and-security-release-october-24) applies ADR 126 to the compatible public/security stage. Complete newer product work remains in [PR 140](https://github.com/StefanDG1/vibescroll/pull/140), with provider, migration, production and independent evidence still distinct.
+
+Current brief: [F048](idea-backlog.md#f048-resumed-budget-direct-work-cloud-candidate-and-later-lifetime-offer-october-24) records ADR 125, the resumed US$3 cumulative ceiling, later lifetime offer and partial no-GitHub Work Cloud readiness. It supersedes earlier cap/lifetime launch ordering only; production processing and market claims still require evidence.
+
+## Current brief, October 24: F047 minimal setup and optional GitHub
+
+[F047](idea-backlog.md#f047-recommended-github-and-minimal-analysis-setup-october-24) and [ADR 124](../adr/124-recommended-github-and-minimal-processing-setup.md) require recommended-but-skippable GitHub and supported source analysis with no user GitHub account/repository. Preserve repository-specific permission boundaries and all source/provider/privacy/Pro/budget controls. Root minimizes setup through supported automation, real readiness and explicit consent. No-GitHub Cloud and beginner usability remain pending actual acceptance. All other F046/F045 scope remains; no runtime or live offer change follows.
+
+## Earlier brief, October 24: F046 integrated marketing and offer
+
+[F046](idea-backlog.md#f046-scrollshow-handoff-and-ongoing-pro-offer-october-24) and [ADR 123](../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) integrate the final supplied ScrollShow handoff. Original A/B scenes, scoped public emerald/mint design and the product-first story preserve existing app behavior and all launch requirements. The future Pro EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing-access choices each include a defined monthly AI allowance. This replaces the new three-year-pass target and older initial-balance-only draft; concrete sustainable allowance/terms/legacy migration remain gated. ADR 122, existing prices/purchases, privacy, approved demos and cumulative US$2 remain. The [integration record](../launch-plan/2026-10-23/SCROLLSHOW-INTEGRATION.md) supplies conflicts, ownership, parallel execution and acceptance. No application, offer activation or production result is implied.
+
+## Earlier brief, October 24: F045 proprietary Pro catalog
+
+[F045](idea-backlog.md#f045-proprietary-pro-insight-catalog-october-24) and [ADR 122](../adr/122-proprietary-pro-insight-catalog.md) synchronize all four briefs for proprietary Pro-only catalog access, all-plan contribution and readable saved copies after cancellation. New catalog access/reuse/updates require current Pro. F044's free public dataset direction is historical and superseded; official user-owned Cloud, private work, exact approved demo editions, software MIT and full launch acceptance remain. The [owner checklist](../launch-plan/2026-10-23/OWNER-CHECKLIST.md) separates human/provider prerequisites from root engineering. This is a product decision and copy hypothesis, not deployed entitlements, measured demand or new spending.
+
+## Earlier brief, October 23: F044 Cloud-first direction
+
+[F044](idea-backlog.md#f044-codex-cloud-first-and-a-public-insight-library-october-23) synchronizes all four foundations for official user-owned Codex Cloud, permitted real-link analysis, eligible public generic contribution and private customization. [ADR 121](../adr/121-codex-cloud-first-and-public-neutral-library.md) and the [current remaining-work addendum](../launch-plan/2026-10-23/CLOUD-FIRST.md) preserve provider/rights/review/budget gates and every original R/P/N requirement. Subscriber selection/failover and benefit claims need evidence. Local/managed work is conditionally deferred only after Cloud succeeds. Earlier briefs retain their dated evidence and route priorities.
+
+## Earlier brief, October 23: F043 authorization
+
+[F043](idea-backlog.md#f043-authorized-creator-and-onboarding-implementation-october-23) synchronizes the four foundations after explicit N0-N7 implementation authorization. [ADR 119](../adr/119-authorized-complete-creator-and-onboarding-implementation.md) supersedes the earlier planning-only boundary. Implementation continues through existing systems. Provider rights, the original cumulative US$2 cap, privacy, release and actual live/independent acceptance remain separate gates. No new result or benefit is claimed. Earlier briefs below remain historical.
+
+## F042: local companion and source-gate corrections, October 23
+
+The application tree committed as `58df6ec` passed 1,001 local tests with three hosted skips, all types, zero-warning lint and both production builds. It separates GitHub/Reddit release gates, validates advertised account capabilities and reported quota, serializes existing app-source and assistant work through one owned controller, halts after uncertain dispatch, and separates pairing/connection/full-check setup with workspace-safe configuration. [The receipt](../operations/evidence/launch-20261023-local-completion.json) preserves the corrected review finding, earlier test failures, unchanged formatting failures and blocked native browser review.
+
+This is partial local engineering evidence. Complete own-plan project/plan production, retry reuse, portable runtime preparation, provider access, production and independent acceptance remain open. F041's creator/onboarding additions remain planning-only; the seven reviewed insights retain their existing publication/save/reuse approval. No new source discovery, customer, measured benefit, deployment or provider job ran. The original cumulative US$2 cap and unknown holds remain unchanged, with US$1.679289 conservatively retained. Audience, prices, allowances and six beliefs remain unchanged.
+
+## F041: creator and onboarding planning reconciliation, October 23
+
+The owner selected daily public TikTok/Instagram creator monitoring without creator cooperation, including video, image, TikTok photo and ordered/mixed carousel evidence, eligible neutral shared ideas/lessons/summaries with private personalization, eligible local own-subscription and approved cloud routes, future posts by default and optional latest ten. These are planning-only additions. [ADR 118](../adr/118-creator-and-guided-onboarding-planning-boundary.md) and the [single remaining-work plan](../launch-plan/2026-10-23/README.md#creator-and-onboarding-reconciliation) require later implementation authorization and extend existing setup, jobs, source contracts and public artifact/reuse systems.
+
+The new project-builder journey connects processing, offers optional GitHub and three verified relevant skill recommendations, introduces scrolling, teaches explicit VibeScroll invocation through ChatGPT with copy/paste fallback, completes required Instagram export education and offers optional following. Skill installation is skippable. Guide acknowledgement is separate from later export request/import, actual readiness and first useful result; returning libraries stay accessible. No new supplier, price, allowance, recurring collection, installation or spending is authorized. Existing seven-insight review/save/reuse approval and R0-R13 fixes remain valid. Provider rights, commercial subscription access, new shared-analysis lifecycle and real-device/live/independent evidence remain pending. No new demand, savings or customer outcome is claimed; audience, prices and six beliefs remain unchanged.
+
+## F040: complete per-user workflow and GitHub first, October 23
+
+The owner approved all seven actual README insights for use and allows readers to save/reuse the reviewed published insights. Exact edition preview/hash, attribution, permission expiry and private-layer exclusion still govern publication. Direct GitHub release may proceed first; Reddit remains independently gated. The owner requests each eligible user's own subscription for video analysis and selected-repository evaluation, proposals and editable plans inside VibeScroll. The immediate route uses the user's own awake paired computer; computer-free hosted use follows provider approval.
+
+The new audit found real engineering gaps in worker selection/controller ownership, first pairing, task-stage funding/model readiness, plan generation, retry preparation reuse and public moderation/provenance. These are planned corrections, not already deployed capabilities. Independent testers will be observed later in production; no independent result or customer benefit is claimed. The [October 23 completion plan](../launch-plan/2026-10-23/README.md) retains the complete original scope and [ADR 117](../adr/117-github-first-and-complete-own-subscription-workflows.md) records superseding decisions.
+
+The owner permits relevant VibeScroll and Exponential Education examples, with unrelated private material excluded. Images are optional and must explain the example without publishing private evidence. Audience, prices, allowances and six beliefs remain unchanged. Subscription allowance does not eliminate preparation/platform costs or establish commercial provider permission. The original cumulative US$2 ceiling remains; unfunded live tests stay pending. Root High is explicitly authorized for this continuation, with Ultra off.
+
+Decision: adopt the owner's scope and publication/reuse choices; implement the documented gaps and preserve provider/privacy/spending controls. Counterargument: a paired runtime and reviewed founder example still do not prove independent setup or usefulness. Validate those later with real participants and exact live evidence. No new price, campaign, public activation or spending follows from this brief.
 
 ## F039: live contrast verification, October 22
 
@@ -100,3 +178,7 @@ The document check verifies four deliverables, original template coverage, six b
 Next evidence needed is recurring customer behavior, willingness to pay, a comparative workflow pilot, source-access reliability, a benchmark on rights-cleared sources, complete production and funding-route tests, and the remaining applicable tax and publication confirmation. Original operator records remain private. No research interview, paying-customer quote, measured time saving, conversion rate, or achieved operating margin was manufactured to close those gaps.
 
 October 3 current scope: individuals and businesses may buy Starter or Pro through verified tax-covered Managed Payments markets when release gates pass. Custom Business scope remains enquiry-only; no direct-billing fallback or enterprise entitlement follows. See [F006](idea-backlog.md) and [ADR 039](../adr/039-managed-individual-and-business-buyers.md).
+
+## F062: private variant project integration, October 24
+
+The four foundational documents record explicitly selected earned private text insights for existing project evaluation and plans. [ADR 139](../adr/139-private-variant-project-references.md) defines actual run/output provenance, separate runtime admission and privacy. Candidate implementation is in progress; real model usefulness, media/skills/Cloud and production remain unverified. This is not a shared catalog contribution or marketing outcome.

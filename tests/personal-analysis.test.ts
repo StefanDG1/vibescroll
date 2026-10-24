@@ -6,6 +6,13 @@ import workflowTest from "@convex-dev/workflow/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import { processPersonalJob } from "../packages/runner/personal-analysis.mjs";
+import { normalizeSubscriptionCapabilities } from "../packages/runner/subscription-capabilities.mjs";
+import {
+  personalPreparationBinding,
+  personalPreparationInput,
+  personalPreparationInputBinding,
+  reusablePersonalPreparation,
+} from "../convex/lib/personalPreparation";
 const modules = import.meta.glob("../convex/**/*.ts");
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
@@ -96,6 +103,811 @@ const outputFor = (job: any) => ({
       ],
     },
   ],
+});
+
+const ownCatalogue = (effort = "xhigh", inputModalities = ["text", "image"]) =>
+  normalizeSubscriptionCapabilities({
+    data: [
+      {
+        model: "synthetic-model",
+        supportedReasoningEfforts: [{ reasoningEffort: effort }],
+        inputModalities,
+      },
+    ],
+  });
+async function announceCapabilities(
+  s: Awaited<ReturnType<typeof setup>>,
+  capabilities = ownCatalogue(),
+) {
+  return s.dispatch({
+    operation: "hello",
+    profileBinding: createHash("sha256")
+      .update("synthetic-profile")
+      .digest("hex"),
+    models: [{ slug: "synthetic-model", displayName: "Synthetic" }],
+    capabilities,
+    sessionExpiresAt: Date.now() + 4 * 3600000,
+  });
+}
+async function approveCapabilitySource(
+  s: Awaited<ReturnType<typeof setup>>,
+  effort = "xhigh",
+) {
+  return s.a.mutation(api.personalAnalysis.approve, {
+    id: s.source,
+    generation: 0,
+    deviceId: s.device,
+    model: "synthetic-model",
+    effort,
+    useOwnPlan: true,
+  });
+}
+it("binds source approval and completion to the actual advertised effort without changing legacy approval", async () => {
+  const s = await setup();
+  await expect(approveCapabilitySource(s)).rejects.toThrow("APPROVAL_STALE");
+  await announceCapabilities(s);
+  await expect(approveCapabilitySource(s, "ultra")).rejects.toThrow(
+    "APPROVAL_STALE",
+  );
+  await approveCapabilitySource(s);
+  const { job }: any = await s.dispatch({ operation: "poll" });
+  expect(job.effort).toBe("xhigh");
+  expect(job.capabilityHash).toMatch(/^[a-f0-9]{64}$/);
+  const request = async (operation: string, args: any) =>
+    s.dispatch({ operation, ...args });
+  await processPersonalJob(job, {
+    client: {
+      capabilities: async () => ownCatalogue(),
+      status: async () => ({ profileBinding: job.profileBinding }),
+      respond: async (options: any) => {
+        expect(options.reasoningEffort).toBe("xhigh");
+        return { text: JSON.stringify(outputFor(job)) };
+      },
+    },
+    request,
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.source)))?.personalAnalysis?.state,
+  ).toBe("completed");
+});
+it("rejects expired advertised catalogues instead of falling back to legacy names", async () => {
+  const s = await setup();
+  await announceCapabilities(s);
+  await s.t.run(async (ctx) => {
+    const device = (await ctx.db.get(s.device))!;
+    await ctx.db.patch(s.device, {
+      subscriptionCapabilities: {
+        ...device.subscriptionCapabilities!,
+        expiresAt: Date.now() - 1,
+      },
+    });
+  });
+  await expect(approveCapabilitySource(s, "medium")).rejects.toThrow(
+    "APPROVAL_STALE",
+  );
+});
+it("renews a matching catalogue on heartbeat but denies an effort change before source completion", async () => {
+  const s = await setup();
+  await announceCapabilities(s);
+  await approveCapabilitySource(s);
+  const { job }: any = await s.dispatch({ operation: "poll" });
+  await expect(
+    s.dispatch({
+      operation: "heartbeat",
+      id: job.id,
+      generation: job.generation,
+      capabilities: ownCatalogue(),
+    }),
+  ).resolves.toMatchObject({ valid: true });
+  await announceCapabilities(s, ownCatalogue("high"));
+  await expect(
+    s.dispatch({
+      operation: "heartbeat",
+      id: job.id,
+      generation: job.generation,
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  await expect(
+    s.dispatch({
+      operation: "complete",
+      id: job.id,
+      generation: job.generation,
+      output: outputFor(job),
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+});
+it("requires image applicability before media preparation and preserves its verified compute gate", async () => {
+  const s = await setup();
+  await announceCapabilities(s, ownCatalogue("xhigh", ["text"]));
+  const id = await s.a.mutation(api.product.capture, {
+    organizationId: s.org,
+    key: "capability-media-source",
+    kind: "url",
+    title: "Owned post",
+    url: "https://instagram.com/reel/Synthetic123/",
+    rightsAttested: true,
+  });
+  vi.stubEnv("ACQUISITION_VERIFIED", "true");
+  await expect(
+    s.a.mutation(api.personalAnalysis.approve, {
+      id,
+      generation: 0,
+      deviceId: s.device,
+      model: "synthetic-model",
+      effort: "xhigh",
+      useOwnPlan: true,
+      maxComputeCredits: 10,
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  await announceCapabilities(s);
+  await expect(
+    s.a.mutation(api.personalAnalysis.approve, {
+      id,
+      generation: 0,
+      deviceId: s.device,
+      model: "synthetic-model",
+      effort: "xhigh",
+      useOwnPlan: true,
+      maxComputeCredits: 10,
+    }),
+  ).rejects.toThrow("SETUP_REQUIRED");
+});
+
+async function mediaApproval(
+  s: Awaited<ReturnType<typeof setup>>,
+  upload = false,
+) {
+  vi.stubEnv("ACQUISITION_VERIFIED", "true");
+  vi.stubEnv("MEDIA_VERIFIED", "true");
+  const rawKey = `${s.org}/synthetic-retained-original`;
+  if (upload)
+    await s.t.run((ctx) =>
+      ctx.db.insert("assets", {
+        organizationId: s.org,
+        key: rawKey,
+        size: 100,
+        type: "video/mp4",
+        etag: "original-etag",
+        state: "complete",
+        expiresAt: Date.now() + 1800000,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }),
+    );
+  const id = await s.a.mutation(api.product.capture, {
+    organizationId: s.org,
+    key: "retained-media-preparation",
+    kind: upload ? "upload" : "url",
+    title: "Owned media",
+    ...(upload
+      ? { objectKey: rawKey }
+      : { url: "https://instagram.com/reel/RetainedMedia123/" }),
+    rightsAttested: true,
+  });
+  await s.a.mutation(api.personalAnalysis.approve, {
+    id,
+    generation: 0,
+    deviceId: s.device,
+    model: "synthetic-model",
+    effort: "medium",
+    useOwnPlan: true,
+    maxComputeCredits: 10,
+  });
+  return id;
+}
+async function retainedPreparation(
+  s: Awaited<ReturnType<typeof setup>>,
+  upload = false,
+  pending = false,
+) {
+  vi.stubEnv("VERCEL_MEDIA_IMAGE", `synthetic/media@sha256:${"a".repeat(64)}`);
+  const id = await mediaApproval(s, upload);
+  await s.t.mutation(internal.personalMediaState.begin, { id, generation: 1 });
+  const key = `${s.org}/retained-personal-frame`;
+  const assetId = await s.t.mutation(internal.assets.registerEvidence, {
+    sourceId: id,
+    generation: 1,
+    key,
+    size: 4,
+    etag: "synthetic",
+  });
+  const snapshot = await s.t.query(internal.personalMediaState.inputSnapshot, {
+    id,
+    generation: 1,
+  });
+  expect(snapshot).not.toBeNull();
+  const media = {
+    durationMs: 1000,
+    coverage: "visual_only",
+    frames: [
+      {
+        key,
+        size: 4,
+        etag: "synthetic",
+        assetId,
+        sha256: "a".repeat(64),
+        timestampMs: 0,
+        selectionReason: "periodic sample",
+      },
+    ],
+    preparation: {
+      version: "personal-preparation-v1",
+      generation: 1,
+      binding: snapshot!.cacheBinding,
+      inputBinding: snapshot!.inputBinding,
+      creationProvenance: {
+        version: "sandbox-create-receipt-v1",
+        selection: snapshot!.runtime!,
+        sandboxId: "vercel:synthetic-preparation",
+      },
+      preparedAt: Date.now(),
+      expiresAt: snapshot!.expiresAt,
+    },
+  };
+  if (!pending) {
+    await s.t.mutation(internal.personalMediaState.finish, {
+      id,
+      generation: 1,
+      organizationId: s.org,
+      computeCredits: 1,
+      media,
+      inputBinding: snapshot!.inputBinding,
+    });
+    const { job }: any = await s.dispatch({ operation: "poll" });
+    expect(job.id).toBe(id);
+    await s.dispatch({ operation: "fail", id, generation: 1 });
+  }
+  return { id, assetId: assetId!, media, snapshot: snapshot! };
+}
+async function brokerRuntime(s: Awaited<ReturnType<typeof setup>>) {
+  vi.stubEnv("VERCEL_SANDBOX_TOKEN", "");
+  vi.stubEnv(
+    "SANDBOX_BRIDGE_URL",
+    "https://example.test/api/internal/sandbox-credentials",
+  );
+  vi.stubEnv("SANDBOX_BRIDGE_ENABLED", "true");
+  vi.stubEnv("VERCEL_SANDBOX_TEAM_ID", "team_synthetic");
+  vi.stubEnv("VERCEL_SANDBOX_PROJECT_ID", "prj_synthetic");
+  return s.t.run((ctx) =>
+    ctx.db.insert("sandboxToolSnapshots", {
+      kind: "media",
+      snapshotId: "snap_brokerSelected123",
+      parentSnapshotId: "snap_brokerParent123",
+      projectId: "prj_synthetic",
+      teamId: "team_synthetic",
+      expiresAt: Date.now() + 86400000,
+      updatedAt: Date.now(),
+    }),
+  );
+}
+it("reuses exact broker-selected preparation despite stale configured static images without repeated compute", async () => {
+  const s = await setup();
+  await brokerRuntime(s);
+  const f = await retainedPreparation(s);
+  expect(f.media.preparation.creationProvenance.selection).toMatchObject({
+    route: "broker",
+    authority: {
+      snapshotId: "snap_brokerSelected123",
+      projectId: "prj_synthetic",
+      teamId: "team_synthetic",
+    },
+  });
+  expect(
+    await s.t.run(
+      async (ctx) =>
+        !!(await reusablePersonalPreparation(ctx, (await ctx.db.get(f.id))!)),
+    ),
+  ).toBe(true);
+  await s.a.mutation(api.personalAnalysis.approve, {
+    id: f.id,
+    generation: 1,
+    deviceId: s.device,
+    model: "synthetic-model",
+    effort: "medium",
+    useOwnPlan: true,
+    maxComputeCredits: 10,
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(f.id)))?.personalMedia.preparation,
+  ).toEqual(f.media.preparation);
+  expect(
+    (await s.t.run((ctx) => ctx.db.query("reservations").collect())).filter(
+      (r) => r.key.startsWith(`personal-media:${f.id}:`),
+    ),
+  ).toHaveLength(1);
+});
+it.each([
+  "snapshot",
+  "revision",
+  "parent",
+  "team",
+  "project",
+  "expiry",
+  "missing",
+  "provenance",
+] as const)(
+  "invalidates broker cache on changed %s authority",
+  async (change) => {
+    const s = await setup(),
+      row = await brokerRuntime(s),
+      f = await retainedPreparation(s);
+    await s.t.run(async (ctx) => {
+      if (change === "snapshot")
+        await ctx.db.patch(row, { snapshotId: "snap_rotatedSelected123" });
+      if (change === "revision")
+        await ctx.db.patch(row, { updatedAt: Date.now() - 1 });
+      if (change === "parent")
+        await ctx.db.patch(row, { parentSnapshotId: "snap_otherParent123" });
+      if (change === "team")
+        await ctx.db.patch(row, { teamId: "team_foreign" });
+      if (change === "project")
+        await ctx.db.patch(row, { projectId: "prj_foreign" });
+      if (change === "expiry")
+        await ctx.db.patch(row, { expiresAt: Date.now() + 30000 });
+      if (change === "missing") await ctx.db.delete(row);
+      if (change === "provenance")
+        await ctx.db.patch(f.id, {
+          personalMedia: {
+            ...f.media,
+            preparation: {
+              ...f.media.preparation,
+              creationProvenance: undefined,
+            },
+          },
+        });
+      expect(
+        await reusablePersonalPreparation(ctx, (await ctx.db.get(f.id))!),
+      ).toBeNull();
+    });
+  },
+);
+it("denies a stale broker receipt at finish while settling measured preparation usage", async () => {
+  const s = await setup(),
+    row = await brokerRuntime(s),
+    f = await retainedPreparation(s, false, true);
+  await s.t.run((ctx) =>
+    ctx.db.patch(row, { snapshotId: "snap_rotatedSelected123" }),
+  );
+  expect(
+    await s.t.mutation(internal.personalMediaState.finish, {
+      id: f.id,
+      generation: 1,
+      organizationId: s.org,
+      computeCredits: 2,
+      media: f.media,
+      inputBinding: f.snapshot.inputBinding,
+    }),
+  ).toBe(false);
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(f.id)))?.personalMedia,
+  ).toBeUndefined();
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("reservations")
+        .withIndex("by_key", (q) =>
+          q.eq("organizationId", s.org).eq("key", `personal-media:${f.id}:1`),
+        )
+        .unique(),
+    ),
+  ).toMatchObject({ state: "settled", settled: 2 });
+});
+it("reuses retained compatible preparation after inference failure with fresh approval and no repeated compute reservation", async () => {
+  const s = await setup(),
+    f = await retainedPreparation(s);
+  for (const generation of [1, 2]) {
+    await s.a.mutation(api.personalAnalysis.approve, {
+      id: f.id,
+      generation,
+      deviceId: s.device,
+      model: "synthetic-model",
+      effort: "medium",
+      useOwnPlan: true,
+      maxComputeCredits: 10,
+    });
+    const source = await s.t.run((ctx) => ctx.db.get(f.id));
+    expect(source).toMatchObject({
+      generation: generation + 1,
+      state: "queued",
+      personalAnalysis: { state: "queued" },
+      personalMedia: f.media,
+    });
+    const reservations = await s.t.run((ctx) =>
+      ctx.db
+        .query("reservations")
+        .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+        .collect(),
+    );
+    expect(
+      reservations.filter((r) => r.key.startsWith(`personal-media:${f.id}:`)),
+    ).toHaveLength(1);
+    const { job }: any = await s.dispatch({ operation: "poll" });
+    await s.dispatch({
+      operation: "fail",
+      id: job.id,
+      generation: job.generation,
+    });
+  }
+});
+it.each([
+  "etag",
+  "size",
+  "generation",
+  "expiry",
+  "identity",
+  "deletion",
+] as const)(
+  "refuses same-key raw upload cache reuse after %s changes",
+  async (change) => {
+    const s = await setup(),
+      f = await retainedPreparation(s, true);
+    expect(f.media.preparation.expiresAt).toBeLessThanOrEqual(
+      f.media.preparation.preparedAt + 1800000,
+    );
+    if (change === "etag") {
+      const source = (await s.t.run((ctx) => ctx.db.get(f.id)))!;
+      await s.t.mutation(internal.assets.complete, {
+        organizationId: s.org,
+        key: source.objectKey!,
+        size: 100,
+        type: "video/mp4",
+        etag: "replacement-same-key",
+      });
+    }
+    await s.t.run(async (ctx) => {
+      const source = (await ctx.db.get(f.id))!;
+      const asset = (await ctx.db
+        .query("assets")
+        .withIndex("by_key", (q) => q.eq("key", source.objectKey!))
+        .unique())!;
+      if (change === "size")
+        await ctx.db.patch(asset._id, { size: asset.size + 1 });
+      if (change === "generation")
+        await ctx.db.patch(asset._id, { sourceGeneration: 10 });
+      if (change === "expiry")
+        await ctx.db.patch(asset._id, { expiresAt: Date.now() - 1 });
+      if (change === "identity") {
+        const { _id, _creationTime: _created, ...fields } = asset;
+        await ctx.db.delete(_id);
+        await ctx.db.insert("assets", fields);
+      }
+      if (change === "deletion")
+        await ctx.db.insert("objectDeletions", {
+          key: asset.key,
+          state: "pending",
+          attempts: 0,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+      expect(
+        await reusablePersonalPreparation(ctx, (await ctx.db.get(f.id))!),
+      ).toBeNull();
+    });
+  },
+);
+it.each(["image", "snapshot", "missing_pin", "broker"] as const)(
+  "invalidates cache on %s pipeline changes without changing its retained expiry",
+  async (change) => {
+    const s = await setup(),
+      f = await retainedPreparation(s);
+    if (change === "image")
+      vi.stubEnv(
+        "VERCEL_MEDIA_IMAGE",
+        `synthetic/media@sha256:${"b".repeat(64)}`,
+      );
+    if (change === "snapshot")
+      vi.stubEnv("VERCEL_MEDIA_SNAPSHOT", "snap_syntheticChanged123");
+    if (change === "missing_pin") vi.stubEnv("VERCEL_MEDIA_IMAGE", "");
+    if (change === "broker")
+      vi.stubEnv(
+        "SANDBOX_BRIDGE_URL",
+        "https://example.test/api/internal/sandbox-credentials",
+      );
+    expect(
+      await s.t.run(async (ctx) =>
+        reusablePersonalPreparation(ctx, (await ctx.db.get(f.id))!),
+      ),
+    ).toBeNull();
+    expect(
+      (await s.t.run((ctx) => ctx.db.get(f.id)))?.personalMedia.preparation
+        .expiresAt,
+    ).toBe(f.media.preparation.expiresAt);
+  },
+);
+it("refuses changed original input before dispatch and preserves measured compute after a mid-preparation change", async () => {
+  const s = await setup();
+  const id = await mediaApproval(s, true);
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(id))!;
+    const raw = (await ctx.db
+      .query("assets")
+      .withIndex("by_key", (q) => q.eq("key", source.objectKey!))
+      .unique())!;
+    await ctx.db.patch(raw._id, { state: "deleted" });
+  });
+  expect(
+    await s.t.mutation(internal.personalMediaState.begin, {
+      id,
+      generation: 1,
+    }),
+  ).toBeNull();
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("reservations")
+        .withIndex("by_key", (q) =>
+          q.eq("organizationId", s.org).eq("key", `personal-media:${id}:1`),
+        )
+        .unique(),
+    ),
+  ).toMatchObject({ state: "settled", settled: 0 });
+  const s2 = await setup(),
+    f = await retainedPreparation(s2, true, true);
+  await s2.t.run(async (ctx) => {
+    const source = (await ctx.db.get(f.id))!;
+    const raw = (await ctx.db
+      .query("assets")
+      .withIndex("by_key", (q) => q.eq("key", source.objectKey!))
+      .unique())!;
+    await ctx.db.patch(raw._id, { etag: "changed-during-preparation" });
+  });
+  expect(
+    await s2.t.mutation(internal.personalMediaState.finish, {
+      id: f.id,
+      generation: 1,
+      organizationId: s2.org,
+      computeCredits: 2,
+      media: f.media,
+      inputBinding: f.snapshot.inputBinding,
+    }),
+  ).toBe(false);
+  expect(await s2.t.run((ctx) => ctx.db.get(f.id))).toMatchObject({
+    state: "failed",
+  });
+  expect(
+    (await s2.t.run((ctx) => ctx.db.get(f.id)))?.personalMedia,
+  ).toBeUndefined();
+  expect(
+    await s2.t.run((ctx) =>
+      ctx.db
+        .query("reservations")
+        .withIndex("by_key", (q) =>
+          q.eq("organizationId", s2.org).eq("key", `personal-media:${f.id}:1`),
+        )
+        .unique(),
+    ),
+  ).toMatchObject({ state: "settled", settled: 2 });
+});
+it("permits legacy preparation without a cache stamp when no verified pinned identity exists", async () => {
+  const s = await setup(),
+    f = await retainedPreparation(s, false, true),
+    id = f.id;
+  vi.stubEnv("VERCEL_MEDIA_IMAGE", "");
+  vi.stubEnv("VERCEL_MEDIA_SNAPSHOT", "");
+  expect(
+    (
+      await s.t.query(internal.personalMediaState.inputSnapshot, {
+        id,
+        generation: 1,
+      })
+    )?.cacheBinding,
+  ).toBeNull();
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(id))!,
+      input = await personalPreparationInput(ctx, source);
+    expect(input).not.toBeNull();
+    expect(await personalPreparationBinding(source, input!)).toBeNull();
+    expect(await personalPreparationInputBinding(input!)).toMatch(
+      /^[a-f0-9]{64}$/,
+    );
+  });
+  const { preparation: _stamp, ...legacyMedia } = f.media;
+  expect(
+    await s.t.mutation(internal.personalMediaState.finish, {
+      id,
+      generation: 1,
+      organizationId: s.org,
+      computeCredits: 1,
+      media: legacyMedia,
+      inputBinding: f.snapshot.inputBinding,
+    }),
+  ).toBe(true);
+  const source = await s.t.run((ctx) => ctx.db.get(id));
+  expect(source?.state).toBe("queued");
+  expect(source?.personalMedia.preparation).toBeUndefined();
+});
+it("refuses preparation reuse after input, expiry, asset, deletion or unsettled-usage changes", async () => {
+  for (const change of [
+    "input",
+    "expiry",
+    "asset",
+    "deletion",
+    "unsettled",
+  ] as const) {
+    const s = await setup(),
+      f = await retainedPreparation(s);
+    await s.t.run(async (ctx) => {
+      const source = (await ctx.db.get(f.id))!;
+      if (change === "input")
+        await ctx.db.patch(f.id, {
+          url: "https://instagram.com/reel/ChangedMedia123/",
+        });
+      if (change === "expiry")
+        await ctx.db.patch(f.id, {
+          personalMedia: {
+            ...f.media,
+            preparation: { ...f.media.preparation, expiresAt: Date.now() - 1 },
+          },
+        });
+      if (change === "asset")
+        await ctx.db.patch(f.assetId, { state: "deleted" });
+      if (change === "deletion")
+        await ctx.db.insert("objectDeletions", {
+          key: f.media.frames[0].key,
+          state: "pending",
+          attempts: 0,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+      if (change === "unsettled") {
+        const hold = await ctx.db
+          .query("reservations")
+          .withIndex("by_key", (q) =>
+            q.eq("organizationId", s.org).eq("key", `personal-media:${f.id}:1`),
+          )
+          .unique();
+        await ctx.db.patch(hold!._id, { state: "active" });
+      }
+      expect(
+        await reusablePersonalPreparation(ctx, (await ctx.db.get(source._id))!),
+      ).toBeNull();
+    });
+    if (change === "unsettled")
+      await expect(
+        s.a.mutation(api.personalAnalysis.approve, {
+          id: f.id,
+          generation: 1,
+          deviceId: s.device,
+          model: "synthetic-model",
+          effort: "medium",
+          useOwnPlan: true,
+          maxComputeCredits: 10,
+        }),
+      ).rejects.toThrow("COST_RECONCILIATION_REQUIRED");
+  }
+});
+it("invalidates retained preparation during recovery even for otherwise preserved legacy media", async () => {
+  const s = await setup(),
+    f = await retainedPreparation(s);
+  expect(
+    await s.t.run(
+      async (ctx) =>
+        !!(await reusablePersonalPreparation(ctx, (await ctx.db.get(f.id))!)),
+    ),
+  ).toBe(true);
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.mutation(internal.recovery.quarantinePage, {
+    section: "sources",
+    cursor: null,
+  });
+  vi.stubEnv("RESTORE_LOCK", "false");
+  const source = await s.t.run((ctx) => ctx.db.get(f.id));
+  expect(source?.personalMedia).toBeUndefined();
+  expect(
+    await s.t.run(
+      async (ctx) =>
+        !!(await reusablePersonalPreparation(ctx, (await ctx.db.get(f.id))!)),
+    ),
+  ).toBe(false);
+});
+it("refuses paid preparation after retained rights or the approved catalogue change", async () => {
+  for (const change of ["retention", "rights", "capabilities"]) {
+    const s = await setup();
+    if (change === "capabilities")
+      await announceCapabilities(s, ownCatalogue("medium"));
+    const id = await mediaApproval(s);
+    if (change === "capabilities")
+      await announceCapabilities(s, ownCatalogue("high"));
+    else
+      await s.t.run((ctx) =>
+        ctx.db.patch(
+          id,
+          change === "rights"
+            ? { rightsAttested: false }
+            : { sourceRetentionUntil: Date.now() - 1 },
+        ),
+      );
+    expect(
+      await s.t.mutation(internal.personalMediaState.begin, {
+        id,
+        generation: 1,
+      }),
+    ).toBeNull();
+    const reservation = await s.t.run((ctx) =>
+      ctx.db
+        .query("reservations")
+        .withIndex("by_key", (q) =>
+          q.eq("organizationId", s.org).eq("key", `personal-media:${id}:1`),
+        )
+        .unique(),
+    );
+    expect(reservation).toMatchObject({ state: "settled", settled: 0 });
+    expect(reservation?.dispatchedAt).toBeUndefined();
+  }
+});
+it("rejects late prepared media after retention expiry while settling its measured compute exactly", async () => {
+  const s = await setup(),
+    id = await mediaApproval(s);
+  expect(
+    await s.t.mutation(internal.personalMediaState.begin, {
+      id,
+      generation: 1,
+    }),
+  ).not.toBeNull();
+  await s.t.run((ctx) =>
+    ctx.db.patch(id, { sourceRetentionUntil: Date.now() - 1 }),
+  );
+  expect(
+    await s.t.mutation(internal.personalMediaState.finish, {
+      id,
+      generation: 1,
+      organizationId: s.org,
+      computeCredits: 2,
+      media: { durationMs: 8000, coverage: "audio_only", frames: [] },
+    }),
+  ).toBe(false);
+  const reservation = await s.t.run((ctx) =>
+    ctx.db
+      .query("reservations")
+      .withIndex("by_key", (q) =>
+        q.eq("organizationId", s.org).eq("key", `personal-media:${id}:1`),
+      )
+      .unique(),
+  );
+  expect(reservation).toMatchObject({ state: "settled", settled: 2 });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(id)))?.personalMedia,
+  ).toBeUndefined();
+});
+it("keeps media authority internal and denies a new signed lease after rights revocation", async () => {
+  const s = await setup(),
+    id = await mediaApproval(s),
+    key = `${s.org}/retained-normalized-audio`;
+  await s.t.mutation(internal.personalMediaState.begin, { id, generation: 1 });
+  const assetId = await s.t.mutation(internal.assets.registerNormalized, {
+    sourceId: id,
+    generation: 1,
+    key,
+    size: 100,
+    etag: "fixture",
+  });
+  await s.t.mutation(internal.personalMediaState.finish, {
+    id,
+    generation: 1,
+    organizationId: s.org,
+    computeCredits: 2,
+    media: {
+      durationMs: 8000,
+      coverage: "audio_only",
+      frames: [],
+      audio: {
+        assetId,
+        key,
+        size: 100,
+        sha256: "a".repeat(64),
+        etag: "fixture",
+      },
+    },
+  });
+  await s.dispatch({ operation: "poll" });
+  const args = { credentialHash: "c".repeat(64), id, generation: 1 };
+  expect(
+    await s.t.query(internal.personalAnalysis.mediaLease, args),
+  ).toHaveProperty("sourceAuthority");
+  await s.t.run((ctx) => ctx.db.patch(id, { rightsAttested: false }));
+  await expect(
+    s.t.query(internal.personalAnalysis.mediaLease, args),
+  ).rejects.toThrow("APPROVAL_STALE");
 });
 
 it("approves imported public links atomically, preserves acquisition captions and verifies media evidence before insights", async () => {

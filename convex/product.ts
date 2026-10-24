@@ -1,5 +1,9 @@
 import { presentAnalysis } from "../packages/insights/presentation";
 import { classifySourceUrl } from "../packages/sources/classify";
+import {
+  socialPostUrl,
+  socialPostAliases,
+} from "../packages/social/identity.mjs";
 import { validateEvidenceRegistry } from "../packages/sources/evidence";
 import { sourcePolicyCurrent } from "./lib/sourcePolicy";
 import { retainedSourceRevision, sourceRetained } from "./lib/sourceAuthority";
@@ -8,6 +12,11 @@ import {
   type SourceProposal,
 } from "../packages/proposals/evidence";
 import { sharedTypedCitations } from "./lib/sourceCitations";
+import { currentOrderedSource } from "./lib/orderedSource";
+import { socialPipelineVersion } from "../packages/social/prompts";
+import { personalOrderedInputSchema } from "../packages/social/ordered-intake";
+import { providedMediaMetadata } from "../packages/social/contracts";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { invalidatePublicSource } from "./publicKnowledge";
 import { filing } from "./librarySpaces";
 import { repositoryContent } from "./lib/repositoryContent";
@@ -41,7 +50,8 @@ import {
   processingReceipt,
   speechProvenance,
 } from "../packages/media/provenance";
-import { personalAllowed } from "./lib/personalAccess";
+import { personalAllowed, workCloudTextAllowed } from "./lib/personalAccess";
+import { sourceEligibility } from "./lib/privateSourceAnalysis";
 import {
   hostedMediaAllowed,
   hostedSourceAllowed,
@@ -341,7 +351,12 @@ export const libraryContext = query({
     for (const p of proposals)
       if (
         !p.references ||
-        (await referencesCurrent(ctx, organizationId, p.references))
+        (await referencesCurrent(
+          ctx,
+          organizationId,
+          p.references,
+          p.privateEvaluationOrigin,
+        ))
       )
         current.push({ _id: p._id, review: p.review });
     return {
@@ -526,11 +541,7 @@ export const library = query({
     const page = [];
     for (const source of result.page) {
       if (!source || (sourceState && source.state !== sourceState)) continue;
-      if (
-        source.sourceRetentionUntil &&
-        source.sourceRetentionUntil <= Date.now()
-      )
-        continue;
+      if (!sourceRetained(source)) continue;
       if (notAnalyzed && source.state === "ready") continue;
       if (inProgress && !["queued", "processing"].includes(source.state))
         continue;
@@ -550,7 +561,10 @@ export const library = query({
         ({
           text: _text,
           analysis,
+          privateSourceAnalysis: _privateSourceAnalysis,
+          privateSourceAnalysisRunId: _privateSourceAnalysisRunId,
           objectKey: _objectKey,
+          personalOrderedInput: _personalOrderedInput,
           searchable: _searchable,
           ...source
         }) => ({
@@ -602,7 +616,7 @@ export const detail = query({
       fail("Source unavailable.");
     const reader = await access(ctx, s.organizationId);
     ensure(
-      !s.sourceRetentionUntil || s.sourceRetentionUntil > Date.now(),
+      sourceRetained(s),
       "SOURCE_UNAVAILABLE",
       "The retained source evidence expired. Recover it with permitted supplied text.",
     );
@@ -660,6 +674,15 @@ export const detail = query({
       .collect();
     return {
       ...s,
+      privateSourceAnalysis: undefined,
+      privateSourceAnalysisRunId: undefined,
+      privateSourceEligibility:
+        reader.organization.privateOwnerId === reader.actor._id
+          ? await sourceEligibility(ctx, s, reader.actor._id)
+          : undefined,
+      workCloudTextEnabled:
+        reader.organization.privateOwnerId === reader.actor._id &&
+        workCloudTextAllowed(reader.actor.subject),
       sourceRevision: typedRegistry?.revision,
       evidenceRegistry: typedRegistry?.evidence,
       spaces: reader.organization.privateOwnerId
@@ -690,7 +713,12 @@ export const detail = query({
           proposals.map(async (p) =>
             p.organizationId === s.organizationId &&
             (!p.references ||
-              (await referencesCurrent(ctx, s.organizationId, p.references)))
+              (await referencesCurrent(
+                ctx,
+                s.organizationId,
+                p.references,
+                p.privateEvaluationOrigin,
+              )))
               ? p
               : null,
           ),
@@ -768,6 +796,187 @@ export const capture = mutation({
   },
   handler: (ctx, a) => captureOne(ctx, a),
 });
+export const captureOrdered = mutation({
+  args: {
+    ...org,
+    key: v.string(),
+    title: v.string(),
+    assets: v.array(
+      v.object({ key: v.string(), index: v.number(), sha256: v.string() }),
+    ),
+    originalUrl: v.optional(v.string()),
+    caption: v.optional(v.string()),
+    rightsAttested: v.boolean(),
+  },
+  handler: async (ctx, a) => {
+    const actor = await writeAccess(ctx, a.organizationId);
+    ensure(
+      process.env.DISABLE_CAPTURE !== "true",
+      "POLICY_BLOCKED",
+      "Capture is paused.",
+    );
+    ensure(
+      a.rightsAttested,
+      "RIGHTS_REQUIRED",
+      "Confirm that you may submit this content.",
+    );
+    ensure(
+      a.key.length >= 8 &&
+        a.key.length <= 100 &&
+        a.title.length > 0 &&
+        a.title.length <= 160 &&
+        a.assets.length >= 1 &&
+        a.assets.length <= 35 &&
+        a.assets.every(
+          (asset, index) =>
+            asset.index === index &&
+            /^[a-f0-9]{64}$/.test(asset.sha256) &&
+            asset.key.startsWith(`${a.organizationId}/`) &&
+            asset.key.length <= 1024,
+        ) &&
+        new Set(a.assets.map((asset) => asset.key)).size === a.assets.length,
+      "INVALID_INPUT",
+      "Use between one and 35 distinct ordered files.",
+    );
+    const caption = a.caption ?? "";
+    ensure(
+      caption.length <= 60000 &&
+        !containsSecret(caption) &&
+        !containsSecret(a.title),
+      "POLICY_BLOCKED",
+      "Supplied text is too large or contains a credential.",
+    );
+    ensure(
+      !a.originalUrl ||
+        (a.originalUrl.length <= 2048 && !containsSecret(a.originalUrl)),
+      "INVALID_INPUT",
+      "The original reference is invalid or contains a credential.",
+    );
+    const originalUrl = a.originalUrl ? new URL(a.originalUrl).href : null;
+    const old = await ctx.db
+      .query("sources")
+      .withIndex("by_key", (q) =>
+        q.eq("organizationId", a.organizationId).eq("key", a.key),
+      )
+      .unique();
+    if (old) {
+      const prior = personalOrderedInputSchema.safeParse(
+        old.personalOrderedInput,
+      );
+      ensure(
+        old.state !== "deleted" &&
+          prior.success &&
+          prior.data.metadata.schemaVersion === "provided-media-v1" &&
+          old.title === a.title &&
+          prior.data.metadata.caption === caption &&
+          prior.data.metadata.originalUrl === originalUrl &&
+          canonicalJson(
+            prior.data.assets.map(({ key, index, sha256 }) => ({
+              key,
+              index,
+              sha256,
+            })),
+          ) === canonicalJson(a.assets),
+        "INPUT_CHANGED",
+        "This save key already belongs to a different submission. Start a new save.",
+      );
+      return old._id;
+    }
+    const now = Date.now();
+    const rows = [];
+    for (const item of a.assets) {
+      const row = await ctx.db
+        .query("assets")
+        .withIndex("by_key", (q) => q.eq("key", item.key))
+        .unique();
+      ensure(
+        row &&
+          row.organizationId === a.organizationId &&
+          row.state === "complete" &&
+          !row.sourceId &&
+          row.kind === undefined &&
+          row.etag &&
+          row.etag.length <= 512 &&
+          Number.isSafeInteger(row.size) &&
+          row.size > 0 &&
+          row.size <= 250000000 &&
+          row.expiresAt !== undefined &&
+          row.expiresAt > now &&
+          [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "video/mp4",
+            "video/webm",
+          ].includes(row.type) &&
+          !(await ctx.db
+            .query("objectDeletions")
+            .withIndex("by_key", (q) => q.eq("key", item.key))
+            .unique()),
+        "UPLOAD_INVALID",
+        "Complete each unbound, current upload in this workspace first.",
+      );
+      rows.push(row);
+    }
+    ensure(
+      rows.reduce((sum, row) => sum + row.size, 0) <= 250000000,
+      "UNSUPPORTED_UPLOAD",
+      "The ordered files together must fit within 250 MB.",
+    );
+    const submissionId = crypto.randomUUID();
+    const metadata = providedMediaMetadata.parse({
+      schemaVersion: "provided-media-v1",
+      submissionId,
+      originalUrl,
+      publishedAt: null,
+      observedAt: now,
+      dateReliability: "unknown",
+      provenance: "user_supplied_unverified",
+      caption,
+      expectedAssetCount: rows.length,
+    });
+    const input = personalOrderedInputSchema.parse({
+      schemaVersion: "ordered-personal-input-v1",
+      metadata,
+      assets: rows.map((row, index) => ({
+        id: `child_${index}`,
+        index,
+        kind: row.type.startsWith("image/") ? "image" : "video",
+        key: row.key,
+        bytes: row.size,
+        sha256: a.assets[index].sha256,
+      })),
+    });
+    // Reuse the existing source allowance, counter, capture audit and upload
+    // binding. This operation schedules neither preparation nor inference.
+    const id = await captureAuthorized(
+      ctx,
+      {
+        organizationId: a.organizationId,
+        key: a.key,
+        title: a.title,
+        kind: "upload",
+        objectKey: rows[0].key,
+        rightsAttested: true,
+      },
+      actor,
+      false,
+      true,
+    );
+    await ctx.db.patch(id, {
+      canonical: `provided:${submissionId}`,
+      personalOrderedInput: input,
+      searchable: [a.title, caption].filter(Boolean).join(" "),
+    });
+    for (const row of rows)
+      await ctx.db.patch(row._id, {
+        sourceId: id,
+        sourceGeneration: 0,
+        updatedAt: now,
+      });
+    return id;
+  },
+});
 export async function captureOne(
   ctx: MutationCtx,
   a: {
@@ -841,6 +1050,13 @@ export async function captureAuthorized(
       : a.kind === "text"
         ? `text:${await digest(a.text ?? "")}`
         : `object:${a.objectKey}`;
+  if (a.kind === "url" && classified?.sourceType === "media") {
+    try {
+      canonical = socialPostUrl(canonical).canonical;
+    } catch {
+      /* Other supported media retains its existing canonical form. */
+    }
+  }
   ensure(
     !a.text || (a.text.length <= 60000 && !containsSecret(a.text)),
     "POLICY_BLOCKED",
@@ -867,10 +1083,33 @@ export async function captureAuthorized(
         asset.organizationId === a.organizationId &&
         asset.state === "complete" &&
         asset.expiresAt !== undefined &&
-        asset.expiresAt > Date.now(),
+        asset.expiresAt > Date.now() &&
+        !(await ctx.db
+          .query("objectDeletions")
+          .withIndex("by_key", (q) => q.eq("key", asset.key))
+          .unique()),
       "UPLOAD_INVALID",
       "Complete a verified upload first.",
     );
+    if (asset.sourceId) {
+      const bound = await ctx.db.get(asset.sourceId);
+      ensure(
+        bound &&
+          bound.organizationId === a.organizationId &&
+          bound.state !== "deleted" &&
+          bound.kind === "upload" &&
+          bound.objectKey === asset.key &&
+          bound.canonical === `object:${asset.key}` &&
+          !bound.personalOrderedInput &&
+          !bound.orderedMedia &&
+          !bound.orderedPreparation &&
+          !bound.serviceIntent &&
+          sourceRetained(bound),
+        "UPLOAD_INVALID",
+        "This upload already belongs to a source. Open that source instead.",
+      );
+      return bound._id;
+    }
   }
   const dup = await ctx.db
     .query("sources")
@@ -879,6 +1118,44 @@ export async function captureAuthorized(
     )
     .unique();
   if (dup && dup.state !== "deleted") return dup._id;
+  let socialIdentity:
+    { platform: "instagram" | "tiktok"; postKey: string } | undefined;
+  if (a.kind === "url" && classified?.sourceType === "media") {
+    try {
+      const identity = socialPostUrl(canonical);
+      socialIdentity = {
+        platform: identity.platform,
+        postKey: identity.postKey,
+      };
+    } catch {
+      /* Other supported media keeps its existing identity. */
+    }
+    if (socialIdentity) {
+      const stable = await ctx.db
+        .query("sources")
+        .withIndex("by_social_identity", (q) =>
+          q
+            .eq("organizationId", a.organizationId)
+            .eq("socialIdentity.platform", socialIdentity!.platform)
+            .eq("socialIdentity.postKey", socialIdentity!.postKey),
+        )
+        .unique();
+      if (stable && stable.state !== "deleted") return stable._id;
+      for (const alias of socialPostAliases(canonical)) {
+        if (alias === canonical) continue;
+        const legacy = await ctx.db
+          .query("sources")
+          .withIndex("by_canonical", (q) =>
+            q.eq("organizationId", a.organizationId).eq("canonical", alias),
+          )
+          .unique();
+        if (legacy && legacy.state !== "deleted") {
+          await ctx.db.patch(legacy._id, { socialIdentity });
+          return legacy._id;
+        }
+      }
+    }
+  }
   const w = await wallet(ctx, a.organizationId);
   let counts = await ctx.db
     .query("sourceCounts")
@@ -919,6 +1196,7 @@ export async function captureAuthorized(
   const id = await ctx.db.insert("sources", {
     ...a,
     canonical,
+    ...(socialIdentity ? { socialIdentity } : {}),
     sourceType:
       classified?.sourceType ?? (a.kind === "text" ? "supplied_text" : "media"),
     ...(classified && classified.sourceType !== "media"
@@ -950,7 +1228,12 @@ export async function captureAuthorized(
       .query("assets")
       .withIndex("by_key", (q) => q.eq("key", a.objectKey!))
       .unique();
-    if (asset) await ctx.db.patch(asset._id, { sourceId: id, updatedAt: now });
+    if (asset)
+      await ctx.db.patch(asset._id, {
+        sourceId: id,
+        sourceGeneration: 0,
+        updatedAt: now,
+      });
   }
   await audit(ctx, a.organizationId, actor.actor._id, "source.captured", id);
   if (
@@ -1054,6 +1337,14 @@ export async function startSource(
     "POLICY_BLOCKED",
     "Open the current saved public artifact. Saving it does not start inference.",
   );
+  ensure(
+    !s.orderedMedia &&
+      !s.orderedPreparation &&
+      !s.serviceIntent &&
+      !s.personalOrderedInput,
+    "POLICY_BLOCKED",
+    "Ordered posts require their reviewed ordered-media route and current rights. No legacy media fallback was used.",
+  );
   const typedRevision = s.currentRevisionId
     ? await ctx.db.get(s.currentRevisionId)
     : null;
@@ -1072,7 +1363,7 @@ export async function startSource(
     );
     ensure(
       registry.revision.contentHash === typedRevision.contentHash &&
-        sourceRetained(s.sourceRetentionUntil),
+        sourceRetained(s),
       "INVALID_EVIDENCE",
       "The current retained content changed.",
     );
@@ -1277,7 +1568,7 @@ export const workerSourceRevision = internalQuery({
     );
     ensure(
       registry.revision.contentHash === row!.contentHash &&
-        sourceRetained(source.sourceRetentionUntil),
+        sourceRetained(source),
       "INVALID_EVIDENCE",
       "The retained source content changed.",
     );
@@ -1369,11 +1660,16 @@ export const commitAnalysis = internalMutation({
         "INVALID_EVIDENCE",
         "A typed source cannot fall back to legacy media evidence.",
       );
-      analysis = presentAnalysis(
-        (typedRevision ? sourceInsightOutput : insightOutput).parse(
-          a.output,
-        ) as any,
+      const ordered = Boolean(
+        s.orderedMedia || a.output?.schemaVersion === "3.0.0",
       );
+      analysis = ordered
+        ? (await currentOrderedSource(s, a.output)).analysis
+        : presentAnalysis(
+            (typedRevision ? sourceInsightOutput : insightOutput).parse(
+              a.output,
+            ) as any,
+          );
       ensure(
         analysis.sourceId === s._id &&
           analysis.processingRunId === `${s._id}:${a.generation}`,
@@ -1381,12 +1677,14 @@ export const commitAnalysis = internalMutation({
         "Wrong source reference.",
       );
       ensure(
-        typedRevision
-          ? analysis.coverage === "source_text"
-          : s.kind === "text"
-            ? analysis.coverage === "caption_only"
-            : ["upload", "url"].includes(s.kind) &&
-              analysis.coverage === s.mediaCoverage,
+        ordered
+          ? analysis.coverage === "ordered_media"
+          : typedRevision
+            ? analysis.coverage === "source_text"
+            : s.kind === "text"
+              ? analysis.coverage === "caption_only"
+              : ["upload", "url"].includes(s.kind) &&
+                analysis.coverage === s.mediaCoverage,
         "INVALID_EVIDENCE",
         "Analysis coverage does not match verified processing.",
       );
@@ -1397,7 +1695,7 @@ export const commitAnalysis = internalMutation({
       );
       if (typedRevision) {
         ensure(
-          s.rightsAttested && sourceRetained(s.sourceRetentionUntil),
+          s.rightsAttested && sourceRetained(s),
           "RIGHTS_REQUIRED",
           "Source rights or retention changed before completion.",
         );
@@ -1423,7 +1721,7 @@ export const commitAnalysis = internalMutation({
         );
         ensure(
           registry.revision.contentHash === typedRevision.contentHash &&
-            sourceRetained(s.sourceRetentionUntil),
+            sourceRetained(s),
           "INVALID_EVIDENCE",
           "The retained source content changed.",
         );
@@ -1460,7 +1758,7 @@ export const commitAnalysis = internalMutation({
       for (const i of analysis.insights)
         for (const e of i.evidence)
           ensure(
-            typedRevision
+            ordered || typedRevision
               ? true
               : s.kind === "text"
                 ? e.id === "supplied_text" &&
@@ -1510,9 +1808,11 @@ export const commitAnalysis = internalMutation({
       state: analysis ? "ready" : "failed",
       analysis,
       analysisPipelineVersion: analysis
-        ? s.currentRevisionId
-          ? "cited-source-v2"
-          : "legacy-media-text-v1"
+        ? s.orderedMedia
+          ? (s.serviceIntent?.pipelineVersion ?? socialPipelineVersion)
+          : s.currentRevisionId
+            ? "cited-source-v2"
+            : "legacy-media-text-v1"
         : undefined,
       summary: analysis?.summary,
       searchable: [s.title, analysis?.summary, s.text, ...s.tags]
@@ -1723,7 +2023,11 @@ export const attachSource = mutation({
         "UPLOAD_INVALID",
         "Upload unavailable.",
       );
-      await ctx.db.patch(asset._id, { sourceId: s._id, updatedAt: Date.now() });
+      await ctx.db.patch(asset._id, {
+        sourceId: s._id,
+        sourceGeneration: s.generation + 1,
+        updatedAt: Date.now(),
+      });
     }
     const proposals = await ctx.db
       .query("proposals")
@@ -1777,6 +2081,10 @@ export const attachSource = mutation({
       speechProvenance: undefined,
       mediaEvidence: undefined,
       originalMediaEvidence: undefined,
+      orderedMedia: undefined,
+      personalOrderedInput: undefined,
+      orderedPreparation: undefined,
+      serviceIntent: undefined,
       mediaCoverage: undefined,
       error: undefined,
       generation: s.generation + 1,
@@ -1796,6 +2104,13 @@ export const deleteSource = mutation({
 export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
   await invalidatePublicSource(ctx, id);
   const trialSource = await ctx.db.get(id);
+  if (trialSource)
+    await ctx.scheduler.runAfter(0, internal.privateSourceAnalysis.scrub, {
+      organizationId: trialSource.organizationId,
+      sourceId: id,
+      maxGeneration: trialSource.generation,
+      cursor: null,
+    });
   if (trialSource)
     await ctx.scheduler.runAfter(0, internal.subscriptionTrials.redact, {
       organizationId: trialSource.organizationId,
@@ -1870,6 +2185,11 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
   await ctx.db.patch(id, {
     state: "deleted",
     canonical: `deleted:${id}`,
+    socialIdentity: undefined,
+    orderedMedia: undefined,
+    personalOrderedInput: undefined,
+    orderedPreparation: undefined,
+    serviceIntent: undefined,
     key: `deleted:${id}`,
     title: "Deleted source",
     searchable: "",
@@ -1886,6 +2206,8 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     originalMediaEvidence: undefined,
     correctionAuthor: undefined,
     personalAnalysis: undefined,
+    privateSourceAnalysis: undefined,
+    privateSourceAnalysisRunId: undefined,
     personalMedia: undefined,
     acquisition: undefined,
     currentRevisionId: undefined,
@@ -2029,7 +2351,12 @@ export const proposals = query({
     for (const p of rows) {
       if (
         p.references &&
-        !(await referencesCurrent(ctx, p.organizationId, p.references))
+        !(await referencesCurrent(
+          ctx,
+          p.organizationId,
+          p.references,
+          p.privateEvaluationOrigin,
+        ))
       )
         continue;
       permitted.push(p);
@@ -2045,7 +2372,12 @@ export const proposal = query({
     await access(ctx, p.organizationId);
     ensure(
       !p.references ||
-        (await referencesCurrent(ctx, p.organizationId, p.references)),
+        (await referencesCurrent(
+          ctx,
+          p.organizationId,
+          p.references,
+          p.privateEvaluationOrigin,
+        )),
       "FORBIDDEN",
       "Proposal evidence unavailable.",
     );
@@ -2217,7 +2549,7 @@ export async function currentMatchingProposal(
     job.sourceRevision !== source.updatedAt ||
     source.state !== "ready" ||
     !source.rightsAttested ||
-    !sourceRetained(source.sourceRetentionUntil) ||
+    !sourceRetained(source) ||
     !(await actorCurrent(ctx, source.organizationId, job.actor))
   )
     return null;
@@ -2359,7 +2691,7 @@ export const addProposal = internalMutation({
           matchingJob.sourceRevision === s.updatedAt &&
           s.state === "ready" &&
           s.rightsAttested &&
-          sourceRetained(s.sourceRetentionUntil) &&
+          sourceRetained(s) &&
           r.confirmed,
         "APPROVAL_STALE",
         "Matching authority or source context changed.",

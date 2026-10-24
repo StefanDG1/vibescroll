@@ -1,5 +1,43 @@
 # VibeScroll complete product and launch plan
 
+## Consolidated stop checkpoint, October 24
+
+Read the [combined completion report](../2026-10-23/COMPLETION-REPORT-2026-10-24.md) and [ADR 140](../../adr/140-public-main-consolidation-with-deployment-hold.md). The owner requested the reviewed source in public main and then a stop. Approximate implementation is70%; expanded production acceptance is roughly10-20%, not100%. Main source publication does not deploy the held backend or complete the public Cloud/Stripe journey.
+
+## Private variant project integration, October 24
+
+[ADR 139](../../adr/139-private-variant-project-references.md) extends the existing project evaluation/proposal/plan path to explicitly selected earned private text insights. Actual run/version/output hashes replace any fabricated canonical membership. Separate runtime admission prevents old workers from spending on unsupported references. Root owns contracts and integration; High owns backend/runtime, Medium the existing controls, and independent High review precedes combined checks. The integrated offline check passed with exit0, 1,761 tests and three hosted skips, zero-warning lint, all types and both builds. Independent High review found no remaining P1/P2 after the superseded-provider retention fix. See the [receipt](../../operations/evidence/launch-20261024-private-variant-project.json). Exact-head CI and native/provider/production acceptance remain pending. Full media, approved skills, trusted creator acquisition/contribution, official Cloud and original external acceptance remain open; no live activation follows.
+
+## Private source-text result candidate, October 24
+
+[ADR 138](../../adr/138-private-source-text-results-on-existing-runs.md) implements the next C6b text-only slice through existing task runs and small source pointers. Canonical generic results remain intact, previous private versions stay available while pending, and old workers cannot claim new source tasks. Earned reads, exact input/output/run identity, privacy cleanup and version CAS are independently reviewed. Focused verification passed; root integrated checks and exact-head CI remain pending. Media reanalysis, approved skills, private-variant project references, trusted creator acquisition/contribution and official Cloud execution remain unfinished requirements, not replaced by text fixtures. Same US$3 cumulative cap and prior holds; both index migrations and backend publication remain held.
+
+## Distinct setup availability candidate, October 24
+
+[ADR 137](../../adr/137-distinct-processing-availability-in-setup.md) completes a C7a projection/guidance slice through the existing setup. Paired subscription, managed credits and experimental text review remain distinct. Text gate availability stays unverified and cannot complete a chapter, start work or imply video/host readiness. The integrated check passed 1,674 tests with three hosted skips, all types and both builds. The final legacy-copy correction passed seventeen UI cases; exact-head CI remains pending. Keep all unfinished original R/P/N/C/M acceptance, the US$3 cumulative cap and prior holds. Production remains the narrow PR141 frontend with unchanged backend.
+
+## Private evaluation focus candidate, October 24
+
+[ADR 136](../../adr/136-private-evaluation-brief-origin.md) extends the existing R5 project task with an optional C6a private-owner focus brief. It binds exact text/owner/model/effort to quote, cache and derived origin, preserves canonical generic analysis and reviewed issue/plan flows, and excludes personalized results from neutral histories and standing automatic execution. No new queue/store/executor or team-wide ACL. Backend 90 focused and UI 23 focused cases passed, with types/lint/format; independent High review found no P1/P2. The integrated check passed 1,659 tests with three hosted skips, all types and both builds; exact-head CI remains pending. Team-private overlays, skills, official Cloud project/video authority, real model usefulness and production/independent acceptance remain open. The same US$3 cap and all prior holds remain.
+
+Parent public-site PR149 passed exact-head CI 40068663644 at b73211f. Its integrated local check passed 1,625 cases with three hosted skips with both builds. Production remains the narrow PR141 frontend and unchanged backend; no new live request or deployment follows.
+
+## Readable public-site candidate, October 24
+
+[ADR 135](../../adr/135-optional-readable-scroll-emphasis.md) completes a bounded M1 motion slice through explicit Play/Pause/Replay over the existing explanation. Text stays fully readable; mobile/reduced-motion/default views stay static. Literal approved Help reads also remove whole-checkout tracing without suppressing warnings. Focused UI/Help checks and the fixed starter build passed; final combined verification, exact-head CI and native-browser/production acceptance remain separate. No original R/P/N/C/M requirement is removed and no new provider/production request is made.
+
+## October 24 existing-contract protection candidate
+
+[ADR 134](../../adr/134-purchased-allowance-commitments.md) preserves frozen paid allowances through the existing billing and refund records, including future monthly grants of a paid annual term. The [current integrated plan](../2026-10-23/README.md) retains all unfinished R/P/N/C/M acceptance. No new price, quantity, live policy or deployment follows. Media PR147 passed exact-head CI40066131115; full backend release remains held on the same cumulative US$3 budget proof.
+
+October24 current execution follows [ADR125](../../adr/125-resumed-budget-and-repository-free-cloud-probe.md): resumed full implementation withinUS$3 cumulative with old holds retained, lifetime/ongoing offer deferred, and repository-free Work Cloud readiness only. Read the [current completion ledger](../2026-10-23/ACCEPTANCE.md) for candidate, production and external evidence. The older offer/cap paragraphs below remain historical and do not activate a lifetime sale.
+
+October 24 offer/design override: [ADR 123](../../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) integrates the final ScrollShow M0-M7 handoff into the existing C9/C10 work. The future Pro EUR 35 monthly/EUR 350 yearly/EUR 800 ongoing-access offer includes a defined monthly AI allowance for every choice and supersedes the new fixed three-year-pass target below. Exact economics/terms/legacy migration and all original acceptance remain. See [the integrated order](../2026-10-23/SCROLLSHOW-INTEGRATION.md); no live billing or runtime changes follow.
+
+Current access override, October 24: [ADR 122](../../adr/122-proprietary-pro-insight-catalog.md) makes the shared insight database proprietary and Pro-only. All plans may contribute; saved private copies/notes remain readable after cancellation. Original collections/reuse/discovery/globe scope continues with Pro catalog access and separate exact approved public demos. Software MIT is unchanged. Read the [current plan](../2026-10-23/README.md) and [owner checklist](../2026-10-23/OWNER-CHECKLIST.md) before treating dated public-library language below as current access policy. No runtime enforcement is claimed by this note.
+
+October 23 continuation: the owner changed release order to GitHub first/Reddit later, approved the seven actual README insights and requested complete per-user subscription-funded video/project/proposal/plan workflows. Follow the [completion plan](../2026-10-23/README.md) and [ADR 117](../../adr/117-github-first-and-complete-own-subscription-workflows.md) for superseding decisions and new gaps. This original package and unfinished acceptance remain in scope.
+
 ## Latest live contrast verification, October 22
 
 Latest production evidence: [PR 132](https://github.com/StefanDG1/vibescroll/pull/132) is merged and canonical frontend `3e831ae4`, alpha `0.1.0-alpha.20261022212012.g3e831ae461aa`, passed exact-head/main CI, staged/canonical health and eight hydrated public synthetic-demo width/theme/state cases. Both source-detail controls have 13.92:1 light and 13.02:1 dark contrast, verified native keyboard behavior, at least 44-pixel targets and no overflow. Backend `abfdeff67` is unchanged and compatible. The complete offline sequence passed 915 tests with three hosted skips. Launch PRs 120–129, 131 and 132 are merged; unrelated dependency PR 130 remains unmerged with failing CI. This does not close pending provider, signed distribution, human public-content review or independent acceptance. Earlier dated receipts retain their actual versions.

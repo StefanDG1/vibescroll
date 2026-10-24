@@ -27,8 +27,116 @@ it("renders an explicit load action without fetching reports or exposing moderat
   expect(html).toContain("Load reports");
   expect(html).toContain("up to 50 open reports");
   expect(html).not.toContain("Confirm removal");
+  expect(html).toContain("Load active restrictions");
+  expect(html).toContain("Repair a legacy moderation identity");
   expect(request).not.toHaveBeenCalled();
   request.mockRestore();
+});
+const block = {
+  _id: "block-1",
+  reportId: "report-1",
+  reason: "privacy",
+  state: "active",
+  version: 3,
+  createdAt: 1,
+  updatedAt: 2,
+};
+it("loads only an explicitly requested restriction page and strips private identity data", async () => {
+  const { loadModerationBlocks } = await import(modulePath);
+  const request = vi.fn().mockResolvedValue(
+    response({
+      page: [
+        {
+          ...block,
+          canonicalHash: "PRIVATE_HASH",
+          publisher: "PRIVATE_ACTOR",
+          organizationId: "PRIVATE_ORG",
+          releaseNote: "PRIVATE_NOTE",
+        },
+      ],
+      isDone: false,
+      continueCursor: "next-page",
+    }),
+  );
+  expect(await loadModerationBlocks(null, request)).toEqual({
+    page: [block],
+    isDone: false,
+    continueCursor: "next-page",
+  });
+  expect(JSON.parse(request.mock.lastCall![1].body)).toEqual({
+    operation: "publicModerationBlocks",
+    args: { cursor: null },
+  });
+  for (const bad of [
+    { page: Array(26).fill(block), isDone: true, continueCursor: "" },
+    {
+      page: [{ ...block, state: "released" }],
+      isDone: true,
+      continueCursor: "",
+    },
+    { page: [{ ...block, version: 0 }], isDone: true, continueCursor: "" },
+  ])
+    await expect(
+      loadModerationBlocks(null, vi.fn().mockResolvedValue(response(bad))),
+    ).rejects.toThrow("Restrictions could not be read");
+});
+it("requires a separate reason and confirmation for exact-version release and never publishes", async () => {
+  const { releaseModerationRestriction } = await import(modulePath);
+  const request = vi.fn().mockResolvedValue(response({ released: true }));
+  await expect(
+    releaseModerationRestriction(block, "Reviewed rights", false, request),
+  ).rejects.toThrow("confirming release");
+  await expect(
+    releaseModerationRestriction(block, " ", true, request),
+  ).rejects.toThrow();
+  expect(request).not.toHaveBeenCalled();
+  await releaseModerationRestriction(block, " Reviewed rights ", true, request);
+  expect(JSON.parse(request.mock.lastCall![1].body)).toEqual({
+    operation: "publicReleaseModerationBlock",
+    args: {
+      id: "block-1",
+      expectedVersion: 3,
+      note: "Reviewed rights",
+      explicitlyApproved: true,
+    },
+  });
+  expect(request).toHaveBeenCalledTimes(1);
+  await expect(
+    releaseModerationRestriction(
+      block,
+      "Reviewed rights",
+      true,
+      vi.fn().mockResolvedValue(response({ published: true })),
+    ),
+  ).rejects.toThrow("not confirmed");
+});
+it("repairs only an explicitly confirmed original hash and edition version without releasing a restriction", async () => {
+  const { repairModerationIdentity } = await import(modulePath);
+  const request = vi.fn().mockResolvedValue(response({ repaired: true }));
+  const input = {
+    editionId: "edition-1",
+    reportId: "report-1",
+    expectedEditionVersion: 2,
+    canonicalHash: "a".repeat(64),
+    note: "Original identity recovered from archived review metadata.",
+  };
+  await expect(
+    repairModerationIdentity(input, false, request),
+  ).rejects.toThrow();
+  await expect(
+    repairModerationIdentity(
+      { ...input, canonicalHash: "https://private-source.invalid" },
+      true,
+      request,
+    ),
+  ).rejects.toThrow();
+  expect(request).not.toHaveBeenCalled();
+  await repairModerationIdentity(input, true, request);
+  expect(JSON.parse(request.mock.lastCall![1].body)).toEqual({
+    operation: "publicRepairLegacyModeration",
+    args: { ...input, explicitlyApproved: true },
+  });
+  expect(request).toHaveBeenCalledTimes(1);
 });
 it("loads exactly the explicit bounded open-report operation and strips unrelated payload", async () => {
   const { loadModerationReports } = await import(modulePath);

@@ -60,6 +60,29 @@
   display: block;
   max-width: 195px;
 }
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.alternative {
+  min-width: 0;
+  padding-block: 0.75rem;
+  border-block: 1px solid var(--line);
+}
+.alternative summary {
+  min-height: 44px;
+  cursor: pointer;
+  padding-block: 0.75rem;
+}
+.alternative > p {
+  margin-block: 1rem;
+}
 
 @media (max-width: 640px) {
   .overview,

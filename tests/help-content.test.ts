@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import manifest from "../docs/help/manifest.json";
@@ -11,6 +11,48 @@ import {
 } from "../apps/starter/lib/help-content";
 
 describe("public task help", () => {
+  it.each(["root", "starter"])(
+    "reads the actual approved files from the %s working directory",
+    async (directory) => {
+      const root = process.cwd();
+      const cwd = vi
+        .spyOn(process, "cwd")
+        .mockReturnValue(
+          directory === "root" ? root : resolve(root, "apps/starter"),
+        );
+      try {
+        for (const article of helpArticles) {
+          expect((await readHelpArticle(article.slug))?.content).toBe(
+            readFileSync(resolve(root, "docs/help", article.file), "utf8"),
+          );
+        }
+        expect(await readHelpArticle("../../.env")).toBeNull();
+        expect(
+          await readHelpArticle("advanced-troubleshooting-draft"),
+        ).toBeNull();
+      } finally {
+        cwd.mockRestore();
+      }
+    },
+  );
+  it("rejects malformed manifest filenames before selecting a filesystem path", async () => {
+    const article = helpArticle("getting-started")!;
+    const original = article.file;
+    try {
+      for (const filename of [
+        "../../private.md",
+        "nested/article.md",
+        "article\\private.md",
+        "article.json",
+        "/private.md",
+      ]) {
+        article.file = filename;
+        expect(await readHelpArticle(article.slug)).toBeNull();
+      }
+    } finally {
+      article.file = original;
+    }
+  });
   it("exposes only approved known slugs and reads allowlisted Markdown", async () => {
     expect(helpArticle("advanced-troubleshooting-draft")).toBeUndefined();
     expect(helpArticle("../../.env")).toBeUndefined();

@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T06:29:16.372940+00:00",
+  "baseCommit": "b73211ff2e9f0513cebfe0d4455b0c15c3ccc114",
+  "mode": "offline owner-private project evaluation context candidate; not source reanalysis or Cloud proof",
+  "verification": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "result": "passed",
+    "totalPassed": 1659,
+    "core": 1397,
+    "auth": 40,
+    "publicUi": 170,
+    "other": 52,
+    "hostedSkipped": 3,
+    "documents": 322,
+    "skillSnapshots": 12,
+    "financeChecks": 17,
+    "lint": "zero warnings/errors",
+    "types": "root/actualConvex/bothapps passed",
+    "builds": "both passed, no whole-project Help tracing warnings",
+    "backendFocused": 90,
+    "uiFocused": 23,
+    "finalLabels": "After full pass, root added optional origin labels to existing proposal/evaluation cards; all170 publicUI cases, starter types and scoped zero-warning lint passed afterward. Exact-head CI remains required.",
+    "fullLogSha256": "02b4fa71886a786fb3ea144d8b9812dadd3f5d5f300a74d2a04fdb1232b55c42",
+    "finalLabelLogSha256": "5028270ed605223bbf79dcccc6649564855ef3366c458d9d7868d23cadc824a5",
+    "browserActualModelProduction": "pending, not represented by fixtures"
+  },
+  "contract": {
+    "input": "privateEvaluationBrief optional exacttext<=4000UTF8bytes, sourceprojectevaluation only",
+    "scope": "serverprivateOwnerId===actor; default/team ordinarytasks unchanged",
+    "origin": "server kind/version/owner/exactbriefSHA/model/effort copiedthrough existing task/evaluation/proposal/issue/improvement",
+    "rawText": "approved task, authorized quote/context and owner export only; status/resume origin label only",
+    "cache": "default key byte-identical; custom versioned origin hash suffix",
+    "neutralIsolation": "local/managed/profile histories exclude custom; canonical source analysis/artifacts unchanged",
+    "lineage": "completed custom eval binds original task text/hash/actor/model; plan inherits proposal origin under separateapproval",
+    "reviewedIssues": "existing manual draft/edit/export/exactpublication preserved",
+    "automation": "standing candidate/start and run policy reject custom before automaticspend",
+    "recovery": "export strips leases; restore clears task/outputauthority and preserves custommarker",
+    "protocol": "existing coordinator spreads exact leased bundle into structured input; no new operation/echo/capabilityneeded"
+  },
+  "review": {
+    "independentHigh": "no substantiated P1/P2 after frozen source review of privacy/authority/default/cache/history/lineage/automation/recovery/UI",
+    "root": "owns DTO/fiveexistingtableextensions, contracts, source review, integration, Help and final evidence",
+    "notEstablished": "model usefulness, skills, separate private source reanalysis, officialCloud authority, nativebrowser, production/independent acceptance"
+  },
+  "preservedFailures": [
+    "Initial backend50/52: new genericBearer fixture did not match unchanged detector; missing deploy:false in synthetic policy. Fixtures corrected, detector/policy not weakened.",
+    "String.isWellFormed unavailable in configuredTypeScriptlib; replaced with bounded Unicode lone-surrogate validation.",
+    "Intentional control-regex lint corrected with explicit code-point validation, no suppression.",
+    "Initial UI22/23 whitespace testhelper assertion corrected without trimming accepted product text."
+  ],
+  "release": {
+    "parentPr149Ci": "40068663644 success at b73211ff2e9f0513cebfe0d4455b0c15c3ccc114",
+    "newTablesIndexesQueuesStores": 0,
+    "sdkLockPricesQuantitiesChanged": false,
+    "newProductionConvexCalls": 0,
+    "newProviderJobs": 0,
+    "purchases": 0,
+    "cumulativeCapUSD": 3,
+    "conservativeReservationsUSD": "2.8092885298898517",
+    "unallocatedUSD": "0.1907114701101483",
+    "allUnknownHoldsPreserved": true,
+    "settledInvoice": false,
+    "production": "frontendfba56d4/backendabfdeff67 unchanged; backendfiscalproofheld"
+  },
+  "sourceHashes": [
+    {
+      "path": "apps/starter/components/console.tsx",
+      "sha256": "2611cf1bcaf320c4af1ab5be96d797665a53f62efa3c4bfdf81d4a7277b8539d"
+    },
+    {
+      "path": "apps/starter/components/knowledge-library.tsx",
+      "sha256": "94098b429ed585e24f9420971fe7e220188b3cd16262e1ecbce2f80639a1ee21"
+    },
+    {
+      "path": "apps/starter/components/own-plan-task-controls.tsx",
+      "sha256": "2243b80ff8b7dbbbb501469607db3f1ae1264f111f31d06f441bdac1fe6c8bed"
+    },
+    {
+      "path": "apps/starter/own-plan-task-ui.test.ts",
+      "sha256": "ceb8dc4363376ef4f2c4cea5050aac1678cd988f04e7335e9f9f2165d67115a1"
+    },
+    {
+      "path": "convex/assistant.ts",
+      "sha256": "c30b68db6e63093611c9bd392f3959cc295d853ad87669008ca746ca05fa1d63"
+    },
+    {
+      "path": "convex/improvementPolicies.ts",
+      "sha256": "86dfb5a3dd0d09643ae6928132a27fbdd2d418c6928d89aaae7f01c21d42c378"
+    },
+    {
+      "path": "convex/improvementSchema.ts",
+      "sha256": "3d52a8a358597c4713ce4ba275d827b3739816704729a3afd4225b0db2a6b423"
+    },
+    {
+      "path": "convex/improvements.ts",
+      "sha256": "21eacb3fa1b3a73939f8a1c2a0517d8f3b1758238483b77a9dd68319deee003c"
+    },
+    {
+      "path": "convex/issues.ts",
+      "sha256": "41bdb4e46460cfb689751c6af87d45100ec91f32586739e2e3e0facc6a242eb6"
+    },
+    {
+      "path": "convex/knowledge.ts",
+      "sha256": "5b14e05d640b962ff065afc0e602421d29157d8d7541c46cc8826c34f481bb0a"
+    },
+    {
+      "path": "convex/knowledgeExplore.ts",
+      "sha256": "948fd894b6815dc265405e346f73621b63fa446245c2ed2dd3ac88af949a5589"
+    },
+    {
+      "path": "convex/knowledgeSchema.ts",
+      "sha256": "19549a7e8feb95b89868d96e248e83eaff76f18ed82a73803d5dd304ba87b9c0"
+    },
+    {
+      "path": "convex/lib/improvementContext.ts",
+      "sha256": "cd7d1348e53e7c5eddb80744ef6f6c46fde7ca1fe6eedd81ed53d9ba75dba56c"
+    },
+    {
+      "path": "convex/lib/localTaskAuthority.ts",
+      "sha256": "09207ed7536eeec74b3ce76ff5f76ea82f1f487b6c2038d3b3bd3faeeced0bee"
+    },
+    {
+      "path": "convex/lib/privateEvaluationContext.ts",
+      "sha256": "ade9b2fd9975ea1f4abda32c9c84e5a0bde3a46722a60c86e7c458767f22c20b"
+    },
+    {
+      "path": "convex/libraryScans.ts",
+      "sha256": "9f3209ae6814e76f009d6cd1cc6115b9e7878bd5ec78dadb4db6703bcf1bc951"
+    },
+    {
+      "path": "convex/localLibrary.ts",
+      "sha256": "d8ce9a33f5b2a3fc18bd4d71c3fee23227a8463f637dbd9355387530b85e1f54"
+    },
+    {
+      "path": "convex/localLibrarySchema.ts",
+      "sha256": "f2931f9b16ebed818809f02d5a9b21728ccf805c0422fdbe184b50bdf7f6d878"
+    },
+    {
+      "path": "convex/localLibraryTaskRuntime.ts",
+      "sha256": "7fff32fbb9e82bc55e67f3432faab4dae979b90bdd24bdc10c27a5f9d09c24ed"
+    },
+    {
+      "path": "convex/localLibraryTasks.ts",
+      "sha256": "2033ee3b142bd53a57f1a5fdd6b347b675d418a9a6416d234599cee3bf52811f"
+    },
+    {
+      "path": "convex/productSchema.ts",
+      "sha256": "4b72aa9b9057e4f4126dee426bc510247d31dfc59523c32419a85c3024836ed9"
+    },
+    {
+      "path": "convex/profiles.ts",
+      "sha256": "3f4f5c112823b4fffe4486699bbe13623a8b6fd8c456da86d667b9ad558c4e3d"
+    },
+    {
+      "path": "packages/contracts/private-evaluation-context.ts",
+      "sha256": "97074a8faad2cd5c0fa9149765bcf0235ecba9c2d16b6666435faceb555aa883"
+    },
+    {
+      "path": "tests/own-plan-tasks.test.ts",
+      "sha256": "df870c04deecc4963d0c41f9d5c9a87eb98aea5d342c57aecf26a63a42e1e0c5"
+    },
+    {
+      "path": "tests/subscription-task-processor.test.ts",
+      "sha256": "ae87fa7234af3417ca0a0c50fd9e6f537eff7bb77462fa3c83a859d3d3970814"
+    }
+  ]
+}

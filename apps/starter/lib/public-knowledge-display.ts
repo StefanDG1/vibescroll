@@ -11,6 +11,7 @@ export type PublicPayload = {
   summary: string;
   publisher: string;
   sourceUrl: string | null;
+  sourceProvenance?: "supplied_text_unverified";
   coverage: string;
   language: string;
   pipelineVersion: string;

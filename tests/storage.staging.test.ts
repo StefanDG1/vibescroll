@@ -2,6 +2,7 @@ import { it, expect } from "vitest";
 import { writeFile } from "node:fs/promises";
 import {
   signedObject,
+  signedUploadObject,
   objectMetadata,
   deleteObject,
 } from "../packages/providers/storage";
@@ -14,7 +15,23 @@ it.skipIf(process.env.VIBE_STAGING_TEST !== "storage")(
       "VibeScroller synthetic private-storage test. No customer data.";
     let deleted = false;
     try {
-      const put = await fetch(signedObject(key, "PUT"), {
+      const bounded = signedUploadObject(key, {
+        size: Buffer.byteLength(value),
+        type: "application/octet-stream",
+      });
+      const wrongType = await fetch(bounded, {
+        method: "PUT",
+        headers: { "Content-Type": "video/mp4" },
+        body: value,
+      });
+      expect(wrongType.status).toBe(403);
+      const wrongLength = await fetch(bounded, {
+        method: "PUT",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: value + "!",
+      });
+      expect(wrongLength.status).toBe(403);
+      const put = await fetch(bounded, {
         method: "PUT",
         headers: { "Content-Type": "application/octet-stream" },
         body: value,
@@ -34,7 +51,7 @@ it.skipIf(process.env.VIBE_STAGING_TEST !== "storage")(
         signedObject(key, "GET", 60, new Date(Date.now() - 120000)),
       );
       expect(expired.status).toBe(403);
-      const cors = await fetch(signedObject(key, "PUT"), {
+      const cors = await fetch(bounded, {
         method: "OPTIONS",
         headers: {
           Origin: "http://localhost:3001",
@@ -63,6 +80,8 @@ it.skipIf(process.env.VIBE_STAGING_TEST !== "storage")(
               privateUnsignedDenied: true,
               expiredGrantDenied: true,
               scopedCors: true,
+              uploadTypeSigned: true,
+              uploadLengthSigned: true,
               readWrite: true,
               deleteConfirmed: true,
             },

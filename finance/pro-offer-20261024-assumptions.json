@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "1.0.0",
+  "preparedAt": "2026-10-24",
+  "status": "review_only_quantity_blocked",
+  "scope": "Future Pro monthly and annual proposal; lifetime and ongoing offers deferred",
+  "notAuthorization": [
+    "No sale",
+    "No price or catalog change",
+    "No policy publication",
+    "No provider call",
+    "No spending grant"
+  ],
+  "currentRepositoryContract": {
+    "source": "contracts/pricing.json",
+    "schemaVersion": "1.0.0",
+    "stripeCatalogVersionSource": "packages/providers/stripe-catalogue.ts",
+    "stripeCatalogVersion": "1.1.0",
+    "proMonthlyEUR": 39,
+    "proAnnualEUR": 390,
+    "proWeeklyEUR": 11.99,
+    "proWeeklyCredits": 150,
+    "proMonthlyCredits": 600,
+    "starterMonthlyEUR": 19,
+    "starterAnnualEUR": 190,
+    "starterWeeklyEUR": 5.99,
+    "starterWeeklyCredits": 65,
+    "starterMonthlyCredits": 250,
+    "topups": [
+      { "eur": 10, "credits": 200 },
+      { "eur": 25, "credits": 550 }
+    ],
+    "proAssetStorageGB": 5,
+    "proSources": 10000,
+    "trialCredits": 30,
+    "actualLiveCatalogInspected": false
+  },
+  "futureProposal": {
+    "proMonthlyEUR": 35,
+    "proAnnualEUR": 350,
+    "monthlyAllowanceCredits": null,
+    "quantityStatus": "BLOCKED_PENDING_COST_AND_RETENTION_BOUNDS",
+    "source": "docs/adr/123-scrollshow-handoff-and-integrated-offer-planning.md",
+    "lifetimeStatus": "deferred_by_ADR_125",
+    "sameAllowanceEachCalendarMonthOnMonthlyAndAnnual": true,
+    "annualCreditsGrantedUpfront": false,
+    "includedRollover": false,
+    "automaticTopups": false,
+    "customerOwnSubscriptionFundsCompanyAllowance": false
+  },
+  "creditCost": {
+    "eurPerCredit": 0.01,
+    "status": "design_ceiling_not_observed_guarantee",
+    "source": "docs/BILLING-AND-TAX.md#credits-and-quotes",
+    "counterfactualMonthlyCredits": 600,
+    "counterfactualStatus": "Legacy quantity used only for sensitivity; not selected for the future offer",
+    "requiresWholeOperationBounds": [
+      "Inference including reasoning",
+      "Preparation and compute",
+      "Tools and acquisition",
+      "Transfer and request charges",
+      "Applicable supplier tax and FX",
+      "Failures and retries",
+      "Cleanup and residual exposure"
+    ]
+  },
+  "savedInputs": {
+    "asOf": "2026-10-03",
+    "source": "finance/assumptions.json",
+    "managedPaymentsDecision": "docs/adr/048-managed-payments-financial-scenarios.md",
+    "status": "Saved planning inputs; not current tax settings, current FX, actual merchant fees or measured costs",
+    "refundRate": 0.02,
+    "cardRate": 0.018,
+    "billingRate": 0.007,
+    "managedPaymentsRate": 0.035,
+    "separateTaxFeeRate": 0,
+    "fixedPaymentRON": 1,
+    "advancedScreeningRON": 0.31,
+    "screenedAttemptsPerPayment": 1.1,
+    "ronPerEUR": 5,
+    "fxReserveRate": 0.005,
+    "disputeProbabilityPerPayment": 0.001,
+    "disputeFeeEUR": 20,
+    "consumerVATRate": 0.21,
+    "serviceEURPerUserMonth": 0.95,
+    "serviceBreakdownEUR": {
+      "storageBackendEmailMonitoring": 0.55,
+      "supportInvoiceHandling": 0.4
+    },
+    "fixedEURPerMonth": 30,
+    "targetOperatingMargin": 0.6,
+    "excludedFromTarget": [
+      "Company tax",
+      "Founder salary",
+      "Marketing",
+      "Initial development"
+    ],
+    "notAssumed": [
+      "Cross-customer cache savings",
+      "Promotional cloud credits",
+      "Unpaid labor as a funding source",
+      "Customer or founder ChatGPT allowance as company-funded inference"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "saved_managed_base",
+      "description": "Saved Managed Payments assumptions, full credit consumption",
+      "overrides": {}
+    },
+    {
+      "id": "saved_higher_vat",
+      "description": "27% consumer-VAT scenario with other base assumptions",
+      "overrides": { "consumerVATRate": 0.27 }
+    },
+    {
+      "id": "combined_saved_stress",
+      "description": "Combined saved high payment/service/FX/fixed-cost and 27% VAT inputs, retaining selected Managed Payments fee",
+      "overrides": {
+        "consumerVATRate": 0.27,
+        "cardRate": 0.0315,
+        "fxReserveRate": 0.02,
+        "serviceEURPerUserMonth": 2.95,
+        "fixedEURPerMonth": 80
+      }
+    },
+    {
+      "id": "credit_ceiling_failure",
+      "description": "Failure stress: actual cost per credit triples; this is not a permitted quote policy",
+      "overrides": { "eurPerCredit": 0.03 }
+    }
+  ],
+  "activeCustomerCounts": [0, 10, 25, 30, 50, 100, 250],
+  "retention": {
+    "horizonsMonths": [1, 12, 36],
+    "cancelledCustomerCounts": [10, 100],
+    "databaseGBPerCancelledCustomerCases": [1, 5],
+    "maximumServiceSnapshotBytes": 524288,
+    "maximumProSourceRecords": 10000,
+    "snapshotCeilingSource": "convex/lib/serviceArtifacts.ts maxBytes; contracts/pricing.json limits.pro.sources",
+    "snapshotScenarioIsMeasured": false,
+    "snapshotScenarioIsEnforcedWorkspaceDatabaseCap": false,
+    "snapshotScenarioCaveat": "10000 maximum-sized copies is a sizing case only; source-record and asset-byte limits do not prove a bound on all imports, source rows, indexes or history",
+    "catalogRightsMaximumMs": 31536000000,
+    "catalogRightsMaximumSource": "packages/social/contracts.ts socialRightsSchema.maxRetentionMs",
+    "horizonCaveat": "36 months is a sensitivity for notes, own results or other continuing obligations, not permission to retain a catalog snapshot beyond its recorded rights/retention deadline",
+    "savedDatabaseRate": {
+      "asOf": "2026-10-22",
+      "source": "docs/operations/evidence/launch-20261022-deploy-budget-proof.json#operatorEnvelopeUSD",
+      "primaryURL": "https://docs.convex.dev/production/state/limits",
+      "usdPerGBMonth": 0.22,
+      "nonUSMultiplier": 1.3,
+      "eurPerUSDScenario": 0.9,
+      "unrecoverableSupplierTaxScenario": 0.21,
+      "status": "Saved database storage rate plus finance FX/tax scenarios; not an R2 rate or a current invoice"
+    },
+    "r2BlobStorageRate": null,
+    "r2RequestAndDeletionRates": null,
+    "databaseIndexAndProjectionMultiplier": null,
+    "backupAndDeletionOverlapFactor": null,
+    "retainedSupportAndExportCost": null,
+    "trafficAndReadFrequency": null,
+    "noNewSalesAssumedForCancelledCohorts": true
+  },
+  "unclosedBounds": [
+    "All eligible managed workloads have a verified whole-operation cost ceiling per quoted service credit",
+    "Current Vercel minimums, transfer, teardown, failed attempts and image/maintenance allocation",
+    "Current R2 EU storage, request, transfer, lifecycle and deletion charges from retained evidence",
+    "Database, search, projection, immutable-copy and backup amplification at full plan occupancy",
+    "Retention and read/export/support costs after cancellation, separately for snapshots and authored material",
+    "Observed or explicitly funded support and shared catalog acquisition/moderation/maintenance",
+    "Current merchant fees, supplier-tax exposure and FX/reserve policy",
+    "Supported-scale and zero-new-sales reserve policy",
+    "Versioned allowance snapshot preserving all legacy paid commitments",
+    "Reviewed exact customer terms and matching enabled workload acceptance"
+  ]
+}

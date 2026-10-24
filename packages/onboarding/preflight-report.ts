@@ -15,6 +15,7 @@ const report = z.strictObject({
   version: z.literal(1),
   kind: z.literal("local_prerequisites"),
   readyForLocalStart: z.boolean(),
+  readyToConnect: z.boolean().optional(),
   processingReady: z.literal("unverified"),
   checks: z
     .array(
@@ -31,7 +32,12 @@ export function parsePreflightReport(input: unknown) {
   if (JSON.stringify(input).length > 16384)
     throw Error("INVALID_INPUT: Keep the diagnostic report under 16 KiB.");
   const parsed = report.parse(input);
+  const readyToConnect = parsed.checks.every(
+    (c) => c.id === "saved_account" || c.status === "passed",
+  );
   if (
+    (parsed.readyToConnect !== undefined &&
+      parsed.readyToConnect !== readyToConnect) ||
     new Set(parsed.checks.map((c) => c.id)).size !== prerequisiteIds.length ||
     parsed.readyForLocalStart !==
       parsed.checks.every((c) => c.status === "passed")
@@ -39,6 +45,7 @@ export function parsePreflightReport(input: unknown) {
     throw Error("INVALID_INPUT: Inconsistent prerequisite report.");
   return {
     passed: parsed.readyForLocalStart,
+    readyToConnect,
     checks: parsed.checks.map(({ id, status }) => ({ id, status })),
   };
 }

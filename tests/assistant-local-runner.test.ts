@@ -46,6 +46,45 @@ it("supplies provider-required types throughout the real structured insight sche
   expect(idleDelay(0)).toBe(30000);
   expect(idleDelay(20)).toBe(300000);
 });
+
+it("passes deadline and controller cancellation through the actual local preparation seam", async () => {
+  const abort = new AbortController();
+  const client = {
+    session: { profileBinding: "a".repeat(64) },
+    structured: vi.fn(),
+  };
+  const request = vi.fn();
+  const prepare = vi.fn(async (options: any) => {
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+    expect(options.signal.aborted).toBe(false);
+    abort.abort(new Error("CONTROLLER_STOPPED"));
+    expect(options.signal.aborted).toBe(true);
+    options.signal.throwIfAborted();
+    return { status: "prepared", directory: "unused" };
+  });
+  await expect(
+    processAssistantJob(
+      {
+        profileBinding: client.session.profileBinding,
+        expiresAt: Date.now() + 10000,
+        extract: true,
+        runId: "run",
+        sourceId: "source",
+        url: "https://youtube.com/watch?v=abcdefghijk",
+      },
+      {
+        client,
+        request,
+        config: { mediaImage: "synthetic" },
+        prepare,
+        signal: abort.signal,
+      },
+    ),
+  ).rejects.toThrow("CONTROLLER_STOPPED");
+  expect(prepare).toHaveBeenCalledOnce();
+  expect(client.structured).not.toHaveBeenCalled();
+  expect(request).not.toHaveBeenCalled();
+});
 it("processes an isolated prepared frame into a cited zero-credit import and never evaluates projects by default", async () => {
   const directory = await mkdtemp(join(tmpdir(), "vibescroll-assistant-test-"));
   try {
@@ -173,6 +212,14 @@ it("refuses tool execution emitted during an official analysis turn", async () =
     account: async () => ({
       account: { type: "chatgpt", email: "owner@example.test" },
     }),
+    models: async () => ({
+      data: [
+        {
+          model: "gpt-6.1-sol",
+          supportedReasoningEfforts: [{ reasoningEffort: "medium" }],
+        },
+      ],
+    }),
     onEvent: (fn: any) => {
       listener = fn;
       return () => {};
@@ -213,6 +260,10 @@ it("keeps default Sol/medium exact while using only approved available model and
     }),
     models: vi.fn(async () => ({
       data: [
+        {
+          model: "gpt-6.1-sol",
+          supportedReasoningEfforts: [{ reasoningEffort: "medium" }],
+        },
         {
           model: "fixture-high",
           supportedReasoningEfforts: [{ reasoningEffort: "high" }],
@@ -255,7 +306,7 @@ it("keeps default Sol/medium exact while using only approved available model and
     server,
   );
   await client.structured({ type: "object", properties: {} }, {});
-  expect(server.models).not.toHaveBeenCalled();
+  expect(server.models).toHaveBeenCalledOnce();
   expect(server.request).toHaveBeenCalledWith(
     "turn/start",
     expect.objectContaining({ model: "gpt-6.1-sol", effort: "medium" }),
@@ -326,4 +377,44 @@ it("interrupts an official turn when the approved personal job signal is cancele
     }),
   ).rejects.toThrow("ASSISTANT_LOCAL_CANCELED");
   expect(server.interrupt).toHaveBeenCalledWith("thread", "turn");
+});
+
+it("passes the controlling lease signal through project evaluation and refuses a late result", async () => {
+  const abort = new AbortController();
+  const request = vi.fn(async (operation: string) =>
+    operation === "project_work"
+      ? { topicId: "topic", members: ["member"], repositories: ["repo"] }
+      : operation === "evaluation"
+        ? { id: "evaluation", cached: false }
+        : { accepted: true },
+  );
+  const client = {
+    session: { profileBinding: "a".repeat(64) },
+    structured: vi.fn(
+      async (_schema: any, _input: any, frames: any, options: any) => {
+        expect(frames).toEqual([]);
+        expect(options.signal.aborted).toBe(false);
+        abort.abort();
+        expect(options.signal.aborted).toBe(true);
+        return { output: {} };
+      },
+    ),
+  };
+  await expect(
+    processAssistantJob(
+      {
+        runId: "run",
+        repositories: ["repo"],
+        extract: false,
+        profileBinding: client.session.profileBinding,
+        expiresAt: Date.now() + 10000,
+      },
+      { client, request, config: {}, signal: abort.signal },
+    ),
+  ).rejects.toThrow();
+  expect(request.mock.calls.map(([operation]) => operation)).toEqual([
+    "project_work",
+    "evaluation",
+  ]);
+  expect(client.structured).toHaveBeenCalledOnce();
 });

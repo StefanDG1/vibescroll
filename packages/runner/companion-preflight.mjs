@@ -68,8 +68,11 @@ export function companionPreflight(observed) {
   );
   check(
     "offline_transcription",
-    observed.pythonPresent === true && observed.asrModelPresent === true,
-    "Select the installed local transcription runtime and model directory.",
+    observed.pythonPresent === true &&
+      observed.asrModelPresent === true &&
+      observed.asrRuntimeVerified === true &&
+      observed.asrModelVerified === true,
+    "Verify the supported local transcription runtime and reviewed model files using the setup guide. Paths alone do not verify their contents.",
   );
   check(
     "saved_account",
@@ -87,6 +90,10 @@ export function companionPreflight(observed) {
     version: 1,
     kind: "local_prerequisites",
     readyForLocalStart: checks.every((c) => c.status === "passed"),
+    // Launch may offer normal official consent; this does not certify an account.
+    readyToConnect: checks.every(
+      (c) => c.id === "saved_account" || c.status === "passed",
+    ),
     processingReady: "unverified",
     checks,
     limits: [

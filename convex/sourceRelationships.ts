@@ -9,10 +9,7 @@ import { sourceRetained } from "./lib/sourceAuthority";
 async function source(ctx: QueryCtx, id: Id<"sources">) {
   const row = await ctx.db.get(id);
   ensure(
-    row &&
-      row.state !== "deleted" &&
-      row.rightsAttested &&
-      sourceRetained(row.sourceRetentionUntil),
+    row && row.state !== "deleted" && row.rightsAttested && sourceRetained(row),
     "SOURCE_UNAVAILABLE",
     "Choose a current permitted source.",
   );
@@ -45,7 +42,7 @@ export const list = query({
         !target ||
         target.organizationId !== original.organizationId ||
         target.state === "deleted" ||
-        !sourceRetained(target.sourceRetentionUntil) ||
+        !sourceRetained(target) ||
         !target.rightsAttested
       )
         continue;

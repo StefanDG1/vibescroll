@@ -1,0 +1,11 @@
+VibeScroll social static walkthrough
+
+Edited synthetic candidate captures from October 22, 2026, source commit 76ec7bf0b9812e670207cba199b8d07cc07839fd. Editorial holds are not measured processing time. No real processing, customer result, repository inspection or publication is shown.
+
+Scene 1, 0-5 seconds: Save permitted material. This example uses manual analysis.
+Scene 2, 5-10 seconds: Inspect the evidence. Synthetic data explains the workflow.
+Scene 3, 10-15 seconds: Review a private issue draft. Nothing is published here.
+Scene 4, 15-20 seconds: No fit is useful too. Inspect the example at scroll.companynerve.com/example.
+
+The issue draft is not an implementation plan. Source permissions and hashes are recorded in docs/launch-kit/assets.json. No private Reel, founder crop, generated UI, music or voice was used.
+Desktop presentations use uncropped scaling and letterboxing. Mobile presentations retain the original source width with a caption band.

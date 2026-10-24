@@ -1,3 +1,7 @@
+import {
+  prepareVariantEvaluation,
+  variantOrigin,
+} from "./lib/privateProjectVariant";
 import { presentAnalysis } from "../packages/insights/presentation";
 import { repositoryContent } from "./lib/repositoryContent";
 import {
@@ -26,6 +30,7 @@ import {
 import {
   synthesis,
   evaluation,
+  privateEvaluation,
   assertReferences,
   limits,
   processingVersion,
@@ -34,6 +39,9 @@ import { snapshotScopeCurrent } from "../packages/repositories/scope";
 import { z } from "zod";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { queueDeletion } from "./assets";
+import { taskBindingsCurrent } from "./lib/localTaskAuthority";
+import { samePrivateEvaluationOrigin } from "./lib/privateEvaluationContext";
+import { releaseSourcePointer } from "./lib/privateSourceAnalysis";
 import {
   acquisitionManifest,
   acquisitionPolicy,
@@ -93,7 +101,10 @@ async function activeRun(
     ? await ctx.db.get(actorId)
     : (await access(ctx, run.organizationId, ["owner", "admin"])).actor;
   ensure(actor, "FORBIDDEN", "Actor unavailable.");
-  if (actorId) {
+  if (run.task) {
+    ensure(actorId, "FORBIDDEN", "Use the paired executor's exact task lease.");
+    await taskBindingsCurrent(ctx, run, actor._id);
+  } else if (actorId) {
     await validateLocalRun(ctx, run, actorId);
   }
   ensure(
@@ -191,6 +202,20 @@ export const list = query({
       .filter((r) => r.actor === actor._id)
       .map((r) => ({
         ...r,
+        sourceTaskResult: undefined,
+        ...(r.task
+          ? {
+              task: {
+                workload: r.task.workload,
+                fundingRoute: r.task.fundingRoute,
+                deadline: r.task.deadline,
+                evaluationIds:
+                  r.task.schemaVersion !== "2.0.0" ? r.task.evaluationIds : [],
+                proposalIds:
+                  r.task.schemaVersion !== "2.0.0" ? r.task.proposalIds : [],
+              },
+            }
+          : {}),
         state:
           r.state === "active" && r.expiresAt <= Date.now()
             ? "expired"
@@ -213,8 +238,38 @@ export const expire = internalMutation({
   args: runArgs,
   handler: async (ctx, a) => {
     const run = await ctx.db.get(a.runId);
-    if (run && run.expiresAt <= Date.now() && run.state === "active") {
-      await ctx.db.patch(run._id, { state: "expired", updatedAt: Date.now() });
+    if (
+      run &&
+      run.expiresAt <= Date.now() &&
+      ["active", "queued"].includes(run.state)
+    ) {
+      await ctx.db.patch(run._id, {
+        state: "expired",
+        updatedAt: Date.now(),
+        ...(run.task
+          ? {
+              task: {
+                ...run.task,
+                leaseUntil: 0,
+                leaseToken: undefined,
+                ...(run.task.schemaVersion !== "2.0.0"
+                  ? { inspected: undefined, inspectionManifest: undefined }
+                  : {}),
+              },
+            }
+          : {}),
+      });
+      if (run.state === "queued") await releaseSourcePointer(ctx, run);
+      if (
+        run.state === "queued" &&
+        run.task &&
+        run.task.schemaVersion !== "2.0.0" &&
+        run.task.proposal
+      ) {
+        const p = await ctx.db.get(run.task.proposal.id);
+        if (p?.localPlanRunId === run._id)
+          await ctx.db.patch(p._id, { localPlanRunId: undefined });
+      }
       await ctx.scheduler.runAfter(0, internal.localLibrary.cleanPending, {
         runId: run._id,
         cursor: null,
@@ -839,16 +894,33 @@ export async function evaluationPrepareCore(
   ctx: MutationCtx,
   a: {
     runId: Id<"localLibraryRuns">;
-    topicId: Id<"knowledgeTopics">;
+    topicId?: Id<"knowledgeTopics">;
     repositoryId: Id<"repositories">;
     cursor?: string;
     members?: Id<"knowledgeMembers">[];
   },
   actorId?: Id<"users">,
 ) {
-  const run = await activeRun(ctx, a.runId, actorId),
-    topic = await ctx.db.get(a.topicId),
+  const run = await activeRun(ctx, a.runId, actorId);
+  if (run.task?.schemaVersion === "3.0.0") {
+    ensure(
+      a.topicId === undefined && !a.cursor && a.members?.length === 0,
+      "INVALID_INPUT",
+      "Private variants have no canonical topic or memberships.",
+    );
+    return prepareVariantEvaluation(ctx, run, a.repositoryId);
+  }
+  const topic = a.topicId ? await ctx.db.get(a.topicId) : null,
     repo = await repositoryContent(ctx, await ctx.db.get(a.repositoryId));
+  if (run.task)
+    ensure(
+      run.task.workload === "project_evaluation" &&
+        a.topicId === run.task.topicId &&
+        !a.cursor &&
+        JSON.stringify(a.members) === JSON.stringify(run.task.members),
+      "APPROVAL_STALE",
+      "Evaluate only the exact approved ideas.",
+    );
   ensure(
     topic?.organizationId === run.organizationId &&
       !topic.redirect &&
@@ -936,7 +1008,11 @@ export async function evaluationPrepareCore(
       .withIndex("by_org", (q) => q.eq("organizationId", run.organizationId))
       .unique(),
     preferenceVersion = preferences?.version ?? 0,
-    key = `knowledge-evaluation:${processingVersion}:insight-first-project-context-v3:${topic._id}:${topic.version}:${repo._id}:${repo.sha}:${repo.profileVersion}:${repo.selectionVersion ?? 0}:${sourceSetHash}:${preferenceVersion}`;
+    baseKey = `knowledge-evaluation:${processingVersion}:insight-first-project-context-v3:${topic._id}:${topic.version}:${repo._id}:${repo.sha}:${repo.profileVersion}:${repo.selectionVersion ?? 0}:${sourceSetHash}:${preferenceVersion}`,
+    origin = run.task?.privateEvaluationOrigin,
+    key = origin
+      ? `${baseKey}:private-brief-v1:${await digest(canonicalJson(origin))}`
+      : baseKey;
   const previous = await ctx.db
     .query("knowledgeEvaluations")
     .withIndex("by_topic_repo", (q) =>
@@ -949,6 +1025,8 @@ export async function evaluationPrepareCore(
     if (
       old.state === "ready" &&
       old.output &&
+      samePrivateEvaluationOrigin(old.privateEvaluationOrigin, origin) &&
+      (!origin || old.actor === origin.ownerId) &&
       ["rejected", "deferred"].includes(old.decision) &&
       (await referencesCurrent(ctx, run.organizationId, old.references))
     )
@@ -967,6 +1045,12 @@ export async function evaluationPrepareCore(
     .unique();
   if (old) {
     ensure(
+      samePrivateEvaluationOrigin(old.privateEvaluationOrigin, origin) &&
+        (!origin || old.actor === run.actor),
+      "APPROVAL_STALE",
+      "The cached evaluation has different private context.",
+    );
+    ensure(
       old.state === "ready" ||
         (old.state === "local_prepared" && old.localRunId === run._id),
       "SOURCE_BUSY",
@@ -979,6 +1063,12 @@ export async function evaluationPrepareCore(
       repo,
       preference: preferences?.note ?? "",
       reviewHistory,
+      ...(origin
+        ? {
+            privateEvaluationOrigin: origin,
+            privateEvaluationBrief: run.task!.privateEvaluationBrief,
+          }
+        : {}),
       next: page.isDone ? null : page.continueCursor,
     };
   }
@@ -997,6 +1087,7 @@ export async function evaluationPrepareCore(
     sourceSetHash,
     preferenceVersion,
     localRunId: run._id,
+    ...(origin ? { privateEvaluationOrigin: origin } : {}),
     topicBindings,
     key,
     state: "local_prepared",
@@ -1015,6 +1106,12 @@ export async function evaluationPrepareCore(
     repo,
     preference: preferences?.note ?? "",
     reviewHistory,
+    ...(origin
+      ? {
+          privateEvaluationOrigin: origin,
+          privateEvaluationBrief: run.task!.privateEvaluationBrief,
+        }
+      : {}),
     next: page.isDone ? null : page.continueCursor,
   };
 }
@@ -1057,6 +1154,12 @@ export async function evaluationFinishCore(
   ensure(
     e.organizationId === run.organizationId &&
       e.actor === run.actor &&
+      samePrivateEvaluationOrigin(
+        e.privateEvaluationOrigin,
+        run.task && run.task.schemaVersion !== "2.0.0"
+          ? run.task.privateEvaluationOrigin
+          : undefined,
+      ) &&
       run.repositories.includes(e.repositoryId) &&
       (await evaluationCurrent(ctx, e)),
     "APPROVAL_STALE",
@@ -1068,7 +1171,9 @@ export async function evaluationFinishCore(
     "CONTEXT_REQUIRED",
     "Prepare repository evidence first.",
   );
-  const output = evaluation.parse(a.output);
+  const output = (
+    variantOrigin(e.privateEvaluationOrigin) ? privateEvaluation : evaluation
+  ).parse(a.output);
   assertReferences([output], e.references);
   ensure(
     !containsSecret(JSON.stringify(output)),
@@ -1090,7 +1195,7 @@ export async function evaluationFinishCore(
     state: "ready",
     output,
     credits: 0,
-    model: "gpt-6.1-sol",
+    model: run.model,
     updatedAt: Date.now(),
   });
   return { saved: true, cached: false };

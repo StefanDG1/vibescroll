@@ -17,7 +17,7 @@ export async function sourceWithinAssistantScope(
     source.organizationId !== organization._id ||
     source.state === "deleted" ||
     !source.rightsAttested ||
-    !sourceRetained(source.sourceRetentionUntil)
+    !sourceRetained(source)
   )
     return false;
   let granted = grant.libraryScope === "all";

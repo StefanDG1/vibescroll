@@ -6,9 +6,13 @@ Keep the saved source while you repair the smallest missing prerequisite.
 
 Open the existing source/status link and **Connections**. Check which workspace and account you are using. Never send tokens, pairing secrets, signed links or private transcripts to support.
 
+## Experimental Work Cloud text
+
+A separately enabled [Work Cloud text review](/help/work-cloud-text-review) can handle approved supplied or retained cited text without a paired computer. It is disabled by default and does not establish video processing or automatic background execution. A queued request, tool connection and actual host execution are different states. Revoking app access does not prove that the host stopped; unknown usage blocks silent retries or executor changes.
+
 ## Computer unavailable
 
-1. Start your supported paired computer and the documented assistant worker.
+1. Start your supported paired computer and its [single companion](/help/connect-your-computer). Do not start separate conflicting source/assistant workers.
 2. Check Docker/local engine, offline transcription files and the saved official-client connection.
 3. Confirm that the worker belongs to this user and workspace. Paired, account connected, worker available and ready to process are different states.
 4. Leave waiting work queued. An idle worker can take up to five minutes to check for new work. Sleeping hardware does not wake automatically.
@@ -21,11 +25,31 @@ Stopping the worker pauses local processing. Revoking assistant authority preven
 
 The report is user-provided and its web acknowledgement expires after 24 hours. Even an all-passed report leaves processing readiness, account/model access and a cited sample separately unverified. Browser instructions do not read back actual pause/startup state. Resume and Windows sign-in startup require their own explicit local consent; saving a report does not enable them.
 
+A new computer pairs before the full check. A **ready to connect** report can permit official consent while the saved account is absent; it is not a full prerequisite pass. Start one companion through the documented command, follow supported consent and rerun the full check after connection. Missing tools, isolation, disk or paired configuration still block startup. [Follow the ordered setup guide](/help/connect-your-computer).
+
 The companion package/update engine is candidate code. Do not treat local package tests or a source archive as a published signed installer. A usable distribution needs its actual release signature, approved runtime metadata and verified installation prerequisites. [Open-source setup](/open-source) explains the distinction.
 
 ## Account or permission changed
 
 Reconnect through the supported sign-in flow when required. Review assistant preferences after a recent app sign-in. Existing grants do not gain automatic-analysis authority merely because the application was upgraded. Never reuse another person's account or credentials.
+
+## Review a project with a private focus
+
+In your private Library, open a ready source and the existing own-subscription project review. Select the confirmed projects you want to evaluate. Under **Advanced: private evaluation focus**, optionally describe what matters for this review. Keep the brief under the displayed limit and omit credentials. Review the exact text in the quote before approving it; editing the brief requires a new quote and consent.
+
+This focus produces a separate private project judgment. It does not replace the source's generic analysis or change the shared catalog. It is currently available only in the owner's private workspace, through the existing eligible paired-computer route. Your approved brief joins the source and repository context sent to your connected account for this evaluation.
+
+Review the resulting proposal as usual. An accepted proposal can supply its private context to a separately approved plan; edit that plan before any coding approval. Issue drafting and publication still need their existing explicit review. Standing automatic execution policies do not pick these personalized improvements. A private-context label records the origin; status/history do not repeat the brief.
+
+## Reanalyse text privately
+
+On a ready source in your private Library, open **Private text reanalysis**. This uses genuine supplied text or the retained source excerpts available to the task. It does not inspect video or images again. A saved catalog analysis is not original source evidence.
+
+Use a supported paired runtime with your eligible account, choose the model and effort, and optionally add a **Private text brief**. Review the exact source, focus and own-subscription quote before approving. An older worker may need an update before it can accept this task; follow [the computer setup guide](/help/connect-your-computer). GitHub is not required for this source-only task.
+
+Choose **Load private text result** to read the latest completed version. Task history can open an earlier recorded version while its original source and rights remain current. The previous result stays available while a new request is pending. Reading an earned result does not require the processing computer to be awake. Inspect the cited text, then use **Export private result JSON** if needed.
+
+Private versions leave the generic source, shared catalog and existing notes unchanged. Source changes or rights withdrawal can make an old version unavailable. Private-version insights are not yet inputs to project evaluation; use the existing reviewed project workflow separately. If execution is uncertain, reconcile its recorded state rather than start a duplicate request.
 
 ## Understand the credit display
 
@@ -44,3 +68,9 @@ For a GitHub or Reddit source, explicitly check the request status, recorded req
 The source has a clear saved, waiting, ready or actionable failure state, and you know the next repair and any approved maximum.
 
 **Tip:** For support, record the app version, UTC time and safe error code. Describe the state without sending the source itself.
+
+## Retrying ordered media
+
+Newly prepared ordered media can be reused after an eligible failed analysis when its original provenance, exact files, current rights, expiry and preparation runtime still match. Your source history must have settled compute and no active prior device claim. You still approve your own account/model/effort and pass a fresh account/audio-tool check. Inference and local transcription may consume resources again; this is not a free model retry.
+
+Old preparations without the new verification stamp are not retroactively trusted. Canceled, unknown or changed-generation work cannot use this recovery shortcut. Unknown usage needs reconciliation. An eligible reused preparation keeps its original expiry; a new approval does not extend it. If preparation cannot be reused, review the ordinary available route and quote. The current production version and route readiness still determine which controls are available.

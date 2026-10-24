@@ -62,7 +62,12 @@ export async function POST(request: Request) {
         token,
         teamId: process.env.SANDBOX_TEAM_ID,
         projectId: process.env.SANDBOX_PROJECT_ID,
-        ...(authorized !== true ? { snapshots: authorized.snapshots } : {}),
+        ...(authorized !== true
+          ? {
+              snapshots: authorized.snapshots,
+              snapshotAuthorities: authorized.snapshotAuthorities,
+            }
+          : {}),
       },
       { headers },
     );

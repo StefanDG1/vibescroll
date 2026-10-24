@@ -5,6 +5,7 @@ import { syncCategories } from "./categories";
 import { wallet } from "./product";
 import { queueDeletion } from "./assets";
 import { containsSecret, ensure } from "../packages/policy";
+import { sourceRetained } from "./lib/sourceAuthority";
 export const begin = internalMutation({
   args: { id: v.id("sources") },
   handler: async (ctx, { id }) => {
@@ -14,6 +15,7 @@ export const begin = internalMutation({
       s.state === "deleted" ||
       !s.url ||
       !s.rightsAttested ||
+      !sourceRetained(s) ||
       s.linkPreview?.state !== "queued" ||
       process.env.LINK_PREVIEWS_ENABLED !== "true" ||
       process.env.RESTORE_LOCK === "true" ||
@@ -58,6 +60,7 @@ export const finish = internalMutation({
     const org = s ? await ctx.db.get(s.organizationId) : null;
     const valid =
       s.state !== "deleted" &&
+      sourceRetained(s) &&
       s.canonical === a.canonical &&
       s.linkPreview?.state === "loading" &&
       org?.status === "active" &&
@@ -100,6 +103,7 @@ export const finish = internalMutation({
     const assetId = await insertAsset(ctx, {
       organizationId: s.organizationId,
       sourceId: s._id,
+      sourceGeneration: s.generation,
       key: a.key,
       size: a.size,
       type: "image/jpeg",

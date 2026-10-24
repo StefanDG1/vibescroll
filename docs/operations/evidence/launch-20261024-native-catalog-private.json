@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T10:20:10.062168+00:00",
+  "sourceCommit": "beda8aee0f39ff864106961afb973d2e1807c21a",
+  "mode": "actual hydrated components with authored synthetic in-memory replies on loopback; no real account/model/backend result",
+  "catalog": {
+    "viewports": [
+      "390light",
+      "320dark reduced-motion",
+      "1440light",
+      "1440dark reduced-motion"
+    ],
+    "nativeVerified": [
+      "explicit browse/preview",
+      "keyboard Enter save and truthful no-analysis notice",
+      "workspace change clears detail without automatic reload",
+      "denied request clears cached view",
+      "typing search does not request until explicit submit",
+      "optional map expands through keyboard without new API request",
+      "recorded viewport widths have no horizontal document overflow and no JS/hydration errors"
+    ],
+    "limits": "not full authenticated Console, compiled Tailwind, real Pro entitlement or backend authority. Mobile map labels are compact; the readable primary membership list remains available.",
+    "preservedFailures": [
+      "Old fixture v1 was correctly rejected by current strict v2 parser; fixture corrected, no product control changed.",
+      "Initial raw CDP Enter omitted native text and did not activate save; supported press_key Enter activated exactly one mock save.",
+      "One desktop-dark screenshot capture timed out after its valid DOM/metrics state was saved; no claim that capture succeeded."
+    ]
+  },
+  "privateResult": {
+    "viewports": ["390light", "320dark reduced-motion"],
+    "nativeVerified": [
+      "no calls on mount",
+      "explicit result read uses one detail request and no capability/approval",
+      "twelve distinct selected IDs, thirteenth disabled",
+      "native device/model/effort/repository selection",
+      "exact private version/run/output/12 IDs quoted and approved only after consent",
+      "one mock approval plus one status read, no polling",
+      "canonical metadata change clears result and project controls",
+      "held old detail suppressed after scope change",
+      "visible result expires by one-shot rights timer without an extra API call",
+      "source-only runtime shows update requirement and cannot request variant quote"
+    ],
+    "normalPathCounts": {
+      "privateSourceAnalysisDetail": 1,
+      "localTaskCapabilities": 1,
+      "localTaskQuote": 1,
+      "localTaskApprove": 1,
+      "localTaskStatus": 1
+    },
+    "errors": [],
+    "limits": "synthetic account/model/task approval only; no actual provider work. Desktop private-result viewport was not completed.",
+    "preservedFailures": [
+      "First1.5second deadline case lacked an observed before-expiry state; five-second case observed visible result then successful automatic clearing.",
+      "Another independent task changed the shared default browser target during final observation. Root used explicit owned-target session for final evidence, stopped its own recording and closed only its two test tabs. No unrelated page data or recordings are published."
+    ]
+  },
+  "egress": {
+    "loopbackOnlyResourcesObserved": true,
+    "serverCsp": "connect-src self or none; no external fonts/media",
+    "targetHttpsBlocked": true,
+    "newProductionConvexCalls": 0,
+    "newProviderJobs": 0,
+    "purchases": 0
+  },
+  "cleanup": {
+    "ownTestTabsClosed": true,
+    "ownRecordingsStopped": true,
+    "ownStaticServersExited": true,
+    "sharedBrowserConnectionPreservedForOtherWork": true,
+    "rawRecordings": "private; not published because shared browser actions can interleave"
+  },
+  "screenshots": [
+    {
+      "path": "docs/operations/evidence/launch-20261024-catalog-desktop.png",
+      "sha256": "f45f689be3be005a6715a93927bb5221b370c8e3c77bf875a7000fdbebf4559a",
+      "caption": "Synthetic localhost interface test. Accounts, models and replies are mocked. No processing ran."
+    },
+    {
+      "path": "docs/operations/evidence/launch-20261024-catalog-mobile.png",
+      "sha256": "7c652179f1fc05df70538813ae8377ef18ee7f57665700aa68400cc9a8b93e16",
+      "caption": "Synthetic localhost interface test. Accounts, models and replies are mocked. No processing ran."
+    },
+    {
+      "path": "docs/operations/evidence/launch-20261024-private-runtime-mobile.png",
+      "sha256": "3b0daf47f4fef68272814f7725b5eec9a24c272a5eadc9df3453b0837033458d",
+      "caption": "Synthetic localhost interface test. Accounts, models and replies are mocked. No processing ran."
+    }
+  ],
+  "budget": {
+    "capUSD": 3,
+    "conservativeReservationsUSD": "2.8092885298898517",
+    "unallocatedUSD": "0.1907114701101483",
+    "settledInvoice": false
+  },
+  "sourceHashes": [
+    {
+      "path": "apps/starter/app/atlas.css",
+      "sha256": "85e3e7e2391db828670d4963c2f676695e4c12b524fcd97c64faf11640432a2f"
+    },
+    {
+      "path": "apps/starter/app/product.css",
+      "sha256": "4d5e2ac647ac5c5a74167e67d4ac025237b6b405946dd08e899da8bf396899fc"
+    },
+    {
+      "path": "apps/starter/app/public.css",
+      "sha256": "0828c64fdffcbbdb94428d10fec441552f7e495bdd2a5804174a1156b70d6602"
+    },
+    {
+      "path": "apps/starter/app/studio.css",
+      "sha256": "258c808320a3871b8049e502a311b6bf6ce69104e2e8351fa8315743b7beb5ec"
+    },
+    {
+      "path": "apps/starter/components/own-plan-task-controls.tsx",
+      "sha256": "851881b0c28a462a1f2095c826dfcd2c5a8308914902305d4118300c2b06d1a9"
+    },
+    {
+      "path": "apps/starter/components/private-source-analysis.tsx",
+      "sha256": "916d1b2ccfd504f3636b383349d94190f9295461556c253ea9e5c488d4832f59"
+    },
+    {
+      "path": "apps/starter/components/service-catalog-map.tsx",
+      "sha256": "373e4e7ac0760c6918bfda0263ff6d6e9240ffceeae80bab93cf14b55fc5b214"
+    },
+    {
+      "path": "apps/starter/components/service-catalog.tsx",
+      "sha256": "500598657a23e4750d3758f9e0390d5618b51c2d91211280fcff2f8034040841"
+    },
+    {
+      "path": "apps/starter/components/shared-ordered-analysis-content.tsx",
+      "sha256": "bff3e952bfc7dfae2417947c4501233b66355d697a0909c2efccb423cf0b9bc0"
+    },
+    {
+      "path": "apps/starter/components/typed-source-evidence.tsx",
+      "sha256": "ecdac349ac42d2252d1b9e0d41ed832dad54997afc8990d28f7a06d0f253e664"
+    },
+    {
+      "path": "apps/starter/lib/download.ts",
+      "sha256": "0a5ed911ed06efb8a76e3157716854540b3b606d96e16f3ec47a1a2cd31137ee"
+    },
+    {
+      "path": "apps/starter/lib/public-knowledge-display.ts",
+      "sha256": "da5b8709310ea6f09776bedf7ffa7b965515e91df0dbf81bfc5ff080aff7e69c"
+    },
+    {
+      "path": "apps/starter/lib/source-acquisition-display.ts",
+      "sha256": "2963e5a2cc830acdb8d23e75bd0fea9f4722ecdd74bda4b5fef8ac4876c5c9cd"
+    },
+    {
+      "path": "contracts/insight.schema.json",
+      "sha256": "fc460d193756863fc6db6ad007f51cd508ea2fe7e07bc5db97feac0a457b33be"
+    },
+    {
+      "path": "contracts/proposal.schema.json",
+      "sha256": "a87502da29548da5761fab5f1165fd7fb09ffc07dadb5d86956c6285287a77e4"
+    },
+    {
+      "path": "contracts/runner-job.schema.json",
+      "sha256": "e7d7859158c475d3817a984e243ad1fadad2f9d961e7705492111a9024ae06a9"
+    },
+    {
+      "path": "contracts/source-insight-v2.schema.json",
+      "sha256": "f8d1fb1c96be97c4e02d58ee6b131c4e1623512ddd0041dc3c7f2af3729892ad"
+    },
+    {
+      "path": "packages/contracts/canonical-json.mjs",
+      "sha256": "1944c0f7f49feda1e2f342aa7de30e662231184b85592095ca44be9fbd3d775a"
+    },
+    {
+      "path": "packages/contracts/index.ts",
+      "sha256": "dad076a07bc2c0330ee8a086f44522a323f1485f565e86f041c26eafdd19827b"
+    },
+    {
+      "path": "packages/contracts/validator.mjs",
+      "sha256": "3e063ebcedcb685ca8c7f14f40b2ea848d93cdc23d0ae3e58f449478eb5ba300"
+    },
+    {
+      "path": "packages/runner/subscription-capabilities.mjs",
+      "sha256": "af2f72433541996e81be968ab4559320ab875948c3d30b561fa9f1b21a0792ca"
+    },
+    {
+      "path": "packages/social/catalog.ts",
+      "sha256": "23d41084de464c1816fac44eda4dc3ff216da86790d576d0c8a76b4c0d5db5ec"
+    }
+  ]
+}

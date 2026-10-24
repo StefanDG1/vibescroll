@@ -2,6 +2,7 @@ import { storageUsage, insertAsset, deleteAsset } from "./lib/storageUsage";
 import { query } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
+import { sourceRetained } from "./lib/sourceAuthority";
 import { access, limit, fail, writeAccess } from "./lib";
 import { ensure } from "../packages/policy";
 import { internal } from "./_generated/api";
@@ -106,6 +107,93 @@ export const grant = mutation({
     return id;
   },
 });
+// One bounded submission consumes one request from the existing upload limit.
+// All rows and their storage reservation commit together, or none do.
+export const grantBatch = mutation({
+  args: {
+    organizationId: v.id("organizations"),
+    files: v.array(
+      v.object({ key: v.string(), size: v.number(), type: v.string() }),
+    ),
+  },
+  handler: async (ctx, a) => {
+    const u = await writeAccess(ctx, a.organizationId);
+    ensure(
+      process.env.DISABLE_CAPTURE !== "true",
+      "CAPTURE_DISABLED",
+      "Capture is paused.",
+    );
+    ensure(
+      a.files.length >= 1 &&
+        a.files.length <= 35 &&
+        new Set(a.files.map((file) => file.key)).size === a.files.length,
+      "INVALID_INPUT",
+      "Choose between 1 and 35 distinct files.",
+    );
+    const total = a.files.reduce((sum, file) => sum + file.size, 0);
+    ensure(
+      Number.isSafeInteger(total) &&
+        total > 0 &&
+        total <= 250_000_000 &&
+        a.files.every(
+          (file) =>
+            Number.isSafeInteger(file.size) &&
+            file.size > 0 &&
+            [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "video/mp4",
+              "video/webm",
+            ].includes(file.type) &&
+            file.key.startsWith(`${a.organizationId}/`) &&
+            file.key.length <= 1024 &&
+            file.key.split("/").length === 2 &&
+            /^[a-zA-Z0-9_-]+$/.test(file.key.split("/")[1]),
+        ),
+      "UNSUPPORTED_UPLOAD",
+      "Use JPEG, PNG, WebP, MP4 or WebM files within 250 MB together.",
+    );
+    await limit(ctx, `upload:${u.actor._id}`, 10);
+    const entitlement = await wallet(ctx, a.organizationId);
+    const retainedBytes = (await storageUsage(ctx, a.organizationId)).bytes;
+    ensure(
+      retainedBytes + total <=
+        (entitlement.tier === "pro" ? 5 : 1) * 1_000_000_000,
+      "STORAGE_LIMIT",
+      "Your retained storage allowance is full. Delete sources or wait for temporary uploads to expire.",
+    );
+    for (const file of a.files) {
+      ensure(
+        !(await ctx.db
+          .query("objectDeletions")
+          .withIndex("by_key", (q) => q.eq("key", file.key))
+          .unique()) &&
+          !(await ctx.db
+            .query("assets")
+            .withIndex("by_key", (q) => q.eq("key", file.key))
+            .unique()),
+        "UPLOAD_INVALID",
+        "Upload keys cannot be reused.",
+      );
+    }
+    const now = Date.now();
+    for (const file of a.files) {
+      const id = await insertAsset(ctx, {
+        ...file,
+        organizationId: a.organizationId,
+        state: "pending",
+        createdAt: now,
+        updatedAt: now,
+        expiresAt: now + 86400000,
+      });
+      await ctx.scheduler.runAfter(86400000, internal.assets.expireAsset, {
+        id,
+      });
+    }
+    return { count: a.files.length };
+  },
+});
 export const complete = internalMutation({
   args: {
     organizationId: v.id("organizations"),
@@ -182,6 +270,7 @@ export const evidence = query({
       if (
         !source ||
         source.organizationId !== asset.organizationId ||
+        !sourceRetained(source) ||
         source.state === "deleted"
       )
         fail("Evidence unavailable.");
@@ -204,6 +293,7 @@ export const registerEvidence = internalMutation({
       !source ||
       source.state === "deleted" ||
       source.generation !== a.generation ||
+      !sourceRetained(source) ||
       (source.managedAnalysisActor && !(await hostedSourceAllowed(ctx, source)))
     ) {
       await queueDeletion(ctx, a.key);
@@ -249,6 +339,7 @@ export const registerEvidence = internalMutation({
     return insertAsset(ctx, {
       organizationId: source.organizationId,
       sourceId: source._id,
+      sourceGeneration: source.generation,
       key: a.key,
       size: a.size,
       etag: a.etag,
@@ -273,7 +364,8 @@ export const registerNormalized = internalMutation({
     if (
       !source ||
       source.state === "deleted" ||
-      source.generation !== a.generation
+      source.generation !== a.generation ||
+      !sourceRetained(source)
     ) {
       await queueDeletion(ctx, a.key);
       return null;
@@ -319,6 +411,7 @@ export const registerNormalized = internalMutation({
     const id = await insertAsset(ctx, {
       organizationId: source.organizationId,
       sourceId: source._id,
+      sourceGeneration: source.generation,
       key: a.key,
       size: a.size,
       etag: a.etag,

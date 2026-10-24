@@ -3,10 +3,13 @@ import { mutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
 import { access, limit } from "./lib";
 import { ensure } from "../packages/policy";
-import { personalAllowed } from "./lib/personalAccess";
+import { personalAllowed, workCloudTextAllowed } from "./lib/personalAccess";
 import { hostedMediaAllowed } from "./lib/hostedMediaAccess";
 import { privateLibrary } from "./librarySpaces";
+import { pairingConfiguration } from "../packages/onboarding/pairing-configuration";
 import { parsePreflightReport } from "../packages/onboarding/preflight-report";
+import { advanceJourney } from "../packages/onboarding/project-builder-journey";
+import { recommendProjectSkills } from "../packages/onboarding/skill-catalog";
 
 export const status = query({
   args: { organizationId: v.id("organizations") },
@@ -44,6 +47,17 @@ export const status = query({
       .take(30);
     return {
       version: setup?.version ?? 0,
+      journey: setup?.journey ?? null,
+      // Only owner-authored metadata is matched locally. Repository text,
+      // names and manifests are not explicit framework declarations.
+      skillRecommendations: recommendProjectSkills(
+        setup?.confirmed ? [setup.goal, setup.role, ...setup.interests] : [],
+      ),
+      pairingConfiguration: pairingConfiguration(
+        process.env.CONVEX_CLOUD_URL,
+        process.env.CONVEX_SITE_URL,
+        a.organizationId,
+      ),
       localPreflight: setup?.localPreflight
         ? {
             ...setup.localPreflight,
@@ -56,11 +70,17 @@ export const status = query({
         sourceSaved: sources.some((s) => s.state !== "deleted"),
         route: setup?.processingRoute,
         cloudAvailable: hostedMediaAllowed(actor.subject),
+        workCloudTextState: workCloudTextAllowed(actor.subject)
+          ? ("available_unverified" as const)
+          : ("unavailable" as const),
         localEligible: personalAllowed(actor.subject),
         // The web has no trusted local prerequisite/startup bridge. A heartbeat
         // proves availability only; it never certifies a local installation.
         prerequisitesChecked:
           setup?.localPreflight?.passed === true &&
+          setup.localPreflight.reportedAt > Date.now() - 86400000,
+        connectionPrerequisitesChecked:
+          setup?.localPreflight?.readyToConnect === true &&
           setup.localPreflight.reportedAt > Date.now() - 86400000,
         paired: owned.length > 0,
         accountConnected: active.some(
@@ -93,6 +113,7 @@ export const save = mutation({
     importReviewed: v.optional(v.boolean()),
     preferencesReviewed: v.optional(v.boolean()),
     preflightReport: v.optional(v.any()),
+    journeyAction: v.optional(v.any()),
   },
   handler: async (ctx, a) => {
     const { actor } = await privateLibrary(ctx, a.organizationId);
@@ -109,6 +130,9 @@ export const save = mutation({
     const fields = {
       version: old.version + 1,
       updatedAt: Math.max(Date.now(), old.updatedAt + 1),
+      ...(a.journeyAction !== undefined
+        ? { journey: advanceJourney(old.journey, a.journeyAction, Date.now()) }
+        : {}),
       ...(a.route ? { processingRoute: a.route } : {}),
       ...(a.importReviewed !== undefined
         ? { importReviewed: a.importReviewed }

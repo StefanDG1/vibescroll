@@ -644,6 +644,13 @@ export const step = internalMutation({
     if (j.phase === "topics") {
       if (j.pendingEvaluation) {
         const e = await ctx.db.get(j.pendingEvaluation);
+        if (e?.privateEvaluationOrigin) {
+          await patch({
+            state: "paused",
+            reason: "private_context_requires_review",
+          });
+          return null;
+        }
         if (e && ["queued", "running"].includes(e.state)) return 15000;
         if (!e || e.state !== "ready") {
           await patch({

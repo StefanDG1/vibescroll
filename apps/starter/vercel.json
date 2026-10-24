@@ -6,6 +6,7 @@
   "ignoreCommand": "node ../../scripts/ignore-vercel-build.mjs",
   "git": {
     "deploymentEnabled": {
+      "main": false,
       "codex/launch-20261022-*": false
     }
   },

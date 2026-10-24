@@ -483,7 +483,7 @@ it("applies restore deletion below 64 KiB without scanning unrelated workspace a
         .withIndex("by_key", (q) => q.eq("key", ids.key))
         .unique(),
     ),
-  ).toMatchObject({ state: "pending" });
+  ).toMatchObject({ state: "deferred", attempts: 0 });
   expect(
     await s.t.run((ctx) =>
       ctx.db

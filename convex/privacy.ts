@@ -78,17 +78,20 @@ export const sweep = internalMutation({
         section,
         cursor: null,
       });
-    for (const job of await ctx.db
-      .query("objectDeletions")
-      .withIndex("by_state", (q) => q.eq("state", "pending"))
-      .take(100)) {
-      await ctx.db.patch(job._id, {
-        attempts: job.attempts + 1,
-        updatedAt: Date.now(),
-      });
-      await ctx.scheduler.runAfter(0, internal.integrations.deleteObject, {
-        key: job.key,
-      });
+    let remainingDeletions = 100;
+    const resumedKeys = new Set<string>();
+    for (const state of ["deferred_recheck", "deferred", "pending"]) {
+      if (remainingDeletions === 0) break;
+      const jobs = await ctx.db
+        .query("objectDeletions")
+        .withIndex("by_state", (q) => q.eq("state", state))
+        .take(remainingDeletions);
+      remainingDeletions -= jobs.length;
+      for (const job of jobs) {
+        if (resumedKeys.has(job.key)) continue;
+        resumedKeys.add(job.key);
+        await queueDeletion(ctx, job.key);
+      }
     }
   },
 });

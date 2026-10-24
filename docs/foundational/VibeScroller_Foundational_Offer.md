@@ -1,5 +1,17 @@
 # VibeScroll foundational offer
 
+## F066: preserve older saved posts through explicit privacy repair, October 24
+
+A real connected account can expose Cloud tools while an older workspace still has team permissions. Its name does not establish privacy. [ADR 147](../adr/147-explicit-legacy-private-library-adoption.md) prepares an explicit original-creator/sole-owner upgrade using the existing workspace and unchanged post/project IDs. Current membership, invitations, recent authentication and another private library are checked again before adoption. Team collaboration uses a separate workspace.
+
+This is a reviewed implementation candidate with local/native evidence, not a live migration or successful Cloud video result. Existing grants and per-post approvals remain separate. Keep the audience, offer, six beliefs, proprietary catalog and provider/privacy/funding gates. No measured setup success, speed, customer outcome or campaign follows.
+
+## F065: compatible publication and honest Cloud availability, October 24
+
+Compatible source `bcb8662` is live, with the Posts navigation repair and private Cloud protocol. [The receipt](../operations/evidence/launch-20261024-cloud-compatible-production.json) records staged/canonical checks and passing exact-head CI separately from actual video acceptance. Main retains whole-post transcript/images and distinct proposal work, but those full-main controls are not yet serving.
+
+A repository-free founder Cloud environment has verified prerequisites. Provider registration now includes the separate execution permission; actual renewed consent, tool exposure and a real cited video return remain pending. Configuration and prepared tools do not establish working public Cloud processing, speed, accuracy, provider attestation or beginner success. Keep the same audience, prices, purchased allowances, six beliefs, private/proprietary catalog decisions and release gates. No campaign, customer result or new spending is claimed.
+
 ## F063: whole-post project context, October 24
 
 [ADR145](../adr/145-whole-post-project-content-and-distinct-proposals.md) records the authorized default-on retained transcript/images choice and separate proposals per post/project. Off uses extracted insights/citations. Missing pixels and incomplete coverage stay explicit; private personalization stays private. This is an implementation candidate, with no new audience, price, provider approval, measured savings, production Cloud acceptance or customer outcome. Cloud setup must verify supported network permission before starting its finite source lease.

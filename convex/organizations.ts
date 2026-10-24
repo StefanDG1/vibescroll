@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, type QueryCtx } from "./_generated/server";
 import { mutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
 import { role } from "./schema";
@@ -11,6 +11,7 @@ import {
   audit,
   billingFor,
   writeAccess,
+  recentAuthentication,
 } from "./lib";
 import { internal } from "./_generated/api";
 import { rememberDeletion } from "./lib/deletionMarkers";
@@ -135,6 +136,132 @@ export const createPrivate = mutation({
     });
     await audit(ctx, id, actor._id, "organization.private_created", id);
     return id;
+  },
+});
+
+const privateAdoptionLifetime = 5 * 60_000;
+const privateAdoptionInvitationLimit = 51;
+
+// This is a compare-and-swap snapshot, not an authorization credential. Every
+// mutation checks current identity, membership, invitations and ownership again.
+function privateAdoptionVersion(a: Awaited<ReturnType<typeof access>>) {
+  const o = a.organization;
+  const m = a.membership;
+  return JSON.stringify([
+    "private-adoption-v1",
+    o._id,
+    o._creationTime,
+    o.name,
+    o.status,
+    o.createdBy,
+    o.createdAt,
+    o.privateOwnerId ?? null,
+    m._id,
+    m._creationTime,
+    m.organizationId,
+    m.userId,
+    m.role,
+  ]);
+}
+
+async function privateAdoptionState(
+  ctx: QueryCtx,
+  a: Awaited<ReturnType<typeof access>>,
+) {
+  if (a.membership.role !== "owner") return "owner_required";
+  if (a.organization.createdBy !== a.actor._id) return "creator_required";
+  // Two rows are sufficient to disprove sole membership. Do not scan the team.
+  const members = await ctx.db
+    .query("memberships")
+    .withIndex("by_org", (q) => q.eq("organizationId", a.organization._id))
+    .take(2);
+  if (
+    members.length !== 1 ||
+    members[0]._id !== a.membership._id ||
+    members[0].userId !== a.actor._id ||
+    members[0].role !== "owner"
+  )
+    return "shared_workspace";
+  const invitations = await ctx.db
+    .query("invitations")
+    .withIndex("by_org", (q) => q.eq("organizationId", a.organization._id))
+    .take(privateAdoptionInvitationLimit);
+  // An expired prefix cannot prove that a later invitation is also expired.
+  if (invitations.length === privateAdoptionInvitationLimit)
+    return "invitation_check_limit";
+  if (invitations.some((invitation) => invitation.expiresAt > Date.now()))
+    return "pending_invitations";
+  const privateWorkspaces = await ctx.db
+    .query("organizations")
+    .withIndex("by_private_owner", (q) => q.eq("privateOwnerId", a.actor._id))
+    .take(2);
+  // Match createPrivate's single-library contract, including deletion in progress.
+  if (
+    privateWorkspaces.some((workspace) => workspace._id !== a.organization._id)
+  )
+    return "other_private_workspace";
+  return a.organization.privateOwnerId ? "already_private" : "eligible";
+}
+
+export const previewPrivateAdoption = query({
+  args: { organizationId: v.id("organizations") },
+  handler: async (ctx, { organizationId }) => {
+    const a = await access(ctx, organizationId);
+    const reason = await privateAdoptionState(ctx, a);
+    const previewedAt = Date.now();
+    return {
+      organizationId,
+      organizationName: a.organization.name,
+      membershipId: a.membership._id,
+      eligible: reason === "eligible",
+      reason,
+      expectedVersion: privateAdoptionVersion(a),
+      previewedAt,
+      expiresAt: previewedAt + privateAdoptionLifetime,
+      preservesPosts: true,
+      preservesProjects: true,
+      teamInvitationsDisabled: true,
+    };
+  },
+});
+
+export const adoptPrivate = mutation({
+  args: {
+    organizationId: v.id("organizations"),
+    expectedVersion: v.string(),
+    previewedAt: v.number(),
+    acknowledgePrivateOnly: v.literal(true),
+  },
+  handler: async (ctx, args) => {
+    const a = await writeAccess(ctx, args.organizationId, ["owner"]);
+    await recentAuthentication(ctx);
+    const now = Date.now();
+    if (
+      !Number.isSafeInteger(args.previewedAt) ||
+      args.previewedAt > now ||
+      now - args.previewedAt >= privateAdoptionLifetime ||
+      args.expectedVersion !== privateAdoptionVersion(a)
+    )
+      fail("Private adoption preview changed or expired. Review it again.");
+    const reason = await privateAdoptionState(ctx, a);
+    if (reason === "already_private")
+      return { organizationId: args.organizationId, status: "already_private" };
+    if (reason !== "eligible")
+      fail(
+        `Private adoption unavailable: ${reason}. Review the workspace again.`,
+      );
+    await limit(ctx, `org-private-adopt:${a.actor._id}`, 5);
+    // Keep the workspace and all sources/projects in place. No defaults, grants,
+    // entitlements or processing jobs are written here.
+    await ctx.db.patch(args.organizationId, { privateOwnerId: a.actor._id });
+    await audit(
+      ctx,
+      args.organizationId,
+      a.actor._id,
+      "organization.private_adopted",
+      args.organizationId,
+    );
+    return { organizationId: args.organizationId, status: "adopted" };
   },
 });
 export const details = query({

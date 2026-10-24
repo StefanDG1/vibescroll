@@ -6,6 +6,14 @@ Keep the saved source while you repair the smallest missing prerequisite.
 
 Open the existing source/status link and **Connections**. Check which workspace and account you are using. Never send tokens, pairing secrets, signed links or private transcripts to support.
 
+## Work Cloud says a private library is required
+
+An older workspace can still use team access even if it is named Personal workspace. On the post, choose **Review private-library setup**, then **Review private-library upgrade** in Team settings. This review starts no analysis.
+
+If you are the original creator and only member, with no active invitations or another private library, you can review the private-only acknowledgement and choose **Make this library private**. Sign in again if requested. Existing posts, projects and links stay in place. Invitations and ownership transfer are unavailable in a private library; use a separate team workspace for collaboration.
+
+A refusal leaves the workspace unchanged. Follow the displayed reason, or choose an existing separate private library from Your workspaces. Making a library private does not connect a processing account or grant execution. Review the assistant connection and approve the exact post afterward. Experimental Cloud availability and successful video execution remain separate.
+
 ## Experimental Work Cloud text
 
 A separately enabled [Work Cloud text review](/help/work-cloud-text-review) can handle approved supplied or retained cited text without a paired computer. It is disabled by default and does not establish video processing or automatic background execution. A queued request, tool connection and actual host execution are different states. Revoking app access does not prove that the host stopped; unknown usage blocks silent retries or executor changes.

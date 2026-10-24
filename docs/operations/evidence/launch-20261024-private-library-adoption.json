@@ -1,0 +1,126 @@
+{
+  "recordedAt": "2026-10-24T19:09:59.184441+00:00",
+  "stage": "reviewed main candidate; production adoption pending",
+  "baseCommit": "da2c6f7d43d2c1175300074bdd1f8fbb99447445",
+  "decision": 147,
+  "scope": [
+    "Explicit existing-workspace preview and sole-original-owner adoption",
+    "Same organization/source/project IDs; no copy or automatic migration",
+    "Owner-only source repair link without Cloud authority",
+    "Existing Team and product API controls; no new table/index/dependency"
+  ],
+  "productionReproduction": {
+    "sixCloudToolsExposed": true,
+    "existingWorkspaceUsesTeamAccess": true,
+    "cloudRefusedPrivateLibraryMismatch": true,
+    "selectedSourceGeneration": 0,
+    "selectedSourceAnalysis": false,
+    "knowledgeOrganizer": "disabled/paused",
+    "reservedOwnerTestPost": "untouched"
+  },
+  "authority": {
+    "recentAppAuthentication": true,
+    "explicitAcknowledgement": true,
+    "fiveMinuteIdentityCAS": true,
+    "atomicCurrentSoleOwnerCheck": true,
+    "activeInvitationsRefused": true,
+    "otherPrivateWorkspaceRefused": true,
+    "originalCreatorRequired": true,
+    "schemaChanges": 0,
+    "jobGrantBillingChanges": 0,
+    "automaticLiveAdoption": false
+  },
+  "review": {
+    "independentHigh": "No P1/P2 in backend/UI/API/source projection; 26backend and8UI independently passed",
+    "backendFocused": 26,
+    "uiFocused": 8,
+    "sourceParentCases": 3
+  },
+  "integratedOffline": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "exitCode": 0,
+    "unitPassed": 1567,
+    "authPassed": 40,
+    "uiPassed": 239,
+    "javascriptPassed": 1846,
+    "hostedSkipped": 3,
+    "nativePassed": 19,
+    "pythonPassed": 33,
+    "types": "passed",
+    "lint": "zero errors/warnings after semantic output correction",
+    "bothBuilds": "passed",
+    "documents": 334,
+    "skillSnapshots": 12,
+    "financeChecks": 17
+  },
+  "failuresPreserved": [
+    "Initial integrated lint rejected two p elements using role=status. Replaced with semantic output, full check rerun passed.",
+    "Initial focused UI fixture clock and reused Response failures corrected in test harness.",
+    "Formatting helper rejected bracketed route path; formatted existing app directory and restored unrelated formatting-only document changes."
+  ],
+  "nativeBrowser": {
+    "synthetic": true,
+    "actualComponentAndCompiledCss": true,
+    "widths": [320, 1280],
+    "themes": ["dark", "light"],
+    "reducedMotion": true,
+    "keyboardAcknowledgement": true,
+    "noOverflow": true,
+    "noMountRequests": true,
+    "exactCASPayload": true,
+    "ineligibleRefusal": true,
+    "productionRequests": 0,
+    "ownedTabClosed": true,
+    "ownedServerStopped": true,
+    "screenshots": [
+      "assets/private-library-upgrade-desktop.png",
+      "assets/private-library-upgrade-mobile.png",
+      "assets/private-library-upgrade-refusal.png"
+    ],
+    "finalSourceEquivalence": "Final-v2 native pass binds the exact final panel SHA256 including semantic output and conditional supported sign-in return link.",
+    "componentSHA256": "f93806dc20868c2871b3f91b2835809bf47b1ad03682ccb853b0880169721464"
+  },
+  "exactHeadCI": "pending",
+  "productionAdoption": "not attempted",
+  "cloudVideoResult": "not attempted",
+  "budget": {
+    "capUSD": 3,
+    "retainedMaximumUSD": 2.970870711101575,
+    "headroomUSD": 0.02912928889842492,
+    "oldUnknownAndFutureHoldsPreserved": true,
+    "invoiceSettled": false
+  },
+  "fileHashes": {
+    "convex/organizations.ts": "ebd89e1aca4d664b96918106276f966961e0fde33991fb5df768dd4ce88a76d0",
+    "convex/product.ts": "7786b0eb58f3ad4cf18929278f4a06ea4445840c95a692425e624513ee1649ba",
+    "apps/starter/components/private-library-upgrade.tsx": "f93806dc20868c2871b3f91b2835809bf47b1ad03682ccb853b0880169721464",
+    "apps/starter/components/console.tsx": "c38de7eaa5685534a33c9b2067f6a5552c1de397de74b497fd58544e019cdb7d",
+    "apps/starter/app/api/product/route.ts": "a45d45140e550eb06fb23ca47da8fbb6b5005d0964f7006f57d8ffe4a194b44f",
+    "apps/starter/app/app/[org]/team/page.tsx": "94aa061b287fbb755b77bf03e5ffd8af0ff0d6c574d36f8baca6febcaed9bd19",
+    "tests/private-workspace-adoption.test.ts": "17110e37b1473cb941dc820d9a1a2c21cd8c624d0d825c9a0d34cc0429aba913",
+    "apps/starter/private-library-upgrade-ui.test.ts": "a0ebc979862085141fbc5bd1a662d5583a28b89b67883a4342630e00687a6c52",
+    "apps/starter/work-cloud-parent-ui.test.ts": "348108d08f3d30392c6ca9ddeede771f0915ec06f46df4f700989150912ad356"
+  },
+  "finalScopedUI": {
+    "passed": 22,
+    "command": "node scripts/run-offline.mjs pnpm exec vitest run --config apps/starter/vitest.public-knowledge.config.ts apps/starter/private-library-upgrade-ui.test.ts apps/starter/work-cloud-parent-ui.test.ts",
+    "note": "After last conditional sign-in-link addition; prior fullcheck retained and exact-headCI still required."
+  },
+  "dependencyAudit": {
+    "at": "2026-10-24T19:13:23.112Z",
+    "high": 0,
+    "critical": 0,
+    "moderate": 2,
+    "low": 2,
+    "unresolved": []
+  },
+  "latestBudgetReconciliation": {
+    "retainedMaximumUSD": 2.745486157115575,
+    "headroomUSD": 0.25451384288442513,
+    "releasedCompletedConvexQueryWrapperUSD": 0.043184553984,
+    "releasedUnusedMatchedPublicChecksUSD": 0.182200000002,
+    "retainedFrontendUSD": 0.187799999998,
+    "basis": "Independent source review and measured completed responses; no credit assumption or old/Node/read/compute/future hold release.",
+    "invoiceSettled": false
+  }
+}

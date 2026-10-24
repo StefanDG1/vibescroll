@@ -6,9 +6,19 @@ These routes are disabled by default. Supplied or retained text and public singl
 
 Use your own private library, a source you may process and the intended official Work Cloud connection. GitHub, Docker Desktop and a paired computer are not required by this handoff. Your host's subscription and resource limits still apply. A model selection is a request; VibeScroll cannot attest the host's actual model, resource controls or usage.
 
-The connection needs **Read separately approved text or public video links and return private analysis**, `analysis:execute`, in both OAuth and the app's current grant. Each video still requires its own exact approval. Existing read, save and local-request permissions do not include execution. Changing sensitive grants or approving work may require signing in again. Never paste credentials, bearer tokens or private configuration into a task.
+The connection needs **Read separately approved text or public video links and return private analysis**, `analysis:execute`, in both OAuth and the app's current grant. Existing read, save and local-request permissions do not include execution. Changing sensitive grants or approving work may require signing in again. Never paste credentials, bearer tokens or private configuration into a task.
 
-## Review one request
+## Request a saved video from your Work Cloud chat
+
+This option appears only when the experimental video route is enabled for your account. In Connections, edit the intended connection, select the library scope and both analysis actions, then review **Allow exact video analysis requests in my Work Cloud chat** and save. This permission starts off. Selecting it turns off automatic local processing in the reviewed settings and requires no paired computer.
+
+In a supported Work Cloud chat with VibeScroll connected, ask VibeScroll to analyze the saved post and provide its VibeScroll link. The assistant reads its current status and sends an exact own-subscription request with a model, effort, retention deadline and maximum API spend of US$0. After this setup, there is no additional app approval for each request. The host must prepare supported tools and restricted Internet permission before claiming work.
+
+The experimental limit is six new requests per hour. Repeating the identical unclaimed request returns the existing job. The app's waiting receipt does not launch a Cloud task. Automatically waking a task when you share a new link remains separate implementation and production acceptance work. Old team workspaces do not become private because of their names, and this option does not move their posts.
+
+If this option is absent, use the separately approved diagnostic handoff below when available. Do not disconnect an existing connection, delete posts or switch to paid credits to work around unavailable access.
+
+## Review one diagnostic handoff
 
 1. Open the saved source. Look for **Experimental Work Cloud text** or **Experimental Work Cloud video**. An absent control means that route is unavailable.
 2. Select **Review Work Cloud text** or **Review Work Cloud video**, then choose the intended connection. Review the requested model and effort against the options in your official host. Choose the model explicitly if its Default setting can route to another model.

@@ -1,5 +1,13 @@
 # October 22 launch implementation candidate
 
+## Exact private MCP Cloud requests, October 25
+
+[ADR 150](adr/150-explicit-mcp-cloud-analysis-requests.md) implements an optional versioned connection opt-in and exact `request_analysis(mode=work_cloud)` through the existing media-v2 source job/lease. Existing grants do not acquire authority. Both scope sets, private owner, current grant/policy/source bindings, finite retention and hourly limits are enforced. Matching unclaimed replay is idempotent; claimed/unknown jobs cannot be replaced. App approval retains recent-auth/input-hash checks. No GitHub, paid fallback, new queue or catalog publication is introduced.
+
+Root ran `node scripts/run-offline.mjs pnpm exec vitest run tests/work-cloud-mcp-request.test.ts tests/work-cloud-transport.test.ts --maxWorkers=2`: 38 passed, October25 00:35 Europe/Berlin. Earlier 65 unchanged text/media tests passed; 37 focused connection/WorkCloud UI checks and types passed. Independent High review found no P1/P2 in the permission boundary. The combined check passed 1,940 local tests with three hosted skips, all types, zero-warning lint, both builds and dependency review. Native actual-component checks passed desktop light and 320px dark/reduced-motion, including keyboard approval, exact payload and no paired computer. [The receipt](operations/evidence/launch-20261025-cloud-mcp-request.json) separates this from pending exact-head CI/publication and real Cloud acceptance.
+
+One separately reserved production MCP profile read for the existing private library returned unavailable authorization, with no source/grant/job change. The original cumulative USD3 ledger retains USD2.5354438943301747, leaving USD0.4645561056698253. This is conservative reservation accounting, not an invoice. No Cloud analysis started; the reserved owner-test post remains untouched. Two optional existing-grant fields need a fresh bounded schema-impact proof before a compatible release. Full main's migration, actual media/return, automatic event dispatch, neutral contribution and public paid access remain unfinished.
+
 ## Link-first/navigation source audit, October 24
 
 [ADR 149](adr/149-automatic-link-analysis-and-insight-first-navigation.md) and the [current execution index](launch-plan/2026-10-23/README.md) record automatic link processing, current reuse, status/automatic display, Home recent cards, extracted-insight Library and bounded loading/cache work. [The complete page map](launch-plan/2026-10-23/APP-MAP-AND-LOADING.md) distinguishes identical route sets from different main/compatible panels. No runtime or production analysis changed in this stage.

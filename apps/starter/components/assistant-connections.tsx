@@ -25,6 +25,7 @@ type Grant = {
   };
   intakeSpace?: "personal" | "business";
   contextVersion?: number;
+  cloudRequestPolicy?: "explicit_per_source_v1";
 };
 type Setup = {
   devices?: {
@@ -38,6 +39,7 @@ type Setup = {
   enabled: boolean;
   privateLibrary: boolean;
   eventsEnabled?: boolean;
+  workCloudMediaEnabled?: boolean;
   clients: { id: string; name: string; scopes: string[] }[];
   grants: Grant[];
   context: {
@@ -85,6 +87,7 @@ function AssistantAccessEditor({
   const [intakeSpace, setIntakeSpace] = useState("");
   const [duration, setDuration] = useState("until_revoked");
   const [automatic, setAutomatic] = useState<boolean | null>(null);
+  const [cloudRequests, setCloudRequests] = useState(false);
   const [computerId, setComputerId] = useState("");
   const [ack, setAck] = useState("");
   const [error, setError] = useState("");
@@ -131,6 +134,8 @@ function AssistantAccessEditor({
       const next = { ...access, ...projects } as Setup;
       if (current === generation.current) {
         setData(next);
+        if (!next.privateLibrary || !next.workCloudMediaEnabled)
+          setCloudRequests(false);
         setCheckedAt(Date.now());
         setPageLoading(false);
         setError("");
@@ -142,6 +147,7 @@ function AssistantAccessEditor({
         setScopes([]);
         setSelectedProjects([]);
         setIncludeLibraryContext(false);
+        setCloudRequests(false);
         setPageLoading(false);
         setAck("");
         setError(
@@ -164,8 +170,19 @@ function AssistantAccessEditor({
     clientId || (data?.clients.length === 1 ? data.clients[0].id : "");
   const client = data?.clients.find((c) => c.id === activeClientId);
   const existing = data?.grants.find((g) => g.clientId === activeClientId);
+  const cloudAvailable = !!data?.privateLibrary && !!data.workCloudMediaEnabled;
+  const cloudEligible =
+    cloudAvailable &&
+    !!libraryScope &&
+    scopes.includes("analysis:request") &&
+    scopes.includes("analysis:execute") &&
+    !!client?.scopes.includes("analysis:request") &&
+    client.scopes.includes("analysis:execute");
+  const cloudRequestPolicy =
+    cloudEligible && cloudRequests ? "explicit_per_source_v1" : undefined;
   const automaticAnalysis =
-    automatic ?? existing?.analysisDefaults?.enabled ?? true;
+    !cloudRequestPolicy &&
+    (automatic ?? existing?.analysisDefaults?.enabled ?? true);
   const computers = data?.devices?.filter((d) => !!d.profileBinding) ?? [];
   const chosenComputerId =
     computerId ||
@@ -198,6 +215,8 @@ function AssistantAccessEditor({
     intakeSpace,
     duration,
     automaticAnalysis,
+    cloudRequestPolicy,
+    cloudAvailable,
     computer,
     data?.context?.version,
     existing?.version,
@@ -218,6 +237,7 @@ function AssistantAccessEditor({
     setIncludeLibraryContext(grant.contextVersion !== undefined);
     setIntakeSpace(grant.intakeSpace ?? "");
     setAutomatic(grant.analysisDefaults?.enabled ?? true);
+    setCloudRequests(grant.cloudRequestPolicy === "explicit_per_source_v1");
     setComputerId(grant.analysisDefaults?.deviceId ?? "");
     setDuration(
       grant.expiresAt === null
@@ -230,6 +250,16 @@ function AssistantAccessEditor({
     if (editor.current) editor.current.open = true;
   }
   async function save(expiresAt: number | null) {
+    if (
+      disabled ||
+      ack !== binding ||
+      !scopes.length ||
+      !projectDraftValid ||
+      !contextValid ||
+      !intakeValid ||
+      !libraryScope
+    )
+      return;
     setPending("save");
     setError("");
     try {
@@ -251,6 +281,7 @@ function AssistantAccessEditor({
         expectedVersion: existing?.version ?? 0,
         expiresAt,
         acknowledged: true,
+        ...(cloudRequestPolicy ? { cloudRequestPolicy } : {}),
         ...(scopes.includes("links:save")
           ? { intakePolicy: "explicit_links" }
           : {}),
@@ -383,6 +414,9 @@ function AssistantAccessEditor({
                     {grant.analysisDefaults?.enabled
                       ? " Links automatically queue local extraction and organization."
                       : " Automatic analysis is off."}
+                    {grant.cloudRequestPolicy === "explicit_per_source_v1"
+                      ? " Exact private video requests are allowed in a supported Work Cloud chat."
+                      : ""}
                   </p>
                 </div>
                 <button
@@ -434,6 +468,7 @@ function AssistantAccessEditor({
                     setLibraryScope("");
                     setSelectedProjects([]);
                     setIncludeLibraryContext(false);
+                    setCloudRequests(false);
                     setAck("");
                   }}
                   disabled={disabled}
@@ -458,6 +493,7 @@ function AssistantAccessEditor({
                     value={libraryScope}
                     onValueChange={(value) => {
                       setLibraryScope(value);
+                      if (!value) setCloudRequests(false);
                       setAck("");
                     }}
                     disabled={disabled}
@@ -510,6 +546,13 @@ function AssistantAccessEditor({
                           disabled={disabled}
                           checked={scopes.includes(scope)}
                           onChange={(e) => {
+                            if (
+                              !e.target.checked &&
+                              ["analysis:request", "analysis:execute"].includes(
+                                scope,
+                              )
+                            )
+                              setCloudRequests(false);
                             setScopes((old) =>
                               e.target.checked
                                 ? [...old, scope]
@@ -530,6 +573,49 @@ function AssistantAccessEditor({
                       </p>
                     )}
                 </fieldset>
+                {cloudAvailable && (
+                  <fieldset>
+                    <legend>Private Work Cloud requests</legend>
+                    <label className="check">
+                      <input
+                        type="checkbox"
+                        checked={!!cloudRequestPolicy}
+                        disabled={disabled || !cloudEligible}
+                        onChange={(e) => {
+                          if (disabled || !cloudEligible) return;
+                          setCloudRequests(e.target.checked);
+                          if (e.target.checked) setAutomatic(false);
+                          setAck("");
+                        }}
+                      />
+                      Allow exact video analysis requests in my Work Cloud chat
+                    </label>
+                    {!cloudEligible && (
+                      <p className="fine">
+                        Choose a library scope and both analysis actions above
+                        before enabling Cloud requests.
+                      </p>
+                    )}
+                    <p className="fine">
+                      After this setup, you can request a specific saved public
+                      video in a supported Work Cloud chat using your own
+                      ChatGPT subscription. GitHub is not required. VibeScroll
+                      does not launch the Cloud task or automatically process
+                      new links. The task must support the required tools and
+                      network access. Results stay private, with no paid API
+                      fallback.
+                    </p>
+                    <p className="fine">
+                      Up to 6 new requests per hour. Each request allows one
+                      video up to 50 MiB and 10 minutes, up to 48 sampled
+                      frames, a 3-minute renewable lease within a fixed
+                      15-minute deadline, and result retention you choose within
+                      30 days. Each request must specify its model, effort and
+                      retention. Provider task history and cleanup remain
+                      separate.
+                    </p>
+                  </fieldset>
+                )}
                 {scopes.includes("links:save") && (
                   <fieldset>
                     <legend>When I send a link</legend>
@@ -543,8 +629,9 @@ function AssistantAccessEditor({
                       <input
                         type="checkbox"
                         checked={automaticAnalysis}
-                        disabled={disabled}
+                        disabled={disabled || !!cloudRequestPolicy}
                         onChange={(e) => {
+                          if (cloudRequestPolicy) return;
                           setAutomatic(e.target.checked);
                           setAck("");
                         }}
@@ -838,6 +925,9 @@ function AssistantAccessEditor({
                       : ""}
                   </p>
                   <p className="fine">
+                    {cloudRequestPolicy
+                      ? "Exact private Work Cloud requests use your own subscription, with a paid API maximum of $0. Local automatic extraction is off. "
+                      : ""}
                     {scopes.includes("links:save") && automaticAnalysis
                       ? "Automatic extraction and organization use your selected computer and ChatGPT allowance. "
                       : ""}

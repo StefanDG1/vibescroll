@@ -87,8 +87,22 @@ const operations = z.discriminatedUnion("operation", [
         .object({
           profileId,
           sourceId: z.string().min(1).max(100),
-          mode: z.enum(["local", "credits", "projects", "cancel"]).optional(),
+          mode: z
+            .enum(["local", "credits", "projects", "cancel", "work_cloud"])
+            .optional(),
           generation: z.number().int().nonnegative().optional(),
+          revision: z.number().int().nonnegative().optional(),
+          grantVersion: z.number().int().positive().optional(),
+          cloud: z
+            .object({
+              model: z.string().min(1).max(100),
+              effort: z.enum(["low", "medium", "high", "xhigh"]),
+              useOwnPlan: z.literal(true),
+              maxApiUsd: z.literal(0),
+              retainUntil: z.number().int().positive(),
+            })
+            .strict()
+            .optional(),
           maxCredits: z.number().int().nonnegative().optional(),
           project: z.string().min(1).max(200).optional(),
           bestProjects: z.boolean().optional(),

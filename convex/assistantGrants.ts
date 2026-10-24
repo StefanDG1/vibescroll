@@ -8,6 +8,9 @@ import {
   assistantScopes,
 } from "../packages/policy/assistant";
 import { ensure, containsSecret } from "../packages/policy";
+import { workCloudMediaPolicy } from "../packages/contracts/work-cloud-text";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { digest } from "./product";
 import {
   assistantRepositoryBinding,
   assistantAnalysisDefaults,
@@ -82,6 +85,7 @@ export const setup = query({
           intakeSpace: g.intakeSpace,
           intakePolicy: g.intakePolicy,
           analysisDefaults: g.analysisDefaults,
+          cloudRequestPolicy: g.cloudRequestPolicy,
           version: g.version,
           state: g.state,
           expiresAt: g.expiresAt,
@@ -147,6 +151,7 @@ export const save = mutation({
     ),
     intakePolicy: v.optional(v.literal("explicit_links")),
     analysisDefaults: v.optional(assistantAnalysisDefaults),
+    cloudRequestPolicy: v.optional(v.literal("explicit_per_source_v1")),
     expectedVersion: v.number(),
     expiresAt: v.union(v.number(), v.null()),
     acknowledged: v.literal(true),
@@ -299,6 +304,17 @@ export const save = mutation({
       "INVALID_INPUT",
       "Choose an intake destination within the approved library scope.",
     );
+    if (a.cloudRequestPolicy) {
+      ensure(
+        organization.privateOwnerId === actor._id &&
+          workCloudMediaAllowed(actor.subject) &&
+          a.scopes.includes("analysis:request") &&
+          a.scopes.includes("analysis:execute") &&
+          !a.analysisDefaults?.enabled,
+        "SETUP_REQUIRED",
+        "Review your own private Cloud connection and turn off automatic local processing before allowing Cloud requests.",
+      );
+    }
     if (a.analysisDefaults?.enabled) {
       const device = await ctx.db.get(a.analysisDefaults.deviceId);
       const membership = await ctx.db
@@ -361,6 +377,10 @@ export const save = mutation({
       intakeSpace: a.intakeSpace,
       intakePolicy: a.intakePolicy,
       analysisDefaults: a.analysisDefaults,
+      cloudRequestPolicy: a.cloudRequestPolicy,
+      cloudRequestPolicyHash: a.cloudRequestPolicy
+        ? await digest(canonicalJson(workCloudMediaPolicy))
+        : undefined,
       version: (old?.version ?? 0) + 1,
       state: "active" as const,
       expiresAt: a.expiresAt,

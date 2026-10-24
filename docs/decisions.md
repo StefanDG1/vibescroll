@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 25: exact private Cloud requests through MCP
+
+[ADR 150](adr/150-explicit-mcp-cloud-analysis-requests.md) adds an explicit, default-off connection opt-in for exact private video requests through MCP. Existing grants remain unchanged. Preserve automatic-dispatch, shared-catalog, provider, paid-access and production acceptance gates.
+
 ## October 24: link-only Cloud processing and insight-first navigation
 
 [ADR 149](adr/149-automatic-link-analysis-and-insight-first-navigation.md) makes a permitted shared link the complete normal action after one-time bounded standing setup. Eligible reuse is immediate; otherwise use one existing Cloud job with truthful status and automatic result display. No routine per-post approval, handoff copying, GitHub or awake computer. Home owns metrics/expandable recent posts; Library opens extracted insights with Posts/filter/sort. Reuse projections, pagination, cache/request owners and loading primitives. Preserve paid/Pro/private boundaries and all release/provider/budget gates. Implementation and automatic production proof remain pending.

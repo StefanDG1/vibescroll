@@ -18,6 +18,7 @@ export default defineConfig({
       "apps/starter/service-catalog-ui.test.ts",
       "apps/starter/work-cloud-text-ui.test.ts",
       "apps/starter/work-cloud-parent-ui.test.ts",
+      "apps/starter/assistant-connections-cloud-ui.test.ts",
       "apps/starter/scrollshow-prompts-ui.test.ts",
       "apps/starter/scrollshow-emphasis-ui.test.ts",
       "apps/starter/own-plan-task-ui.test.ts",

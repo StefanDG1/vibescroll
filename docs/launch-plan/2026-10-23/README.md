@@ -14,11 +14,13 @@ The former chronological front page is preserved in [historical checkpoints](HIS
 
 ## Current status, not a completion claim
 
+[ADR 150](../../adr/150-explicit-mcp-cloud-analysis-requests.md) adds a private experimental implementation stage: one reviewed connection opt-in permits exact video requests through MCP without per-post app approval. It reuses current jobs/leases and keeps old grants unchanged. Automatic dispatch, paid hosted entry, neutral contribution and actual Cloud media return remain unfinished. Optional grant-schema additions need their own bounded publication proof; this is not a live acceptance claim.
+
 The last verified compatible frontend/backend is `63a071d`, with the Posts repair and experimental private Work Cloud controls. Six execution tools are exposed after normal reconnection. The main baseline inspected for this plan revision is `7ded1e1`; its PR, main checks, versioning and alpha publication passed. Main contains additional product code that is not established live merely because its routes also exist in the compatible release.
 
 Not verified in production: complete Cloud video-to-cited-result return, automatic event-to-processing dispatch, neutral subscription contribution to the shared catalog, the new global paid-entry gate and workspace-free insight journey, the requested Home cards/insight feed, and general customer readiness. These remain implementation/acceptance work. The specifically reserved owner-test post remains unanalyzed.
 
-The same cumulative USD 3 cap retains USD 2.510443894330175, leaving USD 0.4895561056698252 after evidence-backed completed-work reconciliation. These are conservative holds, not a settled invoice. Do not spend this remainder on an incomplete production experiment: reserve setup, execution, storage, delivery, failure recovery and future cleanup together. No paid API fallback, new purchase, automatic cap increase or reset at midnight.
+The same cumulative USD 3 cap retains USD 2.5354438943301747, leaving USD 0.4645561056698253 after evidence-backed completed-work reconciliation. These are conservative holds, not a settled invoice. Do not spend this remainder on an incomplete production experiment: reserve setup, execution, storage, delivery, failure recovery and future cleanup together. No paid API fallback, new purchase, automatic cap increase or reset at midnight.
 
 ## Owner decisions and unresolved constraints
 

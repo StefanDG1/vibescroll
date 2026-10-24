@@ -1,5 +1,44 @@
 import { z } from "zod";
 import { insightOutput, sourceInsightOutput } from "./index";
+import {
+  cloudObservedMediaSchema,
+  socialEvidenceSchema,
+} from "../social/contracts";
+import { socialAnalysisOutput } from "../social/analysis";
+import downloader from "../../infra/downloader.json";
+import asr from "../media/asr-model.lock.json";
+
+export const workCloudMediaPolicy = {
+  schemaVersion: "work-cloud-media-v2",
+  pipelineVersion: "official-work-cloud-media-v2",
+  funding: "own_subscription",
+  maxApiUsd: 0,
+  publication: "private_only",
+  maximumBytes: 50 * 1024 * 1024,
+  maximumDurationMs: 600000,
+  maximumFrames: 48,
+  maximumSegments: 200,
+  maximumPayloadBytes: 120000,
+  maximumExecutionMs: 900000,
+  maximumLeaseMs: 180000,
+  maximumAcquisitionMs: 60000,
+  maximumSourceInvocations: 1,
+  maximumDownloadedBytes: 750 * 1024 * 1024,
+  maximumPrivateDiskBytes: 2 * 1024 * 1024 * 1024,
+  automaticRetries: 0,
+  networkEnforcement: "current_restricted_required",
+  maximumResultRetentionMs: 30 * 86400000,
+  rawMediaCleanupTargetMs: 86400000,
+  provenance: "authenticated_host_reported",
+  toolchain: { version: "cloud-sampled-preparation-v2", downloader, asr },
+} as const;
+export const workCloudMediaPreparation = z.strictObject({
+  schemaVersion: z.literal("work-cloud-media-preparation-v2"),
+  post: cloudObservedMediaSchema,
+  evidence: z.array(socialEvidenceSchema).max(248),
+});
+export const validateWorkCloudMediaOutput = (value: unknown) =>
+  socialAnalysisOutput.parse(value);
 
 export function validateWorkCloudTextOutput(value: unknown, typed: boolean) {
   // Reject unknown/deep fields with the fixed schema before hashing or
@@ -18,6 +57,12 @@ const lease = {
 };
 export const workCloudClaimInput = z.object(source).strict();
 export const workCloudLeaseInput = z.object(lease).strict();
+export const workCloudPrepareInput = z
+  .object({
+    ...lease,
+    preparationJson: z.string().min(2).max(120000),
+  })
+  .strict();
 export const workCloudCompleteInput = z
   .object({
     ...lease,
@@ -42,6 +87,12 @@ export function parseWorkCloudResult(resultJson: string): unknown {
 }
 
 export const workCloudTextOperations = [
+  z
+    .object({
+      operation: z.literal("work_cloud_prepare"),
+      args: workCloudPrepareInput,
+    })
+    .strict(),
   z
     .object({
       operation: z.literal("work_cloud_claim"),
@@ -77,7 +128,12 @@ export const workCloudTextOperations = [
 export function cloudCompletionEnvelope(value: unknown, mcp = false) {
   if (!value || typeof value !== "object") return false;
   if (!mcp)
-    return "operation" in value && value.operation === "work_cloud_complete";
+    return (
+      "operation" in value &&
+      ["work_cloud_complete", "work_cloud_prepare"].includes(
+        value.operation as string,
+      )
+    );
   if (
     !("method" in value) ||
     value.method !== "tools/call" ||
@@ -89,6 +145,8 @@ export function cloudCompletionEnvelope(value: unknown, mcp = false) {
     !!params &&
     typeof params === "object" &&
     "name" in params &&
-    params.name === "work_cloud_complete"
+    ["work_cloud_complete", "work_cloud_prepare"].includes(
+      params.name as string,
+    )
   );
 }

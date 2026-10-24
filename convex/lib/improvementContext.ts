@@ -31,11 +31,20 @@ export async function improvementCurrent(ctx: QueryCtx, p: Doc<"proposals">) {
       e.repositoryId !== p.repositoryId ||
       e.baseSha !== p.baseSha ||
       e.profileVersion !== p.profileVersion ||
+      (p.opportunityIndex !== undefined &&
+        (!Number.isSafeInteger(p.opportunityIndex) ||
+          p.opportunityIndex < 0 ||
+          p.opportunityIndex >= 5 ||
+          !e.opportunityGroup)) ||
       !samePrivateEvaluationOrigin(
         e.privateEvaluationOrigin,
         p.privateEvaluationOrigin,
       ) ||
-      JSON.stringify(e.references) !== JSON.stringify(p.references) ||
+      JSON.stringify(
+        p.opportunityIndex === undefined
+          ? e.references
+          : e.opportunityGroup?.opportunities[p.opportunityIndex]?.references,
+      ) !== JSON.stringify(p.references) ||
       !(await evaluationCurrent(ctx, e))
     )
       return false;

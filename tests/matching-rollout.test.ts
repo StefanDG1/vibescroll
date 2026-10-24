@@ -8,6 +8,7 @@ import { failedInferenceSettlement } from "../convex/lib/googleInference";
 import { RETRIEVAL_VERSION } from "../packages/repositories/retrieval";
 import insight from "../fixtures/insight.json";
 import proposal from "../fixtures/proposal.json";
+import { buildProjectSourceContent } from "../convex/lib/projectSourceContent";
 
 const modules = import.meta.glob("../convex/**/*.ts");
 afterEach(() => {
@@ -132,6 +133,261 @@ async function legacyFixture(completed = false) {
     });
   return { t, owner, actor, organizationId, ...saved, commit };
 }
+
+it("applies a whole post as distinct atomic proposals, reuses only the exact content mode and keeps each review independent", async () => {
+  const s = await legacyFixture();
+  const args = {
+    id: s.sourceId,
+    repositoryId: s.repositoryId,
+    maxCredits: 10,
+    multipleProposals: true,
+    includeSourceContent: true,
+  };
+  const quoted = await s.owner.mutation(api.jobs.reserveMatch, args);
+  expect(quoted.sourceContent?.transcript).toBe("Permitted synthetic note.");
+  const repo = await s.t.run((ctx) => ctx.db.get(s.repositoryId));
+  const details = [
+    {
+      ...s.detail,
+      title: "First independent synthetic change",
+      proposedChange: "Implement the first observed improvement.",
+    },
+    {
+      ...s.detail,
+      title: "Second independent synthetic change",
+      proposedChange: "Implement a separate observed improvement.",
+    },
+  ];
+  const commit = {
+    sourceId: s.sourceId,
+    repositoryId: s.repositoryId,
+    output: { schemaVersion: "post-project-proposals-v1", proposals: details },
+    matchKey: quoted.semanticKey,
+    sourceGeneration: 1,
+    inspectedContext: repo!.contextExcerpts!,
+    inspectionManifest: repo!.contextExcerpts!.map((row) => ({
+      path: row.path,
+      blobSha: row.blobSha,
+      mode: "100644",
+      size: row.content.length,
+    })),
+  };
+  const ids = await s.t.mutation(internal.product.addProposalGroup, commit);
+  expect(ids).toHaveLength(2);
+  expect(await s.t.mutation(internal.product.addProposalGroup, commit)).toEqual(
+    ids,
+  );
+  expect((await s.owner.mutation(api.jobs.reserveMatch, args)).cached).toBe(
+    true,
+  );
+  const lean = await s.owner.mutation(api.jobs.reserveMatch, {
+    ...args,
+    includeSourceContent: false,
+  });
+  expect(lean.cached).toBe(false);
+  expect(lean.sourceContent).toBeUndefined();
+  expect(lean.semanticKey).not.toBe(quoted.semanticKey);
+  await s.t.run(async (ctx) => {
+    const rows = await Promise.all(ids.map((id) => ctx.db.get(id)));
+    expect(rows.map((p) => p?.review)).toEqual(["unreviewed", "unreviewed"]);
+    expect(rows.every((p) => !p?.planHash)).toBe(true);
+    await ctx.db.patch(ids[0], { review: "rejected" });
+    expect((await ctx.db.get(ids[1]))?.review).toBe("unreviewed");
+    expect(await ctx.db.query("runs").collect()).toEqual([]);
+  });
+});
+
+it("rolls the whole proposal group back on invalid evidence, duplicated ideas or changed source content", async () => {
+  const s = await legacyFixture();
+  const quoted = await s.owner.mutation(api.jobs.reserveMatch, {
+    id: s.sourceId,
+    repositoryId: s.repositoryId,
+    maxCredits: 10,
+    multipleProposals: true,
+    includeSourceContent: true,
+  });
+  const repo = await s.t.run((ctx) => ctx.db.get(s.repositoryId));
+  const first = {
+    ...s.detail,
+    proposedChange: "First supported synthetic change",
+  };
+  const commit = {
+    sourceId: s.sourceId,
+    repositoryId: s.repositoryId,
+    matchKey: quoted.semanticKey,
+    sourceGeneration: 1,
+    inspectedContext: repo!.contextExcerpts!,
+    inspectionManifest: repo!.contextExcerpts!.map((row) => ({
+      path: row.path,
+      blobSha: row.blobSha,
+      mode: "100644",
+      size: row.content.length,
+    })),
+  };
+  await expect(
+    s.t.mutation(internal.product.addProposalGroup, {
+      ...commit,
+      output: {
+        schemaVersion: "post-project-proposals-v1",
+        proposals: [
+          first,
+          {
+            ...first,
+            proposedChange: "Second change",
+            insightIds: ["invented"],
+          },
+        ],
+      },
+    }),
+  ).rejects.toThrow(/insight/i);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("proposals").collect()),
+  ).toHaveLength(0);
+  await expect(
+    s.t.mutation(internal.product.addProposalGroup, {
+      ...commit,
+      output: {
+        schemaVersion: "post-project-proposals-v1",
+        proposals: [first, first],
+      },
+    }),
+  ).rejects.toThrow(/distinct/);
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, { text: "Changed retained source text" }),
+  );
+  await expect(
+    s.t.mutation(internal.product.addProposalGroup, {
+      ...commit,
+      output: {
+        schemaVersion: "post-project-proposals-v1",
+        proposals: [first],
+      },
+    }),
+  ).rejects.toThrow(/transcript|images/i);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("proposals").collect()),
+  ).toHaveLength(0);
+});
+
+it("includes only current retained image pixels, binds their versions and reports unavailable images without reacquiring", async () => {
+  const s = await legacyFixture();
+  const retained = await s.t.run(async (ctx) => {
+    const base = {
+      organizationId: s.organizationId,
+      sourceId: s.sourceId,
+      sourceGeneration: 1,
+      kind: "evidence",
+      type: "image/jpeg",
+      state: "complete",
+      size: 100,
+      etag: "a".repeat(32),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    const id = await ctx.db.insert("assets", {
+      ...base,
+      key: "synthetic/current",
+    });
+    await ctx.db.insert("assets", {
+      ...base,
+      key: "synthetic/expired",
+      expiresAt: Date.now() - 1,
+    });
+    await ctx.db.insert("assets", {
+      ...base,
+      key: "old",
+      sourceGeneration: 0,
+    });
+    await ctx.db.insert("assets", {
+      ...base,
+      key: "thumbnail",
+      kind: "preview",
+    });
+    return id;
+  });
+  const before = await s.t.run(async (ctx) =>
+    buildProjectSourceContent(ctx, (await ctx.db.get(s.sourceId))!),
+  );
+  expect(before.images.map((image) => image.id)).toEqual([retained]);
+  await s.t.run((ctx) => ctx.db.patch(retained, { etag: "b".repeat(32) }));
+  const changed = await s.t.run(async (ctx) =>
+    buildProjectSourceContent(ctx, (await ctx.db.get(s.sourceId))!),
+  );
+  expect(changed.binding.contentHash).not.toBe(before.binding.contentHash);
+  await s.t.run((ctx) => ctx.db.patch(retained, { state: "deleted" }));
+  const missing = await s.t.run(async (ctx) =>
+    buildProjectSourceContent(ctx, (await ctx.db.get(s.sourceId))!),
+  );
+  expect(missing.images).toEqual([]);
+  expect(missing.warnings.join(" ")).toMatch(/not been fetched again/);
+  await s.t.run((ctx) => ctx.db.patch(s.sourceId, { rightsAttested: false }));
+  await expect(
+    s.t.run(async (ctx) =>
+      buildProjectSourceContent(ctx, (await ctx.db.get(s.sourceId))!),
+    ),
+  ).rejects.toThrow(/retained source/);
+});
+
+it("rechecks withdrawal and retirement before issuing image access or dispatching captured source content", async () => {
+  vi.stubEnv("DISABLE_INFERENCE", "false");
+  vi.stubEnv("RESTORE_LOCK", "false");
+  const s = await legacyFixture();
+  const assetId = await s.t.run((ctx) =>
+    ctx.db.insert("assets", {
+      organizationId: s.organizationId,
+      sourceId: s.sourceId,
+      sourceGeneration: 1,
+      key: "synthetic/pending-image",
+      size: 100,
+      etag: "a".repeat(32),
+      type: "image/jpeg",
+      kind: "evidence",
+      state: "complete",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }),
+  );
+  const quoted = await s.owner.mutation(api.jobs.reserveMatch, {
+    id: s.sourceId,
+    repositoryId: s.repositoryId,
+    maxCredits: 10,
+    multipleProposals: true,
+    includeSourceContent: true,
+  });
+  const args = {
+    key: quoted.semanticKey,
+    reservationKey: quoted.key,
+    baseSha: s.detail.baseSha,
+    profileVersion: s.detail.profileVersion,
+  };
+  expect(
+    (
+      await s.t.query(internal.jobs.matchingContext, {
+        ...args,
+        imageId: assetId,
+      })
+    ).image?.id,
+  ).toBe(assetId);
+  await s.t.run((ctx) =>
+    ctx.db.insert("objectDeletions", {
+      key: "synthetic/pending-image",
+      attempts: 1,
+      state: "pending",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }),
+  );
+  await expect(
+    s.t.query(internal.jobs.matchingContext, { ...args, imageId: assetId }),
+  ).rejects.toThrow(/retired/);
+  await expect(s.t.query(internal.jobs.matchingContext, args)).rejects.toThrow(
+    /changed/,
+  );
+  await s.t.run((ctx) => ctx.db.patch(s.sourceId, { rightsAttested: false }));
+  await expect(s.t.query(internal.jobs.matchingContext, args)).rejects.toThrow(
+    /permissions/,
+  );
+});
 
 it("rejects a pre-upgrade pending completion and settles only measured work once without inventing authority or fallback", async () => {
   const s = await legacyFixture(),

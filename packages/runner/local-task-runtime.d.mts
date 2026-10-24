@@ -6,7 +6,12 @@ export function validLocalTaskRuntime(value: unknown): value is {
   schemaVersion: "local-task-runtime-v1";
   features:
     | ["source_reanalysis_text_v1"]
-    | ["source_reanalysis_text_v1", "project_private_variant_v1"];
+    | ["source_reanalysis_text_v1", "project_private_variant_v1"]
+    | [
+        "source_reanalysis_text_v1",
+        "project_private_variant_v1",
+        "project_apply_source_v1",
+      ];
 };
 export function sourceTextTask(job: unknown): boolean;
 export function versionedTask(job: unknown): boolean;
@@ -36,3 +41,12 @@ export const projectVariantRuntime: Readonly<{
   ];
 }>;
 export function projectVariantTask(job: unknown): boolean;
+export const projectApplyRuntime: Readonly<{
+  schemaVersion: "local-task-runtime-v1";
+  features: readonly [
+    "source_reanalysis_text_v1",
+    "project_private_variant_v1",
+    "project_apply_source_v1",
+  ];
+}>;
+export function projectApplyTask(job: unknown): boolean;

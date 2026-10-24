@@ -212,9 +212,139 @@ it("keys source, workspace, generation, revision and disabled state while keepin
     { generation: 4 },
     { revision: 13 },
     { disabled: true },
+    { media: true },
+    { retentionUntil: now + 86400000 },
   ])
     expect(WorkCloudText({ ...base, ...change, call }).key).not.toBe(first.key);
   expect(WorkCloudText({ ...base, call: callFixture() }).key).toBe(first.key);
+});
+
+it("server-renders the private video review without contacting a host or treating requested settings as verified", () => {
+  hooks.real = true;
+  const call = callFixture();
+  const html = renderToStaticMarkup(
+    createElement(WorkCloudText, { ...base, call, media: true }),
+  );
+  expect(html).toContain("Experimental Work Cloud video");
+  expect(html).toContain("GitHub and a paired computer are not required");
+  expect(html).toContain("sampled visual evidence");
+  expect(html).toContain("does not wake a background task");
+  expect(html).toContain("has not verified");
+  expect(call).not.toHaveBeenCalled();
+});
+
+it("binds one media approval to the separate media gate, requested settings and exact retention deadline", async () => {
+  const retainUntil = now + 7 * 86400000;
+  const mediaPreview = {
+    ...preview,
+    inputKind: "media",
+    mediaSupported: true,
+    inputCharacters: 0,
+    retainUntil,
+    toolchainHash: "c".repeat(64),
+  };
+  const call = vi.fn(async (operation: string) =>
+    operation === "assistantSetup"
+      ? { ...setup, workCloudTextEnabled: false, workCloudMediaEnabled: true }
+      : operation === "workCloudTextPreview"
+        ? mediaPreview
+        : queued,
+  );
+  const props = { ...base, call, media: true, retentionUntil: retainUntil };
+  await click(render(props), "Review Work Cloud video");
+  select(render(props), "Assistant connection").props.onChange({
+    target: { value: grant.id },
+  });
+  await click(render(props), "Preview video approval");
+  expect(call.mock.calls[1]).toEqual([
+    "workCloudTextPreview",
+    {
+      sourceId: base.sourceId,
+      grantId: grant.id,
+      inputKind: "media",
+      retainUntil,
+    },
+  ]);
+  expect(text(render(props))).toContain("UTC");
+  expect(text(render(props))).toContain("Review the saved video shown above");
+  expect(text(render(props))).not.toContain("Current generation");
+  expect(
+    button(render(props), "Approve one video analysis").props.disabled,
+  ).toBe(true);
+  expect(input(render(props), "text").props.value).toBe("gpt-6.1-sol");
+  expect(select(render(props), "Requested reasoning effort").props.value).toBe(
+    "medium",
+  );
+  input(render(props), "checkbox").props.onChange({
+    target: { checked: true },
+  });
+  await click(render(props), "Approve one video analysis");
+  expect(call.mock.calls[2]).toEqual([
+    "workCloudTextApprove",
+    {
+      sourceId: base.sourceId,
+      generation: 3,
+      grantId: grant.id,
+      grantVersion: grant.version,
+      expectedInputHash: preview.inputHash,
+      model: "gpt-6.1-sol",
+      effort: "medium",
+      useOwnPlan: true,
+      maxApiUsd: 0,
+      inputKind: "media",
+      retainUntil,
+    },
+  ]);
+  const instructions = elements(render(props)).find(
+    (n) => n.type === "textarea",
+  )!.props.value;
+  expect(instructions).toContain("work_cloud_prepare");
+  expect(instructions).toContain("unique correlation UUID");
+  expect(instructions).toContain("not a provider-attested task ID");
+  await vi.advanceTimersByTimeAsync(180000);
+  expect(call).toHaveBeenCalledTimes(3);
+});
+
+it.each([{}, { workCloudMediaEnabled: false }])(
+  "does not use text availability to enable video review: %j",
+  async (change) => {
+    const call = vi.fn().mockResolvedValue({ ...setup, ...change });
+    const props = { ...base, call, media: true };
+    await click(render(props), "Review Work Cloud video");
+    expect(text(render(props))).toContain("approval could not be confirmed");
+    expect(call).toHaveBeenCalledTimes(1);
+  },
+);
+
+it.each([
+  { mediaSupported: false },
+  { toolchainHash: "bad" },
+  { retainUntil: now + 86400000 },
+])("rejects a mismatched media preview: %j", async (change) => {
+  const call = vi.fn(async (operation: string) =>
+    operation === "assistantSetup"
+      ? { ...setup, workCloudMediaEnabled: true }
+      : {
+          ...preview,
+          inputKind: "media",
+          mediaSupported: true,
+          retainUntil: now + 30 * 86400000,
+          toolchainHash: "c".repeat(64),
+          ...change,
+        },
+  );
+  const props = { ...base, call, media: true };
+  await click(render(props), "Review Work Cloud video");
+  select(render(props), "Assistant connection").props.onChange({
+    target: { value: grant.id },
+  });
+  await click(render(props), "Preview video approval");
+  expect(text(render(props))).toContain("approval could not be confirmed");
+  expect(
+    elements(render(props)).some(
+      (n) => n.props["aria-label"] === "Exact video approval preview",
+    ),
+  ).toBe(false);
 });
 it("fetches grants only after review and filters active permission/expiry without choosing a grant", async () => {
   const call = vi.fn().mockResolvedValue({
@@ -308,9 +438,10 @@ it("requires model, effort and exact own-plan consent before exact-argument appr
   const instructions = elements(tree).find((node) => node.type === "textarea")!;
   expect(instructions.props.readOnly).toBe(true);
   expect(instructions.props.value).toContain(
-    "work_cloud_claim for sourceId source-one and generation 4",
+    "analyze sourceId source-one, generation 4",
   );
-  expect(instructions.props.value).toContain("actual current host task ID");
+  expect(instructions.props.value).toContain("unique correlation UUID");
+  expect(instructions.props.value).toContain("not a provider-attested task ID");
   expect(text(tree)).toContain("not a completed analysis");
   await vi.advanceTimersByTimeAsync(900000);
   approvedButton.props.onClick();

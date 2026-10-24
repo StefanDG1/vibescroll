@@ -13,7 +13,10 @@ import {
   assistantAnalysisDefaults,
 } from "./assistantSchema";
 import { snapshotScopeCurrent } from "../packages/repositories/scope";
-import { workCloudTextAllowed } from "./lib/personalAccess";
+import {
+  workCloudTextAllowed,
+  workCloudMediaAllowed,
+} from "./lib/personalAccess";
 const binding = v.object({
   sourceId: v.id("sources"),
   generation: v.number(),
@@ -44,6 +47,9 @@ export const setup = query({
       workCloudTextEnabled:
         organization.privateOwnerId === actor._id &&
         workCloudTextAllowed(actor.subject),
+      workCloudMediaEnabled:
+        organization.privateOwnerId === actor._id &&
+        workCloudMediaAllowed(actor.subject),
       eventsEnabled: process.env.MCP_EVENTS_ENABLED === "true",
       devices: (
         await ctx.db

@@ -62,9 +62,11 @@ export async function sharedTypedCitations(
               ...(post.coverage === "complete_manifest"
                 ? []
                 : [
-                    post.schemaVersion === "provided-media-v1"
-                      ? "Some supplied files were unavailable or not inspected. The original post and publication date are unverified."
-                      : "The provider's child manifest is incomplete or unknown.",
+                    post.schemaVersion === "work-cloud-observed-media-v1"
+                      ? "Private authenticated host-reported acquisition; sampled frames, model execution and provider retention are unverified."
+                      : post.schemaVersion === "provided-media-v1"
+                        ? "Some supplied files were unavailable or not inspected. The original post and publication date are unverified."
+                        : "The provider's child manifest is incomplete or unknown.",
                   ]),
             ],
           },

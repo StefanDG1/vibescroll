@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { socialPostUrl } from "./identity.mjs";
 import { canonicalJson } from "../contracts/canonical-json.mjs";
+import { acquisitionPolicy } from "../media/acquisition-runtime.ts";
 
 export async function socialHash(value: string) {
   return Array.from(
@@ -178,9 +179,118 @@ export const providedMediaSchema = providedMediaMetadata
       });
   });
 export type ProvidedMedia = z.infer<typeof providedMediaSchema>;
+export function privateCloudMediaIdentity(url: string) {
+  const input = acquisitionPolicy(url);
+  return ["instagram", "tiktok"].includes(input.platform)
+    ? acquisitionPolicy(socialPostUrl(input.url).canonical)
+    : input;
+}
+// Private observations reported through one authenticated Cloud lease. These
+// are not a supplier receipt or independently verified media acquisition.
+export const cloudObservedMediaSchema = z
+  .strictObject({
+    schemaVersion: z.literal("work-cloud-observed-media-v1"),
+    provenance: z.literal("authenticated_host_reported"),
+    canonical: z.string().min(1).max(2048),
+    platform: z.enum(["instagram", "tiktok", "youtube", "vimeo"]),
+    publishedAt: z.null(),
+    dateReliability: z.literal("unknown"),
+    observedAt: timestamp,
+    caption: z.string().max(6000),
+    captionHash: sha256,
+    assets: z.array(orderedAsset).length(1),
+    expectedAssetCount: z.null(),
+    coverage: z.literal("partial"),
+    revisionHash: sha256,
+    inputHash: sha256,
+    policyHash: sha256,
+    toolchainHash: sha256,
+    taskId: z.string().regex(/^[A-Za-z0-9._:-]{1,160}$/),
+    retainUntil: timestamp,
+    rawMediaDeleteBy: timestamp,
+    providerRetention: z.literal("unknown"),
+    frames: z
+      .array(
+        z.strictObject({
+          id: stableId,
+          timestampMs: z.number().int().nonnegative().max(600000),
+          sha256,
+          bytes: z.number().int().positive().max(1000000),
+          width: z.number().int().positive().max(960),
+          height: z.number().int().positive().max(960),
+        }),
+      )
+      .max(48),
+    audio: z
+      .strictObject({
+        sha256,
+        bytes: z.number().int().positive().max(19500000),
+        outcome: z.enum(["transcribed", "no_speech"]),
+      })
+      .nullable(),
+    segments: z
+      .array(
+        z.strictObject({
+          id: stableId,
+          startMs: z.number().int().nonnegative(),
+          endMs: z.number().int().positive(),
+          text: z.string().min(1).max(6000),
+          textHash: sha256,
+        }),
+      )
+      .max(200),
+  })
+  .superRefine((post, ctx) => {
+    let identity;
+    try {
+      identity = privateCloudMediaIdentity(post.canonical);
+    } catch {
+      /* rejected below */
+    }
+    const asset = post.assets[0];
+    if (
+      !identity ||
+      identity.url !== post.canonical ||
+      identity.platform !== post.platform ||
+      asset.kind !== "video" ||
+      asset.index !== 0 ||
+      !asset.inspected ||
+      asset.bytes > 50 * 1024 * 1024 ||
+      asset.audioInspected !== !!post.audio ||
+      (!post.audio && !post.frames.length) ||
+      post.retainUntil <= post.observedAt ||
+      post.rawMediaDeleteBy < post.observedAt ||
+      post.rawMediaDeleteBy >
+        Math.min(post.observedAt + 86400000, post.retainUntil) ||
+      new Set(post.frames.map((f) => f.id)).size !== post.frames.length ||
+      new Set(post.frames.map((f) => f.timestampMs)).size !==
+        post.frames.length ||
+      post.frames.some(
+        (f, i) =>
+          f.timestampMs >= (asset.kind === "video" ? asset.durationMs : 0) ||
+          (i > 0 && post.frames[i - 1].timestampMs >= f.timestampMs),
+      ) ||
+      new Set(post.segments.map((s) => s.id)).size !== post.segments.length ||
+      post.segments.some(
+        (s, i) =>
+          s.startMs >= s.endMs ||
+          s.endMs > (asset.kind === "video" ? asset.durationMs : 0) ||
+          (i > 0 && post.segments[i - 1].endMs > s.startMs),
+      ) ||
+      (post.audio?.outcome === "transcribed"
+        ? !post.segments.length
+        : post.segments.length > 0)
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Invalid private Cloud media observation",
+      });
+  });
+export type CloudObservedMedia = z.infer<typeof cloudObservedMediaSchema>;
 export const orderedPostSchema = z.union([
   socialPostSchema,
   providedMediaSchema,
+  cloudObservedMediaSchema,
 ]);
 export type OrderedPost = z.infer<typeof orderedPostSchema>;
 
@@ -236,9 +346,16 @@ export async function orderedRevisionHash(
     | Omit<SocialPost, "revisionHash">
     | SocialPost
     | Omit<ProvidedMedia, "revisionHash">
-    | ProvidedMedia,
+    | ProvidedMedia
+    | Omit<CloudObservedMedia, "revisionHash">
+    | CloudObservedMedia,
 ) {
   if (post.schemaVersion === "social-post-v1") return socialRevisionHash(post);
+  if (post.schemaVersion === "work-cloud-observed-media-v1") {
+    const { revisionHash: _revisionHash, ...observed } =
+      post as CloudObservedMedia;
+    return socialHash(canonicalJson(observed));
+  }
   return socialHash(
     canonicalJson({
       version: post.schemaVersion,
@@ -271,7 +388,10 @@ export async function validateOrderedEvidence(
   evidenceValue: unknown,
 ) {
   const post = orderedPostSchema.parse(postValue);
-  const evidence = z.array(socialEvidenceSchema).max(200).parse(evidenceValue);
+  const evidence = z
+    .array(socialEvidenceSchema)
+    .max(post.schemaVersion === "work-cloud-observed-media-v1" ? 248 : 200)
+    .parse(evidenceValue);
   if (new Set(evidence.map((e) => e.id)).size !== evidence.length)
     throw Error("DUPLICATE_SOCIAL_EVIDENCE");
   if (
@@ -297,6 +417,32 @@ export async function validateOrderedEvidence(
       throw Error("INVALID_SOCIAL_EVIDENCE_BINDING");
     if ((await socialHash(e.text)) !== e.textHash)
       throw Error("SOCIAL_EVIDENCE_HASH_MISMATCH");
+  }
+  if (post.schemaVersion === "work-cloud-observed-media-v1") {
+    for (const segment of post.segments)
+      if ((await socialHash(segment.text)) !== segment.textHash)
+        throw Error("CLOUD_TRANSCRIPT_HASH_MISMATCH");
+    for (const e of evidence) {
+      if (
+        e.kind !== "video_observation" ||
+        (e.basis === "transcript"
+          ? !post.segments.some(
+              (s) =>
+                s.id === e.id &&
+                s.startMs === e.startMs &&
+                s.endMs === e.endMs &&
+                s.text === e.text &&
+                s.textHash === e.textHash,
+            )
+          : !post.frames.some(
+              (f) =>
+                f.id === e.id &&
+                f.timestampMs === e.startMs &&
+                e.endMs === f.timestampMs + 1,
+            ))
+      )
+        throw Error("CLOUD_OBSERVATION_NOT_PREPARED");
+    }
   }
   return { post, evidence };
 }

@@ -1,4 +1,11 @@
 import { variantTaskEvidence } from "./lib/privateProjectVariant";
+import { projectApplicationContent } from "./lib/projectApplication";
+import {
+  evaluationGroup,
+  privateEvaluationGroup,
+} from "../packages/knowledge/contracts";
+import { variantOrigin } from "./lib/privateProjectVariant";
+import { digest } from "./product";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { ensure } from "../packages/policy";
@@ -32,6 +39,7 @@ export async function claimLocalTask(
   device: Doc<"devices">,
   localRuntimeHash?: string,
   allowPrivateVariant = false,
+  allowProjectApply = false,
 ) {
   // A new worker session cannot erase the previous session's uncertain turn.
   for (const state of ["unknown", "canceled", "expired"]) {
@@ -78,7 +86,8 @@ export async function claimLocalTask(
       return { job: null, reconcileTask: true };
     }
     if (
-      (sourceTask(active) || active.task.schemaVersion === "3.0.0") &&
+      (sourceTask(active) ||
+        ["3.0.0", "4.0.0"].includes(active.task.schemaVersion)) &&
       (!localRuntimeHash || !runtimeCurrent(device, localRuntimeHash))
     )
       return { job: null, upgradeRequired: true };
@@ -126,12 +135,27 @@ export async function claimLocalTask(
     ...legacy,
     ...sourceCandidates,
     ...privateCandidates,
+    ...(allowProjectApply &&
+    localRuntimeHash &&
+    runtimeCurrent(device, localRuntimeHash) &&
+    device.localTaskRuntime!.value.features.includes("project_apply_source_v1")
+      ? await ctx.db
+          .query("localLibraryRuns")
+          .withIndex("by_device_state", (q) =>
+            q
+              .eq("task.deviceId", device._id)
+              .eq("state", "queued")
+              .eq("task.schemaVersion", "4.0.0"),
+          )
+          .take(5)
+      : []),
   ].sort(
     (a, b) => a._creationTime - b._creationTime || a._id.localeCompare(b._id),
   );
   for (const run of candidates) {
     if (
-      (sourceTask(run) || run.task?.schemaVersion === "3.0.0") &&
+      (sourceTask(run) ||
+        ["3.0.0", "4.0.0"].includes(run.task?.schemaVersion ?? "")) &&
       (!localRuntimeHash || !runtimeCurrent(device, localRuntimeHash))
     )
       continue;
@@ -171,7 +195,10 @@ export async function claimLocalTask(
         deadline: task.deadline,
         leaseGeneration: task.leaseGeneration,
         leaseToken: task.leaseToken,
-        ...(task.schemaVersion === "3.0.0"
+        ...(task.schemaVersion === "4.0.0"
+          ? { includeSourceContent: task.includeSourceContent }
+          : {}),
+        ...(task.schemaVersion === "3.0.0" || task.schemaVersion === "4.0.0"
           ? { localRuntimeHash: task.localRuntimeHash }
           : {}),
         ...(task.schemaVersion === "2.0.0"
@@ -230,9 +257,13 @@ export async function localTaskOperation(
       "Use the exact private text operation contract.",
     );
   }
-  if (initial.task.schemaVersion === "3.0.0") {
+  if (
+    initial.task.schemaVersion === "3.0.0" ||
+    initial.task.schemaVersion === "4.0.0"
+  ) {
     const extra: Record<string, string[]> = {
       task_context_prepare: ["repositoryId"],
+      task_source_frame_prepare: ["frameId"],
       task_heartbeat: ["capabilities", "localTaskRuntime"],
       task_record_evaluation_inspection: ["id", "inspected"],
       task_evaluation_finish: ["id", "output"],
@@ -300,7 +331,11 @@ export async function localTaskOperation(
       "APPROVAL_STALE",
       "The approved catalogue changed.",
     );
-    if (sourceTask(initial) || initial.task.schemaVersion === "3.0.0") {
+    if (
+      sourceTask(initial) ||
+      initial.task.schemaVersion === "3.0.0" ||
+      initial.task.schemaVersion === "4.0.0"
+    ) {
       const runtime = await admitLocalRuntime(
         ctx,
         device,
@@ -312,7 +347,8 @@ export async function localTaskOperation(
         runtime &&
           runtime.hash ===
             (initial.task.schemaVersion === "2.0.0" ||
-            initial.task.schemaVersion === "3.0.0"
+            initial.task.schemaVersion === "3.0.0" ||
+            initial.task.schemaVersion === "4.0.0"
               ? initial.task.localRuntimeHash
               : ""),
         "APPROVAL_STALE",
@@ -329,6 +365,23 @@ export async function localTaskOperation(
     a.leaseToken,
   );
   const task = run.task!;
+  if (operation === "task_source_frame_prepare") {
+    ensure(
+      task.schemaVersion === "4.0.0" && task.includeSourceContent,
+      "FORBIDDEN",
+      "This task excludes source images.",
+    );
+    const contents = await projectApplicationContent(ctx, run);
+    const matches = contents
+      .flatMap((c) => c.images)
+      .filter((image) => image.id === a.frameId);
+    ensure(
+      matches.length === 1,
+      "FORBIDDEN",
+      "Image is outside this exact current source context.",
+    );
+    return matches[0];
+  }
   if (operation === "task_heartbeat") {
     const leaseUntil = Math.min(task.deadline, Date.now() + 40000);
     await ctx.db.patch(run._id, {
@@ -503,7 +556,8 @@ export async function localTaskOperation(
       "Complete each selected repository once.",
     );
     const evidence =
-      task.schemaVersion === "3.0.0"
+      task.schemaVersion === "3.0.0" ||
+      (task.schemaVersion === "4.0.0" && task.privateVariantSelection)
         ? (await variantTaskEvidence(ctx, run)).evidence
         : await memberEvidence(
             ctx,
@@ -533,67 +587,114 @@ export async function localTaskOperation(
         "Use current evaluations of the exact selected ideas and repositories.",
       );
       repositories.add(e!.repositoryId);
-      let p = await ctx.db
-        .query("proposals")
-        .withIndex("by_local_evaluation", (q) =>
-          q.eq("localEvaluationId", e!._id),
-        )
-        .unique();
+      const grouped = task.schemaVersion === "4.0.0";
+      const group = grouped
+        ? (variantOrigin(e!.privateEvaluationOrigin)
+            ? privateEvaluationGroup
+            : evaluationGroup
+          ).parse({
+            schemaVersion: e!.opportunityGroup?.schemaVersion,
+            opportunities: e!.opportunityGroup?.opportunities,
+          })
+        : null;
+      if (group)
+        ensure(
+          (await digest(canonicalJson(group))) ===
+            e!.opportunityGroup?.outputHash,
+          "APPROVAL_STALE",
+          "The opportunity group changed.",
+        );
+      const outputs = group?.opportunities ?? [e!.output];
+      const existing = grouped
+        ? await ctx.db
+            .query("proposals")
+            .withIndex("by_local_evaluation", (q) =>
+              q.eq("localEvaluationId", e!._id),
+            )
+            .take(6)
+        : [];
       ensure(
-        !p ||
-          samePrivateEvaluationOrigin(
-            p.privateEvaluationOrigin,
-            e!.privateEvaluationOrigin,
+        existing.length <= 5 &&
+          new Set(existing.map((p) => p.opportunityIndex)).size ===
+            existing.length &&
+          existing.every(
+            (p) =>
+              Number.isSafeInteger(p.opportunityIndex) &&
+              p.opportunityIndex! >= 0 &&
+              p.opportunityIndex! < outputs.length,
           ),
         "APPROVAL_STALE",
-        "The existing proposal has different private context.",
+        "Existing grouped proposals have inconsistent ordinals.",
       );
-      if (!p) {
-        const output = e!.output;
-        const proposalId = await ctx.db.insert("proposals", {
-          organizationId: run.organizationId,
-          sourceId: e!.references[0].sourceId,
-          localEvaluationId: e!._id,
-          ...(e!.privateEvaluationOrigin
-            ? { privateEvaluationOrigin: e!.privateEvaluationOrigin }
-            : {}),
-          references: e!.references,
-          repositoryId: e!.repositoryId,
-          baseSha: e!.baseSha,
-          profileVersion: e!.profileVersion,
-          title: output.title.slice(0, 160),
-          disposition: output.disposition,
-          review: "unreviewed",
-          version: 1,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          detail: {
-            schemaVersion: "1.0.0",
+      for (const [opportunityIndex, output] of outputs.entries()) {
+        const references = grouped ? output.references : e!.references;
+        let p = grouped
+          ? (existing.find((p) => p.opportunityIndex === opportunityIndex) ??
+            null)
+          : await ctx.db
+              .query("proposals")
+              .withIndex("by_local_evaluation", (q) =>
+                q.eq("localEvaluationId", e!._id),
+              )
+              .unique();
+        ensure(
+          !p ||
+            samePrivateEvaluationOrigin(
+              p.privateEvaluationOrigin,
+              e!.privateEvaluationOrigin,
+            ),
+          "APPROVAL_STALE",
+          "The existing proposal has different private context.",
+        );
+        if (!p) {
+          const proposalId = await ctx.db.insert("proposals", {
+            organizationId: run.organizationId,
+            sourceId: references[0].sourceId,
+            localEvaluationId: e!._id,
+            ...(grouped ? { opportunityIndex } : {}),
+            ...(e!.privateEvaluationOrigin
+              ? { privateEvaluationOrigin: e!.privateEvaluationOrigin }
+              : {}),
+            references,
             repositoryId: e!.repositoryId,
             baseSha: e!.baseSha,
             profileVersion: e!.profileVersion,
-            insightIds: e!.references.map((r) => r.insightId),
-            disposition: output.disposition,
             title: output.title.slice(0, 160),
-            currentProblem: output.problem,
-            proposedChange: output.approach,
-            benefitHypothesis: output.rationale,
-            repositoryEvidence: output.repositoryEvidence.map((r: any) => ({
-              path: r.path,
-              startLine: r.startLine,
-              endLine: r.endLine,
-              observation: r.explanation,
-            })),
-            sourceEvidence: [],
-            risks: output.risks,
-            nonGoals: [],
-            acceptanceCriteria: output.acceptance,
-            verificationNeeds: output.questions,
-          },
-        });
-        p = (await ctx.db.get(proposalId))!;
+            disposition: output.disposition,
+            review: "unreviewed",
+            version: 1,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            detail: {
+              schemaVersion: "1.0.0",
+              repositoryId: e!.repositoryId,
+              baseSha: e!.baseSha,
+              profileVersion: e!.profileVersion,
+              insightIds: references.map(
+                (r: { insightId: string }) => r.insightId,
+              ),
+              disposition: output.disposition,
+              title: output.title.slice(0, 160),
+              currentProblem: output.problem,
+              proposedChange: output.approach,
+              benefitHypothesis: output.rationale,
+              repositoryEvidence: output.repositoryEvidence.map((r: any) => ({
+                path: r.path,
+                startLine: r.startLine,
+                endLine: r.endLine,
+                observation: r.explanation,
+              })),
+              sourceEvidence: [],
+              risks: output.risks,
+              nonGoals: [],
+              acceptanceCriteria: output.acceptance,
+              verificationNeeds: output.questions,
+            },
+          });
+          p = (await ctx.db.get(proposalId))!;
+        }
+        proposalIds.push(p._id);
       }
-      proposalIds.push(p._id);
     }
     await ctx.db.patch(run._id, {
       state: "completed",

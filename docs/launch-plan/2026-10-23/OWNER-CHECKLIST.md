@@ -1,5 +1,13 @@
 # What help is still needed to finish the plan
 
+## Private media-v2 checkpoint, October 24
+
+Root continues the already authorized engineering under [ADR 143](../../adr/143-private-work-cloud-media-observations.md) and [F062](../../foundational/idea-backlog.md#f062-private-work-cloud-media-observations-october-24). No repeat general confirmation, new post link or credential is requested. The candidate remains default-off and private-only, with existing grant/lease review and no automatic dispatch or paid fallback.
+
+The no-GitHub native UI probe confirmed exposed tools, not host policy, official task identity, model execution or media acceptance. Root must retain the requested/reported model discrepancy and complete supported host/media/return checks before claiming the route works. The real WorkOS canonical audio-only verification and separate private 48-frame local result are distinct evidence. Full transcript/images in project evaluation and automatic multiple proposals per post/project remain root-owned gaps, not completed Apply features.
+
+PR 155 is merged/released, compatible PR 156 is merged but undeployed, and corrected cleanup PR 157 CI is pending. The media candidate's final combined checks are also pending. Current US$3 retained budget is US$2.8762037111015744 with US$0.1237962888984258 headroom; Vercel, older unknown and future holds remain. Source billing classification is separate proof. Older checklist entries below retain their dated status; this checkpoint grants no new spending or publication authority.
+
 ## Owner-requested stop and public main consolidation, October 24
 
 The owner requested finishing the current checks, consolidating all reviewed source into public main and stopping feature work. [The completion report](COMPLETION-REPORT-2026-10-24.md) records approximately70% implementation and roughly10-20% expanded production acceptance, with an explicit estimate method. [ADR 140](../../adr/140-public-main-consolidation-with-deployment-hold.md) adds a temporary main deployment hold while keeping full CI/versioning. The owner does not require an extra discretionary OpenAI confirmation; actual provider contracts and missing Cloud execution/return capabilities are not bypassed. Public main and the serving production build remain distinct.

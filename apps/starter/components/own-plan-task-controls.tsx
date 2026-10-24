@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { SubscriptionCapabilities } from "../../../packages/runner/subscription-capabilities.mjs";
 import type { PrivateEvaluationOrigin } from "../../../packages/contracts/private-evaluation-context";
 import type { LocalTaskRuntimeSnapshot } from "../../../packages/contracts/private-source-analysis";
@@ -39,6 +39,7 @@ type TaskStatus = {
   resultAvailable?: boolean;
 };
 type Selection = {
+  includeSourceContent?: boolean;
   organizationId: string;
   workload: "project_evaluation" | "plan_draft" | "source_reanalysis_text";
   deviceId: string;
@@ -58,6 +59,7 @@ type Quote = {
   hash: string;
   expiresAt: number;
   payload: {
+    includeSourceContent?: boolean;
     sourceBindings?: { sourceId: string; generation: number }[];
     repositoryBindings?: { repositoryId: string; baseSha: string }[];
     privateEvaluationBrief?: string;
@@ -70,6 +72,10 @@ type Quote = {
   maxInferenceCredits: number;
 };
 export type OwnPlanTaskProps = {
+  sourceContentChoice?: {
+    include: boolean;
+    onChange: (include: boolean) => void;
+  };
   organizationId: string;
   call: (operation: string, args: Record<string, unknown>) => Promise<any>;
   source?: { id: string; title: string };
@@ -113,6 +119,7 @@ export function OwnPlanTaskPanel({
   onViewPrivateResult,
   privateVariantSelection,
   privateVariantReadUntil,
+  sourceContentChoice,
   disabled = false,
   onComplete,
 }: OwnPlanTaskProps) {
@@ -145,7 +152,27 @@ export function OwnPlanTaskPanel({
   const [history, setHistory] = useState<TaskStatus[] | null>(null);
   const [historyNext, setHistoryNext] = useState<string | null>(null);
   const [privateBrief, setPrivateBrief] = useState("");
+  const [localSourceContent, setLocalSourceContent] = useState(true);
+  const includeSourceContent =
+    sourceContentChoice?.include ?? localSourceContent;
+  const sourceContentCurrent = useRef(includeSourceContent);
+  const [seenSourceContent, setSeenSourceContent] =
+    useState(includeSourceContent);
+  if (seenSourceContent !== includeSourceContent) {
+    setSeenSourceContent(includeSourceContent);
+    setQuote(null);
+    setConsent(false);
+  }
+  const setIncludeSourceContent = (include: boolean) =>
+    sourceContentChoice
+      ? sourceContentChoice.onChange(include)
+      : setLocalSourceContent(include);
+  useLayoutEffect(() => {
+    sourceContentCurrent.current = includeSourceContent;
+    requestRevision.current += 1;
+  }, [includeSourceContent]);
   const sourceMode = !!sourceReanalysis && !proposal;
+  const applicationMode = !!source && !sourceMode && !proposal;
   const variantMode = !!privateVariantSelection && !sourceMode && !proposal;
   const requiresVariantRuntime =
     variantMode ||
@@ -170,13 +197,15 @@ export function OwnPlanTaskPanel({
     accepted = !proposal || proposal.review === "accepted",
     currentCatalogue = !!device?.catalogue && device.expiresAt > observedAt,
     runtimeCurrent = (item: Device | undefined, now = observedAt) =>
-      (!sourceMode && !requiresVariantRuntime) ||
+      (!sourceMode && !requiresVariantRuntime && !applicationMode) ||
       (!!item?.admittedRuntime &&
         item.admittedRuntime.value.schemaVersion === "local-task-runtime-v1" &&
         item.admittedRuntime.value.features.includes(
-          requiresVariantRuntime
-            ? "project_private_variant_v1"
-            : "source_reanalysis_text_v1",
+          applicationMode
+            ? "project_apply_source_v1"
+            : requiresVariantRuntime
+              ? "project_private_variant_v1"
+              : "source_reanalysis_text_v1",
         ) &&
         item.admittedRuntime.expiresAt > now &&
         item.admittedRuntime.sessionExpiresAt > now),
@@ -295,6 +324,27 @@ export function OwnPlanTaskPanel({
         <output>
           Accept the current proposal before requesting a plan draft.
         </output>
+      )}
+      {applicationMode && (
+        <label className="check-label">
+          <input
+            type="checkbox"
+            checked={includeSourceContent}
+            disabled={locked}
+            onChange={(event) => {
+              invalidate();
+              setIncludeSourceContent(event.target.checked);
+            }}
+          />{" "}
+          <span>
+            Include full transcript and images
+            <span className="fine" style={{ display: "block" }}>
+              Uses only retained source text and sampled images that are
+              available. Missing media is not fetched again. Up to five distinct
+              proposals per project.
+            </span>
+          </span>
+        </label>
       )}
       <button
         className="secondary"
@@ -554,7 +604,8 @@ export function OwnPlanTaskPanel({
         disabled={
           locked ||
           !variantCurrent() ||
-          (requiresVariantRuntime && !runtimeCurrent(device)) ||
+          ((requiresVariantRuntime || applicationMode) &&
+            !runtimeCurrent(device)) ||
           (sourceMode &&
             (privateLibrary !== true ||
               !sourceReanalysis?.available ||
@@ -575,7 +626,8 @@ export function OwnPlanTaskPanel({
             if (
               !currentCatalogue ||
               !variantCurrent(Date.now()) ||
-              (requiresVariantRuntime && !runtimeCurrent(device, Date.now())) ||
+              ((requiresVariantRuntime || applicationMode) &&
+                !runtimeCurrent(device, Date.now())) ||
               (sourceMode &&
                 (privateLibrary !== true ||
                   !sourceReanalysis?.available ||
@@ -619,6 +671,7 @@ export function OwnPlanTaskPanel({
                   : {
                       sourceId: source!.id,
                       repositoryIds: [...selected],
+                      includeSourceContent,
                       ...(variantMode ? { privateVariantSelection } : {}),
                       ...(privateBriefAllowed && privateBrief.trim().length > 0
                         ? { privateEvaluationBrief: privateBrief }
@@ -626,12 +679,21 @@ export function OwnPlanTaskPanel({
                     }),
             };
             const value: Quote = await call("localTaskQuote", selection);
-            if (!alive.current || requestRevision.current !== revision) return;
+            if (
+              !alive.current ||
+              requestRevision.current !== revision ||
+              (applicationMode &&
+                sourceContentCurrent.current !== selection.includeSourceContent)
+            )
+              return;
             if (
               value.maxInferenceCredits !== 0 ||
               value.expiresAt <= Date.now() ||
               value.payload.privateEvaluationBrief !==
                 selection.privateEvaluationBrief ||
+              (applicationMode &&
+                value.payload.includeSourceContent !==
+                  selection.includeSourceContent) ||
               (variantMode &&
                 variantIdentity(value.payload.privateVariantSelection) !==
                   variantIdentity(selection.privateVariantSelection)) ||
@@ -748,7 +810,10 @@ export function OwnPlanTaskPanel({
             onClick={() =>
               void action(async () => {
                 const now = Date.now();
-                if (requiresVariantRuntime && !runtimeCurrent(device, now)) {
+                if (
+                  (requiresVariantRuntime || applicationMode) &&
+                  !runtimeCurrent(device, now)
+                ) {
                   invalidate();
                   throw Error(
                     "Private project runtime changed. Review current account choices and a new quote.",
@@ -757,6 +822,16 @@ export function OwnPlanTaskPanel({
                 if (requestRevision.current !== quote.revision) {
                   invalidate();
                   throw Error("Task choices changed. Review a new quote.");
+                }
+                if (
+                  applicationMode &&
+                  quote.selection.includeSourceContent !==
+                    sourceContentCurrent.current
+                ) {
+                  invalidate();
+                  throw Error(
+                    "Source content choice changed. Review a new quote.",
+                  );
                 }
                 if (
                   variantMode &&

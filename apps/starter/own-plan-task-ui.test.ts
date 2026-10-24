@@ -24,6 +24,18 @@ vi.mock("react", async (original) => {
       const index = hooks.index++;
       return (hooks.values[index] ??= { current: value });
     },
+    useLayoutEffect: (effect: () => void, dependencies: unknown[]) => {
+      if (hooks.real) return;
+      const index = hooks.index++,
+        previous = hooks.values[index] as unknown[] | undefined;
+      if (
+        !previous ||
+        dependencies.some((value, n) => !Object.is(value, previous[n]))
+      ) {
+        hooks.values[index] = dependencies;
+        effect();
+      }
+    },
     useState: (value: unknown) => {
       if (hooks.real) return real.useState(value);
       const index = hooks.index++;
@@ -102,6 +114,20 @@ function harness() {
           name: "My computer",
           catalogue,
           expiresAt: Date.now() + 300000,
+          admittedRuntime: {
+            value: {
+              schemaVersion: "local-task-runtime-v1",
+              features: [
+                "source_reanalysis_text_v1",
+                "project_private_variant_v1",
+                "project_apply_source_v1",
+              ],
+            },
+            hash: "d".repeat(64),
+            profileBinding: "e".repeat(64),
+            expiresAt: Date.now() + 300000,
+            sessionExpiresAt: Date.now() + 3600000,
+          },
         },
       ];
     if (operation === "localTaskQuote")
@@ -110,6 +136,9 @@ function harness() {
         expiresAt: Date.now() + 300000,
         maxInferenceCredits: 0,
         payload: {
+          ...(args.includeSourceContent !== undefined
+            ? { includeSourceContent: args.includeSourceContent }
+            : {}),
           ...(args.privateEvaluationBrief !== undefined
             ? { privateEvaluationBrief: args.privateEvaluationBrief }
             : {}),
@@ -155,12 +184,59 @@ function harness() {
     select(0, "owned-device");
     select(1, "actual-only");
     select(2, "xhigh");
-    elements(view())
-      .find((node) => node.type === "input" && node.props.type === "checkbox")!
-      .props.onChange({ target: { checked: true } });
+    const repositoryLabel = elements(view()).find(
+      (node) => node.type === "label" && text(node).trim() === "owned/project",
+    );
+    elements(repositoryLabel)
+      .find((node) => node.type === "input")
+      ?.props.onChange({ target: { checked: true } });
   }
   return { props, calls, view, click, choose, select };
 }
+it("defaults full source content on, binds the choice, and clears quote consent when switched off", async () => {
+  const h = harness();
+  await h.choose();
+  const toggle = () =>
+    elements(h.view()).find(
+      (node) =>
+        node.type === "input" &&
+        node.props.type === "checkbox" &&
+        node.props.checked === true,
+    )!;
+  expect(toggle()).toBeDefined();
+  await h.click("Review own-subscription quote");
+  expect(
+    h.calls.mock.calls.find(([op]) => op === "localTaskQuote")?.[1]
+      .includeSourceContent,
+  ).toBe(true);
+  toggle().props.onChange({ target: { checked: false } });
+  expect(text(h.view())).not.toContain("Approve this exact request");
+  await h.click("Review own-subscription quote");
+  expect(
+    h.calls.mock.calls.filter(([op]) => op === "localTaskQuote").at(-1)?.[1]
+      .includeSourceContent,
+  ).toBe(false);
+});
+it("uses the controlled full-content choice shared with the source page", async () => {
+  const h = harness(),
+    changed = vi.fn();
+  h.props.sourceContentChoice = { include: false, onChange: changed };
+  await h.choose();
+  await h.click("Review own-subscription quote");
+  expect(
+    h.calls.mock.calls.find(([op]) => op === "localTaskQuote")?.[1]
+      .includeSourceContent,
+  ).toBe(false);
+  const label = elements(h.view()).find(
+    (node) =>
+      node.type === "label" &&
+      text(node).includes("Include full transcript and images"),
+  )!;
+  elements(label)
+    .find((node) => node.type === "input")!
+    .props.onChange({ target: { checked: true } });
+  expect(changed).toHaveBeenCalledExactlyOnceWith(true);
+});
 it("makes no requests on render and exposes only actual advertised choices after explicit load", async () => {
   const h = harness();
   expect(text(h.view())).toContain("No paid API fallback");
@@ -909,6 +985,7 @@ function variantHarness() {
             features: [
               "source_reanalysis_text_v1",
               "project_private_variant_v1",
+              "project_apply_source_v1",
             ],
           },
           hash: "d".repeat(64),

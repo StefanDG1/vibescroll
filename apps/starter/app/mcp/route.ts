@@ -162,13 +162,15 @@ export async function POST(request: Request) {
         });
         const value = await readAssistantBody(
           response,
-          operation === "work_cloud_input" ? 131072 : 100000,
+          operation === "work_cloud_input" ? 262144 : 100000,
         );
         return { ok: response.ok, status: response.status, value };
       },
       process.env.MCP_EVENTS_ENABLED === "true",
       process.env.WORK_CLOUD_TEXT_ENABLED === "true" &&
         process.env.WORK_CLOUD_TEXT_VERIFIED === "true",
+      process.env.WORK_CLOUD_MEDIA_ENABLED === "true" &&
+        process.env.WORK_CLOUD_MEDIA_VERIFIED === "true",
     );
     const input = new Request(request.url, {
       method: "POST",

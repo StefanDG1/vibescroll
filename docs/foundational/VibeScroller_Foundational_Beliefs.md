@@ -1,5 +1,17 @@
 # VibeScroll foundational beliefs
 
+## F063: whole-post project context, October 24
+
+[ADR145](../adr/145-whole-post-project-content-and-distinct-proposals.md) records the authorized default-on retained transcript/images choice and separate proposals per post/project. Off uses extracted insights/citations. Missing pixels and incomplete coverage stay explicit; private personalization stays private. This is an implementation candidate, with no new audience, price, provider approval, measured savings, production Cloud acceptance or customer outcome. Cloud setup must verify supported network permission before starting its finite source lease.
+
+## F062: private Work Cloud media observations, October 24
+
+[ADR 143](../adr/143-private-work-cloud-media-observations.md) preserves the six beliefs through explicit execution permission, cited observations and private results. OAuth authentication identifies the reporting client; it cannot turn reported media, task identity, model settings or cleanup into provider-attested facts. Sampled frames remain partial coverage. An uncertain attempt cannot become an automatic retry, paid fallback or catalog contribution.
+
+The no-GitHub capability probe found exposed tools but no host-policy inspection or official task ID, and requested/reported model settings disagree. Keep that uncertainty visible. The separately verified audio-only result and privately retained local media analysis establish their own narrow outcomes, not Cloud media success or usefulness.
+
+Calling all extracted insights “the whole post” must not imply that each project evaluation receives every transcript segment and image. Automatic multiple proposals per post/project remain unfinished. [F062](idea-backlog.md#f062-private-work-cloud-media-observations-october-24) changes no belief, testimonial, audience, offer or publication permission.
+
 ## F061: separate private text reanalysis, October 24
 
 [ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) reuses existing task runs for separately approved private text results and retains only small version pointers on the source. Generic source analysis and citations remain unchanged. A distinct local runtime protocol excludes unsupported older workers. Original rights, result identity, current read scope and privacy cleanup remain authoritative.

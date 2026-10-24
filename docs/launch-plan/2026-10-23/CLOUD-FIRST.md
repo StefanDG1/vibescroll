@@ -1,5 +1,13 @@
 # Finish the launch with user-owned Codex Cloud
 
+## Private media-v2 checkpoint, October 24
+
+[ADR 143](../../adr/143-private-work-cloud-media-observations.md) freezes a default-off private single-video candidate on the existing source job, OAuth execution grant and same-job lease. It accepts four supported platforms and authenticated client-reported sampled observations, with raw media in the provider task. It adds no automatic dispatch, paid fallback or catalog publication. Host policy, runtime, model, bytes and provider cleanup remain independently unverified. Ninety-eight focused tests passed before review; the native extension finding is corrected and final combined checks remain pending.
+
+The 12:46 UTC native UI probe in an existing no-GitHub chat exposed eight VibeScroll MCP tools, shell and `view_image`, but no host-policy inspection tool or official task ID. Requested Sol Medium differs from the host's `gpt6-astra-wm` self-report; neither establishes the executed model. The probe made no service/media/production call. The earlier thread-message timeout retains unknown outcome. Actual media acquisition/return, host controls, cancellation/provider retention and independent usefulness remain acceptance work. Separate canonical audio-only and private local media results do not close those gates or establish Cloud speed.
+
+PR 155 is merged/released and compatible PR 156 merged but undeployed. Corrected cleanup PR 157 CI is pending. The remaining Apply flow must preserve whole-post context and support reviewed multiple proposals where appropriate; live grouping currently passes extracted insights and one proposal per repository evaluation. The same US$3 cap retains US$2.8762037111015744 with US$0.1237962888984258 headroom; all Vercel, older unknown and future holds remain. Source billing classification stays separate. Earlier dated plan/checkpoint statements below are historical.
+
 ## Owner-requested stop and public main consolidation, October 24
 
 The owner requested finishing the current checks, consolidating all reviewed source into public main and stopping feature work. [The completion report](COMPLETION-REPORT-2026-10-24.md) records approximately70% implementation and roughly10-20% expanded production acceptance, with an explicit estimate method. [ADR 140](../../adr/140-public-main-consolidation-with-deployment-hold.md) adds a temporary main deployment hold while keeping full CI/versioning. The owner does not require an extra discretionary OpenAI confirmation; actual provider contracts and missing Cloud execution/return capabilities are not bypassed. Public main and the serving production build remain distinct.

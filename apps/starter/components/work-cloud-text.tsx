@@ -14,9 +14,10 @@ const grantSchema = z.object({
 const setupSchema = z.object({
   enabled: z.boolean(),
   workCloudTextEnabled: z.boolean(),
+  workCloudMediaEnabled: z.boolean().optional().default(false),
   grants: z.array(grantSchema).max(51),
 });
-const previewSchema = z.strictObject({
+const previewBase = z.strictObject({
   sourceId: z.string().min(1),
   generation: z.number().int().nonnegative(),
   approvedGeneration: z.number().int().nonnegative(),
@@ -24,11 +25,21 @@ const previewSchema = z.strictObject({
   grantVersion: z.number().int().positive(),
   inputHash: hash,
   policyHash: hash,
-  inputKind: z.enum(["source_text", "supplied_text"]),
   inputCharacters: z.number().int().nonnegative(),
   maxApiUsd: z.literal(0),
-  mediaSupported: z.literal(false),
 });
+const previewSchema = z.discriminatedUnion("mediaSupported", [
+  previewBase.extend({
+    inputKind: z.enum(["source_text", "supplied_text"]),
+    mediaSupported: z.literal(false),
+  }),
+  previewBase.extend({
+    inputKind: z.literal("media"),
+    mediaSupported: z.literal(true),
+    retainUntil: z.number().int().positive().max(8_640_000_000_000_000),
+    toolchainHash: hash,
+  }),
+]);
 const queuedSchema = z.strictObject({
   sourceId: z.string().min(1),
   generation: z.number().int().nonnegative(),
@@ -42,6 +53,15 @@ type Preview = z.infer<typeof previewSchema>;
 type Queued = z.infer<typeof queuedSchema>;
 function observedTime() {
   return Date.now();
+}
+function retentionDeadline(value: number) {
+  return (
+    new Intl.DateTimeFormat("en-GB", {
+      dateStyle: "long",
+      timeStyle: "short",
+      timeZone: "UTC",
+    }).format(value) + " UTC"
+  );
 }
 function grantCurrent(grant: Grant, now: number) {
   return (
@@ -57,6 +77,8 @@ export type WorkCloudTextProps = {
   revision: number;
   call: (operation: string, args: Record<string, unknown>) => Promise<any>;
   disabled?: boolean;
+  media?: boolean;
+  retentionUntil?: number;
 };
 
 export function WorkCloudText(props: WorkCloudTextProps) {
@@ -68,6 +90,8 @@ export function WorkCloudText(props: WorkCloudTextProps) {
         props.generation,
         props.revision,
         Boolean(props.disabled),
+        Boolean(props.media),
+        props.retentionUntil ?? null,
       ])}
       {...props}
     />
@@ -80,12 +104,18 @@ export function WorkCloudTextPanel({
   generation,
   call,
   disabled = false,
+  media = false,
+  retentionUntil,
 }: WorkCloudTextProps) {
+  const kind = media ? "video" : "text";
+  const [mediaRetainUntil] = useState(() =>
+    Math.min(retentionUntil ?? Infinity, observedTime() + 30 * 86400000),
+  );
   const [grants, setGrants] = useState<Grant[] | null>(null);
   const [grantId, setGrantId] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [model, setModel] = useState("");
-  const [effort, setEffort] = useState("");
+  const [model, setModel] = useState(media ? "gpt-6.1-sol" : "");
+  const [effort, setEffort] = useState(media ? "medium" : "");
   const [consent, setConsent] = useState<string | null>(null);
   const [queued, setQueued] = useState<Queued | null>(null);
   const [busy, setBusy] = useState(false);
@@ -131,7 +161,7 @@ export function WorkCloudTextPanel({
     setConsent(null);
     setSelection(++selectionVersion.current);
     setError(
-      "This approval could not be confirmed. Review Work Cloud text again to check the current source, connection and permissions.",
+      `This approval could not be confirmed. Review Work Cloud ${kind} again to check the current source, connection and permissions.`,
     );
   }
   function resetPreview() {
@@ -162,7 +192,10 @@ export function WorkCloudTextPanel({
         await call("assistantSetup", { organizationId }),
       );
       if (!current(ticket)) return;
-      if (!result.enabled || !result.workCloudTextEnabled)
+      if (
+        !result.enabled ||
+        !(media ? result.workCloudMediaEnabled : result.workCloudTextEnabled)
+      )
         throw Error("Experimental route unavailable");
       const now = observedTime();
       setCheckedAt(now);
@@ -187,7 +220,7 @@ export function WorkCloudTextPanel({
       setConsent(null);
       setCheckedAt(observedTime());
       setError(
-        "The selected connection has expired or lost analysis permission. Review Work Cloud text again.",
+        `The selected connection has expired or lost analysis permission. Review Work Cloud ${kind} again.`,
       );
       return;
     }
@@ -196,7 +229,13 @@ export function WorkCloudTextPanel({
     const expectedSelection = selectionVersion.current;
     try {
       const result = previewSchema.parse(
-        await call("workCloudTextPreview", { sourceId, grantId: grant.id }),
+        await call("workCloudTextPreview", {
+          sourceId,
+          grantId: grant.id,
+          ...(media
+            ? { inputKind: "media", retainUntil: mediaRetainUntil }
+            : {}),
+        }),
       );
       if (!current(ticket) || expectedSelection !== selectionVersion.current)
         return;
@@ -206,6 +245,8 @@ export function WorkCloudTextPanel({
         result.approvedGeneration !== generation + 1 ||
         result.grantId !== grant.id ||
         result.grantVersion !== grant.version ||
+        result.mediaSupported !== media ||
+        (result.mediaSupported && result.retainUntil !== mediaRetainUntil) ||
         !grantCurrent(grant, observedTime())
       )
         throw Error("Stale preview");
@@ -258,6 +299,9 @@ export function WorkCloudTextPanel({
           effort: chosenEffort.data,
           useOwnPlan: true,
           maxApiUsd: 0,
+          ...(preview.mediaSupported
+            ? { inputKind: "media", retainUntil: preview.retainUntil }
+            : {}),
         }),
       );
       if (!current(ticket)) return;
@@ -280,21 +324,21 @@ export function WorkCloudTextPanel({
     }
   }
   const instructions = queued
-    ? `In your current official Work Cloud task, explicitly invoke the VibeScroll tool work_cloud_claim for sourceId ${queued.sourceId} and generation ${queued.generation}. Supply this task's actual current host task ID when the tool requests it. Do not invent a task ID, credential or token. Follow the returned text-only task instructions under your own eligible subscription. There is no paid API fallback or media processing in this approval.`
+    ? `In this official Work Cloud session, use the VibeScroll plugin to analyze sourceId ${queued.sourceId}, generation ${queued.generation}. Create one unique correlation UUID for this attempt and pass it as taskId to work_cloud_claim. This is a client correlation identifier, not a provider-attested task ID. Keep it and the returned lease token unchanged for input, heartbeat, ${media ? "prepare, " : ""}complete or fail. Follow the returned ${kind} policy and requested model/effort. ${media ? "Verify current restricted network policy and host resource controls before acquiring the exact source. Reuse only verified cached tools/models. Inspect actual speech and sampled frames, bind the evidence with work_cloud_prepare, then submit cited final analysis through work_cloud_complete. " : ""}Stop if tools, source rights, host controls or requested settings are unavailable; report the actual failure without a paid fallback or substitute result. Do not disclose credentials, lease tokens or private source bytes in the chat. This approval does not launch a host automatically. Host execution, model settings, cancellation and retention are not provider-attested by VibeScroll.`
     : "";
   return (
     <section
       className="panel"
-      aria-label="Experimental Work Cloud text"
+      aria-label={`Experimental Work Cloud ${kind}`}
       aria-busy={busy}
       style={{ minWidth: 0, overflowWrap: "anywhere" }}
     >
-      <h2>Experimental Work Cloud text</h2>
+      <h2>Experimental Work Cloud {kind}</h2>
       <p>
-        Review one text-only analysis through your own eligible subscription in
-        an official Work Cloud task. No installation or GitHub connection is
-        required. This does not process video, images or audio, or wake a
-        background task.
+        {media
+          ? "Review one public video link for analysis in your own eligible Work Cloud session. GitHub and a paired computer are not required. This experimental route covers one video with sampled visual evidence; photos and carousels need their supported route."
+          : "Review one text-only analysis through your own eligible subscription in an official Work Cloud task. No installation or GitHub connection is required. This does not process video, images or audio."}{" "}
+        This approval does not wake a background task.
       </p>
       <p>
         Paid API fallback is disabled, with a maximum API spend of US$0. Your
@@ -307,7 +351,7 @@ export function WorkCloudTextPanel({
         disabled={disabled || busy}
         onClick={() => void review()}
       >
-        Review Work Cloud text
+        Review Work Cloud {kind}
       </button>
       {busy && <output>Checking the current approval…</output>}
       {error && <p role="alert">{error}</p>}
@@ -351,22 +395,40 @@ export function WorkCloudTextPanel({
                 }
                 onClick={() => void inspect()}
               >
-                Preview text approval
+                Preview {kind} approval
               </button>
             </>
           )}
           {preview && (
-            <section aria-label="Exact text approval preview">
-              <h3>Review this text approval</h3>
-              <p>
-                {preview.inputCharacters} characters of{" "}
-                {preview.inputKind === "supplied_text"
-                  ? "supplied text"
-                  : "source text"}
-                . Current generation {preview.generation}; approved generation{" "}
-                {preview.approvedGeneration}. This preview grants no processing
-                permission.
-              </p>
+            <section aria-label={`Exact ${kind} approval preview`}>
+              <h3>Review this {kind} approval</h3>
+              {preview.mediaSupported ? (
+                <p>
+                  Review the saved video shown above. Approving it lets your
+                  selected Work Cloud connection process this video once.
+                </p>
+              ) : (
+                <p>
+                  <>
+                    {preview.inputCharacters} characters of{" "}
+                    {preview.inputKind === "supplied_text"
+                      ? "supplied text"
+                      : "source text"}
+                  </>
+                  . Current generation {preview.generation}; approved generation{" "}
+                  {preview.approvedGeneration}. This preview grants no
+                  processing permission.
+                </p>
+              )}
+              {preview.mediaSupported && (
+                <p>
+                  This private result and its retained evidence expire on{" "}
+                  {retentionDeadline(preview.retainUntil)}. Raw media stays in
+                  your provider environment with a 24-hour cleanup target.
+                  Provider file and chat-history deletion cannot be verified
+                  here. No catalog publication is approved.
+                </p>
+              )}
               <details>
                 <summary>Inspect approval fingerprints</summary>
                 <p>
@@ -377,42 +439,47 @@ export function WorkCloudTextPanel({
                 </p>
                 <p>Connection version: {preview.grantVersion}</p>
               </details>
-              <label>
-                Requested model
-                <input
-                  type="text"
-                  style={{ width: "100%", minWidth: 0, maxWidth: "100%" }}
-                  value={model}
-                  maxLength={100}
-                  disabled={disabled || busy}
-                  onChange={(event) => {
-                    setModel(event.target.value);
-                    resetConsent();
-                  }}
-                />
-              </label>
-              <p>
-                Enter the model identifier supported by your current official
-                host. Availability is not verified here.
-              </p>
-              <label>
-                Requested reasoning effort
-                <select
-                  value={effort}
-                  disabled={disabled || busy}
-                  onChange={(event) => {
-                    setEffort(event.target.value);
-                    resetConsent();
-                  }}
-                >
-                  <option value="">Choose effort</option>
-                  {["low", "medium", "high", "xhigh"].map((value) => (
-                    <option value={value} key={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <details open={!media}>
+                <summary>
+                  Processing settings{media ? ` · ${model}, ${effort}` : ""}
+                </summary>
+                <label>
+                  Requested model
+                  <input
+                    type="text"
+                    style={{ width: "100%", minWidth: 0, maxWidth: "100%" }}
+                    value={model}
+                    maxLength={100}
+                    disabled={disabled || busy}
+                    onChange={(event) => {
+                      setModel(event.target.value);
+                      resetConsent();
+                    }}
+                  />
+                </label>
+                <p>
+                  Enter the model identifier supported by your current official
+                  host. Availability is not verified here.
+                </p>
+                <label>
+                  Requested reasoning effort
+                  <select
+                    value={effort}
+                    disabled={disabled || busy}
+                    onChange={(event) => {
+                      setEffort(event.target.value);
+                      resetConsent();
+                    }}
+                  >
+                    <option value="">Choose effort</option>
+                    {["low", "medium", "high", "xhigh"].map((value) => (
+                      <option value={value} key={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </details>
               <label className="check">
                 <input
                   type="checkbox"
@@ -428,23 +495,27 @@ export function WorkCloudTextPanel({
                     setConsent(event.target.checked ? binding : null)
                   }
                 />
-                I approve this exact text, connection, requested model and
-                effort using my own plan, with no paid API fallback.
+                I approve this exact {kind}, connection, requested model and
+                effort
+                {preview.mediaSupported
+                  ? ", sampled evidence and the stated retention deadline"
+                  : ""}{" "}
+                using my own plan, with no paid API fallback.
               </label>
               <button
                 type="button"
                 disabled={disabled || busy || !binding || consent !== binding}
                 onClick={() => void approve()}
               >
-                Approve one text analysis
+                Approve one {kind} analysis
               </button>
             </section>
           )}
         </div>
       )}
       {queued && (
-        <section aria-label="Queued text handoff">
-          <h3>Text approval queued</h3>
+        <section aria-label={`Queued ${kind} handoff`}>
+          <h3>{media ? "Video" : "Text"} approval queued</h3>
           <p>
             This is an approval receipt, not a completed analysis. The one-shot
             handoff expires within 15 minutes, at{" "}
@@ -461,9 +532,9 @@ export function WorkCloudTextPanel({
           </label>
           <p>
             Copy these instructions into your current official host task. Use
-            its real task ID. Check the existing source status manually after
-            the host returns its result; this panel does not poll or start the
-            host.
+            one unique correlation ID for the attempt. Check the existing source
+            status manually after the host returns its result; this panel does
+            not poll or start the host.
           </p>
         </section>
       )}

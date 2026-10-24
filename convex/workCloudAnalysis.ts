@@ -1,4 +1,6 @@
 import { v } from "convex/values";
+import { z } from "zod";
+import { internal } from "./_generated/api";
 import { query, internalQuery, type QueryCtx } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -9,14 +11,35 @@ import {
 } from "../packages/policy/assistant";
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
-import { workCloudTextAllowed } from "./lib/personalAccess";
+import {
+  workCloudMediaAllowed,
+  workCloudTextAllowed,
+} from "./lib/personalAccess";
 import { typedSource, completePersonalSource } from "./personalAnalysis";
 import { reserve, settle, digest } from "./product";
 import { ensure, containsSecret } from "../packages/policy";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { safeModel } from "../packages/runner/subscription-capabilities.mjs";
 import type { WorkCloudJob } from "./personalAnalysisSchema";
-import { validateWorkCloudTextOutput } from "../packages/contracts/work-cloud-text";
+import {
+  validateWorkCloudTextOutput,
+  validateWorkCloudMediaOutput,
+  workCloudMediaPolicy,
+  workCloudMediaPreparation,
+} from "../packages/contracts/work-cloud-text";
+import {
+  socialAnalysisOutput,
+  validateOrderedAnalysis,
+} from "../packages/social/analysis";
+import {
+  validateOrderedEvidence,
+  privateCloudMediaIdentity,
+} from "../packages/social/contracts";
+import { sourceRetained } from "./lib/sourceAuthority";
+import { commitPersonalOrdered } from "./lib/personalOrderedCommit";
+import { currentOrderedSource } from "./lib/orderedSource";
+import { syncCategories } from "./categories";
+import { syncKnowledge } from "./knowledge";
 import insightSchema from "../contracts/insight.schema.json";
 import sourceInsightSchema from "../contracts/source-insight-v2.schema.json";
 
@@ -43,14 +66,14 @@ type ExecutionArgs = {
   leaseToken: string;
 };
 
-function enabled(subject: string) {
+function enabled(subject: string, media = false) {
   ensure(
-    workCloudTextAllowed(subject),
+    media ? workCloudMediaAllowed(subject) : workCloudTextAllowed(subject),
     "FORBIDDEN",
-    "Work Cloud text handoff is unavailable for this account.",
+    "This Work Cloud handoff is unavailable for this account.",
   );
 }
-async function ownedSource(ctx: QueryCtx, id: Id<"sources">) {
+async function ownedSource(ctx: QueryCtx, id: Id<"sources">, media = false) {
   const source = await ctx.db.get(id);
   ensure(
     source && source.state !== "deleted",
@@ -58,7 +81,7 @@ async function ownedSource(ctx: QueryCtx, id: Id<"sources">) {
     "Source unavailable.",
   );
   const a = await access(ctx, source.organizationId, ["owner"]);
-  enabled(a.actor.subject);
+  enabled(a.actor.subject, media);
   ensure(
     a.organization.privateOwnerId === a.actor._id,
     "FORBIDDEN",
@@ -99,7 +122,99 @@ async function sourceInput(
   source: Doc<"sources">,
   generation: number,
   bound: WorkCloudJob | null = null,
+  mediaApproval?: { retainUntil: number },
 ) {
+  const media =
+    bound?.cloud.schemaVersion === "work-cloud-media-v2"
+      ? bound.cloud.media
+      : mediaApproval;
+  ensure(
+    (bound?.cloud.schemaVersion === "work-cloud-media-v2") ===
+      !!bound?.cloud.media,
+    "APPROVAL_STALE",
+    "The Cloud protocol binding changed.",
+  );
+  if (media) {
+    const now = Date.now();
+    ensure(
+      process.env.RESTORE_LOCK !== "true" &&
+        source.kind === "url" &&
+        !!source.url &&
+        !source.currentRevisionId &&
+        !source.publicImportId &&
+        !source.personalMedia &&
+        !source.personalOrderedInput &&
+        !source.orderedPreparation &&
+        !source.serviceIntent &&
+        !source.objectKey &&
+        !source.creatorRights &&
+        source.rightsAttested &&
+        sourceRetained(source) &&
+        Number.isSafeInteger(media.retainUntil) &&
+        media.retainUntil > now &&
+        media.retainUntil <=
+          (bound?.approvedAt ?? now) +
+            workCloudMediaPolicy.maximumResultRetentionMs &&
+        media.retainUntil <= (source.sourceRetentionUntil ?? Infinity) &&
+        source.title.length <= 240 &&
+        !containsSecret(source.title),
+      "SOURCE_UNAVAILABLE",
+      "Review a permitted single-video URL and finite private result retention.",
+    );
+    const acquisition = privateCloudMediaIdentity(source.url!);
+    ensure(
+      acquisition.url === source.canonical &&
+        (!source.orderedMedia || !!bound?.cloud.media?.preparationHash),
+      "APPROVAL_STALE",
+      "The original video identity or preparation changed.",
+    );
+    const policyHash = await digest(canonicalJson(workCloudMediaPolicy));
+    const toolchainHash = await digest(
+      canonicalJson(workCloudMediaPolicy.toolchain),
+    );
+    ensure(
+      !bound ||
+        (bound.cloud.media?.canonicalUrl === acquisition.url &&
+          bound.cloud.media.toolchainHash === toolchainHash),
+      "APPROVAL_STALE",
+      "The reviewed media toolchain changed.",
+    );
+    const input = {
+      schemaVersion: "work-cloud-media-v2",
+      sourceId: source._id,
+      generation,
+      processingRunId: `${source._id}:${generation}`,
+      title: source.title,
+      inputKind: "media" as const,
+      canonicalUrl: acquisition.url,
+      platform: acquisition.platform,
+      allowedDomains: acquisition.domains,
+      retainUntil: media.retainUntil,
+      expectedCoverage: "ordered_media",
+      outputSchema: canonicalJson(z.toJSONSchema(socialAnalysisOutput)),
+      policy: workCloudMediaPolicy,
+      policyHash,
+      toolchainHash,
+      text: "",
+      sourceRevisionId: null,
+      sourceContentHash: null,
+      revision: null,
+      evidence: [],
+    };
+    const serialized = canonicalJson(input);
+    ensure(
+      new TextEncoder().encode(serialized).byteLength <= 120000 &&
+        !containsSecret(serialized),
+      "INVALID_INPUT",
+      "The full Cloud media input exceeds its byte or credential bound.",
+    );
+    return {
+      registry: null,
+      input,
+      policyHash,
+      inputHash: await digest(serialized),
+    };
+  }
   ensure(
     !source.publicImportId &&
       !source.personalMedia &&
@@ -189,9 +304,21 @@ async function approvable(ctx: QueryCtx, source: Doc<"sources">) {
   }
 }
 export const preview = query({
-  args: { sourceId: v.id("sources"), grantId: v.id("assistantGrants") },
+  args: {
+    sourceId: v.id("sources"),
+    grantId: v.id("assistantGrants"),
+    inputKind: v.optional(v.literal("media")),
+    retainUntil: v.optional(v.number()),
+  },
   handler: async (ctx, a) => {
-    const owned = await ownedSource(ctx, a.sourceId);
+    const owned = await ownedSource(ctx, a.sourceId, a.inputKind === "media");
+    ensure(
+      a.inputKind === "media"
+        ? a.retainUntil !== undefined
+        : a.retainUntil === undefined,
+      "INVALID_INPUT",
+      "Retention is explicit only for the media protocol.",
+    );
     await approvable(ctx, owned.source);
     const grant = await selectedGrant(
       ctx,
@@ -204,6 +331,8 @@ export const preview = query({
       ctx,
       owned.source,
       owned.source.generation + 1,
+      null,
+      a.inputKind === "media" ? { retainUntil: a.retainUntil! } : undefined,
     );
     return {
       sourceId: a.sourceId,
@@ -216,7 +345,13 @@ export const preview = query({
       inputKind: input.input.inputKind,
       inputCharacters: input.input.text.length,
       maxApiUsd: 0,
-      mediaSupported: false,
+      mediaSupported: a.inputKind === "media",
+      ...(input.input.inputKind === "media"
+        ? {
+            retainUntil: input.input.retainUntil,
+            toolchainHash: input.input.toolchainHash,
+          }
+        : {}),
     };
   },
 });
@@ -231,9 +366,18 @@ export const approve = mutation({
     effort: v.string(),
     useOwnPlan: v.literal(true),
     maxApiUsd: v.literal(0),
+    inputKind: v.optional(v.literal("media")),
+    retainUntil: v.optional(v.number()),
   },
   handler: async (ctx, a) => {
-    const owned = await ownedSource(ctx, a.sourceId);
+    const owned = await ownedSource(ctx, a.sourceId, a.inputKind === "media");
+    ensure(
+      a.inputKind === "media"
+        ? a.retainUntil !== undefined
+        : a.retainUntil === undefined,
+      "INVALID_INPUT",
+      "Retention is explicit only for the media protocol.",
+    );
     await recentAuthentication(ctx);
     await approvable(ctx, owned.source);
     ensure(
@@ -257,7 +401,13 @@ export const approve = mutation({
       "The execution grant changed.",
     );
     const generation = a.generation + 1;
-    const input = await sourceInput(ctx, owned.source, generation);
+    const input = await sourceInput(
+      ctx,
+      owned.source,
+      generation,
+      null,
+      a.inputKind === "media" ? { retainUntil: a.retainUntil! } : undefined,
+    );
     ensure(
       a.expectedInputHash === input.inputHash,
       "APPROVAL_STALE",
@@ -276,7 +426,7 @@ export const approve = mutation({
       expiresAt: now + 900000,
       leaseUntil: 0,
       deadline: 0,
-      stage: "analyzing",
+      stage: a.inputKind === "media" ? "acquiring" : "analyzing",
       ...(input.registry
         ? {
             sourceRevisionId: input.registry.id,
@@ -284,7 +434,6 @@ export const approve = mutation({
           }
         : {}),
       cloud: {
-        schemaVersion: "work-cloud-text-v1",
         grantId: grant._id,
         grantVersion: grant.version,
         clientId: grant.clientId,
@@ -294,6 +443,16 @@ export const approve = mutation({
         policyHash: input.policyHash,
         funding: "own_subscription",
         maxApiUsd: 0,
+        ...(input.input.inputKind === "media"
+          ? {
+              schemaVersion: "work-cloud-media-v2" as const,
+              media: {
+                canonicalUrl: input.input.canonicalUrl,
+                toolchainHash: input.input.toolchainHash,
+                retainUntil: input.input.retainUntil,
+              },
+            }
+          : { schemaVersion: "work-cloud-text-v1" as const }),
       },
     };
     await reserve(
@@ -306,6 +465,9 @@ export const approve = mutation({
       generation,
       state: "queued",
       personalAnalysis: job,
+      ...(job.cloud.media
+        ? { sourceRetentionUntil: job.cloud.media.retainUntil }
+        : {}),
       managedAnalysisActor: undefined,
       analysis: undefined,
       summary: undefined,
@@ -334,6 +496,7 @@ async function current(
   ctx: QueryCtx,
   sourceId: Id<"sources">,
   generation: number,
+  allowExpiredMedia = false,
 ) {
   const source = await ctx.db.get(sourceId);
   ensure(
@@ -346,8 +509,12 @@ async function current(
     source.organizationId,
     "analysis:execute",
   );
-  enabled(a.actor.subject);
   const job = source.personalAnalysis;
+  enabled(
+    a.actor.subject,
+    job?.executor === "work_cloud" &&
+      job.cloud.schemaVersion === "work-cloud-media-v2",
+  );
   ensure(
     a.organization.privateOwnerId === a.actor._id &&
       a.membership.role === "owner" &&
@@ -358,7 +525,11 @@ async function current(
       job.cloud.grantId === a.grant._id &&
       job.cloud.grantVersion === a.grant.version &&
       job.cloud.clientId === a.client.id &&
-      job.expiresAt > Date.now(),
+      (job.expiresAt > Date.now() ||
+        (allowExpiredMedia &&
+          job.cloud.media &&
+          job.state === "running" &&
+          source.state === "processing")),
     "APPROVAL_STALE",
     "The approved Cloud source or execution grant changed.",
   );
@@ -393,10 +564,34 @@ async function current(
     "APPROVAL_STALE",
     "The approved input or policy changed.",
   );
+  if (job.cloud.media?.preparationHash) {
+    const prepared = workCloudMediaPreparation.parse({
+      schemaVersion: "work-cloud-media-preparation-v2",
+      post: source.orderedMedia?.post,
+      evidence: source.orderedMedia?.evidence,
+    });
+    ensure(
+      source.orderedMedia?.schemaVersion === "ordered-media-v1" &&
+        (await digest(
+          canonicalJson({
+            schemaVersion: "ordered-media-v1",
+            post: prepared.post,
+            evidence: prepared.evidence,
+          }),
+        )) === job.cloud.media.preparationHash,
+      "APPROVAL_STALE",
+      "Prepared media observations changed.",
+    );
+  }
   return { source, job, ...a, ...input };
 }
-async function leased(ctx: QueryCtx, a: ExecutionArgs, allowTerminal = false) {
-  const c = await current(ctx, a.sourceId, a.generation);
+async function leased(
+  ctx: QueryCtx,
+  a: ExecutionArgs,
+  allowTerminal = false,
+  allowExpiredMedia = false,
+) {
+  const c = await current(ctx, a.sourceId, a.generation, allowExpiredMedia);
   ensure(
     c.job.cloud.taskId === a.taskId &&
       c.job.cloud.consentId === c.identity.sid &&
@@ -406,10 +601,18 @@ async function leased(ctx: QueryCtx, a: ExecutionArgs, allowTerminal = false) {
     "APPROVAL_STALE",
     "The Cloud task, consent or lease token changed.",
   );
+  const expiredMedia =
+    !!c.job.cloud.media &&
+    c.job.state === "running" &&
+    c.source.state === "processing" &&
+    (c.job.leaseUntil <= Date.now() ||
+      c.job.deadline <= Date.now() ||
+      c.job.expiresAt <= Date.now());
   ensure(
-    (allowTerminal &&
-      c.job.state === "completed" &&
-      c.source.state === "ready") ||
+    (allowExpiredMedia && expiredMedia) ||
+      (allowTerminal &&
+        c.job.state === "completed" &&
+        c.source.state === "ready") ||
       (c.job.state === "running" &&
         c.source.state === "processing" &&
         c.job.leaseUntil > Date.now() &&
@@ -417,16 +620,15 @@ async function leased(ctx: QueryCtx, a: ExecutionArgs, allowTerminal = false) {
     "APPROVAL_STALE",
     "The Cloud execution lease is no longer active.",
   );
-  return c;
+  return { ...c, expiredMedia };
 }
 export const input = internalQuery({
   args: executionArgs,
   handler: async (ctx, a) => {
     const c = await leased(ctx, a);
-    return {
+    const response = {
       ...c.input,
       inputHash: c.inputHash,
-      schemaVersion: "work-cloud-text-v1",
       requestedModel: c.job.model,
       requestedEffort: c.job.effort,
       leaseUntil: c.job.leaseUntil,
@@ -434,8 +636,25 @@ export const input = internalQuery({
       maxApiUsd: 0,
       evidenceTrust:
         "User-authorized retained text; host execution and model are not provider-attested.",
-      mediaSupported: false,
+      mediaSupported: c.job.cloud.schemaVersion === "work-cloud-media-v2",
+      ...(c.job.cloud.media
+        ? {
+            preparationSchema: canonicalJson(
+              z.toJSONSchema(workCloudMediaPreparation),
+            ),
+            preparationHash: c.job.cloud.media.preparationHash ?? null,
+            prepared: c.source.orderedMedia ?? null,
+            evidenceTrust:
+              "Authenticated host-reported acquisition and sampled observations; model, execution, raw-media deletion and provider retention are unverified.",
+          }
+        : {}),
     };
+    ensure(
+      new TextEncoder().encode(JSON.stringify(response)).byteLength <= 262144,
+      "INVALID_INPUT",
+      "The full Cloud input response exceeds its transport bound.",
+    );
+    return response;
   },
 });
 export const dispatch = internalMutation({
@@ -446,9 +665,11 @@ export const dispatch = internalMutation({
       v.literal("heartbeat"),
       v.literal("complete"),
       v.literal("fail"),
+      v.literal("prepare"),
     ),
     leaseToken: v.optional(v.string()),
     output: v.optional(v.any()),
+    preparation: v.optional(v.any()),
     usage: v.optional(
       v.object({ inputTokens: v.number(), outputTokens: v.number() }),
     ),
@@ -470,6 +691,11 @@ export const dispatch = internalMutation({
       "INVALID_INPUT",
       "Completion data is permitted only for completion.",
     );
+    ensure(
+      a.operation === "prepare" || a.preparation === undefined,
+      "INVALID_INPUT",
+      "Preparation data requires the media preparation operation.",
+    );
     if (a.operation === "claim") {
       ensure(
         a.leaseToken === undefined,
@@ -489,8 +715,17 @@ export const dispatch = internalMutation({
       await limit(ctx, `work-cloud-dispatch:${c.actor._id}`, 120);
       const token = crypto.randomUUID(),
         now = Date.now();
-      const deadline = Math.min(c.job.expiresAt, now + 180000);
-      const leaseUntil = Math.min(deadline, now + 40000);
+      const deadline = Math.min(
+        c.job.expiresAt,
+        now +
+          (c.job.cloud.media
+            ? workCloudMediaPolicy.maximumExecutionMs
+            : 180000),
+      );
+      const leaseUntil = Math.min(
+        deadline,
+        now + (c.job.cloud.media ? workCloudMediaPolicy.maximumLeaseMs : 40000),
+      );
       await ctx.db.patch(c.source._id, {
         state: "processing",
         updatedAt: Math.max(now, c.source.updatedAt + 1),
@@ -502,11 +737,23 @@ export const dispatch = internalMutation({
           cloud: {
             ...c.job.cloud,
             taskId: a.taskId,
+            ...(c.job.cloud.media ? { claimedAt: now } : {}),
             consentId: c.identity.sid as string,
             leaseTokenHash: await digest(token),
           },
         },
       });
+      if (c.job.cloud.media)
+        await ctx.scheduler.runAfter(
+          Math.max(0, c.job.cloud.media.retainUntil - now),
+          internal.workCloudAnalysis.expire,
+          {
+            sourceId: c.source._id,
+            organizationId: c.source.organizationId,
+            generation: c.job.generation,
+            retainUntil: c.job.cloud.media.retainUntil,
+          },
+        );
       return {
         sourceId: c.source._id,
         generation: c.job.generation,
@@ -528,10 +775,31 @@ export const dispatch = internalMutation({
       ctx,
       { ...a, leaseToken: a.leaseToken },
       a.operation === "complete",
+      true,
     );
     await limit(ctx, `work-cloud-dispatch:${c.actor._id}`, 120);
+    if (c.expiredMedia) {
+      await settle(
+        ctx,
+        c.source.organizationId,
+        `source:${c.source._id}:${c.job.generation}`,
+        0,
+      );
+      await ctx.db.patch(c.source._id, {
+        state: "failed",
+        personalAnalysis: { ...c.job, state: "unknown", leaseUntil: 0 },
+        error:
+          "The Cloud media lease expired. Host stop and subscription usage are unknown; reconcile before retrying.",
+        updatedAt: Math.max(Date.now(), c.source.updatedAt + 1),
+      });
+      return { accepted: false, state: "unknown", hostStopped: false };
+    }
     if (a.operation === "heartbeat") {
-      const leaseUntil = Math.min(Date.now() + 40000, c.job.deadline);
+      const leaseUntil = Math.min(
+        Date.now() +
+          (c.job.cloud.media ? workCloudMediaPolicy.maximumLeaseMs : 40000),
+        c.job.deadline,
+      );
       await ctx.db.patch(c.source._id, {
         personalAnalysis: { ...c.job, leaseUntil },
       });
@@ -553,7 +821,63 @@ export const dispatch = internalMutation({
       });
       return { accepted: true, state: "unknown", hostStopped: false };
     }
-    const output = validateWorkCloudTextOutput(a.output, !!c.registry);
+    if (a.operation === "prepare") {
+      ensure(
+        c.job.cloud.media,
+        "INVALID_INPUT",
+        "Preparation requires an approved media protocol.",
+      );
+      const checked = workCloudMediaPreparation.parse(a.preparation);
+      ensure(
+        new TextEncoder().encode(canonicalJson(checked)).byteLength <= 120000 &&
+          !containsSecret(canonicalJson(checked)),
+        "INVALID_EVIDENCE",
+        "Use bounded media observations without credentials.",
+      );
+      const post = checked.post,
+        now = Date.now();
+      ensure(
+        post.canonical === c.job.cloud.media.canonicalUrl &&
+          post.taskId === a.taskId &&
+          post.inputHash === c.inputHash &&
+          post.policyHash === c.policyHash &&
+          post.toolchainHash === c.job.cloud.media.toolchainHash &&
+          post.retainUntil === c.job.cloud.media.retainUntil &&
+          c.job.cloud.claimedAt !== undefined &&
+          post.observedAt >= c.job.cloud.claimedAt &&
+          post.observedAt <= now,
+        "INVALID_EVIDENCE",
+        "The acquired revision is outside the exact approved Cloud lease.",
+      );
+      const validated = await validateOrderedEvidence(post, checked.evidence);
+      const prepared = {
+        schemaVersion: "ordered-media-v1" as const,
+        ...validated,
+      };
+      const preparationHash = await digest(canonicalJson(prepared));
+      ensure(
+        !c.job.cloud.media.preparationHash ||
+          c.job.cloud.media.preparationHash === preparationHash,
+        "APPROVAL_STALE",
+        "This lease already bound different acquired observations.",
+      );
+      if (!c.job.cloud.media.preparationHash)
+        await ctx.db.patch(c.source._id, {
+          orderedMedia: prepared,
+          personalAnalysis: {
+            ...c.job,
+            stage: "analyzing",
+            cloud: {
+              ...c.job.cloud,
+              media: { ...c.job.cloud.media, preparationHash },
+            },
+          },
+        });
+      return { accepted: true, preparationHash, observationsVerified: false };
+    }
+    const output = c.job.cloud.media
+      ? validateWorkCloudMediaOutput(a.output)
+      : validateWorkCloudTextOutput(a.output, !!c.registry);
     ensure(
       new TextEncoder().encode(JSON.stringify(output)).length <= 120000 &&
         (a.reportedModel === undefined || a.reportedModel === c.job.model) &&
@@ -602,15 +926,48 @@ export const dispatch = internalMutation({
       );
       return { accepted: true, cached: true };
     }
-    await completePersonalSource(
-      ctx,
-      c.source,
-      c.job,
-      { ...a, output },
-      c.registry,
-      Math.max(Date.now(), c.source.updatedAt + 1),
-      "official-work-cloud-text-v1",
-    );
+    if (c.job.cloud.media) {
+      ensure(
+        c.job.cloud.media.preparationHash && c.source.orderedMedia,
+        "INVALID_EVIDENCE",
+        "Bind acquired media observations before returning analysis.",
+      );
+      const validated = await validateOrderedAnalysis(
+        output,
+        c.source.orderedMedia,
+        {
+          sourceId: c.source._id,
+          generation: c.job.generation,
+        },
+      );
+      validated.analysis.warnings = [
+        ...new Set([
+          "Authenticated host-reported media observations and requested model settings are not independently verified.",
+          "Video frames are sampled; short scenes can be missed. Automatic transcription can contain errors.",
+          "Raw media stays in the provider task. Its cleanup target, cancellation and retained task history are unverified.",
+          ...validated.analysis.warnings,
+        ]),
+      ].slice(0, 20);
+      await commitPersonalOrdered(
+        ctx,
+        c.source,
+        c.job,
+        validated,
+        a.usage,
+        Math.max(Date.now(), c.source.updatedAt + 1),
+        workCloudMediaPolicy.pipelineVersion,
+      );
+      await currentOrderedSource((await ctx.db.get(c.source._id))!);
+    } else
+      await completePersonalSource(
+        ctx,
+        c.source,
+        c.job,
+        { ...a, output },
+        c.registry,
+        Math.max(Date.now(), c.source.updatedAt + 1),
+        "official-work-cloud-text-v1",
+      );
     const completed = (await ctx.db.get(c.source._id))!.personalAnalysis;
     ensure(
       completed?.executor === "work_cloud",
@@ -633,5 +990,70 @@ export const dispatch = internalMutation({
       },
     });
     return { accepted: true, cached: false };
+  },
+});
+
+// App retention erases app evidence only. It cannot attest provider cleanup.
+export const expire = internalMutation({
+  args: {
+    sourceId: v.id("sources"),
+    organizationId: v.id("organizations"),
+    generation: v.number(),
+    retainUntil: v.number(),
+  },
+  handler: async (ctx, a) => {
+    const source = await ctx.db.get(a.sourceId),
+      job = source?.personalAnalysis;
+    if (
+      !source ||
+      source.organizationId !== a.organizationId ||
+      a.retainUntil > Date.now()
+    )
+      return;
+    if (process.env.RESTORE_LOCK === "true") {
+      await ctx.scheduler.runAfter(60000, internal.workCloudAnalysis.expire, a);
+      return;
+    }
+    await ctx.scheduler.runAfter(0, internal.knowledge.redactDerived, {
+      organizationId: a.organizationId,
+      sourceId: source._id,
+      section: "knowledgeJobs",
+      cursor: null,
+      maxGeneration: a.generation,
+    });
+    if (
+      source.generation !== a.generation ||
+      job?.executor !== "work_cloud" ||
+      job.generation !== a.generation ||
+      !job.cloud.media ||
+      job.cloud.media.retainUntil !== a.retainUntil
+    )
+      return;
+    await ctx.db.patch(source._id, {
+      state: "failed",
+      orderedMedia: undefined,
+      analysis: undefined,
+      summary: undefined,
+      personalAnalysis: {
+        ...job,
+        // Preserve an acknowledged completion as known. Expiring its app
+        // evidence does not turn that completed attempt into unresolved usage.
+        state: job.state === "completed" ? "completed" : "unknown",
+        leaseUntil: 0,
+        cloud: {
+          ...job.cloud,
+          media: { ...job.cloud.media, preparationHash: undefined },
+        },
+      },
+      error:
+        "Private Cloud result retention expired. Provider files, history and usage remain unverified.",
+      updatedAt: Math.max(Date.now(), source.updatedAt + 1),
+    });
+    const expired = (await ctx.db.get(source._id))!;
+    await syncCategories(ctx, expired);
+    await syncKnowledge(ctx, expired, {
+      preserveManualHistory: true,
+      enqueue: false,
+    });
   },
 });

@@ -3712,6 +3712,8 @@ function SourceDetail({
   const [detail, setDetail] = useState(source);
   const [detailLoading, setDetailLoading] = useState(!demo);
   const [excludedInsights, setExcludedInsights] = useState<string[]>([]);
+  const [includeProjectSourceContent, setIncludeProjectSourceContent] =
+    useState(true);
   const [viewFrame, setViewFrame] = useState<string>();
   const [allFrames, setAllFrames] = useState(false);
   const [categoryDraft, setCategoryDraft] = useState("");
@@ -4013,6 +4015,10 @@ function SourceDetail({
           organizationId={org}
           call={strictCall}
           source={{ id: sourceId, title: detail.title }}
+          sourceContentChoice={{
+            include: includeProjectSourceContent,
+            onChange: setIncludeProjectSourceContent,
+          }}
           privateLibrary={detail.privateLibrary === true}
           repositories={repos
             .filter((repo: any) => repo.enabled && repo.confirmed)
@@ -4577,6 +4583,25 @@ function SourceDetail({
                 : `${insightIds.length} selected main points`}
               .
             </p>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={includeProjectSourceContent}
+                disabled={busy || readOnly}
+                onChange={(event) =>
+                  setIncludeProjectSourceContent(event.target.checked)
+                }
+              />
+              Include full transcript and images
+            </label>
+            <p className="fine">
+              On by default. Include the retained transcript, caption and
+              available sampled image pixels. Turn this off to use extracted
+              insights and citations with less input usage. Missing or expired
+              media is reported and is not downloaded again. A post can produce
+              up to five distinct proposals per project, each reviewed
+              separately.
+            </p>
             <details className="point-selection">
               <summary>Advanced · choose main points</summary>
               {detail.analysis.insights.map((insight: any) => (
@@ -4638,6 +4663,8 @@ function SourceDetail({
                           id: id(source),
                           repositoryId: candidate.repositoryId,
                           insightIds,
+                          includeSourceContent: includeProjectSourceContent,
+                          multipleProposals: true,
                           maxCredits: 10,
                         })
                       }
@@ -4682,6 +4709,8 @@ function SourceDetail({
                 id: id(source),
                 repositoryId: id(r),
                 insightIds,
+                includeSourceContent: includeProjectSourceContent,
+                multipleProposals: true,
                 maxCredits: 10,
               })
             }
@@ -4805,16 +4834,22 @@ function SourceDetail({
             </p>
           </section>
         )}
-        {detail.workCloudTextEnabled &&
+        {(detail.workCloudTextEnabled || detail.workCloudMediaEnabled) &&
           !orderedSource &&
           !detail.publicImportId &&
-          (detail.kind === "text" || detail.currentRevisionId) &&
+          ((detail.workCloudTextEnabled &&
+            (detail.kind === "text" || detail.currentRevisionId)) ||
+            (detail.workCloudMediaEnabled &&
+              detail.kind === "url" &&
+              !detail.currentRevisionId)) &&
           !["ready", "queued", "processing"].includes(detail.state) && (
             <WorkCloudText
               sourceId={id(detail)}
               organizationId={org}
               generation={detail.generation}
               revision={detail.updatedAt}
+              media={detail.kind === "url" && !detail.currentRevisionId}
+              retentionUntil={detail.sourceRetentionUntil}
               call={strictCall}
               disabled={readOnly || detailLoading}
             />

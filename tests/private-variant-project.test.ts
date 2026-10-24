@@ -8,6 +8,7 @@ import { normalizeSubscriptionCapabilities } from "../packages/runner/subscripti
 import {
   sourceTextRuntime,
   projectVariantRuntime,
+  projectApplyRuntime,
 } from "../packages/runner/local-task-runtime.mjs";
 import { processSubscriptionTask } from "../packages/runner/subscription-coordinator.mjs";
 import { createEvidence, registryHash } from "../packages/sources/evidence";
@@ -15,6 +16,111 @@ import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { evaluationCurrent } from "../convex/knowledge";
 import { resolvePrivateVariant } from "../convex/lib/privateProjectVariant";
 const modules = import.meta.glob("../convex/**/*.ts");
+it("v4 grouped project proposals preserve actual private references and keep default history neutral", async () => {
+  const f = await fixture(),
+    connected = await f.hello(projectApplyRuntime);
+  const approved = await f.variantApprove({ includeSourceContent: false });
+  expect(approved.quote.payload.schemaVersion).toBe("4.0.0");
+  const { job } = await f.dispatch("claim", {
+    taskProtocolVersion: "4.0.0",
+    localRuntimeHash: connected.localRuntimeHash,
+    preferTasks: true,
+  });
+  const context = await f.dispatch("task_context_prepare", {
+    ...ref(job),
+    repositoryId: f.repo,
+  });
+  expect(context.application.sources).toEqual([]);
+  await f.dispatch("task_record_evaluation_inspection", {
+    ...ref(job),
+    id: context.id,
+    inspected: [],
+  });
+  const first = {
+    disposition: "no_fit",
+    title: "First private opportunity",
+    rationale: "Review private evidence",
+    problem: "No proved issue",
+    approach: "Keep current behavior",
+    acceptance: ["Review evidence"],
+    tests: ["Inspect fixture"],
+    risks: [],
+    alternatives: [],
+    questions: [],
+    references: context.evidence.map((e: any) => e.reference),
+    repositoryEvidence: [],
+  };
+  const forged = {
+    ...first,
+    references: first.references.map(
+      ({
+        schemaVersion: _s,
+        runId: _r,
+        privateVersion: _v,
+        outputHash: _h,
+        ...r
+      }: any) => r,
+    ),
+  };
+  await expect(
+    f.dispatch("task_evaluation_finish", {
+      ...ref(job),
+      id: context.id,
+      output: {
+        schemaVersion: "project-opportunity-group-v1",
+        opportunities: [forged],
+      },
+    }),
+  ).rejects.toThrow("INVALID_EVIDENCE");
+  await f.dispatch("task_evaluation_finish", {
+    ...ref(job),
+    id: context.id,
+    output: {
+      schemaVersion: "project-opportunity-group-v1",
+      opportunities: [
+        first,
+        {
+          ...first,
+          title: "Second private opportunity",
+          problem: "Different issue",
+        },
+      ],
+    },
+  });
+  const done = await f.dispatch("task_finish", {
+    ...ref(job),
+    evaluationIds: [context.id],
+  });
+  expect(done.proposalIds).toHaveLength(2);
+  for (const id of done.proposalIds) {
+    const p = (await f.t.run((ctx) => ctx.db.get(id as Id<"proposals">)))!;
+    expect(p.references?.[0]).toMatchObject({
+      schemaVersion: "private-source-reference-v1",
+      runId: f.privateVariantSelection.runId,
+      insightId: "private-one",
+    });
+    expect(p.privateEvaluationOrigin?.kind).toBe("private_source_variant");
+  }
+  expect(
+    (
+      await f.owner.query(api.localLibraryTasks.resume, {
+        organizationId: f.org,
+        sourceId: f.source,
+        cursor: null,
+      })
+    ).items,
+  ).toEqual([]);
+  expect(
+    (
+      await f.owner.query(api.localLibraryTasks.resume, {
+        organizationId: f.org,
+        sourceId: f.source,
+        cursor: null,
+        privateVariantSelection: f.privateVariantSelection,
+      })
+    ).items,
+  ).toMatchObject([{ id: job.runId }]);
+});
 afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();

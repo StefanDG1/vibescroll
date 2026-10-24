@@ -1,5 +1,13 @@
 # Foundational document change log
 
+## F062: private Work Cloud media observations, October 24
+
+Updated Research, Avatar, Offer and Beliefs together with [F062](idea-backlog.md#f062-private-work-cloud-media-observations-october-24), [ADR 143](../adr/143-private-work-cloud-media-observations.md), the foundational README and remaining-work checkpoints. The new entries distinguish the default-off media-v2 candidate and authenticated client reports from independently verified host/runtime/model/media evidence. They retain private-only results, sampled coverage, provider-local raw data, explicit existing grant/lease authority and no automatic dispatch, fake assets/provenance, catalog publication or paid fallback.
+
+Evidence: 98 focused tests preceded review; root corrected the native extension finding and final combined checks remain pending. The native no-GitHub probe exposed tools but lacked host-policy inspection/official task ID and had a requested/reported model discrepancy. Separate canonical audio-only five-insight/twenty-citation verification and the private local 48-frame/seven-insight result retain their own scope. PR 155 is merged/released, compatible PR 156 is merged but undeployed, and corrected cleanup PR 157 CI is pending. None establishes Cloud media acceptance.
+
+The review records the whole-post/full-media/multiple-proposal gap, counterargument and concrete acceptance test. Audience, prices, purchased allowances, six beliefs, lifetime deferral and publication rights remain unchanged. The current US$3 cap retains US$2.8762037111015744 with US$0.1237962888984258 headroom; completed-day reconciliation releases only eligible worst-case holds. Older entries preserve their dates and claims. No source content or private chat/task identifiers are public, and no campaign or new spending follows.
+
 ## F061: separate private text reanalysis, October 24
 
 [ADR 138](../adr/138-private-source-text-results-on-existing-runs.md) reuses existing task runs for separately approved private text results and retains only small version pointers on the source. Generic source analysis and citations remain unchanged. A distinct local runtime protocol excludes unsupported older workers. Original rights, result identity, current read scope and privacy cleanup remain authoritative.
@@ -318,3 +326,7 @@ Updated all four briefs for the owner's link-to-local-extraction default, one-ti
 ## F062: private variant project integration, October 24
 
 The four foundational documents record explicitly selected earned private text insights for existing project evaluation and plans. [ADR 139](../adr/139-private-variant-project-references.md) defines actual run/output provenance, separate runtime admission and privacy. Candidate implementation is in progress; real model usefulness, media/skills/Cloud and production remain unverified. This is not a shared catalog contribution or marketing outcome.
+
+## October 24: F063 whole-post project application
+
+Synchronized all four foundations with the owner-approved retained transcript/images toggle, independent proposal groups and Cloud readiness-before-approval ordering. Scope reuses existing systems. Production and provider evidence, the same cumulative US$3 cap and unvalidated benefit claims remain separate.

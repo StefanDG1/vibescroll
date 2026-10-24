@@ -44,13 +44,13 @@ async function packet(response: Response) {
   }
   return response.json();
 }
-function mcp(enabled: boolean, scopes = ["analysis:execute"]) {
+function mcp(enabled: boolean, scopes = ["analysis:execute"], media = false) {
   const invoke = vi.fn(async () => ({
     ok: true,
     status: 200,
     value: { accepted: true },
   }));
-  const handler = createKnowledgeHandler(invoke, false, enabled);
+  const handler = createKnowledgeHandler(invoke, false, enabled, media);
   return {
     invoke,
     async call(method: string, params: unknown) {
@@ -189,4 +189,53 @@ it("preserves the original non-completion raw byte limits, including whitespace 
       true,
     ),
   ).toBe(false);
+});
+
+it("exposes preparation only behind the separate media gate and transports its bounded scalar through MCP", async () => {
+  const text = mcp(true);
+  const oldTools = (await packet(await text.call("tools/list", {}))).result
+    .tools;
+  expect(
+    oldTools.some((t: { name: string }) => t.name === "work_cloud_prepare"),
+  ).toBe(false);
+  const host = mcp(false, ["analysis:execute"], true);
+  const tools = (await packet(await host.call("tools/list", {}))).result.tools;
+  expect(
+    tools.some((t: { name: string }) => t.name === "work_cloud_prepare"),
+  ).toBe(true);
+  const args = {
+    ...lease,
+    preparationJson: JSON.stringify({
+      evidence: Array(220).fill({ text: '"'.repeat(30) }),
+    }),
+  };
+  expect(
+    (
+      await packet(
+        await host.call("tools/call", {
+          name: "work_cloud_prepare",
+          arguments: args,
+        }),
+      )
+    ).result.structuredContent,
+  ).toEqual({ accepted: true });
+  expect(host.invoke).toHaveBeenCalledExactlyOnceWith(
+    "work_cloud_prepare",
+    args,
+  );
+  expect(cloudCompletionEnvelope({ operation: "work_cloud_prepare" })).toBe(
+    true,
+  );
+  expect(
+    cloudCompletionEnvelope(
+      { method: "tools/call", params: { name: "work_cloud_prepare" } },
+      true,
+    ),
+  ).toBe(true);
+  host.invoke.mockClear();
+  await host.call("tools/call", {
+    name: "work_cloud_prepare",
+    arguments: { ...args, providerVerified: true },
+  });
+  expect(host.invoke).not.toHaveBeenCalled();
 });

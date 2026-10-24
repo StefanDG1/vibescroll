@@ -21,6 +21,7 @@ import { taskDevice } from "./lib/localTaskAuthority";
 import { snapshotScopeCurrent } from "../packages/repositories/scope";
 import type { PrivateEvaluationOrigin } from "../packages/contracts/private-evaluation-context";
 import { validatePrivateEvaluationBrief } from "./lib/privateEvaluationContext";
+import { projectApplicationQuote } from "./lib/projectApplication";
 import { quoteSourceTask, approveSourceTask } from "./lib/sourceReanalysisTask";
 import {
   releaseSourcePointer,
@@ -75,10 +76,17 @@ export const resume = query({
             run.actor === actor._id &&
             run.task &&
             (a.privateVariantSelection
-              ? run.task.schemaVersion === "3.0.0" &&
+              ? (run.task.schemaVersion === "3.0.0" ||
+                  (run.task.schemaVersion === "4.0.0" &&
+                    !!run.task.privateVariantSelection)) &&
                 canonicalJson(run.task.privateVariantSelection) ===
                   canonicalJson(a.privateVariantSelection)
-              : run.task.schemaVersion !== "3.0.0" || !!a.proposalId) &&
+              : (run.task.schemaVersion !== "3.0.0" &&
+                  !(
+                    run.task.schemaVersion === "4.0.0" &&
+                    run.task.privateVariantSelection
+                  )) ||
+                !!a.proposalId) &&
             (a.proposalId
               ? run.task.schemaVersion !== "2.0.0" &&
                 run.task.proposal?.id === a.proposalId
@@ -136,9 +144,11 @@ export const localTaskArgs = {
   privateEvaluationBrief: v.optional(v.string()),
   privateVariantSelection: v.optional(privateVariantSelectionValue),
   privateSourceBrief: v.optional(v.string()),
+  includeSourceContent: v.optional(v.boolean()),
   expectedPrivateVersion: v.optional(v.number()),
 };
 type Selection = {
+  includeSourceContent?: boolean;
   organizationId: Id<"organizations">;
   workload: "project_evaluation" | "plan_draft";
   deviceId: Id<"devices">;
@@ -163,8 +173,12 @@ export async function localTaskQuote(
   if (
     a.privateVariantSelection ||
     variantOrigin(inherited?.privateEvaluationOrigin)
-  )
-    return quotePrivateVariantTask(ctx, a, expiresAt);
+  ) {
+    const quoted = await quotePrivateVariantTask(ctx, a, expiresAt);
+    return a.includeSourceContent === undefined
+      ? quoted
+      : projectApplicationQuote(ctx, quoted.payload, a.includeSourceContent);
+  }
   ensure(
     !a.members ||
       (a.members.length > 0 &&
@@ -405,7 +419,9 @@ export async function localTaskQuote(
     ...(privateEvaluationOrigin ? { privateEvaluationOrigin } : {}),
     quoteExpiresAt: expiresAt,
   };
-  return { payload, hash: await digest(canonicalJson(payload)) };
+  return a.includeSourceContent === undefined
+    ? { payload, hash: await digest(canonicalJson(payload)) }
+    : projectApplicationQuote(ctx, payload, a.includeSourceContent);
 }
 
 export const capabilities = query({

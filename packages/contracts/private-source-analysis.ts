@@ -78,6 +78,7 @@ export const localTaskRuntimeValue = v.object({
     v.union(
       v.literal("source_reanalysis_text_v1"),
       v.literal("project_private_variant_v1"),
+      v.literal("project_apply_source_v1"),
     ),
   ),
 });

@@ -11,6 +11,10 @@ import {
 } from "./lib/repositoryContent";
 import { RETRIEVAL_VERSION } from "../packages/repositories/retrieval";
 import { selectedInsights } from "../packages/insights/scope";
+import {
+  buildProjectSourceContent,
+  currentProjectSourceImage,
+} from "./lib/projectSourceContent";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import {
   contentExportSections,
@@ -503,6 +507,8 @@ export const reserveMatch = mutation({
     repositoryId: v.id("repositories"),
     maxCredits: v.number(),
     insightIds: v.optional(v.array(v.string())),
+    includeSourceContent: v.optional(v.boolean()),
+    multipleProposals: v.optional(v.boolean()),
   },
   handler: async (ctx, a) => {
     const source = await ctx.db.get(a.id),
@@ -576,14 +582,30 @@ export const reserveMatch = mutation({
       insights.length === source.analysis.insights.length
         ? ""
         : `:scope:${await digest(JSON.stringify(insights.map((i: any) => i.id)))}`;
-    const semanticKey = `match:${RETRIEVAL_VERSION}:${source._id}:${source.generation}:${source.updatedAt}:${repo._id}:${repo.sha}:${repo.profileVersion}${suffix}`;
+    const sourceContent =
+      a.includeSourceContent === true
+        ? await buildProjectSourceContent(ctx, source)
+        : undefined;
+    const applySuffix =
+      a.multipleProposals === true || a.includeSourceContent !== undefined
+        ? `:apply-v2:${a.multipleProposals === true ? "distinct" : "single"}:${sourceContent?.binding.contentHash ?? "insights-only"}`
+        : "";
+    const semanticKey = `match:${RETRIEVAL_VERSION}:${source._id}:${source.generation}:${source.updatedAt}:${repo._id}:${repo.sha}:${repo.profileVersion}${suffix}${applySuffix}`;
     const old = await ctx.db
       .query("matchingJobs")
       .withIndex("by_key", (q) => q.eq("key", semanticKey))
       .unique();
     if (
       old?.proposalId &&
-      (await currentMatchingProposal(ctx, old, source, repo, actor._id))
+      (await currentMatchingProposal(ctx, old, source, repo, actor._id)) &&
+      (!old.proposalIds ||
+        (
+          await Promise.all(
+            old.proposalIds.map((id) =>
+              currentMatchingProposal(ctx, old, source, repo, actor._id, id),
+            ),
+          )
+        ).every(Boolean))
     )
       return {
         source: scopedSource,
@@ -592,6 +614,7 @@ export const reserveMatch = mutation({
         semanticKey,
         cached: true,
         sourceRevisionRegistry,
+        sourceContent,
       };
     ensure(
       old?.state !== "pending",
@@ -612,6 +635,9 @@ export const reserveMatch = mutation({
         attempt,
         reservationKey: key,
         proposalId: undefined,
+        proposalIds: undefined,
+        multipleProposals: a.multipleProposals === true,
+        projectContentHash: sourceContent?.binding.contentHash,
         insightIds: insights.map((i: any) => i.id),
         actor: actor._id,
         sourceGeneration: source.generation,
@@ -629,6 +655,8 @@ export const reserveMatch = mutation({
         state: "pending",
         attempt,
         reservationKey: key,
+        multipleProposals: a.multipleProposals === true,
+        projectContentHash: sourceContent?.binding.contentHash,
         insightIds: insights.map((i: any) => i.id),
         actor: actor._id,
         sourceGeneration: source.generation,
@@ -645,7 +673,75 @@ export const reserveMatch = mutation({
       semanticKey,
       cached: false,
       sourceRevisionRegistry,
+      sourceContent,
     };
+  },
+});
+export const matchingContext = internalQuery({
+  args: {
+    key: v.string(),
+    reservationKey: v.string(),
+    baseSha: v.string(),
+    profileVersion: v.number(),
+    imageId: v.optional(v.string()),
+  },
+  handler: async (ctx, a) => {
+    const job = await ctx.db
+      .query("matchingJobs")
+      .withIndex("by_key", (q) => q.eq("key", a.key))
+      .unique();
+    const source = job && (await ctx.db.get(job.sourceId)),
+      repo = job && (await ctx.db.get(job.repositoryId));
+    ensure(
+      process.env.RESTORE_LOCK !== "true" &&
+        process.env.DISABLE_INFERENCE !== "true" &&
+        job?.state === "pending" &&
+        job.reservationKey === a.reservationKey &&
+        job.actor &&
+        source &&
+        repo &&
+        job.organizationId === source.organizationId &&
+        repo.organizationId === source.organizationId &&
+        source.state === "ready" &&
+        source.rightsAttested &&
+        sourceRetained(source) &&
+        source.generation === job.sourceGeneration &&
+        source.updatedAt === job.sourceRevision &&
+        repo.enabled &&
+        repo.confirmed &&
+        repo.sha === a.baseSha &&
+        repo.profileVersion === a.profileVersion &&
+        (await actorCurrent(ctx, job.organizationId, job.actor)),
+      "APPROVAL_STALE",
+      "Matching permissions or source/project context changed before processing.",
+    );
+    if (source.currentRevisionId || source.orderedMedia)
+      await sharedTypedCitations(ctx, source);
+    if (a.imageId) {
+      ensure(
+        job.projectContentHash,
+        "APPROVAL_STALE",
+        "No image disclosure was approved.",
+      );
+      return { image: await currentProjectSourceImage(ctx, source, a.imageId) };
+    }
+    const content = job.projectContentHash
+      ? await buildProjectSourceContent(ctx, source)
+      : null;
+    ensure(
+      !content || content.binding.contentHash === job.projectContentHash,
+      "APPROVAL_STALE",
+      "The approved retained transcript or images changed before processing.",
+    );
+    const image = a.imageId
+      ? content?.images.find((item) => item.id === a.imageId)
+      : undefined;
+    ensure(
+      !a.imageId || image,
+      "APPROVAL_STALE",
+      "The approved image is unavailable or expired.",
+    );
+    return image ? { image } : {};
   },
 });
 export const finishMatch = internalMutation({
@@ -1368,6 +1464,7 @@ export const exportPage = query({
         permitted.push({
           ...row,
           output: undefined,
+          opportunityGroup: undefined,
           ...("goal" in row
             ? { title: "Unavailable improvement", goal: "" }
             : {}),

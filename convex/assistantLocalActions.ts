@@ -6,6 +6,26 @@ import { uploadLocalFrame, localEvaluationBundle } from "./localLibraryActions";
 import { authorizeRepository } from "./lib/githubAuthorization";
 import { retrieveContext } from "../packages/providers/github";
 import { repositoryCheckContext } from "../packages/plans/repository-checks";
+import { loadProjectSourceImage } from "../packages/providers/project-source-images";
+export const taskSourceFrame = internalAction({
+  args: { credentialHash: v.string(), args: v.any() },
+  handler: async (ctx, a): Promise<any> => {
+    const image = await ctx.runMutation(internal.assistantLocal.operation, {
+      credentialHash: a.credentialHash,
+      operation: "task_source_frame_prepare",
+      args: a.args,
+    });
+    const pixels = await loadProjectSourceImage(image);
+    const current = await ctx.runMutation(internal.assistantLocal.operation, {
+      credentialHash: a.credentialHash,
+      operation: "task_source_frame_prepare",
+      args: a.args,
+    });
+    if (JSON.stringify(image) !== JSON.stringify(current))
+      throw Error("PROJECT_SOURCE_IMAGE_CHANGED");
+    return { id: image.id, ...pixels };
+  },
+});
 export const frame = internalAction({
   args: {
     credentialHash: v.string(),

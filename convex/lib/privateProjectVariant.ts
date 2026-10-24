@@ -17,6 +17,10 @@ import { taskDevice } from "./localTaskAuthority";
 import { runtimeCurrent } from "./privateSourceAnalysis";
 import { snapshotScopeCurrent } from "../../packages/repositories/scope";
 import { improvementCurrent } from "./improvementContext";
+import {
+  projectApplicationCache,
+  projectApplicationBundle,
+} from "./projectApplication";
 
 export async function quotePrivateVariantTask(
   ctx: QueryCtx,
@@ -335,7 +339,8 @@ export async function variantTaskEvidence(
 ) {
   const task = run.task;
   ensure(
-    task?.schemaVersion === "3.0.0" &&
+    (task?.schemaVersion === "3.0.0" ||
+      (task?.schemaVersion === "4.0.0" && !!task.privateVariantSelection)) &&
       task.privateEvaluationBrief === undefined &&
       task.members.length === 0 &&
       task.topicId === undefined &&
@@ -347,7 +352,7 @@ export async function variantTaskEvidence(
       ctx,
       run.organizationId,
       run.actor,
-      task.privateVariantSelection,
+      task.privateVariantSelection!,
     ),
     origin = variantOrigin(task.privateEvaluationOrigin);
   ensure(
@@ -376,7 +381,7 @@ export async function prepareVariantEvaluation(
   const current = await variantTaskEvidence(ctx, run),
     task = run.task!;
   ensure(
-    task.schemaVersion === "3.0.0" &&
+    (task.schemaVersion === "3.0.0" || task.schemaVersion === "4.0.0") &&
       task.workload === "project_evaluation" &&
       run.repositories.includes(repositoryId),
     "FORBIDDEN",
@@ -388,7 +393,7 @@ export async function prepareVariantEvaluation(
     sourceSetHash = await digest(
       canonicalJson({ references, topicBindings: [] }),
     );
-  const key = `knowledge-evaluation:private-source-variant-v1:${repo._id}:${repo.sha}:${repo.profileVersion}:${repo.selectionVersion ?? 0}:${sourceSetHash}:${task.preferenceVersion}:${await digest(canonicalJson(task.privateEvaluationOrigin))}`;
+  const key = `knowledge-evaluation:private-source-variant-v1:${repo._id}:${repo.sha}:${repo.profileVersion}:${repo.selectionVersion ?? 0}:${sourceSetHash}:${task.preferenceVersion}:${await digest(canonicalJson(task.privateEvaluationOrigin))}${projectApplicationCache(run)}`;
   const old = await ctx.db
     .query("knowledgeEvaluations")
     .withIndex("by_key", (q) => q.eq("key", key))
@@ -471,6 +476,7 @@ export async function prepareVariantEvaluation(
   return {
     id,
     cached: old?.state === "ready",
+    ...(await projectApplicationBundle(ctx, run)),
     evidence: current.evidence,
     repo,
     preference: preference?.note ?? "",

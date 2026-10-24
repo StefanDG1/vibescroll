@@ -84,6 +84,17 @@ export type EvaluationReference = z.infer<typeof evaluationReference>;
 export const privateEvaluation = evaluation.extend({
   references: z.array(evaluationReference).min(1).max(12),
 });
+export const evaluationGroup = z.strictObject({
+  schemaVersion: z.literal("project-opportunity-group-v1"),
+  opportunities: z.array(evaluation).min(1).max(5),
+});
+export const privateEvaluationGroup = evaluationGroup.extend({
+  opportunities: z.array(privateEvaluation).min(1).max(5),
+});
+export const evaluationGroupJson = z.toJSONSchema(evaluationGroup);
+export const privateEvaluationGroupJson = z.toJSONSchema(
+  privateEvaluationGroup,
+);
 export const issueApproval = z.strictObject({
   id: z.string().min(1).max(100),
   version: z.number().int().positive(),

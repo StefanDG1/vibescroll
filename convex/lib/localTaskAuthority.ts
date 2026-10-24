@@ -1,4 +1,5 @@
 import { variantTaskEvidence } from "./privateProjectVariant";
+import { projectApplicationContent } from "./projectApplication";
 import type { QueryCtx, MutationCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
 import { ensure } from "../../packages/policy";
@@ -176,7 +177,7 @@ export async function taskBindingsCurrent(
   );
   ensure(
     t &&
-      ["1.0.0", "3.0.0"].includes(t.schemaVersion) &&
+      ["1.0.0", "3.0.0", "4.0.0"].includes(t.schemaVersion) &&
       run.actor === actorId &&
       ["queued", "active"].includes(run.state) &&
       run.expiresAt > Date.now() &&
@@ -208,7 +209,10 @@ export async function taskBindingsCurrent(
     "APPROVAL_STALE",
     "The account, catalogue or task lease changed.",
   );
-  if (t!.schemaVersion === "3.0.0") {
+  if (
+    t!.schemaVersion === "3.0.0" ||
+    (t!.schemaVersion === "4.0.0" && t.privateVariantSelection)
+  ) {
     await variantTaskEvidence(ctx, run);
     ensure(
       runtimeCurrent(device, t.localRuntimeHash) &&
@@ -218,6 +222,17 @@ export async function taskBindingsCurrent(
       "APPROVAL_STALE",
       "Reconnect the approved private project runtime.",
     );
+  }
+  if (t.schemaVersion === "4.0.0") {
+    ensure(
+      runtimeCurrent(device, t.localRuntimeHash) &&
+        device.localTaskRuntime!.value.features.includes(
+          "project_apply_source_v1",
+        ),
+      "APPROVAL_STALE",
+      "Reconnect the approved full post evaluation runtime.",
+    );
+    await projectApplicationContent(ctx, run);
   }
   for (const b of t!.sourceBindings) {
     const s = await ctx.db.get(b.sourceId);
@@ -229,6 +244,7 @@ export async function taskBindingsCurrent(
         s.updatedAt === b.revision &&
         (await digest(canonicalJson(s.analysis))) === b.analysisHash &&
         (t!.schemaVersion === "3.0.0" ||
+          (t!.schemaVersion === "4.0.0" && !!t.privateVariantSelection) ||
           (await referencesCurrent(
             ctx,
             run.organizationId,

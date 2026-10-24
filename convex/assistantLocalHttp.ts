@@ -23,6 +23,7 @@ export const runner = httpAction(async (ctx, request) => {
           "done",
           "fail",
           "task_context",
+          "task_source_frame",
           "task_heartbeat",
           "task_evaluation_finish",
           "task_finish",
@@ -41,28 +42,39 @@ export const runner = httpAction(async (ctx, request) => {
     ).join("");
     const args: any = body.args;
     const result =
-      body.operation === "frame"
-        ? await ctx.runAction(internal.assistantLocalActions.frame, {
+      body.operation === "task_source_frame"
+        ? await ctx.runAction(internal.assistantLocalActions.taskSourceFrame, {
             credentialHash,
-            id: args.id,
-            frameId: args.frameId,
-            data: args.data,
+            args,
           })
-        : body.operation === "task_context"
-          ? await ctx.runAction(internal.assistantLocalActions.taskContext, {
+        : body.operation === "frame"
+          ? await ctx.runAction(internal.assistantLocalActions.frame, {
               credentialHash,
-              args,
+              id: args.id,
+              frameId: args.frameId,
+              data: args.data,
             })
-          : body.operation === "evaluation"
-            ? await ctx.runAction(internal.assistantLocalActions.evaluation, {
+          : body.operation === "task_context"
+            ? await ctx.runAction(internal.assistantLocalActions.taskContext, {
                 credentialHash,
                 args,
               })
-            : await ctx.runMutation(internal.assistantLocal.operation, {
-                credentialHash,
-                operation: body.operation,
-                args,
-              });
+            : body.operation === "evaluation"
+              ? await ctx.runAction(internal.assistantLocalActions.evaluation, {
+                  credentialHash,
+                  args,
+                })
+              : await ctx.runMutation(internal.assistantLocal.operation, {
+                  credentialHash,
+                  operation: body.operation,
+                  args,
+                });
+    if (
+      body.operation === "task_source_frame" &&
+      new TextEncoder().encode(JSON.stringify(result)).byteLength >
+        2 * 1024 * 1024
+    )
+      throw Error("PROJECT_SOURCE_IMAGE_RESPONSE_LIMIT");
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return Response.json(

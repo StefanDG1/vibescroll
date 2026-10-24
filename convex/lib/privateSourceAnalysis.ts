@@ -647,7 +647,9 @@ export async function scrubSourceResults(
     .paginate({ cursor, numItems: 5 });
   for (const run of page.page) {
     const task =
-      run.task?.schemaVersion === "2.0.0" || run.task?.schemaVersion === "3.0.0"
+      run.task?.schemaVersion === "2.0.0" ||
+      run.task?.schemaVersion === "3.0.0" ||
+      run.task?.schemaVersion === "4.0.0"
         ? run.task
         : null;
     if (

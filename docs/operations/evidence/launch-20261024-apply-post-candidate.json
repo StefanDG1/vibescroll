@@ -1,0 +1,69 @@
+{
+  "recordedAt": "2026-10-24T15:15:00Z",
+  "stage": "implementation candidate; not production acceptance",
+  "baseCommit": "a943a3257f3e32ca8cf9ae09a9a61f7a1a7e732c",
+  "scope": [
+    "private Work Cloud media handoff",
+    "whole-post Apply with default-on retained-source toggle",
+    "one to five distinct proposals per repository"
+  ],
+  "integratedOffline": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "completedAt": "2026-10-24T15:10:33.6752812Z",
+    "exitCode": 0,
+    "unitTests": 1528,
+    "authTests": 40,
+    "uiAndPublicKnowledgeTests": 217,
+    "hostedTestsSkipped": 3,
+    "types": "passed",
+    "lint": "passed",
+    "marketingAndStarterBuilds": "passed",
+    "nativeAndPythonChecks": "passed"
+  },
+  "subsequentPresentationOnlyChange": {
+    "change": "reused existing check-label alignment for the new checkbox",
+    "focusedOwnPlanUiTests": 39,
+    "result": "passed",
+    "exactHeadCi": "pending"
+  },
+  "nativeBrowser": {
+    "synthetic": true,
+    "actualComponentAndCompiledCss": true,
+    "desktopWidth": 1280,
+    "desktopTheme": "light",
+    "mobileWidth": 320,
+    "mobileTheme": "dark",
+    "reducedMotion": true,
+    "scrollWidth": 320,
+    "defaultOn": true,
+    "nativeToggleOff": true,
+    "productionCalls": 0,
+    "ownedFixtureTabsClosed": true,
+    "ownedFixtureServerStopped": true
+  },
+  "reviews": {
+    "managedAndSourceContent": "High review cleared after disclosure-race fix",
+    "ownSubscriptionV4": "High review cleared; actual provider execution separate",
+    "rootOwnSubscriptionFocusedChecks": 117
+  },
+  "retainedFailures": [
+    "Initial managed group fixtures omitted the inspected manifest; fixture corrected, validator preserved.",
+    "Initial whole check rejected a Node-only helper missing its runtime declaration; declaration corrected and native Convex bundle plus complete check passed.",
+    "Own-plan UI fixtures selected the new checkbox instead of the intended repository; selectors corrected and all39passed.",
+    "A runner negative fixture missed the newly required exact source binding; fixture corrected without relaxing the check."
+  ],
+  "screenshots": [
+    "assets/apply-post-desktop.png",
+    "assets/apply-post-mobile.png"
+  ],
+  "productionVideoToCitedResult": "pending actual Work Cloud and canonical read-back",
+  "cloudReadiness": "Narrow native network permission granted; restricted proxy/TLS HEAD succeeded. Pinned prerequisite preparation remains incomplete.",
+  "budget": {
+    "cumulativeCapUSD": 3,
+    "retainedUSD": 2.4788707111015746,
+    "headroomUSD": 0.5211292888984254,
+    "oldUnknownAndFutureHoldsRetained": true,
+    "settledInvoice": false
+  },
+  "publicationAndExecutionApprovals": "unchanged; proposal acceptance grants no coding or publication"
+}

@@ -145,6 +145,9 @@ export const productTables = {
     attempt: v.number(),
     reservationKey: v.string(),
     proposalId: v.optional(v.id("proposals")),
+    proposalIds: v.optional(v.array(v.id("proposals"))),
+    multipleProposals: v.optional(v.boolean()),
+    projectContentHash: v.optional(v.string()),
     insightIds: v.optional(v.array(v.string())),
     actor: v.optional(v.id("users")),
     sourceGeneration: v.optional(v.number()),
@@ -561,6 +564,7 @@ export const productTables = {
     planDraftActor: v.optional(v.id("users")),
     localPlanRunId: v.optional(v.id("localLibraryRuns")),
     localEvaluationId: v.optional(v.id("knowledgeEvaluations")),
+    opportunityIndex: v.optional(v.number()),
     planHash: v.optional(v.string()),
     version: v.number(),
   })

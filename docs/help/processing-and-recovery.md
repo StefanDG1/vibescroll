@@ -57,3 +57,11 @@ This private test route appears only for eligible configured accounts. General p
 6. Refresh the existing post after completion. Inspect its coverage and citations. A queued approval or a message in chat is not a saved result. Refreshing the page can recover instructions while that approval is still unclaimed and current.
 
 The first environment preparation can download a model and take longer than a warm run. Reuse verified cached prerequisites where supported. Source access, speech quality, sampled image coverage, provider retention and subscription limits still apply. VibeScroll does not automatically launch or wake a Cloud task. A missing plugin permission requires the supported reconnection/consent flow, never a copied token.
+
+## Work Cloud says a private library is required
+
+An older workspace can still use team access even if it is named Personal workspace. On the post, choose **Review private-library setup**, then **Review private-library upgrade** in Team settings. This review starts no analysis.
+
+If you are the original creator and only member, with no active invitations or another private library, you can review the private-only acknowledgement and choose **Make this library private**. Sign in again if requested. Existing posts, projects and links stay in place. Invitations and ownership transfer are unavailable in a private library; use a separate team workspace for collaboration.
+
+A refusal leaves the workspace unchanged. Follow the displayed reason, or choose an existing separate private library from Your workspaces. Making a library private does not connect a processing account or grant execution. Review the assistant connection and approve the exact post afterward. Experimental Cloud availability and successful video execution remain separate.

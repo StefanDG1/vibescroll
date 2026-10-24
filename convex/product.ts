@@ -688,6 +688,10 @@ export const detail = query({
         ? await filing(ctx, id)
         : undefined,
       privateLibrary: Boolean(reader.organization.privateOwnerId),
+      workCloudPrivateLibraryRequired:
+        !reader.organization.privateOwnerId &&
+        reader.membership.role === "owner" &&
+        workCloudMediaAllowed(reader.actor.subject),
       workCloudTextEnabled:
         reader.organization.privateOwnerId === reader.actor._id &&
         workCloudTextAllowed(reader.actor.subject),

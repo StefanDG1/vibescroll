@@ -1,5 +1,11 @@
 # Configure scoped assistant access
 
+## Older workspaces and private Cloud analysis, October 24
+
+The compatible private Cloud protocol is deployed, and the founder connection now exposes `work_cloud_claim`, `work_cloud_input`, `work_cloud_heartbeat`, `work_cloud_prepare`, `work_cloud_complete` and `work_cloud_fail`. The new provider `analysis:execute` permission preserves the existing eight scopes and callback. Normal OAuth consent, the matching app grant and exact post approval are separate requirements. Tool discovery is not a successful video run.
+
+An older workspace named Personal workspace can still use team permissions. The [ADR 147 candidate](../adr/147-explicit-legacy-private-library-adoption.md) adds an explicit sole-owner upgrade in Team settings while keeping post/project URLs. It refuses other members, active invitations and an existing separate private library. No automatic migration or grant expansion follows. Root must publish and verify the exact candidate before describing this control as live.
+
 Mode: how-to. The October 7 one-client private acceptance pilot is enabled; broader acceptance remains incomplete. The official ChatGPT connected UI has been verified. Exact app grants, actual tools and provider revocation remain separate checks. Configuration and local tests do not establish them.
 
 October 17 duration update: [ADR 108](../adr/108-assistant-access-until-revoked.md) adds an explicit **Until I turn access off** choice, alongside seven and thirty days. Existing grants keep their recorded duration until the owner reviews and saves a replacement. Choose all posts to include future eligible unfiled, Personal and Business posts. Keep the context-read action and select confirmed library or project context for profile discovery. A new grant still requires app sign-in within five minutes. OAuth renewal is separate; reconnect only when provider authentication requires it. Exact deployment and owner activation are recorded in implementation status.

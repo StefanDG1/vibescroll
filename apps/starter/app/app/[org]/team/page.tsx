@@ -4,6 +4,7 @@ import { ActionForm } from "@/components/action-form";
 import { inviteMember, changeMember, revokeInvite } from "@/app/actions";
 import { Card, Input, Label, Select, Badge } from "@companynerve/ui";
 import Link from "next/link";
+import { PrivateLibraryUpgrade } from "@/components/private-library-upgrade";
 export default async function Page({
   params,
 }: {
@@ -36,6 +37,9 @@ export default async function Page({
     <>
       <h1>Your team</h1>
       <div className="stack">
+        {info.role === "owner" && (
+          <PrivateLibraryUpgrade organizationId={org} />
+        )}
         <Card>
           <div className="table-wrap">
             <table>

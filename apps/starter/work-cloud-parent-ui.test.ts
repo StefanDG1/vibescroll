@@ -152,6 +152,36 @@ function server(value: any) {
     ),
   );
 }
+it.each(["owner", "viewer", "unavailable"])(
+  "offers only the current eligible %s the legacy privacy repair without Cloud authority",
+  async (role) => {
+    const source = {
+      ...queued,
+      state: "needs_upload",
+      generation: 0,
+      privateLibrary: false,
+      workCloudMediaEnabled: false,
+      workCloudTextEnabled: false,
+      workCloudPrivateLibraryRequired: role !== "unavailable",
+      workCloudHandoff: null,
+      personalAnalysis: undefined,
+    };
+    server(source);
+    const parent = props(source, { readOnly: role === "viewer" });
+    render(parent);
+    await settle();
+    const html = render(parent);
+    expect(html.includes("Review private-library setup")).toBe(
+      role === "owner",
+    );
+    if (role === "owner")
+      expect(html).toContain(`/app/${org}/team#private-library`);
+    expect(html).not.toContain("Review Work Cloud video");
+    expect(html).not.toContain("Resume this unclaimed Work Cloud handoff");
+    expect(parent.strictCall).not.toHaveBeenCalled();
+    expect(parent.call).not.toHaveBeenCalled();
+  },
+);
 it("keeps the existing unclaimed handoff after the actual source-detail refresh and a full remount without another approval", async () => {
   const saved = {
     ...queued,

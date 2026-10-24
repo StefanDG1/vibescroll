@@ -1,0 +1,139 @@
+{
+  "recordedAt": "2026-10-24T18:33:27.261Z",
+  "stage": "compatible production publication; Cloud video acceptance pending",
+  "frontend": {
+    "commit": "bcb86629e6d535859ce19ff82e0c740cbdf05e8a",
+    "version": "0.1.0-alpha.20261024164239.gbcb86629e6d5",
+    "deploymentId": "dpl_4kt1uKeq8XUgqnQWhSFc49Xa2qux",
+    "domain": "https://scroll.companynerve.com",
+    "machine": "fixed Basic; normal queue",
+    "createdAt": 1792865276801,
+    "buildingAt": 1792865277934,
+    "readyAt": 1792865320197,
+    "buildSeconds": 42.263,
+    "stagedHealth": "passed",
+    "stagedProcessingHelp": "passed",
+    "canonicalHealth": {
+      "status": 200,
+      "observedAt": "2026-10-24T18:21:07.737Z",
+      "exactCommit": true
+    }
+  },
+  "backend": {
+    "deployment": "bold-lemur-667",
+    "compatibleSource": "bcb86629e6d535859ce19ff82e0c740cbdf05e8a",
+    "sdk": "1.46.0",
+    "finishAcknowledged": true,
+    "finishHttpStatus": 200,
+    "finishResponseSHA256": "a9186a522f3f2f1aa54d940e8ece86ead851e9a003efdf67bb52dd825b87030c",
+    "newTables": 0,
+    "newIndexes": 0,
+    "newCron": 0,
+    "existingIndexBackfill": false,
+    "changedValidator": "sources only",
+    "guardHaltAfterCommit": "The SDK-valid finish response included five legacy-only definition paths outside the guard target-only allowlist. Preserve the halt and raw response; independent forensics confirmed the expected old/target path union. Do not repeat the committed push."
+  },
+  "configuration": {
+    "privateAccountAllowlistUnchanged": true,
+    "mediaEnabled": true,
+    "mediaVerifiedConfiguration": true,
+    "configurationIsNotVideoAcceptance": true,
+    "eventsEnabled": false,
+    "registeredOAuthPermission": "analysis:execute",
+    "priorEightOAuthPermissionsPreserved": true,
+    "pkceAndCallbackPreserved": true,
+    "existingConsentNotExpanded": true,
+    "newConsent": "pending",
+    "hostToolCatalog": "older eight tools observed; Cloud tools not yet exposed",
+    "firstProviderPermissionRequest": "HTTP422; shorter permission name/description accepted in a separately recorded corrected request; original response preserved as failure, reason not established"
+  },
+  "sourceAndCI": {
+    "compatiblePR": 160,
+    "compatibleExactHeadRun": 40112826373,
+    "compatibleExactHeadResult": "success",
+    "mainParityPR": 161,
+    "mainParitySource": "3489f91c3238d1c14331ba086f7806218e23c5aa",
+    "mainParityExactHeadRun": 40114692185,
+    "mainMerge": "da2c6f7d43d2c1175300074bdd1f8fbb99447445",
+    "mainVerifyRun": 40115131240,
+    "mainVersionRun": 40115131210,
+    "mainAlphaReleaseRun": 40115453530,
+    "allNamedRuns": "success",
+    "applyWholePostPR": 159,
+    "taskPRs159to161": "merged",
+    "unrelatedDependencyPR142": "untouched"
+  },
+  "offlineEvidence": {
+    "compatibleJavaScriptPassed": 1019,
+    "compatibleNativePassed": 19,
+    "compatiblePythonPassed": 15,
+    "compatibleHostedSkipped": 3,
+    "mainJavaScriptPassed": 1809,
+    "mainNativePassed": 19,
+    "mainPythonPassed": 33,
+    "mainHostedSkipped": 3,
+    "bothBuilds": "passed",
+    "types": "passed",
+    "lint": "zero errors/warnings",
+    "dependencyAuditHigh": 0,
+    "dependencyAuditCritical": 0,
+    "syntheticNativeHandoff": {
+      "actualComponentAndCss": true,
+      "widths": [320, 1280],
+      "themes": ["dark", "light"],
+      "productionRequests": 0,
+      "noHorizontalOverflow": true,
+      "expiredAndMismatchedHandoffHidden": true
+    }
+  },
+  "cloudRuntimePreparation": {
+    "githubRepositoryRequired": false,
+    "existingTaskRepositoryAttached": false,
+    "verifiedArtifacts": 29,
+    "newVideoRuns": 0,
+    "newVideoResults": 0,
+    "warmVideoSpeed": "unverified",
+    "requestedModelSettings": "Sol Medium; actual executed model/effort independently unverified",
+    "rawMediaPolicy": "provider-local, not independently attested deletion"
+  },
+  "budget": {
+    "cumulativeCapUSD": 3,
+    "retainedMaximumUSD": 2.9138707111015747,
+    "unreservedUSD": 0.0861292888984253,
+    "frontendEnvelopeStillHeldUSD": 0.65,
+    "olderUnknownAndFutureHoldsPreserved": true,
+    "settledInvoice": false,
+    "noNewPaidInference": true
+  },
+  "notLiveOrNotAccepted": [
+    "Actual Cloud source acquisition and cited result return",
+    "Fresh no-GitHub user acceptance",
+    "Full main migration with five new tables and 37 new indexes",
+    "Whole-post transcript/images toggle and distinct proposals in the serving application",
+    "Broader commercial own-subscription access",
+    "Remaining original R/P/N/C/M acceptance and external gates"
+  ],
+  "reservedOwnerTestPost": "One specifically reserved post remains unanalyzed; its private identifier is not published here.",
+  "subsequentCheckpoint": {
+    "at": "2026-10-24T19:01:30Z",
+    "humanReconnected": true,
+    "sixCloudToolsExposed": true,
+    "productionSetupRead": "privateLibrary=false; Cloud media authority refused",
+    "sourceRead": "one selected Reel remains generation0 without analysis/proposals; rights attested",
+    "knowledgePolicy": "disabled/paused",
+    "actualCloudVideoRuns": 0,
+    "legacyRepairADR": 147,
+    "legacyRepairLive": false,
+    "retainedMaximumUSD": 2.970870711101575,
+    "headroomUSD": 0.02912928889842492
+  },
+  "latestBudgetReconciliation": {
+    "retainedMaximumUSD": 2.745486157115575,
+    "headroomUSD": 0.25451384288442513,
+    "releasedCompletedConvexQueryWrapperUSD": 0.043184553984,
+    "releasedUnusedMatchedPublicChecksUSD": 0.182200000002,
+    "retainedFrontendUSD": 0.187799999998,
+    "basis": "Independent source review and measured completed responses; no credit assumption or old/Node/read/compute/future hold release.",
+    "invoiceSettled": false
+  }
+}

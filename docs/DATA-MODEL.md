@@ -59,6 +59,8 @@ Versioned records include `schemaVersion` and an immutable content hash. Public 
 
 ## Dashboard projections
 
+The Pro service catalog is a read projection of existing service-variant `publicArtifacts`. Its card contract is separate from the immutable `service-import-v1` DTO stored in `publicImports`; adding browse metadata cannot rewrite or invalidate saved copies. Browse uses the existing service-expiry index with one five-candidate page per request. It creates no store, index, queue, processing intent or contributor record. The existing explicit save creates the requesting actor's private import/source pair under current Pro; retained-copy rules continue after cancellation.
+
 A `sourceCard` query returns a summary, at most three preview main points, coverage, tags, related repo count, proposal counts, and PR counts. It also returns counts for no-fit, already-implemented, unsupported, and unreviewed matches. The detail query loads the full list.
 
 PR counts use unique provider PR IDs. A source-level `hasMergedChange` is true only when at least one linked PR has a verified merge. The UI says "1 merged PR" rather than implying that every idea from the video shipped.

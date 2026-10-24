@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-24T02:12:52.957Z",
+  "baseCommit": "1852c47",
+  "mode": "Local offline candidate; not live catalog acceptance",
+  "scope": "C4 bounded Pro browse, inspect and existing explicit private save inside Library",
+  "architecture": {
+    "stores": "Existing service publicArtifacts and private publicImports; no new store/queue/index/cron",
+    "page": "One fixed-range five-candidate page; per-artifact currentness validation; strict versioned cards; empty filtered continuation preserved",
+    "access": "Authenticated private owner and current verified Pro before global artifact reads; preview/save independently recheck",
+    "snapshots": "service-import-v1 DTO and cancellation/removal/retention behavior unchanged",
+    "ui": "Explicit browse/refresh/next/preview/save, local expiry timer, scope and request fencing, no processing/polling/automatic pagination",
+    "entitlementBoundary": "Known parent entitlement changes remount the panel; remote changes are checked at the next operation. No live billing subscription feed is claimed."
+  },
+  "verification": {
+    "environment": "Windows Node24.22.1, pnpm12.3.4, credential-stripping offline wrapper",
+    "integratedCheck": "passed",
+    "mainUnit": 1258,
+    "authApi": 38,
+    "publicAndUi": 97,
+    "installer": 14,
+    "pythonPcm": 15,
+    "pythonProxy": 6,
+    "pythonSampling": 3,
+    "pythonOrderedMedia": 9,
+    "buildPolicy": 5,
+    "totalPassed": 1445,
+    "hostedSkipped": 3,
+    "documents": 310,
+    "skillSnapshots": 12,
+    "lint": "zero warnings/errors",
+    "types": "root, Convex and all workspace projects passed",
+    "productionBuilds": "both passed",
+    "focused": "58 service-artifact cases including five new browse cases;11 new UI handler/lifecycle cases",
+    "auditObservedAt": "2026-10-24T02:12:52.957Z",
+    "audit": "policy passed;0 high/critical,2 low,2 moderate;no exceptions",
+    "review": "Independent Sol High no P1; identified missing known-entitlement wiring corrected without new billing polling",
+    "browser": "Prepared an actual-component hydrated synthetic loopback fixture. Chrome requested fresh remote-debugging consent; no new browser check or screenshot passed. User card remains pending."
+  },
+  "retainedFailuresAndLimits": [
+    "First integrated check stopped at test access to untyped RegisteredQuery._handler. Extracted typed browseServiceArtifactsCore and reran root types/focused tests, then complete offline check successfully. No casts or controls weakened.",
+    "Author initially invoked focused verification without the offline wrapper. Preserve that run as an unwrapped limitation; authoritative evidence is the later credential-sanitized offline rerun. Read-only source review found no live dispatch/import-time provider action in that fixture path.",
+    "Two existing dynamic-filesystem tracing build warnings and Node experimental type-stripping warning remain.",
+    "Handler/lifecycle fixture tests are not native browser, production, independent-user or provider acceptance."
+  ],
+  "budget": {
+    "sameCumulativeCapUsd": "3",
+    "combinedReservationsUsd": "2.8092885298898517",
+    "unallocatedUsd": "0.1907114701101483",
+    "newHostedCallsThisSlice": 0,
+    "inferenceJobs": 0,
+    "purchases": 0,
+    "unknownHoldsPreserved": true,
+    "settledInvoice": false
+  },
+  "remaining": [
+    "Catalog search, categories/creator provenance and bounded graph",
+    "Verified user-owned Cloud artifact origin/contribution and rights/terms release",
+    "Native browser and independent/live catalog lifecycle acceptance",
+    "Complete backend migration prediction and conservative publication bound",
+    "All other retained R/P/N/C/M requirements"
+  ]
+}

@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F051: bounded Pro catalog candidate, October 24
+
+Synchronized all four briefs for the bounded Pro Library panel, existing immutable saved-copy behavior and passing integrated local checks. Preserved browser/production/provider/search/graph gaps, original audience/prices/valid purchases and conservative cumulative reservations. No campaign or live catalog claim was added.
+
 ## F050: compatible frontend live, October 24
 
 Synchronized all four briefs for PR 141 canonical frontend publication, exact-head/main CI and narrowly bounded public reads. Preserved the held backend, complete PR 140 scope, current prices, lifetime deferral and all provider/privacy/human gates. Linked actual failures and conservative reservations without treating them as settled billing or customer acceptance.

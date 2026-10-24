@@ -19,6 +19,8 @@ import {
   type SocialRights,
 } from "../packages/social/contracts";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { browseServiceArtifactsCore } from "../convex/serviceArtifacts";
+import { serviceCatalogPage } from "../packages/social/catalog";
 import {
   googleCostPolicy,
   googleInferenceModel,
@@ -687,6 +689,231 @@ async function savedCopy(s: Fixture) {
   if (layer.origin !== "service") throw Error("fixture");
   return { r, args, saved, layer };
 }
+
+async function catalogArtifacts(s: Fixture, count: number) {
+  const first = await commit(s);
+  return s.t.run(async (ctx) => {
+    const row = (await ctx.db.get(first.artifactId))!;
+    if (row.origin !== "service") throw Error("fixture");
+    const { _id, _creationTime, ...copy } = row;
+    const ids = [_id];
+    for (let i = 1; i < count; i++)
+      ids.push(
+        await ctx.db.insert("publicArtifacts", {
+          ...copy,
+          retainUntil: row.retainUntil - i,
+        }),
+      );
+    return ids;
+  });
+}
+
+it("authorizes catalog browsing before reading global artifacts for anonymous, non-Pro and foreign callers", async () => {
+  const s = await setup();
+  await commit(s);
+  const r = await recipient(s);
+  const other = await recipient(s, "foreign-browser");
+  const args = { organizationId: r.org, cursor: null };
+  const assertDenied = async (client: typeof r.client, message: string) =>
+    client.query(async (ctx) => {
+      const original = ctx.db.query.bind(ctx.db);
+      const globalReads: string[] = [];
+      const spy = vi.spyOn(ctx.db, "query").mockImplementation((table) => {
+        if (table === "publicArtifacts") globalReads.push(table);
+        return original(table);
+      });
+      try {
+        await expect(browseServiceArtifactsCore(ctx, args)).rejects.toThrow(
+          message,
+        );
+        expect(globalReads).toEqual([]);
+      } finally {
+        spy.mockRestore();
+      }
+      return null;
+    });
+  await assertDenied(s.t, "Sign in");
+  await assertDenied(other.client, "Organization unavailable");
+  for (const tier of ["free", "starter"]) {
+    await s.t.run(async (ctx) => {
+      const w = (await ctx.db
+        .query("wallets")
+        .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+        .unique())!;
+      await ctx.db.patch(w._id, { tier });
+    });
+    await assertDenied(r.client, "Pro");
+  }
+});
+
+it("returns bounded validated catalog cards and preserves paging as time advances", async () => {
+  const s = await setup();
+  s.result.summary = "S".repeat(1250);
+  await s.t.run((ctx) => ctx.db.patch(s.sourceId, { analysis: s.result }));
+  const ids = await catalogArtifacts(s, 7);
+  const r = await recipient(s);
+  const first = await r.client.query(api.serviceArtifacts.browse, {
+    organizationId: r.org,
+    cursor: null,
+  });
+  expect(serviceCatalogPage.parse(first)).toEqual(first);
+  expect(first.page).toHaveLength(5);
+  expect(first).toMatchObject({
+    version: "service-catalog-v1",
+    availability: "ready",
+    isDone: false,
+  });
+  expect(first.continueCursor).toBeTypeOf("string");
+  expect(first.page[0]).toEqual({
+    artifactId: ids[0],
+    compatibilityKey: s.compatibility.compatibilityKey,
+    title: "Read the label",
+    summary: "S".repeat(1200),
+    summaryTruncated: true,
+    sourceUrl: s.prepared.post.canonical,
+    platform: "instagram",
+    language: "en",
+    insightCount: 1,
+    availableUntil: s.prepared.post.observedAt + s.rights.maxRetentionMs,
+  });
+  vi.setSystemTime(s.now + 1);
+  const second = await r.client.query(api.serviceArtifacts.browse, {
+    organizationId: r.org,
+    cursor: first.continueCursor,
+  });
+  expect(second).toMatchObject({
+    availability: "ready",
+    isDone: true,
+    continueCursor: null,
+  });
+  expect(second.page).toHaveLength(2);
+  expect(
+    [...first.page, ...second.page].map((card) => card.artifactId),
+  ).toEqual(ids);
+  const serialized = JSON.stringify(first);
+  for (const hidden of [
+    s.actor,
+    s.sourceId,
+    "A visible synthetic label",
+    "processingRunId",
+    "categories",
+    "citations",
+    "fundingOwner",
+  ])
+    expect(serialized).not.toContain(hidden);
+});
+
+it("filters expired, blocked, stale and malformed records without erasing an empty page continuation", async () => {
+  const s = await setup();
+  const ids = await catalogArtifacts(s, 8);
+  const r = await recipient(s);
+  await s.t.run(async (ctx) => {
+    await ctx.db.patch(ids[0], { contentHash: "b".repeat(64) });
+    await ctx.db.patch(ids[1], { evidenceHash: "c".repeat(64) });
+    await ctx.db.patch(ids[2], { data: { malformed: true } });
+    await ctx.db.patch(ids[3], { generation: 2 });
+    await ctx.db.patch(ids[4], { data: undefined });
+    await ctx.db.patch(ids[5], { state: "blocked" });
+    await ctx.db.patch(ids[7], { retainUntil: s.now });
+  });
+  const first = await r.client.query(api.serviceArtifacts.browse, {
+    organizationId: r.org,
+    cursor: null,
+  });
+  expect(first).toMatchObject({
+    availability: "ready",
+    page: [],
+    isDone: false,
+  });
+  expect(first.continueCursor).toBeTypeOf("string");
+  const second = await r.client.query(api.serviceArtifacts.browse, {
+    organizationId: r.org,
+    cursor: first.continueCursor,
+  });
+  expect(second).toMatchObject({
+    availability: "ready",
+    isDone: true,
+    continueCursor: null,
+  });
+  expect(second.page.map((card) => card.artifactId)).toEqual([ids[6]]);
+});
+
+it("reports unavailable configuration after authorization and rejects empty or overlong catalog cursors", async () => {
+  const s = await setup();
+  await commit(s);
+  const r = await recipient(s);
+  for (const cursor of ["", "x".repeat(8193)])
+    await expect(
+      r.client.query(api.serviceArtifacts.browse, {
+        organizationId: r.org,
+        cursor,
+      }),
+    ).rejects.toThrow("valid catalog continuation");
+  for (const [name, value] of [
+    ["CREATOR_SERVICE_REUSE_ENABLED", "false"],
+    ["CREATOR_PROVIDER_CONFIGURATION", "unavailable"],
+  ]) {
+    vi.stubEnv(name, value);
+    expect(
+      await r.client.query(api.serviceArtifacts.browse, {
+        organizationId: r.org,
+        cursor: null,
+      }),
+    ).toEqual({
+      version: "service-catalog-v1",
+      availability: "unavailable",
+      page: [],
+      continueCursor: null,
+      isDone: true,
+    });
+    await expect(
+      s.t.query(api.serviceArtifacts.browse, {
+        organizationId: r.org,
+        cursor: null,
+      }),
+    ).rejects.toThrow("Sign in");
+    vi.stubEnv("CREATOR_SERVICE_REUSE_ENABLED", "true");
+  }
+});
+
+it("keeps contribution available on trial and rechecks Pro on each browse continuation without losing a saved copy", async () => {
+  const s = await setup();
+  expect(await s.t.run(async (ctx) => (await wallet(ctx, s.org)).tier)).toBe(
+    "trial",
+  );
+  const ids = await catalogArtifacts(s, 7);
+  const r = await recipient(s);
+  const saved = await r.client.mutation(api.serviceArtifacts.save, {
+    organizationId: r.org,
+    artifactId: ids[0],
+    expectedCompatibilityKey: s.compatibility.compatibilityKey,
+  });
+  const detail = await r.client.query(api.publicKnowledge.savedDetail, {
+    sourceId: saved.sourceId,
+  });
+  const first = await r.client.query(api.serviceArtifacts.browse, {
+    organizationId: r.org,
+    cursor: null,
+  });
+  await s.t.run(async (ctx) => {
+    const billing = (await ctx.db
+      .query("billing")
+      .withIndex("by_org", (q) => q.eq("organizationId", r.org))
+      .unique())!;
+    await ctx.db.patch(billing._id, { status: "canceled" });
+  });
+  await expect(
+    r.client.query(api.serviceArtifacts.browse, {
+      organizationId: r.org,
+      cursor: first.continueCursor,
+    }),
+  ).rejects.toThrow("Pro");
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toEqual(detail);
+});
 
 it.each([
   "free",

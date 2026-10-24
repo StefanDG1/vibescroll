@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 24: browse the Pro catalog through existing service artifacts
+
+[ADR 127](adr/127-bounded-pro-catalog-browsing.md) adds bounded on-demand browse/inspect/save inside Library. Current Pro and source authority are checked before disclosure, saved-copy DTOs remain separate, and no new queue/store/index or hosted processing route is introduced. Search, graph, provider activation and production catalog acceptance remain open.
+
 ## October 24: compatible public/security release before bounded product migration
 
 [ADR 126](adr/126-compatible-public-and-security-release.md) separates the reviewed public design and dependency fixes from the full product candidate while its populated-index migration bound remains unresolved. Preserve the entire full launch scope in PR 140. The same cumulative cap is US$3, old holds remain, lifetime access is later, and no provider/privacy gate changes.

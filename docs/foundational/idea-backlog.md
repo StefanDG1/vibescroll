@@ -1,5 +1,13 @@
 # Foundational idea backlog
 
+## F051: bounded Pro catalog candidate, October 24
+
+[ADR 127](../adr/127-bounded-pro-catalog-browsing.md) adds an on-demand Pro browse/inspect/save candidate inside Library, using existing artifacts/imports and preserving immutable saved copies after cancellation. The [local receipt](../operations/evidence/launch-20261024-catalog-browse.json) records 1,445 passing offline tests, three hosted skips, both builds and independent review. Native browser consent, exact-head CI and live catalog lifecycle remain pending. Search, categories/graph and verified Cloud contribution are still required.
+
+Keep public catalog availability pending. No new processing, contributor, provider approval, customer, saving or demand was observed. All-plan contribution does not confer catalog access; own valid results and private personalization remain separate. Current prices, audience, six beliefs, lifetime deferral and provider/privacy gates are unchanged. The same US$3 cap retains US$2.8092885298898517 in conservative reservations; this slice adds no hosted operation.
+
+Source: existing artifact contracts, integrated checks and independent review. Decision: provide inspectable Pro reuse through one existing system. Counterevidence: live provider/catalog acceptance, browser usability and market demand remain unverified. Test the real lifecycle and beginner use before stronger claims.
+
 ## F050: compatible frontend live, October 24
 
 [PR 141](https://github.com/StefanDG1/vibescroll/pull/141) published only the compatible public experience and frontend dependency backports. Canonical frontend `fba56d4`, alpha `0.1.0-alpha.20261024014829.gfba56d44c484`, passed exact-head/main CI, staged public reads and canonical health after exact-build promotion. Backend `abfdeff67` remains unchanged because its fresh prediction was incomplete. [The production receipt](../operations/evidence/launch-20261024-public-production.json) preserves failures, a remediated diagnostic credential exposure and conservative US$2.8092885298898517 reservations under the same US$3 cap.

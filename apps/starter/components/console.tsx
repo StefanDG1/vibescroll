@@ -59,6 +59,7 @@ import { EvidenceViewer } from "./evidence-viewer";
 import { AnalysisReview } from "./analysis-review";
 import { SetupJourney } from "./setup-journey";
 import { CreatorFollowing } from "./creator-following";
+import { ServiceCatalog } from "./service-catalog";
 import { CreatorDigest } from "./creator-digest";
 import { OwnPlanTaskControls } from "./own-plan-task-controls";
 import { OrderedFileUpload } from "./ordered-file-upload";
@@ -883,6 +884,7 @@ export function Console({
           "localTaskCapabilities",
           "localTaskResume",
           "serviceArtifactPreview",
+          "serviceArtifactBrowse",
           "localTaskQuote",
           "localTaskStatus",
           "localTaskApprove",
@@ -1322,6 +1324,22 @@ export function Console({
                   creditsPerSecond={
                     data.customerRoutes?.execution?.creditsPerSecond
                   }
+                />
+              )}
+              {view === "library" && !demo && data.privateLibrary && (
+                <ServiceCatalog
+                  key={organizationId}
+                  organizationId={organizationId}
+                  call={strictCall}
+                  disabled={readOnly}
+                  entitlementKey={JSON.stringify([
+                    data.usage?.wallet?.tier ?? null,
+                    data.usage?.wallet?.periodEnd ?? null,
+                    data.usage?.billing?.status ?? null,
+                    data.usage?.billing?.subscriptionId ?? null,
+                    data.usage?.billing?.verifiedAt ?? null,
+                    data.usage?.billing?.periodEnd ?? null,
+                  ])}
                 />
               )}
               {view === "library" && !demo && data.privateLibrary && (

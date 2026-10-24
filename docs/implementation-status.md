@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Bounded Pro catalog candidate, October 24
+
+The full branch now exposes on-demand browse, inspect and explicit save through the existing service artifact/import family inside Library. Private ownership/current verified Pro are checked before global artifact reads. One fixed-range five-candidate page returns only validated generic cards; currentness, unavailable configuration, empty filtered continuation and cancellation-safe saved copies retain their existing boundaries. No store, queue, index, cron or processing call was added. [ADR 127](adr/127-bounded-pro-catalog-browsing.md) defines the contract.
+
+The complete offline check passed 1,445 tests with three hosted skips, zero-warning lint, all types and both production builds. Validation covered 310 documents and twelve snapshots. The fresh audit passed with no high/critical findings and two low/two moderate findings. Independent High review found no remaining P1. Root corrected known-parent entitlement fencing without adding billing polling; remote changes are checked on each new operation. [The receipt](operations/evidence/launch-20261024-catalog-browse.json) preserves the resolved test typing failure, initial unwrapped verification limitation and browser consent block. Native browser, exact-head CI, production catalog acceptance, search/graph and Cloud contribution remain pending. Canonical frontend remains the separately verified `fba56d4`; this candidate has not been deployed.
+
 ## Compatible frontend live, October 24
 
 [PR 141](https://github.com/StefanDG1/vibescroll/pull/141) is merged. Exact tested head `efcf29c` and main `fba56d44c484260dc98e27174e943ee5ed21af51` passed CI 40050795332 and 40051452151. The fixed Basic production build completed in 38.994 seconds. Staged health, public home and sharing guide returned 200; the exact build was promoted, its canonical alias matched and canonical health confirmed alpha `0.1.0-alpha.20261024014829.gfba56d44c484`. Original domain auto-assignment was restored. [The receipt](operations/evidence/launch-20261024-public-production.json) preserves the CLI flag failure, offline correction of the guide-title assertion, metadata argument-transport error and immediately remediated diagnostic credential exposure.

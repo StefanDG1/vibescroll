@@ -5,6 +5,15 @@ import type { Id } from "./_generated/dataModel";
 import { access, limit } from "./lib";
 import { ensure } from "../packages/policy";
 import { captureAuthorized } from "./product";
+import { creatorConfiguration } from "./lib/creatorPolicy";
+import {
+  serviceCatalogCard,
+  serviceCatalogCursor,
+  serviceCatalogPage,
+  serviceCatalogPageSize,
+  serviceCatalogSummaryLimit,
+  type ServiceCatalogCard,
+} from "../packages/social/catalog";
 import {
   commitServiceArtifact,
   expireServiceArtifact,
@@ -74,6 +83,66 @@ async function privateOwner(
   );
   return authorization;
 }
+export async function browseServiceArtifactsCore(
+  ctx: QueryCtx,
+  a: { organizationId: Id<"organizations">; cursor: string | null },
+) {
+  await privateOwner(ctx, a.organizationId);
+  await requireProCatalogAccess(ctx, a.organizationId);
+  const cursor = serviceCatalogCursor.safeParse(a.cursor);
+  ensure(cursor.success, "INVALID_INPUT", "Use a valid catalog continuation.");
+  if (
+    process.env.CREATOR_SERVICE_REUSE_ENABLED !== "true" ||
+    !creatorConfiguration()
+  )
+    return serviceCatalogPage.parse({
+      version: "service-catalog-v1",
+      availability: "unavailable",
+      page: [],
+      continueCursor: null,
+      isDone: true,
+    });
+  const rows = await ctx.db
+    .query("publicArtifacts")
+    .withIndex("by_service_expiry", (q) =>
+      q.eq("origin", "service").eq("state", "eligible"),
+    )
+    .order("desc")
+    .paginate({ cursor: cursor.data, numItems: serviceCatalogPageSize });
+  const page: ServiceCatalogCard[] = [];
+  for (const row of rows.page) {
+    const current = await serviceArtifactCurrent(ctx, row);
+    if (!current) continue;
+    const dto = serviceArtifactDto(current);
+    const card = serviceCatalogCard.safeParse({
+      artifactId: row._id,
+      compatibilityKey: current.artifact.compatibilityKey,
+      title: (dto.insights[0]?.title || dto.title).slice(0, 240),
+      summary: dto.summary.slice(0, serviceCatalogSummaryLimit),
+      summaryTruncated: dto.summary.length > serviceCatalogSummaryLimit,
+      sourceUrl: dto.sourceUrl,
+      platform: current.prepared.post.platform,
+      language: dto.language,
+      insightCount: dto.insights.length,
+      availableUntil: current.artifact.retainUntil,
+    });
+    if (card.success) page.push(card.data);
+  }
+  return serviceCatalogPage.parse({
+    version: "service-catalog-v1",
+    availability: "ready",
+    page,
+    continueCursor: rows.isDone ? null : rows.continueCursor,
+    isDone: rows.isDone,
+  });
+}
+export const browse = query({
+  args: {
+    organizationId: v.id("organizations"),
+    cursor: v.union(v.string(), v.null()),
+  },
+  handler: browseServiceArtifactsCore,
+});
 export const preview = query({
   args: importArgs,
   handler: async (ctx, a) => {

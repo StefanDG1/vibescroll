@@ -47,6 +47,7 @@ const operations = {
   savePersonalLayer: ["mutation", api.publicKnowledge.savePersonalLayer],
   publicSaveEdition: ["mutation", api.publicKnowledge.saveEdition],
   serviceArtifactPreview: ["query", api.serviceArtifacts.preview],
+  serviceArtifactBrowse: ["query", api.serviceArtifacts.browse],
   serviceArtifactSave: ["mutation", api.serviceArtifacts.save],
   assistantIntakeStatus: ["query", api.assistantIntakeUi.status],
   assistantIntakeAction: ["mutation", api.assistantIntakeUi.act],

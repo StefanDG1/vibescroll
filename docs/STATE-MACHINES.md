@@ -4,6 +4,8 @@ Mode: reference. These state names are canonical for the specification.
 
 ## Source processing
 
+Catalog browsing has only transient interface states: closed, loading, page, inspecting, saving, unavailable and error. It creates no processing state or job. Closing the panel, leaving its workspace, changing entitlement scope or losing access fences pending responses. Every new page, preview and save rechecks server authority; cached browser state grants no access. A successful save uses the existing retained-copy lifecycle. Expired, removed or denied content clears from the current catalog view while the user's separately authored private work remains.
+
 `received -> validating -> queued -> acquiring -> extracting -> analyzing -> ready`
 
 Alternate terminal or waiting states are `needs_upload`, `needs_auth`, `unsupported`, `unavailable`, `low_confidence`, `budget_paused`, `failed`, `cancelled`, and `deleted`.

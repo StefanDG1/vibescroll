@@ -9,25 +9,57 @@ import type { MutationCtx } from "./_generated/server";
 import { wallet } from "./product";
 import { hostedSourceAllowed } from "./lib/hostedMediaAccess";
 export async function queueDeletion(ctx: MutationCtx, key: string) {
+  await dispatchDeletion(ctx, key, false);
+}
+async function dispatchDeletion(
+  ctx: MutationCtx,
+  key: string,
+  recheck: boolean,
+) {
   const old = await ctx.db
     .query("objectDeletions")
     .withIndex("by_key", (q) => q.eq("key", key))
     .unique();
+  if (recheck && !old) return;
+  recheck ||= old?.state === "deferred_recheck";
+  const attempts = old?.attempts ?? 0;
+  if (
+    !Number.isSafeInteger(attempts) ||
+    attempts < 0 ||
+    attempts >= (recheck ? 5 : 3) ||
+    (!recheck && (old?.state === "deleted" || old?.state === "failed"))
+  ) {
+    if (old && !["deleted", "failed"].includes(old.state))
+      await ctx.db.patch(old._id, {
+        state: "failed",
+        updatedAt: Math.max(Date.now(), old.updatedAt + 1),
+      });
+    return;
+  }
   const scheduleRechecks = old?.rechecksScheduledAt === undefined;
-  if (old)
-    await ctx.db.patch(old._id, {
-      state: "pending",
-      updatedAt: Date.now(),
-      ...(scheduleRechecks ? { rechecksScheduledAt: Date.now() } : {}),
-    });
+  const locked = process.env.RESTORE_LOCK === "true";
+  const nextAttempts = attempts + Number(!locked);
+  const updatedAt = Math.max(Date.now(), (old?.updatedAt ?? 0) + 1);
+  const update = {
+    // Exhausted normal retries leave the pending scan even while a final
+    // reserved attempt is running. Only its physical deletion receipt clears it.
+    state: locked
+      ? recheck
+        ? "deferred_recheck"
+        : "deferred"
+      : nextAttempts >= 3
+        ? "failed"
+        : "pending",
+    attempts: nextAttempts,
+    updatedAt,
+    ...(scheduleRechecks ? { rechecksScheduledAt: Date.now() } : {}),
+  };
+  if (old) await ctx.db.patch(old._id, update);
   else
     await ctx.db.insert("objectDeletions", {
       key,
-      state: "pending",
-      attempts: 0,
       createdAt: Date.now(),
-      updatedAt: Date.now(),
-      rechecksScheduledAt: Date.now(),
+      ...update,
     });
   // A previously issued PUT can finish after an immediate deletion. Retired
   // keys cannot be reused, and delayed checks close that bounded upload race.
@@ -36,17 +68,51 @@ export async function queueDeletion(ctx: MutationCtx, key: string) {
       await ctx.scheduler.runAfter(delay, internal.assets.recheckDeletion, {
         key,
       });
-  await ctx.scheduler.runAfter(0, internal.integrations.deleteObject, { key });
+  if (!locked)
+    await ctx.scheduler.runAfter(0, internal.integrations.deleteObject, {
+      key,
+      attempt: nextAttempts,
+      reservedAt: updatedAt,
+      recheck,
+    });
 }
+// A lock race still consumes its scheduled action budget. Preserve resumable
+// intent only within that finite budget; a stale callback cannot replace it.
+export const deferDeletion = internalMutation({
+  args: {
+    key: v.string(),
+    attempt: v.optional(v.number()),
+    reservedAt: v.optional(v.number()),
+    recheck: v.optional(v.boolean()),
+  },
+  handler: async (ctx, a) => {
+    const old = await ctx.db
+      .query("objectDeletions")
+      .withIndex("by_key", (q) => q.eq("key", a.key))
+      .unique();
+    if (
+      !old ||
+      a.attempt !== old.attempts ||
+      a.reservedAt !== old.updatedAt ||
+      !Number.isSafeInteger(a.attempt) ||
+      a.attempt! < 1
+    )
+      return;
+    const recheck = a.recheck || old.state === "deferred_recheck";
+    await ctx.db.patch(old._id, {
+      state:
+        old.attempts >= (recheck ? 5 : 3)
+          ? "failed"
+          : recheck
+            ? "deferred_recheck"
+            : "deferred",
+      updatedAt: Math.max(Date.now(), old.updatedAt + 1),
+    });
+  },
+});
 export const recheckDeletion = internalMutation({
   args: { key: v.string() },
-  handler: async (ctx, { key }) => {
-    const retired = await ctx.db
-      .query("objectDeletions")
-      .withIndex("by_key", (q) => q.eq("key", key))
-      .unique();
-    if (retired) await queueDeletion(ctx, key);
-  },
+  handler: (ctx, { key }) => dispatchDeletion(ctx, key, true),
 });
 export const grant = mutation({
   args: {
@@ -137,7 +203,12 @@ export const complete = internalMutation({
   },
 });
 export const deleteReceipt = internalMutation({
-  args: { key: v.string() },
+  args: {
+    key: v.string(),
+    attempt: v.optional(v.number()),
+    reservedAt: v.optional(v.number()),
+    recheck: v.optional(v.boolean()),
+  },
   handler: async (ctx, a) => {
     const asset = await ctx.db
       .query("assets")
@@ -148,8 +219,11 @@ export const deleteReceipt = internalMutation({
       .query("objectDeletions")
       .withIndex("by_key", (q) => q.eq("key", a.key))
       .unique();
-    if (job)
-      await ctx.db.patch(job._id, { state: "deleted", updatedAt: Date.now() });
+    if (job && a.attempt === job.attempts && a.reservedAt === job.updatedAt)
+      await ctx.db.patch(job._id, {
+        state: "deleted",
+        updatedAt: Math.max(Date.now(), job.updatedAt + 1),
+      });
     if (
       !(await ctx.db
         .query("webhookReceipts")

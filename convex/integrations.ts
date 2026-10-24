@@ -979,9 +979,17 @@ export const reconcilePRRun = internalAction({
   },
 });
 export const deleteObject = internalAction({
-  args: { key: v.string() },
+  args: {
+    key: v.string(),
+    attempt: v.optional(v.number()),
+    reservedAt: v.optional(v.number()),
+    recheck: v.optional(v.boolean()),
+  },
   handler: async (ctx, a) => {
-    if (process.env.RESTORE_LOCK === "true") return;
+    if (process.env.RESTORE_LOCK === "true") {
+      await ctx.runMutation(internal.assets.deferDeletion, a);
+      return;
+    }
     await removeStoredObject(a.key);
     await ctx.runMutation(internal.assets.deleteReceipt, a);
   },

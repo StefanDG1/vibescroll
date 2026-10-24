@@ -1,5 +1,11 @@
 # What help is still needed to finish the plan
 
+## Current account checkpoint, October 24 at 20:10 UTC
+
+VibeScroll reconnection is complete and exposes six Cloud execution tools. No further reconnection or private-adoption answer is needed now. The published preview correctly refused a second private library; use the active existing private library for the next source-scoped experiment. No ownership or content was changed. Root owns the remaining fiscal proof, sensitive app authentication when needed, grant/source approval and actual cited Cloud return. Do not ask the owner to repeat settled permission or product answers.
+
+The [production receipt](../../operations/evidence/launch-20261024-private-library-production.json) distinguishes the live compatible release from real Cloud acceptance, which is pending. Retained maximum US$2.8581559473235747 leaves US$0.1418440526764253 under the same US$3 ceiling. Do not start an unaffordable job or release old unknown/future-cleanup holds. Original human/provider items remain below; earlier checkpoints are historical.
+
 ## Current help needed, October 24
 
 Your VibeScroll reconnection is complete and all six Cloud tools are exposed. No further plugin consent is currently requested. The original saved-link workspace uses team permissions; the private Cloud gate requires a private library. Root is preparing the [ADR 147 repair](../../adr/147-explicit-legacy-private-library-adoption.md), which keeps existing posts, projects and URLs and refuses workspaces with other members, active invitations or another private library. After the tested control is published and a fresh preview confirms eligibility, root will show the exact private-only choice for your approval. No live adoption has happened.

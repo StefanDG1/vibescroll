@@ -1,5 +1,11 @@
 # VibeScroll complete product and launch plan
 
+## Published checkpoint, October 24 at 20:10 UTC
+
+Compatible frontend/backend `63a071d` is live. PRs 162/163 passed exact-head CI and are merged. Staged health/Help and canonical health passed. [The production receipt](../../operations/evidence/launch-20261024-private-library-production.json) records the post-commit verifier defect without retry. Reconnection exposes six Cloud tools. The privacy preview refused a second private library; an active private library already exists. Reuse it without moving original posts. No source, grant, ownership or analysis mutation was sent.
+
+Real production Cloud video return remains pending; the reserved test post is untouched. Retained maximum US$2.8581559473235747 leaves US$0.1418440526764253 under the same US$3 cap. Preserve future cleanup and older unknown holds. Full-main migration and public/provider/payment/independent acceptance remain separate. No further reconnection or private-adoption answer is needed now. All original and reconciled scope remains; checkpoints below are historical.
+
 ## Legacy workspace repair candidate, October 24
 
 The founder connection now exposes all six Cloud tools after normal reconnection. Bounded live reads confirmed that the selected Reel is still untouched and that its older workspace uses team permissions, so the private Cloud gate correctly refuses it. Its paid knowledge organizer is paused. [ADR 147](../../adr/147-explicit-legacy-private-library-adoption.md) adds an explicit, guarded in-place private-library upgrade through existing organization/Team controls. It preserves post/project IDs, refuses shared/invited or conflicting-private workspaces, and creates no job or grant. Backend 26 focused cases, eight UI cases and native synthetic mobile/desktop review pass; independent High review found no P1/P2. Root owns integrated checks, compatible publication and fresh operator approval before any live adoption.

@@ -1,5 +1,13 @@
 # October 22 launch implementation candidate
 
+## Live private-library checkpoint, October 24 at 20:10 UTC
+
+Compatible frontend/backend `63a071d`, version `0.1.0-alpha.20261024193841.g63a071d6ad74`, is published. PRs 162 and 163 are merged with passing exact-head CI. Staged health/Help and canonical health passed after exact-build promotion. [The production receipt](operations/evidence/launch-20261024-private-library-production.json) preserves the independently explained post-commit verifier failure and no retry. No tables, indexes or backfills changed. Fixed Basic builds, original Git suppression and automatic domain assignment remain.
+
+Normal reconnection is complete and all six Cloud execution tools are exposed. The privacy preview correctly refused adoption because an active private library already exists. No ownership, source, grant or analysis mutation was sent. Reuse that library for the next bounded experiment. No further reconnection or adoption consent is needed now; sensitive operations may still require fresh app sign-in.
+
+Actual production Cloud video return and speed remain unverified. The reserved owner-test post is untouched. The same US$3 cap retains US$2.8581559473235747, leaving US$0.1418440526764253 unallocated. These are conservative holds, not a settled invoice. Full-main Apply transcript/images and distinct proposals are merged but not serving while their migration is held. All original R/P/N/C/M scope, public commercial/provider, catalog, Stripe and independent-user gates remain. Earlier checkpoints below are historical.
+
 ## Legacy workspace repair candidate, October 24
 
 The founder connection now exposes all six Cloud tools after normal reconnection. Bounded live reads confirmed that the selected Reel is still untouched and that its older workspace uses team permissions, so the private Cloud gate correctly refuses it. Its paid knowledge organizer is paused. [ADR 147](adr/147-explicit-legacy-private-library-adoption.md) adds an explicit, guarded in-place private-library upgrade through existing organization/Team controls. It preserves post/project IDs, refuses shared/invited or conflicting-private workspaces, and creates no job or grant. Backend 26 focused cases, eight UI cases and native synthetic mobile/desktop review pass; independent High review found no P1/P2. The full offline check passes with 1,846 JavaScript, 19 native and 33 Python checks, three hosted skips, all types and both builds. [The integration receipt](operations/evidence/launch-20261024-private-library-adoption.json) retains the corrected lint failure and native evidence. Exact-head CI and compatible publication remain pending; root must obtain a fresh eligible preview and concrete operator approval before any live adoption.

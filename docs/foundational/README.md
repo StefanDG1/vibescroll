@@ -1,5 +1,11 @@
 # VibeScroller foundational document process
 
+## F067: live controls and pending Cloud results, October 24
+
+Compatible source `63a071d` is published. Reconnection exposes six Cloud execution tools. The live preview correctly refused a second private library; an active private library already exists. Reuse it. No source, ownership, grant or analysis mutation followed. [The production receipt](../operations/evidence/launch-20261024-private-library-production.json) separates publication from the still-pending real source-to-cited-result test.
+
+Keep optional GitHub, explicit source authority and the same US$3 cap. A connected tool does not prove analyzed media, speed, commercial availability or beginner success. Full-main, provider and independent acceptance remain separate. Audience, prices, allowances, beliefs and proprietary catalog decisions are unchanged. No campaign or customer outcome follows.
+
 ## F066: preserve older saved posts through explicit privacy repair, October 24
 
 A real connected account can expose Cloud tools while an older workspace still has team permissions. Its name does not establish privacy. [ADR 147](../adr/147-explicit-legacy-private-library-adoption.md) prepares an explicit original-creator/sole-owner upgrade using the existing workspace and unchanged post/project IDs. Current membership, invitations, recent authentication and another private library are checked again before adoption. Team collaboration uses a separate workspace.

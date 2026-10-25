@@ -128,6 +128,7 @@ export async function POST(request: Request) {
           if (operation === "events/subscribe") {
             const selected = eventSubscribe.parse(args);
             input = {
+              eventName: selected.name,
               ...selected.arguments,
               ...sealEventCredentials(
                 {
@@ -146,6 +147,7 @@ export async function POST(request: Request) {
                 principal,
                 selected.delivery.url,
                 selected.arguments,
+                selected.name,
               ),
             };
           }

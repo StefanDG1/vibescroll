@@ -6,6 +6,50 @@ import {
 } from "../../packages/policy/assistant";
 import { workspaceReadable } from "./workspacePrivacy";
 import { sourceWithinAssistantScope } from "./assistantSourceScope";
+import { workCloudSourceEligible } from "./workCloudSourceAccess";
+import { workCloudMediaAllowed, workCloudTextAllowed } from "./personalAccess";
+import { workCloudMediaPolicy } from "../../packages/contracts/work-cloud-text";
+import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
+import { internal } from "../_generated/api";
+export async function cloudProfileEligible(
+  ctx: QueryCtx,
+  actor: Doc<"users">,
+  organization: Doc<"organizations">,
+  grant: Doc<"assistantGrants">,
+) {
+  const client = assistantClients().find((c) => c.id === grant.clientId);
+  const scopes = [
+    "events:subscribe",
+    "analysis:request",
+    "analysis:execute",
+  ] as const;
+  const policyHash = Array.from(
+    new Uint8Array(
+      await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(canonicalJson(workCloudMediaPolicy)),
+      ),
+    ),
+    (b) => b.toString(16).padStart(2, "0"),
+  ).join("");
+  return (
+    eventsEnabled() &&
+    actor.status === "active" &&
+    grant.organizationId === organization._id &&
+    grant.actor === actor._id &&
+    assistantGrantActive(grant) &&
+    grant.libraryScope === "all" &&
+    grant.cloudRequestPolicy === "explicit_per_source_v1" &&
+    grant.cloudRequestPolicyHash === policyHash &&
+    !grant.analysisDefaults?.enabled &&
+    scopes.every(
+      (scope) => grant.scopes.includes(scope) && client?.scopes.includes(scope),
+    ) &&
+    (workCloudMediaAllowed(actor.subject) ||
+      workCloudTextAllowed(actor.subject)) &&
+    (await workCloudSourceEligible(ctx, organization, actor._id))
+  );
+}
 export const eventsEnabled = () =>
   process.env.MCP_ENABLED === "true" &&
   process.env.MCP_EVENTS_ENABLED === "true" &&
@@ -17,11 +61,10 @@ export async function eventSubscriptionCurrent(
 ) {
   if (!eventsEnabled() || s.state !== "active" || s.expiresAt <= Date.now())
     return false;
-  const [actor, organization, grant, source] = await Promise.all([
+  const [actor, organization, grant] = await Promise.all([
     ctx.db.get(s.actor),
     ctx.db.get(s.organizationId),
     ctx.db.get(s.grantId),
-    knownSource ? Promise.resolve(knownSource) : ctx.db.get(s.sourceId),
   ]);
   const member = await ctx.db
     .query("memberships")
@@ -40,7 +83,13 @@ export async function eventSubscriptionCurrent(
     grant.clientId !== s.clientId ||
     grant.version !== s.grantVersion ||
     !assistantGrantActive(grant) ||
-    !grant.scopes.includes("events:subscribe") ||
+    !grant.scopes.includes("events:subscribe")
+  )
+    return false;
+  if (!("sourceId" in s))
+    return cloudProfileEligible(ctx, actor, organization!, grant);
+  const source = knownSource ?? (await ctx.db.get(s.sourceId));
+  if (
     source?.organizationId !== s.organizationId ||
     source.state === "deleted" ||
     !source.rightsAttested ||
@@ -75,6 +124,137 @@ export async function eventSubscriptionCurrent(
     intake.generation === s.generation
   );
 }
+export async function cloudWaitingCurrent(
+  ctx: QueryCtx,
+  s: Doc<"assistantSubscriptions">,
+  source: Doc<"sources"> | null,
+  occurrence?: { generation: number; completedRevision: number },
+) {
+  if (
+    s.eventName !== "work_cloud_waiting" ||
+    !source ||
+    !(await eventSubscriptionCurrent(ctx, s))
+  )
+    return false;
+  const job = source.personalAnalysis;
+  if (
+    source.organizationId !== s.organizationId ||
+    source.state !== "queued" ||
+    !source.rightsAttested ||
+    job?.executor !== "work_cloud" ||
+    job.state !== "queued" ||
+    job.actor !== s.actor ||
+    source.generation !== job.generation ||
+    job.expiresAt <= Date.now() ||
+    job.cloud.grantId !== s.grantId ||
+    job.cloud.grantVersion !== s.grantVersion ||
+    job.cloud.clientId !== s.clientId ||
+    job.cloud.taskId ||
+    job.cloud.leaseTokenHash ||
+    job.cloud.claimedAt !== undefined ||
+    job.cloud.consentId ||
+    job.cloud.funding !== "own_subscription" ||
+    job.cloud.maxApiUsd !== 0 ||
+    !Number.isSafeInteger(job.approvedAt) ||
+    (occurrence &&
+      (occurrence.generation !== job.generation ||
+        occurrence.completedRevision !== job.approvedAt))
+  )
+    return false;
+  const actor = await ctx.db.get(s.actor);
+  if (
+    !actor ||
+    !(job.cloud.media
+      ? workCloudMediaAllowed(actor.subject)
+      : workCloudTextAllowed(actor.subject))
+  )
+    return false;
+  const grant = await ctx.db.get(s.grantId);
+  const organization = await ctx.db.get(s.organizationId);
+  return (
+    !!grant &&
+    !!organization &&
+    (await sourceWithinAssistantScope(
+      ctx,
+      grant,
+      organization,
+      s.actor,
+      source,
+      false,
+    ))
+  );
+}
+export async function eventDeliveryCurrent(
+  ctx: QueryCtx,
+  s: Doc<"assistantSubscriptions">,
+  d: Doc<"assistantDeliveries">,
+) {
+  if (d.subscriptionId !== s._id || d.organizationId !== s.organizationId)
+    return false;
+  if (
+    (s.eventName ?? "analysis_completed") !==
+    (d.eventName ?? "analysis_completed")
+  )
+    return false;
+  if (d.eventName === "work_cloud_connection_verified")
+    return eventSubscriptionCurrent(ctx, s);
+  const source = await ctx.db.get(d.sourceId);
+  if (d.eventName === "work_cloud_waiting")
+    return cloudWaitingCurrent(ctx, s, source, d);
+  return (
+    "sourceId" in s &&
+    source?.state === "ready" &&
+    source.generation === d.generation &&
+    s.sourceId === d.sourceId &&
+    (await eventSubscriptionCurrent(ctx, s, source))
+  );
+}
+// Only approval and exact unclaimed-request reuse call this. Subscription creation
+// deliberately performs no retrospective source scan and grants no execution.
+export async function notifyCloudWaiting(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+) {
+  const job = source.personalAnalysis;
+  if (!eventsEnabled() || job?.executor !== "work_cloud") return;
+  const subscriptions = await ctx.db
+    .query("assistantSubscriptions")
+    .withIndex("by_actor_client", (q) =>
+      q.eq("actor", job.actor).eq("clientId", job.cloud.clientId),
+    )
+    .take(21);
+  for (const s of subscriptions) {
+    if (!(await cloudWaitingCurrent(ctx, s, source))) continue;
+    const existing = await ctx.db
+      .query("assistantDeliveries")
+      .withIndex("by_source_occurrence", (q) =>
+        q
+          .eq("subscriptionId", s._id)
+          .eq("sourceId", source._id)
+          .eq("generation", job.generation)
+          .eq("completedRevision", job.approvedAt),
+      )
+      .unique();
+    if (existing) continue;
+    const now = Date.now();
+    const id = await ctx.db.insert("assistantDeliveries", {
+      organizationId: s.organizationId,
+      subscriptionId: s._id,
+      eventName: "work_cloud_waiting",
+      sourceId: source._id,
+      generation: job.generation,
+      completedRevision: job.approvedAt,
+      state: "pending",
+      attempts: 0,
+      dueAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await ctx.scheduler.runAfter(0, internal.assistantEventRuntime.deliver, {
+      id,
+    });
+  }
+}
 export async function queueSourceCompletion(
   ctx: MutationCtx,
   source: Doc<"sources">,
@@ -93,6 +273,7 @@ export async function queueSourceCompletion(
     .take(21);
   const queued = [];
   for (const s of subscriptions) {
+    if (!("sourceId" in s)) continue;
     if (!(await eventSubscriptionCurrent(ctx, s, source))) continue;
     const existing = await ctx.db
       .query("assistantDeliveries")

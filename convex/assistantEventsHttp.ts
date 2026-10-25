@@ -27,9 +27,16 @@ const inputSchema = z.discriminatedUnion("operation", [
       operation: z.literal("events/subscribe"),
       args: z
         .object({
+          eventName: z
+            .enum([
+              "analysis_completed",
+              "work_cloud_waiting",
+              "work_cloud_connection_verified",
+            ])
+            .optional(),
           profileId: z.string().min(1).max(100),
-          sourceId: z.string().min(1).max(100),
-          generation: z.number().int().nonnegative(),
+          sourceId: z.string().min(1).max(100).optional(),
+          generation: z.number().int().nonnegative().optional(),
           grantVersion: z.number().int().positive(),
           ciphertext: z.string().min(1).max(30000),
           keyVersion: z.string().regex(/^[1-9][0-9]{0,2}$/),
@@ -41,7 +48,14 @@ const inputSchema = z.discriminatedUnion("operation", [
             .nullable()
             .optional(),
         })
-        .strict(),
+        .strict()
+        .refine(
+          (a) =>
+            a.eventName && a.eventName !== "analysis_completed"
+              ? a.sourceId === undefined && a.generation === undefined
+              : a.sourceId !== undefined && a.generation !== undefined,
+          "Use exact event arguments.",
+        ),
     })
     .strict(),
 ]);
@@ -89,7 +103,7 @@ export const events = httpAction(async (ctx, request) => {
         {
           ...input.args,
           profileId: input.args.profileId as Id<"organizations">,
-          sourceId: input.args.sourceId as Id<"sources">,
+          sourceId: input.args.sourceId as Id<"sources"> | undefined,
         },
       );
       value = result.verified ? result.result : result;

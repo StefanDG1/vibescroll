@@ -4,6 +4,7 @@ import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { productTables } from "../convex/productSchema";
 import { assistantTables } from "../convex/assistantSchema";
+import schema from "../convex/schema";
 import { sourceType, retrievalState } from "../convex/sourceSchema";
 import {
   revertEvidenceValidator,
@@ -11,7 +12,10 @@ import {
 } from "../convex/lib/prObservation";
 import { readFileSync } from "node:fs";
 const base = "346b718baf91ba9847fbb707be7bbe069df57257";
-it("adds no table/index/config and widens only the exact personal job, ordered receipt and Cloud request opt-in", () => {
+it("preserves all tables/config and permits only the exact Cloud validators and one C2 delivery index", () => {
+  // The application exports 89 tables. The deployment's 131-table inventory
+  // also includes component tables; their configuration is byte-checked below.
+  expect(Object.keys(schema.tables)).toHaveLength(89);
   const old = execFileSync("git", ["show", `${base}:convex/productSchema.ts`], {
     encoding: "utf8",
   });
@@ -102,6 +106,65 @@ it("adds no table/index/config and widens only the exact personal job, ordered r
       });
       delete current.documentType.value.cloudRequestPolicy;
       delete current.documentType.value.cloudRequestPolicyHash;
+    }
+    if (name === "assistantSubscriptions" || name === "assistantDeliveries") {
+      const literal = (value: string) => ({ type: "literal", value });
+      const eventField = (value: string, optional = false) => ({
+        fieldType: literal(value),
+        optional,
+      });
+      const legacy = structuredClone(prior.documentType);
+      legacy.value.eventName = eventField("analysis_completed", true);
+      const profile = structuredClone(prior.documentType);
+      delete profile.value.sourceId;
+      delete profile.value.generation;
+      if (name === "assistantSubscriptions") {
+        delete profile.value.revision;
+        profile.value.eventName = {
+          fieldType: {
+            type: "union",
+            value: [
+              literal("work_cloud_waiting"),
+              literal("work_cloud_connection_verified"),
+            ],
+          },
+          optional: false,
+        };
+        expect(current.documentType).toEqual({
+          type: "union",
+          value: [legacy, profile],
+        });
+      } else {
+        const waiting = structuredClone(prior.documentType);
+        waiting.value.eventName = eventField("work_cloud_waiting");
+        profile.value.eventName = eventField("work_cloud_connection_verified");
+        expect(current.documentType).toEqual({
+          type: "union",
+          value: [legacy, waiting, profile],
+        });
+        const added = current.indexes.filter(
+          (index: { indexDescriptor: string }) =>
+            index.indexDescriptor === "by_source_occurrence",
+        );
+        expect(added).toEqual([
+          {
+            indexDescriptor: "by_source_occurrence",
+            fields: [
+              "subscriptionId",
+              "sourceId",
+              "generation",
+              "completedRevision",
+            ],
+          },
+        ]);
+        current.indexes = current.indexes.filter(
+          (index: { indexDescriptor: string }) =>
+            index.indexDescriptor !== "by_source_occurrence",
+        );
+      }
+      // Normalize only the exact, asserted C2 changes. Every legacy field,
+      // existing index and other exported table setting must still match.
+      current.documentType = prior.documentType;
     }
     expect(current).toEqual(prior);
   }

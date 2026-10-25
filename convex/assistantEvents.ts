@@ -1,23 +1,39 @@
 import { internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
-import { eventSubscriptionCurrent, eventsEnabled } from "./lib/assistantEvents";
+import {
+  cloudProfileEligible,
+  eventDeliveryCurrent,
+  eventSubscriptionCurrent,
+  eventsEnabled,
+} from "./lib/assistantEvents";
 import { ensure } from "../packages/policy";
 import { audit, limit } from "./lib";
 import { internal } from "./_generated/api";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 const selected = {
+  eventName: v.optional(
+    v.union(
+      v.literal("analysis_completed"),
+      v.literal("work_cloud_waiting"),
+      v.literal("work_cloud_connection_verified"),
+    ),
+  ),
   profileId: v.id("organizations"),
-  sourceId: v.id("sources"),
-  generation: v.number(),
+  sourceId: v.optional(v.id("sources")),
+  generation: v.optional(v.number()),
   grantVersion: v.number(),
 };
 async function reviewed(
   ctx: import("./_generated/server").QueryCtx,
   args: {
     profileId: import("./_generated/dataModel").Id<"organizations">;
-    sourceId: import("./_generated/dataModel").Id<"sources">;
-    generation: number;
+    eventName?:
+      | "analysis_completed"
+      | "work_cloud_waiting"
+      | "work_cloud_connection_verified";
+    sourceId?: import("./_generated/dataModel").Id<"sources">;
+    generation?: number;
     grantVersion: number;
   },
 ) {
@@ -27,6 +43,26 @@ async function reviewed(
     a.grant.version === args.grantVersion,
     "APPROVAL_STALE",
     "Review the current Events grant.",
+  );
+  if (args.eventName && args.eventName !== "analysis_completed") {
+    ensure(
+      args.sourceId === undefined &&
+        args.generation === undefined &&
+        ["analysis:request", "analysis:execute"].every((scope) =>
+          a.scopes.includes(scope),
+        ) &&
+        (await cloudProfileEligible(ctx, a.actor, a.organization, a.grant)),
+      "FORBIDDEN",
+      "Review current owner Cloud policy and all-library execution scopes before subscribing to profile Events.",
+    );
+    return { ...a, source: null };
+  }
+  ensure(
+    args.sourceId !== undefined &&
+      Number.isSafeInteger(args.generation) &&
+      args.generation! >= 0,
+    "INVALID_INPUT",
+    "Completion requires an exact source generation.",
   );
   const source = await ctx.db.get(args.sourceId);
   const scoped =
@@ -49,7 +85,7 @@ async function reviewed(
           q
             .eq("actor", a.actor._id)
             .eq("clientId", a.client.id)
-            .eq("sourceId", args.sourceId),
+            .eq("sourceId", args.sourceId!),
         )
         .unique();
   ensure(
@@ -83,10 +119,17 @@ export const prepare = internalQuery({
         q.eq("actor", a.actor._id).eq("clientId", a.client.id),
       )
       .take(21);
-    const sourceRows = await ctx.db
-      .query("assistantSubscriptions")
-      .withIndex("by_source", (q) => q.eq("sourceId", a.source._id))
-      .take(21);
+    const sourceRows = await (
+      a.source
+        ? ctx.db
+            .query("assistantSubscriptions")
+            .withIndex("by_source", (q) => q.eq("sourceId", a.source!._id))
+        : ctx.db
+            .query("assistantSubscriptions")
+            .withIndex("by_org", (q) =>
+              q.eq("organizationId", a.organization._id),
+            )
+    ).take(21);
     ensure(
       old || (actorRows.length < 20 && sourceRows.length < 20),
       "QUOTA_EXCEEDED",
@@ -155,7 +198,9 @@ export const install = internalMutation({
           old.clientId === a.client.id &&
           old.consentId === a.identity.sid &&
           old.organizationId === a.organization._id &&
-          old.sourceId === a.source._id),
+          (old.eventName ?? "analysis_completed") ===
+            (args.eventName ?? "analysis_completed") &&
+          ("sourceId" in old ? old.sourceId === a.source?._id : !a.source)),
       "FORBIDDEN",
       "Subscription ownership changed.",
     );
@@ -167,10 +212,17 @@ export const install = internalMutation({
             q.eq("actor", a.actor._id).eq("clientId", a.client.id),
           )
           .take(21),
-        await ctx.db
-          .query("assistantSubscriptions")
-          .withIndex("by_source", (q) => q.eq("sourceId", a.source._id))
-          .take(21),
+        await (
+          a.source
+            ? ctx.db
+                .query("assistantSubscriptions")
+                .withIndex("by_source", (q) => q.eq("sourceId", a.source!._id))
+            : ctx.db
+                .query("assistantSubscriptions")
+                .withIndex("by_org", (q) =>
+                  q.eq("organizationId", a.organization._id),
+                )
+        ).take(21),
       ])
         ensure(
           rows.length < 20,
@@ -186,9 +238,17 @@ export const install = internalMutation({
       consentId: a.identity.sid as string,
       grantId: a.grant._id,
       grantVersion: a.grant.version,
-      sourceId: a.source._id,
-      generation: a.source.generation,
-      revision: a.source.updatedAt,
+      ...(a.source
+        ? {
+            eventName: "analysis_completed" as const,
+            sourceId: a.source._id,
+            generation: a.source.generation,
+            revision: a.source.updatedAt,
+          }
+        : {
+            eventName: args.eventName as
+              "work_cloud_waiting" | "work_cloud_connection_verified",
+          }),
       externalId: args.externalId,
       ciphertext: args.ciphertext,
       keyVersion: args.keyVersion,
@@ -216,6 +276,22 @@ export const install = internalMutation({
           createdAt: now,
         });
     if (old) await ctx.db.patch(id, record);
+    if (!old && args.eventName === "work_cloud_connection_verified") {
+      const deliveryId = await ctx.db.insert("assistantDeliveries", {
+        organizationId: a.organization._id,
+        subscriptionId: id,
+        eventName: "work_cloud_connection_verified",
+        completedRevision: now,
+        state: "pending",
+        attempts: 0,
+        dueAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.scheduler.runAfter(0, internal.assistantEventRuntime.deliver, {
+        id: deliveryId,
+      });
+    }
     await ctx.scheduler.runAfter(
       args.expiresAt - now,
       internal.assistantEvents.expire,
@@ -291,13 +367,7 @@ export const claim = internalMutation({
     const d = await ctx.db.get(id);
     if (!d || d.state !== "pending" || d.dueAt > Date.now()) return null;
     const s = await ctx.db.get(d.subscriptionId);
-    const source = await ctx.db.get(d.sourceId);
-    if (
-      !s ||
-      !(await eventSubscriptionCurrent(ctx, s)) ||
-      source?.state !== "ready" ||
-      source.generation !== d.generation
-    ) {
+    if (!s || !(await eventDeliveryCurrent(ctx, s, d))) {
       await ctx.db.patch(id, { state: "cancelled", updatedAt: Date.now() });
       return null;
     }
@@ -334,13 +404,7 @@ export const deliveryCurrent = internalQuery({
     )
       return false;
     const s = await ctx.db.get(d.subscriptionId);
-    const source = await ctx.db.get(d.sourceId);
-    return (
-      !!s &&
-      source?.state === "ready" &&
-      source.generation === d.generation &&
-      (await eventSubscriptionCurrent(ctx, s))
-    );
+    return !!s && (await eventDeliveryCurrent(ctx, s, d));
   },
 });
 export const finish = internalMutation({
@@ -371,7 +435,7 @@ export const finish = internalMutation({
     );
     const now = Date.now();
     const s = await ctx.db.get(d.subscriptionId);
-    const current = !!s && (await eventSubscriptionCurrent(ctx, s));
+    const current = !!s && (await eventDeliveryCurrent(ctx, s, d));
     if (a.outcome === "received") {
       await ctx.db.patch(d._id, {
         state: "delivered",

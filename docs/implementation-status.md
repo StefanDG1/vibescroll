@@ -1,5 +1,13 @@
 # October 22 launch implementation candidate
 
+## Compatible Cloud Events release preparation, October25
+
+[The compatible candidate](operations/evidence/launch-20261025-compatible-cloud-events.json) ports the reviewed Events/inline guidance to the serving398c325 lineage without main's unrelated migrations. Codeb369512/evidence675dea2 passes1,199 offline tests, three hosted skips, lint/types, both builds, registry audit and secret checks. Its inherited compatibility test initially rejected the intended schema delta; the updated test permits only exact source/profile unions and one exact Events index while preserving the entire old export. Health now declares an explicit30second server duration cap, confirmed in the compiled Next functions manifest. Main keeps the same cap through this parity update. No ordinary app UI changed.
+
+Main PR177 is merged at4904673 with CI40204729202 passing. Compatible PR178 CI and fresh release prediction/publication remain separate. An audit command accidentally included a deployment-protection bypass credential in task output; root revoked/regenerated it and verified the old key absent/new key present at15:04:58UTC using three provider-control requests, no app/Convex calls or build. No values enter this receipt; protection, domains and build settings were preserved.
+
+The same cumulative EUR5 ledger now retains USD4.922258194860614 with USD0.3777418051393857 unreserved. The terminal accidental-preview hold changed0.030 to0.008; the completed independent status hold increased0.040 to0.043. All older unknown/future obligations remain. No new publication or automatic processing acceptance is claimed.
+
 ## Independent catalog lifecycle and Cloud waiting Events, October25
 
 Source4fef582 implements independent canonical authority, association-only personal removal and bounded canonical safety cleanup, including restore recovery. Profile-scoped waiting and connection-verification Events reuse existing subscriptions, deliveries and source jobs. They do not create automatic work, establish standing authority or publish private Cloud output. The connection payload explicitly leaves host execution unverified. [The receipt](operations/evidence/launch-20261025-catalog-cloud-events.json) records contracts, failures and limits.

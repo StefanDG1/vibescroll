@@ -1,0 +1,60 @@
+{
+  "observedAt": "2026-10-25T15:11:56.820Z",
+  "sourceCommit": "b369512b5c08648a6224726bdcc21682d125f782",
+  "baselineServingBackend": "398c3256d7f0b21cdef8036687b95f5f7b812b8a",
+  "status": "offline_verified_compatible_candidate_not_published",
+  "scope": [
+    "Same-turn explicit Work Cloud tool guidance without a second handoff.",
+    "Existing profile Cloud waiting and connection-verification Events contracts.",
+    "Exactly three notification import/approval/reuse additions in compatible workCloudAnalysis.",
+    "Health route declares maxDuration30; dependency-free response preserved."
+  ],
+  "expectedSchema": {
+    "applicationTables": 89,
+    "deploymentTablesIncludingComponents": 131,
+    "indexes": 274,
+    "newIndex": "assistantDeliveries.by_source_occurrence(subscriptionId,sourceId,generation,completedRevision)",
+    "condition": "fresh complete prediction must verify event stores empty and no unexpected validation walk/populated backfill"
+  },
+  "verification": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "exitCode": 0,
+    "passedTests": 1199,
+    "hostedSkips": 3,
+    "lintWarnings": 0,
+    "rootAndConvexTypes": "passed",
+    "bothBuilds": "passed",
+    "dependencyAuditPassed": true,
+    "registryCounts": {
+      "low": 2,
+      "moderate": 2,
+      "high": 0,
+      "critical": 0
+    },
+    "stagedSecretAndDiffChecks": "passed",
+    "initialFailure": "1039 passed, one inherited no-index compatibility assertion failed, three hosted skips. Strict allowlist now asserts exact profile/source unions and one added index while preserving all old fields/indexes/config."
+  },
+  "release": {
+    "published": false,
+    "CI": "pending",
+    "automaticJobCreation": false,
+    "standingAuthority": false,
+    "catalogPublication": false,
+    "actualHostWakeExecutionRenewal": "pending",
+    "fullMainPopulatedIndexMigration": false,
+    "cumulativeBudget": "EUR5 unchanged; all prior unknown/future holds preserved",
+    "reservedOwnerPostUntouched": true
+  },
+  "operationalCorrection": {
+    "kind": "deployment_protection_bypass_rotation",
+    "completedAt": "2026-10-25T15:04:58.133Z",
+    "reason": "An audit accidentally included the bypass credential in task output.",
+    "oldCredentialAbsent": true,
+    "newCredentialPresent": true,
+    "providerControlRequests": 3,
+    "appOrConvexRequests": 0,
+    "buildsCreated": 0,
+    "protectionDomainsAndBuildSettingsPreserved": true,
+    "secretsInRestrictedPrivateFilesOnly": true
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "recordedAtUtc": "2026-10-25T14:11:17.492218+00:00",
+  "candidate": {
+    "head": "60069b6a8418bc45e27dddd267b9a4c64ba529ca",
+    "tree": "698b8a7e224f55070978fdce7996d9e267114be4",
+    "lock": "3e6e3c7d304cf7623992240d4b018fa2f6a27c761a19d9802593673c4553d981"
+  },
+  "predictionAtUtc": "2026-10-25T13:35:29.400Z",
+  "complete": true,
+  "published": false,
+  "components": 12,
+  "tables": 136,
+  "indexes": 310,
+  "walkTables": [],
+  "notValidatedTables": [],
+  "newComponentDefinitions": 0,
+  "addedIndexes": 37,
+  "populatedBackfills": [
+    {
+      "name": "localLibraryRuns.by_device_state",
+      "numDocs": 14
+    },
+    {
+      "name": "localLibraryRuns.by_source_reanalysis",
+      "numDocs": 14
+    },
+    {
+      "name": "localLibraryRuns.by_task_key",
+      "numDocs": 14
+    },
+    {
+      "name": "proposals.by_local_evaluation",
+      "numDocs": 1
+    },
+    {
+      "name": "sources.by_social_identity",
+      "numDocs": 278
+    }
+  ],
+  "populatedTables": [
+    {
+      "name": "localLibraryRuns",
+      "numDocs": 14,
+      "sizeBytes": 19238,
+      "outcome": "supersetOfEnforced"
+    },
+    {
+      "name": "proposals",
+      "numDocs": 1,
+      "sizeBytes": 4500,
+      "outcome": "supersetOfEnforced"
+    },
+    {
+      "name": "sources",
+      "numDocs": 278,
+      "sizeBytes": 3301375,
+      "outcome": "supersetOfEnforced"
+    }
+  ],
+  "weightedIndexEntries": 321,
+  "weightedDocumentBytes": 3363589,
+  "responseBytes": 84578,
+  "responseSHA256": "44aa705b0d51455f07c9edf1e33494e39bec41e24968ab0c499e54f8401a46c2",
+  "credentialFileDeletedBeforeDispatch": true,
+  "systemQueries": 0,
+  "applicationCalls": 0,
+  "migrationAuthorized": false,
+  "offlineGuardTestsPassed": 53,
+  "fundedOperationUSD": 0.025,
+  "newPurchase": false,
+  "budget": {
+    "capEUR": 5,
+    "workingCapUSD": 5.3,
+    "retainedMaximumUSD": 4.941258194860614,
+    "headroomUSD": 0.3587418051393857,
+    "oldUnknownAndFutureHoldsPreserved": true,
+    "invoiceSettled": false
+  },
+  "remaining": "Source shows unbounded provider retry of populated backfill; wait deadline is not cancellation. No verified hard total bound or cancel is established, so migration stays held under owner spending control. This is not evidence that the measured migration would normally be expensive."
+}

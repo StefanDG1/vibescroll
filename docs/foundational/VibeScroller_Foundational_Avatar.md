@@ -1,5 +1,9 @@
 # VibeScroll foundational avatar
 
+## F075: one global catalog and minimal Cloud intake
+
+[ADR154](../adr/154-global-catalog-defaults-and-cloud-intake.md) records the owner's required default: eligible neutral analyses contribute to one global paid catalog, without a region or sharing picker. Removing a personal post does not remove canonical insights. Keep privacy, rights and moderation removals, private personalization and independent canonical ownership. One-time setup replaces routine reconnect/copy/approval steps; inline Work Cloud and background wake have distinct implementation requirements. These are accepted requirements, not current automatic-sharing or customer-availability claims. Audience, prices and the six beliefs stay unchanged.
+
 ## F074: selected-post loading, candidate scope
 
 [ADR153](../adr/153-source-page-loading-and-active-refresh.md) reduces redundant reads for a viewed post while preserving source actions and active updates. It is a bounded implementation candidate, not proof of whole-app efficiency, phone costs, faster fresh-video analysis or automatic execution. Keep the audience, offer, prices, six beliefs, Pro catalog and provider/privacy gates unchanged. The actual Cloud result remains the separately dated F073 receipt.

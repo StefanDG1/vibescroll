@@ -382,3 +382,7 @@ All four briefs now separate one accepted real-media result from pending automat
 ## F074: source-loading candidate, October25
 
 Synchronized all four briefs with the reduced selected-source loading candidate and its limits. No new speed, budget, phone or commercial claim is promoted. ADR153 retains the remaining compact-progress and complete product acceptance.
+
+## F075: global catalog and one-time Cloud intake, October25
+
+All four briefs now record owner-confirmed automatic neutral contribution, association-only personal removal and the supported Cloud intake distinction. ADR154 preserves actual moderation/provider/paid gates and every unclosed launch requirement. Current private-only results are not silently republished.

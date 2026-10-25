@@ -370,3 +370,7 @@ The owner requested the smallest no-GitHub Cloud setup with supported internet p
 Updated all four foundational briefs and the index for the explicit private MCP Cloud-request candidate. Reviewed legacy-grant consent, exact job limits and unavailable production authorization. Audience, prices and six beliefs are unchanged. No automatic execution, production video or customer-value claim is published; actual deployment/host/media and paid/provider gates remain.
 
 October 25, F071: reconciled the owner-only existing-team Cloud experiment across Research, Avatar, Offer and Beliefs. Source identity/content preservation and real runtime verification remain distinct from production/customer acceptance. No campaign or price change.
+
+## F072: exact Cloud confidence and result return, October 25
+
+Source: actual owner-account media preparation, rejected completion and exact-payload offline reproduction. ADR152 conservatively reduces confidence and permits a fresh owner review of only the original retained result hash. Counterargument: returning a result cannot silently authorize more provider work or reconcile unknown usage. Current authority, immutable evidence, fixed completion window and no-overwrite tests are required. Production return remains pending; no campaign, price, customer or availability claim follows.

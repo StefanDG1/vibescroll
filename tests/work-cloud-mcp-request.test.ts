@@ -230,6 +230,85 @@ it("recovers an unclaimed request using the current status receipt after a lost 
     }),
   ).toMatchObject({ generation: 1, reused_request: true });
 });
+it.each([
+  { state: "queued", sourceState: "queued", status: "waiting_for_cloud" },
+  { state: "running", sourceState: "processing", status: "processing" },
+  { state: "unknown", sourceState: "failed", status: "unknown" },
+  { state: "completed", sourceState: "ready", status: "ready" },
+] as const)(
+  "projects the current $state Cloud job instead of an older waiting local intake",
+  async ({ state, sourceState, status }) => {
+    const s = await setup(true, true);
+    const intakeId = await s.t.run(async (ctx) => {
+      await ctx.db.patch(s.sourceId, { assistantIntake: true });
+      return ctx.db.insert("assistantIntakes", {
+        organizationId: s.org,
+        actor: s.actorId,
+        clientId,
+        grantId: s.grant.id,
+        grantVersion: s.grant.version,
+        sourceId: s.sourceId,
+        generation: s.source.generation,
+        revision: s.source.updatedAt,
+        analysisGeneration: s.source.generation,
+        queueState: "waiting",
+        createdAt: Date.now(),
+      });
+    });
+    // The historical local receipt really would mask the Cloud result.
+    const localStatus = await s.assistant.query(
+      internal.assistant.getJobStatus,
+      {
+        profileId: s.org,
+        sourceId: s.sourceId,
+      },
+    );
+    expect(localStatus).toMatchObject({
+      status: "waiting_for_computer",
+      receipt: { status: "waiting_for_computer" },
+    });
+    expect(localStatus.receipt?.credit_route_note).toContain("local computer");
+    await s.call();
+    await s.t.run(async (ctx) => {
+      const source = (await ctx.db.get(s.sourceId))!;
+      if (source.personalAnalysis?.executor !== "work_cloud")
+        throw Error("Expected Cloud job");
+      await ctx.db.patch(s.sourceId, {
+        state: sourceState,
+        personalAnalysis: {
+          ...source.personalAnalysis,
+          state,
+          stage: state === "queued" ? "acquiring" : "analyzing",
+        },
+      });
+    });
+    const before = await s.t.run(async (ctx) => ({
+      source: await ctx.db.get(s.sourceId),
+      intake: await ctx.db.get(intakeId),
+      reservations: await ctx.db.query("reservations").collect(),
+    }));
+    const result = await s.assistant.query(internal.assistant.getJobStatus, {
+      profileId: s.org,
+      sourceId: s.sourceId,
+    });
+    expect(result).toMatchObject({
+      status,
+      source_status: sourceState,
+      processing: { executor: "work_cloud", state },
+      receipt: null,
+    });
+    expect(JSON.stringify(result)).not.toMatch(
+      /waiting_for_computer|processing_locally|credit_route_note|credit_offer/,
+    );
+    expect(
+      await s.t.run(async (ctx) => ({
+        source: await ctx.db.get(s.sourceId),
+        intake: await ctx.db.get(intakeId),
+        reservations: await ctx.db.query("reservations").collect(),
+      })),
+    ).toEqual(before);
+  },
+);
 it.each(["client", "app"])(
   "requires the %s execution scope after setup",
   async (where) => {

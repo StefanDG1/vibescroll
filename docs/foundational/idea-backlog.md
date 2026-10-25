@@ -1,5 +1,9 @@
 # Foundational idea backlog
 
+## F071: existing posts in a sole-owner Cloud experiment, October 25
+
+Source: the owner confirms they are the only production user and authorizes team/backend changes while preserving saved data. Need: return real Cloud analysis to existing posts with optional GitHub and minimal setup. Decision: ADR151 uses a separate current team grant and existing source/job, without adoption or copying. Counterargument: available MCP tools do not establish a connected executor, public media access or model execution. Verify current sole ownership at every protected stage, preserve all old insights and test a real cited result on the same production post. Shared-catalog and automatic dispatch acceptance remain separate. All four briefs keep their audience, prices and beliefs. Cumulative task limit EUR5 includes earlier holds.
+
 ## F069: share a link and follow its result, October 24
 
 Source: the owner's link-only Cloud and Home/Library/loading request, plus a read-only main/compatible route and data-flow audit. Need: remove routine phone handoff friction, separate source insights from project evaluations and keep Convex work bounded. Decision: implement ADR149 through existing jobs/grants/events/artifacts/projections and request/cache owners. Counterargument: webhook receipt is not runtime execution, list clipping is not reduced database I/O and fake progress hides missing host authority. Test a real laptop-off automatic result, no-inference reuse, duplicate/expired/unpaid authority, exact card targets, correct insight feed, compact/authoritative response races, measured read payloads and all main loaders. All remain pending. Preserve original scope and proprietary/private boundaries; make no speed or release promise.

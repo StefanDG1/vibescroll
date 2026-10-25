@@ -219,8 +219,11 @@ it.each(["analysis:request", "analysis:execute"])(
   },
 );
 
-it.each([{ privateLibrary: false }, { workCloudMediaEnabled: false }])(
-  "omits the Cloud control and policy when its private gate is unavailable: %j",
+it.each([
+  { workCloudMediaEnabled: false },
+  { workCloudMediaEnabled: undefined },
+])(
+  "omits the Cloud control and policy when server eligibility is unavailable: %j",
   async (gate) => {
     const f = await fixture(setup(gate));
     f.configure();
@@ -233,6 +236,21 @@ it.each([{ privateLibrary: false }, { workCloudMediaEnabled: false }])(
     expect(f.call.mock.calls[0][1]).not.toHaveProperty("cloudRequestPolicy");
   },
 );
+
+it("allows the server-approved sole-owner team without a private-library migration", async () => {
+  const f = await fixture(setup({ privateLibrary: false }));
+  f.configure();
+  checkbox(f.render(), cloudLabel).props.onChange({
+    target: { checked: true },
+  });
+  f.acknowledge();
+  await f.save();
+  expect(f.call).toHaveBeenCalledWith(
+    "saveAssistantGrant",
+    expect.objectContaining({ cloudRequestPolicy: "explicit_per_source_v1" }),
+  );
+  expect(f.call.mock.calls[0][1]).not.toHaveProperty("analysisDefaults");
+});
 
 it("keeps legacy grants off and restores a saved Cloud choice only when editing it", async () => {
   const grant = {

@@ -16,6 +16,7 @@ import {
 } from "../packages/policy/assistant";
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
+import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import {
   workCloudMediaAllowed,
   workCloudTextAllowed,
@@ -89,7 +90,7 @@ async function ownedSource(ctx: QueryCtx, id: Id<"sources">, media = false) {
   const a = await access(ctx, source.organizationId, ["owner"]);
   enabled(a.actor.subject, media);
   ensure(
-    a.organization.privateOwnerId === a.actor._id,
+    await workCloudSourceEligible(ctx, a.organization, a.actor._id),
     "FORBIDDEN",
     "Use your own private library.",
   );
@@ -317,7 +318,7 @@ export async function unclaimedCloudHandoff(
     job.state !== "queued" ||
     source.generation !== job.generation ||
     job.actor !== actor._id ||
-    organization.privateOwnerId !== actor._id ||
+    !(await workCloudSourceEligible(ctx, organization, actor._id)) ||
     job.expiresAt <= Date.now() ||
     job.cloud.taskId ||
     job.cloud.leaseTokenHash ||
@@ -516,6 +517,16 @@ async function approveExactCloudSource(
   a: CloudApproval,
 ) {
   await approvable(ctx, owned.source);
+  if (a.inputKind === "media" || !owned.organization.privateOwnerId)
+    ensure(
+      owned.source.analysis === undefined &&
+        owned.source.summary === undefined &&
+        owned.source.orderedMedia === undefined &&
+        owned.source.privateSourceAnalysis === undefined &&
+        owned.source.privateSourceAnalysisRunId === undefined,
+      "APPROVAL_STALE",
+      "Cloud media experiments require an unanalyzed post. Preserve existing insights.",
+    );
   ensure(
     Number.isSafeInteger(a.generation) &&
       owned.source.generation === a.generation &&
@@ -643,7 +654,7 @@ export async function requestCloudFromAssistant(
     a.scopes.includes("analysis:request") &&
       a.client.scopes.includes("analysis:request") &&
       a.grant.scopes.includes("analysis:request") &&
-      a.organization.privateOwnerId === a.actor._id &&
+      (await workCloudSourceEligible(ctx, a.organization, a.actor._id)) &&
       a.membership.role === "owner" &&
       a.grant.cloudRequestPolicy === "explicit_per_source_v1" &&
       a.grant.cloudRequestPolicyHash === currentPolicyHash &&
@@ -786,7 +797,7 @@ async function current(
       job.cloud.schemaVersion === "work-cloud-media-v2",
   );
   ensure(
-    a.organization.privateOwnerId === a.actor._id &&
+    (await workCloudSourceEligible(ctx, a.organization, a.actor._id)) &&
       a.membership.role === "owner" &&
       job?.executor === "work_cloud" &&
       job.actor === a.actor._id &&

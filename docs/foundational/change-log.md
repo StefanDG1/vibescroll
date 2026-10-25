@@ -368,3 +368,5 @@ The owner requested the smallest no-GitHub Cloud setup with supported internet p
 ## October 25: F070
 
 Updated all four foundational briefs and the index for the explicit private MCP Cloud-request candidate. Reviewed legacy-grant consent, exact job limits and unavailable production authorization. Audience, prices and six beliefs are unchanged. No automatic execution, production video or customer-value claim is published; actual deployment/host/media and paid/provider gates remain.
+
+October 25, F071: reconciled the owner-only existing-team Cloud experiment across Research, Avatar, Offer and Beliefs. Source identity/content preservation and real runtime verification remain distinct from production/customer acceptance. No campaign or price change.

@@ -1,0 +1,95 @@
+{
+  "version": "cloud-events-production-publication-v1",
+  "publishedOn": "2026-10-25",
+  "candidate": "675dea24804d3ed730cdec2aa5f858ddbcd07594",
+  "candidateCI": {
+    "passed": true,
+    "hostedSkipped": 3,
+    "productOfflineTests": 1199,
+    "run": 40206021775
+  },
+  "backend": {
+    "newIndex": "assistantDeliveries.by_source_occurrence",
+    "populatedBackfills": 0,
+    "finishRawSHA256": "fabd93cd2cd1a1bede9bfff2bb5314c26a89e68fb427d9c25fc85e1bca48bebc",
+    "finishAtUtc": "2026-10-25T16:38:01.332Z",
+    "components": 12,
+    "tables": 131,
+    "published": true,
+    "indexes": 274
+  },
+  "configuration": {
+    "billingOrGatewayChanges": 0,
+    "existingKeyCreationAcknowledgmentPreserved": true,
+    "vercelWholeControlRequests": 7,
+    "matchingServerOnlyEventsVariables": 3,
+    "credentialPreparationFileDeleted": true,
+    "convexNamedReads": 6,
+    "privateKeyValuesPublished": false,
+    "convexAtomicChangesArrayUpdates": 1
+  },
+  "frontend": {
+    "staticHelpPassed": true,
+    "siteConvexOrModelCalls": 0,
+    "canonicalBodySHA256": "c960f8bf46845b7281d135045ecfcd2fa72bbe8977cf1384ae807c8665ea156c",
+    "stagedHealthPassed": true,
+    "publicURL": "https://scroll.companynerve.com",
+    "normalDomainAssignmentRestored": true,
+    "maximumBytesEach": 1048576,
+    "builds": 1,
+    "target": "production",
+    "version": "0.1.0-alpha.20261025151420.g675dea24804d",
+    "siteRequests": 3,
+    "rebuildsAtPromotion": 0,
+    "sameBuildPromoted": true,
+    "normalQueue": true,
+    "canonicalAuthenticationOrBypassUsed": false,
+    "observedCreatedToReadySeconds": 33.762,
+    "deploymentId": "dpl_5wNFvQwfcRGtkTnCXSZ3asFcGTDg",
+    "directMachineAttestationClaimed": false,
+    "fixedBasicFromHeldProject": true,
+    "publicCanonicalHealthPassed": true,
+    "observedBuildSeconds": 32.431,
+    "elasticConcurrency": false
+  },
+  "releaseGuardChecks": {
+    "backendProtocolOffline": 234,
+    "convexConfigurationOffline": 47,
+    "separateFromProductAcceptance": true,
+    "vercelFinalConfigurationOffline": 10,
+    "frontendOffline": 16
+  },
+  "preservedFailures": [
+    "original read-only metadata inspection halted at a strict vendor wrapper; existing acknowledgments recovered under a separate reviewed operation",
+    "Windows preload and request serialization errors stopped before their attempted mutations",
+    "first signing-key creation returned HTTP201 in a vendor wrapper; its success was preserved and never replayed"
+  ],
+  "budget": {
+    "ownerCumulativeCapEUR": 5,
+    "notAnInvoice": true,
+    "workingCeilingUSD": 5.3,
+    "allPriorUnknownFutureHoldsPreserved": true,
+    "completedBuildOnlyReleaseUSD": 0.308,
+    "currentRetainedMaximumUSD": 4.875014256044613,
+    "newPaidOrders": 0,
+    "unreservedUSD": 0.424985743955387,
+    "retainedFrontendMaximumUSD": 0.042
+  },
+  "separateMainWork": {
+    "head": "401ad189f06d395b856c4c411eee713229bfd790",
+    "HomeChangesServing": false,
+    "CIPassed": true,
+    "mergedMain": "cc8d3252e9e0285671c35c858a3e7e7d79e7a85b",
+    "CI": 40216636509,
+    "pullRequest": 180
+  },
+  "remaining": [
+    "actual supported Events subscription, signed callback and provider-host wake/runtime/renewal acceptance",
+    "standing save/creator intake and neutral own-subscription catalog admission/reuse",
+    "full-main populated index publication and R6 production acceptance",
+    "ordinary fresh real-video reliability and automatic phone-only result display",
+    "all remaining original R/P/N/C/M and external acceptance gates"
+  ],
+  "noNewSubscriptionOrVideoTestStarted": true,
+  "ownerImmediateSetupActionPending": false
+}

@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Compatible Events support published, October25
+
+[The production receipt](operations/evidence/launch-20261025-cloud-events-production.json) records source675dea2 on both backend and frontend, matching server configuration, passing exact-head CI40206021775 and one fixed Basic build. The staged health/static Help checks passed; the same build was promoted and its public canonical health returned the exact version without authentication or a bypass. Normal domain assignment was restored. No subscription, callback, host wake or new video test was started by this publication.
+
+PR180's Home projection/progress stage is separately merged atcc8d325 after exact-head CI40216636509. Its fifty-one focused and eight native synthetic checks do not establish R6 production acceptance. Full-main populated indexes remain held. The same EUR5 ledger retains USD4.875014256044613, with USD0.424985743955387 unreserved, after releasing only the completed build's unused USD0.308 allowance. Every other old, future and unknown hold remains. These are conservative reservations, not an invoice. No owner setup action is waiting now.
+
 ## Home post summaries and compact progress, October25
 
 Source02f3626 adds bounded existing-card projections, strict Home/post/progress contracts and an authenticated thirty-ID compact progress read. Recent Home posts expand before opening, with direct thumbnail/action links, bounded previews and expiry hiding. Console retains its existing request owner and visible/online poller; stage updates avoid heavy Home reloads, while mutations and changed content force fresh authorized data. Idle Home stops periodic reads. The sources-only projection refresh has its own checkpoint and preserves the completed older dashboard migration.

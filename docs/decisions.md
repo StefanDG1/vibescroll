@@ -1,5 +1,11 @@
 # Product decisions
 
+## Current source loading candidate, October25
+
+[ADR153](adr/153-source-page-loading-and-active-refresh.md) limits the existing source workspace slice to five authorized direct queries, reuses current full detail, lazily loads related-source choices and stops idle periodic reads while retaining active updates and visibility/reconnect refresh. This is a frontend candidate, not a complete compact-progress contract or production acceptance. Preserve every source action, stale-scope fence and retention check.
+
+The earlier Cloud return is now verified in production: five insights and twenty-nine citations, without GitHub, through exact retained-result recovery. [The receipt](operations/evidence/launch-20261025-cloud-video-return.json) supersedes older pending-return wording below. Automatic dispatch, ordinary fresh-run reliability, shared catalog and full-main migration remain open. Cumulative EUR5 and earlier unknown/future holds remain; only completed HTTP compute was reconciled, leaving USD4.916258194860614 conservatively retained and USD0.3837418051393857 unreserved.
+
 ## Conservative Cloud result return, October 25
 
 [ADR 152](adr/152-conservative-cloud-result-return.md) records a real accepted preparation and rejected completion, followed by exact-payload offline verification. The adapter reduces overstated confidence and supports a recent-owner-reviewed, hash-bound return of the same retained attempt. It starts no processing and preserves saved posts/insights. Current Cloud status overrides old local-intake advice. Production completion remains pending; cumulative EUR5 and all prior holds remain.

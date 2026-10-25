@@ -1,5 +1,9 @@
 # Interface contracts
 
+## Conservative Cloud result return, October 25
+
+[ADR 152](adr/152-conservative-cloud-result-return.md) records a real accepted preparation and rejected completion, followed by exact-payload offline verification. The adapter reduces overstated confidence and supports a recent-owner-reviewed, hash-bound return of the same retained attempt. It starts no processing and preserves saved posts/insights. Current Cloud status overrides old local-intake advice. Production completion remains pending; cumulative EUR5 and all prior holds remain.
+
 ## Explicit experimental MCP Cloud requests
 
 [ADR 150](adr/150-explicit-mcp-cloud-analysis-requests.md) adds `request_analysis(mode=work_cloud)` with required current `generation`, `revision`, `grantVersion` and strict `cloud:{model,effort,useOwnPlan:true,maxApiUsd:0,retainUntil}`. It requires the reviewed `explicit_per_source_v1` app-grant policy, server-owned current media-policy hash, both request/execution scopes and owner-private media authority. Old grants do not acquire approval authority. Identical unclaimed replay is idempotent; claimed/unknown work cannot be replaced. `get_job_status` returns compact identities and Cloud state/stage. This does not launch a host, dispatch future links, publish catalog data or authorize paid processing.

@@ -4,7 +4,11 @@ import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import { orderedRevisionHash, socialHash } from "../packages/social/contracts";
-import { validateSocialAnalysis } from "../packages/social/analysis";
+import {
+  validateSocialAnalysis,
+  validateOrderedAnalysis,
+} from "../packages/social/analysis";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { sharedTypedCitations } from "../convex/lib/sourceCitations";
 import { currentOrderedSource } from "../convex/lib/workCloudMediaSource";
 import {
@@ -267,6 +271,313 @@ async function prepare(s: Fixture, lease: Lease, prepared: Receipt) {
     preparation: prepared,
   });
 }
+
+it("downgrades Cloud support claims citing uncertain observations without changing the raw result or global validator", async () => {
+  const s = await setup(),
+    lease = await s.claim(),
+    prepared = await receipt(s, lease);
+  prepared.evidence[0].uncertainty =
+    "Automatic transcription was not independently checked.";
+  await prepare(s, lease, prepared);
+  const bound = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  const raw = output(lease, prepared),
+    original = structuredClone(raw);
+  await expect(
+    validateOrderedAnalysis(raw, bound.orderedMedia, lease),
+  ).rejects.toThrow("ORDERED_MEDIA_UNCERTAIN_EVIDENCE");
+  await expect(
+    s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+      ...lease,
+      operation: "complete",
+      output: raw,
+    }),
+  ).resolves.toMatchObject({ accepted: true, cached: false });
+  const saved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(saved.analysis.insights[0].confidence).toBe("uncertain");
+  expect(saved.analysis.insights[0].evidence).toEqual(raw.insights[0].evidence);
+  expect(saved.orderedMedia).toEqual(bound.orderedMedia);
+  expect(raw).toEqual(original);
+  await expect(
+    validateOrderedAnalysis(raw, saved.orderedMedia, lease),
+  ).rejects.toThrow("ORDERED_MEDIA_UNCERTAIN_EVIDENCE");
+  await expect(currentOrderedSource(saved)).resolves.toBeDefined();
+});
+
+async function preparedUnknownRecovery() {
+  const s = await setup(),
+    lease = await s.claim(),
+    prepared = await receipt(s, lease);
+  prepared.evidence[0].uncertainty = "Sampled observations require review.";
+  await prepare(s, lease, prepared);
+  const raw = output(lease, prepared);
+  const completionHash = await socialHash(
+    canonicalJson({
+      output: raw,
+      usage: null,
+      reportedModel: null,
+      reportedEffort: null,
+    }),
+  );
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...lease,
+    operation: "fail",
+  });
+  const unknown = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  const job = unknown.personalAnalysis;
+  if (job?.executor !== "work_cloud" || !job.cloud.media?.preparationHash)
+    throw Error("Expected prepared unknown Cloud job");
+  vi.advanceTimersByTime(job.deadline - Date.now() + 1);
+  const freshOwner = s.t.withIdentity({
+    subject,
+    auth_time: Math.floor(Date.now() / 1000),
+  });
+  const approval = {
+    ...s.selection,
+    generation: job.generation,
+    grantVersion: job.cloud.grantVersion,
+    expectedInputHash: job.cloud.inputHash,
+    model: job.model,
+    effort: job.effort,
+    useOwnPlan: true as const,
+    maxApiUsd: 0 as const,
+    recovery: {
+      taskId: lease.taskId,
+      preparationHash: job.cloud.media.preparationHash,
+      completionHash,
+      acknowledged: true as const,
+    },
+  };
+  return {
+    ...s,
+    lease,
+    raw,
+    prepared,
+    unknown,
+    job,
+    freshOwner,
+    approval,
+    completionHash,
+  };
+}
+
+it("returns one owner-approved prepared result after the old deadline using the same generation and lease", async () => {
+  const s = await preparedUnknownRecovery();
+  const reservations = await s.t.run((ctx) =>
+    ctx.db.query("reservations").collect(),
+  );
+  const now = Date.now();
+  await s.freshOwner.mutation(api.workCloudAnalysis.approve, s.approval);
+  const recovering = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(recovering.generation).toBe(s.unknown.generation);
+  expect(recovering.orderedMedia).toEqual(s.unknown.orderedMedia);
+  expect(recovering.personalAnalysis).toMatchObject({
+    state: "recovering",
+    generation: s.job.generation,
+    expiresAt: now + 180000,
+    leaseUntil: now + 180000,
+    deadline: s.job.deadline,
+    cloud: {
+      taskId: s.job.cloud.taskId,
+      consentId: s.job.cloud.consentId,
+      leaseTokenHash: s.job.cloud.leaseTokenHash,
+      inputHash: s.job.cloud.inputHash,
+      completionHash: s.completionHash,
+      media: { preparationHash: s.job.cloud.media?.preparationHash },
+    },
+  });
+  const completion = {
+    ...s.lease,
+    operation: "complete" as const,
+    output: s.raw,
+  };
+  await expect(
+    s.assistant.mutation(internal.workCloudAnalysis.dispatch, completion),
+  ).resolves.toEqual({ accepted: true, cached: false });
+  const saved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(saved).toMatchObject({
+    state: "ready",
+    generation: s.job.generation,
+    analysis: { insights: [{ confidence: "uncertain" }] },
+    personalAnalysis: { state: "completed", deadline: s.job.deadline },
+  });
+  expect(saved.orderedMedia).toEqual(s.unknown.orderedMedia);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual(reservations);
+  await expect(
+    s.assistant.mutation(internal.workCloudAnalysis.dispatch, completion),
+  ).resolves.toEqual({ accepted: true, cached: true });
+  expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(saved);
+});
+
+it.each(["output", "usage", "reportedModel", "reportedEffort"] as const)(
+  "rejects recovery completion when the approved raw envelope %s changes",
+  async (field) => {
+    const s = await preparedUnknownRecovery();
+    await s.freshOwner.mutation(api.workCloudAnalysis.approve, s.approval);
+    const before = await s.t.run((ctx) => ctx.db.get(s.sourceId));
+    const changes = {
+      output: { ...s.raw, summary: "Different returned result" },
+      usage: { inputTokens: 1, outputTokens: 1 },
+      reportedModel: s.job.model,
+      reportedEffort: s.job.effort,
+    };
+    await expect(
+      s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+        ...s.lease,
+        operation: "complete",
+        output: s.raw,
+        [field]: changes[field],
+      }),
+    ).rejects.toThrow();
+    expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(before);
+  },
+);
+
+it.each([
+  "taskId",
+  "preparationHash",
+  "generation",
+  "grantVersion",
+  "expectedInputHash",
+  "model",
+  "effort",
+  "retainUntil",
+] as const)(
+  "rejects owner recovery when the original %s binding changes",
+  async (field) => {
+    const s = await preparedUnknownRecovery();
+    const approval = structuredClone(s.approval);
+    if (field === "taskId") approval.recovery.taskId = "different-task";
+    else if (field === "preparationHash")
+      approval.recovery.preparationHash = "f".repeat(64);
+    else if (
+      field === "generation" ||
+      field === "grantVersion" ||
+      field === "retainUntil"
+    )
+      approval[field] += 1;
+    else if (field === "expectedInputHash")
+      approval.expectedInputHash = "f".repeat(64);
+    else if (field === "model") approval.model = "different-model";
+    else approval.effort = "medium";
+    await expect(
+      s.freshOwner.mutation(api.workCloudAnalysis.approve, approval),
+    ).rejects.toThrow();
+    expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(s.unknown);
+  },
+);
+
+it.each([
+  "recent_auth",
+  "rights",
+  "role",
+  "grant",
+  "retention",
+  "analysis",
+  "preparation",
+] as const)(
+  "rejects owner return-only recovery after losing %s authority or evidence",
+  async (change) => {
+    const s = await preparedUnknownRecovery();
+    await s.t.run(async (ctx) => {
+      if (change === "rights")
+        await ctx.db.patch(s.sourceId, { rightsAttested: false });
+      if (change === "role") {
+        const membership = await ctx.db
+          .query("memberships")
+          .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+          .first();
+        await ctx.db.patch(membership!._id, { role: "admin" });
+      }
+      if (change === "grant")
+        await ctx.db.patch(s.grant.id, { state: "revoked" });
+      if (change === "retention")
+        await ctx.db.patch(s.sourceId, {
+          sourceRetentionUntil: Date.now() - 1,
+        });
+      if (change === "analysis")
+        await ctx.db.patch(s.sourceId, {
+          analysis: { insights: [{ title: "Existing saved insight" }] },
+        });
+      if (change === "preparation")
+        await ctx.db.patch(s.sourceId, { orderedMedia: undefined });
+    });
+    const before = await s.t.run((ctx) => ctx.db.get(s.sourceId));
+    await expect(
+      (change === "recent_auth" ? s.owner : s.freshOwner).mutation(
+        api.workCloudAnalysis.approve,
+        s.approval,
+      ),
+    ).rejects.toThrow();
+    expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(before);
+  },
+);
+
+it("allows only completion during recovery and rejects the fixed return window after expiry", async () => {
+  const s = await preparedUnknownRecovery();
+  await s.freshOwner.mutation(api.workCloudAnalysis.approve, s.approval);
+  const before = await s.t.run((ctx) => ctx.db.get(s.sourceId));
+  await expect(
+    s.assistant.query(internal.workCloudAnalysis.input, s.lease),
+  ).rejects.toThrow();
+  for (const operation of ["heartbeat", "claim", "prepare", "fail"] as const)
+    await expect(
+      s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+        ...s.lease,
+        operation,
+        ...(operation === "claim" ? { leaseToken: undefined } : {}),
+        ...(operation === "prepare" ? { preparation: s.prepared } : {}),
+      }),
+    ).rejects.toThrow();
+  expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(before);
+  vi.advanceTimersByTime(60000);
+  await expect(
+    s.freshOwner.mutation(api.workCloudAnalysis.approve, s.approval),
+  ).rejects.toThrow();
+  expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(before);
+  vi.advanceTimersByTime(120001);
+  await expect(
+    s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+      ...s.lease,
+      operation: "complete",
+      output: s.raw,
+    }),
+  ).rejects.toThrow();
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.analysis,
+  ).toBeUndefined();
+});
+
+it.each(["rights", "grant", "role"] as const)(
+  "rechecks %s authority at recovery completion after fresh approval",
+  async (change) => {
+    const s = await preparedUnknownRecovery();
+    await s.freshOwner.mutation(api.workCloudAnalysis.approve, s.approval);
+    await s.t.run(async (ctx) => {
+      if (change === "rights")
+        await ctx.db.patch(s.sourceId, { rightsAttested: false });
+      if (change === "grant")
+        await ctx.db.patch(s.grant.id, { state: "revoked" });
+      if (change === "role") {
+        const membership = await ctx.db
+          .query("memberships")
+          .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+          .first();
+        await ctx.db.patch(membership!._id, { role: "admin" });
+      }
+    });
+    const before = await s.t.run((ctx) => ctx.db.get(s.sourceId));
+    await expect(
+      s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+        ...s.lease,
+        operation: "complete",
+        output: s.raw,
+      }),
+    ).rejects.toThrow();
+    expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(before);
+  },
+);
 
 it("returns a canonical cited private media result through the existing source, without assets, supplier proof or a second queue", async () => {
   const s = await setup(),

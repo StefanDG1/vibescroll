@@ -320,24 +320,39 @@ export const getJobStatus = internalQuery({
           .eq("sourceId", source._id),
       )
       .unique();
-    const receipt = intake ? await intakeReceipt(ctx, intake, source) : null;
+    const cloud =
+      source.personalAnalysis?.executor === "work_cloud" &&
+      source.personalAnalysis.generation === source.generation
+        ? source.personalAnalysis
+        : null;
+    // An earlier local intake is historical once this source generation has its
+    // own Cloud attempt. It cannot describe the current executor or offer a
+    // local/credit fallback for work whose Cloud outcome may be unknown.
+    const receipt =
+      !cloud && intake ? await intakeReceipt(ctx, intake, source) : null;
+    const cloudStatus = cloud
+      ? cloud.state === "queued"
+        ? "waiting_for_cloud"
+        : cloud.state === "unknown" || cloud.state === "recovering"
+          ? cloud.state
+          : source.state
+      : null;
     return {
       source_id: source._id,
       profile_id: a.organization._id,
-      status: receipt?.status ?? source.state,
+      status: cloudStatus ?? receipt?.status ?? source.state,
       source_status: source.state,
       generation: source.generation,
       revision: source.updatedAt,
       grant_version: a.grant.version,
       cloud_request_policy: a.grant.cloudRequestPolicy ?? null,
-      processing:
-        source.personalAnalysis?.executor === "work_cloud"
-          ? {
-              executor: "work_cloud",
-              state: source.personalAnalysis.state,
-              stage: source.personalAnalysis.stage,
-            }
-          : null,
+      processing: cloud
+        ? {
+            executor: "work_cloud",
+            state: cloud.state,
+            stage: cloud.stage,
+          }
+        : null,
       receipt,
       evidence_changed: changed,
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,

@@ -1,5 +1,9 @@
 # October 22 launch implementation candidate
 
+## Conservative Cloud result return, October 25
+
+[ADR 152](adr/152-conservative-cloud-result-return.md) records a real accepted preparation and rejected completion, followed by exact-payload offline verification. The adapter reduces overstated confidence and supports a recent-owner-reviewed, hash-bound return of the same retained attempt. It starts no processing and preserves saved posts/insights. Current Cloud status overrides old local-intake advice. Production completion remains pending; cumulative EUR5 and all prior holds remain.
+
 ## Compatible private MCP request checks, October 25
 
 The narrow63a071d backport passed1,135 local checks, three hosted skips, types/lint, both builds and package/finance validation. [The compatible receipt](operations/evidence/launch-20261025-cloud-mcp-compatible.json) preserves initial failures and their corrections. The compatibility validator check permits only the exact two optional grant fields while preserving all prior table/index/config constraints. Exact-head CI, fresh no-scan publication and actual Cloud media return remain pending. Full main retains its separate implementation and migration gates.

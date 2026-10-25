@@ -1,3 +1,6 @@
+// Keep this dependency-free liveness response within a short server-side cap.
+export const maxDuration = 30;
+
 export async function GET() {
   return Response.json(
     {

@@ -176,6 +176,15 @@ it("keeps Cloud requests unavailable by default or with only the text gate", asy
   ]) {
     const tools = (await packet(await host.call("tools/list", {}))).result
       .tools;
+    for (const name of ["save_link", "request_analysis"]) {
+      const tool = tools.find((tool: { name: string }) => tool.name === name);
+      expect(tool.description).not.toContain("Work Cloud chat");
+      expect(tool.description).not.toContain("mode=work_cloud");
+    }
+    expect(
+      tools.find((tool: { name: string }) => tool.name === "request_analysis")
+        .description,
+    ).toMatch(/^Request supported media local extraction/);
     expect(
       tools.find((tool: { name: string }) => tool.name === "request_analysis")
         .inputSchema.properties.mode.enum,
@@ -192,6 +201,55 @@ it("keeps Cloud requests unavailable by default or with only the text gate", asy
     expect(host.invoke).toHaveBeenCalledOnce();
   }
 });
+it.each(["2025-11-25", "2026-07-28"])(
+  "guides an awake Cloud host inline without turning save into execution over %s",
+  async (protocol) => {
+    const host = mcp(false, ["links:save", "analysis:request"], true, protocol);
+    const tools = (await packet(await host.call("tools/list", {}))).result
+      .tools;
+    for (const name of ["save_link", "request_analysis"]) {
+      const { description } = tools.find(
+        (tool: { name: string }) => tool.name === name,
+      );
+      expect(description).toMatch(/^For an exact supported video/);
+      expect(description).toContain("continue in this same user turn");
+      expect(description).toContain(
+        "Before request_analysis or work_cloud_claim",
+      );
+      expect(description).toContain(
+        "Save with analyze=false, then read get_job_status",
+      );
+      expect(description).toContain("explicit_per_source_v1");
+      expect(description).toContain("maxApiUsd=0");
+      expect(description).toContain("saving alone grants no Cloud execution");
+      expect(description).toContain(
+        "No pasted second message, Events subscription, GitHub or fresh per-post app approval",
+      );
+      expect(description).toContain("private_only");
+      expect(description).toContain(
+        "does not automatically launch a host task",
+      );
+      expect(description).toContain(
+        "separately accepted background wake/execution bridge",
+      );
+      expect(description).toMatch(
+        /Never choose credits automatically|without automatically spending credits/,
+      );
+    }
+    const args = {
+      url: "https://www.instagram.com/reel/ExactVideo/",
+      title: "Requested video",
+      key: "inline-cloud-fixture",
+      analyze: false,
+    };
+    const saved = await host.call("tools/call", {
+      name: "save_link",
+      arguments: args,
+    });
+    expect(saved.status).toBe(200);
+    expect(host.invoke).toHaveBeenCalledExactlyOnceWith("save_link", args);
+  },
+);
 it("challenges missing request scope before invoking a Cloud request", async () => {
   const host = mcp(false, ["analysis:execute"], true);
   const response = await host.call("tools/call", {

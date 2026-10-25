@@ -17,6 +17,7 @@ import {
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
+import { notifyCloudWaiting } from "./lib/assistantEvents";
 import {
   workCloudMediaAllowed,
   workCloudTextAllowed,
@@ -704,6 +705,7 @@ async function approveExactCloudSource(
     updatedAt: Math.max(now, owned.source.updatedAt + 1),
   });
   if (input.registry) await ctx.db.patch(input.registry.id, { generation });
+  await notifyCloudWaiting(ctx, (await ctx.db.get(a.sourceId))!);
   await audit(
     ctx,
     owned.organization._id,
@@ -780,6 +782,7 @@ export async function requestCloudFromAssistant(
       "APPROVAL_STALE",
       "The queued Cloud request changed or may already have been claimed.",
     );
+    await notifyCloudWaiting(ctx, source);
     return cloudRequestReceipt(pending, true);
   }
   ensure(

@@ -1,0 +1,117 @@
+{
+  "recordedAtUtc": "2026-10-25T12:26:23.040760+00:00",
+  "stage": "Real owner-account no-GitHub Work Cloud analysis committed and canonically fetched after exact return recovery",
+  "frontendSource": "5ad6dfb7d0fc826d45b4ecccb8dc488611f03802",
+  "frontendVersion": "0.1.0-alpha.20261025105609.g5ad6dfb7d0fc",
+  "backendSource": "398c3256d7f0b21cdef8036687b95f5f7b812b8a",
+  "backendPublishedAtUtc": "2026-10-25T12:17:18.116Z",
+  "frontendRebuiltForRecovery": false,
+  "mainMerge": "56a7baffb4bd26ff12814221ce51daeaf9df81d0",
+  "pullRequests": [
+    {
+      "number": 170,
+      "head": "d3680228cd1d2dc1a4bbda4f6651f569a3883287",
+      "exactHeadCI": 40186569682,
+      "result": "success"
+    },
+    {
+      "number": 171,
+      "head": "5ad6dfb7d0fc826d45b4ecccb8dc488611f03802",
+      "exactHeadCI": 40186865835,
+      "result": "success"
+    },
+    {
+      "number": 172,
+      "head": "398c3256d7f0b21cdef8036687b95f5f7b812b8a",
+      "exactHeadCI": 40191427182,
+      "result": "success"
+    },
+    {
+      "number": 173,
+      "head": "cb358898605510bf523aebd639b8e5ae652ae9df",
+      "exactHeadCI": 40191635760,
+      "result": "success"
+    }
+  ],
+  "media": {
+    "realSavedInstagramReel": true,
+    "githubConnectedOrRepositoryRequired": false,
+    "bytes": 3667745,
+    "durationSeconds": 46.901451,
+    "transcriptSegments": 18,
+    "sampledFrames": 8,
+    "frameTimesSeconds": [0, 6.6, 13.3, 20, 26.6, 33.3, 40, 46.5],
+    "offlineASRSeconds": 13.85,
+    "fullVisualCoverageClaimed": false,
+    "creatorGrowthClaimsVerified": false
+  },
+  "canonicalReturn": {
+    "state": "ready",
+    "generation": 1,
+    "insights": 5,
+    "citations": 29,
+    "citationsMatchAcceptedPreparation": true,
+    "rawOutputUnchanged": true,
+    "confidenceDowngrades": 4,
+    "completionSeconds": 4.639,
+    "completionToCanonicalFetchSeconds": 13.374,
+    "newProviderWorkDuringRecovery": false,
+    "cloudMCPCalls": 11,
+    "ownerRecoveryApplicationCalls": 1,
+    "totalWithinOriginalTwelveCallEnvelope": 12,
+    "nativePostRenderingVerified": false
+  },
+  "requestedSettings": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "actualAttestation": "Unavailable; optional model/effort/usage reports omitted"
+  },
+  "backend": {
+    "unchangedSchemas": 12,
+    "tables": 131,
+    "indexes": 273,
+    "newTables": 0,
+    "newIndexes": 0,
+    "indexBackfills": 0,
+    "configuredLogSinks": 0,
+    "metadataDigest": "0441d92fc865c3b88ab3c5e6c4f11a804643ae6c55931f021985794056a0a0f6",
+    "phase": "finished"
+  },
+  "verification": {
+    "compatibleFullCheck": "passed",
+    "mainFullCheck": "passed",
+    "focusedCompatibleMediaTests": 65,
+    "guardOfflineTests": 120,
+    "independentHighReview": "No P1/P2",
+    "freshProductionModelRunAfterFix": "Not attempted; this exact retained run completed through audited recovery",
+    "githubConnectedComparison": "Not attempted; no repository was used"
+  },
+  "preservedFailures": [
+    "Initial completion rejected ORDERED_MEDIA_UNCERTAIN_EVIDENCE; exact payload reproduced offline before correction",
+    "Initial extractor and resource-limit preparation failures retained privately",
+    "One unintended feature preview used an unsuppressed branch prefix; USD0.03 retained and subsequent branches use existing suppression",
+    "Duplicate local sink-inspection invocation halted at EEXIST before another provider request; original success retained",
+    "Root attempted to store an undefined process session after the acknowledged approval; local serialization failed after success, no request repeated"
+  ],
+  "budget": {
+    "capEUR": 5,
+    "workingCeilingUSD": 5.3,
+    "retainedMaximumUSD": 5.082996410796614,
+    "unreservedUSD": 0.2170035892033857,
+    "settledInvoice": false,
+    "paidInferenceAPIUSD": 0,
+    "newPurchases": false,
+    "allPriorUnknownAndFutureStorageCleanupHoldsPreserved": true,
+    "releaseOnlyCompletedFrontendBuildHoldUSD": 0.35
+  },
+  "remaining": [
+    "Automatic saved-link event-to-host dispatch and phone-only acceptance",
+    "Ordinary fresh run after fix and runtime availability across hosts",
+    "Neutral shared Pro-catalog contribution and paid hosted entry",
+    "Full-main migrations and whole-post Apply publication",
+    "TikTok/YouTube permitted runtime setup and source acquisition",
+    "Original/reconciled R/P/N/C/M acceptance and independent/provider gates"
+  ],
+  "reservedOwnerTestPost": "Untouched and unanalyzed",
+  "privateIdentifiersAndContentOmitted": true
+}

@@ -1,5 +1,9 @@
 # Remaining acceptance and completion ledger
 
+Current October 25 checkpoint: [the real-video receipt](../../operations/evidence/launch-20261025-cloud-video-return.json) verifies five saved insights and twenty-nine citations from an actual Instagram Reel in the owner's existing production account, without GitHub or a repository. Backend398c325 is live and PRs170-173 are merged with passing exact-head CI. The rejected result returned through recent-owner-approved, exact-hash recovery; this did not repeat acquisition or inference. Automatic link dispatch, native post rendering, ordinary fresh-run reliability, shared Pro contribution and the rest of the plan remain unverified. No new permission is pending. The cumulative EUR5 ledger retains USD5.082996410796614 with USD0.2170035892033857 unreserved, including prior unknown and future storage/cleanup holds. These are conservative reservations, not an invoice.
+
+Earlier entries below are dated checkpoints. The current receipt above supersedes their pending setup, completion and budget statements; their other acceptance requirements remain.
+
 Current follow-up: the supported existing-plugin tool refresh returned HTTP200 without disconnecting OAuth; this chat still has its old cached definition, so a fresh official Work Cloud turn is checking metadata only. A complete October24 usage read and completed public-check reconciliation released only explicitly justified holds. After a separate metadata allowance, the cumulative ledger retains USD2.5963302151024803 with USD0.4036697848975197 unreserved. This is not an invoice or permission to start an unfunded video. The one-time app policy review and complete real-media return remain pending.
 
 ## Published private MCP request controls, October 25

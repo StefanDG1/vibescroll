@@ -1,16 +1,14 @@
 # Complete the launch and own-subscription workflows
 
-## October 25: finish the real Cloud return
+Current October 25 checkpoint: [the real-video receipt](../../operations/evidence/launch-20261025-cloud-video-return.json) verifies five saved insights and twenty-nine citations from an actual Instagram Reel in the owner's existing production account, without GitHub or a repository. Backend398c325 is live and PRs170-173 are merged with passing exact-head CI. The rejected result returned through recent-owner-approved, exact-hash recovery; this did not repeat acquisition or inference. Automatic link dispatch, native post rendering, ordinary fresh-run reliability, shared Pro contribution and the rest of the plan remain unverified. No new permission is pending. The cumulative EUR5 ledger retains USD5.082996410796614 with USD0.2170035892033857 unreserved, including prior unknown and future storage/cleanup holds. These are conservative reservations, not an invoice.
 
-Owner/team access is live at5ad6dfb with grant7. One real no-repository Cloud run acquired/transcribed/sampled the saved Reel and its preparation was accepted, but final confidence validation rejected completion. ADR152 fixes conservative confidence and adds exact owner-approved return-only recovery through existing APIs. Root owns this immediate milestone; no owner permission remains outstanding. Completion, normal phone-only dispatch, shared Pro contribution and the rest of the original/reconciled plans remain distinct acceptance work. Cumulative EUR5 includes every earlier hold; no paid API fallback.
+Earlier entries below are dated checkpoints. The current receipt above supersedes their pending setup, completion and budget statements; their other acceptance requirements remain.
 
-## Existing sole-owner Cloud posts, October 25
+## Current execution ownership
 
-[ADR 151](../../adr/151-existing-sole-owner-cloud-posts.md) extends the experimental route to the original creator/current sole owner of an active team without active invitations. Reuse existing post IDs and separate organization-bound grants; preserve all saved insights. The cumulative run ceiling is now EUR5 with every prior hold retained. A fresh metadata-capable Cloud chat has no executor; the earlier task currently verifies operational cached tools and enforced restricted Instagram access. Actual production video return remains pending.
+Root owns the remaining integration, automatic dispatch, fiscal proof and final review. Existing original-team access and its reviewed connection are live; preserve all post IDs and saved insights. The current operational Work Cloud task has cached media tools and enforced restricted Instagram access. A newer metadata-only task has no executor, so exposing tools alone is insufficient readiness. Local and managed-credit routes remain available behind their existing gates until Cloud reliability is proved.
 
-Mode: current execution index. Owner direction October 24; reconciled October 25, 2026, Europe/Berlin. Root owns implementation, integration, contracts, budget and final review. This is the single starting point for all remaining work, including the original October 22 launch, creator/onboarding plans, ScrollShow, paid entry, catalog-first insights and automatic link processing. Linked files supply detail; they are not competing plans or new queues.
-
-Current follow-up: the supported existing-plugin tool refresh returned HTTP200 without disconnecting OAuth; this chat still has its old cached definition, so a fresh official Work Cloud turn is checking metadata only. A complete October24 usage read and completed public-check reconciliation released only explicitly justified holds. After a separate metadata allowance, the cumulative ledger retains USD2.5963302151024803 with USD0.4036697848975197 unreserved. This is not an invoice or permission to start an unfunded video. The one-time app policy review and complete real-media return remain pending.
+This is the single remaining-work index for the original October22 launch, N0-N7 creator/onboarding, ScrollShow M0-M7, C0-C10, whole-post Apply, paid entry, catalog and Home/Library/loading work. The dependency order and complete linked acceptance below remain in scope.
 
 ## Start here
 
@@ -22,17 +20,13 @@ Current follow-up: the supported existing-plugin tool refresh returned HTTP200 w
 
 The former chronological front page is preserved in [historical checkpoints](HISTORY-BEFORE-LINK-FIRST-20261024.md). Its old budgets, versions, candidate statuses and manual per-post target are not current instructions. ADRs 148/149 and this index override conflicting historical wording. No requirement is dropped by reorganizing this index.
 
-## Current status, not a completion claim
+## Current status and limits
 
-[ADR 150](../../adr/150-explicit-mcp-cloud-analysis-requests.md) is now published as private experimental controls. One reviewed connection opt-in permits exact video requests through MCP without per-post app approval, using the current jobs/leases. Old grants remain unchanged. [The production receipt](../../operations/evidence/launch-20261025-cloud-mcp-production.json) records frontend/backend `f2495e7`, version `0.1.0-alpha.20261024225317.gf2495e71eea8`, merged PRs 167/168, exact-head CI, fresh no-scan optional-field publication, staged Help/health and canonical version verification. Full main's other migrations remain held.
+[ADR150](../../adr/150-explicit-mcp-cloud-analysis-requests.md), [ADR151](../../adr/151-existing-sole-owner-cloud-posts.md) and [ADR152](../../adr/152-conservative-cloud-result-return.md) are live for the owner's explicit experimental MCP route. Frontend5ad6dfb and backend398c325 preserve original source IDs and organization-bound grant authority. Full main's other migrations remain held. New recovery Help text is merged source, not a rebuilt frontend.
 
-Main `2322d31` passed Verify, versioning and alpha publication. Its combined offline check passed 1,940 tests; the compatible suite passed 1,135, each with three hosted skips. Native actual-component review covered desktop and 320px mobile with synthetic data. This establishes the new request controls, not actual Cloud media acceptance.
+The real Cloud run decoded46.9seconds, transcribed18segments and inspected8sampled frames. It saved5insights/29citations after the original confidence rejection was fixed. The4.639second completion and13.374second return-to-fetch measurements cover only returning the retained result, not total fresh-video processing. Requested Sol High settings are not independently attested.
 
-Still pending: refresh the existing host's tool metadata; review the new one-time Cloud permission in the existing private library with recent app authentication; then prove a whole-budgeted real video-to-cited-result return. The old saved-link workspace has team authority and its posts were not moved or relabeled. Root owns the internal-routing extension needed for those original posts. No additional source links or blanket OAuth reconnection are needed now.
-
-Not verified in production: complete Cloud video return and speed, automatic waiting-work dispatch, neutral subscription contribution to the shared catalog, global paid-before-app access, the workspace-free insight journey, requested Home cards/insight feed, full-main whole-post application and general customer readiness. The specifically reserved owner-test post remains unanalyzed. Preserve all R/P/N/C/M work below.
-
-At the published checkpoint the same cumulative USD3 cap retains USD2.6424438943301745, leaving USD0.35755610566982554. These are conservative holds, not a settled invoice. A minimum test plus required grant already exceeds this remainder before storage/writes/transfer. Root is reconciling completed usage; do not start or ask the owner to start an unfunded test. Reserve setup, execution, storage, delivery, failure recovery and future cleanup together. No paid API fallback, purchase or budget reset.
+Not verified: automatic link-only phone processing, a fresh post-fix run, native post rendering, shared neutral catalog contribution, global paid-before-app access, requested Home/Library UX, full-main whole-post Apply and general customer readiness. The reserved owner-test post remains unanalyzed. No new source link or repeat OAuth reconnection is needed.
 
 ## Owner decisions and unresolved constraints
 
@@ -125,7 +119,7 @@ Record exact source, command, environment, timestamp, CI, screenshots and honest
 
 ## Current limits and completion standard
 
-Root remains on the owner-approved Sol High continuation setting, Ultra off, with High/Medium assignments and four total concurrency slots. Do not claim an unverified executed Cloud model/effort. Keep the same USD3 ledger, paid gateways off for offline work, gross future test reservations and old unknown/storage/cleanup holds. Basic builds, branch deployment suppression and exact-build promotion controls remain.
+Root remains on the owner-approved Sol High continuation setting, Ultra off, with High/Medium assignments and four total concurrency slots. Do not claim an unverified executed Cloud model/effort. Keep the same cumulative EUR5 ledger with every earlier hold, paid gateways off for offline work, gross future test reservations and old unknown/storage/cleanup holds. Basic builds, branch deployment suppression and exact-build promotion controls remain.
 
 The full-main migration is still held; no unbounded schema/index backfill is authorized. Reddit, commercial/pooling/source access, actual payment, signing/isolation and independent-human gates remain individually tracked. Ordinary unpaid account data is not deleted for billing lapse, and the experimental private Cloud expiry cannot stand in for persistent hosted-library retention.
 

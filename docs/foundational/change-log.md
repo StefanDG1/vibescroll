@@ -374,3 +374,7 @@ October 25, F071: reconciled the owner-only existing-team Cloud experiment acros
 ## F072: exact Cloud confidence and result return, October 25
 
 Source: actual owner-account media preparation, rejected completion and exact-payload offline reproduction. ADR152 conservatively reduces confidence and permits a fresh owner review of only the original retained result hash. Counterargument: returning a result cannot silently authorize more provider work or reconcile unknown usage. Current authority, immutable evidence, fixed completion window and no-overwrite tests are required. Production return remains pending; no campaign, price, customer or availability claim follows.
+
+## F073: verified owner Cloud return, October25
+
+All four briefs now separate one accepted real-media result from pending automatic phone use and customer availability. See the production receipt and ADR152. No new benefit, speed, revenue or provider-approval claim follows.

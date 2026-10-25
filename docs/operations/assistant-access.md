@@ -1,6 +1,23 @@
 # Configure scoped assistant access
 
-## Older workspaces and private Cloud analysis, October 24
+## Current explicit Work Cloud route, October 25
+
+One real saved Instagram Reel completed in the owner's existing production account without GitHub or a repository. [The receipt](evidence/launch-20261025-cloud-video-return.json) separates this accepted, recovered result from pending automatic dispatch and normal fresh-run acceptance. Existing reviewed connection authority permits another explicit MCP request without another per-post app approval. Do not use recovery as the normal execution path.
+
+Use the existing official Work Cloud task with an actual media execution environment. A task that exposes MCP tools but has no shell/media runtime is not ready. Before requesting or claiming a job, verify supported isolation, current enforced restricted network access for the exact provider, verified cached downloader/FFmpeg/ASR tools and model availability. Prepare these before starting the short lease. Stop for missing access or tools; never switch to paid APIs or bypass the network policy.
+
+The version-one host sequence reuses current contracts:
+
+1. Read `get_job_status` for the explicitly requested saved source and its profile. Preserve the returned generation, revision and `grant_version`; do not guess them or select another organization.
+2. Call `request_analysis` with `mode=work_cloud`, those exact fields, `grantVersion`, and explicit Cloud model/effort, `useOwnPlan=true`, `maxApiUsd=0` and finite `retainUntil`. Existing connection policy and both analysis scopes must permit it. No GitHub or repository parameter is needed.
+3. Claim the returned generation once with one unique task correlation ID. Keep its lease token private and unchanged. Read `work_cloud_input` and obey its exact source, rights, policy, retention, bounds and deadline. Unknown dispatch is not permission to request a replacement job.
+4. Acquire the actual approved media after claiming. Reuse verified tools and models, not another post's transcript or analysis. Decode audio and inspect the permitted sampled frames, disclose incomplete coverage, and bind truthful evidence with `work_cloud_prepare`. Renew only the same lease between bounded steps when necessary.
+5. Complete within the lease using cited canonical JSON bound to that preparation. Mark uncertainty honestly. Omit optional usage/model/effort attestations that the runtime cannot verify. Never disclose raw media, lease credentials or signed URLs through the chat.
+6. Fetch the same source/profile once after acknowledged completion. Confirm the current result and protected citations, report actual counts and timings, then remove task-owned raw media/frames/audio and credentials. Preserve verified shared tool/model caches and unrelated files. A return-only timing is not fresh-video latency.
+
+This is an explicit user-request route. Saving a link alone does not yet wake an operational Cloud task. The current Events implementation delivers `analysis_completed`, not waiting work. Root must prove a real supported host's subscription, delivery, renewal and execution bridge before adding standing-authorized waiting-work dispatch through the existing grants, jobs and deliveries. Never claim background execution from a registered event method or successful webhook alone. Keep all original provider, paid-entry, catalog, spending and independent acceptance gates.
+
+## Earlier workspace checkpoint, October 24
 
 The compatible private Cloud protocol is deployed, and the founder connection now exposes `work_cloud_claim`, `work_cloud_input`, `work_cloud_heartbeat`, `work_cloud_prepare`, `work_cloud_complete` and `work_cloud_fail`. The new provider `analysis:execute` permission preserves the existing eight scopes and callback. Normal OAuth consent, the matching app grant and exact post approval are separate requirements. Tool discovery is not a successful video run.
 

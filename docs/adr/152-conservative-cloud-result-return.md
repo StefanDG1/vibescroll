@@ -1,6 +1,6 @@
 # ADR 152: preserve uncertain Cloud results and recover exact returns
 
-Date: October 25, 2026. Status: tested candidate; production return pending.
+Date: October 25, 2026. Status: implemented, merged and production return verified.
 
 ## Observed failure
 
@@ -19,3 +19,7 @@ Current Cloud status overrides older local-intake advice. Cloud waiting, process
 ## Acceptance
 
 Focused tests cover conservative confidence, raw/evidence preservation, exact return after the original deadline, fixed expiry, current authority, hash tampering, denied execution operations and idempotency. Root owns actual payload validation, independent review, exact-head CI, unchanged-schema publication and real MCP return. Keep cumulative EUR5, all prior unknown/future holds, reserved owner-test post and provider/privacy/catalog gates. The existing frontend remains live; no extra website build is required.
+
+## Production outcome, October25
+
+[The receipt](../operations/evidence/launch-20261025-cloud-video-return.json) records backend398c325 and accepted completion plus canonical fetch of five insights/twenty-nine citations in the original account. Owner recovery used the normal protected app API and fresh SSO, then only the original Cloud completion and one fetch. Generation, preparation and raw result stayed unchanged; no new provider work ran. The original failure remains recorded. This closes that exact return, not automatic dispatch, full visual coverage, fresh-run reliability, native rendering or commercial availability.

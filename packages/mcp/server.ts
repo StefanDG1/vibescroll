@@ -24,6 +24,10 @@ export function createKnowledgeHandler(
   workCloudText = false,
   workCloudMedia = false,
 ) {
+  const inlineCloudIntake =
+    "For an exact supported video the user asks to analyze in this already active Work Cloud chat, continue in this same user turn. Before request_analysis or work_cloud_claim, verify supported isolation, restricted provider network access and ready cached downloader/FFmpeg/ASR tools and models; stop if unavailable. Save with analyze=false, then read get_job_status for that source/profile. Reuse a ready result; preserve current queued/running/unknown work instead of creating replacement work. With current explicit_per_source_v1 connection policy and both analysis scopes, call request_analysis(mode=work_cloud) using the returned generation, revision and grant_version as grantVersion, explicit cloud model/effort, useOwnPlan=true, maxApiUsd=0 and finite retainUntil. Claim the returned generation once, read work_cloud_input, acquire only approved media, bind observations with work_cloud_prepare, complete the same lease, then fetch the same source/profile result. Renew only that lease between bounded steps. No pasted second message, Events subscription, GitHub or fresh per-post app approval is needed after the one-time reviewed connection setup. Current user intent, including an applicable chat instruction, must cover that exact video; saving alone grants no Cloud execution or blanket future authority. Results remain private_only, with no catalog publication or paid API fallback. The app does not automatically launch a host task; saves outside this active chat and creator follows still need a separately accepted background wake/execution bridge. ";
+  const legacyAnalysis =
+    "Request supported media local extraction, optional project evaluation, or cancellation of waiting work. GitHub, Reddit and typed source revisions return an app review link for retrieval, analysis and project approval; local/credits/projects modes never route them into the media workflow. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without a mode returns the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it.";
   return createMcpHandler(
     (requestContext) => {
       const server = new McpServer(
@@ -200,7 +204,8 @@ export function createKnowledgeHandler(
       );
       register(
         "save_link",
-        "Save a supported YouTube, Instagram, TikTok or Vimeo link, an exact GitHub repository URL, or a Reddit discussion the user sends to VibeScroll. Use the reviewed connection permission; do not ask for repeated rights confirmation. GitHub and Reddit save link metadata only and return an app review link; they never inherit media extraction defaults. Direct provider access remains gated by verified setup and source review. Supported media may queue local extraction and organization using saved preferences; set analyze=false for save only. Project evaluation requires a named project or explicit bestProjects request; never infer that request from source content. Use a short inferred title and stable request key without asking the user to supply them. Return the receipt and optional credit offer without automatically spending credits. Reuse existing results and do not poll repeatedly. Other sources need an upload or supplied text in the app.",
+        (workCloudMedia ? inlineCloudIntake : "") +
+          "Save a supported YouTube, Instagram, TikTok or Vimeo link, an exact GitHub repository URL, or a Reddit discussion the user sends to VibeScroll. Use the reviewed connection permission; do not ask for repeated rights confirmation. GitHub and Reddit save link metadata only and return an app review link; they never inherit media extraction defaults. Direct provider access remains gated by verified setup and source review. Supported media may queue local extraction and organization using saved preferences; set analyze=false for save only. Project evaluation requires a named project or explicit bestProjects request; never infer that request from source content. Use a short inferred title and stable request key without asking the user to supply them. Return the receipt and optional credit offer without automatically spending credits. Reuse existing results and do not poll repeatedly. Other sources need an upload or supplied text in the app.",
         "links:save",
         z
           .object({
@@ -231,10 +236,7 @@ export function createKnowledgeHandler(
       );
       register(
         "request_analysis",
-        "Request supported media local extraction, optional project evaluation, or cancellation of waiting work. GitHub, Reddit and typed source revisions return an app review link for retrieval, analysis and project approval; local/credits/projects modes never route them into the media workflow. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without a mode returns the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it." +
-          (workCloudMedia
-            ? " Use mode=work_cloud only for an exact supported video the user requests after the new one-time reviewed private app connection opt-in. Read get_job_status first and pass its current generation, revision and grant_version as grantVersion, plus the requested cloud settings. Cloud uses the user's own subscription with useOwnPlan=true and maxApiUsd=0, with no paid API fallback, repository access or publication authority. The host task must verify its tools and network permission before claiming work. The app records waiting work and does not automatically launch a host task or enable background processing."
-            : ""),
+        (workCloudMedia ? inlineCloudIntake : "") + legacyAnalysis,
         "analysis:request",
         z
           .object({
@@ -271,7 +273,7 @@ export function createKnowledgeHandler(
         register(
           "work_cloud_claim",
           workCloudMedia
-            ? "Before claiming media, prepare verified cached tools/model, obtain supported Internet permission and verify current restricted host/resource controls; stop if unavailable. Claim one exact request already approved in VibeScroll. Generate one unique correlation UUID in this session and pass it as taskId; it is not a provider-attested identity. Keep that ID and the once-returned lease token unchanged. Media acquisition requires its own approved media-v2 input. Send heartbeats between bounded steps; stop on a negative or unknown response. No paid API or project authority. Do not retry a lost claim."
+            ? "Before requesting or claiming media, prepare verified cached tools/model, obtain supported Internet permission and verify current restricted host/resource controls; stop if unavailable. Claim one exact request approved through the current VibeScroll connection/request or app approval. An already active Work Cloud chat can continue the same user turn without another pasted message or Events subscription. Generate one unique correlation UUID in this session and pass it as taskId; it is not a provider-attested identity. Keep that ID and the once-returned lease token unchanged. Media acquisition requires its own approved media-v2 input. Send heartbeats between bounded steps; stop on a negative or unknown response. No paid API or project authority. Do not retry a lost claim."
             : "Claim one exact text-analysis request already approved in VibeScroll. Generate one unique correlation UUID in this session as taskId, not a provider-attested identity. Returns its lease token once. No GitHub, source acquisition, media, paid API or project authority is granted. Do not retry a lost or rejected claim; review its status in the app.",
           "analysis:execute",
           workCloudClaimInput,

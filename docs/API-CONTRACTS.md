@@ -1,5 +1,11 @@
 # Interface contracts
 
+## Global catalog and Cloud setup direction, October25
+
+[ADR154](adr/154-global-catalog-defaults-and-cloud-intake.md) requires one global paid catalog, no region or opt-out in normal neutral analysis, and personal-post removal that preserves independent canonical insights. Actual privacy, rights and moderation erasure remain separate. Existing source/account-coupled artifacts need a versioned ownership/lifecycle change; this is not accomplished by skipping one delete call. Keep private context out and preserve the existing stores, approved public examples and advanced editions.
+
+For an explicitly requested video already sent in a ready Work Cloud chat, the host can complete the existing save/status/request/lease/media/result chain in that turn. New tool guidance does not grant automatic future work or launch a host. External saves and creator monitoring require one-time standing setup and a proven signed Events-to-operational-host bridge. Reconnect only when provider authorization expires or is revoked. Current Cloud output remains private-only until the independent generic-contribution path is implemented and admitted.
+
 ## Current source loading candidate, October25
 
 [ADR153](adr/153-source-page-loading-and-active-refresh.md) limits the existing source workspace slice to five authorized direct queries, reuses current full detail, lazily loads related-source choices and stops idle periodic reads while retaining active updates and visibility/reconnect refresh. This is a frontend candidate, not a complete compact-progress contract or production acceptance. Preserve every source action, stale-scope fence and retention check.

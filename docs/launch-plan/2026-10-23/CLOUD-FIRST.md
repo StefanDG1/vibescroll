@@ -1,5 +1,7 @@
 # Finish the launch with user-owned Codex Cloud
 
+Current status is in the [October25 handover](HANDOVER-2026-10-25.md) and [acceptance ledger](ACCEPTANCE.md). The demonstrated Work Cloud result has unresolved transcript/image quality; PR182's display correction is merged but undeployed. The runtime demonstrated was a prepared Work Cloud task, not proof of a public repository-free Codex task-launch API. Reassess the provider mechanism independently. Automatic host wake remains unproved; no remaining stage is removed.
+
 ## Current normal-flow requirement
 
 [ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md) and the [current index](README.md) supersede manual per-post approval/copying as the default target. After supported one-time standing processing/monitoring setup, a link must reuse an eligible current artifact or create one bounded Cloud job, honest stages and automatic post-page display. Extend grants/jobs/events/artifacts; current `analysis_completed` notification alone cannot wake processing. Preserve paid/Pro/private authority and all C0-C10 scope. Manual handoff remains diagnostic evidence. Actual event-to-host/media/return needs implementation and a funded live test.

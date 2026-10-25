@@ -1,5 +1,11 @@
 # Complete the launch and own-subscription workflows
 
+## Current handover, October 25
+
+Start with the [engineering handover](HANDOVER-2026-10-25.md) for current versions, implementation status, unfinished packages, uncommitted work and the continuation prompt. The owner disputed the demonstrated Cloud post's transcript and missing images. Quality acceptance is reopened. Transcript-display PR182 is merged with passing exact-head CI40225282186, but is not deployed; screenshot/thumbnail retention and source/audio review remain unfinished. Production remains frontend/backend675dea2. Automatic share-to-analysis is not accepted. No immediate owner login or new link is requested.
+
+Keep the same cumulative EUR5 cap: USD4.875014256044613 retained and USD0.424985743955387 unreserved, including all prior unknown/future holds. The handover supersedes older status/version/budget statements below. Original P/R/N/C/M requirements and their unresolved acceptance remain.
+
 Latest production checkpoint: [compatible Events support](../../operations/evidence/launch-20261025-cloud-events-production.json) is published at675dea2 on backend/frontend, with matching server configuration and exact-build public health/Help checks. Actual subscription delivery, provider-host wake, standing link-only intake and neutral own-subscription catalog reuse remain unverified. No new subscription or video ran during publication. The cumulative EUR5 ledger retains USD4.875014256044613 with USD0.424985743955387 available; only the completed build allowance was reduced. No new owner login, connection, link or setup answer is needed now.
 
 PR180 is merged atcc8d325 with exact-head CI40216636509 passing. Its Home summary/card/progress work remains separate from the serving compatible release. Keep the full-main populated-index hold and every original work package and release gate; publication of support code does not complete automatic analysis.
@@ -40,7 +46,7 @@ The former chronological front page is preserved in [historical checkpoints](HIS
 
 ## Current status and limits
 
-[ADR150](../../adr/150-explicit-mcp-cloud-analysis-requests.md), [ADR151](../../adr/151-existing-sole-owner-cloud-posts.md) and [ADR152](../../adr/152-conservative-cloud-result-return.md) are live for the owner's explicit experimental MCP route. Frontend5ad6dfb and backend398c325 preserve original source IDs and organization-bound grant authority. Full main's other migrations remain held. New recovery Help text is merged source, not a rebuilt frontend.
+[ADR150](../../adr/150-explicit-mcp-cloud-analysis-requests.md), [ADR151](../../adr/151-existing-sole-owner-cloud-posts.md) and [ADR152](../../adr/152-conservative-cloud-result-return.md) remain published in compatible frontend/backend675dea2, preserving original source IDs and organization-bound grant authority. The later Events publication included matching configuration and health/Help checks, not a new video or automatic execution test. Full-main migrations and the merged transcript-display correction remain unshipped.
 
 The real Cloud run decoded46.9seconds, transcribed18segments and inspected8sampled frames. It saved5insights/29citations after the original confidence rejection was fixed. The4.639second completion and13.374second return-to-fetch measurements cover only returning the retained result, not total fresh-video processing. Requested Sol High settings are not independently attested.
 

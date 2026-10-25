@@ -1,5 +1,9 @@
 # VibeScroll foundational beliefs
 
+## F073: real owner Cloud result, bounded claim
+
+[The production receipt](../operations/evidence/launch-20261025-cloud-video-return.json) verifies one actual Instagram video returned five insights and twenty-nine citations to the existing owner account without GitHub. Exact result recovery followed a real confidence rejection. This proves that retained source-to-result attempt, not automatic phone processing, fresh-run speed, complete visual coverage, shared-catalog availability or customer acceptance. Keep the audience, prices, six beliefs, proprietary catalog and provider/privacy gates unchanged. Cumulative EUR5 retains all earlier unknown and future holds.
+
 ## F072: honest confidence and exact Cloud result recovery
 
 [ADR 152](../adr/152-conservative-cloud-result-return.md) records accepted real-media preparation and a failed production return due to overstated confidence. Preserve citations and reduce affected labels to uncertain; exact owner-reviewed result recovery permits no new execution. Actual completed return remains pending. Keep the audience, prices, six beliefs, proprietary catalog and provider/privacy gates unchanged. Cumulative EUR5 includes all earlier holds; no customer, speed or commercial-availability claim follows.

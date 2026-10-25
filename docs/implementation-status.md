@@ -1,5 +1,13 @@
 # October 22 launch implementation candidate
 
+## Independent catalog lifecycle and Cloud waiting Events, October25
+
+Source4fef582 implements independent canonical authority, association-only personal removal and bounded canonical safety cleanup, including restore recovery. Profile-scoped waiting and connection-verification Events reuse existing subscriptions, deliveries and source jobs. They do not create automatic work, establish standing authority or publish private Cloud output. The connection payload explicitly leaves host execution unverified. [The receipt](operations/evidence/launch-20261025-catalog-cloud-events.json) records contracts, failures and limits.
+
+`node scripts/run-offline.mjs pnpm check` passed locally with2,034 tests, three hosted skips, zero-warning lint, all types and both production builds. Registry audit passed policy with two low/two moderate advisories and no high/critical advisory; staged secret/diff checks passed. Independent High review found no remaining P1/P2 after the restore cleanup fix. Exact-head CI and publication are separate pending stages. No live calls, gates or serving versions changed during this implementation.
+
+One real saved production Reel already has five insights/twenty-nine citations through the no-GitHub Cloud route and exact return recovery, as recorded in [its receipt](operations/evidence/launch-20261025-cloud-video-return.json). Automatic link-only processing, native rendering, neutral own-subscription contribution, general paid access and the full launch are not yet accepted. Same cumulative EUR5 and all prior unknown/future holds remain. No new owner setup answer is pending.
+
 ## Conservative Cloud result return, October 25
 
 [ADR 152](adr/152-conservative-cloud-result-return.md) records a real accepted preparation and rejected completion, followed by exact-payload offline verification. The adapter reduces overstated confidence and supports a recent-owner-reviewed, hash-bound return of the same retained attempt. It starts no processing and preserves saved posts/insights. Current Cloud status overrides old local-intake advice. Production completion remains pending; cumulative EUR5 and all prior holds remain.

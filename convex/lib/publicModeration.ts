@@ -43,7 +43,7 @@ export async function legacyModerationPending(ctx: QueryCtx) {
 }
 export async function publicModerationBlocked(
   ctx: QueryCtx,
-  source: Doc<"sources">,
+  source: Pick<Doc<"sources">, "_id" | "canonical" | "organizationId">,
   publisher: Id<"users">,
 ) {
   if (await legacyModerationPending(ctx)) return true;

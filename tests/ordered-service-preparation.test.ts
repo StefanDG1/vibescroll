@@ -707,13 +707,33 @@ it("preserves bounded decoder omissions and fixed warnings in prompt, cache bind
   expect(
     await s.t.run((ctx) => serviceArtifactCurrent(ctx, artifacts[0])),
   ).not.toBeNull();
+  const frozen = await s.t.run((ctx) =>
+    serviceArtifactCurrent(ctx, artifacts[0]),
+  );
   await s.t.run((ctx) =>
     ctx.db.patch(s.id, {
       orderedPreparation: { ...pending.orderedPreparation!, warnings: [] },
     }),
   );
+  // Later account-owned metadata cannot rewrite the admitted canonical coverage.
   expect(
     await s.t.run((ctx) => serviceArtifactCurrent(ctx, artifacts[0])),
+  ).toEqual(frozen);
+  await s.t.run(async (ctx) => {
+    const artifact = (await ctx.db.get(artifacts[0]._id))!;
+    if (artifact.origin !== "service") throw Error("fixture");
+    await ctx.db.patch(artifact._id, {
+      authority: {
+        ...artifact.authority,
+        diagnostics: { ...artifact.authority.diagnostics, warnings: [] },
+      },
+    });
+  });
+  // Tampering with the frozen diagnostics still invalidates canonical access.
+  expect(
+    await s.t.run(async (ctx) =>
+      serviceArtifactCurrent(ctx, await ctx.db.get(artifacts[0]._id)),
+    ),
   ).toBeNull();
 });
 

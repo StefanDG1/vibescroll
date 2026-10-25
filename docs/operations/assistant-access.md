@@ -1,5 +1,16 @@
 # Configure scoped assistant access
 
+## Profile Cloud Events candidate, October25
+
+The [offline-verified candidate](evidence/launch-20261025-catalog-cloud-events.json) adds two Events through the existing modern MCP transport. Both take exactly `{profileId, grantVersion}`. Neither grants execution or publication authority.
+
+- `work_cloud_waiting` identifies an already explicitly approved, current, unclaimed Cloud job. Its versioned payload contains source/profile identity, generation, grant version, approval time, waiting status and a protected post link. Exact occurrence deduplication includes source identity. Approval and identical unclaimed request reuse can enqueue it; claimed or unknown work is never restarted. Subscription creation does not scan old jobs.
+- `work_cloud_connection_verified` emits once when a new subscription is created after callback verification. Its payload says `status=webhook_verified` and `hostExecutionVerified=false`. Ordinary renewal emits no new connection notification. Receipt alone cannot establish an operational media host.
+
+Installation, delivery claim and transmission recheck current eligible owner, exact grant/client/consent, reviewed Cloud policy, all-library scope and Events/request/execution scopes. Existing encrypted callback authority, public-address restrictions, key rotation, bounded retries, revocation and restore quarantine remain. Legacy exact-source completion Events keep their existing arguments, identity and behavior.
+
+Subscriptions remain capped at30minutes and at earlier OAuth/grant expiry. The supported host must renew them; persistent background readiness is unverified until actual renewal succeeds. Matching protected keys and Events gates must be configured on both serving frontend and backend before the real host setup test. Do not reconnect OAuth, request another link or claim automatic save processing merely because tools are exposed. Standing authority, ordinary save/creator dispatch and neutral own-subscription catalog admission remain separate implementation stages. This candidate is not yet serving.
+
 ## Current explicit Work Cloud route, October 25
 
 One real saved Instagram Reel completed in the owner's existing production account without GitHub or a repository. [The receipt](evidence/launch-20261025-cloud-video-return.json) separates this accepted, recovered result from pending automatic dispatch and normal fresh-run acceptance. Existing reviewed connection authority permits another explicit MCP request without another per-post app approval. Do not use recovery as the normal execution path.

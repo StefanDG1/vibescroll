@@ -103,6 +103,8 @@ export const purgeOrganization = internalMutation({
       const batchSize = table === "publicEditions" ? 5 : 100;
       const rows = await ctx.db
         .query(table)
+        // Independent service artifacts have no organizationId, so this indexed
+        // purge removes editions/associations without skipping canonical rows.
         .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
         .take(batchSize);
       for (const row of rows) {

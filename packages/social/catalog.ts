@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Catalog cards are separate from immutable service-import-v1 saved DTOs.
+// Catalog cards are separate from immutable service-import-v2 saved DTOs.
 export const serviceCatalogPageSize = 5;
 export const serviceCatalogSummaryLimit = 1200;
 export const serviceCatalogQuery = z.string().trim().min(1).max(200);

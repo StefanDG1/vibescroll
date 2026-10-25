@@ -22,6 +22,10 @@ import { personalOrderedInputSchema } from "../packages/social/ordered-intake";
 import { providedMediaMetadata } from "../packages/social/contracts";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { invalidatePublicSource } from "./publicKnowledge";
+import {
+  preservesServiceArtifact,
+  type ServiceInvalidationReason,
+} from "../packages/social/catalog-authority";
 import { filing } from "./librarySpaces";
 import { repositoryContent } from "./lib/repositoryContent";
 import { repositoryManifest } from "./lib/repositoryManifest";
@@ -2130,11 +2134,15 @@ export const deleteSource = mutation({
     const s = await ctx.db.get(id);
     if (!s) return;
     await writeAccess(ctx, s.organizationId);
-    await redactSource(ctx, id);
+    await redactSource(ctx, id, "association_remove");
   },
 });
-export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
-  await invalidatePublicSource(ctx, id);
+export async function redactSource(
+  ctx: MutationCtx,
+  id: Id<"sources">,
+  reason: ServiceInvalidationReason = "unspecified",
+) {
+  await invalidatePublicSource(ctx, id, reason);
   const trialSource = await ctx.db.get(id);
   if (trialSource)
     await ctx.scheduler.runAfter(0, internal.privateSourceAnalysis.scrub, {
@@ -2171,17 +2179,22 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
         active: Math.max(0, counts.active - 1),
       });
   }
-  if (
-    !(await ctx.db
-      .query("tombstones")
-      .withIndex("by_target", (q) => q.eq("target", id))
-      .first())
-  )
+  const tombstone = await ctx.db
+    .query("tombstones")
+    .withIndex("by_target", (q) => q.eq("target", id))
+    .first();
+  if (!tombstone)
     await ctx.db.insert("tombstones", {
       organizationId: s.organizationId,
       target: id,
       at: Date.now(),
+      ...(preservesServiceArtifact(reason)
+        ? { catalogDisposition: "personal-association-v1" as const }
+        : {}),
     });
+  else if (!preservesServiceArtifact(reason) && tombstone.catalogDisposition)
+    // A later safety erasure must never be weakened by personal-marker replay.
+    await ctx.db.patch(tombstone._id, { catalogDisposition: undefined });
   const proposals = await ctx.db
     .query("proposals")
     .withIndex("by_source", (q) => q.eq("sourceId", id))

@@ -20,6 +20,7 @@ import { sealEventCredentials } from "../packages/mcp/credentials";
 import { eventSubscriptionId } from "../packages/mcp/events";
 import { internal, api } from "../convex/_generated/api";
 import { queueSourceCompletion } from "../convex/lib/assistantEvents";
+import { waitingEvent, connectionEvent } from "../packages/mcp/events";
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
@@ -93,6 +94,159 @@ async function runtimeSetup(untilRevoked = false) {
   }));
   return { ...s, grant, selected, input, sign, provider, credentials };
 }
+async function profileRuntimeSetup(
+  eventName: "work_cloud_waiting" | "work_cloud_connection_verified",
+) {
+  const s = await runtimeSetup();
+  const scopes = ["analysis:execute", "analysis:request", "events:subscribe"];
+  for (const key of ["WORK_CLOUD_MEDIA_ENABLED", "WORK_CLOUD_MEDIA_VERIFIED"])
+    vi.stubEnv(key, "true");
+  vi.stubEnv(
+    "PERSONAL_ALPHA_SUBJECTS_JSON",
+    JSON.stringify([principal.subject]),
+  );
+  vi.stubEnv(
+    "MCP_CLIENTS",
+    JSON.stringify([{ id: principal.clientId, name: "Synthetic", scopes }]),
+  );
+  const grant = await s.owner.mutation(api.assistantGrants.save, {
+    ...s.args,
+    expectedVersion: 1,
+    sources: [],
+    libraryScope: "all",
+    scopes,
+    cloudRequestPolicy: "explicit_per_source_v1",
+  });
+  const assistant = s.t.withIdentity({
+    subject: principal.subject,
+    issuer: "https://synthetic-test.authkit.app",
+    client_id: principal.clientId,
+    sid: principal.consentId,
+    scope: scopes.join(" "),
+  });
+  const credentials = {
+    ...s.credentials,
+    token: await s.sign({ scope: scopes.join(" ") }),
+  };
+  const selected = { profileId: s.organizationId, grantVersion: grant.version };
+  const input = {
+    ...selected,
+    eventName,
+    ...sealEventCredentials(credentials, principal),
+  };
+  return { ...s, assistant, grant, credentials, selected, input, eventName };
+}
+it("signs one connection-created event with honest host readiness, not on renewal", async () => {
+  vi.useFakeTimers();
+  const s = await profileRuntimeSetup("work_cloud_connection_verified");
+  await s.assistant.action(internal.assistantEventRuntime.subscribe, s.input);
+  await s.assistant.action(internal.assistantEventRuntime.subscribe, s.input);
+  const rows = await s.t.run((ctx) =>
+    ctx.db.query("assistantDeliveries").collect(),
+  );
+  expect(rows).toHaveLength(1);
+  callback.mockClear();
+  await s.t.action(internal.assistantEventRuntime.deliver, { id: rows[0]._id });
+  expect(callback).toHaveBeenCalledTimes(1);
+  const sent = callback.mock.calls[0],
+    body = JSON.parse(sent[1]);
+  expect(body.name).toBe(connectionEvent.name);
+  expect(body.data).toEqual({
+    schemaVersion: "work-cloud-connection-v1",
+    profileId: s.organizationId,
+    grantVersion: s.grant.version,
+    status: "webhook_verified",
+    hostExecutionVerified: false,
+  });
+  expect(sent[2]["webhook-id"]).toBe(body.eventId);
+  expect(sent[2]["X-MCP-Subscription-Id"]).toBe(
+    eventSubscriptionId(
+      principal,
+      s.credentials.callback,
+      s.selected,
+      s.eventName,
+    ),
+  );
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual([]);
+});
+it("sends only versioned waiting identity and protected link for an explicitly approved queued job", async () => {
+  vi.useFakeTimers();
+  const s = await profileRuntimeSetup("work_cloud_waiting");
+  await s.assistant.action(internal.assistantEventRuntime.subscribe, s.input);
+  const sourceId = await s.owner.mutation(api.product.capture, {
+    organizationId: s.organizationId,
+    kind: "url",
+    url: "https://www.youtube.com/watch?v=abcdefghijk",
+    key: "waiting-runtime",
+    title: "Synthetic waiting runtime",
+    rightsAttested: true,
+  });
+  const source = (await s.t.run((ctx) => ctx.db.get(sourceId)))!;
+  await s.assistant.mutation(internal.assistant.requestAnalysis, {
+    profileId: s.organizationId,
+    sourceId,
+    generation: source.generation,
+    revision: source.updatedAt,
+    grantVersion: s.grant.version,
+    mode: "work_cloud",
+    cloud: {
+      model: "synthetic-model",
+      effort: "high",
+      maxApiUsd: 0,
+      useOwnPlan: true,
+      retainUntil: Date.now() + 86400000,
+    },
+  });
+  const row = (await s.t.run((ctx) =>
+    ctx.db.query("assistantDeliveries").first(),
+  ))!;
+  callback.mockClear();
+  await s.t.action(internal.assistantEventRuntime.deliver, { id: row._id });
+  const sent = callback.mock.calls[0],
+    body = JSON.parse(sent[1]);
+  expect(body.name).toBe(waitingEvent.name);
+  expect(body.data).toEqual({
+    schemaVersion: "work-cloud-waiting-v1",
+    sourceId,
+    profileId: s.organizationId,
+    generation: 1,
+    grantVersion: s.grant.version,
+    approvedAt: row.completedRevision,
+    status: "waiting",
+    reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/library/${sourceId}`,
+  });
+  expect(sent[2]["webhook-id"]).toBe(body.eventId);
+  expect(sent[2]["X-MCP-Subscription-Id"]).toBe(
+    eventSubscriptionId(
+      principal,
+      s.credentials.callback,
+      s.selected,
+      s.eventName,
+    ),
+  );
+  expect(JSON.stringify(body)).not.toMatch(
+    /PRIVATE|leaseToken|inputHash|transcript/,
+  );
+});
+it("rejects a profile token missing analysis scope before verifying callback ownership", async () => {
+  const s = await profileRuntimeSetup("work_cloud_connection_verified");
+  const input = {
+    ...s.input,
+    ...sealEventCredentials(
+      {
+        ...s.credentials,
+        token: await s.sign({ scope: "events:subscribe analysis:request" }),
+      },
+      principal,
+    ),
+  };
+  await expect(
+    s.assistant.action(internal.assistantEventRuntime.subscribe, input),
+  ).rejects.toThrow("EVENT_AUTHORIZATION_UNAVAILABLE");
+  expect(callback).not.toHaveBeenCalled();
+});
 it("caps completion credentials at OAuth expiry even when the app grant lasts until revoked", async () => {
   const s = await runtimeSetup(true);
   const result = await s.assistant.action(

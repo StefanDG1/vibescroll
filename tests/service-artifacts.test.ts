@@ -282,6 +282,15 @@ it("commits only validated neutral data, reuses idempotently and stays outside e
   expect(await commit(s)).toEqual({ ...first, reused: true });
   const current = await read(s, first.artifactId);
   expect(current?.analysis).toEqual(s.result);
+  expect(current?.artifact.authority.version).toBe(
+    "global-service-authority-v1",
+  );
+  expect(current?.artifact).not.toHaveProperty("organizationId");
+  expect(current?.artifact).not.toHaveProperty("fundingOwner");
+  expect(current?.artifact).not.toHaveProperty("reservationKey");
+  expect(JSON.stringify(current?.artifact)).not.toContain(
+    "service@example.test",
+  );
   expect(current?.artifact.retainUntil).toBe(
     s.prepared.post.observedAt + s.rights.maxRetentionMs,
   );
@@ -305,13 +314,19 @@ it.each([
   "CREATOR_FOLLOWING_ENABLED",
   "CREATOR_SERVICE_ORGANIZATION_ID",
   "HOSTED_MEDIA_ACCEPTANCE_ENABLED",
-])("requires the current server gate %s at commit and reuse", async (gate) => {
-  const s = await setup();
-  const a = await commit(s);
-  vi.stubEnv(gate, "");
-  expect(await read(s, a.artifactId)).toBeNull();
-  await expect(commit(s)).rejects.toThrow();
-});
+])(
+  "requires admission gate %s without retaining account execution dependencies",
+  async (gate) => {
+    const s = await setup();
+    const a = await commit(s);
+    vi.stubEnv(gate, "");
+    expect((await read(s, a.artifactId)) !== null).toBe(
+      gate === "CREATOR_SERVICE_ORGANIZATION_ID" ||
+        gate === "HOSTED_MEDIA_ACCEPTANCE_ENABLED",
+    );
+    await expect(commit(s)).rejects.toThrow();
+  },
+);
 
 it.each([
   "crossCustomerReuse",
@@ -346,7 +361,7 @@ it.each([
   },
 );
 
-it("binds exact current provider identity, route, policy hash and fresh owner authorization", async () => {
+it("binds current provider rights while contributor authorization governs only new admissions", async () => {
   const s = await setup();
   const a = await commit(s);
   for (const rights of [
@@ -362,7 +377,8 @@ it("binds exact current provider identity, route, policy hash and fresh owner au
   }
   vi.stubEnv("CREATOR_PROVIDER_CONFIGURATION", JSON.stringify(s.configuration));
   await s.t.run((ctx) => ctx.db.patch(s.actor, { status: "deleting" }));
-  expect(await read(s, a.artifactId)).toBeNull();
+  expect(await read(s, a.artifactId)).not.toBeNull();
+  await expect(commit(s)).rejects.toThrow();
 });
 
 it.each([
@@ -373,31 +389,35 @@ it.each([
   "local",
   "rights",
   "owner",
-])("does not let changed %s reuse an old artifact", async (change) => {
-  const s = await setup();
-  const a = await commit(s);
-  await s.t.run(async (ctx) => {
-    const source = (await ctx.db.get(s.sourceId))!;
-    if (change === "generation")
-      await ctx.db.patch(s.sourceId, { generation: 2 });
-    if (change === "sourceRevision")
-      await ctx.db.patch(s.sourceId, { updatedAt: s.now + 1 });
-    if (change === "analysis")
-      await ctx.db.patch(s.sourceId, {
-        analysis: { ...s.result, summary: "Changed output" },
-      });
-    if (change === "intent")
-      await ctx.db.patch(s.sourceId, {
-        serviceIntent: { ...source.serviceIntent!, generation: 2 },
-      });
-    if (change === "local")
-      await ctx.db.patch(s.sourceId, { managedAnalysisActor: undefined });
-    if (change === "rights")
-      await ctx.db.patch(s.sourceId, { rightsAttested: false });
-    if (change === "owner") await ctx.db.patch(s.org, { status: "deleting" });
-  });
-  expect(await read(s, a.artifactId)).toBeNull();
-});
+])(
+  "keeps frozen canonical content independent of changed contributor %s",
+  async (change) => {
+    const s = await setup();
+    const a = await commit(s);
+    await s.t.run(async (ctx) => {
+      const source = (await ctx.db.get(s.sourceId))!;
+      if (change === "generation")
+        await ctx.db.patch(s.sourceId, { generation: 2 });
+      if (change === "sourceRevision")
+        await ctx.db.patch(s.sourceId, { updatedAt: s.now + 1 });
+      if (change === "analysis")
+        await ctx.db.patch(s.sourceId, {
+          analysis: { ...s.result, summary: "Changed output" },
+        });
+      if (change === "intent")
+        await ctx.db.patch(s.sourceId, {
+          serviceIntent: { ...source.serviceIntent!, generation: 2 },
+        });
+      if (change === "local")
+        await ctx.db.patch(s.sourceId, { managedAnalysisActor: undefined });
+      if (change === "rights")
+        await ctx.db.patch(s.sourceId, { rightsAttested: false });
+      if (change === "owner") await ctx.db.patch(s.org, { status: "deleting" });
+    });
+    expect((await read(s, a.artifactId))?.analysis).toEqual(s.result);
+    if (change !== "sourceRevision") await expect(commit(s)).rejects.toThrow();
+  },
+);
 
 it.each([
   "missing",
@@ -1069,7 +1089,19 @@ it("rejects forged projection text or hashes, reindexes only current generic con
   expect((await search()).page).toHaveLength(1);
   expect(await s.t.run((ctx) => ctx.db.get(layer._id))).toEqual(layer);
   await s.t.run((ctx) => ctx.db.patch(s.sourceId, { generation: 2 }));
-  expect((await search()).page).toEqual([]);
+  expect((await search()).page).toHaveLength(1);
+  await s.t.mutation(internal.serviceArtifacts.reindexCatalog, {
+    cursor: null,
+  });
+  expect((await search()).page).toHaveLength(1);
+  await s.t.mutation(internal.serviceArtifacts.invalidateSource, {
+    sourceId: s.sourceId,
+    maxGeneration: 1,
+    reason: "privacy",
+  });
+  // convex-test cannot evaluate a search row after its optional text is removed.
+  // Verify denial and physical index projection cleanup directly instead.
+  expect(await read(s, artifact._id)).toBeNull();
   await s.t.mutation(internal.serviceArtifacts.reindexCatalog, {
     cursor: null,
   });
@@ -1877,7 +1909,22 @@ it("denies shared-workspace/viewer/foreign-tenant imports and refuses stale comp
 it("source invalidation scrubs only bounded old generations and delayed cleanup preserves a recovered artifact", async () => {
   const s = await setup();
   const a = await commit(s);
-  const freshResult = { ...s.result, processingRunId: `${s.sourceId}:2` };
+  const prepared = structuredClone(s.prepared);
+  prepared.post.caption = "A genuinely changed source version";
+  prepared.post.captionHash = await socialHash(prepared.post.caption);
+  prepared.post.revisionHash = await socialRevisionHash(prepared.post);
+  prepared.evidence[0].postRevisionHash = prepared.post.revisionHash;
+  const compatibility = await serviceCompatibility(
+    prepared,
+    "en",
+    s.rights,
+    s.now,
+  );
+  const freshResult = {
+    ...s.result,
+    processingRunId: `${s.sourceId}:2`,
+    postRevisionHash: prepared.post.revisionHash,
+  };
   vi.setSystemTime(s.now + 10);
   await s.t.run(async (ctx) => {
     const row = (await ctx.db.get(a.artifactId))!;
@@ -1889,10 +1936,11 @@ it("source invalidation scrubs only bounded old generations and delayed cleanup 
       generation: 2,
       updatedAt: s.now + 10,
       analysis: freshResult,
+      orderedMedia: prepared,
       serviceIntent: {
         schemaVersion: "service-social-v1",
         generation: 2,
-        ...s.compatibility,
+        ...compatibility,
       },
       processingStartedAt: s.now + 1,
       processingReceipt: {
@@ -1917,6 +1965,7 @@ it("source invalidation scrubs only bounded old generations and delayed cleanup 
   const fresh = await s.t.mutation(internal.serviceArtifacts.commit, {
     ...s.args,
     generation: 2,
+    compatibilityKey: compatibility.compatibilityKey,
     result: freshResult,
   });
   expect((await read(s, fresh.artifactId))?.analysis.processingRunId).toBe(
@@ -1946,6 +1995,437 @@ it("full source removal scrubs the service payload through the existing source i
   const row = await s.t.run((ctx) => ctx.db.get(a.artifactId));
   expect(row).toMatchObject({ state: "blocked" });
   expect(row).not.toHaveProperty("data");
+});
+
+it("keeps B's catalog and saved copy after A removes their post, workspace and account", async () => {
+  const s = await setup();
+  const { r, args, saved, layer } = await savedCopy(s);
+  const before = await r.client.query(api.publicKnowledge.savedDetail, {
+    sourceId: saved.sourceId,
+  });
+  await s.owner.mutation(api.product.deleteSource, { id: s.sourceId });
+  expect((await read(s, args.artifactId))?.analysis).toEqual(s.result);
+  const marker = (
+    await s.t.query(internal.recovery.markerPage, {
+      section: "tombstones",
+      cursor: null,
+    })
+  ).page[0];
+  expect(marker).toMatchObject({
+    kind: "source",
+    catalogDisposition: "personal-association-v1",
+  });
+  await s.owner.mutation(api.organizations.remove, {
+    organizationId: s.org,
+    confirmation: "Synthetic service workspace",
+  });
+  await s.owner.mutation(api.accounts.deleteAccount, {
+    confirmation: "service@example.test",
+  });
+  await s.t.mutation(internal.maintenance.purgeOrganization, {
+    organizationId: s.org,
+  });
+  const deletion = (
+    await s.t.run((ctx) => ctx.db.query("deletionJobs").collect())
+  )[0];
+  await s.t.mutation(internal.accounts.finishDelete, { jobId: deletion._id });
+  expect(await s.t.run((ctx) => ctx.db.get(s.actor))).toBeNull();
+  expect(await s.t.run((ctx) => ctx.db.get(s.org))).toBeNull();
+  expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toBeNull();
+  expect((await read(s, args.artifactId))?.analysis).toEqual(s.result);
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toEqual(before);
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).toEqual(layer);
+  expect(
+    (
+      await r.client.query(api.serviceArtifacts.browse, {
+        organizationId: r.org,
+        cursor: null,
+      })
+    ).page,
+  ).toHaveLength(1);
+  const preview = await r.client.query(api.serviceArtifacts.preview, args);
+  for (const privateValue of [
+    s.actor,
+    s.org,
+    "service@example.test",
+    "Synthetic service owner",
+    "authority",
+    "moderation",
+  ])
+    expect(JSON.stringify(preview)).not.toContain(privateValue);
+});
+
+it("personal retention removes provider material but does not shorten independent canonical rights", async () => {
+  const s = await setup();
+  const personalDeadline = s.now + 100;
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, { sourceRetentionUntil: personalDeadline }),
+  );
+  const { r, args, saved } = await savedCopy(s);
+  expect(
+    (await read(s, args.artifactId))!.artifact.retainUntil,
+  ).toBeGreaterThan(personalDeadline);
+  const revisionId = await s.t.run(async (ctx) => {
+    const id = await ctx.db.insert("sourceRevisions", {
+      organizationId: s.org,
+      sourceId: s.sourceId,
+      generation: 1,
+      createdAt: s.now,
+      updatedAt: s.now,
+      contentHash: "a".repeat(64),
+      revision: { retention: { retainUntil: personalDeadline } },
+      evidence: [],
+      text: "Private provider text",
+      state: "current",
+    });
+    await ctx.db.patch(s.sourceId, { currentRevisionId: id });
+    return id;
+  });
+  vi.setSystemTime(personalDeadline);
+  await s.t.mutation(internal.sourceAcquisition.expire, { revisionId });
+  expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).not.toHaveProperty(
+    "analysis",
+  );
+  expect((await read(s, args.artifactId))?.analysis).toEqual(s.result);
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toMatchObject({ available: true });
+});
+
+it.each(["rights", "privacy", "moderation", undefined] as const)(
+  "canonical %s removal still denies and scrubs B's copy after A's personal removal",
+  async (reason) => {
+    const s = await setup();
+    const { r, args, saved, layer } = await savedCopy(s);
+    await s.owner.mutation(api.product.deleteSource, { id: s.sourceId });
+    await s.t.run((ctx) => ctx.db.delete(s.sourceId));
+    await s.t.mutation(internal.publicKnowledge.invalidateSource, {
+      sourceId: s.sourceId,
+      ...(reason ? { reason } : {}),
+    });
+    expect(await read(s, args.artifactId)).toBeNull();
+    expect(
+      await r.client.query(api.publicKnowledge.savedDetail, {
+        sourceId: saved.sourceId,
+      }),
+    ).toMatchObject({ available: false, service: null });
+    await s.t.mutation(internal.serviceArtifacts.scrubCopies, {
+      artifactId: args.artifactId,
+      cursor: null,
+    });
+    expect(await s.t.run((ctx) => ctx.db.get(layer._id))).not.toHaveProperty(
+      "snapshot",
+    );
+    const artifact = await s.t.run((ctx) => ctx.db.get(args.artifactId));
+    expect(artifact).toMatchObject({ state: "blocked" });
+    expect(artifact).not.toHaveProperty("data");
+    expect(artifact).not.toHaveProperty("catalogSearchText");
+  },
+);
+
+it("uses frozen moderation identity after the contributor source is deleted", async () => {
+  const s = await setup();
+  const { r, args, saved, layer } = await savedCopy(s);
+  await s.owner.mutation(api.product.deleteSource, { id: s.sourceId });
+  const artifact = (await s.t.run((ctx) => ctx.db.get(args.artifactId)))!;
+  if (artifact.origin !== "service") throw Error("fixture");
+  await s.t.run(async (ctx) => {
+    await ctx.db.delete(s.sourceId);
+    await ctx.db.insert("publicModerationBlocks", {
+      ...artifact.authority.moderation,
+      sourceId: s.sourceId,
+      origin: "legacy_removal",
+      reason: "privacy",
+      state: "active",
+      version: 1,
+      createdAt: s.now,
+      updatedAt: s.now,
+    });
+  });
+  expect(await read(s, args.artifactId)).toBeNull();
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toMatchObject({ available: false });
+  await s.t.mutation(internal.serviceArtifacts.scrubCopies, {
+    artifactId: args.artifactId,
+    cursor: null,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).not.toHaveProperty(
+    "snapshot",
+  );
+});
+
+it("an actual edition moderation removal schedules canonical cleanup without deleting the private source", async () => {
+  const s = await setup();
+  const { r, args, saved, layer } = await savedCopy(s);
+  const reportId = await s.t.run(async (ctx) => {
+    const payload = {
+      title: "Advanced public edition",
+      summary: "Reviewed generic copy",
+      publisher: "Synthetic publisher",
+      sourceUrl: s.prepared.post.canonical,
+      coverage: "ordered_media",
+      language: "en",
+      pipelineVersion: "fixture",
+      schemaVersion: "3.0.0",
+      insights: [],
+    };
+    const editionId = await ctx.db.insert("publicEditions", {
+      organizationId: s.org,
+      actor: s.actor,
+      sourceId: s.sourceId,
+      sourceGeneration: 1,
+      sourceRevision: s.now,
+      createdAt: s.now,
+      updatedAt: s.now,
+      state: "published",
+      version: 1,
+      slug: "moderated-catalog-fixture",
+      payload,
+      payloadHash: await socialHash(canonicalJson(payload)),
+      rightsBasis: "licensed",
+      permissionReference: "Synthetic review",
+      permissionExpiresAt: s.rights.expiresAt,
+      reuseAllowed: true,
+    });
+    return ctx.db.insert("publicReports", {
+      organizationId: s.org,
+      editionId,
+      key: "canonical-moderation-fixture",
+      reason: "privacy",
+      state: "open",
+      createdAt: s.now,
+      updatedAt: s.now,
+    });
+  });
+  vi.stubEnv("PUBLIC_MODERATOR_SUBJECTS_JSON", '["recipient"]');
+  await r.client.mutation(api.publicKnowledge.moderate, {
+    reportId,
+    action: "remove",
+  });
+  expect(await read(s, args.artifactId)).toBeNull();
+  expect(
+    await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    }),
+  ).toMatchObject({ available: false });
+  await vi.advanceTimersByTimeAsync(0);
+  await s.t.finishInProgressScheduledFunctions();
+  expect(Date.now()).toBe(s.now);
+  expect(await s.t.run((ctx) => ctx.db.get(args.artifactId))).toMatchObject({
+    state: "blocked",
+  });
+  await s.t.mutation(internal.serviceArtifacts.scrubCopies, {
+    artifactId: args.artifactId,
+    cursor: null,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(layer._id))).not.toHaveProperty(
+    "snapshot",
+  );
+  expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toMatchObject({
+    state: "ready",
+    analysis: s.result,
+  });
+});
+
+it.each([true, false])(
+  "restore preserves only explicitly personal marker authority: %s",
+  async (personal) => {
+    const s = await setup();
+    const { args } = await savedCopy(s);
+    const { _id, _creationTime, ...original } = (await s.t.run((ctx) =>
+      ctx.db.get(s.sourceId),
+    ))!;
+    await s.owner.mutation(api.product.deleteSource, { id: s.sourceId });
+    const marker = (
+      await s.t.query(internal.recovery.markerPage, {
+        section: "tombstones",
+        cursor: null,
+      })
+    ).page[0];
+    await s.t.run((ctx) => ctx.db.replace(s.sourceId, original));
+    vi.stubEnv("RESTORE_LOCK", "true");
+    await s.t.mutation(internal.recovery.applyMarkers, {
+      entries: [
+        { ...marker, ...(!personal ? { catalogDisposition: undefined } : {}) },
+      ],
+    });
+    vi.stubEnv("RESTORE_LOCK", "false");
+    expect((await read(s, args.artifactId)) !== null).toBe(personal);
+  },
+);
+
+it("an ambiguous safety marker overrides a personal marker after the source row is purged", async () => {
+  const s = await setup();
+  const a = await commit(s);
+  await s.owner.mutation(api.product.deleteSource, { id: s.sourceId });
+  await s.t.run((ctx) => ctx.db.delete(s.sourceId));
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.mutation(internal.recovery.applyMarkers, {
+    entries: [
+      { kind: "source", target: s.sourceId, organizationId: s.org, at: s.now },
+    ],
+  });
+  vi.stubEnv("RESTORE_LOCK", "false");
+  expect(await read(s, a.artifactId)).toBeNull();
+  const marker = (
+    await s.t.query(internal.recovery.markerPage, {
+      section: "tombstones",
+      cursor: null,
+    })
+  ).page[0];
+  expect(marker.catalogDisposition).toBeUndefined();
+});
+
+async function resumePrivacy(s: Fixture) {
+  await s.t.mutation(internal.privacy.sweep, {});
+  // Advance only four event-loop ticks, including nested zero-delay callbacks.
+  // Jumping to future artifact expiry would make this regression vacuous.
+  for (let step = 0; step < 4; step++) {
+    await vi.advanceTimersByTimeAsync(1);
+    await s.t.finishInProgressScheduledFunctions();
+  }
+  expect(Date.now()).toBe(s.now + 4);
+}
+
+it.each([
+  ["present", false],
+  ["deleted", false],
+  ["absent", false],
+  ["present", true],
+  ["deleted", true],
+  ["absent", true],
+] as const)(
+  "ordinary privacy resume finishes restore cleanup with source %s and personal marker %s",
+  async (sourceState, personal) => {
+    const s = await setup();
+    const { r, args, saved, layer } = await savedCopy(s);
+    const before = await r.client.query(api.publicKnowledge.savedDetail, {
+      sourceId: saved.sourceId,
+    });
+    const { _id, _creationTime, ...original } = (await s.t.run((ctx) =>
+      ctx.db.get(s.sourceId),
+    ))!;
+    if (sourceState === "absent")
+      await s.t.run((ctx) => ctx.db.delete(s.sourceId));
+    vi.stubEnv("RESTORE_LOCK", "true");
+    await s.t.mutation(internal.recovery.applyMarkers, {
+      entries: [
+        {
+          kind: "source",
+          target: s.sourceId,
+          organizationId: s.org,
+          at: s.now,
+          ...(personal
+            ? { catalogDisposition: "personal-association-v1" as const }
+            : {}),
+        },
+      ],
+    });
+    if (sourceState === "present")
+      await s.t.run((ctx) => ctx.db.replace(s.sourceId, original));
+    expect(await s.t.run((ctx) => ctx.db.get(args.artifactId))).toHaveProperty(
+      "data",
+    );
+    expect(await s.t.run((ctx) => ctx.db.get(layer._id))).toHaveProperty(
+      "snapshot",
+    );
+    vi.stubEnv("RESTORE_LOCK", "false");
+    await resumePrivacy(s);
+    const artifact = await s.t.run((ctx) => ctx.db.get(args.artifactId));
+    const copy = await s.t.run((ctx) => ctx.db.get(layer._id));
+    if (personal) {
+      expect(artifact).toMatchObject({ state: "eligible" });
+      expect(artifact).toHaveProperty("data");
+      expect(artifact).toHaveProperty("catalogSearchText");
+      expect(copy).toEqual(layer);
+      expect(
+        await r.client.query(api.publicKnowledge.savedDetail, {
+          sourceId: saved.sourceId,
+        }),
+      ).toEqual(before);
+    } else {
+      expect(artifact).toMatchObject({ state: "blocked" });
+      for (const field of [
+        "data",
+        "catalogSearchText",
+        "catalogSearchHash",
+        "catalogSearchVersion",
+      ])
+        expect(artifact).not.toHaveProperty(field);
+      expect(copy).not.toHaveProperty("snapshot");
+      expect(
+        await r.client.query(api.publicKnowledge.savedDetail, {
+          sourceId: saved.sourceId,
+        }),
+      ).toMatchObject({ available: false, service: null });
+    }
+  },
+);
+
+it("scoped restore erasure advances past foreign-origin rows without scrubbing them", async () => {
+  const s = await setup();
+  const first = await commit(s);
+  const r = await recipient(s);
+  const { foreignIds, targetId } = await s.t.run(async (ctx) => {
+    const original = (await ctx.db.get(first.artifactId))!;
+    if (original.origin !== "service") throw Error("fixture");
+    const { _id, _creationTime, ...row } = original;
+    await ctx.db.delete(_id);
+    const foreignIds = [];
+    for (let i = 0; i < 6; i++) {
+      const authority = {
+        ...row.authority,
+        moderation: { ...row.authority.moderation, organizationId: r.org },
+      };
+      foreignIds.push(
+        await ctx.db.insert("publicArtifacts", {
+          ...row,
+          authority,
+          authorityHash: await socialHash(canonicalJson(authority)),
+        }),
+      );
+    }
+    return {
+      foreignIds,
+      targetId: await ctx.db.insert("publicArtifacts", row),
+    };
+  });
+  const saved = await r.client.mutation(api.serviceArtifacts.save, {
+    organizationId: r.org,
+    artifactId: targetId,
+    expectedCompatibilityKey: s.args.compatibilityKey,
+  });
+  const privateSource = (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))!;
+  await s.t.run((ctx) => ctx.db.delete(s.sourceId));
+  vi.stubEnv("RESTORE_LOCK", "true");
+  await s.t.mutation(internal.recovery.applyMarkers, {
+    entries: [
+      { kind: "source", target: s.sourceId, organizationId: s.org, at: s.now },
+    ],
+  });
+  vi.stubEnv("RESTORE_LOCK", "false");
+  await resumePrivacy(s);
+  expect(await s.t.run((ctx) => ctx.db.get(targetId))).toMatchObject({
+    state: "blocked",
+  });
+  expect(
+    await s.t.run((ctx) => ctx.db.get(privateSource.publicImportId!)),
+  ).not.toHaveProperty("snapshot");
+  for (const id of foreignIds) {
+    const row = await s.t.run((ctx) => ctx.db.get(id));
+    expect(row).toMatchObject({ state: "eligible" });
+    expect(row).toHaveProperty("data");
+    expect(row).toHaveProperty("catalogSearchText");
+  }
 });
 
 it("rejects an oversized neutral artifact before inserting or scheduling it", async () => {

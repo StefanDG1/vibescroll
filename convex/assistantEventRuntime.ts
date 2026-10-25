@@ -29,6 +29,7 @@ const keySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 async function providerCurrent(
   credentials: EventCredentials,
   principal: EventPrincipal,
+  profileEvent = false,
 ) {
   const issuer = assistantIssuer(process.env.MCP_AUTH_ISSUER);
   if (!issuer) throw Error("EVENT_AUTHORIZATION_UNAVAILABLE");
@@ -65,6 +66,10 @@ async function providerCurrent(
     typeof payload.scope !== "string" ||
     payload.scope.length > 2048 ||
     !payload.scope.split(" ").includes("events:subscribe") ||
+    (profileEvent &&
+      !["analysis:request", "analysis:execute"].every((scope) =>
+        (payload.scope as string).split(" ").includes(scope),
+      )) ||
     !Number.isSafeInteger(payload.exp) ||
     !Number.isSafeInteger(payload.iat) ||
     (payload.iat as number) < 0 ||
@@ -91,9 +96,16 @@ async function providerCurrent(
 }
 export const subscribe = internalAction({
   args: {
+    eventName: v.optional(
+      v.union(
+        v.literal("analysis_completed"),
+        v.literal("work_cloud_waiting"),
+        v.literal("work_cloud_connection_verified"),
+      ),
+    ),
     profileId: v.id("organizations"),
-    sourceId: v.id("sources"),
-    generation: v.number(),
+    sourceId: v.optional(v.id("sources")),
+    generation: v.optional(v.number()),
     grantVersion: v.number(),
     ciphertext: v.string(),
     keyVersion: v.string(),
@@ -128,15 +140,37 @@ export const subscribe = internalAction({
       consentId: identity.sid,
     };
     const credentials = openEventCredentials(args, principal);
+    if (
+      args.eventName &&
+      args.eventName !== "analysis_completed" &&
+      (args.sourceId !== undefined || args.generation !== undefined)
+    )
+      throw Error("EVENT_ARGUMENTS_INVALID");
     const callback = webhookUrl(credentials.callback).href;
     webhookKey(credentials.secret).fill(0);
     const selected = {
+      eventName: args.eventName,
       profileId: args.profileId,
-      sourceId: args.sourceId,
-      generation: args.generation,
+      ...(args.eventName && args.eventName !== "analysis_completed"
+        ? {}
+        : {
+            sourceId: args.sourceId!,
+            generation: args.generation!,
+          }),
       grantVersion: args.grantVersion,
     };
-    const externalId = eventSubscriptionId(principal, callback, selected);
+    const externalId = eventSubscriptionId(
+      principal,
+      callback,
+      {
+        profileId: selected.profileId,
+        grantVersion: selected.grantVersion,
+        ...("sourceId" in selected
+          ? { sourceId: selected.sourceId!, generation: selected.generation! }
+          : {}),
+      },
+      args.eventName,
+    );
     const prepared = await ctx.runQuery(internal.assistantEvents.prepare, {
       ...selected,
       externalId,
@@ -144,6 +178,7 @@ export const subscribe = internalAction({
     const tokenExpiresAt = await providerCurrent(
       credentials,
       prepared.principal,
+      !!args.eventName && args.eventName !== "analysis_completed",
     );
     const now = Date.now();
     const requested = args.ttlMs ?? 1800000;
@@ -224,7 +259,11 @@ export const deliver = internalAction({
       status: number | undefined;
     try {
       const credentials = openEventCredentials(s, principal);
-      await providerCurrent(credentials, principal);
+      await providerCurrent(
+        credentials,
+        principal,
+        !!s.eventName && s.eventName !== "analysis_completed",
+      );
       if (
         !(await ctx.runQuery(internal.assistantEvents.deliveryCurrent, {
           id,
@@ -252,15 +291,37 @@ export const deliver = internalAction({
       const eventId = "evt_" + id;
       const body = JSON.stringify({
         eventId,
-        name: "analysis_completed",
+        name: d.eventName ?? "analysis_completed",
         timestamp: new Date(d.completedRevision).toISOString(),
-        data: {
-          sourceId: d.sourceId,
-          profileId: s.organizationId,
-          status: "ready",
-          evidenceChanged: d.completedRevision !== s.revision,
-          reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/library/${d.sourceId}`,
-        },
+        data:
+          d.eventName === "work_cloud_connection_verified"
+            ? {
+                schemaVersion: "work-cloud-connection-v1",
+                profileId: s.organizationId,
+                grantVersion: s.grantVersion,
+                status: "webhook_verified",
+                hostExecutionVerified: false,
+              }
+            : d.eventName === "work_cloud_waiting"
+              ? {
+                  schemaVersion: "work-cloud-waiting-v1",
+                  sourceId: d.sourceId,
+                  profileId: s.organizationId,
+                  generation: d.generation,
+                  grantVersion: s.grantVersion,
+                  approvedAt: d.completedRevision,
+                  status: "waiting",
+                  reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/library/${d.sourceId}`,
+                }
+              : {
+                  sourceId: d.sourceId,
+                  profileId: s.organizationId,
+                  status: "ready",
+                  evidenceChanged:
+                    d.completedRevision !==
+                    ("revision" in s ? s.revision : undefined),
+                  reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/library/${d.sourceId}`,
+                },
         cursor: null,
       });
       const receipt = await sendWebhook(

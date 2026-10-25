@@ -1,5 +1,7 @@
 # What help is still needed to finish the plan
 
+The [catalog/Events candidate](../../operations/evidence/launch-20261025-catalog-cloud-events.json) now passes integrated offline checks and independent review. Its connection event verifies a callback only; an actual operational host, renewal, standing intake and automatic link-to-result run remain separate. Root owns publication and setup preparation. No monitor, new sign-in or test link is requested before that concrete step is ready.
+
 Current owner setup: no new source link, account, purchase, product decision or repeated OAuth reconnection is requested. Login and the existing VibeScroll connection are present. Root will give the exact one-time monitoring/Internet consent step after the event path is concrete and tested. The owner reports the empty-post view is fixed; no team or data mutation was made for that report.
 
 Latest October25 direction: [ADR154](../../adr/154-global-catalog-defaults-and-cloud-intake.md) makes normal neutral contribution global and mandatory, with no region picker, and separates personal removal from canonical erasure. Root must implement independent artifact ownership, attach existing post associations and move advanced publisher controls out of ordinary analysis. Same-turn Work Cloud guidance is being clarified first; actual outside-chat wake and standing authorization remain implementation/acceptance work. No repeated per-post connection or pasted instruction belongs in the accepted default.

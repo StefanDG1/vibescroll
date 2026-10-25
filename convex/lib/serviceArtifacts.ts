@@ -15,6 +15,12 @@ import {
   validateSocialEvidence,
 } from "../../packages/social/contracts";
 import { neutralSocialContract } from "../../packages/social/prompts";
+import {
+  serviceCatalogAuthority,
+  preservesServiceArtifact,
+  type ServiceInvalidationReason,
+} from "../../packages/social/catalog-authority";
+import { excerptHash } from "../../packages/sources/evidence";
 import { creatorConfiguration } from "./creatorPolicy";
 import { hostedSourceAllowed } from "./hostedMediaAccess";
 import { sourceRetained } from "./sourceAuthority";
@@ -260,7 +266,6 @@ async function resolveSource(
     config.expiresAt,
     config.rights.expiresAt,
     validated.prepared.post.observedAt + config.rights.maxRetentionMs,
-    source.sourceRetentionUntil ?? Infinity,
   );
   if (!Number.isSafeInteger(retainUntil) || retainUntil <= now)
     throw Error("SERVICE_RETENTION_EXPIRED");
@@ -280,48 +285,173 @@ export async function serviceArtifactCurrent(
   artifact: Doc<"publicArtifacts"> | null,
 ) {
   if (
+    process.env.CREATOR_SERVICE_REUSE_ENABLED !== "true" ||
+    !creatorConfiguration()
+  )
+    return null;
+  return (await frozenServiceArtifactState(ctx, artifact, true)).current;
+}
+
+// Frozen catalog authority is independent of its contributor's live account,
+// source, reservation and personal retention. Only the trusted producer mints it.
+async function frozenServiceArtifactState(
+  ctx: QueryCtx,
+  artifact: Doc<"publicArtifacts"> | null,
+  requireCurrentConfiguration: boolean,
+) {
+  const unavailable = (scrub = true) => ({ current: null, scrub });
+  if (process.env.RESTORE_LOCK === "true") return unavailable(false);
+  const now = Date.now();
+  if (
     !artifact ||
     artifact.origin !== "service" ||
     artifact.state !== "eligible" ||
     !artifact.data ||
-    artifact.retainUntil <= Date.now()
+    artifact.retainUntil <= now ||
+    artifact.organizationId !== undefined
   )
-    return null;
+    return unavailable();
   try {
     if (new TextEncoder().encode(canonicalJson(artifact)).length > maxBytes)
-      return null;
-    const resolved = await resolveSource(
-      ctx,
-      artifact.sourceId,
-      artifact.generation,
-      artifact.data.analysis,
-      artifact.language,
-    );
+      return unavailable();
+    const authority = serviceCatalogAuthority.safeParse(artifact.authority);
     if (
-      !same(artifact.data, resolved.validated) ||
-      artifact.organizationId !== resolved.org._id ||
-      artifact.fundingOwner !== resolved.org.createdBy ||
-      artifact.sourceRevision !== resolved.source.updatedAt ||
-      artifact.reservationKey !== resolved.reservationKey ||
-      artifact.retainUntil > resolved.retainUntil ||
-      artifact.policyEvidenceId !== resolved.policy.evidenceId ||
-      artifact.deletionWithinMs !== resolved.policy.deletionWithinMs ||
-      artifact.compatibilityKey !== resolved.compatibility.compatibilityKey ||
-      artifact.rightsHash !== resolved.compatibility.rightsHash ||
-      artifact.postRevisionHash !== resolved.compatibility.postRevisionHash ||
-      artifact.evidenceHash !== resolved.compatibility.evidenceHash ||
-      artifact.promptHash !== resolved.compatibility.promptHash ||
-      artifact.settingsHash !== resolved.compatibility.settingsHash ||
-      artifact.pipelineVersion !== resolved.compatibility.pipelineVersion ||
+      !authority.success ||
+      artifact.authorityHash !==
+        (await socialHash(canonicalJson(authority.data)))
+    )
+      return unavailable();
+    const { rights, contract, diagnostics, moderation } = authority.data;
+    const validated = await validateSocialAnalysis(
+      artifact.data.analysis,
+      artifact.data.prepared,
+      { sourceId: artifact.sourceId, generation: artifact.generation },
+    );
+    const { post } = validated.prepared;
+    const request = {
+      provider: rights.provider,
+      platform: post.platform,
+      creatorId: post.creatorId,
+      workload: "reuse" as const,
+      route: contract.route,
+    };
+    requireSocialRights(rights, request, now);
+    const evidenceHash = await socialHash(
+      canonicalJson(
+        diagnostics.warnings.length || diagnostics.omissions.length
+          ? { evidence: validated.prepared.evidence, ...diagnostics }
+          : validated.prepared.evidence,
+      ),
+    );
+    const rightsHash = await socialHash(canonicalJson(rights));
+    const fields = {
+      ...contract,
+      postRevisionHash: post.revisionHash,
+      evidenceHash,
+      rightsHash,
+    };
+    if (
+      !same(artifact.data, validated) ||
+      !Number.isSafeInteger(artifact.createdAt) ||
+      artifact.createdAt > now ||
+      !Number.isSafeInteger(artifact.sourceRevision) ||
+      !Number.isSafeInteger(artifact.retainUntil) ||
+      post.observedAt > artifact.createdAt ||
+      post.observedAt < rights.reviewedAt ||
+      post.providerEvidenceId !== rights.evidenceId ||
+      artifact.retainUntil >
+        Math.min(
+          authority.data.policyExpiresAt,
+          rights.expiresAt,
+          post.observedAt + rights.maxRetentionMs,
+        ) ||
+      artifact.policyEvidenceId !== rights.evidenceId ||
+      artifact.deletionWithinMs !== rights.deletionWithinMs ||
+      artifact.compatibilityKey !==
+        (await socialHash(
+          canonicalJson({
+            version: "service-social-v1",
+            platform: post.platform,
+            creatorId: post.creatorId,
+            postId: post.postId,
+            ...fields,
+          }),
+        )) ||
+      artifact.rightsHash !== rightsHash ||
+      artifact.postRevisionHash !== fields.postRevisionHash ||
+      artifact.evidenceHash !== evidenceHash ||
+      artifact.promptHash !== contract.promptHash ||
+      artifact.settingsHash !== contract.settingsHash ||
+      artifact.pipelineVersion !== contract.pipelineVersion ||
+      artifact.language !== contract.language ||
       artifact.schemaVersion !== "3.0.0" ||
       artifact.coverage !== "ordered_media" ||
-      artifact.contentHash !==
-        (await socialHash(canonicalJson(resolved.validated)))
+      artifact.contentHash !== (await socialHash(canonicalJson(validated))) ||
+      moderation.canonicalHash !== (await excerptHash(post.canonical))
     )
-      return null;
-    return { artifact, ...resolved.validated };
+      return unavailable();
+    // Catalog admissions require current reviewed configuration. Operational
+    // pauses do not revoke previously saved grants; a reviewed withdrawal does.
+    if (requireCurrentConfiguration) {
+      const config = creatorConfiguration(now);
+      if (
+        !config ||
+        (await socialHash(canonicalJson(config.rights))) !== rightsHash
+      )
+        return unavailable(false);
+    }
+    let currentRights;
+    try {
+      currentRights = socialRightsSchema.safeParse(
+        JSON.parse(process.env.CREATOR_PROVIDER_CONFIGURATION ?? "null")
+          ?.rights,
+      );
+    } catch {
+      /* A temporary configuration failure cannot destroy a saved grant. */
+    }
+    if (
+      currentRights?.success &&
+      currentRights.data.provider === rights.provider &&
+      currentRights.data.reviewedAt >= rights.reviewedAt &&
+      currentRights.data.reviewedAt <= now
+    ) {
+      try {
+        requireSocialRights(currentRights.data, request, now);
+      } catch {
+        return unavailable();
+      }
+      if (post.observedAt + currentRights.data.maxRetentionMs <= now)
+        return unavailable();
+    }
+    if (await legacyModerationPending(ctx)) return unavailable(false);
+    const tombstone = await ctx.db
+      .query("tombstones")
+      .withIndex("by_target", (q) => q.eq("target", artifact.sourceId))
+      .first();
+    if (
+      tombstone &&
+      tombstone.organizationId !== artifact.authority.moderation.organizationId
+    )
+      return unavailable(false);
+    if (tombstone && tombstone.catalogDisposition !== "personal-association-v1")
+      return unavailable();
+    if (
+      await publicModerationBlocked(
+        ctx,
+        {
+          _id: artifact.sourceId,
+          organizationId: artifact.authority.moderation.organizationId,
+          canonical: post.canonical,
+        },
+        artifact.authority.moderation.publisher,
+      )
+    )
+      return unavailable();
+    return { current: { artifact, ...validated }, scrub: false };
   } catch {
-    return null;
+    // Validation or infrastructure uncertainty denies reads without authorizing
+    // destructive cleanup. Explicit hash/policy/state failures above scrub.
+    return unavailable(false);
   }
 }
 
@@ -389,12 +519,12 @@ export async function serviceArtifactSnapshot(
 ): Promise<NonNullable<ServiceImport["snapshot"]>> {
   const { artifact } = current;
   const dto = serviceArtifactDto(current);
-  const config = creatorConfiguration();
-  const rights = socialRightsSchema.parse(config?.rights);
+  const rights = serviceCatalogAuthority.parse(artifact.authority).rights;
   if ((await socialHash(canonicalJson(rights))) !== artifact.rightsHash)
     throw Error("SERVICE_POLICY_BINDING_CHANGED");
   const snapshot = {
-    version: "service-import-v1" as const,
+    version: "service-import-v2" as const,
+    authorityHash: artifact.authorityHash,
     dto,
     dtoHash: await socialHash(canonicalJson(dto)),
     contentHash: artifact.contentHash,
@@ -426,7 +556,7 @@ async function retainedServiceArtifactState(
   const now = Date.now();
   if (
     !snapshot ||
-    snapshot.version !== "service-import-v1" ||
+    snapshot.version !== "service-import-v2" ||
     !Number.isSafeInteger(snapshot.savedAt) ||
     snapshot.savedAt > now ||
     !Number.isSafeInteger(snapshot.retainUntil) ||
@@ -442,18 +572,21 @@ async function retainedServiceArtifactState(
       return unavailable();
     if (new TextEncoder().encode(canonicalJson(snapshot)).length > maxBytes)
       return unavailable();
-    const artifact = await ctx.db.get(layer.artifactId);
+    const state = await frozenServiceArtifactState(
+      ctx,
+      await ctx.db.get(layer.artifactId),
+      false,
+    );
+    if (!state.current) return unavailable(state.scrub);
+    const { artifact } = state.current;
     const privateSource = await ctx.db.get(layer.sourceId);
     if (
-      !artifact ||
-      artifact.origin !== "service" ||
-      artifact.state !== "eligible" ||
-      !artifact.data ||
       !privateSource ||
       privateSource.state === "deleted" ||
       privateSource.organizationId !== layer.organizationId ||
       privateSource.publicImportId !== layer._id ||
       !sourceRetained(privateSource.sourceRetentionUntil, now) ||
+      snapshot.authorityHash !== artifact.authorityHash ||
       snapshot.sourceId !== artifact.sourceId ||
       snapshot.generation !== artifact.generation ||
       snapshot.sourceRevision !== artifact.sourceRevision ||
@@ -466,78 +599,8 @@ async function retainedServiceArtifactState(
       snapshot.retainUntil > artifact.retainUntil ||
       snapshot.savedAt < artifact.createdAt ||
       snapshot.dtoHash !== (await socialHash(canonicalJson(snapshot.dto))) ||
-      artifact.contentHash !== (await socialHash(canonicalJson(artifact.data)))
+      !same(snapshot.dto, serviceArtifactDto(state.current))
     )
-      return unavailable();
-    const source = await ctx.db.get(snapshot.sourceId);
-    const org = await ctx.db.get(artifact.organizationId);
-    const contributor = await ctx.db.get(artifact.fundingOwner);
-    if (
-      !source ||
-      source.state === "deleted" ||
-      !source.rightsAttested ||
-      source.publicImportId ||
-      !sourceRetained(source.sourceRetentionUntil, now) ||
-      org?.status !== "active" ||
-      contributor?.status !== "active" ||
-      source.organizationId !== artifact.organizationId ||
-      source.managedAnalysisActor !== artifact.fundingOwner ||
-      rights.data.evidenceId !== snapshot.policyEvidenceId ||
-      snapshot.retainUntil >
-        Math.min(
-          rights.data.expiresAt,
-          artifact.data.prepared.post.observedAt + rights.data.maxRetentionMs,
-          source.sourceRetentionUntil ?? Infinity,
-        ) ||
-      !same(snapshot.dto, serviceArtifactDto({ artifact, ...artifact.data }))
-    )
-      return unavailable();
-    const request = {
-      provider: rights.data.provider,
-      platform: artifact.data.prepared.post.platform,
-      creatorId: artifact.data.prepared.post.creatorId,
-      workload: "reuse" as const,
-      route: "managed_api" as const,
-    };
-    try {
-      requireSocialRights(rights.data, request, now);
-    } catch {
-      return unavailable();
-    }
-    // An execution switch or unavailable provider configuration cannot revoke
-    // a saved grant. A valid reviewed withdrawal can; invalidatePolicy persists it.
-    let currentRights;
-    try {
-      currentRights = socialRightsSchema.safeParse(
-        JSON.parse(process.env.CREATOR_PROVIDER_CONFIGURATION ?? "null")
-          ?.rights,
-      );
-    } catch {
-      /* Temporary configuration failure leaves the saved grant intact. */
-    }
-    if (
-      currentRights?.success &&
-      currentRights.data.provider === rights.data.provider &&
-      currentRights.data.reviewedAt >= rights.data.reviewedAt &&
-      currentRights.data.reviewedAt <= now
-    ) {
-      try {
-        requireSocialRights(currentRights.data, request, now);
-      } catch {
-        return unavailable();
-      }
-      if (
-        Math.min(
-          currentRights.data.expiresAt,
-          artifact.data.prepared.post.observedAt +
-            currentRights.data.maxRetentionMs,
-        ) <= now
-      )
-        return unavailable();
-    }
-    // Pending legacy moderation is an uncertainty fence, not a removal order.
-    if (await legacyModerationPending(ctx)) return unavailable(false);
-    if (await publicModerationBlocked(ctx, source, artifact.fundingOwner))
       return unavailable();
     return {
       copy: snapshot.dto as ReturnType<typeof serviceArtifactDto>,
@@ -675,16 +738,35 @@ export async function commitServiceArtifact(
     return { artifactId: previous.artifact._id, reused: true };
   }
   const now = Date.now();
+  const authority: ServiceArtifact["authority"] = {
+    version: "global-service-authority-v1",
+    contract: await neutralSocialContract(resolved.compatibility.language),
+    rights: resolved.policy,
+    policyExpiresAt: resolved.retainUntil,
+    diagnostics: resolved.source.orderedPreparation
+      ? orderedDiagnostics.parse({
+          warnings: resolved.source.orderedPreparation.warnings,
+          omissions: resolved.source.orderedPreparation.omissions,
+        })
+      : emptyOrderedDiagnostics,
+    moderation: {
+      organizationId: resolved.org._id,
+      publisher: resolved.org.createdBy,
+      canonicalHash: await excerptHash(
+        resolved.validated.prepared.post.canonical,
+      ),
+    },
+  };
+  serviceCatalogAuthority.parse(authority);
   const row: Omit<ServiceArtifact, "_id" | "_creationTime"> = {
-    organizationId: resolved.org._id,
     createdAt: now,
     updatedAt: now,
     origin: "service",
+    authority,
+    authorityHash: await socialHash(canonicalJson(authority)),
     sourceId: args.sourceId,
     generation: args.generation,
     sourceRevision: resolved.source.updatedAt,
-    fundingOwner: resolved.org.createdBy,
-    reservationKey: resolved.reservationKey,
     compatibilityKey: args.compatibilityKey,
     contentHash: await socialHash(canonicalJson(resolved.validated)),
     language: resolved.compatibility.language,
@@ -853,11 +935,25 @@ export async function invalidateServiceSource(
   ctx: MutationCtx,
   sourceId: Id<"sources">,
   maxGeneration: number,
+  reason: ServiceInvalidationReason = "unspecified",
+  expectedOriginOrganizationId?: Id<"organizations">,
+  cursor: string | null = null,
 ) {
   if (!Number.isSafeInteger(maxGeneration) || maxGeneration < 0)
     throw Error("INVALID_SERVICE_GENERATION");
+  if (preservesServiceArtifact(reason)) return { scrubbed: 0 };
+  const tombstone = await ctx.db
+    .query("tombstones")
+    .withIndex("by_target", (q) => q.eq("target", sourceId))
+    .first();
+  if (
+    tombstone?.catalogDisposition &&
+    (!expectedOriginOrganizationId ||
+      tombstone.organizationId === expectedOriginOrganizationId)
+  )
+    await ctx.db.patch(tombstone._id, { catalogDisposition: undefined });
   if (process.env.RESTORE_LOCK === "true") return { scrubbed: 0, paused: true };
-  const rows = await ctx.db
+  const candidates = ctx.db
     .query("publicArtifacts")
     .withIndex("by_service_source", (q) =>
       q
@@ -865,14 +961,39 @@ export async function invalidateServiceSource(
         .eq("sourceId", sourceId)
         .eq("state", "eligible")
         .lte("generation", maxGeneration),
-    )
-    .take(batchSize);
-  for (const row of rows) if (row.origin === "service") await scrub(ctx, row);
-  if (rows.length === batchSize)
+    );
+  // A scoped resume must advance past mismatched provenance instead of
+  // repeatedly taking the same unmodified first page.
+  const page = expectedOriginOrganizationId
+    ? await candidates.paginate({ cursor, numItems: batchSize })
+    : null;
+  const rows = page?.page ?? (await candidates.take(batchSize));
+  let scrubbed = 0;
+  for (const row of rows)
+    if (
+      row.origin === "service" &&
+      (!expectedOriginOrganizationId ||
+        row.authority.moderation.organizationId ===
+          expectedOriginOrganizationId)
+    ) {
+      await scrub(ctx, row);
+      scrubbed++;
+    }
+  if (page ? !page.isDone : rows.length === batchSize)
     await ctx.scheduler.runAfter(
       0,
       internal.serviceArtifacts.invalidateSource,
-      { sourceId, maxGeneration },
+      {
+        sourceId,
+        maxGeneration,
+        reason,
+        ...(expectedOriginOrganizationId
+          ? {
+              expectedOriginOrganizationId,
+              cursor: page!.continueCursor,
+            }
+          : {}),
+      },
     );
-  return { scrubbed: rows.length };
+  return { scrubbed };
 }

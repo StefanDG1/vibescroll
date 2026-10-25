@@ -356,7 +356,13 @@ it("serves scoped Events through the actual modern SDK and excludes legacy/disab
   expect((await packet(discovery)).result.capabilities.events).toEqual({});
   const list = await run("events/list", {});
   expect(list.status, await list.clone().text()).toBe(200);
-  expect((await packet(list)).result.events[0].name).toBe("analysis_completed");
+  const listed = await packet(list);
+  expect(listed.result.events[0].name).toBe("analysis_completed");
+  expect(listed.result.events.map((e: { name: string }) => e.name)).toEqual([
+    "analysis_completed",
+    "work_cloud_waiting",
+    "work_cloud_connection_verified",
+  ]);
   operation.mockClear();
   const denied = await run("events/list", {}, []);
   expect((await packet(denied)).error).toBeDefined();
@@ -379,6 +385,21 @@ it("serves scoped Events through the actual modern SDK and excludes legacy/disab
   const subscribed = await run("events/subscribe", params);
   expect((await packet(subscribed)).result.id).toBe("sub_synthetic");
   expect(operation).toHaveBeenCalledWith("events/subscribe", params);
+  for (const name of ["work_cloud_waiting", "work_cloud_connection_verified"]) {
+    operation.mockClear();
+    const profile = {
+      ...params,
+      name,
+      arguments: { profileId: "private", grantVersion: 1 },
+    };
+    expect(
+      (await packet(await run("events/subscribe", profile))).result.id,
+    ).toBe("sub_synthetic");
+    expect(operation).toHaveBeenCalledWith("events/subscribe", profile);
+    operation.mockClear();
+    await run("events/subscribe", { ...profile, arguments: params.arguments });
+    expect(operation).not.toHaveBeenCalled();
+  }
   operation.mockClear();
   await run("events/subscribe", {
     ...params,

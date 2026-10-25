@@ -275,5 +275,15 @@
         "reason": "New typed citations preserve the documented current evidence, confirmed context and separate plan/coding approvals."
       }
     ]
+  },
+  "soleOwnerCloudReview": {
+    "date": "2026-10-25",
+    "status": "source-reviewed-candidate",
+    "updated": ["work-cloud-text-review"],
+    "unaffectedWithReason": {
+      "processing-and-recovery": "Existing route funding/retention/host readiness guidance remains; no local or managed-credit behavior change.",
+      "connect-your-computer": "Cloud eligibility does not alter paired computer setup."
+    },
+    "limits": "Existing sole-owner team eligibility and preserved saved results source-reviewed; actual Cloud result, automatic wake-up and independent acceptance remain separate."
   }
 }

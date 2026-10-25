@@ -15,7 +15,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllEnvs();
 });
-async function setup(policy = true, library = false) {
+async function setup(policy = true, library = false, team = false) {
   for (const key of [
     "MCP_ENABLED",
     "WORK_CLOUD_MEDIA_ENABLED",
@@ -30,7 +30,7 @@ async function setup(policy = true, library = false) {
   );
   const t = convexTest(schema, modules);
   rateLimiterTest.register(t);
-  await t.mutation(internal.accounts.syncUser, {
+  const actorId = await t.mutation(internal.accounts.syncUser, {
     subject,
     email: "fixture@example.test",
     name: "Fixture",
@@ -47,7 +47,10 @@ async function setup(policy = true, library = false) {
     sid: "app_consent_01234567890123456789012345",
   };
   const assistant = t.withIdentity(identity);
-  const org = await owner.mutation(api.organizations.createPrivate, {});
+  const privateOrg = await owner.mutation(api.organizations.createPrivate, {});
+  const org = team
+    ? await owner.mutation(api.organizations.create, { name: "Original team" })
+    : privateOrg;
   const sourceId = await owner.mutation(api.product.capture, {
     organizationId: org,
     kind: "url",
@@ -98,6 +101,8 @@ async function setup(policy = true, library = false) {
     assistant.mutation(internal.assistant.requestAnalysis, args);
   return {
     t,
+    actorId,
+    privateOrg,
     owner,
     assistant,
     identity,
@@ -249,15 +254,305 @@ it.each(["client", "app"])(
     await expect(s.call()).rejects.toThrow(/FORBIDDEN/);
   },
 );
-it("does not use the private protocol after private ownership or source rights are lost", async () => {
+it("does not use the private protocol after ownership eligibility or source rights are lost", async () => {
   const s = await setup();
-  await s.t.run((ctx) => ctx.db.patch(s.org, { privateOwnerId: undefined }));
-  await expect(s.call()).rejects.toThrow(/SETUP_REQUIRED/);
+  const otherActor = await s.t.mutation(internal.accounts.syncUser, {
+    subject: "another-owner",
+    email: "other@example.test",
+    name: "Other",
+  });
+  await s.t.run((ctx) => ctx.db.patch(s.org, { privateOwnerId: otherActor }));
+  await expect(s.call()).rejects.toThrow(/FORBIDDEN/);
   const other = await setup();
   await other.t.run((ctx) =>
     ctx.db.patch(other.sourceId, { rightsAttested: false }),
   );
   await expect(other.call()).rejects.toThrow(/FORBIDDEN/);
+});
+
+it("uses an explicitly reviewed original sole-owner team without adopting or copying either library", async () => {
+  const s = await setup(true, false, true);
+  const orgBefore = await s.t.run((ctx) => ctx.db.get(s.org));
+  const privateBefore = await s.t.run((ctx) => ctx.db.get(s.privateOrg));
+  expect(
+    await s.owner.query(api.organizations.previewPrivateAdoption, {
+      organizationId: s.org,
+    }),
+  ).toMatchObject({ eligible: false, reason: "other_private_workspace" });
+  expect(
+    await s.owner.query(api.assistantGrants.setup, { organizationId: s.org }),
+  ).toMatchObject({ privateLibrary: false, workCloudMediaEnabled: true });
+  expect(await s.call()).toMatchObject({
+    source_id: s.sourceId,
+    generation: 1,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(s.org))).toEqual(orgBefore);
+  expect(await s.t.run((ctx) => ctx.db.get(s.privateOrg))).toEqual(
+    privateBefore,
+  );
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(source.organizationId).toBe(s.org);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("sources").collect()),
+  ).toHaveLength(1);
+  const detail = await s.owner.query(api.product.detail, { id: s.sourceId });
+  expect(detail.workCloudHandoff).toMatchObject({ sourceId: s.sourceId });
+  const claim = await s.assistant.mutation(
+    internal.workCloudAnalysis.dispatch,
+    {
+      sourceId: s.sourceId,
+      generation: 1,
+      taskId: "original-team-task",
+      operation: "claim",
+    },
+  );
+  expect(
+    await s.assistant.query(internal.workCloudAnalysis.input, {
+      sourceId: s.sourceId,
+      generation: 1,
+      taskId: "original-team-task",
+      leaseToken: claim.leaseToken!,
+    }),
+  ).toMatchObject({ sourceId: s.sourceId, generation: 1 });
+});
+
+async function disqualifyTeam(
+  s: Awaited<ReturnType<typeof setup>>,
+  change: "member" | "invitation" | "saturated" | "creator" | "role",
+) {
+  await s.t.run(async (ctx) => {
+    if (change === "member" || change === "creator") {
+      const other = await ctx.db.insert("users", {
+        subject: "other-team-user",
+        email: "other@example.test",
+        name: "Other",
+        status: "active",
+        createdAt: Date.now(),
+      });
+      if (change === "member")
+        await ctx.db.insert("memberships", {
+          organizationId: s.org,
+          userId: other,
+          role: "viewer",
+        });
+      else await ctx.db.patch(s.org, { createdBy: other });
+    } else if (change === "role") {
+      const membership = (await ctx.db.query("memberships").collect()).find(
+        (row) => row.organizationId === s.org && row.userId === s.actorId,
+      )!;
+      await ctx.db.patch(membership._id, { role: "admin" });
+    } else {
+      for (let index = 0; index < (change === "saturated" ? 51 : 1); index++)
+        await ctx.db.insert("invitations", {
+          organizationId: s.org,
+          email: `invite${index}@example.test`,
+          role: "viewer",
+          tokenHash: String(index).padStart(64, "0"),
+          createdBy: s.actorId,
+          expiresAt: Date.now() + (change === "saturated" ? -1 : 60000),
+        });
+    }
+  });
+}
+
+it.each(["member", "invitation", "saturated", "creator", "role"] as const)(
+  "rechecks original-team %s eligibility at setup, grant review, request, recovery, claim and lease use",
+  async (change) => {
+    const s = await setup(true, false, true);
+    await s.call();
+    await disqualifyTeam(s, change);
+    expect(
+      await s.owner.query(api.assistantGrants.setup, { organizationId: s.org }),
+    ).toMatchObject({ workCloudMediaEnabled: false });
+    const current = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+    await expect(
+      s.owner.mutation(api.assistantGrants.save, {
+        ...s.grantArgs,
+        sources: [
+          {
+            sourceId: s.sourceId,
+            generation: current.generation,
+            revision: current.updatedAt,
+          },
+        ],
+        expectedVersion: 1,
+      }),
+    ).rejects.toThrow(/SETUP_REQUIRED/);
+    await expect(s.call()).rejects.toThrow(/SETUP_REQUIRED/);
+    expect(
+      (await s.owner.query(api.product.detail, { id: s.sourceId }))
+        .workCloudHandoff,
+    ).toBeNull();
+    await expect(
+      s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+        sourceId: s.sourceId,
+        generation: 1,
+        taskId: "team-task",
+        operation: "claim",
+      }),
+    ).rejects.toThrow(/STALE/);
+
+    const running = await setup(true, false, true);
+    await running.call();
+    const claim = await running.assistant.mutation(
+      internal.workCloudAnalysis.dispatch,
+      {
+        sourceId: running.sourceId,
+        generation: 1,
+        taskId: "team-task",
+        operation: "claim",
+      },
+    );
+    await disqualifyTeam(running, change);
+    const leased = {
+      sourceId: running.sourceId,
+      generation: 1,
+      taskId: "team-task",
+      leaseToken: claim.leaseToken!,
+    };
+    await expect(
+      running.assistant.query(internal.workCloudAnalysis.input, leased),
+    ).rejects.toThrow(/STALE/);
+    await expect(
+      running.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+        ...leased,
+        operation: "heartbeat",
+      }),
+    ).rejects.toThrow(/STALE/);
+  },
+);
+
+it("requires a separately reviewed original-team grant and never uses the private-library grant", async () => {
+  const s = await setup(false, false, true);
+  await expect(s.call()).rejects.toThrow(/SETUP_REQUIRED/);
+  await s.owner.mutation(api.assistantGrants.revoke, {
+    id: s.grant.id,
+    expectedVersion: 1,
+  });
+  await s.owner.mutation(api.assistantGrants.save, {
+    ...s.grantArgs,
+    organizationId: s.privateOrg,
+    sources: [],
+    libraryScope: "all",
+    cloudRequestPolicy: "explicit_per_source_v1",
+  });
+  await expect(s.call()).rejects.toThrow(/FORBIDDEN/);
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.generation).toBe(0);
+});
+
+it.each(["summary", "analysis"] as const)(
+  "refuses a failed source with retained %s before clearing any saved result",
+  async (field) => {
+    const s = await setup(true, true, true);
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.sourceId, {
+        state: "failed",
+        ...(field === "summary"
+          ? { summary: "Saved result" }
+          : { analysis: { insights: [{ title: "Saved insight" }] } }),
+      }),
+    );
+    const before = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+    await expect(
+      s.call({ ...s.request, revision: before.updatedAt }),
+    ).rejects.toThrow(/unanalyzed post/);
+    expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(before);
+    expect(
+      await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+    ).toHaveLength(0);
+  },
+);
+
+it("keeps other saved posts and their insights unchanged when requesting an original-team source", async () => {
+  const s = await setup(true, true, true);
+  const saved = await s.owner.mutation(api.product.capture, {
+    organizationId: s.org,
+    kind: "text",
+    text: "Previously analyzed source",
+    title: "Saved post",
+    key: "saved-post",
+    rightsAttested: true,
+  });
+  await s.t.run((ctx) =>
+    ctx.db.patch(saved, {
+      state: "ready",
+      summary: "Saved summary",
+      analysis: { insights: [{ title: "Saved insight" }] },
+    }),
+  );
+  const before = await s.t.run((ctx) => ctx.db.get(saved));
+  await s.call();
+  expect(await s.t.run((ctx) => ctx.db.get(saved))).toEqual(before);
+});
+
+it("allows expired invitations and app approval on the original sole-owner team", async () => {
+  const s = await setup(true, false, true);
+  await s.t.run((ctx) =>
+    ctx.db.insert("invitations", {
+      organizationId: s.org,
+      email: "expired@example.test",
+      role: "viewer",
+      tokenHash: "a".repeat(64),
+      createdBy: s.actorId,
+      expiresAt: Date.now() - 1,
+    }),
+  );
+  const preview = await s.owner.query(api.workCloudAnalysis.preview, {
+    sourceId: s.sourceId,
+    grantId: s.grant.id,
+    inputKind: "media",
+    retainUntil: s.request.cloud.retainUntil,
+  });
+  expect(
+    await s.owner.mutation(api.workCloudAnalysis.approve, {
+      sourceId: s.sourceId,
+      generation: preview.generation,
+      grantId: s.grant.id,
+      grantVersion: preview.grantVersion,
+      expectedInputHash: preview.inputHash,
+      ...s.request.cloud,
+      inputKind: "media",
+    }),
+  ).toMatchObject({ sourceId: s.sourceId, generation: 1 });
+});
+it("preserves retained results on a failed team text source during app approval", async () => {
+  const s = await setup(true, true, true);
+  vi.stubEnv("WORK_CLOUD_TEXT_ENABLED", "true");
+  vi.stubEnv("WORK_CLOUD_TEXT_VERIFIED", "true");
+  const sourceId = await s.owner.mutation(api.product.capture, {
+    organizationId: s.org,
+    kind: "text",
+    text: "Original evidence",
+    title: "Saved text",
+    key: "saved-team-text",
+    rightsAttested: true,
+  });
+  await s.t.run((ctx) =>
+    ctx.db.patch(sourceId, {
+      state: "failed",
+      summary: "Saved summary",
+      analysis: { insights: [{ title: "Saved insight" }] },
+    }),
+  );
+  const before = (await s.t.run((ctx) => ctx.db.get(sourceId)))!;
+  const preview = await s.owner.query(api.workCloudAnalysis.preview, {
+    sourceId,
+    grantId: s.grant.id,
+  });
+  await expect(
+    s.owner.mutation(api.workCloudAnalysis.approve, {
+      sourceId,
+      generation: before.generation,
+      grantId: s.grant.id,
+      grantVersion: s.grant.version,
+      expectedInputHash: preview.inputHash,
+      model: "synthetic-model",
+      effort: "high",
+      useOwnPlan: true,
+      maxApiUsd: 0,
+    }),
+  ).rejects.toThrow(/Preserve existing insights/);
+  expect(await s.t.run((ctx) => ctx.db.get(sourceId))).toEqual(before);
 });
 it("does not replace an unknown attempt, even using its new current revision", async () => {
   const s = await setup(true, true);

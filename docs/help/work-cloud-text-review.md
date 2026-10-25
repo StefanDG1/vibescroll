@@ -4,7 +4,7 @@ These routes are disabled by default. Supplied or retained text and public singl
 
 ## Before you start
 
-Use your own private library, a source you may process and the intended official Work Cloud connection. GitHub, Docker Desktop and a paired computer are not required by this handoff. Your host's subscription and resource limits still apply. A model selection is a request; VibeScroll cannot attest the host's actual model, resource controls or usage.
+Use your private library or an eligible team that you created and still own alone, a source you may process and the intended official Work Cloud connection. The team must have no active invitations. Its connection permissions are reviewed separately; posts stay in their existing library. GitHub, Docker Desktop and a paired computer are not required by this handoff. Your host's subscription and resource limits still apply. A model selection is a request; VibeScroll cannot attest the host's actual model, resource controls or usage.
 
 The connection needs **Read separately approved text or public video links and return private analysis**, `analysis:execute`, in both OAuth and the app's current grant. Existing read, save and local-request permissions do not include execution. Changing sensitive grants or approving work may require signing in again. Never paste credentials, bearer tokens or private configuration into a task.
 
@@ -14,7 +14,7 @@ This option appears only when the experimental video route is enabled for your a
 
 In a supported Work Cloud chat with VibeScroll connected, ask VibeScroll to analyze the saved post and provide its VibeScroll link. The assistant reads its current status and sends an exact own-subscription request with a model, effort, retention deadline and maximum API spend of US$0. After this setup, there is no additional app approval for each request. The host must prepare supported tools and restricted Internet permission before claiming work.
 
-The experimental limit is six new requests per hour. Repeating the identical unclaimed request returns the existing job. The app's waiting receipt does not launch a Cloud task. Automatically waking a task when you share a new link remains separate implementation and production acceptance work. Old team workspaces do not become private because of their names, and this option does not move their posts.
+The experimental limit is six new requests per hour. Repeating the identical unclaimed request returns the existing job. The app's waiting receipt does not launch a Cloud task. Automatically waking a task when you share a new link remains separate implementation and production acceptance work. Old team workspaces do not become private because of their names, and this option does not move their posts. Existing analyzed posts retain their results; this first experimental media route accepts only unanalyzed posts.
 
 If this option is absent, use the separately approved diagnostic handoff below when available. Do not disconnect an existing connection, delete posts or switch to paid credits to work around unavailable access.
 

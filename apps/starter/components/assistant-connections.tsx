@@ -134,8 +134,7 @@ function AssistantAccessEditor({
       const next = { ...access, ...projects } as Setup;
       if (current === generation.current) {
         setData(next);
-        if (!next.privateLibrary || !next.workCloudMediaEnabled)
-          setCloudRequests(false);
+        if (!next.workCloudMediaEnabled) setCloudRequests(false);
         setCheckedAt(Date.now());
         setPageLoading(false);
         setError("");
@@ -170,7 +169,7 @@ function AssistantAccessEditor({
     clientId || (data?.clients.length === 1 ? data.clients[0].id : "");
   const client = data?.clients.find((c) => c.id === activeClientId);
   const existing = data?.grants.find((g) => g.clientId === activeClientId);
-  const cloudAvailable = !!data?.privateLibrary && !!data.workCloudMediaEnabled;
+  const cloudAvailable = !!data?.workCloudMediaEnabled;
   const cloudEligible =
     cloudAvailable &&
     !!libraryScope &&

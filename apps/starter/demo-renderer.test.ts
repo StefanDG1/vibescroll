@@ -230,3 +230,61 @@ it.each([
     expect(html).not.toContain("user note · 0.0s");
   },
 );
+
+it.each([true, false])(
+  "shows the retained Cloud speech instead of older source text, speech present=%s",
+  (speechPresent) => {
+    const source = {
+      ...libraryDemoSources[0],
+      kind: "url",
+      originalText: "Older source text is not Cloud speech",
+      text: "A saved caption is not Cloud speech",
+      analysis: { insights: [] },
+      orderedMedia: {
+        post: {
+          schemaVersion: "work-cloud-observed-media-v1",
+          retainUntil: Date.now() + 60000,
+          segments: speechPresent
+            ? [
+                {
+                  id: "speech_000",
+                  startMs: 0,
+                  endMs: 1760,
+                  text: "Actual first <speech> segment.",
+                },
+                {
+                  id: "speech_001",
+                  startMs: 1760,
+                  endMs: 2640,
+                  text: "Actual second speech segment.",
+                },
+              ]
+            : [],
+        },
+        evidence: [],
+      },
+    };
+    const html = renderToStaticMarkup(
+      createElement(Console, {
+        initial,
+        organizationId: "demo",
+        demo: true,
+        readOnly: true,
+        initialView: "source",
+        initialSource: source,
+      }),
+    );
+    const panel = html
+      .split('id="source-transcript"')[1]
+      ?.split("</details>")[0];
+    expect(panel).toBeDefined();
+    expect(panel).not.toContain("Older source text");
+    expect(panel).not.toContain("A saved caption");
+    if (speechPresent) {
+      expect(panel).toContain("Actual first &lt;speech&gt; segment.");
+      expect(panel).toContain("Actual second speech segment.");
+      expect(panel).toContain("1.8");
+      expect(panel).toContain("2.6");
+    } else expect(panel).toContain("Original transcript is unavailable.");
+  },
+);

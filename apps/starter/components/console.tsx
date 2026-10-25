@@ -3885,6 +3885,10 @@ export function SourceDetail({
   const [categoryDraft, setCategoryDraft] = useState("");
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const transcript = useRef<HTMLDetailsElement>(null);
+  const cloudSpeechSegments =
+    detail.orderedMedia?.post?.schemaVersion === "work-cloud-observed-media-v1"
+      ? detail.orderedMedia.post.segments
+      : null;
   const sourceId = id(source);
   const orderedSource = Boolean(
     detail.personalOrderedInput ||
@@ -4483,22 +4487,44 @@ export function SourceDetail({
               ? "Original supplied text and corrections"
               : "Original transcript and corrections"}
           </summary>
-          <p style={{ whiteSpace: "pre-wrap" }}>
-            {detail.originalText ??
-              detail.text ??
-              (detail.kind === "text"
-                ? "Original supplied text is unavailable."
-                : "Original transcript is unavailable.")}
-          </p>
-          {detail.originalText && <p>Current user correction: {detail.text}</p>}
-          {(detail.originalMediaEvidence ?? detail.mediaEvidence)
-            ?.filter((e: any) => e.kind === "transcript")
-            .map((e: any) => (
-              <p key={e.id} className="fine">
-                Original transcript segment: {(e.startMs / 1000).toFixed(1)}–
-                {(e.endMs / 1000).toFixed(1)} seconds.
+          {cloudSpeechSegments ? (
+            cloudSpeechSegments.length ? (
+              cloudSpeechSegments.map((segment: any) => (
+                <div key={segment.id}>
+                  <p className="fine">
+                    Original transcript segment:{" "}
+                    {(segment.startMs / 1000).toFixed(1)}–
+                    {(segment.endMs / 1000).toFixed(1)} seconds.
+                  </p>
+                  <p style={{ whiteSpace: "pre-wrap" }}>{segment.text}</p>
+                </div>
+              ))
+            ) : (
+              <p>Original transcript is unavailable.</p>
+            )
+          ) : (
+            <>
+              <p style={{ whiteSpace: "pre-wrap" }}>
+                {detail.originalText ??
+                  detail.text ??
+                  (detail.kind === "text"
+                    ? "Original supplied text is unavailable."
+                    : "Original transcript is unavailable.")}
               </p>
-            ))}
+              {detail.originalText && (
+                <p>Current user correction: {detail.text}</p>
+              )}
+            </>
+          )}
+          {!cloudSpeechSegments &&
+            (detail.originalMediaEvidence ?? detail.mediaEvidence)
+              ?.filter((e: any) => e.kind === "transcript")
+              .map((e: any) => (
+                <p key={e.id} className="fine">
+                  Original transcript segment: {(e.startMs / 1000).toFixed(1)}–
+                  {(e.endMs / 1000).toFixed(1)} seconds.
+                </p>
+              ))}
           {detail.analysis?.correctedText && (
             <p>Confirmed correction: {detail.analysis.correctedText}</p>
           )}

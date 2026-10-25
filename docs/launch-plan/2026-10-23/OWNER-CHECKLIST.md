@@ -1,5 +1,7 @@
 # What help is still needed to finish the plan
 
+Root is preparing [the compatible Events release](../../operations/evidence/launch-20261025-compatible-cloud-events.json), with main's catalog lifecycle retained separately. No new link, repeat connection or setup answer is needed now. An accidentally logged deployment-protection bypass credential has been revoked/replaced and readback verified; app login, domains and build settings were preserved. The replacement stays private. Current conservative ledger retains USD4.922258194860614 with USD0.3777418051393857 unreserved under the same cumulative EUR5 cap, before any new release reservation.
+
 The [catalog/Events candidate](../../operations/evidence/launch-20261025-catalog-cloud-events.json) now passes integrated offline checks and independent review. Its connection event verifies a callback only; an actual operational host, renewal, standing intake and automatic link-to-result run remain separate. Root owns publication and setup preparation. No monitor, new sign-in or test link is requested before that concrete step is ready.
 
 Current owner setup: no new source link, account, purchase, product decision or repeated OAuth reconnection is requested. Login and the existing VibeScroll connection are present. Root will give the exact one-time monitoring/Internet consent step after the event path is concrete and tested. The owner reports the empty-post view is fixed; no team or data mutation was made for that report.

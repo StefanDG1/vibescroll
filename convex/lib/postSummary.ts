@@ -1,4 +1,5 @@
 import type { Doc } from "../_generated/dataModel";
+import { retainedCloudFrames } from "../../packages/media/cloud-frames";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import {
   postSummaryV1,
@@ -91,9 +92,9 @@ export async function projectPostSource(
     sourceRetentionUntil: source.sourceRetentionUntil,
     creatorRights: source.creatorRights,
     thumbnailAssetId:
-      source.linkPreview?.state === "ready"
+      (source.linkPreview?.state === "ready"
         ? source.linkPreview.assetId
-        : undefined,
+        : undefined) ?? retainedCloudFrames(source)[0]?.assetId,
   };
   const contentRevision = await postRevision(content);
   const job = source.personalAnalysis;
@@ -178,15 +179,18 @@ export async function projectPostSource(
       claimExcerpt: insight.claim.slice(0, 240),
     });
   }
-  const thumbnail =
-    source.linkPreview?.state === "ready" && source.linkPreview.assetId
-      ? {
-          kind: "source-thumbnail-asset-v1" as const,
-          assetId: source.linkPreview.assetId,
-          sourceId: source._id,
-          generation: source.generation,
-        }
-      : null;
+  const thumbnailId =
+    (source.linkPreview?.state === "ready"
+      ? source.linkPreview.assetId
+      : undefined) ?? retainedCloudFrames(source)[0]?.assetId;
+  const thumbnail = thumbnailId
+    ? {
+        kind: "source-thumbnail-asset-v1" as const,
+        assetId: thumbnailId,
+        sourceId: source._id,
+        generation: source.generation,
+      }
+    : null;
   return postSummaryV1.parse({
     version: "post-summary-v1",
     sourceId: source._id,

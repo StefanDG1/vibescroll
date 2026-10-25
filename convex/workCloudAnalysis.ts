@@ -45,6 +45,8 @@ import {
   privateCloudMediaIdentity,
 } from "../packages/social/contracts";
 import { sourceRetained } from "./lib/sourceAuthority";
+import { registerEvidenceAsset, queueDeletion } from "./assets";
+import { retainedCloudFrames } from "../packages/media/cloud-frames";
 import { commitPersonalOrdered } from "./lib/personalOrderedCommit";
 import { currentOrderedSource } from "./lib/orderedSource";
 import { syncCategories } from "./categories";
@@ -68,6 +70,19 @@ const sourceArgs = {
   taskId: v.string(),
 };
 const executionArgs = { ...sourceArgs, leaseToken: v.string() };
+const frameArgs = {
+  ...executionArgs,
+  frameId: v.string(),
+  preparationHash: v.string(),
+};
+const frameValue = v.object({
+  id: v.string(),
+  timestampMs: v.number(),
+  sha256: v.string(),
+  bytes: v.number(),
+  width: v.number(),
+  height: v.number(),
+});
 type ExecutionArgs = {
   sourceId: Id<"sources">;
   generation: number;
@@ -160,7 +175,14 @@ async function sourceInput(
         !!source.url &&
         !source.currentRevisionId &&
         !source.publicImportId &&
-        !source.personalMedia &&
+        (!source.personalMedia ||
+          (!!bound?.cloud.media?.preparationHash &&
+            Object.keys(source.personalMedia).every(
+              (key) => key === "cloudFrames",
+            ) &&
+            source.personalMedia.cloudFrames?.generation === generation &&
+            source.personalMedia.cloudFrames?.preparationHash ===
+              bound.cloud.media.preparationHash)) &&
         !source.personalOrderedInput &&
         !source.orderedPreparation &&
         !source.serviceIntent &&
@@ -1005,6 +1027,123 @@ async function leased(
   );
   return { ...c, expiredMedia };
 }
+async function frameContext(
+  ctx: QueryCtx,
+  a: ExecutionArgs & { frameId: string; preparationHash: string },
+) {
+  const c = await leased(ctx, a);
+  const media = c.job.cloud.media;
+  ensure(
+    media &&
+      media.preparationHash === a.preparationHash &&
+      sourceRetained(c.source) &&
+      c.source.rightsAttested,
+    "APPROVAL_STALE",
+    "The retained Cloud preparation changed.",
+  );
+  const prepared = workCloudMediaPreparation.parse({
+    schemaVersion: "work-cloud-media-preparation-v2",
+    post: c.source.orderedMedia?.post,
+    evidence: c.source.orderedMedia?.evidence,
+  });
+  const frame = prepared.post.frames.find((f) => f.id === a.frameId);
+  ensure(
+    frame && frame.bytes <= 150000,
+    "INVALID_EVIDENCE",
+    "Use a prepared JPEG frame of at most 150000 bytes.",
+  );
+  const existing = retainedCloudFrames(c.source).find(
+    (f) => f.frameId === frame.id,
+  );
+  if (existing) {
+    const assetId = ctx.db.normalizeId("assets", existing.assetId);
+    const asset = assetId ? await ctx.db.get(assetId) : null;
+    ensure(
+      asset &&
+        asset.state === "complete" &&
+        asset.sourceId === c.source._id &&
+        asset.sourceGeneration === c.source.generation &&
+        asset.kind === "work_cloud_frame" &&
+        asset.size === frame.bytes &&
+        asset.expiresAt === media.retainUntil &&
+        !(await ctx.db
+          .query("objectDeletions")
+          .withIndex("by_key", (q) => q.eq("key", asset.key))
+          .unique()),
+      "APPROVAL_STALE",
+      "The retained Cloud frame was retired.",
+    );
+  }
+  return { ...c, frame, existing };
+}
+export const frameUploadContext = internalQuery({
+  args: frameArgs,
+  returns: v.object({
+    organizationId: v.id("organizations"),
+    frame: frameValue,
+    assetId: v.union(v.string(), v.null()),
+  }),
+  handler: async (ctx, a) => {
+    const c = await frameContext(ctx, a);
+    return {
+      organizationId: c.source.organizationId,
+      frame: c.frame,
+      assetId: c.existing?.assetId ?? null,
+    };
+  },
+});
+export const recordFrame = internalMutation({
+  args: { ...frameArgs, key: v.string(), size: v.number(), etag: v.string() },
+  returns: v.union(v.null(), v.object({ assetId: v.string() })),
+  handler: async (ctx, a) => {
+    const c = await frameContext(ctx, a);
+    ensure(
+      a.size === c.frame.bytes &&
+        a.key.startsWith(`${c.source.organizationId}/cloud-frame-`) &&
+        /^[a-f0-9-]{36}$/.test(a.key.split("cloud-frame-")[1] ?? ""),
+      "INVALID_EVIDENCE",
+      "Use the exact bounded private frame object.",
+    );
+    if (c.existing) {
+      await queueDeletion(ctx, a.key);
+      return { assetId: c.existing.assetId };
+    }
+    const assetId = await registerEvidenceAsset(
+      ctx,
+      {
+        sourceId: a.sourceId,
+        generation: a.generation,
+        key: a.key,
+        size: a.size,
+        etag: a.etag,
+      },
+      { kind: "work_cloud_frame", expiresAt: c.job.cloud.media!.retainUntil },
+    );
+    if (!assetId) return null;
+    const frames = [
+      ...retainedCloudFrames(c.source),
+      {
+        frameId: c.frame.id,
+        assetId,
+        sha256: c.frame.sha256,
+        timestampMs: c.frame.timestampMs,
+        size: a.size,
+      },
+    ];
+    await ctx.db.patch(c.source._id, {
+      personalMedia: {
+        ...c.source.personalMedia,
+        cloudFrames: {
+          generation: a.generation,
+          preparationHash: a.preparationHash,
+          frames,
+        },
+      },
+      updatedAt: Math.max(Date.now(), c.source.updatedAt + 1),
+    });
+    return { assetId };
+  },
+});
 export const input = internalQuery({
   args: executionArgs,
   handler: async (ctx, a) => {

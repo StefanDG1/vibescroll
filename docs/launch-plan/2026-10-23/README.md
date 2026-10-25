@@ -1,5 +1,9 @@
 # Complete the launch and own-subscription workflows
 
+## Cloud evidence continuation, October25
+
+[ADR155](../../adr/155-private-cloud-frame-return.md) records a local frame-return candidate and an independent replay of the retained production preparation. The serving renderer displays older input; the corrected renderer displays all18 Cloud speech segments. Actual frame bytes can now enter the existing EU asset path during an active lease, with matching preparation/rights/retention checks, screenshots, thumbnails and project images. Final offline checks and320px/desktop synthetic browser checks pass. [The receipt](../../operations/evidence/launch-20261025-cloud-frame-return.json) distinguishes this from production repair. The completed Reel's expired lease/raw-file cleanup still requires a bounded result-preserving repair operation and audio comparison. Nothing was deployed or spent. Preserve the same budget, reserved post, dirty worker and all original acceptance below.
+
 ## Current handover, October 25
 
 Start with the [engineering handover](HANDOVER-2026-10-25.md) for current versions, implementation status, unfinished packages, uncommitted work and the continuation prompt. The owner disputed the demonstrated Cloud post's transcript and missing images. Quality acceptance is reopened. Transcript-display PR182 is merged with passing exact-head CI40225282186, but is not deployed; screenshot/thumbnail retention and source/audio review remain unfinished. Production remains frontend/backend675dea2. Automatic share-to-analysis is not accepted. No immediate owner login or new link is requested.

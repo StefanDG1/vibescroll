@@ -144,6 +144,7 @@ import type * as subscriptionTrials from "../subscriptionTrials.js";
 import type * as toolMaintenance from "../toolMaintenance.js";
 import type * as usageMaintenance from "../usageMaintenance.js";
 import type * as workCloudAnalysis from "../workCloudAnalysis.js";
+import type * as workCloudFrames from "../workCloudFrames.js";
 import type * as workflows from "../workflows.js";
 
 import type {
@@ -289,6 +290,7 @@ declare const fullApi: ApiFromModules<{
   toolMaintenance: typeof toolMaintenance;
   usageMaintenance: typeof usageMaintenance;
   workCloudAnalysis: typeof workCloudAnalysis;
+  workCloudFrames: typeof workCloudFrames;
   workflows: typeof workflows;
 }>;
 

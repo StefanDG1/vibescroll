@@ -1,0 +1,72 @@
+{
+  "observedAt": "2026-10-25T14:53:04.242Z",
+  "sourceCommit": "4fef58222b8bc5f6a7ec9ccef7c3a34ee9ad46fd",
+  "status": "offline_verified_candidate_not_published",
+  "catalog": {
+    "authorityVersion": "global-service-authority-v1",
+    "savedSnapshotVersion": "service-import-v2",
+    "independentCanonicalOwnership": true,
+    "personalRemovalPreservesCanonicalAndOtherCopies": true,
+    "safetyRemovalAndRestoreScrubPayloadSearchAndCopies": true,
+    "newStoresOrIndexes": 0,
+    "admissionRoute": "existing_managed_neutral_producer_only",
+    "workCloudPublicationImplemented": false,
+    "freshEmptyServiceStoreCheckRequiredBeforePublication": true
+  },
+  "events": {
+    "names": ["work_cloud_waiting", "work_cloud_connection_verified"],
+    "arguments": ["profileId", "grantVersion"],
+    "newIndex": "assistantDeliveries.by_source_occurrence(subscriptionId,sourceId,generation,completedRevision)",
+    "waitingScope": "already_explicitly_approved_unclaimed_current_jobs_only",
+    "connectionPayloadHostExecutionVerified": false,
+    "renewalEmitsConnectionNotification": false,
+    "retrospectiveCatchup": false,
+    "automaticJobCreationOrStandingAuthority": false,
+    "maximumSubscriptionMs": 1800000,
+    "alsoBoundedByOAuthAndGrantExpiry": true,
+    "actualHostWakeOrMediaExecutionVerified": false
+  },
+  "verification": {
+    "runtime": "Node 24.22.1; pnpm 12.3.4; Windows local",
+    "integratedCommand": "node scripts/run-offline.mjs pnpm check",
+    "integratedExitCode": 0,
+    "passedTests": 2034,
+    "skippedHostedTests": 3,
+    "lintWarnings": 0,
+    "typechecks": "passed",
+    "marketingAndStarterProductionBuilds": "passed",
+    "dependencyAuditCommand": "node scripts/audit-dependencies.mjs",
+    "dependencyAuditPassed": true,
+    "registryAdvisories": {
+      "low": 2,
+      "moderate": 2,
+      "high": 0,
+      "critical": 0
+    },
+    "unresolvedPolicyAdvisories": 0,
+    "stagedGitleaksAndDiffCheck": "passed",
+    "independentHighReview": "no_remaining_P1_P2",
+    "nativeBrowserCheck": "not_applicable_no_UI_changed"
+  },
+  "retainedFailures": [
+    "Initial Events union type errors and a fake-timer race were fixed before integrated checks.",
+    "Initial integrated check: 1684 passed, one old live-source decoder-warning invalidation assertion failed, three hosted skips. Updated regression preserves frozen canonical coverage after personal metadata changes and rejects frozen-authority tampering.",
+    "Review caught restore safety markers denying reads without resuming physical cleanup. Existing privacy sweep now resumes bounded scrub for deleted/absent sources, with an origin-organization fence and advancing cursor."
+  ],
+  "production": {
+    "changedByThisStage": false,
+    "frontendServingSource": "5ad6dfb7d0fc826d45b4ecccb8dc488611f03802",
+    "backendServingSource": "398c3256d7f0b21cdef8036687b95f5f7b812b8a",
+    "fullMainMigration": "held_pending_funded_verified_bound",
+    "allEarlierUnknownAndFutureBudgetHoldsPreserved": true,
+    "newHostedCallsOrPaidInferenceFromThisStage": 0
+  },
+  "remaining": [
+    "Fresh exact-source schema/index prediction and funded publication; older prediction does not authorize this schema.",
+    "Matching Events configuration/keys and actual supported host callback, wake, renewal and revocation acceptance.",
+    "One-time standing authority and save/creator automatic dispatch through existing source jobs.",
+    "Neutral own-subscription contribution and existing-post association through current artifact family.",
+    "Phone-only real host media/citations/return, cache reuse and automatic post rendering, with/without GitHub.",
+    "Every remaining R/P/N/C/M acceptance in the single remaining-work index."
+  ]
+}

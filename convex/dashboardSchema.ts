@@ -39,6 +39,9 @@ export const dashboardTables = {
     insightIds: v.optional(v.array(v.string())),
     insightCount: v.optional(v.number()),
     mainPoints: v.optional(v.array(v.string())),
+    // Strict versioned registry in packages/contracts/post-summary.ts validates
+    // every projection write/read. Older cards use the bounded legacy adapter.
+    postSummary: v.optional(v.any()),
     enabled: v.optional(v.boolean()),
     confirmed: v.optional(v.boolean()),
     sha: v.optional(v.string()),

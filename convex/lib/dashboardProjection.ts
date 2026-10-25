@@ -1,13 +1,15 @@
 import type { Doc } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 import type { WithoutSystemFields } from "convex/server";
+import { projectPostSource } from "./postSummary";
+import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 export type DashboardEntity = "sources" | "repositories" | "proposals" | "runs";
 type Entity = Doc<DashboardEntity>;
 
-function fields(
+async function fields(
   table: DashboardEntity,
   row: Entity,
-): WithoutSystemFields<Doc<"dashboardCards">> | null {
+): Promise<WithoutSystemFields<Doc<"dashboardCards">> | null> {
   const base = {
     organizationId: row.organizationId,
     entityId: row._id,
@@ -48,6 +50,7 @@ function fields(
         .flatMap((i: { title?: unknown }) =>
           typeof i?.title === "string" ? [i.title.slice(0, 140)] : [],
         ),
+      postSummary: await projectPostSource(row),
     };
   }
   if (table === "repositories" && "fullName" in row)
@@ -103,11 +106,15 @@ export async function syncDashboardCard(
     .query("dashboardCards")
     .withIndex("by_entity", (q) => q.eq("entityId", id))
     .unique();
-  const card = row ? fields(table, row) : null;
+  const card = row ? await fields(table, row) : null;
   if (!card) {
     if (existing) await ctx.db.delete(existing._id);
     return;
   }
-  if (existing) await ctx.db.replace(existing._id, card);
-  else await ctx.db.insert("dashboardCards", card);
+  if (existing) {
+    const { _id, _creationTime, ...stored } = existing;
+    // Skip identical projected metadata; progress updates retain row.updatedAt.
+    if (canonicalJson(stored) !== canonicalJson(card))
+      await ctx.db.replace(existing._id, card);
+  } else await ctx.db.insert("dashboardCards", card);
 }

@@ -91,7 +91,10 @@ import {
   createJourneyMeasurements,
 } from "@/lib/analytics-events";
 import type { ImportPreview } from "../../../packages/instagram-import";
+import type { HomeSummaryV1 } from "../../../packages/contracts/post-summary";
+import { mergeHomePostProgress } from "../../../packages/browser/home-post-progress";
 type Initial = {
+  homeSnapshot?: HomeSummaryV1;
   workspaceSlice?:
     "library" | "connections" | "usage" | "projects" | "plans" | "source";
   role?: string;
@@ -334,6 +337,7 @@ export function Console({
   const libraryRequest = useRef(0);
   const libraryAbort = useRef<AbortController | null>(null);
   const refreshFlight = useRef<Promise<Initial | undefined> | null>(null);
+  const homeProgressAsOf = useRef(0);
   const recordReturn = useEffectEvent((hiddenAt: number) => {
     const destination = view === "proposals" ? "plans" : view;
     if (
@@ -528,6 +532,7 @@ export function Console({
       return;
     }
     if (next.compact) {
+      homeProgressAsOf.current = next.homeSnapshot?.asOf ?? 0;
       setHomeData(next);
       setData((current) => ({ ...current, notifications: next.notifications }));
       notify(next.notifications);
@@ -614,10 +619,25 @@ export function Console({
     });
   }
 
-  async function refreshData() {
+  async function refreshData(authoritative = false) {
     if (demo) return;
-    if (refreshFlight.current) return refreshFlight.current;
+    if (refreshFlight.current) {
+      if (!authoritative) return refreshFlight.current;
+      while (refreshFlight.current) {
+        const previous: Promise<Initial | undefined> = refreshFlight.current;
+        await previous.catch(() => undefined);
+        if (refreshFlight.current === previous) refreshFlight.current = null;
+      }
+    }
     const request = (async () => {
+      if (
+        !authoritative &&
+        view === "home" &&
+        home.homeSnapshot?.recent.some((post) => post.progress.active)
+      ) {
+        await refreshHomeProgress();
+        return;
+      }
       const next = await refreshWorkspace();
       if (next && view === "library" && librarySection === "posts")
         await loadLibrary();
@@ -627,8 +647,64 @@ export function Console({
     try {
       await request;
     } finally {
-      refreshFlight.current = null;
+      if (refreshFlight.current === request) refreshFlight.current = null;
     }
+  }
+  async function refreshHomeProgress() {
+    const snapshot = home.homeSnapshot;
+    if (!snapshot) return;
+    const generation = viewGeneration.current;
+    const query = new URLSearchParams({ view: "post-progress" });
+    for (const post of snapshot.recent)
+      query.append("sourceIds", post.sourceId);
+    const response = await fetch(`/api/workspace/${organizationId}?${query}`, {
+      cache: "no-store",
+    });
+    if (generation !== viewGeneration.current) return;
+    if (response.redirected || [401, 403, 404].includes(response.status)) {
+      clearAccess();
+      return;
+    }
+    if (!response.ok) throw Error("Post progress could not be refreshed.");
+    let merged;
+    try {
+      if (!response.headers.get("content-type")?.includes("application/json"))
+        throw Error("Unexpected progress response.");
+      const page = await response.json();
+      if (generation !== viewGeneration.current) return;
+      merged = mergeHomePostProgress(snapshot, page, Date.now());
+    } catch {
+      if (generation !== viewGeneration.current) return;
+      clearAccess();
+      throw Error("Post access changed. Refresh this page.");
+    }
+    if (merged.asOf < homeProgressAsOf.current) return;
+    if (merged.scopeChanged) {
+      clearAccess();
+      await refreshWorkspace();
+      return;
+    }
+    homeProgressAsOf.current = merged.asOf;
+    const summaries = new Map(
+      merged.postSummaries.map((post) => [post.sourceId, post]),
+    );
+    setHomeData((current) => {
+      const previous = current ?? home;
+      if (previous.homeSnapshot?.revision !== snapshot.revision) return current;
+      return {
+        ...previous,
+        sources: previous.sources
+          .filter((source) => summaries.has(id(source)))
+          .map((source) => ({
+            ...source,
+            state: summaries.get(id(source))!.progress.state,
+          })),
+        // A changed content/authority snapshot is reauthorized as a whole.
+        ...(merged.requiresRefresh ? { proposals: [], runs: [] } : {}),
+        homeSnapshot: { ...snapshot, recent: merged.postSummaries },
+      };
+    });
+    if (merged.requiresRefresh) await refreshWorkspace();
   }
   async function refreshWorkspace(requestView = view) {
     const generation = viewGeneration.current;
@@ -778,6 +854,23 @@ export function Console({
     }
   }
   const home = homeData ?? data;
+  const [homeProgressTime, setHomeProgressTime] = useState(Date.now);
+  const nextHomeLeaseEnd = Math.min(
+    ...(view === "home"
+      ? (home.homeSnapshot?.recent
+          .filter((post) => post.progress.active)
+          .map((post) => post.progress.activeUntil ?? Infinity)
+          .filter((until) => until > homeProgressTime) ?? [])
+      : []),
+  );
+  useEffect(() => {
+    if (!Number.isFinite(nextHomeLeaseEnd)) return;
+    const timer = setTimeout(
+      () => setHomeProgressTime(Date.now()),
+      Math.max(1, Math.min(nextHomeLeaseEnd - Date.now() + 1, 2147483647)),
+    );
+    return () => clearTimeout(timer);
+  }, [nextHomeLeaseEnd, homeProgressTime]);
   const sourceProcessing =
     view === "source" &&
     selected &&
@@ -788,16 +881,25 @@ export function Console({
   const processing =
     view === "source"
       ? sourceProcessing
-      : data.sources.some((s) => ["queued", "processing"].includes(s.state)) ||
-        data.repositories.some((r) =>
+      : (view === "home" && home.homeSnapshot
+          ? home.homeSnapshot.recent.some(
+              (post) =>
+                post.progress.active &&
+                (post.progress.activeUntil === null ||
+                  post.progress.activeUntil > homeProgressTime),
+            )
+          : data.sources.some((s) =>
+              ["queued", "processing"].includes(s.state),
+            )) ||
+        (view === "home" ? home : data).repositories.some((r) =>
           ["preparing", "drafting_context"].includes(r.status),
         ) ||
-        data.runs.some((r) =>
+        (view === "home" ? home : data).runs.some((r) =>
           ["queued", "running", "publishing"].includes(r.state),
         );
   usePolling(
     refreshData,
-    processing ? 15000 : view === "source" ? null : 60000,
+    processing ? 15000 : view === "source" || view === "home" ? null : 60000,
     !demo && view !== "connections",
     view === "source"
       ? `${organizationId}:source:${selected ? id(selected) : ""}`
@@ -902,7 +1004,7 @@ export function Console({
           });
         throw new Error(body.error);
       }
-      if (operation === "workCloudTextApprove") await refreshData();
+      if (operation === "workCloudTextApprove") await refreshData(true);
       if (
         [
           "checkPersonalSession",
@@ -947,7 +1049,7 @@ export function Console({
           ),
         );
       setHomeData(null);
-      await refreshData();
+      await refreshData(true);
       if (operation === "deleteSource") go("library");
       setNotice(
         operation === "deleteSource"
@@ -1319,7 +1421,7 @@ export function Console({
               <output>Loading this workspace view...</output>
               <Button
                 onClick={() => {
-                  void refreshData();
+                  void refreshData(true);
                 }}
               >
                 Try again
@@ -1514,6 +1616,19 @@ export function Console({
                     repositories={home.repositories}
                     runs={home.runs}
                     libraryNext={home.libraryNext}
+                    homeSnapshot={home.homeSnapshot}
+                    renderThumbnail={(summary) => (
+                      <SourceThumbnail
+                        key={`${home.homeSnapshot?.scopeKey}:${summary.sourceId}:${summary.generation}:${summary.thumbnail?.assetId}`}
+                        source={{
+                          kind: summary.sourceKind,
+                          linkPreview: summary.thumbnail
+                            ? { assetId: summary.thumbnail.assetId }
+                            : undefined,
+                        }}
+                        demo={demo}
+                      />
+                    )}
                     compact={home.compact}
                     draft={sharedDraft}
                     onDraft={setSharedDraft}
@@ -2122,7 +2237,7 @@ export function Console({
                         .map((repo) => ({ id: id(repo), name: repo.fullName }))}
                       disabled={readOnly}
                       onComplete={async () => {
-                        await refreshData();
+                        await refreshData(true);
                       }}
                     />
                   )}

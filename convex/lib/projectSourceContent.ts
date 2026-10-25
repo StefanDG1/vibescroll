@@ -1,5 +1,9 @@
 import type { QueryCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
+import {
+  retainedCloudFrames,
+  cloudFrameAssetCurrent,
+} from "../../packages/media/cloud-frames";
 import { ensure, containsSecret } from "../../packages/policy";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { digest } from "../product";
@@ -18,9 +22,10 @@ function descriptor(
   source: Doc<"sources">,
   asset: Doc<"assets">,
 ): ProjectSourceImage {
-  const frame = source.personalMedia?.frames?.find(
-    (item: { assetId?: string }) => item.assetId === asset._id,
-  );
+  const frame = [
+    ...(source.personalMedia?.frames ?? []),
+    ...retainedCloudFrames(source),
+  ].find((item: { assetId?: string }) => item.assetId === asset._id);
   return {
     id: asset._id,
     key: asset.key,
@@ -41,7 +46,9 @@ function imageCurrent(
     asset.sourceId === source._id &&
     asset.organizationId === source.organizationId &&
     asset.sourceGeneration === source.generation &&
-    asset.kind === "evidence" &&
+    (source.orderedMedia?.post?.schemaVersion === "work-cloud-observed-media-v1"
+      ? cloudFrameAssetCurrent(source, asset, now)
+      : asset.kind === "evidence") &&
     asset.type === "image/jpeg" &&
     asset.state === "complete" &&
     (asset.expiresAt === undefined || asset.expiresAt > now) &&
@@ -147,7 +154,10 @@ export async function buildProjectSourceContent(
     if (
       asset.organizationId !== source.organizationId ||
       asset.sourceGeneration !== source.generation ||
-      asset.kind !== "evidence" ||
+      (source.orderedMedia?.post?.schemaVersion ===
+      "work-cloud-observed-media-v1"
+        ? !cloudFrameAssetCurrent(source, asset, now)
+        : asset.kind !== "evidence") ||
       asset.type !== "image/jpeg" ||
       asset.state !== "complete" ||
       (asset.expiresAt !== undefined && asset.expiresAt <= now)

@@ -186,6 +186,12 @@ export const tools = httpAction(async (ctx, request) => {
         : undefined;
     let value: unknown;
     switch (input.operation) {
+      case "work_cloud_frame":
+        value = await ctx.runAction(internal.workCloudFrames.upload, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
       case "work_cloud_input":
         value = await ctx.runQuery(internal.workCloudAnalysis.input, {
           ...input.args,

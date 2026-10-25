@@ -7,6 +7,7 @@ import {
   parseWorkCloudResult,
   workCloudCompleteInput,
   workCloudLeaseInput,
+  workCloudFrameInput,
   validateWorkCloudTextOutput,
 } from "../packages/contracts/work-cloud-text";
 
@@ -126,6 +127,54 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
+it.each(["2025-11-25", "2026-07-28"])(
+  "transports bounded frame bytes only through the media capability over %s",
+  async (protocol) => {
+    const host = mcp(false, ["analysis:execute"], true, protocol);
+    const args = {
+      ...lease,
+      frameId: "frame-1",
+      preparationHash: "a".repeat(64),
+      data: "YQ==",
+    };
+    const response = await packet(
+      await host.call("tools/call", {
+        name: "work_cloud_frame",
+        arguments: args,
+      }),
+    );
+    expect(response.result.isError).not.toBe(true);
+    expect(host.invoke).toHaveBeenCalledExactlyOnceWith(
+      "work_cloud_frame",
+      args,
+    );
+    const disabled = mcp(true, ["analysis:execute"], false, protocol);
+    await disabled.call("tools/call", {
+      name: "work_cloud_frame",
+      arguments: args,
+    });
+    expect(disabled.invoke).not.toHaveBeenCalled();
+    expect(
+      workCloudFrameInput.safeParse({ ...args, data: "a".repeat(200004) })
+        .success,
+    ).toBe(false);
+    expect(
+      workCloudFrameInput.safeParse({ ...args, data: "YQ==\n" }).success,
+    ).toBe(false);
+    expect(
+      cloudCompletionEnvelope({ operation: "work_cloud_frame", args }),
+    ).toBe(true);
+    expect(
+      cloudCompletionEnvelope(
+        {
+          method: "tools/call",
+          params: { name: "work_cloud_frame", arguments: args },
+        },
+        true,
+      ),
+    ).toBe(true);
+  },
+);
 it.each(["2025-11-25", "2026-07-28"])(
   "transports exact Cloud requests and preserves legacy modes over %s",
   async (protocol) => {

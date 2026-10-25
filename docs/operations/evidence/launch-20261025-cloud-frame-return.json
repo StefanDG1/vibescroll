@@ -1,0 +1,204 @@
+{
+  "recordedAtUtc": "2026-10-25T19:58:51.2295799Z",
+  "stage": "Local private Cloud frame return candidate; completed production post remains unrepaired",
+  "base": "cf19602d086334600e4c03d592e9641ab10dbfae",
+  "sourceDigest": "d5b23ed0a5dd91853f2ff238ec1efb864ee27191da3ca086fb7083da493cef41",
+  "sourceHashes": [
+    {
+      "path": "apps/starter/components/console.tsx",
+      "sha256": "f751de0105fe3b4e28bf6a654096c7984f14e70835e077bd8829e16125d41095"
+    },
+    {
+      "path": "apps/starter/components/evidence-viewer.tsx",
+      "sha256": "c97f706b88488bb4a4c3a0d3578714cfd89376418fab62a0f066b051efd00b93"
+    },
+    {
+      "path": "apps/starter/demo-renderer.test.ts",
+      "sha256": "80d6b85786ead613bc2366ddc340233d6a6dd418af671a9aab1718f2d8112dcf"
+    },
+    {
+      "path": "convex/_generated/api.d.ts",
+      "sha256": "03909e4a09fc2a2064d9085d1e73938fbea29e4b5f0390da7f5eda56648705d2"
+    },
+    {
+      "path": "convex/assets.ts",
+      "sha256": "8614befd9c3e0e269a6bf4e550c50bc10776a0311a5a3355bcaf6141b2f312db"
+    },
+    {
+      "path": "convex/assistantHttp.ts",
+      "sha256": "9e8cef9b3d341be1b3b575573008b47df685f86a7ff8642f13568037495924ff"
+    },
+    {
+      "path": "convex/lib/postSummary.ts",
+      "sha256": "714c1addd25b7e1dbe647f0f62a3c23d84921f0de30ded3bd39b0c4c5a9cabd3"
+    },
+    {
+      "path": "convex/lib/projectSourceContent.ts",
+      "sha256": "e5d0dfca1010136248d1b2ecdfa4e0f4eaefc14a062ac01e46a6683bbee137e3"
+    },
+    {
+      "path": "convex/workCloudAnalysis.ts",
+      "sha256": "3269f596fa94bf8564dca2ee9d923c6626cc700fe53b086e18d20cda8081ea35"
+    },
+    {
+      "path": "convex/workCloudFrames.ts",
+      "sha256": "2721e2a2582b76e8c4b3d2c7bba7f7973439671ecc6a1e6726ab3aecad453315"
+    },
+    {
+      "path": "packages/contracts/work-cloud-text.ts",
+      "sha256": "5a399e083d16df1873c80d978a0001a6c35ef44a8a4b2d722b2f716f87232705"
+    },
+    {
+      "path": "packages/mcp/server.ts",
+      "sha256": "65d9d4ee4a2f5b629bb0acf72939257fa3f803e72d2c96f91019490db2a8f162"
+    },
+    {
+      "path": "packages/media/cloud-frames.ts",
+      "sha256": "93f22fde59c89277152c944812afa2b934506f55c10af43a9ebf24941a5fb2bd"
+    },
+    {
+      "path": "packages/media/jpeg.ts",
+      "sha256": "3019cbe0cb0587124b10ae154e3a1dfd7965fa26d583880b5557eef2b5c46b40"
+    },
+    {
+      "path": "packages/providers/storage.ts",
+      "sha256": "8ed00fa7bc651a52a1453ebe82be7d4fcc94da11dd7822328793aac920892d34"
+    },
+    {
+      "path": "tests/cloud-frame-fixture.ts",
+      "sha256": "9afc32e37023d63e335c7236ee83d14fbc8766ccc4be7217ae707da650b5ce85"
+    },
+    {
+      "path": "tests/cloud-frames.test.ts",
+      "sha256": "e665fe0f6c13f4392c054cd990237525a5da6e78cb74c03d88ba443c12513572"
+    },
+    {
+      "path": "tests/work-cloud-media.test.ts",
+      "sha256": "0e2f6f7b5dc42d3b8eeade84ec2eea9c96a05495da1ff7102bcc39eabf261a5f"
+    },
+    {
+      "path": "tests/work-cloud-transport.test.ts",
+      "sha256": "4c0a07f39b7816a0317f616af8d07e34e7f45baeebf9bbb620a100fdc08620bc"
+    }
+  ],
+  "production": {
+    "freshReads": 0,
+    "writes": 0,
+    "deployments": 0,
+    "newVideoRuns": 0,
+    "lastVerifiedFrontendAndBackend": "675dea24804d3ed730cdec2aa5f858ddbcd07594",
+    "servingVerifiedThisPhase": false,
+    "completedResultRepaired": false,
+    "audioAccuracyVerified": false,
+    "automaticWakeAccepted": false
+  },
+  "reproduction": {
+    "at": "2026-10-25T19:52:46.566Z",
+    "basis": "Protected production preparation export, not a fresh production read; older input replaced with a sentinel",
+    "snapshotSHA256": "cbc517763616a38787c857f680e2e85a97b02e41282ab5add981c0593a335310",
+    "segments": 18,
+    "sampledFrames": 8,
+    "frameFields": ["bytes", "height", "id", "sha256", "timestampMs", "width"],
+    "serving675Renderer": {
+      "olderInputDisplayed": true,
+      "retainedSegmentsDisplayed": 0,
+      "imageAssetRoutes": 0
+    },
+    "candidateRenderer": {
+      "olderInputDisplayed": false,
+      "retainedSegmentsDisplayed": 18,
+      "imageAssetRoutes": 0
+    },
+    "sourceAudioAccuracyVerified": false,
+    "productionCalls": 0,
+    "sourceOrBudgetWrites": 0
+  },
+  "verification": {
+    "offlineFullCheckExit": 0,
+    "vitestPassed": 2039,
+    "nodePassed": 19,
+    "pythonPassed": 33,
+    "hostedSkipped": 3,
+    "types": "passed",
+    "lint": "passed, zero warnings",
+    "productionBuilds": 2,
+    "registryAudit": {
+      "low": 2,
+      "unresolved": 0,
+      "moderate": 2,
+      "critical": 0,
+      "high": 0
+    },
+    "native": {
+      "checks": [
+        {
+          "width": 1280,
+          "images": 2,
+          "imagesDecoded": true,
+          "speech": true,
+          "oldSpeech": false,
+          "oldFrame": false,
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "images": 2,
+          "imagesDecoded": true,
+          "speech": true,
+          "oldSpeech": false,
+          "oldFrame": false,
+          "overflow": false
+        }
+      ],
+      "synthetic": true,
+      "productionCalls": 0,
+      "actualSourceDetail": true,
+      "imageAdapter": "Named Next Image export for standalone esbuild interop; real component retained",
+      "citationViewerCheck": {
+        "dialog": true,
+        "loaded": true,
+        "eager": true,
+        "width": 320
+      },
+      "lazyViewerFailureReproduced": true
+    },
+    "independentAgentReview": "Not performed this phase",
+    "changesNoTablesIndexesCrons": true,
+    "reactReview": "Reviewed both changed components for render-only derived state, bounded helpers, existing modal focus behavior and no new service requests/effects."
+  },
+  "constraints": {
+    "maximumFrameBytes": 150000,
+    "existingTransportBytes": 262144,
+    "preparationAndAnalysisUnchanged": true,
+    "expiredCompletedLeaseCannotUpload": true,
+    "assetsRequireCurrentGenerationPreparationRightsRetention": true,
+    "allTwelveDirtyWorkerSourceHashesMatched": true,
+    "workerWorktreeUnmodified": true,
+    "reservedOwnerPostUnanalyzed": true
+  },
+  "budget": {
+    "capEUR": 5,
+    "workingCeilingUSD": 5.3,
+    "retainedMaximumUSD": 4.875014256044613,
+    "unreservedUSD": 0.424985743955387,
+    "ledgerWrites": 0,
+    "paidApiInferenceUSD": 0,
+    "newPurchases": 0,
+    "priorUnknownStorageCleanupHoldsPreserved": true,
+    "liveRepairCleared": false
+  },
+  "remaining": [
+    "Result-preserving current-authority repair of the completed post, with fresh source/audio comparison",
+    "Combined bounded publication/acquisition/upload/retention/cleanup reservation",
+    "Compatible publication and actual mobile post acceptance",
+    "Actual native Events subscription, callback, wake, renewal and automatic result return",
+    "Full-main populated-index hold and all original P/R/N/C/M release/provider/privacy acceptance"
+  ],
+  "preservedFailures": [
+    "Initial frame integration test exposed sourceInput rejecting the new bound personalMedia container; corrected the exact bound-container whitelist, final tests pass.",
+    "Standalone esbuild SSR needed a named Next Image export adapter; the real Next Image component is retained.",
+    "Native diagnostic selectors needed the native dialog element, ASCII-safe AX matching and explicit hydration/scroll readiness; final hydrated mobile check passes.",
+    "A modal JPEG remained pending with lazy loading and decoded after an eager switch; selected modal images now load eagerly.",
+    "Gitleaks interpreted the generated API filename plus its SHA-256 as a generic API key; represented hash entries as path/sha256 records and rescanned successfully without weakening the scanner."
+  ]
+}

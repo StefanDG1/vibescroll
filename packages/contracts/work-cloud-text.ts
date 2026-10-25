@@ -70,6 +70,16 @@ export const workCloudPrepareInput = z
     preparationJson: z.string().min(2).max(120000),
   })
   .strict();
+export const workCloudFrameInput = z.strictObject({
+  ...lease,
+  frameId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),
+  preparationHash: z.string().regex(/^[a-f0-9]{64}$/),
+  data: z
+    .string()
+    .min(4)
+    .max(200000)
+    .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
+});
 export const workCloudCompleteInput = z
   .object({
     ...lease,
@@ -94,6 +104,10 @@ export function parseWorkCloudResult(resultJson: string): unknown {
 }
 
 export const workCloudTextOperations = [
+  z.strictObject({
+    operation: z.literal("work_cloud_frame"),
+    args: workCloudFrameInput,
+  }),
   z
     .object({
       operation: z.literal("work_cloud_prepare"),
@@ -137,9 +151,11 @@ export function cloudCompletionEnvelope(value: unknown, mcp = false) {
   if (!mcp)
     return (
       "operation" in value &&
-      ["work_cloud_complete", "work_cloud_prepare"].includes(
-        value.operation as string,
-      )
+      [
+        "work_cloud_complete",
+        "work_cloud_prepare",
+        "work_cloud_frame",
+      ].includes(value.operation as string)
     );
   if (
     !("method" in value) ||
@@ -152,7 +168,7 @@ export function cloudCompletionEnvelope(value: unknown, mcp = false) {
     !!params &&
     typeof params === "object" &&
     "name" in params &&
-    ["work_cloud_complete", "work_cloud_prepare"].includes(
+    ["work_cloud_complete", "work_cloud_prepare", "work_cloud_frame"].includes(
       params.name as string,
     )
   );

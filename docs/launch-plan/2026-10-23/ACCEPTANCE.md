@@ -1,5 +1,10 @@
 # Remaining acceptance and completion ledger
 
+## Frame-return candidate, October25
+
+[ADR155](../../adr/155-private-cloud-frame-return.md) has local implementation/test evidence for bounded matching JPEG upload, current-authority attachment, screenshot/thumbnail/project use and clickable Cloud citations. Full checks pass2039 Vitest/19 Node/33 Python with3 hosted skips and both builds; actual Console synthetic images decode at320px/1280px. The protected production-export replay reproduces the serving transcript mismatch and verifies all18 segments in the corrected renderer. This is not source/audio accuracy or a fresh production read. The completed post is unchanged and its expired lease is not revived. Result-preserving repair, combined fiscal clearance, publication, mobile production review and actual Events subscription/wake remain open. No C1/C3 quality or automatic-processing acceptance is closed.
+
+
 ## Current quality and handover checkpoint, October 25
 
 The [engineering handover](HANDOVER-2026-10-25.md) is the current status reference. The owner reports an incorrect transcript and absent images on the demonstrated result. The prior real-video receipt proves acquisition and canonical return, not accurate speech, screenshots, thumbnail or native rendering. Do not count that result as full C1/C3 acceptance. PR182 fixes a reproduced Cloud-transcript display mismatch, is merged after exact-head CI40225282186 and remains undeployed. Offline checks passed2070 tests with3 hosted skips; independent High review found no P1/P2. Image attachment, source/audio comparison, an ordinary fresh run and automatic background execution remain pending.

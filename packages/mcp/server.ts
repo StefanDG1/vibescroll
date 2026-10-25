@@ -20,6 +20,7 @@ import {
   workCloudLeaseInput,
   workCloudCompleteInput,
   workCloudPrepareInput,
+  workCloudFrameInput,
 } from "../contracts/work-cloud-text";
 export function createKnowledgeHandler(
   invoke: (
@@ -318,7 +319,14 @@ export function createKnowledgeHandler(
           false,
         );
       }
-      if (workCloudMedia)
+      if (workCloudMedia) {
+        register(
+          "work_cloud_frame",
+          "Upload one actual JPEG sampled frame matching the accepted preparation, before completion and raw-file cleanup. Use this exact active media lease, preparation hash and frame ID. data is canonical base64, at most 150000 decoded bytes. Compress larger frames before preparing their hashes. No source download, renewed authority, publication or paid fallback. A receipt proves stored matching bytes, not visual accuracy. Stop on stale or unknown authority.",
+          "analysis:execute",
+          workCloudFrameInput,
+          false,
+        );
         register(
           "work_cloud_prepare",
           "Bind bounded authenticated host-reported observations from the exact approved single-video media-v2 lease before final analysis. Use preparationJson matching the input's preparation schema and hashes. No frame bytes, cookies, object URLs, invented supplier proof or database asset IDs. Raw-media cleanup is a self-reported target, not verified provider deletion. Changed observations cannot replace an accepted preparation.",
@@ -326,6 +334,7 @@ export function createKnowledgeHandler(
           workCloudPrepareInput,
           false,
         );
+      }
       if (events && requestContext.era === "modern") {
         // The Events extension uses the SDK's validated custom-method seam.
         const eventCapabilities = { experimental: {}, events: {} };

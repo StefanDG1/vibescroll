@@ -11,6 +11,10 @@ import {
 } from "./work-cloud-text";
 import { UsageSummary } from "./usage-summary";
 import { usageOverview } from "../../../packages/billing/usage-overview";
+import {
+  sourceEvidenceFrames,
+  cloudCitationForDisplay,
+} from "../../../packages/media/cloud-frames";
 import Link from "next/link";
 import Image from "next/image";
 import { Brand } from "./site";
@@ -187,10 +191,9 @@ function SourceThumbnail({ source, demo }: { source: any; demo: boolean }) {
     (source.linkPreview?.assetId
       ? { id: source.linkPreview.assetId, kind: "frame" }
       : undefined) ??
-    (source.originalMediaEvidence ?? source.mediaEvidence ?? []).find(
-      (e: any) => e.kind === "frame",
-    ) ??
-    (source.personalMedia?.frames?.[0]
+    sourceEvidenceFrames(source)[0] ??
+    (source.orderedMedia?.post?.schemaVersion !==
+      "work-cloud-observed-media-v1" && source.personalMedia?.frames?.[0]
       ? { id: source.personalMedia.frames[0].assetId, kind: "frame" }
       : undefined);
   const [failedId, setFailedId] = useState<string>(),
@@ -3928,11 +3931,7 @@ export function SourceDetail({
       clearTimeout(timer);
     };
   }, [demo, retentionDeadline]);
-  const savedFrames = (
-    detail.originalMediaEvidence ??
-    detail.mediaEvidence ??
-    []
-  ).filter((e: any) => e.kind === "frame");
+  const savedFrames = sourceEvidenceFrames(detail, retentionTime);
   const suppliedMetadata =
     detail.personalOrderedInput?.metadata?.schemaVersion === "provided-media-v1"
       ? detail.personalOrderedInput.metadata
@@ -4024,7 +4023,7 @@ export function SourceDetail({
     // evidence only when this source or its linked proposal revision changes.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceId, sourceRevision, org, demo, authoritative, authoritativeDetail]);
-  const insights =
+  const sourceInsights =
     detail.analysis?.insights ??
     (demo
       ? detail.mainPoints?.map((title: string) => ({
@@ -4034,6 +4033,12 @@ export function SourceDetail({
         }))
       : []) ??
     [];
+  const insights = sourceInsights.map((insight: any) => ({
+    ...insight,
+    evidence: (insight.evidence ?? []).map((ref: any) =>
+      cloudCitationForDisplay(detail, ref, retentionTime),
+    ),
+  }));
   const summary =
     detail.summary ??
     (["queued", "processing"].includes(detail.state)

@@ -12,6 +12,13 @@ import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { sharedTypedCitations } from "../convex/lib/sourceCitations";
 import { currentOrderedSource } from "../convex/lib/orderedSource";
 import {
+  retainedCloudFrames,
+  sourceEvidenceFrames,
+} from "../packages/media/cloud-frames";
+import { projectPostSource } from "../convex/lib/postSummary";
+import { buildProjectSourceContent } from "../convex/lib/projectSourceContent";
+import { syntheticJpeg } from "./cloud-frame-fixture";
+import {
   workCloudMediaPreparation,
   validateWorkCloudMediaOutput,
 } from "../packages/contracts/work-cloud-text";
@@ -31,6 +38,7 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 async function setup(url = "https://www.youtube.com/watch?v=abcdefghijk") {
@@ -1515,3 +1523,158 @@ it("rejects a different stored Instagram identity before approval even when both
   );
   await expect(s.preview()).rejects.toThrow("APPROVAL_STALE");
 });
+
+const frameBytes = Uint8Array.from(atob(syntheticJpeg), (c) => c.charCodeAt(0));
+async function frameFixture(width = 2) {
+  const s = await setup(),
+    lease = await s.claim(),
+    prepared = await receipt(s, lease);
+  const sha256 = Array.from(
+    new Uint8Array(await crypto.subtle.digest("SHA-256", frameBytes)),
+    (n) => n.toString(16).padStart(2, "0"),
+  ).join("");
+  prepared.post.frames[0] = {
+    ...prepared.post.frames[0],
+    bytes: frameBytes.length,
+    sha256,
+    width,
+    height: 2,
+  };
+  prepared.post.revisionHash = await orderedRevisionHash(prepared.post);
+  for (const evidence of prepared.evidence)
+    evidence.postRevisionHash = prepared.post.revisionHash;
+  const bound = await prepare(s, lease, prepared);
+  if (!("preparationHash" in bound)) throw Error("No bound preparation");
+  const args = {
+    ...lease,
+    preparationHash: bound.preparationHash!,
+    frameId: "frame-1",
+    data: btoa(String.fromCharCode(...frameBytes)),
+  };
+  for (const [key, value] of Object.entries({
+    R2_ENDPOINT: "https://synthetic.eu.r2.cloudflarestorage.com",
+    R2_BUCKET: "synthetic",
+    R2_ACCESS_KEY_ID: "synthetic",
+    R2_SECRET_ACCESS_KEY: "synthetic",
+  }))
+    vi.stubEnv(key, value);
+  return { ...s, lease, prepared, args };
+}
+function frameStorage(beforeHead?: () => Promise<void>) {
+  const fetcher = vi.fn(async (_url: unknown, request?: RequestInit) => {
+    if (request?.method === "PUT") {
+      expect(new Uint8Array(request.body as ArrayBuffer)).toEqual(frameBytes);
+      return new Response(null, { status: 200 });
+    }
+    expect(request?.method).toBe("HEAD");
+    await beforeHead?.();
+    return new Response(null, {
+      headers: {
+        "content-length": String(frameBytes.length),
+        "content-type": "image/jpeg",
+        etag: '"synthetic-frame"',
+      },
+    });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  return fetcher;
+}
+it("stores matching Cloud pixels once, preserves immutable evidence and exposes the same screenshot, thumbnail and project image", async () => {
+  const s = await frameFixture(),
+    fetcher = frameStorage();
+  const first = await s.assistant.action(
+    internal.workCloudFrames.upload,
+    s.args,
+  );
+  const second = await s.assistant.action(
+    internal.workCloudFrames.upload,
+    s.args,
+  );
+  expect(second).toEqual(first);
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  let source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(source.orderedMedia.post).toEqual(s.prepared.post);
+  expect(source.orderedMedia.evidence).toEqual(s.prepared.evidence);
+  expect(retainedCloudFrames(source)).toHaveLength(1);
+  expect(sourceEvidenceFrames(source)).toEqual([
+    { kind: "frame", id: first.assetId, startMs: 12000, endMs: 12000 },
+  ]);
+  expect((await projectPostSource(source)).thumbnail?.assetId).toBe(
+    first.assetId,
+  );
+  const assetId = first.assetId as any;
+  await expect(
+    s.owner.query(api.assets.evidence, { id: assetId }),
+  ).resolves.toMatchObject({ type: "image/jpeg" });
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...s.lease,
+    operation: "complete",
+    output: output(s.lease, s.prepared),
+  });
+  source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(
+    (await s.t.run((ctx) => buildProjectSourceContent(ctx, source))).images,
+  ).toMatchObject([
+    {
+      id: first.assetId,
+      sha256: s.prepared.post.frames[0].sha256,
+      timestampMs: 12000,
+    },
+  ]);
+  await expect(
+    s.assistant.action(internal.workCloudFrames.upload, s.args),
+  ).rejects.toThrow("APPROVAL_STALE");
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, { generation: source.generation + 1 }),
+  );
+  await expect(
+    s.owner.query(api.assets.evidence, { id: assetId }),
+  ).rejects.toThrow("Evidence unavailable");
+});
+it.each(["pixels", "hash", "lease", "dimension", "base64"])(
+  "rejects mismatched Cloud %s before storage",
+  async (kind) => {
+    const s = await frameFixture(kind === "dimension" ? 3 : 2),
+      fetcher = frameStorage(),
+      args = { ...s.args };
+    if (kind === "pixels") {
+      const changed = frameBytes.slice();
+      changed[30] ^= 1;
+      args.data = btoa(String.fromCharCode(...changed));
+    }
+    if (kind === "hash") args.preparationHash = "0".repeat(64);
+    if (kind === "lease") args.leaseToken = crypto.randomUUID();
+    if (kind === "base64") args.data += "\n";
+    await expect(
+      s.assistant.action(internal.workCloudFrames.upload, args),
+    ).rejects.toThrow();
+    expect(fetcher).not.toHaveBeenCalled();
+  },
+);
+it.each(["lease", "rights", "grant"])(
+  "rechecks Cloud %s after upload and queues the unattached object for deletion",
+  async (kind) => {
+    const s = await frameFixture();
+    frameStorage(async () => {
+      if (kind === "lease") vi.advanceTimersByTime(180001);
+      if (kind === "rights")
+        await s.t.run((ctx) =>
+          ctx.db.patch(s.sourceId, { rightsAttested: false }),
+        );
+      if (kind === "grant")
+        await s.t.run((ctx) => ctx.db.patch(s.grant.id, { version: 2 }));
+    });
+    await expect(
+      s.assistant.action(internal.workCloudFrames.upload, s.args),
+    ).rejects.toThrow();
+    const rows = await s.t.run(async (ctx) => ({
+      assets: await ctx.db.query("assets").collect(),
+      deletions: await ctx.db.query("objectDeletions").collect(),
+      source: await ctx.db.get(s.sourceId),
+    }));
+    expect(rows.assets).toHaveLength(0);
+    expect(rows.deletions).toHaveLength(1);
+    expect(rows.source?.personalMedia?.cloudFrames).toBeUndefined();
+  },
+);

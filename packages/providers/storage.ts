@@ -106,10 +106,10 @@ export async function deleteObject(key: string) {
     "Object deletion failed and must retry.",
   );
 }
-export async function objectMetadata(key: string) {
+export async function objectMetadata(key: string, timeoutMs = 15000) {
   const res = await fetch(signedObject(key, "HEAD"), {
     method: "HEAD",
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   ensure(res.ok, "UPLOAD_INCOMPLETE", "The private upload is unavailable.");
   return {

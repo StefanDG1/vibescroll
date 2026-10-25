@@ -2,7 +2,7 @@
   "recordedAtUtc": "2026-10-25T23:38:40.177330+00:00",
   "status": "compatible candidate not published",
   "baseline": "675dea24804d3ed730cdec2aa5f858ddbcd07594",
-  "sourceDigest": "7cc53c4610d2d6aff8fb33f6c144c9f77ab66ad236c7e58c1a8eaf37b03fcf6c",
+  "sourceDigest": "bb7dfd10ab089e50cc724d27a92caacd4c6edc40b9ffe617c13976f99e6b30b7",
   "sourceHashes": [
     {
       "path": ".github/workflows/ci.yml",
@@ -118,7 +118,7 @@
     },
     {
       "path": "packages/media/asr_verification.py",
-      "sha256": "575137b9009e5cdc43db71fddf984092c2e345405a727e84f675b7369db11f9a"
+      "sha256": "bd029b33c14401712298317012167486bb5a050e81e156376f477adb3effe28a"
     },
     {
       "path": "packages/media/cloud-downloader.lock.json",
@@ -126,7 +126,7 @@
     },
     {
       "path": "packages/media/cloud-extractor.lock.json",
-      "sha256": "fded841ebd36479fa3d13dd3e81794542a4448b972a7c0c0e0a1bcdaee6decc3"
+      "sha256": "7e335eedb45059c494e95a252e67973df89e73f953ad373746e22c0ddec30f92"
     },
     {
       "path": "packages/media/cloud-frames.ts",
@@ -288,7 +288,10 @@
     "native": {
       "data": "synthetic v3 post",
       "actualComponent": "SourceDetail",
-      "widths": [320, 1280],
+      "widths": [
+        320,
+        1280
+      ],
       "olderInputExcluded": true,
       "retainedTranscriptShown": true,
       "frameCitationOpensDecodedJPEG": true,
@@ -305,6 +308,16 @@
       "critical": 0,
       "unresolved": 0,
       "log": "outputs/compatible-audit.json"
+    },
+    "canonicalRouteBuilds": {
+      "exitCode": 0,
+      "log": "outputs/compatible-canonical-builds.log"
+    },
+    "formattingAndStagedSecrets": "passed; gitleaks8.30.1, no findings",
+    "toolManifestFinal": {
+      "archiveSHA256": "f4033f3e47c9897061dd284ce591cae59443bd464938aad9cb75abe6416e1f2e",
+      "files": 11,
+      "difference": "Removed one trailing blank line in the newly included ASR verifier; no executable logic changed."
     }
   },
   "retainedFailures": [

@@ -1,5 +1,11 @@
 # Remaining acceptance and completion ledger
 
+## Current quality and handover checkpoint, October 25
+
+The [engineering handover](HANDOVER-2026-10-25.md) is the current status reference. The owner reports an incorrect transcript and absent images on the demonstrated result. The prior real-video receipt proves acquisition and canonical return, not accurate speech, screenshots, thumbnail or native rendering. Do not count that result as full C1/C3 acceptance. PR182 fixes a reproduced Cloud-transcript display mismatch, is merged after exact-head CI40225282186 and remains undeployed. Offline checks passed2070 tests with3 hosted skips; independent High review found no P1/P2. Image attachment, source/audio comparison, an ordinary fresh run and automatic background execution remain pending.
+
+Serving frontend/backend675dea2 is unchanged. The same cumulative EUR5 ledger retains USD4.875014256044613 with USD0.424985743955387 unreserved. No new production test or data mutation was made for this handover. Older checkpoint figures and pending statuses below remain historical where superseded.
+
 October25 publication: [the compatible Events receipt](../../operations/evidence/launch-20261025-cloud-events-production.json) verifies backend/frontend675dea2, matching server configuration, one Basic build, staged health/static Help and public canonical health without a bypass. These checks made no source/job/model calls and created no subscription. Actual callback/provider-host execution, renewal and standing link-only processing remain pending. Full subscription readiness needs a complete bounded retry/recovery/expiry/audit allowance; the callback's ten-second network timeout does not cap the whole Node action. Do not shorten normal retention or claim callback receipt as executed analysis.
 
 Home PR180 is merged with passing exact-head CI40216636509, fifty-one focused tests, final starter build and eight native synthetic checks. Production R6 and Library's separate insight-first projected-list work remain open. The full-main index hold remains because a static one-pass byte count does not bound arbitrary backfill retries; removing necessary history/security indexes is not an accepted substitute. Same cumulative EUR5 and all prior unknown/future holds remain.
@@ -119,6 +125,24 @@ The newer C4 candidate implements current-Pro preview/save, immutable private co
 October 24 complete-scope integration: [ADR 123](../../adr/123-scrollshow-handoff-and-integrated-offer-planning.md) and [the ScrollShow crosswalk](SCROLLSHOW-INTEGRATION.md) add M0-M7 inside C9/C10. The selected future ongoing-Pro offer supersedes the new three-year founding-pass target, preserves legacy purchases and requires its own catalog/allowance/terms migration acceptance. Historical dated tests remain unchanged. Planning this work passes no application, pricing or production stage.
 
 ## Current Cloud-first acceptance
+
+| Package | Current evidence | Acceptance still open |
+| --- | --- | --- |
+| C0 runtime | A prepared no-GitHub Work Cloud task acquired a real Reel. | Repeatable supported host, current network/resource controls, recovery and simple user setup. |
+| C1 media quality | Real46.9s acquisition,18 ASR segments and8 sampled frames; displayed transcript bug reproduced. | Correct transcript and retained images/thumbnail in production, audio/insight review, all required source/media formats. |
+| C2 events |675dea2 transport/configuration published; fixtures pass. | Actual subscription, callback, host wake, renewal/revocation and bounded failure costs. Uncommitted native-worker work needs integration. |
+| C3 result and intake | Exact private request/claim/preparation/completion is live;5 insights/29 citations returned through recovery. | Ordinary fresh run, standing link-only intake, automatic rendering and neutral contribution. PR182 display fix is merged but not deployed. |
+| C4 catalog | Existing artifact/import lifecycle and independent canonical ownership candidate. | Neutral own-subscription provenance, global paid/Pro access, reuse/lapse/rights/removal/restore and real lifecycle acceptance. |
+| C5 creators | Watch/subscription/digest foundations and source progress projections. | Permitted daily acquisition, recurring authority, contributor selection/failover and full acquisition-to-catalog delivery. |
+| C6 private advanced | Whole-post Apply/context toggle, private tasks and proposal/plan foundations merged. | Full-main publication, real source-plus-repository result, complete private prompt/skill/media and coding acceptance. |
+| C7 setup and Help | Existing setup/progress, optional GitHub and experimental Help are extended. | Supported actual Cloud readiness, minimal one-time setup, complete authorized onboarding and independent mobile acceptance. |
+| C8 discovery | Existing catalog search, categories, map/list and coarse globe foundations. | Production current-data/entitlement/privacy lifecycle and truthful trend/usefulness evidence. |
+| C9 website and media | Partial ScrollShow, original media, examples, motion/static Help and repository presentation merged. | Full M0-M7 integration, device/comprehension checks and truthful production claims. Lifetime purchase remains later. |
+| C10 release | Compatible675dea2 serving; exact-commit CI and narrow health checks recorded. | Full-main migration bound, remaining deployment, real payment/access and independent integrated acceptance. |
+
+The [handover](HANDOVER-2026-10-25.md) records commits, tests, preserved dirty work, constraints and dependencies. The earlier package table below is retained as history; its old counts, absent-implementation labels and pending results are not current evidence.
+
+## Historical Cloud-first package baseline
 
 The owner selected the [Cloud-first sequence](CLOUD-FIRST.md) under ADR 121, revised by [ADR 122](../../adr/122-proprietary-pro-insight-catalog.md) on October 24. The proprietary catalog is Pro-only, all plans may contribute, and retained saved copies/notes remain readable after cancellation. Further catalog access/reuse/updates require Pro. These rules are not yet implemented or production-accepted. Human/provider steps are consolidated in [the owner checklist](OWNER-CHECKLIST.md). C0-C10 retain all original R/P/N scenarios. C11 is future scope. No new stage is passed merely by this plan. Existing historical checkpoints below keep their original versions and evidence limits.
 

@@ -1,5 +1,7 @@
 # App pages, automatic processing and loading
 
+For current execution, use the [October25 handover](HANDOVER-2026-10-25.md). Home/source-loading work and transcript-display PR182 are merged but not serving in675dea2. The insight-first Library implementation, full image evidence and automatic share-to-result acceptance remain open. This specification remains the target, not a production capability list.
+
 Mode: implementation specification linked from the [single remaining-work index](README.md). Owner direction October 24; reconciled October 25, 2026, Europe/Berlin. Root owns integration. The owner authorized these requirements; they are not claims that the new experience is live.
 
 ## Current source inventory and limits

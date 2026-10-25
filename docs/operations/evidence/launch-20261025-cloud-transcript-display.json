@@ -1,6 +1,14 @@
 {
   "recordedAtUtc": "2026-10-25T19:15:28Z",
   "stage": "Offline correction after owner disputed production Cloud result quality",
+  "publicationStatus": {
+    "pullRequest": 182,
+    "sourceHead": "6ffb584bdde126d4dd8871ddcedc88bc1c673b85",
+    "exactHeadCI": 40225282186,
+    "exactHeadCIResult": "success",
+    "mainMerge": "6d3cb0a056cb245b1e583c02d3912a287378819f",
+    "deployed": false
+  },
   "base": "dcc9b30",
   "observations": {
     "productionPageInspectedThisPhase": false,

@@ -1,5 +1,9 @@
 # October 22 launch implementation candidate
 
+## Current handover and Cloud quality correction, October25
+
+Use the [engineering handover](launch-plan/2026-10-23/HANDOVER-2026-10-25.md) before older checkpoints. Transcript-display PR182, source6ffb584, merged at6d3cb0a after exact-head CI40225282186 passed. Its offline full check passed2018 Vitest,19 Node and33 Python tests with3 hosted skips, types/lint and both builds. The [receipt](operations/evidence/launch-20261025-cloud-transcript-display.json) separates that correction from ASR accuracy, image retention and production rendering. The fix remains undeployed. The demonstrated result's quality is disputed by the owner, so canonical return does not complete C1/C3. Serving backend/frontend remain675dea2; automatic host execution, screenshot/thumbnail delivery and full-main publication remain pending. No new video or production data request occurred in this handover. Every prior requirement, old saved post/insight and retained budget obligation remains.
+
 ## Compatible Events support published, October25
 
 [The production receipt](operations/evidence/launch-20261025-cloud-events-production.json) records source675dea2 on both backend and frontend, matching server configuration, passing exact-head CI40206021775 and one fixed Basic build. The staged health/static Help checks passed; the same build was promoted and its public canonical health returned the exact version without authentication or a bypass. Normal domain assignment was restored. No subscription, callback, host wake or new video test was started by this publication.

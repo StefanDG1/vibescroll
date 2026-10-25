@@ -1,5 +1,7 @@
 # Integrate the ScrollShow handoff with the full launch
 
+The [October25 handover](HANDOVER-2026-10-25.md) records the current partial implementation, serving675dea2, unshipped main work and reopened Cloud-result quality acceptance. Preserve M0-M7 and its crosswalk; do not advertise automatic Cloud video processing as accepted. Lifetime purchase implementation remains deferred.
+
 ## Current navigation and processing direction
 
 [ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md), [ADR 148](../../adr/148-catalog-first-insights-and-paid-hosted-entry.md) and the [current index](README.md) retain all M0-M7 work while updating the target to paid hosted entry, shared generic insights, link-only Cloud after one-time setup, Home recent posts and an insight-first Library. Preserve private project work, all P/R/N/C scope and this handoff's design/media requirements. Do not advertise automatic execution, instant misses, measured savings or a working phone journey before actual acceptance. Manual handoff stays diagnostic.

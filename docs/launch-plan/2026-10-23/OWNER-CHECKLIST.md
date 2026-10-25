@@ -1,5 +1,11 @@
 # What help is still needed to finish the plan
 
+## Handover and reported quality issue, October 25
+
+Read the [engineering handover](HANDOVER-2026-10-25.md) first. The owner reports wrong transcript text and missing screenshots/thumbnail. Root reproduced and merged a transcript-display correction in PR182; it is not deployed. Actual image retention and audio/insight accuracy remain unverified. These are engineering responsibilities, not a request for another account, repeated approval, source link or phone test now. The next agent must prepare a concrete supported step before requesting help. Current serving source is675dea2 on frontend/backend; automatic background processing is not accepted.
+
+The current cap is the same cumulative EUR5, with USD4.875014256044613 retained and USD0.424985743955387 unreserved. Earlier US$2/US$3 figures and old live-version paragraphs below are historical. Existing provider, rights, independent-human, payment and conditional signing gates remain.
+
 No setup action is waiting for the owner. Existing Chrome, application and provider connections were sufficient for [the compatible Events publication](../../operations/evidence/launch-20261025-cloud-events-production.json). Backend/frontend675dea2 and matching server settings are live; exact-build public health/Help checks passed. Root still owns the bounded actual host subscription/wake test and automatic intake. Only a concrete supported one-time monitor, Internet or sign-in prompt will require the owner; no new link, GitHub, Docker, purchase or repeat OAuth connection is requested now.
 
 The same cumulative EUR5 ledger retains USD4.875014256044613 with USD0.424985743955387 unreserved, after releasing only USD0.308 of unused completed-build allowance. All prior unknown/future holds remain. These are reservations, not settled spending. General hosted/provider, rights, independent-human and full-main migration gates remain; no automatic analysis acceptance follows from publishing support code. The earlier exposed deployment-protection bypass was revoked/replaced; the current credential remains private.

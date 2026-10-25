@@ -2,6 +2,8 @@
 
 ## Current execution entry point
 
+For takeover, start with the [October25 engineering handover](../2026-10-23/HANDOVER-2026-10-25.md). It distinguishes serving675dea2 from merged and uncommitted work, reopens the disputed Cloud result's quality acceptance and records the same cumulative EUR5 ceiling. Transcript-display PR182 is merged and tested but not deployed; returned screenshot assets, thumbnail and automatic processing remain unfinished.
+
 Use the [single reconciled remaining-work plan](../2026-10-23/README.md), [page inventory/loading specification](../2026-10-23/APP-MAP-AND-LOADING.md) and [ADR 149](../../adr/149-automatic-link-analysis-and-insight-first-navigation.md). The latest target is automatic processing after a link share within one-time standing authority, current eligible reuse, honest status/automatic display, Home analytics/recent cards and extracted-insight Library. All original P0-P15, R0-R13, N0-N7, C0-C10 and M0-M7 acceptance remains. Older dated checkpoints below are historical, not current completion claims.
 
 ## Catalog-first insights and paid entry, October 24

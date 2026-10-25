@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Minimal CI-only synthetic decoder test toolchain; not the production media runtime",
+  "version": "9.0.2",
+  "url": "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz",
+  "bytes": 12040788,
+  "sha256": "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e",
+  "authenticity": {
+    "reviewedAt": "2026-10-23",
+    "releasePage": "https://ffmpeg.org/download.html",
+    "signatureUrl": "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz.asc",
+    "signatureSha256": "d617fd94ea354dadd2a8bb16243d37c44e1e9729b06b6ad58fe30bfb0fa943f2",
+    "keyUrl": "https://ffmpeg.org/ffmpeg-devel.asc",
+    "signerDocumentSha256": "397b3becedcd5a98769967ff1ff8501ddc89f8368b8f766e4701377d7dbaabe5",
+    "fingerprint": "FCF986EA15E6E293A5644F10B4322F04D67658D8",
+    "result": "Detached signature GOODSIG and VALIDSIG verified locally against the fingerprint published on the official release page. Archive SHA-256 computed after verification; no separate upstream SHA-256 file was available. CI requires those exact reviewed archive bytes."
+  }
+}

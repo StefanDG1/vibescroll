@@ -10,12 +10,24 @@ concurrency:
   cancel-in-progress: true
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # The media wheel lock targets this existing x64/Python 3.12 runner baseline.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.22.1
+      - name: Build verified project-scoped decoder tools
+        timeout-minutes: 20
+        run: bash scripts/prepare-media-tests.sh
+      - name: Prepare project-scoped Python media dependencies
+        shell: bash
+        run: |
+          python3.12 -m venv "$RUNNER_TEMP/vibescroll-media-tests"
+          "$RUNNER_TEMP/vibescroll-media-tests/bin/python" -m pip --isolated install --no-index --require-hashes --only-binary=:all: --no-deps --no-cache-dir --disable-pip-version-check -r tests/requirements-media.lock
+          "$RUNNER_TEMP/vibescroll-media-tests/bin/python" tests/check_media_prerequisites.py
+          "$RUNNER_TEMP/vibescroll-media-tests/bin/python" tests/media_prerequisites_test.py
+          echo "$RUNNER_TEMP/vibescroll-media-tests/bin" >> "$GITHUB_PATH"
       - run: npm install --global pnpm@12.3.4
       - run: pnpm install --frozen-lockfile
       - name: Fetch immutable schema compatibility baseline

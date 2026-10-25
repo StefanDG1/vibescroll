@@ -7,8 +7,10 @@ import {
 import { socialAnalysisOutput } from "../social/analysis";
 import downloader from "../../infra/downloader.json";
 import asr from "../media/asr-model.lock.json";
+import cloudDownloader from "../media/cloud-downloader.lock.json";
+import extractionPackage from "../media/cloud-extractor.lock.json";
 
-export const workCloudMediaPolicy = {
+export const workCloudMediaPolicyV2 = {
   schemaVersion: "work-cloud-media-v2",
   pipelineVersion: "official-work-cloud-media-v2",
   funding: "own_subscription",
@@ -32,11 +34,41 @@ export const workCloudMediaPolicy = {
   provenance: "authenticated_host_reported",
   toolchain: { version: "cloud-sampled-preparation-v2", downloader, asr },
 } as const;
-export const workCloudMediaPreparation = z.strictObject({
-  schemaVersion: z.literal("work-cloud-media-preparation-v2"),
-  post: cloudObservedMediaSchema,
-  evidence: z.array(socialEvidenceSchema).max(248),
-});
+export const workCloudMediaPolicy = {
+  ...workCloudMediaPolicyV2,
+  schemaVersion: "work-cloud-media-v3",
+  pipelineVersion: "official-work-cloud-media-v3",
+  toolchain: {
+    ...workCloudMediaPolicyV2.toolchain,
+    downloader: cloudDownloader,
+    extractionPackage,
+    captionParser: {
+      version: "1.9.0",
+      sha256:
+        "83f1979cb7e064294f0c8473ef672ca2e5c0a7172bbf8ae9b4337899d5cdf01f",
+    },
+    version: "cloud-caption-preparation-v3",
+  },
+} as const;
+export const workCloudMediaPreparation = z
+  .strictObject({
+    schemaVersion: z.enum([
+      "work-cloud-media-preparation-v2",
+      "work-cloud-media-preparation-v3",
+    ]),
+    post: cloudObservedMediaSchema,
+    evidence: z.array(socialEvidenceSchema).max(248),
+  })
+  .superRefine((value, ctx) => {
+    if (
+      (value.schemaVersion === "work-cloud-media-preparation-v3") !==
+      (value.post.schemaVersion === "work-cloud-observed-media-v2")
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Caption-aware observations require media-v3 preparation.",
+      });
+  });
 export const validateWorkCloudMediaOutput = (value: unknown) =>
   socialAnalysisOutput.parse(value);
 
@@ -64,12 +96,33 @@ export const workCloudMcpRequestOptions = z.strictObject({
   retainUntil: z.number().int().positive(),
 });
 export const workCloudLeaseInput = z.object(lease).strict();
+export const workCloudMetadata = z.strictObject({
+  title: z.string().min(1).max(160).optional(),
+  authorName: z.string().min(1).max(160).optional(),
+  durationSeconds: z.number().positive().max(600).optional(),
+  publishedAt: z.number().int().positive().optional(),
+});
+export const workCloudMetadataInput = z.strictObject({
+  ...lease,
+  metadata: workCloudMetadata,
+});
 export const workCloudPrepareInput = z
   .object({
     ...lease,
     preparationJson: z.string().min(2).max(120000),
   })
   .strict();
+export const workCloudFrameInput = z.strictObject({
+  ...lease,
+  repair: z.literal(true).optional(),
+  frameId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),
+  preparationHash: z.string().regex(/^[a-f0-9]{64}$/),
+  data: z
+    .string()
+    .min(4)
+    .max(200000)
+    .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
+});
 export const workCloudCompleteInput = z
   .object({
     ...lease,
@@ -94,6 +147,30 @@ export function parseWorkCloudResult(resultJson: string): unknown {
 }
 
 export const workCloudTextOperations = [
+  z.strictObject({
+    operation: z.literal("work_cloud_repair_claim"),
+    args: workCloudClaimInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_repair_input"),
+    args: workCloudLeaseInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_repair_heartbeat"),
+    args: workCloudLeaseInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_repair_complete"),
+    args: workCloudLeaseInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_metadata"),
+    args: workCloudMetadataInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_frame"),
+    args: workCloudFrameInput,
+  }),
   z
     .object({
       operation: z.literal("work_cloud_prepare"),
@@ -137,9 +214,11 @@ export function cloudCompletionEnvelope(value: unknown, mcp = false) {
   if (!mcp)
     return (
       "operation" in value &&
-      ["work_cloud_complete", "work_cloud_prepare"].includes(
-        value.operation as string,
-      )
+      [
+        "work_cloud_complete",
+        "work_cloud_prepare",
+        "work_cloud_frame",
+      ].includes(value.operation as string)
     );
   if (
     !("method" in value) ||
@@ -152,7 +231,7 @@ export function cloudCompletionEnvelope(value: unknown, mcp = false) {
     !!params &&
     typeof params === "object" &&
     "name" in params &&
-    ["work_cloud_complete", "work_cloud_prepare"].includes(
+    ["work_cloud_complete", "work_cloud_prepare", "work_cloud_frame"].includes(
       params.name as string,
     )
   );

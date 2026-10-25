@@ -75,6 +75,7 @@ export async function ProductPage({
       organizationId={org}
       initialView={view}
       readOnly={initial.role === "viewer"}
+      canRepairEvidence={initial.role === "owner"}
       canSuggestCategories={["owner", "admin"].includes(initial.role)}
       initial={initial}
     />

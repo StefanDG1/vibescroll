@@ -6,6 +6,9 @@ import { access, limit, fail, writeAccess } from "./lib";
 import { ensure } from "../packages/policy";
 import { internal } from "./_generated/api";
 import type { MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { cloudFrameAssetCurrent } from "../packages/media/cloud-frames";
+import { sourceRetained } from "./lib/sourceAuthority";
 import { wallet } from "./product";
 import { hostedSourceAllowed } from "./lib/hostedMediaAccess";
 export async function queueDeletion(ctx: MutationCtx, key: string) {
@@ -256,7 +259,10 @@ export const evidence = query({
       if (
         !source ||
         source.organizationId !== asset.organizationId ||
-        source.state === "deleted"
+        !sourceRetained(source.sourceRetentionUntil) ||
+        source.state === "deleted" ||
+        (asset.kind === "work_cloud_frame" &&
+          !cloudFrameAssetCurrent(source, asset))
       )
         fail("Evidence unavailable.");
     }
@@ -272,68 +278,82 @@ export const registerEvidence = internalMutation({
     size: v.number(),
     etag: v.string(),
   },
-  handler: async (ctx, a) => {
-    const source = await ctx.db.get(a.sourceId);
-    if (
-      !source ||
-      source.state === "deleted" ||
-      source.generation !== a.generation ||
-      (source.managedAnalysisActor && !(await hostedSourceAllowed(ctx, source)))
-    ) {
-      await queueDeletion(ctx, a.key);
-      return null;
-    }
-    ensure(
-      a.key.startsWith(`${source.organizationId}/`) &&
-        a.size > 0 &&
-        a.size <= 1000000,
-      "INVALID_EVIDENCE",
-      "Invalid bounded frame object.",
-    );
-    if (
-      await ctx.db
-        .query("objectDeletions")
-        .withIndex("by_key", (q) => q.eq("key", a.key))
-        .unique()
-    ) {
-      await queueDeletion(ctx, a.key);
-      return null;
-    }
-    const existing = await ctx.db
-      .query("assets")
-      .withIndex("by_key", (q) => q.eq("key", a.key))
-      .unique();
-    if (existing) {
-      ensure(
-        existing.sourceId === source._id &&
-          existing.size === a.size &&
-          existing.etag === a.etag &&
-          existing.state === "complete",
-        "INVALID_EVIDENCE",
-        "Evidence key is already bound to different bytes.",
-      );
-      return existing._id;
-    }
-    const entitlement = await wallet(ctx, source.organizationId);
-    const bytes = (await storageUsage(ctx, source.organizationId)).bytes;
-    if (bytes + a.size > (entitlement.tier === "pro" ? 5 : 1) * 1000000000) {
-      await queueDeletion(ctx, a.key);
-      return null;
-    }
-    return insertAsset(ctx, {
-      organizationId: source.organizationId,
-      sourceId: source._id,
-      key: a.key,
-      size: a.size,
-      etag: a.etag,
-      type: "image/jpeg",
-      state: "complete",
-      kind: "evidence",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-  },
+  handler: (ctx, a) => registerEvidenceAsset(ctx, a),
 });
+export async function registerEvidenceAsset(
+  ctx: MutationCtx,
+  a: {
+    sourceId: Id<"sources">;
+    generation: number;
+    key: string;
+    size: number;
+    etag: string;
+  },
+  options?: { kind: "work_cloud_frame"; expiresAt: number },
+) {
+  const source = await ctx.db.get(a.sourceId);
+  if (
+    !source ||
+    source.state === "deleted" ||
+    source.generation !== a.generation ||
+    !sourceRetained(source.sourceRetentionUntil) ||
+    (source.managedAnalysisActor && !(await hostedSourceAllowed(ctx, source)))
+  ) {
+    await queueDeletion(ctx, a.key);
+    return null;
+  }
+  ensure(
+    a.key.startsWith(`${source.organizationId}/`) &&
+      a.size > 0 &&
+      a.size <= 1000000,
+    "INVALID_EVIDENCE",
+    "Invalid bounded frame object.",
+  );
+  if (
+    await ctx.db
+      .query("objectDeletions")
+      .withIndex("by_key", (q) => q.eq("key", a.key))
+      .unique()
+  ) {
+    await queueDeletion(ctx, a.key);
+    return null;
+  }
+  const existing = await ctx.db
+    .query("assets")
+    .withIndex("by_key", (q) => q.eq("key", a.key))
+    .unique();
+  if (existing) {
+    ensure(
+      existing.sourceId === source._id &&
+        existing.size === a.size &&
+        existing.etag === a.etag &&
+        existing.state === "complete",
+      "INVALID_EVIDENCE",
+      "Evidence key is already bound to different bytes.",
+    );
+    return existing._id;
+  }
+  const entitlement = await wallet(ctx, source.organizationId);
+  const bytes = (await storageUsage(ctx, source.organizationId)).bytes;
+  if (bytes + a.size > (entitlement.tier === "pro" ? 5 : 1) * 1000000000) {
+    await queueDeletion(ctx, a.key);
+    return null;
+  }
+  return insertAsset(ctx, {
+    organizationId: source.organizationId,
+    sourceId: source._id,
+    sourceGeneration: source.generation,
+    key: a.key,
+    size: a.size,
+    etag: a.etag,
+    type: "image/jpeg",
+    state: "complete",
+    kind: options?.kind ?? "evidence",
+    ...(options ? { expiresAt: options.expiresAt } : {}),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+}
 export const registerNormalized = internalMutation({
   args: {
     sourceId: v.id("sources"),

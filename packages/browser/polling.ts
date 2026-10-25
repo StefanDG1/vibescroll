@@ -1,7 +1,8 @@
 /** Poll visible, online pages without overlapping requests or retry storms. */
 export function startPolling(
   refresh: () => Promise<unknown>,
-  interval: number,
+  interval: number | null,
+  immediate = true,
 ) {
   let stopped = false,
     running = false,
@@ -10,7 +11,7 @@ export function startPolling(
   const ready = () =>
     document.visibilityState === "visible" && navigator.onLine;
   const schedule = () => {
-    if (!stopped && ready())
+    if (!stopped && ready() && interval !== null)
       timer = setTimeout(
         () => void run(),
         Math.min(interval * 2 ** failures, 300000),
@@ -34,7 +35,8 @@ export function startPolling(
     clearTimeout(timer);
     if (ready()) void run();
   };
-  timer = setTimeout(() => void run(), 0);
+  if (immediate) timer = setTimeout(() => void run(), 0);
+  else schedule();
   document.addEventListener("visibilitychange", wake);
   window.addEventListener("online", wake);
   return () => {

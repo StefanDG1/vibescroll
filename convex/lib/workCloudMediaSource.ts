@@ -2,6 +2,7 @@ import type { Doc } from "../_generated/dataModel";
 import { validateOrderedAnalysis } from "../../packages/social/analysis";
 import {
   socialHash,
+  isCloudObservedMedia,
   privateCloudMediaIdentity,
 } from "../../packages/social/contracts";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
@@ -21,9 +22,7 @@ export async function currentOrderedSource(
     sourceId: source._id,
     generation: source.generation,
   });
-  if (
-    validated.prepared.post.schemaVersion === "work-cloud-observed-media-v1"
-  ) {
+  if (isCloudObservedMedia(validated.prepared.post)) {
     const post = validated.prepared.post,
       job = source.personalAnalysis;
     if (
@@ -37,7 +36,9 @@ export async function currentOrderedSource(
       job?.executor !== "work_cloud" ||
       job.state !== "completed" ||
       job.generation !== source.generation ||
-      job.cloud.schemaVersion !== "work-cloud-media-v2" ||
+      !["work-cloud-media-v2", "work-cloud-media-v3"].includes(
+        job.cloud.schemaVersion,
+      ) ||
       !job.cloud.media ||
       post.canonical !== job.cloud.media.canonicalUrl ||
       post.taskId !== job.cloud.taskId ||

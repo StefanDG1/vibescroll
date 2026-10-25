@@ -183,6 +183,22 @@ export function privateCloudMediaIdentity(url: string) {
   const input = acquisitionPolicy(url);
   if (!["instagram", "tiktok"].includes(input.platform)) return input;
   const identityUrl = new URL(input.url);
+  if (input.platform === "tiktok") {
+    if (
+      ["vm.tiktok.com", "vt.tiktok.com"].includes(identityUrl.hostname) ||
+      identityUrl.pathname.startsWith("/t/")
+    )
+      return input;
+    identityUrl.hostname = "www.tiktok.com";
+    identityUrl.pathname = identityUrl.pathname
+      .replace(
+        /^\/@([^/]+)/,
+        (_, handle: string) => `/@${handle.toLowerCase()}`,
+      )
+      .replace(/\/$/, "");
+    identityUrl.search = "";
+    return acquisitionPolicy(identityUrl.href);
+  }
   // The existing single-video acquisition policy accepts /reels/ as a reel
   // alias. Normalize only this private handoff's identity, without changing
   // creator/social manifest validation or granting another acquisition route.
@@ -194,7 +210,27 @@ export function privateCloudMediaIdentity(url: string) {
 // are not a supplier receipt or independently verified media acquisition.
 export const cloudObservedMediaSchema = z
   .strictObject({
-    schemaVersion: z.literal("work-cloud-observed-media-v1"),
+    schemaVersion: z.enum([
+      "work-cloud-observed-media-v1",
+      "work-cloud-observed-media-v2",
+    ]),
+    resolvedCanonical: z.string().max(2048).optional(),
+    transcript: z
+      .strictObject({
+        origin: z.enum([
+          "platform_manual",
+          "platform_auto",
+          "platform_unknown",
+          "local_asr",
+          "none",
+        ]),
+        language: z.string().min(1).max(40),
+        translated: z.boolean().nullable(),
+        asrUsed: z.boolean(),
+        trackSha256: sha256.nullable(),
+        format: z.enum(["srt", "vtt", "asr", "none"]),
+      })
+      .optional(),
     provenance: z.literal("authenticated_host_reported"),
     canonical: z.string().min(1).max(2048),
     platform: z.enum(["instagram", "tiktok", "youtube", "vimeo"]),
@@ -253,7 +289,54 @@ export const cloudObservedMediaSchema = z
       /* rejected below */
     }
     const asset = post.assets[0];
+    let resolved;
+    try {
+      if (post.resolvedCanonical)
+        resolved = privateCloudMediaIdentity(post.resolvedCanonical);
+    } catch {
+      /* rejected below */
+    }
+    const resolvedValid =
+      post.schemaVersion === "work-cloud-observed-media-v1"
+        ? post.resolvedCanonical === undefined
+        : !!identity &&
+          !!resolved &&
+          resolved.platform === post.platform &&
+          (post.platform === "tiktok" &&
+          (["vm.tiktok.com", "vt.tiktok.com"].includes(
+            new URL(post.canonical).hostname,
+          ) ||
+            new URL(post.canonical).pathname.startsWith("/t/"))
+            ? /^https:\/\/www\.tiktok\.com\/@[^/]+\/video\/\d+$/.test(
+                resolved.url,
+              )
+            : resolved.url === identity?.url);
+    const native =
+      post.schemaVersion === "work-cloud-observed-media-v2" &&
+      post.transcript?.origin.startsWith("platform_");
+    const transcriptValid =
+      post.schemaVersion === "work-cloud-observed-media-v1"
+        ? post.transcript === undefined
+        : !!post.transcript &&
+          (native
+            ? !post.transcript.asrUsed &&
+              !!post.transcript.trackSha256 &&
+              ["srt", "vtt"].includes(post.transcript.format) &&
+              post.segments.length > 0
+            : post.transcript.origin === "local_asr"
+              ? post.transcript.asrUsed &&
+                post.transcript.format === "asr" &&
+                post.transcript.trackSha256 === null &&
+                post.audio?.outcome === "transcribed"
+              : post.transcript.origin === "none" &&
+                (!post.transcript.asrUsed ||
+                  post.audio?.outcome === "no_speech") &&
+                post.transcript.format === "none" &&
+                post.transcript.trackSha256 === null &&
+                post.segments.length === 0);
     if (
+      !transcriptValid ||
+      !resolvedValid ||
       !identity ||
       identity.url !== post.canonical ||
       identity.platform !== post.platform ||
@@ -280,11 +363,16 @@ export const cloudObservedMediaSchema = z
         (s, i) =>
           s.startMs >= s.endMs ||
           s.endMs > (asset.kind === "video" ? asset.durationMs : 0) ||
-          (i > 0 && post.segments[i - 1].endMs > s.startMs),
+          (i > 0 &&
+            (native
+              ? post.segments[i - 1].startMs > s.startMs
+              : post.segments[i - 1].endMs > s.startMs)),
       ) ||
-      (post.audio?.outcome === "transcribed"
-        ? !post.segments.length
-        : post.segments.length > 0)
+      (native
+        ? post.audio?.outcome === "transcribed"
+        : post.audio?.outcome === "transcribed"
+          ? !post.segments.length
+          : post.segments.length > 0)
     )
       ctx.addIssue({
         code: "custom",
@@ -292,6 +380,18 @@ export const cloudObservedMediaSchema = z
       });
   });
 export type CloudObservedMedia = z.infer<typeof cloudObservedMediaSchema>;
+export function isCloudObservedMedia(
+  value: unknown,
+): value is CloudObservedMedia {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "schemaVersion" in value &&
+    (value.schemaVersion === "work-cloud-observed-media-v1" ||
+      value.schemaVersion === "work-cloud-observed-media-v2")
+  );
+}
+
 export const orderedPostSchema = z.union([
   socialPostSchema,
   providedMediaSchema,
@@ -356,11 +456,16 @@ export async function orderedRevisionHash(
     | CloudObservedMedia,
 ) {
   if (post.schemaVersion === "social-post-v1") return socialRevisionHash(post);
-  if (post.schemaVersion === "work-cloud-observed-media-v1") {
+  if (
+    post.schemaVersion === "work-cloud-observed-media-v1" ||
+    post.schemaVersion === "work-cloud-observed-media-v2"
+  ) {
     const { revisionHash: _revisionHash, ...observed } =
       post as CloudObservedMedia;
     return socialHash(canonicalJson(observed));
   }
+  if (post.schemaVersion !== "provided-media-v1")
+    throw Error("UNSUPPORTED_ORDERED_MEDIA_VERSION");
   return socialHash(
     canonicalJson({
       version: post.schemaVersion,
@@ -395,7 +500,7 @@ export async function validateOrderedEvidence(
   const post = orderedPostSchema.parse(postValue);
   const evidence = z
     .array(socialEvidenceSchema)
-    .max(post.schemaVersion === "work-cloud-observed-media-v1" ? 248 : 200)
+    .max(isCloudObservedMedia(post) ? 248 : 200)
     .parse(evidenceValue);
   if (new Set(evidence.map((e) => e.id)).size !== evidence.length)
     throw Error("DUPLICATE_SOCIAL_EVIDENCE");
@@ -417,13 +522,18 @@ export async function validateOrderedEvidence(
         : asset.kind !== "video" ||
           e.startMs >= e.endMs ||
           e.endMs > asset.durationMs ||
-          (e.basis === "transcript" && !asset.audioInspected))
+          (e.basis === "transcript" &&
+            !asset.audioInspected &&
+            !(
+              isCloudObservedMedia(post) &&
+              post.transcript?.origin.startsWith("platform_")
+            )))
     )
       throw Error("INVALID_SOCIAL_EVIDENCE_BINDING");
     if ((await socialHash(e.text)) !== e.textHash)
       throw Error("SOCIAL_EVIDENCE_HASH_MISMATCH");
   }
-  if (post.schemaVersion === "work-cloud-observed-media-v1") {
+  if (isCloudObservedMedia(post)) {
     for (const segment of post.segments)
       if ((await socialHash(segment.text)) !== segment.textHash)
         throw Error("CLOUD_TRANSCRIPT_HASH_MISMATCH");

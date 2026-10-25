@@ -129,6 +129,44 @@ export async function workspaceData({
       usage: null,
     };
   }
+  if (view === "source") {
+    if (!sourceId) throw Error("Source unavailable.");
+    const [organization, selectedSource, repositories, devices, aiPreference] =
+      await Promise.all([
+        c.query(api.organizations.details, { organizationId }),
+        c.query(api.product.detail, {
+          id: sourceId as Id<"sources">,
+          organizationId,
+        }),
+        c.query(api.product.repositories, { organizationId }),
+        c.query(api.devices.list, { organizationId }),
+        c.query(api.aiPreferences.read, { organizationId }),
+      ]);
+    return {
+      workspaceSlice: "source" as const,
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      selectedSource,
+      repositories: repositories.map(
+        ({ _id, fullName, enabled, confirmed, status }) => ({
+          _id,
+          fullName,
+          enabled,
+          confirmed,
+          status,
+        }),
+      ),
+      devices,
+      aiPreference,
+      sources: [],
+      proposals: [],
+      runs: [],
+      notifications: [],
+      usage: null,
+    };
+  }
   if (view === "connections") {
     const [organization, customerRoutes, connections, aiPreference] =
       await Promise.all([

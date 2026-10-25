@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef, useEffectEvent } from "react";
 import { useRouter } from "next/navigation";
 import { usePolling } from "@/lib/use-polling";
+import { isCloudObservedMedia } from "../../../packages/social/contracts";
+import { postDisplayTitle } from "../../../packages/sources/display";
 import { socialCitation } from "../../../packages/social/analysis";
 import {
   WorkCloudText,
@@ -12,6 +14,10 @@ import { AssistantConnections } from "./assistant-connections";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
 import { UsageSummary } from "./usage-summary";
 import { usageOverview } from "../../../packages/billing/usage-overview";
+import {
+  sourceEvidenceFrames,
+  cloudCitationForDisplay,
+} from "../../../packages/media/cloud-frames";
 import Link from "next/link";
 import Image from "next/image";
 import { Brand } from "./site";
@@ -87,7 +93,8 @@ import {
 } from "@/lib/analytics-events";
 import type { ImportPreview } from "../../../packages/instagram-import";
 type Initial = {
-  workspaceSlice?: "library" | "connections" | "usage" | "projects" | "plans";
+  workspaceSlice?:
+    "source" | "library" | "connections" | "usage" | "projects" | "plans";
   compact?: boolean;
   privateLibrary?: boolean;
   sharedKnowledge?: { items: any[]; next: string | null };
@@ -176,10 +183,9 @@ function SourceThumbnail({ source, demo }: { source: any; demo: boolean }) {
     (source.linkPreview?.assetId
       ? { id: source.linkPreview.assetId, kind: "frame" }
       : undefined) ??
-    (source.originalMediaEvidence ?? source.mediaEvidence ?? []).find(
-      (e: any) => e.kind === "frame",
-    ) ??
-    (source.personalMedia?.frames?.[0]
+    sourceEvidenceFrames(source)[0] ??
+    (!isCloudObservedMedia(source.orderedMedia?.post) &&
+    source.personalMedia?.frames?.[0]
       ? { id: source.personalMedia.frames[0].assetId, kind: "frame" }
       : undefined);
   const [failedId, setFailedId] = useState<string>(),
@@ -219,6 +225,7 @@ export function Console({
   demo = false,
   readOnly = false,
   canSuggestCategories = false,
+  canRepairEvidence = false,
   initial,
   organizationId,
   initialView = "home",
@@ -238,6 +245,7 @@ export function Console({
   demo?: boolean;
   readOnly?: boolean;
   canSuggestCategories?: boolean;
+  canRepairEvidence?: boolean;
   initial: Initial;
   organizationId: string;
   initialView?: string;
@@ -759,6 +767,21 @@ export function Console({
       setBusy(false);
     }
   }
+  async function relatedSourceChoices() {
+    const response = await fetch(`/api/library/${organizationId}`, {
+      cache: "no-store",
+    });
+    if (response.redirected || [401, 403, 404].includes(response.status)) {
+      clearAccess();
+      throw Error("Source unavailable.");
+    }
+    if (
+      !response.ok ||
+      !response.headers.get("content-type")?.includes("application/json")
+    )
+      throw Error("Source choices unavailable.");
+    return (await response.json()).items;
+  }
   const home = homeData ?? data;
   const processing =
     (view === "source" &&
@@ -773,9 +796,12 @@ export function Console({
     );
   usePolling(
     refreshData,
-    processing ? 15000 : 60000,
+    processing ? 15000 : view === "source" ? null : 60000,
     !demo && view !== "connections",
-    organizationId,
+    view === "source"
+      ? `${organizationId}:source:${selected ? id(selected) : ""}`
+      : organizationId,
+    view !== "source",
   );
   const planIdentity = selected
     ? `${id(selected)}:${selected.planHash ?? (selected.planDraftVersion === selected.version ? (selected.planDraftKey ?? JSON.stringify(selected.planDraft ?? null)) : "")}`
@@ -1059,7 +1085,7 @@ export function Console({
         if (value && (key !== "sort" || value !== "newest"))
           query.set(key, value);
       router.push(
-        `/app/${organizationId}/library/${encodeURIComponent(id(s))}${query.size ? `?${query}` : ""}`,
+        `/app/${organizationId}/posts/${encodeURIComponent(id(s))}${query.size ? `?${query}` : ""}`,
       );
     }
   }
@@ -1197,7 +1223,9 @@ export function Console({
             <div>
               <h1 className={view === "library" ? "sr-only" : undefined}>
                 {view === "source"
-                  ? (selected?.title ?? "Source unavailable")
+                  ? selected
+                    ? postDisplayTitle(selected)
+                    : "Source unavailable"
                   : view === "proposal"
                     ? selected?.title
                     : view === "menu"
@@ -1733,10 +1761,20 @@ export function Console({
                 <SourceDetail
                   key={id(selected)}
                   source={selected}
+                  authoritative={
+                    data.workspaceSlice === "source" &&
+                    data.selectedSource === selected
+                  }
+                  loadRelatedSources={
+                    data.workspaceSlice === "source"
+                      ? relatedSourceChoices
+                      : undefined
+                  }
                   sources={data.sources}
                   readOnly={readOnly}
                   busy={busy}
                   canSuggestCategories={canSuggestCategories}
+                  canRepairEvidence={canRepairEvidence}
                   demo={demo}
                   org={organizationId}
                   repos={data.repositories}
@@ -3485,10 +3523,14 @@ function CaptureForm({
 }
 export function SourceDetail({
   source,
+  authoritative = false,
   sources,
   readOnly,
   busy,
   canSuggestCategories,
+  canRepairEvidence = false,
+  loadRelatedSources,
+  onRefresh,
   demo,
   org,
   repos,
@@ -3502,13 +3544,16 @@ export function SourceDetail({
   onProposal,
 }: any) {
   const [detail, setDetail] = useState(source);
-  const [detailLoading, setDetailLoading] = useState(!demo);
+  const [detailLoading, setDetailLoading] = useState(!demo && !authoritative);
   const [excludedInsights, setExcludedInsights] = useState<string[]>([]);
   const [viewFrame, setViewFrame] = useState<string>();
   const [allFrames, setAllFrames] = useState(false);
   const [categoryDraft, setCategoryDraft] = useState("");
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const transcript = useRef<HTMLDetailsElement>(null);
+  const cloudSpeechSegments = isCloudObservedMedia(detail.orderedMedia?.post)
+    ? detail.orderedMedia.post.segments
+    : null;
   const sourceId = id(source);
   const proposalRevision = (source.proposals ?? [])
     .map(
@@ -3518,11 +3563,29 @@ export function SourceDetail({
     .sort()
     .join("|");
   const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
-  const savedFrames = (
-    detail.originalMediaEvidence ??
-    detail.mediaEvidence ??
-    []
-  ).filter((e: any) => e.kind === "frame");
+  const [retentionTime, setRetentionTime] = useState(Date.now);
+  const retentionDeadline = Math.min(
+    source.sourceRetentionUntil ?? Infinity,
+    detail.sourceRetentionUntil ?? Infinity,
+  );
+  useEffect(() => {
+    if (demo || !Number.isFinite(retentionDeadline)) return;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const check = () => {
+      if (!active) return;
+      const remaining = retentionDeadline - Date.now();
+      if (remaining > 0)
+        timer = setTimeout(check, Math.min(remaining, 2147483647));
+      else setRetentionTime(Date.now());
+    };
+    check();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [demo, retentionDeadline]);
+  const savedFrames = sourceEvidenceFrames(detail, retentionTime);
   const untimedImages =
     detail.coverage === "visual_only" &&
     savedFrames.length > 1 &&
@@ -3543,6 +3606,11 @@ export function SourceDetail({
       : undefined;
   useEffect(() => {
     if (demo) return;
+    if (authoritative) {
+      setDetail(source);
+      setDetailLoading(false);
+      return;
+    }
     const abort = new AbortController();
     fetch(`/api/source/${sourceId}?organizationId=${encodeURIComponent(org)}`, {
       cache: "no-store",
@@ -3582,8 +3650,8 @@ export function SourceDetail({
     // The workspace projection is a new object after every poll. Reload private
     // evidence only when this source or its linked proposal revision changes.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceId, sourceRevision, org, demo]);
-  const insights =
+  }, [sourceId, sourceRevision, org, demo, authoritative]);
+  const sourceInsights =
     detail.analysis?.insights ??
     (demo
       ? detail.mainPoints?.map((title: string) => ({
@@ -3593,6 +3661,12 @@ export function SourceDetail({
         }))
       : []) ??
     [];
+  const insights = sourceInsights.map((insight: any) => ({
+    ...insight,
+    evidence: (insight.evidence ?? []).map((ref: any) =>
+      cloudCitationForDisplay(detail, ref, retentionTime),
+    ),
+  }));
   const summary =
     detail.summary ??
     (["queued", "processing"].includes(detail.state)
@@ -3618,6 +3692,12 @@ export function SourceDetail({
     : highlightedFrames.length
       ? highlightedFrames.slice(0, 8)
       : savedFrames.slice(0, 4);
+  if (!demo && retentionDeadline <= Math.max(retentionTime, Date.now()))
+    return (
+      <section className="panel">
+        <p>This source is unavailable or its retained evidence has expired.</p>
+      </section>
+    );
   return (
     <>
       {!demo && !detailLoading && (
@@ -3635,6 +3715,7 @@ export function SourceDetail({
           <SourceRelationships
             sourceId={sourceId}
             sources={sources}
+            loadSources={loadRelatedSources}
             call={strictCall}
             readOnly={readOnly}
           />
@@ -3923,36 +4004,37 @@ export function SourceDetail({
                       </li>
                     ))}
                   </ul>
-                  {detail.orderedMedia && (
-                    <ul>
-                      {i.evidence.map((ref: any) => {
-                        const citation = socialCitation(
-                          ref,
-                          detail.orderedMedia.evidence,
-                        );
+                  {detail.orderedMedia &&
+                    !isCloudObservedMedia(detail.orderedMedia.post) && (
+                      <ul>
+                        {i.evidence.map((ref: any) => {
+                          const citation = socialCitation(
+                            ref,
+                            detail.orderedMedia.evidence,
+                          );
 
-                        const record = detail.orderedMedia.evidence.find(
-                          (e: any) => e.id === ref.id && e.kind === ref.kind,
-                        );
+                          const record = detail.orderedMedia.evidence.find(
+                            (e: any) => e.id === ref.id && e.kind === ref.kind,
+                          );
 
-                        return (
-                          <li key={ref.id}>
-                            <p>
-                              Observed video - {ref.kind} -{" "}
-                              {ref.startMs === null
-                                ? "untimed"
-                                : `${(ref.startMs / 1000).toFixed(1)}s`}{" "}
-                              - {citation.basis}
-                            </p>
-                            <p>{record?.text}</p>
-                            {citation.uncertainty && (
-                              <p>{citation.uncertainty}</p>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
+                          return (
+                            <li key={ref.id}>
+                              <p>
+                                Observed video - {ref.kind} -{" "}
+                                {ref.startMs === null
+                                  ? "untimed"
+                                  : `${(ref.startMs / 1000).toFixed(1)}s`}{" "}
+                                - {citation.basis}
+                              </p>
+                              <p>{record?.text}</p>
+                              {citation.uncertainty && (
+                                <p>{citation.uncertainty}</p>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
 
                   {detail.evidenceRegistry && (
                     <TypedSourceEvidence
@@ -3974,6 +4056,48 @@ export function SourceDetail({
               : "No main points yet. Review the source's analysis options."}
           </p>
         )}
+        {!demo &&
+          canRepairEvidence &&
+          !readOnly &&
+          detail.personalAnalysis?.executor === "work_cloud" &&
+          detail.personalAnalysis.state === "completed" &&
+          isCloudObservedMedia(detail.orderedMedia?.post) &&
+          detail.orderedMedia.post.frames.length > savedFrames.length && (
+            <details className="source-notes">
+              <summary>Restore missing screenshots</summary>
+              <p>
+                Restore the exact retained screenshots while preserving this
+                analysis. A connected Cloud task must perform the bounded
+                repair.
+              </p>
+              {detail.personalAnalysis.cloud.media?.evidenceRepair ? (
+                <p>
+                  Evidence repair:{" "}
+                  {detail.personalAnalysis.cloud.media.evidenceRepair.state}.
+                  Review that attempt before starting another.
+                </p>
+              ) : (
+                <Button
+                  busy={busy}
+                  onClick={async () => {
+                    const result = await call(
+                      "workCloudEvidenceRepairApprove",
+                      {
+                        sourceId,
+                        generation: detail.generation,
+                        preparationHash:
+                          detail.personalAnalysis.cloud.media.preparationHash,
+                        acknowledged: true,
+                      },
+                    );
+                    if (result) await onRefresh?.();
+                  }}
+                >
+                  Approve screenshot repair
+                </Button>
+              )}
+            </details>
+          )}
         <details
           id="source-transcript"
           ref={transcript}
@@ -3986,22 +4110,44 @@ export function SourceDetail({
               ? "Original supplied text and corrections"
               : "Original transcript and corrections"}
           </summary>
-          <p style={{ whiteSpace: "pre-wrap" }}>
-            {detail.originalText ??
-              detail.text ??
-              (detail.kind === "text"
-                ? "Original supplied text is unavailable."
-                : "Original transcript is unavailable.")}
-          </p>
-          {detail.originalText && <p>Current user correction: {detail.text}</p>}
-          {(detail.originalMediaEvidence ?? detail.mediaEvidence)
-            ?.filter((e: any) => e.kind === "transcript")
-            .map((e: any) => (
-              <p key={e.id} className="fine">
-                Original transcript segment: {(e.startMs / 1000).toFixed(1)}–
-                {(e.endMs / 1000).toFixed(1)} seconds.
+          {cloudSpeechSegments ? (
+            cloudSpeechSegments.length ? (
+              cloudSpeechSegments.map((segment: any) => (
+                <div key={segment.id}>
+                  <p className="fine">
+                    Original transcript segment:{" "}
+                    {(segment.startMs / 1000).toFixed(1)}–
+                    {(segment.endMs / 1000).toFixed(1)} seconds.
+                  </p>
+                  <p style={{ whiteSpace: "pre-wrap" }}>{segment.text}</p>
+                </div>
+              ))
+            ) : (
+              <p>Original transcript is unavailable.</p>
+            )
+          ) : (
+            <>
+              <p style={{ whiteSpace: "pre-wrap" }}>
+                {detail.originalText ??
+                  detail.text ??
+                  (detail.kind === "text"
+                    ? "Original supplied text is unavailable."
+                    : "Original transcript is unavailable.")}
               </p>
-            ))}
+              {detail.originalText && (
+                <p>Current user correction: {detail.text}</p>
+              )}
+            </>
+          )}
+          {!cloudSpeechSegments &&
+            (detail.originalMediaEvidence ?? detail.mediaEvidence)
+              ?.filter((e: any) => e.kind === "transcript")
+              .map((e: any) => (
+                <p key={e.id} className="fine">
+                  Original transcript segment: {(e.startMs / 1000).toFixed(1)}–
+                  {(e.endMs / 1000).toFixed(1)} seconds.
+                </p>
+              ))}
           {detail.analysis?.correctedText && (
             <p>Confirmed correction: {detail.analysis.correctedText}</p>
           )}
@@ -4467,14 +4613,14 @@ export function SourceDetail({
             )}
           </details>
         )}
-        {detail.orderedMedia?.post.schemaVersion ===
-          "work-cloud-observed-media-v1" && (
+        {isCloudObservedMedia(detail.orderedMedia?.post) && (
           <section className="panel">
             <h3>Private host-reported media observations</h3>
             <p>
-              Partial sampled video evidence. Acquisition, transcript, model
-              settings and raw-media deletion are unverified. Original frame
-              bytes are provider-local and cannot be opened here.
+              Partial sampled video evidence reported by the connected host.
+              Retained screenshots can be opened through their citations. Source
+              acquisition, model settings and raw-media deletion remain
+              host-reported.
             </p>
             <p>
               App result retained until{" "}

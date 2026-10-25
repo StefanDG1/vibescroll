@@ -42,12 +42,41 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
   for (const [name, table] of Object.entries(productTables)) {
     const current = (table as any).export(),
       prior = before[name].export();
+    if (name === "assets") {
+      expect(current.documentType.value.sourceGeneration).toEqual({
+        fieldType: { type: "number" },
+        optional: true,
+      });
+      delete current.documentType.value.sourceGeneration;
+    }
     if (name !== "sources") {
       expect(current).toEqual(prior);
       continue;
     }
     const nextFields = current.documentType.value,
       oldFields = prior.documentType.value;
+    for (const [field, type] of [
+      ["title", "string"],
+      ["authorName", "string"],
+      ["durationSeconds", "number"],
+    ]) {
+      expect(nextFields.linkPreview.fieldType.value[field]).toEqual({
+        fieldType: { type },
+        optional: true,
+      });
+      delete nextFields.linkPreview.fieldType.value[field];
+    }
+    expect(nextFields.linkPreview.fieldType.value.origin).toEqual({
+      fieldType: {
+        type: "union",
+        value: [
+          { type: "literal", value: "page" },
+          { type: "literal", value: "extractor" },
+        ],
+      },
+      optional: true,
+    });
+    delete nextFields.linkPreview.fieldType.value.origin;
     const union = nextFields.personalAnalysis.fieldType.value;
     const paired = structuredClone(union[0]);
     delete paired.value.executor;
@@ -56,6 +85,30 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
       type: "literal",
       value: "work_cloud",
     });
+    const media = union[1].value.cloud.fieldType.value[1].value;
+    expect(media.schemaVersion.fieldType).toEqual({
+      type: "union",
+      value: [
+        { type: "literal", value: "work-cloud-media-v2" },
+        { type: "literal", value: "work-cloud-media-v3" },
+      ],
+    });
+    const repair = media.media.fieldType.value.evidenceRepair;
+    expect(repair.optional).toBe(true);
+    expect(Object.keys(repair.fieldType.value)).toEqual([
+      "state",
+      "actor",
+      "grantId",
+      "grantVersion",
+      "preparationHash",
+      "approvedAt",
+      "expiresAt",
+      "leaseUntil",
+      "rawMediaDeleteBy",
+      "taskId",
+      "leaseTokenHash",
+      "consentId",
+    ]);
     delete nextFields.orderedMedia;
     nextFields.personalAnalysis = oldFields.personalAnalysis;
     expect(current).toEqual(prior);

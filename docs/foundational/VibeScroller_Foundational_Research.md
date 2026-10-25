@@ -1,5 +1,9 @@
 # VibeScroll foundational research
 
+## F074: selected-post loading, candidate scope
+
+[ADR153](../adr/153-source-page-loading-and-active-refresh.md) reduces redundant reads for a viewed post while preserving source actions and active updates. It is a bounded implementation candidate, not proof of whole-app efficiency, phone costs, faster fresh-video analysis or automatic execution. Keep the audience, offer, prices, six beliefs, Pro catalog and provider/privacy gates unchanged. The actual Cloud result remains the separately dated F073 receipt.
+
 ## F073: real owner Cloud result, bounded claim
 
 [The production receipt](../operations/evidence/launch-20261025-cloud-video-return.json) verifies one actual Instagram video returned five insights and twenty-nine citations to the existing owner account without GitHub. Exact result recovery followed a real confidence rejection. This proves that retained source-to-result attempt, not automatic phone processing, fresh-run speed, complete visual coverage, shared-catalog availability or customer acceptance. Keep the audience, prices, six beliefs, proprietary catalog and provider/privacy gates unchanged. Cumulative EUR5 retains all earlier unknown and future holds.

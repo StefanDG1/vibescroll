@@ -48,6 +48,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }));
 import { SourceDetail } from "./components/console";
+import { SourceRelationships } from "./components/source-relationships";
 const now = 1800000000000,
   org = "private-owner-org";
 const handoff = {
@@ -103,13 +104,16 @@ function props(source: any = queued, extra: any = {}) {
     ...extra,
   };
 }
-function render(parent: ReturnType<typeof props>) {
+function render(
+  parent: ReturnType<typeof props>,
+  component = () => SourceDetail(parent),
+) {
   state.direct = true;
   state.index = 0;
   state.effectIndex = 0;
   let tree;
   try {
-    tree = SourceDetail(parent);
+    tree = component();
   } finally {
     state.direct = false;
   }
@@ -152,6 +156,146 @@ function server(value: any) {
     ),
   );
 }
+const ready = {
+  ...queued,
+  state: "ready",
+  workCloudHandoff: null,
+  personalAnalysis: { executor: "work_cloud", state: "completed" },
+  summary: "Retained source summary",
+  analysis: {
+    insights: [
+      {
+        id: "point",
+        title: "Retained point",
+        claim: "Private retained claim",
+        interpretation: "",
+        evidence: [],
+      },
+    ],
+  },
+};
+it("renders authoritative source detail and action prerequisites without another private-source request", async () => {
+  const fetch = vi.fn();
+  vi.stubGlobal("fetch", fetch);
+  const parent = props(ready, {
+    authoritative: true,
+    repos: [
+      {
+        _id: "repo",
+        fullName: "synthetic/project",
+        enabled: true,
+        confirmed: true,
+      },
+    ],
+  });
+  const html = render(parent);
+  expect(html).toContain("Private retained claim");
+  expect(html).toContain("Match synthetic/project");
+  expect(html).toContain("Applies to your projects");
+  await settle();
+  render(parent);
+  expect(fetch).not.toHaveBeenCalled();
+  expect(parent.call).not.toHaveBeenCalled();
+});
+it("uses refreshed authoritative detail without a second request and clears withdrawn rights immediately", async () => {
+  const fetch = vi.fn();
+  vi.stubGlobal("fetch", fetch);
+  render(props(ready, { authoritative: true }));
+  const updated = { ...ready, summary: "Current server summary" };
+  const parent = props(updated, { authoritative: true });
+  render(parent);
+  expect(render(parent)).toContain("Current server summary");
+  const withdrawn = props(
+    { ...updated, rightsAttested: false },
+    { authoritative: true },
+  );
+  const html = render(withdrawn);
+  expect(html).toContain("Source details are unavailable");
+  expect(html).not.toContain("Private retained claim");
+  expect(fetch).not.toHaveBeenCalled();
+});
+it("hides canonical source content and actions at the retention deadline without an idle read", async () => {
+  const fetch = vi.fn();
+  vi.stubGlobal("fetch", fetch);
+  const parent = props(
+    { ...ready, sourceRetentionUntil: now + 1000 },
+    { authoritative: true },
+  );
+  expect(render(parent)).toContain("Private retained claim");
+  await vi.advanceTimersByTimeAsync(1001);
+  const html = render(parent);
+  expect(html).toContain("Source details are unavailable");
+  expect(html).not.toContain("Private retained claim");
+  expect(html).not.toContain("Applies to your projects");
+  expect(fetch).not.toHaveBeenCalled();
+});
+it.each(["delayed", "shortened"] as const)(
+  "rejects a %s authoritative deadline on its first render before the expiry timer fires",
+  (change) => {
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    const initial = {
+      ...ready,
+      sourceRetentionUntil: now + (change === "delayed" ? 1000 : 60000),
+    };
+    expect(render(props(initial, { authoritative: true }))).toContain(
+      "Private retained claim",
+    );
+    // Moving the wall clock deliberately leaves the scheduled timer unrun.
+    vi.setSystemTime(now + 2000);
+    const incoming =
+      change === "shortened"
+        ? { ...initial, sourceRetentionUntil: now + 1000 }
+        : initial;
+    const html = render(props(incoming, { authoritative: true }));
+    expect(html).toContain("Source details are unavailable");
+    expect(html).not.toContain("Private retained claim");
+    expect(html).not.toContain("Applies to your projects");
+    expect(fetch).not.toHaveBeenCalled();
+  },
+);
+it("clears fallback detail on a mismatched server source instead of retaining private content", async () => {
+  server({ ...ready, _id: "different-source" });
+  const parent = props(ready);
+  render(parent);
+  await settle();
+  const html = render(parent);
+  expect(html).toContain("Source details are unavailable");
+  expect(html).not.toContain("Private retained claim");
+});
+it("loads related-source choices only after opening the panel and suppresses duplicate in-flight loads", async () => {
+  let resolve: (value: { _id: string; title: string }[]) => void;
+  const loadSources = vi.fn(
+    () =>
+      new Promise<{ _id: string; title: string }[]>((done) => {
+        resolve = done;
+      }),
+  );
+  let panel: ReturnType<typeof SourceRelationships>;
+  const related = () =>
+    (panel = SourceRelationships({
+      sourceId: "source-one",
+      sources: [],
+      loadSources,
+      readOnly: false,
+      call: vi.fn(),
+    }));
+  render(props(), related);
+  expect(loadSources).not.toHaveBeenCalled();
+  const open = () => panel.props.onToggle({ currentTarget: { open: true } });
+  open();
+  open();
+  expect(loadSources).toHaveBeenCalledTimes(1);
+  const loading = render(props(), related);
+  expect(loading).toContain('<output aria-live="polite">');
+  expect(loading).toContain("Loading sources...");
+  resolve!([{ _id: "related-source", title: "Other saved source" }]);
+  await settle();
+  const html = render(props(), related);
+  expect(html).toContain("Other saved source");
+  expect(html).toContain('value="related-source"');
+  expect(html).toContain("Confirm relationship");
+});
 it.each(["owner", "viewer", "unavailable"])(
   "offers only the current eligible %s the legacy privacy repair without Cloud authority",
   async (role) => {

@@ -1,0 +1,115 @@
+{
+  "atUtc": "2026-10-25T13:09:38.777279+00:00",
+  "stage": "Source-loading candidate; exact-head CI and production pending",
+  "baseMain": "edeacbdc07f791532d08cfe7f3393161db757dec",
+  "directWorkspaceQueriesBefore": 13,
+  "directWorkspaceQueriesAfter": 5,
+  "queryCountExcludes": "Bootstrap/authentication, internal detail I/O and legitimate component/action requests",
+  "queries": [
+    "organizations.details",
+    "product.detail",
+    "product.repositories",
+    "devices.list",
+    "aiPreferences.read"
+  ],
+  "changes": [
+    "Authoritative selected detail reused immediately without duplicate private fetch",
+    "Related source choices requested only when opened",
+    "No immediate duplicate Console polling after SSR or view loading",
+    "Active source fifteen-second refresh; terminal source wake-only",
+    "Present-clock retention fence plus idle deadline timer",
+    "Explicit source refresh after Cloud approval starts active watching"
+  ],
+  "local": {
+    "environment": "Windows, portable Node24.22.1, pnpm12.3.4; paid gateways disabled",
+    "initialFullCheck": "Exit0 before final two review corrections",
+    "initialFullCheckPassed": 1991,
+    "initialFullCheckHostedSkipped": 3,
+    "finalFocusedPassed": 95,
+    "finalTypeScript": "passed",
+    "finalFocusedLint": "zero warnings/errors",
+    "finalBothProductionBuilds": "passed",
+    "dependencyPolicy": "Unchanged lock; prior same-lock Oct25 audit reused",
+    "independentHighReview": "Two P2 findings fixed and re-reviewed; no remaining P1/P2"
+  },
+  "native": {
+    "synthetic": true,
+    "actualComponents": true,
+    "completeConsoleOrSSR": false,
+    "checks": [
+      "authoritative ready detail renders with no initial polling or related-choice load",
+      "native related-source accordion loads choices on demand",
+      "active source uses real fifteen-second polling timer",
+      "terminal source stops periodic reads",
+      "320px dark reduced-motion view has no horizontal overflow",
+      "withdrawn source rights clear detail and actions"
+    ],
+    "runtimeExceptions": 0,
+    "websiteHTTPRequests": 3,
+    "externalHTTPRequests": 0,
+    "extensionResourcesExcluded": 16,
+    "desktop": "1280px device theme",
+    "mobile": "320px dark/reduced motion, no horizontal overflow",
+    "reviewedChecksPassed": true,
+    "originalRunnerExit": "Failed final classification assertion; actual trace reviewed separately, unchanged original receipt retained",
+    "closedOnlyTaskTab": true
+  },
+  "logs": {
+    "source-page-loading-full-check-20261025.log": "f5a5f4deb4e42bd48f58ddaafc984a46b855ae506210f36aa29d8a372117265e",
+    "source-page-loading-final-build-20261025.log": "10135dd3102e35f69322dc438d20dc8d934376f00b71182583cb18ea6682247c"
+  },
+  "failuresPreserved": [
+    "esbuild metafile JSON import attribute in input-hash filename; metadata-path normalization fixed",
+    "local shell quote failed while preparing metadata helper; no browser or product mutation",
+    "AX selector initially included duplicate static text; restricted to native actionable roles",
+    "metadata collector initially required a positional method even for meta requests; fixed",
+    "final network assertion included local Adobe extension resources as website egress; actual website HTTP requests are three loopback resources",
+    "Independent review found duplicate navigation polling and delayed-deadline rendering; fixed with regression tests",
+    "Semantic status paragraph hit prefer-tag-over-role lint; changed to output element"
+  ],
+  "productionCalls": 0,
+  "backendChanges": 0,
+  "schemaIndexChanges": 0,
+  "dependencyChanges": 0,
+  "budget": {
+    "capEUR": 5,
+    "workingCeilingUSD": 5.3,
+    "retainedMaximumUSD": 4.916258194860614,
+    "headroomUSD": 0.3837418051393857,
+    "completedHTTPOnlyReleasedUSD": 0.166738215936,
+    "allOtherUnknownAndFutureHoldsPreserved": true,
+    "invoiceSettled": false,
+    "manualPhoneViewCertified": false
+  },
+  "remaining": [
+    "Bounded full-main prediction and nonzero index migration approval",
+    "Controlled publication and canonical native verification",
+    "Compact source progress DTO and remaining R6/Home/Library/loading work",
+    "Automatic event-to-operational-host dispatch",
+    "Fresh post-fix normal video completion and phone-only acceptance",
+    "Every other unclosed R/P/N/C/M acceptance"
+  ],
+  "nativeCompiledSourceHashesBeforeFinalFormatting": {
+    "apps/starter/components/console.tsx": "274023e18cd70fd46d1271da9557a3afe08e01f372553549ae15b1d5df955ccc",
+    "apps/starter/components/source-relationships.tsx": "d5f38a1892d09ea1498a270fa3638a044036dacbc67b52adaa72a4800f8de849",
+    "apps/starter/lib/use-polling.ts": "ed89119e46fc2bf8078d630a58b49fe55ae1de2dc6fad554d77dd3b629d57052",
+    "apps/starter/lib/workspace-data.ts": "974b58c46920ff0e61d6b994e1b97150e113ea4a220449975e7d95afa63461ae",
+    "packages/browser/polling.ts": "85983e84d9696493f6f578f9115131e665a214f8e6cee463017f8c6a0a8990ea"
+  },
+  "finalSourceHashes": {
+    "apps/starter/components/console.tsx": "274023e18cd70fd46d1271da9557a3afe08e01f372553549ae15b1d5df955ccc",
+    "apps/starter/components/source-relationships.tsx": "6f2da65c36af67050e935f600c0a978f7620e85cb477d164fac4b50683943874",
+    "apps/starter/lib/use-polling.ts": "ed89119e46fc2bf8078d630a58b49fe55ae1de2dc6fad554d77dd3b629d57052",
+    "apps/starter/lib/workspace-data.ts": "974b58c46920ff0e61d6b994e1b97150e113ea4a220449975e7d95afa63461ae",
+    "packages/browser/polling.ts": "85983e84d9696493f6f578f9115131e665a214f8e6cee463017f8c6a0a8990ea"
+  },
+  "finalFormattingVerification": {
+    "changedSourcePaths": ["apps/starter/components/source-relationships.tsx"],
+    "compiledNativeJSAndCSSByteIdentical": true,
+    "hashes": {
+      "fixture.js": "3a09fc37f3d8bc7630af729bd8bf15ac13decb5474478955af12e564949c61e9",
+      "fixture.css": "142117b4e9a60c8a484b99d554b00bea302ff175e3f9eb28d0179a94ef38070c"
+    },
+    "extraBrowserRuns": 0
+  }
+}

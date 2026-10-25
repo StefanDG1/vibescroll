@@ -92,7 +92,9 @@ import {
 } from "@/lib/analytics-events";
 import type { ImportPreview } from "../../../packages/instagram-import";
 type Initial = {
-  workspaceSlice?: "library" | "connections" | "usage" | "projects" | "plans";
+  workspaceSlice?:
+    "library" | "connections" | "usage" | "projects" | "plans" | "source";
+  role?: string;
   compact?: boolean;
   privateLibrary?: boolean;
   sharedKnowledge?: { items: any[]; next: string | null };
@@ -336,7 +338,9 @@ export function Console({
     const destination = view === "proposals" ? "plans" : view;
     if (
       !["library", "projects", "source", "plans"].includes(destination) ||
-      (!data.sources.some((s) => s.state === "ready") && !data.proposals.length)
+      (!data.sources.some((s) => s.state === "ready") &&
+        !(view === "source" && selected?.state === "ready") &&
+        !data.proposals.length)
     )
       return;
     journey.returned(
@@ -774,23 +778,51 @@ export function Console({
     }
   }
   const home = homeData ?? data;
+  const sourceProcessing =
+    view === "source" &&
+    selected &&
+    (["queued", "processing"].includes(selected.state) ||
+      selected.personalAnalysis?.state === "recovering" ||
+      !!selected.privateSourceEligibility?.pendingRunId ||
+      busy);
   const processing =
-    (view === "source" &&
-      selected &&
-      ["queued", "processing"].includes(selected.state)) ||
-    data.sources.some((s) => ["queued", "processing"].includes(s.state)) ||
-    data.repositories.some((r) =>
-      ["preparing", "drafting_context"].includes(r.status),
-    ) ||
-    data.runs.some((r) =>
-      ["queued", "running", "publishing"].includes(r.state),
-    );
+    view === "source"
+      ? sourceProcessing
+      : data.sources.some((s) => ["queued", "processing"].includes(s.state)) ||
+        data.repositories.some((r) =>
+          ["preparing", "drafting_context"].includes(r.status),
+        ) ||
+        data.runs.some((r) =>
+          ["queued", "running", "publishing"].includes(r.state),
+        );
   usePolling(
     refreshData,
-    processing ? 15000 : 60000,
+    processing ? 15000 : view === "source" ? null : 60000,
     !demo && view !== "connections",
-    organizationId,
+    view === "source"
+      ? `${organizationId}:source:${selected ? id(selected) : ""}`
+      : organizationId,
+    false,
   );
+  async function relatedSourceChoices() {
+    const generation = viewGeneration.current;
+    const response = await fetch(`/api/library/${organizationId}`, {
+      cache: "no-store",
+    });
+    if (generation !== viewGeneration.current) throw Error("Source changed.");
+    if (response.redirected || [401, 403, 404].includes(response.status)) {
+      clearAccess();
+      throw Error("Source unavailable.");
+    }
+    if (
+      !response.ok ||
+      !response.headers.get("content-type")?.includes("application/json")
+    )
+      throw Error("Source choices unavailable.");
+    const result = await response.json();
+    if (generation !== viewGeneration.current) throw Error("Source changed.");
+    return result.items;
+  }
   const planIdentity = selected
     ? `${id(selected)}:${selected.planHash ?? (selected.planDraftVersion === selected.version ? (selected.planDraftKey ?? JSON.stringify(selected.planDraft ?? null)) : "")}`
     : "";
@@ -870,6 +902,7 @@ export function Console({
           });
         throw new Error(body.error);
       }
+      if (operation === "workCloudTextApprove") await refreshData();
       if (
         [
           "checkPersonalSession",
@@ -1806,7 +1839,16 @@ export function Console({
                   key={id(selected)}
                   source={selected}
                   sources={data.sources}
-                  readOnly={readOnly}
+                  authoritative={
+                    data.workspaceSlice === "source" &&
+                    data.selectedSource === selected
+                  }
+                  loadRelatedSources={
+                    data.workspaceSlice === "source"
+                      ? relatedSourceChoices
+                      : undefined
+                  }
+                  readOnly={readOnly || data.role === "viewer"}
                   busy={busy}
                   canSuggestCategories={canSuggestCategories}
                   demo={demo}
@@ -3696,6 +3738,8 @@ export function CaptureForm({
 export function SourceDetail({
   source,
   sources,
+  authoritative = false,
+  loadRelatedSources,
   readOnly,
   busy,
   canSuggestCategories,
@@ -3713,8 +3757,11 @@ export function SourceDetail({
   journey,
   onProposal,
 }: any) {
-  const [detail, setDetail] = useState(source);
-  const [detailLoading, setDetailLoading] = useState(!demo);
+  const [loadedDetail, setDetail] = useState(source);
+  const detail = authoritative ? source : loadedDetail;
+  const [detailLoading, setDetailLoading] = useState(!demo && !authoritative);
+  const [detailUnavailable, setDetailUnavailable] = useState(false);
+  const [retentionTime, setRetentionTime] = useState(Date.now);
   const [excludedInsights, setExcludedInsights] = useState<string[]>([]);
   const [includeProjectSourceContent, setIncludeProjectSourceContent] =
     useState(true);
@@ -3737,7 +3784,31 @@ export function SourceDetail({
     )
     .sort()
     .join("|");
-  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
+  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.rightsAttested}:${source.sourceRetentionUntil}:${source.personalAnalysis?.state}:${source.personalAnalysis?.stage}:${source.orderedPreparation?.state}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
+  const authoritativeDetail = authoritative ? source : null;
+  const retentionDeadline = Math.min(
+    source.sourceRetentionUntil ?? Infinity,
+    source.sourceRevision?.retention?.retainUntil ?? Infinity,
+    detail.sourceRetentionUntil ?? Infinity,
+    detail.sourceRevision?.retention?.retainUntil ?? Infinity,
+  );
+  useEffect(() => {
+    if (demo || !Number.isFinite(retentionDeadline)) return;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const check = () => {
+      if (!active) return;
+      const remaining = retentionDeadline - Date.now();
+      if (remaining > 0)
+        timer = setTimeout(check, Math.min(remaining, 2_147_483_647));
+      else setRetentionTime(Date.now());
+    };
+    check();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [demo, retentionDeadline]);
   const savedFrames = (
     detail.originalMediaEvidence ??
     detail.mediaEvidence ??
@@ -3784,6 +3855,12 @@ export function SourceDetail({
       : undefined;
   useEffect(() => {
     if (demo) return;
+    if (authoritative) {
+      setDetail(source);
+      setDetailLoading(false);
+      setDetailUnavailable(false);
+      return;
+    }
     const abort = new AbortController();
     fetch(`/api/source/${sourceId}?organizationId=${encodeURIComponent(org)}`, {
       cache: "no-store",
@@ -3796,9 +3873,12 @@ export function SourceDetail({
         )
           throw new Error("Source unavailable");
         const next = await response.json();
+        if (next._id !== sourceId || next.organizationId !== org)
+          throw new Error("Source unavailable");
         if (!abort.signal.aborted) {
           setDetail(next);
           setDetailLoading(false);
+          setDetailUnavailable(false);
         }
       })
       .catch(() => {
@@ -3817,13 +3897,14 @@ export function SourceDetail({
               "Source details are unavailable. Check access before continuing.",
           });
           setDetailLoading(false);
+          setDetailUnavailable(true);
         }
       });
     return () => abort.abort();
     // The workspace projection is a new object after every poll. Reload private
     // evidence only when this source or its linked proposal revision changes.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceId, sourceRevision, org, demo]);
+  }, [sourceId, sourceRevision, org, demo, authoritative, authoritativeDetail]);
   const insights =
     detail.analysis?.insights ??
     (demo
@@ -3859,6 +3940,21 @@ export function SourceDetail({
     : highlightedFrames.length
       ? highlightedFrames.slice(0, 8)
       : savedFrames.slice(0, 4);
+  // Security deadlines must use present time even when an idle timer is delayed.
+  // oxlint-disable-next-line react-hooks/purity
+  const currentRetentionTime = Math.max(retentionTime, Date.now());
+  if (
+    !demo &&
+    (detailUnavailable ||
+      source.rightsAttested === false ||
+      source.state === "deleted" ||
+      retentionDeadline <= currentRetentionTime)
+  )
+    return (
+      <section className="panel empty-state">
+        <p>Source details are unavailable. Check access before continuing.</p>
+      </section>
+    );
   return (
     <>
       {!demo && !detailLoading && (
@@ -3876,6 +3972,7 @@ export function SourceDetail({
           <SourceRelationships
             sourceId={sourceId}
             sources={sources}
+            loadSources={loadRelatedSources}
             call={strictCall}
             readOnly={readOnly}
           />

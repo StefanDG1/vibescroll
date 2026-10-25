@@ -378,3 +378,7 @@ Source: actual owner-account media preparation, rejected completion and exact-pa
 ## F073: verified owner Cloud return, October25
 
 All four briefs now separate one accepted real-media result from pending automatic phone use and customer availability. See the production receipt and ADR152. No new benefit, speed, revenue or provider-approval claim follows.
+
+## F074: source-loading candidate, October25
+
+Synchronized all four briefs with the reduced selected-source loading candidate and its limits. No new speed, budget, phone or commercial claim is promoted. ADR153 retains the remaining compact-progress and complete product acceptance.

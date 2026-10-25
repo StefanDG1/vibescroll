@@ -137,3 +137,7 @@ The first real phone test must share an approved saved source with the laptop of
 Native UI tests cover direct thumbnail/action navigation, first-body expansion, second-body navigation, explicit collapse, keyboard/nested-control behavior, all main skeletons, Load More, back navigation, stale account/filter/selection replies, empty continuing pages, 320px, themes and reduced motion. Data tests prove explicit row payloads, reduced indexed reads, no N+1 detail fetches, bounded active status reads, cache invalidation and protected-content clearing. Reuse current projection/Library/shared-refresh/Cloud-parent regressions.
 
 Root owns source integration, exact-head CI/review and staged/canonical acceptance. Current automatic Cloud/media/provider/budget gates remain open; no live calls, recurring subscription, payment or deployment occurs by updating this specification.
+
+## October25 source-loading increment
+
+[ADR153](../../adr/153-source-page-loading-and-active-refresh.md) adds the existing source slice with five direct authorized queries, authoritative detail reuse, lazy related choices and active/wake-only watching. This first increment does not finish the Home/Library projections, compact progress DTO, database row bounds or all skeletons. Preserve their acceptance above. Native and production verification remain separate from local source tests.

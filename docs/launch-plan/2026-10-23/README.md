@@ -1,5 +1,9 @@
 # Complete the launch and own-subscription workflows
 
+## October 25: finish the real Cloud return
+
+Owner/team access is live at5ad6dfb with grant7. One real no-repository Cloud run acquired/transcribed/sampled the saved Reel and its preparation was accepted, but final confidence validation rejected completion. ADR152 fixes conservative confidence and adds exact owner-approved return-only recovery through existing APIs. Root owns this immediate milestone; no owner permission remains outstanding. Completion, normal phone-only dispatch, shared Pro contribution and the rest of the original/reconciled plans remain distinct acceptance work. Cumulative EUR5 includes every earlier hold; no paid API fallback.
+
 ## Existing sole-owner Cloud posts, October 25
 
 [ADR 151](../../adr/151-existing-sole-owner-cloud-posts.md) extends the experimental route to the original creator/current sole owner of an active team without active invitations. Reuse existing post IDs and separate organization-bound grants; preserve all saved insights. The cumulative run ceiling is now EUR5 with every prior hold retained. A fresh metadata-capable Cloud chat has no executor; the earlier task currently verifies operational cached tools and enforced restricted Instagram access. Actual production video return remains pending.

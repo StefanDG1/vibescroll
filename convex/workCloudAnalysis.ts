@@ -36,6 +36,7 @@ import {
 } from "../packages/contracts/work-cloud-text";
 import {
   socialAnalysisOutput,
+  socialCitation,
   validateOrderedAnalysis,
 } from "../packages/social/analysis";
 import {
@@ -102,6 +103,7 @@ async function selectedGrant(
   actor: Doc<"users">,
   organization: Doc<"organizations">,
   grantId: Id<"assistantGrants">,
+  bound?: WorkCloudJob,
 ) {
   const grant = await ctx.db.get(grantId);
   const client = assistantClients().find((c) => c.id === grant?.clientId);
@@ -112,13 +114,21 @@ async function selectedGrant(
       assistantGrantActive(grant) &&
       grant.scopes.includes("analysis:execute") &&
       client?.scopes.includes("analysis:execute") &&
-      (await sourceWithinAssistantScope(
-        ctx,
-        grant,
-        organization,
-        actor._id,
-        source,
-      )),
+      (bound && !grant.libraryScope
+        ? grant.sources.some(
+            (ref) =>
+              ref.sourceId === source._id &&
+              ref.generation === bound.cloud.selectedGeneration &&
+              ref.revision === bound.cloud.selectedRevision,
+          )
+        : await sourceWithinAssistantScope(
+            ctx,
+            grant,
+            organization,
+            actor._id,
+            source,
+            !bound,
+          )),
     "FORBIDDEN",
     "Review a current execution grant for this exact source.",
   );
@@ -475,6 +485,14 @@ export const approve = mutation({
     maxApiUsd: v.literal(0),
     inputKind: v.optional(v.literal("media")),
     retainUntil: v.optional(v.number()),
+    recovery: v.optional(
+      v.object({
+        taskId: v.string(),
+        preparationHash: v.string(),
+        completionHash: v.string(),
+        acknowledged: v.literal(true),
+      }),
+    ),
   },
   handler: async (ctx, a) => {
     const owned = await ownedSource(ctx, a.sourceId, a.inputKind === "media");
@@ -492,7 +510,83 @@ export const approve = mutation({
       owned.actor,
       owned.organization,
       a.grantId,
+      a.recovery && owned.source.personalAnalysis?.executor === "work_cloud"
+        ? owned.source.personalAnalysis
+        : undefined,
     );
+    if (a.recovery) {
+      const source = owned.source,
+        job = source.personalAnalysis,
+        now = Date.now();
+      ensure(
+        a.inputKind === "media" &&
+          job?.executor === "work_cloud" &&
+          job.cloud.media &&
+          job.state === "unknown" &&
+          source.state === "failed" &&
+          job.actor === owned.actor._id &&
+          source.generation === a.generation &&
+          job.generation === a.generation &&
+          job.cloud.grantId === grant._id &&
+          job.cloud.grantVersion === grant.version &&
+          grant.version === a.grantVersion &&
+          job.cloud.clientId === grant.clientId &&
+          job.cloud.taskId === a.recovery.taskId &&
+          !!job.cloud.consentId &&
+          !!job.cloud.leaseTokenHash &&
+          /^[a-f0-9]{64}$/.test(a.recovery.completionHash) &&
+          job.cloud.media.preparationHash === a.recovery.preparationHash &&
+          job.cloud.media.retainUntil === a.retainUntil &&
+          a.retainUntil > now &&
+          a.model === job.model &&
+          a.effort === job.effort &&
+          source.analysis === undefined &&
+          source.summary === undefined &&
+          !("privateSourceAnalysis" in source) &&
+          !("privateSourceAnalysisRunId" in source) &&
+          !!source.orderedMedia,
+        "APPROVAL_STALE",
+        "Review this exact retained Cloud result without starting another execution.",
+      );
+      const input = await sourceInput(ctx, source, source.generation, job);
+      ensure(
+        input.inputHash === a.expectedInputHash &&
+          input.inputHash === job.cloud.inputHash &&
+          input.policyHash === job.cloud.policyHash &&
+          (await digest(canonicalJson(source.orderedMedia))) ===
+            a.recovery.preparationHash,
+        "APPROVAL_STALE",
+        "The retained Cloud input or preparation changed.",
+      );
+      await limit(ctx, `work-cloud-result-recovery:${owned.actor._id}`, 6);
+      const expiresAt = Math.min(now + 180000, job.cloud.media.retainUntil);
+      await ctx.db.patch(source._id, {
+        personalAnalysis: {
+          ...job,
+          state: "recovering",
+          expiresAt,
+          leaseUntil: expiresAt,
+          cloud: { ...job.cloud, completionHash: a.recovery.completionHash },
+        },
+        updatedAt: Math.max(now, source.updatedAt + 1),
+      });
+      await audit(
+        ctx,
+        source.organizationId,
+        owned.actor._id,
+        "work_cloud.result_return_approved",
+        `${source._id}:${source.generation}:${a.recovery.completionHash}`,
+      );
+      return {
+        sourceId: source._id,
+        generation: source.generation,
+        state: "recovering" as const,
+        expiresAt,
+        inputHash: input.inputHash,
+        providerExecutionAuthorized: false,
+        usageVerified: false,
+      };
+    }
     return approveExactCloudSource(ctx, owned, grant, a);
   },
 });
@@ -894,6 +988,11 @@ async function leased(
       (allowTerminal &&
         c.job.state === "completed" &&
         c.source.state === "ready") ||
+      (allowTerminal &&
+        c.job.state === "recovering" &&
+        c.source.state === "failed" &&
+        !!c.job.cloud.completionHash &&
+        c.job.leaseUntil > Date.now()) ||
       (c.job.state === "running" &&
         c.source.state === "processing" &&
         c.job.leaseUntil > Date.now() &&
@@ -1058,7 +1157,8 @@ export const dispatch = internalMutation({
       a.operation === "complete",
       true,
     );
-    await limit(ctx, `work-cloud-dispatch:${c.actor._id}`, 120);
+    if (a.operation !== "complete")
+      await limit(ctx, `work-cloud-dispatch:${c.actor._id}`, 120);
     if (c.expiredMedia) {
       await settle(
         ctx,
@@ -1199,6 +1299,13 @@ export const dispatch = internalMutation({
         reportedEffort: a.reportedEffort ?? null,
       }),
     );
+    if (c.job.state === "recovering")
+      ensure(
+        c.job.cloud.completionHash === completionHash,
+        "APPROVAL_STALE",
+        "Return only the exact owner-approved result; no new execution is authorized.",
+      );
+    await limit(ctx, `work-cloud-dispatch:${c.actor._id}`, 120);
     if (c.job.state === "completed") {
       ensure(
         c.job.cloud.completionHash === completionHash,
@@ -1213,8 +1320,24 @@ export const dispatch = internalMutation({
         "INVALID_EVIDENCE",
         "Bind acquired media observations before returning analysis.",
       );
+      const conservative = validateWorkCloudMediaOutput(output);
+      const prepared = workCloudMediaPreparation.parse({
+        schemaVersion: "work-cloud-media-preparation-v2",
+        post: c.source.orderedMedia.post,
+        evidence: c.source.orderedMedia.evidence,
+      });
+      let downgraded = false;
+      for (const insight of conservative.insights)
+        for (const ref of insight.evidence)
+          if (
+            socialCitation(ref, prepared.evidence).uncertainty.trim() &&
+            insight.confidence === "supported"
+          ) {
+            insight.confidence = "uncertain";
+            downgraded = true;
+          }
       const validated = await validateOrderedAnalysis(
-        output,
+        conservative,
         c.source.orderedMedia,
         {
           sourceId: c.source._id,
@@ -1226,6 +1349,11 @@ export const dispatch = internalMutation({
           "Authenticated host-reported media observations and requested model settings are not independently verified.",
           "Video frames are sampled; short scenes can be missed. Automatic transcription can contain errors.",
           "Raw media stays in the provider task. Its cleanup target, cancellation and retained task history are unverified.",
+          ...(downgraded
+            ? [
+                "Insight confidence was reduced where cited transcription or sampled observations contain uncertainty.",
+              ]
+            : []),
           ...validated.analysis.warnings,
         ]),
       ].slice(0, 20);

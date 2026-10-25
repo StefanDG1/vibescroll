@@ -1,5 +1,9 @@
 # Interface contracts
 
+## Conservative Cloud result return, October 25
+
+[ADR 152](adr/152-conservative-cloud-result-return.md) records a real accepted preparation and rejected completion, followed by exact-payload offline verification. The adapter reduces overstated confidence and supports a recent-owner-reviewed, hash-bound return of the same retained attempt. It starts no processing and preserves saved posts/insights. Current Cloud status overrides old local-intake advice. Production completion remains pending; cumulative EUR5 and all prior holds remain.
+
 ## Existing sole-owner Cloud posts, October 25
 
 [ADR 151](adr/151-existing-sole-owner-cloud-posts.md) extends the experimental route to the original creator/current sole owner of an active team without active invitations. Reuse existing post IDs and separate organization-bound grants; preserve all saved insights. The cumulative run ceiling is now EUR5 with every prior hold retained. A fresh metadata-capable Cloud chat has no executor; the earlier task currently verifies operational cached tools and enforced restricted Instagram access. Actual production video return remains pending.

@@ -45,3 +45,9 @@ Open the same source in Library to inspect the private result and citations. Thi
 A lost claim, expired execution or uncertain completion is not automatically retried. Replacing source input does not remove that uncertainty or authorize another executor. Reconciliation with the real host remains necessary; do not delete and resubmit as a retry workaround. Privacy deletion remains available, but app deletion does not erase provider-retained task history.
 
 Real video-to-result acceptance, proactive task wake-up, general-account setup and independent walkthrough acceptance remain pending. See [Processing, costs and recovery](/help/processing-and-recovery) for the existing paired and explicitly funded routes.
+
+## Confidence and rejected returns
+
+When cited observations contain uncertainty, the Cloud adapter reduces affected support labels to uncertain. This preserves useful results without overstating transcription or sampled evidence.
+
+An operator can prepare an exact retained-result recovery for a fresh owner review. This allows the original task to return only the reviewed result during a fixed short window. It starts no processing and does not verify provider usage. Keep the existing post and Cloud task while investigating a rejected return.

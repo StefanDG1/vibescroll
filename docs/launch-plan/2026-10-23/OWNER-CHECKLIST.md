@@ -1,5 +1,7 @@
 # What help is still needed to finish the plan
 
+Current October25 update: OAuth/app permission setup is complete, original-team grant7 is active and the real Cloud preparation passed. Root is fixing/recovering its rejected final return. No new permission or product decision is needed from the owner for this step. Earlier independent tester, provider and optional local signing items remain separately scoped; do not ask again for completed connection approval.
+
 Current follow-up: the supported existing-plugin tool refresh returned HTTP200 without disconnecting OAuth; this chat still has its old cached definition, so a fresh official Work Cloud turn is checking metadata only. A complete October24 usage read and completed public-check reconciliation released only explicitly justified holds. After a separate metadata allowance, the cumulative ledger retains USD2.5963302151024803 with USD0.4036697848975197 unreserved. This is not an invoice or permission to start an unfunded video. The one-time app policy review and complete real-media return remain pending.
 
 ## Current live MCP setup, October 25

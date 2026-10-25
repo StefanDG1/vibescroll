@@ -1,5 +1,9 @@
 # VibeScroll foundational beliefs
 
+## F072: honest confidence and exact Cloud result recovery
+
+[ADR 152](../adr/152-conservative-cloud-result-return.md) records accepted real-media preparation and a failed production return due to overstated confidence. Preserve citations and reduce affected labels to uncertain; exact owner-reviewed result recovery permits no new execution. Actual completed return remains pending. Keep the audience, prices, six beliefs, proprietary catalog and provider/privacy gates unchanged. Cumulative EUR5 includes all earlier holds; no customer, speed or commercial-availability claim follows.
+
 ## F071: preserve saved posts in the Cloud experiment
 
 [ADR 151](../adr/151-existing-sole-owner-cloud-posts.md) records owner-authorized experimental execution in an eligible original sole-owner team through its own reviewed connection. Preserve existing posts, insights, source IDs and private project material. Reuse the existing Cloud job and source page. Do not infer media success, automatic dispatch, shared-catalog contribution or customer availability from this candidate. Audience, prices and the six beliefs stay unchanged. The cumulative task ceiling is EUR5 including all prior holds; local and managed-credit routes can be deferred only after Work Cloud proves reliable.

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { serviceInvalidationReasons } from "../packages/social/catalog-authority";
 import { internalMutation, mutation } from "./lib/projectedMutations";
 import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
@@ -49,9 +50,24 @@ export const invalidatePolicy = internalMutation({
   handler: (ctx, args) => invalidateServicePolicy(ctx, args.rightsHash),
 });
 export const invalidateSource = internalMutation({
-  args: { sourceId: v.id("sources"), maxGeneration: v.number() },
+  args: {
+    sourceId: v.id("sources"),
+    maxGeneration: v.number(),
+    reason: v.optional(
+      v.union(...serviceInvalidationReasons.map((r) => v.literal(r))),
+    ),
+    expectedOriginOrganizationId: v.optional(v.id("organizations")),
+    cursor: v.optional(v.union(v.string(), v.null())),
+  },
   handler: (ctx, a) =>
-    invalidateServiceSource(ctx, a.sourceId, a.maxGeneration),
+    invalidateServiceSource(
+      ctx,
+      a.sourceId,
+      a.maxGeneration,
+      a.reason,
+      a.expectedOriginOrganizationId,
+      a.cursor,
+    ),
 });
 export const scrubCopies = internalMutation({
   args: {

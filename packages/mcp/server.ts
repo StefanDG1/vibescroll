@@ -6,7 +6,13 @@ import {
   type AuthInfo,
   type StandardSchemaWithJSON,
 } from "@modelcontextprotocol/server";
-import { completionEvent, eventSubscribe, eventUnsubscribe } from "./events";
+import {
+  completionEvent,
+  waitingEvent,
+  connectionEvent,
+  eventSubscribe,
+  eventUnsubscribe,
+} from "./events";
 import { z } from "zod";
 import { classifySourceUrl } from "../sources/classify";
 import {
@@ -355,7 +361,7 @@ export function createKnowledgeHandler(
           { params: z.object({ cursor: z.null().optional() }).strict() },
           async () => {
             await run("events/list", {});
-            return { events: [completionEvent] };
+            return { events: [completionEvent, waitingEvent, connectionEvent] };
           },
         );
         server.server.setRequestHandler(

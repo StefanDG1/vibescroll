@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import type { ServiceInvalidationReason } from "../packages/social/catalog-authority";
 import { internal } from "./_generated/api";
 import { z } from "zod";
 import { query } from "./_generated/server";
@@ -134,6 +135,7 @@ export async function scrubUnusableBase(
   ctx: Parameters<typeof invalidatePublicSource>[0],
   source: Doc<"sources">,
   now: number,
+  reason: ServiceInvalidationReason = "unspecified",
 ) {
   // Authored filing, notes and knowledge corrections are separate records.
   // New rights never reauthorize retained provider bytes or their old analysis.
@@ -167,7 +169,7 @@ export async function scrubUnusableBase(
     generation: source.generation + 1,
     updatedAt: Math.max(now, source.updatedAt + 1),
   });
-  await invalidatePublicSource(ctx, source._id);
+  await invalidatePublicSource(ctx, source._id, reason);
   await ctx.scheduler.runAfter(0, internal.privateSourceAnalysis.scrub, {
     organizationId: source.organizationId,
     sourceId: source._id,
@@ -303,7 +305,12 @@ export const prepare = mutation({
     );
     const now = Date.now();
     if (recovery) {
-      await scrubUnusableBase(ctx, source, now);
+      await scrubUnusableBase(
+        ctx,
+        source,
+        now,
+        source.rightsAttested ? "personal_retention" : "rights",
+      );
       await ctx.db.patch(source._id, {
         rightsAttested: true,
         sourceRetentionUntil: undefined,
@@ -923,7 +930,9 @@ export const expire = internalMutation({
       preserveManualHistory: true,
       enqueue: false,
     });
-    await invalidatePublicSource(ctx, source._id);
+    // This expires the account's provider material, not an independently
+    // licensed canonical artifact. Its frozen rights/retention still apply.
+    await invalidatePublicSource(ctx, source._id, "personal_retention");
     return { expired: true };
   },
 });

@@ -796,6 +796,7 @@ export const productTables = {
     read: v.boolean(),
   }).index("by_org", ["organizationId"]),
   tombstones: defineTable({
+    catalogDisposition: v.optional(v.literal("personal-association-v1")),
     organizationId: v.id("organizations"),
     target: v.string(),
     at: v.number(),

@@ -121,12 +121,30 @@ export const retentionPage = internalMutation({
         if (!id) continue;
         const source = await ctx.db.get(id);
         // Bind tombstone ownership as well as the target ID before restore redaction.
-        if (
-          source &&
-          source.organizationId === row.organizationId &&
-          source.state !== "deleted"
-        )
-          await redactSource(ctx, id);
+        if (source && source.organizationId !== row.organizationId) continue;
+        if (source && source.state !== "deleted")
+          await redactSource(
+            ctx,
+            id,
+            row.catalogDisposition === "personal-association-v1"
+              ? "association_remove"
+              : "unspecified",
+          );
+        else if (row.catalogDisposition !== "personal-association-v1")
+          // Restore redaction may have run while canonical cleanup was locked.
+          // A durable safety marker must finish cleanup even without its source.
+          // Keep the artifact page in its existing cleanup mutation: Convex
+          // permits only one paginated query in this tombstone-page execution.
+          await ctx.scheduler.runAfter(
+            0,
+            internal.serviceArtifacts.invalidateSource,
+            {
+              sourceId: id,
+              maxGeneration: Number.MAX_SAFE_INTEGER,
+              reason: "unspecified",
+              expectedOriginOrganizationId: row.organizationId,
+            },
+          );
       } else if ("context" in row) {
         if (
           (row.context || row.contentStored) &&

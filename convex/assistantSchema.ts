@@ -11,29 +11,64 @@ export const assistantAnalysisDefaults = v.object({
   deviceId: v.id("devices"),
   profileBinding: v.string(),
 });
+const subscriptionFields = {
+  organizationId: v.id("organizations"),
+  actor: v.id("users"),
+  clientId: v.string(),
+  consentId: v.string(),
+  grantId: v.id("assistantGrants"),
+  grantVersion: v.number(),
+  externalId: v.string(),
+  ciphertext: v.string(),
+  keyVersion: v.string(),
+  previousCiphertext: v.optional(v.string()),
+  previousKeyVersion: v.optional(v.string()),
+  previousSecretExpiresAt: v.optional(v.number()),
+  callbackVerifiedAt: v.number(),
+  expiresAt: v.number(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  state: v.union(v.literal("active"), v.literal("cancelled")),
+};
+const deliveryFields = {
+  organizationId: v.id("organizations"),
+  subscriptionId: v.id("assistantSubscriptions"),
+  completedRevision: v.number(),
+  state: v.union(
+    v.literal("pending"),
+    v.literal("delivering"),
+    v.literal("delivered"),
+    v.literal("failed"),
+    v.literal("cancelled"),
+  ),
+  attempts: v.number(),
+  dueAt: v.number(),
+  lease: v.optional(v.string()),
+  leaseUntil: v.optional(v.number()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  receivedAt: v.optional(v.number()),
+  httpStatus: v.optional(v.number()),
+};
 export const assistantTables = {
-  assistantSubscriptions: defineTable({
-    organizationId: v.id("organizations"),
-    actor: v.id("users"),
-    clientId: v.string(),
-    consentId: v.string(),
-    grantId: v.id("assistantGrants"),
-    grantVersion: v.number(),
-    sourceId: v.id("sources"),
-    generation: v.number(),
-    revision: v.number(),
-    externalId: v.string(),
-    ciphertext: v.string(),
-    keyVersion: v.string(),
-    previousCiphertext: v.optional(v.string()),
-    previousKeyVersion: v.optional(v.string()),
-    previousSecretExpiresAt: v.optional(v.number()),
-    callbackVerifiedAt: v.number(),
-    expiresAt: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    state: v.union(v.literal("active"), v.literal("cancelled")),
-  })
+  assistantSubscriptions: defineTable(
+    v.union(
+      v.object({
+        ...subscriptionFields,
+        eventName: v.optional(v.literal("analysis_completed")),
+        sourceId: v.id("sources"),
+        generation: v.number(),
+        revision: v.number(),
+      }),
+      v.object({
+        ...subscriptionFields,
+        eventName: v.union(
+          v.literal("work_cloud_waiting"),
+          v.literal("work_cloud_connection_verified"),
+        ),
+      }),
+    ),
+  )
     .index("by_external", ["externalId"])
     .index("by_grant", ["grantId"])
     .index("by_previous_expiry", ["previousSecretExpiresAt"])
@@ -42,30 +77,34 @@ export const assistantTables = {
     .index("by_actor", ["actor"])
     .index("by_actor_client", ["actor", "clientId"])
     .index("by_expiry", ["expiresAt"]),
-  assistantDeliveries: defineTable({
-    organizationId: v.id("organizations"),
-    subscriptionId: v.id("assistantSubscriptions"),
-    sourceId: v.id("sources"),
-    generation: v.number(),
-    completedRevision: v.number(),
-    state: v.union(
-      v.literal("pending"),
-      v.literal("delivering"),
-      v.literal("delivered"),
-      v.literal("failed"),
-      v.literal("cancelled"),
+  assistantDeliveries: defineTable(
+    v.union(
+      v.object({
+        ...deliveryFields,
+        eventName: v.optional(v.literal("analysis_completed")),
+        sourceId: v.id("sources"),
+        generation: v.number(),
+      }),
+      v.object({
+        ...deliveryFields,
+        eventName: v.literal("work_cloud_waiting"),
+        sourceId: v.id("sources"),
+        generation: v.number(),
+      }),
+      v.object({
+        ...deliveryFields,
+        eventName: v.literal("work_cloud_connection_verified"),
+      }),
     ),
-    attempts: v.number(),
-    dueAt: v.number(),
-    lease: v.optional(v.string()),
-    leaseUntil: v.optional(v.number()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    receivedAt: v.optional(v.number()),
-    httpStatus: v.optional(v.number()),
-  })
+  )
     .index("by_occurrence", [
       "subscriptionId",
+      "generation",
+      "completedRevision",
+    ])
+    .index("by_source_occurrence", [
+      "subscriptionId",
+      "sourceId",
       "generation",
       "completedRevision",
     ])

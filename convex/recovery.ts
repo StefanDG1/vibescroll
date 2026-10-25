@@ -164,6 +164,7 @@ export const evidenceRestoreCurrent = internalQuery({
   },
 });
 const entry = v.object({
+  catalogDisposition: v.optional(v.literal("personal-association-v1")),
   kind: v.union(
     v.literal("source"),
     v.literal("workspace"),
@@ -207,6 +208,7 @@ export const markerPage = internalQuery({
               kind: "source" as const,
               target: row.target,
               organizationId: row.organizationId,
+              catalogDisposition: row.catalogDisposition,
               at: row.at,
             },
       ),
@@ -246,18 +248,36 @@ export const applyMarkers = internalMutation({
           "FORBIDDEN",
           "Deletion marker belongs to another workspace.",
         );
-        if (source) await redactSource(ctx, id);
-        else if (
-          !(await ctx.db
+        if (source)
+          await redactSource(
+            ctx,
+            id,
+            marker.catalogDisposition === "personal-association-v1"
+              ? "association_remove"
+              : "unspecified",
+          );
+        else {
+          const tombstone = await ctx.db
             .query("tombstones")
             .withIndex("by_target", (q) => q.eq("target", id))
-            .first())
-        )
-          await ctx.db.insert("tombstones", {
-            target: id,
-            organizationId,
-            at: marker.at,
-          });
+            .first();
+          ensure(
+            !tombstone || tombstone.organizationId === organizationId,
+            "FORBIDDEN",
+            "Deletion marker belongs to another workspace.",
+          );
+          if (!tombstone)
+            await ctx.db.insert("tombstones", {
+              target: id,
+              organizationId,
+              at: marker.at,
+              catalogDisposition: marker.catalogDisposition,
+            });
+          else if (!marker.catalogDisposition && tombstone.catalogDisposition)
+            await ctx.db.patch(tombstone._id, {
+              catalogDisposition: undefined,
+            });
+        }
       } else if (marker.kind === "workspace") {
         const id = ctx.db.normalizeId("organizations", marker.target);
         ensure(id, "INVALID_INPUT", "Invalid workspace deletion identifier.");

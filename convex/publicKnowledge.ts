@@ -4,6 +4,10 @@ import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import {
+  serviceInvalidationReasons,
+  type ServiceInvalidationReason,
+} from "../packages/social/catalog-authority";
 import { access, user, recentAuthentication, limit, short } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { digest, captureAuthorized } from "./product";
@@ -1076,6 +1080,17 @@ export const moderate = mutation({
         updatedAt: Date.now(),
       });
       await ctx.db.patch(report._id, { moderationBlockId: blockId });
+      // The durable block denies reads immediately; scrub canonical payloads
+      // and dependent snapshots through the existing bounded cleanup.
+      await ctx.scheduler.runAfter(
+        0,
+        internal.serviceArtifacts.invalidateSource,
+        {
+          sourceId: source._id,
+          maxGeneration: source.generation,
+          reason: "moderation",
+        },
+      );
     }
     await ctx.db.patch(a.reportId, {
       state: a.action === "remove" ? "removed" : "dismissed",
@@ -1411,10 +1426,16 @@ export const invalidateEditions = internalMutation({
 export async function invalidatePublicSource(
   ctx: MutationCtx,
   sourceId: Id<"sources">,
+  reason: ServiceInvalidationReason = "unspecified",
 ) {
   const serviceSource = await ctx.db.get(sourceId);
-  if (serviceSource)
-    await invalidateServiceSource(ctx, sourceId, serviceSource.generation);
+  // Canonical rights/safety removal must still work after personal source purge.
+  await invalidateServiceSource(
+    ctx,
+    sourceId,
+    serviceSource?.generation ?? Number.MAX_SAFE_INTEGER,
+    reason,
+  );
   await invalidatePublicEditions(ctx, sourceId);
   for (const row of await ctx.db
     .query("sourceRevisions")
@@ -1436,6 +1457,7 @@ export async function invalidatePublicSource(
   if (more)
     await ctx.scheduler.runAfter(0, internal.publicKnowledge.invalidateSource, {
       sourceId,
+      reason,
     });
   const imports = await ctx.db
     .query("publicImports")
@@ -1444,6 +1466,11 @@ export async function invalidatePublicSource(
   for (const row of imports) await ctx.db.delete(row._id);
 }
 export const invalidateSource = internalMutation({
-  args: { sourceId: v.id("sources") },
-  handler: (ctx, a) => invalidatePublicSource(ctx, a.sourceId),
+  args: {
+    sourceId: v.id("sources"),
+    reason: v.optional(
+      v.union(...serviceInvalidationReasons.map((r) => v.literal(r))),
+    ),
+  },
+  handler: (ctx, a) => invalidatePublicSource(ctx, a.sourceId, a.reason),
 });

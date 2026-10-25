@@ -367,6 +367,12 @@ Independent Impeccable finish review found five concrete issues in the synthetic
 
 # Implementation status
 
+## October 25: Cloud transcript display correction, offline candidate
+
+The owner reported missing images and an incorrect displayed transcript on the completed experimental Cloud post. Inspection found a concrete display mismatch: the existing Console transcript panel read older `originalText`/`text`, while Cloud preparation retains speech in `orderedMedia.post.segments`. Two renderer regressions reproduced the mismatch before correction. The panel now renders those retained segments and timestamps, keeps confirmed corrections separate and does not substitute older input when Cloud speech is absent. Existing source access and retention guards remain. Independent High review found no P1/P2.
+
+[The evidence](operations/evidence/launch-20261025-cloud-transcript-display.json) records 19 focused renderer passes and an offline full check exit0, with 2018 Vitest,19 Node and33 Python passes and3 hosted skips. Both builds, types and lint passed. This is not deployed or production UI acceptance. The previous real Cloud test verified acquisition and canonical result return; it did not verify native post rendering or transcript accuracy against the audio. Cloud frame hashes cannot display images. Screenshot attachment, thumbnail fallback and source/audio quality review remain required before claiming the complete product journey works. No new video, live request or data mutation occurred in this correction phase.
+
 ## Active recovery and scoped restore reads released, October 11
 
 [PR107](https://github.com/StefanDG1/vibescroll/pull/107) head `68555c9925ef22a2b2a478f74e96ee65b98f08f8` passed Verify `38169579614` and the protected Vercel preview. It merged at 19:50:59 UTC to application `553099dd3dace3f2938036ee5f3cae92f9766572`. Main Verify `38169744025`, version `38169744028` and alpha publication `38169833154` succeeded. The immutable application release is `v0.1.0-alpha.20261011195058.g553099dd3dac`.

@@ -21,6 +21,7 @@ import { syntheticJpeg } from "./cloud-frame-fixture";
 import {
   workCloudMediaPreparation,
   validateWorkCloudMediaOutput,
+  workCloudMediaPolicyV2,
 } from "../packages/contracts/work-cloud-text";
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -151,6 +152,23 @@ async function setup(url = "https://www.youtube.com/watch?v=abcdefghijk") {
   };
 }
 type Fixture = Awaited<ReturnType<typeof setup>>;
+it.each([
+  "https://vm.tiktok.com/Abcdef123/",
+  "https://vt.tiktok.com/Abcdef123/",
+  "https://www.tiktok.com/t/Abcdef123/",
+])(
+  "admits supported TikTok sharing links without confusing them with creator identities: %s",
+  async (url) => {
+    const s = await setup(url),
+      lease = await s.claim();
+    await expect(
+      s.assistant.query(internal.workCloudAnalysis.input, lease),
+    ).resolves.toMatchObject({
+      canonicalUrl: expect.stringContaining("Abcdef123"),
+      platform: "tiktok",
+    });
+  },
+);
 type Lease = Awaited<ReturnType<Fixture["claim"]>>;
 async function receipt(s: Fixture, lease: Lease) {
   const input = await s.assistant.query(
@@ -608,7 +626,7 @@ it("returns a canonical cited private media result through the existing source, 
     lease,
   );
   expect(input).toMatchObject({
-    schemaVersion: "work-cloud-media-v2",
+    schemaVersion: "work-cloud-media-v3",
     maxApiUsd: 0,
     mediaSupported: true,
     deadline: expect.any(Number),
@@ -630,7 +648,7 @@ it("returns a canonical cited private media result through the existing source, 
   const saved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
   expect(saved).toMatchObject({
     state: "ready",
-    analysisPipelineVersion: "official-work-cloud-media-v2",
+    analysisPipelineVersion: "official-work-cloud-media-v3",
     coverage: "ordered_media",
     sourceRetentionUntil: s.retainUntil,
   });
@@ -1525,10 +1543,34 @@ it("rejects a different stored Instagram identity before approval even when both
 });
 
 const frameBytes = Uint8Array.from(atob(syntheticJpeg), (c) => c.charCodeAt(0));
-async function frameFixture(width = 2) {
+async function frameFixture(width = 2, captionFirst = false) {
   const s = await setup(),
-    lease = await s.claim(),
-    prepared = await receipt(s, lease);
+    lease = await s.claim();
+  let prepared = await receipt(s, lease);
+  if (captionFirst) {
+    prepared = workCloudMediaPreparation.parse({
+      ...prepared,
+      schemaVersion: "work-cloud-media-preparation-v3",
+      post: {
+        ...prepared.post,
+        schemaVersion: "work-cloud-observed-media-v2",
+        resolvedCanonical: prepared.post.canonical,
+        audio: null,
+        assets: prepared.post.assets.map((asset) => ({
+          ...asset,
+          audioInspected: false,
+        })),
+        transcript: {
+          origin: "platform_auto",
+          language: "en",
+          translated: false,
+          asrUsed: false,
+          trackSha256: "d".repeat(64),
+          format: "srt",
+        },
+      },
+    }) as unknown as Receipt;
+  }
   const sha256 = Array.from(
     new Uint8Array(await crypto.subtle.digest("SHA-256", frameBytes)),
     (n) => n.toString(16).padStart(2, "0"),
@@ -1579,6 +1621,279 @@ function frameStorage(beforeHead?: () => Promise<void>) {
   vi.stubGlobal("fetch", fetcher);
   return fetcher;
 }
+async function queuedEvidenceRepair() {
+  const s = await frameFixture();
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...s.lease,
+    operation: "complete",
+    output: output(s.lease, s.prepared),
+  });
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.sourceId))!,
+      job = source.personalAnalysis!;
+    await ctx.db.patch(s.sourceId, {
+      personalAnalysis: {
+        ...job,
+        expiresAt: Date.now() - 1,
+        leaseUntil: 0,
+        deadline: Date.now() - 1,
+      },
+    });
+  });
+  const before = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  await s.owner.mutation(api.workCloudEvidenceRepair.approve, {
+    sourceId: s.sourceId,
+    generation: s.lease.generation,
+    preparationHash: s.args.preparationHash,
+    acknowledged: true,
+  });
+  const claimed = await s.assistant.mutation(
+    internal.workCloudEvidenceRepair.claim,
+    {
+      sourceId: s.sourceId,
+      generation: s.lease.generation,
+      taskId: "new-image-repair-task",
+    },
+  );
+  const repairLease = {
+    ...s.lease,
+    taskId: "new-image-repair-task",
+    leaseToken: claimed.leaseToken,
+  };
+  return { ...s, before, repairLease };
+}
+it("repairs only exact original pixels with a fresh lease while the old completed lease remains expired", async () => {
+  const s = await queuedEvidenceRepair();
+  await expect(
+    s.assistant.query(internal.workCloudEvidenceRepair.input, s.repairLease),
+  ).resolves.toMatchObject({
+    analysisAllowed: false,
+    exactExistingPixelsRequired: true,
+  });
+  frameStorage();
+  await expect(
+    s.assistant.action(internal.workCloudFrames.upload, s.args),
+  ).rejects.toThrow("APPROVAL_STALE");
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.complete,
+      s.repairLease,
+    ),
+  ).rejects.toThrow("required prepared JPEG");
+  await s.assistant.action(internal.workCloudFrames.upload, {
+    ...s.args,
+    ...s.repairLease,
+    repair: true,
+  });
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.complete,
+      s.repairLease,
+    ),
+  ).resolves.toEqual({ accepted: true, cached: false });
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.complete,
+      s.repairLease,
+    ),
+  ).resolves.toEqual({ accepted: true, cached: true });
+  const after = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(after.analysis).toEqual(s.before.analysis);
+  expect(after.orderedMedia).toEqual(s.before.orderedMedia);
+  expect(after.generation).toBe(s.before.generation);
+  expect(after.personalAnalysis?.state).toBe("completed");
+  expect(retainedCloudFrames(after)).toHaveLength(1);
+  await expect(currentOrderedSource(after)).resolves.toBeDefined();
+  await expect(
+    s.assistant.action(internal.workCloudFrames.upload, {
+      ...s.args,
+      ...s.repairLease,
+      repair: true,
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+});
+it("rechecks repair permission after storage I/O and cleans an unattached image on revocation", async () => {
+  const s = await queuedEvidenceRepair();
+  frameStorage(async () => {
+    await s.t.run((ctx) => ctx.db.patch(s.grant.id, { state: "revoked" }));
+  });
+  await expect(
+    s.assistant.action(internal.workCloudFrames.upload, {
+      ...s.args,
+      ...s.repairLease,
+      repair: true,
+    }),
+  ).rejects.toThrow();
+  const after = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(after.analysis).toEqual(s.before.analysis);
+  expect(retainedCloudFrames(after)).toEqual([]);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("objectDeletions").collect()),
+  ).toHaveLength(1);
+});
+it("cannot renew an expired repair or claim it again with another correlation", async () => {
+  const s = await queuedEvidenceRepair();
+  await expect(
+    s.assistant.mutation(internal.workCloudEvidenceRepair.claim, {
+      sourceId: s.sourceId,
+      generation: s.lease.generation,
+      taskId: "another-task",
+    }),
+  ).rejects.toThrow("Claim repair once");
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.heartbeat,
+      s.repairLease,
+    ),
+  ).resolves.toMatchObject({ leaseUntil: expect.any(Number) });
+  vi.advanceTimersByTime(180001);
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.heartbeat,
+      s.repairLease,
+    ),
+  ).rejects.toThrow("APPROVAL_STALE");
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.analysis).toEqual(
+    s.before.analysis,
+  );
+});
+it("completes caption-only media with real stored images and early metadata without changing the approved title", async () => {
+  const s = await frameFixture(2, true);
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...s.lease,
+    operation: "metadata",
+    metadata: {
+      title: "Native platform title",
+      authorName: "Creator name",
+      publishedAt: Date.now() - 1000,
+    },
+  });
+  await expect(
+    s.assistant.query(internal.workCloudAnalysis.input, s.lease),
+  ).resolves.toMatchObject({
+    schemaVersion: "work-cloud-media-v3",
+    title: "Synthetic permitted video",
+  });
+  await expect(
+    s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+      ...s.lease,
+      operation: "complete",
+      output: output(s.lease, s.prepared),
+    }),
+  ).rejects.toThrow("image bytes");
+  frameStorage();
+  await s.assistant.action(internal.workCloudFrames.upload, s.args);
+  await expect(
+    s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+      ...s.lease,
+      operation: "complete",
+      output: output(s.lease, s.prepared),
+    }),
+  ).resolves.toMatchObject({ accepted: true });
+  const saved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(saved.title).toBe("Synthetic permitted video");
+  expect(saved.linkPreview?.authorName).toBe("Creator name");
+  expect(saved.orderedMedia.post.transcript).toMatchObject({
+    origin: "platform_auto",
+    asrUsed: false,
+  });
+  expect(retainedCloudFrames(saved)).toHaveLength(1);
+  await expect(currentOrderedSource(saved)).resolves.toBeDefined();
+});
+it("rejects contradictory ASR provenance and a caption post in the legacy envelope", async () => {
+  const s = await frameFixture(2, true);
+  const post = s.prepared.post as any;
+  expect(
+    workCloudMediaPreparation.safeParse({
+      ...s.prepared,
+      post: { ...post, transcript: { ...post.transcript, asrUsed: true } },
+    }).success,
+  ).toBe(false);
+  expect(
+    workCloudMediaPreparation.safeParse({
+      ...s.prepared,
+      schemaVersion: "work-cloud-media-preparation-v2",
+    }).success,
+  ).toBe(false);
+});
+it("keeps already approved media-v2 execution bound to its original policy and toolchain", async () => {
+  const s = await setup(),
+    lease = await s.claim();
+  const input = await s.assistant.query(
+    internal.workCloudAnalysis.input,
+    lease,
+  );
+  const keys = [
+    "schemaVersion",
+    "sourceId",
+    "generation",
+    "processingRunId",
+    "title",
+    "inputKind",
+    "canonicalUrl",
+    "platform",
+    "allowedDomains",
+    "retainUntil",
+    "expectedCoverage",
+    "outputSchema",
+    "policy",
+    "policyHash",
+    "toolchainHash",
+    "text",
+    "sourceRevisionId",
+    "sourceContentHash",
+    "revision",
+    "evidence",
+  ];
+  const legacy = Object.fromEntries(
+    keys.map((key) => [key, (input as Record<string, unknown>)[key]]),
+  );
+  legacy.schemaVersion = "work-cloud-media-v2";
+  legacy.policy = workCloudMediaPolicyV2;
+  legacy.policyHash = await socialHash(canonicalJson(workCloudMediaPolicyV2));
+  legacy.toolchainHash = await socialHash(
+    canonicalJson(workCloudMediaPolicyV2.toolchain),
+  );
+  const inputHash = await socialHash(canonicalJson(legacy));
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.sourceId))!,
+      job = source.personalAnalysis;
+    if (job?.executor !== "work_cloud" || !job.cloud.media)
+      throw Error("Missing fixture job");
+    await ctx.db.patch(s.sourceId, {
+      personalAnalysis: {
+        ...job,
+        cloud: {
+          ...job.cloud,
+          schemaVersion: "work-cloud-media-v2",
+          inputHash,
+          policyHash: legacy.policyHash as string,
+          media: {
+            ...job.cloud.media,
+            toolchainHash: legacy.toolchainHash as string,
+          },
+        },
+      },
+    });
+  });
+  await expect(
+    s.assistant.query(internal.workCloudAnalysis.input, lease),
+  ).resolves.toMatchObject({
+    schemaVersion: "work-cloud-media-v2",
+    policy: workCloudMediaPolicyV2,
+    inputHash,
+  });
+  const prepared = await receipt(s, lease);
+  await prepare(s, lease, prepared);
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...lease,
+    operation: "complete",
+    output: output(lease, prepared),
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.analysisPipelineVersion,
+  ).toBe("official-work-cloud-media-v2");
+});
 it("stores matching Cloud pixels once, preserves immutable evidence and exposes the same screenshot, thumbnail and project image", async () => {
   const s = await frameFixture(),
     fetcher = frameStorage();

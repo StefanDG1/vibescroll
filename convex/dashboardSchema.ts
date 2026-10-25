@@ -54,6 +54,7 @@ export const dashboardTables = {
   })
     .index("by_org", ["organizationId"])
     .index("by_entity", ["entityId"])
+    .index("by_org_kind_created", ["organizationId", "kind", "createdAt"])
     .index("by_org_kind_updated", ["organizationId", "kind", "updatedAt"])
     .index("by_org_kind_state", ["organizationId", "kind", "state"]),
 };

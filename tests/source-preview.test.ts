@@ -90,6 +90,64 @@ async function setup() {
   const source = await t.mutation(internal.sourcePreviewState.begin, { id });
   return { t, owner, org, id, source: source! };
 }
+it("keeps title and author metadata when a cover is unavailable without starting analysis", async () => {
+  const { t, owner, id, source } = await setup();
+  const html = `<meta property="og:url" content="${source.url}"><meta property="og:title" content="Native title"><meta name="author" content="Creator name"><meta property="video:duration" content="47">`;
+  const parsed = postPreviewMetadata(html, source.url);
+  expect(parsed).toMatchObject({
+    title: "Native title",
+    authorName: "Creator name",
+    durationSeconds: 47,
+  });
+  await t.mutation(internal.sourcePreviewState.finish, {
+    id,
+    canonical: source.canonical,
+    generation: source.generation,
+    title: parsed!.title,
+    authorName: parsed!.authorName,
+    durationSeconds: parsed!.durationSeconds,
+  });
+  const saved = await owner.query(api.product.detail, { id });
+  expect(saved.title).toBe("Native title");
+  expect(saved.linkPreview).toMatchObject({
+    state: "ready",
+    authorName: "Creator name",
+    durationSeconds: 47,
+  });
+  expect(saved.linkPreview?.assetId).toBeUndefined();
+  expect(saved.personalAnalysis).toBeUndefined();
+});
+it("fences preview generation changes and preserves a user's title", async () => {
+  const { t, owner, id, source } = await setup();
+  await t.run((ctx) => ctx.db.patch(id, { title: "My own title" }));
+  await t.mutation(internal.sourcePreviewState.finish, {
+    id,
+    canonical: source.canonical,
+    generation: source.generation,
+    title: "Native title",
+  });
+  expect((await owner.query(api.product.detail, { id })).title).toBe(
+    "My own title",
+  );
+  await t.run((ctx) =>
+    ctx.db.patch(id, {
+      generation: source.generation + 1,
+      linkPreview: { state: "loading", updatedAt: Date.now() },
+    }),
+  );
+  expect(
+    await t.mutation(internal.sourcePreviewState.finish, {
+      id,
+      canonical: source.canonical,
+      generation: source.generation,
+      title: "Stale title",
+      authorName: "Stale author",
+    }),
+  ).toBe(false);
+  expect(
+    (await owner.query(api.product.detail, { id })).linkPreview?.authorName,
+  ).toBeUndefined();
+});
 it("queues previews at capture, binds them to the original post and keeps thumbnail evidence tenant protected", async () => {
   const { t, owner, org, id, source } = await setup();
   expect(source.url).toContain("Synthetic123");

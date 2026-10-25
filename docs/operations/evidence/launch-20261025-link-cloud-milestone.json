@@ -1,0 +1,376 @@
+{
+  "recordedAtUtc": "2026-10-25T22:57:20.889422+00:00",
+  "stage": "Local link-to-Cloud milestone candidate; production acceptance open",
+  "base": "0fef3e07f0a1c6b58738f6cd979426ecf1ff04e1",
+  "sourceDigest": "fd988852f9fe32bd8d7d77a49eb86019eac7e257c1bcfc6c5ebe8bb6d0c80284",
+  "sourceHashes": [
+    {
+      "path": "apps/starter/app/api/product/route.ts",
+      "sha256": "1a8405f4a8c65c0a358160ece3fba2b4c7facfb75c6f0176bfe9af1caba2b822"
+    },
+    {
+      "path": "apps/starter/app/app/[org]/posts/[id]/page.tsx",
+      "sha256": "d86cdfda7c519e1a000acbf157ec754668ead38d823d1b0812eb5aa6c563c8a9"
+    },
+    {
+      "path": "apps/starter/app/collections/page.tsx",
+      "sha256": "f2a37a0581ce0fb0bbdb12d8be4636c45b9972e540c4481ed70e379f10ee4add"
+    },
+    {
+      "path": "apps/starter/app/discover/page.tsx",
+      "sha256": "a688b9b2d04c9896c244b4ee5f6f0776cc994cc611870a2667aca1f7bc2e7e7e"
+    },
+    {
+      "path": "apps/starter/app/studio.css",
+      "sha256": "67d0a2a1c41457bebd0f73e9760f6749c69c6a78c5903af0f17830750d38511d"
+    },
+    {
+      "path": "apps/starter/components/community-discovery.tsx",
+      "sha256": null
+    },
+    {
+      "path": "apps/starter/components/community-globe.tsx",
+      "sha256": null
+    },
+    {
+      "path": "apps/starter/components/console.tsx",
+      "sha256": "415b612ce710b6d0b732b7af702b88a91f269f0692d2e56f6c1ad3f8e773aa4d"
+    },
+    {
+      "path": "apps/starter/components/home-post-card.tsx",
+      "sha256": "2df3db6198ae49af4791fbef92f9c63d3a58d1ba6e966ac03c6e8d2c5fb4731e"
+    },
+    {
+      "path": "apps/starter/components/public-knowledge-panel.tsx",
+      "sha256": "66f41ec4a13a12b46b1db70dcc4ca6b29e90aacd792d1b27aced379408b7c5c9"
+    },
+    {
+      "path": "apps/starter/components/studio-home.tsx",
+      "sha256": "5a162af345568e62446a0b8cdad814e0d54ccbe80a0b659eeeb1365e62ae476a"
+    },
+    {
+      "path": "apps/starter/home-post-card.test.ts",
+      "sha256": "7ba9894b7c33c5a8034e49769486bccf9ecd8d8cc33aca34534434f0eba4e212"
+    },
+    {
+      "path": "apps/starter/integration-controls.test.ts",
+      "sha256": "a092532531c80bfe610f7f1f661fbe85004ba43ad284a013e1ed657a7da105cd"
+    },
+    {
+      "path": "apps/starter/lib/public-knowledge.ts",
+      "sha256": "a2a2727e66b22abb2aa0539675a5347858202131ee09f95cc42ceb7d00f579a2"
+    },
+    {
+      "path": "apps/starter/lib/workspace-data.ts",
+      "sha256": "b992429b6a0f39e357008ad110dd789c5986a42ef487f6a81b11ee1a6b1577ea"
+    },
+    {
+      "path": "apps/starter/vitest.public-knowledge.config.ts",
+      "sha256": "2a40b443422f7e81905493459f78f2aa9cd1aa5ed665e75b615595dd47d0847e"
+    },
+    {
+      "path": "convex/_generated/api.d.ts",
+      "sha256": "efe6220bd1d3d0285dabefaf4053ec0cff246966cbe52dbce4554e94a321b420"
+    },
+    {
+      "path": "convex/assistant.ts",
+      "sha256": "796f0307c7c2fc36f4ce8e7a3ff68e30fa9fd252bca0a861ea72f42bd2b961fe"
+    },
+    {
+      "path": "convex/assistantHttp.ts",
+      "sha256": "591b4b9b34acb41d16dba9106793578c55d5ddd2830853758bec9aad3b79d395"
+    },
+    {
+      "path": "convex/dashboard.ts",
+      "sha256": "ace23710839aa8703fa3351da38a8b72f355658fb4609f19b7a99c726072e41a"
+    },
+    {
+      "path": "convex/dashboardSchema.ts",
+      "sha256": "9dbc51d5856c4cbd7a1416aa151bcba77bf30e2e4cb01de549dc5f29d53c3998"
+    },
+    {
+      "path": "convex/lib/assistantIntake.ts",
+      "sha256": "79eecd1005b66b77978aefa8c469c1f18e6faa42961866fd18dd299870939ad4"
+    },
+    {
+      "path": "convex/lib/orderedSource.ts",
+      "sha256": "c95e306758d1a1f69c08321750200fdda54cd018fbac6eb2ad7eca8c69500eb1"
+    },
+    {
+      "path": "convex/lib/postSummary.ts",
+      "sha256": "c4a9ea063e38b5f5cc6de1ce3a42e56b926437bbe26839a3b2bdf14001a0a92e"
+    },
+    {
+      "path": "convex/lib/projectSourceContent.ts",
+      "sha256": "3f4177e45f2937ddf3ffda3845f1936128ffb1a58b3e83a6ee84496c878e8021"
+    },
+    {
+      "path": "convex/lib/sourceCitations.ts",
+      "sha256": "85204d445fedaf0261f24064420d3a280c1be04d1e87065797b64b83b732e72e"
+    },
+    {
+      "path": "convex/personalAnalysisSchema.ts",
+      "sha256": "d02c9d2eda40c8a104d59b5dcea81ddcc7e4b39703d39ea795ba1f3ae7faab2c"
+    },
+    {
+      "path": "convex/productSchema.ts",
+      "sha256": "757feeea274ced9e78f44af07e3499b49416c45e00ec129a7d2539ae35ba8122"
+    },
+    {
+      "path": "convex/publicKnowledge.ts",
+      "sha256": "aa2e624c527ae05faa46dde102d5be81eb32a8e8a8512a2eca6e23620b205e71"
+    },
+    {
+      "path": "convex/sourcePreview.ts",
+      "sha256": "86ac64e31de6b1185bd0618876e85642eaa9d76ad3199bca1decb8a3ffe7df5c"
+    },
+    {
+      "path": "convex/sourcePreviewState.ts",
+      "sha256": "b2c4e1375fa4995e2e80ac4f554c1f2d683abb040e93495dc788fb01f2cd3393"
+    },
+    {
+      "path": "convex/workCloudAnalysis.ts",
+      "sha256": "9671fcee4542a58ad65413c48c183f8ab3dd01333473bd0eae4bb19ec932029c"
+    },
+    {
+      "path": "convex/workCloudEvidenceRepair.ts",
+      "sha256": "44800dbb52b667f46aa6a520ea24eac1538f0b902e891a02e9d29dc0f7ed45e0"
+    },
+    {
+      "path": "convex/workCloudFrames.ts",
+      "sha256": "e55a3877f251b96f373e2ba8fcef007f19abeb68793e1a77b40b493ae69a6b41"
+    },
+    {
+      "path": "package.json",
+      "sha256": "aa4f1ae6e13ecda5e404e18f5c99f63b08c9b0469b9254ef27c57f3c5ec72de1"
+    },
+    {
+      "path": "packages/browser/post-route.ts",
+      "sha256": "8d0fdb8bbffaa1a62b7b04265f0fe5271bca11f43af2f5c3c81dd21b2bcdf709"
+    },
+    {
+      "path": "packages/contracts/post-summary.ts",
+      "sha256": "ea49374290bd648def0d1fb5aafd707a4a54ae86337915fd014a5f563fd2178c"
+    },
+    {
+      "path": "packages/contracts/work-cloud-text.ts",
+      "sha256": "c2c2a99b4520faff39bb1d441d62505cb73b591ff8351cb9857b7074c7ab94f7"
+    },
+    {
+      "path": "packages/mcp/server.ts",
+      "sha256": "e518d5e76d7bd6b2928e73b6fc59a1c4bb4ea157b971f72a5280b8a9955867a2"
+    },
+    {
+      "path": "packages/media/CLOUD.md",
+      "sha256": "03660ab1b859f7e9942ad12e047b3e41a6362fe0a7eca2492cfb2da3822fd632"
+    },
+    {
+      "path": "packages/media/acquisition-policy.mjs",
+      "sha256": "a33761743fda7bc68ac21d85c18f74b4474ed5f42e3ae605ab65dd22b9cb8f56"
+    },
+    {
+      "path": "packages/media/acquisition-runtime.ts",
+      "sha256": "44dacdc6f3d0205823b20bca07ba6ec2c3e22da90c6e00ec07f6336b1454eb16"
+    },
+    {
+      "path": "packages/media/cloud-downloader.lock.json",
+      "sha256": "8a17925dfd2b80f4d935e922375bf039f2bd7a8cd97a38c9b004bd89b112637b"
+    },
+    {
+      "path": "packages/media/cloud-extractor.lock.json",
+      "sha256": "fded841ebd36479fa3d13dd3e81794542a4448b972a7c0c0e0a1bcdaee6decc3"
+    },
+    {
+      "path": "packages/media/cloud-frames.ts",
+      "sha256": "488251fc0033aba5edbd92928b846af39fab6316d1ef47f70d3658123305d097"
+    },
+    {
+      "path": "packages/media/cloud_extraction.py",
+      "sha256": "91bbd4e1e7fee474c2e0d64db658ec4588a89978c5028d0907d0d3df29b2286a"
+    },
+    {
+      "path": "packages/media/cloud_job.py",
+      "sha256": "5b6ee341c60cdd948b0d9c5facbc30988f0c85ef311be38b11191eb2b14c4865"
+    },
+    {
+      "path": "packages/media/cloud_prepare.py",
+      "sha256": "73117d59506d6c382615b241167549ad9ad61e21ba568ed49b85e6e05be23483"
+    },
+    {
+      "path": "packages/media/cloud_ytdlp.py",
+      "sha256": "788ada9e95f7d49a9d23872780e37d1a6383b8d00814aab92d864c97f616ecfd"
+    },
+    {
+      "path": "packages/media/prepare_cloud_dependencies.py",
+      "sha256": "76fce48e87dd54d9a52524c82a4ae4585470a7673be1af0c91d1639e1c238d0c"
+    },
+    {
+      "path": "packages/media/requirements-captions.lock",
+      "sha256": "1017557c89656f55f4b9cae8a24251c502aa4958834f707038fa5b45c064429b"
+    },
+    {
+      "path": "packages/media/restore_cloud_frames.py",
+      "sha256": "03acc9893759bd3b888c1e6269a8dee51c819001125256bef2cf573b483df7fb"
+    },
+    {
+      "path": "packages/policy/index.ts",
+      "sha256": "42f67b6013441ddf103dad472e381ebdbe962a79bd743db099044bfdb4fae624"
+    },
+    {
+      "path": "packages/providers/source-preview.ts",
+      "sha256": "b3908f7dc23917eb7aa7e0be525c261ea1e3d46d7d5b5406252d4aa7361afdb6"
+    },
+    {
+      "path": "packages/social/contracts.ts",
+      "sha256": "a02d540821f78ed2ff77d1a9713c8f0600d7e9f2217735ecfcce879304e8bba7"
+    },
+    {
+      "path": "packages/sources/display.ts",
+      "sha256": "6f86026678975a01f38ad4ec5257d53ebcaefd263a20faf5d615281cb79e31a6"
+    },
+    {
+      "path": "scripts/build-cloud-media-package.py",
+      "sha256": "d878ed38a8f6fb009718d30df04a7e9cb362804045dccd9babf993732f44af98"
+    },
+    {
+      "path": "scripts/validate.mjs",
+      "sha256": "b395a103549512879c418e1bd6632399643c11588c23ced9404f0f3ac5e6d581"
+    },
+    {
+      "path": "tests/assistant-access.test.ts",
+      "sha256": "12218f4c9f27adda7d5d0f03fffc8d6bef717e7387a4bae747e9effe9cfd84ac"
+    },
+    {
+      "path": "tests/caption_extraction_test.py",
+      "sha256": "fff37ec0ba7241ce572e8c7819014ea894adc8699d98daec8f6642a86b064989"
+    },
+    {
+      "path": "tests/dashboard-projection.test.ts",
+      "sha256": "44049a8ded0495ba4a8a5488d91dbe793561dfc58039e6b53bcd74405a283889"
+    },
+    {
+      "path": "tests/home-post-progress.test.ts",
+      "sha256": "cf198810e81eb9d473f560c5081bbe513acd228f5054ca81180e41caa1e8cb9e"
+    },
+    {
+      "path": "tests/public-knowledge.test.ts",
+      "sha256": "7f65bcb522fc4c179d8ec0b49fffda76204a49e5e3b6221de9a049086de5e157"
+    },
+    {
+      "path": "tests/public-read-bounds.test.ts",
+      "sha256": "515022cc175408a273d2d7f72ffc7acf1b201eb4f08cc7f39163c67f704b3552"
+    },
+    {
+      "path": "tests/requirements-media.lock",
+      "sha256": "ef5e5819ce85da6b4095bf413aa15e626e17e4a6f12a1d6e9b4adb41a31d36e4"
+    },
+    {
+      "path": "tests/source-preview.test.ts",
+      "sha256": "bad74b31610703b598684093b8f0c92044dd834d55e0ed4ac6ed92b9f6bfa5b2"
+    },
+    {
+      "path": "tests/work-cloud-mcp-request.test.ts",
+      "sha256": "6a6b2194b8be29ab5b1b767a4a6b2828aae6d31f06e8cae7bc9dad2a17cfeab1"
+    },
+    {
+      "path": "tests/work-cloud-media.test.ts",
+      "sha256": "dd9a1b9e890bc6f7f83f70fe774537e57f4457096886044996164894c8e0d0ac"
+    },
+    {
+      "path": "tests/work-cloud-transport.test.ts",
+      "sha256": "fbf64879c14aa19f0396620b1198e205d3e2d75ca06697e45b71a3c6de1db905"
+    }
+  ],
+  "checks": {
+    "fullOffline": {
+      "command": "node scripts/run-offline.mjs pnpm check",
+      "environment": "Windows; Node24.22.1; pnpm12.3.4; project caption-tools Python environment",
+      "exitCode": 0,
+      "vitestPassed": 2053,
+      "hostedSkipped": 3,
+      "nodePassed": 19,
+      "pythonPassed": 46,
+      "bothProductionBuilds": true,
+      "log": "outputs/link-cloud-verified-check-20261025.log"
+    },
+    "finalManifestProtocol": {
+      "passed": 98,
+      "log": "outputs/link-cloud-final-protocol-check.log",
+      "note": "After final tool-manifest refresh and two new transport cases."
+    },
+    "dependencyAudit": {
+      "passed": true,
+      "low": 2,
+      "moderate": 2,
+      "high": 0,
+      "critical": 0,
+      "unresolved": 0,
+      "log": "outputs/link-cloud-audit-20261025.json"
+    },
+    "browser": {
+      "actualComponent": "HomePostCard",
+      "syntheticData": true,
+      "mobileWidth": 320,
+      "desktopWidth": 1280,
+      "overflow": false,
+      "mobileOneClick": true,
+      "desktopKeyboardEnter": true,
+      "homeAnalysisIncluded": false,
+      "log": "outputs/native-post-pages/receipt.json",
+      "limitations": "Loopback fixture, not authenticated production or full Console SSR. Initial keyboard attempt lacked foreground focus; passed after bringing own fixture tab forward. Closing through raw Target command failed; own tab closed with close_tab helper; own server stopped."
+    },
+    "toolArchive": {
+      "sha256": "cfe6f87616026e035b0411c94f226f540833ce16a374f0de2cb124d2d2eb10e7",
+      "files": 11,
+      "twoBuildHashesEqual": true
+    },
+    "separateDirtyWorker": {
+      "all12FrozenHashesUnchanged": true
+    },
+    "finalPrePR": {
+      "formatting": true,
+      "validationDocuments": 348,
+      "lintWarnings": 0,
+      "typecheck": true,
+      "stagedSecretScan": {
+        "tool": "gitleaks8.30.1",
+        "findings": 0,
+        "log": "outputs/link-cloud-gitleaks-20261025.log"
+      },
+      "whitespace": true,
+      "sourceHashesMatchFinalCandidate": true,
+      "independentAgentReview": false
+    }
+  },
+  "retainedFailures": [
+    "First full run stopped at redundant boolean lint warning; corrected.",
+    "Second full run failed two remaining Library URL responses and one new-job protocol expectation; corrected without weakening assertions.",
+    "Cloud cache setup found no pip on private Python; no wheels or models fetched. Later follow-up transport returned invalid rate-limit caller identity. No source/service operation was sent."
+  ],
+  "production": {
+    "changed": false,
+    "lastVerifiedFrontendBackend": "675dea24804d3ed730cdec2aa5f858ddbcd07594",
+    "freshProductionRead": false,
+    "realReelRepaired": false,
+    "sourceAudioVerified": false,
+    "captionPathInlineCloudCanary": false,
+    "automaticEventsWake": false,
+    "reservedTikTokUnanalyzed": true
+  },
+  "budget": {
+    "ledgerUnchanged": true,
+    "retainedMaximumUSD": 4.875014256044613,
+    "remainingUnreservedUSD": 0.424985743955387,
+    "workingCeilingUSD": 5.3,
+    "proposedNewReserveUSD": 2.4,
+    "proposalIsAuthorization": false
+  },
+  "gates": [
+    "Current owner/grant and supported host/source readiness",
+    "Result-preserving original source/JPEG hashes",
+    "Complete budget reservation before dispatch",
+    "Compatible release or independently bounded populated index migration",
+    "Actual Reel audio review and fresh caption-path app result",
+    "Retained provider/privacy/release/catalog/payment gates"
+  ]
+}

@@ -1,3 +1,4 @@
+import { isCloudObservedMedia } from "../../packages/social/contracts";
 import type { QueryCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
 import { retainedSourceRevision, sourceRetained } from "./sourceAuthority";
@@ -62,7 +63,7 @@ export async function sharedTypedCitations(
               ...(post.coverage === "complete_manifest"
                 ? []
                 : [
-                    post.schemaVersion === "work-cloud-observed-media-v1"
+                    isCloudObservedMedia(post)
                       ? "Private authenticated host-reported acquisition; sampled frames, model execution and provider retention are unverified."
                       : post.schemaVersion === "provided-media-v1"
                         ? "Some supplied files were unavailable or not inspected. The original post and publication date are unverified."

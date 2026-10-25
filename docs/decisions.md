@@ -1,5 +1,9 @@
 # Product decisions
 
+## Direct post pages and caption-first Cloud milestone, October25
+
+[ADR156](adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) makes Home recent additions metadata-only and one-click, reusing bookmarkable authenticated post pages. It adds progressive native previews and caption-first extraction, retires region sharing, defers Telegram and public publisher expansion, and prioritizes one verified inline Cloud media result before broader platform and automatic-wake acceptance. Preserve existing content, permissions, cumulative EUR5 and provider/release gates. Implementation has begun; production acceptance remains open.
+
 ## Global catalog and Cloud setup direction, October25
 
 [ADR154](adr/154-global-catalog-defaults-and-cloud-intake.md) requires one global paid catalog, no region or opt-out in normal neutral analysis, and personal-post removal that preserves independent canonical insights. Actual privacy, rights and moderation erasure remain separate. Existing source/account-coupled artifacts need a versioned ownership/lifecycle change; this is not accomplished by skipping one delete call. Keep private context out and preserve the existing stores, approved public examples and advanced editions.

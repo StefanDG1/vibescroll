@@ -128,6 +128,56 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 it.each(["2025-11-25", "2026-07-28"])(
+  "transports native metadata and separate repair authority over %s",
+  async (protocol) => {
+    const host = mcp(false, ["analysis:execute"], true, protocol);
+    const tools = (await packet(await host.call("tools/list", {}))).result
+      .tools;
+    for (const [name, args] of [
+      [
+        "work_cloud_metadata",
+        {
+          ...lease,
+          metadata: { title: "Native title", authorName: "Creator" },
+        },
+      ],
+      [
+        "work_cloud_repair_claim",
+        {
+          sourceId: lease.sourceId,
+          generation: lease.generation,
+          taskId: "fresh-repair",
+        },
+      ],
+      ["work_cloud_repair_input", lease],
+      ["work_cloud_repair_heartbeat", lease],
+      ["work_cloud_repair_complete", lease],
+      [
+        "work_cloud_frame",
+        {
+          ...lease,
+          repair: true,
+          frameId: "frame-1",
+          preparationHash: "a".repeat(64),
+          data: "YQ==",
+        },
+      ],
+    ] as const) {
+      expect(tools.some((tool: { name: string }) => tool.name === name)).toBe(
+        true,
+      );
+      const result = await packet(
+        await host.call("tools/call", { name, arguments: args }),
+      );
+      expect(result.result.isError).not.toBe(true);
+      expect(host.invoke).toHaveBeenLastCalledWith(name, args);
+      const disabled = mcp(false, ["analysis:execute"], false, protocol);
+      await disabled.call("tools/call", { name, arguments: args });
+      expect(disabled.invoke).not.toHaveBeenCalled();
+    }
+  },
+);
+it.each(["2025-11-25", "2026-07-28"])(
   "transports bounded frame bytes only through the media capability over %s",
   async (protocol) => {
     const host = mcp(false, ["analysis:execute"], true, protocol);

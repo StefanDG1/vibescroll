@@ -28,7 +28,6 @@ import {
   legacyModerationPending,
   preserveLegacyEditionModeration,
 } from "./lib/publicModeration";
-import { sharingRegions, contributorBand } from "../packages/sources/geography";
 import { validateEvidenceRegistry } from "../packages/sources/evidence";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { sourceRetained } from "./lib/sourceAuthority";
@@ -1310,89 +1309,24 @@ export const setGeography = mutation({
   handler: async (ctx, a) => {
     const { actor } = await access(ctx, a.organizationId, ["owner", "admin"]);
     ensure(
-      a.cell === null ||
-        (a.explicitlyOptedIn && sharingRegions.some((r) => r.id === a.cell)),
-      "INVALID_INPUT",
-      "Choose a voluntary broad region.",
+      a.cell === null,
+      "POLICY_BLOCKED",
+      "Region sharing has been retired. Existing sharing can be withdrawn.",
     );
-    if (a.cell !== null) enabled();
     const old = await ctx.db
       .query("publicGeography")
       .withIndex("by_actor", (q) => q.eq("actor", actor._id))
       .take(50);
     for (const row of old) await ctx.db.delete(row._id);
-    if (a.cell)
-      await ctx.db.insert("publicGeography", {
-        organizationId: a.organizationId,
-        actor: actor._id,
-        cell: a.cell,
-        enabled: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
+
     return { sharing: a.cell !== null };
   },
 });
+// Compatibility response for older clients. No location aggregates are read.
 export const geography = query({
   args: {},
-  handler: async (ctx) => {
-    if (!publicEnabled()) return [];
-    ctx = knowledgeReadContext(ctx);
-    const budget = publicReadBudget(ctx, 25);
-    let remainingCandidates = 100;
-    let remainingEditionCandidates = 25;
-    const seen = new Set<string>();
-    const result = [];
-    for (const region of sharingRegions) {
-      if (
-        remainingCandidates <= 0 ||
-        remainingEditionCandidates <= 0 ||
-        budget.remaining() <= 0
-      )
-        break;
-      const candidates = await ctx.db
-        .query("publicGeography")
-        .withIndex("by_cell", (q) =>
-          q.eq("cell", region.id).eq("enabled", true),
-        )
-        .take(remainingCandidates);
-      remainingCandidates -= candidates.length;
-      const actors = new Set<string>();
-      for (const person of candidates) {
-        if (
-          actors.size >= 25 ||
-          remainingEditionCandidates <= 0 ||
-          budget.remaining() <= 0
-        )
-          break;
-        const identity = `${person.actor}:${person.organizationId}:${person.cell}`;
-        if (seen.has(identity)) continue;
-        seen.add(identity);
-        const editions = await ctx.db
-          .query("publicEditions")
-          .withIndex("by_actor", (q) => q.eq("actor", person.actor))
-          .order("desc")
-          .take(1);
-        remainingEditionCandidates -= editions.length;
-        for (const edition of editions)
-          if (
-            edition.organizationId === person.organizationId &&
-            (await budget.current(edition))
-          ) {
-            actors.add(person.actor);
-            break;
-          }
-      }
-      const band = contributorBand(actors.size);
-      if (band)
-        result.push({
-          ...region,
-          contributors: band,
-          coverage: "bounded_snapshot" as const,
-        });
-    }
-    return result;
-  },
+  returns: v.array(v.any()),
+  handler: async () => [],
 });
 export async function invalidatePublicEditions(
   ctx: MutationCtx,

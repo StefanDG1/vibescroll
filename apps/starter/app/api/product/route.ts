@@ -23,6 +23,10 @@ const operations = {
   setupJourney: ["query", api.setupJourney.status],
   workCloudTextPreview: ["query", api.workCloudAnalysis.preview],
   workCloudTextApprove: ["mutation", api.workCloudAnalysis.approve],
+  workCloudEvidenceRepairApprove: [
+    "mutation",
+    api.workCloudEvidenceRepair.approve,
+  ],
   saveSetupJourney: ["mutation", api.setupJourney.save],
   creatorFollowing: ["query", api.creators.list],
   creatorFollow: ["mutation", api.creators.follow],

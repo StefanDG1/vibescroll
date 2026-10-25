@@ -138,8 +138,9 @@ export async function dashboardHome(
     (["source", "repository", "proposal", "run"] as const).map((kind) =>
       ctx.db
         .query("dashboardCards")
-        .withIndex("by_org_kind_updated", (q) =>
-          q.eq("organizationId", organizationId).eq("kind", kind),
+        .withIndex(
+          kind === "source" ? "by_org_kind_created" : "by_org_kind_updated",
+          (q) => q.eq("organizationId", organizationId).eq("kind", kind),
         )
         .order("desc")
         .take(31),
@@ -236,7 +237,14 @@ export async function dashboardHome(
   const postSummaries: PostSummaryV1[] = [];
   for (const row of sources) {
     const summary = await postSummaryFromCard(row, asOf);
-    if (summary) postSummaries.push(summary);
+    if (summary)
+      postSummaries.push({
+        ...summary,
+        // Home is a metadata feed. Insight text is read on the post page only.
+        insightPreview: [],
+        insightPreviewTruncated:
+          summary.insightCount === null || summary.insightCount > 0,
+      });
   }
   const snapshot = {
     version: "home-summary-v1" as const,

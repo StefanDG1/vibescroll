@@ -16,6 +16,31 @@ import {
 import type { Doc } from "../convex/_generated/dataModel";
 import type { QueryCtx } from "../convex/_generated/server";
 const modules = import.meta.glob("../convex/**/*.ts");
+it("orders Home by date added and returns no insight excerpts after an older post is updated", async () => {
+  const s = await setup();
+  await s.t.run(async (ctx) => {
+    for (const [i, sourceId] of s.sources.entries()) {
+      await ctx.db.patch(sourceId, {
+        createdAt: Date.now() - (s.sources.length - i) * 1000,
+      });
+    }
+  });
+  await s.migrate();
+  await patchProjectedSource(s, { updatedAt: Date.now() + 1000 });
+  const result = await s.owner.query(api.dashboard.home, {
+    organizationId: s.organizationId,
+  });
+  expect(result.ready).toBe(true);
+  if (!result.ready) throw Error("Missing fixture projection");
+  expect(result.homeSnapshot.recent.map((p) => p.sourceId)).toEqual(
+    [...s.sources].reverse(),
+  );
+  expect(
+    result.homeSnapshot.recent.every((p) => p.insightPreview.length === 0),
+  ).toBe(true);
+  expect(JSON.stringify(result)).not.toContain("PRIVATE_INSIGHT_BODY");
+  expect(JSON.stringify(result)).not.toContain("PRIVATE_TRANSCRIPT");
+});
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.useRealTimers();

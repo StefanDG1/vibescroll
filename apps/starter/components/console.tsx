@@ -1,6 +1,9 @@
 "use client";
+import { isCloudObservedMedia } from "../../../packages/social/contracts";
 import { useState, useEffect, useRef, useEffectEvent, useId } from "react";
 import { useRouter } from "next/navigation";
+import { postPagePath } from "../../../packages/browser/post-route";
+import { postDisplayTitle } from "../../../packages/sources/display";
 import { usePolling } from "@/lib/use-polling";
 import { AssistantConnections } from "./assistant-connections";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
@@ -99,6 +102,7 @@ import type { HomeSummaryV1 } from "../../../packages/contracts/post-summary";
 import { mergeHomePostProgress } from "../../../packages/browser/home-post-progress";
 type Initial = {
   homeSnapshot?: HomeSummaryV1;
+  homeProjectionPending?: boolean;
   workspaceSlice?:
     "library" | "connections" | "usage" | "projects" | "plans" | "source";
   role?: string;
@@ -192,8 +196,8 @@ function SourceThumbnail({ source, demo }: { source: any; demo: boolean }) {
       ? { id: source.linkPreview.assetId, kind: "frame" }
       : undefined) ??
     sourceEvidenceFrames(source)[0] ??
-    (source.orderedMedia?.post?.schemaVersion !==
-      "work-cloud-observed-media-v1" && source.personalMedia?.frames?.[0]
+    (!isCloudObservedMedia(source.orderedMedia?.post) &&
+    source.personalMedia?.frames?.[0]
       ? { id: source.personalMedia.frames[0].assetId, kind: "frame" }
       : undefined);
   const [failedId, setFailedId] = useState<string>(),
@@ -270,6 +274,8 @@ export function Console({
   const captureAccess = useRef(true);
   const [journey] = useState(() => createJourneyMeasurements(track));
   const captureOrigin = useRef<HTMLElement | null>(null);
+  const [publicationManagementOpen, setPublicationManagementOpen] =
+    useState(false);
   const router = useRouter(),
     [data, setData] = useState(initial),
     [view, setView] = useState(
@@ -1233,7 +1239,7 @@ export function Console({
         if (value && (key !== "sort" || value !== "newest"))
           query.set(key, value);
       router.push(
-        `/app/${organizationId}/library/${encodeURIComponent(id(s))}${query.size ? `?${query}` : ""}`,
+        `${postPagePath(organizationId, id(s))}${query.size ? `?${query}` : ""}`,
       );
     }
   }
@@ -1371,7 +1377,9 @@ export function Console({
             <div>
               <h1 className={view === "library" ? "sr-only" : undefined}>
                 {view === "source"
-                  ? (selected?.title ?? "Source unavailable")
+                  ? selected
+                    ? postDisplayTitle(selected)
+                    : "Source unavailable"
                   : view === "proposal"
                     ? selected?.title
                     : view === "menu"
@@ -1620,6 +1628,7 @@ export function Console({
                     runs={home.runs}
                     libraryNext={home.libraryNext}
                     homeSnapshot={home.homeSnapshot}
+                    homeProjectionPending={home.homeProjectionPending}
                     renderThumbnail={(summary) => (
                       <SourceThumbnail
                         key={`${home.homeSnapshot?.scopeKey}:${summary.sourceId}:${summary.generation}:${summary.thumbnail?.assetId}`}
@@ -1969,6 +1978,7 @@ export function Console({
                   readOnly={readOnly || data.role === "viewer"}
                   busy={busy}
                   canSuggestCategories={canSuggestCategories}
+                  canRepairEvidence={data.role === "owner"}
                   demo={demo}
                   org={organizationId}
                   repos={data.repositories}
@@ -2563,6 +2573,7 @@ export function Console({
                     Enable browser notification permission
                   </Button>
                   <CookieSettings className="secondary" />
+
                   <Button
                     busy={busy}
                     onClick={() =>
@@ -2755,14 +2766,6 @@ export function Console({
                       Revoke credential
                     </Button>
                   </form>
-                  <div className="panel">
-                    <h2>Telegram</h2>
-                    <p>
-                      Planned for later. Use the web inbox now. Setup needs a
-                      BotFather bot, secret webhook, numeric-user pairing and
-                      replay tests.
-                    </p>
-                  </div>
                 </>
               )}
               {view === "runners" && (
@@ -2938,6 +2941,24 @@ export function Console({
                     </Link>
                   </div>
                   <CookieSettings className="secondary" />
+                  {!demo && organizationId && canSuggestCategories && (
+                    <details
+                      className="panel"
+                      onToggle={(event) =>
+                        setPublicationManagementOpen(event.currentTarget.open)
+                      }
+                    >
+                      <summary>Manage existing publications</summary>
+                      {publicationManagementOpen && (
+                        <PublicKnowledgePanel
+                          organizationId={organizationId}
+                          call={call}
+                          readOnly={readOnly}
+                          enabled
+                        />
+                      )}
+                    </details>
+                  )}
                   <Button
                     busy={busy}
                     onClick={() =>
@@ -3861,6 +3882,7 @@ export function SourceDetail({
   readOnly,
   busy,
   canSuggestCategories,
+  canRepairEvidence = false,
   demo,
   org,
   repos,
@@ -3888,10 +3910,9 @@ export function SourceDetail({
   const [categoryDraft, setCategoryDraft] = useState("");
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const transcript = useRef<HTMLDetailsElement>(null);
-  const cloudSpeechSegments =
-    detail.orderedMedia?.post?.schemaVersion === "work-cloud-observed-media-v1"
-      ? detail.orderedMedia.post.segments
-      : null;
+  const cloudSpeechSegments = isCloudObservedMedia(detail.orderedMedia?.post)
+    ? detail.orderedMedia.post.segments
+    : null;
   const sourceId = id(source);
   const orderedSource = Boolean(
     detail.personalOrderedInput ||
@@ -4100,23 +4121,13 @@ export function SourceDetail({
             call={strictCall}
             readOnly={readOnly}
           />
-          {detail.publicImportId ? (
+          {detail.publicImportId && (
             <SavedPublicSource
               sourceId={sourceId}
               call={strictCall}
               readOnly={readOnly}
               enabled
             />
-          ) : (
-            canSuggestCategories && (
-              <PublicKnowledgePanel
-                organizationId={org}
-                source={detail}
-                call={strictCall}
-                readOnly={readOnly}
-                enabled
-              />
-            )
           )}
         </>
       )}
@@ -4480,6 +4491,48 @@ export function SourceDetail({
               : "No main points yet. Review the source's analysis options."}
           </p>
         )}
+        {!demo &&
+          canRepairEvidence &&
+          !readOnly &&
+          detail.personalAnalysis?.executor === "work_cloud" &&
+          detail.personalAnalysis.state === "completed" &&
+          isCloudObservedMedia(detail.orderedMedia?.post) &&
+          detail.orderedMedia.post.frames.length > savedFrames.length && (
+            <details className="source-notes">
+              <summary>Restore missing screenshots</summary>
+              <p>
+                Restore the exact retained screenshots while preserving this
+                analysis. A connected Cloud task must perform the bounded
+                repair.
+              </p>
+              {detail.personalAnalysis.cloud.media?.evidenceRepair ? (
+                <p>
+                  Evidence repair:{" "}
+                  {detail.personalAnalysis.cloud.media.evidenceRepair.state}.
+                  Review that attempt before starting another.
+                </p>
+              ) : (
+                <Button
+                  busy={busy}
+                  onClick={async () => {
+                    const result = await call(
+                      "workCloudEvidenceRepairApprove",
+                      {
+                        sourceId,
+                        generation: detail.generation,
+                        preparationHash:
+                          detail.personalAnalysis.cloud.media.preparationHash,
+                        acknowledged: true,
+                      },
+                    );
+                    if (result) await onRefresh?.();
+                  }}
+                >
+                  Approve screenshot repair
+                </Button>
+              )}
+            </details>
+          )}
         <details
           id="source-transcript"
           ref={transcript}
@@ -4492,6 +4545,24 @@ export function SourceDetail({
               ? "Original supplied text and corrections"
               : "Original transcript and corrections"}
           </summary>
+          {isCloudObservedMedia(detail.orderedMedia?.post) &&
+            detail.orderedMedia.post.transcript && (
+              <p className="fine">
+                {detail.orderedMedia.post.transcript.origin.startsWith(
+                  "platform_",
+                )
+                  ? "Platform captions"
+                  : "Local speech processing"}
+                {" · "}
+                {detail.orderedMedia.post.transcript.language}
+                {detail.orderedMedia.post.transcript.origin === "platform_auto"
+                  ? " · Automatically generated"
+                  : ""}
+                {detail.orderedMedia.post.transcript.translated === true
+                  ? " · Translated"
+                  : ""}
+              </p>
+            )}
           {cloudSpeechSegments ? (
             cloudSpeechSegments.length ? (
               cloudSpeechSegments.map((segment: any) => (

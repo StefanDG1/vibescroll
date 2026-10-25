@@ -291,6 +291,10 @@ export const productTables = {
     speechProvenance: v.optional(v.any()),
     linkPreview: v.optional(
       v.object({
+        title: v.optional(v.string()),
+        authorName: v.optional(v.string()),
+        durationSeconds: v.optional(v.number()),
+        origin: v.optional(v.union(v.literal("page"), v.literal("extractor"))),
         state: v.union(
           v.literal("queued"),
           v.literal("loading"),

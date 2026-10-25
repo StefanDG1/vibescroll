@@ -186,6 +186,30 @@ export const tools = httpAction(async (ctx, request) => {
         : undefined;
     let value: unknown;
     switch (input.operation) {
+      case "work_cloud_repair_claim":
+        value = await ctx.runMutation(internal.workCloudEvidenceRepair.claim, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "work_cloud_repair_input":
+        value = await ctx.runQuery(internal.workCloudEvidenceRepair.input, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "work_cloud_repair_complete":
+        value = await ctx.runMutation(
+          internal.workCloudEvidenceRepair.complete,
+          { ...input.args, sourceId: input.args.sourceId as Id<"sources"> },
+        );
+        break;
+      case "work_cloud_repair_heartbeat":
+        value = await ctx.runMutation(
+          internal.workCloudEvidenceRepair.heartbeat,
+          { ...input.args, sourceId: input.args.sourceId as Id<"sources"> },
+        );
+        break;
       case "work_cloud_frame":
         value = await ctx.runAction(internal.workCloudFrames.upload, {
           ...input.args,
@@ -219,6 +243,14 @@ export const tools = httpAction(async (ctx, request) => {
           sourceId: args.sourceId as Id<"sources">,
           operation: "complete",
           output: parseWorkCloudResult(resultJson),
+        });
+        break;
+      }
+      case "work_cloud_metadata": {
+        value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+          operation: "metadata",
         });
         break;
       }

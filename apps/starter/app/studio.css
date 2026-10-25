@@ -645,6 +645,8 @@ textarea {
   object-fit: cover;
 }
 .home-post-card .home-post-card-body {
+  text-decoration: none;
+  font: inherit;
   display: flex;
   flex-direction: column;
   align-items: stretch;

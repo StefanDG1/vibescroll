@@ -25,12 +25,17 @@ export const begin = internalMutation({
     const org = await ctx.db.get(s.organizationId);
     if (org?.status !== "active") return null;
     await ctx.db.patch(id, {
-      linkPreview: { state: "loading", updatedAt: Date.now() },
+      linkPreview: {
+        ...s.linkPreview,
+        state: "loading",
+        updatedAt: Date.now(),
+      },
     });
     return {
       id: s._id,
       url: s.url,
       canonical: s.canonical,
+      generation: s.generation,
       organizationId: s.organizationId,
     };
   },
@@ -39,11 +44,14 @@ export const finish = internalMutation({
   args: {
     id: v.id("sources"),
     canonical: v.string(),
+    generation: v.optional(v.number()),
     key: v.optional(v.string()),
     size: v.optional(v.number()),
     etag: v.optional(v.string()),
     title: v.optional(v.string()),
     publishedAt: v.optional(v.number()),
+    authorName: v.optional(v.string()),
+    durationSeconds: v.optional(v.number()),
   },
   handler: async (ctx, a) => {
     const s = await ctx.db.get(a.id);
@@ -62,6 +70,7 @@ export const finish = internalMutation({
       s.state !== "deleted" &&
       sourceRetained(s) &&
       s.canonical === a.canonical &&
+      (a.generation === undefined || s.generation === a.generation) &&
       s.linkPreview?.state === "loading" &&
       org?.status === "active" &&
       process.env.RESTORE_LOCK !== "true";
@@ -69,6 +78,55 @@ export const finish = internalMutation({
       if (a.key) await queueDeletion(ctx, a.key);
       return false;
     }
+    const candidate = {
+      ...(a.title && !containsSecret(a.title)
+        ? { title: a.title.slice(0, 160) }
+        : {}),
+      ...(a.authorName && !containsSecret(a.authorName)
+        ? { authorName: a.authorName.slice(0, 160) }
+        : {}),
+      ...(a.durationSeconds &&
+      Number.isFinite(a.durationSeconds) &&
+      a.durationSeconds > 0 &&
+      a.durationSeconds <= 600
+        ? { durationSeconds: a.durationSeconds }
+        : {}),
+    };
+    const metadata =
+      s.linkPreview?.origin === "extractor"
+        ? {
+            ...candidate,
+            ...Object.fromEntries(
+              Object.entries({
+                title: s.linkPreview.title,
+                authorName: s.linkPreview.authorName,
+                durationSeconds: s.linkPreview.durationSeconds,
+              }).filter(([, value]) => value !== undefined),
+            ),
+            origin: "extractor" as const,
+          }
+        : { ...candidate, origin: "page" as const };
+    const hasMetadata = Boolean(
+      metadata.title || metadata.authorName || metadata.durationSeconds,
+    );
+    const textUpdate = {
+      ...(metadata.title &&
+      s.title === "Imported video link" &&
+      !["queued", "running", "recovering"].includes(
+        s.personalAnalysis?.state ?? "",
+      )
+        ? {
+            title: metadata.title,
+            searchable: [metadata.title, ...s.tags].join(" "),
+          }
+        : {}),
+      ...(a.publishedAt &&
+      Number.isSafeInteger(a.publishedAt) &&
+      a.publishedAt > 0 &&
+      a.publishedAt <= Date.now() + 86400000
+        ? { publishedAt: a.publishedAt }
+        : {}),
+    };
     if (
       !a.key ||
       !a.size ||
@@ -80,7 +138,12 @@ export const finish = internalMutation({
     ) {
       if (a.key) await queueDeletion(ctx, a.key);
       await ctx.db.patch(s._id, {
-        linkPreview: { state: "unavailable", updatedAt: Date.now() },
+        linkPreview: {
+          ...metadata,
+          state: hasMetadata ? "ready" : "unavailable",
+          updatedAt: Date.now(),
+        },
+        ...textUpdate,
       });
       return false;
     }
@@ -96,7 +159,12 @@ export const finish = internalMutation({
     ) {
       await queueDeletion(ctx, a.key);
       await ctx.db.patch(s._id, {
-        linkPreview: { state: "unavailable", updatedAt: Date.now() },
+        linkPreview: {
+          ...metadata,
+          state: hasMetadata ? "ready" : "unavailable",
+          updatedAt: Date.now(),
+        },
+        ...textUpdate,
       });
       return false;
     }
@@ -114,7 +182,12 @@ export const finish = internalMutation({
       updatedAt: Date.now(),
     });
     await ctx.db.patch(s._id, {
-      linkPreview: { state: "ready", assetId, updatedAt: Date.now() },
+      linkPreview: {
+        ...metadata,
+        state: "ready",
+        assetId,
+        updatedAt: Date.now(),
+      },
       ...(a.publishedAt &&
       Number.isSafeInteger(a.publishedAt) &&
       a.publishedAt > 0 &&

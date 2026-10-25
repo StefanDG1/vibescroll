@@ -400,7 +400,7 @@ it("keeps authenticated withdrawal usable with a closed publication gate and dis
         title: "Synthetic collection",
       },
     ],
-    geography: [],
+    geography: [{ cell: "europe" }],
   };
   const call = vi.fn(async (operation: string) =>
     operation === "publicOwn" ? own : { withdrawn: true },
@@ -432,7 +432,9 @@ it("keeps authenticated withdrawal usable with a closed publication gate and dis
       (node) => text(node) === "Prepare exact public preview",
     ),
   ).toBe(false);
-  expect(button(tree, "Share selected region").props.disabled).toBe(true);
+  expect(
+    elements(tree).some((node) => text(node) === "Share selected region"),
+  ).toBe(false);
   expect(button(tree, "Withdraw edition").props.disabled).toBe(false);
   await button(tree, "Withdraw edition").props.onClick();
   expect(call).toHaveBeenCalledWith("withdrawEdition", {
@@ -440,7 +442,10 @@ it("keeps authenticated withdrawal usable with a closed publication gate and dis
     version: 2,
   });
   tree = view();
-  await button(tree, "Stop sharing my region").props.onClick();
+  button(tree, "Load my editions and collections").props.onClick();
+  await flush();
+  tree = view();
+  await button(tree, "Remove previously shared region").props.onClick();
   expect(call).toHaveBeenCalledWith("setGeography", {
     organizationId: "org-one",
     cell: null,

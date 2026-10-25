@@ -15,6 +15,7 @@ export const upload = internalAction({
     generation: v.number(),
     taskId: v.string(),
     leaseToken: v.string(),
+    repair: v.optional(v.literal(true)),
     preparationHash: v.string(),
     frameId: v.string(),
     data: v.string(),

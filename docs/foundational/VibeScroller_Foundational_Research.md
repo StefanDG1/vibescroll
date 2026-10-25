@@ -1,5 +1,9 @@
 # VibeScroll foundational research
 
+## F076: direct posts and a smaller caption-first milestone
+
+The owner approved one-click, bookmarkable post pages, metadata-only recent additions on Home, progressive title/author/cover previews and caption reuse before local ASR. [ADR156](../adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) retires region sharing, defers Telegram/public publisher expansion and prioritizes Work Cloud over additional runtime work. Preserve existing content and publication withdrawal, project actions, permissions, recovery and cumulative EUR5. These are owner requirements and implementation candidates, not new demand, accuracy, speed or production-acceptance evidence. The actual Reel, caption-path inline run and later idle Events wake each need their own verification.
+
 ## F075: one global catalog and minimal Cloud intake
 
 [ADR154](../adr/154-global-catalog-defaults-and-cloud-intake.md) records the owner's required default: eligible neutral analyses contribute to one global paid catalog, without a region or sharing picker. Removing a personal post does not remove canonical insights. Keep privacy, rights and moderation removals, private personalization and independent canonical ownership. One-time setup replaces routine reconnect/copy/approval steps; inline Work Cloud and background wake have distinct implementation requirements. These are accepted requirements, not current automatic-sharing or customer-availability claims. Audience, prices and the six beliefs stay unchanged.

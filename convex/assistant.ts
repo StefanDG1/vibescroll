@@ -24,6 +24,7 @@ import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { assistantGrantActive } from "../packages/policy/assistant";
 import { requestCloudFromAssistant } from "./workCloudAnalysis";
+import { retainedCloudFrames } from "../packages/media/cloud-frames";
 import {
   evaluation as evaluationContract,
   assertReferences,
@@ -221,7 +222,7 @@ export const saveLink = internalMutation({
       source_id: id,
       profile_id: a.organization._id,
       status: "saved",
-      url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${id}`,
+      url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${id}`,
       analysis_started: false,
       receipt: await intakeReceipt(ctx, currentIntake, source),
       note: sourceReview
@@ -353,9 +354,20 @@ export const getJobStatus = internalQuery({
             stage: cloud.stage,
           }
         : null,
+      evidence_repair: cloud?.cloud.media?.evidenceRepair
+        ? {
+            state: cloud.cloud.media.evidenceRepair.state,
+            expires_at: cloud.cloud.media.evidenceRepair.expiresAt,
+            lease_until: cloud.cloud.media.evidenceRepair.leaseUntil,
+            returned_frames: retainedCloudFrames(source).length,
+            required_frames: Array.isArray(source.orderedMedia?.post?.frames)
+              ? source.orderedMedia.post.frames.length
+              : 0,
+          }
+        : null,
       receipt,
       evidence_changed: changed,
-      url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+      url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
       note: changed
         ? "Evidence changed. Review it in VibeScroll before retrieving ideas."
         : "Status only; no private analysis or provider logs.",
@@ -443,7 +455,7 @@ export const requestAnalysis = internalMutation({
         source_id: source._id,
         status: "approval_required",
         analysis_started: false,
-        review_url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+        review_url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
         note: "Review this typed source in VibeScroll. GitHub file selection, Reddit retrieval permission and supplied-text provenance need their source review; analysis and project work require separate current approval. This request queued no local media work, reserved no credits and started no retrieval or analysis.",
       };
     if (intake && args.mode) {
@@ -508,7 +520,7 @@ export const requestAnalysis = internalMutation({
       source_id: source._id,
       status: "approval_required",
       analysis_started: false,
-      review_url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+      review_url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
       note: "Review the current source, available provider, funding route and cap in VibeScroll. This request reserves no credits and starts no analysis.",
     };
   },
@@ -932,7 +944,7 @@ export const recordFeedback = internalMutation({
       version: version + 1,
       status: "recorded",
       benefit: "not_measured",
-      url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+      url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
       note: "Recorded your judgment. It does not change source evidence, manual quality reviews, preferences, funding or publication authority.",
     };
   },
@@ -1070,7 +1082,7 @@ export const search = internalQuery({
         ctx.db.normalizeId("sources", ref.sourceId),
       );
       if (!source) continue;
-      const url = `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`;
+      const url = `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`;
       const insights =
         source.state === "ready"
           ? (source.analysis?.insights ?? []).slice(0, 128)
@@ -1200,7 +1212,7 @@ export const fetch = internalQuery({
             }
           : {}),
       }),
-      url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+      url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
       profile_id: a.organization._id,
       grant_version: a.grant.version,
       more_ideas: index === undefined && all.length > 20,

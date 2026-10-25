@@ -159,7 +159,7 @@ it("creates one exact private Cloud job through MCP without repository or per-po
     leaseToken: claimed.leaseToken!,
   });
   expect(input).toMatchObject({
-    schemaVersion: "work-cloud-media-v2",
+    schemaVersion: "work-cloud-media-v3",
     maxApiUsd: 0,
     requestedModel: "synthetic-model",
   });

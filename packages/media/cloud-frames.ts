@@ -1,3 +1,4 @@
+import { isCloudObservedMedia } from "../social/contracts";
 // Pixels are stored separately from the immutable observed-media preparation.
 export type CloudFrame = {
   frameId: string;
@@ -26,8 +27,7 @@ export function retainedCloudFrames(
     saved.generation !== source.generation ||
     saved.preparationHash !== media.preparationHash ||
     !media.preparationHash ||
-    source.orderedMedia?.post?.schemaVersion !==
-      "work-cloud-observed-media-v1" ||
+    !isCloudObservedMedia(source.orderedMedia?.post) ||
     !Array.isArray(source.orderedMedia.post.frames) ||
     !Array.isArray(saved.frames) ||
     saved.frames.length > 48
@@ -67,9 +67,7 @@ export function cloudFrameAssetCurrent(
   );
 }
 export function sourceEvidenceFrames(source: any, now = Date.now()) {
-  if (
-    source.orderedMedia?.post?.schemaVersion === "work-cloud-observed-media-v1"
-  )
+  if (isCloudObservedMedia(source.orderedMedia?.post))
     return retainedCloudFrames(source, now).map((frame) => ({
       kind: "frame",
       id: frame.assetId,
@@ -87,8 +85,7 @@ export function cloudCitationForDisplay(
   now = Date.now(),
 ) {
   if (
-    source.orderedMedia?.post?.schemaVersion !==
-      "work-cloud-observed-media-v1" ||
+    !isCloudObservedMedia(source.orderedMedia?.post) ||
     ref.kind !== "video_observation"
   )
     return ref;

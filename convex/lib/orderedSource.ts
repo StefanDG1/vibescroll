@@ -1,3 +1,4 @@
+import { isCloudObservedMedia } from "../../packages/social/contracts";
 import type { Doc } from "../_generated/dataModel";
 import { creatorConfiguration } from "./creatorPolicy";
 import { requireSocialRights } from "../../packages/social/contracts";
@@ -25,9 +26,7 @@ export async function currentOrderedSource(
     sourceId: source._id,
     generation: source.generation,
   });
-  if (
-    validated.prepared.post.schemaVersion === "work-cloud-observed-media-v1"
-  ) {
+  if (isCloudObservedMedia(validated.prepared.post)) {
     const post = validated.prepared.post,
       job = source.personalAnalysis;
     if (
@@ -43,7 +42,7 @@ export async function currentOrderedSource(
       job?.executor !== "work_cloud" ||
       job.state !== "completed" ||
       job.generation !== source.generation ||
-      job.cloud.schemaVersion !== "work-cloud-media-v2" ||
+      !job.cloud.media ||
       !job.cloud.media ||
       post.canonical !== job.cloud.media.canonicalUrl ||
       post.taskId !== job.cloud.taskId ||

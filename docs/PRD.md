@@ -1,5 +1,9 @@
 # Product requirements
 
+## Direct posts and the first Cloud milestone, October25
+
+[ADR156](adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) supersedes expand-first cards and the earlier requirement to finish every capture/runtime option before this milestone. Home lists recently added metadata-only cards with direct authenticated post pages, progressive native previews and lazy images. Full analysis loads on opening a post. Retire regional sharing, defer Telegram/public publisher expansion and additional runtime work, and prioritize a verified caption-first Instagram/TikTok Cloud result. Preserve existing content, recovery, private project work, permissions and cumulative EUR5. Automatic wake and global reuse still require their separate acceptance.
+
 ## Global catalog and Cloud setup direction, October25
 
 [ADR154](adr/154-global-catalog-defaults-and-cloud-intake.md) requires one global paid catalog, no region or opt-out in normal neutral analysis, and personal-post removal that preserves independent canonical insights. Actual privacy, rights and moderation erasure remain separate. Existing source/account-coupled artifacts need a versioned ownership/lifecycle change; this is not accomplished by skipping one delete call. Keep private context out and preserve the existing stores, approved public examples and advanced editions.

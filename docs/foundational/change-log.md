@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## October 25: F076 direct posts and reduced first-milestone scope
+
+Owner direction supersedes Home expansion before navigation and prioritizes caption-first link-to-Cloud acceptance. All four briefs reference ADR156 and preserve existing content, withdrawal, privacy and fiscal controls. Region sharing is retired; Telegram/public publisher expansion and additional runtime work are deferred. No production result, performance or customer claim is added.
+
 ## October 25: published F070 controls, acceptance pending
 
 Root reconciled F070 across the four briefs and index with the [actual compatible production receipt](../operations/evidence/launch-20261025-cloud-mcp-production.json). Exact MCP request controls are live; actual Cloud video, automatic dispatch, public commercial use and speed are not verified. No new audience, price, allowance, campaign or customer claim follows. The same USD3 cap and all provider/privacy gates remain.

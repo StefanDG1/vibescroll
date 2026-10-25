@@ -1,3 +1,4 @@
+import { isCloudObservedMedia } from "../../packages/social/contracts";
 import type { QueryCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
 import {
@@ -46,7 +47,7 @@ function imageCurrent(
     asset.sourceId === source._id &&
     asset.organizationId === source.organizationId &&
     asset.sourceGeneration === source.generation &&
-    (source.orderedMedia?.post?.schemaVersion === "work-cloud-observed-media-v1"
+    (isCloudObservedMedia(source.orderedMedia?.post)
       ? cloudFrameAssetCurrent(source, asset, now)
       : asset.kind === "evidence") &&
     asset.type === "image/jpeg" &&
@@ -110,7 +111,7 @@ export async function buildProjectSourceContent(
   if (source.orderedMedia && !source.publicImportId) {
     const ordered = await currentOrderedSource(source);
     transcript =
-      (ordered.prepared.post.schemaVersion === "work-cloud-observed-media-v1"
+      (isCloudObservedMedia(ordered.prepared.post)
         ? ordered.prepared.post.segments
         : ordered.prepared.evidence.filter(
             (item) => item.basis === "transcript",
@@ -118,7 +119,7 @@ export async function buildProjectSourceContent(
       )
         .map((item) => item.text)
         .join("\n") || null;
-    if (ordered.prepared.post.schemaVersion !== "work-cloud-observed-media-v1")
+    if (!isCloudObservedMedia(ordered.prepared.post))
       warnings.push(
         "Ordered-media transcript coverage follows the retained observations; missing speech has not been recreated.",
       );
@@ -154,8 +155,7 @@ export async function buildProjectSourceContent(
     if (
       asset.organizationId !== source.organizationId ||
       asset.sourceGeneration !== source.generation ||
-      (source.orderedMedia?.post?.schemaVersion ===
-      "work-cloud-observed-media-v1"
+      (isCloudObservedMedia(source.orderedMedia?.post)
         ? !cloudFrameAssetCurrent(source, asset, now)
         : asset.kind !== "evidence") ||
       asset.type !== "image/jpeg" ||

@@ -32,6 +32,8 @@ import {
   validateWorkCloudTextOutput,
   validateWorkCloudMediaOutput,
   workCloudMediaPolicy,
+  workCloudMediaPolicyV2,
+  workCloudMetadata,
   workCloudMediaPreparation,
   workCloudMcpRequestOptions,
 } from "../packages/contracts/work-cloud-text";
@@ -47,6 +49,7 @@ import {
 import { sourceRetained } from "./lib/sourceAuthority";
 import { registerEvidenceAsset, queueDeletion } from "./assets";
 import { retainedCloudFrames } from "../packages/media/cloud-frames";
+import { evidenceRepairContext } from "./workCloudEvidenceRepair";
 import { commitPersonalOrdered } from "./lib/personalOrderedCommit";
 import { currentOrderedSource } from "./lib/orderedSource";
 import { syncCategories } from "./categories";
@@ -72,6 +75,7 @@ const sourceArgs = {
 const executionArgs = { ...sourceArgs, leaseToken: v.string() };
 const frameArgs = {
   ...executionArgs,
+  repair: v.optional(v.literal(true)),
   frameId: v.string(),
   preparationHash: v.string(),
 };
@@ -84,6 +88,7 @@ const frameValue = v.object({
   height: v.number(),
 });
 type ExecutionArgs = {
+  repair?: true;
   sourceId: Id<"sources">;
   generation: number;
   taskId: string;
@@ -157,12 +162,14 @@ async function sourceInput(
   bound: WorkCloudJob | null = null,
   mediaApproval?: { retainUntil: number },
 ) {
-  const media =
+  const mediaPolicy =
     bound?.cloud.schemaVersion === "work-cloud-media-v2"
-      ? bound.cloud.media
-      : mediaApproval;
+      ? workCloudMediaPolicyV2
+      : workCloudMediaPolicy;
+  const media = bound?.cloud.media ? bound.cloud.media : mediaApproval;
   ensure(
-    (bound?.cloud.schemaVersion === "work-cloud-media-v2") ===
+    (bound?.cloud.schemaVersion === "work-cloud-media-v2" ||
+      bound?.cloud.schemaVersion === "work-cloud-media-v3") ===
       !!bound?.cloud.media,
     "APPROVAL_STALE",
     "The Cloud protocol binding changed.",
@@ -208,10 +215,8 @@ async function sourceInput(
       "APPROVAL_STALE",
       "The original video identity or preparation changed.",
     );
-    const policyHash = await digest(canonicalJson(workCloudMediaPolicy));
-    const toolchainHash = await digest(
-      canonicalJson(workCloudMediaPolicy.toolchain),
-    );
+    const policyHash = await digest(canonicalJson(mediaPolicy));
+    const toolchainHash = await digest(canonicalJson(mediaPolicy.toolchain));
     ensure(
       !bound ||
         (bound.cloud.media?.canonicalUrl === acquisition.url &&
@@ -220,7 +225,7 @@ async function sourceInput(
       "The reviewed media toolchain changed.",
     );
     const input = {
-      schemaVersion: "work-cloud-media-v2",
+      schemaVersion: mediaPolicy.schemaVersion,
       sourceId: source._id,
       generation,
       processingRunId: `${source._id}:${generation}`,
@@ -232,7 +237,7 @@ async function sourceInput(
       retainUntil: media.retainUntil,
       expectedCoverage: "ordered_media",
       outputSchema: canonicalJson(z.toJSONSchema(socialAnalysisOutput)),
-      policy: workCloudMediaPolicy,
+      policy: mediaPolicy,
       policyHash,
       toolchainHash,
       text: "",
@@ -322,6 +327,7 @@ async function sourceInput(
   };
 }
 export type UnclaimedCloudHandoff = {
+  protocol: WorkCloudJob["cloud"]["schemaVersion"];
   sourceId: Id<"sources">;
   organizationId: Id<"organizations">;
   generation: number;
@@ -411,6 +417,7 @@ export async function unclaimedCloudHandoff(
       revision: source.updatedAt,
       expiresAt: job.expiresAt,
       inputHash: job.cloud.inputHash,
+      protocol: job.cloud.schemaVersion,
       model: job.model,
       effort: job.effort,
       media,
@@ -703,7 +710,7 @@ async function approveExactCloudSource(
       maxApiUsd: 0,
       ...(input.input.inputKind === "media"
         ? {
-            schemaVersion: "work-cloud-media-v2" as const,
+            schemaVersion: input.input.schemaVersion,
             media: {
               canonicalUrl: input.input.canonicalUrl,
               toolchainHash: input.input.toolchainHash,
@@ -857,7 +864,12 @@ export async function requestCloudFromAssistant(
   if (row) await ctx.db.patch(row._id, counter);
   else await ctx.db.insert("limits", { key, ...counter });
   return cloudRequestReceipt(
-    { ...approved, model: options.model, effort: options.effort },
+    {
+      ...approved,
+      protocol: workCloudMediaPolicy.schemaVersion,
+      model: options.model,
+      effort: options.effort,
+    },
     false,
   );
 }
@@ -869,6 +881,7 @@ function cloudRequestReceipt(
     inputHash: string;
     model: string;
     effort: string;
+    protocol: string;
   },
   reused: boolean,
 ) {
@@ -879,7 +892,7 @@ function cloudRequestReceipt(
     analysis_started: false,
     reused_request: reused,
     cloud: {
-      protocol: "work-cloud-media-v2",
+      protocol: value.protocol,
       input_hash: value.inputHash,
       model: value.model,
       effort: value.effort,
@@ -910,11 +923,7 @@ async function current(
     "analysis:execute",
   );
   const job = source.personalAnalysis;
-  enabled(
-    a.actor.subject,
-    job?.executor === "work_cloud" &&
-      job.cloud.schemaVersion === "work-cloud-media-v2",
-  );
+  enabled(a.actor.subject, job?.executor === "work_cloud" && !!job.cloud.media);
   ensure(
     (await workCloudSourceEligible(ctx, a.organization, a.actor._id)) &&
       a.membership.role === "owner" &&
@@ -966,7 +975,11 @@ async function current(
   );
   if (job.cloud.media?.preparationHash) {
     const prepared = workCloudMediaPreparation.parse({
-      schemaVersion: "work-cloud-media-preparation-v2",
+      schemaVersion:
+        source.orderedMedia?.post?.schemaVersion ===
+        "work-cloud-observed-media-v2"
+          ? "work-cloud-media-preparation-v3"
+          : "work-cloud-media-preparation-v2",
       post: source.orderedMedia?.post,
       evidence: source.orderedMedia?.evidence,
     });
@@ -1031,7 +1044,9 @@ async function frameContext(
   ctx: QueryCtx,
   a: ExecutionArgs & { frameId: string; preparationHash: string },
 ) {
-  const c = await leased(ctx, a);
+  const c = a.repair
+    ? await evidenceRepairContext(ctx, a)
+    : await leased(ctx, a);
   const media = c.job.cloud.media;
   ensure(
     media &&
@@ -1042,7 +1057,11 @@ async function frameContext(
     "The retained Cloud preparation changed.",
   );
   const prepared = workCloudMediaPreparation.parse({
-    schemaVersion: "work-cloud-media-preparation-v2",
+    schemaVersion:
+      c.source.orderedMedia?.post?.schemaVersion ===
+      "work-cloud-observed-media-v2"
+        ? "work-cloud-media-preparation-v3"
+        : "work-cloud-media-preparation-v2",
     post: c.source.orderedMedia?.post,
     evidence: c.source.orderedMedia?.evidence,
   });
@@ -1158,7 +1177,7 @@ export const input = internalQuery({
       maxApiUsd: 0,
       evidenceTrust:
         "User-authorized retained text; host execution and model are not provider-attested.",
-      mediaSupported: c.job.cloud.schemaVersion === "work-cloud-media-v2",
+      mediaSupported: !!c.job.cloud.media,
       ...(c.job.cloud.media
         ? {
             preparationSchema: canonicalJson(
@@ -1188,10 +1207,12 @@ export const dispatch = internalMutation({
       v.literal("complete"),
       v.literal("fail"),
       v.literal("prepare"),
+      v.literal("metadata"),
     ),
     leaseToken: v.optional(v.string()),
     output: v.optional(v.any()),
     preparation: v.optional(v.any()),
+    metadata: v.optional(v.any()),
     usage: v.optional(
       v.object({ inputTokens: v.number(), outputTokens: v.number() }),
     ),
@@ -1199,6 +1220,11 @@ export const dispatch = internalMutation({
     reportedEffort: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
+    ensure(
+      a.operation === "metadata" || a.metadata === undefined,
+      "INVALID_INPUT",
+      "Metadata requires the metadata operation.",
+    );
     ensure(
       /^[A-Za-z0-9._:-]{1,160}$/.test(a.taskId),
       "INVALID_INPUT",
@@ -1317,6 +1343,37 @@ export const dispatch = internalMutation({
       });
       return { accepted: false, state: "unknown", hostStopped: false };
     }
+    if (a.operation === "metadata") {
+      ensure(
+        c.job.cloud.schemaVersion === "work-cloud-media-v3",
+        "APPROVAL_STALE",
+        "Native metadata requires a reviewed media-v3 lease.",
+      );
+      const metadata = workCloudMetadata.parse(a.metadata);
+      const { publishedAt, ...previewMetadata } = metadata;
+      ensure(
+        !containsSecret(canonicalJson(metadata)) &&
+          (!metadata.publishedAt ||
+            metadata.publishedAt <= Date.now() + 86400000),
+        "INVALID_INPUT",
+        "Use native metadata without credentials or future dates.",
+      );
+      await ctx.db.patch(c.source._id, {
+        linkPreview: {
+          ...c.source.linkPreview,
+          ...previewMetadata,
+          origin: "extractor",
+          state: ["queued", "loading"].includes(
+            c.source.linkPreview?.state ?? "",
+          )
+            ? c.source.linkPreview!.state
+            : "ready",
+          updatedAt: Date.now(),
+        },
+      });
+      if (publishedAt) await ctx.db.patch(c.source._id, { publishedAt });
+      return { accepted: true, metadataUpdated: true };
+    }
     if (a.operation === "heartbeat") {
       const leaseUntil = Math.min(
         Date.now() +
@@ -1351,6 +1408,12 @@ export const dispatch = internalMutation({
         "Preparation requires an approved media protocol.",
       );
       const checked = workCloudMediaPreparation.parse(a.preparation);
+      ensure(
+        c.job.cloud.schemaVersion === "work-cloud-media-v3" ||
+          checked.schemaVersion === "work-cloud-media-preparation-v2",
+        "APPROVAL_STALE",
+        "Existing media-v2 leases cannot acquire caption-aware authority.",
+      );
       ensure(
         new TextEncoder().encode(canonicalJson(checked)).byteLength <= 120000 &&
           !containsSecret(canonicalJson(checked)),
@@ -1464,10 +1527,24 @@ export const dispatch = internalMutation({
       );
       const conservative = validateWorkCloudMediaOutput(output);
       const prepared = workCloudMediaPreparation.parse({
-        schemaVersion: "work-cloud-media-preparation-v2",
+        schemaVersion:
+          c.source.orderedMedia.post?.schemaVersion ===
+          "work-cloud-observed-media-v2"
+            ? "work-cloud-media-preparation-v3"
+            : "work-cloud-media-preparation-v2",
         post: c.source.orderedMedia.post,
         evidence: c.source.orderedMedia.evidence,
       });
+      if (prepared.post.schemaVersion === "work-cloud-observed-media-v2") {
+        const retained = retainedCloudFrames(c.source);
+        ensure(
+          prepared.post.frames.every((frame) =>
+            retained.some((stored) => stored.frameId === frame.id),
+          ),
+          "INVALID_EVIDENCE",
+          "Return the prepared image bytes before completing caption-aware analysis.",
+        );
+      }
       let downgraded = false;
       for (const insight of conservative.insights)
         for (const ref of insight.evidence)
@@ -1506,7 +1583,10 @@ export const dispatch = internalMutation({
         validated,
         a.usage,
         Math.max(Date.now(), c.source.updatedAt + 1),
-        workCloudMediaPolicy.pipelineVersion,
+        (c.job.cloud.schemaVersion === "work-cloud-media-v2"
+          ? workCloudMediaPolicyV2
+          : workCloudMediaPolicy
+        ).pipelineVersion,
       );
       await currentOrderedSource((await ctx.db.get(c.source._id))!);
     } else

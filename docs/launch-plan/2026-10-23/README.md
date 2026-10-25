@@ -1,5 +1,11 @@
 # Complete the launch and own-subscription workflows
 
+## Direct posts and the first link-to-Cloud milestone, October25
+
+Follow the [current link-to-insights stages](LINK-TO-INSIGHTS.md) for the accepted simplification, first-class post pages, caption-first package and bounded first milestone.
+
+[ADR156](../../adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) supersedes the expand-first Home interaction below. Show recent additions as metadata-only cards that open an existing authenticated post page in one click. Load full analysis on that page. Add progressive native previews and caption-first extraction; retire region sharing and defer Telegram/public publisher expansion and additional runtime work. Preserve existing data/routes and advanced recovery. First verify the real Reel and a caption-path inline Cloud result, then independent global-catalog ownership, actual Events wake and broader platform cohorts. These scope changes are authorized; implementation and production acceptance remain separate. All budget/provider/privacy/release gates remain.
+
 ## Cloud evidence continuation, October25
 
 [ADR155](../../adr/155-private-cloud-frame-return.md) records a local frame-return candidate and an independent replay of the retained production preparation. The serving renderer displays older input; the corrected renderer displays all18 Cloud speech segments. Actual frame bytes can now enter the existing EU asset path during an active lease, with matching preparation/rights/retention checks, screenshots, thumbnails and project images. Final offline checks and320px/desktop synthetic browser checks pass. [The receipt](../../operations/evidence/launch-20261025-cloud-frame-return.json) distinguishes this from production repair. The completed Reel's expired lease/raw-file cleanup still requires a bounded result-preserving repair operation and audio comparison. Nothing was deployed or spent. Preserve the same budget, reserved post, dirty worker and all original acceptance below.

@@ -1,4 +1,6 @@
 import type { Doc } from "../_generated/dataModel";
+import { postDisplayTitle } from "../../packages/sources/display";
+import { acquisitionPolicy } from "../../packages/media/acquisition-runtime";
 import { retainedCloudFrames } from "../../packages/media/cloud-frames";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import {
@@ -56,6 +58,13 @@ export async function projectPostSource(
     kind: source.kind,
     sourceType: source.sourceType,
     title: source.title,
+    nativeMetadata: source.linkPreview
+      ? {
+          title: source.linkPreview.title,
+          authorName: source.linkPreview.authorName,
+          durationSeconds: source.linkPreview.durationSeconds,
+        }
+      : undefined,
     text: source.text,
     originalText: source.originalText,
     summary: source.summary,
@@ -191,14 +200,26 @@ export async function projectPostSource(
         generation: source.generation,
       }
     : null;
+  let platform: string | null = null;
+  try {
+    if (source.url) platform = acquisitionPolicy(source.url).platform;
+  } catch {
+    /* Non-media sources keep their kind. */
+  }
   return postSummaryV1.parse({
     version: "post-summary-v1",
     sourceId: source._id,
     generation: source.generation,
     projection: "complete",
     contentRevision,
-    title: source.title.slice(0, 200),
+    title: postDisplayTitle(source).slice(0, 200),
+    authorName: source.linkPreview?.authorName?.slice(0, 160) ?? null,
+    durationSeconds:
+      source.linkPreview?.durationSeconds ??
+      source.acquisition?.durationSeconds ??
+      null,
     sourceKind: source.kind.slice(0, 40),
+    platform,
     coverage: source.coverage.slice(0, 64),
     capturedAt: date(source.createdAt),
     savedAt: date(source.originalSavedAt ?? source.createdAt),

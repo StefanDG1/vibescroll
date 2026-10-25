@@ -18,7 +18,21 @@ export const retrieve = internalAction({
         await ctx.runMutation(internal.sourcePreviewState.finish, {
           id,
           canonical: s.canonical,
+          generation: s.generation,
         });
+        return;
+      }
+      const fields = {
+        id,
+        canonical: s.canonical,
+        generation: s.generation,
+        title: preview.title,
+        authorName: preview.authorName,
+        durationSeconds: preview.durationSeconds,
+        publishedAt: preview.publishedAt,
+      };
+      if (!("bytes" in preview) || !preview.bytes) {
+        await ctx.runMutation(internal.sourcePreviewState.finish, fields);
         return;
       }
       key = `${s.organizationId}/thumbnail-${randomUUID()}`;
@@ -38,13 +52,10 @@ export const retrieve = internalAction({
       const accepted = await ctx.runMutation(
         internal.sourcePreviewState.finish,
         {
-          id,
-          canonical: s.canonical,
+          ...fields,
           key,
           size: preview.bytes.length,
           etag: metadata.etag || "",
-          title: preview.title,
-          publishedAt: preview.publishedAt,
         },
       );
       if (!accepted)
@@ -55,6 +66,7 @@ export const retrieve = internalAction({
       await ctx.runMutation(internal.sourcePreviewState.finish, {
         id,
         canonical: s.canonical,
+        generation: s.generation,
       });
     }
   },

@@ -1,9 +1,10 @@
 # Remaining acceptance and completion ledger
 
+The current first milestone follows [Link to insights](LINK-TO-INSIGHTS.md) and [ADR156](../../adr/156-direct-post-pages-and-caption-first-cloud-milestone.md). Direct post routes, metadata-only recent Home cards, caption-first extraction, v2 compatibility, actual JPEG return and a separate immutable-result repair permission are candidate implementation. A real repaired Reel, source-audio comparison and a fresh caption-path inline Cloud result are still required. Local fixtures cannot close this milestone. Automatic Events wake, independent catalog ownership, migration and provider/privacy gates remain separate.
+
 ## Frame-return candidate, October25
 
 [ADR155](../../adr/155-private-cloud-frame-return.md) has local implementation/test evidence for bounded matching JPEG upload, current-authority attachment, screenshot/thumbnail/project use and clickable Cloud citations. Full checks pass2039 Vitest/19 Node/33 Python with3 hosted skips and both builds; actual Console synthetic images decode at320px/1280px. The protected production-export replay reproduces the serving transcript mismatch and verifies all18 segments in the corrected renderer. This is not source/audio accuracy or a fresh production read. The completed post is unchanged and its expired lease is not revived. Result-preserving repair, combined fiscal clearance, publication, mobile production review and actual Events subscription/wake remain open. No C1/C3 quality or automatic-processing acceptance is closed.
-
 
 ## Current quality and handover checkpoint, October 25
 
@@ -131,19 +132,19 @@ October 24 complete-scope integration: [ADR 123](../../adr/123-scrollshow-handof
 
 ## Current Cloud-first acceptance
 
-| Package | Current evidence | Acceptance still open |
-| --- | --- | --- |
-| C0 runtime | A prepared no-GitHub Work Cloud task acquired a real Reel. | Repeatable supported host, current network/resource controls, recovery and simple user setup. |
-| C1 media quality | Real46.9s acquisition,18 ASR segments and8 sampled frames; displayed transcript bug reproduced. | Correct transcript and retained images/thumbnail in production, audio/insight review, all required source/media formats. |
-| C2 events |675dea2 transport/configuration published; fixtures pass. | Actual subscription, callback, host wake, renewal/revocation and bounded failure costs. Uncommitted native-worker work needs integration. |
+| Package              | Current evidence                                                                                              | Acceptance still open                                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| C0 runtime           | A prepared no-GitHub Work Cloud task acquired a real Reel.                                                    | Repeatable supported host, current network/resource controls, recovery and simple user setup.                                              |
+| C1 media quality     | Real46.9s acquisition,18 ASR segments and8 sampled frames; displayed transcript bug reproduced.               | Correct transcript and retained images/thumbnail in production, audio/insight review, all required source/media formats.                   |
+| C2 events            | 675dea2 transport/configuration published; fixtures pass.                                                     | Actual subscription, callback, host wake, renewal/revocation and bounded failure costs. Uncommitted native-worker work needs integration.  |
 | C3 result and intake | Exact private request/claim/preparation/completion is live;5 insights/29 citations returned through recovery. | Ordinary fresh run, standing link-only intake, automatic rendering and neutral contribution. PR182 display fix is merged but not deployed. |
-| C4 catalog | Existing artifact/import lifecycle and independent canonical ownership candidate. | Neutral own-subscription provenance, global paid/Pro access, reuse/lapse/rights/removal/restore and real lifecycle acceptance. |
-| C5 creators | Watch/subscription/digest foundations and source progress projections. | Permitted daily acquisition, recurring authority, contributor selection/failover and full acquisition-to-catalog delivery. |
-| C6 private advanced | Whole-post Apply/context toggle, private tasks and proposal/plan foundations merged. | Full-main publication, real source-plus-repository result, complete private prompt/skill/media and coding acceptance. |
-| C7 setup and Help | Existing setup/progress, optional GitHub and experimental Help are extended. | Supported actual Cloud readiness, minimal one-time setup, complete authorized onboarding and independent mobile acceptance. |
-| C8 discovery | Existing catalog search, categories, map/list and coarse globe foundations. | Production current-data/entitlement/privacy lifecycle and truthful trend/usefulness evidence. |
-| C9 website and media | Partial ScrollShow, original media, examples, motion/static Help and repository presentation merged. | Full M0-M7 integration, device/comprehension checks and truthful production claims. Lifetime purchase remains later. |
-| C10 release | Compatible675dea2 serving; exact-commit CI and narrow health checks recorded. | Full-main migration bound, remaining deployment, real payment/access and independent integrated acceptance. |
+| C4 catalog           | Existing artifact/import lifecycle and independent canonical ownership candidate.                             | Neutral own-subscription provenance, global paid/Pro access, reuse/lapse/rights/removal/restore and real lifecycle acceptance.             |
+| C5 creators          | Watch/subscription/digest foundations and source progress projections.                                        | Permitted daily acquisition, recurring authority, contributor selection/failover and full acquisition-to-catalog delivery.                 |
+| C6 private advanced  | Whole-post Apply/context toggle, private tasks and proposal/plan foundations merged.                          | Full-main publication, real source-plus-repository result, complete private prompt/skill/media and coding acceptance.                      |
+| C7 setup and Help    | Existing setup/progress, optional GitHub and experimental Help are extended.                                  | Supported actual Cloud readiness, minimal one-time setup, complete authorized onboarding and independent mobile acceptance.                |
+| C8 discovery         | Existing catalog search, categories, map/list and coarse globe foundations.                                   | Production current-data/entitlement/privacy lifecycle and truthful trend/usefulness evidence.                                              |
+| C9 website and media | Partial ScrollShow, original media, examples, motion/static Help and repository presentation merged.          | Full M0-M7 integration, device/comprehension checks and truthful production claims. Lifetime purchase remains later.                       |
+| C10 release          | Compatible675dea2 serving; exact-commit CI and narrow health checks recorded.                                 | Full-main migration bound, remaining deployment, real payment/access and independent integrated acceptance.                                |
 
 The [handover](HANDOVER-2026-10-25.md) records commits, tests, preserved dirty work, constraints and dependencies. The earlier package table below is retained as history; its old counts, absent-implementation labels and pending results are not current evidence.
 

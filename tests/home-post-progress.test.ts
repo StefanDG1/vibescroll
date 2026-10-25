@@ -17,10 +17,30 @@ vi.mock("../apps/starter/lib/backend", async () => ({
   backend: session.backend,
   api: (await import("../convex/_generated/api")).api,
 }));
-import { workspacePostProgress } from "../apps/starter/lib/workspace-data";
+import {
+  workspacePostProgress,
+  workspaceData,
+} from "../apps/starter/lib/workspace-data";
 import { GET } from "../apps/starter/app/api/workspace/[org]/route";
 
 afterEach(() => vi.resetAllMocks());
+it("never falls back to heavy Library reads when Home projections are unavailable", async () => {
+  session.backend.mockResolvedValue({ query: session.query });
+  session.query.mockImplementation(async (ref) => {
+    const name = getFunctionName(ref);
+    if (name === "dashboard:home") return { ready: false };
+    if (name === "organizations:details")
+      return { name: "My team", private: true, role: "owner" };
+    throw Error(`UNEXPECTED_HEAVY_QUERY:${name}`);
+  });
+  const result = await workspaceData({ org: "organization", view: "home" });
+  expect(result).toMatchObject({
+    homeProjectionPending: true,
+    sources: [],
+    usage: null,
+  });
+  expect(session.query).toHaveBeenCalledTimes(2);
+});
 const hash = (character: string) => character.repeat(64);
 function post(id = "post-1"): PostSummaryV1 {
   return {

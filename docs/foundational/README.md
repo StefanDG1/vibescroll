@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## F076: direct posts and a smaller caption-first milestone
+
+The owner approved one-click, bookmarkable post pages, metadata-only recent additions on Home, progressive title/author/cover previews and caption reuse before local ASR. [ADR156](../adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) retires region sharing, defers Telegram/public publisher expansion and prioritizes Work Cloud over additional runtime work. Preserve existing content and publication withdrawal, project actions, permissions, recovery and cumulative EUR5. These are owner requirements and implementation candidates, not new demand, accuracy, speed or production-acceptance evidence. The actual Reel, caption-path inline run and later idle Events wake each need their own verification.
+
 ## F070: exact private Cloud requests through MCP, October 25
 
 [ADR 150](../adr/150-explicit-mcp-cloud-analysis-requests.md) adds a reviewed connection opt-in for exact private video requests through MCP, without another app approval for each post. Old grants gain no authority. Reuse the existing job/lease, fixed media limits, zero API maximum and explicit requested settings; GitHub and a paired computer are unnecessary for this handoff. The host still needs supported tools and restricted Internet access.

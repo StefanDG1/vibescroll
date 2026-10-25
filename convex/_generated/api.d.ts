@@ -144,6 +144,7 @@ import type * as subscriptionTrials from "../subscriptionTrials.js";
 import type * as toolMaintenance from "../toolMaintenance.js";
 import type * as usageMaintenance from "../usageMaintenance.js";
 import type * as workCloudAnalysis from "../workCloudAnalysis.js";
+import type * as workCloudEvidenceRepair from "../workCloudEvidenceRepair.js";
 import type * as workCloudFrames from "../workCloudFrames.js";
 import type * as workflows from "../workflows.js";
 
@@ -163,7 +164,7 @@ declare const fullApi: ApiFromModules<{
   assistantEventsHttp: typeof assistantEventsHttp;
   assistantGrants: typeof assistantGrants;
   assistantHttp: typeof assistantHttp;
-  "assistantIntakeUi": typeof assistantIntakeUi;
+  assistantIntakeUi: typeof assistantIntakeUi;
   assistantLocal: typeof assistantLocal;
   assistantLocalActions: typeof assistantLocalActions;
   assistantLocalHttp: typeof assistantLocalHttp;
@@ -290,6 +291,7 @@ declare const fullApi: ApiFromModules<{
   toolMaintenance: typeof toolMaintenance;
   usageMaintenance: typeof usageMaintenance;
   workCloudAnalysis: typeof workCloudAnalysis;
+  workCloudEvidenceRepair: typeof workCloudEvidenceRepair;
   workCloudFrames: typeof workCloudFrames;
   workflows: typeof workflows;
 }>;

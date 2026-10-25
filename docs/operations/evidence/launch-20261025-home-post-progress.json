@@ -1,0 +1,78 @@
+{
+  "version": "launch-home-post-progress-evidence-v1",
+  "codeCommit": "02f3626c7f83be3074efd4ca08a8a84071d8285e",
+  "branch": "codex/launch-20261022-post-summary-progress-20261025",
+  "environment": "offline synthetic",
+  "checkedAtUtc": "2026-10-25T17:27:06.2969106+00:00",
+  "combinedCheck": {
+    "hostedSkipped": 3,
+    "zeroWarningLint": true,
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "bothProductionBuilds": true,
+    "allTypes": true,
+    "timing": "before the two final reviewed refresh fixes",
+    "exitCode": 0
+  },
+  "finalFocused": {
+    "passed": 51,
+    "command": "node scripts/run-offline.mjs pnpm exec vitest run tests/home-post-progress.test.ts tests/workspace-slices.test.ts tests/dashboard-projection.test.ts tests/polling.test.ts --maxWorkers=2",
+    "failed": 0
+  },
+  "finalStarterBuild": {
+    "exitCode": 0,
+    "includesFinalRefreshFixes": true,
+    "command": "node scripts/run-offline.mjs pnpm --filter @companynerve/starter build"
+  },
+  "finalLint": {
+    "warnings": 0,
+    "exitCode": 0,
+    "command": "node scripts/run-offline.mjs pnpm lint"
+  },
+  "native": {
+    "mobileScreenshot": "launch-20261025-home-post-mobile.png",
+    "localFixtureStopped": true,
+    "checks": 8,
+    "productionCalls": 0,
+    "desktopScreenshot": "launch-20261025-home-post-desktop.png",
+    "taskTabsClosed": true,
+    "passed": true,
+    "externalHTTPRequests": 0,
+    "synthetic": true,
+    "mobileWidthCSSPixels": 320,
+    "actualStudioHomeAndCard": true
+  },
+  "review": {
+    "remainingP1P2": 0,
+    "fixed": [
+      "running and return-only recovery progress respects current execution lease",
+      "mutation refresh forces full Home data after a serialized in-flight refresh",
+      "successful malformed progress response clears protected state under generation fence"
+    ],
+    "independent": "Sol High",
+    "root": "Sol High, continuation authorized"
+  },
+  "dependencyAudit": {
+    "low": 2,
+    "moderate": 2,
+    "critical": 0,
+    "passed": true,
+    "lockSHA256": "3e6e3c7d304cf7623992240d4b018fa2f6a27c761a19d9802593673c4553d981",
+    "high": 0
+  },
+  "secretScan": {
+    "passed": true,
+    "command": "gitleaks git --staged --redact --no-banner --log-level warn"
+  },
+  "failuresPreserved": [
+    "native Enter probe lacked character text; corrected native key dispatch passed",
+    "post-review build found inferred promise type; explicit type fixed and final build passed",
+    "offline wrapper rejected a literal wildcard invocation; standard pinned lint script passed"
+  ],
+  "notAccepted": [
+    "production R6 publication and sources-only projection refresh",
+    "Library insight-first projected pagination and filters",
+    "actual automatic Events-to-Work-Cloud runtime execution",
+    "standing link-only authorization and own-subscription catalog contribution",
+    "complete original launch plan"
+  ]
+}

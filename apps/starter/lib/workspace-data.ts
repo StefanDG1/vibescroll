@@ -2,6 +2,23 @@ import "server-only";
 import { backend, api } from "./backend";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { usageOverview } from "../../../packages/billing/usage-overview";
+import { parseHomePostProgressSourceIds } from "../../../packages/browser/home-post-progress";
+import { postProgressPageV1 } from "../../../packages/contracts/post-summary";
+
+export async function workspacePostProgress(org: string, sourceIds: string[]) {
+  const ids = parseHomePostProgressSourceIds(sourceIds);
+  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(org))
+    throw Error("Workspace unavailable.");
+  const c = await backend();
+  const page = postProgressPageV1.parse(
+    await c.query(api.dashboard.progress, {
+      organizationId: org as Id<"organizations">,
+      sourceIds: ids as Id<"sources">[],
+    }),
+  );
+  if (page.organizationId !== org) throw Error("Workspace unavailable.");
+  return page;
+}
 
 export async function workspaceData({
   org,

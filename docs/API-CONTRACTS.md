@@ -1,5 +1,13 @@
 # Interface contracts
 
+## Bounded Home post summaries and progress
+
+`packages/contracts/post-summary.ts` defines strict versioned Home, post-summary and progress responses. Home contains at most thirty recent posts and labels its counts as the loaded window. Each post contains a title, nullable coverage/dates/counts, at most three short insight previews and an authenticated thumbnail pointer. Transcripts, original text, images, analysis payloads, private variants, job credentials and repository context are absent. Unknown legacy values remain null.
+
+`GET /api/workspace/{org}?view=post-progress&sourceIds=A&sourceIds=B` accepts at most thirty distinct IDs and performs one scoped `dashboard.progress` query after validation. This is a projection read, not a source-detail loop. The current actor, membership, generation, retention and rights still govern every response. Status stages have no fabricated percentage. Running work stops appearing active when its execution lease ends; return-only recovery uses its own fresh lease.
+
+The existing Console request owner patches stage changes while content hashes remain stable. Changed generation, content, retention or authorization removes stale previews before a full read. Mutations always request a serialized full refresh. Idle Home has no periodic query; active Home uses compact progress through the existing visible/online poller. Visibility and reconnect refresh remain. The Home preview marker is never a Library pagination cursor. These contracts do not complete Library's separate projected-list migration or the Cloud host bridge.
+
 ## Global catalog and Cloud setup direction, October25
 
 [ADR154](adr/154-global-catalog-defaults-and-cloud-intake.md) requires one global paid catalog, no region or opt-out in normal neutral analysis, and personal-post removal that preserves independent canonical insights. Actual privacy, rights and moderation erasure remain separate. Existing source/account-coupled artifacts need a versioned ownership/lifecycle change; this is not accomplished by skipping one delete call. Keep private context out and preserve the existing stores, approved public examples and advanced editions.

@@ -1,5 +1,11 @@
 # October 22 launch implementation candidate
 
+## Home post summaries and compact progress, October25
+
+Source02f3626 adds bounded existing-card projections, strict Home/post/progress contracts and an authenticated thirty-ID compact progress read. Recent Home posts expand before opening, with direct thumbnail/action links, bounded previews and expiry hiding. Console retains its existing request owner and visible/online poller; stage updates avoid heavy Home reloads, while mutations and changed content force fresh authorized data. Idle Home stops periodic reads. The sources-only projection refresh has its own checkpoint and preserves the completed older dashboard migration.
+
+[The receipt](operations/evidence/launch-20261025-home-post-progress.json) records the combined offline check, fifty-one focused tests, final starter build, current audit/secret checks and eight native synthetic checks with desktop/mobile screenshots. Review found and fixed lease-expiry display, mutation freshness and malformed-response clearing. Exact-head CI and publication remain separate. Library's insight-first list/projection migration, automatic Cloud execution and the complete original scope remain pending; this is not production acceptance.
+
 ## Compatible Cloud Events release preparation, October25
 
 [The compatible candidate](operations/evidence/launch-20261025-compatible-cloud-events.json) ports the reviewed Events/inline guidance to the serving398c325 lineage without main's unrelated migrations. Codeb369512/evidence675dea2 passes1,199 offline tests, three hosted skips, lint/types, both builds, registry audit and secret checks. Its inherited compatibility test initially rejected the intended schema delta; the updated test permits only exact source/profile unions and one exact Events index while preserving the entire old export. Health now declares an explicit30second server duration cap, confirmed in the compiled Next functions manifest. Main keeps the same cap through this parity update. No ordinary app UI changed.

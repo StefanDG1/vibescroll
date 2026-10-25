@@ -1,5 +1,11 @@
 # Data model
 
+## Home post projection
+
+`dashboardCards.postSummary` is an optional bounded `post-summary-v1` projection maintained by the existing atomic source-write triggers. It adds no table, queue or analysis store. `contentRevision` covers material source content; `progressRevision` also reflects stages, ordered phases and lease windows. Stage-only changes preserve the material hash and existing proposal version fences. Thumbnail pointers use the current authenticated evidence route, which checks the actual asset again.
+
+Existing authority-v2 cards can return a conservative legacy summary without reading a raw source. Earlier or unavailable authority fails closed. The operator can resume the existing ten-row backfill handler with `refreshPosts:true`; its separate `dashboard-post-summary-v1` checkpoint scans sources only. It does not rewind the completed `dashboard-v1` migration, automatically run from a user read, or queue analysis. Publication and backfill require their own bounded release evidence.
+
 ## Private source result candidate
 
 `localLibraryRuns.sourceTaskResult` is the sole full private output owner. Strict v2 task binding retains exact base/rights/context/schema/runtime metadata and optional approved brief. `sources.privateSourceAnalysis` is only latest metadata/version/hash pointers; `privateSourceAnalysisRunId` tracks pending work. Canonical state/generation/updatedAt and knowledge remain unchanged. Devices report a separate optional local runtime snapshot. Add `by_source_reanalysis` for exact source privacy/history pages and extend existing `by_device_state` by task schema version for bounded compatible claims. Both index migrations remain gated. No new table, result store or queue. See [ADR 138](adr/138-private-source-text-results-on-existing-runs.md).

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ArrowRight, Bookmark, GitBranch, Link2 } from "lucide-react";
 import { Button } from "@companynerve/ui";
 import {
@@ -10,9 +10,14 @@ import {
 import { DashboardVisuals } from "./dashboard-visuals";
 import { KnowledgePreview } from "./knowledge-preview";
 import { DashboardTrace } from "./dashboard-trace";
+import { HomePostCard } from "./home-post-card";
+import type {
+  HomeSummaryV1,
+  PostSummaryV1,
+} from "../../../packages/contracts/post-summary";
 
 export function StudioHome({
-  sources,
+  sources: loadedSources,
   proposals,
   repositories,
   runs,
@@ -28,6 +33,8 @@ export function StudioHome({
   compact = false,
   organizationId,
   demo = false,
+  homeSnapshot,
+  renderThumbnail,
 }: {
   sources: DashboardItem[];
   proposals: DashboardItem[];
@@ -45,9 +52,42 @@ export function StudioHome({
   compact?: boolean;
   organizationId?: string;
   demo?: boolean;
+  homeSnapshot?: HomeSummaryV1;
+  renderThumbnail?: (summary: PostSummaryV1) => ReactNode;
 }) {
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [highlightStopped, setHighlightStopped] = useState(false);
+  const [retentionTime, setRetentionTime] = useState(Date.now);
+  const expiry = Math.min(
+    ...(homeSnapshot?.recent
+      .map((post) => post.availableUntil ?? Infinity)
+      .filter((until) => until > retentionTime) ?? []),
+  );
+  useEffect(() => {
+    if (!Number.isFinite(expiry)) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const check = () => {
+      const remaining = expiry - Date.now();
+      if (remaining > 0)
+        timer = setTimeout(check, Math.min(remaining + 1, 2147483647));
+      else setRetentionTime(Date.now());
+    };
+    check();
+    return () => clearTimeout(timer);
+  }, [expiry]);
+  // Hide expired protected previews even if a background timer was delayed.
+  // oxlint-disable-next-line react-hooks/purity
+  const currentTime = Math.max(retentionTime, Date.now());
+  const recentSummaries = homeSnapshot?.recent.filter(
+    (post) => post.availableUntil === null || post.availableUntil > currentTime,
+  );
+  const sources = recentSummaries
+    ? loadedSources.filter((source) =>
+        recentSummaries.some(
+          (post) => post.sourceId === (source._id ?? source.id),
+        ),
+      )
+    : loadedSources;
   const actions = dashboardActions({ sources, proposals, repositories, runs });
   const next =
     actions.find((a) => !dismissed.includes(a.key)) ?? actions.at(-1)!;
@@ -150,13 +190,41 @@ export function StudioHome({
       <div className="studio-shelves">
         <section aria-labelledby="studio-knowledge">
           <div className="row spread">
-            <h2 id="studio-knowledge">Worth returning to</h2>
+            <h2 id="studio-knowledge">Recent posts</h2>
             <Button variant="ghost" onClick={() => go("library")}>
               Explore library
               <ArrowRight size={16} aria-hidden="true" />
             </Button>
           </div>
-          {recent.length ? (
+          {recentSummaries ? (
+            recentSummaries.length ? (
+              <ul className="studio-list">
+                {recentSummaries.map((summary) => (
+                  <li
+                    key={`${homeSnapshot?.scopeKey}:${summary.sourceId}:${summary.generation}`}
+                  >
+                    <HomePostCard
+                      summary={summary}
+                      href={`/app/${encodeURIComponent(organizationId ?? "")}/library/${encodeURIComponent(summary.sourceId)}`}
+                      onOpen={(sourceId) => {
+                        const source = sources.find(
+                          (item) => (item._id ?? item.id) === sourceId,
+                        );
+                        if (source) onOpenSource(source);
+                        else
+                          window.location.assign(
+                            `/app/${encodeURIComponent(organizationId ?? "")}/library/${encodeURIComponent(sourceId)}`,
+                          );
+                      }}
+                      thumbnailNode={renderThumbnail?.(summary)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="studio-empty">No recent posts are available.</p>
+            )
+          ) : recent.length ? (
             <ul className="studio-list">
               {recent.map((s) => (
                 <li key={s._id ?? s.id}>

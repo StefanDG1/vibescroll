@@ -285,5 +285,11 @@
       "connect-your-computer": "Cloud eligibility does not alter paired computer setup."
     },
     "limits": "Existing sole-owner team eligibility and preserved saved results source-reviewed; actual Cloud result, automatic wake-up and independent acceptance remain separate."
+  },
+  "cloudResultReturnReview": {
+    "date": "2026-10-25",
+    "status": "source-reviewed-candidate",
+    "updated": ["work-cloud-text-review"],
+    "limits": "Conservative confidence and exact owner result-return recovery source-reviewed; real completion pending. Existing funding/local/retention instructions remain."
   }
 }

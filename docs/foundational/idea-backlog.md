@@ -280,3 +280,7 @@ The owner requested the smallest no-GitHub Cloud setup with supported internet p
 ## F070: exact private Cloud requests through MCP, October 25
 
 Source: owner requests production own-subscription MCP analysis and authorizes saved-post testing. Adopted for bounded implementation under [ADR 150](../adr/150-explicit-mcp-cloud-analysis-requests.md). Supporting fact: current MCP requests otherwise return local processing/app approval while Cloud execution is separately approved. Contrary consideration: eliminating that approval under old grants would broaden authority silently, so a new recent-authenticated connection opt-in is required. Tests cover unchanged old grants, exact source/grant identity, replay, unknown outcomes and no-computer setup. Actual host/media/return, automatic dispatch, shared contribution and public paid access remain separate acceptance. No new demand, pricing, allowance or measured benefit is inferred.
+
+## F072: exact Cloud confidence and result return, October 25
+
+Source: actual owner-account media preparation, rejected completion and exact-payload offline reproduction. ADR152 conservatively reduces confidence and permits a fresh owner review of only the original retained result hash. Counterargument: returning a result cannot silently authorize more provider work or reconcile unknown usage. Current authority, immutable evidence, fixed completion window and no-overwrite tests are required. Production return remains pending; no campaign, price, customer or availability claim follows.

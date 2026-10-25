@@ -1,5 +1,9 @@
 # Product decisions
 
+## Conservative Cloud result return, October 25
+
+[ADR 152](adr/152-conservative-cloud-result-return.md) records a real accepted preparation and rejected completion, followed by exact-payload offline verification. The adapter reduces overstated confidence and supports a recent-owner-reviewed, hash-bound return of the same retained attempt. It starts no processing and preserves saved posts/insights. Current Cloud status overrides old local-intake advice. Production completion remains pending; cumulative EUR5 and all prior holds remain.
+
 ## October 25: exact private Cloud requests through MCP
 
 [ADR 150](adr/150-explicit-mcp-cloud-analysis-requests.md) adds an explicit, default-off connection opt-in for exact private video requests through MCP. Existing grants remain unchanged. Preserve automatic-dispatch, shared-catalog, provider, paid-access and production acceptance gates.

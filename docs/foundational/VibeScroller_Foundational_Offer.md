@@ -1,5 +1,9 @@
 # VibeScroll foundational offer
 
+## F072: honest confidence and exact Cloud result recovery
+
+[ADR 152](../adr/152-conservative-cloud-result-return.md) records accepted real-media preparation and a failed production return due to overstated confidence. Preserve citations and reduce affected labels to uncertain; exact owner-reviewed result recovery permits no new execution. Actual completed return remains pending. Keep the audience, prices, six beliefs, proprietary catalog and provider/privacy gates unchanged. Cumulative EUR5 includes all earlier holds; no customer, speed or commercial-availability claim follows.
+
 ## F070: exact private Cloud requests through MCP, October 25
 
 [ADR 150](../adr/150-explicit-mcp-cloud-analysis-requests.md) adds a reviewed connection opt-in for exact private video requests through MCP, without another app approval for each post. Old grants gain no authority. Reuse the existing job/lease, fixed media limits, zero API maximum and explicit requested settings; GitHub and a paired computer are unnecessary for this handoff. The host still needs supported tools and restricted Internet access.

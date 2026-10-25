@@ -372,5 +372,54 @@
     "Compatible release or independently bounded populated index migration",
     "Actual Reel audio review and fresh caption-path app result",
     "Retained provider/privacy/release/catalog/payment gates"
-  ]
+  ],
+  "oct26Continuation": {
+    "originalExactHeadCI": {
+      "head": "587063a64e8b82a233cc0a64c10d8376d3bec48d",
+      "run": 40242634623,
+      "result": "success"
+    },
+    "downgradeRegression": {
+      "passed": 81,
+      "log": "outputs/cloud-no-downgrade-final-tests.log",
+      "meaning": "New v3 jobs require v3 preparation; only explicit retained-v2 fixtures use the legacy envelope."
+    },
+    "budget": {
+      "humanAuthorization": "Raise cumulative cap to EUR7",
+      "newReservationUSD": 2.4,
+      "retainedMaximumUSD": 7.275014256044614,
+      "remainingUSD": 0.14498574395538633,
+      "oldHoldsPreserved": true
+    },
+    "hostTools": {
+      "sourceCommit": "587063a64e8b82a233cc0a64c10d8376d3bec48d",
+      "python": "3.13.5",
+      "ytDlp": "2026.10.21",
+      "pysubs2": "1.9.0",
+      "wheelHashesVerified": true,
+      "legacyCacheUnchanged": true,
+      "sourceOrVibeScrollCalls": 0
+    },
+    "productionUnchanged": true,
+    "compatibleRelease": "Independent port from 675dea2 in progress, no index additions; not deployed.",
+    "amendedFullCheck": {
+      "log": "outputs/link-cloud-amended-full-check.log",
+      "exitCode": 0,
+      "vitestPassed": 2056,
+      "nodePassed": 19,
+      "pythonPassed": 46,
+      "hostedSkipped": 3,
+      "typesLintBothBuilds": true
+    },
+    "changedSourceHashes": [
+      {
+        "path": "convex/workCloudAnalysis.ts",
+        "sha256": "b4f53d5333654c0855f3ff8c82a532d5bab68fb86cf5d4f05b851dbe4ab3fe07"
+      },
+      {
+        "path": "tests/work-cloud-media.test.ts",
+        "sha256": "784628649dce0b127932b7f613412040b270985f276e2eb59ae82889b299a82f"
+      }
+    ]
+  }
 }

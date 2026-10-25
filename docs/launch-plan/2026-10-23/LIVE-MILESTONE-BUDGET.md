@@ -21,3 +21,7 @@ Retaining all earlier holds plus this envelope would total USD7.275014256044613,
 Approval of a larger cap would not waive the populated-index gate. Full main has five known-populated index additions held, and this candidate adds a created-date Home index. Before publication, either prove a bounded supported migration or produce and review a compatible staged release. If neither is possible within this scope, stop and report that specific gate. Additional money alone does not establish a finite backfill bound.
 
 The first live milestone still requires source-audio review of the disputed Reel, exact JPEG restoration, current private app verification and a separate permitted caption-path inline Cloud result. The reserved TikTok must remain unanalyzed. Automatic Events wake is a later checkpoint.
+
+## Owner approval, October26
+
+The human selected "Raise cumulative cap to EUR7" in this task. The single ledger now reserves USD2.40, retains USD7.275014256044614 and leaves USD0.14498574395538633 unreserved under USD7.42. Earlier holds remain. This supersedes the proposal-only authorization status above, not the operation bounds or migration/provider/privacy gates. No production operation ran when the reservation was recorded.

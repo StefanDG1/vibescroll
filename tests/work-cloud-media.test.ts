@@ -42,7 +42,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function setup(url = "https://www.youtube.com/watch?v=abcdefghijk") {
+async function setup(
+  url = "https://www.youtube.com/watch?v=abcdefghijk",
+  legacy = true,
+) {
   for (const key of [
     "MCP_ENABLED",
     "WORK_CLOUD_MEDIA_ENABLED",
@@ -129,12 +132,14 @@ async function setup(url = "https://www.youtube.com/watch?v=abcdefghijk") {
     });
     if (!("leaseToken" in c) || !c.leaseToken)
       throw Error("Missing claim token");
-    return {
+    const lease = {
       sourceId,
       generation: approved.generation,
       taskId: "synthetic-real-task",
       leaseToken: c.leaseToken,
     };
+    if (legacy) await bindLegacyLease({ t, assistant, sourceId }, lease);
+    return lease;
   };
   return {
     t,
@@ -152,6 +157,68 @@ async function setup(url = "https://www.youtube.com/watch?v=abcdefghijk") {
   };
 }
 type Fixture = Awaited<ReturnType<typeof setup>>;
+// Existing sampled-ASR fixtures represent retained v2 jobs. New caption-path
+// cases explicitly keep the current v3 approval and image requirements.
+async function bindLegacyLease(s: any, lease: any) {
+  const input = await s.assistant.query(
+    internal.workCloudAnalysis.input,
+    lease,
+  );
+  const fields = [
+    "schemaVersion",
+    "sourceId",
+    "generation",
+    "processingRunId",
+    "title",
+    "inputKind",
+    "canonicalUrl",
+    "platform",
+    "allowedDomains",
+    "retainUntil",
+    "expectedCoverage",
+    "outputSchema",
+    "policy",
+    "policyHash",
+    "toolchainHash",
+    "text",
+    "sourceRevisionId",
+    "sourceContentHash",
+    "revision",
+    "evidence",
+  ];
+  const legacy = Object.fromEntries(fields.map((key) => [key, input[key]]));
+  legacy.schemaVersion = "work-cloud-media-v2";
+  legacy.policy = workCloudMediaPolicyV2;
+  legacy.policyHash = await socialHash(canonicalJson(workCloudMediaPolicyV2));
+  legacy.toolchainHash = await socialHash(
+    canonicalJson(workCloudMediaPolicyV2.toolchain),
+  );
+  const inputHash = await socialHash(canonicalJson(legacy));
+  await s.t.run(async (ctx: any) => {
+    const source = await ctx.db.get(s.sourceId),
+      job = source.personalAnalysis;
+    await ctx.db.patch(s.sourceId, {
+      personalAnalysis: {
+        ...job,
+        cloud: {
+          ...job.cloud,
+          schemaVersion: "work-cloud-media-v2",
+          inputHash,
+          policyHash: legacy.policyHash,
+          media: { ...job.cloud.media, toolchainHash: legacy.toolchainHash },
+        },
+      },
+    });
+  });
+}
+it("does not let a new Cloud job downgrade to legacy preparation without returned images", async () => {
+  const s = await setup(undefined, false),
+    lease = await s.claim();
+  await expect(prepare(s, lease, await receipt(s, lease))).rejects.toThrow(
+    "preparation version",
+  );
+});
+
 it.each([
   "https://vm.tiktok.com/Abcdef123/",
   "https://vt.tiktok.com/Abcdef123/",
@@ -626,7 +693,7 @@ it("returns a canonical cited private media result through the existing source, 
     lease,
   );
   expect(input).toMatchObject({
-    schemaVersion: "work-cloud-media-v3",
+    schemaVersion: "work-cloud-media-v2",
     maxApiUsd: 0,
     mediaSupported: true,
     deadline: expect.any(Number),
@@ -648,7 +715,7 @@ it("returns a canonical cited private media result through the existing source, 
   const saved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
   expect(saved).toMatchObject({
     state: "ready",
-    analysisPipelineVersion: "official-work-cloud-media-v3",
+    analysisPipelineVersion: "official-work-cloud-media-v2",
     coverage: "ordered_media",
     sourceRetentionUntil: s.retainUntil,
   });
@@ -1195,6 +1262,7 @@ it("claims an exact 180-second media lease, renews after a bounded step and comp
     taskId: "caller-correlation-id",
     leaseToken: claimed.leaseToken,
   };
+  await bindLegacyLease(s, lease);
   const p = await receipt(s, lease);
   await prepare(s, lease, p);
   vi.advanceTimersByTime(60000);
@@ -1544,7 +1612,7 @@ it("rejects a different stored Instagram identity before approval even when both
 
 const frameBytes = Uint8Array.from(atob(syntheticJpeg), (c) => c.charCodeAt(0));
 async function frameFixture(width = 2, captionFirst = false) {
-  const s = await setup(),
+  const s = await setup(undefined, !captionFirst),
     lease = await s.claim();
   let prepared = await receipt(s, lease);
   if (captionFirst) {

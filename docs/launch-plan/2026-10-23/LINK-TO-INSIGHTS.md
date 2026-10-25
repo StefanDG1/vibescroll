@@ -58,6 +58,6 @@ For the actual Reel, a fresh repair permission accepts only original prepared JP
 
 ## Preserve release and fiscal controls
 
-The same EUR5 cumulative cap and earlier unknown/storage/cleanup holds remain. No source/asset/deployment operation is cleared by writing this plan. Reserve the complete release, current-authority work, UI verification and cleanup before dispatch. Recheck actual schema/index impact: this candidate adds a created-date dashboard index, and full main already has five populated index backfills on hold. Do not deploy all main to bypass compatibility work.
+The owner raised the cumulative cap to EUR7 on October26. The USD2.40 live-milestone envelope is now reserved, preserving every earlier unknown/storage/cleanup hold. The ledger retains USD7.275014256044614 under a USD7.42 working ceiling. No source/asset/deployment operation is cleared by writing this plan. Reserve the complete release, current-authority work, UI verification and cleanup before dispatch. Recheck actual schema/index impact: this candidate adds a created-date dashboard index, and full main already has five populated index backfills on hold. Do not deploy all main to bypass compatibility work.
 
 Keep fixed Basic queued builds and exact staged/canonical version checks. Report local checks, actual inline Cloud execution, repaired production data, background wake and public/provider clearance separately. Missing capability or budget is an explicit remaining checkpoint, never a passed test.

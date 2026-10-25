@@ -1409,10 +1409,11 @@ export const dispatch = internalMutation({
       );
       const checked = workCloudMediaPreparation.parse(a.preparation);
       ensure(
-        c.job.cloud.schemaVersion === "work-cloud-media-v3" ||
-          checked.schemaVersion === "work-cloud-media-preparation-v2",
+        c.job.cloud.schemaVersion === "work-cloud-media-v3"
+          ? checked.schemaVersion === "work-cloud-media-preparation-v3"
+          : checked.schemaVersion === "work-cloud-media-preparation-v2",
         "APPROVAL_STALE",
-        "Existing media-v2 leases cannot acquire caption-aware authority.",
+        "Use the preparation version bound to this job; new jobs cannot downgrade image requirements.",
       );
       ensure(
         new TextEncoder().encode(canonicalJson(checked)).byteLength <= 120000 &&
@@ -1535,7 +1536,7 @@ export const dispatch = internalMutation({
         post: c.source.orderedMedia.post,
         evidence: c.source.orderedMedia.evidence,
       });
-      if (prepared.post.schemaVersion === "work-cloud-observed-media-v2") {
+      if (c.job.cloud.schemaVersion === "work-cloud-media-v3") {
         const retained = retainedCloudFrames(c.source);
         ensure(
           prepared.post.frames.every((frame) =>

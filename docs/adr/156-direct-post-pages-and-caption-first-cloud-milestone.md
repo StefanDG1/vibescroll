@@ -27,3 +27,7 @@ The first milestone is one direct saved-post page with progressive metadata, ver
 Offline contract, worker, backend and native browser checks precede live operations. A ready active chat completing analysis does not establish idle Events wake; phone-share/laptop-off acceptance remains a separate later milestone. Catalog publication remains subject to independent ownership and provider/reuse gates.
 
 Preserve the cumulative EUR5 cap, unknown/storage/cleanup holds and fixed Basic queued builds. Publication and source processing need a complete conservative reservation and current authority. Full-main populated-index backfills are not authorized by this decision. Report local, staged and production evidence separately.
+
+## October26 fiscal continuation
+
+The owner explicitly raised this task's cumulative cap to EUR7. The complete USD2.40 live envelope is reserved with earlier holds preserved. This supersedes the earlier EUR5 amount only. Migration, current authority, provider/privacy and actual acceptance gates remain. New v3 jobs must use v3 preparation and return all prepared images; they cannot downgrade to a legacy envelope. Actual retained v2 jobs keep their original contract.

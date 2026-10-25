@@ -1,8 +1,17 @@
 {
   "schemaVersion": "cloud-media-tools-v1",
-  "pythonMinimum": [3, 10],
-  "asrPython": [3, 13],
-  "supportedPlatforms": ["instagram", "tiktok"],
+  "pythonMinimum": [
+    3,
+    10
+  ],
+  "asrPython": [
+    3,
+    13
+  ],
+  "supportedPlatforms": [
+    "instagram",
+    "tiktok"
+  ],
   "files": {
     "cloud_job.py": {
       "bytes": 6672,
@@ -33,8 +42,8 @@
       "sha256": "cc9e1259af391ec707cf860aa0b2ffd59a166337480dff4bef049d59bef44f84"
     },
     "asr_verification.py": {
-      "bytes": 7398,
-      "sha256": "575137b9009e5cdc43db71fddf984092c2e345405a727e84f675b7369db11f9a"
+      "bytes": 7397,
+      "sha256": "bd029b33c14401712298317012167486bb5a050e81e156376f477adb3effe28a"
     },
     "asr-model.lock.json": {
       "bytes": 911,

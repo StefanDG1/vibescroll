@@ -130,7 +130,7 @@ it("never treats a Personal workspace name or a read-only preview as private own
   ).toBeUndefined();
 });
 
-it("exposes existing Cloud media eligibility after adoption without processing the saved video", async () => {
+it("keeps sole-owner Cloud eligibility before and after optional adoption without processing the saved video", async () => {
   vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", '["adoption-owner"]');
   vi.stubEnv("WORK_CLOUD_MEDIA_ENABLED", "true");
   vi.stubEnv("WORK_CLOUD_MEDIA_VERIFIED", "true");
@@ -153,8 +153,8 @@ it("exposes existing Cloud media eligibility after adoption without processing t
   expect(before).toMatchObject({
     _id: sourceId,
     organizationId,
-    workCloudPrivateLibraryRequired: true,
-    workCloudMediaEnabled: false,
+    workCloudPrivateLibraryRequired: false,
+    workCloudMediaEnabled: true,
     workCloudHandoff: null,
   });
   vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", "[]");

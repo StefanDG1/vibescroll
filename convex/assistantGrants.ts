@@ -16,6 +16,7 @@ import {
   assistantAnalysisDefaults,
 } from "./assistantSchema";
 import { snapshotScopeCurrent } from "../packages/repositories/scope";
+import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import {
   workCloudTextAllowed,
   workCloudMediaAllowed,
@@ -42,17 +43,20 @@ export const setup = query({
       .query("librarySetup")
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
       .unique();
+    const cloudEligible = await workCloudSourceEligible(
+      ctx,
+      organization,
+      actor._id,
+    );
     return {
       enabled:
         process.env.MCP_ENABLED === "true" &&
         !!assistantIssuer(process.env.MCP_AUTH_ISSUER),
       privateLibrary: organization.privateOwnerId === actor._id,
       workCloudTextEnabled:
-        organization.privateOwnerId === actor._id &&
-        workCloudTextAllowed(actor.subject),
+        cloudEligible && workCloudTextAllowed(actor.subject),
       workCloudMediaEnabled:
-        organization.privateOwnerId === actor._id &&
-        workCloudMediaAllowed(actor.subject),
+        cloudEligible && workCloudMediaAllowed(actor.subject),
       eventsEnabled: process.env.MCP_EVENTS_ENABLED === "true",
       devices: (
         await ctx.db
@@ -306,7 +310,7 @@ export const save = mutation({
     );
     if (a.cloudRequestPolicy) {
       ensure(
-        organization.privateOwnerId === actor._id &&
+        (await workCloudSourceEligible(ctx, organization, actor._id)) &&
           workCloudMediaAllowed(actor.subject) &&
           a.scopes.includes("analysis:request") &&
           a.scopes.includes("analysis:execute") &&

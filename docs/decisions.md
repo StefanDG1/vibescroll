@@ -1,5 +1,9 @@
 # Product decisions
 
+## Existing sole-owner Cloud posts, October 25
+
+[ADR 151](adr/151-existing-sole-owner-cloud-posts.md) extends the experimental route to the original creator/current sole owner of an active team without active invitations. Reuse existing post IDs and separate organization-bound grants; preserve all saved insights. The cumulative run ceiling is now EUR5 with every prior hold retained. A fresh metadata-capable Cloud chat has no executor; the earlier task currently verifies operational cached tools and enforced restricted Instagram access. Actual production video return remains pending.
+
 ## October 25: exact private Cloud requests through MCP
 
 [ADR 150](adr/150-explicit-mcp-cloud-analysis-requests.md) adds an explicit, default-off connection opt-in for exact private video requests through MCP. Existing grants remain unchanged. Preserve automatic-dispatch, shared-catalog, provider, paid-access and production acceptance gates.

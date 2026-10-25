@@ -1,5 +1,9 @@
 # VibeScroll foundational research
 
+## F071: preserve saved posts in the Cloud experiment
+
+[ADR 151](../adr/151-existing-sole-owner-cloud-posts.md) records owner-authorized experimental execution in an eligible original sole-owner team through its own reviewed connection. Preserve existing posts, insights, source IDs and private project material. Reuse the existing Cloud job and source page. Do not infer media success, automatic dispatch, shared-catalog contribution or customer availability from this candidate. Audience, prices and the six beliefs stay unchanged. The cumulative task ceiling is EUR5 including all prior holds; local and managed-credit routes can be deferred only after Work Cloud proves reliable.
+
 ## F070: exact private Cloud requests through MCP, October 25
 
 [ADR 150](../adr/150-explicit-mcp-cloud-analysis-requests.md) adds a reviewed connection opt-in for exact private video requests through MCP, without another app approval for each post. Old grants gain no authority. Reuse the existing job/lease, fixed media limits, zero API maximum and explicit requested settings; GitHub and a paired computer are unnecessary for this handoff. The host still needs supported tools and restricted Internet access.

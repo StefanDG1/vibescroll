@@ -1,4 +1,5 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
+import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { presentAnalysis } from "../packages/insights/presentation";
 import { classifySourceUrl } from "../packages/sources/classify";
 import {
@@ -679,6 +680,15 @@ export const detail = query({
       .query("repositories")
       .withIndex("by_org", (q) => q.eq("organizationId", s.organizationId))
       .collect();
+    const cloudSourceEligible =
+      reader.membership.role === "owner" &&
+      (workCloudTextAllowed(reader.actor.subject) ||
+        workCloudMediaAllowed(reader.actor.subject)) &&
+      (await workCloudSourceEligible(
+        ctx,
+        reader.organization,
+        reader.actor._id,
+      ));
     return {
       ...s,
       privateSourceAnalysis: undefined,
@@ -688,15 +698,14 @@ export const detail = query({
           ? await sourceEligibility(ctx, s, reader.actor._id)
           : undefined,
       workCloudPrivateLibraryRequired:
+        !cloudSourceEligible &&
         !reader.organization.privateOwnerId &&
         reader.membership.role === "owner" &&
         workCloudMediaAllowed(reader.actor.subject),
       workCloudTextEnabled:
-        reader.organization.privateOwnerId === reader.actor._id &&
-        workCloudTextAllowed(reader.actor.subject),
+        cloudSourceEligible && workCloudTextAllowed(reader.actor.subject),
       workCloudMediaEnabled:
-        reader.organization.privateOwnerId === reader.actor._id &&
-        workCloudMediaAllowed(reader.actor.subject),
+        cloudSourceEligible && workCloudMediaAllowed(reader.actor.subject),
       workCloudHandoff:
         reader.membership.role === "owner"
           ? ((await unclaimedCloudHandoff(

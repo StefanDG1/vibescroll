@@ -70,7 +70,8 @@
         "packages/contracts/work-cloud-text.ts",
         "packages/mcp/server.ts",
         "apps/starter/components/assistant-connections.tsx",
-        "apps/starter/components/work-cloud-text.tsx"
+        "apps/starter/components/work-cloud-text.tsx",
+        "convex/lib/workCloudSourceAccess.ts"
       ],
       "related": [
         "processing-and-recovery",
@@ -405,5 +406,15 @@
     "status": "source-reviewed-candidate",
     "updated": ["evaluate-an-idea-for-a-project"],
     "limits": "Explicit earned private text insight selection through existing project/plan controls only. No media reanalysis, skills or official Cloud claim. Focused tests are separate from native browser, real provider, production and independent acceptance."
+  },
+  "soleOwnerCloudReview": {
+    "date": "2026-10-25",
+    "status": "source-reviewed-candidate",
+    "updated": ["work-cloud-text-review"],
+    "unaffectedWithReason": {
+      "processing-and-recovery": "Existing route funding/retention/host readiness guidance remains; no local or managed-credit behavior change.",
+      "connect-your-computer": "Cloud eligibility does not alter paired computer setup."
+    },
+    "limits": "Existing sole-owner team eligibility and preserved saved results source-reviewed; actual Cloud result, automatic wake-up and independent acceptance remain separate."
   }
 }

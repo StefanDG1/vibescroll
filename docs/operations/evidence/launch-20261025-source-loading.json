@@ -54,13 +54,6 @@
     "originalRunnerExit": "Failed final classification assertion; actual trace reviewed separately, unchanged original receipt retained",
     "closedOnlyTaskTab": true
   },
-  "hashes": {
-    "apps/starter/components/console.tsx": "274023e18cd70fd46d1271da9557a3afe08e01f372553549ae15b1d5df955ccc",
-    "apps/starter/components/source-relationships.tsx": "d5f38a1892d09ea1498a270fa3638a044036dacbc67b52adaa72a4800f8de849",
-    "apps/starter/lib/use-polling.ts": "ed89119e46fc2bf8078d630a58b49fe55ae1de2dc6fad554d77dd3b629d57052",
-    "apps/starter/lib/workspace-data.ts": "974b58c46920ff0e61d6b994e1b97150e113ea4a220449975e7d95afa63461ae",
-    "packages/browser/polling.ts": "85983e84d9696493f6f578f9115131e665a214f8e6cee463017f8c6a0a8990ea"
-  },
   "logs": {
     "source-page-loading-full-check-20261025.log": "f5a5f4deb4e42bd48f58ddaafc984a46b855ae506210f36aa29d8a372117265e",
     "source-page-loading-final-build-20261025.log": "10135dd3102e35f69322dc438d20dc8d934376f00b71182583cb18ea6682247c"
@@ -95,5 +88,28 @@
     "Automatic event-to-operational-host dispatch",
     "Fresh post-fix normal video completion and phone-only acceptance",
     "Every other unclosed R/P/N/C/M acceptance"
-  ]
+  ],
+  "nativeCompiledSourceHashesBeforeFinalFormatting": {
+    "apps/starter/components/console.tsx": "274023e18cd70fd46d1271da9557a3afe08e01f372553549ae15b1d5df955ccc",
+    "apps/starter/components/source-relationships.tsx": "d5f38a1892d09ea1498a270fa3638a044036dacbc67b52adaa72a4800f8de849",
+    "apps/starter/lib/use-polling.ts": "ed89119e46fc2bf8078d630a58b49fe55ae1de2dc6fad554d77dd3b629d57052",
+    "apps/starter/lib/workspace-data.ts": "974b58c46920ff0e61d6b994e1b97150e113ea4a220449975e7d95afa63461ae",
+    "packages/browser/polling.ts": "85983e84d9696493f6f578f9115131e665a214f8e6cee463017f8c6a0a8990ea"
+  },
+  "finalSourceHashes": {
+    "apps/starter/components/console.tsx": "274023e18cd70fd46d1271da9557a3afe08e01f372553549ae15b1d5df955ccc",
+    "apps/starter/components/source-relationships.tsx": "6f2da65c36af67050e935f600c0a978f7620e85cb477d164fac4b50683943874",
+    "apps/starter/lib/use-polling.ts": "ed89119e46fc2bf8078d630a58b49fe55ae1de2dc6fad554d77dd3b629d57052",
+    "apps/starter/lib/workspace-data.ts": "974b58c46920ff0e61d6b994e1b97150e113ea4a220449975e7d95afa63461ae",
+    "packages/browser/polling.ts": "85983e84d9696493f6f578f9115131e665a214f8e6cee463017f8c6a0a8990ea"
+  },
+  "finalFormattingVerification": {
+    "changedSourcePaths": ["apps/starter/components/source-relationships.tsx"],
+    "compiledNativeJSAndCSSByteIdentical": true,
+    "hashes": {
+      "fixture.js": "3a09fc37f3d8bc7630af729bd8bf15ac13decb5474478955af12e564949c61e9",
+      "fixture.css": "142117b4e9a60c8a484b99d554b00bea302ff175e3f9eb28d0179a94ef38070c"
+    },
+    "extraBrowserRuns": 0
+  }
 }

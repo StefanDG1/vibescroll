@@ -22,6 +22,7 @@ import {
   workCloudMediaPolicyV2,
   workCloudMediaPolicyInitialV3,
   workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
 } from "../packages/contracts/work-cloud-text";
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -165,7 +166,8 @@ async function bindLegacyLease(
   policy:
     | typeof workCloudMediaPolicyV2
     | typeof workCloudMediaPolicyInitialV3
-    | typeof workCloudMediaPolicyPreDiagnosticsV3 = workCloudMediaPolicyV2,
+    | typeof workCloudMediaPolicyPreDiagnosticsV3
+    | typeof workCloudMediaPolicyPreResolvedV3 = workCloudMediaPolicyV2,
 ) {
   const input = await s.assistant.query(
     internal.workCloudAnalysis.input,
@@ -223,7 +225,11 @@ it("does not let a new Cloud job downgrade to legacy preparation without returne
     "preparation version",
   );
 });
-it.each([workCloudMediaPolicyInitialV3, workCloudMediaPolicyPreDiagnosticsV3])(
+it.each([
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
+])(
   "retains the exact approved v3 toolchain through reviewed implementation patches",
   async (policy) => {
     const s = await setup(undefined, false),

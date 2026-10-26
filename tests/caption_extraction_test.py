@@ -111,6 +111,48 @@ class CaptionTests(unittest.TestCase):
             self.assertIn('--load-info-json', calls[1])
             self.assertIn('--abort-on-unavailable-fragments', calls[1])
 
+    def test_pinned_tiktok_video_aliases_bind_the_same_post_without_new_source_urls(self):
+        from yt_dlp.extractor.tiktok import TikTokIE
+        video_id = '7668090902816017671'
+        original = 'https://vm.tiktok.com/Abcdef123/'
+        opaque = 'MS4wLjABAAAA' + 'a' * 64
+        for path in (f'/@/video/{video_id}/', f'/share/video/{video_id}/',
+                     f'/@{opaque}/video/{video_id}/'):
+            url = 'https://www.tiktok.com' + path
+            with self.subTest(shape=path.split('/video/')[0]):
+                self.assertTrue(TikTokIE.suitable(url))
+                with self.assertRaisesRegex(ValueError, '^unsupported_source$'):
+                    worker.source_identity(url)
+                info = {'id': video_id, 'webpage_url': url, 'extractor_key': 'TikTok'}
+                self.assertEqual(worker.validate_identity(original, info), 'tiktok')
+                self.assertEqual(worker.resolved_canonical(original, info),
+                                 f'https://www.tiktok.com/@_/video/{video_id}')
+                full = f'https://www.tiktok.com/@Creator/video/{video_id}'
+                self.assertEqual(worker.resolved_canonical(full, info),
+                                 f'https://www.tiktok.com/@creator/video/{video_id}')
+
+    def test_resolved_aliases_require_matching_tiktok_metadata_and_never_admit_other_content(self):
+        video_id = '7668090902816017671'
+        original = 'https://vm.tiktok.com/Abcdef123/'
+        alias = f'https://www.tiktok.com/@/video/{video_id}/'
+        for info in ({'id': video_id, 'webpage_url': alias},
+                     {'id': video_id, 'webpage_url': alias, 'extractor_key': 'Generic'},
+                     {'webpage_url': alias, 'extractor_key': 'TikTok'},
+                     {'id': '7777777777777777777', 'webpage_url': alias, 'extractor_key': 'TikTok'}):
+            with self.assertRaises(ValueError):
+                worker.validate_identity(original, info)
+        for url in (f'https://www.tiktok.com/@creator/photo/{video_id}',
+                    f'https://example.test/@/video/{video_id}',
+                    f'https://user:password@www.tiktok.com/@/video/{video_id}',
+                    f'http://www.tiktok.com/@/video/{video_id}',
+                    f'https://www.tiktok.com/@/video/{video_id}/extra',
+                    f'https://www.tiktok.com/@/video/{video_id}%2fextra'):
+            with self.assertRaisesRegex(ValueError, '^unsupported_resolved_source$'):
+                worker.validate_identity(original, {'id': video_id, 'webpage_url': url, 'extractor_key': 'TikTok'})
+        with self.assertRaisesRegex(ValueError, '^source_identity_mismatch$'):
+            worker.validate_identity(f'https://www.tiktok.com/@creator/video/7777777777777777777',
+                                     {'id': video_id, 'webpage_url': alias, 'extractor_key': 'TikTok'})
+
     def test_untrusted_source_starts_no_process(self):
         with tempfile.TemporaryDirectory() as directory:
             run = Mock()
@@ -251,6 +293,19 @@ class OfflinePreparationTests(unittest.TestCase):
             self.assertEqual(recorded, worker.digest(preparation.canonical(post).encode()))
             self.assertEqual(bound['evidence'][0]['text'], 'Check the source.')
             self.assertEqual(bound['evidence'][-1]['basis'], 'visible')
+            tiktok_context = {**context, 'platform': 'tiktok', 'canonicalUrl': 'https://vm.tiktok.com/Abcdef123/'}
+            video_id = '7668090902816017671'
+            for path in (f'/@/video/{video_id}/', f'/share/video/{video_id}/'):
+                tiktok_info = {**info, 'id': video_id, 'extractor_key': 'TikTok',
+                               'webpage_url': 'https://www.tiktok.com' + path}
+                tiktok = preparation.bind_preparation(tiktok_context, tiktok_info, manifest,
+                                                      {manifest['frames'][0]['id']: 'A blue synthetic frame.'})
+                self.assertEqual(tiktok['post']['resolvedCanonical'], f'https://www.tiktok.com/@_/video/{video_id}')
+                self.assertEqual(tiktok['post']['canonical'], tiktok_context['canonicalUrl'])
+                self.assertEqual(tiktok['post']['frames'], manifest['frames'])
+                self.assertEqual(tiktok['post']['segments'], manifest['segments'])
+                self.assertTrue(all(e['postRevisionHash'] == tiktok['post']['revisionHash'] for e in tiktok['evidence']))
+            asr.assert_not_called()
 
 
 

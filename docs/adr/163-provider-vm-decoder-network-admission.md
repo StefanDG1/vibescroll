@@ -23,3 +23,9 @@ The current v2/v3 Cloud package and its policy hashes are unchanged. This standa
 ## Validation
 
 Fixtures cover exact root state, every capability including inheritable/bounding, missing controls/state, mixed identities, existing threads, preserved V1 refusals and no install/exec on rejection. Actual Linux tests must verify socket denial and inheritance; Windows reports its explicit skip. Native testing must use only synthetic inputs, preserve monitors/permissions and stop on any failed control. No source/job or enabled-analysis claim follows from this decision.
+
+## Actual synthetic validation, October26
+
+Source `dfb4acac519b09898bc465791a51fabe77b53866` passed exact CI40351522420. Its eight provider-VM tests ran without a skip, including real socket/exec denial and FFmpeg/FFprobe decoding. The same exact three pinned source/test files then passed all eight tests in the actual native Work task, again without skips. That task reported inheritable and bounding capabilities0, NNP1 and its existing provider filter. Owned synthetic directories were reported removed. One ordinary chat reload displayed the persisted completion; no test was resubmitted.
+
+This closes the tested decoder-network assumption, not source or whole-host admission. No real source, app call, model, job or monitor change occurred. A separate pinned caption-package setup/synthetic preparation attempt is pending under its own budget reservation. [Sanitized receipt](../operations/evidence/launch-20261026-provider-vm-decoder.json).

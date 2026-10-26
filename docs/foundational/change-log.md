@@ -406,3 +406,7 @@ All four briefs now record owner-confirmed automatic neutral contribution, assoc
 ## F080: current-grant native setup, October26
 
 All four briefs distinguish the gated setup-message candidate, synthetic JPEG handoff and blocked public TikTok visit. The owner's one-time setup direction is preserved; no prices, audience, permissions or live availability change. Actual automatic media remains unaccepted.
+
+## F081: one pinned Cloud download and separate readiness, October 26
+
+All four briefs record verified private synthetic tools and real metadata-only limits. The website bundle remains unpublished, ASR setup is not speech accuracy, and automatic media remains disabled. Counterargument: a pinned download alone does not make per-user Cloud setup reliable. Test exact native retrieval, lease control and a real event-triggered retained result before customer claims. No audience, price, permissions or campaign changes. See [ADR164](../adr/164-pinned-cloud-runtime-download.md).

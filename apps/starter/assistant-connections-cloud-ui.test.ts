@@ -45,6 +45,7 @@ vi.mock("react", async (original) => ({
   },
 }));
 import { AssistantConnections } from "./components/assistant-connections";
+import runtimePackage from "../../packages/media/cloud-runtime-package.lock.json";
 
 type Node = ReactElement<Record<string, any>>;
 const cloudLabel = "Allow exact video analysis requests in my Work Cloud chat";
@@ -489,6 +490,10 @@ it("copies setup for the saved grant, then uses the refreshed version without ch
     '"profileId":"private","grantVersion":3,"clientId":"host"',
   );
   expect(message.props.value).not.toContain("synthetic-model");
+  expect(message.props.value).toContain(
+    "https://scroll.companynerve.com" + runtimePackage.path,
+  );
+  expect(message.props.value).toContain(runtimePackage.sha256);
   await button(f.render(), "Copy setup message").props.onClick();
   expect(writeText).toHaveBeenCalledWith(message.props.value);
   expect(text(f.render())).toContain(

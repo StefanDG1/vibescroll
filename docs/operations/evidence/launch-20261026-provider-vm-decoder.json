@@ -1,6 +1,6 @@
 {
   "observedAtUTC": "2026-10-26T15:34:34.366495+00:00",
-  "status": "separate_candidate_no_host_or_media_admission",
+  "status": "kernel_and_synthetic_decoder_passed_not_full_host_or_source_admission",
   "servingCommit": "ff7d88f5601c5d717f3ac5cad6ff73489ba29a25",
   "nativeMetadata": {
     "chatURL": "https://chatgpt.com/c/6adf4371-7f2c-83eb-a9d8-6a1fae54101f",
@@ -16,7 +16,7 @@
     "NoNewPrivs": 1,
     "Seccomp": 2,
     "Seccomp_filters": 1,
-    "CapInh": "not_queried",
+    "CapInh": "not queried in initial read; independently reported zero after synthetic test",
     "restrictionOrPrivilegeChanges": false,
     "networkOrSourceAccess": false,
     "fileWrites": 0,
@@ -24,7 +24,7 @@
     "sourceJobs": 0,
     "monitorStateChanged": false
   },
-  "conclusion": "The nonroot-only adapter rejects solely on UID0 before its actual kernel filter check. A versioned V2 candidate additionally requires all five masks, permanent existing NNP and a provider filter. This read does not establish actual V2 enforcement or full host admission.",
+  "conclusion": "V1 rejected this native Work configuration on UID0. The separately pinned V2 candidate passed raw child/exec socket denial and synthetic decoding on that actual capless/NNP/provider-filter host. This is network and decoder evidence only; actual provider boundary, acquisition policy, tools/captions/ASR, lease control, source result and event-run admission remain separate.",
   "policyVersion": "linux-provider-vm-decoder-socket-denial-v2",
   "adapterFiles": {
     "decoder_network_denial_v1.py": {
@@ -37,13 +37,43 @@
     }
   },
   "acceptedMediaPackageChanged": false,
-  "nativeSyntheticTest": "not_dispatched",
+  "nativeSyntheticTest": {
+    "commit": "dfb4acac519b09898bc465791a51fabe77b53866",
+    "attempts": 1,
+    "sourceFiles": 3,
+    "sourcePinsMatched": true,
+    "exitCode": 0,
+    "testsPassed": 8,
+    "testsFailed": 0,
+    "testsErrored": 0,
+    "testsSkipped": 0,
+    "fixtureCases": 6,
+    "actualCases": {
+      "socketDenialAcrossExec": "passed",
+      "synthetic32x32JPEGUnderSameDenial": "passed"
+    },
+    "ordinaryProcess": {
+      "CapInh": "0000000000000000",
+      "CapBnd": "0000000000000000",
+      "NoNewPrivs": 1,
+      "Seccomp": 2,
+      "Seccomp_filters": 1
+    },
+    "cleanup": "host reports owned test tree and synthetic JPEG directory removed; no uncertainty",
+    "monitorStateChanged": false,
+    "sourceJobs": 0,
+    "appCalls": 0,
+    "normalSetupTurnNotEvent": true,
+    "uiObservation": "one normal chat reload displayed persisted completion; test was not resubmitted"
+  },
   "budget": {
     "cumulativeCapEUR": 8,
     "newReadOnlyHoldUSD": 0.01,
-    "retainedUSD": 8.305014256044613,
-    "unreservedUSD": 0.17498574395538746,
-    "priorHoldsReleased": false
+    "retainedUSD": 8.355014256044612,
+    "unreservedUSD": 0.12498574395538853,
+    "priorHoldsReleased": false,
+    "syntheticDecoderHoldUSD": 0.02,
+    "pendingCaptionToolsHoldUSD": 0.03
   },
   "sources": [
     "https://learn.chatgpt.com/docs/enterprise/chatgpt-work-cloud-security",
@@ -65,11 +95,34 @@
     "lintZeroWarnings": true,
     "typesPassed": true,
     "productionBuilds": 2,
-    "unchangedAcceptedPackageManifestVerified": true
+    "unchangedAcceptedPackageManifestVerified": true,
+    "finalPythonTotal": 68,
+    "finalPythonWindowsSkipped": 4
   },
   "nativeTestFile": {
     "path": "tests/decoder_provider_vm_test.py",
     "bytes": 7288,
     "sha256": "83272279bb83e81a0834804a0e199b1a9cd024cfebd72eddb6b287a88f449627"
+  },
+  "exactCI": {
+    "commit": "dfb4acac519b09898bc465791a51fabe77b53866",
+    "runId": "40351522420",
+    "jobId": "121672557550",
+    "status": "passed",
+    "mandatoryFlagForwarded": true,
+    "providerVMSuite": {
+      "total": 8,
+      "passed": 8,
+      "skipped": 0,
+      "actualSocketExecAndFFmpegTestsRan": true
+    },
+    "originalSuite": {
+      "total": 13,
+      "passed": 12,
+      "skipped": 1,
+      "skipReason": "negative unsupported-host CLI test inapplicable on admitted nonroot Linux"
+    },
+    "vitestPassed": 2113,
+    "vitestSkipped": 5
   }
 }

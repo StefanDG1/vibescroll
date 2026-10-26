@@ -509,3 +509,7 @@ All four briefs now record owner-confirmed automatic neutral contribution, assoc
 ## F080: current-grant native setup, October26
 
 Adopted as a disabled implementation candidate within the owner's one-time-setup request. Generate the exact current library/client/grant binding from saved permissions and provide clipboard/manual copying. Supporting evidence: native Events renewal and save acknowledgement work; synthetic Cloud image handoff works. Contrary evidence: nested decoder controls failed and one hosted-browser TikTok visit was blocked by CAPTCHA/login. The message must stop before a monitor/job when runtime readiness fails, preserve every server authority check and avoid paid/local fallbacks. Validate current-version copying, stale/disabled/revoked access, clipboard fallback, mobile layout and the same-job caption/JPEG/result chain. No customer, revenue, speed or general automatic-analysis claim follows.
+
+## F081: one pinned Cloud download and separate readiness, October 26
+
+All four briefs record verified private synthetic tools and real metadata-only limits. The website bundle remains unpublished, ASR setup is not speech accuracy, and automatic media remains disabled. Counterargument: a pinned download alone does not make per-user Cloud setup reliable. Test exact native retrieval, lease control and a real event-triggered retained result before customer claims. No audience, price, permissions or campaign changes. See [ADR164](../adr/164-pinned-cloud-runtime-download.md).

@@ -1,5 +1,9 @@
 # VibeScroll foundational beliefs
 
+## F081: pinned setup and verified private tools, October 26
+
+The unpublished [single-download candidate](../adr/164-pinned-cloud-runtime-download.md) removes a GitHub setup dependency without changing accepted source pins or granting execution authority. Actual private native tests passed synthetic caption/JPEG preparation and offline ASR initialization. A real TikTok metadata read returned title, author and duration but no supported captions. No real source or automatic-analysis acceptance follows. Keep Cloud disabled until the event-to-result test passes; do not promise speech accuracy or general customer availability. Audience, prices, funding, privacy and every earlier budget hold remain unchanged.
+
 ## F080: exact native setup message and tested browser limits, October26
 
 Connections now has an unpublished, gated setup-message candidate generated from a saved current grant. It carries library/client/version identifiers without credentials, post content or editable analysis settings. Runtime checks precede monitor creation and any source job. The owner browser test established synthetic JPEG handoff but the supplied TikTok hit a CAPTCHA/login overlay; captions, duration and source frames remain unverified. Keep the pinned caption-first downloader direction and existing disabled gates. This is setup guidance and local evidence, not automatic-media or customer-availability acceptance. Audience, prices, six beliefs, private data and the cumulative EUR8 cap with every old hold remain unchanged. See [ADR162](../adr/162-finite-app-save-cloud-intents.md) and the [browser receipt](../operations/evidence/launch-20261026-native-cloud-browser.json).

@@ -154,6 +154,59 @@ it("records a finite exact app-Save intent without creating a job, lease or rese
   vi.advanceTimersByTime(1000);
   expect(await s.capture()).toEqual(result);
 });
+it.each([false, true])(
+  "keeps an app-Save intent valid when native preview metadata arrives, thumbnail=%s",
+  async (thumbnail) => {
+    const s = await setup();
+    const saved = await s.owner.mutation(api.workCloudSaves.capture, {
+      ...s.captureArgs,
+      title: "Imported video link",
+    });
+    const before = (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))!;
+    vi.advanceTimersByTime(1000);
+    vi.stubEnv("LINK_PREVIEWS_ENABLED", "true");
+    await s.t.run((ctx) =>
+      ctx.db.patch(saved.sourceId, {
+        linkPreview: { state: "queued", updatedAt: Date.now() },
+      }),
+    );
+    await s.t.mutation(internal.sourcePreviewState.begin, {
+      id: saved.sourceId,
+    });
+    await s.t.mutation(internal.sourcePreviewState.finish, {
+      id: saved.sourceId,
+      canonical: before.canonical,
+      generation: before.generation,
+      title: "Synthetic native preview title",
+      authorName: "Synthetic creator",
+      durationSeconds: 15,
+      ...(thumbnail
+        ? { key: `${s.org}/synthetic-preview`, size: 200, etag: "synthetic" }
+        : {}),
+    });
+    const after = (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))!;
+    expect(after.linkPreview).toMatchObject({
+      state: "ready",
+      title: "Synthetic native preview title",
+      authorName: "Synthetic creator",
+    });
+    const status = await s.assistant.query(internal.assistant.getJobStatus, {
+      profileId: s.org,
+      sourceId: saved.sourceId,
+    });
+    expect(status.saved_cloud_intent).toMatchObject({
+      id: saved.intentId,
+      state: "waiting_for_runtime",
+    });
+    expect(await s.start(saved.sourceId, saved.intentId!)).toMatchObject({
+      generation: 1,
+      reused_request: false,
+    });
+    expect(after.title).toBe(before.title);
+    expect(after.updatedAt).toBe(before.updatedAt);
+    expect(after.workCloudSaveIntent).toEqual(before.workCloudSaveIntent);
+  },
+);
 it("consumes once through the existing Cloud job and replays an unclaimed acknowledgement safely", async () => {
   const s = await setup();
   const saved = await s.capture();

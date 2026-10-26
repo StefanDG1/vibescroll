@@ -8,6 +8,7 @@ import {
   workCloudCompleteInput,
   workCloudLeaseInput,
   workCloudFrameInput,
+  workCloudPreparationStage,
   validateWorkCloudTextOutput,
 } from "../packages/contracts/work-cloud-text";
 
@@ -17,6 +18,98 @@ const lease = {
   taskId: "actual-host-task",
   leaseToken: crypto.randomUUID(),
 };
+it.each(["metadata", "frame"])(
+  "returns %s through the existing connected preparation tool and authenticated handler",
+  async (stage) => {
+    const issuer = "https://synthetic-test.authkit.app";
+    vi.stubEnv("MCP_ENABLED", "true");
+    vi.stubEnv("MCP_AUTH_ISSUER", issuer);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ sub: "synthetic-subject" })),
+    );
+    const runMutation = vi.fn(
+      async (_op: unknown, args: Record<string, unknown>) =>
+        Object.keys(args).length === 0
+          ? { issuer, subject: "synthetic-subject" }
+          : { accepted: true },
+    );
+    const runAction = vi.fn(async () => ({ assetId: "synthetic-frame" }));
+    const payload = {
+      schemaVersion: "work-cloud-media-stage-v1",
+      stage,
+      ...(stage === "metadata"
+        ? { metadata: { title: "Native title", authorName: "Creator" } }
+        : {
+            frameId: "frame-1",
+            preparationHash: "a".repeat(64),
+            data: Buffer.alloc(81920, 1).toString("base64"),
+          }),
+    };
+    const args = { ...lease, preparationJson: JSON.stringify(payload) };
+    const host = mcp(false, ["analysis:execute"], true);
+    expect(
+      (
+        await packet(
+          await host.call("tools/call", {
+            name: "work_cloud_prepare",
+            arguments: args,
+          }),
+        )
+      ).result.isError,
+    ).not.toBe(true);
+    expect(host.invoke).toHaveBeenCalledExactlyOnceWith(
+      "work_cloud_prepare",
+      args,
+    );
+    const handler = (
+      assistantHttpTools as unknown as {
+        _handler: (ctx: unknown, request: Request) => Promise<Response>;
+      }
+    )._handler;
+    const response = await handler(
+      { runMutation, runAction },
+      new Request("https://synthetic.example/assistant-tools", {
+        method: "POST",
+        headers: { authorization: "Bearer synthetic-access-token-0123456789" },
+        body: JSON.stringify({ operation: "work_cloud_prepare", args }),
+      }),
+    );
+    expect(response.status).toBe(200);
+    const validated = workCloudPreparationStage.parse(payload);
+    if (validated.stage === "metadata") {
+      expect(runMutation.mock.calls[1][1]).toEqual({
+        ...lease,
+        operation: "metadata",
+        metadata: validated.metadata,
+      });
+      expect(runAction).not.toHaveBeenCalled();
+    } else {
+      expect(runAction).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
+        ...lease,
+        frameId: validated.frameId,
+        preparationHash: validated.preparationHash,
+        data: validated.data,
+      });
+      expect(runMutation).toHaveBeenCalledOnce();
+    }
+    for (const patch of [
+      { sourceId: "other-source" },
+      { leaseToken: crypto.randomUUID() },
+      { extra: true },
+      ...(stage === "frame"
+        ? [
+            { data: "a".repeat(109232) },
+            { data: Buffer.alloc(81921).toString("base64") },
+          ]
+        : []),
+    ]) {
+      expect(
+        workCloudPreparationStage.safeParse({ ...payload, ...patch }).success,
+      ).toBe(false);
+    }
+  },
+);
 it("rejects deeply nested unknown output before recursive hashing or serialization", () => {
   let extra: unknown = null;
   for (let i = 0; i < 20000; i++) extra = { nested: extra };

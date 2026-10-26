@@ -123,6 +123,34 @@ export const workCloudFrameInput = z.strictObject({
     .max(200000)
     .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
 });
+// Existing connected hosts may retain their original six-tool catalog. Keep
+// staged media return on the already available bounded preparation scalar.
+export const workCloudPreparationStage = z.discriminatedUnion("stage", [
+  z.strictObject({
+    schemaVersion: z.literal("work-cloud-media-stage-v1"),
+    stage: z.literal("metadata"),
+    metadata: workCloudMetadata,
+  }),
+  z.strictObject({
+    schemaVersion: z.literal("work-cloud-media-stage-v1"),
+    stage: z.literal("frame"),
+    ...workCloudFrameInput.omit({
+      sourceId: true,
+      generation: true,
+      taskId: true,
+      leaseToken: true,
+    }).shape,
+    // 80 KiB fits the original 120000-byte scalar, including its envelope.
+    data: workCloudFrameInput.shape.data
+      .max(109228)
+      .refine(
+        (data) =>
+          (data.length / 4) * 3 -
+            (data.endsWith("==") ? 2 : data.endsWith("=") ? 1 : 0) <=
+          81920,
+      ),
+  }),
+]);
 export const workCloudCompleteInput = z
   .object({
     ...lease,

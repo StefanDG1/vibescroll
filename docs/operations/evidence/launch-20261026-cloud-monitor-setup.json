@@ -35,10 +35,7 @@
   "syntheticBrowser": {
     "actualReactAndCSS": true,
     "network": "local fixture only; app API mocked with synthetic data; mutations forbidden",
-    "widths": [
-      1600,
-      320
-    ],
+    "widths": [1600, 320],
     "horizontalOverflow": false,
     "messageReadOnly": true,
     "fullTextSelectOnFocus": true,
@@ -69,7 +66,6 @@
     "automaticMediaAccepted": false
   },
   "remaining": [
-    "exact new-head CI",
     "actual admitted native media runtime",
     "one automatic app-Save retained analysis",
     "original exact-image repair",
@@ -88,5 +84,11 @@
     "lintZeroWarnings": true,
     "documentationDocuments": 355,
     "financeInvariants": 17
+  },
+  "exactCI": {
+    "commit": "e855fe7e43ec09cdc51747f032daa460c83d2592",
+    "runId": "40349584407",
+    "jobId": "121665661415",
+    "status": "passed"
   }
 }

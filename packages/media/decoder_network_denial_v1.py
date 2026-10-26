@@ -160,6 +160,11 @@ def _verify_socket_denial(library):
 def install_denial():
     """Irreversibly constrain this fresh child, then verify kernel enforcement."""
     _admit_host()
+    _install_after_admission()
+
+
+def _install_after_admission():
+    """Shared filter mechanics; each version must admit its host first."""
     _close_inherited_descriptors()
     library = _libc()
     filters, program = _filter_program()
@@ -185,7 +190,7 @@ def _decoder_environment():
             "HF_HUB_OFFLINE": "1", "HF_HUB_DISABLE_TELEMETRY": "1"}
 
 
-def main(arguments=None):
+def _run_decoder(arguments, installer):
     args = list(sys.argv[1:] if arguments is None else arguments)
     if (not args or args.pop(0) != "--" or not args or len(args) > 128 or
             sum(len(arg.encode()) for arg in args) > 16384 or
@@ -195,8 +200,12 @@ def main(arguments=None):
     if not executable.is_absolute() or not executable.is_file() or not os.access(executable, os.X_OK):
         raise DecoderDenialUnavailable("decoder_denial_requires_absolute_executable")
     environment = _decoder_environment()
-    install_denial()
+    installer()
     os.execve(str(executable), args, environment)
+
+
+def main(arguments=None):
+    _run_decoder(arguments, install_denial)
 
 
 if __name__ == "__main__":

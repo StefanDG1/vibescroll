@@ -1,0 +1,36 @@
+{
+  "recordedAtUTC": "2026-10-26T19:06:59.049245+00:00",
+  "scope": "candidate backend-only eligibility reuse; no migration or source job",
+  "observedProduction": {
+    "frontendCommit": "112774540f14c067e8ab55bdb1f2a51e6efc9a7d",
+    "backendCommit": "112774540f14c067e8ab55bdb1f2a51e6efc9a7d",
+    "privateLibrary": false,
+    "workCloudMediaEnabled": true,
+    "workCloudSavedEnabled": false,
+    "adoptionRefusal": "other_private_workspace"
+  },
+  "reproducedFailingCasesBeforeFix": 7,
+  "focusedCompatibleCasesPassed": 77,
+  "fullLocalCheck": {
+    "exitCode": 0,
+    "vitestPassed": 2128,
+    "hostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 68,
+    "windowsLinuxSkipped": 4,
+    "typesPassed": true,
+    "zeroWarningLint": true,
+    "productionBuildsPassed": true
+  },
+  "preserved": [
+    "organization IDs and ownership",
+    "saved source and project IDs",
+    "other private library",
+    "old grant automatic authority",
+    "reserved and unknown posts",
+    "zero API funding and finite per-Save approval"
+  ],
+  "productionEligibilityUpdate": false,
+  "automaticMediaAcceptance": false,
+  "exactCI": "pending"
+}

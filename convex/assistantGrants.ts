@@ -61,9 +61,7 @@ export const setup = query({
       workCloudMediaEnabled:
         cloudEligible && workCloudMediaAllowed(actor.subject),
       eventsEnabled: process.env.MCP_EVENTS_ENABLED === "true",
-      workCloudSavedEnabled:
-        organization.privateOwnerId === actor._id &&
-        savedCloudEnabled(actor.subject),
+      workCloudSavedEnabled: cloudEligible && savedCloudEnabled(actor.subject),
       devices: (
         await ctx.db
           .query("devices")
@@ -330,7 +328,7 @@ export const save = mutation({
     if (a.cloudSaveDefaults) {
       ensure(
         savedCloudEnabled(actor.subject) &&
-          organization.privateOwnerId === actor._id &&
+          (await workCloudSourceEligible(ctx, organization, actor._id)) &&
           a.cloudRequestPolicy === "explicit_per_source_v1" &&
           a.libraryScope === "all" &&
           !a.analysisDefaults?.enabled &&

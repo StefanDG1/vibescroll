@@ -1,3 +1,13 @@
+## October 26: full eligibility checks pass
+
+The stable eligibility candidate passed the full local check: 1,292 Vitest tests with three hosted skips, nineteen Node tests, 59 Python cases with four Linux-only Windows skips, types, zero-warning lint and production builds. The compatible focused regression suite passed77 cases after seven original-workspace failures before the fix. Only assistantGrants and the existing workCloudSave helper change backend behavior; schema, indexes and component configuration are untouched. [Sanitized receipt](operations/evidence/launch-20261026-cloud-save-eligibility.json). Exact CI and guarded backend publication remain pending. No source job or grant change occurred.
+
+## October 26: reproduce the original-workspace automatic setup mismatch
+
+Production frontend/backend1127745 now include the title-preview update and preserve the ChatGPT renderer fix. One fixed Basic queued build passed staged health, exact illustrated guide and tools-ZIP checks, then same-build promotion and canonical health. Desktop and320px public Help decoded the652x1066 illustration without overflow. The first guide-index expectation and first pre-completion canonical read are retained as failures, not acceptance. Automatic source jobs remain zero.
+
+The native runtime's complete pins and fresh V2 socket denial passed. Its older incomplete marker was preserved before removal; a separate turn verified both receipt hashes, marker/partial absence and the unchanged bounded cache. Private pilot flags were enabled through two exact guarded writes, without changing any source or grant. Actual setup then exposed a stricter ownership-field check in automatic Save than in existing explicit Cloud requests. The original sole-owner workspace has another private library, so adoption is correctly unavailable. Seven regressions fail before the fix. The candidate now reuses the existing bounded eligibility predicate without changing ownership or saved data;77 focused compatible cases pass. [ADR166](adr/166-consistent-cloud-save-eligibility.md). Full checks and exact CI remain pending.
+
 ## October 26: preserve the serving renderer fix
 
 The compatible candidate now includes the ChatGPT renderer discovery fix from d975e1e. A fresh public canonical health read returned d975e1eb97fc11a83c43dcd7175e58db92139490/version0.1.0-alpha.20261026182408.gd975e1eb97fc. The title-preview follow-up is not deployed. Automatic flags, grants and jobs remain unchanged by this merge; actual automatic media acceptance remains open.

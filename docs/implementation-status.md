@@ -1,5 +1,11 @@
 ## October 26: task locations and illustrated Help are live
 
+## Widget release preflight and spending policy, October26
+
+The owner approved up to EUR1 for a controlled deployment and read-only host verification, raising the cumulative cap to EUR9 with every prior hold retained. The owner then confirmed that included Vercel credits may fund useful work and prohibited spending only for build speed. The release reservation is USD0.42, not an incurred charge. Fixed Basic machinery and normal queuing remain required. The month-to-date billing query exceeded the connector's response limit, so no remaining included-credit balance is certified.
+
+Exact candidate `2f154a6d7e6da2f3e4ae2b286433380c79a622b2` passed Linux CI40362175470. Offline schema/index comparison, seven component code comparisons after explicit packaging normalization, and10 release-guard tests passed. A fresh hosted sink read returned zero configured sinks. The live baseline matched all291 root module hashes. The one schema prediction then reported five new component definitions and incomplete old-component validation because the widget's optional `@standard-schema/spec` peer changes existing pnpm component paths. The guard halted before backend publication. No Vercel build, project/env update, source save, analysis or media download ran. A narrow local override failed to restore component identities and was reverted; the exact committed lockfile was reinstalled offline. New-widget production remains0%. [Preflight evidence](operations/evidence/launch-20261026-mcp-widget-preflight.json). Dependency isolation and actual ChatGPT/Codex rendering remain pending.
+
 ## Widget review branch, October26
 
 [Draft PR187](https://github.com/StefanDG1/vibescroll/pull/187) contains the compact-first candidate. The compatible base advanced with docs-only `f53ee03` while review was prepared; its exact `ff7d88f` application source is now live and the owner raised the cumulative cap to EUR8. That publication did not include this widget. This branch integrates the receipt without releasing any existing hold or authorizing another hosted build. The widget feature flag remains off and its new-code production percentage remains0.

@@ -1,5 +1,9 @@
 # Product decisions
 
+## Three task locations, October26
+
+[ADR161](adr/161-three-task-locations.md) implements the owner's shared three-choice picker: own ChatGPT Cloud Recommended, separately bought VibeScroll server credits, and local own-subscription processing. Keep unsupported routes visible but disabled, quick setup/reconfiguration and More info, and Save without analysis separate. This presentation change widens no grant or runtime availability and changes no saved data or funding approval. Production publication remains pending.
+
 ## Conservative Cloud result return, October 25
 
 [ADR 152](adr/152-conservative-cloud-result-return.md) records a real accepted preparation and rejected completion, followed by exact-payload offline verification. The adapter reduces overstated confidence and supports a recent-owner-reviewed, hash-bound return of the same retained attempt. It starts no processing and preserves saved posts/insights. Current Cloud status overrides old local-intake advice. Production completion remains pending; cumulative EUR5 and all prior holds remain.

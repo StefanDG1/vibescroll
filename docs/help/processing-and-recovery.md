@@ -2,6 +2,20 @@
 
 Keep the saved source while you repair the smallest missing prerequisite.
 
+## Choose where tasks run
+
+The Save form and **Continue setup** show the same three choices:
+
+1. **My own Cloud Work**, recommended. This uses your ChatGPT subscription in ChatGPT Work with Cloud selected. Your computer can be off. Automatic video analysis is still being verified, so this choice stays visible and disabled until ready.
+2. **VibeScroll's servers**. This uses processing credits bought separately from your ChatGPT subscription. Review the maximum before starting. Buying credits does not enable an unavailable processing route.
+3. **Local machine**. This uses your own eligible subscription on a paired computer. Keep the computer and its companion on. Review any preparation credits before starting.
+
+Use **Finish setup** or **Reconfigure** beside the choice. **More info** opens by tap, mouse or keyboard. Cloud setup opens Connections, server usage opens Usage, and local setup opens Paired computers. Existing account, rights, runtime and budget checks still apply.
+
+![Task locations in a synthetic account](/help/task-locations.png)
+
+You can save a post without analysis. Choosing a task location does not start work. VibeScroll never switches a failed task to a different subscription or credit route automatically.
+
 ## Before you start
 
 Open the existing source/status link and **Connections**. Check which workspace and account you are using. Never send tokens, pairing secrets, signed links or private transcripts to support.

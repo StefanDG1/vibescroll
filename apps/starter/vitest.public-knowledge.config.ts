@@ -11,6 +11,8 @@ export default defineConfig({
   },
   test: {
     include: [
+      "apps/starter/task-runtime-picker.test.ts",
+      "apps/starter/capture-runtime-ui.test.ts",
       "apps/starter/private-library-upgrade-ui.test.ts",
       "apps/starter/work-cloud-text-ui.test.ts",
       "apps/starter/assistant-connections-cloud-ui.test.ts",

@@ -6,9 +6,12 @@
   "ignoreCommand": "node ../../scripts/ignore-vercel-build.mjs",
   "git": {
     "deploymentEnabled": {
-      "codex/launch-20261022-*": false
+      "codex/launch-20261022-*": false,
+      "codex/widget-ui-*": false
     }
   },
-  "regions": ["fra1"],
+  "regions": [
+    "fra1"
+  ],
   "fluid": true
 }

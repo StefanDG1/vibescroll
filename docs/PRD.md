@@ -1,5 +1,9 @@
 # Product requirements
 
+## Three task locations, October26
+
+[ADR161](adr/161-three-task-locations.md) requires a simple shared picker in Save and setup, ordered own ChatGPT Cloud Recommended, VibeScroll servers using separately bought credits, then local machine using the user's own subscription. Show actual availability, quick setup/reconfiguration and accessible extra information. Unsupported routes remain visible and disabled. Save without analysis remains separate; preserve existing data and every task's permissions and limits.
+
 Mode: reference. Product: VibeScroller. Release: V1. Specification: 1.0.0.
 
 ## Product purpose

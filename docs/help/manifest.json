@@ -51,6 +51,16 @@
       "height": 700,
       "captureCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
       "synthetic": true
+    },
+    {
+      "path": "/help/task-locations.png",
+      "status": "approved",
+      "alt": "Three task locations with own ChatGPT Cloud recommended, separate VibeScroll credits and local subscription use. All are disabled in this synthetic account.",
+      "caption": "Actual candidate interface with a synthetic account. Availability depends on your setup. Recommended does not mean automatic analysis is enabled.",
+      "width": 652,
+      "height": 1066,
+      "captureCommit": "63e5d0b617481aae4cb9931ad9a3120b3dd2a2e0",
+      "synthetic": true
     }
   ],
   "articles": [
@@ -136,8 +146,8 @@
       "summary": "Distinguish waiting work, unavailable accounts, reservations and settled usage.",
       "file": "processing-and-recovery.md",
       "status": "approved",
-      "reviewMode": "source-reviewed compatible private Cloud candidate; existing local guidance preserved; real Cloud video and independent setup pending",
-      "lastVerifiedCommit": "76ec7bf0b9812e670207cba199b8d07cc07839fd",
+      "reviewMode": "source-reviewed three-location candidate with actual synthetic screenshot and local keyboard/mobile checks; production and independent setup pending",
+      "lastVerifiedCommit": "63e5d0b617481aae4cb9931ad9a3120b3dd2a2e0",
       "dependencies": [
         "apps/starter/components/console.tsx",
         "docs/CAPABILITIES.md",
@@ -151,10 +161,12 @@
         "convex/workCloudAnalysis.ts",
         "apps/starter/components/work-cloud-text.tsx",
         "packages/contracts/work-cloud-text.ts",
-        "docs/adr/146-compatible-private-work-cloud-release.md"
+        "docs/adr/146-compatible-private-work-cloud-release.md",
+        "apps/starter/components/task-runtime-picker.tsx",
+        "convex/aiPreferences.ts"
       ],
       "related": ["getting-started"],
-      "assets": []
+      "assets": ["/help/task-locations.png"]
     },
     {
       "slug": "imports-and-data",
@@ -291,5 +303,11 @@
     "status": "source-reviewed-candidate",
     "updated": ["work-cloud-text-review"],
     "limits": "Conservative confidence and exact owner result-return recovery source-reviewed; real completion pending. Existing funding/local/retention instructions remain."
+  },
+  "taskLocationReview": {
+    "date": "2026-10-26",
+    "baseline": "63e5d0b617481aae4cb9931ad9a3120b3dd2a2e0",
+    "updated": ["processing-and-recovery"],
+    "limits": "No route activated. Actual synthetic screenshot and local keyboard/mobile checks; automatic Cloud video, production publication and independent setup remain separate."
   }
 }

@@ -2,7 +2,7 @@
 
 ## Native MCP widget candidate, October 26
 
-The owner approved the widget-only combination of the Library workspace, inline cited cards and project review board. Local branch `codex/widget-ui-20261026` starts at compatible PR186 head `75fe204ab04eae4b2210581de1603a8e9a379b43`. [ADR161](adr/161-native-mcp-widget-workspace.md), the [full plan and coverage](widget/implementation.md), [research](widget/research-and-plan.md) and [runbook](operations/mcp-widget.md) describe the candidate. This is local code and fixture evidence, not deployed-host or public-release acceptance.
+The owner approved the widget-only combination of the Library workspace, inline cited cards and project review board. Local branch `codex/widget-ui-20261026` starts at compatible PR186 head `75fe204ab04eae4b2210581de1603a8e9a379b43`. [ADR162](adr/162-native-mcp-widget-workspace.md), the [full plan and coverage](widget/implementation.md), [research](widget/research-and-plan.md) and [runbook](operations/mcp-widget.md) describe the candidate. This is local code and fixture evidence, not deployed-host or public-release acceptance.
 
 The candidate adds a separate React MCP Apps client, three self-contained resources, five authenticated bounded read projections, current-work cards, exact private proposal reading, protected review destinations, strict snapshot files, self-service connection pages/prompts and nine workflow skills. Existing Cloud/Events commands and grants stay unchanged. Source disclosure through context/comparison/export rechecks current retrieval and evidence version. `MCP_WIDGET_ENABLED` defaults off. No live customer data, provider settings, charge, job, plugin account or deployment was changed.
 
@@ -17,6 +17,16 @@ Validation on 26 October 2026, Windows/Node24/pnpm12.3.4, base commit above plus
 - Portable source ZIP inspected: 13 files, nine skills, contained paths, matching manifest/icon references and no env/dependency directories. It is not an installed or directory-approved package. No portal binding or reviewer credentials were invented.
 
 The full broad unit/integration/Cloud/physical-device/real-host acceptance matrix and named release secret scanner were not run in this bounded local pass. Full repository PR checks, matching deployment, fresh-customer OAuth, actual ChatGPT/Codex rendering, file/context/mentions support and exact-source Cloud reopen/recovery are release conditions. Sensitive organization, project/plan edits and execution/publication remain protected app workflows under existing permissions. This record does not close those gates.
+
+## Three task locations compatible candidate, October26
+
+[ADR161](adr/161-three-task-locations.md) implements one shared Where tasks run picker in Save and Continue setup. Own ChatGPT Cloud is Recommended but stays disabled pending automatic media acceptance; VibeScroll servers use separately bought credits; local machine uses the user's own account. Setup/reconfiguration and keyboard/tap More info use existing pages. The duplicate inert preference checkbox is removed without deleting its stored value/API. Paired, offline and per-task readiness stay separate.
+
+The existing authorized AI-preference query returns the matching private owner's saved route through the current by-org index; no schema, index or grant changes. Save honors save-only and unavailable routes without changing executor/funding. Opening the editor refreshes its existing bounded options once. No full-main Home, project-builder, ordered-media or index work was imported.
+
+Full compatible offline check passed1,229 Vitest,19 Node and38 Python tests, with3 hosted skips, types/lint and both builds. Focused UI101 and backend5 passed. Final Help screenshot/static-asset builds passed on both branches. Exact-head CI remains separately recorded. Source/format checks passed; dependencies are unchanged and prior development-tool advisories remain.
+
+The actual synthetic screenshot comes from main runtime63e5d0b and the identical shared picker. This is candidate UI acceptance, not independent customer/device testing or deployment. Serving frontend/backend remains6cdcb1c. The no-media native probe's later execution/cleanup are host-reported; independent later tool trace and full media admission remain. Probe paused, subscriptions/deliveries0 at12:47:45/46UTC. No post/job/download/paid inference. Current retainedUSD7.825014256044614 underUSD7.95/EUR7.50 leavesUSD.12498574395538586 unreserved; every prior hold remains. No new controlled publication is funded.
 
 ## Actual app Save to ChatGPT reply accepted, October 26
 

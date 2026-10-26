@@ -1,4 +1,4 @@
-# ADR 161: add a native MCP widget around compatible Cloud commands
+# ADR 162: add a native MCP widget around compatible Cloud commands
 
 Date: October 26, 2026. Status: local implementation candidate, deployment and host acceptance pending.
 

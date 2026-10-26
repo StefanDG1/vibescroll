@@ -74,6 +74,7 @@ import { policyRelease } from "../../../packages/policy/publication";
 import { EvidenceViewer } from "./evidence-viewer";
 import { AnalysisReview } from "./analysis-review";
 import { SetupJourney } from "./setup-journey";
+import { TaskRuntimePicker } from "./task-runtime-picker";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
 import { TypedSourceEvidence } from "./typed-source-evidence";
 import { PublicKnowledgePanel } from "./public-knowledge-panel";
@@ -108,6 +109,7 @@ type Initial = {
     personalAlphaEnabled?: boolean;
     linkAnalysisEnabled?: boolean;
     cloudAnalysisEnabled?: boolean;
+    processingRoute?: "local" | "cloud" | "save_only" | null;
   };
   sources: any[];
   selectedSource?: any;
@@ -691,7 +693,7 @@ export function Console({
       if (captureOrigin.current === origin) captureOrigin.current = null;
     };
     const generation = viewGeneration.current;
-    if ((data.compact || data.workspaceSlice) && !demo) {
+    if (!demo) {
       setBusy(true);
       try {
         if (refreshFlight.current) await refreshFlight.current;
@@ -2354,67 +2356,20 @@ export function Console({
                     demo={demo}
                   />
                   <section className="panel">
-                    <h2>Use your plan for local analysis</h2>
+                    <h2>Task setup</h2>
                     <p>
-                      Prefer your own allowance for eligible AI requests and
-                      keep VibeScroll inference credits for other work. ChatGPT
-                      limits still apply; transcription, storage and cloud
-                      execution have separate costs.
+                      Choose where tasks run when saving a post or in Continue
+                      setup. My own Cloud Work uses your ChatGPT subscription
+                      and is recommended once automatic analysis is ready.
+                      VibeScroll's servers use separately bought credits. Local
+                      machine needs your own computer on.
                     </p>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: ".65rem",
-                        minHeight: 44,
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        style={{ width: 18, height: 18, flexShrink: 0 }}
-                        checked={data.aiPreference?.preferChatGPTPlan ?? false}
-                        disabled={demo || busy}
-                        onChange={async (event) => {
-                          const preferChatGPTPlan = event.target.checked;
-                          const result = await call("aiPreference", {
-                            organizationId,
-                            preferChatGPTPlan,
-                          });
-                          if (result)
-                            setData((current) => ({
-                              ...current,
-                              aiPreference: {
-                                ...current.aiPreference,
-                                preferChatGPTPlan,
-                                hostedStatus: "awaiting_commercial_access",
-                                active: false,
-                              },
-                            }));
-                        }}
-                      />
-                      Prefer my ChatGPT plan when available
-                    </label>
-                    <p className="notice" style={{ textAlign: "left" }}>
-                      Hosted subscription-funded analysis is awaiting OpenAI
-                      commercial access. This is separate from assistant library
-                      access. Saving this preference does not connect an
-                      account, grant consent, or change the funding route of a
-                      current task.
-                    </p>
-                    <p>
-                      Personal alpha accounts can pair a laptop and approve text
-                      and video analysis from the source screen. Audio is
-                      transcribed on that laptop; sampled frames and text use
-                      your connected ChatGPT account. Coding requires verified
-                      isolation and separate approval.
-                    </p>
-                    <a
-                      href="https://chatgpt.com/settings/usage"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Manage ChatGPT app access and usage
-                    </a>
+                    <Button busy={busy} onClick={() => void openCapture()}>
+                      Choose where to run analysis
+                    </Button>
+                    <Link href="/help/processing-and-recovery" prefetch={false}>
+                      Setup and costs guide
+                    </Link>
                   </section>
                   <div className="panel">
                     <h2>GitHub</h2>
@@ -2830,6 +2785,7 @@ export function Console({
               personalEnabled={data.aiPreference?.personalAlphaEnabled}
               linkAnalysisEnabled={data.aiPreference?.linkAnalysisEnabled}
               cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
+              preferredRoute={data.aiPreference?.processingRoute}
               sharedDraft={sharedDraft}
               demo={demo}
               organizationId={organizationId}
@@ -2852,7 +2808,7 @@ export function Console({
     </div>
   );
 }
-function CaptureForm({
+export function CaptureForm({
   demo,
   organizationId,
   call,
@@ -2863,20 +2819,32 @@ function CaptureForm({
   personalEnabled = false,
   linkAnalysisEnabled = false,
   cloudEnabled = false,
+  preferredRoute,
   sharedDraft,
 }: any) {
   const [kind, setKind] = useState(existingSourceId ? "upload" : "url");
   const [saving, setSaving] = useState(false);
-  const [autoAnalyze, setAutoAnalyze] = useState(true);
-  const [analysisRoute, setAnalysisRoute] = useState(
-    personalEnabled ? "personal" : "cloud",
+  const [autoAnalyze, setAutoAnalyze] = useState(
+    preferredRoute !== "save_only",
   );
-  const eligible = devices.filter(
-    (d: any) =>
-      d.personalOwned &&
-      d.state === "paired" &&
-      d.personalOnline &&
-      d.personalModels?.length,
+  const [analysisRoute, setAnalysisRoute] = useState(
+    preferredRoute === "local"
+      ? "personal"
+      : preferredRoute === "cloud"
+        ? "cloud"
+        : preferredRoute === "save_only"
+          ? ""
+          : personalEnabled
+            ? "personal"
+            : cloudEnabled
+              ? "cloud"
+              : "",
+  );
+  const paired = devices.filter(
+    (d: any) => d.personalOwned && d.state === "paired",
+  );
+  const eligible = paired.filter(
+    (d: any) => d.personalOnline && d.personalModels?.length,
   );
   const [chosenDevice, setChosenDevice] = useState(
     eligible.length === 1 ? id(eligible[0]) : "",
@@ -3339,19 +3307,33 @@ function CaptureForm({
         <input name="rights" type="checkbox" required />I may submit this
         content for processing
       </label>
-      {personalEnabled && cloudEnabled && (
-        <label htmlFor="analysis-provider-choice">
-          Analysis provider
-          <ChoiceSelect
-            id="analysis-provider-choice"
-            value={analysisRoute}
-            onValueChange={(value) => setAnalysisRoute(value)}
-          >
-            <option value="personal">My ChatGPT plan · paired laptop</option>
-            <option value="cloud">Cloud processing · app credits</option>
-          </ChoiceSelect>
-        </label>
-      )}
+      <TaskRuntimePicker
+        organizationId={organizationId}
+        value={
+          analysisRoute === "personal"
+            ? "local"
+            : analysisRoute === "cloud"
+              ? "cloud"
+              : undefined
+        }
+        onChange={(value) => {
+          if (value === "local") setAnalysisRoute("personal");
+          if (value === "cloud") setAnalysisRoute("cloud");
+        }}
+        serverAvailable={cloudEnabled}
+        localAvailable={personalEnabled}
+        localConfigured={paired.length > 0}
+        localStatus={
+          eligible.length
+            ? "check_before_running"
+            : paired.some((device: any) => device.personalOnline)
+              ? "setup_required"
+              : paired.length
+                ? "offline"
+                : "setup_required"
+        }
+        disabled={saving || importBusy}
+      />
       {personalEnabled &&
         analysisRoute === "personal" &&
         (kind === "upload" ||

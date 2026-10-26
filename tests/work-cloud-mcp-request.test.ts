@@ -294,6 +294,19 @@ it.each([
       intake: await ctx.db.get(intakeId),
       reservations: await ctx.db.query("reservations").collect(),
     }));
+    await expect(
+      s.owner.query(api.assistantIntakeUi.status, { sourceId: s.sourceId }),
+    ).resolves.toBeNull();
+    for (const mode of ["cancel", "credits"] as const) {
+      await expect(
+        s.owner.mutation(api.assistantIntakeUi.act, {
+          sourceId: s.sourceId,
+          generation: 1,
+          mode,
+          ...(mode === "credits" ? { maxCredits: 10 } : {}),
+        }),
+      ).rejects.toThrow(/current Cloud request controls/);
+    }
     const result = await s.assistant.query(internal.assistant.getJobStatus, {
       profileId: s.org,
       sourceId: s.sourceId,

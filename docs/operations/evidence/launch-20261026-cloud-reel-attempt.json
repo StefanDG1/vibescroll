@@ -1,0 +1,35 @@
+{
+  "backend": "e9d58807a19af00ca00c30f53e89c78f4bd5ae28",
+  "frontend": "bba2715aa8fdb14501e0b54033addb1ff4f280ae",
+  "sourceId": "px797hpmxmysyg53z0ktspb60n8gwk6g",
+  "url": "https://www.instagram.com/reel/Dez9915l8ga/",
+  "generation": 1,
+  "existingGrantVersion": 8,
+  "repeatedAppAuthorization": false,
+  "nativeMetadataAccepted": {
+    "title": "Video by tunestechtips",
+    "authorName": "tunestechtips"
+  },
+  "acquisition": {
+    "seconds": 5.323,
+    "bytes": 2336272,
+    "captionTracks": 0,
+    "automaticRetries": 0
+  },
+  "failure": "LOCAL_ASR_MODEL_FILES_INVALID: retained four pinned weight files lack the verifier-required vibescroller-model.json marker",
+  "transcriptCompleted": false,
+  "framesCompleted": false,
+  "analysisCompleted": false,
+  "asrInitialized": false,
+  "terminalState": "unknown; accepted fail receipt; no lease reopened or replayed",
+  "rawCleanupObserved": {
+    "files": 11,
+    "directories": 1,
+    "providerHistoryDeletion": "not attested"
+  },
+  "next": "Verify original four hashes and create marker only in a new model cache; actual synthetic ASR smoke test before another selected source. Preserve this generation and its accounting.",
+  "staleUIReproduced": "historical local-computer waiting/credit receipt appeared during current Cloud work; backend status/action guard being tested",
+  "cumulativeCapEUR": 7,
+  "allOldUnknownHoldsRetained": true,
+  "reservedTikTokUnchanged": true
+}

@@ -20,6 +20,13 @@ export const status = query({
       "Source unavailable.",
     );
     const { actor } = await access(ctx, source.organizationId);
+    // The historical local intake cannot describe this generation's Cloud
+    // executor, credit usage or controls. Its own Cloud panel owns that state.
+    if (
+      source.personalAnalysis?.executor === "work_cloud" &&
+      source.personalAnalysis.generation === source.generation
+    )
+      return null;
     const rows = await ctx.db
       .query("assistantIntakes")
       .withIndex("by_source", (q) => q.eq("sourceId", source._id))
@@ -52,6 +59,14 @@ export const act = mutation({
       "owner",
       "admin",
     ]);
+    ensure(
+      !(
+        source.personalAnalysis?.executor === "work_cloud" &&
+        source.personalAnalysis.generation === source.generation
+      ),
+      "APPROVAL_STALE",
+      "Use the current Cloud request controls.",
+    );
     const rows = await ctx.db
       .query("assistantIntakes")
       .withIndex("by_source", (q) => q.eq("sourceId", source._id))

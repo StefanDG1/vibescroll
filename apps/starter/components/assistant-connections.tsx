@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChoiceSelect } from "./choice-select";
+import { workCloudMonitorMessage } from "../../../packages/onboarding/work-cloud-monitor";
 type Project = {
   repositoryId: string;
   name: string;
@@ -106,6 +107,7 @@ function AssistantAccessEditor({
   const busy = pending !== null;
   const [pageLoading, setPageLoading] = useState(false);
   const [checkedAt, setCheckedAt] = useState(0);
+  const [copiedSetup, setCopiedSetup] = useState("");
   const generation = useRef(0);
   const editor = useRef<HTMLDetailsElement>(null);
   const needsContext = scopes.includes("context:read");
@@ -424,57 +426,118 @@ function AssistantAccessEditor({
             </p>
           )}
           <div className="assistant-grant-list">
-            {data.grants.map((grant) => (
-              <div key={grant.id} className="assistant-grant-row">
-                <div>
-                  <strong>
-                    {data.clients.find((c) => c.id === grant.clientId)?.name ??
-                      "Previously configured assistant"}
-                  </strong>
-                  <p className="fine">
-                    {grant.state === "active" &&
-                    (grant.expiresAt === null || grant.expiresAt > checkedAt)
-                      ? grant.expiresAt === null
-                        ? "Active until you turn access off"
-                        : `Active until ${new Date(grant.expiresAt).toLocaleString()}`
-                      : "Access ended"}
-                    .{" "}
-                    {grant.libraryScope
-                      ? grant.libraryScope === "all"
-                        ? "All current and future posts"
-                        : `Current and future ${grant.libraryScope === "personal" ? "Personal" : "Business"} posts`
-                      : `${grant.sources.length} previously selected posts`}
-                    . {grant.repositories?.length ?? 0} selected projects.
-                    {grant.analysisDefaults?.enabled
-                      ? " Links automatically queue local extraction and organization."
-                      : " Automatic analysis is off."}
-                    {grant.cloudRequestPolicy === "explicit_per_source_v1"
-                      ? " Exact private video requests are allowed in a supported Work Cloud chat."
-                      : ""}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={busy || readOnly}
-                  onClick={() => editPreferences(grant)}
-                >
-                  Edit preferences
-                </button>
-                {grant.state === "active" && (
+            {data.grants.map((grant) => {
+              const setupMessage =
+                data.privateLibrary &&
+                data.enabled &&
+                data.eventsEnabled &&
+                data.workCloudMediaEnabled &&
+                data.workCloudSavedEnabled
+                  ? workCloudMonitorMessage(
+                      organizationId,
+                      grant,
+                      data.clients.find((c) => c.id === grant.clientId),
+                      checkedAt,
+                    )
+                  : null;
+              return (
+                <div key={grant.id} className="assistant-grant-row">
+                  <div>
+                    <strong>
+                      {data.clients.find((c) => c.id === grant.clientId)
+                        ?.name ?? "Previously configured assistant"}
+                    </strong>
+                    <p className="fine">
+                      {grant.state === "active" &&
+                      (grant.expiresAt === null || grant.expiresAt > checkedAt)
+                        ? grant.expiresAt === null
+                          ? "Active until you turn access off"
+                          : `Active until ${new Date(grant.expiresAt).toLocaleString()}`
+                        : "Access ended"}
+                      .{" "}
+                      {grant.libraryScope
+                        ? grant.libraryScope === "all"
+                          ? "All current and future posts"
+                          : `Current and future ${grant.libraryScope === "personal" ? "Personal" : "Business"} posts`
+                        : `${grant.sources.length} previously selected posts`}
+                      . {grant.repositories?.length ?? 0} selected projects.
+                      {grant.cloudSaveDefaults
+                        ? " Automatic Cloud defaults are saved."
+                        : grant.analysisDefaults?.enabled
+                          ? " Links automatically queue local extraction and organization."
+                          : " Automatic analysis is off."}
+                      {grant.cloudRequestPolicy === "explicit_per_source_v1"
+                        ? " Exact private video requests are allowed in a supported Work Cloud chat."
+                        : ""}
+                    </p>
+                  </div>
+                  {setupMessage && (
+                    <details className="assistant-cloud-monitor-setup">
+                      <summary>Set up ChatGPT</summary>
+                      <p className="fine">
+                        Open a Work chat with Cloud and this VibeScroll plugin
+                        selected. Paste this message once and let setup finish.
+                        ChatGPT will check its runtime before creating the
+                        monitor. Refresh access here after changing your
+                        permissions.
+                      </p>
+                      <label htmlFor={`cloud-monitor-${grant.id}`}>
+                        ChatGPT setup message
+                      </label>
+                      <textarea
+                        id={`cloud-monitor-${grant.id}`}
+                        readOnly
+                        rows={8}
+                        value={setupMessage}
+                        onFocus={(event) => event.currentTarget.select()}
+                      />
+                      <button
+                        type="button"
+                        className="secondary"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(setupMessage);
+                            setCopiedSetup(`${grant.id}:${grant.version}`);
+                          } catch {
+                            setCopiedSetup("");
+                            setError(
+                              "Select the setup message and copy it using your browser.",
+                            );
+                          }
+                        }}
+                      >
+                        Copy setup message
+                      </button>
+                      <output className="fine">
+                        {copiedSetup === `${grant.id}:${grant.version}`
+                          ? "Copied. Paste it into your ChatGPT Work chat."
+                          : "This message contains library identifiers, not your login credentials."}
+                      </output>
+                    </details>
+                  )}
                   <button
                     type="button"
                     className="secondary"
                     disabled={busy || readOnly}
-                    onClick={() => void revoke(grant)}
+                    onClick={() => editPreferences(grant)}
                   >
-                    {pending === grant.id
-                      ? "Turning access off..."
-                      : "Turn off access"}
+                    Edit preferences
                   </button>
-                )}
-              </div>
-            ))}
+                  {grant.state === "active" && (
+                    <button
+                      type="button"
+                      className="secondary"
+                      disabled={busy || readOnly}
+                      onClick={() => void revoke(grant)}
+                    >
+                      {pending === grant.id
+                        ? "Turning access off..."
+                        : "Turn off access"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <details ref={editor} className="assistant-grant-editor">
             <summary>Choose assistant access</summary>

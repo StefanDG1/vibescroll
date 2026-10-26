@@ -402,3 +402,7 @@ Synchronized all four briefs with the reduced selected-source loading candidate 
 ## F075: global catalog and one-time Cloud intake, October25
 
 All four briefs now record owner-confirmed automatic neutral contribution, association-only personal removal and the supported Cloud intake distinction. ADR154 preserves actual moderation/provider/paid gates and every unclosed launch requirement. Current private-only results are not silently republished.
+
+## F080: current-grant native setup, October26
+
+All four briefs distinguish the gated setup-message candidate, synthetic JPEG handoff and blocked public TikTok visit. The owner's one-time setup direction is preserved; no prices, audience, permissions or live availability change. Actual automatic media remains unaccepted.

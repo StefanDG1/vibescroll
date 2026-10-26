@@ -1,0 +1,92 @@
+{
+  "observedDateUTC": "2026-10-26",
+  "status": "disabled_unpublished_candidate",
+  "baseCommit": "79c59a244b62a0bdd248c1ecebcddcab4e6e4d0e",
+  "baseCI": {
+    "runId": "40344437782",
+    "status": "passed",
+    "mandatoryLinuxSocketAndExecTestsRan": true
+  },
+  "servingCommit": "ff7d88f5601c5d717f3ac5cad6ff73489ba29a25",
+  "implementation": [
+    "current saved profile/client/grant version setup message",
+    "existing-gate and action checks, no old grant authority",
+    "clipboard or selectable manual copying",
+    "no backend operation or monitor/job creation from copying",
+    "same-job app intent/caption/JPEG/thumbnail/canonical result integration"
+  ],
+  "localFullCheck": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "log": "outputs/cloud-monitor-setup-full-check-20261026-r2.log",
+    "exitCode": 0,
+    "vitestPassed": 2115,
+    "vitestExternalSkipped": 3,
+    "nodePassed": 19,
+    "pythonTotal": 60,
+    "pythonLinuxOnlyWindowsSkipped": 2,
+    "types": true,
+    "lintZeroWarnings": true,
+    "productionBuilds": 2,
+    "earlierFailures": [
+      "initial test mock signature rejected by type checking; corrected",
+      "status role semantic lint warning; replaced with output"
+    ]
+  },
+  "syntheticBrowser": {
+    "actualReactAndCSS": true,
+    "network": "local fixture only; app API mocked with synthetic data; mutations forbidden",
+    "widths": [
+      1600,
+      320
+    ],
+    "horizontalOverflow": false,
+    "messageReadOnly": true,
+    "fullTextSelectOnFocus": true,
+    "keyboardDisclosure": true,
+    "actualClipboardTouched": false,
+    "clipboardSuccessAndRefusal": "component-tested",
+    "ownedTabClosed": true,
+    "devServerStopped": true
+  },
+  "browserScreenshots": {
+    "mobile.png": {
+      "sha256": "1c9e6e0a1153fcbfdd63cf51355a3c4cc7a6687f113776f5c1885b1407021f6c",
+      "bytes": 40546
+    },
+    "mobile-message.png": {
+      "sha256": "2ae422fc0ee6eadcfbb6c508e241e5794329835ad6071d6b3cd0a9424f58b003",
+      "bytes": 35093
+    },
+    "desktop.png": {
+      "sha256": "6fdd60dae34547c11da3a6c2b8378ede56afb68f4ff3ef0e6816576fff996228",
+      "bytes": 260963
+    }
+  },
+  "publication": {
+    "performed": false,
+    "savedLinksEnabled": false,
+    "savedLinksVerified": false,
+    "automaticMediaAccepted": false
+  },
+  "remaining": [
+    "exact new-head CI",
+    "actual admitted native media runtime",
+    "one automatic app-Save retained analysis",
+    "original exact-image repair",
+    "full linked plans and existing external gates"
+  ],
+  "budget": {
+    "cumulativeCapEUR": 8,
+    "retainedUSD": 8.295014256044613,
+    "unreservedUSD": 0.18498574395538725,
+    "priorHoldsReleased": false
+  },
+  "finalFocused": {
+    "cloudConnectionsUI": 21,
+    "joinedMediaAndSaveTests": 104,
+    "typesPassed": true,
+    "lintZeroWarnings": true,
+    "documentationDocuments": 355,
+    "financeInvariants": 17
+  }
+}

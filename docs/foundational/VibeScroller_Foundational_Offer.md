@@ -1,5 +1,9 @@
 # VibeScroll foundational offer
 
+## F080: exact native setup message and tested browser limits, October26
+
+Connections now has an unpublished, gated setup-message candidate generated from a saved current grant. It carries library/client/version identifiers without credentials, post content or editable analysis settings. Runtime checks precede monitor creation and any source job. The owner browser test established synthetic JPEG handoff but the supplied TikTok hit a CAPTCHA/login overlay; captions, duration and source frames remain unverified. Keep the pinned caption-first downloader direction and existing disabled gates. This is setup guidance and local evidence, not automatic-media or customer-availability acceptance. Audience, prices, six beliefs, private data and the cumulative EUR8 cap with every old hold remain unchanged. See [ADR162](../adr/162-finite-app-save-cloud-intents.md) and the [browser receipt](../operations/evidence/launch-20261026-native-cloud-browser.json).
+
 ## F079: finite app saves and actual native runtime limits, October26
 
 The owner-approved link-only flow now has a disabled implementation candidate under [ADR162](../adr/162-finite-app-save-cloud-intents.md). A reviewed one-time default and current native saved-link monitor permit a finite source-bound intent. The host prepares before the existing analysis job begins; save-only and unavailable routes preserve their meaning. The three-option picker and illustrated Help are live separately. Native notification/renewal and one active-task Reel do not prove automatic media: current nested decoder probes failed. Local UI/handler tests supply no customer outcome or general availability evidence. Preserve the audience, prices, six beliefs, private data, every provider/privacy gate and EUR8 cumulative cap with all old holds. No marketing campaign or automatic catalog contribution follows.

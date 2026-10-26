@@ -505,3 +505,7 @@ Synchronized all four briefs with the reduced selected-source loading candidate 
 ## F075: global catalog and one-time Cloud intake, October25
 
 All four briefs now record owner-confirmed automatic neutral contribution, association-only personal removal and the supported Cloud intake distinction. ADR154 preserves actual moderation/provider/paid gates and every unclosed launch requirement. Current private-only results are not silently republished.
+
+## F080: current-grant native setup, October26
+
+Adopted as a disabled implementation candidate within the owner's one-time-setup request. Generate the exact current library/client/grant binding from saved permissions and provide clipboard/manual copying. Supporting evidence: native Events renewal and save acknowledgement work; synthetic Cloud image handoff works. Contrary evidence: nested decoder controls failed and one hosted-browser TikTok visit was blocked by CAPTCHA/login. The message must stop before a monitor/job when runtime readiness fails, preserve every server authority check and avoid paid/local fallbacks. Validate current-version copying, stale/disabled/revoked access, clipboard fallback, mobile layout and the same-job caption/JPEG/result chain. No customer, revenue, speed or general automatic-analysis claim follows.

@@ -2926,6 +2926,16 @@ dialog.capture-modal::backdrop {
   padding: 16px 0;
   border-bottom: 1px solid var(--line);
 }
+.assistant-cloud-monitor-setup {
+  flex-basis: 100%;
+  min-width: 0;
+  order: 1;
+}
+.assistant-cloud-monitor-setup textarea {
+  display: block;
+  max-width: 100%;
+  margin: 8px 0 12px;
+}
 .assistant-context {
   padding-left: 16px;
   border-left: 1px solid var(--line);

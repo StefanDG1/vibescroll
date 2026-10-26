@@ -64,7 +64,7 @@
   },
   "remainingAdmission": [
     "independent event command trace",
-    "actual image viewing",
+    "actual source-frame inspection",
     "supported pinned package bootstrap",
     "source-network policy and decoder isolation",
     "verified ASR cache or narrower captions-only acceptance",
@@ -73,12 +73,13 @@
   ],
   "budget": {
     "cumulativeCapEUR": 8,
-    "retainedUsd": 8.265014256044614,
-    "unreservedUsd": 0.2149857439553866,
+    "retainedUsd": 8.295014256044613,
+    "unreservedUsd": 0.18498574395538725,
     "probeHoldsUsd": 0.04,
     "priorHoldsReleased": false,
     "invoiceCertified": false,
-    "newAdmissionHoldUsd": 0.02
+    "newAdmissionHoldUsd": 0.02,
+    "newBrowserMetadataHoldUsd": 0.03
   },
   "laterSetupAdmission": {
     "observedDateUTC": "2026-10-26",
@@ -128,7 +129,7 @@
     "limitations": [
       "normal setup-turn experiments only",
       "independent event-run tool trace still not recovered",
-      "no image inspection or decoder success",
+      "no source-frame inspection or decoder success",
       "no bypass or escalation"
     ]
   },
@@ -143,6 +144,14 @@
     "skipReason": "unsupported-host CLI negative case is inapplicable on admitted Linux",
     "realSocketAndExecTestsRan": true,
     "nativeHostAdmitted": false,
-    "mandatoryFlagForwardingFix": "subsequent_candidate_pending_CI"
-  }
+    "mandatoryFlagForwardingFix": {
+      "commit": "79c59a244b62a0bdd248c1ecebcddcab4e6e4d0e",
+      "runId": "40344437782",
+      "jobId": "121647479399",
+      "status": "passed",
+      "realLinuxSocketAndExecTestsRan": true,
+      "mandatoryFlagForwarded": true
+    }
+  },
+  "hostedBrowserFollowup": "launch-20261026-native-cloud-browser.json"
 }

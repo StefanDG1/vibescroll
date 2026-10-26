@@ -352,6 +352,14 @@ export const state = internalQuery({
       processing_route:
         setup?.actor === a.actor._id ? (setup.processingRoute ?? null) : null,
       actions: {
+        ...(process.env.MCP_WIDGET_LIBRARY_EDITING_ENABLED === "true"
+          ? {
+              organize:
+                a.membership.role !== "viewer" &&
+                a.grant.libraryScope === "all" &&
+                allowed("knowledge:write"),
+            }
+          : {}),
         jobs: allowed("jobs:read"),
         context: allowed("context:read"),
         save: a.membership.role !== "viewer" && allowed("links:save"),

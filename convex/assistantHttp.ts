@@ -11,6 +11,20 @@ import {
 } from "../packages/widget/contracts";
 import { assistantIssuer } from "../packages/policy/assistant";
 import {
+  libraryEditInput,
+  libraryEditStateInput,
+  libraryEditReceiptInput,
+  libraryEditFailure,
+  type LibraryEdit,
+} from "../packages/widget/library-edits";
+import {
+  filingInput,
+  filingStateInput,
+  filingReceiptInput,
+  filingFailure,
+  type FilingInput,
+} from "../packages/widget/evidence-filing";
+import {
   cloudCompletionEnvelope,
   parseWorkCloudResult,
   workCloudTextOperations,
@@ -26,6 +40,39 @@ const operations = z.discriminatedUnion("operation", [
     .object({
       operation: z.literal("widget_feedback_state"),
       args: feedbackStateInput,
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_evidence_state"),
+      args: filingStateInput,
+    })
+    .strict(),
+  z
+    .object({ operation: z.literal("widget_evidence_edit"), args: filingInput })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_evidence_receipt"),
+      args: filingReceiptInput,
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_library_state"),
+      args: libraryEditStateInput,
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_library_edit"),
+      args: libraryEditInput,
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_library_receipt"),
+      args: libraryEditReceiptInput,
     })
     .strict(),
   z
@@ -184,6 +231,8 @@ const operations = z.discriminatedUnion("operation", [
     .strict(),
 ]);
 export const tools = httpAction(async (ctx, request) => {
+  let editRequest: LibraryEdit | undefined;
+  let evidenceRequest: FilingInput | undefined;
   const deny = (status = 403) =>
     Response.json(
       {
@@ -235,6 +284,74 @@ export const tools = httpAction(async (ctx, request) => {
             typeof internal.assistantWidget.feedbackState
           >,
         );
+        break;
+      case "widget_evidence_state":
+        value = await ctx.runQuery(
+          internal.assistantLibrary.evidenceState,
+          input.args as FunctionArgs<
+            typeof internal.assistantLibrary.evidenceState
+          >,
+        );
+        break;
+      case "widget_evidence_receipt": {
+        const receipt = await ctx.runQuery(
+          internal.assistantLibrary.evidenceOutcome,
+          input.args as FunctionArgs<
+            typeof internal.assistantLibrary.evidenceOutcome
+          >,
+        );
+        value = {
+          profile_id: input.args.profileId,
+          grant_version: input.args.grantVersion,
+          reference: input.args.reference,
+          receipt,
+        };
+        break;
+      }
+      case "widget_evidence_edit":
+        evidenceRequest = input.args;
+        value = await ctx.runMutation(
+          internal.assistantLibrary.fileEvidence,
+          input.args as FunctionArgs<
+            typeof internal.assistantLibrary.fileEvidence
+          >,
+        );
+        break;
+      case "widget_library_state":
+        value = await ctx.runQuery(internal.assistantLibrary.state, {
+          ...input.args,
+          profileId: input.args.profileId as Id<"organizations">,
+          topicId: input.args.topicId as Id<"knowledgeTopics">,
+        });
+        break;
+      case "widget_library_receipt": {
+        const receipt = await ctx.runQuery(internal.assistantLibrary.outcome, {
+          ...input.args,
+          profileId: input.args.profileId as Id<"organizations">,
+          topicId: input.args.topicId as Id<"knowledgeTopics">,
+        });
+        value = {
+          profile_id: input.args.profileId,
+          grant_version: input.args.grantVersion,
+          receipt,
+        };
+        break;
+      }
+      case "widget_library_edit":
+        editRequest = input.args;
+        value = await ctx.runMutation(internal.assistantLibrary.change, {
+          ...input.args,
+          profileId: input.args.profileId as Id<"organizations">,
+          topicId: input.args.topicId as Id<"knowledgeTopics">,
+          change:
+            input.args.change.kind === "structure"
+              ? {
+                  ...input.args.change,
+                  parentId: input.args.change
+                    .parentId as Id<"knowledgeTopics"> | null,
+                }
+              : input.args.change,
+        });
         break;
       case "widget_profiles":
         value = await ctx.runQuery(internal.assistantWidget.profiles, {});
@@ -424,7 +541,23 @@ export const tools = httpAction(async (ctx, request) => {
         break;
     }
     return Response.json(value, { headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    if (evidenceRequest) {
+      const rejected = filingFailure(error, evidenceRequest);
+      if (rejected)
+        return Response.json(rejected, {
+          status: 409,
+          headers: { "Cache-Control": "no-store" },
+        });
+    }
+    if (editRequest) {
+      const rejected = libraryEditFailure(error, editRequest);
+      if (rejected)
+        return Response.json(rejected, {
+          status: 409,
+          headers: { "Cache-Control": "no-store" },
+        });
+    }
     return deny();
   }
 });

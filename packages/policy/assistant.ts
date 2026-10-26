@@ -1,6 +1,7 @@
 export const assistantResource = "https://scroll.companynerve.com/mcp";
 export const assistantScopes = [
   "knowledge:read",
+  "knowledge:write",
   "context:read",
   "links:save",
   "jobs:read",

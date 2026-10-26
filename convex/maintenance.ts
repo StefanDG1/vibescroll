@@ -42,6 +42,7 @@ export const purgeOrganization = internalMutation({
       "assistantDeliveries",
       "assistantSubscriptions",
       "assistantIntakes",
+      "assistantLibraryCommands",
       "assistantGrants",
       "teamKnowledgeGrants",
       "librarySetup",
@@ -119,6 +120,10 @@ export const cleanup = internalMutation({
   handler: async (ctx) => {
     if (process.env.RESTORE_LOCK === "true") return;
     const batches = await Promise.all([
+      ctx.db
+        .query("assistantLibraryCommands")
+        .withIndex("by_expiry", (q) => q.lt("expiresAt", Date.now()))
+        .take(200),
       ctx.db
         .query("events")
         .withIndex("by_processed", (q) =>

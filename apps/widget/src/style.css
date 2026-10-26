@@ -1429,3 +1429,126 @@ a svg {
   padding: 8px 12px;
   font-size: 12px;
 }
+
+.topic-editor {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+}
+.topic-editor > summary {
+  min-height: 40px;
+  align-content: center;
+  cursor: pointer;
+  font-weight: 550;
+}
+.topic-editor-body {
+  padding-top: 8px;
+}
+.topic-editor fieldset {
+  min-width: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 18px 0 0;
+  padding: 14px 0 0;
+}
+.topic-editor legend {
+  font-weight: 550;
+  padding: 0 8px 0 0;
+}
+.topic-editor label {
+  display: block;
+  margin: 10px 0 6px;
+}
+.topic-editor input,
+.topic-editor select,
+.topic-editor textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+.topic-editor textarea {
+  resize: vertical;
+}
+.topic-editor input:focus-visible,
+.topic-editor select:focus-visible,
+.topic-editor textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.topic-editor fieldset .widget-action {
+  margin: 8px 8px 0 0;
+}
+.topic-editor-recovery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.topic-editor p {
+  overflow-wrap: anywhere;
+}
+.topic-editor output {
+  display: block;
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+
+.idea-filing {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 8px;
+}
+.idea-filing > summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+  font-weight: 550;
+}
+.idea-filing-body {
+  padding: 4px 0 8px;
+}
+.idea-filing fieldset {
+  border: 0;
+  min-width: 0;
+  margin: 16px 0;
+  padding: 0;
+}
+.idea-filing label {
+  display: block;
+  margin: 12px 0 6px;
+}
+.idea-filing select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  appearance: auto;
+}
+.idea-filing select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.filing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.idea-filing p,
+.idea-filing output {
+  overflow-wrap: anywhere;
+}
+.idea-filing output {
+  display: block;
+  margin: 12px 0;
+}

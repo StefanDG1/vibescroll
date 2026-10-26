@@ -201,6 +201,11 @@ export const finishDelete = internalMutation({
       .withIndex("by_actor", (q) => q.eq("actor", job.userId))
       .take(100);
     for (const intake of intakes) await ctx.db.delete(intake._id);
+    const libraryCommands = await ctx.db
+      .query("assistantLibraryCommands")
+      .withIndex("by_actor", (q) => q.eq("actor", job.userId))
+      .take(100);
+    for (const command of libraryCommands) await ctx.db.delete(command._id);
     const grants = await ctx.db
       .query("assistantGrants")
       .withIndex("by_actor_client", (q) => q.eq("actor", job.userId))
@@ -209,7 +214,8 @@ export const finishDelete = internalMutation({
     if (
       subscriptions.length > 0 ||
       grants.length === 100 ||
-      intakes.length === 100
+      intakes.length === 100 ||
+      libraryCommands.length === 100
     ) {
       await ctx.scheduler.runAfter(0, internal.accounts.finishDelete, {
         jobId,

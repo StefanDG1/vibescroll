@@ -1,0 +1,90 @@
+{
+  "scope": "Local inline ChatGPT-style card candidate extending unpublished PR191; no live edit acceptance",
+  "baseCommit": "aa5d3d083d447597bdfe6f772a6ac800bc91880e",
+  "featureFlag": "MCP_WIDGET_LIBRARY_EDITING_ENABLED",
+  "defaultEnabled": false,
+  "scopeRequired": ["knowledge:read", "knowledge:write"],
+  "libraryScopeRequired": "all",
+  "writerRoleRequired": true,
+  "liveConfigurationChanges": 0,
+  "liveDataWrites": 0,
+  "deploymentBuilds": 0,
+  "paidApiCalls": 0,
+  "commands": [
+    "widget_evidence_state",
+    "widget_evidence_edit",
+    "widget_evidence_receipt"
+  ],
+  "schemaCandidate": {
+    "newTablesRelativeToProduction": ["assistantLibraryCommands"],
+    "indexes": 5,
+    "newThisPhase": ["Optional evidence receipt", "by_source index"],
+    "productionSchemaChanged": false
+  },
+  "checks": {
+    "fullCheckBeforeReviewFix": {
+      "command": "node scripts/run-offline.mjs pnpm check",
+      "passed": true,
+      "vitestPassed": 1364,
+      "hostedSkipped": 3,
+      "nodeTestsPassed": 19,
+      "pythonCases": 67,
+      "pythonWindowsSkipped": 5,
+      "types": true,
+      "lintWarnings": 0,
+      "productionBuilds": ["marketing", "starter"]
+    },
+    "postFix": {
+      "focusedPassed": 62,
+      "filingBackendCases": 29,
+      "includesRealHttpRouter": true,
+      "includesSourceCleanupAndFilteredEmptyPage": true,
+      "fullTypesPassed": true
+    },
+    "widgetBuild": {
+      "passed": true,
+      "workspaceBytes": 931040,
+      "workspaceGzipBytes": 235129
+    },
+    "appBridge": {
+      "passed": 15,
+      "synthetic": true,
+      "productionHtml": true,
+      "nativeKeyboard": true,
+      "recoveryWrites": 1,
+      "recoveryReceiptReads": 1,
+      "emptyPageReadsBeforeManualLoad": 1,
+      "emptyPageReadsAfterManualLoad": 2,
+      "ownedTabClosed": true,
+      "actualHost": false
+    },
+    "dependencyAudit": {
+      "observedAt": "2026-10-26T21:31:53.293Z",
+      "unresolved": 0
+    },
+    "design": {
+      "initialDisposition": "fix",
+      "finding": "Empty filtered filing page hid manual continuation",
+      "finalDisposition": "ship",
+      "scope": "Listed continuation correction scored resolved",
+      "primaryDetectorFindings": 0,
+      "incumbentCssAdvisories": 44,
+      "newCssFindings": 0
+    }
+  },
+  "preservedFailures": [
+    "Initial revocation test used a nonexistent revokedAt field; corrected fixture to existing state:revoked before focused pass.",
+    "Initial typechecks found literal-type widening and query-inference ordering; corrected before compiled UI review.",
+    "Shared-browser pointer and raw Enter events were unreliable; local harness now dispatches native Enter with its character event.",
+    "Navigation readiness could reuse an earlier document handshake; harness now binds its initialized receipt to an exact unique navigation URL.",
+    "Early captures were scrolled or clipped while the host resized; final whole-card captures wait for size, reset child/parent scroll and were opened/validated.",
+    "Independent reviewer found empty-page continuation hidden; explicit manual continuation and real/backend AppBridge regressions passed after the fix."
+  ],
+  "pending": [
+    "Exact candidate CI",
+    "Separate additive schema release and budget review",
+    "Explicit provider/client/user edit consent",
+    "Actual ChatGPT editing acceptance",
+    "Remaining full widget plan"
+  ]
+}

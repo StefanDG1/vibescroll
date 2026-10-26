@@ -3,6 +3,7 @@ import { internalMutation, mutation } from "./lib/projectedMutations";
 import type { QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
+import { checkTopicParent } from "./lib/topicStructure";
 import { access, writeAccess, limit, audit } from "./lib";
 import { insightProposalStatus } from "../packages/knowledge/proposal-status";
 import { categoryName } from "../packages/categories";
@@ -88,25 +89,7 @@ export const organize = mutation({
       "POLICY_BLOCKED",
       "Do not include credentials in topic names.",
     );
-    let parentId = a.parentId ?? null;
-    const seen = new Set<string>([topic._id]);
-    for (let depth = 0; parentId; depth++) {
-      ensure(
-        depth < 12 && !seen.has(parentId),
-        "INVALID_INPUT",
-        "Choose a parent without a cycle, within twelve levels.",
-      );
-      seen.add(parentId);
-      const parent = await ctx.db.get(parentId);
-      ensure(
-        parent &&
-          parent.organizationId === topic.organizationId &&
-          !parent.redirect,
-        "FORBIDDEN",
-        "Parent topic unavailable.",
-      );
-      parentId = parent.parentId ?? null;
-    }
+    await checkTopicParent(ctx, topic, a.parentId ?? null);
     await ctx.db.patch(topic._id, {
       ...(a.parentId === undefined
         ? {}

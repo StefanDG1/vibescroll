@@ -227,3 +227,11 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## October 26: source judgment review inside ChatGPT
 
 [ADR176](adr/176-compact-source-judgment-review.md) adds a compact lazy source-review disclosure with the saved connection-specific judgment/note, canonical recovery and stable first keys. It reuses current feedback/read permissions and existing records/indexes, preserving manual quality reviews. Exact CI and real-host acceptance remain separate; no live judgment or permission changes follow from this local implementation.
+
+## October 26: opt-in widget topic editing
+
+[ADR 170](adr/170-opt-in-widget-topic-editing.md) adds versioned rename, pin, folder and alias commands with current whole-library edit consent and retained receipts. This local phase defaults off, adds a receipt table, and changes no live client, scope or grant.
+
+## October 26: exact idea filing in the ChatGPT card
+
+[ADR174](adr/174-inline-idea-filing.md) adds collapsed, exact-reference move/remove/restore controls to the cited card under the unpublished explicit whole-library edit consent. Manual state, versioned receipts, filtered-page continuation and source deletion cleanup preserve current authority. It starts no analysis or publication and changes no live grant or feature flag.

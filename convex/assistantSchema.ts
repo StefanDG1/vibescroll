@@ -65,6 +65,7 @@ export const assistantTables = {
         eventName: v.union(
           v.literal("work_cloud_waiting"),
           v.literal("work_cloud_connection_verified"),
+          v.literal("video_link_saved"),
         ),
       }),
     ),
@@ -87,7 +88,10 @@ export const assistantTables = {
       }),
       v.object({
         ...deliveryFields,
-        eventName: v.literal("work_cloud_waiting"),
+        eventName: v.union(
+          v.literal("work_cloud_waiting"),
+          v.literal("video_link_saved"),
+        ),
         sourceId: v.id("sources"),
         generation: v.number(),
       }),

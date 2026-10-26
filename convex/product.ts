@@ -1,4 +1,5 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
+import { notifyVideoLinkSaved } from "./lib/assistantEvents";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { presentAnalysis } from "../packages/insights/presentation";
 import { classifySourceUrl } from "../packages/sources/classify";
@@ -1078,7 +1079,11 @@ export async function captureAuthorized(
       q.eq("organizationId", a.organizationId).eq("key", a.key),
     )
     .unique();
-  if (old && old.state !== "deleted") return old._id;
+  if (old && old.state !== "deleted") {
+    if (!bulk && a.kind === "url")
+      await notifyVideoLinkSaved(ctx, old, actor.actor._id);
+    return old._id;
+  }
   const classified = a.kind === "url" ? classifySourceUrl(a.url ?? "") : null;
   let canonical =
     a.kind === "url"
@@ -1153,7 +1158,11 @@ export async function captureAuthorized(
       q.eq("organizationId", a.organizationId).eq("canonical", canonical),
     )
     .unique();
-  if (dup && dup.state !== "deleted") return dup._id;
+  if (dup && dup.state !== "deleted") {
+    if (!bulk && a.kind === "url")
+      await notifyVideoLinkSaved(ctx, dup, actor.actor._id);
+    return dup._id;
+  }
   let socialIdentity:
     { platform: "instagram" | "tiktok"; postKey: string } | undefined;
   if (a.kind === "url" && classified?.sourceType === "media") {
@@ -1272,6 +1281,8 @@ export async function captureAuthorized(
       });
   }
   await audit(ctx, a.organizationId, actor.actor._id, "source.captured", id);
+  if (!bulk && a.kind === "url")
+    await notifyVideoLinkSaved(ctx, (await ctx.db.get(id))!, actor.actor._id);
   if (
     a.kind === "url" &&
     classified?.sourceType === "media" &&

@@ -1,3 +1,7 @@
+## October 26: preserve the serving renderer fix
+
+The compatible candidate now includes the ChatGPT renderer discovery fix from d975e1e. A fresh public canonical health read returned d975e1eb97fc11a83c43dcd7175e58db92139490/version0.1.0-alpha.20261026182408.gd975e1eb97fc. The title-preview follow-up is not deployed. Automatic flags, grants and jobs remain unchanged by this merge; actual automatic media acceptance remains open.
+
 ## October 26: complete title-preview checks pass
 
 Full stable-source check passed 1,284 Vitest tests with three external skips, nineteen Node tests and 59 Python cases with four Linux-only Windows skips, types, zero-warning lint and both application builds. A before/after source-diff digest matched across the complete run. The six joined preview cases preserve custom and approved titles while exposing native metadata; compatible widget source/job/fetch cases also pass without exposing transcript text. The earlier four placeholder failures and widget fetch failure are retained in ignored logs. [Sanitized receipt](operations/evidence/launch-20261026-title-preview.json). Exact-head CI remains pending for this update.
@@ -7,6 +11,14 @@ The compatible branch includes the widget dependency isolation and ADR-number co
 ## October 26: early native titles survive blank URL saves
 
 The candidate now uses the existing Imported video link placeholder for new URL saves and recognizes historical Saved video in presentation. Scoped job status and the app select the same native preview title; an explicit custom title stays preferred. The saved source title/revision, finite approval hash, grant and generation are untouched. Four placeholder regression cases failed before the fix; the expanded six-case integration covers custom-title preservation with and without thumbnail metadata. Full final checks and exact CI for this update remain pending. Production remains the freshly verified ff7d88f.
+
+## October26: widget candidate published; actual host found a renderer restriction
+
+Source bfe02d2 passed exact Linux CI40373100728, the final local1278-test JavaScript suite, Node/Python checks and22 operator-guard checks. The guarded backend returned finish acknowledgement at18:01:26.794UTC. Its postcondition incorrectly expected private dependency chunks in the public-module diff and halted after publication. Independent receipt review accepted only the four frozen public additions and exact optional schema widening. A fresh read matched all297 deployed root module hashes. No retry, schema walk, index backfill or component remount occurred; the original halt remains recorded.
+
+One fixed Basic frontend build dpl_5225QTerfeq6VwPk6G4zE8BeLhYi passed staged version/descriptor/OAuth metadata checks and was promoted unchanged. Canonical health reports bfe02d2/version0.1.0-alpha.20261026175106.gbfe02d2e869f. The POST-only MCP endpoint correctly rejects GET with405; an initial401 expectation was rejected rather than counted as an auth pass. Normal domain assignment was restored. No automatic Cloud flag, source, job or grant changed.
+
+The authenticated production profile read succeeded, but real ChatGPT tool refresh reports that the private open_vibescroll_export tool cannot render a widget. The local fix exposes only that read-only renderer to model and app, adding its existing knowledge:read OAuth metadata and enforcement. App-only data reads stay private. A new regression fails before the fix and passes after it. Actual widget rendering remains unverified. [Publication/host receipt](operations/evidence/launch-20261026-mcp-widget-publication.json).
 
 ## October26: widget dependency isolation fixed locally
 

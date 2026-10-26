@@ -99,6 +99,25 @@ it("opens an empty-argument workspace through profile discovery and reauthorizes
   expect(invoke).not.toHaveBeenCalled();
 });
 
+it("advertises widget renderers as model-visible OAuth tools for ChatGPT discovery", async () => {
+  const listed = await packet(
+    await call("tools/list", {}, ["knowledge:read", "links:save"]),
+  );
+  const renderers = listed.result.tools.filter(
+    (tool: any) => tool._meta?.ui?.resourceUri,
+  );
+  expect(renderers.map((tool: any) => tool.name)).toContain(
+    "open_vibescroll_export",
+  );
+  for (const tool of renderers) {
+    expect(tool._meta.ui.visibility).toContain("model");
+    expect(tool._meta.securitySchemes).toContainEqual({
+      type: "oauth2",
+      scopes: [tool.name === "save_link" ? "links:save" : "knowledge:read"],
+    });
+  }
+});
+
 it("renders ordinary fetched results as inline cards without changing headless content or polling tools", async () => {
   const listed = await packet(
     await call("tools/list", {}, ["knowledge:read", "links:save"]),

@@ -139,8 +139,10 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
         idempotentHint: true,
         openWorldHint: false,
       },
+      scopeChallenge: requireScopes("knowledge:read"),
       _meta: {
-        ui: { resourceUri: uri("export"), visibility: ["app"] },
+        ...scopes,
+        ui: { resourceUri: uri("export"), visibility: ["model", "app"] },
         "openai/ui": {
           entrypoints: [{ type: "file", extensions: [".vibescroll"] }],
         },

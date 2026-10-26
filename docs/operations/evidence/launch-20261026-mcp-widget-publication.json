@@ -1,0 +1,56 @@
+{
+  "dateUTC": "2026-10-26",
+  "status": "published_candidate_chatgpt_discovery_rejected_private_renderer_fix_pending",
+  "sourceCommit": "bfe02d2e869f39ec61b8f87850bdec796f18fae7",
+  "ciRun": 40373100728,
+  "ciConclusion": "success",
+  "backend": {
+    "finishAcknowledgementUTC": "2026-10-26T18:01:26.794Z",
+    "finishAcknowledgementSHA256": "895c8b1b8512a5ad0cd937f5077ce94a908e148423854ab6dabd152e02ca5ac0",
+    "originalPostconditionHalt": "MODULE_PATHS_CHANGED",
+    "postconditionCause": "The public-module diff omits private _deps chunks; the local expectation included them.",
+    "postReceiptReview": "All four public additions match the frozen candidate. Existing auth, crons, indexes and component identities are unchanged; only the reviewed optional schema widening occurred.",
+    "publicModuleAdditions": [
+      "assistantWidget.js",
+      "lib/workCloudSave.js",
+      "workCloudSaveSchema.js",
+      "workCloudSaves.js"
+    ],
+    "freshModuleReadUTC": "2026-10-26T18:04:36.013Z",
+    "matchedRootModules": 297,
+    "schemaScans": 0,
+    "indexBackfills": 0,
+    "componentRemounts": 0,
+    "publicationRetries": 0,
+    "originalHaltPreserved": true
+  },
+  "frontend": {
+    "deploymentId": "dpl_5225QTerfeq6VwPk6G4zE8BeLhYi",
+    "fixedBasicQueued": true,
+    "builds": 1,
+    "sameStagedBuildPromoted": true,
+    "canonicalHealthCommitMatched": true,
+    "version": "0.1.0-alpha.20261026175106.gbfe02d2e869f",
+    "widgetEnabled": true,
+    "canonicalOAuthResourceVerified": true,
+    "statelessGetStatus": 405,
+    "statelessGetAllow": "POST",
+    "initialIncorrectGet401ExpectationPreserved": true,
+    "automaticDomainAssignmentRestored": true,
+    "automaticCloudFlagChanges": 0
+  },
+  "host": {
+    "name": "ChatGPT web",
+    "existingPluginIdentityPreserved": true,
+    "accountOrGrantChanges": 0,
+    "authenticatedProfileReadSucceeded": true,
+    "toolRefreshError": "These private tools can't render their widgets: open_vibescroll_export",
+    "widgetRendered": false,
+    "fix": "Advertise the read-only export renderer to model and app with the existing knowledge:read OAuth scope. Keep app-only data tools private."
+  },
+  "sourceSaves": 0,
+  "analysisJobs": 0,
+  "mediaDownloads": 0,
+  "holdsReleasedUSD": 0,
+  "invoiceCertified": false
+}

@@ -30,7 +30,12 @@
     "reserved and unknown posts",
     "zero API funding and finite per-Save approval"
   ],
-  "productionEligibilityUpdate": false,
+  "productionEligibilityUpdate": true,
+  "publishedBackendCommit": "f6dd6d4eb944fee5a88e3826e6a058b987b4b3d4",
+  "publishedAtUTC": "2026-10-26T19:12:59.462Z",
+  "schemaIndexComponentChanges": false,
+  "backfills": 0,
+  "actualOriginalLibrarySetupEligible": true,
   "automaticMediaAcceptance": false,
-  "exactCI": "pending"
+  "exactCI": { "runId": 40383890611, "conclusion": "success" }
 }

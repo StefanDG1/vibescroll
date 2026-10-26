@@ -1,3 +1,7 @@
+## October 26: widget candidate preserves the current Cloud HTTP baseline
+
+Widget implementation6dd8701 is integrated with serving backend source3ac3247 in merge dc04693. Both documentation histories are retained. Eighty focused cases pass across the widget edit contracts/backend/MCP, exact additive schema guard and current app-Save through MCP and HTTP job transport. The earlier full check belongs to the6dd implementation before this merge; exact combined CI remains required. No new deployment or live access change follows.
+
 ## October 26: opt-in widget topic editor passes local checks
 
 The local candidate based on33cbca9 adds expanded Topics rename, pin, folder and aliases through three app-only tools. It defaults off and requires explicit current whole-library read/edit consent and writer membership. Stable request keys, exact topic/layout versions and atomic thirty-day receipts support reconciliation without duplicate edits. Closing the disclosure preserves an unresolved request. No synthesis, media, coding or publication is dispatched.

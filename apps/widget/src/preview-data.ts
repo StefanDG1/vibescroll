@@ -1,4 +1,8 @@
 import type { ToolRecord } from "../../../packages/widget/contracts";
+import {
+  feedbackRequest,
+  type FeedbackState,
+} from "../../../packages/widget/feedback";
 const profile = "demo-private-workspace";
 export const demoCardPayload = {
   route: { view: "insight", profileId: profile, sourceId: "sample-onboarding" },
@@ -54,6 +58,28 @@ const links = Object.fromEntries(
     ],
   ),
 );
+type DemoFeedback = NonNullable<FeedbackState["feedback"]> & {
+  sourceId: string;
+  generation: number;
+  revision: number;
+  order: number;
+};
+const judgments = new Map<string, DemoFeedback>();
+let judgmentOrder = 0;
+export function seedDemoFeedback() {
+  judgments.set("sample-onboarding:saved-feedback-key", {
+    feedback_id: "sample-saved-judgment",
+    key: "saved-feedback-key",
+    version: 1,
+    action: "later",
+    note: "A saved note from this connection.",
+    grant_version: 1,
+    sourceId: "sample-onboarding",
+    generation: 1,
+    revision: 100,
+    order: ++judgmentOrder,
+  });
+}
 export async function demoCall(
   name: string,
   args: ToolRecord,
@@ -204,12 +230,79 @@ export async function demoCall(
       url: sources[0].url,
       note: "Illustrative save receipt. No real source was saved.",
     };
-  if (name === "record_feedback")
+  if (name === "widget_feedback_state") {
+    const matching = [...judgments.values()]
+      .filter(
+        (row) =>
+          row.sourceId === args.sourceId &&
+          row.generation === args.generation &&
+          row.revision === args.revision &&
+          (!args.key || row.key === args.key),
+      )
+      .sort((a, b) => b.order - a.order)[0];
     return {
-      feedback_version: Number(args.expectedVersion) + 1,
-      action: args.action,
-      note: "Illustrative feedback only.",
+      schema_version: "vibescroll-feedback-v1",
+      profile_id: profile,
+      grant_version: 1,
+      authority_id: "sample-feedback-grant",
+      request_key:
+        args.key ??
+        matching?.key ??
+        `review-${args.sourceId}-${args.generation}-${args.revision}`,
+      source_id: args.sourceId,
+      generation: args.generation,
+      revision: args.revision,
+      lookup_complete: true,
+      feedback: matching
+        ? {
+            feedback_id: matching.feedback_id,
+            key: matching.key,
+            version: matching.version,
+            action: matching.action,
+            note: matching.note,
+            grant_version: matching.grant_version,
+          }
+        : null,
     };
+  }
+  if (name === "record_feedback") {
+    const input = feedbackRequest.parse(args);
+    const lookup = `${input.sourceId}:${input.key}`;
+    const old = judgments.get(lookup);
+    if (
+      old &&
+      old.action === input.action &&
+      old.note === input.note.trim() &&
+      [old.version, old.version - 1].includes(input.expectedVersion)
+    )
+      return {
+        feedback_id: old.feedback_id,
+        version: old.version,
+        status: "recorded",
+        benefit: "not_measured",
+      };
+    if ((old?.version ?? 0) !== input.expectedVersion)
+      throw new Error("Synthetic judgment version changed");
+    const row: DemoFeedback = {
+      feedback_id: `sample-judgment-${++judgmentOrder}`,
+      key: input.key,
+      version: input.expectedVersion + 1,
+      action: input.action,
+      note: input.note.trim(),
+      grant_version: input.grantVersion,
+      sourceId: input.sourceId,
+      generation: input.generation,
+      revision: input.revision,
+      order: judgmentOrder,
+    };
+    judgments.set(lookup, row);
+    return {
+      feedback_id: row.feedback_id,
+      version: row.version,
+      status: "recorded",
+      benefit: "not_measured",
+    };
+  }
   if (name === "search")
     return {
       results: sources.flatMap((source) =>

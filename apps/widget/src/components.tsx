@@ -7,7 +7,6 @@ import {
   LoaderCircle,
   MessageSquare,
   Play,
-  ThumbsUp,
 } from "lucide-react";
 import { useHost } from "./host";
 import {
@@ -133,25 +132,18 @@ export function InsightDetail({
   source,
   insight,
   profileId,
-  grantVersion,
-  allowFeedback,
+  review,
   compact = false,
   notify,
 }: {
   source: Source;
   insight: Insight;
   profileId: string;
-  grantVersion: number;
-  allowFeedback: boolean;
+  review?: ReactNode;
   compact?: boolean;
   notify: (text: string) => void;
 }) {
   const host = useHost();
-  const [pending, setPending] = useState(false);
-  const [feedback, setFeedback] = useState("");
-  const [version, setVersion] = useState(0);
-  const [key] = useState(() => crypto.randomUUID());
-  const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const evidenceId = useId();
   const [expandedEvidenceId, setExpandedEvidenceId] = useState<string | null>(
@@ -162,36 +154,6 @@ export function InsightDetail({
     compact && !evidenceExpanded
       ? insight.evidence.slice(0, 2)
       : insight.evidence;
-  const submit = async (action: string) => {
-    if (!insight.reference) return;
-    setPending(true);
-    setError("");
-    try {
-      const data = await host.call("record_feedback", {
-        profileId,
-        sourceId: insight.reference.sourceId,
-        generation: insight.reference.generation,
-        revision: insight.reference.revision,
-        grantVersion,
-        key,
-        expectedVersion: version,
-        explicitlyRequested: true,
-        action,
-        note,
-      });
-      setVersion(Number(data.version ?? data.feedback_version));
-      setFeedback(action);
-      notify("Your judgment was recorded. It is not a measured benefit.");
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Feedback could not be recorded. Keep this view open to retry the same request.",
-      );
-    } finally {
-      setPending(false);
-    }
-  };
   const attach = async () => {
     try {
       await reauthorizeSources(host.call, profileId, [source]);
@@ -277,49 +239,7 @@ export function InsightDetail({
           citation remains available above.
         </p>
       )}
-      {allowFeedback && insight.reference && (
-        <section className="feedback-area">
-          <h3>How useful is this source?</h3>
-          <p className="muted small">
-            Your judgment applies to this exact source version.
-          </p>
-          <div className="feedback-buttons">
-            {[
-              ["useful", "Useful"],
-              ["not_relevant", "Not relevant"],
-              ["already_implemented", "Already implemented"],
-              ["unsafe_unsupported", "Unsupported"],
-              ["later", "Later"],
-            ].map(([action, label]) => (
-              <button
-                aria-pressed={feedback === action}
-                disabled={pending}
-                className={feedback === action ? "chosen" : ""}
-                key={action}
-                onClick={() => void submit(action)}
-              >
-                {action === "useful" && <ThumbsUp size={13} />}
-                {label}
-              </button>
-            ))}
-          </div>
-          <label className="note-label">
-            Optional note
-            <textarea
-              maxLength={2000}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={2}
-              placeholder="What should be kept in mind?"
-            />
-          </label>
-          {feedback && (
-            <output className="success">
-              Judgment saved · Version {version}
-            </output>
-          )}
-        </section>
-      )}
+      {review}
       {error && (
         <p className="inline-error" role="alert">
           {error}

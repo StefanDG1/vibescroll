@@ -11,11 +11,162 @@ import { assistantProject } from "./lib/assistantProject";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { draftCurrent } from "./issues";
 import { ensure } from "../packages/policy";
+import { digest } from "./product";
+import {
+  feedbackAction,
+  feedbackStateInput,
+} from "../packages/widget/feedback";
 
 const profile = { profileId: v.optional(v.id("organizations")) };
 const url = (org: string, suffix = "") =>
   `https://scroll.companynerve.com/app/${org}${suffix}`;
 type Authorized = Awaited<ReturnType<typeof assistantGrant>>;
+
+export const feedbackState = internalQuery({
+  args: {
+    profileId: v.id("organizations"),
+    sourceId: v.id("sources"),
+    generation: v.number(),
+    revision: v.number(),
+    grantVersion: v.number(),
+    key: v.optional(v.string()),
+  },
+  returns: v.object({
+    schema_version: v.literal("vibescroll-feedback-v1"),
+    profile_id: v.id("organizations"),
+    grant_version: v.number(),
+    authority_id: v.id("assistantGrants"),
+    request_key: v.string(),
+    source_id: v.id("sources"),
+    generation: v.number(),
+    revision: v.number(),
+    lookup_complete: v.boolean(),
+    feedback: v.union(
+      v.null(),
+      v.object({
+        feedback_id: v.id("feedback"),
+        key: v.string(),
+        version: v.number(),
+        action: v.union(
+          v.literal("useful"),
+          v.literal("not_relevant"),
+          v.literal("already_implemented"),
+          v.literal("unsafe_unsupported"),
+          v.literal("later"),
+        ),
+        note: v.string(),
+        grant_version: v.number(),
+      }),
+    ),
+  }),
+  handler: async (ctx, args) => {
+    feedbackStateInput.parse(args);
+    const a = await assistantGrant(ctx, args.profileId, "feedback:write");
+    ensure(
+      a.scopes.includes("knowledge:read") &&
+        a.client.scopes.includes("knowledge:read") &&
+        a.grant.scopes.includes("knowledge:read"),
+      "FORBIDDEN",
+      "Current knowledge access is required.",
+    );
+    const source = await sourceFor(ctx, a, args.sourceId);
+    ensure(
+      source &&
+        source.generation === args.generation &&
+        source.updatedAt === args.revision &&
+        a.grant.version === args.grantVersion,
+      "APPROVAL_STALE",
+      "Review the current source and connection before reading its judgment.",
+    );
+    let rows: Doc<"feedback">[];
+    let complete = true;
+    if (args.key) {
+      const row = await ctx.db
+        .query("feedback")
+        .withIndex("by_assistant_key", (q) =>
+          q
+            .eq("organizationId", a.organization._id)
+            .eq("actor", a.actor._id)
+            .eq("assistantClientId", a.client.id)
+            .eq("assistantKey", args.key!),
+        )
+        .order("desc")
+        .first();
+      ensure(
+        !row || row.target === source._id,
+        "INVALID_INPUT",
+        "This judgment key belongs to another source.",
+      );
+      rows = row ? [row] : [];
+    } else {
+      rows = await ctx.db
+        .query("feedback")
+        .withIndex("by_target_actor", (q) =>
+          q
+            .eq("organizationId", a.organization._id)
+            .eq("target", source._id)
+            .eq("actor", a.actor._id)
+            .eq("sourceGeneration", args.generation)
+            .eq("analysisHash", undefined),
+        )
+        .order("desc")
+        .take(51);
+      complete = rows.length < 51;
+    }
+    const row = rows.find(
+      (row) =>
+        row.assistantClientId === a.client.id &&
+        row.sourceGeneration === args.generation &&
+        row.sourceRevision === args.revision,
+    );
+    if (row) {
+      ensure(
+        typeof row.assistantKey === "string" &&
+          /^[a-zA-Z0-9_-]{8,64}$/.test(row.assistantKey) &&
+          Number.isSafeInteger(row.assistantVersion) &&
+          row.assistantVersion! > 0 &&
+          Number.isSafeInteger(row.assistantGrantVersion) &&
+          row.assistantGrantVersion! > 0 &&
+          feedbackAction.safeParse(row.action).success &&
+          row.note.length <= 2000,
+        "INVALID_INPUT",
+        "Review this older judgment in the protected source.",
+      );
+    }
+    return {
+      schema_version: "vibescroll-feedback-v1" as const,
+      profile_id: a.organization._id,
+      grant_version: a.grant.version,
+      authority_id: a.grant._id,
+      request_key:
+        args.key ??
+        row?.assistantKey ??
+        (await digest(
+          JSON.stringify([
+            "widget-feedback-v1",
+            a.grant._id,
+            source._id,
+            source.generation,
+            source.updatedAt,
+          ]),
+        )),
+      source_id: source._id,
+      generation: source.generation,
+      revision: source.updatedAt,
+      lookup_complete: !!row || complete,
+      feedback: row
+        ? {
+            feedback_id: row._id,
+            key: row.assistantKey!,
+            version: row.assistantVersion!,
+            action: feedbackAction.parse(row.action),
+            note: row.note,
+            grant_version: row.assistantGrantVersion!,
+          }
+        : null,
+    };
+  },
+});
 
 function cursorFor(a: Authorized, kind: string, cursor: string | null) {
   return cursor

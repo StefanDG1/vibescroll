@@ -2,6 +2,8 @@ import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
+import type { FunctionArgs } from "convex/server";
+import { feedbackStateInput } from "../packages/widget/feedback";
 import {
   widgetBrowseInput,
   widgetTopicInput,
@@ -20,6 +22,12 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z
+    .object({
+      operation: z.literal("widget_feedback_state"),
+      args: feedbackStateInput,
+    })
+    .strict(),
   z
     .object({
       operation: z.literal("widget_profiles"),
@@ -220,6 +228,14 @@ export const tools = httpAction(async (ctx, request) => {
         : undefined;
     let value: unknown;
     switch (input.operation) {
+      case "widget_feedback_state":
+        value = await ctx.runQuery(
+          internal.assistantWidget.feedbackState,
+          input.args as FunctionArgs<
+            typeof internal.assistantWidget.feedbackState
+          >,
+        );
+        break;
       case "widget_profiles":
         value = await ctx.runQuery(internal.assistantWidget.profiles, {});
         break;

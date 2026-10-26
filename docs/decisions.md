@@ -223,3 +223,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## October 26: native Events before automatic media analysis
 
 [ADR 160](adr/160-native-events-and-saved-video-acknowledgement.md) records the accepted private ChatGPT connection renewal and actual app-save acknowledgement. The event is live in compatible6cdcb1c. Reuse the existing capture, scoped grants and signed delivery path; no new worker, queue or analysis authority follows from saving. Actual app-save acknowledgement precedes automatic media execution.
+
+## October 26: source judgment review inside ChatGPT
+
+[ADR176](adr/176-compact-source-judgment-review.md) adds a compact lazy source-review disclosure with the saved connection-specific judgment/note, canonical recovery and stable first keys. It reuses current feedback/read permissions and existing records/indexes, preserving manual quality reviews. Exact CI and real-host acceptance remain separate; no live judgment or permission changes follow from this local implementation.

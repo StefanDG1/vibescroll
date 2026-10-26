@@ -3,7 +3,7 @@ import {
   PostMessageTransport,
 } from "@modelcontextprotocol/ext-apps/app-bridge";
 import { widgetResources } from "../../../packages/widget/resources.generated";
-import { demoCall } from "../src/preview-data";
+import { demoCall, seedDemoFeedback } from "../src/preview-data";
 import type { ToolRecord } from "../../../packages/widget/contracts";
 import {
   widgetVersion,
@@ -25,6 +25,7 @@ const status = document.querySelector<HTMLOutputElement>("#status")!;
 const receipt = document.querySelector<HTMLPreElement>("#receipts")!;
 type Receipt = {
   event: string;
+  url?: string;
   name?: string;
   source?: string;
   profile?: string;
@@ -75,6 +76,9 @@ async function load() {
   );
   bridge = next;
   let initialized = false;
+  let feedbackReads = 0;
+  let feedbackReplyLost = false;
+  if (options.get("feedback-saved") === "1") seedDemoFeedback();
   next.addEventListener("sizechange", ({ height }) => {
     if (initialized && height)
       frame.style.height = `${Math.min(2000, Math.max(100, height))}px`;
@@ -91,6 +95,32 @@ async function load() {
         content: [{ type: "text", text: "Synthetic grant revoked" }],
       };
     const data = await demoCall(name, (args ?? {}) as ToolRecord);
+    if (name === "widget_feedback_state") {
+      feedbackReads++;
+      if (options.get("feedback-authority-change") === "1" && feedbackReads > 1)
+        data.authority_id = "another-feedback-grant";
+      if (options.get("feedback-limited") === "1") {
+        data.lookup_complete = false;
+        data.feedback = null;
+      }
+    }
+    if (name === "record_feedback" && options.get("feedback-delay") === "1")
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    if (
+      name === "record_feedback" &&
+      options.get("feedback-lost-reply") === "1" &&
+      !feedbackReplyLost
+    ) {
+      feedbackReplyLost = true;
+      return {
+        isError: true,
+        content: [
+          { type: "text", text: "Synthetic reply lost after saved judgment" },
+        ],
+      };
+    }
+    if (name === "widget_state" && options.get("feedback") === "0")
+      (data.actions as ToolRecord).feedback = false;
     if (
       name === "fetch" &&
       options.get("references") === "5" &&
@@ -157,7 +187,7 @@ async function load() {
   next.oninitialized = async () => {
     if (session !== current) return;
     initialized = true;
-    record("initialized");
+    record("initialized", { url: location.href });
     if (kind === "card" && options.get("card") !== "status") {
       await next.sendToolInput({
         arguments: {
@@ -198,7 +228,14 @@ async function load() {
                     profileId: "demo-private-workspace",
                     sourceId: "sample-onboarding",
                   }
-                : { view: kind === "export" ? "export" : "library" },
+                : {
+                    view:
+                      kind === "export"
+                        ? "export"
+                        : options.get("view") === "scroll"
+                          ? "scroll"
+                          : "library",
+                  },
           },
           content: [],
         }),

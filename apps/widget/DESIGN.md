@@ -111,6 +111,10 @@ The compact follow-up adds `compact-card-bridge.png`, `compact-status-bridge.png
 
 The compact citation refinement uses `compact-five-references-bridge.png` and the updated `compact-card-mobile-bridge.png`. These synthetic local AppBridge captures show the generated production card at 680px light and 320px dark. `compact-citations-finish-review.md` identified clipped source titles; `compact-citations-finish-verdict.md` records ship for the resolved source-title correction only. The builder reports six AppBridge checks plus passing widget types, lint and build. This evidence establishes no live-host, CSP, OAuth, production-account or whole-widget acceptance.
 
+The later published cache correction has a bounded actual-host receipt at `docs/operations/evidence/launch-20261026-mcp-widget-cache-publication.json`. At frontend `a7a48cb6a4e10f023c78e581ac64d2b6ac3039a7`, the refreshed existing ChatGPT plugin received current HTML with developer CSP enforcement on. Native pointer disclosure displayed two, five and two citation rows, retained toggle focus and opened the host's expanded Library with four bounded rows. Live keyboard activation did not pass that automation. Actual Codex rendering, fresh customer OAuth and the full accessibility and access matrix remain open. Serving baseline `97dfa2c` inherits this earlier compact receipt; it establishes no source-judgment write acceptance.
+
+The source-review follow-up adds `src/source-review.tsx` without changing the approved visual world or token values. The opened synthetic AppBridge captures `inline-source-review-desktop.png`, `inline-source-review-mobile.png` and `expanded-source-review-mobile.png` show the full claim, source evidence, saved note and all five choices at 680px light and 320px dark/light. Thirteen compiled AppBridge cases pass in `.impeccable/review/feedback-final-contract-bridge.log`, including 44px judgment targets in expanded Library and Scroll at 320px. The finish review found one shared judgment-target gap; the same reviewer recorded that correction resolved and ship in the conversation only. The single detector result at `.impeccable/review/feedback-detector.json` has zero primary findings and 44 incumbent CSS advisories, with no new style finding. Eighteen new backend cases and 48 focused MCP/access/schema cases pass. These local results establish no real-host feedback write, account import or deployment. The final offline check passed full types, lint and both builds, with 1323 Vitest, 19 Node and 70 Python passes; three hosted and seven Windows-inapplicable cases remain skipped. Matching staged and production verification remains pending.
+
 **Key Characteristics:**
 
 - Small inline cited cards are the first-priority experience; expansion is explicit.
@@ -156,7 +160,7 @@ Source cards use three equal columns with 16px gaps. Project review uses three e
 - At 1050px and below, the rail becomes 175px, main padding becomes 25px, source cards use two columns and project stages become one column. The Library inspector minimum becomes 250px.
 - At 760px and below, the rail disappears, the header becomes at least 58px tall and main padding becomes `23px 18px 85px`. Library and topic layouts stack; source cards use one column. Opening an insight uses a dedicated detail route with Back to library. Five fixed bottom destinations provide Home, Library, Save, Projects and Account, with safe-area padding.
 - At 380px and below, horizontal page padding becomes 14px. Search takes the full tool-row width; tabs and action gaps tighten. Long titles and controls continue to wrap.
-- Compact inline results have 20px padding, a small product heading, an explicit expand action and cited detail. They omit application navigation and feedback controls. Expansion requests the host's fullscreen mode; errors remain visible if that request fails.
+- Compact inline results have 20px padding, a small product heading, an explicit expand action and cited detail. When the current connection permits feedback, a collapsed Review this source disclosure follows the source and conversation actions. Its first opening loads the private saved judgment; the initial card does not read it. Inline cards omit application navigation. Expansion requests the host's fullscreen mode; errors remain visible if that request fails.
 
 Normal save and fetch responses attach the compact resource with client-only route metadata. The card opens the saved-source status or cited result directly. Status reads remain headless so refresh and polling do not add repeated cards to the conversation. The expanded workspace remains available through the explicit expand control.
 
@@ -178,11 +182,13 @@ Controls use compact, gently rounded rectangles. The control, field, evidence an
 
 The shared action wraps the Apps SDK UI Button with `pill={false}`. Primary actions reverse ink and canvas; secondary actions use transparent backgrounds and line borders. Local action styling sets a 40px minimum height, 13px type and weight 550. Busy actions show a labelled context with a Lucide loading icon and disable repeated submission. Disabled controls use half opacity and the default cursor. Outline hover uses hover tone. SDK styling remains part of the actual control presentation.
 
-Keyboard-visible controls use a 2px focus outline offset by 3px. Navigation rows, tabs and protected source actions use at least 44px height, but the current header refresh and inline expand controls are smaller. Do not describe the entire current widget as meeting a universal 44px target.
+Keyboard-visible controls use a 2px focus outline offset by 3px. Navigation rows, tabs, protected source actions, source-review summaries and judgment choices use at least 44px height, but the current header refresh and inline expand controls are smaller. The native source-review summary retains browser focus styling. Do not describe the entire current widget as meeting a universal 44px target.
 
 ### Chips
 
 Status badges pair semantic text with positive tint and accent. Neutral tags use a line border with compact metadata. Feedback choices are buttons with `aria-pressed`; recorded selection adds accent border and positive tint. Status meaning must remain in text rather than color alone.
+
+Source judgments use the existing compact rounded-button treatment with 12px labels, 8px vertical and 12px horizontal padding, and a 44px minimum height. The five choices wrap with 7px gaps. The selected state reflects the canonical saved judgment, and its matching unchanged note disables a duplicate submission. A note correction makes that same choice available again.
 
 ### Cards / Containers
 
@@ -212,6 +218,16 @@ When a saved analysis preference is present, the save form initially selects Sav
 
 Project stages keep evaluation, private draft and execution review distinct. Viewing a board or preparing a draft grants no coding, spending, publication or deployment authority. Preserve the existing security and copy decisions when extending these components.
 
+### Source judgment review
+
+Review this source is a native details/summary disclosure in compact cards. A thin line separates it from the cited result, with 20px top margin and 8px top padding. Its open content uses the same controller as expanded source detail and Scroll. Expanded views show the review body directly. The compact disclosure adds no navigation or separate edit route.
+
+The body asks How useful is this source? and explains that the current connection's judgment applies to this exact source version. It displays the saved action and version above Useful, Not relevant, Already implemented, Unsupported and Later. A labelled, vertically resizable Optional note field has an 8px radius, line border, canvas background and 10px by 12px padding. It retains the host's font and exposes theme-accent focus. Text and recovery controls wrap at 320px; the card grows to fit the content. Choosing a judgment saves the trimmed note with it. Judgment saved · Version N appears only after the write acknowledgement and a matching canonical keyed read.
+
+The existing knowledge:read and feedback:write permissions govern this component. Its indexed read checks at most 51 records and returns only the current actor/client's judgment for the exact source generation and revision. The server supplies a stable first-request key, and an incomplete bounded lookup offers Review this source in VibeScroll rather than an empty editable state. Before saving, the controller rechecks the connection authority fingerprint. Failed access or a changed identity hides private fields and blocks submission until authoritative recovery.
+
+An uncertain reply keeps the request while the disclosure is collapsed. Check saved judgment reconciles its existing key; Retry same judgment retains its payload, key and expected version. A conflicting newer judgment requires Review current judgment before a correction. Unmounting does not replay the command. Browser storage contains no notes or tokens. Recording a judgment starts no processing and grants no analysis, sharing, funding, coding or publication authority. The confirmation explicitly distinguishes a recorded judgment from measured benefit.
+
 ### Theme, motion and state
 
 The MCP host bridge applies document theme and host style variables, including font family. It listens for host-context changes and switches the widget's dark class. Account explains that appearance follows the host; the widget has no independent appearance toggle. DEV `theme=dark` is a fixture control only.
@@ -228,6 +244,7 @@ Saved-source status performs its initial authorized read even when the document 
 - Do keep the complete claim, source evidence and explicit next action together.
 - Do preserve native keyboard controls, labelled fields, visible focus and route focus recovery.
 - Do retain authoritative receipts, current source versions and explicit recovery text.
+- Do load and confirm the current connection's exact-source judgment before showing saved review state.
 - Do distinguish fixture review from live host and production acceptance.
 - Do reuse the existing original brand asset where an icon asset is required. No raster artwork ships in this widget build.
 

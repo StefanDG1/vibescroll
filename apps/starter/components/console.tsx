@@ -3,7 +3,10 @@ import { isCloudObservedMedia } from "../../../packages/social/contracts";
 import { useState, useEffect, useRef, useEffectEvent, useId } from "react";
 import { useRouter } from "next/navigation";
 import { postPagePath } from "../../../packages/browser/post-route";
-import { postDisplayTitle } from "../../../packages/sources/display";
+import {
+  postDisplayTitle,
+  defaultLinkTitle,
+} from "../../../packages/sources/display";
 import { usePolling } from "@/lib/use-polling";
 import { AssistantConnections } from "./assistant-connections";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
@@ -3467,7 +3470,7 @@ export function CaptureForm({
             const result = await call("captureWorkCloud", {
               organizationId,
               key: crypto.randomUUID(),
-              title: String(f.get("title") || "Saved video"),
+              title: String(f.get("title") || defaultLinkTitle),
               url: f.get("url"),
               rightsAttested: f.get("rights") === "on",
               grantId: workCloud.grantId,
@@ -3488,7 +3491,10 @@ export function CaptureForm({
               organizationId,
               key: crypto.randomUUID(),
               kind,
-              title: String(f.get("title") || "Saved video"),
+              title: String(
+                f.get("title") ||
+                  (kind === "url" ? defaultLinkTitle : "Saved video"),
+              ),
               ...(kind === "url"
                 ? { url: f.get("url") }
                 : { text: f.get("text") }),
@@ -4227,7 +4233,7 @@ export function SourceDetail({
           href={detail.url}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`Open original source: ${detail.title}`}
+          aria-label={`Open original source: ${postDisplayTitle(detail)}`}
         >
           <SourceThumbnail source={detail} demo={demo} />
           <span className="source-origin-copy">

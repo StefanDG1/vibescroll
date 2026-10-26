@@ -1,3 +1,9 @@
+## October 26: release cadence and current progress estimate
+
+The owner requests frequent production updates at major user improvements. Group related fixes into one tested release, verify its exact serving version and a focused real journey, then report what users can use and the next checkpoint. Preserve fixed Basic queued builds, the shared cumulative EUR9.50 cap, saved data, reserved/unknown work and provider/privacy gates. Do not wait for the entire large plan to finish before publishing an accepted useful milestone.
+
+The current judgment estimate is about 80% implementation and 35% verified production acceptance, with roughly ten percentage points of uncertainty. It averages the eleven C0-C10 umbrella domains without double-counting P/R/N/M labels; deferred C11/lifetime work is excluded. This is not code coverage or general customer availability. There are still zero accepted automatic app-Save-to-media-result production runs. The new funded one-TikTok canary is next after the separate widget release finishes and the exact current release is verified.
+
 ## October 26: private Cloud tools pass, automatic result still pending
 
 The actual native Work task passed pinned caption setup, synthetic JPEG viewing and offline ASR initialization under the separately tested provider-VM network denial. The real supplied TikTok metadata read returned a title/author and 104-second duration, with no supported caption candidates. The ASR tone test used the real model once and yielded no transcript; it supplies no speech-accuracy evidence. Exact cleanup of three partial model downloads restored the original cache bound. No new source/job, monitor activation, paid API or production release occurred. [Setup receipt](../../operations/evidence/launch-20261026-native-cloud-tools.json).

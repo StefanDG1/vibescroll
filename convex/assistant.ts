@@ -7,6 +7,7 @@ import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
 import { audit, limit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { classifySourceUrl } from "../packages/sources/classify";
+import { postDisplayTitle } from "../packages/sources/display";
 import { captureAuthorized, digest, startSource } from "./product";
 import {
   chooseIntakeProjects,
@@ -346,6 +347,7 @@ export const getJobStatus = internalQuery({
       source_id: source._id,
       profile_id: a.organization._id,
       status: cloudStatus ?? receipt?.status ?? source.state,
+      title: postDisplayTitle(source).slice(0, 200),
       source_status: source.state,
       generation: source.generation,
       revision: source.updatedAt,
@@ -1155,7 +1157,7 @@ export const search = internalQuery({
       )
         results.push({
           id: source._id,
-          title: source.title,
+          title: postDisplayTitle(source),
           url,
           state: source.state,
         });
@@ -1235,7 +1237,7 @@ export const fetch = internalQuery({
     }));
     return {
       id: args.id,
-      title: source.title,
+      title: postDisplayTitle(source),
       text: JSON.stringify({
         state: source.state,
         coverage: source.coverage,

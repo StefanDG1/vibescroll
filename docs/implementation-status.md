@@ -1,3 +1,13 @@
+## October 26: complete title-preview checks pass
+
+Full stable-source check passed 2,121 Vitest tests with three external skips, nineteen Node tests and 68 Python cases with four Linux-only Windows skips, types, zero-warning lint and both application builds. A before/after source-diff digest matched across the complete run. The six joined preview cases preserve custom and approved titles while exposing native metadata. The earlier four placeholder failures are retained in ignored logs. Separate compatible-branch widget source/job/fetch cases pass without exposing transcript text. [Sanitized receipt](operations/evidence/launch-20261026-title-preview.json). Exact-head CI remains pending for this update.
+
+The separate compatible branch includes the widget dependency isolation and ADR-number correction at bfe02d2; this full-main branch does not import that widget update. No production source, grant, job or analysis changed. The owner approved the shared EUR9.50 cap and USD0.95 controlled combined release/current-grant/one-TikTok canary envelope; every prior hold remains. Wait for a coordinated verified serving baseline, then freeze the exact current source before publication. Keep all broader provider/privacy gates and the reserved/unknown sources.
+
+## October 26: early native titles survive blank URL saves
+
+The candidate now uses the existing Imported video link placeholder for new URL saves and recognizes historical Saved video in presentation. Scoped job status and the app select the same native preview title; an explicit custom title stays preferred. The saved source title/revision, finite approval hash, grant and generation are untouched. Four placeholder regression cases failed before the fix; the expanded six-case integration covers custom-title preservation with and without thumbnail metadata. Full final checks and exact CI for this update remain pending. Production remains the freshly verified ff7d88f.
+
 ## October 26: final local candidate checks and concurrent release boundary
 
 Full offline check passed 2117 Vitest tests, with three explicit hosted skips, nineteen Node tests, 68 Python cases with four Linux-only Windows skips, types, zero-warning lint and both production builds. The new preview races fail before the fix and pass after it. Native synthetic caption/JPEG and ASR setup passed separately; real source/event/lease acceptance remains open. Exact-head CI is pending.

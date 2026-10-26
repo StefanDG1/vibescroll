@@ -1,5 +1,11 @@
 # VibeScroll foundational avatar
 
+## F077: a fresh Reel completes in an active Cloud task, October 26
+
+The [production receipt](../operations/evidence/launch-20261026-cloud-reel-success.json) verifies one 49.483 second Instagram Reel through existing Cloud authority: 20 automatic English transcript segments, five insights, 23 citations and eight retained JPEGs. The authenticated post page, thumbnail, lazy gallery and image viewer passed desktop and 320px mobile checks. No captions were available for this source. The owner accepts either Reels or TikTok and approved a cumulative EUR7 cap; all earlier holds remain.
+
+This establishes one active-task URL-to-result path. It does not establish idle app-share wake, perfect transcript accuracy, customer benefit, TikTok support, full-main Home/region publication or public/provider clearance. The original disputed Reel displays its retained transcript; its exact-image repair remains open. Keep existing audience, prices, allowances, beliefs and private-content boundaries. No campaign or testimonial follows.
+
 ## F076: direct posts and a smaller caption-first milestone
 
 The owner approved one-click, bookmarkable post pages, metadata-only recent additions on Home, progressive title/author/cover previews and caption reuse before local ASR. [ADR156](../adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) retires region sharing, defers Telegram/public publisher expansion and prioritizes Work Cloud over additional runtime work. Preserve existing content and publication withdrawal, project actions, permissions, recovery and cumulative EUR5. These are owner requirements and implementation candidates, not new demand, accuracy, speed or production-acceptance evidence. The actual Reel, caption-path inline run and later idle Events wake each need their own verification.

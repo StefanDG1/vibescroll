@@ -1,5 +1,9 @@
 # Foundational idea backlog
 
+## F077: one-platform live Cloud acceptance, October 26
+
+Source: owner direction and actual Cloud completion plus authenticated production browser checks. Decision: accept the single active-task Reel path and stop broadening live canaries. Counterargument: one successful ASR source cannot establish caption reuse, transcript accuracy, idle wake, TikTok reliability or general availability. Preserve the failed source's unknown generation and accounting, both TikToks, original-image repair and provider/privacy/release gates. All four briefs link the sanitized production receipt; no new benefit or campaign claim follows.
+
 ## F071: existing posts in a sole-owner Cloud experiment, October 25
 
 Source: the owner confirms they are the only production user and authorizes team/backend changes while preserving saved data. Need: return real Cloud analysis to existing posts with optional GitHub and minimal setup. Decision: ADR151 uses a separate current team grant and existing source/job, without adoption or copying. Counterargument: available MCP tools do not establish a connected executor, public media access or model execution. Verify current sole ownership at every protected stage, preserve all old insights and test a real cited result on the same production post. Shared-catalog and automatic dispatch acceptance remain separate. All four briefs keep their audience, prices and beliefs. Cumulative task limit EUR5 includes earlier holds.

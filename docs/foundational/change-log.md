@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## October 26: F077 fresh Reel result and bounded acceptance
+
+Synchronized all four briefs and the index with the sanitized live receipt. A fresh active-task Reel returns retained speech, JPEGs and cited analysis; actual app checks include mobile image rendering. Explicitly retained idle-wake, original-image-repair, accuracy, full-main and provider/privacy limits. EUR7 supersedes the older EUR5 cap; all earlier holds remain. No audience, price, allowance, campaign or customer-outcome claim changes.
+
 ## October 25: F076 direct posts and reduced first-milestone scope
 
 Owner direction supersedes Home expansion before navigation and prioritizes caption-first link-to-Cloud acceptance. All four briefs reference ADR156 and preserve existing content, withdrawal, privacy and fiscal controls. Region sharing is retired; Telegram/public publisher expansion and additional runtime work are deferred. No production result, performance or customer claim is added.

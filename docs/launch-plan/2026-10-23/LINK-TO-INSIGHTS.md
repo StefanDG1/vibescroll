@@ -1,6 +1,6 @@
 # Finish the first link-to-Cloud-analysis milestone
 
-Owner direction: October 25, 2026. Status: implementation candidate; production acceptance remains open. [ADR156](../../adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) records the accepted scope changes.
+Owner direction: October 25, 2026. Status: one active-task Reel accepted in production on October 26; remaining stages and original-image repair stay open. [ADR156](../../adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) records the accepted scope changes.
 
 ## Make each post directly accessible
 
@@ -67,3 +67,11 @@ Keep fixed Basic queued builds and exact staged/canonical version checks. Report
 The owner confirmed that either Reels or TikTok working is sufficient for the first live workflow milestone and deferred connector reconnection/settings troubleshooting. Verify one complete permitted URL-to-Cloud-to-app result, including actual transcript and JPEGs; retain the original Reel repair as a separately tracked data-preserving task if its exact evidence cannot be restored. Do not hold a successful platform behind another platform's blocked extractor.
 
 Compatible frontend/backend bba2715 is live with the direct post route and retained transcript fix. Its new tool names were absent from both active task catalogs. [ADR158](../../adr/158-preparation-stages-for-connected-cloud-hosts.md) therefore adds strict metadata/frame stages through the already available preparation scalar using the same authority and image actions. Publishing this backend compatibility does not require another frontend build or renewed app scopes. The first fresh run has not yet completed. Ordinary app-share background execution still requires a supported idle wake interface and remains separate from an automatic continuation inside an active Cloud chat. The exposed host has no such Events/wake control. Do not report phone-only completion from a manually resumed task.
+
+## October 26: the first active-task Reel path passes
+
+[The final handover](HANDOVER-2026-10-26.md) and [production receipt](../../operations/evidence/launch-20261026-cloud-reel-success.json) record a different fresh saved Reel reaching ready with 20 local English ASR segments, five insights, 23 citations and eight actual retained JPEGs. Root verified the direct production page, timestamped speech, thumbnail, lazy gallery and image dialog on desktop and 320px mobile. Existing grant8 sufficed. Claim-to-ready was 339.885 seconds; this is one observation, not a service promise.
+
+The owner's one-platform condition is met for active Cloud orchestration. Stage4's original-image repair, independent audio review and live caption-path example are still open; do not mark the entire original row complete. Stage6 remains blocked on an actually supported subscription/idle-wake interface. Do not infer ordinary app-save background execution from this active-task success. TikTok was blocked by host networking before acquisition; no policy bypass was used.
+
+Compatible frontend bba2715 and backend f84285f are serving. Full-main source38b882f passed exact CI40254080207 but remains undeployed for index/migration review. Its Home cards, region retirement and navigation reductions are still candidates. Accepted extractor metadata is stored; early native title/author presentation is not fully accepted in the compatible UI. Next work should complete supported wake integration when available and the bounded UI/data-preserving follow-ups, rather than expanding platforms or adding another downloader.

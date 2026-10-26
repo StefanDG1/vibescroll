@@ -5,6 +5,8 @@ import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import { postDisplayTitle } from "../packages/sources/display";
 import { projectPostSource } from "../convex/lib/postSummary";
+import { tools as assistantHttpTools } from "../convex/assistantHttp";
+import { createKnowledgeHandler } from "../packages/mcp/server";
 
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -21,6 +23,7 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 async function setup(optIn = true, originalWorkspace = false) {
   for (const key of [
@@ -128,6 +131,164 @@ async function setup(optIn = true, originalWorkspace = false) {
     start,
   };
 }
+it.each([
+  [false, "2025-11-25"],
+  [true, "2025-11-25"],
+  [false, "2026-07-28"],
+  [true, "2026-07-28"],
+] as const)(
+  "carries app-Save intent through MCP, authenticated HTTP and the real job mutation: legacy=%s protocol=%s",
+  async (legacy, protocol) => {
+    const s = await setup(true, legacy);
+    const saved = await s.capture();
+    const provider = vi.fn(async () => Response.json({ sub: subject }));
+    vi.stubGlobal("fetch", provider);
+    const http = (
+      assistantHttpTools as unknown as {
+        _handler: (ctx: unknown, request: Request) => Promise<Response>;
+      }
+    )._handler;
+    const runMutation = vi.fn((reference, args) =>
+      s.assistant.mutation(reference, args),
+    );
+    const invoke = vi.fn(async (operation, args) => {
+      const response = await http(
+        { runMutation },
+        new Request("https://synthetic.example/assistant-tools", {
+          method: "POST",
+          headers: {
+            authorization: "Bearer synthetic-access-token-0123456789",
+          },
+          body: JSON.stringify({ operation, args }),
+        }),
+      );
+      return {
+        ok: response.ok,
+        status: response.status,
+        value: await response.json(),
+      };
+    });
+    const mcp = createKnowledgeHandler(invoke, false, false, true);
+    const args = {
+      sourceId: saved.sourceId,
+      profileId: s.org,
+      mode: "work_cloud",
+      savedIntentId: saved.intentId,
+    };
+    const request = async (arguments_: Record<string, unknown>) => {
+      const body = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "request_analysis",
+          arguments: arguments_,
+          ...(protocol === "2026-07-28"
+            ? {
+                _meta: {
+                  "io.modelcontextprotocol/protocolVersion": protocol,
+                  "io.modelcontextprotocol/clientInfo": {
+                    name: "Synthetic Cloud",
+                    version: "1",
+                  },
+                  "io.modelcontextprotocol/clientCapabilities": {},
+                },
+              }
+            : {}),
+        },
+      };
+      const response = await mcp.fetch(
+        new Request("https://scroll.companynerve.com/mcp", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json, text/event-stream",
+            "mcp-protocol-version": protocol,
+            "mcp-method": "tools/call",
+            "mcp-name": "request_analysis",
+          },
+          body: JSON.stringify(body),
+        }),
+        {
+          parsedBody: body,
+          authInfo: {
+            token: "synthetic-token",
+            clientId,
+            scopes,
+            resource: new URL("https://scroll.companynerve.com/mcp"),
+            resourceMetadataUrl:
+              "https://scroll.companynerve.com/.well-known/oauth-protected-resource/mcp",
+          },
+        },
+      );
+      const raw = await response.text();
+      return JSON.parse(
+        response.headers.get("content-type")?.includes("text/event-stream")
+          ? raw
+              .split("\n")
+              .find((line) => line.startsWith("data: "))!
+              .slice(6)
+          : raw,
+      );
+    };
+    const first = await request(args);
+    expect(first.result.isError).not.toBe(true);
+    expect(first.result.structuredContent).toMatchObject({
+      generation: 1,
+      status: "waiting_for_cloud",
+      reused_request: false,
+    });
+    expect(invoke).toHaveBeenCalledExactlyOnceWith("request_analysis", args);
+    expect(provider).toHaveBeenCalledOnce();
+    expect((await request(args)).result.structuredContent).toMatchObject({
+      generation: 1,
+      reused_request: true,
+    });
+    const source = await s.t.run((ctx) => ctx.db.get(saved.sourceId));
+    expect(source?.workCloudSaveIntent?.analysisGeneration).toBe(1);
+    expect(source?.personalAnalysis).toMatchObject({
+      executor: "work_cloud",
+      model: "synthetic-model",
+      effort: "high",
+    });
+    const reservations = await s.t.run((ctx) =>
+      ctx.db.query("reservations").collect(),
+    );
+    expect(reservations).toHaveLength(1);
+    expect(reservations[0].max).toBe(0);
+    for (const patch of [
+      { savedIntentId: "invalid" },
+      { unrecognized: true },
+      { maxCredits: 10 },
+    ]) {
+      expect((await request({ ...args, ...patch })).result.isError).toBe(true);
+    }
+    expect(
+      (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))?.generation,
+    ).toBe(1);
+    for (const savedIntentId of [null, "a".repeat(63), "g".repeat(64)]) {
+      runMutation.mockClear();
+      provider.mockClear();
+      const rejected = await http(
+        { runMutation },
+        new Request("https://synthetic.example/assistant-tools", {
+          method: "POST",
+          headers: {
+            authorization: "Bearer synthetic-access-token-0123456789",
+          },
+          body: JSON.stringify({
+            operation: "request_analysis",
+            args: { ...args, savedIntentId },
+          }),
+        }),
+      );
+      expect(rejected.status).toBe(403);
+      expect(runMutation).not.toHaveBeenCalled();
+      expect(provider).not.toHaveBeenCalled();
+    }
+  },
+);
+
 it("records a finite exact app-Save intent without creating a job, lease or reservation", async () => {
   const s = await setup();
   const result = await s.capture();

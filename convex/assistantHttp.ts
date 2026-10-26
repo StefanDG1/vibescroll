@@ -94,6 +94,10 @@ const operations = z.discriminatedUnion("operation", [
           generation: z.number().int().nonnegative().optional(),
           revision: z.number().int().nonnegative().optional(),
           grantVersion: z.number().int().positive().optional(),
+          savedIntentId: z
+            .string()
+            .regex(/^[a-f0-9]{64}$/)
+            .optional(),
           cloud: z
             .object({
               model: z.string().min(1).max(100),

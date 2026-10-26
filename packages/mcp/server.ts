@@ -10,6 +10,7 @@ import {
   completionEvent,
   waitingEvent,
   connectionEvent,
+  videoLinkSavedEvent,
   eventSubscribe,
   eventUnsubscribe,
 } from "./events";
@@ -406,7 +407,14 @@ export function createKnowledgeHandler(
           { params: z.object({ cursor: z.null().optional() }).strict() },
           async () => {
             await run("events/list", {});
-            return { events: [completionEvent, waitingEvent, connectionEvent] };
+            return {
+              events: [
+                completionEvent,
+                waitingEvent,
+                connectionEvent,
+                videoLinkSavedEvent,
+              ],
+            };
           },
         );
         server.server.setRequestHandler(

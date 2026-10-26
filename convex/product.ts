@@ -1,4 +1,5 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
+import { notifyVideoLinkSaved } from "./lib/assistantEvents";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
 import {
@@ -874,7 +875,11 @@ export async function captureAuthorized(
       q.eq("organizationId", a.organizationId).eq("key", a.key),
     )
     .unique();
-  if (old && old.state !== "deleted") return old._id;
+  if (old && old.state !== "deleted") {
+    if (!bulk && a.kind === "url")
+      await notifyVideoLinkSaved(ctx, old, actor.actor._id);
+    return old._id;
+  }
   const classified = a.kind === "url" ? classifySourceUrl(a.url ?? "") : null;
   let canonical =
     a.kind === "url"
@@ -919,7 +924,11 @@ export async function captureAuthorized(
       q.eq("organizationId", a.organizationId).eq("canonical", canonical),
     )
     .unique();
-  if (dup && dup.state !== "deleted") return dup._id;
+  if (dup && dup.state !== "deleted") {
+    if (!bulk && a.kind === "url")
+      await notifyVideoLinkSaved(ctx, dup, actor.actor._id);
+    return dup._id;
+  }
   const w = await wallet(ctx, a.organizationId);
   let counts = await ctx.db
     .query("sourceCounts")
@@ -994,6 +1003,8 @@ export async function captureAuthorized(
     if (asset) await ctx.db.patch(asset._id, { sourceId: id, updatedAt: now });
   }
   await audit(ctx, a.organizationId, actor.actor._id, "source.captured", id);
+  if (!bulk && a.kind === "url")
+    await notifyVideoLinkSaved(ctx, (await ctx.db.get(id))!, actor.actor._id);
   if (
     a.kind === "url" &&
     classified?.sourceType === "media" &&

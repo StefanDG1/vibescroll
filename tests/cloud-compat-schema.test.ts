@@ -179,6 +179,7 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
             value: [
               literal("work_cloud_waiting"),
               literal("work_cloud_connection_verified"),
+              literal("video_link_saved"),
             ],
           },
           optional: false,
@@ -189,7 +190,13 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
         });
       } else {
         const waiting = structuredClone(prior.documentType);
-        waiting.value.eventName = eventField("work_cloud_waiting");
+        waiting.value.eventName = {
+          fieldType: {
+            type: "union",
+            value: [literal("work_cloud_waiting"), literal("video_link_saved")],
+          },
+          optional: false,
+        };
         profile.value.eventName = eventField("work_cloud_connection_verified");
         expect(current.documentType).toEqual({
           type: "union",

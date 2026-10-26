@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>VibeScroll protocol harness</title>
+  </head>
+  <body>
+    <header>
+      <strong>Local MCP Apps protocol verification</strong>
+      <p>
+        Synthetic records. No live account, credentials, network processing or
+        writes.
+      </p>
+      <label
+        >Resource
+        <select id="resource">
+          <option>workspace</option>
+          <option>card</option>
+          <option>export</option>
+        </select></label
+      >
+      <button id="theme">Switch theme</button>
+      <button id="revoke">Remove fixture access</button>
+      <button id="reload">Reload widget</button
+      ><output id="status">Connecting</output>
+    </header>
+    <iframe
+      id="widget"
+      title="Production VibeScroll widget"
+      sandbox="allow-scripts allow-forms allow-downloads"
+    ></iframe>
+    <details>
+      <summary>Protocol receipts</summary>
+      <pre id="receipts"></pre>
+    </details>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

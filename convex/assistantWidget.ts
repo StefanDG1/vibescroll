@@ -178,6 +178,15 @@ export const state = internalQuery({
       a.scopes.includes(scope) &&
       a.client.scopes.includes(scope as never) &&
       a.grant.scopes.includes(scope);
+    const setup =
+      a.organization.privateOwnerId === a.actor._id
+        ? await ctx.db
+            .query("librarySetup")
+            .withIndex("by_org", (q) =>
+              q.eq("organizationId", a.organization._id),
+            )
+            .unique()
+        : null;
     return {
       schema_version: "vibescroll-widget-v1",
       profile_id: a.organization._id,
@@ -188,6 +197,8 @@ export const state = internalQuery({
       scope: a.grant.libraryScope ?? "selected_sources",
       automatic_analysis: a.grant.analysisDefaults?.enabled ?? false,
       cloud_request_policy: a.grant.cloudRequestPolicy ?? null,
+      processing_route:
+        setup?.actor === a.actor._id ? (setup.processingRoute ?? null) : null,
       actions: {
         jobs: allowed("jobs:read"),
         context: allowed("context:read"),
@@ -244,6 +255,8 @@ export const browse = internalQuery({
       profile_id: a.organization._id,
       grant_version: a.grant.version,
     };
+    if (args.kind === "jobs")
+      await assistantGrant(ctx, a.organization._id, "jobs:read");
     if (args.kind === "usage")
       return {
         ...base,
@@ -410,7 +423,6 @@ export const browse = internalQuery({
       const source = await sourceFor(ctx, a, id);
       if (!source) continue;
       if (args.kind === "jobs") {
-        await assistantGrant(ctx, a.organization._id, "jobs:read");
         const cloud =
           source.personalAnalysis?.executor === "work_cloud" &&
           source.personalAnalysis.generation === source.generation

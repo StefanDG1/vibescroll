@@ -12,7 +12,7 @@
     "brand:generate": "node scripts/generate-brand-assets.mjs",
     "dev": "pnpm --filter @companynerve/starter dev",
     "dev:marketing": "pnpm --filter @companynerve/marketing dev",
-    "build": "pnpm --filter @vibescroll/widget build && pnpm --filter @companynerve/marketing build && pnpm --filter @companynerve/starter build",
+    "build": "pnpm --filter @companynerve/marketing build && pnpm --filter @companynerve/starter build",
     "dev:widget": "pnpm --filter @vibescroll/widget dev",
     "build:widget": "pnpm --filter @vibescroll/widget build",
     "typecheck": "tsc --noEmit && tsc --project convex/tsconfig.json --noEmit && pnpm -r --if-present typecheck",
@@ -32,7 +32,7 @@
     "setup:preflight": "node scripts/setup-preflight.mjs",
     "review:prepare": "node scripts/prepare-quality-review.ts",
     "costs:reconcile": "node scripts/reconcile-costs.ts",
-    "lint": "oxlint apps/starter apps/widget/src apps/widget/designs convex packages tests scripts --react-plugin --jsx-a11y-plugin --nextjs-plugin --ignore-pattern 'packages/runner/protocol/**' --ignore-pattern 'packages/widget/resources.generated.ts' --ignore-pattern 'convex/_generated/**' --ignore-pattern '**/node_modules/**' --max-warnings 0"
+    "lint": "oxlint apps/starter apps/widget/src apps/widget/designs apps/widget/harness convex packages tests scripts --react-plugin --jsx-a11y-plugin --nextjs-plugin --ignore-pattern 'packages/runner/protocol/**' --ignore-pattern 'packages/widget/resources.generated.ts' --ignore-pattern 'convex/_generated/**' --ignore-pattern '**/node_modules/**' --max-warnings 0"
   },
   "dependencies": {
     "@convex-dev/rate-limiter": "0.4.0",

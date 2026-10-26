@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-26T13:29:45.994Z",
+  "generatedAt": "2026-10-26T16:33:44.493959Z",
   "title": "Design System: VibeScroll widget",
   "extensions": {
     "colorMeta": {
@@ -367,7 +367,7 @@
       "name": "Recorded status",
       "kind": "chip",
       "refersTo": "status-badge",
-      "description": "Text states carry meaning while mint supports identification.",
+      "description": "Text states carry meaning while mint supports identification. Compact status places the authoritative saved-source title above this badge and neutral result/recovery guidance below; a saved or completed state does not imply a Cloud route.",
       "html": "<span class=\"ds-status\">Insights ready</span>",
       "css": ".ds-status{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);display:inline-block;font-size:10px;border-radius:5px;padding:5px 8px;background:var(--positive,#e9f5f0);color:var(--accent,#087762)}"
     },
@@ -383,15 +383,16 @@
       "name": "Citation group",
       "kind": "custom",
       "refersTo": "evidence-list",
-      "description": "Exact source references grouped without replacing the complete claim.",
+      "description": "Exact source references grouped with the complete claim in the first-priority inline card; expanded workspace is secondary.",
       "html": "<section class=\"ds-evidence\" aria-label=\"Source evidence\"><div class=\"ds-evidence-row\"><span>1:42 to 2:18</span><p>Designing a useful first experience</p></div></section>",
       "css": ".ds-evidence{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);border:1px solid var(--line,#e5e6e8);border-radius:11px;padding:0 17px}.ds-evidence-row{display:flex;flex-direction:column;gap:10px;padding:16px 0;color:var(--accent,#087762);font-size:11px}.ds-evidence-row p{margin:0;color:var(--muted,#6a6c73);font-size:11px;line-height:1.7}"
     }
   ],
   "narrative": {
     "northStar": "Library desk",
-    "overview": "This document governs `apps/widget` only. The approved Operate direction combines A's Library desk, B's inline cited cards and C's project review. Quiet neutral panels keep a saved claim, its current source evidence and its next action close together. The host supplies the sans-serif family and theme. The widget adds compact controls, line-based structure and restrained mint status accents.\n\nThe widget is a working view inside ChatGPT or Codex. Its design authority is `APPROVED-DIRECTION.md`; the website's Atlas and marketing systems remain separate. Extraction uses `src/style.css`, `src/app.tsx`, `src/components.tsx` and `src/host.tsx`, checked against the six current images in the repository's `.impeccable/review` directory. `finish-review.md` records ship for three scored corrections only. Those images are illustrative DEV fixtures, not live host or production acceptance.",
+    "overview": "This document governs `apps/widget` only. The approved Operate direction combines A's Library desk, B's inline cited cards and C's project review. The owner prioritizes the small inline ChatGPT widget; the expanded workspace is secondary. Quiet neutral panels keep a saved claim, its current source evidence and its next action close together. The host supplies the sans-serif family and theme. The widget adds compact controls, line-based structure and restrained mint status accents.\n\nThe widget is a working view inside ChatGPT or Codex. Its design authority is `APPROVED-DIRECTION.md`; the website's Atlas and marketing systems remain separate. Extraction uses `src/style.css`, `src/app.tsx`, `src/components.tsx` and `src/host.tsx`, checked against the six current images in the repository's `.impeccable/review` directory. `finish-review.md` records ship for three scored corrections only. Those images are illustrative DEV fixtures, not live host or production acceptance.\n\nThe compact follow-up adds `compact-card-bridge.png`, `compact-status-bridge.png` and `compact-card-mobile-bridge.png` in that review directory. They capture generated production HTML through a local AppBridge with synthetic scoped responses, including the 320px dark card. `compact-finish-review.md` records ship for the sole status identity/truth correction. Five local AppBridge scenarios pass, as reported in the follow-up handoff. This evidence does not establish actual ChatGPT/Codex, OAuth or production-account acceptance. The follow-up changes behavior documentation, not the visual world or tokens.",
     "keyCharacteristics": [
+      "Small inline cited cards are the first-priority experience; expansion is explicit.",
       "Evidence stays beside the selected claim on wide screens.",
       "Native controls and semantic Lucide icons carry the actions.",
       "Project stages and authoritative receipts describe recorded state.",
@@ -427,7 +428,7 @@
       "Don't invent whole-library counts, progress percentages or measured-benefit claims.",
       "Don't treat selection, draft preparation or review as execution approval.",
       "Don't add application navigation to inline cited cards.",
-      "Don't infer complete accessibility or host acceptance from the six fixture screenshots."
+      "Don't infer complete accessibility or host acceptance from fixture screenshots or local AppBridge scenarios."
     ]
   }
 }

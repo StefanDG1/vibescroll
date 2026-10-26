@@ -17,6 +17,7 @@ import {
   decodeToolResult,
   parseAppRoute,
   widgetExport,
+  widgetRoute,
   safeAppUrl,
   type ToolRecord,
   type ToolResult,
@@ -33,11 +34,13 @@ type Host = {
   fullscreen: boolean;
   canMessage: boolean;
   canContext: boolean;
+  canDownload: boolean;
   call: (name: string, args: ToolRecord) => Promise<ToolRecord>;
   open: (url: string) => Promise<void>;
   message: (text: string) => Promise<void>;
   attach: (text: string, data?: ToolRecord) => Promise<void>;
   expand: () => Promise<void>;
+  download: (text: string) => Promise<boolean>;
 };
 const HostContext = createContext<Host | null>(null);
 const isDemo =
@@ -57,6 +60,7 @@ export function HostProvider({ children }: { children: ReactNode }) {
     fullscreen: false,
     canMessage: false,
     canContext: false,
+    canDownload: false,
   });
   const app = useMemo(
     () =>
@@ -88,6 +92,12 @@ export function HostProvider({ children }: { children: ReactNode }) {
       if (!active) return;
       try {
         const payload = decodeToolResult(result as ToolResult);
+        const metadata = (result as { _meta?: Record<string, unknown> })
+          ._meta?.["vibescroll/widget"] as { route?: unknown } | undefined;
+        const card = metadata?.route
+          ? widgetRoute.safeParse(metadata.route)
+          : null;
+        if (card?.success) payload.route = card.data;
         setState((old) => ({ ...old, payload, error: "" }));
       } catch (error) {
         setState((old) => ({
@@ -149,6 +159,7 @@ export function HostProvider({ children }: { children: ReactNode }) {
         fullscreen: true,
         canMessage: true,
         canContext: true,
+        canDownload: true,
       }));
       if (document.documentElement.dataset.entry === "card") {
         void import("./preview-data").then(({ demoCardPayload }) => {
@@ -173,6 +184,7 @@ export function HostProvider({ children }: { children: ReactNode }) {
             error: "",
             canMessage: !!capabilities?.message,
             canContext: !!capabilities?.updateModelContext,
+            canDownload: !!capabilities?.downloadFile,
           }));
           context();
         })
@@ -251,6 +263,41 @@ export function HostProvider({ children }: { children: ReactNode }) {
     },
     expand: async () => {
       if (!isDemo) await app.requestDisplayMode({ mode: "fullscreen" });
+    },
+    download: async (text) => {
+      if (new TextEncoder().encode(text).length > 262144)
+        throw new Error(
+          "Select fewer insights for a snapshot smaller than 256 KiB.",
+        );
+      if (isDemo) {
+        const url = URL.createObjectURL(
+          new Blob([text], { type: "application/vnd.vibescroll+json" }),
+        );
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = "selected-insights.vibescroll";
+        anchor.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return true;
+      }
+      if (!state.canDownload) return false;
+      try {
+        const result = await app.downloadFile({
+          contents: [
+            {
+              type: "resource",
+              resource: {
+                uri: "file:///selected-insights.vibescroll",
+                mimeType: "application/vnd.vibescroll+json",
+                text,
+              },
+            },
+          ],
+        });
+        return !result.isError;
+      } catch {
+        return false;
+      }
     },
   };
   return <HostContext.Provider value={host}>{children}</HostContext.Provider>;

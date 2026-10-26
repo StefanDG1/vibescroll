@@ -341,6 +341,7 @@ export const getJobStatus = internalQuery({
       source_id: source._id,
       profile_id: a.organization._id,
       status: cloudStatus ?? receipt?.status ?? source.state,
+      title: source.title.slice(0, 200),
       source_status: source.state,
       generation: source.generation,
       revision: source.updatedAt,

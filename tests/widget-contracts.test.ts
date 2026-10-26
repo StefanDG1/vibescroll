@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+import { validateWidgetOutput } from "../packages/widget/outputs";
 import { fetchSource, reauthorizeSources } from "../apps/widget/src/data";
 import {
   decodeToolResult,
@@ -106,5 +107,26 @@ it("rejects exported secrets, raw transcripts and error results instead of displ
   ).toThrow();
   expect(() =>
     decodeToolResult({ content: [{ type: "text", text: "x".repeat(262145) }] }),
+  ).toThrow();
+});
+
+it("rejects unexpected private fields and oversized widget result envelopes", () => {
+  const result = {
+    profiles: [],
+    truncated: false,
+    coverage: "No approved records",
+  };
+  expect(validateWidgetOutput("widget_profiles", result)).toEqual(result);
+  expect(() =>
+    validateWidgetOutput("widget_profiles", {
+      ...result,
+      transcript: "private",
+    }),
+  ).toThrow();
+  expect(() =>
+    validateWidgetOutput("widget_profiles", {
+      ...result,
+      coverage: "x".repeat(262145),
+    }),
   ).toThrow();
 });

@@ -89,6 +89,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
   const [search, setSearch] = useState("");
   const [notice, notify] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const [exportFallback, setExportFallback] = useState("");
   const mainRef = useRef<HTMLElement | null>(null);
   const focusAfterNavigation = useRef(false);
   const lastInsightKey = useRef("");
@@ -162,6 +163,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
   const priorAuthority = useRef(authority);
   useEffect(() => {
     if (!state.error) return;
+    setExportFallback("");
     cache.removeQueries({ predicate: (item) => item.queryKey[0] === "data" });
     setSelected({});
   }, [state.error, cache]);
@@ -169,6 +171,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
     if (priorAuthority.current !== authority) {
       select(route.sourceId ?? null);
       setSelected({});
+      setExportFallback("");
       setTopic("");
       setQuery("");
       setSearch("");
@@ -243,7 +246,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
     queryKey: ["data", authority, "fetch", selectedId],
     queryFn: async () =>
       fetchSource(await host.call("fetch", { profileId, id: selectedId })),
-    enabled: !!state.data && !!selectedId,
+    enabled: !!state.data && !!selectedId && route.view !== "save",
   });
   const sourceList = useMemo(() => {
     if (search || !["sources"].includes(kind)) return [];
@@ -381,19 +384,16 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
           })),
         })),
       });
-      const objectUrl = URL.createObjectURL(
-        new Blob([JSON.stringify(file, null, 2)], {
-          type: "application/vnd.vibescroll+json",
-        }),
-      );
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = "selected-insights.vibescroll";
-      anchor.click();
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-      notify(
-        "Selected snapshot exported. It contains no raw media, transcripts, or credentials.",
-      );
+      const text = JSON.stringify(file, null, 2);
+      if (await host.download(text)) {
+        setExportFallback("");
+        notify("The host accepted your selected snapshot download.");
+      } else {
+        setExportFallback(text);
+        notify(
+          "Download is unavailable. Copy the selected snapshot from the export panel.",
+        );
+      }
     } catch (e) {
       notify((e as Error).message);
     }
@@ -548,6 +548,11 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
       <SaveView
         profileId={profileId}
         actions={actions}
+        preferredRoute={
+          typeof state.data?.processing_route === "string"
+            ? state.data.processing_route
+            : null
+        }
         notify={notify}
         onOpen={(id) => {
           select(id);
@@ -1187,6 +1192,28 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
               </div>
             )}
             {content}
+            {exportFallback && (
+              <section
+                className="export-source"
+                aria-label="Snapshot download fallback"
+              >
+                <h2>Copy your selected snapshot</h2>
+                <p>
+                  This host did not accept the download. Save this text in a
+                  .vibescroll file.
+                </p>
+                <textarea
+                  aria-label="Selected snapshot JSON"
+                  readOnly
+                  value={exportFallback}
+                  rows={8}
+                  style={{ width: "100%" }}
+                />
+                <Action secondary onClick={() => setExportFallback("")}>
+                  Close export panel
+                </Action>
+              </section>
+            )}
           </main>
         </div>
       </div>
@@ -1238,17 +1265,19 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
 function SaveView({
   profileId,
   actions,
+  preferredRoute,
   notify,
   onOpen,
 }: {
   profileId: string;
   actions: Record<string, boolean>;
+  preferredRoute: string | null;
   notify: (text: string) => void;
   onOpen: (id: string) => void;
 }) {
   const host = useHost();
   const [url, setUrl] = useState("");
-  const [saveOnly, setSaveOnly] = useState(false);
+  const [saveOnly, setSaveOnly] = useState(!!preferredRoute);
   const [receipt, setReceipt] = useState<ToolRecord | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -1264,7 +1293,7 @@ function SaveView({
     queryKey: ["data", profileId, "job", receipt?.source_id],
     queryFn: () =>
       host.call("get_job_status", { profileId, sourceId: receipt?.source_id }),
-    enabled: !!receipt?.source_id && visible && !!actions.jobs,
+    enabled: !!receipt?.source_id && !!actions.jobs,
     retry: false,
     refetchInterval: (query) =>
       visible && query.state.data && jobPresentation(query.state.data).active
@@ -1353,7 +1382,9 @@ function SaveView({
               ? "Saving…"
               : saveOnly
                 ? "Save link"
-                : "Save and find insights"}
+                : actions.cloud
+                  ? "Save and ask Work Cloud"
+                  : "Save source"}
             <ArrowRight size={15} />
           </button>
         </div>
@@ -1374,6 +1405,20 @@ function SaveView({
             : "Review analysis setup in your connected account"}
         </span>
       </div>
+      {preferredRoute && (
+        <p className="small muted">
+          Saved preference:{" "}
+          {(
+            {
+              local: "Local machine",
+              cloud: "VibeScroll's servers",
+              save_only: "Save only",
+            } as Record<string, string>
+          )[preferredRoute] ?? "Review in Connections"}
+          . Saving here keeps that preference. Uncheck Save only to deliberately
+          ask Work Cloud in this chat for this source.
+        </p>
+      )}
       {error && (
         <p className="inline-error" role="alert">
           {error} Retry keeps the same save key for this URL.
@@ -1915,7 +1960,7 @@ function InlineStatus({
   const status = useQuery({
     queryKey: ["data", profileId, "inline-job", sourceId],
     queryFn: () => host.call("get_job_status", { profileId, sourceId }),
-    enabled: canRead && visible,
+    enabled: canRead,
     refetchInterval: (query) =>
       visible && query.state.data && jobPresentation(query.state.data).active
         ? Math.min(60000, 10000 * Math.max(1, query.state.dataUpdateCount))
@@ -1934,12 +1979,16 @@ function InlineStatus({
   const presentation = jobPresentation(status.data ?? {});
   return (
     <section className="compact-result" aria-live="polite">
-      <span className="tag">Work Cloud status</span>
-      <h2>{presentation.label}</h2>
+      <h2>
+        {typeof status.data?.title === "string" && status.data.title.trim()
+          ? status.data.title
+          : `Saved source ${sourceId.slice(0, 10)}`}
+      </h2>
+      <output className="status-badge">{presentation.label}</output>
       <p>
         {presentation.uncertain
           ? "Keep the current work in place. Refresh to reconcile its result."
-          : "This card reads the saved source's current state."}
+          : "Open the source for its current result or recovery steps."}
       </p>
       <div className="detail-buttons">
         <Action

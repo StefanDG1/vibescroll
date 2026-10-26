@@ -30,3 +30,13 @@ Disable `MCP_WIDGET_ENABLED` in the frontend and redeploy the last compatible re
 ## Release package
 
 `plugins/vibescroll` is a portable source candidate, not an installed or directory-approved release. Preserve the existing app identity when importing it. Public listing review, publisher metadata, reviewer access, cases/demo and verified URLs need their normal submission workflow. No dashboard binding or reviewer credential is stored in this directory. Adding the MCP URL alone does not install its nine skills.
+
+## Compact-first host check
+
+Verify a normal authorized `fetch` first. It should return its unchanged headless data plus the inline card resource and client-only navigation metadata. Verify `save_link` next only with a source the user actually wants saved. `get_job_status` stays headless for polling; the existing status card refreshes itself. No special extra renderer call is needed for every fetch/save.
+
+Use the small card before testing the expanded workspace. Check the authoritative source title, citations, supported context attachment, disabled unsupported actions, narrow wrapping, neutral current status and the expand action. A title or route from old tool metadata grants no access; the widget reauthorizes the source. Resource-opening scope and OAuth are still required.
+
+The local protocol check at `apps/widget/harness/check.py` is development-only, uses scoped CDP sessions and focus emulation for background-browser rendering, and closes its single test tab. A synthetic host advertises `openai/resource` only for the file-entrypoint case. A generic MCP Apps host without that extension falls back to manual snapshot selection. It never connects to the live server or starts real analysis.
+
+No hosted test release is funded by this checkpoint. Preserve the cap and all existing holds in ADR161. The branch-specific Vercel Git suppression prevents a draft PR from accidentally creating a paid preview build. Obtain the explicit bounded release reservation before deployment.

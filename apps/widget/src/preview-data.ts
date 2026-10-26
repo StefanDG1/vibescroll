@@ -182,6 +182,9 @@ export async function demoCall(
   }
   if (name === "get_job_status")
     return {
+      title:
+        sources.find((source) => source.id === args.sourceId)?.title ??
+        "Saved sample source",
       source_id: args.sourceId,
       status: "ready",
       generation: 1,

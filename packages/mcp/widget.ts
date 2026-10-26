@@ -14,6 +14,7 @@ import {
   appOrigin,
 } from "../widget/contracts";
 import { widgetResources } from "../widget/resources.generated";
+import { widgetOutputs, validateWidgetOutput } from "../widget/outputs";
 
 type Invoke = (
   operation: string,
@@ -28,7 +29,7 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
       throw new Error(
         "Review your current VibeScroll connection, workspace and access grant.",
       );
-    return response.value;
+    return validateWidgetOutput(operation, response.value);
   };
   const reply = (
     data: Record<string, unknown>,
@@ -265,7 +266,7 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
         title: description.split(".")[0],
         description,
         inputSchema: schema,
-        outputSchema: resultSchema,
+        outputSchema: widgetOutputs[name],
         annotations: {
           readOnlyHint: true,
           destructiveHint: false,

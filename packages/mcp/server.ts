@@ -16,6 +16,7 @@ import {
 } from "./events";
 import { z } from "zod";
 import { registerWidget } from "./widget";
+import { inlineCardRoute } from "../widget/contracts";
 import { classifySourceUrl } from "../sources/classify";
 import {
   workCloudClaimInput,
@@ -76,6 +77,14 @@ export function createKnowledgeHandler(
                 ? requireScopes(scope)
                 : requireScopes(...scope),
             _meta: {
+              ...(widgetEnabled && ["fetch", "save_link"].includes(name)
+                ? {
+                    ui: {
+                      resourceUri: "ui://vibescroll/card/v1.html",
+                      visibility: ["model", "app"],
+                    },
+                  }
+                : {}),
               securitySchemes: [
                 {
                   type: "oauth2",
@@ -129,11 +138,17 @@ export function createKnowledgeHandler(
                     }
                   : {}),
               };
+            const card = widgetEnabled
+              ? inlineCardRoute(name, result.value)
+              : null;
             return {
               content: [
                 { type: "text" as const, text: JSON.stringify(result.value) },
               ],
               structuredContent: result.value,
+              ...(card
+                ? { _meta: { "vibescroll/widget": { route: card } } }
+                : {}),
             };
           },
         );

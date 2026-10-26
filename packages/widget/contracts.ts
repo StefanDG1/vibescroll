@@ -32,6 +32,20 @@ export const widgetRoute = z
   .strict();
 export type WidgetRoute = z.infer<typeof widgetRoute>;
 
+/** An authenticated tool receipt supplies navigation only; UI reads reauthorize it. */
+export function inlineCardRoute(
+  operation: string,
+  value: Record<string, unknown>,
+): WidgetRoute | null {
+  if (operation !== "fetch" && operation !== "save_link") return null;
+  const parsed = widgetRoute.safeParse({
+    view: operation === "fetch" ? "insight" : "save",
+    profileId: value.profile_id,
+    sourceId: operation === "fetch" ? value.id : value.source_id,
+  });
+  return parsed.success && parsed.data.sourceId ? parsed.data : null;
+}
+
 export const widgetBrowseInput = z
   .object({
     profileId: id.optional(),

@@ -1,10 +1,21 @@
 import { expect, it, vi } from "vitest";
 import { createKnowledgeHandler } from "../packages/mcp/server";
-const invoke = vi.fn(async () => ({
-  ok: true,
-  status: 200,
-  value: { results: [] },
-}));
+const invoke = vi.fn(
+  async (
+    operation: string,
+  ): Promise<{
+    ok: boolean;
+    status: number;
+    value: Record<string, unknown>;
+  }> => ({
+    ok: true,
+    status: 200,
+    value:
+      operation === "widget_profiles"
+        ? { profiles: [], truncated: false, coverage: "No granted workspaces" }
+        : { results: [] },
+  }),
+);
 async function packet(response: Response) {
   if (response.headers.get("content-type")?.includes("text/event-stream")) {
     const data = (await response.text())
@@ -86,4 +97,41 @@ it("opens an empty-argument workspace through profile discovery and reauthorizes
     [],
   );
   expect(invoke).not.toHaveBeenCalled();
+});
+
+it("renders ordinary fetched results as inline cards without changing headless content or polling tools", async () => {
+  const listed = await packet(
+    await call("tools/list", {}, ["knowledge:read", "links:save"]),
+  );
+  for (const name of ["fetch", "save_link"])
+    expect(
+      listed.result.tools.find((tool: { name: string }) => tool.name === name)
+        ._meta.ui.resourceUri,
+    ).toBe("ui://vibescroll/card/v1.html");
+  expect(
+    listed.result.tools.find(
+      (tool: { name: string }) => tool.name === "get_job_status",
+    )._meta.ui,
+  ).toBeUndefined();
+  const value = {
+    id: "source-id~2",
+    profile_id: "profile",
+    title: "Current result",
+    text: '{"insights":[]}',
+    url: "https://scroll.companynerve.com/app/profile/library/source-id",
+  };
+  invoke.mockResolvedValueOnce({ ok: true, status: 200, value });
+  const fetched = await packet(
+    await call(
+      "tools/call",
+      { name: "fetch", arguments: { id: "source-id~2", profileId: "profile" } },
+      ["knowledge:read"],
+    ),
+  );
+  expect(fetched.result.structuredContent).toEqual(value);
+  expect(fetched.result._meta["vibescroll/widget"].route).toEqual({
+    view: "insight",
+    profileId: "profile",
+    sourceId: "source-id~2",
+  });
 });

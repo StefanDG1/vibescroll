@@ -10,8 +10,6 @@
       "codex/widget-ui-*": false
     }
   },
-  "regions": [
-    "fra1"
-  ],
+  "regions": ["fra1"],
   "fluid": true
 }

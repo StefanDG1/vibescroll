@@ -1,5 +1,17 @@
 # October 22 launch implementation candidate
 
+## Compact widget first, October26 follow-up
+
+The owner prioritized the small ChatGPT inline widget and requested that unused test tabs be closed. The candidate now integrates compatible PR186 head `ff7d88f`, preserving its source-of-truth processing preferences and publication hold. The widget ADR is renumbered to [ADR162](adr/162-native-mcp-widget-workspace.md) to avoid colliding with that branch's three-task-locations decision.
+
+Normal `save_link` and `fetch` advertise the compact card without changing their structured headless content. Validated client-only metadata routes carry source/profile identity; polling remains headless. Status uses the authorized source title and neutral wording. Strict output envelopes bound the five new reads to 256 KiB and allowed fields. Job-read scope is checked even on empty pages; a saved processing preference is returned only for the caller's own private setup. Export uses native host downloads with a copy fallback, and optional host-file support is capability-gated.
+
+Local validation after the follow-up: 45 focused tests pass across all five assistant/widget suites. The earlier broad JavaScript/Node suite reached the media stage successfully; its caption tests initially failed for missing `yt-dlp`/`pysubs2`. Both pinned pure-Python wheels were installed with required hashes in an ignored isolated environment. All 38 media tests then passed, and 5 build-policy tests passed. Types, lint, formatting and production builds pass; inherited help-content tracing warnings remain. Staged/history secret scans and production dependency audit are recorded separately. A new proposal DTO assertion caught a singular insight-reference mismatch; the DTO now matches the actual backend. No failed observation is represented as a production pass.
+
+Five compiled-resource AppBridge checks pass in an opaque sandbox with synthetic records: ordinary inline fetch, current status, unsupported context, advertised file reads and 320px dark rendering. Background focus emulation fixes screenshot timing only. The compact result/status/mobile captures were opened and verified; the reviewer scored the status identity/truth correction resolved. Real ChatGPT/Codex/OAuth and public onboarding remain unverified. Twenty-three redundant task tabs were closed, and the bounded protocol check closes its one tab. The app preview remains available.
+
+The full-plan estimate shared with the owner is approximately 50% implemented locally and 0% of the new widget deployed. The serving Cloud/app baseline is separate. Vercel Git previews are suppressed for this branch and `MCP_WIDGET_ENABLED` stays off. No additional publication budget, deployment, live job, charge or grant expansion was performed. [Coverage](widget/implementation.md) and the [runbook](operations/mcp-widget.md) retain the remaining direct-edit, host and release requirements.
+
 ## Native MCP widget candidate, October 26
 
 The owner approved the widget-only combination of the Library workspace, inline cited cards and project review board. Local branch `codex/widget-ui-20261026` starts at compatible PR186 head `75fe204ab04eae4b2210581de1603a8e9a379b43`. [ADR162](adr/162-native-mcp-widget-workspace.md), the [full plan and coverage](widget/implementation.md), [research](widget/research-and-plan.md) and [runbook](operations/mcp-widget.md) describe the candidate. This is local code and fixture evidence, not deployed-host or public-release acceptance.

@@ -103,12 +103,15 @@ components:
 
 **Creative North Star: "Library desk"**
 
-This document governs `apps/widget` only. The approved Operate direction combines A's Library desk, B's inline cited cards and C's project review. Quiet neutral panels keep a saved claim, its current source evidence and its next action close together. The host supplies the sans-serif family and theme. The widget adds compact controls, line-based structure and restrained mint status accents.
+This document governs `apps/widget` only. The approved Operate direction combines A's Library desk, B's inline cited cards and C's project review. The owner prioritizes the small inline ChatGPT widget; the expanded workspace is secondary. Quiet neutral panels keep a saved claim, its current source evidence and its next action close together. The host supplies the sans-serif family and theme. The widget adds compact controls, line-based structure and restrained mint status accents.
 
 The widget is a working view inside ChatGPT or Codex. Its design authority is `APPROVED-DIRECTION.md`; the website's Atlas and marketing systems remain separate. Extraction uses `src/style.css`, `src/app.tsx`, `src/components.tsx` and `src/host.tsx`, checked against the six current images in the repository's `.impeccable/review` directory. `finish-review.md` records ship for three scored corrections only. Those images are illustrative DEV fixtures, not live host or production acceptance.
 
+The compact follow-up adds `compact-card-bridge.png`, `compact-status-bridge.png` and `compact-card-mobile-bridge.png` in that review directory. They capture generated production HTML through a local AppBridge with synthetic scoped responses, including the 320px dark card. `compact-finish-review.md` records ship for the sole status identity/truth correction. Five local AppBridge scenarios pass, as reported in the follow-up handoff. This evidence does not establish actual ChatGPT/Codex, OAuth or production-account acceptance. The follow-up changes behavior documentation, not the visual world or tokens.
+
 **Key Characteristics:**
 
+- Small inline cited cards are the first-priority experience; expansion is explicit.
 - Evidence stays beside the selected claim on wide screens.
 - Native controls and semantic Lucide icons carry the actions.
 - Project stages and authoritative receipts describe recorded state.
@@ -153,6 +156,8 @@ Source cards use three equal columns with 16px gaps. Project review uses three e
 - At 380px and below, horizontal page padding becomes 14px. Search takes the full tool-row width; tabs and action gaps tighten. Long titles and controls continue to wrap.
 - Compact inline results have 20px padding, a small product heading, an explicit expand action and cited detail. They omit application navigation and feedback controls. Expansion requests the host's fullscreen mode; errors remain visible if that request fails.
 
+Normal save and fetch responses attach the compact resource with client-only route metadata. The card opens the saved-source status or cited result directly. Status reads remain headless so refresh and polling do not add repeated cards to the conversation. The expanded workspace remains available through the explicit expand control.
+
 Explicit route navigation focuses the labelled main region. Returning from detail to Library focuses the invoking insight button using its saved key. These focus handoffs preserve keyboard orientation; the current fixture review does not establish all host, zoom or physical-device behavior.
 
 ## Elevation & Depth
@@ -193,6 +198,12 @@ Expanded navigation combines semantic Lucide icons and text in rows at least 44p
 
 The selected detail includes coverage, full claim, source evidence and the protected source action. Add to conversation deliberately attaches only the selected content and citation. Its availability follows host capabilities, with a visible explanation when unsupported. Feedback refers to the exact source version and shows the returned saved version. Its receipt does not claim measured benefit.
 
+The compact saved-source status card leads with the authoritative source title, or an explicit shortened source-ID fallback when no title is returned. The current status appears below it, followed by neutral result or recovery guidance. Refresh status reconciles the same source, and View source opens its current result. Do not infer a Cloud route from a saved or completed status. The removed fixed Cloud eyebrow is not part of the component.
+
+Snapshot export requests a host-native download for the selected bounded content. Host acceptance is reported as acceptance, not proof of a file saved on disk. An unsupported or rejected download exposes a labelled, read-only JSON field that the user can copy into a `.vibescroll` file. Opening a host-provided file requires the advertised `openai/resource` capability and validates the bounded snapshot; viewing it does not import data or grant execution authority.
+
+When a saved analysis preference is present, the save form initially selects Save only for this source. The user can deliberately uncheck it to ask the existing Work Cloud flow to process that one source. This preserves the global preference. Saving alone does not start duplicate analysis, and running or uncertain work retains recovery guidance.
+
 Project stages keep evaluation, private draft and execution review distinct. Viewing a board or preparing a draft grants no coding, spending, publication or deployment authority. Preserve the existing security and copy decisions when extending these components.
 
 ### Theme, motion and state
@@ -200,6 +211,8 @@ Project stages keep evaluation, private draft and execution review distinct. Vie
 The MCP host bridge applies document theme and host style variables, including font family. It listens for host-context changes and switches the widget's dark class. Account explains that appearance follows the host; the widget has no independent appearance toggle. DEV `theme=dark` is a fixture control only.
 
 The only authored animation is the loading icon's one-second linear rotation. `prefers-reduced-motion: reduce` stops it. Loading uses output content; view failures and action errors expose alerts; notifications use output with a labelled dismiss action. Empty bounded pages explain their limited scope and retain available manual loading or recovery actions.
+
+Saved-source status performs its initial authorized read even when the document is hidden. Repeated polling runs only while the document is visible and the returned job state is active, with its interval bounded to 60 seconds. Hidden documents pause polling. Uncertain status offers reconciliation rather than starting replacement work. Compact status changes use a polite live region.
 
 ## Do's and Don'ts
 
@@ -218,6 +231,6 @@ The only authored animation is the loading icon's one-second linear rotation. `p
 - Don't invent whole-library counts, progress percentages or measured-benefit claims.
 - Don't treat selection, draft preparation or review as execution approval.
 - Don't add application navigation to inline cited cards.
-- Don't infer complete accessibility or host acceptance from the six fixture screenshots.
+- Don't infer complete accessibility or host acceptance from fixture screenshots or local AppBridge scenarios.
 
 Not canonized: the existing uppercase sidebar group label, letter-v brandmark and small annotation sizes are not reusable design rules. The native font is an owner-approved host convention. Removed generic insight eyebrows remain removed; no decorative illustration or new raster is part of this system.

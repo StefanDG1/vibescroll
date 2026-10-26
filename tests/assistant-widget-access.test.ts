@@ -3,6 +3,7 @@ import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import { convexTest } from "convex-test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
+import { widgetOutputs } from "../packages/widget/outputs";
 const modules = import.meta.glob("../convex/**/*.ts");
 const issuer = "https://synthetic-test.authkit.app";
 const clientId = "client_01234567890123456789012345";
@@ -83,6 +84,7 @@ it("discovers minimal current workspace access without context scope and removes
   const s = await setup();
   const grant = await s.owner.mutation(api.assistantGrants.save, s.args);
   const result = await s.assistant.query(internal.assistantWidget.profiles, {});
+  expect(widgetOutputs.widget_profiles.parse(result)).toEqual(result);
   expect(result.profiles).toHaveLength(1);
   expect(result.profiles[0]).toMatchObject({
     profile_id: s.organizationId,
@@ -93,6 +95,7 @@ it("discovers minimal current workspace access without context scope and removes
   const state = await s.assistant.query(internal.assistantWidget.state, {
     profileId: s.organizationId,
   });
+  expect(widgetOutputs.widget_state.parse(state)).toEqual(state);
   expect(state.actions).toMatchObject({
     context: false,
     save: false,
@@ -127,6 +130,7 @@ it("browses only granted current sources without exposing transcripts, topic lab
     profileId: s.organizationId,
     kind: "sources",
   });
+  expect(widgetOutputs.widget_browse.parse(result)).toEqual(result);
   expect(result.items.map((item: { id: string }) => item.id)).toEqual([
     s.sourceId,
   ]);
@@ -191,6 +195,62 @@ it("binds full-library pagination to the exact grant version and collection", as
     s.assistant.query(internal.assistantWidget.browse, {
       profileId: s.organizationId,
       kind: "jobs",
+    }),
+  ).rejects.toThrow();
+});
+
+it("returns only the caller's private saved processing route and requires jobs scope even on an empty page", async () => {
+  const s = await setup();
+  await s.owner.mutation(api.assistantGrants.save, s.args);
+  const setupId = await s.t.run(async (ctx) => {
+    const organization = (await ctx.db.get(s.organizationId))!;
+    return ctx.db.insert("librarySetup", {
+      organizationId: s.organizationId,
+      actor: organization.privateOwnerId!,
+      version: 1,
+      focus: ["personal"],
+      goal: "Use evidence",
+      interests: [],
+      role: "Owner",
+      connectSpaces: false,
+      confirmed: true,
+      stage: 2,
+      provenance: "user",
+      processingRoute: "local",
+      updatedAt: Date.now(),
+    });
+  });
+  expect(
+    (
+      await s.assistant.query(internal.assistantWidget.state, {
+        profileId: s.organizationId,
+      })
+    ).processing_route,
+  ).toBe("local");
+  await s.t.mutation(internal.accounts.syncUser, {
+    subject: "user_other_widget",
+    name: "Other",
+    email: "other-widget@example.test",
+  });
+  await s.t.run(async (ctx) => {
+    const other = (await ctx.db
+      .query("users")
+      .withIndex("by_subject", (q) => q.eq("subject", "user_other_widget"))
+      .unique())!;
+    await ctx.db.patch(setupId, { actor: other._id });
+  });
+  expect(
+    (
+      await s.assistant.query(internal.assistantWidget.state, {
+        profileId: s.organizationId,
+      })
+    ).processing_route,
+  ).toBeNull();
+  await expect(
+    s.assistant.query(internal.assistantWidget.browse, {
+      profileId: s.organizationId,
+      kind: "jobs",
+      offset: 49,
     }),
   ).rejects.toThrow();
 });

@@ -11,7 +11,7 @@ from functools import partial
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 import unittest
 import zipfile
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 spec = importlib.util.spec_from_file_location('cloud_extraction', Path(__file__).parents[1] / 'packages/media/cloud_extraction.py')
 worker = importlib.util.module_from_spec(spec)
@@ -21,6 +21,22 @@ SRT = '1\n00:00:00,000 --> 00:00:01,000\nCheck the source.\n\n2\n00:00:00,800 --
 
 
 class CaptionTests(unittest.TestCase):
+    def test_managed_network_transport_is_inherited_without_application_credentials(self):
+        values = {'PATH': '/synthetic/bin', 'HTTPS_PROXY': 'http://managed.invalid:8080',
+                  'https_proxy': 'http://managed.invalid:8080', 'SSL_CERT_FILE': '/synthetic/ca.pem',
+                  'SSL_CERT_DIR': '/synthetic/certs', 'REQUESTS_CA_BUNDLE': '/synthetic/ca.pem',
+                  'CURL_CA_BUNDLE': '/synthetic/ca.pem', 'NO_PROXY': 'localhost,127.0.0.1',
+                  'AWS_SECRET_ACCESS_KEY': 'SYNTHETIC', 'OPENAI_API_KEY': 'SYNTHETIC',
+                  'PYTHONPATH': '/unreviewed', 'VIBESCROLL_LEASE_TOKEN': 'SYNTHETIC'}
+        with patch.object(worker.os, 'environ', values):
+            child = worker.child_environment()
+        self.assertEqual(child, {k: v for k, v in values.items() if k not in
+                               ('AWS_SECRET_ACCESS_KEY', 'OPENAI_API_KEY', 'PYTHONPATH', 'VIBESCROLL_LEASE_TOKEN')})
+        with tempfile.TemporaryDirectory() as directory:
+            command = worker.ResolvedDownloader(Path(directory), Path(sys.executable).absolute(), Mock()).common
+        self.assertEqual(command[command.index('--compat-options') + 1], 'no-certifi')
+        self.assertNotIn('--no-check-certificates', command)
+
     def info(self, **extra):
         return {'webpage_url': URL, 'language': 'en', 'duration': 3, 'subtitles': {'en': [{'ext': 'srt', 'data': SRT}]}, **extra}
 
@@ -207,7 +223,13 @@ class OfflinePreparationTests(unittest.TestCase):
             (root / 'captions.srt').write_bytes(data)
             info = {'webpage_url': URL, 'language': 'en', 'subtitles': {'en': [{'ext': 'srt', 'data': SRT}]}}
             asr = Mock(side_effect=AssertionError('NO_ASR_OR_MODEL_CACHE'))
-            manifest = preparation.prepare_files(root, info, [{'candidateId': worker.caption_candidates(info)[0]['id'], 'file': 'captions.srt', 'sha256': worker.digest(data), 'bucket': 'subtitles', 'language': 'en', 'format': 'srt'}], transcribe=asr)
+            original_import = __import__
+            def without_pillow(name, *args, **kwargs):
+                if name == 'PIL' or name.startswith('PIL.'):
+                    raise AssertionError('NO_NATIVE_PYTHON_IMAGE_DEPENDENCY')
+                return original_import(name, *args, **kwargs)
+            with patch('builtins.__import__', side_effect=without_pillow):
+                manifest = preparation.prepare_files(root, info, [{'candidateId': worker.caption_candidates(info)[0]['id'], 'file': 'captions.srt', 'sha256': worker.digest(data), 'bucket': 'subtitles', 'language': 'en', 'format': 'srt'}], transcribe=asr)
             asr.assert_not_called()
             self.assertFalse((root / 'audio.wav').exists())
             self.assertFalse(manifest['transcript']['asrUsed'])
@@ -217,6 +239,7 @@ class OfflinePreparationTests(unittest.TestCase):
             for frame in manifest['frames']:
                 path = root / (frame['id'] + '.jpg')
                 self.assertEqual(worker.digest(path.read_bytes()), frame['sha256'])
+                self.assertLessEqual(path.stat().st_size, 81920)
                 with Image.open(path) as image:
                     self.assertEqual(image.size, (frame['width'], frame['height']))
             context = {'schemaVersion': 'work-cloud-media-v3', 'canonicalUrl': URL, 'platform': 'instagram', 'inputHash': 'a' * 64, 'policyHash': 'b' * 64, 'toolchainHash': 'c' * 64, 'taskId': 'fixture', 'retainUntil': round(__import__('time').time() * 1000) + 3600000}

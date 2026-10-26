@@ -33,3 +33,9 @@ Claim `work_cloud_repair_claim` once with a new correlation, then read `work_clo
 Renew only the still-active repair lease with `work_cloud_repair_heartbeat` between bounded steps. Its approval deadline is fixed; raw task files have a separate explicit cleanup target. An expired repair cannot be revived.
 
 Return matching JPEGs through `work_cloud_frame` with `repair=true` and the fresh repair lease, then acknowledge `work_cloud_repair_complete`. Missing required images cannot be marked complete. Changed authority after storage I/O queues the unattached object for cleanup. Reopening an expired analysis lease or overwriting the accepted analysis is never part of repair. Image restoration alone does not verify the transcript against speech.
+
+## Managed-host preparation readiness
+
+Check actual Python imports and a generated video/caption preparation before claiming a real job. New Cloud preparation uses the admitted FFmpeg/FFprobe for JPEG encoding, dimensions and small pixel comparisons; Pillow is not a Cloud dependency. Frame output is at most81920bytes so it fits the existing staged preparation transport. Review actual caption-first success without ASR or model initialization.
+
+The bounded launcher preserves only standard proxy/no-proxy and certificate variable names from the trusted managed environment. Never print their values or substitute a direct connection. This is necessary to keep its restricted enforcement transport. Acquisition networking must still be admitted by the host, and decoding/ASR must run with actual source networking disabled. An available downloader binary alone does not prove those controls.

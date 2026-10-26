@@ -103,29 +103,45 @@ def prepare_files(directory, info, tracks, *, ffmpeg='ffmpeg', ffprobe='ffprobe'
             raise ValueError('caption_bytes_changed')
         available[record['candidateId']] = data
     transcript = extract.choose_transcript(info, duration_ms, lambda candidate: available.get(candidate['id']), local_asr)
-    from PIL import Image, ImageChops, ImageStat
     frames = []
     previous = None
     for index in range(8):
         timestamp = duration_ms * index // 8
         image = root / f'frame-{index + 1}.jpg'
-        tool(common + ['-ss', str(timestamp / 1000), '-i', str(source), '-frames:v', '1', '-vf', "scale=w='min(960,iw)':h='min(960,ih)':force_original_aspect_ratio=decrease", '-q:v', '5', str(image)])
-        checked_file(root, image.name, 1000000)
-        with Image.open(image) as decoded:
-            decoded.load()
-            pixels = decoded.convert('RGB')
-            comparison = pixels.resize((32, 32))
-            duplicate = previous is not None and max(ImageStat.Stat(ImageChops.difference(comparison, previous)).mean) < 2
-            previous = comparison
-            if duplicate and index not in (0, 7):
-                image.unlink()
-                continue
-            for quality in (80, 65, 50, 35):
-                pixels.save(image, 'JPEG', quality=quality, optimize=True)
-                if image.stat().st_size <= 150000:
+        # FFmpeg already supplies the admitted decoder. Do not require another
+        # native Python image library just to resize, compare and encode pixels.
+        encoded = False
+        for limit in (960, 640, 480):
+            for quality in (5, 12, 24, 31):
+                if image.is_symlink():
+                    raise ValueError('invalid_local_file')
+                if image.exists():
+                    image.unlink()
+                scale = f"scale=w='min({limit},iw)':h='min({limit},ih)':force_original_aspect_ratio=decrease"
+                tool(common + ['-ss', str(timestamp / 1000), '-i', str(source), '-frames:v', '1', '-vf', scale, '-q:v', str(quality), str(image)])
+                checked_file(root, image.name, 1000000)
+                if image.stat().st_size <= 81920:
+                    encoded = True
                     break
-            checked_file(root, image.name, 150000)
-            width, height = pixels.size
+            if encoded:
+                break
+        if not encoded:
+            raise ValueError('frame_over_transport_limit')
+        jpeg_input = ['-protocol_whitelist', 'file', '-format_whitelist', 'image2', '-f', 'image2', '-pattern_type', 'none', '-i', str(image)]
+        dimensions = json.loads(tool([ffprobe, '-v', 'error', *jpeg_input, '-show_entries', 'stream=width,height', '-of', 'json'], 10))['streams']
+        if len(dimensions) != 1:
+            raise ValueError('invalid_prepared_frame')
+        width, height = dimensions[0]['width'], dimensions[0]['height']
+        if not 0 < width <= 960 or not 0 < height <= 960:
+            raise ValueError('invalid_prepared_frame')
+        comparison = tool([ffmpeg, '-nostdin', '-v', 'error', '-threads', '2', *jpeg_input, '-frames:v', '1', '-vf', 'scale=32:32', '-pix_fmt', 'rgb24', '-f', 'rawvideo', 'pipe:1'], 10)
+        if len(comparison) != 3072:
+            raise ValueError('invalid_frame_comparison')
+        duplicate = previous is not None and max(sum(abs(a - b) for a, b in zip(comparison[c::3], previous[c::3])) / 1024 for c in range(3)) < 2
+        previous = comparison
+        if duplicate and index not in (0, 7):
+            image.unlink()
+            continue
         frames.append({'id': f'frame-{index + 1}', 'timestampMs': timestamp, 'sha256': extract.digest(image.read_bytes()), 'bytes': image.stat().st_size, 'width': width, 'height': height})
     return {
         'video': {'id': 'video-1', 'index': 0, 'kind': 'video', 'contentHash': extract.digest(source.read_bytes()), 'bytes': source.stat().st_size, 'width': video['width'], 'height': video['height'], 'mime': 'video/mp4' if source.name.endswith('.mp4') or source.read_bytes()[4:8] == b'ftyp' else 'video/webm', 'durationMs': duration_ms},

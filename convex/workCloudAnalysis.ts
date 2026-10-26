@@ -33,6 +33,8 @@ import {
   validateWorkCloudMediaOutput,
   workCloudMediaPolicy,
   workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
+  workCloudRequestPolicies,
   workCloudMetadata,
   workCloudMediaPreparation,
   workCloudMcpRequestOptions,
@@ -162,10 +164,16 @@ async function sourceInput(
   bound: WorkCloudJob | null = null,
   mediaApproval?: { retainUntil: number },
 ) {
+  const initialV3 =
+    bound?.cloud.schemaVersion === "work-cloud-media-v3" &&
+    bound.cloud.media?.toolchainHash ===
+      (await digest(canonicalJson(workCloudMediaPolicyInitialV3.toolchain)));
   const mediaPolicy =
     bound?.cloud.schemaVersion === "work-cloud-media-v2"
       ? workCloudMediaPolicyV2
-      : workCloudMediaPolicy;
+      : initialV3
+        ? workCloudMediaPolicyInitialV3
+        : workCloudMediaPolicy;
   const media = bound?.cloud.media ? bound.cloud.media : mediaApproval;
   ensure(
     (bound?.cloud.schemaVersion === "work-cloud-media-v2" ||
@@ -774,7 +782,9 @@ export async function requestCloudFromAssistant(
   );
   enabled(a.actor.subject, true);
   const options = workCloudMcpRequestOptions.parse(request.cloud);
-  const currentPolicyHash = await digest(canonicalJson(workCloudMediaPolicy));
+  const approvedPolicyHashes = await Promise.all(
+    workCloudRequestPolicies.map((policy) => digest(canonicalJson(policy))),
+  );
   ensure(
     a.scopes.includes("analysis:request") &&
       a.client.scopes.includes("analysis:request") &&
@@ -782,7 +792,7 @@ export async function requestCloudFromAssistant(
       (await workCloudSourceEligible(ctx, a.organization, a.actor._id)) &&
       a.membership.role === "owner" &&
       a.grant.cloudRequestPolicy === "explicit_per_source_v1" &&
-      a.grant.cloudRequestPolicyHash === currentPolicyHash &&
+      approvedPolicyHashes.includes(a.grant.cloudRequestPolicyHash ?? "") &&
       a.grant.version === request.grantVersion &&
       !a.grant.analysisDefaults?.enabled,
     "SETUP_REQUIRED",

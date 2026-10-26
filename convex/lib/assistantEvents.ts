@@ -8,7 +8,7 @@ import { workspaceReadable } from "./workspacePrivacy";
 import { sourceWithinAssistantScope } from "./assistantSourceScope";
 import { workCloudSourceEligible } from "./workCloudSourceAccess";
 import { workCloudMediaAllowed, workCloudTextAllowed } from "./personalAccess";
-import { workCloudMediaPolicy } from "../../packages/contracts/work-cloud-text";
+import { workCloudRequestPolicies } from "../../packages/contracts/work-cloud-text";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { internal } from "../_generated/api";
 export async function cloudProfileEligible(
@@ -23,15 +23,19 @@ export async function cloudProfileEligible(
     "analysis:request",
     "analysis:execute",
   ] as const;
-  const policyHash = Array.from(
-    new Uint8Array(
-      await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(canonicalJson(workCloudMediaPolicy)),
-      ),
+  const policyHashes = await Promise.all(
+    workCloudRequestPolicies.map(async (policy) =>
+      Array.from(
+        new Uint8Array(
+          await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(canonicalJson(policy)),
+          ),
+        ),
+        (b) => b.toString(16).padStart(2, "0"),
+      ).join(""),
     ),
-    (b) => b.toString(16).padStart(2, "0"),
-  ).join("");
+  );
   return (
     eventsEnabled() &&
     actor.status === "active" &&
@@ -40,7 +44,7 @@ export async function cloudProfileEligible(
     assistantGrantActive(grant) &&
     grant.libraryScope === "all" &&
     grant.cloudRequestPolicy === "explicit_per_source_v1" &&
-    grant.cloudRequestPolicyHash === policyHash &&
+    policyHashes.includes(grant.cloudRequestPolicyHash ?? "") &&
     !grant.analysisDefaults?.enabled &&
     scopes.every(
       (scope) => grant.scopes.includes(scope) && client?.scopes.includes(scope),

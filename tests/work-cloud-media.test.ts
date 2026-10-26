@@ -22,6 +22,7 @@ import {
   workCloudMediaPreparation,
   validateWorkCloudMediaOutput,
   workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
 } from "../packages/contracts/work-cloud-text";
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -159,7 +160,13 @@ async function setup(
 type Fixture = Awaited<ReturnType<typeof setup>>;
 // Existing sampled-ASR fixtures represent retained v2 jobs. New caption-path
 // cases explicitly keep the current v3 approval and image requirements.
-async function bindLegacyLease(s: any, lease: any) {
+async function bindLegacyLease(
+  s: any,
+  lease: any,
+  policy:
+    | typeof workCloudMediaPolicyV2
+    | typeof workCloudMediaPolicyInitialV3 = workCloudMediaPolicyV2,
+) {
   const input = await s.assistant.query(
     internal.workCloudAnalysis.input,
     lease,
@@ -187,12 +194,10 @@ async function bindLegacyLease(s: any, lease: any) {
     "evidence",
   ];
   const legacy = Object.fromEntries(fields.map((key) => [key, input[key]]));
-  legacy.schemaVersion = "work-cloud-media-v2";
-  legacy.policy = workCloudMediaPolicyV2;
-  legacy.policyHash = await socialHash(canonicalJson(workCloudMediaPolicyV2));
-  legacy.toolchainHash = await socialHash(
-    canonicalJson(workCloudMediaPolicyV2.toolchain),
-  );
+  legacy.schemaVersion = policy.schemaVersion;
+  legacy.policy = policy;
+  legacy.policyHash = await socialHash(canonicalJson(policy));
+  legacy.toolchainHash = await socialHash(canonicalJson(policy.toolchain));
   const inputHash = await socialHash(canonicalJson(legacy));
   await s.t.run(async (ctx: any) => {
     const source = await ctx.db.get(s.sourceId),
@@ -202,7 +207,7 @@ async function bindLegacyLease(s: any, lease: any) {
         ...job,
         cloud: {
           ...job.cloud,
-          schemaVersion: "work-cloud-media-v2",
+          schemaVersion: policy.schemaVersion,
           inputHash,
           policyHash: legacy.policyHash,
           media: { ...job.cloud.media, toolchainHash: legacy.toolchainHash },
@@ -217,6 +222,23 @@ it("does not let a new Cloud job downgrade to legacy preparation without returne
   await expect(prepare(s, lease, await receipt(s, lease))).rejects.toThrow(
     "preparation version",
   );
+});
+it("retains the original approved v3 toolchain through a decoder patch", async () => {
+  const s = await setup(undefined, false),
+    lease = await s.claim();
+  await bindLegacyLease(s, lease, workCloudMediaPolicyInitialV3);
+  await expect(
+    s.assistant.query(internal.workCloudAnalysis.input, lease),
+  ).resolves.toMatchObject({
+    schemaVersion: "work-cloud-media-v3",
+    policy: workCloudMediaPolicyInitialV3,
+  });
+  await expect(
+    s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+      ...lease,
+      operation: "heartbeat",
+    }),
+  ).resolves.toMatchObject({ valid: true });
 });
 
 it.each([

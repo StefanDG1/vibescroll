@@ -428,7 +428,6 @@ function AssistantAccessEditor({
           <div className="assistant-grant-list">
             {data.grants.map((grant) => {
               const setupMessage =
-                data.privateLibrary &&
                 data.enabled &&
                 data.eventsEnabled &&
                 data.workCloudMediaEnabled &&

@@ -510,6 +510,23 @@ it("copies setup for the saved grant, then uses the refreshed version without ch
   expect(f.call).not.toHaveBeenCalled();
 });
 
+it.each([true, false])(
+  "uses authoritative Cloud eligibility for legacy-workspace setup: %s",
+  async (eligible) => {
+    const data = monitorSetup();
+    data.privateLibrary = false;
+    data.workCloudSavedEnabled = eligible;
+    const f = await fixture(data);
+    const message = elements(f.render()).find((n) => n.type === "textarea");
+    expect(Boolean(message)).toBe(eligible);
+    if (message)
+      expect(message.props.value).toContain(
+        '"profileId":"private","grantVersion":3,"clientId":"host"',
+      );
+    expect(f.call).not.toHaveBeenCalled();
+  },
+);
+
 it.each([
   "gate",
   "events",

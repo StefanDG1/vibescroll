@@ -1,13 +1,13 @@
 {
   "schemaVersion": "cloud-runtime-bundle-v1",
-  "path": "/downloads/cloud-runtime-f2bf4676b1251840.zip",
-  "sha256": "f2bf4676b125184040bcbf2368a99ec4392e11c93dc845fe170afb0deb9bc9d4",
-  "bytes": 78361,
+  "path": "/downloads/cloud-runtime-be21d22c1ecf35ba.zip",
+  "sha256": "be21d22c1ecf35ba0d1a795e5d518e6593deeb1bb59556ae7a4d1c527891e0ce",
+  "bytes": 80335,
   "expandedMaximumBytes": 131072,
   "cacheMaximumBytes": 41943040,
-  "packageManifestSHA256": "9c2cde19457d2e2da6a61985d1fafe4dc480187bca2ad1638a1f7141efe5d788",
+  "packageManifestSHA256": "4bde8f3763802e7e2d8dd272e85804e63d06771dc9b416ebc6c72646ac524842",
   "adapterPolicy": "linux-provider-vm-decoder-socket-denial-v2",
-  "sourceCommit": "549b0d26c49e9489fff907831eb5b75f30d049b1",
+  "sourceCommit": "dc77c0a28bc659361df8cab4af51a5d1430bb55a",
   "files": {
     "cloud_job.py": {
       "bytes": 6672,
@@ -18,8 +18,8 @@
       "sha256": "788ada9e95f7d49a9d23872780e37d1a6383b8d00814aab92d864c97f616ecfd"
     },
     "cloud_extraction.py": {
-      "bytes": 15607,
-      "sha256": "a2959bcab78d3fd47ef0b7b9d59329882ad92f90bea29fb7df426bdfd2d35532"
+      "bytes": 17581,
+      "sha256": "f1eeb1be8d81cd4d4f35a809a458ddfcc070efd3c93de9d694a303e1a373d456"
     },
     "cloud_prepare.py": {
       "bytes": 11861,
@@ -55,7 +55,7 @@
     },
     "cloud-extractor.lock.json": {
       "bytes": 1748,
-      "sha256": "9c2cde19457d2e2da6a61985d1fafe4dc480187bca2ad1638a1f7141efe5d788"
+      "sha256": "4bde8f3763802e7e2d8dd272e85804e63d06771dc9b416ebc6c72646ac524842"
     },
     "decoder_network_denial_v1.py": {
       "bytes": 9088,

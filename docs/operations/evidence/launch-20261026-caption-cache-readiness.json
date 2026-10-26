@@ -1,0 +1,51 @@
+{
+  "recordedAtUTC": "2026-10-26T20:21:42.262023+00:00",
+  "helperCommit": "549b0d26c49e9489fff907831eb5b75f30d049b1",
+  "helperBytes": 6308,
+  "helperSHA256": "758ff267309502e66ce7c4be9bab25d8ea54e88819fcdbe240e08fc0123f688f",
+  "reproducedFailure": "automatic preflight compared total regular files with hashed wheel payload count",
+  "cacheDriftFound": false,
+  "cacheRepairedOrDeleted": false,
+  "independentPinnedWheelArchiveCheck": {
+    "archives": 2,
+    "sourceRequests": 0,
+    "hashedPayloadFiles": 1085,
+    "recordSelfEntries": 2,
+    "totalRegularFiles": 1087,
+    "bytes": 10842844,
+    "payloadSHA256": "a78d962f845ccfe2f4c3d463a3f645434612c6b8ae3ebc8aaf32393f569528c3",
+    "thirdPartyImports": 0
+  },
+  "actualNativeHelper": {
+    "exitCode": 0,
+    "rawHelperPinMatched": true,
+    "samePayloadHashAndCounts": true,
+    "networkRequests": 0,
+    "writes": 0,
+    "thirdPartyImports": 0,
+    "pilotStayedPaused": true,
+    "sourceJobs": 0
+  },
+  "fullLocalCheck": {
+    "exitCode": 0,
+    "vitestPassed": 1296,
+    "hostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 67,
+    "windowsSkipped": 5,
+    "typesPassed": true,
+    "zeroWarningLint": true,
+    "productionBuildsPassed": true
+  },
+  "nextWebsiteBundle": {
+    "path": "/downloads/cloud-runtime-f2bf4676b1251840.zip",
+    "bytes": 78361,
+    "files": 16,
+    "sha256": "f2bf4676b125184040bcbf2368a99ec4392e11c93dc845fe170afb0deb9bc9d4",
+    "priorImmutableZipRetained": true,
+    "acceptedElevenFileExtractionManifestUnchanged": true
+  },
+  "automaticMediaAccepted": false,
+  "frontendPublished": false,
+  "exactCI": "pending"
+}

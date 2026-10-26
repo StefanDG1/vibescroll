@@ -35,6 +35,7 @@ export function StudioHome({
   organizationId,
   demo = false,
   homeSnapshot,
+  progressTime,
   renderThumbnail,
   homeProjectionPending = false,
 }: {
@@ -55,6 +56,7 @@ export function StudioHome({
   organizationId?: string;
   demo?: boolean;
   homeSnapshot?: HomeSummaryV1;
+  progressTime?: number;
   renderThumbnail?: (summary: PostSummaryV1) => ReactNode;
   homeProjectionPending?: boolean;
 }) {
@@ -207,6 +209,7 @@ export function StudioHome({
                     key={`${homeSnapshot?.scopeKey}:${summary.sourceId}:${summary.generation}`}
                   >
                     <HomePostCard
+                      progressTime={progressTime}
                       summary={summary}
                       href={postPagePath(
                         organizationId ?? "",

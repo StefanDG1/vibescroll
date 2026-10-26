@@ -16,6 +16,7 @@ export type HomePostCardProps = {
   onOpen?: (sourceId: string) => void;
   /** Noninteractive image content resolved through the authorized asset route. */
   thumbnailNode?: ReactNode;
+  progressTime?: number;
 };
 
 export function HomePostCard({
@@ -23,18 +24,35 @@ export function HomePostCard({
   href,
   onOpen,
   thumbnailNode,
+  progressTime,
 }: HomePostCardProps) {
   const title = summary.title || "Untitled post";
-  const status = summary.progress.active
-    ? (summary.progress.stage ?? summary.progress.state).replaceAll("_", " ")
-    : {
-        saved: "Saved",
-        needs_upload: "Upload needed",
-        queued: "Queued",
-        processing: "Processing",
-        ready: "Insights ready",
-        failed: "Analysis failed",
-      }[summary.progress.state];
+  const intentNeedsReview =
+    summary.progress.executor === "work_cloud" &&
+    summary.progress.executionState === null &&
+    summary.progress.stage === "preflight" &&
+    progressTime !== undefined &&
+    summary.progress.activeUntil !== null &&
+    summary.progress.activeUntil <= progressTime;
+  const status = intentNeedsReview
+    ? "Review Cloud setup"
+    : summary.progress.active
+      ? summary.progress.executor === "work_cloud" &&
+        summary.progress.executionState === null &&
+        summary.progress.stage === "preflight"
+        ? "Waiting for ChatGPT"
+        : (summary.progress.stage ?? summary.progress.state).replaceAll(
+            "_",
+            " ",
+          )
+      : {
+          saved: "Saved",
+          needs_upload: "Upload needed",
+          queued: "Queued",
+          processing: "Processing",
+          ready: "Insights ready",
+          failed: "Analysis failed",
+        }[summary.progress.state];
   const openLink = (event: MouseEvent<HTMLAnchorElement>) => {
     const selection = window.getSelection();
     if (

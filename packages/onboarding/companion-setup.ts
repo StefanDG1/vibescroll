@@ -18,7 +18,8 @@ export type SetupAction =
 export type SetupSnapshot = {
   purposeSaved: boolean;
   sourceSaved: boolean;
-  route?: "local" | "cloud" | "save_only";
+  route?: "local" | "cloud" | "save_only" | "work_cloud";
+  workCloudAvailable?: boolean;
   cloudAvailable: boolean;
   // Feature availability only; never host, account, execution or media readiness.
   workCloudTextState?: "unavailable" | "available_unverified";
@@ -78,7 +79,9 @@ export function companionSetupSteps(
           ? !s.localEligible
           : s.route === "cloud"
             ? !s.cloudAvailable
-            : false,
+            : s.route === "work_cloud"
+              ? !s.workCloudAvailable
+              : false,
       help: "/help/processing-and-recovery",
     },
   ];
@@ -131,12 +134,14 @@ export function companionSetupSteps(
       blocked:
         s.route === "cloud"
           ? !s.cloudAvailable
-          : !s.localEligible ||
-            !s.prerequisitesChecked ||
-            !s.paired ||
-            !s.accountConnected ||
-            !s.workerAvailable ||
-            s.paused,
+          : s.route === "work_cloud"
+            ? !s.workCloudAvailable
+            : !s.localEligible ||
+              !s.prerequisitesChecked ||
+              !s.paired ||
+              !s.accountConnected ||
+              !s.workerAvailable ||
+              s.paused,
       help: "/help/first-useful-insight",
     });
   if (guided)

@@ -61,6 +61,9 @@ export const setup = query({
       workCloudMediaEnabled:
         cloudEligible && workCloudMediaAllowed(actor.subject),
       eventsEnabled: process.env.MCP_EVENTS_ENABLED === "true",
+      workCloudSavedEnabled:
+        organization.privateOwnerId === actor._id &&
+        savedCloudEnabled(actor.subject),
       devices: (
         await ctx.db
           .query("devices")

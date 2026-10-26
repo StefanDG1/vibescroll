@@ -6,6 +6,7 @@ import { personalAllowed } from "./lib/personalAccess";
 import { freeWorkersConfigured } from "../packages/providers/workers-plan";
 import { hostedMediaAllowed } from "./lib/hostedMediaAccess";
 import { googleConfigured } from "../packages/providers/google-inference";
+import { savedCloudRoute } from "./lib/workCloudSave";
 export const read = query({
   args: { organizationId: v.id("organizations") },
   returns: v.object({
@@ -16,10 +17,20 @@ export const read = query({
     orderedPersonalAnalysisEnabled: v.boolean(),
     cloudAnalysisEnabled: v.boolean(),
     linkAnalysisEnabled: v.boolean(),
+    workCloud: v.union(
+      v.object({
+        available: v.boolean(),
+        configured: v.boolean(),
+        grantId: v.union(v.id("assistantGrants"), v.null()),
+        grantVersion: v.union(v.number(), v.null()),
+      }),
+      v.null(),
+    ),
     processingRoute: v.union(
       v.literal("local"),
       v.literal("cloud"),
       v.literal("save_only"),
+      v.literal("work_cloud"),
       v.null(),
     ),
   }),
@@ -35,6 +46,7 @@ export const read = query({
             .unique()
         : null;
     return {
+      workCloud: await savedCloudRoute(ctx, actor, organization),
       processingRoute:
         setup?.actor === actor._id ? (setup.processingRoute ?? null) : null,
       preferChatGPTPlan: actor.preferChatGPTPlan ?? false,

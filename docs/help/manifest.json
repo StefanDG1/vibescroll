@@ -253,7 +253,7 @@
       "summary": "Distinguish waiting work, unavailable accounts, reservations and settled usage.",
       "file": "processing-and-recovery.md",
       "status": "approved",
-      "reviewMode": "source-reviewed three-location candidate with actual synthetic screenshot and local keyboard/mobile checks; production and independent setup pending",
+      "reviewMode": "source-reviewed; default-disabled task-location screenshot remains accurate after gated Save wiring; local desktop/320px and keyboard reverified October26; enabled automatic media and independent walkthrough remain pending",
       "lastVerifiedCommit": "63e5d0b617481aae4cb9931ad9a3120b3dd2a2e0",
       "dependencies": [
         "apps/starter/components/console.tsx",

@@ -59,4 +59,22 @@ it("opens a bookmarkable post from every card action without rendering insight t
     /PRIVATE_INSIGHT|PRIVATE_ANALYSIS|aria-expanded|<button/,
   );
   expect(() => postPagePath("org-1", "../foreign")).toThrow("unavailable");
+  summary.progress = {
+    ...summary.progress,
+    active: true,
+    executor: "work_cloud",
+    executionState: null,
+    stage: "preflight",
+    activeUntil: 1000,
+  };
+  expect(
+    renderToStaticMarkup(
+      createElement(HomePostCard, { summary, href, progressTime: 999 }),
+    ),
+  ).toContain("Waiting for ChatGPT");
+  expect(
+    renderToStaticMarkup(
+      createElement(HomePostCard, { summary, href, progressTime: 1000 }),
+    ),
+  ).toContain("Review Cloud setup");
 });

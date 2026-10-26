@@ -108,6 +108,13 @@ export async function projectPostSource(
   const contentRevision = await postRevision(content);
   const job = source.personalAnalysis;
   const currentJob = job?.generation === source.generation ? job : undefined;
+  const saveIntent =
+    !currentJob &&
+    source.workCloudSaveIntent?.analysisGeneration === undefined &&
+    source.workCloudSaveIntent?.generation === source.generation &&
+    ["saved", "needs_upload"].includes(source.state)
+      ? source.workCloudSaveIntent
+      : undefined;
   const ordered =
     source.orderedPreparation?.generation === source.generation
       ? source.orderedPreparation
@@ -127,6 +134,7 @@ export async function projectPostSource(
     currentJob?.expiresAt,
     recovering ? undefined : currentJob?.deadline,
     ordered?.deadline,
+    saveIntent?.expiresAt,
   );
   if (executionState === "running" || executionState === "recovering") {
     // Queued/preparing jobs intentionally have no lease. Claimed jobs must
@@ -143,7 +151,8 @@ export async function projectPostSource(
       executionState ?? "",
     ) &&
     (["queued", "processing"].includes(source.state) ||
-      executionState === "recovering");
+      executionState === "recovering" ||
+      (!!saveIntent && saveIntent.expiresAt > Date.now()));
   const progress = await revisionedProgress({
     version: "post-progress-v1",
     sourceId: source._id,
@@ -156,9 +165,13 @@ export async function projectPostSource(
         : "paired_computer"
       : ordered || source.managedAnalysisActor
         ? "managed"
-        : null,
+        : saveIntent
+          ? "work_cloud"
+          : null,
     executionState,
-    stage: optionalEnum(postStage.safeParse(currentJob?.stage)),
+    stage: saveIntent
+      ? "preflight"
+      : optionalEnum(postStage.safeParse(currentJob?.stage)),
     orderedPhase: optionalEnum(
       postOrderedPhase.safeParse(currentJob?.ordered?.phase ?? ordered?.phase),
     ),

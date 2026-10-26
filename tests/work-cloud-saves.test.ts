@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
+import { projectPostSource } from "../convex/lib/postSummary";
 
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -79,6 +80,16 @@ async function setup(optIn = true) {
       : {}),
   };
   const grant = await owner.mutation(api.assistantGrants.save, grantArgs);
+  await assistant.mutation(internal.assistantEvents.install, {
+    profileId: org,
+    grantVersion: grant.version,
+    eventName: "video_link_saved",
+    externalId: "sub_" + "a".repeat(64),
+    ciphertext: "synthetic-authority",
+    keyVersion: "1",
+    expiresAt: Date.now() + 600000,
+    callbackVerifiedAt: Date.now(),
+  });
   const captureArgs = {
     organizationId: org,
     key: "cloud-save-fixture",
@@ -328,6 +339,16 @@ it("does not extend an expired intent when the same link is saved again", async 
   const s = await setup();
   const saved = await s.capture();
   vi.advanceTimersByTime(86400001);
+  await s.assistant.mutation(internal.assistantEvents.install, {
+    profileId: s.org,
+    grantVersion: s.grant.version,
+    eventName: "video_link_saved",
+    externalId: "sub_" + "a".repeat(64),
+    ciphertext: "synthetic-authority",
+    keyVersion: "1",
+    expiresAt: Date.now() + 600000,
+    callbackVerifiedAt: Date.now(),
+  });
   expect(await s.capture()).toMatchObject({
     status: "existing_work_preserved",
     intentId: null,
@@ -339,6 +360,56 @@ it("does not extend an expired intent when the same link is saved again", async 
   await expect(s.start(saved.sourceId, saved.intentId!)).rejects.toThrow(
     /APPROVAL_STALE/,
   );
+});
+it("reports a handoff only with one current grant and an active saved-link monitor", async () => {
+  const s = await setup();
+  expect(
+    (await s.owner.query(api.aiPreferences.read, { organizationId: s.org }))
+      .workCloud,
+  ).toMatchObject({ available: true, configured: true, grantId: s.grant.id });
+  await s.t.run(async (ctx) => {
+    const row = (await ctx.db.query("assistantSubscriptions").collect())[0];
+    await ctx.db.patch(row._id, { state: "cancelled" });
+  });
+  expect(
+    (await s.owner.query(api.aiPreferences.read, { organizationId: s.org }))
+      .workCloud,
+  ).toMatchObject({ available: false, configured: true });
+  await expect(s.capture()).rejects.toThrow(/SETUP_REQUIRED/);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("sources").collect()),
+  ).toHaveLength(0);
+});
+it("projects pending setup as light progress without invalidating heavy content or claiming a running job", async () => {
+  const s = await setup();
+  const id = await s.owner.mutation(api.product.capture, {
+    organizationId: s.org,
+    key: s.captureArgs.key,
+    kind: "url",
+    url: s.captureArgs.url,
+    title: s.captureArgs.title,
+    rightsAttested: true,
+  });
+  const before = await s.t.run(async (ctx) =>
+    projectPostSource((await ctx.db.get(id))!),
+  );
+  const saved = await s.capture();
+  const after = await s.t.run(async (ctx) =>
+    projectPostSource((await ctx.db.get(id))!),
+  );
+  expect(after.contentRevision).toBe(before.contentRevision);
+  expect(after.progress.progressRevision).not.toBe(
+    before.progress.progressRevision,
+  );
+  expect(after.progress).toMatchObject({
+    executor: "work_cloud",
+    executionState: null,
+    stage: "preflight",
+    active: true,
+    activeUntil: saved.expiresAt,
+  });
+  expect(JSON.stringify(after)).not.toContain(saved.intentId!);
+  expect(JSON.stringify(after)).not.toContain(s.grant.id);
 });
 it("removes the intent with the source and refuses later consumption", async () => {
   const s = await setup();

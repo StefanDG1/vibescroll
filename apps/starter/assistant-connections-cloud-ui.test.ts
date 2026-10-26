@@ -195,6 +195,39 @@ it("requires a separate Cloud choice and fresh acknowledgement, without a paired
   expect(text(f.render())).toContain("does not launch the Cloud task");
   expect(text(f.render())).toContain("Up to 6 new requests per hour");
 });
+it("reviews automatic app-Save defaults separately and invalidates the acknowledgement", async () => {
+  const allScopes = [...scopes, "jobs:read", "events:subscribe"];
+  const f = await fixture(
+    setup({
+      workCloudSavedEnabled: true,
+      clients: [{ id: "host", name: "Work Cloud", scopes: allScopes }],
+    }),
+  );
+  f.configure();
+  checkbox(f.render(), cloudLabel).props.onChange({
+    target: { checked: true },
+  });
+  f.acknowledge();
+  const label = "Allow analysis of video links I save in the app";
+  expect(checkbox(f.render(), label).props.checked).toBe(false);
+  checkbox(f.render(), label).props.onChange({ target: { checked: true } });
+  expect(checkbox(f.render(), approvalLabel).props.checked).toBe(false);
+  await f.save();
+  expect(f.call).not.toHaveBeenCalled();
+  f.acknowledge();
+  await f.save();
+  expect(f.call).toHaveBeenCalledWith(
+    "saveAssistantGrant",
+    expect.objectContaining({
+      cloudSaveDefaults: {
+        version: "app-save-cloud-v1",
+        model: "gpt-6.1-sol",
+        effort: "high",
+        retentionMs: 7 * 86400000,
+      },
+    }),
+  );
+});
 
 it.each(["analysis:request", "analysis:execute"])(
   "does not grant Cloud permission without %s, even through an injected checkbox event",

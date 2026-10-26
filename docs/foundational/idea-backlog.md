@@ -1,5 +1,11 @@
 # Foundational idea backlog
 
+## F079: finite app saves and actual native runtime limits, October26
+
+The owner-approved link-only flow now has a disabled implementation candidate under [ADR162](../adr/162-finite-app-save-cloud-intents.md). A reviewed one-time default and current native saved-link monitor permit a finite source-bound intent. The host prepares before the existing analysis job begins; save-only and unavailable routes preserve their meaning. The three-option picker and illustrated Help are live separately. Native notification/renewal and one active-task Reel do not prove automatic media: current nested decoder probes failed. Local UI/handler tests supply no customer outcome or general availability evidence. Preserve the audience, prices, six beliefs, private data, every provider/privacy gate and EUR8 cumulative cap with all old holds. No marketing campaign or automatic catalog contribution follows.
+
+Counterargument: native wake and a connected badge cannot establish a usable media runtime. Test one actual laptop-off link through retained transcript, inspected JPEGs and cited analysis before enabling the route. No authority or spending follows the candidate.
+
 ## F078: understandable task locations, October 26
 
 Source: the owner's exact three-option request. Decision: implement one shared picker and existing setup shortcuts, keeping unavailable routes visible and disabled. The objection is ambiguity between ChatGPT Cloud and VibeScroll-funded servers. Recommendation follows owner preference; readiness and customer comprehension remain separately tested. Keep all existing quotes, grants and saved data. See [ADR161](../adr/161-three-task-locations.md).

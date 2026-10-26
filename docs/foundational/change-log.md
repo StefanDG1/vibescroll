@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## October26: F079 finite app saves and runtime limits
+
+All four briefs distinguish the live three-choice picker from the disabled automatic-intent candidate. Recorded actual failed native adapters, supported-host research, one-time defaults, no premature job and preserved grants/funding. No audience, pricing, belief, outcome or campaign claim changes.
+
 ## October 26: F078 three task locations
 
 All four briefs now record the owner-selected order, costs and quick setup links. The local candidate reuses current processing checks and keeps automatic ChatGPT Cloud disabled until admitted. No prices, allowances, permissions, audience or six beliefs change. Local browser/source checks remain separate from production publication and independent usability.

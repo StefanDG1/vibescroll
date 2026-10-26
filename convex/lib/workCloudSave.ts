@@ -10,6 +10,7 @@ import { workCloudMediaAllowed } from "./personalAccess";
 import { workCloudSourceEligible } from "./workCloudSourceAccess";
 import { digest } from "../product";
 import { sourceRetained } from "./sourceAuthority";
+import { eventSubscriptionCurrent } from "./assistantEvents";
 
 export const cloudSaveIntentLifetimeMs = 86400000;
 export function savedCloudEnabled(subject: string) {
@@ -20,6 +21,63 @@ export function savedCloudEnabled(subject: string) {
     process.env.WORK_CLOUD_SAVED_LINKS_ENABLED === "true" &&
     process.env.WORK_CLOUD_SAVED_LINKS_VERIFIED === "true"
   );
+}
+export async function savedCloudMonitorCurrent(
+  ctx: QueryCtx,
+  grant: Doc<"assistantGrants">,
+) {
+  const rows = await ctx.db
+    .query("assistantSubscriptions")
+    .withIndex("by_org", (q) => q.eq("organizationId", grant.organizationId))
+    .take(21);
+  if (rows.length > 20) return false;
+  for (const row of rows)
+    if (
+      row.eventName === "video_link_saved" &&
+      row.grantId === grant._id &&
+      row.grantVersion === grant.version &&
+      row.actor === grant.actor &&
+      row.clientId === grant.clientId &&
+      (await eventSubscriptionCurrent(ctx, row))
+    )
+      return true;
+  return false;
+}
+export async function savedCloudRoute(
+  ctx: QueryCtx,
+  actor: Doc<"users">,
+  organization: Doc<"organizations">,
+) {
+  if (
+    !savedCloudEnabled(actor.subject) ||
+    organization.privateOwnerId !== actor._id
+  )
+    return null;
+  const rows = await ctx.db
+    .query("assistantGrants")
+    .withIndex("by_actor_org", (q) =>
+      q.eq("actor", actor._id).eq("organizationId", organization._id),
+    )
+    .take(5);
+  if (rows.length > 4) return null;
+  const current = [];
+  for (const grant of rows)
+    if (await savedCloudGrantCurrent(ctx, actor, organization, grant))
+      current.push(grant);
+  if (current.length !== 1)
+    return {
+      available: false,
+      configured: current.length > 0,
+      grantId: null,
+      grantVersion: null,
+    };
+  const grant = current[0];
+  return {
+    available: await savedCloudMonitorCurrent(ctx, grant),
+    configured: true,
+    grantId: grant._id,
+    grantVersion: grant.version,
+  };
 }
 export async function savedCloudGrantCurrent(
   ctx: QueryCtx,

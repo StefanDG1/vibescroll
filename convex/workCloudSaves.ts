@@ -13,6 +13,7 @@ import {
   savedCloudIntentCurrent,
   savedCloudSourceHash,
   cloudSaveIntentLifetimeMs,
+  savedCloudMonitorCurrent,
 } from "./lib/workCloudSave";
 
 // App-only authenticated capture. Shared/MCP/creator capture never calls this.
@@ -50,6 +51,11 @@ export const capture = mutation({
         )),
       "SETUP_REQUIRED",
       "Review automatic Cloud saves once in Connections after runtime verification.",
+    );
+    ensure(
+      await savedCloudMonitorCurrent(ctx, grant),
+      "SETUP_REQUIRED",
+      "Complete or resume the saved-link monitor in ChatGPT before saving for Cloud analysis.",
     );
     const requestedIdentity = privateCloudMediaIdentity(a.url);
     ensure(

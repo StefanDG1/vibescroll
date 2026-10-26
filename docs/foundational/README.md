@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## F079: finite app saves and actual native runtime limits, October26
+
+The owner-approved link-only flow now has a disabled implementation candidate under [ADR162](../adr/162-finite-app-save-cloud-intents.md). A reviewed one-time default and current native saved-link monitor permit a finite source-bound intent. The host prepares before the existing analysis job begins; save-only and unavailable routes preserve their meaning. The three-option picker and illustrated Help are live separately. Native notification/renewal and one active-task Reel do not prove automatic media: current nested decoder probes failed. Local UI/handler tests supply no customer outcome or general availability evidence. Preserve the audience, prices, six beliefs, private data, every provider/privacy gate and EUR8 cumulative cap with all old holds. No marketing campaign or automatic catalog contribution follows.
+
 ## F077: a fresh Reel completes in an active Cloud task, October 26
 
 The [production receipt](../operations/evidence/launch-20261026-cloud-reel-success.json) verifies one 49.483 second Instagram Reel through existing Cloud authority: 20 automatic English transcript segments, five insights, 23 citations and eight retained JPEGs. The authenticated post page, thumbnail, lazy gallery and image viewer passed desktop and 320px mobile checks. No captions were available for this source. The owner accepts either Reels or TikTok and approved a cumulative EUR7 cap; all earlier holds remain.

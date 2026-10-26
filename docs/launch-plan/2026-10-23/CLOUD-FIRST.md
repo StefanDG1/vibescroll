@@ -1,3 +1,9 @@
+## October26: live task locations and gated automatic Save candidate
+
+Compatible frontend/backend `ff7d88f` are live with the three-option picker and illustrated Help. Public canonical version, guide image, desktop/320px and keyboard checks passed. Full-main Home/region/navigation remains undeployed. Backend intent source215535c passed exact CI40339689399. The subsequent UI connects reviewed defaults, one active monitor, Save and existing job consumption while preserving disabled routes and no fallback. It remains unpublished with both saved-link gates off. Full local checks passed2,105 Vitest/19 Node, types/lint and both builds; Python60 tests with two Linux-only Windows skips. Native default-disabled browser checks passed desktop/320px; the enabled path has component/handler tests and lacks live native media acceptance.
+
+The native Work task reports root/capabilities0 and rejected Bubblewrap netlink/UID mapping plus unavailable Landlock ABI. No source or model/package was fetched. These tested adapters are unavailable; other supported host mechanisms remain research, not an impossible-in-principle claim. The original active-task Reel and renewable native acknowledgement remain accepted. First automatic media result, original exact-image repair, both protected TikToks, unknown source, full-main index migration and every P/R/N/C/M provider/privacy gate remain. EUR8 retainedUSD8.265014256044614 leavesUSD0.2149857439553866, with all earlier holds intact. Continue the original linked plans under [ADR162](../../adr/162-finite-app-save-cloud-intents.md).
+
 # Finish the launch with user-owned Codex Cloud
 
 ## Current native Events checkpoint, October 26

@@ -142,6 +142,65 @@ it("uses actual selected effort for automatic URL capture and rejects missing ch
     sources: [{ id: "captured-source", generation: 0 }],
   });
 });
+it.each([true, false])(
+  "uses the saved Cloud handoff only when ready=%s and never falls back",
+  async (available) => {
+    const call = vi.fn(async () => ({
+      sourceId: "saved-source",
+      status: "waiting_for_cloud_setup",
+    }));
+    const done = vi.fn();
+    const props = {
+      organizationId: "workspace",
+      preferredRoute: "work_cloud",
+      workCloud: {
+        available,
+        configured: true,
+        grantId: "grant",
+        grantVersion: 3,
+      },
+      personalEnabled: true,
+      cloudEnabled: true,
+      linkAnalysisEnabled: true,
+      call,
+      onDone: done,
+    };
+    vi.stubGlobal("crypto", { randomUUID: () => "synthetic-save" });
+    vi.stubGlobal(
+      "FormData",
+      class {
+        get(name: string) {
+          return (
+            {
+              url: "https://www.instagram.com/reel/Example/",
+              rights: "on",
+            } as Record<string, string>
+          )[name];
+        }
+      },
+    );
+    hooks.index = 0;
+    const tree = CaptureForm(props);
+    expect(
+      elements(tree).find((n) => n.type === TaskRuntimePicker)!.props.value,
+    ).toBe("work_cloud");
+    await tree.props.onSubmit({ preventDefault() {}, currentTarget: {} });
+    if (available) {
+      expect(call).toHaveBeenCalledExactlyOnceWith(
+        "captureWorkCloud",
+        expect.objectContaining({
+          grantId: "grant",
+          grantVersion: 3,
+          rightsAttested: true,
+        }),
+      );
+      expect(done).toHaveBeenCalledExactlyOnceWith("saved-source", true);
+    } else {
+      expect(call).not.toHaveBeenCalled();
+      expect(done).not.toHaveBeenCalled();
+    }
+  },
+);
 it("blocks expired automatic capture choices before a new source or upload grant", async () => {
   const h = harness();
   const call = vi.fn();

@@ -1,5 +1,9 @@
 # VibeScroll foundational beliefs
 
+## F079: finite app saves and actual native runtime limits, October26
+
+The owner-approved link-only flow now has a disabled implementation candidate under [ADR162](../adr/162-finite-app-save-cloud-intents.md). A reviewed one-time default and current native saved-link monitor permit a finite source-bound intent. The host prepares before the existing analysis job begins; save-only and unavailable routes preserve their meaning. The three-option picker and illustrated Help are live separately. Native notification/renewal and one active-task Reel do not prove automatic media: current nested decoder probes failed. Local UI/handler tests supply no customer outcome or general availability evidence. Preserve the audience, prices, six beliefs, private data, every provider/privacy gate and EUR8 cumulative cap with all old holds. No marketing campaign or automatic catalog contribution follows.
+
 ## F078: three task locations, October 26
 
 The owner requires the same short choice in Save and setup: My own Cloud Work using the user's ChatGPT subscription, Recommended; VibeScroll's servers using credits bought separately; Local machine using the user's own subscription. Show disabled routes with setup/reconfiguration links and accessible More info. Keep saving without analysis separate. [ADR161](../adr/161-three-task-locations.md) records the implementation candidate and unchanged permissions, prices and credit approvals.

@@ -2,6 +2,7 @@ import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
+import type { FunctionArgs } from "convex/server";
 import {
   widgetBrowseInput,
   widgetTopicInput,
@@ -16,6 +17,13 @@ import {
   type LibraryEdit,
 } from "../packages/widget/library-edits";
 import {
+  filingInput,
+  filingStateInput,
+  filingReceiptInput,
+  filingFailure,
+  type FilingInput,
+} from "../packages/widget/evidence-filing";
+import {
   cloudCompletionEnvelope,
   parseWorkCloudResult,
   workCloudTextOperations,
@@ -27,6 +35,21 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z
+    .object({
+      operation: z.literal("widget_evidence_state"),
+      args: filingStateInput,
+    })
+    .strict(),
+  z
+    .object({ operation: z.literal("widget_evidence_edit"), args: filingInput })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_evidence_receipt"),
+      args: filingReceiptInput,
+    })
+    .strict(),
   z
     .object({
       operation: z.literal("widget_library_state"),
@@ -202,6 +225,7 @@ const operations = z.discriminatedUnion("operation", [
 ]);
 export const tools = httpAction(async (ctx, request) => {
   let editRequest: LibraryEdit | undefined;
+  let evidenceRequest: FilingInput | undefined;
   const deny = (status = 403) =>
     Response.json(
       {
@@ -246,6 +270,38 @@ export const tools = httpAction(async (ctx, request) => {
         : undefined;
     let value: unknown;
     switch (input.operation) {
+      case "widget_evidence_state":
+        value = await ctx.runQuery(
+          internal.assistantLibrary.evidenceState,
+          input.args as FunctionArgs<
+            typeof internal.assistantLibrary.evidenceState
+          >,
+        );
+        break;
+      case "widget_evidence_receipt": {
+        const receipt = await ctx.runQuery(
+          internal.assistantLibrary.evidenceOutcome,
+          input.args as FunctionArgs<
+            typeof internal.assistantLibrary.evidenceOutcome
+          >,
+        );
+        value = {
+          profile_id: input.args.profileId,
+          grant_version: input.args.grantVersion,
+          reference: input.args.reference,
+          receipt,
+        };
+        break;
+      }
+      case "widget_evidence_edit":
+        evidenceRequest = input.args;
+        value = await ctx.runMutation(
+          internal.assistantLibrary.fileEvidence,
+          input.args as FunctionArgs<
+            typeof internal.assistantLibrary.fileEvidence
+          >,
+        );
+        break;
       case "widget_library_state":
         value = await ctx.runQuery(internal.assistantLibrary.state, {
           ...input.args,
@@ -471,6 +527,14 @@ export const tools = httpAction(async (ctx, request) => {
     }
     return Response.json(value, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    if (evidenceRequest) {
+      const rejected = filingFailure(error, evidenceRequest);
+      if (rejected)
+        return Response.json(rejected, {
+          status: 409,
+          headers: { "Cache-Control": "no-store" },
+        });
+    }
     if (editRequest) {
       const rejected = libraryEditFailure(error, editRequest);
       if (rejected)

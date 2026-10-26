@@ -25,6 +25,7 @@ const status = document.querySelector<HTMLOutputElement>("#status")!;
 const receipt = document.querySelector<HTMLPreElement>("#receipts")!;
 type Receipt = {
   event: string;
+  url?: string;
   name?: string;
   source?: string;
   profile?: string;
@@ -76,6 +77,7 @@ async function load() {
   bridge = next;
   let initialized = false;
   let editReplyLost = false;
+  let filingReplyLost = false;
   next.addEventListener("sizechange", ({ height }) => {
     if (initialized && height)
       frame.style.height = `${Math.min(2000, Math.max(100, height))}px`;
@@ -92,6 +94,29 @@ async function load() {
         content: [{ type: "text", text: "Synthetic grant revoked" }],
       };
     const data = await demoCall(name, (args ?? {}) as ToolRecord);
+    if (
+      name === "widget_evidence_state" &&
+      options.get("filing-empty-page") === "1" &&
+      !args?.cursor
+    ) {
+      data.items = [];
+      data.next_cursor = "synthetic-next-filing-page";
+    }
+    if (name === "widget_evidence_edit" && options.get("filing-delay") === "1")
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    if (
+      name === "widget_evidence_edit" &&
+      options.get("filing-lost-reply") === "1" &&
+      !filingReplyLost
+    ) {
+      filingReplyLost = true;
+      return {
+        isError: true,
+        content: [
+          { type: "text", text: "Synthetic reply lost after committed filing" },
+        ],
+      };
+    }
     if (name === "widget_library_edit" && options.get("edit-delay") === "1")
       await new Promise((resolve) => setTimeout(resolve, 1200));
     if (
@@ -176,7 +201,7 @@ async function load() {
   next.oninitialized = async () => {
     if (session !== current) return;
     initialized = true;
-    record("initialized");
+    record("initialized", { url: location.href });
     if (kind === "card" && options.get("card") !== "status") {
       await next.sendToolInput({
         arguments: {

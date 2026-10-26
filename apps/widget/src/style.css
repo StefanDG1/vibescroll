@@ -1439,3 +1439,57 @@ a svg {
   margin: 12px 0;
   overflow-wrap: anywhere;
 }
+
+.idea-filing {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 8px;
+}
+.idea-filing > summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+  font-weight: 550;
+}
+.idea-filing-body {
+  padding: 4px 0 8px;
+}
+.idea-filing fieldset {
+  border: 0;
+  min-width: 0;
+  margin: 16px 0;
+  padding: 0;
+}
+.idea-filing label {
+  display: block;
+  margin: 12px 0 6px;
+}
+.idea-filing select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  appearance: auto;
+}
+.idea-filing select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.filing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.idea-filing p,
+.idea-filing output {
+  overflow-wrap: anywhere;
+}
+.idea-filing output {
+  display: block;
+  margin: 12px 0;
+}

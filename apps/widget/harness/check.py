@@ -18,10 +18,6 @@ def parentjs(expression):
     result = request("Runtime.evaluate", expression=expression, returnByValue=True)
     return result.get("result", {}).get("value")
 
-def click_parent_xy(x,y):
-    request("Input.dispatchMouseEvent",type="mousePressed",x=x,y=y,button="left",clickCount=1)
-    request("Input.dispatchMouseEvent",type="mouseReleased",x=x,y=y,button="left",clickCount=1)
-
 
 def until(check, label):
     deadline = time.monotonic() + 12
@@ -47,12 +43,12 @@ def open_case(params='', width=1440):
         parent_target = own['targetId'] if own else new_tab('http://127.0.0.1:4318/harness/')
         parent_session = raw_cdp('Target.attachToTarget',targetId=parent_target,flatten=True)['sessionId']
         request('Emulation.setFocusEmulationEnabled',enabled=True)
-    url='http://127.0.0.1:4318/harness/?' + params
+    url='http://127.0.0.1:4318/harness/?' + params + '&case=' + str(time.monotonic_ns())
     request('Page.navigate',url=url)
     until(lambda: parentjs('location.href')==url and parentjs('document.readyState')=='complete', 'harness navigation')
     request('Emulation.setDeviceMetricsOverride', width=width, height=1000, deviceScaleFactor=1, mobile=width<760)
     request('Emulation.setPageScaleFactor', pageScaleFactor=1)
-    until(lambda: any(r['event']=='initialized' for r in receipts()), 'MCP Apps handshake')
+    until(lambda: any(r['event']=='initialized' and r.get('url')==url for r in receipts()), 'MCP Apps handshake for this exact navigation')
     root = request('DOM.getDocument')['root']['nodeId']
     owner = request('DOM.querySelector', nodeId=root, selector='#widget')['nodeId']
     target = request('DOM.describeNode', nodeId=owner)['node']['frameId']
@@ -61,28 +57,20 @@ def open_case(params='', width=1440):
     request('Emulation.setFocusEmulationEnabled',session_id=child_session,enabled=True)
 
 def click_child(name, role='button', partial=False):
-    until(lambda: parentjs('document.querySelector("iframe").clientHeight') >= min(2000,request('Runtime.evaluate',session_id=child_session,expression='document.querySelector(".widget-root").getBoundingClientRect().height',returnByValue=True)['result'].get('value',100))-1, 'host frame resize before input')
-    nodes = request('Accessibility.getFullAXTree', session_id=child_session)['nodes']
-    node = next(n for n in nodes if n.get('role',{}).get('value')==role and (name in n.get('name',{}).get('value','') if partial else name==n.get('name',{}).get('value')))
-    request('DOM.scrollIntoViewIfNeeded', session_id=child_session, backendNodeId=node['backendDOMNodeId'])
-    q = request('DOM.getBoxModel', session_id=child_session, backendNodeId=node['backendDOMNodeId'])['model']['content']
-    offset = parentjs('(()=>{const r=document.querySelector("iframe").getBoundingClientRect();return {x:r.x,y:r.y,h:innerHeight}})()')
-    y = sum(q[1::2])/4 + offset['y']
-    if y>offset['h']-60 or y<40:
-        parentjs('window.scrollBy(0,'+str(y-300)+')')
-        offset = parentjs('(()=>{const r=document.querySelector("iframe").getBoundingClientRect();return {x:r.x,y:r.y}})()')
-    click_parent_xy(sum(q[0::2])/4+offset['x'], sum(q[1::2])/4+offset['y'])
+    # Scoped keyboard activation remains reliable in a background shared browser.
+    activate_child(name, role, partial)
+
 
 def click_parent(name):
-    parentjs('window.scrollTo(0,0)')
-    node = next(n for n in request('Accessibility.getFullAXTree')['nodes'] if n.get('role',{}).get('value')=='button' and n.get('name',{}).get('value')==name)
-    q=request('DOM.getBoxModel',backendNodeId=node['backendDOMNodeId'])['model']['content']
-    click_parent_xy(sum(q[0::2])/4,sum(q[1::2])/4)
+    node=next(n for n in request('Accessibility.getFullAXTree')['nodes'] if n.get('role',{}).get('value')=='button' and n.get('name',{}).get('value')==name)
+    request('DOM.focus',backendNodeId=node['backendDOMNodeId'])
+    request('Input.dispatchKeyEvent',type='keyDown',key='Enter',code='Enter',text='\r',unmodifiedText='\r',windowsVirtualKeyCode=13)
+    request('Input.dispatchKeyEvent',type='keyUp',key='Enter',code='Enter',windowsVirtualKeyCode=13)
+
 
 def capture_card(name):
-    until(lambda: parentjs('document.querySelector("iframe").clientHeight') >= request('Runtime.evaluate',session_id=child_session,expression='document.querySelector(".compact").getBoundingClientRect().height',returnByValue=True)['result'].get('value',100), 'inline content resize')
-    box=parentjs('(()=>{const r=document.querySelector("iframe").getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()')
-    Path('.impeccable/review/'+name).write_bytes(base64.b64decode(request('Page.captureScreenshot',format='png',clip=box,captureBeyondViewport=True)['data']))
+    capture_workspace(name)
+
 
 def fill_child(label, value):
     nodes=request('Accessibility.getFullAXTree',session_id=child_session)['nodes']
@@ -92,12 +80,37 @@ def fill_child(label, value):
     request('Input.dispatchKeyEvent',session_id=child_session,type='keyUp',key='a',code='KeyA',windowsVirtualKeyCode=65,modifiers=2)
     request('Input.insertText',session_id=child_session,text=value)
 
+
+
+def activate_child(name, role='button', partial=False):
+    def ready():
+        nodes=request('Accessibility.getFullAXTree',session_id=child_session)['nodes']
+        found=next((n for n in nodes if n.get('role',{}).get('value')==role and (name in n.get('name',{}).get('value','') if partial else n.get('name',{}).get('value')==name)),None)
+        return found if found and not any(p.get('name')=='disabled' and p.get('value',{}).get('value') for p in found.get('properties',[])) else None
+    until(lambda:bool(ready()),'enabled native control '+name)
+    node=ready()
+    request('DOM.focus',session_id=child_session,backendNodeId=node['backendDOMNodeId'])
+    request('Input.dispatchKeyEvent',session_id=child_session,type='keyDown',key='Enter',code='Enter',text='\r',unmodifiedText='\r',windowsVirtualKeyCode=13)
+    request('Input.dispatchKeyEvent',session_id=child_session,type='keyUp',key='Enter',code='Enter',windowsVirtualKeyCode=13)
+
+def select_child(label, steps=1):
+    nodes=request('Accessibility.getFullAXTree',session_id=child_session)['nodes']
+    node=next(n for n in nodes if n.get('role',{}).get('value')=='combobox' and n.get('name',{}).get('value')==label)
+    request('DOM.focus',session_id=child_session,backendNodeId=node['backendDOMNodeId'])
+    for key,code in [('Home',36)]+[('ArrowDown',40)]*steps+[('Enter',13)]:
+        request('Input.dispatchKeyEvent',session_id=child_session,type='rawKeyDown',key=key,code=key,windowsVirtualKeyCode=code)
+        request('Input.dispatchKeyEvent',session_id=child_session,type='keyUp',key=key,code=key,windowsVirtualKeyCode=code)
+
 def capture_workspace(name):
+    until(lambda:parentjs('document.querySelector("iframe").clientHeight') >= min(2000,request('Runtime.evaluate',session_id=child_session,expression='document.documentElement.scrollHeight',returnByValue=True)['result'].get('value',100))-1,'settled host resize before capture')
+    request('Runtime.evaluate',session_id=child_session,expression='window.scrollTo(0,0)')
     parentjs('window.scrollTo(0,0)')
     width=int(parentjs('innerWidth'))
     height=int(parentjs('document.querySelector("iframe").clientHeight + document.querySelector("iframe").getBoundingClientRect().y + 40'))
     request('Emulation.setDeviceMetricsOverride',width=width,height=min(2600,height),deviceScaleFactor=1,mobile=width<760)
     request('Emulation.setPageScaleFactor',pageScaleFactor=1)
+    request('Runtime.evaluate',session_id=child_session,expression='window.scrollTo(0,0)')
+    parentjs('window.scrollTo(0,0)')
     box=parentjs('(()=>{const r=document.querySelector("iframe").getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()')
     Path('.impeccable/review/'+name).write_bytes(base64.b64decode(request('Page.captureScreenshot',format='png',clip=box,captureBeyondViewport=False)['data']))
 
@@ -148,6 +161,71 @@ assert request('Runtime.evaluate',session_id=child_session,expression='!!documen
 assert request('Runtime.evaluate',session_id=child_session,expression='Array.from(document.querySelectorAll(".evidence-row > span:last-child")).every(e => getComputedStyle(e).whiteSpace !== "nowrap" && e.scrollWidth <= e.clientWidth && e.scrollHeight <= e.clientHeight)',returnByValue=True)['result'].get('value')
 passed('host theme is applied and the compiled compact card fits 320 pixels')
 capture_card('compact-card-mobile-bridge.png')
+
+
+open_case('resource=card&references=5',680)
+until(lambda:'File this idea' in body(),'inline filing disclosure')
+assert not any(r.get('name')=='widget_evidence_state' for r in receipts())
+activate_child('File this idea',role='DisclosureTriangle')
+until(lambda:'Current topic filing' in body(),'current exact idea filing')
+select_child('Move to topic')
+until(lambda:request('Runtime.evaluate',session_id=child_session,expression='document.querySelector(".idea-filing select[id$=destination]").value',returnByValue=True)['result'].get('value')=='sample-folder','native destination choice')
+capture_workspace('inline-idea-filing-desktop.png')
+activate_child('Move idea')
+until(lambda:'Idea moved.' in body(),'confirmed inline move')
+assert 'YOUR KNOWLEDGE' not in body() and 'Back to library' not in body()
+activate_child('Remove from this topic')
+until(lambda:'Restore to this topic' in body(),'reversible removal')
+activate_child('Restore to this topic')
+until(lambda:'Idea restored to this topic.' in body(),'confirmed restore')
+assert sum(r.get('name')=='widget_evidence_edit' for r in receipts())==3
+assert not any(r.get('name') in ['request_analysis','save_link','draft_project_suggestion'] for r in receipts())
+passed('the inline ChatGPT card lazily moves, removes and restores the exact idea without app navigation or processing')
+
+open_case('resource=card&filing-delay=1&filing-lost-reply=1',680)
+until(lambda:'File this idea' in body(),'lost filing disclosure')
+activate_child('File this idea',role='DisclosureTriangle')
+until(lambda:'Current topic filing' in body(),'lost filing current versions')
+select_child('Move to topic')
+activate_child('Move idea')
+until(lambda:sum(r.get('name')=='widget_evidence_edit' for r in receipts())==1,'filing in flight')
+activate_child('File this idea',role='DisclosureTriangle')
+time.sleep(1.4)
+activate_child('File this idea',role='DisclosureTriangle')
+until(lambda:'The filing change is not confirmed.' in body(),'retained filing recovery after the delayed reply settles')
+assert request('Runtime.evaluate',session_id=child_session,expression='document.querySelector(".idea-filing fieldset").disabled',returnByValue=True)['result'].get('value')
+activate_child('Check filing result')
+until(lambda:'Idea moved.' in body(),'existing filing receipt reconciled')
+assert sum(r.get('name')=='widget_evidence_edit' for r in receipts())==1
+assert sum(r.get('name')=='widget_evidence_receipt' for r in receipts())==1
+passed('collapse during a lost inline filing reply retains one command and recovers it without another write')
+
+
+open_case('resource=card&filing-empty-page=1',680)
+until(lambda:'File this idea' in body(),'paged inline filing')
+activate_child('File this idea',role='DisclosureTriangle')
+until(lambda:'Load more idea filings' in body(),'empty first page retains continuation')
+assert 'Current topic filing' not in body()
+assert sum(r.get('name')=='widget_evidence_state' for r in receipts())==1
+activate_child('Load more idea filings')
+until(lambda:'Current topic filing' in body(),'valid later filing reached')
+assert sum(r.get('name')=='widget_evidence_state' for r in receipts())==2
+assert not any(r.get('name')=='widget_evidence_edit' for r in receipts())
+passed('an empty filtered first filing page remains manually pageable without draining cursors or leaving the card')
+
+open_case('resource=card&editing=0',680)
+until(lambda:'Source evidence' in body(),'read-only inline result')
+assert not request('Runtime.evaluate',session_id=child_session,expression='!!document.querySelector(".idea-filing")',returnByValue=True)['result'].get('value')
+assert not any(str(r.get('name','')).startswith('widget_evidence_') for r in receipts())
+passed('read-only inline results expose no filing controls or edit-only reads')
+
+open_case('resource=card&theme=dark',320)
+until(lambda:'File this idea' in body(),'narrow inline filing')
+activate_child('File this idea',role='DisclosureTriangle')
+until(lambda:'Move to topic' in body(),'narrow filing choices')
+assert request('Runtime.evaluate',session_id=child_session,expression='!!document.querySelector(".widget-root.dark") && document.documentElement.scrollWidth <= innerWidth',returnByValue=True)['result'].get('value')
+capture_workspace('inline-idea-filing-mobile.png')
+passed('the320px dark inline card keeps its cited claim and labelled filing controls without horizontal overflow')
 
 open_case('resource=workspace&view=topics',1440)
 until(lambda:'Product design' in body(), 'topic navigation')

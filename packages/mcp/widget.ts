@@ -24,6 +24,12 @@ import {
   libraryEditReceiptInput,
   libraryEditRejection,
 } from "../widget/library-edits";
+import {
+  filingInput,
+  filingStateInput,
+  filingReceiptInput,
+  filingRejection,
+} from "../widget/evidence-filing";
 
 type Invoke = (
   operation: string,
@@ -316,6 +322,24 @@ export function registerWidget(
   if (libraryEditingEnabled) {
     const edits = [
       [
+        "widget_evidence_state",
+        "Read current topic filings for one exact cited idea.",
+        filingStateInput,
+        true,
+      ],
+      [
+        "widget_evidence_receipt",
+        "Reconcile the retained result of an idea filing before retrying.",
+        filingReceiptInput,
+        true,
+      ],
+      [
+        "widget_evidence_edit",
+        "Move, remove or restore one exact idea filing after an explicit user action. Starts no processing.",
+        filingInput,
+        false,
+      ],
+      [
         "widget_library_state",
         "Read the current topic and versions for a reviewed library edit.",
         libraryEditStateInput,
@@ -359,6 +383,14 @@ export function registerWidget(
         async (args: Record<string, unknown>) => {
           const response = await invoke(name, args);
           if (!response.ok) {
+            if (name === "widget_evidence_edit") {
+              const rejected = filingRejection.safeParse(response.value);
+              if (rejected.success)
+                return reply(
+                  rejected.data,
+                  "The filing was rejected. No idea filing changed.",
+                );
+            }
             if (name === "widget_library_edit") {
               const rejected = libraryEditRejection.safeParse(response.value);
               if (rejected.success)

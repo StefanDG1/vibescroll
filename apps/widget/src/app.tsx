@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useHost } from "./host";
 import { TopicEditor } from "./library-edit";
+import { EvidenceFiling } from "./evidence-filing";
 import {
   profilesOf,
   sourcesOf,
@@ -161,6 +162,16 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
   const links = (state.data?.links ?? {}) as Record<string, string>;
   const grant = Number(state.data?.grant_version ?? 0);
   const authority = `${profileId}:${grant}`;
+  const filingFor = (insight: Insight) =>
+    actions.organize && insight.reference ? (
+      <EvidenceFiling
+        key={`${authority}:${insight.reference.sourceId}:${insight.reference.generation}:${insight.reference.revision}:${insight.reference.insightId}`}
+        profileId={profileId}
+        grantVersion={grant}
+        reference={insight.reference}
+        notify={notify}
+      />
+    ) : null;
   const priorAuthority = useRef(authority);
   useEffect(() => {
     if (!state.error) return;
@@ -310,6 +321,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
       grantVersion={grant}
       allowFeedback={!!actions.feedback}
       compact={compact && !expanded}
+      filing={filingFor(currentInsight)}
       notify={notify}
     />
   ) : current ? (
@@ -839,6 +851,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
             profileId={profileId}
             grantVersion={grant}
             allowFeedback={!!actions.feedback}
+            filing={filingFor(item.insight)}
             notify={notify}
           />
         ) : browse.isPending ? (

@@ -65,6 +65,11 @@
       "command": "gitleaks git --staged --redact",
       "passed": true,
       "findings": 0
+    },
+    "postMergeFocused": {
+      "passed": 80,
+      "files": 5,
+      "includes": "topic contracts/backend/MCP, exact additive schema and app Save through actual HTTP job transport"
     }
   },
   "preservedFailures": [
@@ -79,5 +84,8 @@
     "Explicit official provider/client scope configuration and user grant consent",
     "Real ChatGPT/Codex edit acceptance",
     "Full remaining widget plan"
-  ]
+  ],
+  "implementationCommit": "6dd8701",
+  "servingBaselineIntegrated": "3ac324723577ee5af0deaf471716270deb40872b",
+  "integrationCommit": "dc04693"
 }

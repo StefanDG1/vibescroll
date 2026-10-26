@@ -1,3 +1,7 @@
+## October 26: resource cache correction passes complete local checks
+
+Source bc96a65, based on combined2c93b30, passed the complete offline check: 1,296 Vitest tests with three hosted skips, nineteen Node tests and59 Python cases with four Linux-only Windows skips, validation, full types, zero-warning lint and production builds. The production dependency audit reports zero advisories. Existing Help tracing warnings remain. The generated HTML bodies are unchanged from the reviewed compact UI; only the generated fingerprint map is added. Offline backend public-request hash still exactly matches servingf6dd6d4. This is local evidence; exact next-source CI, publication and fresh actual-host receipt remain pending. No second frontend build was dispatched for this correction.
+
 ## October 26: compact frontend published; actual host exposes cached old HTML
 
 Exact21de39d CI40384656875 succeeded. One fixed Basic queued build dpl_AniRT3yDoh9GAJ7MrQ4qYgKH8eD3 passed staged exact health, widget descriptor, illustrated guide and pinned71925-byte runtime ZIP checks, then same-build promotion. Canonical version0.1.0-alpha.20261026191210.g21de39d04672 matches. Normal domain assignment is restored; no backend upload occurred from this chat. The other release chat published compatible backendf6dd6d4 separately. No source/job/grant changed through widget verification.

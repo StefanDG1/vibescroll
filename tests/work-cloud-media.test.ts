@@ -21,6 +21,7 @@ import {
   validateWorkCloudMediaOutput,
   workCloudMediaPolicyV2,
   workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
 } from "../packages/contracts/work-cloud-text";
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -163,7 +164,8 @@ async function bindLegacyLease(
   lease: any,
   policy:
     | typeof workCloudMediaPolicyV2
-    | typeof workCloudMediaPolicyInitialV3 = workCloudMediaPolicyV2,
+    | typeof workCloudMediaPolicyInitialV3
+    | typeof workCloudMediaPolicyPreDiagnosticsV3 = workCloudMediaPolicyV2,
 ) {
   const input = await s.assistant.query(
     internal.workCloudAnalysis.input,
@@ -221,23 +223,26 @@ it("does not let a new Cloud job downgrade to legacy preparation without returne
     "preparation version",
   );
 });
-it("retains the original approved v3 toolchain through a decoder patch", async () => {
-  const s = await setup(undefined, false),
-    lease = await s.claim();
-  await bindLegacyLease(s, lease, workCloudMediaPolicyInitialV3);
-  await expect(
-    s.assistant.query(internal.workCloudAnalysis.input, lease),
-  ).resolves.toMatchObject({
-    schemaVersion: "work-cloud-media-v3",
-    policy: workCloudMediaPolicyInitialV3,
-  });
-  await expect(
-    s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
-      ...lease,
-      operation: "heartbeat",
-    }),
-  ).resolves.toMatchObject({ valid: true });
-});
+it.each([workCloudMediaPolicyInitialV3, workCloudMediaPolicyPreDiagnosticsV3])(
+  "retains the exact approved v3 toolchain through reviewed implementation patches",
+  async (policy) => {
+    const s = await setup(undefined, false),
+      lease = await s.claim();
+    await bindLegacyLease(s, lease, policy);
+    await expect(
+      s.assistant.query(internal.workCloudAnalysis.input, lease),
+    ).resolves.toMatchObject({
+      schemaVersion: "work-cloud-media-v3",
+      policy,
+    });
+    await expect(
+      s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+        ...lease,
+        operation: "heartbeat",
+      }),
+    ).resolves.toMatchObject({ valid: true });
+  },
+);
 
 it.each([
   "https://vm.tiktok.com/Abcdef123/",

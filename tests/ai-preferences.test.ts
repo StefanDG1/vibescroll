@@ -112,3 +112,69 @@ it("keeps plan preference personal, off by default and independent of hosted aut
       .preferChatGPTPlan,
   ).toBe(false);
 });
+
+it("returns a saved processing route only for the exact private owner and setup actor", async () => {
+  const t = convexTest(schema, modules);
+  for (const subject of ["route-owner", "route-other"])
+    await t.mutation(internal.accounts.syncUser, {
+      subject,
+      email: `${subject}@example.test`,
+      name: subject,
+    });
+  const owner = t.withIdentity({ subject: "route-owner" });
+  const other = t.withIdentity({ subject: "route-other" });
+  const org = await owner.mutation(api.organizations.createPrivate, {});
+  await owner.mutation(api.librarySpaces.saveSetup, {
+    organizationId: org,
+    expectedVersion: 0,
+    focus: ["personal"],
+    goal: "Keep useful evidence",
+    interests: [],
+    role: "",
+    connectSpaces: false,
+    confirmed: true,
+    stage: 2,
+  });
+  const originalActor = await t.run(async (ctx) => {
+    const setup = await ctx.db
+      .query("librarySetup")
+      .withIndex("by_org", (q) => q.eq("organizationId", org))
+      .unique();
+    await ctx.db.patch(setup!._id, { processingRoute: "cloud" });
+    return setup!.actor;
+  });
+  expect(
+    (await owner.query(api.aiPreferences.read, { organizationId: org }))
+      .processingRoute,
+  ).toBe("cloud");
+  await expect(
+    other.query(api.aiPreferences.read, { organizationId: org }),
+  ).rejects.toThrow();
+  await t.run(async (ctx) => {
+    const setup = await ctx.db
+      .query("librarySetup")
+      .withIndex("by_org", (q) => q.eq("organizationId", org))
+      .unique();
+    const foreignActor = await ctx.db
+      .query("users")
+      .withIndex("by_subject", (q) => q.eq("subject", "route-other"))
+      .unique();
+    await ctx.db.patch(setup!._id, { actor: foreignActor!._id });
+  });
+  expect(
+    (await owner.query(api.aiPreferences.read, { organizationId: org }))
+      .processingRoute,
+  ).toBeNull();
+  await t.run(async (ctx) => {
+    const setup = await ctx.db
+      .query("librarySetup")
+      .withIndex("by_org", (q) => q.eq("organizationId", org))
+      .unique();
+    await ctx.db.patch(setup!._id, { actor: originalActor });
+    await ctx.db.patch(org, { privateOwnerId: undefined });
+  });
+  expect(
+    (await owner.query(api.aiPreferences.read, { organizationId: org }))
+      .processingRoute,
+  ).toBeNull();
+});

@@ -12,6 +12,8 @@ The Save form and **Continue setup** show the same three choices:
 
 Use **Finish setup** or **Reconfigure** beside the choice. **More info** opens by tap, mouse or keyboard. Cloud setup opens Connections, server usage opens Usage, and local setup opens Paired computers. Existing account, rights, runtime and budget checks still apply.
 
+![Task locations in a synthetic account](/help/task-locations.png)
+
 You can save a post without analysis. Choosing a task location does not start work. VibeScroll never switches a failed task to a different subscription or credit route automatically.
 
 ## Before you start

@@ -3779,13 +3779,16 @@ export function SourceDetail({
             />
           ) : (
             canSuggestCategories && (
-              <PublicKnowledgePanel
-                organizationId={org}
-                source={detail}
-                call={strictCall}
-                readOnly={readOnly}
-                enabled
-              />
+              <details className="panel">
+                <summary>Advanced privacy and publication</summary>
+                <PublicKnowledgePanel
+                  organizationId={org}
+                  source={detail}
+                  call={strictCall}
+                  readOnly={readOnly}
+                  enabled
+                />
+              </details>
             )
           )}
         </>

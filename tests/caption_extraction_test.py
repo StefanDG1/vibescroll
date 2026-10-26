@@ -267,7 +267,7 @@ class DownloaderDiagnosticTests(unittest.TestCase):
             (b'ERROR: The webpage request was redirected to the login page.', 'source_access_required'),
             (b'ERROR: There is no video in this post', 'source_media_unsupported'),
             (b'ERROR: unrecognized upstream response', 'source_download_failed'),
-            (b'ERROR: https://example.invalid/HTTP%20Error%20429?token=PRIVATE_VALUE', 'source_download_failed'),
+            (b'ERROR: https://example.invalid/proxyerror?token=PRIVATE_VALUE', 'source_download_failed'),
         ]
         for diagnostic, expected in cases:
             with self.subTest(expected=expected):

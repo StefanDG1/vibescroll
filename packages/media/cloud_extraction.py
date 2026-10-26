@@ -186,6 +186,7 @@ class ResolvedDownloader:
         self.binary, self.run = binary, run
         self.deadline = time.monotonic() + maximum_ms / 1000
         self.common = [binary, '--ignore-config', '--no-plugin-dirs', '--no-cache-dir',
+                       '--compat-options', 'no-certifi',
                        '--no-playlist', '--no-warnings', '--no-progress', '--socket-timeout', '10',
                        '--retries', '0', '--fragment-retries', '0', '--extractor-retries', '0',
                        '--abort-on-unavailable-fragments', '--max-filesize', str(MAX_MEDIA_BYTES), '--fixup', 'never']
@@ -271,6 +272,16 @@ class ResolvedDownloader:
         return {'files': [path.name for path in paths], 'bytes': sum(path.stat().st_size for path in paths)}
 
 
+def child_environment():
+    # Preserve the managed host's enforcement proxy and trust roots. These
+    # values come only from the trusted host, never from source metadata.
+    names = ('PATH', 'LANG', 'LC_ALL', 'HOME', 'TMPDIR',
+             'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY',
+             'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy',
+             'SSL_CERT_FILE', 'SSL_CERT_DIR', 'REQUESTS_CA_BUNDLE', 'CURL_CA_BUNDLE')
+    return {key: os.environ[key] for key in names if key in os.environ}
+
+
 def bounded_tool(args, timeout):
     """Linux runtime only. The host must enforce the admitted network policy."""
     import resource
@@ -278,7 +289,7 @@ def bounded_tool(args, timeout):
         resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_MEDIA_BYTES, MAX_MEDIA_BYTES))
         resource.setrlimit(resource.RLIMIT_CPU, (60, 60))
         resource.setrlimit(resource.RLIMIT_NOFILE, (128, 128))
-    env = {key: os.environ[key] for key in ('PATH', 'LANG', 'LC_ALL', 'HOME', 'TMPDIR') if key in os.environ}
+    env = child_environment()
     # Spool bounded process output to private files instead of unbounded PIPEs.
     import tempfile
     with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:

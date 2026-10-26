@@ -9,6 +9,7 @@ import downloader from "../../infra/downloader.json";
 import asr from "../media/asr-model.lock.json";
 import cloudDownloader from "../media/cloud-downloader.lock.json";
 import extractionPackage from "../media/cloud-extractor.lock.json";
+import initialV3Package from "../media/cloud-extractor-initial-v3.lock.json";
 
 export const workCloudMediaPolicyV2 = {
   schemaVersion: "work-cloud-media-v2",
@@ -50,6 +51,20 @@ export const workCloudMediaPolicy = {
     version: "cloud-caption-preparation-v3",
   },
 } as const;
+// Keep accepted jobs reproducible across the reviewed decoder patch. The
+// source/cost/privacy limits are unchanged; only implementation pins differ.
+export const workCloudMediaPolicyInitialV3 = {
+  ...workCloudMediaPolicy,
+  toolchain: {
+    ...workCloudMediaPolicy.toolchain,
+    extractionPackage: initialV3Package,
+  },
+} as const;
+export const workCloudRequestPolicies = [
+  workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicy,
+] as const;
 export const workCloudMediaPreparation = z
   .strictObject({
     schemaVersion: z.enum([

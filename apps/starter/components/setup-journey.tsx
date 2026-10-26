@@ -7,7 +7,11 @@ import type {
   SetupSnapshot,
   SetupAction,
 } from "../../../packages/onboarding/companion-setup";
-type Progress = { version: number; snapshot: SetupSnapshot };
+type Progress = {
+  version: number;
+  snapshot: SetupSnapshot;
+  workCloud?: { available: boolean; configured: boolean } | null;
+};
 export function SetupJourney({
   organizationId,
   call,
@@ -131,9 +135,11 @@ export function SetupJourney({
               ? "Local machine"
               : progress.snapshot.route === "cloud"
                 ? "VibeScroll's servers"
-                : progress.snapshot.route === "save_only"
-                  ? "Save for later"
-                  : "Not selected"}
+                : progress.snapshot.route === "work_cloud"
+                  ? "My own Cloud Work"
+                  : progress.snapshot.route === "save_only"
+                    ? "Save for later"
+                    : "Not selected"}
             . Review task limits before starting analysis.
           </p>
           <TaskRuntimePicker
@@ -144,9 +150,11 @@ export function SetupJourney({
                 : progress.snapshot.route
             }
             onChange={(route) => {
-              if (route !== "work_cloud") void save({ route });
+              void save({ route });
             }}
             serverAvailable={progress.snapshot.cloudAvailable}
+            workCloudAvailable={progress.workCloud?.available}
+            workCloudConfigured={progress.workCloud?.configured}
             localAvailable={progress.snapshot.localEligible}
             localConfigured={progress.snapshot.paired}
             localStatus={

@@ -1,5 +1,6 @@
 import { personalAnalysisValue } from "./personalAnalysisSchema";
 import { defineTable } from "convex/server";
+import { cloudSaveIntent } from "./workCloudSaveSchema";
 import { v } from "convex/values";
 import { sourceType, retrievalState } from "./sourceSchema";
 import {
@@ -302,6 +303,7 @@ export const productTables = {
       }),
     ),
     personalAnalysis: v.optional(personalAnalysisValue),
+    workCloudSaveIntent: v.optional(cloudSaveIntent),
     repositorySelection: v.optional(v.any()),
     selectionPendingKey: v.optional(v.string()),
     selectionActor: v.optional(v.id("users")),

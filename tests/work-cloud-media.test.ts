@@ -1631,9 +1631,109 @@ it("rejects a different stored Instagram identity before approval even when both
 });
 
 const frameBytes = Uint8Array.from(atob(syntheticJpeg), (c) => c.charCodeAt(0));
-async function frameFixture(width = 2, captionFirst = false) {
-  const s = await setup(undefined, !captionFirst),
-    lease = await s.claim();
+async function frameFixture(width = 2, captionFirst = false, appSave = false) {
+  const s = await setup(
+    appSave ? "https://www.instagram.com/reel/Abcdef12345/" : undefined,
+    !captionFirst,
+  );
+  let savedIntentId: string | undefined;
+  let lease: Lease;
+  if (appSave) {
+    for (const key of [
+      "MCP_EVENTS_ENABLED",
+      "WORK_CLOUD_SAVED_LINKS_ENABLED",
+      "WORK_CLOUD_SAVED_LINKS_VERIFIED",
+    ])
+      vi.stubEnv(key, "true");
+    const scopes = [
+      "analysis:execute",
+      "analysis:request",
+      "jobs:read",
+      "events:subscribe",
+    ];
+    vi.stubEnv(
+      "MCP_CLIENTS",
+      JSON.stringify([{ id: clientId, name: "Synthetic saved media", scopes }]),
+    );
+    s.assistant = s.t.withIdentity({ ...identity, scope: scopes.join(" ") });
+    s.grant = await s.owner.mutation(api.assistantGrants.save, {
+      organizationId: s.org,
+      clientId,
+      sources: [],
+      libraryScope: "all",
+      scopes,
+      expectedVersion: s.grant.version,
+      expiresAt: null,
+      acknowledged: true,
+      cloudRequestPolicy: "explicit_per_source_v1",
+      cloudSaveDefaults: {
+        version: "app-save-cloud-v1",
+        model: "synthetic-model",
+        effort: "high",
+        retentionMs: 7 * 86400000,
+      },
+    });
+    await s.assistant.mutation(internal.assistantEvents.install, {
+      profileId: s.org,
+      grantVersion: s.grant.version,
+      eventName: "video_link_saved",
+      externalId: "sub_" + "a".repeat(64),
+      ciphertext: "synthetic-authority",
+      keyVersion: "1",
+      expiresAt: Date.now() + 600000,
+      callbackVerifiedAt: Date.now(),
+    });
+    const saved = await s.owner.mutation(api.workCloudSaves.capture, {
+      organizationId: s.org,
+      key: "cloud-media-fixture",
+      url: s.original.url!,
+      title: s.original.title,
+      rightsAttested: true,
+      grantId: s.grant.id,
+      grantVersion: s.grant.version,
+    });
+    if (!saved.intentId) throw Error("No saved intent");
+    savedIntentId = saved.intentId;
+    const status = await s.assistant.query(internal.assistant.getJobStatus, {
+      profileId: s.org,
+      sourceId: s.sourceId,
+    });
+    expect(status.saved_cloud_intent).toMatchObject({
+      id: savedIntentId,
+      state: "waiting_for_runtime",
+    });
+    expect(
+      (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.personalAnalysis,
+    ).toBeUndefined();
+    const queued = await s.assistant.mutation(
+      internal.assistant.requestAnalysis,
+      {
+        profileId: s.org,
+        sourceId: s.sourceId,
+        mode: "work_cloud",
+        savedIntentId,
+      },
+    );
+    if (!("generation" in queued))
+      throw Error("Saved intent did not queue a job");
+    const taskId = "synthetic-real-task";
+    const claimed = await s.assistant.mutation(
+      internal.workCloudAnalysis.dispatch,
+      {
+        sourceId: s.sourceId,
+        generation: queued.generation,
+        taskId,
+        operation: "claim",
+      },
+    );
+    if (!claimed.leaseToken) throw Error("Missing saved-intent claim");
+    lease = {
+      sourceId: s.sourceId,
+      generation: queued.generation,
+      taskId,
+      leaseToken: claimed.leaseToken,
+    };
+  } else lease = await s.claim();
   let prepared = await receipt(s, lease);
   if (captionFirst) {
     prepared = workCloudMediaPreparation.parse({
@@ -1688,7 +1788,7 @@ async function frameFixture(width = 2, captionFirst = false) {
     R2_SECRET_ACCESS_KEY: "synthetic",
   }))
     vi.stubEnv(key, value);
-  return { ...s, lease, prepared, args };
+  return { ...s, lease, prepared, args, savedIntentId };
 }
 function frameStorage(beforeHead?: () => Promise<void>) {
   const fetcher = vi.fn(async (_url: unknown, request?: RequestInit) => {
@@ -2022,6 +2122,59 @@ it("stores matching Cloud pixels once, preserves immutable evidence and exposes 
   await expect(
     s.owner.query(api.assets.evidence, { id: assetId }),
   ).rejects.toThrow("Evidence unavailable");
+});
+it("joins app Save, exact intent, caption preparation, retained JPEG and canonical analysis on the same job", async () => {
+  const s = await frameFixture(2, true, true);
+  const storage = frameStorage();
+  await s.assistant.action(internal.workCloudFrames.upload, s.args);
+  const result = output(s.lease, s.prepared);
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...s.lease,
+    operation: "complete",
+    output: result,
+  });
+  const detail = await s.owner.query(api.product.detail, {
+    id: s.sourceId,
+    organizationId: s.org,
+  });
+  expect(detail).toMatchObject({
+    state: "ready",
+    generation: 1,
+    personalAnalysis: { state: "completed" },
+    orderedMedia: {
+      post: { transcript: { origin: "platform_auto", asrUsed: false } },
+    },
+  });
+  expect(detail.analysis.insights).toHaveLength(1);
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(retainedCloudFrames(source)).toHaveLength(1);
+  expect(
+    await s.owner.query(api.assets.evidence, {
+      id: retainedCloudFrames(source)[0].assetId as any,
+    }),
+  ).toMatchObject({ type: "image/jpeg" });
+  const before = source.updatedAt;
+  const replay = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    {
+      profileId: s.org,
+      sourceId: s.sourceId,
+      mode: "work_cloud",
+      savedIntentId: s.savedIntentId!,
+    },
+  );
+  expect(replay).toMatchObject({
+    generation: 1,
+    reused_request: true,
+    analysis_started: false,
+  });
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.updatedAt).toBe(
+    before,
+  );
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toHaveLength(1);
+  expect(storage).toHaveBeenCalledTimes(2);
 });
 it.each(["pixels", "hash", "lease", "dimension", "base64"])(
   "rejects mismatched Cloud %s before storage",

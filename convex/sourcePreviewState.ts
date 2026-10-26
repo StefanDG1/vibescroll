@@ -109,8 +109,14 @@ export const finish = internalMutation({
     const hasMetadata = Boolean(
       metadata.title || metadata.authorName || metadata.durationSeconds,
     );
+    // The pending app-Save approval binds title/revision. Native preview fields
+    // remain visible without rewriting that approved input before consumption.
+    const pendingCloudSave =
+      !!s.workCloudSaveIntent &&
+      s.workCloudSaveIntent.analysisGeneration === undefined;
     const textUpdate = {
       ...(metadata.title &&
+      !pendingCloudSave &&
       s.title === "Imported video link" &&
       !["queued", "running", "recovering"].includes(
         s.personalAnalysis?.state ?? "",
@@ -188,18 +194,8 @@ export const finish = internalMutation({
         assetId,
         updatedAt: Date.now(),
       },
-      ...(a.publishedAt &&
-      Number.isSafeInteger(a.publishedAt) &&
-      a.publishedAt > 0 &&
-      a.publishedAt <= Date.now() + 86400000
-        ? { publishedAt: a.publishedAt }
-        : {}),
-      ...(a.title &&
-      !containsSecret(a.title) &&
-      s.title === "Imported video link"
-        ? { title: a.title, searchable: [a.title, ...s.tags].join(" ") }
-        : {}),
-      updatedAt: Date.now(),
+      ...textUpdate,
+      ...(pendingCloudSave ? {} : { updatedAt: Date.now() }),
     });
     await syncCategories(ctx, (await ctx.db.get(a.id))!);
     return true;

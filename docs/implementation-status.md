@@ -1,3 +1,15 @@
+## October 26: final local candidate checks and concurrent release boundary
+
+Full offline check passed 1265 Vitest tests, with three explicit hosted skips, nineteen Node tests, 59 Python cases with four Linux-only Windows skips, types, zero-warning lint and both production builds. The new preview races fail before the fix and pass after it. Native synthetic caption/JPEG and ASR setup passed separately; real source/event/lease acceptance remains open. Exact-head CI is pending.
+
+The owner separately approved a widget-only controlled release in the parallel Research Codex plugin UI options chat, increasing the shared cumulative cap to EUR9/USD9.48. Preserve its USD0.42 reservation and candidate2f154a6. Current shared retained maximum is USD8.895014256044613; unreserved USD0.5849857439553876. These are conservative allowances, not provider bills. No prior hold was released. This automatic-analysis work has not acquired the widget operation's allowance. This branch has not published anything. Reconcile the new widget serving baseline and preserve its changes before any subsequent compatible publication; older ff7d88f statements identify the last verified baseline for this task.
+
+## October 26: compatible automatic Save candidate, unpublished
+
+Serving frontend/backend remain ff7d88f. The compatible branch now carries the finite app-Save intent, current-grant setup message, pinned tools ZIP and preview-race fix. No new table or index is introduced. Optional source/grant values and the optional setup-route enum are checked against the immutable compatibility baseline. Existing saved posts, unknown work and reserved TikTok remain untouched. Full-main Home/region/navigation changes and their index migration remain separate.
+
+Focused backend/preview/schema tests passed 27 cases, UI integration passed 114 and final types passed. The joined Save-to-canonical-result fixture is ported with compatible authenticated asset retrieval rather than main-only Home projection. Full checks and exact CI are pending. Actual private Cloud caption/JPEG and synthetic ASR setup passed; no real automatic media run follows. [ADR164](adr/164-pinned-cloud-runtime-download.md) and [setup evidence](operations/evidence/launch-20261026-native-cloud-tools.json). EUR8 retains USD8.473014256044612; every old hold remains. No deployment, analysis job or paid API ran in this port.
+
 ## October 26: task locations and illustrated Help are live
 
 Compatible frontend/backend `ff7d88f5601c5d717f3ac5cad6ff73489ba29a25` published after exact CI40328458291. One fixed Basic queued build was staged, verified and promoted unchanged. Public health confirms version `0.1.0-alpha.20261026131113.gff7d88f5601c`. Public Help image decoded at320px and1600px; synthetic Save shows three ordered disabled choices, mobile has no overflow and keyboard More info opens. No production Save or analysis ran. Authenticated production picker was not freshly exercised. Main ca43a32 remains undeployed. [Actual receipt](operations/evidence/launch-20261026-task-locations.json).

@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit && tsc --project convex/tsconfig.json --noEmit && pnpm -r --if-present typecheck",
     "test": "vitest run --maxWorkers=2 && vitest run --config apps/starter/vitest.auth.config.ts && vitest run --config apps/starter/vitest.public-knowledge.config.ts && node --test tests/companion-installer.test.mjs && pnpm test:pcm && pnpm test:build-policy",
     "test:build-policy": "node --test tests/vercel-build-ignore.test.mjs",
-    "test:pcm": "python tests/local_pcm_test.py && python tests/public_proxy_test.py && python tests/media_sampling_test.py && python tests/caption_extraction_test.py",
+    "test:pcm": "python tests/local_pcm_test.py && python tests/public_proxy_test.py && python tests/media_sampling_test.py && python tests/caption_extraction_test.py && python tests/decoder_network_denial_test.py && python tests/decoder_provider_vm_test.py && python scripts/build-cloud-runtime-package.py",
     "validate": "node scripts/validate.mjs",
     "benchmark": "node scripts/evaluate-benchmark.ts",
     "chatgpt:local": "node packages/runner/chatgpt-cli.mjs",

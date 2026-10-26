@@ -45,6 +45,7 @@ vi.mock("react", async (original) => ({
   },
 }));
 import { AssistantConnections } from "./components/assistant-connections";
+import runtimePackage from "../../packages/media/cloud-runtime-package.lock.json";
 
 type Node = ReactElement<Record<string, any>>;
 const cloudLabel = "Allow exact video analysis requests in my Work Cloud chat";
@@ -56,6 +57,8 @@ function setup(overrides: Record<string, unknown> = {}) {
     enabled: true,
     privateLibrary: true,
     workCloudMediaEnabled: true,
+    workCloudSavedEnabled: false,
+    eventsEnabled: false,
     clients: [{ id: "host", name: "Work Cloud", scopes }],
     grants: [] as any[],
     devices: [] as any[],
@@ -194,6 +197,39 @@ it("requires a separate Cloud choice and fresh acknowledgement, without a paired
   expect(text(f.render())).toContain("GitHub is not required");
   expect(text(f.render())).toContain("does not launch the Cloud task");
   expect(text(f.render())).toContain("Up to 6 new requests per hour");
+});
+it("reviews automatic app-Save defaults separately and invalidates the acknowledgement", async () => {
+  const allScopes = [...scopes, "jobs:read", "events:subscribe"];
+  const f = await fixture(
+    setup({
+      workCloudSavedEnabled: true,
+      clients: [{ id: "host", name: "Work Cloud", scopes: allScopes }],
+    }),
+  );
+  f.configure();
+  checkbox(f.render(), cloudLabel).props.onChange({
+    target: { checked: true },
+  });
+  f.acknowledge();
+  const label = "Allow analysis of video links I save in the app";
+  expect(checkbox(f.render(), label).props.checked).toBe(false);
+  checkbox(f.render(), label).props.onChange({ target: { checked: true } });
+  expect(checkbox(f.render(), approvalLabel).props.checked).toBe(false);
+  await f.save();
+  expect(f.call).not.toHaveBeenCalled();
+  f.acknowledge();
+  await f.save();
+  expect(f.call).toHaveBeenCalledWith(
+    "saveAssistantGrant",
+    expect.objectContaining({
+      cloudSaveDefaults: {
+        version: "app-save-cloud-v1",
+        model: "gpt-6.1-sol",
+        effort: "high",
+        retentionMs: 7 * 86400000,
+      },
+    }),
+  );
 });
 
 it.each(["analysis:request", "analysis:execute"])(
@@ -411,4 +447,113 @@ it("blocks Cloud selection and saving while read-only or saving", async () => {
   finish(true);
   await flush();
   expect(f.call).toHaveBeenCalledTimes(1);
+});
+
+function monitorSetup(grantOverrides: Record<string, unknown> = {}) {
+  const actions = [...scopes, "jobs:read", "events:subscribe"];
+  return setup({
+    eventsEnabled: true,
+    workCloudSavedEnabled: true,
+    clients: [{ id: "host", name: "Work Cloud", scopes: actions }],
+    grants: [
+      {
+        id: "grant",
+        clientId: "host",
+        scopes: actions,
+        sources: [],
+        libraryScope: "all",
+        version: 3,
+        state: "active",
+        expiresAt: null,
+        cloudRequestPolicy: "explicit_per_source_v1",
+        cloudSaveDefaults: {
+          version: "app-save-cloud-v1",
+          model: "synthetic-model",
+          effort: "high",
+          retentionMs: 86400000,
+        },
+        ...grantOverrides,
+      },
+    ],
+  });
+}
+
+it("copies setup for the saved grant, then uses the refreshed version without changing access or starting work", async () => {
+  const writeText = vi.fn(async (_text: string) => undefined);
+  vi.stubGlobal("navigator", { clipboard: { writeText } });
+  const data = monitorSetup();
+  const f = await fixture(data);
+  const message = elements(f.render()).find((n) => n.type === "textarea")!;
+  expect(text(f.render())).not.toContain("Automatic analysis is off.");
+  expect(message.props.readOnly).toBe(true);
+  expect(message.props.value).toContain(
+    '"profileId":"private","grantVersion":3,"clientId":"host"',
+  );
+  expect(message.props.value).not.toContain("synthetic-model");
+  expect(message.props.value).toContain(
+    "https://scroll.companynerve.com" + runtimePackage.path,
+  );
+  expect(message.props.value).toContain(runtimePackage.sha256);
+  await button(f.render(), "Copy setup message").props.onClick();
+  expect(writeText).toHaveBeenCalledWith(message.props.value);
+  expect(text(f.render())).toContain(
+    "Copied. Paste it into your ChatGPT Work chat.",
+  );
+  f.replace({ ...data, grants: [{ ...data.grants[0], version: 4 }] });
+  button(f.render(), "Refresh access").props.onClick();
+  await flush();
+  expect(text(f.render())).not.toContain(
+    "Copied. Paste it into your ChatGPT Work chat.",
+  );
+  await button(f.render(), "Copy setup message").props.onClick();
+  expect(writeText.mock.lastCall?.[0]).toContain('"grantVersion":4');
+  expect(f.call).not.toHaveBeenCalled();
+});
+
+it.each([
+  "gate",
+  "events",
+  "old-grant",
+  "expired",
+  "revoked",
+  "client",
+  "scope",
+])("does not offer monitor setup with %s unavailable", async (reason) => {
+  const data = monitorSetup(
+    reason === "old-grant"
+      ? { cloudSaveDefaults: undefined }
+      : reason === "expired"
+        ? { expiresAt: Date.now() - 1 }
+        : reason === "revoked"
+          ? { state: "revoked" }
+          : reason === "scope"
+            ? { scopes }
+            : {},
+  );
+  if (reason === "gate") data.workCloudSavedEnabled = false;
+  if (reason === "events") data.eventsEnabled = false;
+  if (reason === "client") data.clients = [];
+  const f = await fixture(data);
+  expect(elements(f.render()).some((n) => n.type === "textarea")).toBe(false);
+  expect(f.call).not.toHaveBeenCalled();
+});
+
+it("keeps a selectable setup message when browser clipboard permission is unavailable", async () => {
+  vi.stubGlobal("navigator", {
+    clipboard: {
+      writeText: vi.fn(async () => {
+        throw Error("denied");
+      }),
+    },
+  });
+  const f = await fixture(monitorSetup());
+  await button(f.render(), "Copy setup message").props.onClick();
+  expect(text(f.render())).toContain(
+    "Select the setup message and copy it using your browser.",
+  );
+  const message = elements(f.render()).find((n) => n.type === "textarea")!;
+  const select = vi.fn();
+  message.props.onFocus({ currentTarget: { select } });
+  expect(select).toHaveBeenCalledOnce();
+  expect(f.call).not.toHaveBeenCalled();
 });

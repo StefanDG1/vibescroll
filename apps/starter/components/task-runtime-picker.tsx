@@ -11,6 +11,8 @@ export function TaskRuntimePicker({
   onChange,
   organizationId,
   serverAvailable = false,
+  workCloudAvailable = false,
+  workCloudConfigured = false,
   localAvailable = false,
   localConfigured = false,
   localStatus = "setup_required",
@@ -20,6 +22,8 @@ export function TaskRuntimePicker({
   onChange: (runtime: TaskRuntime) => void;
   organizationId: string;
   serverAvailable?: boolean;
+  workCloudAvailable?: boolean;
+  workCloudConfigured?: boolean;
   localAvailable?: boolean;
   localConfigured?: boolean;
   localStatus?: "setup_required" | "offline" | "check_before_running";
@@ -31,9 +35,13 @@ export function TaskRuntimePicker({
       id: "work_cloud" as const,
       title: "My own Cloud Work",
       description: "Uses your ChatGPT subscription. Your computer can be off.",
-      available: false,
-      configured: false,
-      status: "Not available yet",
+      available: workCloudAvailable,
+      configured: workCloudConfigured,
+      status: workCloudAvailable
+        ? "Ready to send to ChatGPT"
+        : workCloudConfigured
+          ? "Check ChatGPT setup"
+          : "Not available yet",
       href: `/app/${organizationId}/connections`,
       detail:
         "Recommended once automatic analysis is verified. Connect VibeScroll in ChatGPT Work with Cloud selected. A connected account alone does not mean automatic video analysis is ready. Your ChatGPT plan limits apply.",

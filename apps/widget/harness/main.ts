@@ -228,7 +228,14 @@ async function load() {
                     profileId: "demo-private-workspace",
                     sourceId: "sample-onboarding",
                   }
-                : { view: kind === "export" ? "export" : "library" },
+                : {
+                    view:
+                      kind === "export"
+                        ? "export"
+                        : options.get("view") === "scroll"
+                          ? "scroll"
+                          : "library",
+                  },
           },
           content: [],
         }),

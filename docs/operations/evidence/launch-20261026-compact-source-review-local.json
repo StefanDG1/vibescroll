@@ -1,0 +1,99 @@
+{
+  "scope": "Compact source judgment review candidate; local compiled widget and synthetic AppBridge only",
+  "originalBase": "3ac324723577ee5af0deaf471716270deb40872b",
+  "servingBaselineIntegrated": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
+  "integrationCommit": "33f3a0de473b9d8f9285c4cdc4c6fc74dd15f98a",
+  "existingPermissions": ["knowledge:read", "feedback:write"],
+  "newScopes": 0,
+  "newTables": 0,
+  "newIndexes": 0,
+  "componentChanges": 0,
+  "authChanges": 0,
+  "cronChanges": 0,
+  "liveConfigurationChanges": 0,
+  "liveFeedbackWrites": 0,
+  "deploymentBuilds": 0,
+  "paidApiCalls": 0,
+  "readOperation": "widget_feedback_state",
+  "existingWriteOperation": "record_feedback",
+  "privacy": {
+    "currentActorAndClientOnly": true,
+    "exactSourceGenerationRevision": true,
+    "currentGrantRequired": true,
+    "lookupRecordBound": 51,
+    "limitedLookupBlocksFreshUiWrites": true,
+    "immutableConnectionIdentityCheckedBeforeWrite": true,
+    "failedAccessMasksFields": true,
+    "browserTokenOrNoteStorage": false
+  },
+  "recovery": {
+    "stableServerFirstKey": true,
+    "existingKeyVersionReused": true,
+    "canonicalKeyedReadRequiredForSuccess": true,
+    "collapseRetainsUnknownRequest": true,
+    "unmountReplays": false
+  },
+  "checks": {
+    "fullOfflineCheck": {
+      "passed": true,
+      "node": "24.22.1",
+      "vitestPassed": 1323,
+      "hostedSkipped": 3,
+      "nodeTestsPassed": 19,
+      "pythonCases": 70,
+      "pythonWindowsSkipped": 7,
+      "fullTypes": true,
+      "lintWarnings": 0,
+      "productionBuilds": ["marketing", "starter"]
+    },
+    "focused": {
+      "passed": 48,
+      "newFeedbackCases": 18,
+      "actualHttpRouter": true,
+      "actorIsolationAndSelectedSourceGrant": true,
+      "schemaCompatibilityGuard": true
+    },
+    "widgetBuild": {
+      "passed": true,
+      "workspaceBytes": 914837,
+      "workspaceGzipBytes": 231034
+    },
+    "appBridge": {
+      "passed": 13,
+      "productionHtml": true,
+      "synthetic": true,
+      "allFiveChoices": true,
+      "savedNoteReopened": true,
+      "lostReplyWrites": 1,
+      "changedIdentityWrites": 0,
+      "readOnlyPrivateReads": 0,
+      "compactExpandedScrollTargets": 44,
+      "ownedTabClosed": true
+    },
+    "dependencyAudit": {
+      "observedAt": "2026-10-26T22:03:16.802Z",
+      "unresolved": 0
+    },
+    "finishReview": {
+      "initialDisposition": "fix",
+      "finding": "Expanded Library/Scroll reused40px instead of required44px judgment targets",
+      "finalDisposition": "ship",
+      "scope": "Listed shared sizing correction scored resolved",
+      "primaryDetectorFindings": 0,
+      "incumbentCssAdvisories": 44,
+      "newStyleFindings": 0
+    }
+  },
+  "preservedFailures": [
+    "First feedback fixture mixed all-library access with a selected-source list and misread save return shape; corrected to existing grant contract before18case pass.",
+    "Initial full check stopped at types because feedback extraction accidentally removed ProjectsView.grantVersion; restored before final full check.",
+    "Initial expanded harness tried a desktop-only Scroll sidebar control at320px; final case uses the supported Scroll view entrypoint and verifies real computed target sizes.",
+    "Independent reviewer found compact-only44px sizing; the shared rule and recaptured inline/expanded views resolved that listed issue."
+  ],
+  "pending": [
+    "Exact final candidate CI",
+    "Coordinated controlled publication and same-plugin refresh",
+    "Separately authorized real ChatGPT feedback write verification",
+    "Remaining full widget plan"
+  ]
+}

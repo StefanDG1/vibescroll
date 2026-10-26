@@ -677,6 +677,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
         error={browse.error}
         canDraft={!!actions.draft}
         profileId={profileId}
+        grantVersion={grant}
         reviewUrl={links.projects}
         notify={notify}
         onRefresh={refresh}

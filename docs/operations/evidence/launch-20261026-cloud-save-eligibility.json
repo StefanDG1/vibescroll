@@ -1,5 +1,5 @@
 {
-  "recordedAtUTC": "2026-10-26T19:06:59.049245+00:00",
+  "recordedAtUTC": "2026-10-26T19:06:59.045827+00:00",
   "scope": "candidate backend-only eligibility reuse; no migration or source job",
   "observedProduction": {
     "frontendCommit": "112774540f14c067e8ab55bdb1f2a51e6efc9a7d",
@@ -13,10 +13,10 @@
   "focusedCompatibleCasesPassed": 77,
   "fullLocalCheck": {
     "exitCode": 0,
-    "vitestPassed": 2128,
+    "vitestPassed": 1292,
     "hostedSkipped": 3,
     "nodePassed": 19,
-    "pythonCases": 68,
+    "pythonCases": 59,
     "windowsLinuxSkipped": 4,
     "typesPassed": true,
     "zeroWarningLint": true,
@@ -30,7 +30,12 @@
     "reserved and unknown posts",
     "zero API funding and finite per-Save approval"
   ],
-  "productionEligibilityUpdate": false,
+  "productionEligibilityUpdate": true,
+  "publishedBackendCommit": "f6dd6d4eb944fee5a88e3826e6a058b987b4b3d4",
+  "publishedAtUTC": "2026-10-26T19:12:59.462Z",
+  "schemaIndexComponentChanges": false,
+  "backfills": 0,
+  "actualOriginalLibrarySetupEligible": true,
   "automaticMediaAcceptance": false,
-  "exactCI": "pending"
+  "exactCI": { "runId": 40383890611, "conclusion": "success" }
 }

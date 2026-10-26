@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Button } from "@openai/apps-sdk-ui/components/Button";
 import {
   ArrowRight,
@@ -135,6 +135,7 @@ export function InsightDetail({
   profileId,
   grantVersion,
   allowFeedback,
+  compact = false,
   notify,
 }: {
   source: Source;
@@ -142,6 +143,7 @@ export function InsightDetail({
   profileId: string;
   grantVersion: number;
   allowFeedback: boolean;
+  compact?: boolean;
   notify: (text: string) => void;
 }) {
   const host = useHost();
@@ -151,6 +153,15 @@ export function InsightDetail({
   const [key] = useState(() => crypto.randomUUID());
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const evidenceId = useId();
+  const [expandedEvidenceId, setExpandedEvidenceId] = useState<string | null>(
+    null,
+  );
+  const evidenceExpanded = expandedEvidenceId === insight.id;
+  const visibleEvidence =
+    compact && !evidenceExpanded
+      ? insight.evidence.slice(0, 2)
+      : insight.evidence;
   const submit = async (action: string) => {
     if (!insight.reference) return;
     setPending(true);
@@ -196,10 +207,12 @@ export function InsightDetail({
     <article className="insight-detail">
       <div className="detail-meta">
         <span>
-          {String(source.coverage ?? "Coverage unavailable").replaceAll(
-            "_",
-            " ",
-          )}
+          {source.coverage === "ordered_media"
+            ? "Timestamped media evidence"
+            : String(source.coverage ?? "Coverage unavailable").replaceAll(
+                "_",
+                " ",
+              )}
         </span>
       </div>
       <h2>{insight.title}</h2>
@@ -208,8 +221,8 @@ export function InsightDetail({
       </p>
       <h3>Source evidence</h3>
       {insight.evidence.length ? (
-        <div className="evidence-list">
-          {insight.evidence.map((evidence, index) => (
+        <div className="evidence-list" id={evidenceId}>
+          {visibleEvidence.map((evidence, index) => (
             <div
               className="evidence-row"
               key={`${evidenceLabel(evidence)}-${index}`}
@@ -231,6 +244,21 @@ export function InsightDetail({
           This preview contains the claim. Open the source for its current
           detailed evidence.
         </p>
+      )}
+      {compact && insight.evidence.length > 2 && (
+        <button
+          type="button"
+          className="evidence-toggle"
+          aria-expanded={evidenceExpanded}
+          aria-controls={evidenceId}
+          onClick={() =>
+            setExpandedEvidenceId(evidenceExpanded ? null : insight.id)
+          }
+        >
+          {evidenceExpanded
+            ? "Show fewer references"
+            : `Show ${insight.evidence.length - 2} more references`}
+        </button>
       )}
       <ProtectedLink url={source.url}>Open source evidence</ProtectedLink>
       <div className="detail-buttons">

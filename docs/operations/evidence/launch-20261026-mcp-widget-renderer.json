@@ -1,0 +1,43 @@
+{
+  "dateUTC": "2026-10-26",
+  "status": "renderer_published_chatgpt_rendered_strict_csp_repeat_pending",
+  "sourceCommit": "d975e1eb97fc11a83c43dcd7175e58db92139490",
+  "ciRun": 40377419642,
+  "ciConclusion": "success",
+  "backend": {
+    "exactBundleUnchangedFrom": "bfe02d2e869f39ec61b8f87850bdec796f18fae7",
+    "publications": 0
+  },
+  "frontend": {
+    "deploymentId": "dpl_CPkKLq2qhwAx87r5qUccrjv3VNgr",
+    "fixedBasicQueued": true,
+    "builds": 1,
+    "sameBuildPromoted": true,
+    "normalDomainAssignmentRestored": true,
+    "supersededByCombinedCommit": "112774540f14c067e8ab55bdb1f2a51e6efc9a7d"
+  },
+  "host": {
+    "chatgptDiscoveryRefreshUTC": "2026-10-26T18:34:04.676003Z",
+    "existingPluginIdentityPreserved": true,
+    "privateRendererErrorCleared": true,
+    "realAuthorizedFetchRendered": true,
+    "sourceWrites": 0,
+    "analysisJobs": 0,
+    "grantChanges": 0,
+    "initialRenderDeveloperCSPEnforcement": false,
+    "developerCSPEnforcementEnabledUTC": "2026-10-26T18:50:26.313119Z",
+    "strictCSPRepeat": "pending",
+    "temporaryChatReopen": "not_passed_temporary_chat_unavailable_after_navigation",
+    "codexRendering": "unverified"
+  },
+  "compactFollowUp": {
+    "state": "local_unpublished",
+    "referencesInitiallyVisible": 2,
+    "localDisclosureOnly": true,
+    "bridgeCasesPassed": 6,
+    "typecheck": "passed",
+    "lint": "passed",
+    "widgetBuild": "passed"
+  },
+  "scope": "Core widget publication and bounded existing-account ChatGPT rendering only. Fresh customer OAuth, full host/role matrix, skills behavior and public listing remain open."
+}

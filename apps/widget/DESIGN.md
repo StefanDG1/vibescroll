@@ -109,6 +109,8 @@ The widget is a working view inside ChatGPT or Codex. Its design authority is `A
 
 The compact follow-up adds `compact-card-bridge.png`, `compact-status-bridge.png` and `compact-card-mobile-bridge.png` in that review directory. They capture generated production HTML through a local AppBridge with synthetic scoped responses, including the 320px dark card. `compact-finish-review.md` records ship for the sole status identity/truth correction. Five local AppBridge scenarios pass, as reported in the follow-up handoff. This evidence does not establish actual ChatGPT/Codex, OAuth or production-account acceptance. The follow-up changes behavior documentation, not the visual world or tokens.
 
+The compact citation refinement uses `compact-five-references-bridge.png` and the updated `compact-card-mobile-bridge.png`. These synthetic local AppBridge captures show the generated production card at 680px light and 320px dark. `compact-citations-finish-review.md` identified clipped source titles; `compact-citations-finish-verdict.md` records ship for the resolved source-title correction only. The builder reports six AppBridge checks plus passing widget types, lint and build. This evidence establishes no live-host, CSP, OAuth, production-account or whole-widget acceptance.
+
 **Key Characteristics:**
 
 - Small inline cited cards are the first-priority experience; expansion is explicit.
@@ -186,6 +188,8 @@ Status badges pair semantic text with positive tint and accent. Neutral tags use
 
 Source and work cards use card radius, a line border and 20px padding. Project review cards use evidence radius and 18px padding. Evidence lists group citation rows inside one outlined container, separate adjacent rows with line and preserve the full source title. Insight list rows use bottom dividers; selection adds surface tone and field radius.
 
+Compact citation rows use two equal flexible columns for the exact reference and source title, with a 12px gap and 10px vertical padding. Both columns allow long-word breaking. Complete source titles wrap even at 320px; the card grows to fit them.
+
 ### Inputs / Fields
 
 Search has a surface background and field radius. URL capture is outlined and wraps its submit action below the field on narrow screens. Both wrappers use a 2px theme-accent `:focus-within` outline offset by 3px, so the inner input's suppressed outline does not hide focus. Optional notes are labelled, vertically resizable textareas. Failures use visible alert text with a retry or retained request where supported.
@@ -197,6 +201,8 @@ Expanded navigation combines semantic Lucide icons and text in rows at least 44p
 ### Evidence and project review
 
 The selected detail includes coverage, full claim, source evidence and the protected source action. Add to conversation deliberately attaches only the selected content and citation. Its availability follows host capabilities, with a visible explanation when unsupported. Feedback refers to the exact source version and shows the returned saved version. Its receipt does not claim measured benefit.
+
+Compact detail initially displays the first two returned evidence references, or all when fewer are returned. When more than two exist, Show N more references reveals the remaining returned references and becomes Show fewer references. The same native button exposes `aria-expanded` and `aria-controls` and retains focus. This disclosure uses local state and makes no RPC. The full claim, complete source titles, Open source evidence and Add to conversation remain available. Attachment still uses the complete selected insight context, independently of the visible reference rows. Expanded workspace detail displays the full returned reference list without this disclosure. Coverage value `ordered_media` reads Timestamped media evidence; the label does not imply complete coverage.
 
 The compact saved-source status card leads with the authoritative source title, or an explicit shortened source-ID fallback when no title is returned. The current status appears below it, followed by neutral result or recovery guidance. Refresh status reconciles the same source, and View source opens its current result. Do not infer a Cloud route from a saved or completed status. The removed fixed Cloud eyebrow is not part of the component.
 

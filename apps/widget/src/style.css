@@ -1095,6 +1095,30 @@ a svg {
 .compact .insight-claim {
   font-size: 13px;
 }
+.compact .evidence-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.compact .evidence-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.evidence-toggle {
+  display: block;
+  min-height: 40px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 11px;
+}
+.evidence-toggle:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .compact .feedback-area {
   display: none;
 }

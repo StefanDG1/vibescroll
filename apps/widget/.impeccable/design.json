@@ -1,0 +1,434 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-26T16:33:44.493959Z",
+  "title": "Design System: VibeScroll widget",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "bg",
+        "tonalRamp": [
+          "oklch(15.0% 0.0000 89.9)",
+          "oklch(26.5% 0.0000 89.9)",
+          "oklch(38.0% 0.0000 89.9)",
+          "oklch(49.5% 0.0000 89.9)",
+          "oklch(61.0% 0.0000 89.9)",
+          "oklch(72.5% 0.0000 89.9)",
+          "oklch(84.0% 0.0000 89.9)",
+          "oklch(95.0% 0.0000 89.9)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.0000 89.9)",
+          "oklch(26.5% 0.0000 89.9)",
+          "oklch(38.0% 0.0000 89.9)",
+          "oklch(49.5% 0.0000 89.9)",
+          "oklch(61.0% 0.0000 89.9)",
+          "oklch(72.5% 0.0000 89.9)",
+          "oklch(84.0% 0.0000 89.9)",
+          "oklch(95.0% 0.0000 89.9)"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "hover",
+        "tonalRamp": [
+          "oklch(15.0% 0.0013 286.4)",
+          "oklch(26.5% 0.0013 286.4)",
+          "oklch(38.0% 0.0013 286.4)",
+          "oklch(49.5% 0.0013 286.4)",
+          "oklch(61.0% 0.0013 286.4)",
+          "oklch(72.5% 0.0013 286.4)",
+          "oklch(84.0% 0.0013 286.4)",
+          "oklch(95.0% 0.0013 286.4)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "ink",
+        "tonalRamp": [
+          "oklch(15.0% 0.0041 264.5)",
+          "oklch(26.5% 0.0041 264.5)",
+          "oklch(38.0% 0.0041 264.5)",
+          "oklch(49.5% 0.0041 264.5)",
+          "oklch(61.0% 0.0041 264.5)",
+          "oklch(72.5% 0.0041 264.5)",
+          "oklch(84.0% 0.0041 264.5)",
+          "oklch(95.0% 0.0041 264.5)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "muted",
+        "tonalRamp": [
+          "oklch(15.0% 0.0112 273.2)",
+          "oklch(26.5% 0.0112 273.2)",
+          "oklch(38.0% 0.0112 273.2)",
+          "oklch(49.5% 0.0112 273.2)",
+          "oklch(61.0% 0.0112 273.2)",
+          "oklch(72.5% 0.0112 273.2)",
+          "oklch(84.0% 0.0112 273.2)",
+          "oklch(95.0% 0.0112 273.2)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "line",
+        "tonalRamp": [
+          "oklch(15.0% 0.0029 264.5)",
+          "oklch(26.5% 0.0029 264.5)",
+          "oklch(38.0% 0.0029 264.5)",
+          "oklch(49.5% 0.0029 264.5)",
+          "oklch(61.0% 0.0029 264.5)",
+          "oklch(72.5% 0.0029 264.5)",
+          "oklch(84.0% 0.0029 264.5)",
+          "oklch(95.0% 0.0029 264.5)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "accent",
+        "tonalRamp": [
+          "oklch(15.0% 0.0946 174.4)",
+          "oklch(26.5% 0.0946 174.4)",
+          "oklch(38.0% 0.0946 174.4)",
+          "oklch(49.5% 0.0946 174.4)",
+          "oklch(61.0% 0.0946 174.4)",
+          "oklch(72.5% 0.0946 174.4)",
+          "oklch(84.0% 0.0946 174.4)",
+          "oklch(95.0% 0.0946 174.4)"
+        ]
+      },
+      "positive": {
+        "role": "neutral",
+        "displayName": "positive",
+        "tonalRamp": [
+          "oklch(15.0% 0.0143 169.2)",
+          "oklch(26.5% 0.0143 169.2)",
+          "oklch(38.0% 0.0143 169.2)",
+          "oklch(49.5% 0.0143 169.2)",
+          "oklch(61.0% 0.0143 169.2)",
+          "oklch(72.5% 0.0143 169.2)",
+          "oklch(84.0% 0.0143 169.2)",
+          "oklch(95.0% 0.0143 169.2)"
+        ]
+      },
+      "dark-bg": {
+        "role": "neutral",
+        "displayName": "dark bg",
+        "tonalRamp": [
+          "oklch(15.0% 0.0041 264.5)",
+          "oklch(26.5% 0.0041 264.5)",
+          "oklch(38.0% 0.0041 264.5)",
+          "oklch(49.5% 0.0041 264.5)",
+          "oklch(61.0% 0.0041 264.5)",
+          "oklch(72.5% 0.0041 264.5)",
+          "oklch(84.0% 0.0041 264.5)",
+          "oklch(95.0% 0.0041 264.5)"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "dark surface",
+        "tonalRamp": [
+          "oklch(15.0% 0.0056 271.2)",
+          "oklch(26.5% 0.0056 271.2)",
+          "oklch(38.0% 0.0056 271.2)",
+          "oklch(49.5% 0.0056 271.2)",
+          "oklch(61.0% 0.0056 271.2)",
+          "oklch(72.5% 0.0056 271.2)",
+          "oklch(84.0% 0.0056 271.2)",
+          "oklch(95.0% 0.0056 271.2)"
+        ]
+      },
+      "dark-hover": {
+        "role": "neutral",
+        "displayName": "dark hover",
+        "tonalRamp": [
+          "oklch(15.0% 0.0071 274.8)",
+          "oklch(26.5% 0.0071 274.8)",
+          "oklch(38.0% 0.0071 274.8)",
+          "oklch(49.5% 0.0071 274.8)",
+          "oklch(61.0% 0.0071 274.8)",
+          "oklch(72.5% 0.0071 274.8)",
+          "oklch(84.0% 0.0071 274.8)",
+          "oklch(95.0% 0.0071 274.8)"
+        ]
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "dark ink",
+        "tonalRamp": [
+          "oklch(15.0% 0.0067 286.3)",
+          "oklch(26.5% 0.0067 286.3)",
+          "oklch(38.0% 0.0067 286.3)",
+          "oklch(49.5% 0.0067 286.3)",
+          "oklch(61.0% 0.0067 286.3)",
+          "oklch(72.5% 0.0067 286.3)",
+          "oklch(84.0% 0.0067 286.3)",
+          "oklch(95.0% 0.0067 286.3)"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "dark muted",
+        "tonalRamp": [
+          "oklch(15.0% 0.0100 279.6)",
+          "oklch(26.5% 0.0100 279.6)",
+          "oklch(38.0% 0.0100 279.6)",
+          "oklch(49.5% 0.0100 279.6)",
+          "oklch(61.0% 0.0100 279.6)",
+          "oklch(72.5% 0.0100 279.6)",
+          "oklch(84.0% 0.0100 279.6)",
+          "oklch(95.0% 0.0100 279.6)"
+        ]
+      },
+      "dark-line": {
+        "role": "neutral",
+        "displayName": "dark line",
+        "tonalRamp": [
+          "oklch(15.0% 0.0102 278.4)",
+          "oklch(26.5% 0.0102 278.4)",
+          "oklch(38.0% 0.0102 278.4)",
+          "oklch(49.5% 0.0102 278.4)",
+          "oklch(61.0% 0.0102 278.4)",
+          "oklch(72.5% 0.0102 278.4)",
+          "oklch(84.0% 0.0102 278.4)",
+          "oklch(95.0% 0.0102 278.4)"
+        ]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "dark accent",
+        "tonalRamp": [
+          "oklch(15.0% 0.0944 170.7)",
+          "oklch(26.5% 0.0944 170.7)",
+          "oklch(38.0% 0.0944 170.7)",
+          "oklch(49.5% 0.0944 170.7)",
+          "oklch(61.0% 0.0944 170.7)",
+          "oklch(72.5% 0.0944 170.7)",
+          "oklch(84.0% 0.0944 170.7)",
+          "oklch(95.0% 0.0944 170.7)"
+        ]
+      },
+      "dark-positive": {
+        "role": "neutral",
+        "displayName": "dark positive",
+        "tonalRamp": [
+          "oklch(15.0% 0.0359 170.2)",
+          "oklch(26.5% 0.0359 170.2)",
+          "oklch(38.0% 0.0359 170.2)",
+          "oklch(49.5% 0.0359 170.2)",
+          "oklch(61.0% 0.0359 170.2)",
+          "oklch(72.5% 0.0359 170.2)",
+          "oklch(84.0% 0.0359 170.2)",
+          "oklch(95.0% 0.0359 170.2)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "focus",
+        "tonalRamp": [
+          "oklch(15.0% 0.1035 176.8)",
+          "oklch(26.5% 0.1035 176.8)",
+          "oklch(38.0% 0.1035 176.8)",
+          "oklch(49.5% 0.1035 176.8)",
+          "oklch(61.0% 0.1035 176.8)",
+          "oklch(72.5% 0.1035 176.8)",
+          "oklch(84.0% 0.1035 176.8)",
+          "oklch(95.0% 0.1035 176.8)"
+        ]
+      },
+      "error": {
+        "role": "neutral",
+        "displayName": "error",
+        "tonalRamp": [
+          "oklch(15.0% 0.1563 24.6)",
+          "oklch(26.5% 0.1563 24.6)",
+          "oklch(38.0% 0.1563 24.6)",
+          "oklch(49.5% 0.1563 24.6)",
+          "oklch(61.0% 0.1563 24.6)",
+          "oklch(72.5% 0.1563 24.6)",
+          "oklch(84.0% 0.1563 24.6)",
+          "oklch(95.0% 0.1563 24.6)"
+        ]
+      },
+      "dark-error": {
+        "role": "neutral",
+        "displayName": "dark error",
+        "tonalRamp": [
+          "oklch(15.0% 0.1006 19.5)",
+          "oklch(26.5% 0.1006 19.5)",
+          "oklch(38.0% 0.1006 19.5)",
+          "oklch(49.5% 0.1006 19.5)",
+          "oklch(61.0% 0.1006 19.5)",
+          "oklch(72.5% 0.1006 19.5)",
+          "oklch(84.0% 0.1006 19.5)",
+          "oklch(95.0% 0.1006 19.5)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Page heading",
+        "purpose": "Expanded workspace page titles."
+      },
+      "title": {
+        "displayName": "Section title",
+        "purpose": "Workspace sections."
+      },
+      "row-title": {
+        "displayName": "Insight row title",
+        "purpose": "Readable saved insight titles."
+      },
+      "body": {
+        "displayName": "Native body",
+        "purpose": "Compact host-native prose."
+      },
+      "claim": {
+        "displayName": "Claim",
+        "purpose": "Full selected claim in the inspector."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Controls and supporting labels."
+      },
+      "metadata": {
+        "displayName": "Metadata",
+        "purpose": "Source and state annotations; not a new minimum text size."
+      }
+    },
+    "shadows": [
+      {
+        "name": "notification",
+        "value": "0 8px 30px #0002",
+        "purpose": "Transient fixed notification only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "loading-spin",
+        "value": "spin 1s linear infinite",
+        "purpose": "Loading icon rotation; disabled by prefers-reduced-motion: reduce. Keyframe ends at rotate(360deg)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "1050px"
+      },
+      {
+        "name": "mobile",
+        "value": "760px"
+      },
+      {
+        "name": "narrow",
+        "value": "380px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Apps SDK UI solid action, translated to standalone local styling.",
+      "html": "<button class=\"ds-primary\">Save a link</button>",
+      "css": ".ds-primary{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 14px;font-size:13px;font-weight:550;border-radius:8px;cursor:pointer;border:0;background:var(--ink,#202123);color:var(--bg,#fff)}.ds-primary:hover,.ds-primary:active{background:var(--ink,#202123)}.ds-primary:focus-visible{outline:2px solid #108c77;outline-offset:3px;}.ds-primary:disabled{opacity:.5;cursor:default}"
+    },
+    {
+      "name": "Outline action",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary explicit action such as adding selected content to the conversation.",
+      "html": "<button class=\"ds-outline\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"/></svg>Add to conversation</button>",
+      "css": ".ds-outline{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 14px;font-size:13px;font-weight:550;border-radius:8px;cursor:pointer;border:1px solid var(--line,#e5e6e8);background:transparent;color:var(--ink,#202123)}.ds-outline:hover,.ds-outline:active{background:var(--hover,#efeff0)}.ds-outline:focus-visible{outline:2px solid #108c77;outline-offset:3px;}.ds-outline:disabled{opacity:.5;cursor:default}"
+    },
+    {
+      "name": "Search field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Labelled bounded Library search with focus on the enclosing field.",
+      "html": "<label class=\"ds-search\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input aria-label=\"Search library\" placeholder=\"Search your current approved library\"/></label>",
+      "css": ".ds-search{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);display:flex;align-items:center;gap:9px;padding:11px 13px;border:1px solid var(--line,#e5e6e8);border-radius:10px;color:var(--muted,#6a6c73);background:var(--surface,#f8f8f8)}.ds-search input{min-width:0;width:100%;background:transparent;outline:0;border:0;color:var(--ink,#202123);font:inherit;font-size:13px}.ds-search:focus-within{outline:2px solid var(--accent,#087762);outline-offset:3px}"
+    },
+    {
+      "name": "Rail navigation",
+      "kind": "nav",
+      "refersTo": "navigation-item",
+      "description": "Labelled, flat navigation with a tonal current item.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><button aria-current=\"page\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M12 7v14m-9-3V3c3-1 6 0 9 2 3-2 6-3 9-2v15c-3-1-6 0-9 2-3-2-6-3-9-2z\"/></svg>Library</button><button>Projects</button></nav>",
+      "css": ".ds-nav{display:flex;flex-direction:column;gap:4px}.ds-nav button{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);display:flex;align-items:center;gap:11px;min-height:44px;border:0;border-radius:8px;padding:11px 13px;text-align:left;font-size:13px;background:transparent;color:var(--muted,#6a6c73);cursor:pointer}.ds-nav button:hover,.ds-nav [aria-current=page]{background:var(--hover,#efeff0)}.ds-nav [aria-current=page]{color:var(--ink,#202123);font-weight:550}.ds-nav button:focus-visible{outline:2px solid #108c77;outline-offset:3px;}"
+    },
+    {
+      "name": "Recorded status",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Text states carry meaning while mint supports identification. Compact status places the authoritative saved-source title above this badge and neutral result/recovery guidance below; a saved or completed state does not imply a Cloud route.",
+      "html": "<span class=\"ds-status\">Insights ready</span>",
+      "css": ".ds-status{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);display:inline-block;font-size:10px;border-radius:5px;padding:5px 8px;background:var(--positive,#e9f5f0);color:var(--accent,#087762)}"
+    },
+    {
+      "name": "Source card",
+      "kind": "card",
+      "refersTo": "source-card",
+      "description": "A bordered saved source with a claim and explicit opening action.",
+      "html": "<article class=\"ds-source\"><h3>Saved source</h3><p>Inspect the current claim and its source evidence.</p><button>Open source <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M5 12h14m-6-6 6 6-6 6\"/></svg></button></article>",
+      "css": ".ds-source{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);border:1px solid var(--line,#e5e6e8);border-radius:12px;padding:20px;color:var(--ink,#202123)}.ds-source h3{font-size:16px;font-weight:550;line-height:1.6;margin:18px 0 9px}.ds-source p{color:var(--muted,#6a6c73);font-size:12px;line-height:1.8}.ds-source button{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);display:inline-flex;align-items:center;gap:8px;padding:12px 0;min-height:44px;border:0;background:transparent;color:var(--ink,#202123);font-size:12px;cursor:pointer}.ds-source button:hover{text-decoration:underline;text-underline-offset:3px}.ds-source button:focus-visible{outline:2px solid #108c77;outline-offset:3px;}"
+    },
+    {
+      "name": "Citation group",
+      "kind": "custom",
+      "refersTo": "evidence-list",
+      "description": "Exact source references grouped with the complete claim in the first-priority inline card; expanded workspace is secondary.",
+      "html": "<section class=\"ds-evidence\" aria-label=\"Source evidence\"><div class=\"ds-evidence-row\"><span>1:42 to 2:18</span><p>Designing a useful first experience</p></div></section>",
+      "css": ".ds-evidence{font-family:var(--font-sans,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif);border:1px solid var(--line,#e5e6e8);border-radius:11px;padding:0 17px}.ds-evidence-row{display:flex;flex-direction:column;gap:10px;padding:16px 0;color:var(--accent,#087762);font-size:11px}.ds-evidence-row p{margin:0;color:var(--muted,#6a6c73);font-size:11px;line-height:1.7}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Library desk",
+    "overview": "This document governs `apps/widget` only. The approved Operate direction combines A's Library desk, B's inline cited cards and C's project review. The owner prioritizes the small inline ChatGPT widget; the expanded workspace is secondary. Quiet neutral panels keep a saved claim, its current source evidence and its next action close together. The host supplies the sans-serif family and theme. The widget adds compact controls, line-based structure and restrained mint status accents.\n\nThe widget is a working view inside ChatGPT or Codex. Its design authority is `APPROVED-DIRECTION.md`; the website's Atlas and marketing systems remain separate. Extraction uses `src/style.css`, `src/app.tsx`, `src/components.tsx` and `src/host.tsx`, checked against the six current images in the repository's `.impeccable/review` directory. `finish-review.md` records ship for three scored corrections only. Those images are illustrative DEV fixtures, not live host or production acceptance.\n\nThe compact follow-up adds `compact-card-bridge.png`, `compact-status-bridge.png` and `compact-card-mobile-bridge.png` in that review directory. They capture generated production HTML through a local AppBridge with synthetic scoped responses, including the 320px dark card. `compact-finish-review.md` records ship for the sole status identity/truth correction. Five local AppBridge scenarios pass, as reported in the follow-up handoff. This evidence does not establish actual ChatGPT/Codex, OAuth or production-account acceptance. The follow-up changes behavior documentation, not the visual world or tokens.",
+    "keyCharacteristics": [
+      "Small inline cited cards are the first-priority experience; expansion is explicit.",
+      "Evidence stays beside the selected claim on wide screens.",
+      "Native controls and semantic Lucide icons carry the actions.",
+      "Project stages and authoritative receipts describe recorded state.",
+      "Light and dark appearance follow the host."
+    ],
+    "rules": [
+      {
+        "name": "The Semantic Mint Rule",
+        "body": "Use mint for evidence and recorded state. Primary actions use reversed ink and canvas.",
+        "section": "colors"
+      },
+      {
+        "name": "The Readable Claim Rule",
+        "body": "Preserve complete claim and source wording. Let text wrap and the container grow.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Workspace Rule",
+        "body": "Use tone and borders for persistent panels. Reserve the recorded shadow for transient notifications.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use host-native type and host-provided theme changes.",
+      "Do keep the complete claim, source evidence and explicit next action together.",
+      "Do preserve native keyboard controls, labelled fields, visible focus and route focus recovery.",
+      "Do retain authoritative receipts, current source versions and explicit recovery text.",
+      "Do distinguish fixture review from live host and production acceptance.",
+      "Do reuse the existing original brand asset where an icon asset is required. No raster artwork ships in this widget build."
+    ],
+    "donts": [
+      "Don't import the website's palette, custom fonts or marketing composition into this widget.",
+      "Don't invent whole-library counts, progress percentages or measured-benefit claims.",
+      "Don't treat selection, draft preparation or review as execution approval.",
+      "Don't add application navigation to inline cited cards.",
+      "Don't infer complete accessibility or host acceptance from fixture screenshots or local AppBridge scenarios."
+    ]
+  }
+}

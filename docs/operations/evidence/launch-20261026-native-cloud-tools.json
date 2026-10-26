@@ -114,5 +114,35 @@
     "exactCI": "pending",
     "previewRegressionFailedBeforeFix": 2,
     "previewRegressionPassedAfterFix": 2
+  },
+  "preMergeExactCI": {
+    "main": {
+      "commit": "c023bc0339b1e49eef3b536b339b0fc0040ad9e4",
+      "runId": 40366221552,
+      "status": "passed"
+    },
+    "compatible": {
+      "commit": "33d5cd1320e18f208d718ca3462b67654074118a",
+      "runId": 40366234544,
+      "status": "passed"
+    },
+    "providerVMTests": 8,
+    "providerVMTestsSkipped": 0,
+    "websiteArchiveVerified": true
+  },
+  "widgetIntegration": {
+    "sourceCommit": "2f154a6d7e6da2f3e4ae2b286433380c79a622b2",
+    "mergeConflicts": 0,
+    "vitestPassed": 1278,
+    "vitestHostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 59,
+    "pythonWindowsLinuxSkipped": 4,
+    "productionAdvisories": 0,
+    "frozenOfflineInstallDownloads": 0,
+    "installScriptsRun": false,
+    "buildsPassed": true,
+    "exactCI": "pending",
+    "deployedByThisTask": false
   }
 }

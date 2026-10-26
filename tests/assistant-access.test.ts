@@ -5,6 +5,7 @@ import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
 import { syncDashboardCard } from "../convex/lib/dashboardProjection";
 import { setup as setupQuery } from "../convex/assistantGrants";
+import { widgetOutputs } from "../packages/widget/outputs";
 const modules = import.meta.glob("../convex/**/*.ts");
 const issuer = "https://synthetic-test.authkit.app";
 const clientId = "client_01234567890123456789012345";
@@ -1294,4 +1295,33 @@ it("withholds derived evaluation metadata from a context-only grant or OAuth sco
     "purpose: review synthetic ideas",
   );
   expect(profile.profiles[0].projects[0].evaluations).toEqual([]);
+});
+
+it("projects a strict current private proposal only with both knowledge and selected context grants", async () => {
+  const s = await projectSuggestion();
+  const first = await s.assistant.mutation(
+    internal.assistant.draftProjectSuggestion,
+    s.input,
+  );
+  await expect(
+    s.assistant.query(internal.assistantWidget.proposal, {
+      profileId: s.organizationId,
+      proposalId: first.draft_id!,
+    }),
+  ).rejects.toThrow("FORBIDDEN");
+  await s.owner.mutation(api.assistantGrants.save, {
+    ...s.args,
+    repositories: s.repositories,
+    scopes: ["knowledge:read", "context:read", "suggestions:draft"],
+    expectedVersion: s.grant.version,
+  });
+  const result = await s.assistant.query(internal.assistantWidget.proposal, {
+    profileId: s.organizationId,
+    proposalId: first.draft_id!,
+  });
+  expect(widgetOutputs.widget_proposal.parse(result)).toMatchObject({
+    id: first.draft_id,
+    coding_started: false,
+    publication_started: false,
+  });
 });

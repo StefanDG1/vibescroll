@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "node ../../scripts/sync-legal.mjs && next dev --port 3001",
-    "build": "node ../../scripts/sync-legal.mjs && next build",
+    "build": "pnpm --filter @vibescroll/widget build && node ../../scripts/sync-legal.mjs && next build",
     "start": "next start --port 3001",
     "typecheck": "tsc --noEmit"
   },

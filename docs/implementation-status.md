@@ -1,3 +1,9 @@
+## October 26: widget and automatic Save combined locally
+
+The compatible candidate33d5cd1 passed exact CI40366234544; mainc023bc0 passed40366221552. Each ran all eight actual Linux provider-VM tests without skips and reproduced the canonical tools ZIP. Linux reports two additional platform-specific JavaScript skips, separately from the three hosted skips on Windows.
+
+The compatible branch now merges the owner-reviewed widget source2f154a6 without conflict, preserving native inline cards, connection guides, nine skills and existing grant/Events behavior alongside finite app-Save intents. The full integrated local check passed 1,278 Vitest tests with three hosted skips, nineteen Node tests and fifty-nine Python cases with four Linux-only Windows skips, types, zero-warning lint, widget resources and both application builds. Offline frozen installation reused sixty cached packages, downloaded none and ran no install scripts. The integrated production dependency audit reports zero advisories. No real-host widget/media acceptance follows. Exact merged-head CI remains pending; publication and automatic-analysis flags remain unchanged by this merge.
+
 ## October 26: final local candidate checks and concurrent release boundary
 
 Full offline check passed 1265 Vitest tests, with three explicit hosted skips, nineteen Node tests, 59 Python cases with four Linux-only Windows skips, types, zero-warning lint and both production builds. The new preview races fail before the fix and pass after it. Native synthetic caption/JPEG and ASR setup passed separately; real source/event/lease acceptance remains open. Exact-head CI is pending.
@@ -12,11 +18,47 @@ Focused backend/preview/schema tests passed 27 cases, UI integration passed 114 
 
 ## October 26: task locations and illustrated Help are live
 
+## Widget review branch, October26
+
+[Draft PR187](https://github.com/StefanDG1/vibescroll/pull/187) contains the compact-first candidate. The compatible base advanced with docs-only `f53ee03` while review was prepared; its exact `ff7d88f` application source is now live and the owner raised the cumulative cap to EUR8. That publication did not include this widget. This branch integrates the receipt without releasing any existing hold or authorizing another hosted build. The widget feature flag remains off and its new-code production percentage remains0.
+
+Final local checks passed45 focused tests,5 compiled-resource bridge scenarios,38 media tests,14 installer and5 build-policy tests, full types/lint/formatting/builds, production audit with zero registry advisories and redacted staged/history gitleaks. The compact result/status/mobile captures are valid. Initial browser automation failures were target/visibility/capability simulation issues, not accepted passes; the final bounded check uses explicit scoped sessions/focus emulation and closes its test tab. Public CI is tracked against the draft head separately.
+
 Compatible frontend/backend `ff7d88f5601c5d717f3ac5cad6ff73489ba29a25` published after exact CI40328458291. One fixed Basic queued build was staged, verified and promoted unchanged. Public health confirms version `0.1.0-alpha.20261026131113.gff7d88f5601c`. Public Help image decoded at320px and1600px; synthetic Save shows three ordered disabled choices, mobile has no overflow and keyboard More info opens. No production Save or analysis ran. Authenticated production picker was not freshly exercised. Main ca43a32 remains undeployed. [Actual receipt](operations/evidence/launch-20261026-task-locations.json).
 
 Backend finish13:54:42.591UTC followed exact291-module baseline match,11 guard tests, zero configured log sinks and no schema scans/backfills. Normal domain assignment and fixed Basic controls are restored. EUR8 cumulative cap retains USD8.245014256044614 including the USD0.42 release hold, with USD0.2349857439553853 unreserved; no hold or invoice claim released. Confirmed bypass exposure was revoked/regenerated at13:34:31UTC. Older deployment-credential incident remains open. Automatic native media, exact old-image repair, TikToks, unknown source, full-main migration and provider/privacy gates remain.
 
 # October 22 launch implementation candidate
+
+## Compact widget first, October26 follow-up
+
+The owner prioritized the small ChatGPT inline widget and requested that unused test tabs be closed. The candidate now integrates compatible PR186 head `ff7d88f`, preserving its source-of-truth processing preferences and publication hold. The widget ADR is renumbered to [ADR162](adr/162-native-mcp-widget-workspace.md) to avoid colliding with that branch's three-task-locations decision.
+
+Normal `save_link` and `fetch` advertise the compact card without changing their structured headless content. Validated client-only metadata routes carry source/profile identity; polling remains headless. Status uses the authorized source title and neutral wording. Strict output envelopes bound the five new reads to 256 KiB and allowed fields. Job-read scope is checked even on empty pages; a saved processing preference is returned only for the caller's own private setup. Export uses native host downloads with a copy fallback, and optional host-file support is capability-gated.
+
+Local validation after the follow-up: 45 focused tests pass across all five assistant/widget suites. The earlier broad JavaScript/Node suite reached the media stage successfully; its caption tests initially failed for missing `yt-dlp`/`pysubs2`. Both pinned pure-Python wheels were installed with required hashes in an ignored isolated environment. All 38 media tests then passed, and 5 build-policy tests passed. Types, lint, formatting and production builds pass; inherited help-content tracing warnings remain. Staged/history secret scans and production dependency audit are recorded separately. A new proposal DTO assertion caught a singular insight-reference mismatch; the DTO now matches the actual backend. No failed observation is represented as a production pass.
+
+Five compiled-resource AppBridge checks pass in an opaque sandbox with synthetic records: ordinary inline fetch, current status, unsupported context, advertised file reads and 320px dark rendering. Background focus emulation fixes screenshot timing only. The compact result/status/mobile captures were opened and verified; the reviewer scored the status identity/truth correction resolved. Real ChatGPT/Codex/OAuth and public onboarding remain unverified. Twenty-three redundant task tabs were closed, and the bounded protocol check closes its one tab. The app preview remains available.
+
+The full-plan estimate shared with the owner is approximately 50% implemented locally and 0% of the new widget deployed. The serving Cloud/app baseline is separate. Vercel Git previews are suppressed for this branch and `MCP_WIDGET_ENABLED` stays off. No additional publication budget, deployment, live job, charge or grant expansion was performed. [Coverage](widget/implementation.md) and the [runbook](operations/mcp-widget.md) retain the remaining direct-edit, host and release requirements.
+
+## Native MCP widget candidate, October 26
+
+The owner approved the widget-only combination of the Library workspace, inline cited cards and project review board. Local branch `codex/widget-ui-20261026` starts at compatible PR186 head `75fe204ab04eae4b2210581de1603a8e9a379b43`. [ADR162](adr/162-native-mcp-widget-workspace.md), the [full plan and coverage](widget/implementation.md), [research](widget/research-and-plan.md) and [runbook](operations/mcp-widget.md) describe the candidate. This is local code and fixture evidence, not deployed-host or public-release acceptance.
+
+The candidate adds a separate React MCP Apps client, three self-contained resources, five authenticated bounded read projections, current-work cards, exact private proposal reading, protected review destinations, strict snapshot files, self-service connection pages/prompts and nine workflow skills. Existing Cloud/Events commands and grants stay unchanged. Source disclosure through context/comparison/export rechecks current retrieval and evidence version. `MCP_WIDGET_ENABLED` defaults off. No live customer data, provider settings, charge, job, plugin account or deployment was changed.
+
+Validation on 26 October 2026, Windows/Node24/pnpm12.3.4, base commit above plus the candidate changes on this branch:
+
+- `pnpm exec vitest run tests/widget-contracts.test.ts tests/assistant-widget-mcp.test.ts tests/assistant-widget-access.test.ts tests/assistant-mcp.test.ts tests/assistant-access.test.ts --maxWorkers=2`: 40 passed at 14:22 Europe/Berlin. A later deliberate-disclosure reauthorization test expanded the contracts file from three to four tests; that file passed all four at 14:28 Europe/Berlin. Total unique focused coverage is 41 tests. Earlier new-test citation/status-label expectations failed and were corrected; the implementation's state distinctions were preserved.
+- `pnpm typecheck` and `pnpm lint`: passed after the final source changes. `pnpm validate`: passed 308 documents and 12 existing skill snapshots. The separate widget design YAML/JSON and component references were validated by the documenter.
+- `pnpm build`: passed widget, marketing and starter production builds. Widget HTML sizes are 906437/906429/906443 raw bytes and 228800/228795/228801 gzip bytes for workspace/card/export. Development fixture IDs are absent. Starter retains two existing Turbopack help-content filesystem-tracing warnings; they are not new widget warnings.
+- `pnpm audit --prod --json`: first failed with eight transitive advisories, including lodash high severity. Patched overrides lodash4.18.1, KaTeX0.18.2 and fast-uri3.1.9 produce zero production advisories. Both results remain in ignored local review evidence. No passing full-development dependency audit is claimed.
+- Browser Harness: 1440px light/dark Library, 680px inline, 320px detail/project and 1280px/320px built `/connect` render without horizontal overflow. Narrow detail focus moves to labelled main and Back restores the invoking row. Screenshots are labeled development fixtures. Initial malformed screenshot scale and unselected/stale captures were replaced, not treated as acceptance.
+- Independent Impeccable review: disposition `ship` for its three listed corrections, each scored resolved, after visible input focus, detail/back focus restoration and generic eyebrow removal. This verdict covers those corrections, not live host compatibility. Separate widget DESIGN.md and sidecar document the built boundary; root website design is unchanged.
+- Portable source ZIP inspected: 13 files, nine skills, contained paths, matching manifest/icon references and no env/dependency directories. It is not an installed or directory-approved package. No portal binding or reviewer credentials were invented.
+
+The full broad unit/integration/Cloud/physical-device/real-host acceptance matrix and named release secret scanner were not run in this bounded local pass. Full repository PR checks, matching deployment, fresh-customer OAuth, actual ChatGPT/Codex rendering, file/context/mentions support and exact-source Cloud reopen/recovery are release conditions. Sensitive organization, project/plan edits and execution/publication remain protected app workflows under existing permissions. This record does not close those gates.
 
 ## Three task locations compatible candidate, October26
 

@@ -1,3 +1,7 @@
+## October 26: resolved TikTok identity correction passes complete local checks
+
+The ADR177 candidate now has its new82,057-byte immutable runtime archive, SHA49e57707a6924ca56f71343935ac1153ffe323752e63dc599d68dc3b0e466327, bound to source321e041. Full offline checks pass compatible1,306/main2,140 Vitest with3 hosted skips,19 Node and72/81 Python cases with7 Windows skips, validation, types, zero-warning lint and both builds. Existing Help tracing warnings remain. The source boundary, invocation limits, provider transport, ASR/model pins and all accepted earlier implementations stay fixed. Exact CI and controlled publication are pending. No source was replayed and production stays97dfa2c. [Candidate receipt](operations/evidence/launch-20261026-tiktok-resolved-identity.json).
+
 ## October 26, 22:22 UTC: automatic TikTok stopped on returned identity validation
 
 The test below claimed generation1 but its sole inspection exited1 with unsupported_source. No media acquisition, ASR, frames, uploads or completion followed. Relinquishment was accepted after a valid heartbeat; no lease-expiry refusal was observed. Retained cleanup receipts report deletion of a2-file/7,848-byte job root and a1,177-file/13,657,559-byte disposable tools root. All launched sessions completed in those receipts; no fresh process scan or provider stop attestation occurred. Shared caches stayed unchanged. The pilot is paused, provider deletion/usage remain unverified and the consumed attempt is protected against replay.

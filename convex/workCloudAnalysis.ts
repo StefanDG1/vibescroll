@@ -1184,6 +1184,13 @@ export const input = internalQuery({
               z.toJSONSchema(workCloudMediaPreparation),
             ),
             preparationHash: c.job.cloud.media.preparationHash ?? null,
+            preparationTransport: {
+              tool: "work_cloud_prepare",
+              schemaVersion: "work-cloud-media-stage-v1",
+              stages: ["metadata", "frame"],
+              maximumFrameBytes: 81920,
+              note: "Use preparationJson with this schemaVersion and stage. Metadata carries metadata; frame carries preparationHash, frameId and canonical base64 data. Keep lease fields only in the tool arguments. Original observation preparation stays unchanged. Dedicated tools remain supported when available.",
+            },
             prepared: c.source.orderedMedia ?? null,
             evidenceTrust:
               "Authenticated host-reported acquisition and sampled observations; model, execution, raw-media deletion and provider retention are unverified.",

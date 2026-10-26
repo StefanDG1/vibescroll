@@ -7,6 +7,7 @@ import {
   cloudCompletionEnvelope,
   parseWorkCloudResult,
   workCloudTextOperations,
+  workCloudPreparationStage,
 } from "../packages/contracts/work-cloud-text";
 import {
   readAssistantBody,
@@ -256,11 +257,38 @@ export const tools = httpAction(async (ctx, request) => {
       }
       case "work_cloud_prepare": {
         const { preparationJson, ...args } = input.args;
+        const preparation = parseWorkCloudResult(preparationJson);
+        if (
+          preparation &&
+          typeof preparation === "object" &&
+          "schemaVersion" in preparation &&
+          preparation.schemaVersion === "work-cloud-media-stage-v1"
+        ) {
+          const stage = workCloudPreparationStage.parse(preparation);
+          const lease = {
+            ...args,
+            sourceId: args.sourceId as Id<"sources">,
+          };
+          if (stage.stage === "metadata") {
+            value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+              ...lease,
+              operation: "metadata",
+              metadata: stage.metadata,
+            });
+          } else {
+            const { schemaVersion: _version, stage: _stage, ...frame } = stage;
+            value = await ctx.runAction(internal.workCloudFrames.upload, {
+              ...lease,
+              ...frame,
+            });
+          }
+          break;
+        }
         value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
           ...args,
           sourceId: args.sourceId as Id<"sources">,
           operation: "prepare",
-          preparation: parseWorkCloudResult(preparationJson),
+          preparation,
         });
         break;
       }

@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
 import { createKnowledgeHandler } from "../packages/mcp/server";
 const invoke = vi.fn(
   async (
@@ -59,7 +60,9 @@ it("registers self-contained widget resources and read-only entrypoints without 
     (tool: { name: string }) => tool.name === "open_vibescroll",
   );
   expect(open.annotations.readOnlyHint).toBe(true);
-  expect(open._meta.ui.resourceUri).toBe("ui://vibescroll/workspace/v1.html");
+  expect(open._meta.ui.resourceUri).toMatch(
+    /^ui:\/\/vibescroll\/workspace\/v1-[a-f0-9]{16}\.html$/,
+  );
   expect(open.inputSchema.required ?? []).toEqual([]);
   const resources = await packet(
     await call("resources/list", {}, ["knowledge:read"]),
@@ -118,6 +121,55 @@ it("advertises widget renderers as model-visible OAuth tools for ChatGPT discove
   }
 });
 
+it("binds every advertised UI cache key to its built HTML", async () => {
+  const listed = await packet(
+    await call("tools/list", {}, ["knowledge:read", "links:save"]),
+  );
+  const uris = new Set<string>(
+    listed.result.tools.flatMap((tool: any) =>
+      tool._meta?.ui?.resourceUri ? [tool._meta.ui.resourceUri] : [],
+    ),
+  );
+  expect(uris.size).toBe(3);
+  for (const uri of uris) {
+    expect(uri).toMatch(
+      /^ui:\/\/vibescroll\/(workspace|card|export)\/v1-[a-f0-9]{16}\.html$/,
+    );
+    const result = await packet(
+      await call("resources/read", { uri }, ["knowledge:read"]),
+    );
+    const html = result.result.contents[0];
+    expect(html.uri).toBe(uri);
+    const digest = createHash("sha256")
+      .update(html.text)
+      .digest("hex")
+      .slice(0, 16);
+    expect(uri.endsWith(`/v1-${digest}.html`)).toBe(true);
+    expect(html._meta.ui.csp.connectDomains).toEqual([]);
+  }
+});
+
+it("recovers old v1 cards without accepting another UI contract or missing scope", async () => {
+  for (const version of ["v1", "v1-0000000000000000"]) {
+    const uri = `ui://vibescroll/card/${version}.html`;
+    const result = await packet(
+      await call("resources/read", { uri }, ["knowledge:read"]),
+    );
+    expect(result.result.contents[0].uri).toBe(uri);
+    expect(result.result.contents[0].text).toContain('data-entry="card"');
+    const denied = await packet(await call("resources/read", { uri }, []));
+    expect(denied.result?.contents).toBeUndefined();
+    expect(denied.error).toBeDefined();
+  }
+  const unsupported = await packet(
+    await call("resources/read", { uri: "ui://vibescroll/card/v2.html" }, [
+      "knowledge:read",
+    ]),
+  );
+  expect(unsupported.result?.contents).toBeUndefined();
+  expect(unsupported.error).toBeDefined();
+});
+
 it("renders ordinary fetched results as inline cards without changing headless content or polling tools", async () => {
   const listed = await packet(
     await call("tools/list", {}, ["knowledge:read", "links:save"]),
@@ -126,7 +178,7 @@ it("renders ordinary fetched results as inline cards without changing headless c
     expect(
       listed.result.tools.find((tool: { name: string }) => tool.name === name)
         ._meta.ui.resourceUri,
-    ).toBe("ui://vibescroll/card/v1.html");
+    ).toMatch(/^ui:\/\/vibescroll\/card\/v1-[a-f0-9]{16}\.html$/);
   expect(
     listed.result.tools.find(
       (tool: { name: string }) => tool.name === "get_job_status",

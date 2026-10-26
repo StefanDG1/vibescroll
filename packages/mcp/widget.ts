@@ -13,7 +13,10 @@ import {
   safeAppUrl,
   appOrigin,
 } from "../widget/contracts";
-import { widgetResources } from "../widget/resources.generated";
+import {
+  widgetResources,
+  widgetResourceUris,
+} from "../widget/resources.generated";
 import { widgetOutputs, validateWidgetOutput } from "../widget/outputs";
 
 type Invoke = (
@@ -38,7 +41,7 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
     structuredContent: data,
     content: [{ type: "text" as const, text }],
   });
-  const uri = (kind: string) => `ui://vibescroll/${kind}/v1.html`;
+  const uri = (kind: keyof typeof widgetResources) => widgetResourceUris[kind];
   server.registerResource(
     "vibescroll-citation",
     new ResourceTemplate("vibescroll://profile/{profileId}/source/{sourceId}", {
@@ -73,46 +76,65 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
     },
   );
   for (const kind of ["workspace", "card", "export"] as const) {
+    const metadata = {
+      title: `VibeScroll ${kind}`,
+      mimeType: "text/html;profile=mcp-app",
+      scopeChallenge: requireScopes("knowledge:read"),
+    };
+    const resource = (requestedUri: string) => ({
+      contents: [
+        {
+          uri: requestedUri,
+          mimeType: "text/html;profile=mcp-app",
+          text: widgetResources[kind],
+          _meta: {
+            ui: {
+              prefersBorder: kind === "card",
+              domain: appOrigin,
+              csp: {
+                connectDomains: [],
+                resourceDomains: [],
+                frameDomains: [],
+              },
+            },
+            "openai/widgetDescription":
+              kind === "card"
+                ? "A focused VibeScroll result with citations and current status. Avoid repeating its contents."
+                : "VibeScroll private knowledge workspace: browse evidence, save sources, and review projects using the user's current grant.",
+            "openai/ui": {
+              preferredDisplayMode:
+                kind === "workspace" ? "fullscreen" : "inline",
+              availableDisplayModes:
+                kind === "workspace"
+                  ? ["fullscreen", "inline"]
+                  : ["inline", "fullscreen"],
+            },
+          },
+        },
+      ],
+    });
     server.registerResource(
       `vibescroll-${kind}`,
       uri(kind),
-      {
-        title: `VibeScroll ${kind}`,
-        mimeType: "text/html;profile=mcp-app",
-        scopeChallenge: requireScopes("knowledge:read"),
-      },
-      async () => ({
-        contents: [
-          {
-            uri: uri(kind),
-            mimeType: "text/html;profile=mcp-app",
-            text: widgetResources[kind],
-            _meta: {
-              ui: {
-                prefersBorder: kind === "card",
-                domain: appOrigin,
-                csp: {
-                  connectDomains: [],
-                  resourceDomains: [],
-                  frameDomains: [],
-                },
-              },
-              "openai/widgetDescription":
-                kind === "card"
-                  ? "A focused VibeScroll result with citations and current status. Avoid repeating its contents."
-                  : "VibeScroll private knowledge workspace: browse evidence, save sources, and review projects using the user's current grant.",
-              "openai/ui": {
-                preferredDisplayMode:
-                  kind === "workspace" ? "fullscreen" : "inline",
-                availableDisplayModes:
-                  kind === "workspace"
-                    ? ["fullscreen", "inline"]
-                    : ["inline", "fullscreen"],
-              },
-            },
-          },
-        ],
+      metadata,
+      async () => resource(uri(kind)),
+    );
+    // Old conversation cards retain the v1 data contract. An uncached legacy
+    // resource read receives the current compatible UI and reauthorizes data.
+    server.registerResource(
+      `vibescroll-${kind}-compatible`,
+      new ResourceTemplate(`ui://vibescroll/${kind}/{version}.html`, {
+        list: undefined,
       }),
+      metadata,
+      async (requestedUri, variables) => {
+        if (
+          typeof variables.version !== "string" ||
+          !/^v1(?:-[a-f0-9]{16})?$/.test(variables.version)
+        )
+          throw new Error("Unsupported widget resource version.");
+        return resource(requestedUri.href);
+      },
     );
   }
   const scopes = {

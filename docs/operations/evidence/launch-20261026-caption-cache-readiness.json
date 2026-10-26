@@ -46,6 +46,24 @@
     "acceptedElevenFileExtractionManifestUnchanged": true
   },
   "automaticMediaAccepted": false,
-  "frontendPublished": false,
-  "exactCI": "pending"
+  "frontendPublished": true,
+  "exactCI": {
+    "runId": 40397618609,
+    "conclusion": "success"
+  },
+  "updatedAtUTC": "2026-10-26T20:55:46.239814+00:00",
+  "production": {
+    "frontendCommit": "3ac324723577ee5af0deaf471716270deb40872b",
+    "backendCommit": "3ac324723577ee5af0deaf471716270deb40872b",
+    "deploymentId": "dpl_2v6aiXEurixg9ojkKfE1mSVnmN5i",
+    "canonicalVersion": "0.1.0-alpha.20261026203931.g3ac324723577",
+    "sameBuildPromotion": true,
+    "normalAutoDomainAssignmentRestoredAndUiVerified": true,
+    "canonicalGuideVerified": true,
+    "canonicalRuntimeBytes": 78361,
+    "canonicalRuntimeSHA256": "f2bf4676b125184040bcbf2368a99ec4392e11c93dc845fe170afb0deb9bc9d4",
+    "actualPostRegionalInviteAbsent": true,
+    "actualPostAdvancedPrivacyInitiallyClosed": true
+  },
+  "hostedPublication": true
 }

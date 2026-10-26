@@ -223,3 +223,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## October 26: native Events before automatic media analysis
 
 [ADR 160](adr/160-native-events-and-saved-video-acknowledgement.md) records the accepted private ChatGPT connection renewal and actual app-save acknowledgement. The event is live in compatible6cdcb1c. Reuse the existing capture, scoped grants and signed delivery path; no new worker, queue or analysis authority follows from saving. Actual app-save acknowledgement precedes automatic media execution.
+
+## October 26: opt-in widget topic editing
+
+[ADR 170](adr/170-opt-in-widget-topic-editing.md) adds versioned rename, pin, folder and alias commands with current whole-library edit consent and retained receipts. This local phase defaults off, adds a receipt table, and changes no live client, scope or grant.

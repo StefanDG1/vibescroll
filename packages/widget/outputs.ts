@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { safeAppUrl, widgetVersion } from "./contracts";
+import {
+  libraryEditState,
+  libraryEditResult,
+  libraryEditOutcome,
+} from "./library-edits";
 
 const id = z.string().min(1).max(300);
 const version = z.number().int().nonnegative();
@@ -85,6 +90,9 @@ const base = { profile_id: id, grant_version: version };
 const cursor = z.string().max(4096).nullable().optional();
 const coverage = z.string().max(1000);
 export const widgetOutputs = {
+  widget_library_state: libraryEditState,
+  widget_library_edit: libraryEditResult,
+  widget_library_receipt: libraryEditOutcome,
   widget_profiles: z
     .object({
       profiles: z
@@ -125,6 +133,7 @@ export const widgetOutputs = {
           cloud: z.boolean(),
           draft: z.boolean(),
           events: z.boolean(),
+          organize: z.boolean().optional(),
         })
         .strict(),
       links: z

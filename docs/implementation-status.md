@@ -1,3 +1,17 @@
+## October 26: widget candidate preserves the current Cloud HTTP baseline
+
+Widget implementation6dd8701 is integrated with serving backend source3ac3247 in merge dc04693. Both documentation histories are retained. Eighty focused cases pass across the widget edit contracts/backend/MCP, exact additive schema guard and current app-Save through MCP and HTTP job transport. The earlier full check belongs to the6dd implementation before this merge; exact combined CI remains required. No new deployment or live access change follows.
+
+## October 26: opt-in widget topic editor passes local checks
+
+The local candidate based on33cbca9 adds expanded Topics rename, pin, folder and aliases through three app-only tools. It defaults off and requires explicit current whole-library read/edit consent and writer membership. Stable request keys, exact topic/layout versions and atomic thirty-day receipts support reconciliation without duplicate edits. Closing the disclosure preserves an unresolved request. No synthesis, media, coding or publication is dispatched.
+
+Complete offline check passed1,332 Vitest tests with three hosted skips, nineteen Node tests and59 Python cases with four Linux-only Windows skips, validation, full types, zero-warning lint and both production builds. The separate self-contained widget build passed; workspace918,922 bytes raw/232,289 gzip. Ten synthetic AppBridge cases passed, including collapse during save and after a lost reply, one-write/one-receipt recovery, read-only absence and320px dark layout. Twenty-five focused backend cases include actual strict HTTP routing; ten contract cases cover receipt correlation and rejection. Dependency audit returned zero unresolved advisories. Existing Help tracing warnings remain.
+
+The first full run failed the previous89-table compatibility assertion. The updated guard permits exactly the new receipt table/four indexes and still compares existing exports. The final check passed. The independent UI reviewer found disclosure state loss; the fix and recaptured views were reviewed, and that one correction was scored resolved with disposition ship. This is not a whole-host approval. Normal offline Convex codegen refused without deployment configuration; the pinned generator's pure API template produced local types without a hosted push.
+
+This phase changes no live flags, client scopes, grants or data and has no deployment. The additive schema requires a separate reviewed release; prior no-schema-change publication receipts do not apply. New provider/user consent and actual ChatGPT/Codex editing remain pending. [ADR170](adr/170-opt-in-widget-topic-editing.md), [bounded local receipt](operations/evidence/launch-20261026-widget-topic-editor-local.json).
+
 ## October26: automatic request exposes a missing HTTP contract field
 
 The third app Save at20:26:03.787UTC emitted a fresh event, received HTTP200 at20:26:05.730UTC with the chat tab closed. Actual native preflight passed the exact verifier, retained source/model pins, private execution copy and fresh V2 socket denial. The single request_analysis call was refused with INVALID_ARGUMENT and the generic authorization/evidence message. The task reconciled generation0/no processing/same waiting intent, cleaned its disposable copy and paused without retrying or acquiring media.

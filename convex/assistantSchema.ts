@@ -52,6 +52,29 @@ const deliveryFields = {
   httpStatus: v.optional(v.number()),
 };
 export const assistantTables = {
+  assistantLibraryCommands: defineTable({
+    organizationId: v.id("organizations"),
+    actor: v.id("users"),
+    clientId: v.string(),
+    grantId: v.id("assistantGrants"),
+    grantVersion: v.number(),
+    key: v.string(),
+    inputHash: v.string(),
+    topicId: v.id("knowledgeTopics"),
+    operation: v.union(
+      v.literal("rename"),
+      v.literal("pin"),
+      v.literal("structure"),
+    ),
+    topicVersion: v.number(),
+    layoutVersion: v.number(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_request", ["grantId", "grantVersion", "key"])
+    .index("by_org", ["organizationId"])
+    .index("by_actor", ["actor"])
+    .index("by_expiry", ["expiresAt"]),
   assistantSubscriptions: defineTable(
     v.union(
       v.object({

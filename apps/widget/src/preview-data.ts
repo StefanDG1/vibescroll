@@ -1,5 +1,35 @@
 import type { ToolRecord } from "../../../packages/widget/contracts";
+import { categoryName } from "../../../packages/categories";
+import {
+  libraryEditInput,
+  libraryEditVersion,
+  type LibraryEditReceipt,
+} from "../../../packages/widget/library-edits";
 const profile = "demo-private-workspace";
+const demoTopics = [
+  {
+    id: "sample-topic",
+    name: "Product design",
+    parent_id: null as string | null,
+    version: 1,
+    layout_version: 0,
+    pinned: true,
+    aliases: ["User experience"],
+  },
+  {
+    id: "sample-folder",
+    name: "Saved methods",
+    parent_id: null as string | null,
+    version: 1,
+    layout_version: 0,
+    pinned: false,
+    aliases: [] as string[],
+  },
+];
+const demoEdits = new Map<
+  string,
+  { input: string; receipt: LibraryEditReceipt }
+>();
 export const demoCardPayload = {
   route: { view: "insight", profileId: profile, sourceId: "sample-onboarding" },
 };
@@ -58,6 +88,67 @@ export async function demoCall(
   name: string,
   args: ToolRecord,
 ): Promise<ToolRecord> {
+  if (name === "widget_library_state") {
+    const topic = demoTopics.find((topic) => topic.id === args.topicId);
+    if (!topic) throw new Error("Synthetic topic unavailable");
+    return {
+      schema_version: libraryEditVersion,
+      profile_id: profile,
+      grant_version: 1,
+      topic: { ...topic, aliases: [...topic.aliases] },
+    };
+  }
+  if (name === "widget_library_receipt") {
+    const found = demoEdits.get(String(args.key));
+    if (found && found.receipt.topic_id !== args.topicId)
+      throw new Error("Synthetic key belongs to another topic");
+    return {
+      profile_id: profile,
+      grant_version: 1,
+      receipt: found?.receipt ?? null,
+    };
+  }
+  if (name === "widget_library_edit") {
+    const input = libraryEditInput.parse(args);
+    const previous = demoEdits.get(input.key);
+    if (previous) {
+      if (previous.input !== JSON.stringify(input))
+        throw new Error("Synthetic key changed");
+      return previous.receipt;
+    }
+    const topic = demoTopics.find((topic) => topic.id === input.topicId);
+    if (
+      !topic ||
+      topic.version !== input.expectedVersion ||
+      topic.layout_version !== input.expectedLayoutVersion
+    )
+      throw new Error("Synthetic topic version changed");
+    if (input.change.kind === "rename") {
+      topic.name = categoryName(input.change.name);
+      topic.version++;
+    } else if (input.change.kind === "pin") {
+      topic.pinned = input.change.pinned;
+      topic.version++;
+    } else {
+      topic.parent_id = input.change.parentId;
+      topic.aliases = [...new Set(input.change.aliases.map(categoryName))];
+      topic.layout_version++;
+    }
+    const receipt: LibraryEditReceipt = {
+      schema_version: libraryEditVersion,
+      profile_id: profile,
+      grant_version: 1,
+      topic_id: topic.id,
+      topic_version: topic.version,
+      layout_version: topic.layout_version,
+      request_key: input.key,
+      operation: input.change.kind,
+      applied: true,
+      processing_started: false,
+    };
+    demoEdits.set(input.key, { input: JSON.stringify(input), receipt });
+    return receipt;
+  }
   if (name === "get_profile" || name === "widget_profiles")
     return {
       profiles: [
@@ -109,6 +200,7 @@ export async function demoCall(
         cloud: true,
         draft: true,
         events: true,
+        organize: true,
       },
       links,
       notice:
@@ -120,15 +212,13 @@ export async function demoCall(
       grant_version: 1,
       items:
         args.kind === "topics"
-          ? [
-              {
-                id: "sample-topic",
-                name: "Product design",
-                parent_id: null,
-                version: 1,
-                pinned: true,
-              },
-            ]
+          ? demoTopics.map(({ id, name, parent_id, version, pinned }) => ({
+              id,
+              name,
+              parent_id,
+              version,
+              pinned,
+            }))
           : args.kind === "proposals"
             ? [
                 {

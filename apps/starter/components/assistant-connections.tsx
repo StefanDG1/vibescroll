@@ -59,6 +59,7 @@ type Setup = {
 };
 const scopeNames: Record<string, string> = {
   "knowledge:read": "Read ideas in my chosen library scope",
+  "knowledge:write": "Rename, pin and file topics in my whole library",
   "context:read": "Read the confirmed context I select",
   "links:save": "Save links I explicitly request",
   "jobs:read": "Read status of work in my chosen scope",

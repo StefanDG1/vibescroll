@@ -17,7 +17,15 @@ export function GET() {
       authorization_servers: [issuer],
       bearer_methods_supported: ["header"],
       scopes_supported: [
-        ...new Set(assistantClients().flatMap((c) => c.scopes)),
+        ...new Set(
+          assistantClients()
+            .flatMap((c) => c.scopes)
+            .filter(
+              (scope) =>
+                scope !== "knowledge:write" ||
+                process.env.MCP_WIDGET_LIBRARY_EDITING_ENABLED === "true",
+            ),
+        ),
       ],
       resource_documentation: "https://scroll.companynerve.com/docs",
     },

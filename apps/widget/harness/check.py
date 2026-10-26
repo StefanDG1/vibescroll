@@ -230,6 +230,18 @@ assert request('Runtime.evaluate',session_id=child_session,expression='!!documen
 capture_workspace('inline-source-review-mobile.png')
 passed('the320px dark compact card keeps all five judgment choices, current note and source evidence readable')
 
+
+open_case('resource=card&feedback-saved=1',320)
+until(lambda:'Review this source' in body(),'expanded judgment entry')
+activate_child('Expand workspace')
+until(lambda:'How useful is this source?' in body() and 'Your saved judgment: Later' in body(),'expanded source judgment')
+assert request('Runtime.evaluate',session_id=child_session,expression='Array.from(document.querySelectorAll(".feedback-buttons button")).every(e=>e.getBoundingClientRect().height>=44)',returnByValue=True)['result'].get('value')
+capture_workspace('expanded-source-review-mobile.png')
+activate_child('Scroll')
+until(lambda:'Scroll your insights' in body() and 'How useful is this source?' in body(),'scroll judgment reuse')
+assert request('Runtime.evaluate',session_id=child_session,expression='Array.from(document.querySelectorAll(".feedback-buttons button")).every(e=>e.getBoundingClientRect().height>=44)',returnByValue=True)['result'].get('value')
+passed('expanded Library and Scroll source review both keep44px judgment targets at320px')
+
 out=Path('.impeccable/review/widget-bridge-result.json')
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(json.dumps({'scope':'local production HTML + official AppBridge + synthetic tool projections; not real ChatGPT/Codex or OAuth acceptance','results':results},indent=2),encoding='utf-8')

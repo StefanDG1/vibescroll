@@ -1,0 +1,81 @@
+{
+  "recordedAtUTC": "2026-10-26T21:35:36.634623+00:00",
+  "scope": "candidate; not published",
+  "productionBaseline": "3ac324723577ee5af0deaf471716270deb40872b",
+  "actualReelOutcome": {
+    "appSaveAtUTC": "2026-10-26T21:12:41.053Z",
+    "chatTabClosed": true,
+    "eventReceivedAtUTC": "2026-10-26T21:12:43.643Z",
+    "callbackHttpStatus": 200,
+    "callbackAttempts": 1,
+    "generation": 1,
+    "intentConsumed": true,
+    "inspectionCalls": 1,
+    "inspectionExitCode": 1,
+    "safeError": "source_download_failed",
+    "underlyingCause": "not retained; unknown",
+    "mediaAcquisitions": 0,
+    "asrOrFramesOrCompletion": false,
+    "relinquishmentAccepted": true,
+    "priorLeaseCheckValid": true,
+    "ownedTemporaryDirectoriesRemoved": "host-reported",
+    "sharedCachesPreserved": true,
+    "providerDeletionAndUsage": "unverified",
+    "retryOrReplacement": false,
+    "pilotPaused": true
+  },
+  "candidate": {
+    "changedExtractionFiles": [
+      "cloud_extraction.py"
+    ],
+    "rawDiagnosticsReturned": false,
+    "maximumDiagnosticBytes": 64000,
+    "urlsMaskedBeforeClassification": true,
+    "finalFastExitOutputBoundsChecked": true,
+    "diagnosticHintIsNotAttestationOrRetryAuthority": true,
+    "sourceProviderFlagsLimitsAndPermissionsChanged": false,
+    "previousV3ManifestSHA256": "9c2cde19457d2e2da6a61985d1fafe4dc480187bca2ad1638a1f7141efe5d788",
+    "retainedPoliciesMatchedBySchemaPolicyAndToolchainHashes": true,
+    "currentAppSaveExactPolicyCheckUnchanged": true
+  },
+  "runtimeBundle": {
+    "path": "/downloads/cloud-runtime-be21d22c1ecf35ba.zip",
+    "bytes": 80335,
+    "sha256": "be21d22c1ecf35ba0d1a795e5d518e6593deeb1bb59556ae7a4d1c527891e0ce",
+    "sourceCommit": "dc77c0a28bc659361df8cab4af51a5d1430bb55a",
+    "packageManifestSHA256": "4bde8f3763802e7e2d8dd272e85804e63d06771dc9b416ebc6c72646ac524842"
+  },
+  "fullChecks": {
+    "compatible": {
+      "exitCode": 0,
+      "vitestPassed": 1304,
+      "hostedSkipped": 3,
+      "nodePassed": 19,
+      "pythonCases": 70,
+      "windowsSkipped": 7,
+      "types": true,
+      "zeroWarningLint": true,
+      "builds": true
+    },
+    "main": {
+      "exitCode": 0,
+      "vitestPassed": 2138,
+      "hostedSkipped": 3,
+      "nodePassed": 19,
+      "pythonCases": 79,
+      "windowsSkipped": 7,
+      "types": true,
+      "zeroWarningLint": true,
+      "builds": true
+    }
+  },
+  "focusedContractsPassed": 168,
+  "actualLinuxSubprocessChecks": "pending exact CI",
+  "retainedFailures": [
+    "first compatibility case exposed hard-coded two-version policy selection; generalized only over the bounded reviewed list",
+    "initial unused-import edit removed a V2 reference still used in completion; restored before final checks"
+  ],
+  "automaticMediaAccepted": false,
+  "hostedPublication": false,
+  "exactCI": "pending"
+}

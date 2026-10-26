@@ -1,6 +1,6 @@
 {
   "recordedAtUTC": "2026-10-26T19:56:44.068390+00:00",
-  "scope": "compatible candidate; not published",
+  "scope": "compatible production; source data and historical withdrawal preserved",
   "productionBaseline": "a7a48cb6a4e10f023c78e581ac64d2b6ac3039a7",
   "decision": "retire regional opt-in and public aggregates; preserve withdrawal",
   "reproducedBeforeFix": {
@@ -35,7 +35,9 @@
     "withdrawalControlRetained": true,
     "newRegionOptInAbsent": true,
     "appApiRequestsOrWrites": 0,
-    "limitation": "Static SSR export verifies native disclosure and layout; integration tests verify actual React handlers. This is not production acceptance."
+    "limitation": "Static SSR export verifies native disclosure and layout; integration tests verify actual React handlers. This is not production acceptance.",
+    "productionPostRegionalInviteAbsent": true,
+    "productionPostAdvancedDisclosureInitiallyClosed": true
   },
   "retainedFailures": [
     "first full run reached an obsolete regional aggregate expectation; replaced with zero-byte no-read retirement case",
@@ -44,6 +46,20 @@
   ],
   "schemaIndexComponentChanges": false,
   "sourceOrGrantChanges": false,
-  "hostedPublication": false,
-  "automaticMediaAcceptance": false
+  "hostedPublication": true,
+  "automaticMediaAcceptance": false,
+  "updatedAtUTC": "2026-10-26T20:55:46.239814+00:00",
+  "production": {
+    "frontendCommit": "3ac324723577ee5af0deaf471716270deb40872b",
+    "backendCommit": "3ac324723577ee5af0deaf471716270deb40872b",
+    "deploymentId": "dpl_2v6aiXEurixg9ojkKfE1mSVnmN5i",
+    "canonicalVersion": "0.1.0-alpha.20261026203931.g3ac324723577",
+    "sameBuildPromotion": true,
+    "normalAutoDomainAssignmentRestoredAndUiVerified": true,
+    "canonicalGuideVerified": true,
+    "canonicalRuntimeBytes": 78361,
+    "canonicalRuntimeSHA256": "f2bf4676b125184040bcbf2368a99ec4392e11c93dc845fe170afb0deb9bc9d4",
+    "actualPostRegionalInviteAbsent": true,
+    "actualPostAdvancedPrivacyInitiallyClosed": true
+  }
 }

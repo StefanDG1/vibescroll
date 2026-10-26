@@ -330,11 +330,22 @@ export const getJobStatus = internalQuery({
       source.personalAnalysis.generation === source.generation
         ? source.personalAnalysis
         : null;
-    // An earlier local intake is historical once this source generation has its
-    // own Cloud attempt. It cannot describe the current executor or offer a
-    // local/credit fallback for work whose Cloud outcome may be unknown.
+    const savedIntentCurrent = await savedCloudIntentCurrent(
+      ctx,
+      a.actor,
+      a.organization,
+      a.grant,
+      source,
+    );
+    const waitingForCloud =
+      savedIntentCurrent &&
+      source.workCloudSaveIntent!.analysisGeneration === undefined;
+    // A current app-Save Cloud intent or attempt supersedes the old intake's
+    // display. Preserve that intake without offering an alternate executor.
     const receipt =
-      !cloud && intake ? await intakeReceipt(ctx, intake, source) : null;
+      !cloud && !waitingForCloud && intake
+        ? await intakeReceipt(ctx, intake, source)
+        : null;
     const cloudStatus = cloud
       ? cloud.state === "queued"
         ? "waiting_for_cloud"
@@ -345,20 +356,18 @@ export const getJobStatus = internalQuery({
     return {
       source_id: source._id,
       profile_id: a.organization._id,
-      status: cloudStatus ?? receipt?.status ?? source.state,
+      status:
+        cloudStatus ??
+        (waitingForCloud
+          ? "waiting_for_cloud"
+          : (receipt?.status ?? source.state)),
       title: postDisplayTitle(source).slice(0, 200),
       source_status: source.state,
       generation: source.generation,
       revision: source.updatedAt,
       grant_version: a.grant.version,
       cloud_request_policy: a.grant.cloudRequestPolicy ?? null,
-      saved_cloud_intent: (await savedCloudIntentCurrent(
-        ctx,
-        a.actor,
-        a.organization,
-        a.grant,
-        source,
-      ))
+      saved_cloud_intent: savedIntentCurrent
         ? {
             id: source.workCloudSaveIntent!.id,
             expires_at: source.workCloudSaveIntent!.expiresAt,

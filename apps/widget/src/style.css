@@ -1424,7 +1424,7 @@ a svg {
   margin-top: 0;
   padding-top: 12px;
 }
-.source-review .feedback-buttons button {
+.feedback-area .feedback-buttons button {
   min-height: 44px;
   padding: 8px 12px;
   font-size: 12px;

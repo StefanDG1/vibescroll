@@ -22,8 +22,8 @@
       "sha256": "788ada9e95f7d49a9d23872780e37d1a6383b8d00814aab92d864c97f616ecfd"
     },
     "cloud_extraction.py": {
-      "bytes": 15607,
-      "sha256": "a2959bcab78d3fd47ef0b7b9d59329882ad92f90bea29fb7df426bdfd2d35532"
+      "bytes": 17581,
+      "sha256": "f1eeb1be8d81cd4d4f35a809a458ddfcc070efd3c93de9d694a303e1a373d456"
     },
     "cloud_prepare.py": {
       "bytes": 11861,

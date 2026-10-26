@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { safeAppUrl, widgetVersion } from "./contracts";
+import { feedbackState } from "./feedback";
 
 const id = z.string().min(1).max(300);
 const version = z.number().int().nonnegative();
@@ -85,6 +86,7 @@ const base = { profile_id: id, grant_version: version };
 const cursor = z.string().max(4096).nullable().optional();
 const coverage = z.string().max(1000);
 export const widgetOutputs = {
+  widget_feedback_state: feedbackState,
   widget_profiles: z
     .object({
       profiles: z

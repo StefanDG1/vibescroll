@@ -18,6 +18,7 @@ import {
   widgetResourceUris,
 } from "../widget/resources.generated";
 import { widgetOutputs, validateWidgetOutput } from "../widget/outputs";
+import { feedbackStateInput } from "../widget/feedback";
 
 type Invoke = (
   operation: string,
@@ -303,6 +304,31 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
       async (args: Record<string, unknown>) => reply(await read(name, args)),
     );
 
+  server.registerTool(
+    "widget_feedback_state",
+    {
+      title: "Read my current source judgment",
+      description:
+        "Read only this connection's current user's judgment for the exact permitted source version, or reconcile its known key. Starts no work.",
+      inputSchema: feedbackStateInput,
+      outputSchema: widgetOutputs.widget_feedback_state,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+      scopeChallenge: requireScopes("knowledge:read", "feedback:write"),
+      _meta: {
+        securitySchemes: [
+          { type: "oauth2", scopes: ["knowledge:read", "feedback:write"] },
+        ],
+        ui: { visibility: ["app"] },
+      },
+    },
+    async (args: Record<string, unknown>) =>
+      reply(await read("widget_feedback_state", args)),
+  );
   app.mentions.setHandler(async ({ query }) => {
     const data = query.trim()
       ? await read("search", { query: query.slice(0, 200) })

@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { useHost } from "./host";
+import { SourceReview } from "./source-review";
 import {
   profilesOf,
   sourcesOf,
@@ -160,6 +161,20 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
   const links = (state.data?.links ?? {}) as Record<string, string>;
   const grant = Number(state.data?.grant_version ?? 0);
   const authority = `${profileId}:${grant}`;
+  const reviewFor = (source: Source, insight: Insight, inline: boolean) =>
+    actions.feedback && insight.reference ? (
+      <SourceReview
+        key={`${authority}:${insight.reference.sourceId}:${insight.reference.generation}:${insight.reference.revision}`}
+        profileId={profileId}
+        grantVersion={grant}
+        sourceId={insight.reference.sourceId}
+        generation={insight.reference.generation}
+        revision={insight.reference.revision}
+        reviewUrl={source.url}
+        compact={inline}
+        notify={notify}
+      />
+    ) : null;
   const priorAuthority = useRef(authority);
   useEffect(() => {
     if (!state.error) return;
@@ -306,8 +321,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
       source={current}
       insight={currentInsight}
       profileId={profileId}
-      grantVersion={grant}
-      allowFeedback={!!actions.feedback}
+      review={reviewFor(current, currentInsight, compact && !expanded)}
       compact={compact && !expanded}
       notify={notify}
     />
@@ -663,7 +677,6 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
         error={browse.error}
         canDraft={!!actions.draft}
         profileId={profileId}
-        grantVersion={grant}
         reviewUrl={links.projects}
         notify={notify}
         onRefresh={refresh}
@@ -826,8 +839,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
             source={item.source}
             insight={item.insight}
             profileId={profileId}
-            grantVersion={grant}
-            allowFeedback={!!actions.feedback}
+            review={reviewFor(item.source, item.insight, false)}
             notify={notify}
           />
         ) : browse.isPending ? (

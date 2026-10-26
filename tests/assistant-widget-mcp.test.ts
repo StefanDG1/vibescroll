@@ -206,3 +206,39 @@ it("renders ordinary fetched results as inline cards without changing headless c
     sourceId: "source-id~2",
   });
 });
+
+it("keeps own-judgment reads app-only and requires both existing scopes", async () => {
+  const listed = await packet(
+    await call("tools/list", {}, ["knowledge:read", "feedback:write"]),
+  );
+  const tool = listed.result.tools.find(
+    (tool: any) => tool.name === "widget_feedback_state",
+  );
+  expect(tool._meta.ui.visibility).toEqual(["app"]);
+  expect(tool.annotations.readOnlyHint).toBe(true);
+  expect(tool._meta.securitySchemes).toContainEqual({
+    type: "oauth2",
+    scopes: ["knowledge:read", "feedback:write"],
+  });
+  for (const scopes of [["knowledge:read"], ["feedback:write"]]) {
+    invoke.mockClear();
+    const denied = await packet(
+      await call(
+        "tools/call",
+        {
+          name: "widget_feedback_state",
+          arguments: {
+            profileId: "profile",
+            sourceId: "source",
+            generation: 1,
+            revision: 100,
+            grantVersion: 1,
+          },
+        },
+        scopes,
+      ),
+    );
+    expect(denied.error ?? denied.result?.isError).toBeTruthy();
+    expect(invoke).not.toHaveBeenCalled();
+  }
+});

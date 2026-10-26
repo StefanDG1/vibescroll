@@ -1,5 +1,11 @@
 # What help is still needed to finish the plan
 
+## Current native Events checkpoint, October 26
+
+Actual app **Save source** to a later native ChatGPT acknowledgement passed in the private owner account. Compatible frontend/backend6cdcb1c are live; the same authenticated plugin discovered `video_link_saved` through Refresh tools without another login. The source, analysis, transcript, eight retained frames and generation stayed hash-identical, with no new analysis or paid route. Both temporary monitors are paused and their subscription/delivery rows were removed. See the [current handover](HANDOVER-2026-10-26.md), [actual receipt](../../operations/evidence/launch-20261026-saved-link-native-ack.json) and [setup runbook](../../operations/chatgpt-native-events.md).
+
+This closes the automatic saved-link notification checkpoint only. Next, connect explicit Work Cloud analysis intent in the existing Save flow to an exact approved job and `work_cloud_waiting`, preserving save-only behavior and reviewed grant/policy authority. Review any policy extension once rather than silently widening grant8. Then verify the event-triggered Work host has a supported media runtime and can finish the existing caption-first Reel pipeline. Physical-device notification, automatic media execution, original repair, live caption/TikTok acceptance and the full original P/R/N/C/M plans remain open. The cumulative cap is EUR7.50; every prior hold, both TikToks, unknown attempt, main-only Home/region/navigation migration and provider/privacy/release gate remain.
+
 ## Handover and reported quality issue, October 25
 
 Read the [engineering handover](HANDOVER-2026-10-25.md) first. The owner reports wrong transcript text and missing screenshots/thumbnail. Root reproduced and merged a transcript-display correction in PR182; it is not deployed. Actual image retention and audio/insight accuracy remain unverified. These are engineering responsibilities, not a request for another account, repeated approval, source link or phone test now. The next agent must prepare a concrete supported step before requesting help. Current serving source is675dea2 on frontend/backend; automatic background processing is not accepted.

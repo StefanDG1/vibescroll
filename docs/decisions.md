@@ -342,4 +342,4 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 
 ## October 26: native Events before automatic media analysis
 
-[ADR 160](adr/160-native-events-and-saved-video-acknowledgement.md) records the accepted private ChatGPT connection acknowledgement/renewal proof and the unpublished saved-video event. Reuse the existing capture, scoped grants and signed delivery path; no new worker, queue or analysis authority follows from saving. Actual app-save acknowledgement precedes automatic media execution.
+[ADR 160](adr/160-native-events-and-saved-video-acknowledgement.md) records the accepted private ChatGPT connection renewal and actual app-save acknowledgement. The event is live in compatible6cdcb1c. Reuse the existing capture, scoped grants and signed delivery path; no new worker, queue or analysis authority follows from saving. Actual app-save acknowledgement precedes automatic media execution.

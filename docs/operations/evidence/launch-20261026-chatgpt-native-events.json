@@ -1,8 +1,8 @@
 {
   "observedDateUTC": "2026-10-26",
-  "status": "native_connection_acknowledgement_and_renewal_accepted_private_pilot",
-  "servingFrontend": "bba2715aa8fdb14501e0b54033addb1ff4f280ae",
-  "servingBackend": "f84285ff0b773344bc960179cb7dd9b823107a3c",
+  "status": "native_connection_renewal_and_actual_app_save_acknowledgement_accepted_private_pilot",
+  "servingFrontend": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
+  "servingBackend": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
   "providerSurface": "ChatGPT web Work, native MCP Events and Automations",
   "originalPluginPreserved": true,
   "parallelPluginCreatedAndAuthedByOwner": true,
@@ -19,14 +19,6 @@
     "version": "2.3.1",
     "revision": "2026-07-28",
     "actualLiveNegotiatedRevisionSeparatelyCaptured": false
-  },
-  "monitor": {
-    "name": "VibeScroll connection test",
-    "event": "work_cloud_connection_verified",
-    "grantVersion": 8,
-    "finalState": "paused",
-    "scheduledPolling": false,
-    "workspaceAgentsUsed": false
   },
   "firstSubscription": {
     "callbackVerifiedAtMs": 1793011156200,
@@ -45,30 +37,14 @@
     "deliveryAttempts": 1,
     "newSubscription": true
   },
-  "agentReplies": {
-    "exactText": "VibeScroll event received: work_cloud_connection_verified",
-    "observedCount": 2,
-    "followupChatMessageOrRunNowUsed": false,
-    "pageReloadNeededToDisplay": true,
-    "chatTabClosedTested": false
-  },
-  "cleanup": {
-    "subscriptionsObserved": 0,
-    "subscriptionsCheckedAtUTC": "2026-10-26T11:00:51.587343+00:00",
-    "deliveriesObserved": 0,
-    "deliveriesCheckedAtUTC": "2026-10-26T11:02:47.564505+00:00",
-    "pluginStillConnected": true
-  },
-  "sourceSaves": 0,
   "mediaDownloads": 0,
   "analysisJobs": 0,
   "creditsReserved": 0,
   "paidInferenceRouteSelected": false,
-  "deployments": 0,
   "savedLinkCandidate": {
     "event": "video_link_saved",
-    "live": false,
-    "actualAppSaveCanaryPassed": false,
+    "live": true,
+    "actualAppSaveCanaryPassed": true,
     "focusedTestsPassed": 49,
     "typesPassed": true,
     "fullCheck": "pnpm check exit0",
@@ -100,28 +76,77 @@
       "critical": 0,
       "highPaths": "development-only adm-zip via disabled rclone.js installation and vite test/dev tooling; unchanged dependencies; not represented as a clean whole-tree audit"
     },
-    "dirtyWorkerFilesUnchanged": 12
+    "dirtyWorkerFilesUnchanged": 12,
+    "servingCommit": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
+    "releaseCI": 40314319573,
+    "releaseCIConclusion": "success",
+    "fullMainCI": 40314319488,
+    "fullMainCIConclusion": "success"
   },
   "budget": {
-    "cumulativeCapEUR": 7,
-    "workingCeilingUSD": 7.42,
+    "cumulativeCapEUR": 7.5,
+    "workingCeilingUSD": 7.95,
     "newProbeReservedUSD": 0.06,
     "allPriorHoldsPreserved": true,
-    "retainedMaximumUSD": 7.335014256044613,
-    "unreservedUSD": 0.08498574395538672,
+    "retainedMaximumUSD": 7.785014256044614,
+    "unreservedUSD": 0.1649857439553859,
     "invoiceCertification": false,
-    "newReleaseFunded": false
+    "newReleaseFunded": true,
+    "newReleaseMaximumUSD": 0.45
   },
   "limits": [
     "Finite automatic renewal observed, not permanent credential validity.",
     "Old registration failure root cause not isolated.",
     "Connection event acknowledgement is not app-save or media-analysis acceptance.",
-    "Saved-link candidate needs exact-head CI, funded controlled frontend/backend publication and an actual app save canary.",
-    "Original repair, both TikToks, unknown attempt, full-main migration and provider/privacy/release gates remain held."
+    "Original repair, both TikToks, unknown attempt, full-main migration and provider/privacy/release gates remain held.",
+    "Actual app-save acknowledgement accepted; automatic media execution remains unaccepted. Both canary monitors are paused and encrypted delivery authority was removed; plugin authentication remains."
   ],
   "sources": [
     "https://developers.openai.com/plugins/build/mcp-events",
     "https://developers.openai.com/plugins/build/plugins",
     "https://developers.openai.com/plugins/build/examples"
-  ]
+  ],
+  "connectionProbeServing": {
+    "frontend": "bba2715aa8fdb14501e0b54033addb1ff4f280ae",
+    "backend": "f84285ff0b773344bc960179cb7dd9b823107a3c"
+  },
+  "actualAppSaveReceipt": "launch-20261026-saved-link-native-ack.json",
+  "connectionProbeSourceSaves": 0,
+  "connectionProbeDeployments": 0,
+  "connectionProbeAgentReplies": {
+    "exactText": "VibeScroll event received: work_cloud_connection_verified",
+    "observedCount": 2,
+    "followupChatMessageOrRunNowUsed": false,
+    "pageReloadNeededToDisplay": true,
+    "chatTabClosedTested": false
+  },
+  "connectionMonitor": {
+    "name": "VibeScroll connection test",
+    "event": "work_cloud_connection_verified",
+    "grantVersion": 8,
+    "finalState": "paused",
+    "scheduledPolling": false,
+    "workspaceAgentsUsed": false
+  },
+  "connectionProbeCleanup": {
+    "subscriptionsObserved": 0,
+    "subscriptionsCheckedAtUTC": "2026-10-26T11:00:51.587343+00:00",
+    "deliveriesObserved": 0,
+    "deliveriesCheckedAtUTC": "2026-10-26T11:02:47.564505+00:00",
+    "pluginStillConnected": true
+  },
+  "actualAppSaveSaves": 1,
+  "newSources": 0,
+  "additionalRelease": {
+    "backendPublications": 1,
+    "frontendBuilds": 1,
+    "sameBuildPromotions": 1
+  },
+  "cleanup": {
+    "bothCanaryMonitorsPaused": true,
+    "subscriptionRows": 0,
+    "deliveryRows": 0,
+    "checkedAtUTC": "2026-10-26T11:46:14.610704+00:00",
+    "pluginStillConnected": true
+  }
 }

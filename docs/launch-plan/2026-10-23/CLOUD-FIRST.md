@@ -1,5 +1,11 @@
 # Finish the launch with user-owned Codex Cloud
 
+## Current native Events checkpoint, October 26
+
+Actual app **Save source** to a later native ChatGPT acknowledgement passed in the private owner account. Compatible frontend/backend6cdcb1c are live; the same authenticated plugin discovered `video_link_saved` through Refresh tools without another login. The source, analysis, transcript, eight retained frames and generation stayed hash-identical, with no new analysis or paid route. Both temporary monitors are paused and their subscription/delivery rows were removed. See the [current handover](HANDOVER-2026-10-26.md), [actual receipt](../../operations/evidence/launch-20261026-saved-link-native-ack.json) and [setup runbook](../../operations/chatgpt-native-events.md).
+
+This closes the automatic saved-link notification checkpoint only. Next, connect explicit Work Cloud analysis intent in the existing Save flow to an exact approved job and `work_cloud_waiting`, preserving save-only behavior and reviewed grant/policy authority. Review any policy extension once rather than silently widening grant8. Then verify the event-triggered Work host has a supported media runtime and can finish the existing caption-first Reel pipeline. Physical-device notification, automatic media execution, original repair, live caption/TikTok acceptance and the full original P/R/N/C/M plans remain open. The cumulative cap is EUR7.50; every prior hold, both TikToks, unknown attempt, main-only Home/region/navigation migration and provider/privacy/release gate remain.
+
 Current status is in the [October25 handover](HANDOVER-2026-10-25.md) and [acceptance ledger](ACCEPTANCE.md). The demonstrated Work Cloud result has unresolved transcript/image quality; PR182's display correction is merged but undeployed. The runtime demonstrated was a prepared Work Cloud task, not proof of a public repository-free Codex task-launch API. Reassess the provider mechanism independently. Automatic host wake remains unproved; no remaining stage is removed.
 
 ## Current normal-flow requirement

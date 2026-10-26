@@ -1,7 +1,6 @@
 {
-  "status": "prepared_not_authorized_or_reserved",
+  "status": "owner_approved_reserved_and_executed_private_pilot",
   "dateUTC": "2026-10-26",
-  "cumulativeCapEUR": 7,
   "workingCeilingUSD": 7.42,
   "allCurrentRetainedMaximumUSD": 7.335014256044613,
   "availableUSD": 0.08498574395538672,
@@ -15,7 +14,7 @@
     "oneAcknowledgementOnlyAppCanaryAndCleanup": 0.03
   },
   "retainedMaximumAfterReservationUSD": 7.785014256044614,
-  "reservationMade": false,
+  "reservationMade": true,
   "oldHoldsReleasedUSD": 0,
   "compatibleRuntimeCommit": "a6b44ad341f4fee3af619be1233b6fa235e5c1a5",
   "fullMainParityRuntimeCommit": "01cec40136bb26e3b7cba12003d08a27eec12005",
@@ -46,5 +45,11 @@
     "Missing event discovery or media/analysis dispatch",
     "Unchanged cumulative cap without sufficient release reservation"
   ],
-  "providerPrivacyAndReleaseGatesPreserved": true
+  "providerPrivacyAndReleaseGatesPreserved": true,
+  "priorCumulativeCapEUR": 7,
+  "authorizedCumulativeCapEUR": 7.5,
+  "ownerAuthorization": "Raise cumulative cap to EUR7.50",
+  "executedReceipt": "launch-20261026-saved-link-native-ack.json",
+  "analysisRan": false,
+  "actualFrontendBuildCount": 1
 }

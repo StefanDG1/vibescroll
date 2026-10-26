@@ -127,7 +127,7 @@ def prepare_files(directory, info, tracks, *, ffmpeg='ffmpeg', ffprobe='ffprobe'
                 break
         if not encoded:
             raise ValueError('frame_over_transport_limit')
-        jpeg_input = ['-protocol_whitelist', 'file', '-format_whitelist', 'mjpeg', '-f', 'mjpeg', '-i', str(image)]
+        jpeg_input = ['-protocol_whitelist', 'file', '-format_whitelist', 'image2', '-f', 'image2', '-pattern_type', 'none', '-i', str(image)]
         dimensions = json.loads(tool([ffprobe, '-v', 'error', *jpeg_input, '-show_entries', 'stream=width,height', '-of', 'json'], 10))['streams']
         if len(dimensions) != 1:
             raise ValueError('invalid_prepared_frame')

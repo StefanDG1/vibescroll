@@ -282,6 +282,34 @@ def child_environment():
     return {key: os.environ[key] for key in names if key in os.environ}
 
 
+
+def downloader_failure_code(diagnostic, returncode):
+    """A bounded reported hint, never provider attestation or retry authority."""
+    if not isinstance(diagnostic, bytes):
+        raise ValueError('invalid_downloader_diagnostic')
+    if len(diagnostic) > 64000:
+        return 'downloader_diagnostic_limit'
+    if returncode < 0:
+        return 'downloader_terminated'
+    text = diagnostic.decode('utf-8', errors='replace').lower()
+    # Provider URLs can contain arbitrary text and secrets. They supply no hint.
+    text = re.sub(r'https?://\S+', '[url]', text)
+    groups = (
+        ('downloader_runtime_unavailable', ('no module named', 'error while finding module specification', "can't open file")),
+        ('source_rate_limited', ('http error 429', 'too many requests')),
+        ('source_transport_unavailable', ('certificate_verify_failed', 'certificate verify failed', 'proxyerror', 'temporary failure in name resolution', 'connection timed out', 'timed out')),
+        ('source_access_denied', ('http error 401', 'http error 403', 'your ip address is blocked')),
+        ('source_unavailable', ('http error 404', 'video not available', 'this content is no longer available')),
+        ('source_metadata_unavailable', ('instagram sent an empty media response', 'unable to extract', 'failed to extract')),
+        ('source_access_required', ('redirected to the login page', 'only available for registered users', 'login required', 'log in to access')),
+        ('source_media_unsupported', ('there is no video in this post', 'no video formats', 'requested format is not available', 'unsupported url')),
+    )
+    for code, phrases in groups:
+        if any(phrase in text for phrase in phrases):
+            return code
+    return 'source_download_failed'
+
+
 def bounded_tool(args, timeout):
     """Linux runtime only. The host must enforce the admitted network policy."""
     import resource
@@ -302,8 +330,11 @@ def bounded_tool(args, timeout):
                     raise ValueError('acquisition_deadline')
                 time.sleep(min(.05, timeout))
                 timeout -= .05
+            if output.tell() > 1000000 or errors.tell() > 64000:
+                raise ValueError('downloader_diagnostic_limit')
             if process.returncode != 0:
-                raise ValueError('source_download_failed')
+                errors.seek(0)
+                raise ValueError(downloader_failure_code(errors.read(64001), process.returncode))
             output.seek(0)
             return output.read(1000001)
         finally:

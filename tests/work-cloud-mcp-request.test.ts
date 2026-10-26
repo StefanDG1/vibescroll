@@ -7,6 +7,7 @@ import {
   workCloudMediaPolicy,
   workCloudMediaPolicyV2,
   workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
 } from "../packages/contracts/work-cloud-text";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { socialHash } from "../packages/social/contracts";
@@ -749,7 +750,11 @@ it("binds the reviewed media policy and respects revocation", async () => {
   });
   await expect(s.call()).rejects.toThrow(/FORBIDDEN/);
 });
-it.each([workCloudMediaPolicyV2, workCloudMediaPolicyInitialV3])(
+it.each([
+  workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
+])(
   "preserves exact-source consent across a reviewed implementation patch",
   async (policy) => {
     const capabilities = (

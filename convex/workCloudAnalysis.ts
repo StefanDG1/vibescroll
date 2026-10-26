@@ -33,7 +33,6 @@ import {
   validateWorkCloudMediaOutput,
   workCloudMediaPolicy,
   workCloudMediaPolicyV2,
-  workCloudMediaPolicyInitialV3,
   workCloudRequestPolicies,
   workCloudMetadata,
   workCloudMediaPreparation,
@@ -165,16 +164,25 @@ async function sourceInput(
   bound: WorkCloudJob | null = null,
   mediaApproval?: { retainUntil: number },
 ) {
-  const initialV3 =
-    bound?.cloud.schemaVersion === "work-cloud-media-v3" &&
-    bound.cloud.media?.toolchainHash ===
-      (await digest(canonicalJson(workCloudMediaPolicyInitialV3.toolchain)));
-  const mediaPolicy =
-    bound?.cloud.schemaVersion === "work-cloud-media-v2"
-      ? workCloudMediaPolicyV2
-      : initialV3
-        ? workCloudMediaPolicyInitialV3
-        : workCloudMediaPolicy;
+  let mediaPolicy: (typeof workCloudRequestPolicies)[number] =
+    workCloudMediaPolicy;
+  if (bound?.cloud.media) {
+    const candidates = await Promise.all(
+      workCloudRequestPolicies.map(async (policy) => ({
+        policy,
+        policyHash: await digest(canonicalJson(policy)),
+        toolchainHash: await digest(canonicalJson(policy.toolchain)),
+      })),
+    );
+    const retained = candidates.find(
+      (entry) =>
+        entry.policy.schemaVersion === bound.cloud.schemaVersion &&
+        entry.policyHash === bound.cloud.policyHash &&
+        entry.toolchainHash === bound.cloud.media!.toolchainHash,
+    );
+    ensure(retained, "APPROVAL_STALE", "The reviewed media toolchain changed.");
+    mediaPolicy = retained.policy;
+  }
   const media = bound?.cloud.media ? bound.cloud.media : mediaApproval;
   ensure(
     (bound?.cloud.schemaVersion === "work-cloud-media-v2" ||

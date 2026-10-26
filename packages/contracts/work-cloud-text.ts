@@ -10,6 +10,7 @@ import asr from "../media/asr-model.lock.json";
 import cloudDownloader from "../media/cloud-downloader.lock.json";
 import extractionPackage from "../media/cloud-extractor.lock.json";
 import initialV3Package from "../media/cloud-extractor-initial-v3.lock.json";
+import preDiagnosticsV3Package from "../media/cloud-extractor-pre-diagnostics-v3.lock.json";
 
 export const workCloudMediaPolicyV2 = {
   schemaVersion: "work-cloud-media-v2",
@@ -60,9 +61,18 @@ export const workCloudMediaPolicyInitialV3 = {
     extractionPackage: initialV3Package,
   },
 } as const;
+// Existing approvals retain their exact pre-diagnostics implementation pins.
+export const workCloudMediaPolicyPreDiagnosticsV3 = {
+  ...workCloudMediaPolicy,
+  toolchain: {
+    ...workCloudMediaPolicy.toolchain,
+    extractionPackage: preDiagnosticsV3Package,
+  },
+} as const;
 export const workCloudRequestPolicies = [
   workCloudMediaPolicyV2,
   workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
   workCloudMediaPolicy,
 ] as const;
 export const workCloudMediaPreparation = z

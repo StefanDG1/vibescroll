@@ -253,5 +253,47 @@ class OfflinePreparationTests(unittest.TestCase):
             self.assertEqual(bound['evidence'][-1]['basis'], 'visible')
 
 
+
+class DownloaderDiagnosticTests(unittest.TestCase):
+    def test_reports_fixed_categories_without_raw_content_or_retry_authority(self):
+        cases = [
+            (b"ERROR: No module named 'yt_dlp'", 'downloader_runtime_unavailable'),
+            (b'ERROR: HTTP Error 429: Too Many Requests', 'source_rate_limited'),
+            (b'ERROR: CERTIFICATE_VERIFY_FAILED private/path', 'source_transport_unavailable'),
+            (b'ERROR: HTTP Error 403: Forbidden', 'source_access_denied'),
+            (b'ERROR: Your IP address is blocked from accessing this post', 'source_access_denied'),
+            (b'ERROR: HTTP Error 404: Not Found', 'source_unavailable'),
+            (b'ERROR: Instagram sent an empty media response. Use cookies to login', 'source_metadata_unavailable'),
+            (b'ERROR: The webpage request was redirected to the login page.', 'source_access_required'),
+            (b'ERROR: There is no video in this post', 'source_media_unsupported'),
+            (b'ERROR: unrecognized upstream response', 'source_download_failed'),
+            (b'ERROR: https://example.invalid/HTTP%20Error%20429?token=PRIVATE_VALUE', 'source_download_failed'),
+        ]
+        for diagnostic, expected in cases:
+            with self.subTest(expected=expected):
+                code = worker.downloader_failure_code(diagnostic, 1)
+                self.assertEqual(code, expected)
+                self.assertNotIn('PRIVATE_VALUE', code)
+                self.assertNotIn('http', code)
+        self.assertEqual(worker.downloader_failure_code(b'unknown', -9), 'downloader_terminated')
+        self.assertEqual(worker.downloader_failure_code(b'x' * 64001, 1), 'downloader_diagnostic_limit')
+        with self.assertRaisesRegex(ValueError, 'invalid_downloader_diagnostic'):
+            worker.downloader_failure_code('text rather than bounded bytes', 1)
+
+    @unittest.skipUnless(sys.platform == 'linux', 'real resource-limited subprocess requires Linux')
+    def test_actual_child_failure_exposes_only_the_safe_code(self):
+        script = "import sys; sys.stderr.write('ERROR: HTTP Error 403: Forbidden https://example.invalid/?secret=PRIVATE_VALUE'); sys.exit(1)"
+        with self.assertRaisesRegex(ValueError, '^source_access_denied$') as error:
+            worker.bounded_tool([sys.executable, '-I', '-c', script], 3)
+        self.assertNotIn('PRIVATE_VALUE', str(error.exception))
+
+    @unittest.skipUnless(sys.platform == 'linux', 'real resource-limited subprocess requires Linux')
+    def test_fast_child_output_limit_is_checked_after_exit(self):
+        for channel, size in [('stderr', 64001), ('stdout', 1000001)]:
+            script = f"import sys; sys.{channel}.write('x' * {size})"
+            with self.subTest(channel=channel):
+                with self.assertRaisesRegex(ValueError, '^downloader_diagnostic_limit$'):
+                    worker.bounded_tool([sys.executable, '-I', '-c', script], 3)
+
 if __name__ == '__main__':
     unittest.main()

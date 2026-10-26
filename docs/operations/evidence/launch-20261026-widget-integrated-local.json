@@ -1,0 +1,72 @@
+{
+  "scope": "Integrated ChatGPT widget candidate; compiled local UI and synthetic AppBridge only",
+  "observedAt": "2026-10-26T22:18:35.854617+00:00",
+  "parents": {
+    "sourceReview": "1943eac1be96708078d9ea0679dd96ba2b2cd75f",
+    "libraryAndFiling": "d238efa489ceaceff13b88264b168fbe21ca0eab",
+    "serving": "97dfa2c3d83f6631cc36783280da1ef2a70cce84"
+  },
+  "features": [
+    "Compact exact-source judgments and saved notes",
+    "Compact exact-idea move/remove/restore filings",
+    "Expanded topic rename/pin/folder/aliases"
+  ],
+  "integration": {
+    "sharedInsightSlots": ["filing", "review"],
+    "separateCanonicalRecords": true,
+    "allPrivateToolRegistrationsRetained": true,
+    "bothStrictHttpContractsRetained": true,
+    "generatedResourcesRebuilt": true
+  },
+  "candidateOnlyMigration": {
+    "newTables": ["assistantLibraryCommands"],
+    "indexes": 5,
+    "optionalEvidenceReceipt": true,
+    "newConsentScope": "knowledge:write",
+    "editingFlag": "MCP_WIDGET_LIBRARY_EDITING_ENABLED",
+    "enabledInProduction": false
+  },
+  "productionChanges": {
+    "deployments": 0,
+    "scopeChanges": 0,
+    "grantChanges": 0,
+    "flagsChanged": 0,
+    "dataWrites": 0,
+    "budgetReservations": 0,
+    "paidCalls": 0
+  },
+  "checks": {
+    "offlineCommand": "node scripts/run-offline.mjs pnpm check",
+    "node": "24.22.1",
+    "fullTypes": true,
+    "lintWarnings": 0,
+    "vitestPassed": 1388,
+    "hostedSkipped": 3,
+    "nodeTestsPassed": 19,
+    "pythonCases": 70,
+    "pythonWindowsSkipped": 7,
+    "productionBuilds": ["marketing", "starter"],
+    "widgetWorkspaceBytes": 937226,
+    "widgetWorkspaceGzipBytes": 236451,
+    "appBridgeExistingCasesPassed": 22,
+    "appBridgeNewIntegrationCasesPassed": 1,
+    "integrationCase": "320px dark card, both disclosures open, one canonical judgment with note and one idea move; neither overwrites the other; no processing calls",
+    "ownedTestTabsClosed": true
+  },
+  "reviewScope": "Each component retains its existing bounded independent finish review. The combined320px capture was opened and checked; no new visual design or broad host acceptance is claimed.",
+  "logs": [
+    ".impeccable/review/integrated-full-check.log",
+    ".impeccable/review/integrated-widget-build.log",
+    ".impeccable/review/integrated-bridge.log",
+    ".impeccable/review/integrated-extra-bridge.log"
+  ],
+  "pending": [
+    "Exact merged candidate CI",
+    "Additive backend schema/index publication review",
+    "Explicit provider and user editing consent",
+    "Coordinated frontend/backend publication after the active media attempt",
+    "Actual ChatGPT editing and source judgment acceptance",
+    "Remaining full widget acceptance matrix"
+  ],
+  "preservedFailures": "Earlier component fixture, type and UI-review failures remain recorded in their individual receipts. No integrated check failed."
+}

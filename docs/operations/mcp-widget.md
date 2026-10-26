@@ -62,3 +62,25 @@ This candidate adds one app-only private judgment read and reuses record_feedbac
 Stage the new backend read before the matching fingerprinted UI, verify the exact candidate and refresh discovery on the same existing plugin. A read-only smoke can open an authorized existing source and disclose its current connection-specific judgment. A real write test needs a separately authorized disposable judgment; never alter a person's useful/not-relevant decision merely to check setup.
 
 Verify all five choices, a saved note after reopening, canonical acknowledgement and keyed reconciliation after an uncertain response. Changed actor/grant/source scope must deny or mask stale private fields. A limited lookup must keep its protected recovery. Expanded Library and Scroll use the same44px minimum as the compact card. Confirm that no analysis, funding or publication is started. [ADR176](../adr/176-compact-source-judgment-review.md).
+
+## Release the opt-in topic editor
+
+Keep MCP_WIDGET_LIBRARY_EDITING_ENABLED off until the separate additive-schema review and compatible frontend/backend release pass. The topic-only candidate originally added assistantLibraryCommands with four indexes. Inline idea filing extends it with an optional evidence receipt and by_source index, making five candidate indexes. Preserve the serving backend and concurrent Cloud transport changes when assembling the release. Reserve deployment cost separately; no existing publication hold is reusable by assumption.
+
+Configure knowledge:write only for the intended official provider client, then complete new provider consent and deliberate whole-library application-grant consent. Old connections must not inherit it. Enabling the flag exposes three private widget tools and actions.organize only to an authorized writer. Verify a disposable permitted topic through rename, pin, folder/aliases, stale-version rejection, lost-reply reconciliation and revoked-access refusal. Those writes are distinct from the prior read-only host acceptance. Disable the flag to remove the editing entrypoint; retain receipts and existing data.
+
+The local synthetic protocol harness also verifies that collapsing the disclosure during an outstanding save and after a lost reply preserves the same request. It closes its owned test tab. See [ADR170](../adr/170-opt-in-widget-topic-editing.md).
+
+## Verify inline idea filing
+
+Keep the existing edit flag off until the additive schema and current provider/client/app consent are reviewed. The permission label must cover topic organization and idea filings before a person consents. No existing connection receives this new authority automatically.
+
+On an exact current cited idea, open File this idea, move to a deliberately selected loaded topic, verify the receipt, remove a filing and restore it. Verify source-deletion cleanup removes its source-bound receipts. Changed source evidence, source rights, membership, grant or either topic version must reject further changes. An empty filtered page must keep manual pagination; do not silently drain cursors or claim the whole library is empty.
+
+A delayed or lost reply keeps fresh edits disabled. Collapse/reopen the disclosure, check the same request and verify the single canonical receipt. A retry uses that original payload and key. These local cases use synthetic records; real ChatGPT acceptance requires a separately authorized disposable record and explicit edit consent. This checklist authorizes no live write or deployment. [ADR174](../adr/174-inline-idea-filing.md).
+
+## Release the combined candidate deliberately
+
+The integration branch contains both source review and the unpublished topic/idea editing migration. Preserve PR193 as the independently deployable existing-permission option. Do not publish the combined branch under a no-schema-change receipt. Its one additive table/five indexes require reviewed backend publication before the matching resource. Keep the editing flag off until provider configuration and deliberate user consent cover knowledge:write. Existing grants gain no authority.
+
+Wait for the active media attempt to reconcile before any publication. Reconfirm the serving baseline, exact CI, retained cost holds and included Basic-build credit with the release chat. The combined local checks reserve no funds and authorize no live feedback or filing writes. Use the same plugin identity and refresh discovery after the fingerprinted resource changes. [Combined local receipt](evidence/launch-20261026-widget-integrated-local.json).

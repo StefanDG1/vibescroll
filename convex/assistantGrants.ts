@@ -200,6 +200,14 @@ export const save = mutation({
       "Personal and Business access require your private library; scope grants do not copy posts.",
     );
     ensure(
+      !a.scopes.includes("knowledge:write") ||
+        (process.env.MCP_WIDGET_LIBRARY_EDITING_ENABLED === "true" &&
+          a.scopes.includes("knowledge:read") &&
+          a.libraryScope === "all"),
+      "INVALID_INPUT",
+      "Topic editing requires enabled library editing and reviewed read access to the whole library.",
+    );
+    ensure(
       a.sources.length <= 50 &&
         new Set(a.sources.map((s) => s.sourceId)).size === a.sources.length &&
         (a.sources.length > 0 ||

@@ -134,6 +134,7 @@ export function InsightDetail({
   profileId,
   review,
   compact = false,
+  filing,
   notify,
 }: {
   source: Source;
@@ -141,6 +142,7 @@ export function InsightDetail({
   profileId: string;
   review?: ReactNode;
   compact?: boolean;
+  filing?: ReactNode;
   notify: (text: string) => void;
 }) {
   const host = useHost();
@@ -239,6 +241,7 @@ export function InsightDetail({
           citation remains available above.
         </p>
       )}
+      {filing}
       {review}
       {error && (
         <p className="inline-error" role="alert">

@@ -52,6 +52,53 @@ const deliveryFields = {
   httpStatus: v.optional(v.number()),
 };
 export const assistantTables = {
+  assistantLibraryCommands: defineTable({
+    organizationId: v.id("organizations"),
+    actor: v.id("users"),
+    clientId: v.string(),
+    grantId: v.id("assistantGrants"),
+    grantVersion: v.number(),
+    key: v.string(),
+    inputHash: v.string(),
+    topicId: v.id("knowledgeTopics"),
+    operation: v.union(
+      v.literal("rename"),
+      v.literal("pin"),
+      v.literal("structure"),
+      v.literal("file"),
+    ),
+    evidence: v.optional(
+      v.object({
+        sourceId: v.id("sources"),
+        generation: v.number(),
+        revision: v.number(),
+        insightId: v.string(),
+        memberId: v.id("knowledgeMembers"),
+        kind: v.union(
+          v.literal("move"),
+          v.literal("exclude"),
+          v.literal("restore"),
+        ),
+        excluded: v.boolean(),
+        destination: v.optional(
+          v.object({
+            topicId: v.id("knowledgeTopics"),
+            memberId: v.id("knowledgeMembers"),
+            version: v.number(),
+          }),
+        ),
+      }),
+    ),
+    topicVersion: v.number(),
+    layoutVersion: v.number(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_request", ["grantId", "grantVersion", "key"])
+    .index("by_source", ["evidence.sourceId"])
+    .index("by_org", ["organizationId"])
+    .index("by_actor", ["actor"])
+    .index("by_expiry", ["expiresAt"]),
   assistantSubscriptions: defineTable(
     v.union(
       v.object({

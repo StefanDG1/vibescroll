@@ -79,6 +79,8 @@ async function load() {
   let feedbackReads = 0;
   let feedbackReplyLost = false;
   if (options.get("feedback-saved") === "1") seedDemoFeedback();
+  let editReplyLost = false;
+  let filingReplyLost = false;
   next.addEventListener("sizechange", ({ height }) => {
     if (initialized && height)
       frame.style.height = `${Math.min(2000, Math.max(100, height))}px`;
@@ -121,6 +123,47 @@ async function load() {
     }
     if (name === "widget_state" && options.get("feedback") === "0")
       (data.actions as ToolRecord).feedback = false;
+    if (
+      name === "widget_evidence_state" &&
+      options.get("filing-empty-page") === "1" &&
+      !args?.cursor
+    ) {
+      data.items = [];
+      data.next_cursor = "synthetic-next-filing-page";
+    }
+    if (name === "widget_evidence_edit" && options.get("filing-delay") === "1")
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    if (
+      name === "widget_evidence_edit" &&
+      options.get("filing-lost-reply") === "1" &&
+      !filingReplyLost
+    ) {
+      filingReplyLost = true;
+      return {
+        isError: true,
+        content: [
+          { type: "text", text: "Synthetic reply lost after committed filing" },
+        ],
+      };
+    }
+    if (name === "widget_library_edit" && options.get("edit-delay") === "1")
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    if (
+      name === "widget_library_edit" &&
+      options.get("edit-lost-reply") === "1" &&
+      !editReplyLost
+    ) {
+      editReplyLost = true;
+      return {
+        isError: true,
+        content: [
+          { type: "text", text: "Synthetic reply lost after committed edit" },
+        ],
+      };
+    }
+    if (name === "widget_state" && options.get("editing") === "0") {
+      (data.actions as ToolRecord).organize = false;
+    }
     if (
       name === "fetch" &&
       options.get("references") === "5" &&
@@ -234,7 +277,9 @@ async function load() {
                         ? "export"
                         : options.get("view") === "scroll"
                           ? "scroll"
-                          : "library",
+                          : options.get("view") === "topics"
+                            ? "topics"
+                            : "library",
                   },
           },
           content: [],

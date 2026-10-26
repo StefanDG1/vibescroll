@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import { useHost } from "./host";
 import { SourceReview } from "./source-review";
+import { TopicEditor } from "./library-edit";
+import { EvidenceFiling } from "./evidence-filing";
 import {
   profilesOf,
   sourcesOf,
@@ -172,6 +174,16 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
         revision={insight.reference.revision}
         reviewUrl={source.url}
         compact={inline}
+        notify={notify}
+      />
+    ) : null;
+  const filingFor = (insight: Insight) =>
+    actions.organize && insight.reference ? (
+      <EvidenceFiling
+        key={`${authority}:${insight.reference.sourceId}:${insight.reference.generation}:${insight.reference.revision}:${insight.reference.insightId}`}
+        profileId={profileId}
+        grantVersion={grant}
+        reference={insight.reference}
         notify={notify}
       />
     ) : null;
@@ -323,6 +335,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
       profileId={profileId}
       review={reviewFor(current, currentInsight, compact && !expanded)}
       compact={compact && !expanded}
+      filing={filingFor(currentInsight)}
       notify={notify}
     />
   ) : current ? (
@@ -771,6 +784,16 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
               )}
             </nav>
             <section>
+              {topicId && actions.organize && (
+                <TopicEditor
+                  key={`${authority}:${topicId}`}
+                  profileId={profileId}
+                  grantVersion={grant}
+                  topicId={topicId}
+                  candidates={rows}
+                  notify={notify}
+                />
+              )}
               {topic.isFetching && !topic.data ? (
                 <Loading />
               ) : topic.error ? (
@@ -841,6 +864,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
             insight={item.insight}
             profileId={profileId}
             review={reviewFor(item.source, item.insight, false)}
+            filing={filingFor(item.insight)}
             notify={notify}
           />
         ) : browse.isPending ? (

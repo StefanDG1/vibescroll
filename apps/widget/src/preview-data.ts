@@ -3,7 +3,43 @@ import {
   feedbackRequest,
   type FeedbackState,
 } from "../../../packages/widget/feedback";
+import { categoryName } from "../../../packages/categories";
+import {
+  libraryEditInput,
+  libraryEditVersion,
+  type LibraryEditReceipt,
+} from "../../../packages/widget/library-edits";
+import {
+  filingInput,
+  filingVersion,
+  sameFilingReference,
+  type FilingReceipt,
+} from "../../../packages/widget/evidence-filing";
 const profile = "demo-private-workspace";
+const demoTopics = [
+  {
+    id: "sample-topic",
+    name: "Product design",
+    parent_id: null as string | null,
+    version: 1,
+    layout_version: 0,
+    pinned: true,
+    aliases: ["User experience"],
+  },
+  {
+    id: "sample-folder",
+    name: "Saved methods",
+    parent_id: null as string | null,
+    version: 1,
+    layout_version: 0,
+    pinned: false,
+    aliases: [] as string[],
+  },
+];
+const demoEdits = new Map<
+  string,
+  { input: string; receipt: LibraryEditReceipt }
+>();
 export const demoCardPayload = {
   route: { view: "insight", profileId: profile, sourceId: "sample-onboarding" },
 };
@@ -50,6 +86,16 @@ const sources = [
     },
   ],
 }));
+const demoFilings = sources.map((source, index) => ({
+  memberId: `sample-filing-${index}`,
+  topicId: "sample-topic",
+  excluded: false,
+  reference: { ...source.insights[0].reference },
+}));
+const demoFilingReceipts = new Map<
+  string,
+  { input: string; receipt: FilingReceipt }
+>();
 const links = Object.fromEntries(
   ["home", "connections", "projects", "usage", "privacy", "account"].map(
     (key) => [
@@ -84,6 +130,174 @@ export async function demoCall(
   name: string,
   args: ToolRecord,
 ): Promise<ToolRecord> {
+  if (name === "widget_evidence_state") {
+    const reference = args.reference as FilingReceipt["reference"];
+    return {
+      schema_version: filingVersion,
+      profile_id: profile,
+      grant_version: 1,
+      reference,
+      items: demoFilings
+        .filter((row) => sameFilingReference(row.reference, reference))
+        .map((row) => {
+          const topic = demoTopics.find((topic) => topic.id === row.topicId)!;
+          return {
+            member_id: row.memberId,
+            topic_id: row.topicId,
+            excluded: row.excluded,
+            name: topic.name,
+            version: topic.version,
+          };
+        }),
+      next_cursor: null,
+      coverage:
+        "Illustrative exact-idea topic filings. No production record is changed.",
+    };
+  }
+  if (name === "widget_evidence_receipt")
+    return {
+      profile_id: profile,
+      grant_version: 1,
+      reference: args.reference,
+      receipt: demoFilingReceipts.get(String(args.key))?.receipt ?? null,
+    };
+  if (name === "widget_evidence_edit") {
+    const input = filingInput.parse(args);
+    const old = demoFilingReceipts.get(input.key);
+    if (old) {
+      if (old.input !== JSON.stringify(input))
+        throw new Error("Synthetic filing key changed");
+      return old.receipt;
+    }
+    const origin = demoFilings.find(
+      (row) =>
+        row.memberId === input.origin.memberId &&
+        sameFilingReference(row.reference, input.reference),
+    );
+    const topic = demoTopics.find((row) => row.id === input.origin.topicId);
+    if (
+      !origin ||
+      !topic ||
+      topic.version !== input.origin.version ||
+      origin.excluded !== input.origin.excluded
+    )
+      throw new Error("Synthetic filing changed");
+    let destination: FilingReceipt["destination"] = null;
+    if (input.change.kind === "move") {
+      const selected = input.change.destination;
+      const target = demoTopics.find((row) => row.id === selected.topicId);
+      if (
+        !target ||
+        target.id === topic.id ||
+        target.version !== selected.version
+      )
+        throw new Error("Synthetic destination changed");
+      let member = demoFilings.find(
+        (row) =>
+          row.topicId === target.id &&
+          sameFilingReference(row.reference, input.reference),
+      );
+      if (!member) {
+        member = {
+          memberId: `sample-filing-${crypto.randomUUID()}`,
+          topicId: target.id,
+          excluded: false,
+          reference: { ...input.reference },
+        };
+        demoFilings.push(member);
+      }
+      member.excluded = false;
+      target.version++;
+      destination = {
+        topic_id: target.id,
+        member_id: member.memberId,
+        version: target.version,
+      };
+    }
+    origin.excluded = input.change.kind !== "restore";
+    topic.version++;
+    const receipt: FilingReceipt = {
+      schema_version: filingVersion,
+      profile_id: profile,
+      grant_version: 1,
+      reference: input.reference,
+      request_key: input.key,
+      operation: input.change.kind,
+      origin_topic_id: topic.id,
+      origin_member_id: origin.memberId,
+      origin_version: topic.version,
+      excluded: origin.excluded,
+      destination,
+      applied: true,
+      processing_started: false,
+    };
+    demoFilingReceipts.set(input.key, {
+      input: JSON.stringify(input),
+      receipt,
+    });
+    return receipt;
+  }
+  if (name === "widget_library_state") {
+    const topic = demoTopics.find((topic) => topic.id === args.topicId);
+    if (!topic) throw new Error("Synthetic topic unavailable");
+    return {
+      schema_version: libraryEditVersion,
+      profile_id: profile,
+      grant_version: 1,
+      topic: { ...topic, aliases: [...topic.aliases] },
+    };
+  }
+  if (name === "widget_library_receipt") {
+    const found = demoEdits.get(String(args.key));
+    if (found && found.receipt.topic_id !== args.topicId)
+      throw new Error("Synthetic key belongs to another topic");
+    return {
+      profile_id: profile,
+      grant_version: 1,
+      receipt: found?.receipt ?? null,
+    };
+  }
+  if (name === "widget_library_edit") {
+    const input = libraryEditInput.parse(args);
+    const previous = demoEdits.get(input.key);
+    if (previous) {
+      if (previous.input !== JSON.stringify(input))
+        throw new Error("Synthetic key changed");
+      return previous.receipt;
+    }
+    const topic = demoTopics.find((topic) => topic.id === input.topicId);
+    if (
+      !topic ||
+      topic.version !== input.expectedVersion ||
+      topic.layout_version !== input.expectedLayoutVersion
+    )
+      throw new Error("Synthetic topic version changed");
+    if (input.change.kind === "rename") {
+      topic.name = categoryName(input.change.name);
+      topic.version++;
+    } else if (input.change.kind === "pin") {
+      topic.pinned = input.change.pinned;
+      topic.version++;
+    } else {
+      topic.parent_id = input.change.parentId;
+      topic.aliases = [...new Set(input.change.aliases.map(categoryName))];
+      topic.layout_version++;
+    }
+    const receipt: LibraryEditReceipt = {
+      schema_version: libraryEditVersion,
+      profile_id: profile,
+      grant_version: 1,
+      topic_id: topic.id,
+      topic_version: topic.version,
+      layout_version: topic.layout_version,
+      request_key: input.key,
+      operation: input.change.kind,
+      applied: true,
+      processing_started: false,
+    };
+    demoEdits.set(input.key, { input: JSON.stringify(input), receipt });
+    return receipt;
+  }
   if (name === "get_profile" || name === "widget_profiles")
     return {
       profiles: [
@@ -135,6 +349,7 @@ export async function demoCall(
         cloud: true,
         draft: true,
         events: true,
+        organize: true,
       },
       links,
       notice:
@@ -146,15 +361,13 @@ export async function demoCall(
       grant_version: 1,
       items:
         args.kind === "topics"
-          ? [
-              {
-                id: "sample-topic",
-                name: "Product design",
-                parent_id: null,
-                version: 1,
-                pinned: true,
-              },
-            ]
+          ? demoTopics.map(({ id, name, parent_id, version, pinned }) => ({
+              id,
+              name,
+              parent_id,
+              version,
+              pinned,
+            }))
           : args.kind === "proposals"
             ? [
                 {

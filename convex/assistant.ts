@@ -513,7 +513,7 @@ export const requestAnalysis = internalMutation({
     };
   },
 });
-async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
+export async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
   if (id) return id;
   const p = await assistantPrincipal(ctx);
   const rows = await ctx.db
@@ -791,7 +791,7 @@ export const draftProjectSuggestion = internalMutation({
     };
   },
 });
-async function sourceFor(
+export async function sourceFor(
   ctx: QueryCtx,
   a: Awaited<ReturnType<typeof assistantGrant>>,
   sourceId: Id<"sources"> | null,

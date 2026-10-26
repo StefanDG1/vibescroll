@@ -12,6 +12,7 @@ import type * as accounts from "../accounts.js";
 import type * as aiPreferences from "../aiPreferences.js";
 import type * as assets from "../assets.js";
 import type * as assistant from "../assistant.js";
+import type * as assistantWidget from "../assistantWidget.js";
 import type * as assistantEventRuntime from "../assistantEventRuntime.js";
 import type * as assistantEvents from "../assistantEvents.js";
 import type * as assistantEventsHttp from "../assistantEventsHttp.js";
@@ -146,6 +147,7 @@ declare const fullApi: ApiFromModules<{
   aiPreferences: typeof aiPreferences;
   assets: typeof assets;
   assistant: typeof assistant;
+  assistantWidget: typeof assistantWidget;
   assistantEventRuntime: typeof assistantEventRuntime;
   assistantEvents: typeof assistantEvents;
   assistantEventsHttp: typeof assistantEventsHttp;

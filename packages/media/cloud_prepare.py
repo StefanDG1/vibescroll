@@ -9,7 +9,6 @@ import json
 import math
 import os
 from pathlib import Path
-from urllib.parse import urlsplit
 import subprocess
 import sys
 import time
@@ -170,9 +169,7 @@ def bind_preparation(context, info, manifest, observations):
         'frames': manifest['frames'], 'audio': manifest['audio'],
         'segments': manifest['segments'], 'transcript': manifest['transcript'],
     }
-    platform, post_id = extract.source_identity(info['webpage_url'])
-    post['resolvedCanonical'] = (f'https://www.instagram.com/p/{post_id}/' if platform == 'instagram' else
-                                 f"https://www.tiktok.com/{urlsplit(info['webpage_url']).path.split('/')[1].lower()}/video/{post_id}")
+    post['resolvedCanonical'] = extract.resolved_canonical(context['canonicalUrl'], info)
     post['captionHash'] = extract.digest(post['caption'].encode())
     post['revisionHash'] = extract.digest(canonical(post).encode())
     evidence = [dict(kind='video_observation', assetId='video-1', assetIndex=0,

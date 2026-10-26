@@ -11,6 +11,7 @@ import cloudDownloader from "../media/cloud-downloader.lock.json";
 import extractionPackage from "../media/cloud-extractor.lock.json";
 import initialV3Package from "../media/cloud-extractor-initial-v3.lock.json";
 import preDiagnosticsV3Package from "../media/cloud-extractor-pre-diagnostics-v3.lock.json";
+import preResolvedV3Package from "../media/cloud-extractor-pre-resolved-v3.lock.json";
 
 export const workCloudMediaPolicyV2 = {
   schemaVersion: "work-cloud-media-v2",
@@ -69,10 +70,19 @@ export const workCloudMediaPolicyPreDiagnosticsV3 = {
     extractionPackage: preDiagnosticsV3Package,
   },
 } as const;
+// Accepted jobs retain the implementation used before resolved-URL handling.
+export const workCloudMediaPolicyPreResolvedV3 = {
+  ...workCloudMediaPolicy,
+  toolchain: {
+    ...workCloudMediaPolicy.toolchain,
+    extractionPackage: preResolvedV3Package,
+  },
+} as const;
 export const workCloudRequestPolicies = [
   workCloudMediaPolicyV2,
   workCloudMediaPolicyInitialV3,
   workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
   workCloudMediaPolicy,
 ] as const;
 export const workCloudMediaPreparation = z

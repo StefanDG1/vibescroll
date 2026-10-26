@@ -69,18 +69,62 @@ def source_identity(raw):
         return 'tiktok', None
     raise ValueError('unsupported_source')
 
+def resolved_identity(info):
+    """Accept bounded TikTok video aliases only in the extractor's result.
+
+    The pinned extractor supports share links, missing handles and opaque
+    author IDs. They identify a video by ID, not by a public account name.
+    They never become additional URLs the user or downloader may request.
+    """
+    raw = info.get('webpage_url')
+    if not isinstance(raw, str) or len(raw) > 2048:
+        raise ValueError('unsupported_resolved_source')
+    try:
+        identity = source_identity(raw)
+        if identity[1] is not None:
+            return identity
+    except ValueError:
+        pass
+    try:
+        url = urlsplit(raw)
+        allowed = (url.scheme == 'https' and not url.username and not url.password and
+                   url.port in (None, 443) and url.hostname in ('www.tiktok.com', 'tiktok.com'))
+    except ValueError:
+        allowed = False
+    match = re.fullmatch(r'/(?:@[A-Za-z0-9_.-]{0,128}|share)/video/([0-9]{10,25})/?', url.path) if allowed else None
+    if not match or info.get('extractor_key') != 'TikTok' or info.get('id') != match[1]:
+        raise ValueError('unsupported_resolved_source')
+    return 'tiktok', match[1]
+
+
 def validate_identity(original, info):
     """MVP admits individual Instagram/TikTok posts, never a collection/card."""
     if not isinstance(info, dict) or info.get('_type', 'video') != 'video' or info.get('entries') is not None or info.get('is_live'):
         raise ValueError('unsupported_collection_or_live')
     expected = source_identity(original)
-    resolved = source_identity(info.get('webpage_url') or '')
+    resolved = resolved_identity(info)
     if expected[0] != resolved[0] or resolved[1] is None or (expected[1] is not None and expected[1] != resolved[1]):
+        raise ValueError('source_identity_mismatch')
+    if resolved[0] == 'tiktok' and info.get('id') is not None and info['id'] != resolved[1]:
         raise ValueError('source_identity_mismatch')
     duration = info.get('duration')
     if duration is not None and (not number(duration) or not 0 < duration <= 600):
         raise ValueError('over_limit_duration')
     return resolved[0]
+
+
+def resolved_canonical(original, info):
+    validate_identity(original, info)
+    platform, post_id = resolved_identity(info)
+    if platform == 'instagram':
+        return f'https://www.instagram.com/p/{post_id}/'
+    # Preserve an approved full-link identity. A short link may resolve without
+    # a public handle; the pinned extractor uses /@_/video/<ID> in that case.
+    source = original if source_identity(original)[1] is not None else info['webpage_url']
+    handle = urlsplit(source).path.split('/')[1]
+    if not re.fullmatch(r'@[A-Za-z0-9_.]{1,40}', handle):
+        handle = '@_'
+    return f'https://www.tiktok.com/{handle.lower()}/video/{post_id}'
 
 
 def caption_candidates(info):

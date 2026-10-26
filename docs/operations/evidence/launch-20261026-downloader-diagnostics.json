@@ -1,6 +1,6 @@
 {
   "recordedAtUTC": "2026-10-26T21:35:36.634623+00:00",
-  "scope": "published diagnostics; automatic media acceptance pending",
+  "scope": "published diagnostics; automatic media attempt stopped before acquisition",
   "productionBaseline": "3ac324723577ee5af0deaf471716270deb40872b",
   "actualReelOutcome": {
     "appSaveAtUTC": "2026-10-26T21:12:41.053Z",
@@ -85,7 +85,7 @@
     "conclusion": "success",
     "fullCheckAndDependencyAuditPassed": true
   },
-  "updatedAtUTC": "2026-10-26T22:16:02.816272+00:00",
+  "updatedAtUTC": "2026-10-26T22:26:39.359020+00:00",
   "publication": {
     "frontendCommit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
     "backendCommit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
@@ -108,8 +108,33 @@
     "firstReconciliationGeneration": 0,
     "firstReconciliationProcessing": null,
     "currentFiniteIntent": "waiting_for_runtime",
-    "status": "outcome pending",
+    "status": "stopped; generation1 consumed unknown",
     "automaticMediaAccepted": false,
-    "replayOrManualRun": false
+    "replayOrManualRun": false,
+    "generation": 1,
+    "inspectionExitCode": 1,
+    "reportedError": "unsupported_source",
+    "mediaAcquisitions": 0,
+    "asrOrFramesOrUploadsOrCompletion": false,
+    "relinquishmentAccepted": true,
+    "precedingHeartbeatValid": true,
+    "observedExpiryRefusal": false,
+    "pilotPaused": true,
+    "ownedTemporaryCleanup": "host-reported retained receipts",
+    "jobRootRemoved": {
+      "files": 2,
+      "bytes": 7848
+    },
+    "disposableToolsRootRemoved": {
+      "files": 1177,
+      "bytes": 13657559
+    },
+    "providerHostStoppedAttested": false,
+    "freshProcessScan": false,
+    "sharedCachesPreserved": true,
+    "providerDeletionAndUsage": "unverified",
+    "returnedUrlValidationFailure": "code-path conclusion, no independently labelled exception trace",
+    "actualReturnedUrlShape": "unavailable; not persisted before validation",
+    "sourceInspectionSubprocessExit0": "inferred from code path, standalone receipt absent"
   }
 }

@@ -8,6 +8,7 @@ import {
   workCloudMediaPolicyV2,
   workCloudMediaPolicyInitialV3,
   workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
 } from "../packages/contracts/work-cloud-text";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { socialHash } from "../packages/social/contracts";
@@ -754,6 +755,7 @@ it.each([
   workCloudMediaPolicyV2,
   workCloudMediaPolicyInitialV3,
   workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
 ])(
   "preserves exact-source consent across a reviewed implementation patch",
   async (policy) => {

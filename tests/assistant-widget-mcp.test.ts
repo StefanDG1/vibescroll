@@ -27,9 +27,21 @@ async function packet(response: Response) {
   }
   return response.json();
 }
-async function call(method: string, params: unknown, scopes: string[]) {
+async function call(
+  method: string,
+  params: unknown,
+  scopes: string[],
+  libraryEditing = false,
+) {
   const body = { jsonrpc: "2.0", id: 1, method, params };
-  return createKnowledgeHandler(invoke, false, false, false, true).fetch(
+  return createKnowledgeHandler(
+    invoke,
+    false,
+    false,
+    false,
+    true,
+    libraryEditing,
+  ).fetch(
     new Request("https://scroll.companynerve.com/mcp", {
       method: "POST",
       headers: {
@@ -146,6 +158,55 @@ it("binds every advertised UI cache key to its built HTML", async () => {
       .slice(0, 16);
     expect(uri.endsWith(`/v1-${digest}.html`)).toBe(true);
     expect(html._meta.ui.csp.connectDomains).toEqual([]);
+  }
+});
+
+it("keeps opt-in editing absent by default and requires both scopes when enabled", async () => {
+  const disabled = await packet(
+    await call("tools/list", {}, ["knowledge:read", "knowledge:write"]),
+  );
+  expect(
+    disabled.result.tools.some((tool: any) =>
+      tool.name.startsWith("widget_library_"),
+    ),
+  ).toBe(false);
+  const enabled = await packet(
+    await call("tools/list", {}, ["knowledge:read", "knowledge:write"], true),
+  );
+  const edits = enabled.result.tools.filter((tool: any) =>
+    tool.name.startsWith("widget_library_"),
+  );
+  expect(edits).toHaveLength(3);
+  for (const tool of edits) {
+    expect(tool._meta.ui.visibility).toEqual(["app"]);
+    expect(tool._meta.ui.resourceUri).toBeUndefined();
+    expect(tool._meta.securitySchemes).toContainEqual({
+      type: "oauth2",
+      scopes: ["knowledge:read", "knowledge:write"],
+    });
+    expect(tool.annotations.readOnlyHint).toBe(
+      tool.name !== "widget_library_edit",
+    );
+  }
+  for (const scopes of [["knowledge:read"], ["knowledge:write"]]) {
+    invoke.mockClear();
+    const denied = await packet(
+      await call(
+        "tools/call",
+        {
+          name: "widget_library_state",
+          arguments: {
+            profileId: "profile",
+            grantVersion: 1,
+            topicId: "topic",
+          },
+        },
+        scopes,
+        true,
+      ),
+    );
+    expect(denied.error ?? denied.result?.isError).toBeTruthy();
+    expect(invoke).not.toHaveBeenCalled();
   }
 });
 

@@ -9,6 +9,13 @@ import {
 } from "../packages/widget/contracts";
 import { assistantIssuer } from "../packages/policy/assistant";
 import {
+  libraryEditInput,
+  libraryEditStateInput,
+  libraryEditReceiptInput,
+  libraryEditFailure,
+  type LibraryEdit,
+} from "../packages/widget/library-edits";
+import {
   cloudCompletionEnvelope,
   parseWorkCloudResult,
   workCloudTextOperations,
@@ -20,6 +27,24 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z
+    .object({
+      operation: z.literal("widget_library_state"),
+      args: libraryEditStateInput,
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_library_edit"),
+      args: libraryEditInput,
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_library_receipt"),
+      args: libraryEditReceiptInput,
+    })
+    .strict(),
   z
     .object({
       operation: z.literal("widget_profiles"),
@@ -172,6 +197,7 @@ const operations = z.discriminatedUnion("operation", [
     .strict(),
 ]);
 export const tools = httpAction(async (ctx, request) => {
+  let editRequest: LibraryEdit | undefined;
   const deny = (status = 403) =>
     Response.json(
       {
@@ -216,6 +242,42 @@ export const tools = httpAction(async (ctx, request) => {
         : undefined;
     let value: unknown;
     switch (input.operation) {
+      case "widget_library_state":
+        value = await ctx.runQuery(internal.assistantLibrary.state, {
+          ...input.args,
+          profileId: input.args.profileId as Id<"organizations">,
+          topicId: input.args.topicId as Id<"knowledgeTopics">,
+        });
+        break;
+      case "widget_library_receipt": {
+        const receipt = await ctx.runQuery(internal.assistantLibrary.outcome, {
+          ...input.args,
+          profileId: input.args.profileId as Id<"organizations">,
+          topicId: input.args.topicId as Id<"knowledgeTopics">,
+        });
+        value = {
+          profile_id: input.args.profileId,
+          grant_version: input.args.grantVersion,
+          receipt,
+        };
+        break;
+      }
+      case "widget_library_edit":
+        editRequest = input.args;
+        value = await ctx.runMutation(internal.assistantLibrary.change, {
+          ...input.args,
+          profileId: input.args.profileId as Id<"organizations">,
+          topicId: input.args.topicId as Id<"knowledgeTopics">,
+          change:
+            input.args.change.kind === "structure"
+              ? {
+                  ...input.args.change,
+                  parentId: input.args.change
+                    .parentId as Id<"knowledgeTopics"> | null,
+                }
+              : input.args.change,
+        });
+        break;
       case "widget_profiles":
         value = await ctx.runQuery(internal.assistantWidget.profiles, {});
         break;
@@ -404,7 +466,15 @@ export const tools = httpAction(async (ctx, request) => {
         break;
     }
     return Response.json(value, { headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    if (editRequest) {
+      const rejected = libraryEditFailure(error, editRequest);
+      if (rejected)
+        return Response.json(rejected, {
+          status: 409,
+          headers: { "Cache-Control": "no-store" },
+        });
+    }
     return deny();
   }
 });

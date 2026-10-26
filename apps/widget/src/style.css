@@ -1371,3 +1371,71 @@ a svg {
   overflow-wrap: anywhere;
   line-height: 1.6;
 }
+.topic-editor {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+}
+.topic-editor > summary {
+  min-height: 40px;
+  align-content: center;
+  cursor: pointer;
+  font-weight: 550;
+}
+.topic-editor-body {
+  padding-top: 8px;
+}
+.topic-editor fieldset {
+  min-width: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 18px 0 0;
+  padding: 14px 0 0;
+}
+.topic-editor legend {
+  font-weight: 550;
+  padding: 0 8px 0 0;
+}
+.topic-editor label {
+  display: block;
+  margin: 10px 0 6px;
+}
+.topic-editor input,
+.topic-editor select,
+.topic-editor textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+.topic-editor textarea {
+  resize: vertical;
+}
+.topic-editor input:focus-visible,
+.topic-editor select:focus-visible,
+.topic-editor textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.topic-editor fieldset .widget-action {
+  margin: 8px 8px 0 0;
+}
+.topic-editor-recovery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.topic-editor p {
+  overflow-wrap: anywhere;
+}
+.topic-editor output {
+  display: block;
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}

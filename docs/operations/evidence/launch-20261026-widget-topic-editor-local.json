@@ -1,0 +1,83 @@
+{
+  "observedAt": "2026-10-26T20:51:50Z",
+  "scope": "Local topic editor candidate based on33cbca9; no deployment or live edit acceptance",
+  "featureFlag": "MCP_WIDGET_LIBRARY_EDITING_ENABLED",
+  "defaultEnabled": false,
+  "newScope": "knowledge:write",
+  "existingGrantUpgrades": 0,
+  "liveConfigurationChanges": 0,
+  "liveDataWrites": 0,
+  "deploymentBuilds": 0,
+  "schemaDelta": {
+    "addedTables": ["assistantLibraryCommands"],
+    "addedIndexes": ["by_request", "by_org", "by_actor", "by_expiry"],
+    "existingTablesPreserved": true,
+    "deploymentReviewPending": true
+  },
+  "checks": {
+    "offlineCheck": {
+      "command": "node scripts/run-offline.mjs pnpm check",
+      "node": "24.22.1",
+      "passed": true,
+      "vitestPassed": 1332,
+      "hostedSkipped": 3,
+      "nodeTestsPassed": 19,
+      "pythonCases": 59,
+      "pythonWindowsSkipped": 4,
+      "types": true,
+      "lintWarnings": 0,
+      "productionBuilds": ["marketing", "starter"]
+    },
+    "widgetBuild": {
+      "passed": true,
+      "workspaceBytes": 918922,
+      "workspaceGzipBytes": 232289
+    },
+    "appBridge": {
+      "passed": 10,
+      "data": "synthetic",
+      "productionHtml": true,
+      "collapseDuringSave": true,
+      "collapseAfterLostReply": true,
+      "recoveryWriteCalls": 1,
+      "recoveryReceiptReads": 1,
+      "actualHost": false
+    },
+    "backendFocused": {
+      "cases": 25,
+      "includesRealHttpRouter": true
+    },
+    "contractFocused": {
+      "cases": 10
+    },
+    "dependencyAudit": {
+      "observedAt": "2026-10-26T20:48:52.949Z",
+      "unresolved": 0
+    },
+    "designReview": {
+      "initialDisposition": "fix",
+      "finding": "Disclosure collapse discarded an unresolved command",
+      "finalDisposition": "ship",
+      "scope": "Listed recovery correction scored resolved; not whole-widget or live-host approval",
+      "detectorFindings": 0
+    },
+    "changedSourceSecrets": {
+      "command": "gitleaks git --staged --redact",
+      "passed": true,
+      "findings": 0
+    }
+  },
+  "preservedFailures": [
+    "Offline Convex codegen refused without deployment configuration; pinned pure API generator used without hosted dispatch.",
+    "First full check failed the old89-table guard after the explicit new receipt table; updated exact additive schema assertion retains existing-table comparisons, final full check passed.",
+    "Initial synthetic harness mechanics used an exact Pinned label and substring absence check, and one pointer missed during iframe resizing; corrected mechanics precede final10passes.",
+    "Unscoped directory secret scan included ignored dependencies/build/test outputs and existing synthetic source-acquisition tokens. It is not a changed-source scan; staged scan recorded separately."
+  ],
+  "pending": [
+    "Exact candidate CI",
+    "Additive schema release review and cost reservation",
+    "Explicit official provider/client scope configuration and user grant consent",
+    "Real ChatGPT/Codex edit acceptance",
+    "Full remaining widget plan"
+  ]
+}

@@ -17,10 +17,10 @@ import {
 } from "../convex/lib/prObservation";
 import { readFileSync } from "node:fs";
 const base = "346b718baf91ba9847fbb707be7bbe069df57257";
-it("preserves all tables/config and permits only the exact Cloud validators and one C2 delivery index", () => {
-  // The application exports 89 tables. The deployment's 131-table inventory
-  // also includes component tables; their configuration is byte-checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(89);
+it("preserves existing tables/config and permits exact Cloud changes plus the bounded widget receipt table", () => {
+  // ADR170 adds one application table. This is an additive-schema candidate,
+  // not evidence for the prior no-new-table deployment path.
+  expect(Object.keys(schema.tables)).toHaveLength(90);
   const old = execFileSync("git", ["show", `${base}:convex/productSchema.ts`], {
     encoding: "utf8",
   });
@@ -185,8 +185,38 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
     oldAssistant.replace(/^import[\s\S]*?;/gm, "").replace(/^export /gm, "") +
       "; return assistantTables;",
   )(defineTable, v);
-  expect(Object.keys(assistantTables)).toEqual(Object.keys(beforeAssistant));
+  expect(Object.keys(assistantTables).sort()).toEqual(
+    [...Object.keys(beforeAssistant), "assistantLibraryCommands"].sort(),
+  );
+  expect((assistantTables.assistantLibraryCommands as any).export()).toEqual(
+    (
+      defineTable({
+        organizationId: v.id("organizations"),
+        actor: v.id("users"),
+        clientId: v.string(),
+        grantId: v.id("assistantGrants"),
+        grantVersion: v.number(),
+        key: v.string(),
+        inputHash: v.string(),
+        topicId: v.id("knowledgeTopics"),
+        operation: v.union(
+          v.literal("rename"),
+          v.literal("pin"),
+          v.literal("structure"),
+        ),
+        topicVersion: v.number(),
+        layoutVersion: v.number(),
+        createdAt: v.number(),
+        expiresAt: v.number(),
+      })
+        .index("by_request", ["grantId", "grantVersion", "key"])
+        .index("by_org", ["organizationId"])
+        .index("by_actor", ["actor"])
+        .index("by_expiry", ["expiresAt"]) as any
+    ).export(),
+  );
   for (const [name, table] of Object.entries(assistantTables)) {
+    if (name === "assistantLibraryCommands") continue;
     const current = (table as any).export(),
       prior = beforeAssistant[name].export();
     if (name === "assistantGrants") {

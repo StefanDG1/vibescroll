@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { useHost } from "./host";
+import { TopicEditor } from "./library-edit";
 import {
   profilesOf,
   sourcesOf,
@@ -757,6 +758,16 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
               )}
             </nav>
             <section>
+              {topicId && actions.organize && (
+                <TopicEditor
+                  key={`${authority}:${topicId}`}
+                  profileId={profileId}
+                  grantVersion={grant}
+                  topicId={topicId}
+                  candidates={rows}
+                  notify={notify}
+                />
+              )}
               {topic.isFetching && !topic.data ? (
                 <Loading />
               ) : topic.error ? (

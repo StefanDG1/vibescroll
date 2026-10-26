@@ -75,6 +75,7 @@ async function load() {
   );
   bridge = next;
   let initialized = false;
+  let editReplyLost = false;
   next.addEventListener("sizechange", ({ height }) => {
     if (initialized && height)
       frame.style.height = `${Math.min(2000, Math.max(100, height))}px`;
@@ -91,6 +92,24 @@ async function load() {
         content: [{ type: "text", text: "Synthetic grant revoked" }],
       };
     const data = await demoCall(name, (args ?? {}) as ToolRecord);
+    if (name === "widget_library_edit" && options.get("edit-delay") === "1")
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    if (
+      name === "widget_library_edit" &&
+      options.get("edit-lost-reply") === "1" &&
+      !editReplyLost
+    ) {
+      editReplyLost = true;
+      return {
+        isError: true,
+        content: [
+          { type: "text", text: "Synthetic reply lost after committed edit" },
+        ],
+      };
+    }
+    if (name === "widget_state" && options.get("editing") === "0") {
+      (data.actions as ToolRecord).organize = false;
+    }
     if (
       name === "fetch" &&
       options.get("references") === "5" &&
@@ -198,7 +217,14 @@ async function load() {
                     profileId: "demo-private-workspace",
                     sourceId: "sample-onboarding",
                   }
-                : { view: kind === "export" ? "export" : "library" },
+                : {
+                    view:
+                      kind === "export"
+                        ? "export"
+                        : options.get("view") === "topics"
+                          ? "topics"
+                          : "library",
+                  },
           },
           content: [],
         }),

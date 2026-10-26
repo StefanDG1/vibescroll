@@ -36,6 +36,7 @@ export function createKnowledgeHandler(
   workCloudText = false,
   workCloudMedia = false,
   widgetEnabled = false,
+  libraryEditingEnabled = false,
 ) {
   const inlineCloudIntake =
     "For an exact supported video the user asks to analyze in this already active Work Cloud chat, continue in this same user turn. Before request_analysis or work_cloud_claim, verify supported isolation, restricted provider network access and the reviewed cached downloader/FFmpeg/caption package; ASR tools and model are required only for an actual ASR fallback. Stop if the admitted runtime is unavailable. Save with analyze=false, then read get_job_status for that source/profile. Reuse a ready result; preserve current queued/running/unknown work instead of creating replacement work. With current explicit_per_source_v1 connection policy and both analysis scopes, call request_analysis(mode=work_cloud) using the returned generation, revision and grant_version as grantVersion, explicit cloud model/effort, useOwnPlan=true, maxApiUsd=0 and finite retainUntil. Claim the returned generation once, read work_cloud_input, use the reviewed caption-first package for its supported platforms, publish native metadata with work_cloud_metadata on media-v3, reuse usable captions without starting ASR, inspect the actual prepared JPEGs, bind observations with work_cloud_prepare, upload all prepared frame bytes with work_cloud_frame, complete the same lease, then fetch the same source/profile result. Renew only that lease between bounded steps. No pasted second message, Events subscription, GitHub or fresh per-post app approval is needed after the one-time reviewed connection setup. Current user intent, including an applicable chat instruction, must cover that exact video; saving alone grants no Cloud execution or blanket future authority. Results remain private_only, with no catalog publication or paid API fallback. The app does not automatically launch a host task; saves outside this active chat and creator follows still need a separately accepted background wake/execution bridge. ";
@@ -453,7 +454,7 @@ export function createKnowledgeHandler(
           (args) => run("events/unsubscribe", args),
         );
       }
-      if (widgetEnabled) registerWidget(server, invoke);
+      if (widgetEnabled) registerWidget(server, invoke, libraryEditingEnabled);
       return server;
     },
     { legacy: "stateless" },

@@ -174,6 +174,7 @@ export async function POST(request: Request) {
       process.env.WORK_CLOUD_MEDIA_ENABLED === "true" &&
         process.env.WORK_CLOUD_MEDIA_VERIFIED === "true",
       process.env.MCP_WIDGET_ENABLED === "true",
+      process.env.MCP_WIDGET_LIBRARY_EDITING_ENABLED === "true",
     );
     const input = new Request(request.url, {
       method: "POST",

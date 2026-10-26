@@ -18,12 +18,22 @@ import {
   widgetResourceUris,
 } from "../widget/resources.generated";
 import { widgetOutputs, validateWidgetOutput } from "../widget/outputs";
+import {
+  libraryEditInput,
+  libraryEditStateInput,
+  libraryEditReceiptInput,
+  libraryEditRejection,
+} from "../widget/library-edits";
 
 type Invoke = (
   operation: string,
   args: Record<string, unknown>,
 ) => Promise<{ ok: boolean; status: number; value: Record<string, unknown> }>;
-export function registerWidget(server: McpServer, invoke: Invoke) {
+export function registerWidget(
+  server: McpServer,
+  invoke: Invoke,
+  libraryEditingEnabled = false,
+) {
   const app = new OpenAIExtensions(server);
   const resultSchema = z.record(z.string(), z.unknown());
   const read = async (operation: string, args: Record<string, unknown>) => {
@@ -303,6 +313,68 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
       async (args: Record<string, unknown>) => reply(await read(name, args)),
     );
 
+  if (libraryEditingEnabled) {
+    const edits = [
+      [
+        "widget_library_state",
+        "Read the current topic and versions for a reviewed library edit.",
+        libraryEditStateInput,
+        true,
+      ],
+      [
+        "widget_library_receipt",
+        "Reconcile an existing edit key before retrying an uncertain change.",
+        libraryEditReceiptInput,
+        true,
+      ],
+      [
+        "widget_library_edit",
+        "Apply one explicitly requested topic name, pin or folder change with exact versions and a stable key. Starts no processing.",
+        libraryEditInput,
+        false,
+      ],
+    ] as const;
+    for (const [name, description, inputSchema, readOnlyHint] of edits)
+      server.registerTool(
+        name,
+        {
+          title: description.split(".")[0],
+          description,
+          inputSchema,
+          outputSchema: widgetOutputs[name],
+          annotations: {
+            readOnlyHint,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false,
+          },
+          scopeChallenge: requireScopes("knowledge:read", "knowledge:write"),
+          _meta: {
+            securitySchemes: [
+              { type: "oauth2", scopes: ["knowledge:read", "knowledge:write"] },
+            ],
+            ui: { visibility: ["app"] },
+          },
+        },
+        async (args: Record<string, unknown>) => {
+          const response = await invoke(name, args);
+          if (!response.ok) {
+            if (name === "widget_library_edit") {
+              const rejected = libraryEditRejection.safeParse(response.value);
+              if (rejected.success)
+                return reply(
+                  rejected.data,
+                  "The topic change was rejected. No topic update occurred.",
+                );
+            }
+            throw new Error(
+              "The library change is not confirmed. Check its existing result before retrying, or review current access in Connections.",
+            );
+          }
+          return reply(validateWidgetOutput(name, response.value));
+        },
+      );
+  }
   app.mentions.setHandler(async ({ query }) => {
     const data = query.trim()
       ? await read("search", { query: query.slice(0, 200) })

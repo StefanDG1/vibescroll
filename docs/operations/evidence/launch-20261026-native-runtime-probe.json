@@ -72,11 +72,77 @@
     "actual app Save to retained transcript/images/analysis"
   ],
   "budget": {
-    "cumulativeCapEUR": 7.5,
-    "retainedUsd": 7.825014256044614,
-    "unreservedUsd": 0.12498574395538586,
+    "cumulativeCapEUR": 8,
+    "retainedUsd": 8.265014256044614,
+    "unreservedUsd": 0.2149857439553866,
     "probeHoldsUsd": 0.04,
     "priorHoldsReleased": false,
-    "invoiceCertified": false
+    "invoiceCertified": false,
+    "newAdmissionHoldUsd": 0.02
+  },
+  "laterSetupAdmission": {
+    "observedDateUTC": "2026-10-26",
+    "source": "existing_native_Work_task_tool_cards_and_sanitized_report",
+    "python": "3.12.14",
+    "uid": 0,
+    "euid": 0,
+    "capabilitiesZero": {
+      "CapEff": true,
+      "CapPrm": true,
+      "CapAmb": true
+    },
+    "availableExecutables": [
+      "ffmpeg",
+      "ffprobe",
+      "bwrap",
+      "unshare",
+      "prlimit",
+      "uv",
+      "python3.12"
+    ],
+    "python313Available": false,
+    "imageToolReported": "view_image",
+    "imageToolInvoked": false,
+    "bubblewrapFull": {
+      "attempts": 1,
+      "exitCode": 1,
+      "markerExecuted": false,
+      "stderr": "bwrap: loopback: Failed to create NETLINK_ROUTE socket: Operation not permitted"
+    },
+    "bubblewrapFilesystemOnly": {
+      "attempts": 1,
+      "exitCode": 1,
+      "markerExecuted": false,
+      "stderr": "bwrap: setting up uid map: Operation not permitted"
+    },
+    "landlockAbiQuery": {
+      "returnValue": -1,
+      "errno": 38,
+      "rulesetCreated": false
+    },
+    "nativeMediaRuntimeAdmitted": false,
+    "monitorStateChanged": false,
+    "sourceMediaDownloads": 0,
+    "jobsCreated": 0,
+    "packageOrModelInstalls": 0,
+    "limitations": [
+      "normal setup-turn experiments only",
+      "independent event-run tool trace still not recovered",
+      "no image inspection or decoder success",
+      "no bypass or escalation"
+    ]
+  },
+  "decoderCandidateCI": {
+    "commit": "89ef2ebbb5135d39741775e9c1197676069b628f",
+    "runId": "40335580297",
+    "jobId": "121616515895",
+    "status": "passed",
+    "linuxTestsTotal": 13,
+    "passed": 12,
+    "skipped": 1,
+    "skipReason": "unsupported-host CLI negative case is inapplicable on admitted Linux",
+    "realSocketAndExecTestsRan": true,
+    "nativeHostAdmitted": false,
+    "mandatoryFlagForwardingFix": "subsequent_candidate_pending_CI"
   }
 }

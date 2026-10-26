@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { personalAnalysisValue } from "./personalAnalysisSchema";
+import { cloudSaveIntent } from "./workCloudSaveSchema";
 import { v } from "convex/values";
 import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
 import { evaluationEvidenceRef } from "./knowledgeSchema";
@@ -373,6 +374,7 @@ export const productTables = {
     ),
     managedAnalysisActor: v.optional(v.id("users")),
     personalAnalysis: v.optional(personalAnalysisValue),
+    workCloudSaveIntent: v.optional(cloudSaveIntent),
     repositorySelection: v.optional(v.any()),
     selectionPendingKey: v.optional(v.string()),
     selectionActor: v.optional(v.id("users")),

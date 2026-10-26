@@ -146,6 +146,9 @@ import type * as usageMaintenance from "../usageMaintenance.js";
 import type * as workCloudAnalysis from "../workCloudAnalysis.js";
 import type * as workCloudEvidenceRepair from "../workCloudEvidenceRepair.js";
 import type * as workCloudFrames from "../workCloudFrames.js";
+import type * as workCloudSaves from "../workCloudSaves.js";
+import type * as workCloudSaveSchema from "../workCloudSaveSchema.js";
+import type * as lib_workCloudSave from "../lib/workCloudSave.js";
 import type * as workflows from "../workflows.js";
 
 import type {
@@ -293,6 +296,9 @@ declare const fullApi: ApiFromModules<{
   workCloudAnalysis: typeof workCloudAnalysis;
   workCloudEvidenceRepair: typeof workCloudEvidenceRepair;
   workCloudFrames: typeof workCloudFrames;
+  workCloudSaves: typeof workCloudSaves;
+  workCloudSaveSchema: typeof workCloudSaveSchema;
+  "lib/workCloudSave": typeof lib_workCloudSave;
   workflows: typeof workflows;
 }>;
 

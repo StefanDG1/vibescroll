@@ -23,7 +23,11 @@ import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { assistantGrantActive } from "../packages/policy/assistant";
-import { requestCloudFromAssistant } from "./workCloudAnalysis";
+import {
+  requestCloudFromAssistant,
+  requestSavedCloudFromAssistant,
+} from "./workCloudAnalysis";
+import { savedCloudIntentCurrent } from "./lib/workCloudSave";
 import { retainedCloudFrames } from "../packages/media/cloud-frames";
 import {
   evaluation as evaluationContract,
@@ -347,6 +351,22 @@ export const getJobStatus = internalQuery({
       revision: source.updatedAt,
       grant_version: a.grant.version,
       cloud_request_policy: a.grant.cloudRequestPolicy ?? null,
+      saved_cloud_intent: (await savedCloudIntentCurrent(
+        ctx,
+        a.actor,
+        a.organization,
+        a.grant,
+        source,
+      ))
+        ? {
+            id: source.workCloudSaveIntent!.id,
+            expires_at: source.workCloudSaveIntent!.expiresAt,
+            state:
+              source.workCloudSaveIntent!.analysisGeneration === undefined
+                ? "waiting_for_runtime"
+                : "consumed",
+          }
+        : null,
       processing: cloud
         ? {
             executor: "work_cloud",
@@ -391,6 +411,7 @@ export const requestAnalysis = internalMutation({
     maxCredits: v.optional(v.number()),
     revision: v.optional(v.number()),
     grantVersion: v.optional(v.number()),
+    savedIntentId: v.optional(v.string()),
     cloud: v.optional(
       v.object({
         model: v.string(),
@@ -416,6 +437,20 @@ export const requestAnalysis = internalMutation({
       "analysis:request",
     );
     if (args.mode === "work_cloud") {
+      if (args.savedIntentId !== undefined) {
+        ensure(
+          args.generation === undefined &&
+            args.revision === undefined &&
+            args.grantVersion === undefined &&
+            args.cloud === undefined &&
+            args.maxCredits === undefined &&
+            args.project === undefined &&
+            args.bestProjects === undefined,
+          "INVALID_INPUT",
+          "A saved Cloud intent fixes its own post, model, effort, retention and funding. Do not override them.",
+        );
+        return requestSavedCloudFromAssistant(ctx, source, args.savedIntentId);
+      }
       ensure(
         args.generation !== undefined &&
           args.revision !== undefined &&
@@ -436,6 +471,7 @@ export const requestAnalysis = internalMutation({
     }
     ensure(
       args.cloud === undefined &&
+        args.savedIntentId === undefined &&
         args.revision === undefined &&
         args.grantVersion === undefined,
       "INVALID_INPUT",

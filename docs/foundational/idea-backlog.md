@@ -1,5 +1,9 @@
 # Foundational idea backlog
 
+## F078: understandable task locations, October 26
+
+Source: the owner's exact three-option request. Decision: implement one shared picker and existing setup shortcuts, keeping unavailable routes visible and disabled. The objection is ambiguity between ChatGPT Cloud and VibeScroll-funded servers. Recommendation follows owner preference; readiness and customer comprehension remain separately tested. Keep all existing quotes, grants and saved data. See [ADR161](../adr/161-three-task-locations.md).
+
 ## F066: preserve older saved posts through explicit privacy repair, October 24
 
 A real connected account can expose Cloud tools while an older workspace still has team permissions. Its name does not establish privacy. [ADR 147](../adr/147-explicit-legacy-private-library-adoption.md) prepares an explicit original-creator/sole-owner upgrade using the existing workspace and unchanged post/project IDs. Current membership, invitations, recent authentication and another private library are checked again before adoption. Team collaboration uses a separate workspace.

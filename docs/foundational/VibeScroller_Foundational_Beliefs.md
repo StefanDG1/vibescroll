@@ -1,5 +1,11 @@
 # VibeScroll foundational beliefs
 
+## F078: three task locations, October 26
+
+The owner requires the same short choice in Save and setup: My own Cloud Work using the user's ChatGPT subscription, Recommended; VibeScroll's servers using credits bought separately; Local machine using the user's own subscription. Show disabled routes with setup/reconfiguration links and accessible More info. Keep saving without analysis separate. [ADR161](../adr/161-three-task-locations.md) records the implementation candidate and unchanged permissions, prices and credit approvals.
+
+Recommendation is the owner's direction, not proof of general availability. Native saved-link acknowledgement is live; automatic video analysis, supported bootstrap and image/runtime admission remain separate. Keep the existing audience, six beliefs, saved data, provider/privacy gates and cumulative EUR7.50 with every prior hold. No campaign, independent usability or customer-value claim follows.
+
 ## F072: honest confidence and exact Cloud result recovery
 
 [ADR 152](../adr/152-conservative-cloud-result-return.md) records accepted real-media preparation and a failed production return due to overstated confidence. Preserve citations and reduce affected labels to uncertain; exact owner-reviewed result recovery permits no new execution. Actual completed return remains pending. Keep the audience, prices, six beliefs, proprietary catalog and provider/privacy gates unchanged. Cumulative EUR5 includes all earlier holds; no customer, speed or commercial-availability claim follows.

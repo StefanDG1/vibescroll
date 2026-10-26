@@ -1,5 +1,15 @@
 # October 22 launch implementation candidate
 
+## Three task locations compatible candidate, October26
+
+[ADR161](adr/161-three-task-locations.md) implements one shared Where tasks run picker in Save and Continue setup. Own ChatGPT Cloud is Recommended but stays disabled pending automatic media acceptance; VibeScroll servers use separately bought credits; local machine uses the user's own account. Setup/reconfiguration and keyboard/tap More info use existing pages. The duplicate inert preference checkbox is removed without deleting its stored value/API. Paired, offline and per-task readiness stay separate.
+
+The existing authorized AI-preference query returns the matching private owner's saved route through the current by-org index; no schema, index or grant changes. Save honors save-only and unavailable routes without changing executor/funding. Opening the editor refreshes its existing bounded options once. No full-main Home, project-builder, ordered-media or index work was imported.
+
+Full compatible offline check passed1,229 Vitest,19 Node and38 Python tests, with3 hosted skips, types/lint and both builds. Focused UI101 and backend5 passed. Final Help screenshot/static-asset builds passed on both branches. Exact-head CI remains separately recorded. Source/format checks passed; dependencies are unchanged and prior development-tool advisories remain.
+
+The actual synthetic screenshot comes from main runtime63e5d0b and the identical shared picker. This is candidate UI acceptance, not independent customer/device testing or deployment. Serving frontend/backend remains6cdcb1c. The no-media native probe's later execution/cleanup are host-reported; independent later tool trace and full media admission remain. Probe paused, subscriptions/deliveries0 at12:47:45/46UTC. No post/job/download/paid inference. Current retainedUSD7.825014256044614 underUSD7.95/EUR7.50 leavesUSD.12498574395538586 unreserved; every prior hold remains. No new controlled publication is funded.
+
 ## Actual app Save to ChatGPT reply accepted, October 26
 
 The [production receipt](operations/evidence/launch-20261026-saved-link-native-ack.json) records actual **Save source** to a later native ChatGPT acknowledgement, after the setup turn finished and without a follow-up message, polling or manual run. Signed callback delivery returned HTTP200 on attempt1. The existing post's source/analysis/preparation/transcript/frame/generation hash stayed identical. No new source, media download, analysis, credits or paid API route was selected. The same authenticated plugin was refreshed without another login; the earlier connection probe proved automatic subscription renewal. Both canary monitors are now paused and bounded reads confirm zero remaining subscription/delivery rows.

@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## October 26: F078 three task locations
+
+All four briefs now record the owner-selected order, costs and quick setup links. The local candidate reuses current processing checks and keeps automatic ChatGPT Cloud disabled until admitted. No prices, allowances, permissions, audience or six beliefs change. Local browser/source checks remain separate from production publication and independent usability.
+
 ## F066: preserve older saved posts through explicit privacy repair, October 24
 
 Updated the four briefs and index together for [F066](idea-backlog.md#f066-preserve-older-saved-posts-through-explicit-privacy-repair-october-24) and ADR 147. Recorded the actual legacy-workspace blocker, guarded unchanged-ID repair candidate and separate live/privacy consent. Preserved dissent about collaborators and all existing prices, allowances, audience, beliefs and external gates. No production adoption, video success, customer or campaign was claimed.

@@ -1,0 +1,83 @@
+{
+  "dateUTC": "2026-10-26",
+  "status": "published_existing_account_chatgpt_current_widget_accepted",
+  "frontendCommit": "a7a48cb6a4e10f023c78e581ac64d2b6ac3039a7",
+  "backendCommit": "f6dd6d4eb944fee5a88e3826e6a058b987b4b3d4",
+  "exactCI": {
+    "run": 40388132270,
+    "conclusion": "success"
+  },
+  "local": {
+    "vitestPassed": 1296,
+    "hostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 59,
+    "linuxOnlyWindowsSkipped": 4,
+    "typesPassed": true,
+    "lintZeroWarnings": true,
+    "buildsPassed": true,
+    "dependencyAdvisories": 0,
+    "protocolAndAccessCasesPassed": 33,
+    "backendPublicRequestHash": "9c157155413ef8e3722042d00f0930f43d1fd50a64a06740805f9e196e876bbf",
+    "backendByteIdentical": true
+  },
+  "frontend": {
+    "deploymentId": "dpl_3MifH1UW5fVoHvKiLBrcaX5NpFME",
+    "fixedBasicQueued": true,
+    "builds": 1,
+    "stagedReads": 4,
+    "healthExact": true,
+    "widgetDescriptorEnabled": true,
+    "illustratedGuideVerified": true,
+    "runtimeZipSHA256Matched": true,
+    "sameBuildPromoted": true,
+    "canonicalVersion": "0.1.0-alpha.20261026193512.ga7a48cb6a4e1",
+    "normalDomainAssignmentRestored": true,
+    "paidAcceleration": false,
+    "backendPublications": 0
+  },
+  "chatgpt": {
+    "existingPrimaryPluginRefreshed": true,
+    "discoveryErrors": 0,
+    "temporaryChat": true,
+    "developerCSPEnforcementRemainedOn": true,
+    "cspOffBadgeAbsent": true,
+    "currentHtmlReceived": true,
+    "coverageLabel": "Timestamped media evidence",
+    "citationRowsSequence": [2, 5, 2],
+    "ariaExpandedSequence": [false, true, false],
+    "nativePointerDisclosurePassed": true,
+    "toggleFocusRetained": true,
+    "liveKeyboardActivation": "not_passed_by_this_automation",
+    "expandedWorkspace": "native_host_panel",
+    "panelWidthCSS": 424,
+    "libraryNavigationPassed": true,
+    "boundedLibraryRowsObserved": 4,
+    "libraryAlert": null,
+    "sourceSaves": 0,
+    "analysisJobs": 0,
+    "feedbackWrites": 0,
+    "projectWrites": 0,
+    "grantChanges": 0,
+    "ownedVerificationAndBillingTabsClosed": true
+  },
+  "resourceUris": {
+    "workspace": "ui://vibescroll/workspace/v1-1009cbb7beea5283.html",
+    "card": "ui://vibescroll/card/v1-ceeee398c8eb37f1.html",
+    "export": "ui://vibescroll/export/v1-2fe2a653ba69f2e6.html"
+  },
+  "preservedNonPasses": [
+    "Earlier21de deployment rendered cached v1 HTML, recorded separately.",
+    "An immediate collapse pointer attempt missed after host relayout; fresh-layout pointer activation succeeded.",
+    "A parent-target keyboard dispatch did not activate the nested control; no live keyboard activation pass is claimed.",
+    "The initial screenshot clip was displaced or covered by the composer; a fresh viewport capture was opened and validated."
+  ],
+  "remaining": [
+    "Actual Codex visual acceptance",
+    "Fresh customer OAuth and entitlement journey",
+    "Full role/revocation/accessibility/host matrix",
+    "Installed skills behavior and public submission",
+    "Richer versioned editing commands"
+  ],
+  "scope": "Existing-account current ChatGPT compact card disclosure and native Library read only, not full public-release or security certification."
+}

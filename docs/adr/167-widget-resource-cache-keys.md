@@ -1,6 +1,6 @@
 # ADR 167: generate widget resource cache keys
 
-Date: 26 October 2026. Status: accepted for the next compatible frontend release; not published.
+Date: 26 October 2026. Status: accepted and published in a7a48cb.
 
 ## Context
 
@@ -15,3 +15,7 @@ Scoped resource templates retain old v1 and v1-fingerprint URLs for conversation
 ## Validation and limits
 
 A real stateless-MCP regression failed against the constant URI. It now reads every advertised renderer resource and matches the URI fingerprint to its returned HTML. Compatibility cases cover original and older-fingerprint URLs, missing scope and unsupported protocol.33 focused protocol/access cases, widget build, full types and zero-warning lint passed. Exact combined CI, publication, discovery refresh and actual two/five/two-reference rendering with CSP enforcement on remain required. No new backend, permission, network allowlist or paid model is needed.
+
+## Production evidence
+
+Exact CI40388132270 passed and one fixed Basic build was promoted unchanged. Refreshing the existing ChatGPT plugin delivered current HTML with CSP enforcement on. Native pointer disclosure passed2/5/2 and expanded Library reads succeeded. The earlier fixed-URI failure remains in its separate receipt. Actual Codex rendering and live keyboard activation are not certified by this checkpoint. [Host receipt](../operations/evidence/launch-20261026-mcp-widget-cache-publication.json).

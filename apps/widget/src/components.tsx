@@ -136,6 +136,7 @@ export function InsightDetail({
   grantVersion,
   allowFeedback,
   compact = false,
+  filing,
   notify,
 }: {
   source: Source;
@@ -144,6 +145,7 @@ export function InsightDetail({
   grantVersion: number;
   allowFeedback: boolean;
   compact?: boolean;
+  filing?: ReactNode;
   notify: (text: string) => void;
 }) {
   const host = useHost();
@@ -277,6 +279,7 @@ export function InsightDetail({
           citation remains available above.
         </p>
       )}
+      {filing}
       {allowFeedback && insight.reference && (
         <section className="feedback-area">
           <h3>How useful is this source?</h3>

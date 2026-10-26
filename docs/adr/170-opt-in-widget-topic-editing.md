@@ -27,3 +27,5 @@ Local compilation uses the pinned Convex generator's pure API template. Normal o
 ## Evidence
 
 Focused tests cover current/revoked/stale permissions, selected grants, viewer roles, idempotency and conflicting keys, stale topic/layout versions, parent cycles, receipt access/expiry and no processing dispatch. Actual strict HTTP transport tests exercise the real operation router and mutation, including correlated rejection. The development-only AppBridge harness covers editing, receipt recovery, read-only absence and the 320px dark layout with synthetic records. Screenshots and these tests do not certify live OAuth or host editing.
+
+The later [inline idea filing candidate](174-inline-idea-filing.md) extends this still-unpublished table with an optional evidence receipt and a fifth source-cleanup index. Its consent label also covers idea filings. The original topic-only check above remains historical evidence for that phase.

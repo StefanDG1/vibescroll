@@ -57,8 +57,16 @@ The a7a48cb cache correction is now published. Following existing-plugin discove
 
 ## Release the opt-in topic editor
 
-Keep MCP_WIDGET_LIBRARY_EDITING_ENABLED off until the separate additive-schema review and compatible frontend/backend release pass. This candidate adds assistantLibraryCommands with four indexes. Preserve the serving backend and concurrent Cloud transport changes when assembling the release. Reserve deployment cost separately; no existing publication hold is reusable by assumption.
+Keep MCP_WIDGET_LIBRARY_EDITING_ENABLED off until the separate additive-schema review and compatible frontend/backend release pass. The topic-only candidate originally added assistantLibraryCommands with four indexes. Inline idea filing extends it with an optional evidence receipt and by_source index, making five candidate indexes. Preserve the serving backend and concurrent Cloud transport changes when assembling the release. Reserve deployment cost separately; no existing publication hold is reusable by assumption.
 
 Configure knowledge:write only for the intended official provider client, then complete new provider consent and deliberate whole-library application-grant consent. Old connections must not inherit it. Enabling the flag exposes three private widget tools and actions.organize only to an authorized writer. Verify a disposable permitted topic through rename, pin, folder/aliases, stale-version rejection, lost-reply reconciliation and revoked-access refusal. Those writes are distinct from the prior read-only host acceptance. Disable the flag to remove the editing entrypoint; retain receipts and existing data.
 
 The local synthetic protocol harness also verifies that collapsing the disclosure during an outstanding save and after a lost reply preserves the same request. It closes its owned test tab. See [ADR170](../adr/170-opt-in-widget-topic-editing.md).
+
+## Verify inline idea filing
+
+Keep the existing edit flag off until the additive schema and current provider/client/app consent are reviewed. The permission label must cover topic organization and idea filings before a person consents. No existing connection receives this new authority automatically.
+
+On an exact current cited idea, open File this idea, move to a deliberately selected loaded topic, verify the receipt, remove a filing and restore it. Verify source-deletion cleanup removes its source-bound receipts. Changed source evidence, source rights, membership, grant or either topic version must reject further changes. An empty filtered page must keep manual pagination; do not silently drain cursors or claim the whole library is empty.
+
+A delayed or lost reply keeps fresh edits disabled. Collapse/reopen the disclosure, check the same request and verify the single canonical receipt. A retry uses that original payload and key. These local cases use synthetic records; real ChatGPT acceptance requires a separately authorized disposable record and explicit edit consent. This checklist authorizes no live write or deployment. [ADR174](../adr/174-inline-idea-filing.md).

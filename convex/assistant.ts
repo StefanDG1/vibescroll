@@ -48,7 +48,12 @@ export const redactIntakes = internalMutation({
       .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
       .take(50);
     for (const row of rows) await ctx.db.delete(row._id);
-    if (rows.length === 50)
+    const filings = await ctx.db
+      .query("assistantLibraryCommands")
+      .withIndex("by_source", (q) => q.eq("evidence.sourceId", args.sourceId))
+      .take(50);
+    for (const row of filings) await ctx.db.delete(row._id);
+    if (rows.length === 50 || filings.length === 50)
       await ctx.scheduler.runAfter(0, internal.assistant.redactIntakes, args);
   },
 });

@@ -166,17 +166,21 @@ it("keeps opt-in editing absent by default and requires both scopes when enabled
     await call("tools/list", {}, ["knowledge:read", "knowledge:write"]),
   );
   expect(
-    disabled.result.tools.some((tool: any) =>
-      tool.name.startsWith("widget_library_"),
+    disabled.result.tools.some(
+      (tool: any) =>
+        tool.name.startsWith("widget_library_") ||
+        tool.name.startsWith("widget_evidence_"),
     ),
   ).toBe(false);
   const enabled = await packet(
     await call("tools/list", {}, ["knowledge:read", "knowledge:write"], true),
   );
-  const edits = enabled.result.tools.filter((tool: any) =>
-    tool.name.startsWith("widget_library_"),
+  const edits = enabled.result.tools.filter(
+    (tool: any) =>
+      tool.name.startsWith("widget_library_") ||
+      tool.name.startsWith("widget_evidence_"),
   );
-  expect(edits).toHaveLength(3);
+  expect(edits).toHaveLength(6);
   for (const tool of edits) {
     expect(tool._meta.ui.visibility).toEqual(["app"]);
     expect(tool._meta.ui.resourceUri).toBeUndefined();
@@ -184,9 +188,7 @@ it("keeps opt-in editing absent by default and requires both scopes when enabled
       type: "oauth2",
       scopes: ["knowledge:read", "knowledge:write"],
     });
-    expect(tool.annotations.readOnlyHint).toBe(
-      tool.name !== "widget_library_edit",
-    );
+    expect(tool.annotations.readOnlyHint).toBe(!tool.name.endsWith("_edit"));
   }
   for (const scopes of [["knowledge:read"], ["knowledge:write"]]) {
     invoke.mockClear();

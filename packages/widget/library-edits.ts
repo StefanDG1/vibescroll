@@ -105,7 +105,10 @@ export const libraryEditResult = z.union([
 ]);
 
 /** Only a structured Convex policy failure proves that its atomic mutation aborted. */
-export function libraryEditFailure(error: unknown, request: LibraryEdit) {
+export function libraryEditFailure(
+  error: unknown,
+  request: Pick<LibraryEdit, "profileId" | "grantVersion" | "topicId" | "key">,
+) {
   if (
     !error ||
     typeof error !== "object" ||

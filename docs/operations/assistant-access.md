@@ -1,5 +1,11 @@
 # Configure scoped assistant access
 
+## ChatGPT native Events accepted, October 26
+
+The owner's new parallel plugin passed native discovery, signed callback verification, later event-triggered acknowledgement replies and automatic subscription renewal beyond its original OAuth-bound expiry without another login. The original plugin remains installed. No video was saved, downloaded or analysed in this proof. The temporary connection monitor is paused and its subscription/delivery rows were removed through normal unsubscribe.
+
+Use the [exact setup and renewal runbook](chatgpt-native-events.md) and [sanitized live receipt](evidence/launch-20261026-chatgpt-native-events.json). The `video_link_saved` capture hook is an unpublished candidate under [ADR 160](../adr/160-native-events-and-saved-video-acknowledgement.md). Actual app Save to acknowledgement and subsequent automatic media execution remain separate acceptance steps. The EUR7 cap, reserved posts, unknown job, old repair and all release/provider/privacy gates remain.
+
 ## Older workspaces and private Cloud analysis, October 24
 
 The compatible private Cloud protocol is deployed, and the founder connection now exposes `work_cloud_claim`, `work_cloud_input`, `work_cloud_heartbeat`, `work_cloud_prepare`, `work_cloud_complete` and `work_cloud_fail`. The new provider `analysis:execute` permission preserves the existing eight scopes and callback. Normal OAuth consent, the matching app grant and exact post approval are separate requirements. Tool discovery is not a successful video run.

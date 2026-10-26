@@ -499,6 +499,10 @@ it("copies setup for the saved grant, then uses the refreshed version without ch
   expect(message.props.value).toContain("recordSelfEntries");
   expect(message.props.value).toContain("preserve managed proxy/no-proxy/CA");
   expect(message.props.value).not.toContain("/etc/codex/network-policy.json");
+  expect(message.props.value).toContain("Readiness checks do not construct an ASR model or transcribe.");
+  expect(message.props.value).toContain("During an authorized source job");
+  expect(message.props.value).toContain("may initialize that verified local model and transcribe offline");
+  expect(message.props.value).not.toContain("No model construction/install/download during preflight or lease.");
   await button(f.render(), "Copy setup message").props.onClick();
   expect(writeText).toHaveBeenCalledWith(message.props.value);
   expect(text(f.render())).toContain(

@@ -79,6 +79,66 @@
     "generation": 1,
     "savedIntentState": "consumed",
     "stageObserved": "acquiring",
-    "canonicalResultAccepted": false
+    "canonicalResultAccepted": false,
+    "lastStatus": "unknown",
+    "sourceStatus": "failed",
+    "sourceMediaAsrAndProviderUsage": "unreconciled",
+    "retryOrReplacement": false,
+    "actualNativeReport": {
+      "clipAcquired": true,
+      "durationSeconds": 104,
+      "captionTracks": 0,
+      "nativeMetadataAccepted": true,
+      "asrConstruction": 0,
+      "transcriptions": 0,
+      "framePreparations": 0,
+      "completions": 0,
+      "stopReason": "operational monitor instruction mistakenly forbade cached model construction throughout source lease",
+      "leaseRelinquishmentAccepted": true,
+      "ownedMediaAndExecutionCopyRemoved": true,
+      "sharedCachesPreserved": true,
+      "providerDeletion": "unverified",
+      "subscriptionUsage": "unresolved"
+    },
+    "pilotPaused": true,
+    "readOnlyNativeReconciliation": {
+      "acquisitionOperations": 1,
+      "inspectStages": 1,
+      "acquireStages": 1,
+      "commandExitCode": 0,
+      "mediaFiles": 1,
+      "metadataSubmissionsAccepted": 1,
+      "asrConstructions": 0,
+      "transcriptions": 0,
+      "framePreparations": 0,
+      "uploads": 0,
+      "preparationBindings": 0,
+      "completions": 0,
+      "relinquishmentsAccepted": 1,
+      "precedingHeartbeatValid": true,
+      "leaseExpiryRefusalObserved": false,
+      "outstandingLaunchedSessionsInRetainedEvidence": 0,
+      "freshProcessScan": false,
+      "providerAttestedHostStop": false,
+      "jobRootRemoved": {
+        "files": 7,
+        "bytes": 5890901
+      },
+      "toolsCopyRemoved": {
+        "files": 1176,
+        "bytes": 13649277
+      },
+      "providerDeletionAndSubscriptionUsage": "unverified",
+      "auditToolCalls": 0,
+      "monitorPaused": true
+    }
+  },
+  "candidateClarification": {
+    "scope": "preflight stays static; existing authorized offline preparation may initialize separately verified local model under fresh V2",
+    "noPolicyHashOrAuthorityChange": true,
+    "focusedSetupCasesPassed": 23,
+    "independentSourceReview": "no actionable phase inconsistency; real V2 wrapper remains mandatory",
+    "published": false,
+    "pausedActionSavedAndReopenedVerified": true
   }
 }

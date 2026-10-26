@@ -38,6 +38,7 @@ vi.mock("react", async (original) => ({
 import { PublicKnowledgePanel } from "./components/public-knowledge-panel";
 import { PublicSaveContinuation } from "./components/public-save-continuation";
 import { SetupJourney } from "./components/setup-journey";
+import { TaskRuntimePicker } from "./components/task-runtime-picker";
 import { ProjectBuilderGuide } from "./components/project-builder-guide";
 import { advanceJourney } from "../../packages/onboarding/project-builder-journey";
 type Node = ReactElement<Record<string, any>>;
@@ -672,7 +673,7 @@ it("local prerequisite reports require explicit bounded JSON submission and pres
   expect(text(view())).toContain("local report is invalid");
 });
 it.each([undefined, "unavailable", "available_unverified"] as const)(
-  "discloses experimental text state %s without another request or a saved route change",
+  "renders the same execution picker for text state %s without another request or a saved route change",
   async (state) => {
     const snapshot = {
       route: "cloud",
@@ -700,27 +701,13 @@ it.each([undefined, "unavailable", "available_unverified"] as const)(
     const tree = render(SetupJourney, props);
     const copy = text(tree);
     expect(copy).toContain("Saved route:");
-    expect(copy).toContain("Managed cloud");
-    expect(copy).toContain("Managed processing:");
-    expect(copy).toContain("unavailable");
-    expect(copy).toContain(
-      state === "available_unverified"
-        ? "Available for text review; processing connection unverified."
-        : state === "unavailable"
-          ? "Not available for this account."
-          : "Text-review availability unverified.",
-    );
-    expect(copy).toContain("without GitHub or a paired computer");
-    expect(copy).toContain(
-      "Successful host execution and video processing remain unverified",
-    );
-    expect(
-      elements(tree).some(
-        (node) =>
-          node.props.href === "/help/work-cloud-text-review" &&
-          node.props.prefetch === false,
-      ),
-    ).toBe(true);
+    expect(copy).toContain("VibeScroll's servers");
+    const picker = elements(tree).find(
+      (node) => node.type === TaskRuntimePicker,
+    )!;
+    expect(picker.props.value).toBe("cloud");
+    expect(picker.props.serverAvailable).toBe(false);
+    expect(picker.props.localAvailable).toBe(false);
     expect(call).toHaveBeenCalledExactlyOnceWith("setupJourney", {
       organizationId: "distinct-route-owner",
     });
@@ -765,7 +752,7 @@ it("keeps the processing chapter's experimental text guidance distinct without a
       }),
     );
     expect(html).toContain("Connect processing");
-    expect(html).toContain("Managed cloud uses its existing credits");
+    expect(html).toContain("credits bought separately");
     expect(html).toContain(
       state === "available_unverified"
         ? "Available for text review; processing connection unverified."

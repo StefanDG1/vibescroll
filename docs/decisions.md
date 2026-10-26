@@ -1,5 +1,9 @@
 # Product decisions
 
+## Three task locations, October26
+
+[ADR161](adr/161-three-task-locations.md) implements the owner's shared three-choice picker: own ChatGPT Cloud Recommended, separately bought VibeScroll server credits, and local own-subscription processing. Keep unsupported routes visible but disabled, quick setup/reconfiguration and More info, and Save without analysis separate. This presentation change widens no grant or runtime availability and changes no saved data or funding approval. Production publication remains pending.
+
 ## Direct post pages and caption-first Cloud milestone, October25
 
 [ADR156](adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) makes Home recent additions metadata-only and one-click, reusing bookmarkable authenticated post pages. It adds progressive native previews and caption-first extraction, retires region sharing, defers Telegram and public publisher expansion, and prioritizes one verified inline Cloud media result before broader platform and automatic-wake acceptance. Preserve existing content, permissions, cumulative EUR5 and provider/release gates. Implementation has begun; production acceptance remains open.

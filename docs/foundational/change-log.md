@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## October 26: F078 three task locations
+
+All four briefs now record the owner-selected order, costs and quick setup links. The local candidate reuses current processing checks and keeps automatic ChatGPT Cloud disabled until admitted. No prices, allowances, permissions, audience or six beliefs change. Local browser/source checks remain separate from production publication and independent usability.
+
 ## October 26: F077 fresh Reel result and bounded acceptance
 
 Synchronized all four briefs and the index with the sanitized live receipt. A fresh active-task Reel returns retained speech, JPEGs and cited analysis; actual app checks include mobile image rendering. Explicitly retained idle-wake, original-image-repair, accuracy, full-main and provider/privacy limits. EUR7 supersedes the older EUR5 cap; all earlier holds remain. No audience, price, allowance, campaign or customer-outcome claim changes.

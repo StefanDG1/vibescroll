@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CompanionSetup } from "./companion-setup";
+import { TaskRuntimePicker } from "./task-runtime-picker";
 import type {
   SetupSnapshot,
   SetupAction,
@@ -189,50 +190,51 @@ export function SetupJourney({
     >
       <summary>Continue setup</summary>
       <p>
-        Use the browser to save, review and approve work. The paired-computer
-        own-plan route needs your eligible account and an awake paired Windows
-        computer with its supported isolated runtime. Your subscription
-        allowance does not cover every preparation, storage or platform cost.
-        Review each task's route and maximum before approval.
+        Save and review posts in your browser. Choose where analysis runs below.
+        Each option shows its setup and costs. Saving a preference starts no
+        work.
       </p>
-      <a
-        href="/help/connect-your-computer"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Set up your computer step by step
-      </a>
+      <Link href="/help/processing-and-recovery" prefetch={false}>
+        Help choosing where tasks run
+      </Link>
       {progress && (
         <>
           <p>
             Saved route:{" "}
             {progress.snapshot.route === "local"
-              ? "Your paired computer"
+              ? "Local machine"
               : progress.snapshot.route === "cloud"
-                ? "Managed cloud"
+                ? "VibeScroll's servers"
                 : progress.snapshot.route === "save_only"
                   ? "Save for later"
                   : "Not selected"}
-            . Own-plan account eligibility:{" "}
-            {progress.snapshot.localEligible ? "available" : "unavailable"}.
-            Managed processing:{" "}
-            {progress.snapshot.cloudAvailable ? "available" : "unavailable"}.
-            Availability still requires the task's current checks and approval.
+            . Review task limits before starting analysis.
           </p>
-          <p>
-            Experimental Work Cloud text:{" "}
-            {progress.snapshot.workCloudTextState === "available_unverified"
-              ? "Available for text review; processing connection unverified."
-              : progress.snapshot.workCloudTextState === "unavailable"
-                ? "Not available for this account."
-                : "Text-review availability unverified."}{" "}
-            Review a supported text handoff without GitHub or a paired computer.
-            Successful host execution and video processing remain unverified.{" "}
-            <Link href="/help/work-cloud-text-review" prefetch={false}>
-              Read the text handoff guide
-            </Link>
-            .
-          </p>
+          <TaskRuntimePicker
+            organizationId={organizationId}
+            value={
+              progress.snapshot.route === "save_only"
+                ? undefined
+                : progress.snapshot.route
+            }
+            onChange={(route) => {
+              if (route !== "work_cloud") void save({ route });
+            }}
+            serverAvailable={progress.snapshot.cloudAvailable}
+            localAvailable={progress.snapshot.localEligible}
+            localConfigured={progress.snapshot.paired}
+            localStatus={
+              !progress.snapshot.paired
+                ? "setup_required"
+                : !progress.snapshot.workerAvailable
+                  ? "offline"
+                  : !progress.snapshot.accountConnected ||
+                      !progress.snapshot.prerequisitesChecked
+                    ? "setup_required"
+                    : "check_before_running"
+            }
+            disabled={disabled || saving}
+          />
         </>
       )}
       {progress && !progress.journey && (
@@ -293,29 +295,18 @@ export function SetupJourney({
       )}
       {routeReview && progress && (
         <fieldset disabled={disabled || saving} className="form-grid">
-          <legend>Choose your processing route</legend>
-          <p>
-            Saving alone starts no inference. Every analysis still requires its
-            own current approval and maximum. A saved preference cannot enable
-            an unavailable route.
-          </p>
-          {(["save_only", "local", "cloud"] as const).map((route) => (
-            <button
-              type="button"
-              className="secondary"
-              key={route}
-              aria-pressed={progress.snapshot.route === route}
-              onClick={async () => {
-                if (await save({ route })) setRouteReview(false);
-              }}
-            >
-              {route === "save_only"
-                ? "Save for later"
-                : route === "local"
-                  ? "Use my paired computer"
-                  : "Review managed cloud"}
-            </button>
-          ))}
+          <legend>Save without analysis</legend>
+          <p>Choose a task location above, or keep links saved for later.</p>
+          <button
+            type="button"
+            className="secondary"
+            aria-pressed={progress.snapshot.route === "save_only"}
+            onClick={async () => {
+              if (await save({ route: "save_only" })) setRouteReview(false);
+            }}
+          >
+            Save for later
+          </button>
         </fieldset>
       )}
       {instruction && (

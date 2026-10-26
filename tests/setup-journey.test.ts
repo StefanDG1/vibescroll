@@ -72,6 +72,10 @@ it("resumes explicit route and optional reviews without inventing local readines
       assistantReviewed: false,
     },
   });
+  expect(
+    (await client.query(api.aiPreferences.read, { organizationId: org }))
+      .processingRoute,
+  ).toBe("save_only");
   await expect(
     client.mutation(api.setupJourney.save, {
       organizationId: org,

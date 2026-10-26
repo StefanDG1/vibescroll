@@ -27,6 +27,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }));
 import { PersonalSourceAnalysis, CaptureForm } from "./components/console";
+import { TaskRuntimePicker } from "./components/task-runtime-picker";
 type Node = ReactElement<Record<string, any>>;
 afterEach(() => {
   hooks.values = [];
@@ -34,6 +35,49 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
+it.each(["save_only", "cloud"])(
+  "preserves the saved %s route without falling back to local processing",
+  async (preferredRoute) => {
+    const call = vi.fn(async (_operation: string) => "saved-source");
+    hooks.index = 0;
+    const tree = CaptureForm({
+      organizationId: "workspace",
+      preferredRoute,
+      personalEnabled: true,
+      cloudEnabled: false,
+      linkAnalysisEnabled: true,
+      call,
+      onDone: vi.fn(),
+    });
+    const picker = elements(tree).find(
+      (node) => node.type === TaskRuntimePicker,
+    )!;
+    expect(picker.props.value).toBe(
+      preferredRoute === "cloud" ? "cloud" : undefined,
+    );
+    vi.stubGlobal("crypto", { randomUUID: () => "synthetic-save" });
+    vi.stubGlobal(
+      "FormData",
+      class {
+        get(name: string) {
+          return (
+            {
+              url: "https://www.instagram.com/reel/Example/",
+              rights: "on",
+            } as Record<string, string>
+          )[name];
+        }
+      },
+    );
+    await tree.props.onSubmit({
+      preventDefault() {},
+      currentTarget: { reset() {} },
+    });
+    expect(call.mock.calls.map(([operation]) => operation)).toEqual([
+      "capture",
+    ]);
+  },
+);
 it("uses actual selected effort for automatic URL capture and rejects missing choices before saving", async () => {
   const h = harness();
   h.device.subscriptionCapabilities.value.models[1].reasoningEfforts = ["high"];

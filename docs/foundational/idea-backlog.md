@@ -1,5 +1,9 @@
 # Foundational idea backlog
 
+## F078: understandable task locations, October 26
+
+Source: the owner's exact three-option request. Decision: implement one shared picker and existing setup shortcuts, keeping unavailable routes visible and disabled. The objection is ambiguity between ChatGPT Cloud and VibeScroll-funded servers. Recommendation follows owner preference; readiness and customer comprehension remain separately tested. Keep all existing quotes, grants and saved data. See [ADR161](../adr/161-three-task-locations.md).
+
 ## F077: one-platform live Cloud acceptance, October 26
 
 Source: owner direction and actual Cloud completion plus authenticated production browser checks. Decision: accept the single active-task Reel path and stop broadening live canaries. Counterargument: one successful ASR source cannot establish caption reuse, transcript accuracy, idle wake, TikTok reliability or general availability. Preserve the failed source's unknown generation and accounting, both TikToks, original-image repair and provider/privacy/release gates. All four briefs link the sanitized production receipt; no new benefit or campaign claim follows.

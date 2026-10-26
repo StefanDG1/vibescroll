@@ -1,5 +1,9 @@
 # Finish the first link-to-Cloud-analysis milestone
 
+## Task location refinement, October26
+
+Use the [three task locations](../../adr/161-three-task-locations.md) consistently in Save and setup. Keep own ChatGPT Cloud Recommended but disabled until actual automatic media execution is accepted. Preserve separately priced servers and the local route without expanding them for this milestone. Setup/reconfigure links reuse current pages. A finite app-Save intent under reviewed defaults precedes runtime preflight and the existing exact job; do not start its short lease while the host is still preparing. No server extraction or paid fallback hides under the own-subscription label.
+
 ## Current native Events checkpoint, October 26
 
 Actual app **Save source** to a later native ChatGPT acknowledgement passed in the private owner account. Compatible frontend/backend6cdcb1c are live; the same authenticated plugin discovered `video_link_saved` through Refresh tools without another login. The source, analysis, transcript, eight retained frames and generation stayed hash-identical, with no new analysis or paid route. Both temporary monitors are paused and their subscription/delivery rows were removed. See the [current handover](HANDOVER-2026-10-26.md), [actual receipt](../../operations/evidence/launch-20261026-saved-link-native-ack.json) and [setup runbook](../../operations/chatgpt-native-events.md).

@@ -1,5 +1,9 @@
 # Product requirements
 
+## Three task locations, October26
+
+[ADR161](adr/161-three-task-locations.md) requires a simple shared picker in Save and setup, ordered own ChatGPT Cloud Recommended, VibeScroll servers using separately bought credits, then local machine using the user's own subscription. Show actual availability, quick setup/reconfiguration and accessible extra information. Unsupported routes remain visible and disabled. Save without analysis remains separate; preserve existing data and every task's permissions and limits.
+
 ## Direct posts and the first Cloud milestone, October25
 
 [ADR156](adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) supersedes expand-first cards and the earlier requirement to finish every capture/runtime option before this milestone. Home lists recently added metadata-only cards with direct authenticated post pages, progressive native previews and lazy images. Full analysis loads on opening a post. Retire regional sharing, defer Telegram/public publisher expansion and additional runtime work, and prioritize a verified caption-first Instagram/TikTok Cloud result. Preserve existing content, recovery, private project work, permissions and cumulative EUR5. Automatic wake and global reuse still require their separate acceptance.

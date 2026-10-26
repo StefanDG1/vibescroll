@@ -1,5 +1,11 @@
 # VibeScroll foundational offer
 
+## F078: three task locations, October 26
+
+The owner requires the same short choice in Save and setup: My own Cloud Work using the user's ChatGPT subscription, Recommended; VibeScroll's servers using credits bought separately; Local machine using the user's own subscription. Show disabled routes with setup/reconfiguration links and accessible More info. Keep saving without analysis separate. [ADR161](../adr/161-three-task-locations.md) records the implementation candidate and unchanged permissions, prices and credit approvals.
+
+Recommendation is the owner's direction, not proof of general availability. Native saved-link acknowledgement is live; automatic video analysis, supported bootstrap and image/runtime admission remain separate. Keep the existing audience, six beliefs, saved data, provider/privacy gates and cumulative EUR7.50 with every prior hold. No campaign, independent usability or customer-value claim follows.
+
 ## F077: a fresh Reel completes in an active Cloud task, October 26
 
 The [production receipt](../operations/evidence/launch-20261026-cloud-reel-success.json) verifies one 49.483 second Instagram Reel through existing Cloud authority: 20 automatic English transcript segments, five insights, 23 citations and eight retained JPEGs. The authenticated post page, thumbnail, lazy gallery and image viewer passed desktop and 320px mobile checks. No captions were available for this source. The owner accepts either Reels or TikTok and approved a cumulative EUR7 cap; all earlier holds remain.

@@ -39,4 +39,4 @@ Use the small card before testing the expanded workspace. Check the authoritativ
 
 The local protocol check at `apps/widget/harness/check.py` is development-only, uses scoped CDP sessions and focus emulation for background-browser rendering, and closes its single test tab. A synthetic host advertises `openai/resource` only for the file-entrypoint case. A generic MCP Apps host without that extension falls back to manual snapshot selection. It never connects to the live server or starts real analysis.
 
-No hosted test release is funded by this checkpoint. Preserve the cap and all existing holds in ADR161. The branch-specific Vercel Git suppression prevents a draft PR from accidentally creating a paid preview build. Obtain the explicit bounded release reservation before deployment.
+No hosted test release is funded by this checkpoint. Preserve the current EUR8 cap and all existing holds in ADR161; its earlier EUR7.50 limit is historical. The branch-specific Vercel Git suppression prevents a draft PR from accidentally creating a paid preview build. Obtain the explicit bounded release reservation before deployment.

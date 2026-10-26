@@ -1,3 +1,11 @@
+## October26: widget candidate published; actual host found a renderer restriction
+
+Source bfe02d2 passed exact Linux CI40373100728, the final local1278-test JavaScript suite, Node/Python checks and22 operator-guard checks. The guarded backend returned finish acknowledgement at18:01:26.794UTC. Its postcondition incorrectly expected private dependency chunks in the public-module diff and halted after publication. Independent receipt review accepted only the four frozen public additions and exact optional schema widening. A fresh read matched all297 deployed root module hashes. No retry, schema walk, index backfill or component remount occurred; the original halt remains recorded.
+
+One fixed Basic frontend build dpl_5225QTerfeq6VwPk6G4zE8BeLhYi passed staged version/descriptor/OAuth metadata checks and was promoted unchanged. Canonical health reports bfe02d2/version0.1.0-alpha.20261026175106.gbfe02d2e869f. The POST-only MCP endpoint correctly rejects GET with405; an initial401 expectation was rejected rather than counted as an auth pass. Normal domain assignment was restored. No automatic Cloud flag, source, job or grant changed.
+
+The authenticated production profile read succeeded, but real ChatGPT tool refresh reports that the private open_vibescroll_export tool cannot render a widget. The local fix exposes only that read-only renderer to model and app, adding its existing knowledge:read OAuth metadata and enforcement. App-only data reads stay private. A new regression fails before the fix and passes after it. Actual widget rendering remains unverified. [Publication/host receipt](operations/evidence/launch-20261026-mcp-widget-publication.json).
+
 ## October26: widget dependency isolation fixed locally
 
 The workspace now disables automatic peer installation and peer-dependent deduplication. Explicit root Hono4.13.11 and React19.3.0 declarations preserve the backend's existing bindings. The pinned Convex CLI's offline output confirms all seven component payloads and definition paths are byte-identical to serving ff7d88f. No registry package version or integrity changed. No upstream validator was removed and no publication guard was relaxed.

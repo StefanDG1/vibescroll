@@ -1,6 +1,6 @@
 # ADR 175: bounded downloader failure hints preserve accepted media versions
 
-Date: October 26, 2026. Status: candidate; not published.
+Date: October 26, 2026. Status: accepted; published in97dfa2c.
 
 ## Observed failure
 
@@ -16,4 +16,4 @@ Freeze the previous v3 manifest byte-for-byte and preserve both older archives. 
 
 ## Verification and release boundary
 
-Focused contracts pass168 cases, including both earlier v3 implementations and prior exact-source consent. Python tests cover safe categories, secret-bearing URLs, unknown diagnostics and bounds; actual Linux child failure and fast-output cases run in CI and skip explicitly on Windows. Full compatible checks pass1,304 Vitest with3 hosted skips,19 Node and70 Python cases with7 Windows skips, validation, types, zero-warning lint and production builds. Main mirroring is separate. The new immutable tools archive is80,335 bytes/16files, SHAbe21d22c1ecf35ba0d1a795e5d518e6593deeb1bb59556ae7a4d1c527891e0ce. Actual Linux CI, root review, current production sink/schema checks and staged/canonical publication remain required. No live diagnostic or complete automatic media result is claimed.
+Focused contracts pass168 cases, including both earlier v3 implementations and prior exact-source consent. Python tests cover safe categories, secret-bearing URLs, unknown diagnostics and bounds; actual Linux child failure and fast-output cases passed exact Ubuntu CI40405678479 and skip explicitly on Windows. Full compatible checks pass1,304 Vitest with3 hosted skips,19 Node and70 Python cases with7 Windows skips, validation, types, zero-warning lint and production builds. Main mirroring is separate. The new immutable tools archive is80,335 bytes/16files, SHAbe21d22c1ecf35ba0d1a795e5d518e6593deeb1bb59556ae7a4d1c527891e0ce. Root review and current sink/schema checks passed before the guarded backend publication. One fixed Basic queued frontend passed staged checks, same-build promotion and canonical verification at97dfa2c; normal domain assignment is restored. A fresh automatic TikTok event has been delivered, but its media outcome is pending. No real-source diagnostic hint or complete automatic media result is claimed from these tests.

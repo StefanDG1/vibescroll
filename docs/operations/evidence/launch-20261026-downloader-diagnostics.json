@@ -1,6 +1,6 @@
 {
   "recordedAtUTC": "2026-10-26T21:35:36.634623+00:00",
-  "scope": "candidate; not published",
+  "scope": "published diagnostics; automatic media acceptance pending",
   "productionBaseline": "3ac324723577ee5af0deaf471716270deb40872b",
   "actualReelOutcome": {
     "appSaveAtUTC": "2026-10-26T21:12:41.053Z",
@@ -70,12 +70,46 @@
     }
   },
   "focusedContractsPassed": 168,
-  "actualLinuxSubprocessChecks": "pending exact CI",
+  "actualLinuxSubprocessChecks": "passed exact Ubuntu CI40405678479",
   "retainedFailures": [
     "first compatibility case exposed hard-coded two-version policy selection; generalized only over the bounded reviewed list",
     "initial unused-import edit removed a V2 reference still used in completion; restored before final checks"
   ],
   "automaticMediaAccepted": false,
-  "hostedPublication": false,
-  "exactCI": "pending"
+  "hostedPublication": true,
+  "exactCI": {
+    "commit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
+    "runId": 40405678479,
+    "jobId": 121862682173,
+    "runner": "ubuntu-24.04",
+    "conclusion": "success",
+    "fullCheckAndDependencyAuditPassed": true
+  },
+  "updatedAtUTC": "2026-10-26T22:16:02.816272+00:00",
+  "publication": {
+    "frontendCommit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
+    "backendCommit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
+    "backendFinishedAtUTC": "2026-10-26T21:45:40.989Z",
+    "deploymentId": "dpl_U79aMCTB69NA9N97kdQMNFC22PZ3",
+    "canonicalVersion": "0.1.0-alpha.20261026213537.g97dfa2c3d83f",
+    "basicNormalQueuedBuilds": 1,
+    "sameBuildPromotion": true,
+    "stagedAndCanonicalRuntimeVerified": true,
+    "normalDomainAssignmentRestoredAndUiVerified": true,
+    "schemaIndexComponentAuthCronChanges": false
+  },
+  "nextAutomaticTest": {
+    "appSaveAtUTC": "2026-10-26T22:13:43.083Z",
+    "chatTabClosed": true,
+    "eventReceivedAtUTC": "2026-10-26T22:13:45.234Z",
+    "callbackHttpStatus": 200,
+    "callbackAttempts": 1,
+    "currentGrantVersion": 10,
+    "firstReconciliationGeneration": 0,
+    "firstReconciliationProcessing": null,
+    "currentFiniteIntent": "waiting_for_runtime",
+    "status": "outcome pending",
+    "automaticMediaAccepted": false,
+    "replayOrManualRun": false
+  }
 }

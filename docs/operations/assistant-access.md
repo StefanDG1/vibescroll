@@ -1,10 +1,12 @@
 # Configure scoped assistant access
 
-## ChatGPT native Events accepted, October 26
+## Actual app Save to native ChatGPT reply accepted, October 26
 
-The owner's new parallel plugin passed native discovery, signed callback verification, later event-triggered acknowledgement replies and automatic subscription renewal beyond its original OAuth-bound expiry without another login. The original plugin remains installed. No video was saved, downloaded or analysed in this proof. The temporary connection monitor is paused and its subscription/delivery rows were removed through normal unsubscribe.
+The owner's existing authenticated test plugin discovered `video_link_saved` through Refresh tools without another login. An actual app **Save source** click, after native monitor setup ended, produced a later acknowledgement containing the exact post ID. The signed callback returned HTTP200 on its first attempt. Before/after hashes confirm the saved source, analysis, transcript, frames and generation were unchanged. No media analysis, credits or paid API route ran. The earlier connection-event test also verified automatic renewal beyond its original OAuth-bound expiry.
 
-Use the [exact setup and renewal runbook](chatgpt-native-events.md) and [sanitized live receipt](evidence/launch-20261026-chatgpt-native-events.json). The `video_link_saved` capture hook is an unpublished candidate under [ADR 160](../adr/160-native-events-and-saved-video-acknowledgement.md). Actual app Save to acknowledgement and subsequent automatic media execution remain separate acceptance steps. The EUR7 cap, reserved posts, unknown job, old repair and all release/provider/privacy gates remain.
+Frontend/backend `6cdcb1c` are live after exact CI and one controlled fixed Basic queued build. Normal domain assignment is restored. Both temporary canary monitors are paused; bounded reads confirm their subscription/delivery rows are gone. The original plugin stays installed and the new plugin stays authenticated. See the [exact setup/renewal runbook](chatgpt-native-events.md), [actual saved-link receipt](evidence/launch-20261026-saved-link-native-ack.json) and [ADR160](../adr/160-native-events-and-saved-video-acknowledgement.md).
+
+Automatic media execution remains the next acceptance step. Preserve the cumulative EUR7.50 cap, every prior hold, both TikToks, unknown work, original repair and release/provider/privacy gates.
 
 ## Older workspaces and private Cloud analysis, October 24
 

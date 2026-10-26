@@ -1,6 +1,6 @@
 # ADR 160: prove native Events before automatic video analysis
 
-Date: October 26, 2026. Status: native connection acknowledgement accepted in the owner pilot; saved-video event is an unpublished candidate.
+Date: October 26, 2026. Status: native connection renewal and actual app-save acknowledgement accepted in the private owner pilot.
 
 ## Decision
 
@@ -16,6 +16,6 @@ Use the same current private-owner pilot, all-library grant, reviewed Cloud poli
 
 The [live receipt](../operations/evidence/launch-20261026-chatgpt-native-events.json) records the connection proof separately from the source candidate. The [setup runbook](../operations/chatgpt-native-events.md) gives exact operator steps and explains customer authentication and renewal.
 
-Offline tests exercise actual capture through the outbox, modern SDK discovery/subscription, signed runtime payloads, duplicate/canonical reuse, no backfill, bulk exclusion, grant/privacy/revocation failures and concurrent preview updates. Production acceptance must then prove actual app Save to later ChatGPT acknowledgement without analysis or saved-data changes. Automatic media execution remains a later checkpoint.
+Offline tests exercise actual capture through the outbox, modern SDK discovery/subscription, signed runtime payloads, duplicate/canonical reuse, no backfill, bulk exclusion, grant/privacy/revocation failures and concurrent preview updates. The [production save canary](../operations/evidence/launch-20261026-saved-link-native-ack.json) passed actual app Save to later ChatGPT acknowledgement with identical saved-data hashes and no analysis. Automatic media execution remains a later checkpoint.
 
-Retain the owner's cumulative EUR7 cap and every previous hold, including unknown work and the exact old Reel repair. Current evidence does not fund another full Basic frontend build envelope. Prepare and validate the candidate before requesting a concrete release allowance. Do not deploy full main or activate another provider/privacy gate for this small proof.
+The owner raised the cumulative cap to EUR7.50 and approved a separate USD0.45 release/canary envelope after reviewing the tested candidate. Exact compatible CI40314319573 passed. Backend/frontend6cdcb1c now serve the event after zero schema scans/backfills, one fixed Basic queued build, exact staged/canonical checks and same-build promotion. Both test monitors are paused and their delivery authority was removed. Every previous hold, unknown attempt, reserved post, old repair, full-main migration and provider/privacy gate remains.

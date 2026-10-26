@@ -25,7 +25,7 @@ Use **Withdraw edition** or **Withdraw collection** for current publication you 
 
 Saving someone else's edition requires a signed-in, explicit confirmation for the reviewed slug/version. Following a link does not import it. Your own notes/corrections remain private to you; the public base can become unavailable after withdrawal, expiry or a source change. It is not a permanently available copy.
 
-Broad-region contribution is a separate voluntary choice. Leaving it off does not prevent ordinary library use. **Stop sharing my region** withdraws it. Discovery shows bounded, thresholded contribution snapshots, not exact location, an exhaustive census or invented activity. Opening the optional globe starts no processing.
+Region sharing and the globe have been retired. On a post, open **Advanced privacy and publication** to manage existing sharing. **Stop sharing my region** withdraws an earlier region choice. Public collections remain separate from your private library.
 
 ## You have finished when
 

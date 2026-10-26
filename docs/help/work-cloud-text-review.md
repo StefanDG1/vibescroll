@@ -14,7 +14,7 @@ This option appears only when the experimental video route is enabled for your a
 
 In a supported Work Cloud chat with VibeScroll connected, ask VibeScroll to analyze the saved post and provide its VibeScroll link. The assistant reads its current status and sends an exact own-subscription request with a model, effort, retention deadline and maximum API spend of US$0. After this setup, there is no additional app approval for each request. The host must prepare supported tools and restricted Internet permission before claiming work.
 
-The experimental limit is six new requests per hour. Repeating the identical unclaimed request returns the existing job. The app's waiting receipt does not launch a Cloud task. Automatically waking a task when you share a new link remains separate implementation and production acceptance work. Old team workspaces do not become private because of their names, and this option does not move their posts. Existing analyzed posts retain their results; this first experimental media route accepts only unanalyzed posts.
+The experimental limit is six new requests per hour. Repeating the identical unclaimed request returns the existing job. This manual waiting receipt does not configure a Cloud task. Eligible pilot accounts can separately set up native automatic app saves using [the setup guide](/help/processing-and-recovery). Automatic event wake has passed; complete automatic video-to-result acceptance remains pending. Old team workspaces do not become private because of their names, and this option does not move their posts. Existing analyzed posts retain their results; this first experimental media route accepts only unanalyzed posts.
 
 If this option is absent, use the separately approved diagnostic handoff below when available. Do not disconnect an existing connection, delete posts or switch to paid credits to work around unavailable access.
 
@@ -30,21 +30,21 @@ The host receives its lease token once and reads only the approved input and pol
 
 ## Video evidence and setup time
 
-The video route supports one permitted Instagram, TikTok, YouTube or Vimeo video link. It acquires the actual source in the user's Cloud environment, transcribes speech and inspects timestamped samples. It does not claim every frame was reviewed. Photos, mixed posts and carousels need their separately supported route.
+The current caption-first package targets one permitted Instagram or TikTok video. Other platforms require their separately verified route. It acquires the actual source in the user's Cloud environment, reuses usable captions or transcribes speech, and inspects timestamped samples. It does not claim every frame was reviewed. Photos, mixed posts and carousels need their separately supported route.
 
 The first run may need verified downloader and speech-model preparation. Reuse verified cached tools in the same supported environment when available. Do not promise a warm cache in a new task. Keep setup and analysis times separate. Stop when source access, current network enforcement, isolation, requested settings or resource limits cannot be established; do not substitute a caption summary or paid service.
 
-The host binds its observations with `work_cloud_prepare` before submitting final cited analysis through `work_cloud_complete`. VibeScroll checks their exact source, revision and citation bindings. These remain authenticated client reports, not independent verification that particular bytes were acquired or a model inspected them. Raw images and video stay provider-local; app citations do not expose nonexistent image assets.
+The host binds its observations with `work_cloud_prepare` and uploads the required real sampled JPEGs before submitting final cited analysis through `work_cloud_complete`. VibeScroll checks the source, revision, image hashes and citation bindings. These remain authenticated client reports, not independent proof that a model inspected the bytes. Retained sampled images can appear on the private post. Raw source media has a separate provider-local cleanup target.
 
 ## Read the result or recover
 
-Open the same source in Library to inspect the private result and citations. This route creates no shared-catalog entry. Supplied-text citations do not prove that anyone watched a linked video or verified its claims.
+Open or bookmark the same post page to inspect the private result and citations. Library also links to it. This route creates no shared-catalog entry. Supplied-text citations do not prove that anyone watched a linked video or verified its claims.
 
 **Revoke this request's app access** prevents further input and result return. Stop the host task too. VibeScroll cannot confirm provider cancellation or restore consumed subscription allowance.
 
 A lost claim, expired execution or uncertain completion is not automatically retried. Replacing source input does not remove that uncertainty or authorize another executor. Reconciliation with the real host remains necessary; do not delete and resubmit as a retry workaround. Privacy deletion remains available, but app deletion does not erase provider-retained task history.
 
-Real video-to-result acceptance, proactive task wake-up, general-account setup and independent walkthrough acceptance remain pending. See [Processing, costs and recovery](/help/processing-and-recovery) for the existing paired and explicitly funded routes.
+One real active-chat Reel result and native saved-link wake have passed separately. Complete automatic video-to-result, general-account setup and independent walkthrough acceptance remain pending. See [Processing, costs and recovery](/help/processing-and-recovery) for setup, the existing paired route and explicitly funded alternatives.
 
 ## Confidence and rejected returns
 

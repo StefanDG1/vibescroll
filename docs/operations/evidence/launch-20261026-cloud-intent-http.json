@@ -1,0 +1,50 @@
+{
+  "recordedAtUTC": "2026-10-26T20:39:24.219998+00:00",
+  "productionFailure": {
+    "automaticEventDelivered": true,
+    "runtimePreflightPassed": true,
+    "requestAnalysisCalls": 1,
+    "refusal": "INVALID_ARGUMENT generic authorization/evidence error",
+    "generationAfter": 0,
+    "processingAfter": null,
+    "mediaAcquisition": false,
+    "asrOrAnalysis": false,
+    "automaticRetry": false,
+    "pilotPaused": true
+  },
+  "rootCause": "strict assistantHttp request_analysis schema omitted savedIntentId already declared by MCP and backend",
+  "fix": "optional 64-character lowercase hexadecimal field; all existing authorization and saved-default checks retained",
+  "reproducedBeforeFix": {
+    "fullChainCasesFailed": 4,
+    "existingCasesPassed": 33
+  },
+  "fullChainCases": {
+    "protocols": ["2025-11-25", "2026-07-28"],
+    "libraries": ["private", "original sole owner"],
+    "actualAppSaveIntent": true,
+    "mcpToAuthenticatedHttpToRealConvexMutation": true,
+    "providerUserinfo": "mocked",
+    "hostedCalls": 0,
+    "oneGenerationAndOneZeroCostReservation": true,
+    "replayIdempotent": true,
+    "malformedRawHttpRejectedBeforeProviderOrMutation": true,
+    "unknownAndCreditOverridesRejected": true
+  },
+  "focusedCasesPassed": 57,
+  "fullCheck": {
+    "exitCode": 0,
+    "vitestPassed": 1300,
+    "hostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 67,
+    "windowsSkipped": 5,
+    "typesPassed": true,
+    "zeroWarningLint": true,
+    "productionBuildsPassed": true
+  },
+  "schemaIndexComponentChanges": false,
+  "oauthScopeOrGrantChanges": false,
+  "hostedPublication": false,
+  "automaticMediaAccepted": false,
+  "exactCI": "pending"
+}

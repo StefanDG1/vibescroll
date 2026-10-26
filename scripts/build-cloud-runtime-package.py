@@ -21,7 +21,7 @@ def reviewed_bundle():
         if len(data) != expected["bytes"] or hashlib.sha256(data).hexdigest() != expected["sha256"]:
             raise ValueError("accepted_caption_package_pin_changed")
         files[name] = data
-    for name in ("cloud-extractor.lock.json", "decoder_network_denial_v1.py", "decoder_network_denial_v2.py"):
+    for name in ("cloud-extractor.lock.json", "decoder_network_denial_v1.py", "decoder_network_denial_v2.py", "caption_cache_readiness.py"):
         if (MEDIA / name).is_symlink():
             raise ValueError("invalid_runtime_tool_path")
         files[name] = (MEDIA / name).read_bytes().replace(b"\r\n", b"\n")

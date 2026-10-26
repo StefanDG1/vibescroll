@@ -494,6 +494,11 @@ it("copies setup for the saved grant, then uses the refreshed version without ch
     "https://scroll.companynerve.com" + runtimePackage.path,
   );
   expect(message.props.value).toContain(runtimePackage.sha256);
+  expect(message.props.value).toContain("caption_cache_readiness.py");
+  expect(message.props.value).toContain("python -I -B");
+  expect(message.props.value).toContain("recordSelfEntries");
+  expect(message.props.value).toContain("preserve managed proxy/no-proxy/CA");
+  expect(message.props.value).not.toContain("/etc/codex/network-policy.json");
   await button(f.render(), "Copy setup message").props.onClick();
   expect(writeText).toHaveBeenCalledWith(message.props.value);
   expect(text(f.render())).toContain(

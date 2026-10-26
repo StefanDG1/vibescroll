@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "native-title-presentation-v1",
+  "recordedAtUTC": "2026-10-26T18:35:21.854140+00:00",
+  "scope": "candidate only; no stored post/grant/approval mutation",
+  "sourceBase": "bfe02d2e869f39ec61b8f87850bdec796f18fae7",
+  "observedBeforeFix": {
+    "placeholderIntegrationFailures": 4,
+    "widgetFetchFailure": 1
+  },
+  "validation": {
+    "fullCheckExit": 0,
+    "vitestPassed": 1284,
+    "externalSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 59,
+    "pythonWindowsLinuxSkipped": 4,
+    "lintZeroWarnings": true,
+    "typesPassed": true,
+    "productionBuildsPassed": true,
+    "sourceStampBeforeAfterMatched": true,
+    "legacyAndCustomTitlePreviewCases": 6,
+    "widgetSourceJobFetchCases": 2
+  },
+  "acceptedBehavior": [
+    "new URL saves use the recognized placeholder",
+    "historical generic placeholders display native metadata",
+    "custom saved titles stay preferred",
+    "app and scoped MCP titles agree",
+    "stored title/revision, intent hash and grant stay unchanged"
+  ],
+  "productionDeployed": false,
+  "automaticMediaProductionAccepted": false,
+  "exactCI": "pending",
+  "budget": {
+    "approvedSharedCapEUR": 9.5,
+    "approvedCombinedEnvelopeUSD": 0.95,
+    "priorHoldsPreserved": true,
+    "extraHostedPublicationOrAnalysisStarted": false
+  }
+}

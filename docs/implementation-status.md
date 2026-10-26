@@ -1,3 +1,13 @@
+## October 26: complete title-preview checks pass
+
+Full stable-source check passed 1,284 Vitest tests with three external skips, nineteen Node tests and 59 Python cases with four Linux-only Windows skips, types, zero-warning lint and both application builds. A before/after source-diff digest matched across the complete run. The six joined preview cases preserve custom and approved titles while exposing native metadata; compatible widget source/job/fetch cases also pass without exposing transcript text. The earlier four placeholder failures and widget fetch failure are retained in ignored logs. [Sanitized receipt](operations/evidence/launch-20261026-title-preview.json). Exact-head CI remains pending for this update.
+
+The compatible branch includes the widget dependency isolation and ADR-number correction at bfe02d2. No production source, grant, job or analysis changed. The owner approved the shared EUR9.50 cap and USD0.95 controlled combined release/current-grant/one-TikTok canary envelope; every prior hold remains. Wait for a coordinated verified serving baseline, then freeze the exact current source before publication. Keep all broader provider/privacy gates and the reserved/unknown sources.
+
+## October 26: early native titles survive blank URL saves
+
+The candidate now uses the existing Imported video link placeholder for new URL saves and recognizes historical Saved video in presentation. Scoped job status and the app select the same native preview title; an explicit custom title stays preferred. The saved source title/revision, finite approval hash, grant and generation are untouched. Four placeholder regression cases failed before the fix; the expanded six-case integration covers custom-title preservation with and without thumbnail metadata. Full final checks and exact CI for this update remain pending. Production remains the freshly verified ff7d88f.
+
 ## October26: widget dependency isolation fixed locally
 
 The workspace now disables automatic peer installation and peer-dependent deduplication. Explicit root Hono4.13.11 and React19.3.0 declarations preserve the backend's existing bindings. The pinned Convex CLI's offline output confirms all seven component payloads and definition paths are byte-identical to serving ff7d88f. No registry package version or integrity changed. No upstream validator was removed and no publication guard was relaxed.

@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import type { QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { selectedProfile, sourceFor } from "./assistant";
+import { postDisplayTitle } from "../packages/sources/display";
 import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { assistantGrantActive } from "../packages/policy/assistant";
@@ -57,7 +58,7 @@ function sourceSummary(
       : [];
   return {
     id: source._id,
-    title: source.title.slice(0, 200),
+    title: postDisplayTitle(source).slice(0, 200),
     state: source.state,
     kind: source.sourceType ?? source.kind,
     generation: source.generation,
@@ -431,7 +432,7 @@ export const browse = internalQuery({
         items.push({
           id: source._id,
           source_id: source._id,
-          title: source.title.slice(0, 200),
+          title: postDisplayTitle(source).slice(0, 200),
           status: cloud?.state ?? source.state,
           generation: source.generation,
           revision: source.updatedAt,

@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
+import { postDisplayTitle } from "../packages/sources/display";
 
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -153,13 +154,17 @@ it("records a finite exact app-Save intent without creating a job, lease or rese
   vi.advanceTimersByTime(1000);
   expect(await s.capture()).toEqual(result);
 });
-it.each([false, true])(
-  "keeps an app-Save intent valid when native preview metadata arrives, thumbnail=%s",
-  async (thumbnail) => {
+it.each(
+  ["Imported video link", "Saved video", "My saved source"].flatMap((title) =>
+    [false, true].map((thumbnail) => ({ title, thumbnail })),
+  ),
+)(
+  "keeps an app-Save intent and display current when native preview metadata arrives: %j",
+  async ({ title, thumbnail }) => {
     const s = await setup();
     const saved = await s.owner.mutation(api.workCloudSaves.capture, {
       ...s.captureArgs,
-      title: "Imported video link",
+      title,
     });
     const before = (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))!;
     vi.advanceTimersByTime(1000);
@@ -193,6 +198,10 @@ it.each([false, true])(
       profileId: s.org,
       sourceId: saved.sourceId,
     });
+    const displayTitle =
+      title === "My saved source" ? title : "Synthetic native preview title";
+    expect(postDisplayTitle(after)).toBe(displayTitle);
+    expect(status.title).toBe(displayTitle);
     expect(status.saved_cloud_intent).toMatchObject({
       id: saved.intentId,
       state: "waiting_for_runtime",

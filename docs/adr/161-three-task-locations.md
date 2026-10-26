@@ -1,6 +1,6 @@
 # ADR 161: three clear task locations
 
-Date: October 26, 2026. Status: owner-directed implementation candidate.
+Date: October 26, 2026. Status: published on the compatible serving line.
 
 ## Problem
 
@@ -31,3 +31,9 @@ Do not create the short execution job before the host is ready. Do not add anoth
 The current serving frontend/backend remains6cdcb1c. Save-to-native-acknowledgement and renewable authentication passed independently. A later no-media native event reply reports actual Linux command execution and matching marker cleanup; the probe lacks downloader/caption/ASR packages. This is not a video result or complete runtime admission.
 
 The picker is a local candidate. Record tests, browser widths, screenshots and exact source in implementation status. Publishing it still requires exact CI, a separately funded controlled release and unchanged provider/privacy gates. Preserve the EUR7.50 cumulative cap and every earlier hold.
+
+## Controlled publication, October 26
+
+Compatible source `ff7d88f` is live after exact CI40328458291, one fixed Basic queued build and same-build promotion. Public canonical health returned `0.1.0-alpha.20261026131113.gff7d88f5601c`. Public Help and the synthetic Save dialog passed desktop and320px checks; keyboard More info opens. Main Home/region changes remain undeployed. Own Cloud analysis stays disabled pending native media admission.
+
+The owner raised the cumulative cap to EUR8 and reserved USD0.42 for this release with no analysis runs. Every previous hold remains. The first backend check stopped before publication because its expected list omitted the separately stored configuration/schema bundles; all291 exact live module hashes then matched before the single actual publication. No schema scan or index backfill followed. The confirmed disclosed automation bypass was revoked and regenerated; the older deployment-credential incident remains open. See the [release receipt](../operations/evidence/launch-20261026-task-locations.json).

@@ -1,3 +1,9 @@
+## October 26: task locations and illustrated Help are live
+
+Compatible frontend/backend `ff7d88f5601c5d717f3ac5cad6ff73489ba29a25` published after exact CI40328458291. One fixed Basic queued build was staged, verified and promoted unchanged. Public health confirms version `0.1.0-alpha.20261026131113.gff7d88f5601c`. Public Help image decoded at320px and1600px; synthetic Save shows three ordered disabled choices, mobile has no overflow and keyboard More info opens. No production Save or analysis ran. Authenticated production picker was not freshly exercised. Main ca43a32 remains undeployed. [Actual receipt](operations/evidence/launch-20261026-task-locations.json).
+
+Backend finish13:54:42.591UTC followed exact291-module baseline match,11 guard tests, zero configured log sinks and no schema scans/backfills. Normal domain assignment and fixed Basic controls are restored. EUR8 cumulative cap retains USD8.245014256044614 including the USD0.42 release hold, with USD0.2349857439553853 unreserved; no hold or invoice claim released. Confirmed bypass exposure was revoked/regenerated at13:34:31UTC. Older deployment-credential incident remains open. Automatic native media, exact old-image repair, TikToks, unknown source, full-main migration and provider/privacy gates remain.
+
 # October 22 launch implementation candidate
 
 ## Three task locations compatible candidate, October26

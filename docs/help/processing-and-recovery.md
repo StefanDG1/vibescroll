@@ -6,7 +6,7 @@ Keep the saved source while you repair the smallest missing prerequisite.
 
 The Save form and **Continue setup** show the same three choices:
 
-1. **My own Cloud Work**, recommended. This uses your ChatGPT subscription in ChatGPT Work with Cloud selected. Your computer can be off. Automatic video analysis is still being verified, so this choice stays visible and disabled until ready.
+1. **My own Cloud Work**, recommended. This uses your ChatGPT subscription in ChatGPT Work with Cloud selected. Your computer can be off. The private pilot requires current connection permissions, setup and a monitor. The choice stays disabled when these are unavailable; wider automatic-video acceptance is still pending.
 2. **VibeScroll's servers**. This uses processing credits bought separately from your ChatGPT subscription. Review the maximum before starting. Buying credits does not enable an unavailable processing route.
 3. **Local machine**. This uses your own eligible subscription on a paired computer. Keep the computer and its companion on. Review any preparation credits before starting.
 
@@ -15,6 +15,18 @@ Use **Finish setup** or **Reconfigure** beside the choice. **More info** opens b
 ![Task locations in a synthetic account](/help/task-locations.png)
 
 You can save a post without analysis. Choosing a task location does not start work. VibeScroll never switches a failed task to a different subscription or credit route automatically.
+
+## Set up automatic Cloud saves
+
+These steps apply when the private pilot is enabled for your account. A native saved-link event can wake the prepared Work task. Complete video-to-result acceptance and general availability remain separate.
+
+1. In ChatGPT, connect **VibeScroll** using its normal sign-in and consent. Reuse your existing working connection. You do not need to delete it or create a second test connection.
+2. In VibeScroll **Connections**, review the intended library, analysis actions and **Allow exact video analysis requests in my Work Cloud chat**. Enable automatic analysis of links saved in the app and review the displayed defaults. Save once. ChatGPT's connection identifies you; this separate review controls which library and actions it may use.
+3. Choose **Set up ChatGPT**, copy the current setup message and paste it into your own ChatGPT Work chat with Cloud selected. Let its tool checks finish. A first setup may need tools or a speech model. The pinned cache verifier handles wheel metadata correctly; a failed integrity check stops setup without deleting your cache.
+4. Wait until that chat reports **Monitoring**. Its supported event subscription renews automatically. You can close the chat tab and turn your computer off. Reconfigure if you revoke access, change the reviewed grant, lose host capabilities or ChatGPT asks you to sign in again. Renewal is not a promise that a revoked connection works forever.
+5. In the app, choose **My own Cloud Work**, paste a permitted Reel or TikTok, confirm your right to process it and choose **Add and analyze**. Save opens its post page. The link remains saved while the task checks readiness; a waiting state is not completed analysis. Inspect the actual transcript, images and citations when a result returns. Bookmark the post or reopen it from Library.
+
+The monitor must be ready before normal saves. A source that needs unavailable speech recognition or cannot be accessed stops without paid fallback. Keep the existing post while checking the reason in ChatGPT. A failed or unknown analysis is not automatically replayed.
 
 ## Before you start
 
@@ -97,7 +109,7 @@ Newly prepared ordered media can be reused after an eligible failed analysis whe
 
 Old preparations without the new verification stamp are not retroactively trusted. Canceled, unknown or changed-generation work cannot use this recovery shortcut. Unknown usage needs reconciliation. An eligible reused preparation keeps its original expiry; a new approval does not extend it. If preparation cannot be reused, review the ordinary available route and quote. The current production version and route readiness still determine which controls are available.
 
-## Experimental Work Cloud preparation
+## Manual Work Cloud diagnostic preparation
 
 This private test route appears only for eligible configured accounts. General public Cloud access remains unavailable until its separate release checks pass. You do not need GitHub or a paired computer to analyze a source in an eligible official Work Cloud task.
 
@@ -108,4 +120,14 @@ This private test route appears only for eligible configured accounts. General p
 5. Keep that task open while it claims the approval, acquires the permitted source and returns cited analysis through the VibeScroll plugin. The video deadline is fifteen minutes, including its active lease. The task must stop on missing access or unsupported media rather than invent evidence or spend API credits.
 6. Refresh the existing post after completion. Inspect its coverage and citations. A queued approval or a message in chat is not a saved result. Refreshing the page can recover instructions while that approval is still unclaimed and current.
 
-The first environment preparation can download a model and take longer than a warm run. Reuse verified cached prerequisites where supported. Source access, speech quality, sampled image coverage, provider retention and subscription limits still apply. VibeScroll does not automatically launch or wake a Cloud task. A missing plugin permission requires the supported reconnection/consent flow, never a copied token.
+The first environment preparation can download a model and take longer than a warm run. Reuse verified cached prerequisites where supported; a replacement Cloud environment may need setup again. Source access, speech quality, sampled image coverage, provider retention and subscription limits still apply. This manual diagnostic request does not configure an automatic monitor. A missing plugin permission requires the supported reconnection/consent flow, never a copied token.
+
+## Work Cloud says a private library is required
+
+An older workspace can still use team access even if it is named Personal workspace. The experimental Cloud route also admits an eligible original creator who still owns the workspace alone, with no active invitations. It checks that state without moving or copying posts. Do not upgrade or move a library merely because it has an old team label if Cloud setup is already available.
+
+If the app specifically offers an upgrade, choose **Review private-library setup**, then **Review private-library upgrade** in Team settings. This review starts no analysis.
+
+If you are the original creator and only member, with no active invitations or another private library, you can review the private-only acknowledgement and choose **Make this library private**. Sign in again if requested. Existing posts, projects and links stay in place. Invitations and ownership transfer are unavailable in a private library; use a separate team workspace for collaboration.
+
+A refusal leaves the workspace unchanged. Follow the displayed reason, or choose an existing separate private library from Your workspaces. Making a library private does not connect a processing account or grant execution. Review the assistant connection and approve the exact post afterward. Experimental Cloud availability and successful video execution remain separate.

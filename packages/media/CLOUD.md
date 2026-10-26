@@ -12,6 +12,8 @@ If the managed host has no pip, use the reviewed `prepare_cloud_dependencies.py 
 
 New media-v3 uses yt-dlp 2026.10.21 and pysubs2 1.9.0. Existing media-v2 keeps its 2026.08.19 executable/toolchain binding. A tool version is not proof that an arbitrary platform URL can be acquired. Verify current enforced isolation/network/resource policy before requesting or claiming work. Never use cookies, disable TLS verification, fetch remote executable components or silently switch to a paid provider.
 
+The website tools bundle also pins a standalone `caption_cache_readiness.py`. Run `python -I -B caption_cache_readiness.py --directory /absolute/tools/_deps` during setup and before a source job. It verifies the two RECORD authority files and every payload without importing either package or changing the cache. Its `hashedPayloadFiles`, `recordSelfEntries` and `totalRegularFiles` are different counts. An unhashed RECORD self-entry is expected metadata, not an extra payload. Unknown files and bytecode still fail. This helper does not replace provider/decoder, ASR or source admission.
+
 ## Execute one current media-v3 lease
 
 1. Save/reuse the post, obtain its approved job and claim once through the existing MCP tools. Reconcile a lost claim rather than replacing it.

@@ -1,13 +1,13 @@
 {
   "schemaVersion": "cloud-runtime-bundle-v1",
-  "path": "/downloads/cloud-runtime-dcfe182a7be7793a.zip",
-  "sha256": "dcfe182a7be7793a5429d89d7d6d9bf927ecd3a92224085c8d6df74e3b5b3c77",
-  "bytes": 71925,
+  "path": "/downloads/cloud-runtime-f2bf4676b1251840.zip",
+  "sha256": "f2bf4676b125184040bcbf2368a99ec4392e11c93dc845fe170afb0deb9bc9d4",
+  "bytes": 78361,
   "expandedMaximumBytes": 131072,
   "cacheMaximumBytes": 41943040,
   "packageManifestSHA256": "9c2cde19457d2e2da6a61985d1fafe4dc480187bca2ad1638a1f7141efe5d788",
   "adapterPolicy": "linux-provider-vm-decoder-socket-denial-v2",
-  "sourceCommit": "dfb4acac519b09898bc465791a51fabe77b53866",
+  "sourceCommit": "549b0d26c49e9489fff907831eb5b75f30d049b1",
   "files": {
     "cloud_job.py": {
       "bytes": 6672,
@@ -64,6 +64,10 @@
     "decoder_network_denial_v2.py": {
       "bytes": 2878,
       "sha256": "5cd8513cb8a87e77d54110814c5c82ecd53d9b19e6254fb4f265281a5ce1e90e"
+    },
+    "caption_cache_readiness.py": {
+      "bytes": 6308,
+      "sha256": "758ff267309502e66ce7c4be9bab25d8ea54e88819fcdbe240e08fc0123f688f"
     },
     "LICENSE": {
       "bytes": 1073,

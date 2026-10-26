@@ -1,5 +1,11 @@
 # Configure scoped assistant access
 
+## ChatGPT native Events accepted, October 26
+
+The owner's new parallel plugin passed native discovery, signed callback verification, later event-triggered acknowledgement replies and automatic subscription renewal beyond its original OAuth-bound expiry without another login. The original plugin remains installed. No video was saved, downloaded or analysed in this proof. The temporary connection monitor is paused and its subscription/delivery rows were removed through normal unsubscribe.
+
+Use the [exact setup and renewal runbook](chatgpt-native-events.md) and [sanitized live receipt](evidence/launch-20261026-chatgpt-native-events.json). The `video_link_saved` capture hook is an unpublished candidate under [ADR 160](../adr/160-native-events-and-saved-video-acknowledgement.md). Actual app Save to acknowledgement and subsequent automatic media execution remain separate acceptance steps. The EUR7 cap, reserved posts, unknown job, old repair and all release/provider/privacy gates remain.
+
 ## Profile Cloud Events candidate, October25
 
 The [offline-verified candidate](evidence/launch-20261025-catalog-cloud-events.json) adds two Events through the existing modern MCP transport. Both take exactly `{profileId, grantVersion}`. Neither grants execution or publication authority.
@@ -9,7 +15,7 @@ The [offline-verified candidate](evidence/launch-20261025-catalog-cloud-events.j
 
 Installation, delivery claim and transmission recheck current eligible owner, exact grant/client/consent, reviewed Cloud policy, all-library scope and Events/request/execution scopes. Existing encrypted callback authority, public-address restrictions, key rotation, bounded retries, revocation and restore quarantine remain. Legacy exact-source completion Events keep their existing arguments, identity and behavior.
 
-Subscriptions remain capped at30minutes and at earlier OAuth/grant expiry. The supported host must renew them; persistent background readiness is unverified until actual renewal succeeds. Matching protected keys and Events gates must be configured on both serving frontend and backend before the real host setup test. Do not reconnect OAuth, request another link or claim automatic save processing merely because tools are exposed. Standing authority, ordinary save/creator dispatch and neutral own-subscription catalog admission remain separate implementation stages. This candidate is not yet serving.
+Subscriptions remain capped at30minutes and at earlier OAuth/grant expiry. The supported host must renew them; renewal passed in the owner's October 26 connection test; automatic media execution remains unverified. Matching protected keys and Events gates must be configured on both serving frontend and backend before the real host setup test. Do not reconnect OAuth, request another link or claim automatic save processing merely because tools are exposed. Standing authority, ordinary save/creator dispatch and neutral own-subscription catalog admission remain separate implementation stages. The compatible three-Event implementation is serving; full-main publication remains held.
 
 ## Current explicit Work Cloud route, October 25
 
@@ -28,7 +34,7 @@ The version-one host sequence reuses current contracts:
 5. Complete within the lease using cited canonical JSON bound to that preparation. Mark uncertainty honestly. Omit optional usage/model/effort attestations that the runtime cannot verify. Never disclose raw media, lease credentials or signed URLs through the chat.
 6. Fetch the same source/profile once after acknowledged completion. Confirm the current result and protected citations, report actual counts and timings, then remove task-owned raw media/frames/audio and credentials. Preserve verified shared tool/model caches and unrelated files. A return-only timing is not fresh-video latency.
 
-This is an explicit user-request route and the current output remains `private_only`, without global catalog contribution. `save_link` does not automatically queue Cloud work or launch a host task. The inline host makes the separate exact-source request itself. Saves outside this active chat and creator follows still need an accepted background wake/execution bridge. The current Events implementation delivers `analysis_completed`, not waiting work. Root must prove a real supported host's subscription, delivery, renewal and execution bridge before adding standing-authorized waiting-work dispatch through the existing grants, jobs and deliveries. Never claim background execution from a registered event method or successful webhook alone. Keep all original provider, paid-entry, catalog, spending and independent acceptance gates.
+This is an explicit user-request route and the current output remains `private_only`, without global catalog contribution. `save_link` does not automatically queue Cloud work or launch a host task. The inline host makes the separate exact-source request itself. Saves outside this active chat and creator follows still need an accepted background wake/execution bridge. The serving Events catalog includes completion, explicitly approved waiting work and connection verification. Ordinary saved-video notification is an unpublished candidate. Native connection subscription, delivery, renewal and acknowledgement passed in the owner pilot. A real saved-link acknowledgement and media execution bridge must still pass before adding standing-authorized analysis dispatch through the existing grants, jobs and deliveries. Never claim background execution from a registered event method or successful webhook alone. Keep all original provider, paid-entry, catalog, spending and independent acceptance gates.
 
 ## Earlier workspace checkpoint, October 24
 

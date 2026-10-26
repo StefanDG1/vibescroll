@@ -1,0 +1,127 @@
+{
+  "observedDateUTC": "2026-10-26",
+  "status": "native_connection_acknowledgement_and_renewal_accepted_private_pilot",
+  "servingFrontend": "bba2715aa8fdb14501e0b54033addb1ff4f280ae",
+  "servingBackend": "f84285ff0b773344bc960179cb7dd9b823107a3c",
+  "providerSurface": "ChatGPT web Work, native MCP Events and Automations",
+  "originalPluginPreserved": true,
+  "parallelPluginCreatedAndAuthedByOwner": true,
+  "discovered": {
+    "ordinaryTools": 20,
+    "events": [
+      "analysis_completed",
+      "work_cloud_waiting",
+      "work_cloud_connection_verified"
+    ]
+  },
+  "modernOfflineWire": {
+    "package": "@modelcontextprotocol/server",
+    "version": "2.3.1",
+    "revision": "2026-07-28",
+    "actualLiveNegotiatedRevisionSeparatelyCaptured": false
+  },
+  "monitor": {
+    "name": "VibeScroll connection test",
+    "event": "work_cloud_connection_verified",
+    "grantVersion": 8,
+    "finalState": "paused",
+    "scheduledPolling": false,
+    "workspaceAgentsUsed": false
+  },
+  "firstSubscription": {
+    "callbackVerifiedAtMs": 1793011156200,
+    "createdAtMs": 1793011156438,
+    "originalExpiresAtMs": 1793011452000,
+    "renewedUpdatedAtMs": 1793011371849,
+    "renewedExpiresAtMs": 1793011670000,
+    "sameSubscription": true,
+    "extraLoginOrChatMessageForRenewal": false
+  },
+  "afterPauseResume": {
+    "callbackVerifiedAtMs": 1793011709548,
+    "createdAtMs": 1793011709656,
+    "deliveryReceivedAtMs": 1793011710354,
+    "httpStatus": 200,
+    "deliveryAttempts": 1,
+    "newSubscription": true
+  },
+  "agentReplies": {
+    "exactText": "VibeScroll event received: work_cloud_connection_verified",
+    "observedCount": 2,
+    "followupChatMessageOrRunNowUsed": false,
+    "pageReloadNeededToDisplay": true,
+    "chatTabClosedTested": false
+  },
+  "cleanup": {
+    "subscriptionsObserved": 0,
+    "subscriptionsCheckedAtUTC": "2026-10-26T11:00:51.587343+00:00",
+    "deliveriesObserved": 0,
+    "deliveriesCheckedAtUTC": "2026-10-26T11:02:47.564505+00:00",
+    "pluginStillConnected": true
+  },
+  "sourceSaves": 0,
+  "mediaDownloads": 0,
+  "analysisJobs": 0,
+  "creditsReserved": 0,
+  "paidInferenceRouteSelected": false,
+  "deployments": 0,
+  "savedLinkCandidate": {
+    "event": "video_link_saved",
+    "live": false,
+    "actualAppSaveCanaryPassed": false,
+    "focusedTestsPassed": 49,
+    "typesPassed": true,
+    "fullCheck": "pnpm check exit0",
+    "newTables": 0,
+    "newIndexes": 0,
+    "newComponents": 0,
+    "newCrons": 0,
+    "schemaChange": "existing event validator widening only",
+    "runtimeCommit": "01cec40136bb26e3b7cba12003d08a27eec12005",
+    "testedAtUTC": "2026-10-26T11:19:27.381367+00:00",
+    "environment": "Windows; Node24.22.1; pnpm12.3.4; prepared Python3.14.0 venv; network-denied offline wrapper",
+    "vitestPassed": 2074,
+    "nodeTestsPassed": 19,
+    "pythonTestsPassed": 47,
+    "hostedSkips": 3,
+    "lintWarnings": 0,
+    "bothBuildsPassed": true,
+    "productionAudit": {
+      "passed": true,
+      "low": 2,
+      "moderate": 2,
+      "high": 0,
+      "critical": 0
+    },
+    "fullDependencyTreeAudit": {
+      "low": 3,
+      "moderate": 11,
+      "high": 6,
+      "critical": 0,
+      "highPaths": "development-only adm-zip via disabled rclone.js installation and vite test/dev tooling; unchanged dependencies; not represented as a clean whole-tree audit"
+    },
+    "dirtyWorkerFilesUnchanged": 12
+  },
+  "budget": {
+    "cumulativeCapEUR": 7,
+    "workingCeilingUSD": 7.42,
+    "newProbeReservedUSD": 0.06,
+    "allPriorHoldsPreserved": true,
+    "retainedMaximumUSD": 7.335014256044613,
+    "unreservedUSD": 0.08498574395538672,
+    "invoiceCertification": false,
+    "newReleaseFunded": false
+  },
+  "limits": [
+    "Finite automatic renewal observed, not permanent credential validity.",
+    "Old registration failure root cause not isolated.",
+    "Connection event acknowledgement is not app-save or media-analysis acceptance.",
+    "Saved-link candidate needs exact-head CI, funded controlled frontend/backend publication and an actual app save canary.",
+    "Original repair, both TikToks, unknown attempt, full-main migration and provider/privacy/release gates remain held."
+  ],
+  "sources": [
+    "https://developers.openai.com/plugins/build/mcp-events",
+    "https://developers.openai.com/plugins/build/plugins",
+    "https://developers.openai.com/plugins/build/examples"
+  ]
+}

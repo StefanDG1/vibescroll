@@ -1,0 +1,50 @@
+{
+  "status": "prepared_not_authorized_or_reserved",
+  "dateUTC": "2026-10-26",
+  "cumulativeCapEUR": 7,
+  "workingCeilingUSD": 7.42,
+  "allCurrentRetainedMaximumUSD": 7.335014256044613,
+  "availableUSD": 0.08498574395538672,
+  "proposedCapEUR": 7.5,
+  "proposedConservativeWorkingCeilingUSD": 7.95,
+  "releaseEnvelopeUSD": 0.45,
+  "breakdownUSD": {
+    "oneFixedBasicQueuedFrontendBuild": 0.38,
+    "oneCompatibleBackendPublication": 0.02,
+    "boundedReleaseAndRenewalChecks": 0.02,
+    "oneAcknowledgementOnlyAppCanaryAndCleanup": 0.03
+  },
+  "retainedMaximumAfterReservationUSD": 7.785014256044614,
+  "reservationMade": false,
+  "oldHoldsReleasedUSD": 0,
+  "compatibleRuntimeCommit": "a6b44ad341f4fee3af619be1233b6fa235e5c1a5",
+  "fullMainParityRuntimeCommit": "01cec40136bb26e3b7cba12003d08a27eec12005",
+  "stages": [
+    "Passing exact-head CI and immutable compatible frontend/backend package binding.",
+    "Fresh complete schema/index prediction with no populated walks/backfills or new table/index/component/cron.",
+    "One compatible backend release and one fixed Basic queued staged frontend build, then exact canonical verification.",
+    "Refresh the existing new plugin catalog and discover video_link_saved without deleting connections or widening scopes.",
+    "One native acknowledgement-only monitor, one explicit Save source of the already ready permitted Reel, then a later automatic message.",
+    "Compare source, result, preparation and generation before/after; no analysis request, lease, media download, paid API or credit reservation.",
+    "Pause canary, verify unsubscribe cleanup, preserve all saved posts and prior gates."
+  ],
+  "canary": {
+    "newSubscriptionsMaximum": 1,
+    "applicationRequestsMaximum": 20,
+    "responseBytesMaximum": 131072,
+    "modelUserFollowupOrRunNow": false,
+    "analysisJobsMaximum": 0,
+    "analysisRoute": "off",
+    "existingReelOnly": true,
+    "reservedTikTokAndUnknownWorkUntouched": true
+  },
+  "stopConditions": [
+    "CI failure or unreviewed package drift",
+    "Any populated schema walk or index backfill",
+    "Unexpected provider consent or request to broaden authority",
+    "Unknown deployment receipt, with no automatic redeploy",
+    "Missing event discovery or media/analysis dispatch",
+    "Unchanged cumulative cap without sufficient release reservation"
+  ],
+  "providerPrivacyAndReleaseGatesPreserved": true
+}

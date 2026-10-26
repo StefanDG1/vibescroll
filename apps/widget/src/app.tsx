@@ -308,6 +308,7 @@ export function WidgetApp({ compact = false, exportViewer = false }: Props) {
       profileId={profileId}
       grantVersion={grant}
       allowFeedback={!!actions.feedback}
+      compact={compact && !expanded}
       notify={notify}
     />
   ) : current ? (

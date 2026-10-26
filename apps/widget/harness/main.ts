@@ -92,6 +92,21 @@ async function load() {
       };
     const data = await demoCall(name, (args ?? {}) as ToolRecord);
     if (
+      name === "fetch" &&
+      options.get("references") === "5" &&
+      typeof data.text === "string"
+    ) {
+      const source = JSON.parse(data.text);
+      if (Array.isArray(source.insights) && source.insights[0]) {
+        source.insights[0].evidence = Array.from({ length: 5 }, (_, index) => ({
+          kind: "transcript",
+          startMs: 1000 + index * 5000,
+          endMs: 4000 + index * 5000,
+        }));
+        data.text = JSON.stringify(source);
+      }
+    }
+    if (
       name === "widget_state" &&
       ["local", "cloud", "save_only"].includes(options.get("preference") ?? "")
     )

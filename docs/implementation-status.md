@@ -1,3 +1,9 @@
+## October26: widget dependency isolation fixed locally
+
+The workspace now disables automatic peer installation and peer-dependent deduplication. Explicit root Hono4.13.11 and React19.3.0 declarations preserve the backend's existing bindings. The pinned Convex CLI's offline output confirms all seven component payloads and definition paths are byte-identical to serving ff7d88f. No registry package version or integrity changed. No upstream validator was removed and no publication guard was relaxed.
+
+Frozen offline installation, full types, zero-warning lint,45 focused widget/access/MCP tests, both production builds and the production dependency audit passed. The audit has zero advisories. The build retains two existing Help tracing warnings. The first offline dependency-resolution attempt lacked cached registry metadata and failed; the online resolution passed supply-chain policy, linked the graph, then stalled before exiting. It was interrupted; a subsequent frozen offline install completed successfully without resolving or downloading packages. Actual deployment and host rendering are still pending. ADR165 preserves the widget decision alongside the combined branch's separate ADR162 for finite Cloud intents.
+
 ## October 26: task locations and illustrated Help are live
 
 ## Widget release preflight and spending policy, October26
@@ -20,7 +26,7 @@ Backend finish13:54:42.591UTC followed exact291-module baseline match,11 guard t
 
 ## Compact widget first, October26 follow-up
 
-The owner prioritized the small ChatGPT inline widget and requested that unused test tabs be closed. The candidate now integrates compatible PR186 head `ff7d88f`, preserving its source-of-truth processing preferences and publication hold. The widget ADR is renumbered to [ADR162](adr/162-native-mcp-widget-workspace.md) to avoid colliding with that branch's three-task-locations decision.
+The owner prioritized the small ChatGPT inline widget and requested that unused test tabs be closed. The candidate now integrates compatible PR186 head `ff7d88f`, preserving its source-of-truth processing preferences and publication hold. The widget ADR is renumbered to [ADR165](adr/165-native-mcp-widget-workspace.md) to avoid colliding with that branch's three-task-locations decision.
 
 Normal `save_link` and `fetch` advertise the compact card without changing their structured headless content. Validated client-only metadata routes carry source/profile identity; polling remains headless. Status uses the authorized source title and neutral wording. Strict output envelopes bound the five new reads to 256 KiB and allowed fields. Job-read scope is checked even on empty pages; a saved processing preference is returned only for the caller's own private setup. Export uses native host downloads with a copy fallback, and optional host-file support is capability-gated.
 
@@ -32,7 +38,7 @@ The full-plan estimate shared with the owner is approximately 50% implemented lo
 
 ## Native MCP widget candidate, October 26
 
-The owner approved the widget-only combination of the Library workspace, inline cited cards and project review board. Local branch `codex/widget-ui-20261026` starts at compatible PR186 head `75fe204ab04eae4b2210581de1603a8e9a379b43`. [ADR162](adr/162-native-mcp-widget-workspace.md), the [full plan and coverage](widget/implementation.md), [research](widget/research-and-plan.md) and [runbook](operations/mcp-widget.md) describe the candidate. This is local code and fixture evidence, not deployed-host or public-release acceptance.
+The owner approved the widget-only combination of the Library workspace, inline cited cards and project review board. Local branch `codex/widget-ui-20261026` starts at compatible PR186 head `75fe204ab04eae4b2210581de1603a8e9a379b43`. [ADR165](adr/165-native-mcp-widget-workspace.md), the [full plan and coverage](widget/implementation.md), [research](widget/research-and-plan.md) and [runbook](operations/mcp-widget.md) describe the candidate. This is local code and fixture evidence, not deployed-host or public-release acceptance.
 
 The candidate adds a separate React MCP Apps client, three self-contained resources, five authenticated bounded read projections, current-work cards, exact private proposal reading, protected review destinations, strict snapshot files, self-service connection pages/prompts and nine workflow skills. Existing Cloud/Events commands and grants stay unchanged. Source disclosure through context/comparison/export rechecks current retrieval and evidence version. `MCP_WIDGET_ENABLED` defaults off. No live customer data, provider settings, charge, job, plugin account or deployment was changed.
 

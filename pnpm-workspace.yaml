@@ -2,6 +2,10 @@ packages:
   - apps/*
   - packages/*
 
+# Browser-only optional peers must not change deployed Convex component paths.
+autoInstallPeers: false
+dedupePeerDependents: false
+
 allowBuilds:
   core-js: false
   esbuild: true
@@ -10,10 +14,10 @@ allowBuilds:
   workerd: true
 
 minimumReleaseAgeExclude:
-  - '@opennextjs/cloudflare@1.20.7'
+  - "@opennextjs/cloudflare@1.20.7"
   - posthog-js@1.435.5
-  - '@tanstack/query-core@5.105.0'
-  - '@tanstack/react-query@5.105.0'
+  - "@tanstack/query-core@5.105.0"
+  - "@tanstack/react-query@5.105.0"
 
 patchedDependencies:
   braces@3.0.3: patches/braces@3.0.3.patch

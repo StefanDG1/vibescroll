@@ -256,13 +256,16 @@ export function createKnowledgeHandler(
         .strict();
       register(
         "get_job_status",
-        "Read short current status of selected or explicitly saved work, including the current generation, revision and grant_version for an exact Cloud request. Never returns provider logs, transcripts or media.",
+        "Read short current status of selected or explicitly saved work, including the current generation, revision and grant_version for an exact Cloud request. An exact saved_cloud_intent is returned only under separately reviewed automatic app-Save authority. A saved-link event without that intent grants no automatic analysis. Never returns provider logs, transcripts or media.",
         "jobs:read",
         sourceRequest,
       );
       register(
         "request_analysis",
-        (workCloudMedia ? inlineCloudIntake : "") + legacyAnalysis,
+        (workCloudMedia
+          ? inlineCloudIntake +
+            " For a native saved-link event, first read this exact post's status. Only a current saved_cloud_intent permits automatic processing. Complete actual runtime/package/isolation preflight before starting its short job. Call request_analysis with mode=work_cloud and savedIntentId, without cloud, generation, revision, grantVersion, project or credit overrides. The server binds the saved model, effort, retention and zero-API funding. Preserve ready, active, expired or unknown work; reconcile uncertain replies without replacing a generation. Ordinary save-only events have no analysis authority. "
+          : "") + legacyAnalysis,
         "analysis:request",
         z
           .object({
@@ -278,6 +281,10 @@ export function createKnowledgeHandler(
             generation: z.number().int().nonnegative().optional(),
             revision: z.number().int().nonnegative().optional(),
             grantVersion: z.number().int().positive().optional(),
+            savedIntentId: z
+              .string()
+              .regex(/^[a-f0-9]{64}$/)
+              .optional(),
             cloud: z
               .object({
                 model: z.string().min(1).max(100),

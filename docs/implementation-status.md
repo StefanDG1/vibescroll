@@ -4,6 +4,24 @@ The workspace now disables automatic peer installation and peer-dependent dedupl
 
 Frozen offline installation, full types, zero-warning lint,45 focused widget/access/MCP tests, both production builds and the production dependency audit passed. The audit has zero advisories. The build retains two existing Help tracing warnings. The first offline dependency-resolution attempt lacked cached registry metadata and failed; the online resolution passed supply-chain policy, linked the graph, then stalled before exiting. It was interrupted; a subsequent frozen offline install completed successfully without resolving or downloading packages. Actual deployment and host rendering are still pending. ADR165 preserves the widget decision alongside the combined branch's separate ADR162 for finite Cloud intents.
 
+## October 26: widget and automatic Save combined locally
+
+The compatible candidate33d5cd1 passed exact CI40366234544; mainc023bc0 passed40366221552. Each ran all eight actual Linux provider-VM tests without skips and reproduced the canonical tools ZIP. Linux reports two additional platform-specific JavaScript skips, separately from the three hosted skips on Windows.
+
+The compatible branch now merges the owner-reviewed widget source2f154a6 without conflict, preserving native inline cards, connection guides, nine skills and existing grant/Events behavior alongside finite app-Save intents. The full integrated local check passed 1,278 Vitest tests with three hosted skips, nineteen Node tests and fifty-nine Python cases with four Linux-only Windows skips, types, zero-warning lint, widget resources and both application builds. Offline frozen installation reused sixty cached packages, downloaded none and ran no install scripts. The integrated production dependency audit reports zero advisories. No real-host widget/media acceptance follows. Exact merged-head CI remains pending; publication and automatic-analysis flags remain unchanged by this merge.
+
+## October 26: final local candidate checks and concurrent release boundary
+
+Full offline check passed 1265 Vitest tests, with three explicit hosted skips, nineteen Node tests, 59 Python cases with four Linux-only Windows skips, types, zero-warning lint and both production builds. The new preview races fail before the fix and pass after it. Native synthetic caption/JPEG and ASR setup passed separately; real source/event/lease acceptance remains open. Exact-head CI is pending.
+
+The owner separately approved a widget-only controlled release in the parallel Research Codex plugin UI options chat, increasing the shared cumulative cap to EUR9/USD9.48. Preserve its USD0.42 reservation and candidate2f154a6. Current shared retained maximum is USD8.895014256044613; unreserved USD0.5849857439553876. These are conservative allowances, not provider bills. No prior hold was released. This automatic-analysis work has not acquired the widget operation's allowance. This branch has not published anything. Reconcile the new widget serving baseline and preserve its changes before any subsequent compatible publication; older ff7d88f statements identify the last verified baseline for this task.
+
+## October 26: compatible automatic Save candidate, unpublished
+
+Serving frontend/backend remain ff7d88f. The compatible branch now carries the finite app-Save intent, current-grant setup message, pinned tools ZIP and preview-race fix. No new table or index is introduced. Optional source/grant values and the optional setup-route enum are checked against the immutable compatibility baseline. Existing saved posts, unknown work and reserved TikTok remain untouched. Full-main Home/region/navigation changes and their index migration remain separate.
+
+Focused backend/preview/schema tests passed 27 cases, UI integration passed 114 and final types passed. The joined Save-to-canonical-result fixture is ported with compatible authenticated asset retrieval rather than main-only Home projection. Full checks and exact CI are pending. Actual private Cloud caption/JPEG and synthetic ASR setup passed; no real automatic media run follows. [ADR164](adr/164-pinned-cloud-runtime-download.md) and [setup evidence](operations/evidence/launch-20261026-native-cloud-tools.json). EUR8 retains USD8.473014256044612; every old hold remains. No deployment, analysis job or paid API ran in this port.
+
 ## October 26: task locations and illustrated Help are live
 
 ## Widget release preflight and spending policy, October26

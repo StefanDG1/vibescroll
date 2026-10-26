@@ -109,7 +109,13 @@ type Initial = {
     personalAlphaEnabled?: boolean;
     linkAnalysisEnabled?: boolean;
     cloudAnalysisEnabled?: boolean;
-    processingRoute?: "local" | "cloud" | "save_only" | null;
+    processingRoute?: "local" | "cloud" | "save_only" | "work_cloud" | null;
+    workCloud?: {
+      available: boolean;
+      configured: boolean;
+      grantId: string | null;
+      grantVersion: number | null;
+    } | null;
   };
   sources: any[];
   selectedSource?: any;
@@ -788,7 +794,11 @@ export function Console({
   const processing =
     (view === "source" &&
       selected &&
-      ["queued", "processing"].includes(selected.state)) ||
+      (["queued", "processing"].includes(selected.state) ||
+        (!selected.personalAnalysis &&
+          selected.workCloudSaveIntent?.analysisGeneration === undefined &&
+          selected.workCloudSaveIntent?.generation === selected.generation &&
+          selected.workCloudSaveIntent?.expiresAt > Date.now()))) ||
     data.sources.some((s) => ["queued", "processing"].includes(s.state)) ||
     data.repositories.some((r) =>
       ["preparing", "drafting_context"].includes(r.status),
@@ -2786,6 +2796,7 @@ export function Console({
               linkAnalysisEnabled={data.aiPreference?.linkAnalysisEnabled}
               cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
               preferredRoute={data.aiPreference?.processingRoute}
+              workCloud={data.aiPreference?.workCloud}
               sharedDraft={sharedDraft}
               demo={demo}
               organizationId={organizationId}
@@ -2820,6 +2831,7 @@ export function CaptureForm({
   linkAnalysisEnabled = false,
   cloudEnabled = false,
   preferredRoute,
+  workCloud = null,
   sharedDraft,
 }: any) {
   const [kind, setKind] = useState(existingSourceId ? "upload" : "url");
@@ -2830,15 +2842,17 @@ export function CaptureForm({
   const [analysisRoute, setAnalysisRoute] = useState(
     preferredRoute === "local"
       ? "personal"
-      : preferredRoute === "cloud"
-        ? "cloud"
-        : preferredRoute === "save_only"
-          ? ""
-          : personalEnabled
-            ? "personal"
-            : cloudEnabled
-              ? "cloud"
-              : "",
+      : preferredRoute === "work_cloud"
+        ? "work_cloud"
+        : preferredRoute === "cloud"
+          ? "cloud"
+          : preferredRoute === "save_only"
+            ? ""
+            : personalEnabled
+              ? "personal"
+              : cloudEnabled
+                ? "cloud"
+                : "",
   );
   const paired = devices.filter(
     (d: any) => d.personalOwned && d.state === "paired",
@@ -2871,7 +2885,13 @@ export function CaptureForm({
     (kind === "upload" ||
       kind === "text" ||
       (linkAnalysisEnabled && ["url", "import"].includes(kind)));
-  const automatic = personalAutomatic || cloudAutomatic;
+  const workCloudAutomatic =
+    analysisRoute === "work_cloud" &&
+    autoAnalyze &&
+    kind === "url" &&
+    !existingSourceId &&
+    workCloud?.available;
+  const automatic = personalAutomatic || cloudAutomatic || workCloudAutomatic;
   const approval = {
     deviceId: chosenDevice,
     model: effectiveModel,
@@ -2880,6 +2900,14 @@ export function CaptureForm({
     maxComputeCredits: 10,
   };
   const checkAutomatic = async (f: FormData) => {
+    if (
+      analysisRoute === "work_cloud" &&
+      autoAnalyze &&
+      (!workCloudAutomatic || !workCloud?.grantId || !workCloud?.grantVersion)
+    )
+      throw new Error(
+        "Finish ChatGPT setup for this video link, or save without analysis. Cloud will not switch to another task location.",
+      );
     if (cloudAutomatic && f.get("cloudCredits") !== "on")
       throw new Error("Approve the processing-credit maximum before analysis.");
     if (!personalAutomatic) return;
@@ -3090,6 +3118,19 @@ export function CaptureForm({
         setImportError("");
         try {
           await checkAutomatic(f);
+          if (workCloudAutomatic) {
+            const result = await call("captureWorkCloud", {
+              organizationId,
+              key: crypto.randomUUID(),
+              title: String(f.get("title") || "Saved video"),
+              url: f.get("url"),
+              rightsAttested: f.get("rights") === "on",
+              grantId: workCloud.grantId,
+              grantVersion: workCloud.grantVersion,
+            });
+            if (result?.sourceId) onDone(result.sourceId, true);
+            return;
+          }
           let sourceId = existingSourceId;
           if (existingSourceId)
             await call("attachSource", {
@@ -3314,13 +3355,20 @@ export function CaptureForm({
             ? "local"
             : analysisRoute === "cloud"
               ? "cloud"
-              : undefined
+              : analysisRoute === "work_cloud"
+                ? "work_cloud"
+                : undefined
         }
         onChange={(value) => {
           if (value === "local") setAnalysisRoute("personal");
           if (value === "cloud") setAnalysisRoute("cloud");
+          if (value === "work_cloud") setAnalysisRoute("work_cloud");
         }}
         serverAvailable={cloudEnabled}
+        workCloudAvailable={
+          !!workCloud?.available && kind === "url" && !existingSourceId
+        }
+        workCloudConfigured={workCloud?.configured}
         localAvailable={personalEnabled}
         localConfigured={paired.length > 0}
         localStatus={
@@ -3334,6 +3382,16 @@ export function CaptureForm({
         }
         disabled={saving || importBusy}
       />
+      {analysisRoute === "work_cloud" && (
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={autoAnalyze}
+            onChange={(e) => setAutoAnalyze(e.target.checked)}
+          />
+          Analyze in my ChatGPT Cloud Work after saving
+        </label>
+      )}
       {personalEnabled &&
         analysisRoute === "personal" &&
         (kind === "upload" ||
@@ -3428,11 +3486,13 @@ export function CaptureForm({
           </section>
         )}
       <p className="fine">
-        {cloudAutomatic
-          ? "Processing continues in the background. Public links are retrieved when the platform permits access."
-          : automatic
-            ? "Keep your paired laptop on until analysis finishes. Public links are retrieved when the platform permits access."
-            : "Saving does not start analysis. Supplied text has no implied audio or visual coverage."}
+        {workCloudAutomatic
+          ? "ChatGPT receives this link and checks its runtime before analysis. Your computer can be off. No VibeScroll processing credits or paid API fallback."
+          : cloudAutomatic
+            ? "Processing continues in the background. Public links are retrieved when the platform permits access."
+            : automatic
+              ? "Keep your paired laptop on until analysis finishes. Public links are retrieved when the platform permits access."
+              : "Saving does not start analysis. Supplied text has no implied audio or visual coverage."}
       </p>
       <button
         className="primary"
@@ -3549,6 +3609,9 @@ export function SourceDetail({
   const retentionDeadline = Math.min(
     source.sourceRetentionUntil ?? Infinity,
     detail.sourceRetentionUntil ?? Infinity,
+    detail.workCloudSaveIntent?.analysisGeneration === undefined
+      ? (detail.workCloudSaveIntent?.expiresAt ?? Infinity)
+      : Infinity,
   );
   useEffect(() => {
     if (demo || !Number.isFinite(retentionDeadline)) return;
@@ -4326,7 +4389,29 @@ export function SourceDetail({
           </details>
         )}
       </details>
+      {detail.workCloudSaveIntent &&
+        !detail.personalAnalysis &&
+        detail.workCloudSaveIntent.analysisGeneration === undefined && (
+          <section className="panel" aria-live="polite">
+            <h3>
+              {detail.workCloudSaveIntent.expiresAt > retentionTime
+                ? "Waiting for ChatGPT"
+                : "Review Cloud setup"}
+            </h3>
+            <p>
+              {detail.workCloudSaveIntent.expiresAt > retentionTime
+                ? "Your link is saved. ChatGPT checks its tools before starting analysis. Your computer can be off."
+                : "This request expired. Your post is still saved. Review setup before requesting analysis again."}
+            </p>
+            <a href={`/app/${org}/connections`}>Check Cloud setup</a>
+          </section>
+        )}
       {detail.state === "needs_upload" &&
+        !(
+          detail.workCloudSaveIntent &&
+          detail.workCloudSaveIntent.analysisGeneration === undefined &&
+          detail.workCloudSaveIntent.expiresAt > retentionTime
+        ) &&
         !detail.currentRevisionId &&
         !["github_repository", "reddit_thread"].includes(detail.sourceType) && (
           <details className="panel" open={!detail.assistantIntake}>

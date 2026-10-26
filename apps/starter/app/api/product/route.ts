@@ -111,6 +111,7 @@ const operations = {
   confirmProfile: ["mutation", api.profiles.confirmDraft],
   saveProfileDraft: ["mutation", api.profiles.saveDraft],
   capture: ["mutation", api.product.capture],
+  captureWorkCloud: ["mutation", api.workCloudSaves.capture],
   importLinks: ["mutation", api.imports.links],
   process: ["mutation", api.product.processSource],
   processBatch: ["mutation", api.product.processBatch],

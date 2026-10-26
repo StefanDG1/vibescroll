@@ -5,6 +5,11 @@ import { v } from "convex/values";
 import { productTables } from "../convex/productSchema";
 import { assistantTables } from "../convex/assistantSchema";
 import schema from "../convex/schema";
+import { librarySpacesTables } from "../convex/librarySpacesSchema";
+import {
+  cloudSaveDefaults,
+  cloudSaveIntent,
+} from "../convex/workCloudSaveSchema";
 import { sourceType, retrievalState } from "../convex/sourceSchema";
 import {
   revertEvidenceValidator,
@@ -55,6 +60,12 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
     }
     const nextFields = current.documentType.value,
       oldFields = prior.documentType.value;
+    expect(nextFields.workCloudSaveIntent).toEqual({
+      fieldType: (defineTable({ value: cloudSaveIntent }) as any).export()
+        .documentType.value.value.fieldType,
+      optional: true,
+    });
+    delete nextFields.workCloudSaveIntent;
     for (const [field, type] of [
       ["title", "string"],
       ["authorName", "string"],
@@ -122,7 +133,6 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
     "dashboardSchema.ts",
     "localLibrarySchema.ts",
     "publicSchema.ts",
-    "librarySpacesSchema.ts",
     "pilotPaymentSchema.ts",
     "convex.config.ts",
     "crons.ts",
@@ -132,6 +142,37 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
         encoding: "utf8",
       }).replace(/\r\n/g, "\n"),
     );
+  }
+  const oldLibrary = execFileSync(
+    "git",
+    ["show", `${base}:convex/librarySpacesSchema.ts`],
+    { encoding: "utf8" },
+  );
+  const priorLibrary = new Function(
+    "defineTable",
+    "v",
+    oldLibrary.replace(/^import[\s\S]*?;/gm, "").replace(/^export /gm, "") +
+      "; return librarySpacesTables;",
+  )(defineTable, v);
+  expect(Object.keys(librarySpacesTables)).toEqual(Object.keys(priorLibrary));
+  for (const [name, table] of Object.entries(librarySpacesTables)) {
+    const current = (table as any).export(),
+      prior = priorLibrary[name].export();
+    if (name === "librarySetup") {
+      const oldRoute = prior.documentType.value.processingRoute;
+      expect(current.documentType.value.processingRoute).toEqual({
+        ...oldRoute,
+        fieldType: {
+          ...oldRoute.fieldType,
+          value: [
+            ...oldRoute.fieldType.value,
+            { type: "literal", value: "work_cloud" },
+          ],
+        },
+      });
+      current.documentType.value.processingRoute = oldRoute;
+    }
+    expect(current).toEqual(prior);
   }
   const oldAssistant = execFileSync(
     "git",
@@ -157,6 +198,12 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
         fieldType: { type: "string" },
         optional: true,
       });
+      expect(current.documentType.value.cloudSaveDefaults).toEqual({
+        fieldType: (defineTable({ value: cloudSaveDefaults }) as any).export()
+          .documentType.value.value.fieldType,
+        optional: true,
+      });
+      delete current.documentType.value.cloudSaveDefaults;
       delete current.documentType.value.cloudRequestPolicy;
       delete current.documentType.value.cloudRequestPolicyHash;
     }

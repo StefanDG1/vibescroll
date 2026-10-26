@@ -53,6 +53,7 @@ import { sourceRetained } from "./lib/sourceAuthority";
 import { registerEvidenceAsset, queueDeletion } from "./assets";
 import { retainedCloudFrames } from "../packages/media/cloud-frames";
 import { evidenceRepairContext } from "./workCloudEvidenceRepair";
+import { savedCloudIntentCurrent } from "./lib/workCloudSave";
 import { commitPersonalOrdered } from "./lib/personalOrderedCommit";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
 import { syncCategories } from "./categories";
@@ -755,6 +756,65 @@ async function approveExactCloudSource(
     expiresAt: job.expiresAt,
     inputHash: input.inputHash,
   };
+}
+
+export async function requestSavedCloudFromAssistant(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  intentId: string,
+) {
+  const a = await assistantGrant(
+    ctx,
+    source.organizationId,
+    "analysis:execute",
+  );
+  ensure(
+    /^[a-f0-9]{64}$/.test(intentId) &&
+      source.workCloudSaveIntent?.id === intentId &&
+      (await savedCloudIntentCurrent(
+        ctx,
+        a.actor,
+        a.organization,
+        a.grant,
+        source,
+      )),
+    "APPROVAL_STALE",
+    "The automatic app-Save intent expired or its post, grant or defaults changed.",
+  );
+  const intent = source.workCloudSaveIntent!;
+  if (
+    intent.analysisGeneration !== undefined &&
+    (source.state !== "queued" || source.personalAnalysis?.state !== "queued")
+  ) {
+    return {
+      source_id: source._id,
+      generation: source.generation,
+      status: source.personalAnalysis?.state ?? source.state,
+      analysis_started: false,
+      reused_request: true,
+      url: `https://scroll.companynerve.com/app/${source.organizationId}/posts/${source._id}`,
+    };
+  }
+  const receipt = await requestCloudFromAssistant(ctx, source, {
+    generation: intent.generation,
+    revision: intent.revision,
+    grantVersion: intent.grantVersion,
+    cloud: {
+      model: intent.model,
+      effort: intent.effort,
+      retainUntil: intent.retainUntil,
+      useOwnPlan: true,
+      maxApiUsd: 0,
+    },
+  });
+  if (intent.analysisGeneration === undefined)
+    await ctx.db.patch(source._id, {
+      workCloudSaveIntent: {
+        ...intent,
+        analysisGeneration: receipt.generation,
+      },
+    });
+  return receipt;
 }
 
 export async function requestCloudFromAssistant(

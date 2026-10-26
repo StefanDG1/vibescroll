@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChoiceSelect } from "./choice-select";
+import { workCloudMonitorMessage } from "../../../packages/onboarding/work-cloud-monitor";
 type Project = {
   repositoryId: string;
   name: string;
@@ -26,6 +27,12 @@ type Grant = {
   intakeSpace?: "personal" | "business";
   contextVersion?: number;
   cloudRequestPolicy?: "explicit_per_source_v1";
+  cloudSaveDefaults?: {
+    version: "app-save-cloud-v1";
+    model: string;
+    effort: "low" | "medium" | "high" | "xhigh";
+    retentionMs: number;
+  };
 };
 type Setup = {
   devices?: {
@@ -40,6 +47,7 @@ type Setup = {
   privateLibrary: boolean;
   eventsEnabled?: boolean;
   workCloudMediaEnabled?: boolean;
+  workCloudSavedEnabled?: boolean;
   clients: { id: string; name: string; scopes: string[] }[];
   grants: Grant[];
   context: {
@@ -88,6 +96,10 @@ function AssistantAccessEditor({
   const [duration, setDuration] = useState("until_revoked");
   const [automatic, setAutomatic] = useState<boolean | null>(null);
   const [cloudRequests, setCloudRequests] = useState(false);
+  const [cloudSaves, setCloudSaves] = useState(false);
+  const [cloudModel, setCloudModel] = useState("gpt-6.1-sol");
+  const [cloudEffort, setCloudEffort] = useState("high");
+  const [cloudRetentionDays, setCloudRetentionDays] = useState("7");
   const [computerId, setComputerId] = useState("");
   const [ack, setAck] = useState("");
   const [error, setError] = useState("");
@@ -95,6 +107,7 @@ function AssistantAccessEditor({
   const busy = pending !== null;
   const [pageLoading, setPageLoading] = useState(false);
   const [checkedAt, setCheckedAt] = useState(0);
+  const [copiedSetup, setCopiedSetup] = useState("");
   const generation = useRef(0);
   const editor = useRef<HTMLDetailsElement>(null);
   const needsContext = scopes.includes("context:read");
@@ -179,6 +192,22 @@ function AssistantAccessEditor({
     client.scopes.includes("analysis:execute");
   const cloudRequestPolicy =
     cloudEligible && cloudRequests ? "explicit_per_source_v1" : undefined;
+  const cloudSaveEligible =
+    !!cloudRequestPolicy &&
+    !!data?.workCloudSavedEnabled &&
+    libraryScope === "all" &&
+    ["jobs:read", "events:subscribe"].every(
+      (scope) => scopes.includes(scope) && client?.scopes.includes(scope),
+    );
+  const cloudSaveDefaults =
+    cloudSaveEligible && cloudSaves
+      ? {
+          version: "app-save-cloud-v1",
+          model: cloudModel.trim(),
+          effort: cloudEffort,
+          retentionMs: Number(cloudRetentionDays) * 86400000,
+        }
+      : undefined;
   const automaticAnalysis =
     !cloudRequestPolicy &&
     (automatic ?? existing?.analysisDefaults?.enabled ?? true);
@@ -215,6 +244,7 @@ function AssistantAccessEditor({
     duration,
     automaticAnalysis,
     cloudRequestPolicy,
+    cloudSaveDefaults,
     cloudAvailable,
     computer,
     data?.context?.version,
@@ -237,6 +267,12 @@ function AssistantAccessEditor({
     setIntakeSpace(grant.intakeSpace ?? "");
     setAutomatic(grant.analysisDefaults?.enabled ?? true);
     setCloudRequests(grant.cloudRequestPolicy === "explicit_per_source_v1");
+    setCloudSaves(!!grant.cloudSaveDefaults);
+    setCloudModel(grant.cloudSaveDefaults?.model ?? "gpt-6.1-sol");
+    setCloudEffort(grant.cloudSaveDefaults?.effort ?? "high");
+    setCloudRetentionDays(
+      String((grant.cloudSaveDefaults?.retentionMs ?? 7 * 86400000) / 86400000),
+    );
     setComputerId(grant.analysisDefaults?.deviceId ?? "");
     setDuration(
       grant.expiresAt === null
@@ -281,6 +317,7 @@ function AssistantAccessEditor({
         expiresAt,
         acknowledged: true,
         ...(cloudRequestPolicy ? { cloudRequestPolicy } : {}),
+        ...(cloudSaveDefaults ? { cloudSaveDefaults } : {}),
         ...(scopes.includes("links:save")
           ? { intakePolicy: "explicit_links" }
           : {}),
@@ -389,57 +426,118 @@ function AssistantAccessEditor({
             </p>
           )}
           <div className="assistant-grant-list">
-            {data.grants.map((grant) => (
-              <div key={grant.id} className="assistant-grant-row">
-                <div>
-                  <strong>
-                    {data.clients.find((c) => c.id === grant.clientId)?.name ??
-                      "Previously configured assistant"}
-                  </strong>
-                  <p className="fine">
-                    {grant.state === "active" &&
-                    (grant.expiresAt === null || grant.expiresAt > checkedAt)
-                      ? grant.expiresAt === null
-                        ? "Active until you turn access off"
-                        : `Active until ${new Date(grant.expiresAt).toLocaleString()}`
-                      : "Access ended"}
-                    .{" "}
-                    {grant.libraryScope
-                      ? grant.libraryScope === "all"
-                        ? "All current and future posts"
-                        : `Current and future ${grant.libraryScope === "personal" ? "Personal" : "Business"} posts`
-                      : `${grant.sources.length} previously selected posts`}
-                    . {grant.repositories?.length ?? 0} selected projects.
-                    {grant.analysisDefaults?.enabled
-                      ? " Links automatically queue local extraction and organization."
-                      : " Automatic analysis is off."}
-                    {grant.cloudRequestPolicy === "explicit_per_source_v1"
-                      ? " Exact private video requests are allowed in a supported Work Cloud chat."
-                      : ""}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={busy || readOnly}
-                  onClick={() => editPreferences(grant)}
-                >
-                  Edit preferences
-                </button>
-                {grant.state === "active" && (
+            {data.grants.map((grant) => {
+              const setupMessage =
+                data.privateLibrary &&
+                data.enabled &&
+                data.eventsEnabled &&
+                data.workCloudMediaEnabled &&
+                data.workCloudSavedEnabled
+                  ? workCloudMonitorMessage(
+                      organizationId,
+                      grant,
+                      data.clients.find((c) => c.id === grant.clientId),
+                      checkedAt,
+                    )
+                  : null;
+              return (
+                <div key={grant.id} className="assistant-grant-row">
+                  <div>
+                    <strong>
+                      {data.clients.find((c) => c.id === grant.clientId)
+                        ?.name ?? "Previously configured assistant"}
+                    </strong>
+                    <p className="fine">
+                      {grant.state === "active" &&
+                      (grant.expiresAt === null || grant.expiresAt > checkedAt)
+                        ? grant.expiresAt === null
+                          ? "Active until you turn access off"
+                          : `Active until ${new Date(grant.expiresAt).toLocaleString()}`
+                        : "Access ended"}
+                      .{" "}
+                      {grant.libraryScope
+                        ? grant.libraryScope === "all"
+                          ? "All current and future posts"
+                          : `Current and future ${grant.libraryScope === "personal" ? "Personal" : "Business"} posts`
+                        : `${grant.sources.length} previously selected posts`}
+                      . {grant.repositories?.length ?? 0} selected projects.
+                      {grant.cloudSaveDefaults
+                        ? " Automatic Cloud defaults are saved."
+                        : grant.analysisDefaults?.enabled
+                          ? " Links automatically queue local extraction and organization."
+                          : " Automatic analysis is off."}
+                      {grant.cloudRequestPolicy === "explicit_per_source_v1"
+                        ? " Exact private video requests are allowed in a supported Work Cloud chat."
+                        : ""}
+                    </p>
+                  </div>
+                  {setupMessage && (
+                    <details className="assistant-cloud-monitor-setup">
+                      <summary>Set up ChatGPT</summary>
+                      <p className="fine">
+                        Open a Work chat with Cloud and this VibeScroll plugin
+                        selected. Paste this message once and let setup finish.
+                        ChatGPT will check its runtime before creating the
+                        monitor. Refresh access here after changing your
+                        permissions.
+                      </p>
+                      <label htmlFor={`cloud-monitor-${grant.id}`}>
+                        ChatGPT setup message
+                      </label>
+                      <textarea
+                        id={`cloud-monitor-${grant.id}`}
+                        readOnly
+                        rows={8}
+                        value={setupMessage}
+                        onFocus={(event) => event.currentTarget.select()}
+                      />
+                      <button
+                        type="button"
+                        className="secondary"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(setupMessage);
+                            setCopiedSetup(`${grant.id}:${grant.version}`);
+                          } catch {
+                            setCopiedSetup("");
+                            setError(
+                              "Select the setup message and copy it using your browser.",
+                            );
+                          }
+                        }}
+                      >
+                        Copy setup message
+                      </button>
+                      <output className="fine">
+                        {copiedSetup === `${grant.id}:${grant.version}`
+                          ? "Copied. Paste it into your ChatGPT Work chat."
+                          : "This message contains library identifiers, not your login credentials."}
+                      </output>
+                    </details>
+                  )}
                   <button
                     type="button"
                     className="secondary"
                     disabled={busy || readOnly}
-                    onClick={() => void revoke(grant)}
+                    onClick={() => editPreferences(grant)}
                   >
-                    {pending === grant.id
-                      ? "Turning access off..."
-                      : "Turn off access"}
+                    Edit preferences
                   </button>
-                )}
-              </div>
-            ))}
+                  {grant.state === "active" && (
+                    <button
+                      type="button"
+                      className="secondary"
+                      disabled={busy || readOnly}
+                      onClick={() => void revoke(grant)}
+                    >
+                      {pending === grant.id
+                        ? "Turning access off..."
+                        : "Turn off access"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <details ref={editor} className="assistant-grant-editor">
             <summary>Choose assistant access</summary>
@@ -598,11 +696,12 @@ function AssistantAccessEditor({
                     <p className="fine">
                       After this setup, you can request a specific saved public
                       video in a supported Work Cloud chat using your own
-                      ChatGPT subscription. GitHub is not required. VibeScroll
-                      does not launch the Cloud task or automatically process
-                      new links. The task must support the required tools and
-                      network access. Results stay private, with no paid API
-                      fallback.
+                      ChatGPT subscription. GitHub is not required.{" "}
+                      {data?.workCloudSavedEnabled
+                        ? "Automatic app saves require the separate defaults below and a native saved-link monitor."
+                        : "VibeScroll does not launch the Cloud task or automatically process new links."}{" "}
+                      The task must support the required tools and network
+                      access. Results stay private, with no paid API fallback.
                     </p>
                     <p className="fine">
                       Up to 6 new requests per hour. Each request allows one
@@ -613,6 +712,93 @@ function AssistantAccessEditor({
                       retention. Provider task history and cleanup remain
                       separate.
                     </p>
+                    {data?.workCloudSavedEnabled && (
+                      <div className="form-grid">
+                        <label className="check">
+                          <input
+                            type="checkbox"
+                            checked={cloudSaveEligible && cloudSaves}
+                            disabled={disabled || !cloudSaveEligible}
+                            onChange={(e) => {
+                              setCloudSaves(e.target.checked);
+                              setAck("");
+                            }}
+                          />
+                          Allow analysis of video links I save in the app using
+                          My own Cloud Work
+                        </label>
+                        <p className="fine">
+                          Choose all posts and the status, Events and analysis
+                          actions above. Then finish the native saved-link
+                          monitor in ChatGPT once. Saving without analysis stays
+                          separate. Earlier saves and existing results are not
+                          automatically reprocessed.
+                        </p>
+                        {cloudSaveDefaults && (
+                          <details open>
+                            <summary>
+                              Cloud defaults for future app saves
+                            </summary>
+                            <label>
+                              Model selected in your ChatGPT task
+                              <input
+                                value={cloudModel}
+                                maxLength={100}
+                                onChange={(e) => {
+                                  setCloudModel(e.target.value);
+                                  setAck("");
+                                }}
+                                required
+                                disabled={disabled}
+                              />
+                            </label>
+                            <label
+                              htmlFor={`cloud-save-effort-${organizationId}`}
+                            >
+                              Reasoning effort
+                              <ChoiceSelect
+                                id={`cloud-save-effort-${organizationId}`}
+                                value={cloudEffort}
+                                disabled={disabled}
+                                onValueChange={(value) => {
+                                  setCloudEffort(value);
+                                  setAck("");
+                                }}
+                              >
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="xhigh">Extra high</option>
+                              </ChoiceSelect>
+                            </label>
+                            <label
+                              htmlFor={`cloud-save-retention-${organizationId}`}
+                            >
+                              Keep results for
+                              <ChoiceSelect
+                                id={`cloud-save-retention-${organizationId}`}
+                                value={cloudRetentionDays}
+                                disabled={disabled}
+                                onValueChange={(value) => {
+                                  setCloudRetentionDays(value);
+                                  setAck("");
+                                }}
+                              >
+                                <option value="1">1 day</option>
+                                <option value="7">7 days</option>
+                                <option value="30">30 days</option>
+                              </ChoiceSelect>
+                            </label>
+                            <p className="fine">
+                              These are requested settings. Your ChatGPT task
+                              must have its own supported tools and model
+                              access. VibeScroll buys no API inference and does
+                              not verify provider history deletion.
+                            </p>
+                          </details>
+                        )}
+                      </div>
+                    )}
                   </fieldset>
                 )}
                 {scopes.includes("links:save") && (

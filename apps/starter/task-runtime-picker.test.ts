@@ -86,3 +86,27 @@ it("does not mistake a paired offline computer for a ready runtime", () => {
   expect(text(tree)).toContain("Computer offline");
   expect(text(tree)).not.toContain("Available");
 });
+it("allows only a current Cloud handoff and preserves its unavailable preference", () => {
+  const onChange = vi.fn();
+  const props = {
+    organizationId: "workspace",
+    onChange,
+    value: "work_cloud" as const,
+    workCloudConfigured: true,
+  };
+  const stopped = TaskRuntimePicker(props);
+  expect(text(stopped)).toContain("Check ChatGPT setup");
+  const disabled = elements(stopped).find(
+    (n) => n.props.type === "radio" && n.props.value === "work_cloud",
+  )!;
+  expect(disabled.props.checked).toBe(true);
+  expect(disabled.props.disabled).toBe(true);
+  disabled.props.onChange();
+  expect(onChange).not.toHaveBeenCalled();
+  const ready = TaskRuntimePicker({ ...props, workCloudAvailable: true });
+  expect(text(ready)).toContain("Ready to send to ChatGPT");
+  elements(ready)
+    .find((n) => n.props.type === "radio" && n.props.value === "work_cloud")!
+    .props.onChange();
+  expect(onChange).toHaveBeenCalledExactlyOnceWith("work_cloud");
+});

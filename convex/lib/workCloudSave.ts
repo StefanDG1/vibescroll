@@ -50,7 +50,7 @@ export async function savedCloudRoute(
 ) {
   if (
     !savedCloudEnabled(actor.subject) ||
-    organization.privateOwnerId !== actor._id
+    !(await workCloudSourceEligible(ctx, organization, actor._id))
   )
     return null;
   const rows = await ctx.db
@@ -95,7 +95,6 @@ export async function savedCloudGrantCurrent(
   return (
     savedCloudEnabled(actor.subject) &&
     actor.status === "active" &&
-    organization.privateOwnerId === actor._id &&
     (await workCloudSourceEligible(ctx, organization, actor._id)) &&
     grant.organizationId === organization._id &&
     grant.actor === actor._id &&

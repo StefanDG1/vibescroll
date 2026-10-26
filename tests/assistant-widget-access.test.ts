@@ -80,6 +80,47 @@ async function setup() {
   return { t, owner, assistant, organizationId, sourceId, args };
 }
 
+it.each(["Saved video", "My saved source"])(
+  "uses the same safe preview title in widget source/job cards and fetch: %s",
+  async (title) => {
+    const s = await setup();
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.sourceId, {
+        title,
+        state: "queued",
+        linkPreview: {
+          state: "ready",
+          title: "Synthetic extracted title",
+          updatedAt: Date.now(),
+        },
+      }),
+    );
+    const before = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+    await s.owner.mutation(api.assistantGrants.save, {
+      ...s.args,
+      scopes: ["knowledge:read", "jobs:read"],
+    });
+    const expectedTitle =
+      title === "Saved video" ? "Synthetic extracted title" : title;
+    const fetched = await s.assistant.query(internal.assistant.fetch, {
+      profileId: s.organizationId,
+      id: s.sourceId,
+    });
+    expect(fetched.title).toBe(expectedTitle);
+    for (const kind of ["sources", "jobs"] as const) {
+      const result = await s.assistant.query(internal.assistantWidget.browse, {
+        profileId: s.organizationId,
+        kind,
+      });
+      expect(result.items[0]).toMatchObject({ title: expectedTitle });
+      expect(JSON.stringify(result)).not.toContain("PRIVATE transcript");
+    }
+    const after = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+    expect(after.title).toBe(before.title);
+    expect(after.updatedAt).toBe(before.updatedAt);
+  },
+);
+
 it("discovers minimal current workspace access without context scope and removes revoked grants", async () => {
   const s = await setup();
   const grant = await s.owner.mutation(api.assistantGrants.save, s.args);

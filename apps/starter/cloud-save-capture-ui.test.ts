@@ -84,6 +84,7 @@ it.each([true, false])(
         expect.objectContaining({
           grantId: "grant",
           grantVersion: 3,
+          title: "Imported video link",
           rightsAttested: true,
         }),
       );

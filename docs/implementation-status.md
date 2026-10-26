@@ -3,6 +3,29 @@
 Renderer correction d975e1e passed exact Linux CI40377419642. One normal queued fixed Basic frontend build was verified, promoted unchanged and checked on the canonical host; normal domain assignment was restored. Its backend bundle was byte-identical to bfe02d2, so no backend publication occurred. The existing ChatGPT plugin refreshed without its previous private-renderer error. A real temporary ChatGPT chat rendered an existing authorized source; no source, job or grant changed. The initial render had developer CSP enforcement off. Enforcement was subsequently enabled and confirmed on; strict-CSP rendering and Codex rendering remain unverified. Combined serving1127745 preserves this fix and newer Cloud title behavior. [Bounded host receipt](operations/evidence/launch-20261026-mcp-widget-renderer.json).
 
 The next compact-only refinement shows two citation rows first, with an accessible local disclosure for the remaining returned references, and labels ordered-media evidence in readable language. Widget resource build, full types, zero-warning lint and six compiled-HTML AppBridge cases passed. The two/five/two disclosure retains keyboard focus and makes no additional tool call. Desktop680 light and320 dark captures were opened and validated. These are synthetic local checks, not hosted acceptance. The refinement is not yet published. Prior preflight/host failures remain below.
+## October 26: full eligibility checks pass
+
+The stable eligibility candidate passed the full local check: 1,292 Vitest tests with three hosted skips, nineteen Node tests, 59 Python cases with four Linux-only Windows skips, types, zero-warning lint and production builds. The compatible focused regression suite passed77 cases after seven original-workspace failures before the fix. Only assistantGrants and the existing workCloudSave helper change backend behavior; schema, indexes and component configuration are untouched. [Sanitized receipt](operations/evidence/launch-20261026-cloud-save-eligibility.json). Exact CI and guarded backend publication remain pending. No source job or grant change occurred.
+
+## October 26: reproduce the original-workspace automatic setup mismatch
+
+Production frontend/backend1127745 now include the title-preview update and preserve the ChatGPT renderer fix. One fixed Basic queued build passed staged health, exact illustrated guide and tools-ZIP checks, then same-build promotion and canonical health. Desktop and320px public Help decoded the652x1066 illustration without overflow. The first guide-index expectation and first pre-completion canonical read are retained as failures, not acceptance. Automatic source jobs remain zero.
+
+The native runtime's complete pins and fresh V2 socket denial passed. Its older incomplete marker was preserved before removal; a separate turn verified both receipt hashes, marker/partial absence and the unchanged bounded cache. Private pilot flags were enabled through two exact guarded writes, without changing any source or grant. Actual setup then exposed a stricter ownership-field check in automatic Save than in existing explicit Cloud requests. The original sole-owner workspace has another private library, so adoption is correctly unavailable. Seven regressions fail before the fix. The candidate now reuses the existing bounded eligibility predicate without changing ownership or saved data;77 focused compatible cases pass. [ADR166](adr/166-consistent-cloud-save-eligibility.md). Full checks and exact CI remain pending.
+
+## October 26: preserve the serving renderer fix
+
+The compatible candidate now includes the ChatGPT renderer discovery fix from d975e1e. A fresh public canonical health read returned d975e1eb97fc11a83c43dcd7175e58db92139490/version0.1.0-alpha.20261026182408.gd975e1eb97fc. The title-preview follow-up is not deployed. Automatic flags, grants and jobs remain unchanged by this merge; actual automatic media acceptance remains open.
+
+## October 26: complete title-preview checks pass
+
+Full stable-source check passed 1,284 Vitest tests with three external skips, nineteen Node tests and 59 Python cases with four Linux-only Windows skips, types, zero-warning lint and both application builds. A before/after source-diff digest matched across the complete run. The six joined preview cases preserve custom and approved titles while exposing native metadata; compatible widget source/job/fetch cases also pass without exposing transcript text. The earlier four placeholder failures and widget fetch failure are retained in ignored logs. [Sanitized receipt](operations/evidence/launch-20261026-title-preview.json). Exact-head CI remains pending for this update.
+
+The compatible branch includes the widget dependency isolation and ADR-number correction at bfe02d2. No production source, grant, job or analysis changed. The owner approved the shared EUR9.50 cap and USD0.95 controlled combined release/current-grant/one-TikTok canary envelope; every prior hold remains. Wait for a coordinated verified serving baseline, then freeze the exact current source before publication. Keep all broader provider/privacy gates and the reserved/unknown sources.
+
+## October 26: early native titles survive blank URL saves
+
+The candidate now uses the existing Imported video link placeholder for new URL saves and recognizes historical Saved video in presentation. Scoped job status and the app select the same native preview title; an explicit custom title stays preferred. The saved source title/revision, finite approval hash, grant and generation are untouched. Four placeholder regression cases failed before the fix; the expanded six-case integration covers custom-title preservation with and without thumbnail metadata. Full final checks and exact CI for this update remain pending. Production remains the freshly verified ff7d88f.
 
 ## October26: widget candidate published; actual host found a renderer restriction
 

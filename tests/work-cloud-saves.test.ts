@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
+import { postDisplayTitle } from "../packages/sources/display";
 
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -20,7 +21,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllEnvs();
 });
-async function setup(optIn = true) {
+async function setup(optIn = true, originalWorkspace = false) {
   for (const key of [
     "MCP_ENABLED",
     "MCP_EVENTS_ENABLED",
@@ -48,7 +49,12 @@ async function setup(optIn = true) {
     subject,
     auth_time: Math.floor(Date.now() / 1000),
   });
-  const org = await owner.mutation(api.organizations.createPrivate, {});
+  const privateOrg = await owner.mutation(api.organizations.createPrivate, {});
+  const org = originalWorkspace
+    ? await owner.mutation(api.organizations.create, {
+        name: "Original workspace",
+      })
+    : privateOrg;
   const identity = {
     subject,
     issuer,
@@ -109,6 +115,7 @@ async function setup(optIn = true) {
   return {
     t,
     actor,
+    privateOrg,
     owner,
     org,
     identity,
@@ -153,13 +160,17 @@ it("records a finite exact app-Save intent without creating a job, lease or rese
   vi.advanceTimersByTime(1000);
   expect(await s.capture()).toEqual(result);
 });
-it.each([false, true])(
-  "keeps an app-Save intent valid when native preview metadata arrives, thumbnail=%s",
-  async (thumbnail) => {
+it.each(
+  ["Imported video link", "Saved video", "My saved source"].flatMap((title) =>
+    [false, true].map((thumbnail) => ({ title, thumbnail })),
+  ),
+)(
+  "keeps an app-Save intent and display current when native preview metadata arrives: %j",
+  async ({ title, thumbnail }) => {
     const s = await setup();
     const saved = await s.owner.mutation(api.workCloudSaves.capture, {
       ...s.captureArgs,
-      title: "Imported video link",
+      title,
     });
     const before = (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))!;
     vi.advanceTimersByTime(1000);
@@ -193,6 +204,10 @@ it.each([false, true])(
       profileId: s.org,
       sourceId: saved.sourceId,
     });
+    const displayTitle =
+      title === "My saved source" ? title : "Synthetic native preview title";
+    expect(postDisplayTitle(after)).toBe(displayTitle);
+    expect(status.title).toBe(displayTitle);
     expect(status.saved_cloud_intent).toMatchObject({
       id: saved.intentId,
       state: "waiting_for_runtime",
@@ -501,5 +516,136 @@ it("refuses another admitted OAuth client even if it has its own valid all-libra
   ).rejects.toThrow(/APPROVAL_STALE/);
   expect(
     await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toHaveLength(0);
+});
+
+it("uses reviewed automatic app saves in the original sole-owner workspace without converting or copying libraries", async () => {
+  const s = await setup(true, true);
+  const before = await s.t.run(async (ctx) => ({
+    original: await ctx.db.get(s.org),
+    personal: await ctx.db.get(s.privateOrg),
+  }));
+  expect(
+    await s.owner.query(api.organizations.previewPrivateAdoption, {
+      organizationId: s.org,
+    }),
+  ).toMatchObject({ eligible: false, reason: "other_private_workspace" });
+  expect(
+    await s.owner.query(api.assistantGrants.setup, { organizationId: s.org }),
+  ).toMatchObject({ privateLibrary: false, workCloudSavedEnabled: true });
+  expect(
+    (await s.owner.query(api.aiPreferences.read, { organizationId: s.org }))
+      .workCloud,
+  ).toMatchObject({ available: true, configured: true, grantVersion: 1 });
+  const saved = await s.capture();
+  expect(saved.intentId).toMatch(/^[a-f0-9]{64}$/);
+  expect(await s.start(saved.sourceId, saved.intentId!)).toMatchObject({
+    generation: 1,
+    reused_request: false,
+  });
+  expect(
+    await s.t.run(async (ctx) => ({
+      original: await ctx.db.get(s.org),
+      personal: await ctx.db.get(s.privateOrg),
+    })),
+  ).toEqual(before);
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))?.organizationId,
+  ).toBe(s.org);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("sources").collect()),
+  ).toHaveLength(1);
+});
+async function disqualifySavedWorkspace(
+  s: Awaited<ReturnType<typeof setup>>,
+  change: "member" | "invitation" | "saturated" | "creator" | "role",
+) {
+  await s.t.run(async (ctx) => {
+    if (change === "member" || change === "creator") {
+      const other = await ctx.db.insert("users", {
+        subject: "another-save-owner",
+        email: "other@example.test",
+        name: "Other",
+        status: "active",
+        createdAt: Date.now(),
+      });
+      if (change === "member")
+        await ctx.db.insert("memberships", {
+          organizationId: s.org,
+          userId: other,
+          role: "viewer",
+        });
+      else await ctx.db.patch(s.org, { createdBy: other });
+    } else if (change === "role") {
+      const m = await ctx.db
+        .query("memberships")
+        .withIndex("by_pair", (q) =>
+          q.eq("organizationId", s.org).eq("userId", s.actor),
+        )
+        .unique();
+      await ctx.db.patch(m!._id, { role: "admin" });
+    } else
+      for (let i = 0; i < (change === "saturated" ? 51 : 1); i++)
+        await ctx.db.insert("invitations", {
+          organizationId: s.org,
+          email: `saved${i}@example.test`,
+          role: "viewer",
+          tokenHash: String(i).padStart(64, "0"),
+          createdBy: s.actor,
+          expiresAt: Date.now() + (change === "saturated" ? -1 : 60000),
+        });
+  });
+}
+it.each(["member", "invitation", "saturated", "creator", "role"] as const)(
+  "stops original-workspace automatic Save authority after %s changes",
+  async (change) => {
+    const s = await setup(true, true),
+      saved = await s.capture();
+    await disqualifySavedWorkspace(s, change);
+    expect(
+      await s.owner.query(api.assistantGrants.setup, { organizationId: s.org }),
+    ).toMatchObject({ workCloudSavedEnabled: false });
+    expect(
+      (await s.owner.query(api.aiPreferences.read, { organizationId: s.org }))
+        .workCloud,
+    ).toBeNull();
+    await expect(
+      s.owner.mutation(api.assistantGrants.save, {
+        ...s.grantArgs,
+        expectedVersion: 1,
+      }),
+    ).rejects.toThrow(/SETUP_REQUIRED/);
+    await expect(s.capture()).rejects.toThrow();
+    expect(
+      (
+        await s.assistant.query(internal.assistant.getJobStatus, {
+          profileId: s.org,
+          sourceId: saved.sourceId,
+        })
+      ).saved_cloud_intent,
+    ).toBeNull();
+    await expect(s.start(saved.sourceId, saved.intentId!)).rejects.toThrow(
+      /SETUP_REQUIRED|FORBIDDEN|APPROVAL_STALE/,
+    );
+    expect(
+      (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))?.generation,
+    ).toBe(0);
+    expect(
+      await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+    ).toHaveLength(0);
+  },
+);
+it("an older sole-owner connection gains no automatic defaults or intent", async () => {
+  const s = await setup(false, true);
+  expect(
+    await s.owner.query(api.assistantGrants.setup, { organizationId: s.org }),
+  ).toMatchObject({ workCloudSavedEnabled: true });
+  expect(
+    (await s.owner.query(api.aiPreferences.read, { organizationId: s.org }))
+      .workCloud,
+  ).toMatchObject({ available: false, configured: false });
+  await expect(s.capture()).rejects.toThrow(/SETUP_REQUIRED/);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("sources").collect()),
   ).toHaveLength(0);
 });

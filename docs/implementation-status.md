@@ -1,3 +1,11 @@
+## October 26: current compact widget accepted in actual ChatGPT with CSP on
+
+Exact a7a48cb CI40388132270 passed. One fixed Basic normal queued production build dpl_3MifH1UW5fVoHvKiLBrcaX5NpFME passed staged health, enabled widget descriptor, illustrated guide and pinned tools-ZIP checks. That same build was promoted, canonical version0.1.0-alpha.20261026193512.ga7a48cb6a4e1 verified, and normal domain assignment restored. The compiled backend remains byte-identical to servingf6dd6d4, so this release uploaded no backend. No acceleration or extra concurrency was enabled.
+
+After refreshing the same existing ChatGPT plugin, a fresh temporary chat rendered the current fingerprinted UI with developer CSP enforcement on. Actual inner-frame inspection confirmed readable coverage wording and native pointer disclosure2/5/2 with correct aria-expanded and retained toggle focus. Expand opened the native424px panel; Library read four bounded current rows with no alert. The first collapse pointer missed during layout change and a parent-target keyboard dispatch did not activate the inner control. A fresh-layout pointer click passed; actual keyboard activation is not certified. Final compact and Library screenshots were opened and validated. Both owned verification/billing tabs were closed. Source/job/grant/feedback/project writes from this verification are zero.
+
+This closes the existing-account ChatGPT compact-card/cache milestone. Codex visual acceptance, fresh customer OAuth, complete role/host/accessibility coverage, installed skills and richer editing remain open. The separate automatic-media pilot is paused before a job because current acquisition-policy evidence is unresolved; this widget receipt does not certify that pipeline. [Publication and exact host receipt](operations/evidence/launch-20261026-mcp-widget-cache-publication.json).
+
 ## October 26: actual app Save wakes native Cloud; acquisition preflight stops before a job
 
 Compatible backend f6dd6d4 passed exact CI40383890611 and finished publication at19:12:59.462UTC, without schema/index/component changes or backfills. Actual original-library setup now passes the established eligibility check. The owner saved grant9 with unchanged nine actions/five project contexts and explicit automatic defaults. No library adoption or data move was needed.

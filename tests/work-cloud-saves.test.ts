@@ -810,3 +810,46 @@ it("an older sole-owner connection gains no automatic defaults or intent", async
     await s.t.run((ctx) => ctx.db.query("sources").collect()),
   ).toHaveLength(0);
 });
+
+it.each([false, true])(
+  "reports the current waiting Cloud intent ahead of a historical local intake: legacy=%s",
+  async (legacy) => {
+    const s = await setup(true, legacy);
+    const saved = await s.capture();
+    const intakeId = await s.t.run(async (ctx) => {
+      const source = (await ctx.db.get(saved.sourceId))!;
+      return ctx.db.insert("assistantIntakes", {
+        organizationId: s.org,
+        actor: s.actor,
+        clientId,
+        grantId: s.grant.id,
+        grantVersion: s.grant.version,
+        sourceId: saved.sourceId,
+        generation: source.generation,
+        revision: source.updatedAt,
+        queueState: "waiting",
+        createdAt: Date.now(),
+      });
+    });
+    const before = await s.t.run((ctx) => ctx.db.get(intakeId));
+    const args = { profileId: s.org, sourceId: saved.sourceId };
+    const current = await s.assistant.query(
+      internal.assistant.getJobStatus,
+      args,
+    );
+    expect(current.status).toBe("waiting_for_cloud");
+    expect(current.receipt).toBeNull();
+    expect(current.processing).toBeNull();
+    expect(current.saved_cloud_intent?.state).toBe("waiting_for_runtime");
+    expect(await s.t.run((ctx) => ctx.db.get(intakeId))).toEqual(before);
+    vi.setSystemTime(saved.expiresAt! + 1);
+    const expired = await s.assistant.query(
+      internal.assistant.getJobStatus,
+      args,
+    );
+    expect(expired.saved_cloud_intent).toBeNull();
+    expect(expired.status).toBe(expired.receipt?.status);
+    expect(expired.receipt).not.toBeNull();
+    expect(await s.t.run((ctx) => ctx.db.get(intakeId))).toEqual(before);
+  },
+);

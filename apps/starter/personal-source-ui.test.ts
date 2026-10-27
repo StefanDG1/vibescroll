@@ -142,9 +142,13 @@ it("uses actual selected effort for automatic URL capture and rejects missing ch
     sources: [{ id: "captured-source", generation: 0 }],
   });
 });
-it.each([true, false])(
-  "uses the saved Cloud handoff only when ready=%s and never falls back",
-  async (available) => {
+it.each(
+  ["work_cloud", undefined, null].flatMap((preferredRoute) =>
+    [true, false].map((available) => ({ preferredRoute, available })),
+  ),
+)(
+  "uses configured Cloud with preference=$preferredRoute only when ready=$available and never falls back",
+  async ({ preferredRoute, available }) => {
     const call = vi.fn(async () => ({
       sourceId: "saved-source",
       status: "waiting_for_cloud_setup",
@@ -152,7 +156,7 @@ it.each([true, false])(
     const done = vi.fn();
     const props = {
       organizationId: "workspace",
-      preferredRoute: "work_cloud",
+      preferredRoute,
       workCloud: {
         available,
         configured: true,
@@ -202,6 +206,25 @@ it.each([true, false])(
     }
   },
 );
+it.each([
+  { preferredRoute: "local", expected: "local" },
+  { preferredRoute: "cloud", expected: "cloud" },
+  { preferredRoute: "save_only", expected: undefined },
+  { existingSourceId: "upload-recovery", expected: "local" },
+])("preserves an explicit route or upload recovery: %j", (selection) => {
+  const tree = CaptureForm({
+    organizationId: "workspace",
+    personalEnabled: true,
+    cloudEnabled: true,
+    workCloud: { available: true, configured: true },
+    call: vi.fn(),
+    onDone: vi.fn(),
+    ...selection,
+  });
+  expect(
+    elements(tree).find((node) => node.type === TaskRuntimePicker)!.props.value,
+  ).toBe(selection.expected);
+});
 it("blocks expired automatic capture choices before a new source or upload grant", async () => {
   const h = harness();
   const call = vi.fn();

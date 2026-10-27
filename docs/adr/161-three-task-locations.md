@@ -4,6 +4,8 @@ Date: October 26, 2026. Status: published on the compatible serving line.
 
 ## Problem
 
+October 27 clarification: a configured Cloud grant is the default for a new URL when no explicit processing-route preference exists. Keep that choice selected while its monitor is unavailable, and block submission rather than choosing another executor. Explicit Local, server and save-only preferences and existing upload recovery take priority. The setup shortcut says Manage setup after configuration; it does not imply broken authorization or require another OAuth connection. This candidate is tested locally and not yet published.
+
 The existing labels use Cloud for both the user's ChatGPT subscription and VibeScroll's credit-funded processing. Setup emphasizes the paired computer and hides the distinction behind technical controls. The owner wants three understandable choices, setup shortcuts and honest disabled states.
 
 ## Decision

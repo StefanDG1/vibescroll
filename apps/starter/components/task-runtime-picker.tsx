@@ -106,7 +106,7 @@ export function TaskRuntimePicker({
           </label>
           <div className="task-runtime-actions">
             <Link href={option.href} prefetch={false}>
-              {option.configured ? "Reconfigure" : "Finish setup"}
+              {option.configured ? "Manage setup" : "Finish setup"}
               <span className="sr-only"> for {option.title}</span>
             </Link>
             <details>

@@ -71,5 +71,7 @@
     "allPriorHoldsPreserved": true,
     "paidAIOrAlternateFunding": false,
     "invoiceCertified": false
-  }
+  },
+  "supersededBy": "launch-20261027-automatic-reel-accepted.json",
+  "laterHistoricalAttemptState": "generation1 queued, approved01:36:41.740UTC, expired01:51:41.740UTC, no accepted claim observed; consumed hold preserved"
 }

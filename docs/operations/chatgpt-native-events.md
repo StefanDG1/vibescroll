@@ -1,12 +1,16 @@
 # Set up ChatGPT native Events
 
-Mode: how-to. Last verified October 26, 2026. Private owner pilot only.
+Mode: how-to. Last verified October 27, 2026. Private owner pilot only.
 
-## October 27 runtime correction
+## Current accepted path
 
-The closed-tab Save at01:32:37UTC delivered its event on the first attempt, but stopped before creating a job because the previously verified private ASR runtime was absent. The model and caption tools remained present; the cause is unknown. A manual warmup is not sufficient operational readiness. [ADR178](../adr/178-pre-job-cloud-runtime-bootstrap.md) adds a separately pinned runtime bootstrap before job creation, without model downloads, source work or paid API use. Native bootstrap and complete automatic media acceptance are pending. Current source generation remains0 and the pilot is paused. Reconnecting or creating another MCP app does not address this runtime failure.
+One actual app Save completed its full Reel analysis with the native ChatGPT tab closed. The event-triggered task returned52 transcript segments,8 verified JPEGs, a matching thumbnail and6 insights with57 evidence references. [Accepted evidence](evidence/launch-20261027-automatic-reel-accepted.json). The supported route uses the user's own Work Cloud subscription and original OAuth connection, not Workspace Agents or a manually active foreground task.
 
-The monitor-action readback discrepancy was nine extra blank-line insertions from the rich-text editor. All words and identifiers matched. No permission reset or action-content change was necessary.
+The corrected monitor prepares one pinned disposable Python runtime before requesting each admitted source job. A historical warmup directory is not readiness. It verifies separate cached model bytes, uses captions first and initializes the already verified local ASR model only when admitted preparation needs it. No packages or models are installed inside a source lease. Missing model/tools, denied runtime capabilities or exhausted subscription quota stop before a new job. Cold model provisioning and general customer rollout still need acceptance. Recreating the MCP app does not fix missing runtime bytes.
+
+For the current owner setup, no reconnect, scope reset or new app is required. The existing monitor was resumed and its saved instructions and Monitoring indicator were verified. Close the chat tab, choose My own Cloud Work in Save and save an eligible public Reel. Open its protected post page for progress and the completed analysis. The current shared test budget reserves one next user Save, followed by a budget pause. Older unknown, reserved, ready and disputed posts are excluded. This finite pilot budget is separate from OAuth refresh and does not promise unlimited execution.
+
+The previous01:32UTC source initially reported missing ASR runtime, then acquired a later queued generation that expired without an accepted claim. Preserve its consumed attempt and hold. It is not the source used for the successful02:33UTC Save. The rich-text readback mismatch was only extra editor line breaks; whitespace-normalized content verification avoids a false mismatch.
 
 ## What passed
 
@@ -18,7 +22,7 @@ The original plugin remains installed. Its older discovery lacked Events and a f
 
 The subsequent [actual app-save canary](evidence/launch-20261026-saved-link-native-ack.json) also passed. Frontend/backend `6cdcb1c` now serve the fourth event, `video_link_saved`. Refresh tools discovered it on the existing plugin without another login. A native monitor finished setup, then an actual **Save source** click on the already analysed Reel triggered a later ChatGPT reply containing that exact post ID. No follow-up message or manual run caused the reply. The source, analysis, twenty transcript segments, eight frames and generation stayed identical under a before/after content hash. No new source, download, analysis, processing credits or paid API route was selected.
 
-Both temporary canary monitors are now paused. Normal unsubscribe/expiry removed their encrypted subscription authority and delivery rows, verified by bounded empty-table reads. The plugin stays authenticated. [ADR 160](../adr/160-native-events-and-saved-video-acknowledgement.md) records this accepted private pilot. Automatic media analysis remains a separate next stage.
+Both temporary canary monitors are now paused. Normal unsubscribe/expiry removed their encrypted subscription authority and delivery rows, verified by bounded empty-table reads. The plugin stays authenticated. [ADR 160](../adr/160-native-events-and-saved-video-acknowledgement.md) records this accepted private pilot. The later complete automatic media checkpoint above supersedes this historical acknowledgement-only status.
 
 ## Operator registration for this development test
 
@@ -44,7 +48,7 @@ The native monitor subscribes through MCP Events. VibeScroll verifies callback o
 
 The serving code uses `@modelcontextprotocol/server` 2.3.1. Modern wire tests use revision `2026-07-28` and exercise `server/discover`, `events/list`, `events/subscribe` and `events/unsubscribe`. These are native protocol methods, so they need not appear as ordinary model tools. The live account successfully used the native lifecycle; its exact negotiated wire revision was not separately captured.
 
-## Customer setup target and next analysis stage
+## Customer setup and historical analysis-stage plan
 
 The operator configures and distributes the plugin once after its separate release/provider/privacy gates pass. Customers should install it, authorize their own VibeScroll account, review their app grant once and create one persistent native monitor. Each customer uses their own supported ChatGPT subscription and identity. This test used Work on the owner's web account and required no Workspace Agents.
 
@@ -52,7 +56,7 @@ The serving `video_link_saved` event hooks the existing authorized single-link c
 
 The actual save-only checkpoint above has passed. The saved monitor waits after its setup turn ends; a later event starts the acknowledgement turn automatically. An open browser needed a normal reload to display the already returned reply. We did not test a physical-device notification or closing every chat tab before the save. Do not confuse those UI checks with delivery or media-runtime acceptance.
 
-Next, add an explicit Work Cloud analysis choice to the existing Save flow and connect the resulting exact approved job to `work_cloud_waiting`. Preserve save-only behavior and reviewed policy/grant authority; review any required policy extension once rather than silently widening grant8. Then establish that the event-triggered Work task has a supported media environment and can finish the already tested caption-first Reel pipeline. This remains unaccepted. Keep both TikToks, unknown work, original repair and provider/privacy/release gates unchanged.
+Next, add an explicit Work Cloud analysis choice to the existing Save flow and connect the resulting exact approved job to `work_cloud_waiting`. Preserve save-only behavior and reviewed policy/grant authority; review any required policy extension once rather than silently widening grant8. Then establish that the event-triggered Work task has a supported media environment and can finish the already tested caption-first Reel pipeline. The October27 private acceptance above completes that owner media checkpoint. Keep both TikToks, unknown work, original repair and provider/privacy/release gates unchanged.
 
 Sources: [OpenAI MCP Events](https://developers.openai.com/plugins/build/mcp-events), [plugin packaging](https://developers.openai.com/plugins/build/plugins), [OpenAI examples](https://developers.openai.com/plugins/build/examples). The linked Pizzaz Node example uses the older SDK/SSE interface and is not an Events implementation template.
 
@@ -60,7 +64,7 @@ The owner approved the [concrete release proposal](evidence/launch-20261026-save
 
 ## Automatic app saves candidate: exact one-time setup
 
-This section describes the unpublished ADR162 candidate. The serving three-option picker and illustrated guide are sourceff7d88f; its own-Cloud analysis choice remains disabled. The private native setup now passes the tested decoder network filter, caption/JPEG preparation and synthetic ASR initialization. Actual automatic source acquisition and lease-to-result acceptance remain open. These steps are not a claim that automatic media is available to customers.
+This section records the original ADR162 setup sequence; the current private accepted status is above. The serving three-option picker and illustrated guide are sourceff7d88f; its own-Cloud analysis choice remains disabled. The private native setup now passes the tested decoder network filter, caption/JPEG preparation and synthetic ASR initialization. Actual automatic source acquisition and lease-to-result acceptance remain open. These steps are not a claim that automatic media is available to customers.
 
 1. Install the operator's existing registered VibeScroll plugin and authorize your own account once. Keep the original connection. This candidate adds no OAuth scope. Supported OAuth refresh and Events renewal are separate from the app grant; neither promises validity forever.
 2. In your private library's Connections, review the all-posts grant, exact private Cloud requests, status/Events/analysis actions and the separate automatic-app-Save checkbox. Review its model, effort and result retention defaults. Use Until revoked if that is the access you intend. An older grant does not acquire these defaults automatically. Changing sensitive permissions can require a recent app sign-in; ordinary later saves use the reviewed grant.

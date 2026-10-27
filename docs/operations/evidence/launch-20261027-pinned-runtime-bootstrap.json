@@ -1,8 +1,8 @@
 {
   "schemaVersion": "launch-pinned-runtime-bootstrap-v1",
-  "productionCommit": "21736e839e6d046ac305abc2469b5f1d37022dfb",
-  "published": false,
-  "automaticMediaAccepted": false,
+  "productionCommit": "70c9aaca090a8906f6aa4f61826c1a260ec754c7",
+  "published": true,
+  "automaticMediaAccepted": true,
   "originalPlanSHA256": "6be806ea3c3cb13bab7b01b6c711b83cd3543ef19a0071f78133ae46f14ffb83",
   "nativeTest": {
     "archiveSHA256": "a36c959045fc57a639d2b8dacfe0d5dba9d33f60fc0db113d1ee245aa08ef565",
@@ -39,7 +39,7 @@
     "focusedCloudAndIntakeCases": 97,
     "setupUICases": 23,
     "fullFinalChecks": "pass:1314 Vitest plus3 hosted skips,19 Node,82 Python with7 Windows skips,validation/types/lint/both builds",
-    "exactCI": "pending",
+    "exactCI": "success:40437613587",
     "freshPerEventRuntime": true,
     "noInstallInsideSourceLease": true
   },
@@ -48,7 +48,10 @@
     "savedIntentConsumed": false,
     "sourceJobsDispatched": 0,
     "preJobEventStoppedSafely": true,
-    "monitorUpdate": "pending"
+    "monitorUpdate": "accepted source completed; resumed next-event action within one finite future-save allowance",
+    "historicalAttemptSupersededBy": "launch-20261027-automatic-reel-accepted.json",
+    "laterHistoricalGeneration": 1,
+    "laterHistoricalState": "expired queued/unclaimed; no replay"
   },
   "preserved": {
     "savedData": true,
@@ -57,5 +60,6 @@
     "originalDisputedResult": true,
     "oldCachesAndReceipts": true,
     "providerPrivacyAndReleaseGates": true
-  }
+  },
+  "productionReceipt": "launch-20261027-bootstrap-production.json"
 }

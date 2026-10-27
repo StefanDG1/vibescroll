@@ -1,6 +1,6 @@
 # ADR 178: prepare the pinned runtime in the task that executes the event
 
-Date: October 27, 2026. Status: local candidate; native runtime and source-free load verified, automatic media pending.
+Date: October 27, 2026. Status: private automatic media acceptance passed; controlled candidate publication tracked separately.
 
 ## Observed failure
 
@@ -24,4 +24,8 @@ The ordinary post page must also stop presenting historical local/credit intake 
 
 Offline checks cover byte/hash/transport/deadline bounds, archive traversal/expansion, offline installation, installed-byte tampering and preservation of existing roots. A native source-free test must verify the actual interpreter, wheel payloads, preserved model and V2 model load. Then an actual app Save with the native tab closed must trigger the automatic task, acquire the permitted Reel, transcribe or reuse captions, return every real JPEG and thumbnail, commit cited analysis and refresh the protected post. Delivery or bootstrap alone does not complete this acceptance.
 
-Current production stays21736e8 until exact CI and a separately accounted controlled release pass. Saved data, reserved and unknown sources, original disputed repair, full-main migration and provider/privacy gates remain. The owner permits continuation under cumulative EUR10.50 and Vercel included usage below USD20 without repeated Vercel permission requests. Retained allowances are not invoices.
+Frontend/backend70c9aac are published after exact CI40437613587 and the controlled same-build release. The production receipt records canonical checks. Saved data, reserved and unknown sources, original disputed repair, full-main migration and provider/privacy gates remain. The owner permits continuation under cumulative EUR10.50 and Vercel included usage below USD20 without repeated Vercel permission requests. Retained allowances are not invoices.
+
+## October27 accepted outcome
+
+The fresh app Save completed automatically with its ChatGPT tab closed. The current pinned bootstrap preceded job request, and the actual result passed52 displayed transcript segments,8 retained JPEG byte/hash checks, thumbnail and full-size viewing,6 insights and57 evidence references. Exact Ubuntu CI40437613587 passed. The earlier source separately became an expired queued/unclaimed generation and remains protected; its initial reported runtime failure is historical evidence, not the successful source. See the [accepted receipt](../operations/evidence/launch-20261027-automatic-reel-accepted.json). Provider deletion, settled usage, cold model provisioning and general customer rollout remain open.

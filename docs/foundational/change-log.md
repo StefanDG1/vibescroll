@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## October27: F082 private automatic Reel acceptance
+
+All four briefs record the measured closed-tab owner result and current runtime/setup correction. Provider privacy, cold customer onboarding, platform breadth and speech accuracy remain separate. No audience, price, funding, belief or general customer claim changes.
+
 ## October26: F079 finite app saves and runtime limits
 
 All four briefs distinguish the live three-choice picker from the disabled automatic-intent candidate. Recorded actual failed native adapters, supported-host research, one-time defaults, no premature job and preserved grants/funding. No audience, pricing, belief, outcome or campaign claim changes.

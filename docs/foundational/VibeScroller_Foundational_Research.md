@@ -1,5 +1,11 @@
 # VibeScroll foundational research
 
+## F082: automatic Reel accepted in the private owner pilot, October27
+
+An actual app Save completed automatic native Work Cloud analysis with its ChatGPT tabs closed. The protected result has52 matching transcript segments,8 byte/hash-verified JPEGs, a matching thumbnail and6 insights with57 evidence references. The live setup prepares a verified disposable runtime before source authority. No new MCP app or repeated OAuth consent was needed. [Automatic evidence](../operations/evidence/launch-20261027-automatic-reel-accepted.json) and [production receipt](../operations/evidence/launch-20261027-bootstrap-production.json).
+
+This permits a narrow owner-pilot capability statement. It does not establish manually certified transcription accuracy, universal Instagram/TikTok support, cold customer onboarding, exact provider retention/model attestation or general commercial release. Keep the same audience, offer, six beliefs, private data, provider/privacy gates and no-paid-fallback rule. The current finite future-save allowance and subscription quota still limit execution. Earlier disabled/pending statements below are historical where superseded by this evidence.
+
 ## F081: pinned setup and verified private tools, October 26
 
 The unpublished [single-download candidate](../adr/164-pinned-cloud-runtime-download.md) removes a GitHub setup dependency without changing accepted source pins or granting execution authority. Actual private native tests passed synthetic caption/JPEG preparation and offline ASR initialization. A real TikTok metadata read returned title, author and duration but no supported captions. No real source or automatic-analysis acceptance follows. Keep Cloud disabled until the event-to-result test passes; do not promise speech accuracy or general customer availability. Audience, prices, funding, privacy and every earlier budget hold remain unchanged.

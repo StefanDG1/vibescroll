@@ -22,6 +22,7 @@ import type * as assistantLocal from "../assistantLocal.js";
 import type * as assistantLocalActions from "../assistantLocalActions.js";
 import type * as assistantLocalHttp from "../assistantLocalHttp.js";
 import type * as assistantSchema from "../assistantSchema.js";
+import type * as assistantWidget from "../assistantWidget.js";
 import type * as billing from "../billing.js";
 import type * as billingChanges from "../billingChanges.js";
 import type * as billingV1 from "../billingV1.js";
@@ -172,6 +173,7 @@ declare const fullApi: ApiFromModules<{
   assistantLocalActions: typeof assistantLocalActions;
   assistantLocalHttp: typeof assistantLocalHttp;
   assistantSchema: typeof assistantSchema;
+  assistantWidget: typeof assistantWidget;
   billing: typeof billing;
   billingChanges: typeof billingChanges;
   billingV1: typeof billingV1;

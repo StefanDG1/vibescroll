@@ -14,8 +14,85 @@ import { processSubscriptionTask } from "../packages/runner/subscription-coordin
 import { createEvidence, registryHash } from "../packages/sources/evidence";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { evaluationCurrent } from "../convex/knowledge";
+import { draftCurrent } from "../convex/issues";
 import { resolvePrivateVariant } from "../convex/lib/privateProjectVariant";
 const modules = import.meta.glob("../convex/**/*.ts");
+it("keeps current private-variant drafts out of widget pages and direct proposal reads", async () => {
+  const f = await fixture();
+  const done = await f.variantFinish("relevant");
+  const id = await f.owner.mutation(api.issues.create, {
+    id: done.bundle.id,
+    followUp: false,
+  });
+  const draft = (await f.t.run((ctx) => ctx.db.get(id)))!;
+  expect(draft.privateEvaluationOrigin?.kind).toBe("private_source_variant");
+  expect(await f.t.run((ctx) => draftCurrent(ctx, draft))).toBe(true);
+  const clientId = "client_01234567890123456789012345";
+  const issuer = "https://widget-private.authkit.app";
+  const subject = "user_01234567890123456789012345";
+  await f.t.run((ctx) => ctx.db.patch(f.actor, { subject }));
+  vi.stubEnv("MCP_ENABLED", "true");
+  vi.stubEnv("MCP_AUTH_ISSUER", issuer);
+  vi.stubEnv(
+    "MCP_CLIENTS",
+    JSON.stringify([
+      {
+        id: clientId,
+        name: "Synthetic widget",
+        scopes: ["knowledge:read", "context:read"],
+      },
+    ]),
+  );
+  await f.t
+    .withIdentity({ subject, auth_time: Math.floor(Date.now() / 1000) })
+    .mutation(api.assistantGrants.save, {
+      organizationId: f.org,
+      clientId,
+      libraryScope: "all",
+      sources: [],
+      repositories: [
+        {
+          repositoryId: f.repo,
+          baseSha: "e".repeat(40),
+          profileVersion: 1,
+          selectionVersion: 0,
+        },
+      ],
+      scopes: ["knowledge:read", "context:read"],
+      expectedVersion: 0,
+      expiresAt: Date.now() + 86400000,
+      acknowledged: true,
+    });
+  const assistant = f.t.withIdentity({
+    subject,
+    issuer,
+    client_id: clientId,
+    scope: "knowledge:read context:read",
+    sid: "app_consent_01234567890123456789012345",
+  });
+  const profile = await assistant.query(internal.assistant.getProfile, {
+    profileId: f.org,
+  });
+  expect(profile.profiles[0].projects).toHaveLength(1);
+  expect(profile.profiles[0].projects[0].evaluations).toEqual([]);
+  expect(
+    (
+      await assistant.query(internal.assistantWidget.browse, {
+        profileId: f.org,
+        kind: "proposals",
+      })
+    ).items,
+  ).toEqual([]);
+  await expect(
+    assistant.query(internal.assistantWidget.proposal, {
+      profileId: f.org,
+      proposalId: id,
+    }),
+  ).rejects.toThrow(
+    "Private source versions are unavailable through this connection.",
+  );
+  expect(await f.t.run((ctx) => ctx.db.get(id))).toEqual(draft);
+}, 20000);
 it("v4 grouped project proposals preserve actual private references and keep default history neutral", async () => {
   const f = await fixture(),
     connected = await f.hello(projectApplyRuntime);

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "widget-main-parity-v1",
+  "recordedAtUTC": "2026-10-27T03:26:17.160541+00:00",
+  "servingReference": "70c9aaca090a8906f6aa4f61826c1a260ec754c7",
+  "mainBaseline": "9967ac3",
+  "published": false,
+  "productionOrProviderMutation": false,
+  "newSourceJobs": 0,
+  "newHostedBuilds": 0,
+  "scope": [
+    "serving read/save widget and Connect guide parity",
+    "existing main source/grant authorization preserved",
+    "canonical post links",
+    "main ordered-media and finance validation preserved",
+    "fixed React/Hono versions and deployed Convex component identity preserved"
+  ],
+  "excluded": [
+    "unpublished knowledge:write extension",
+    "topic-editor receipt table/indexes",
+    "new grants",
+    "unbounded backfill publication"
+  ],
+  "regression": {
+    "realCurrentPrivateVariantDraftFixture": true,
+    "matchingCurrentRepositoryAndLibraryGrant": true,
+    "ordinaryAssistantProjectionAlreadyExcludedIt": true,
+    "before": "widget proposal list returned private-variant draft",
+    "after": "shared widget draft authorization denies list and direct read; draft unchanged",
+    "focusedTestsPassed": 63,
+    "initialFixtureCorrections": [
+      "cold integration import exceeded original5s test ceiling",
+      "synthetic identity corrected to supported issuer/subject shapes"
+    ],
+    "failedMainCheck": "generated API declaration omitted the new widget module; corrected type mapping"
+  },
+  "offlineDependencyInstall": {
+    "downloaded": 0,
+    "reused": 127,
+    "convexComponentPeerIdentitySettingsPreserved": true
+  },
+  "fullCheck": {
+    "outcome": "pass",
+    "vitestPassed": 2166,
+    "hostedSkips": 3,
+    "nodePassed": 19,
+    "pythonTests": 91,
+    "pythonWindowsSkips": 7,
+    "types": true,
+    "zeroWarningLint": true,
+    "validation": true,
+    "bothProductionBuilds": true,
+    "widgetProductionBuild": true
+  },
+  "exactLinuxCI": "pending",
+  "mainPopulatedIndexMigration": "held separately",
+  "automaticReelAcceptance": "launch-20261027-automatic-reel-accepted.json",
+  "currentProduction": "launch-20261027-bootstrap-production.json",
+  "fullCheckCompletedUTC": "2026-10-27T03:28:01.112903+00:00"
+}

@@ -2,6 +2,11 @@ import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
+import {
+  widgetBrowseInput,
+  widgetTopicInput,
+  widgetProposalInput,
+} from "../packages/widget/contracts";
 import { assistantIssuer } from "../packages/policy/assistant";
 import {
   cloudCompletionEnvelope,
@@ -15,6 +20,30 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z
+    .object({
+      operation: z.literal("widget_profiles"),
+      args: z.object({}).strict(),
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_state"),
+      args: z.object({ profileId }).strict(),
+    })
+    .strict(),
+  z
+    .object({ operation: z.literal("widget_browse"), args: widgetBrowseInput })
+    .strict(),
+  z
+    .object({ operation: z.literal("widget_topic"), args: widgetTopicInput })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_proposal"),
+      args: widgetProposalInput,
+    })
+    .strict(),
   ...workCloudTextOperations,
   z
     .object({
@@ -191,6 +220,33 @@ export const tools = httpAction(async (ctx, request) => {
         : undefined;
     let value: unknown;
     switch (input.operation) {
+      case "widget_profiles":
+        value = await ctx.runQuery(internal.assistantWidget.profiles, {});
+        break;
+      case "widget_state":
+        value = await ctx.runQuery(internal.assistantWidget.state, {
+          profileId: selectedProfile,
+        });
+        break;
+      case "widget_browse":
+        value = await ctx.runQuery(internal.assistantWidget.browse, {
+          ...input.args,
+          profileId: selectedProfile,
+        });
+        break;
+      case "widget_topic":
+        value = await ctx.runQuery(internal.assistantWidget.topic, {
+          ...input.args,
+          profileId: selectedProfile,
+          topicId: input.args.topicId as Id<"knowledgeTopics">,
+        });
+        break;
+      case "widget_proposal":
+        value = await ctx.runQuery(internal.assistantWidget.proposal, {
+          profileId: selectedProfile,
+          proposalId: input.args.proposalId as Id<"issueDrafts">,
+        });
+        break;
       case "work_cloud_repair_claim":
         value = await ctx.runMutation(internal.workCloudEvidenceRepair.claim, {
           ...input.args,

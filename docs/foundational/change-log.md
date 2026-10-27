@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## October27: F082 private automatic Reel acceptance
+
+All four briefs record the measured closed-tab owner result and current runtime/setup correction. Provider privacy, cold customer onboarding, platform breadth and speech accuracy remain separate. No audience, price, funding, belief or general customer claim changes.
+
 ## October 26: F078 three task locations
 
 All four briefs now record the owner-selected order, costs and quick setup links. The local candidate reuses current processing checks and keeps automatic ChatGPT Cloud disabled until admitted. No prices, allowances, permissions, audience or six beliefs change. Local browser/source checks remain separate from production publication and independent usability.

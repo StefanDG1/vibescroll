@@ -1,5 +1,11 @@
 # VibeScroller foundational document process
 
+## F082: automatic Reel accepted in the private owner pilot, October27
+
+An actual app Save completed automatic native Work Cloud analysis with its ChatGPT tabs closed. The protected result has52 matching transcript segments,8 byte/hash-verified JPEGs, a matching thumbnail and6 insights with57 evidence references. The live setup prepares a verified disposable runtime before source authority. No new MCP app or repeated OAuth consent was needed. [Automatic evidence](../operations/evidence/launch-20261027-automatic-reel-accepted.json) and [production receipt](../operations/evidence/launch-20261027-bootstrap-production.json).
+
+This permits a narrow owner-pilot capability statement. It does not establish manually certified transcription accuracy, universal Instagram/TikTok support, cold customer onboarding, exact provider retention/model attestation or general commercial release. Keep the same audience, offer, six beliefs, private data, provider/privacy gates and no-paid-fallback rule. The current finite future-save allowance and subscription quota still limit execution. Earlier disabled/pending statements below are historical where superseded by this evidence.
+
 ## F070: exact private Cloud requests through MCP, October 25
 
 [ADR 150](../adr/150-explicit-mcp-cloud-analysis-requests.md) adds a reviewed connection opt-in for exact private video requests through MCP, without another app approval for each post. Old grants gain no authority. Reuse the existing job/lease, fixed media limits, zero API maximum and explicit requested settings; GitHub and a paired computer are unnecessary for this handoff. The host still needs supported tools and restricted Internet access.

@@ -1,5 +1,11 @@
 # VibeScroll foundational avatar
 
+## F082: automatic Reel accepted in the private owner pilot, October27
+
+An actual app Save completed automatic native Work Cloud analysis with its ChatGPT tabs closed. The protected result has52 matching transcript segments,8 byte/hash-verified JPEGs, a matching thumbnail and6 insights with57 evidence references. The live setup prepares a verified disposable runtime before source authority. No new MCP app or repeated OAuth consent was needed. [Automatic evidence](../operations/evidence/launch-20261027-automatic-reel-accepted.json) and [production receipt](../operations/evidence/launch-20261027-bootstrap-production.json).
+
+This permits a narrow owner-pilot capability statement. It does not establish manually certified transcription accuracy, universal Instagram/TikTok support, cold customer onboarding, exact provider retention/model attestation or general commercial release. Keep the same audience, offer, six beliefs, private data, provider/privacy gates and no-paid-fallback rule. The current finite future-save allowance and subscription quota still limit execution. Earlier disabled/pending statements below are historical where superseded by this evidence.
+
 ## F078: three task locations, October 26
 
 The owner requires the same short choice in Save and setup: My own Cloud Work using the user's ChatGPT subscription, Recommended; VibeScroll's servers using credits bought separately; Local machine using the user's own subscription. Show disabled routes with setup/reconfiguration links and accessible More info. Keep saving without analysis separate. [ADR161](../adr/161-three-task-locations.md) records the implementation candidate and unchanged permissions, prices and credit approvals.

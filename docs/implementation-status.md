@@ -1,4 +1,4 @@
-## October 27: automatic preflight stop and deterministic runtime candidate
+# Implementation status
 
 ## October 27: complete automatic Reel accepted with the native chat closed
 
@@ -9,6 +9,8 @@ The source used own_subscription with maxApiUsd0 and no paid fallback. Owned med
 Candidate70c9aac passed exact Ubuntu CI40437613587 and full local1,314 Vitest plus3 hosted skips,19 Node,82 Python with7 Windows skips, types/lint/validation/both builds. It makes configured Cloud the new-link default, labels setup access Manage setup, prepares a pinned runtime before source authority and suppresses historical local/credit controls while a valid Cloud intent waits. Frontend/backend70c9aac are now live, canonical version0.1.0-alpha.20261027021744.g70c9aaca090a. One fixed Basic queued build passed staged health, both archive hashes, widget and illustrated-guide checks, then the same build was promoted. Canonical checks and normal domain-assignment restoration passed. The actual live Save form selects Cloud by default and shows Manage setup. No source was submitted in this UI check. [Production receipt](operations/evidence/launch-20261027-bootstrap-production.json). Main Home projections, widget reconciliation, five-index migration, original disputed-image repair and the remaining linked plans stay open.
 
 The existing monitor's updated action accepts only the source in a current authorized event, preserves every protected source and stays subscribed with the browser closed. Saved action readback and the native Monitoring indicator passed. One next user-initiated Save is reserved within the existing cumulativeEUR10.50 cap and VercelUSD20 ceiling; after that finite allowance the monitor must pause for budget reconciliation. This is not unlimited infrastructure authorization. ChatGPT showed2% weekly allowance remaining. No credit purchase or paid fallback is authorized.
+
+## Historical pre-bootstrap checkpoint, superseded above
 
 The closed-tab Save's native event stopped before a job when the previously verified private ASR root was absent. A bounded manual check confirmed ENOENT while the caption tools and separate model were present. Its cause is unknown. The source remains generation0 with an unconsumed waiting intent; no media or inference attempt occurred. The monitor was paused for correction. Reconnecting the MCP app is unnecessary.
 

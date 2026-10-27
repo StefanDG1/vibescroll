@@ -59,7 +59,21 @@
     "sourceFromActualEvent": true,
     "nextUserSaveJobsReserved": 1,
     "pauseForBudgetReconciliationAfterAllowance": true,
-    "duplicateMonitorCreated": false
+    "duplicateMonitorCreated": false,
+    "closedTabSubscriptionVerification": {
+      "verifiedAtUTC": "2026-10-27T03:29:56.099327+00:00",
+      "eventName": "video_link_saved",
+      "state": "active",
+      "grantVersion": 11,
+      "callbackVerifiedUTC": "2026-10-27T03:23:50.097000+00:00",
+      "lastRenewedUTC": "2026-10-27T03:27:28.693000+00:00",
+      "expiresUTC": "2026-10-27T03:32:27+00:00",
+      "nativeTabClosedUTC": "2026-10-27T03:10:30.066315+00:00",
+      "anotherOAuthConsent": false,
+      "subscriptionCredentialsDisclosed": false,
+      "unlimitedLifetimePromised": false,
+      "futureReservedJobs": 1
+    }
   },
   "privateSourceIdsURLsImagesAndSignedAssetURLsOmitted": true
 }

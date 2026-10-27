@@ -1,7 +1,7 @@
 {
   "recordedAtUTC": "2026-10-26T22:31:34.818686+00:00",
-  "scope": "local candidate; not published",
-  "servingCommit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
+  "scope": "published correction; next automatic source test pending runtime readiness",
+  "servingCommit": "21736e839e6d046ac305abc2469b5f1d37022dfb",
   "sourceCommit": "321e041f1323b28f51afa08d38c401844943c864",
   "actualStoppedAttempt": {
     "closedTabAppSave": true,
@@ -60,7 +60,7 @@
     "bytes": 82057,
     "files": 16,
     "sha256": "49e57707a6924ca56f71343935ac1153ffe323752e63dc599d68dc3b0e466327",
-    "packageManifestSHA256": "110ace39f1d43db1d2054b139b3fcff1ab7b63d859b5e5bef0aa58f6548abe3d",
+    "packageManifestSHA256": "d19ed8f6a932076c4617e31b345b4dd1ef1e478656d7ee957fdbf9eb3d3c1cc7",
     "sourceCommit": "321e041f1323b28f51afa08d38c401844943c864"
   },
   "checks": {
@@ -89,8 +89,50 @@
     "productionBuilds": true
   },
   "retainedPreparationNonpass": "formatter changed frozen JSON whitespace; restored exact serving blob and verified old SHA before committing",
-  "exactCI": "pending",
-  "published": false,
+  "exactCI": {
+    "runId": 40413212611,
+    "jobId": 121888889043,
+    "conclusion": "success",
+    "fullCheckAndAuditPassed": true
+  },
+  "published": true,
   "automaticMediaAccepted": false,
-  "newMediaAttemptsAfterCorrection": 0
+  "newMediaAttemptsAfterCorrection": 0,
+  "updatedAtUTC": "2026-10-27T00:28:11.361266+00:00",
+  "publication": {
+    "frontendCommit": "21736e839e6d046ac305abc2469b5f1d37022dfb",
+    "backendCommit": "21736e839e6d046ac305abc2469b5f1d37022dfb",
+    "deploymentId": "dpl_BPn5PVxwP5NePQ4VGLUCUGLxkTzX",
+    "version": "0.1.0-alpha.20261026223215.g21736e839e6d",
+    "basicNormalQueuedBuilds": 1,
+    "stagedAndCanonicalHealthAndRuntimeVerified": true,
+    "sameBuildPromotion": true,
+    "normalAutoDomainAssignmentRestoredAndUiVerified": true,
+    "schemaIndexComponentAuthCronChanges": false
+  },
+  "currentSetup": {
+    "grantVersion": 11,
+    "sameActions": 9,
+    "sameProjectContexts": 5,
+    "newOauthScopes": 0,
+    "initialManifestPinFailure": "operator supplied unnormalized Windows working-file hash; archive and accepted lock were correct",
+    "toolsAndCaptionDependenciesPassedAfterCorrection": true,
+    "retainedAsrModelSizeMismatch": {
+      "expectedBytes": 483545366,
+      "observedBytes": 315699200,
+      "cause": "unknown"
+    },
+    "separateBoundedSetupOnlyRecovery": "in progress; no source/model API/new build",
+    "pilotPaused": true,
+    "newSourceGeneration": 0,
+    "newSourceJobs": 0
+  },
+  "ownerContinuationCondition": {
+    "vercelUsageBelowUSD": 20,
+    "lastObservedAccountUsageUSD": 17.35,
+    "includedCreditPeriod": "2026-10-01/2026-11-01",
+    "newEuroCapAsserted": false,
+    "priorAllowancesPreserved": true,
+    "notAnInvoice": true
+  }
 }

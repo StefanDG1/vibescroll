@@ -1,6 +1,6 @@
 # ADR 177: bind supported TikTok extractor aliases by video ID
 
-Date: October 26, 2026. Status: candidate; not published.
+Date: October 26, 2026. Status: accepted; published in21736e8 on October27.
 
 ## Evidence
 
@@ -20,4 +20,4 @@ Freeze the serving v3 extraction manifest byte-for-byte as cloud-extractor-pre-r
 
 ## Verification boundary
 
-Two new focused regressions failed before the correction. Afterward, Python19 cases pass with2 Linux-only skips on Windows, including actual synthetic media/caption/JPEG preparation and final alias binding without ASR. Three focused Cloud files pass170 tests, including the newly retained exact policy and source-consent cases. Full compatible checks pass1,306 Vitest with3 hosted skips,19 Node and72 Python cases with7 Windows skips; main passes2,140/19/81 with the same skips. Validation, types, zero-warning lint and both production builds pass on each branch. The immutable tools archive is82,057bytes/16files, SHA49e57707a6924ca56f71343935ac1153ffe323752e63dc599d68dc3b0e466327, bound to source321e041. Prior manifests and published archives remain byte-identical. Exact CI and any controlled publication remain pending. Production stays97dfa2c and no complete automatic media result is accepted.
+Two new focused regressions failed before the correction. Afterward, Python19 cases pass with2 Linux-only skips on Windows, including actual synthetic media/caption/JPEG preparation and final alias binding without ASR. Three focused Cloud files pass170 tests, including the newly retained exact policy and source-consent cases. Full compatible checks pass1,306 Vitest with3 hosted skips,19 Node and72 Python cases with7 Windows skips; main passes2,140/19/81 with the same skips. Validation, types, zero-warning lint and both production builds pass on each branch. The immutable tools archive is82,057bytes/16files, SHA49e57707a6924ca56f71343935ac1153ffe323752e63dc599d68dc3b0e466327, bound to source321e041. Prior manifests and published archives remain byte-identical. Exact CI40413212611 passed. The controlled backend and one Basic queued frontend passed staged checks, same-build promotion and canonical verification at21736e8; normal domain assignment is restored. The accepted inner manifest is1,748bytes/SHA d19ed8f6a932076c4617e31b345b4dd1ef1e478656d7ee957fdbf9eb3d3c1cc7. A wrong raw-working-file hash in operator setup instructions was corrected without a code/build change. The next automatic source test is still pending runtime setup; no complete automatic media result is accepted.

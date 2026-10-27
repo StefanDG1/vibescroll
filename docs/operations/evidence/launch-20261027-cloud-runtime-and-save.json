@@ -39,7 +39,10 @@
     "eventHTTPStatus": 200,
     "lastObservedGeneration": 0,
     "lastObservedIntent": "waiting_for_runtime",
-    "outcome": "pending",
+    "outcome": "stopped_before_job_missing_private_ASR_runtime",
+    "runtimeAbsenceConfirmedByBoundedManualCheck": true,
+    "captionAndModelCachesStillPresent": true,
+    "causeOfRuntimeDisappearance": "unknown",
     "earlierOffViewportInput": "no source intent or job; observed button below viewport, then corrected visible submission"
   },
   "unpublishedAppCandidate": {

@@ -841,6 +841,20 @@ it.each([false, true])(
     expect(current.receipt).toBeNull();
     expect(current.processing).toBeNull();
     expect(current.saved_cloud_intent?.state).toBe("waiting_for_runtime");
+    expect(
+      await s.owner.query(api.assistantIntakeUi.status, {
+        sourceId: saved.sourceId,
+      }),
+    ).toBeNull();
+    for (const mode of ["credits", "cancel"] as const)
+      await expect(
+        s.owner.mutation(api.assistantIntakeUi.act, {
+          sourceId: saved.sourceId,
+          generation: 0,
+          mode,
+          ...(mode === "credits" ? { maxCredits: 10 } : {}),
+        }),
+      ).rejects.toThrow("APPROVAL_STALE");
     expect(await s.t.run((ctx) => ctx.db.get(intakeId))).toEqual(before);
     vi.setSystemTime(saved.expiresAt! + 1);
     const expired = await s.assistant.query(
@@ -850,6 +864,11 @@ it.each([false, true])(
     expect(expired.saved_cloud_intent).toBeNull();
     expect(expired.status).toBe(expired.receipt?.status);
     expect(expired.receipt).not.toBeNull();
+    expect(
+      await s.owner.query(api.assistantIntakeUi.status, {
+        sourceId: saved.sourceId,
+      }),
+    ).not.toBeNull();
     expect(await s.t.run((ctx) => ctx.db.get(intakeId))).toEqual(before);
   },
 );

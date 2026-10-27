@@ -2,6 +2,12 @@
 
 Mode: how-to. Last verified October 26, 2026. Private owner pilot only.
 
+## October 27 runtime correction
+
+The closed-tab Save at01:32:37UTC delivered its event on the first attempt, but stopped before creating a job because the previously verified private ASR runtime was absent. The model and caption tools remained present; the cause is unknown. A manual warmup is not sufficient operational readiness. [ADR178](../adr/178-pre-job-cloud-runtime-bootstrap.md) adds a separately pinned runtime bootstrap before job creation, without model downloads, source work or paid API use. Native bootstrap and complete automatic media acceptance are pending. Current source generation remains0 and the pilot is paused. Reconnecting or creating another MCP app does not address this runtime failure.
+
+The monitor-action readback discrepancy was nine extra blank-line insertions from the rich-text editor. All words and identifiers matched. No permission reset or action-content change was necessary.
+
 ## What passed
 
 The owner created and authenticated a parallel **VibeScroll Events test** plugin. Its detail page discovered all three serving Events and twenty tools. A native Work monitor subscribed to `work_cloud_connection_verified`, verified the signed callback and produced two separate `VibeScroll event received: work_cloud_connection_verified` replies. No follow-up user message triggered either reply. The second followed an operator pause and resume. A normal page reload was needed to see the replies in the open browser.

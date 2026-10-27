@@ -46,6 +46,7 @@ vi.mock("react", async (original) => ({
 }));
 import { AssistantConnections } from "./components/assistant-connections";
 import runtimePackage from "../../packages/media/cloud-runtime-package.lock.json";
+import asrBootstrap from "../../packages/media/native-asr-bootstrap.lock.json";
 
 type Node = ReactElement<Record<string, any>>;
 const cloudLabel = "Allow exact video analysis requests in my Work Cloud chat";
@@ -494,15 +495,29 @@ it("copies setup for the saved grant, then uses the refreshed version without ch
     "https://scroll.companynerve.com" + runtimePackage.path,
   );
   expect(message.props.value).toContain(runtimePackage.sha256);
+  expect(message.props.value).toContain(
+    "https://scroll.companynerve.com" + asrBootstrap.path,
+  );
+  expect(message.props.value).toContain(asrBootstrap.sha256);
+  expect(message.props.value).toContain(
+    "before requesting or claiming a source job",
+  );
+  expect(message.props.value).toContain("never assume old cache paths persist");
   expect(message.props.value).toContain("caption_cache_readiness.py");
   expect(message.props.value).toContain("python -I -B");
   expect(message.props.value).toContain("recordSelfEntries");
   expect(message.props.value).toContain("preserve managed proxy/no-proxy/CA");
   expect(message.props.value).not.toContain("/etc/codex/network-policy.json");
-  expect(message.props.value).toContain("Readiness checks do not construct an ASR model or transcribe.");
+  expect(message.props.value).toContain(
+    "Readiness checks do not construct an ASR model or transcribe.",
+  );
   expect(message.props.value).toContain("During an authorized source job");
-  expect(message.props.value).toContain("may initialize that verified local model and transcribe offline");
-  expect(message.props.value).not.toContain("No model construction/install/download during preflight or lease.");
+  expect(message.props.value).toContain(
+    "may initialize that verified local model and transcribe offline",
+  );
+  expect(message.props.value).not.toContain(
+    "No model construction/install/download during preflight or lease.",
+  );
   await button(f.render(), "Copy setup message").props.onClick();
   expect(writeText).toHaveBeenCalledWith(message.props.value);
   expect(text(f.render())).toContain(

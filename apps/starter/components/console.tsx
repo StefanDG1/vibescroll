@@ -2851,11 +2851,13 @@ export function CaptureForm({
           ? "cloud"
           : preferredRoute === "save_only"
             ? ""
-            : personalEnabled
-              ? "personal"
-              : cloudEnabled
-                ? "cloud"
-                : "",
+            : !existingSourceId && workCloud?.configured
+              ? "work_cloud"
+              : personalEnabled
+                ? "personal"
+                : cloudEnabled
+                  ? "cloud"
+                  : "",
   );
   const paired = devices.filter(
     (d: any) => d.personalOwned && d.state === "paired",

@@ -162,6 +162,7 @@ export const assistantTables = {
       v.union(v.literal("all"), v.literal("personal"), v.literal("business")),
     ),
     contextVersion: v.optional(v.number()),
+    contextScope: v.optional(v.literal("all_confirmed")),
     repositories: v.optional(v.array(assistantRepositoryBinding)),
     intakeSpace: v.optional(
       v.union(v.literal("personal"), v.literal("business")),

@@ -268,6 +268,37 @@ export const productTables = {
     selectedAnalysisMainPoints: v.optional(v.array(v.string())),
     analysisPipelineVersion: v.optional(v.string()),
     sourceRetentionUntil: v.optional(v.number()),
+    resultRetention: v.optional(v.literal("until_deleted")),
+    catalogStatus: v.optional(
+      v.object({
+        state: v.union(
+          v.literal("pending"),
+          v.literal("published"),
+          v.literal("unknown"),
+          v.literal("failed"),
+        ),
+        updatedAt: v.number(),
+        versionId: v.optional(v.id("analysisVersions")),
+        artifactId: v.optional(v.id("publicArtifacts")),
+      }),
+    ),
+    catalogPolicy: v.optional(
+      v.object({
+        version: v.literal("automatic-neutral-catalog-v1"),
+        policyHash: v.string(),
+        disclosureVersion: v.string(),
+        actor: v.id("users"),
+        requestedAt: v.number(),
+      }),
+    ),
+    catalogWait: v.optional(
+      v.object({
+        familyId: v.id("catalogFamilies"),
+        actor: v.id("users"),
+        generation: v.number(),
+        expiresAt: v.number(),
+      }),
+    ),
     typedAnalysisActor: v.optional(v.id("users")),
     localAnalysisReceipt: v.optional(v.any()),
     processingStartedAt: v.optional(v.number()),

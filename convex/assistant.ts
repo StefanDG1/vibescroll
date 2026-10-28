@@ -63,6 +63,13 @@ async function automaticCloudReceipt(
       analysis_requested: false,
       note: "Existing insights reused. No extraction or analysis was started.",
     };
+  if (source.catalogWait && source.catalogWait.expiresAt > Date.now())
+    return {
+      ...common,
+      status: "waiting_for_shared_analysis",
+      analysis_requested: false,
+      note: "This post is already being analysed. Its shared result will appear here when ready; no new extraction, model run or funding was started.",
+    };
   if (a.grant.cloudSaveDefaults?.version !== "link-save-cloud-v2")
     return {
       ...common,
@@ -118,11 +125,19 @@ async function automaticCloudReceipt(
   );
   return {
     ...common,
-    status: queued.intentId ? "waiting_for_cloud" : "existing_work_preserved",
+    status:
+      queued.status === "waiting_for_shared_analysis"
+        ? queued.status
+        : queued.intentId
+          ? "waiting_for_cloud"
+          : "existing_work_preserved",
     analysis_requested: !!queued.intentId,
-    note: queued.intentId
-      ? "Saved and queued automatically for your own Cloud Work. No per-post app approval is required. The configured Work task and this post will receive the result; a queued intent is not proof that analysis has started."
-      : "Existing work or an earlier outcome was preserved. No replacement, retry or alternate executor was started.",
+    note:
+      queued.status === "waiting_for_shared_analysis"
+        ? "This post is already being analysed. Its shared result will appear here when ready; no new extraction, model run or funding was started."
+        : queued.intentId
+          ? "Saved and queued automatically for your own Cloud Work. No per-post app approval is required. The configured Work task and this post will receive the result; a queued intent is not proof that analysis has started."
+          : "Existing work or an earlier outcome was preserved. No replacement, retry or alternate executor was started.",
   };
 }
 export const redactIntakes = internalMutation({
@@ -466,6 +481,7 @@ export const getJobStatus = internalQuery({
           : (receipt?.status ?? source.state)),
       title: postDisplayTitle(source).slice(0, 200),
       source_status: source.state,
+      catalog_status: source.catalogStatus?.state ?? null,
       selected_analysis_version_id: source.selectedAnalysisVersionId ?? null,
       analysis_selection_revision: source.analysisSelectionRevision ?? 0,
       pending_analysis_version:
@@ -772,7 +788,8 @@ export const getProfile = internalQuery({
         .unique();
       if (!workspaceReadable(org, p.actor._id) || !member) continue;
       const context =
-        grant.contextVersion === undefined
+        grant.contextVersion === undefined &&
+        grant.contextScope !== "all_confirmed"
           ? null
           : await ctx.db
               .query("librarySetup")
@@ -781,8 +798,22 @@ export const getProfile = internalQuery({
               )
               .unique();
       const projects = [];
+      const projectRefs =
+        grant.contextScope === "all_confirmed" && selected
+          ? (
+              await ctx.db
+                .query("repositories")
+                .withIndex("by_org", (q) =>
+                  q.eq("organizationId", grant.organizationId),
+                )
+                .take(20)
+            )
+              .filter((r) => r.enabled && r.confirmed)
+              .slice(0, 5)
+              .map((r) => ({ repositoryId: r._id }))
+          : (grant.repositories ?? []).slice(0, 5);
       if (selected)
-        for (const ref of (grant.repositories ?? []).slice(0, 5)) {
+        for (const ref of projectRefs) {
           let repository;
           try {
             repository = await assistantProject(
@@ -863,10 +894,13 @@ export const getProfile = internalQuery({
         cloud_request_policy: grant.cloudRequestPolicy ?? null,
         intake_setup_required: grant.intakePolicy !== "explicit_links",
         default_output: "extraction_and_organization",
-        selected_project_count: (grant.repositories ?? []).length,
+        selected_project_count: projectRefs.length,
+        project_scope: grant.contextScope ?? "selected",
         projects,
         context:
-          context?.confirmed && context.version === grant.contextVersion
+          context?.confirmed &&
+          (grant.contextScope === "all_confirmed" ||
+            context.version === grant.contextVersion)
             ? {
                 goal: context.goal.slice(0, 500),
                 interests: context.interests
@@ -876,6 +910,7 @@ export const getProfile = internalQuery({
               }
             : undefined,
         context_changed:
+          grant.contextScope !== "all_confirmed" &&
           grant.contextVersion !== undefined &&
           (!context?.confirmed || context.version !== grant.contextVersion),
       });

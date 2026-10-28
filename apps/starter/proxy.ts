@@ -50,6 +50,8 @@ export const config = {
     "/api/evidence/:path*",
     "/api/workspace/:path*",
     "/api/library/:path*",
+    "/api/posts/:path*",
+    "/api/accounting/:path*",
     "/api/github/:path*",
   ],
 };

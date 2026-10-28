@@ -1,3 +1,4 @@
+import { resultRetained } from "../../packages/contracts/result-retention";
 import { sourceRetained } from "./sourceAuthority";
 import { currentOrderedSource } from "./workCloudMediaSource";
 import { socialCitation } from "../../packages/social/analysis";
@@ -43,7 +44,7 @@ export async function sharedTypedCitations(
             : null;
           ensure(
             version.state === "ready" &&
-              version.retainUntil > Date.now() &&
+              resultRetained(version) &&
               version.sourceId === source._id &&
               version.organizationId === source.organizationId &&
               attempt?.sourceId === source._id &&

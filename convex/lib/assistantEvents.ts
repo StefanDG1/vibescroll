@@ -1,3 +1,4 @@
+import { resultRetained } from "../../packages/contracts/result-retention";
 import type { QueryCtx, MutationCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
 import {
@@ -170,7 +171,7 @@ export async function cloudWaitingCurrent(
       !attempt.taskId &&
       attempt.expiresAt > Date.now() &&
       evidence.state === "retained" &&
-      evidence.retainUntil > Date.now() &&
+      resultRetained(evidence) &&
       attempt.actor === s.actor &&
       attempt.grantId === s.grantId &&
       attempt.grantVersion === s.grantVersion &&
@@ -278,6 +279,7 @@ async function videoLinkSavedCurrent(
   if (
     s.eventName !== "video_link_saved" ||
     !source ||
+    source.catalogWait ||
     source.organizationId !== s.organizationId ||
     source.state === "deleted" ||
     !source.rightsAttested ||
@@ -314,6 +316,7 @@ export async function notifyVideoLinkSaved(
 ) {
   if (
     !eventsEnabled() ||
+    source.catalogWait ||
     source.kind !== "url" ||
     (source.sourceType ?? "media") !== "media"
   )

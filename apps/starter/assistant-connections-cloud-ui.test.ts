@@ -44,7 +44,9 @@ vi.mock("react", async (original) => ({
     }
   },
 }));
-import { AssistantConnections } from "./components/assistant-connections";
+import { AssistantAccessAdvanced as AssistantConnections } from "./components/assistant-access-advanced";
+import { AssistantConnections as SimpleConnections } from "./components/assistant-connections";
+import { TaskRuntimePicker } from "./components/task-runtime-picker";
 import runtimePackage from "../../packages/media/cloud-runtime-package.lock.json";
 import asrBootstrap from "../../packages/media/native-asr-bootstrap.lock.json";
 
@@ -55,6 +57,7 @@ const approvalLabel = "I approve this library scope";
 const scopes = ["links:save", "analysis:request", "analysis:execute"];
 function setup(overrides: Record<string, unknown> = {}) {
   return {
+    checkedAt: Date.now(),
     enabled: true,
     privateLibrary: true,
     workCloudMediaEnabled: true,
@@ -106,7 +109,11 @@ function choice(tree: unknown, label: string, value: string) {
 async function flush() {
   for (let i = 0; i < 20; i++) await Promise.resolve();
 }
-async function fixture(data = setup(), options = {}) {
+async function fixture(
+  data = setup(),
+  options = {},
+  component = AssistantConnections,
+) {
   let current = data;
   vi.stubGlobal(
     "fetch",
@@ -123,7 +130,7 @@ async function fixture(data = setup(), options = {}) {
   const render = () => {
     hooks.index = 0;
     hooks.effectIndex = 0;
-    const wrapper = AssistantConnections(props);
+    const wrapper = component(props);
     const editor = wrapper.type as (props: any) => Node;
     const tree = editor(wrapper.props);
     for (const effect of hooks.effects)
@@ -229,6 +236,7 @@ it("reviews automatic app-Save defaults separately and invalidates the acknowled
         model: "gpt-6.1-sol",
         effort: "high",
         retentionMs: 7 * 86400000,
+        resultRetention: "until_deleted",
       },
     }),
   );
@@ -619,4 +627,40 @@ it("uses the normal signed-in session without a five-minute sign-in instruction"
   ).toBe(false);
   await f.save();
   expect(f.call).toHaveBeenCalledOnce();
+});
+
+it("offers one Continue for standard Cloud access without per-action checkboxes and hides local controls", async () => {
+  const f = await fixture(
+    setup({ workCloudSavedEnabled: true, eventsEnabled: true }),
+    {},
+    SimpleConnections,
+  );
+  const tree = f.render();
+  expect(text(tree)).toContain("Where tasks run");
+  expect(
+    elements(tree)
+      .filter((n) => n.type === "legend")
+      .map((n) => text(n)),
+  ).not.toContain("Library access");
+  expect(text(tree)).not.toContain("Allowed actions");
+  expect(text(tree)).not.toContain(localLabel);
+  expect(elements(tree).some((n) => n.props.type === "checkbox")).toBe(false);
+  expect(elements(tree).filter((n) => n.type === "textarea")).toHaveLength(0);
+  expect(button(tree, "Continue").props.disabled).toBe(false);
+  await button(tree, "Continue").props.onClick();
+  await flush();
+  expect(f.call).toHaveBeenCalledWith("continueAssistantSetup", {
+    organizationId: "private",
+    clientId: "host",
+    expectedVersion: 0,
+    route: "work_cloud",
+    model: "gpt-6.1-sol",
+    effort: "high",
+  });
+  const picker = elements(f.render()).find(
+    (n) => n.type === TaskRuntimePicker,
+  )!;
+  picker.props.onChange("local");
+  expect(text(f.render())).not.toContain("ChatGPT checks which models");
+  expect(text(f.render())).toContain("Connect your computer");
 });

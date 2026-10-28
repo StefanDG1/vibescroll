@@ -17,6 +17,8 @@ export function TaskRuntimePicker({
   localConfigured = false,
   localStatus = "setup_required",
   disabled = false,
+  setupMode = false,
+  onSetupNavigate,
 }: {
   value?: TaskRuntime;
   onChange: (runtime: TaskRuntime) => void;
@@ -28,6 +30,8 @@ export function TaskRuntimePicker({
   localConfigured?: boolean;
   localStatus?: "setup_required" | "offline" | "check_before_running";
   disabled?: boolean;
+  setupMode?: boolean;
+  onSetupNavigate?: () => void;
 }) {
   const name = useId();
   const options = [
@@ -77,7 +81,9 @@ export function TaskRuntimePicker({
   ];
   return (
     <fieldset className="task-runtime-picker">
-      <legend>Where tasks run</legend>
+      <legend className={setupMode ? "sr-only" : undefined}>
+        Where tasks run
+      </legend>
       {options.map((option) => (
         <div className="task-runtime-option" key={option.id}>
           <label className="task-runtime-choice" aria-label={option.title}>
@@ -86,9 +92,10 @@ export function TaskRuntimePicker({
               name={name}
               value={option.id}
               checked={value === option.id}
-              disabled={disabled || !option.available}
+              disabled={disabled || (!setupMode && !option.available)}
               onChange={() => {
-                if (!disabled && option.available) onChange(option.id);
+                if (!disabled && (setupMode || option.available))
+                  onChange(option.id);
               }}
             />
             <span>
@@ -104,28 +111,36 @@ export function TaskRuntimePicker({
               <span className="task-runtime-status">{option.status}</span>
             </span>
           </label>
-          <div className="task-runtime-actions">
-            <Link href={option.href} prefetch={false}>
-              {option.configured ? "Manage setup" : "Finish setup"}
-              <span className="sr-only"> for {option.title}</span>
-            </Link>
-            <details>
-              <summary>
-                More info<span className="sr-only"> about {option.title}</span>
-              </summary>
-              <p>{option.detail}</p>
+          {!setupMode && (!value || value === option.id) && (
+            <div className="task-runtime-actions">
               <Link
-                href={
-                  option.id === "local"
-                    ? "/help/connect-your-computer"
-                    : "/help/processing-and-recovery"
-                }
+                href={option.href}
                 prefetch={false}
+                onClick={onSetupNavigate}
               >
-                Setup guide
+                {option.configured ? "Manage setup" : "Finish setup"}
+                <span className="sr-only"> for {option.title}</span>
               </Link>
-            </details>
-          </div>
+              <details>
+                <summary>
+                  More info
+                  <span className="sr-only"> about {option.title}</span>
+                </summary>
+                <p>{option.detail}</p>
+                <Link
+                  href={
+                    option.id === "local"
+                      ? "/help/connect-your-computer"
+                      : "/help/processing-and-recovery"
+                  }
+                  prefetch={false}
+                  onClick={onSetupNavigate}
+                >
+                  Setup guide
+                </Link>
+              </details>
+            </div>
+          )}
         </div>
       ))}
     </fieldset>

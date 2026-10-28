@@ -79,6 +79,11 @@ it.each(
     hooks.index = 0;
     const tree = CaptureForm(props);
     expect(
+      elements(tree).some(
+        (n) => n.props.type === "checkbox" && n.props.checked !== undefined,
+      ),
+    ).toBe(false);
+    expect(
       elements(tree).find((n) => n.type === TaskRuntimePicker)!.props.value,
     ).toBe("work_cloud");
     await tree.props.onSubmit({ preventDefault() {}, currentTarget: {} });
@@ -118,6 +123,46 @@ it.each([
     elements(tree).find((node) => node.type === TaskRuntimePicker)!.props.value,
   ).toBe(selection.expected);
 });
+it("allows an explicit Save only without starting Cloud or requiring its monitor setup", async () => {
+  const call = vi.fn(async () => "saved-only"),
+    done = vi.fn(),
+    close = vi.fn();
+  vi.stubGlobal("crypto", { randomUUID: () => "synthetic-save-only" });
+  vi.stubGlobal(
+    "FormData",
+    class {
+      get(name: string) {
+        return name === "url"
+          ? "https://www.instagram.com/reel/Example/"
+          : name === "rights"
+            ? "on"
+            : null;
+      }
+    },
+  );
+  const tree = CaptureForm({
+    organizationId: "workspace",
+    preferredRoute: "work_cloud",
+    workCloud: { configured: true, available: false },
+    call,
+    onDone: done,
+    onSetupNavigate: close,
+  });
+  const picker = elements(tree).find((n) => n.type === TaskRuntimePicker)!;
+  picker.props.onSetupNavigate();
+  expect(close).toHaveBeenCalledOnce();
+  await tree.props.onSubmit({
+    preventDefault() {},
+    currentTarget: {},
+    nativeEvent: { submitter: { getAttribute: () => "saveOnly" } },
+  });
+  expect(call).toHaveBeenCalledExactlyOnceWith(
+    "capture",
+    expect.objectContaining({ kind: "url", rightsAttested: true }),
+  );
+  expect(done).toHaveBeenCalledExactlyOnceWith("saved-only");
+});
+
 function elements(value: any): Node[] {
   if (Array.isArray(value)) return value.flatMap(elements);
   if (!isValidElement(value)) return [];

@@ -756,6 +756,9 @@ export const detail = query({
               transcript: selected.shared.prepared.segments,
               observations: selected.shared.prepared.observations,
               retainUntil: selected.shared.evidence.retainUntil,
+              ...(selected.shared.evidence.resultRetention
+                ? { resultRetention: selected.shared.evidence.resultRetention }
+                : {}),
               selectionMode: s.selectedAnalysisVersionId
                 ? "pinned"
                 : "recommended",

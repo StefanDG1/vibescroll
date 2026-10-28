@@ -93,6 +93,10 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
     });
     delete nextFields.workCloudSaveIntent;
     for (const field of [
+      "catalogStatus",
+      "catalogPolicy",
+      "catalogWait",
+      "resultRetention",
       "selectedAnalysisVersionId",
       "analysisSelectionRevision",
       "pendingAnalysisAttemptId",
@@ -286,6 +290,11 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
           .documentType.value.value.fieldType,
         optional: true,
       });
+      expect(current.documentType.value.contextScope).toEqual({
+        fieldType: { type: "literal", value: "all_confirmed" },
+        optional: true,
+      });
+      delete current.documentType.value.contextScope;
       delete current.documentType.value.cloudSaveDefaults;
       delete current.documentType.value.cloudRequestPolicy;
       delete current.documentType.value.cloudRequestPolicyHash;

@@ -1,3 +1,4 @@
+import { resultRetained } from "../../packages/contracts/result-retention";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx, MutationCtx } from "../_generated/server";
 import { ensure } from "../../packages/policy";
@@ -5,9 +6,11 @@ import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import {
   cloudCatalogAuthority,
   cloudCatalogConfiguration,
+  cloudCatalogPermissionIdentity,
   currentCloudCatalogPermission,
   neutralCloudAnalysis,
   neutralCloudEvidence,
+  type CloudCatalogPermission,
 } from "../../packages/contracts/cloud-catalog";
 import {
   privateCloudMediaIdentity,
@@ -46,7 +49,14 @@ export function catalogConfiguration(now = Date.now()) {
     const config = cloudCatalogConfiguration.parse(
       JSON.parse(process.env.CLOUD_CATALOG_CONFIGURATION_JSON ?? "null"),
     );
-    if (config.reviewedAt > now || config.expiresAt <= now) return null;
+    if (
+      config.reviewedAt > now ||
+      config.expiresAt <= now ||
+      (config.defaultPolicy &&
+        (config.defaultPolicy.reviewedAt > now ||
+          config.defaultPolicy.expiresAt <= now))
+    )
+      return null;
     return config;
   } catch {
     return null;
@@ -84,6 +94,9 @@ export async function recordCatalogAlias(
     permissionHash: family.permissionHash,
     updatedAt: Date.now(),
     retainUntil,
+    ...(family.resultRetention
+      ? { resultRetention: family.resultRetention }
+      : {}),
   };
   const id = old
     ? (await ctx.db.patch(old._id, value), old._id)
@@ -124,7 +137,7 @@ export async function cacheCandidate(
     .withIndex("by_key", (q) => q.eq("key", aliasKey))
     .unique();
   let family: Doc<"catalogFamilies"> | null = null;
-  if (mapped && mapped.retainUntil > Date.now())
+  if (mapped && resultRetained(mapped))
     family = await ctx.db.get(mapped.familyId);
   if (!family) {
     let reviewed: Awaited<ReturnType<typeof catalogPermission>>;
@@ -181,7 +194,17 @@ export async function attachCloudCache(
   )
     return false;
   const cached = await cacheCandidate(ctx, source.organizationId, source.url);
-  if (!cached) return false;
+  if (!cached) return joinPendingCatalog(ctx, source, actor);
+  return attachResult(ctx, source, actor, cached, false);
+}
+
+async function attachResult(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  actor: Id<"users">,
+  cached: Awaited<ReturnType<typeof currentCloudArtifact>>,
+  contributor: boolean,
+) {
   const now = Date.now();
   const layerId = await ctx.db.insert("publicImports", {
     organizationId: source.organizationId,
@@ -193,7 +216,8 @@ export async function attachCloudCache(
     compatibilityKey: cached.family.key,
     notesVersionId: cached.version._id,
     notesHistory: [],
-    inputCanonical: privateCloudMediaIdentity(source.url).url,
+    inputCanonical: privateCloudMediaIdentity(source.url ?? source.canonical)
+      .url,
     sourceGeneration: source.generation,
     privateNote: "",
     corrections: [],
@@ -202,16 +226,303 @@ export async function attachCloudCache(
   });
   await ctx.db.patch(source._id, {
     state: "ready",
+    catalogWait: undefined,
     publicImportId: layerId,
     coverage: "ordered_media",
-    sourceRetentionUntil: Math.min(
-      source.sourceRetentionUntil ?? Infinity,
-      cached.artifact.retainUntil,
-    ),
-    nextAnalysisVersionNumber: 2,
+    ...(cached.artifact.postMetadata
+      ? {
+          linkPreview: {
+            ...source.linkPreview,
+            ...(cached.artifact.postMetadata.title
+              ? { title: cached.artifact.postMetadata.title }
+              : {}),
+            ...(cached.artifact.postMetadata.authorName
+              ? { authorName: cached.artifact.postMetadata.authorName }
+              : {}),
+            ...(cached.artifact.postMetadata.durationSeconds
+              ? {
+                  durationSeconds: cached.artifact.postMetadata.durationSeconds,
+                }
+              : {}),
+            state: "ready" as const,
+            origin: "extractor" as const,
+            updatedAt: now,
+          },
+        }
+      : {}),
+    ...(cached.artifact.resultRetention === "until_deleted" &&
+    source.sourceRetentionUntil === undefined
+      ? {
+          resultRetention: "until_deleted" as const,
+          sourceRetentionUntil: undefined,
+        }
+      : {
+          sourceRetentionUntil: Math.min(
+            source.sourceRetentionUntil ?? Infinity,
+            cached.artifact.retainUntil,
+          ),
+        }),
+    ...(!contributor
+      ? { nextAnalysisVersionNumber: 2 }
+      : (source.analysisSelectionRevision ?? 0) === 0
+        ? {
+            selectedAnalysisVersionId: undefined,
+            selectedAnalysisSummary: undefined,
+            selectedAnalysisInsightCount: undefined,
+            selectedAnalysisMainPoints: undefined,
+          }
+        : {}),
     updatedAt: Math.max(now, source.updatedAt + 1),
   });
   return true;
+}
+
+export async function associateContributedCloudVersion(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  actor: Id<"users">,
+  artifactId: Id<"publicArtifacts">,
+) {
+  if (
+    source.state !== "ready" ||
+    !source.rightsAttested ||
+    !sourceRetained(source.sourceRetentionUntil) ||
+    source.publicImportId
+  )
+    return false;
+  try {
+    await requireProCatalogAccess(ctx, source.organizationId);
+  } catch (error) {
+    if (error instanceof PolicyError && error.code === "FORBIDDEN")
+      return false;
+    throw error;
+  }
+  const cached = await currentCloudArtifact(ctx, artifactId);
+  return attachResult(ctx, source, actor, cached, true);
+}
+
+export async function catalogFamilyForProduction(
+  ctx: MutationCtx,
+  permission: CloudCatalogPermission,
+  permissionHash: string,
+  serviceOrganizationId: Id<"organizations">,
+  retainUntil: number,
+) {
+  const key = await cloudCatalogFamilyKey(
+    permission.canonical,
+    "en",
+    permission.id,
+  );
+  let family = await ctx.db
+    .query("catalogFamilies")
+    .withIndex("by_key", (q) => q.eq("key", key))
+    .unique();
+  if (!family) {
+    const now = Date.now();
+    const id = await ctx.db.insert("catalogFamilies", {
+      organizationId: serviceOrganizationId,
+      key,
+      canonical: permission.canonical,
+      language: "en",
+      permissionId: permission.id,
+      permissionHash,
+      state: "active",
+      selectionRevision: 0,
+      nextVersionNumber: 1,
+      members: [],
+      createdAt: now,
+      updatedAt: now,
+      retainUntil,
+      ...(permission.resultRetention
+        ? { resultRetention: permission.resultRetention }
+        : {}),
+    });
+    family = (await ctx.db.get(id))!;
+  }
+  ensure(
+    family.state === "active" &&
+      family.permissionHash === permissionHash &&
+      family.organizationId === serviceOrganizationId,
+    "POLICY_BLOCKED",
+    "This catalog family was withdrawn or its authority changed.",
+  );
+  return family;
+}
+
+async function catalogReadAllowed(
+  ctx: QueryCtx,
+  organizationId: Id<"organizations">,
+) {
+  try {
+    await requireProCatalogAccess(ctx, organizationId);
+    return true;
+  } catch (error) {
+    if (error instanceof PolicyError && error.code === "FORBIDDEN")
+      return false;
+    throw error;
+  }
+}
+
+async function joinPendingCatalog(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  actor: Id<"users">,
+) {
+  if (
+    !catalogConfiguration()?.defaultPolicy ||
+    !source.url ||
+    !(await catalogReadAllowed(ctx, source.organizationId))
+  )
+    return false;
+  const reviewed = await catalogPermission(ctx, source.url);
+  const key = await cloudCatalogFamilyKey(
+    reviewed.permission.canonical,
+    "en",
+    reviewed.permission.id,
+  );
+  const family = await ctx.db
+    .query("catalogFamilies")
+    .withIndex("by_key", (q) => q.eq("key", key))
+    .unique();
+  if (
+    !family?.producer ||
+    family.state !== "active" ||
+    family.producer.sourceId === source._id ||
+    family.permissionHash !== reviewed.permissionHash
+  )
+    return false;
+  if (await unclaimedProducerExpired(ctx, family.producer)) return false;
+  return addCatalogWaiter(ctx, family, source, actor);
+}
+
+async function unclaimedProducerExpired(
+  ctx: QueryCtx,
+  producer: NonNullable<Doc<"catalogFamilies">["producer"]>,
+) {
+  const prior = await ctx.db.get(producer.sourceId);
+  // A task that was claimed, failed or has an unknown outcome keeps its hold.
+  // Only an exact intent that never created a job is safe to replace.
+  return (
+    !!prior &&
+    !prior.personalAnalysis &&
+    prior.workCloudSaveIntent?.id === producer.intentId &&
+    prior.workCloudSaveIntent.analysisGeneration === undefined &&
+    prior.workCloudSaveIntent.expiresAt <= Date.now()
+  );
+}
+
+async function addCatalogWaiter(
+  ctx: MutationCtx,
+  family: Doc<"catalogFamilies">,
+  source: Doc<"sources">,
+  actor: Id<"users">,
+) {
+  const existing = family.waiters?.find(
+    (w) =>
+      w.sourceId === source._id &&
+      w.generation === source.generation &&
+      w.actor === actor,
+  );
+  const waiter = existing ?? {
+    sourceId: source._id,
+    organizationId: source.organizationId,
+    actor,
+    generation: source.generation,
+    expiresAt: Math.min(
+      Date.now() + 86400000,
+      family.resultRetention === "until_deleted"
+        ? Infinity
+        : family.retainUntil,
+    ),
+  };
+  ensure(
+    waiter.expiresAt > Date.now(),
+    "SOURCE_UNAVAILABLE",
+    "This shared request expired.",
+  );
+  if (!existing) {
+    ensure(
+      (family.waiters?.length ?? 0) < 200,
+      "SOURCE_BUSY",
+      "This shared producer has reached its waiting limit.",
+    );
+    await ctx.db.patch(family._id, {
+      waiters: [...(family.waiters ?? []), waiter],
+      updatedAt: Date.now(),
+    });
+  }
+  await ctx.db.patch(source._id, {
+    catalogWait: {
+      familyId: family._id,
+      actor,
+      generation: source.generation,
+      expiresAt: waiter.expiresAt,
+    },
+  });
+  if (!existing)
+    await ctx.scheduler.runAfter(
+      Math.max(0, waiter.expiresAt - Date.now()),
+      internal.cloudCatalog.expireWaiter,
+      {
+        familyId: family._id,
+        sourceId: source._id,
+        actorId: actor,
+        generation: source.generation,
+        expiresAt: waiter.expiresAt,
+      },
+    );
+  return true;
+}
+
+export async function reserveCatalogProducer(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  actor: Doc<"users">,
+  reviewed: {
+    permission: CloudCatalogPermission;
+    permissionHash: string;
+    organization: Doc<"organizations">;
+  },
+  intentId: string,
+  expiresAt: number,
+  retainUntil: number,
+) {
+  const family = await catalogFamilyForProduction(
+    ctx,
+    reviewed.permission,
+    reviewed.permissionHash,
+    reviewed.organization._id,
+    retainUntil,
+  );
+  if (family.selectedArtifactId)
+    return { waiting: false, familyId: family._id };
+  let producer = family.producer;
+  if (producer && producer.sourceId !== source._id) {
+    if (await unclaimedProducerExpired(ctx, producer)) producer = undefined;
+    else if (await catalogReadAllowed(ctx, source.organizationId)) {
+      await addCatalogWaiter(ctx, family, source, actor._id);
+      return { waiting: true, familyId: family._id };
+    } else return { waiting: false, familyId: family._id };
+  }
+  if (!producer)
+    await ctx.db.patch(family._id, {
+      producer: {
+        sourceId: source._id,
+        organizationId: source.organizationId,
+        actor: actor._id,
+        generation: source.generation,
+        intentId,
+        expiresAt,
+      },
+      updatedAt: Date.now(),
+    });
+  await recordCatalogAlias(
+    ctx,
+    source.url ?? source.canonical,
+    family,
+    retainUntil,
+  );
+  return { waiting: false, familyId: family._id };
 }
 export async function catalogPermission(
   ctx: QueryCtx,
@@ -225,7 +536,50 @@ export async function catalogPermission(
     "Shared Cloud knowledge is awaiting release review.",
   );
   const exact = privateCloudMediaIdentity(canonical).url;
-  const value = config.permissions.find((p) => p.canonical === exact);
+  let value = config.permissions.find((p) => p.canonical === exact);
+  if (!value && config.defaultPolicy) {
+    const identity = privateCloudMediaIdentity(exact);
+    const policy = config.defaultPolicy;
+    if (
+      (identity.platform === "instagram" || identity.platform === "tiktok") &&
+      policy.platforms.includes(identity.platform)
+    ) {
+      value = {
+        version: "cloud-catalog-permission-v2",
+        id: `default_${(
+          await socialHash(
+            canonicalJson({
+              policyId: policy.id,
+              canonical: exact,
+              rightsBasis: policy.rightsBasis,
+              providerPermissionReference: policy.providerPermissionReference,
+              contentPermissionReference: policy.contentPermissionReference,
+              privacyReviewReference: policy.privacyReviewReference,
+              maximumRetentionMs: policy.maximumRetentionMs,
+              resultRetention: policy.resultRetention ?? null,
+            }),
+          )
+        ).slice(0, 48)}`,
+        canonical: exact,
+        platform: identity.platform,
+        rightsBasis: "user_attested",
+        providerPermissionReference: policy.providerPermissionReference,
+        contentPermissionReference: policy.contentPermissionReference,
+        privacyReviewReference: policy.privacyReviewReference,
+        route: "own_subscription",
+        transcriptReuse: true,
+        screenshotReuse: true,
+        neutralAnalysisReuse: true,
+        crossCustomerReuse: true,
+        reviewedAt: policy.reviewedAt,
+        expiresAt: policy.expiresAt,
+        maximumRetentionMs: policy.maximumRetentionMs,
+        ...(policy.resultRetention
+          ? { resultRetention: policy.resultRetention }
+          : {}),
+      };
+    }
+  }
   ensure(
     value,
     "POLICY_BLOCKED",
@@ -244,7 +598,9 @@ export async function catalogPermission(
   );
   return {
     permission,
-    permissionHash: await socialHash(canonicalJson(permission)),
+    permissionHash: await socialHash(
+      canonicalJson(cloudCatalogPermissionIdentity(permission)),
+    ),
     organization,
   };
 }
@@ -257,7 +613,7 @@ async function currentCloudArtifactHeaderUncached(
   ensure(
     cloudArtifact(artifact) &&
       artifact.state === "eligible" &&
-      artifact.retainUntil > Date.now(),
+      resultRetained(artifact),
     "SOURCE_UNAVAILABLE",
     "This shared analysis is unavailable.",
   );
@@ -285,6 +641,7 @@ async function currentCloudArtifactHeaderUncached(
       authority.canonical === family.canonical &&
       authority.outputHash === artifact.contentHash &&
       authority.retainUntil === artifact.retainUntil &&
+      authority.resultRetention === artifact.resultRetention &&
       authority.contributedAt <= Date.now(),
     "SOURCE_UNAVAILABLE",
     "This shared authority changed.",
@@ -326,6 +683,8 @@ async function currentCloudArtifactUncached(
       version.evidenceId === evidence._id &&
       version.retainUntil === artifact.retainUntil &&
       evidence.retainUntil === artifact.retainUntil &&
+      version.resultRetention === artifact.resultRetention &&
+      evidence.resultRetention === artifact.resultRetention &&
       evidence.evidenceHash === authority.evidenceHash &&
       version.recipeHash === authority.recipeHash &&
       version.requestedModel === authority.requestedModel &&
@@ -373,7 +732,9 @@ async function currentCloudArtifactUncached(
         stored.sourceId === undefined &&
         stored.organizationId === artifact.organizationId &&
         stored.size === frame.size &&
-        stored.expiresAt === artifact.retainUntil &&
+        (stored.expiresAt === artifact.retainUntil ||
+          (artifact.resultRetention === "until_deleted" &&
+            stored.expiresAt === undefined)) &&
         frame.key.startsWith(artifact.storagePrefix) &&
         manifest &&
         frame.sha256 === manifest.sha256 &&
@@ -420,6 +781,10 @@ export async function cloudSourceMetadata(
         summary: artifact.summary,
         insightCount: artifact.insightCount,
         mainPoints: artifact.mainPoints,
+        postMetadata: artifact.postMetadata,
+        thumbnailReference: artifact.postMetadata
+          ? `catalog~${source._id}~${artifact.versionId}~${artifact.postMetadata.thumbnailFrameId}`
+          : null,
       };
     }
     // A personal candidate still needs current access to its independent base.
@@ -431,7 +796,7 @@ export async function cloudSourceMetadata(
         version.sourceId === source._id &&
         version.organizationId === source.organizationId &&
         version.state === "ready" &&
-        version.retainUntil > Date.now(),
+        resultRetained(version),
       "SOURCE_UNAVAILABLE",
       "This candidate is unavailable.",
     );
@@ -442,7 +807,7 @@ export async function cloudSourceMetadata(
       if (
         cloudArtifact(artifact) &&
         artifact.state === "eligible" &&
-        artifact.retainUntil > Date.now()
+        resultRetained(artifact)
       ) {
         member = candidate;
         break;
@@ -531,7 +896,7 @@ export async function cloudSourceEvidence(
     if (
       !cloudArtifact(artifact) ||
       artifact.state !== "eligible" ||
-      artifact.retainUntil <= Date.now()
+      !resultRetained(artifact)
     )
       continue;
     return { ...(await currentCloudArtifact(ctx, artifact._id)), layer };

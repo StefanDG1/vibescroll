@@ -1,3 +1,5 @@
+import { persistCloudResult } from "./lib/persistCloudResult";
+import { completedResultRetained } from "../packages/contracts/result-retention";
 import { v } from "convex/values";
 import { z } from "zod";
 import { internal } from "./_generated/api";
@@ -53,6 +55,7 @@ import { registerEvidenceAsset, queueDeletion } from "./assets";
 import { retainedCloudFrames } from "../packages/media/cloud-frames";
 import { evidenceRepairContext } from "./workCloudEvidenceRepair";
 import { savedCloudIntentCurrent } from "./lib/workCloudSave";
+import { recordAutomaticCatalogIntent } from "./lib/catalogPolicy";
 import { commitPersonalOrdered } from "./lib/personalOrderedCommit";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
 import { syncCategories } from "./categories";
@@ -687,6 +690,8 @@ async function approveExactCloudSource(
     "The approved source input changed.",
   );
   await limit(ctx, `work-cloud-approval:${owned.actor._id}`, 6);
+  if (a.inputKind === "media")
+    await recordAutomaticCatalogIntent(ctx, owned.source, owned.actor);
   const now = Date.now();
   const job: WorkCloudJob = {
     executor: "work_cloud",
@@ -1697,6 +1702,26 @@ export const dispatch = internalMutation({
         },
       },
     });
+    if (
+      c.job.cloud.media &&
+      (c.source.workCloudSaveIntent?.resultRetention === "until_deleted" ||
+        c.grant.cloudSaveDefaults?.resultRetention === "until_deleted")
+    )
+      await persistCloudResult(ctx, (await ctx.db.get(c.source._id))!);
+    if (c.job.cloud.media && c.source.catalogPolicy) {
+      await ctx.db.patch(c.source._id, {
+        catalogStatus: { state: "pending", updatedAt: Date.now() },
+      });
+      await ctx.scheduler.runAfter(
+        0,
+        internal.cloudCatalogActions.publishCompleted,
+        {
+          sourceId: c.source._id,
+          actorId: c.actor._id,
+          generation: c.source.generation,
+        },
+      );
+    }
     return { accepted: true, cached: false };
   },
 });
@@ -1715,7 +1740,8 @@ export const expire = internalMutation({
       job = source?.personalAnalysis;
     if (
       (source && source.organizationId !== a.organizationId) ||
-      a.retainUntil > Date.now()
+      a.retainUntil > Date.now() ||
+      (!!source && completedResultRetained(source))
     )
       return;
     const attempt = a.deferredAttempt ?? 0;

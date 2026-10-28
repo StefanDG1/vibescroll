@@ -216,6 +216,12 @@ export const tools = httpAction(async (ctx, request) => {
       )
     )
       return deny(401);
+    if (
+      ["get_profile", "save_link", "search", "widget_profiles"].includes(
+        input.operation,
+      )
+    )
+      await ctx.runMutation(internal.assistantGrants.ensureDefaults, {});
     const selectedProfile =
       "profileId" in input.args
         ? (input.args.profileId as Id<"organizations"> | undefined)

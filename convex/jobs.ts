@@ -1,3 +1,4 @@
+import { resultRetained } from "../packages/contracts/result-retention";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import {
   repositoryManifest,
@@ -1223,7 +1224,7 @@ export const exportPage = query({
           evidence.organizationId !== source.organizationId ||
           evidence.sourceId !== source._id ||
           evidence.state !== "retained" ||
-          evidence.retainUntil <= Date.now() ||
+          !resultRetained(evidence) ||
           !privateCloudMediaCanonicalMatches(
             source.canonical,
             evidence.canonical,

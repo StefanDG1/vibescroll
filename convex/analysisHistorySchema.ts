@@ -7,6 +7,7 @@ const owner = {
   organizationId: v.optional(v.id("organizations")),
   sourceId: v.optional(v.id("sources")),
   createdAt: v.number(),
+  resultRetention: v.optional(v.literal("until_deleted")),
 };
 export const analysisHistoryTables = {
   analysisEvidence: defineTable({
@@ -55,6 +56,16 @@ export const analysisHistoryTables = {
     outputHash: v.string(),
     retainUntil: v.number(),
     recipeHash: v.optional(v.string()),
+    sourceCompletion: v.optional(
+      v.object({
+        sourceGeneration: v.number(),
+        inputHash: v.string(),
+        policyHash: v.string(),
+        completionHash: v.string(),
+        approvedAt: v.number(),
+        completedAt: v.number(),
+      }),
+    ),
     variantKey: v.optional(v.string()),
     summary: v.string(),
     insightCount: v.number(),

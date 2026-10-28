@@ -95,8 +95,9 @@ it.each(["loading", "error", "empty"])(
 
 it("opens the demo Connections view without granting assistant access", async () => {
   const html = await renderDemo({ view: "connections" });
-  expect(html).toContain("Use saved ideas in your assistant");
-  expect(html).toContain("Assistant access needs your own signed-in account.");
+  expect(html).toContain("Where tasks run");
+  expect(html).toContain("My own Cloud Work");
+  expect(html).toContain("Advanced settings");
 });
 
 it("opens the exact existing issue draft targeted by a project proposal link", async () => {

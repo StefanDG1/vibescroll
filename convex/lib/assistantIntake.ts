@@ -117,14 +117,16 @@ export async function checkProjectBindings(
     const binding = grant.repositories?.find((r) => r.repositoryId === id);
     const repo = await ctx.db.get(id);
     ensure(
-      binding &&
+      (binding || grant.contextScope === "all_confirmed") &&
         repo?.organizationId === grant.organizationId &&
         repo.enabled &&
         repo.confirmed &&
         snapshotScopeCurrent(repo) &&
-        repo.sha === binding.baseSha &&
-        repo.profileVersion === binding.profileVersion &&
-        (repo.selectionVersion ?? 0) === binding.selectionVersion,
+        (grant.contextScope === "all_confirmed" ||
+          (binding &&
+            repo.sha === binding.baseSha &&
+            repo.profileVersion === binding.profileVersion &&
+            (repo.selectionVersion ?? 0) === binding.selectionVersion)),
       "CONTEXT_REQUIRED",
       "Selected project context changed. Review Connections before evaluating.",
     );
@@ -149,16 +151,33 @@ export async function chooseIntakeProjects(
     "Approve project context in Connections first.",
   );
   const eligible: Doc<"repositories">[] = [];
-  for (const binding of grant.repositories ?? []) {
-    const repo = await ctx.db.get(binding.repositoryId);
+  const candidates =
+    grant.contextScope === "all_confirmed"
+      ? await ctx.db
+          .query("repositories")
+          .withIndex("by_org", (q) =>
+            q.eq("organizationId", grant.organizationId),
+          )
+          .take(20)
+      : await Promise.all(
+          (grant.repositories ?? []).map((binding) =>
+            ctx.db.get(binding.repositoryId),
+          ),
+        );
+  for (const repo of candidates) {
+    const binding = grant.repositories?.find(
+      (r) => r.repositoryId === repo?._id,
+    );
     if (
       repo?.organizationId === grant.organizationId &&
       repo.enabled &&
       repo.confirmed &&
       snapshotScopeCurrent(repo) &&
-      repo.sha === binding.baseSha &&
-      repo.profileVersion === binding.profileVersion &&
-      (repo.selectionVersion ?? 0) === binding.selectionVersion
+      (grant.contextScope === "all_confirmed" ||
+        (binding &&
+          repo.sha === binding.baseSha &&
+          repo.profileVersion === binding.profileVersion &&
+          (repo.selectionVersion ?? 0) === binding.selectionVersion))
     )
       eligible.push(repo);
   }
@@ -184,7 +203,7 @@ export async function chooseIntakeProjects(
     "CONTEXT_REQUIRED",
     "Select current project context in Connections first.",
   );
-  return eligible.map((r) => r._id);
+  return eligible.slice(0, 5).map((r) => r._id);
 }
 
 export async function enqueueIntake(

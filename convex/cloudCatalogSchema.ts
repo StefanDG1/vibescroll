@@ -10,6 +10,7 @@ export const cloudCatalogTables = {
     createdAt: v.number(),
     updatedAt: v.number(),
     retainUntil: v.number(),
+    resultRetention: v.optional(v.literal("until_deleted")),
   })
     .index("by_key", ["key"])
     .index("by_org", ["organizationId"])
@@ -23,6 +24,13 @@ export const cloudCatalogTables = {
     permissionHash: v.string(),
     state: v.union(v.literal("active"), v.literal("blocked")),
     selectedArtifactId: v.optional(v.id("publicArtifacts")),
+    selectionBasis: v.optional(
+      v.union(
+        v.literal("first_eligible"),
+        v.literal("owner_model_priority"),
+        v.literal("reviewed"),
+      ),
+    ),
     selectionRevision: v.number(),
     nextVersionNumber: v.number(),
     members: v.array(
@@ -33,11 +41,33 @@ export const cloudCatalogTables = {
         number: v.number(),
       }),
     ),
+    producer: v.optional(
+      v.object({
+        sourceId: v.id("sources"),
+        organizationId: v.id("organizations"),
+        actor: v.id("users"),
+        generation: v.number(),
+        intentId: v.string(),
+        expiresAt: v.number(),
+      }),
+    ),
+    waiters: v.optional(
+      v.array(
+        v.object({
+          sourceId: v.id("sources"),
+          organizationId: v.id("organizations"),
+          actor: v.id("users"),
+          generation: v.number(),
+          expiresAt: v.number(),
+        }),
+      ),
+    ),
     reviewHash: v.optional(v.string()),
     reviewReason: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
     retainUntil: v.number(),
+    resultRetention: v.optional(v.literal("until_deleted")),
   })
     .index("by_key", ["key"])
     .index("by_org", ["organizationId"])
@@ -53,6 +83,7 @@ export const cloudCatalogTables = {
     copyTokenHash: v.string(),
     consent: v.any(),
     consentHash: v.string(),
+    automaticPolicyHash: v.optional(v.string()),
     evidenceHash: v.string(),
     outputHash: v.string(),
     permissionHash: v.string(),
@@ -67,6 +98,7 @@ export const cloudCatalogTables = {
     updatedAt: v.number(),
     expiresAt: v.number(),
     retainUntil: v.number(),
+    resultRetention: v.optional(v.literal("until_deleted")),
   })
     .index("by_org_source_key", ["organizationId", "sourceId", "key"])
     .index("by_org", ["organizationId"])

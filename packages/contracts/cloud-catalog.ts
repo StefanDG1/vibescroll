@@ -31,14 +31,22 @@ const canonical = z
 // Reviewed operator evidence is separate from a user's exact contribution.
 // No model output, connection grant or public URL can supply this permission.
 export const cloudCatalogPermission = z.strictObject({
-  version: z.literal("cloud-catalog-permission-v1"),
+  version: z.enum([
+    "cloud-catalog-permission-v1",
+    "cloud-catalog-permission-v2",
+  ]),
   id: z.string().regex(/^[A-Za-z0-9_-]{8,100}$/),
   canonical,
   platform: z.enum(["instagram", "tiktok"]),
   providerPermissionReference: z.string().min(1).max(2000),
   contentPermissionReference: z.string().min(1).max(2000),
   privacyReviewReference: z.string().min(1).max(2000),
-  rightsBasis: z.enum(["owner_created", "licensed", "public_domain"]),
+  rightsBasis: z.enum([
+    "owner_created",
+    "licensed",
+    "public_domain",
+    "user_attested",
+  ]),
   route: z.literal("own_subscription"),
   transcriptReuse: z.literal(true),
   screenshotReuse: z.literal(true),
@@ -47,18 +55,77 @@ export const cloudCatalogPermission = z.strictObject({
   reviewedAt: timestamp,
   expiresAt: timestamp,
   maximumRetentionMs: z.number().int().positive().max(31_536_000_000),
+  resultRetention: z.literal("until_deleted").optional(),
 });
 export type CloudCatalogPermission = z.infer<typeof cloudCatalogPermission>;
+export function cloudCatalogPermissionIdentity(
+  permission: CloudCatalogPermission,
+) {
+  if (permission.version === "cloud-catalog-permission-v1") return permission;
+  // Renewal of unchanged service authority must not invalidate durable results.
+  // Current review/expiry are still checked on every request. Actual permission,
+  // source, retention or evidence-reference changes keep a different identity.
+  const { reviewedAt: _reviewed, expiresAt: _expiry, ...identity } = permission;
+  return identity;
+}
+export const cloudCatalogAlphaAccess = z.strictObject({
+  version: z.literal("catalog-operator-alpha-access-v1"),
+  subjects: z.array(z.string().regex(/^user_[A-Za-z0-9]{20,80}$/)).max(10),
+  reviewedAt: timestamp,
+  expiresAt: timestamp,
+  reviewReference: z.string().min(1).max(2000),
+});
+export const cloudCatalogDefaultPolicy = z.strictObject({
+  version: z.literal("automatic-neutral-catalog-v1"),
+  resultRetention: z.literal("until_deleted").optional(),
+  modelPreference: z
+    .array(z.string().regex(/^[A-Za-z0-9_.:-]{1,100}$/))
+    .max(20)
+    .optional(),
+  id: z.string().regex(/^[A-Za-z0-9_-]{8,100}$/),
+  disclosureVersion: z.string().regex(/^[A-Za-z0-9_-]{8,100}$/),
+  rightsBasis: z.literal("user_attested"),
+  platforms: z
+    .array(z.enum(["instagram", "tiktok"]))
+    .min(1)
+    .max(2),
+  providerPermissionReference: z.string().min(1).max(2000),
+  contentPermissionReference: z.string().min(1).max(2000),
+  privacyReviewReference: z.string().min(1).max(2000),
+  reviewedAt: timestamp,
+  expiresAt: timestamp,
+  maximumRetentionMs: z.number().int().positive().max(31_536_000_000),
+});
 export const cloudCatalogConfiguration = z
   .strictObject({
-    version: z.literal("cloud-catalog-config-v1"),
+    version: z.enum(["cloud-catalog-config-v1", "cloud-catalog-config-v2"]),
     serviceOrganizationId: z.string().min(1).max(100),
     maximumStorageBytes: z.number().int().positive().max(1_000_000_000),
     reviewedAt: timestamp,
     expiresAt: timestamp,
     permissions: z.array(cloudCatalogPermission).max(20),
+    defaultPolicy: cloudCatalogDefaultPolicy.optional(),
   })
   .superRefine((value, ctx) => {
+    if (
+      (value.version === "cloud-catalog-config-v2") !==
+      Boolean(value.defaultPolicy)
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Only V2 has a standing catalog policy.",
+      });
+    if (
+      value.defaultPolicy &&
+      (value.defaultPolicy.reviewedAt > value.reviewedAt ||
+        value.defaultPolicy.expiresAt > value.expiresAt ||
+        value.defaultPolicy.expiresAt <= value.defaultPolicy.reviewedAt)
+    )
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "The standing policy must fit the reviewed configuration lifetime.",
+      });
     if (
       new Set(value.permissions.map((p) => p.id)).size !==
         value.permissions.length ||
@@ -79,6 +146,10 @@ export function currentCloudCatalogPermission(
   const permission = cloudCatalogPermission.parse(value);
   const identity = privateCloudMediaIdentity(sourceUrl);
   if (
+    (permission.version === "cloud-catalog-permission-v1" &&
+      permission.rightsBasis === "user_attested") ||
+    (permission.version === "cloud-catalog-permission-v2" &&
+      permission.rightsBasis !== "user_attested") ||
     permission.canonical !== identity.url ||
     permission.platform !== identity.platform ||
     permission.reviewedAt > now ||
@@ -160,6 +231,7 @@ export const cloudCatalogConsent = z.strictObject({
   shareNeutralAnalysis: z.literal(true),
   retainIndependentlyOfPersonalSave: z.literal(true),
   retainUntil: timestamp,
+  resultRetention: z.literal("until_deleted").optional(),
 });
 export const cloudCatalogAssessment = z.strictObject({
   rubric: z.literal("evidence-review-v1"),
@@ -190,6 +262,7 @@ export const cloudCatalogAuthority = z
     consentHash: hash,
     contributedAt: timestamp,
     retainUntil: timestamp,
+    resultRetention: z.literal("until_deleted").optional(),
     requestedModel: z.string().regex(/^[A-Za-z0-9_.:-]{1,100}$/),
     requestedEffort: z.enum(["low", "medium", "high", "xhigh"]),
     reportedModel: z.string().min(1).max(100).nullable(),

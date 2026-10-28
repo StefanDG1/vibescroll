@@ -1,3 +1,4 @@
+import { resultRetained } from "../../packages/contracts/result-retention";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { access, audit } from "../lib";
@@ -96,6 +97,7 @@ export async function historySource(
 export async function freezeAnalysisBaseline(
   ctx: MutationCtx,
   source: Doc<"sources">,
+  authenticatedCompletion = false,
 ) {
   if (source.selectedAnalysisVersionId) {
     return (
@@ -146,7 +148,9 @@ export async function freezeAnalysisBaseline(
         asset.organizationId === source.organizationId &&
         asset.sourceGeneration === source.generation &&
         asset.size === saved.size &&
-        asset.expiresAt === post.retainUntil &&
+        (asset.expiresAt === post.retainUntil ||
+          (source.resultRetention === "until_deleted" &&
+            asset.expiresAt === undefined)) &&
         !deletion,
       "SOURCE_UNAVAILABLE",
       "The retained screenshot was removed or changed.",
@@ -179,6 +183,9 @@ export async function freezeAnalysisBaseline(
     ),
     revisionHash: post.revisionHash,
     retainUntil,
+    ...(source.resultRetention
+      ? { resultRetention: source.resultRetention }
+      : {}),
     prepared: validated.prepared,
     frames,
     extractionGeneration: source.generation,
@@ -191,6 +198,24 @@ export async function freezeAnalysisBaseline(
     { evidenceId },
   );
   const job = source.personalAnalysis;
+  const sourceCompletion =
+    authenticatedCompletion &&
+    job.state === "completed" &&
+    job.cloud.completionHash
+      ? {
+          sourceGeneration: source.generation,
+          inputHash: job.cloud.inputHash,
+          policyHash: job.cloud.policyHash,
+          completionHash: job.cloud.completionHash,
+          approvedAt: job.approvedAt,
+          completedAt: source.updatedAt,
+        }
+      : null;
+  ensure(
+    !authenticatedCompletion || sourceCompletion,
+    "APPROVAL_STALE",
+    "Use an acknowledged authenticated Cloud completion.",
+  );
   const number = source.nextAnalysisVersionNumber ?? 1;
   ensure(
     Number.isSafeInteger(number) &&
@@ -211,6 +236,9 @@ export async function freezeAnalysisBaseline(
     outputHash: await digest(canonicalJson(source.analysis)),
     summary: source.analysis.summary,
     retainUntil,
+    ...(source.resultRetention
+      ? { resultRetention: source.resultRetention }
+      : {}),
     insightCount: source.analysis.insights.length,
     requestedModel: job.model,
     requestedEffort: job.effort,
@@ -220,7 +248,23 @@ export async function freezeAnalysisBaseline(
     ...(job.cloud.reportedEffort
       ? { reportedEffort: job.cloud.reportedEffort }
       : {}),
-    provenance: "legacy_recorded",
+    ...(sourceCompletion
+      ? {
+          sourceCompletion,
+          recipeHash: await digest(
+            canonicalJson({
+              version: "initial-cloud-analysis-recipe-v1",
+              policyHash: sourceCompletion.policyHash,
+              pipelineVersion: source.analysisPipelineVersion ?? null,
+              model: job.model,
+              effort: job.effort,
+            }),
+          ),
+        }
+      : {}),
+    provenance: sourceCompletion
+      ? "authenticated_host_reported"
+      : "legacy_recorded",
     evaluation: "review_required",
   });
   await ctx.db.patch(source._id, {
@@ -261,7 +305,7 @@ export async function retainedVersion(
       ? await ctx.db.get(version.attemptId)
       : null;
     ensure(
-      version.retainUntil > Date.now() &&
+      resultRetained(version) &&
         attempt?.sourceId === source._id &&
         attempt.sourceGeneration === source.generation &&
         attempt.evidenceId === evidence._id &&
@@ -278,7 +322,7 @@ export async function retainedVersion(
       evidence.owner === "private" &&
       evidence.organizationId === source.organizationId &&
       evidence.sourceId === source._id &&
-      evidence.retainUntil > Date.now() &&
+      resultRetained(evidence) &&
       source.state === "ready" &&
       source.generation === evidence.extractionGeneration &&
       source.orderedMedia?.post.revisionHash === evidence.revisionHash &&
@@ -328,8 +372,9 @@ export async function verifyRetainedAssets(
         asset.sourceGeneration === evidence.extractionGeneration &&
         asset.key === frame.key &&
         asset.size === frame.size &&
-        asset.expiresAt !== undefined &&
-        asset.expiresAt > Date.now() &&
+        ((asset.expiresAt !== undefined && asset.expiresAt > Date.now()) ||
+          (evidence.resultRetention === "until_deleted" &&
+            asset.expiresAt === undefined)) &&
         !(await ctx.db
           .query("objectDeletions")
           .withIndex("by_key", (q) => q.eq("key", asset.key))

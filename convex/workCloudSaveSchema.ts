@@ -13,6 +13,7 @@ export const cloudSaveDefaults = v.object({
     v.literal("xhigh"),
   ),
   retentionMs: v.number(),
+  resultRetention: v.optional(v.literal("until_deleted")),
 });
 
 export const cloudSaveIntent = v.object({
@@ -39,6 +40,7 @@ export const cloudSaveIntent = v.object({
     v.literal("xhigh"),
   ),
   retainUntil: v.number(),
+  resultRetention: v.optional(v.literal("until_deleted")),
   createdAt: v.number(),
   expiresAt: v.number(),
   analysisGeneration: v.optional(v.number()),

@@ -2366,22 +2366,6 @@ export function Console({
                     readOnly={readOnly}
                     demo={demo}
                   />
-                  <section className="panel">
-                    <h2>Task setup</h2>
-                    <p>
-                      Choose where tasks run when saving a post or in Continue
-                      setup. My own Cloud Work uses your ChatGPT subscription
-                      and is recommended once automatic analysis is ready.
-                      VibeScroll's servers use separately bought credits. Local
-                      machine needs your own computer on.
-                    </p>
-                    <Button busy={busy} onClick={() => void openCapture()}>
-                      Choose where to run analysis
-                    </Button>
-                    <Link href="/help/processing-and-recovery" prefetch={false}>
-                      Setup and costs guide
-                    </Link>
-                  </section>
                   <div className="panel">
                     <h2>GitHub</h2>
                     <p>
@@ -2806,6 +2790,7 @@ export function Console({
               cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
               preferredRoute={data.aiPreference?.processingRoute}
               workCloud={data.aiPreference?.workCloud}
+              onSetupNavigate={() => setCaptureOpen(false)}
               sharedDraft={sharedDraft}
               demo={demo}
               organizationId={organizationId}
@@ -2841,6 +2826,7 @@ export function CaptureForm({
   cloudEnabled = false,
   preferredRoute,
   workCloud = null,
+  onSetupNavigate,
   sharedDraft,
 }: any) {
   const [kind, setKind] = useState(existingSourceId ? "upload" : "url");
@@ -2898,7 +2884,6 @@ export function CaptureForm({
       (linkAnalysisEnabled && ["url", "import"].includes(kind)));
   const workCloudAutomatic =
     analysisRoute === "work_cloud" &&
-    autoAnalyze &&
     kind === "url" &&
     !existingSourceId &&
     workCloud?.available;
@@ -2913,7 +2898,6 @@ export function CaptureForm({
   const checkAutomatic = async (f: FormData) => {
     if (
       analysisRoute === "work_cloud" &&
-      autoAnalyze &&
       (!workCloudAutomatic || !workCloud?.grantId || !workCloud?.grantVersion)
     )
       throw new Error(
@@ -2946,6 +2930,10 @@ export function CaptureForm({
       onSubmit={async (e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
+        const saveOnly =
+          (e.nativeEvent as SubmitEvent | undefined)?.submitter?.getAttribute(
+            "name",
+          ) === "saveOnly";
         if (demo) {
           await call("capture", { synthetic: true });
           onDone();
@@ -3128,8 +3116,8 @@ export function CaptureForm({
         setSaving(true);
         setImportError("");
         try {
-          await checkAutomatic(f);
-          if (workCloudAutomatic) {
+          if (!saveOnly) await checkAutomatic(f);
+          if (workCloudAutomatic && !saveOnly) {
             const result = await call("captureWorkCloud", {
               organizationId,
               key: crypto.randomUUID(),
@@ -3164,7 +3152,7 @@ export function CaptureForm({
               rightsAttested: f.get("rights") === "on",
             });
           if (!sourceId) return;
-          if (automatic) {
+          if (automatic && !saveOnly) {
             const queued = personalAutomatic
               ? await call("approvePersonalBatch", {
                   ...approval,
@@ -3395,17 +3383,8 @@ export function CaptureForm({
                 : "setup_required"
         }
         disabled={saving || importBusy}
+        onSetupNavigate={onSetupNavigate}
       />
-      {analysisRoute === "work_cloud" && (
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={autoAnalyze}
-            onChange={(e) => setAutoAnalyze(e.target.checked)}
-          />
-          Analyze in my ChatGPT Cloud Work after saving
-        </label>
-      )}
       {personalEnabled &&
         analysisRoute === "personal" &&
         (kind === "upload" ||
@@ -3543,6 +3522,18 @@ export function CaptureForm({
                     ? "Add and analyze"
                     : "Save source"}
       </button>
+      {analysisRoute === "work_cloud" &&
+        kind === "url" &&
+        !existingSourceId && (
+          <button
+            type="submit"
+            name="saveOnly"
+            className="secondary"
+            disabled={saving}
+          >
+            Save only
+          </button>
+        )}
       {importError && (
         <div role="alert" className="form-grid">
           <p>{importError}</p>

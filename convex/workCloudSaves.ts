@@ -57,6 +57,7 @@ export const capture = mutation({
     sourceId: v.id("sources"),
     status: v.union(
       v.literal("waiting_for_cloud_setup"),
+      v.literal("waiting_for_shared_analysis"),
       v.literal("existing_work_preserved"),
       v.literal("reused_shared_analysis"),
     ),

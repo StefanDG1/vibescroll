@@ -1,3 +1,4 @@
+import { resultRetained } from "../../packages/contracts/result-retention";
 import type { MutationCtx } from "../_generated/server";
 import type { Id, Doc } from "../_generated/dataModel";
 import { queueDeletion } from "../assets";
@@ -13,13 +14,11 @@ export async function withdrawCatalogContribution(
   const independent = await ctx.db
     .query("catalogContributions")
     .withIndex("by_artifact_retention", (q) =>
-      q
-        .eq("artifactId", row.artifactId)
-        .eq("state", "published")
-        .gt("retainUntil", Date.now()),
+      q.eq("artifactId", row.artifactId).eq("state", "published"),
     )
-    .take(1);
-  if (independent.length === 0) await retireCloudArtifact(ctx, row.artifactId);
+    .take(201);
+  if (independent.length < 201 && !independent.some((c) => resultRetained(c)))
+    await retireCloudArtifact(ctx, row.artifactId);
 }
 
 export async function retireCloudArtifact(
@@ -58,7 +57,7 @@ export async function retireCloudArtifact(
       if (
         cloudArtifact(peer) &&
         peer.state === "eligible" &&
-        peer.retainUntil > Date.now()
+        resultRetained(peer)
       ) {
         sharedReference = true;
         break;
@@ -69,6 +68,7 @@ export async function retireCloudArtifact(
     await ctx.db.patch(evidence._id, {
       state: "removed",
       retainUntil: Math.min(evidence.retainUntil, Date.now()),
+      resultRetention: undefined,
       frames: [],
       prepared: { removed: true },
     });

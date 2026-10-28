@@ -4,6 +4,7 @@ import { billingFor } from "../lib";
 import { isPaid } from "../../packages/company-config";
 import { ensure } from "../../packages/policy";
 import { queryRead } from "./knowledgeReadContext";
+import { cloudCatalogAlphaAccess } from "../../packages/contracts/cloud-catalog";
 
 // Port the existing main candidate's verified Pro check. Call only after the
 // caller's current workspace access has been established; a cache key is not access.
@@ -13,6 +14,37 @@ export async function requireProCatalogAccess(
 ) {
   return queryRead(ctx, `catalog-entitlement:${organizationId}`, async () => {
     const now = Date.now();
+    // A finite operator test entitlement is distinct from paid Pro. Never
+    // manufacture a billing subscription or wallet to exercise shared reuse.
+    if (process.env.RESTORE_LOCK !== "true") {
+      let alpha;
+      try {
+        alpha = cloudCatalogAlphaAccess.parse(
+          JSON.parse(process.env.CLOUD_CATALOG_ALPHA_ACCESS_JSON ?? "null"),
+        );
+      } catch {
+        alpha = null;
+      }
+      if (
+        alpha &&
+        alpha.reviewedAt <= now &&
+        alpha.expiresAt > now &&
+        alpha.expiresAt - alpha.reviewedAt <= 90 * 86400000
+      ) {
+        const organization = await ctx.db.get(organizationId);
+        const owner = organization?.privateOwnerId
+          ? await ctx.db.get(organization.privateOwnerId)
+          : null;
+        if (
+          organization?.status === "active" &&
+          owner?.status === "active" &&
+          owner.profileVerifiedAt !== undefined &&
+          owner.profileVerifiedAt <= now &&
+          alpha.subjects.includes(owner.subject)
+        )
+          return null;
+      }
+    }
     const billing = await billingFor(ctx, organizationId);
     const wallet = await ctx.db
       .query("wallets")

@@ -1,3 +1,5 @@
+import { resultRetained } from "../packages/contracts/result-retention";
+import { persistCloudResult } from "./lib/persistCloudResult";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { z } from "zod";
@@ -31,6 +33,7 @@ import {
 } from "./lib/cloudCatalog";
 import { retainedEvidenceContent } from "./lib/analysisHistory";
 import { savedCloudRoute } from "./lib/workCloudSave";
+import { recordAutomaticCatalogIntent } from "./lib/catalogPolicy";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import {
   analysisConfiguration,
@@ -187,7 +190,7 @@ export const history = query({
           source.generation === evidence.extractionGeneration &&
           source.orderedMedia?.post.revisionHash === evidence.revisionHash &&
           evidence.state === "retained" &&
-          evidence.retainUntil > Date.now() &&
+          resultRetained(evidence) &&
           version.state === "ready"
           ? versionMetadata(version)
           : {
@@ -215,7 +218,7 @@ export const history = query({
           !artifact ||
           artifact.state !== "eligible" ||
           !("retainUntil" in artifact) ||
-          artifact.retainUntil <= Date.now()
+          !resultRetained(artifact)
         )
           continue;
         const current = await currentCloudArtifact(ctx, artifact._id);
@@ -269,6 +272,7 @@ export const read = query({
     evidenceId: v.id("analysisEvidence"),
     evidenceHash: v.string(),
     retainUntil: v.number(),
+    resultRetention: v.optional(v.literal("until_deleted")),
     post: v.any(),
     evidence: v.any(),
     frames: v.array(
@@ -308,6 +312,9 @@ export const read = query({
       evidenceId: evidence._id,
       evidenceHash: evidence.evidenceHash,
       retainUntil: evidence.retainUntil,
+      ...(evidence.resultRetention
+        ? { resultRetention: evidence.resultRetention }
+        : {}),
       post: includeEvidence ? content.post : null,
       evidence: includeEvidence ? content.observations : [],
       frames: includeEvidence
@@ -368,6 +375,7 @@ export const sharedFrame = mutation({
     width: v.number(),
     height: v.number(),
     retainUntil: v.number(),
+    resultRetention: v.optional(v.literal("until_deleted")),
   }),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -393,6 +401,9 @@ export const sharedFrame = mutation({
       width: frame.width,
       height: frame.height,
       retainUntil: evidence.retainUntil,
+      ...(evidence.resultRetention
+        ? { resultRetention: evidence.resultRetention }
+        : {}),
     };
   },
 });
@@ -590,6 +601,7 @@ export async function requestRetainedAnalysis(
     "This post reached its analysis-history limit.",
   );
   await limit(ctx, `analysis-version-request:${a.actor._id}`, 10);
+  await recordAutomaticCatalogIntent(ctx, source, a.actor);
   const now = Date.now();
   const recipeHash = await digest(
     canonicalJson({
@@ -637,14 +649,27 @@ export async function requestRetainedAnalysis(
     grantVersion: grant.version,
     clientId: grant.clientId,
     state: "queued",
-    expiresAt: Math.min(now + 86400000, evidence.retainUntil),
+    expiresAt: Math.min(
+      now + 86400000,
+      evidence.resultRetention === "until_deleted"
+        ? Infinity
+        : evidence.retainUntil,
+    ),
     leaseUntil: 0,
     deadline: 0,
     viewedFrameIds: [],
   });
   await reserve(ctx, source.organizationId, `analysisVersion:${attemptId}`, 0);
   await ctx.scheduler.runAfter(
-    Math.max(0, Math.min(now + 86400000, evidence.retainUntil) - now),
+    Math.max(
+      0,
+      Math.min(
+        now + 86400000,
+        evidence.resultRetention === "until_deleted"
+          ? Infinity
+          : evidence.retainUntil,
+      ) - now,
+    ),
     internal.analysisVersions.expire,
     { attemptId },
   );
@@ -832,6 +857,9 @@ export const input = internalQuery({
       postRevisionHash: c.evidence.revisionHash,
       inputHash: c.attempt.inputHash,
       retainUntil: c.evidence.retainUntil,
+      ...(c.evidence.resultRetention
+        ? { resultRetention: c.evidence.resultRetention }
+        : {}),
       requestedModel: c.attempt.model,
       requestedEffort: c.attempt.effort,
       leaseUntil: c.attempt.leaseUntil,
@@ -891,8 +919,9 @@ async function currentRetainedFrame(
         asset.sourceGeneration === c.evidence.extractionGeneration &&
         asset.key === frame.key &&
         asset.size === frame.size &&
-        asset.expiresAt !== undefined &&
-        asset.expiresAt > Date.now() &&
+        ((asset.expiresAt !== undefined && asset.expiresAt > Date.now()) ||
+          (c.evidence.resultRetention === "until_deleted" &&
+            asset.expiresAt === undefined)) &&
         !(await ctx.db
           .query("objectDeletions")
           .withIndex("by_key", (q) => q.eq("key", asset.key))
@@ -901,7 +930,13 @@ async function currentRetainedFrame(
       "The retained frame was retired.",
     );
   }
-  return { ...frame, retainUntil: c.evidence.retainUntil };
+  return {
+    ...frame,
+    retainUntil: c.evidence.retainUntil,
+    ...(c.evidence.resultRetention
+      ? { resultRetention: c.evidence.resultRetention }
+      : {}),
+  };
 }
 export const frameContext = internalQuery({
   args: { ...executionArgs, frameId: v.string() },
@@ -1097,6 +1132,9 @@ export const dispatch = internalMutation({
       summary: output.summary,
       insightCount: output.insights.length,
       retainUntil: c.evidence.retainUntil,
+      ...(c.evidence.resultRetention
+        ? { resultRetention: c.evidence.resultRetention }
+        : {}),
       recipeHash: c.attempt.recipeHash,
       variantKey: c.attempt.variantKey,
       attemptId: c.attempt._id,
@@ -1132,6 +1170,21 @@ export const dispatch = internalMutation({
       "analysis_version_completed",
       `${c.source._id}:${c.attempt._id}:${versionId}`,
     );
+    if (c.source.catalogPolicy) {
+      await ctx.db.patch(c.source._id, {
+        catalogStatus: { state: "pending", versionId, updatedAt: Date.now() },
+      });
+      await ctx.scheduler.runAfter(
+        0,
+        internal.cloudCatalogActions.publishCompleted,
+        {
+          sourceId: c.source._id,
+          actorId: c.actor._id,
+          generation: c.source.generation,
+          versionId,
+        },
+      );
+    }
     return {
       accepted: true,
       cached: false,
@@ -1177,12 +1230,36 @@ export const expire = internalMutation({
   },
 });
 
+export const keepResult = mutation({
+  args: { sourceId: v.id("sources") },
+  returns: v.null(),
+  handler: async (ctx, { sourceId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    ensure(
+      identity && !isAssistantIdentity(identity),
+      "FORBIDDEN",
+      "Use your app session to change an existing retention limit.",
+    );
+    const { source, actor } = await historySource(ctx, sourceId, true);
+    await persistCloudResult(ctx, source);
+    await audit(
+      ctx,
+      source.organizationId,
+      actor._id,
+      "analysis.retention_until_deleted",
+      source._id,
+    );
+    return null;
+  },
+});
+
 export const expireEvidence = internalMutation({
   args: { evidenceId: v.id("analysisEvidence") },
   returns: v.null(),
   handler: async (ctx, { evidenceId }) => {
     const evidence = await ctx.db.get(evidenceId);
-    if (!evidence || evidence.retainUntil > Date.now()) return null;
+    if (!evidence || (evidence.state !== "removed" && resultRetained(evidence)))
+      return null;
     if (evidence.state !== "removed")
       await ctx.db.patch(evidenceId, {
         state: "removed",

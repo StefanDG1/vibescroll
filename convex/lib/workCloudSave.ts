@@ -15,6 +15,8 @@ import { notifyVideoLinkSaved } from "./assistantEvents";
 import { audit } from "../lib";
 import { ensure } from "../../packages/policy";
 import { privateCloudMediaIdentity } from "../../packages/social/contracts";
+import { recordAutomaticCatalogIntent } from "./catalogPolicy";
+import { reserveCatalogProducer } from "./cloudCatalog";
 
 export const cloudSaveIntentLifetimeMs = 86400000;
 export function savedCloudEnabled(subject: string) {
@@ -214,6 +216,16 @@ export async function queueSavedCloudIntent(
     expiresAt: null,
   };
   if (
+    source.catalogWait?.expiresAt &&
+    source.catalogWait.expiresAt > Date.now()
+  )
+    return {
+      sourceId: source._id,
+      status: "waiting_for_shared_analysis" as const,
+      intentId: null,
+      expiresAt: source.catalogWait.expiresAt,
+    };
+  if (
     !["saved", "needs_upload"].includes(source.state) ||
     source.generation !== 0 ||
     source.personalAnalysis ||
@@ -237,6 +249,11 @@ export async function queueSavedCloudIntent(
     };
   }
   if (source.workCloudSaveIntent) return preserved;
+  const automaticCatalog = await recordAutomaticCatalogIntent(
+    ctx,
+    source,
+    actor,
+  );
   const now = Date.now(),
     defaults = grant.cloudSaveDefaults!;
   const retainUntil = Math.min(
@@ -263,6 +280,9 @@ export async function queueSavedCloudIntent(
     model: defaults.model,
     effort: defaults.effort,
     retainUntil,
+    ...(defaults.resultRetention
+      ? { resultRetention: defaults.resultRetention }
+      : {}),
     createdAt: now,
     expiresAt: Math.min(
       now + cloudSaveIntentLifetimeMs,
@@ -271,6 +291,24 @@ export async function queueSavedCloudIntent(
     ),
   };
   const id = await digest(canonicalJson({ sourceId: source._id, ...values }));
+  if (automaticCatalog) {
+    const producer = await reserveCatalogProducer(
+      ctx,
+      source,
+      actor,
+      automaticCatalog,
+      id,
+      values.expiresAt,
+      retainUntil,
+    );
+    if (producer.waiting)
+      return {
+        sourceId: source._id,
+        status: "waiting_for_shared_analysis" as const,
+        intentId: null,
+        expiresAt: values.expiresAt,
+      };
+  }
   await ctx.db.patch(source._id, { workCloudSaveIntent: { ...values, id } });
   await notifyVideoLinkSaved(ctx, (await ctx.db.get(source._id))!, actor._id);
   await audit(

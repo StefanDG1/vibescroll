@@ -1,3 +1,7 @@
+import {
+  completedResultRetained,
+  resultRetained,
+} from "../contracts/result-retention";
 import { isCloudObservedMedia } from "../social/contracts";
 // Pixels are stored separately from the immutable observed-media preparation.
 export type CloudFrame = {
@@ -20,7 +24,7 @@ export function retainedCloudFrames(
     !media ||
     !Number.isFinite(media.retainUntil) ||
     job.generation !== source.generation ||
-    media.retainUntil <= now ||
+    (!completedResultRetained(source) && media.retainUntil <= now) ||
     (source.sourceRetentionUntil !== undefined &&
       source.sourceRetentionUntil <= now) ||
     !saved ||
@@ -68,7 +72,7 @@ export function cloudFrameAssetCurrent(
 }
 export function sourceEvidenceFrames(source: any, now = Date.now()) {
   if (source.sharedCloud?.version === "shared-cloud-detail-v1")
-    return source.sharedCloud.retainUntil > now &&
+    return resultRetained(source.sharedCloud, now) &&
       (source.sourceRetentionUntil ?? Infinity) > now
       ? source.sharedCloud.frames.map(
           (frame: { reference: string; timestampMs: number }) => ({
@@ -102,7 +106,7 @@ export function cloudCitationForDisplay(
   ) {
     const shared = source.sharedCloud;
     if (
-      shared.retainUntil <= now ||
+      !resultRetained(shared, now) ||
       (source.sourceRetentionUntil ?? Infinity) <= now
     )
       return ref;

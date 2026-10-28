@@ -1,0 +1,45 @@
+{
+  "kind": "routine-auth-posts-controlled-release-v1",
+  "observedAtUTC": "2026-10-28T18:40:57.531291+00:00",
+  "candidate": "b16000759b4a0530c85d4dc8cffb5fa2d3d90833",
+  "exactLinuxCI": 40743071352,
+  "backend": {
+    "published": true,
+    "cliExitCode": 0,
+    "schemaChanges": 0,
+    "indexChanges": 0,
+    "tableWalks": 0,
+    "backfills": 0,
+    "guardTestsPassed": 32
+  },
+  "website": {
+    "builtDeployment": "dpl_Kr2jmbXERmSeDvYYpLQPgW1q7b25",
+    "fixedBasicNormalQueue": true,
+    "buildMilliseconds": 47862,
+    "stagedHealthAndGuidePassed": true,
+    "canonicalFirstMetadataPage": 20,
+    "canonicalPaginationStatus": 404,
+    "accepted": false,
+    "rollbackWithoutRebuild": true,
+    "servingCommit": "f6ecf74334477e96cbff71c7502ce8293cf4dc5d",
+    "servingDeployment": "dpl_BKC6hrEHh7j6K98ViLYnpm7RiDnF",
+    "automaticDomainAssignmentRestored": true
+  },
+  "rootCause": "New /api/posts endpoint omitted from AuthKit proxy matcher; server-rendered first page used the correctly protected /app path.",
+  "correction": "Add Posts and existing accounting backend routes to the proxy; inventory all backend-reading routes with the installed Next matcher. Regression tests passed; corrected website not yet published.",
+  "savedData": {
+    "originalReadyReelFourHashesUnchanged": true,
+    "selectedVersionPreserved": true,
+    "noAnalysisRun": true
+  },
+  "budget": {
+    "cumulativeEUR": 12,
+    "planMaximumUSD": 1,
+    "actualBackendSlotsUsed": 4,
+    "websiteBuildSlotsUsed": 3,
+    "oldHoldsRetained": true,
+    "meterBeforeBuildUSD": 17.69,
+    "vercelStrictCeilingUSD": 20
+  },
+  "sharedCatalogEnabled": false
+}

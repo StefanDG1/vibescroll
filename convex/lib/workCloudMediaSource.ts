@@ -1,3 +1,4 @@
+import { completedResultRetained } from "../../packages/contracts/result-retention";
 import type { Doc } from "../_generated/dataModel";
 import { validateOrderedAnalysis } from "../../packages/social/analysis";
 import {
@@ -30,7 +31,7 @@ export async function currentOrderedSource(
       !source.url ||
       source.publicImportId ||
       post.observedAt > Date.now() ||
-      post.retainUntil <= Date.now() ||
+      (!completedResultRetained(source) && post.retainUntil <= Date.now()) ||
       privateCloudMediaIdentity(source.url).url !== post.canonical ||
       privateCloudMediaIdentity(source.canonical).url !== post.canonical ||
       job?.executor !== "work_cloud" ||

@@ -130,6 +130,14 @@ export const publicTables = {
       v.object({
         ...tenant,
         origin: v.literal("cloud"),
+        postMetadata: v.optional(
+          v.object({
+            title: v.optional(v.string()),
+            authorName: v.optional(v.string()),
+            durationSeconds: v.optional(v.number()),
+            thumbnailFrameId: v.string(),
+          }),
+        ),
         summary: v.string(),
         insightCount: v.number(),
         mainPoints: v.array(v.string()),
@@ -146,6 +154,7 @@ export const publicTables = {
         authority: v.any(),
         storagePrefix: v.string(),
         retainUntil: v.number(),
+        resultRetention: v.optional(v.literal("until_deleted")),
         state: v.union(
           v.literal("staging"),
           v.literal("eligible"),

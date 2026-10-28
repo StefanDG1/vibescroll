@@ -141,6 +141,8 @@ Ship each accepted stage with exact-head CI, fresh migration impact, one fixed B
 
 ## Make MCP cover the useful actions
 
+The [explicit never-claimed retry candidate](../../adr/186-explicit-never-claimed-cloud-retry.md) adds a deliberate post/MCP retry without weakening ordinary Save or unknown-attempt protection. It uses current Cloud defaults, one stable key and a fresh generation, while retaining previous holds and bounded attempt provenance. Local and production acceptance remain separate.
+
 Keep tools aligned with user goals, without requiring a custom widget:
 
 | User intent                  | Existing surface to extend                      | Required behavior                                                                                                               |

@@ -2,6 +2,7 @@ import { httpAction } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
+import { cloudRetryRequest } from "../packages/contracts/cloud-retry";
 import { analysisVersionOperations } from "../packages/contracts/analysis-versions";
 import {
   widgetBrowseInput,
@@ -129,6 +130,7 @@ const operations = z.discriminatedUnion("operation", [
             .string()
             .regex(/^[a-f0-9]{64}$/)
             .optional(),
+          retry: cloudRetryRequest.optional(),
           cloud: z
             .object({
               model: z.string().min(1).max(100),

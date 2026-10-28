@@ -6,6 +6,7 @@ import { ensure } from "../packages/policy";
 import { captureOne } from "./product";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { cacheCandidate } from "./lib/cloudCatalog";
+import { retrySavedCloudSource } from "./workCloudAnalysis";
 import {
   savedCloudGrantCurrent,
   queueSavedCloudIntent,
@@ -38,6 +39,43 @@ export const analyzeSaved = mutation({
       owner.source,
       "app",
     );
+  },
+});
+
+export const retrySaved = mutation({
+  args: {
+    sourceId: v.id("sources"),
+    generation: v.number(),
+    revision: v.number(),
+    key: v.string(),
+  },
+  returns: v.object({
+    sourceId: v.id("sources"),
+    generation: v.number(),
+    currentGeneration: v.optional(v.number()),
+    status: v.string(),
+    reusedRequest: v.boolean(),
+    analysisStarted: v.literal(false),
+    state: v.optional(v.literal("queued")),
+    expiresAt: v.optional(v.number()),
+    inputHash: v.optional(v.string()),
+  }),
+  handler: async (ctx, request) => {
+    const owner = await historySource(ctx, request.sourceId, true);
+    ensure(
+      !owner.grant,
+      "FORBIDDEN",
+      "Use the scoped MCP retry action from a chat.",
+    );
+    const route = await savedCloudRoute(ctx, owner.actor, owner.organization);
+    ensure(
+      route?.grantId,
+      "SETUP_REQUIRED",
+      "Complete Cloud setup in Connections before retrying.",
+    );
+    const grant = (await ctx.db.get(route.grantId))!;
+    const { sourceId: _sourceId, ...retry } = request;
+    return retrySavedCloudSource(ctx, owner, grant, retry);
   },
 });
 

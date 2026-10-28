@@ -8,6 +8,7 @@ import { audit, limit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { classifySourceUrl } from "../packages/sources/classify";
 import { postDisplayTitle } from "../packages/sources/display";
+import { cloudRetryEligible } from "../packages/contracts/cloud-retry";
 import { captureAuthorized, digest, startSource } from "./product";
 import {
   chooseIntakeProjects,
@@ -28,6 +29,7 @@ import { assistantGrantActive } from "../packages/policy/assistant";
 import {
   requestCloudFromAssistant,
   requestSavedCloudFromAssistant,
+  retrySavedCloudSource,
 } from "./workCloudAnalysis";
 import {
   savedCloudIntentCurrent,
@@ -500,6 +502,10 @@ export const getJobStatus = internalQuery({
           : null,
       generation: source.generation,
       revision: source.updatedAt,
+      cloud_retry_eligible:
+        cloudRetryEligible(source) &&
+        a.membership.role === "owner" &&
+        (await savedCloudGrantCurrent(ctx, a.actor, a.organization, a.grant)),
       grant_version: a.grant.version,
       cloud_request_policy: a.grant.cloudRequestPolicy ?? null,
       saved_cloud_intent: savedIntentCurrent
@@ -546,6 +552,13 @@ export const requestAnalysis = internalMutation({
     revision: v.optional(v.number()),
     grantVersion: v.optional(v.number()),
     savedIntentId: v.optional(v.string()),
+    retry: v.optional(
+      v.object({
+        generation: v.number(),
+        revision: v.number(),
+        key: v.string(),
+      }),
+    ),
     cloud: v.optional(
       v.object({
         model: v.string(),
@@ -580,6 +593,7 @@ export const requestAnalysis = internalMutation({
           args.grantVersion === undefined &&
           args.cloud === undefined &&
           args.savedIntentId === undefined &&
+          args.retry === undefined &&
           args.maxCredits === undefined &&
           args.project === undefined &&
           args.bestProjects === undefined,
@@ -589,6 +603,44 @@ export const requestAnalysis = internalMutation({
       return automaticCloudReceipt(ctx, a, source);
     }
     if (args.mode === "work_cloud") {
+      if (args.retry !== undefined) {
+        ensure(
+          args.generation === undefined &&
+            args.revision === undefined &&
+            args.grantVersion === undefined &&
+            args.cloud === undefined &&
+            args.savedIntentId === undefined &&
+            args.maxCredits === undefined &&
+            args.project === undefined &&
+            args.bestProjects === undefined,
+          "INVALID_INPUT",
+          "A deliberate retry uses current Cloud defaults without funding, model or project overrides.",
+        );
+        const execution = await assistantGrant(
+          ctx,
+          source.organizationId,
+          "analysis:execute",
+        );
+        ensure(
+          execution.membership.role === "owner",
+          "FORBIDDEN",
+          "Only the owner can retry this post.",
+        );
+        const receipt = await retrySavedCloudSource(
+          ctx,
+          { source, ...execution },
+          execution.grant,
+          args.retry,
+        );
+        return {
+          source_id: source._id,
+          generation: receipt.generation,
+          status: receipt.status,
+          reused_request: receipt.reusedRequest,
+          analysis_started: false,
+          url: `https://scroll.companynerve.com/app/${source.organizationId}/posts/${source._id}`,
+        };
+      }
       if (args.savedIntentId !== undefined) {
         ensure(
           args.generation === undefined &&
@@ -623,6 +675,7 @@ export const requestAnalysis = internalMutation({
     }
     ensure(
       args.cloud === undefined &&
+        args.retry === undefined &&
         args.savedIntentId === undefined &&
         args.revision === undefined &&
         args.grantVersion === undefined,

@@ -4856,7 +4856,8 @@ export function SourceDetail({
             (detail.workCloudMediaEnabled &&
               detail.kind === "url" &&
               !detail.currentRevisionId)) &&
-          !["ready", "queued", "processing"].includes(detail.state) && (
+          !["ready", "processing"].includes(detail.state) &&
+          (detail.state !== "queued" || detail.workCloudRetryEligible) && (
             <>
               {detail.kind === "url" && detail.workCloudLinkSetup && (
                 <section className="panel">
@@ -4867,18 +4868,29 @@ export function SourceDetail({
                       : "Complete automatic app and ChatGPT link setup once in Connections. After setup, supported links use your own Cloud Work without per-post review."}
                   </p>
                   {detail.workCloudLinkSetup?.monitorReady &&
-                  detail.generation === 0 &&
-                  !detail.personalAnalysis &&
-                  !detail.workCloudSaveIntent ? (
+                  (detail.workCloudRetryEligible ||
+                    (detail.generation === 0 &&
+                      !detail.personalAnalysis &&
+                      !detail.workCloudSaveIntent)) ? (
                     <button
                       className="primary"
                       disabled={readOnly || detailLoading || busy}
                       onClick={async () => {
                         setCloudRequestError("");
                         try {
-                          await strictCall("analyzeSavedWorkCloud", {
-                            sourceId,
-                          });
+                          await strictCall(
+                            detail.workCloudRetryEligible
+                              ? "retrySavedWorkCloud"
+                              : "analyzeSavedWorkCloud",
+                            detail.workCloudRetryEligible
+                              ? {
+                                  sourceId,
+                                  generation: detail.generation,
+                                  revision: detail.updatedAt,
+                                  key: crypto.randomUUID(),
+                                }
+                              : { sourceId },
+                          );
                           onRefresh?.();
                         } catch {
                           setCloudRequestError(
@@ -4887,7 +4899,9 @@ export function SourceDetail({
                         }
                       }}
                     >
-                      Analyze using Cloud defaults
+                      {detail.workCloudRetryEligible
+                        ? "Retry using Cloud defaults"
+                        : "Analyze using Cloud defaults"}
                     </button>
                   ) : (
                     <Link prefetch={false} href={`/app/${org}/connections`}>

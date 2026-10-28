@@ -1,5 +1,15 @@
 # Implementation status
 
+## October 28, 21:46 UTC: explicit safe retry candidate, not yet published
+
+[ADR 186](adr/186-explicit-never-claimed-cloud-retry.md) adds the post-page Retry using Cloud defaults action and the matching explicit MCP retry. It creates a fresh generation only for a known never-claimed failed/cancelled/expired request or an expired unclaimed queue. Claim markers, unknown state, prior results, active work, stale revisions, revoked access and expired source retention are refused. Current Cloud defaults and an active monitor are required. Normal signed-in sessions work without recent authentication. MCP also enforces current request/execution scopes and source access. Duplicate keys reuse one request; ordinary Save keeps its existing preservation behavior.
+
+The optional source receipt array retains at most twenty prior attempt summaries, input/policy/grant bindings and job hashes. Old reservations remain byte-identical. No table, index, component or provider is added. Actual no-scan/no-backfill publication checks remain required. No production source/job/control changed in this checkpoint.
+
+The full offline check passed on Windows with Node 24.22.1 and pnpm 12.3.4: 1,449 Vitest passes, three hosted skips, nineteen Node checks, 88 Python tests with seven Windows skips, validation of 334 documents/twelve skill snapshots, zero-warning lint, all TypeScript projects and both production builds. The actual MCP 2.0 schema, authenticated HTTP boundary and mutation passed together. Earlier failures remain in `outputs/cloud-retry-targeted-1.log`, `outputs/cloud-retry-types-1.log` and `outputs/cloud-retry-full-check-1.log`; the accepted full run is `outputs/cloud-retry-full-check-2.log`. Exact CI and production retry acceptance remain pending. No dependencies changed.
+
+Website 74cd6fc and backend 2ed297d remain live. The Vercel dashboard showed USD17.75/20 at 21:43 UTC, with its stated one-hour lag. All five approved backend publications and five Basic builds are used. Another publication needs a concrete count exception within the existing EUR12/USD1 envelope and Vercel-below-USD20 condition. No new monetary cap, paid API, credit purchase, faster build or release has been used.
+
 ## October 28, 21:20 UTC: Posts/Home Save correction and current guide live
 
 Frontend74cd6fce5c3eea7eda481298450abbc1ae5b71ca is live, canonical version0.1.0-alpha.20261028210406.g74cd6fce5c3e. Exact Linux CI40768808146 passed. The complete offline Convex request/schema match live backend2ed297d, so no backend publication ran. The approved fifth fixed Basic queued website build took33.508seconds and the same staged build was promoted. Canonical authenticated Posts and compact Home now include bounded task settings while their lists remain metadata-only. Manage setup closes Save and opens Connections. The current guide uses one-time Continue/native Monitoring steps rather than the obsolete checkbox. The generated host instructions distinguish separate host sharing actions from eligible automatic service catalog retention.

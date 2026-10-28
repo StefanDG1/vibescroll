@@ -15,6 +15,7 @@ import {
   eventUnsubscribe,
 } from "./events";
 import { z } from "zod";
+import { cloudRetryRequest } from "../contracts/cloud-retry";
 import { registerWidget } from "./widget";
 import { widgetResourceUris } from "../widget/resources.generated";
 import { inlineCardRoute } from "../widget/contracts";
@@ -292,7 +293,7 @@ export function createKnowledgeHandler(
           ? automaticCloudIntake +
             "Omit mode to use reviewed background Cloud defaults. Only an explicitly chosen foreground Work Cloud diagnostic uses mode=work_cloud with per-post model/effort options. " +
             inlineCloudIntake +
-            " For a native saved-link event, first read this exact post's status. Only a current saved_cloud_intent permits automatic processing. Complete actual runtime/package/isolation preflight before starting its short job. Call request_analysis with mode=work_cloud and savedIntentId, without cloud, generation, revision, grantVersion, project or credit overrides. The server binds the saved model, effort, retention and zero-API funding. Preserve ready, active, expired or unknown work; reconcile uncertain replies without replacing a generation. Ordinary save-only events have no analysis authority. "
+            " For a native saved-link event, first read this exact post's status. Only a current saved_cloud_intent permits automatic processing. Complete actual runtime/package/isolation preflight before starting its short job. Call request_analysis with mode=work_cloud and savedIntentId, without cloud, generation, revision, grantVersion, project or credit overrides. The server binds the saved model, effort, retention and zero-API funding. Preserve ready, active, expired or unknown work; reconcile uncertain replies without replacing a generation. Only when the user explicitly asks to retry and get_job_status reports cloud_retry_eligible=true, pass mode=work_cloud and retry={generation,revision,key} using that status and one stable unique key. Omit all other Cloud, funding and project overrides. This creates a new never-claimed attempt using current defaults; never retry automatically or reset claimed/unknown work. Ordinary save-only events have no analysis authority. "
           : "") + legacyAnalysis,
         "analysis:request",
         z
@@ -313,6 +314,7 @@ export function createKnowledgeHandler(
               .string()
               .regex(/^[a-f0-9]{64}$/)
               .optional(),
+            retry: cloudRetryRequest.optional(),
             cloud: z
               .object({
                 model: z.string().min(1).max(100),

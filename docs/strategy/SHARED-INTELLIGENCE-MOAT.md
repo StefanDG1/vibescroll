@@ -1,5 +1,7 @@
 # Shared intelligence, model quality and the VibeScroll moat
 
+October 28 follow-up candidate: [ADR 186](../adr/186-explicit-never-claimed-cloud-retry.md) adds an explicit retry for failed/expired requests that never reached a host. Ready versions, unknown attempts and old funding records stay protected. This is not yet live. The next project bridge must resolve exact retained/shared versions because a cache association intentionally has no copied analysis on its private source row.
+
 Mode: explanation and standing product direction. Owner instruction: October 28, 2026. Status: required roadmap until the acceptance ledger below is complete. Read this document before planning or changing VibeScroll. Source: the owner's instructions in the ongoing link-to-insights conversation, including the later backend-first and simplified-authentication corrections. This is a product decision, not evidence that unimplemented features are live or that model quality, legal rights or customer value have been proved.
 
 ## The product the owner wants

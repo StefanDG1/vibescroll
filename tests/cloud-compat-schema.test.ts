@@ -93,6 +93,7 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
     });
     delete nextFields.workCloudSaveIntent;
     for (const field of [
+      "cloudRetryReceipts",
       "catalogStatus",
       "catalogPolicy",
       "catalogWait",

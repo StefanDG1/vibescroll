@@ -327,3 +327,50 @@ it("does not offer automatic video defaults for a separate unsupported source ro
   await settle();
   expect(render(parent)).not.toContain("Analyze using Cloud defaults");
 });
+
+it.each(["failed", "queued"])(
+  "offers an explicit Cloud retry for an eligible never-claimed %s request without starting it on render",
+  async (status) => {
+    const source = {
+      ...queued,
+      state: status,
+      url: "https://www.instagram.com/reel/DeTest000001/",
+      workCloudHandoff: null,
+      workCloudRetryEligible: true,
+      workCloudLinkSetup: {
+        configured: true,
+        monitorReady: true,
+        chatLinksEnabled: true,
+      },
+    };
+    server(source);
+    const parent = props(source);
+    render(parent);
+    await settle();
+    const html = render(parent);
+    expect(html).toContain("Retry using Cloud defaults");
+    expect(html).not.toContain("Analyze using Cloud defaults");
+    expect(parent.strictCall).not.toHaveBeenCalled();
+  },
+);
+
+it("keeps a failed claimed/unknown attempt out of the retry flow", async () => {
+  const source = {
+    ...queued,
+    state: "failed",
+    workCloudHandoff: null,
+    personalAnalysis: { executor: "work_cloud", state: "unknown" },
+    workCloudRetryEligible: false,
+    workCloudLinkSetup: {
+      configured: true,
+      monitorReady: true,
+      chatLinksEnabled: true,
+    },
+  };
+  server(source);
+  const parent = props(source);
+  render(parent);
+  await settle();
+  expect(render(parent)).not.toContain("Retry using Cloud defaults");
+  expect(parent.strictCall).not.toHaveBeenCalled();
+});

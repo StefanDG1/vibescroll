@@ -1,4 +1,5 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
+import { cloudRetryEligible } from "../packages/contracts/cloud-retry";
 import { selectedAnalysis } from "./lib/analysisHistory";
 import {
   attachCloudCache,
@@ -742,6 +743,7 @@ export const detail = query({
               "link-save-cloud-v2",
           }
         : null,
+      workCloudRetryEligible: cloudSourceEligible && cloudRetryEligible(s),
       catalogContributionAvailable:
         !!catalogConfiguration() &&
         selected?.metadata.origin === "private" &&

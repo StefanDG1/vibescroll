@@ -54,7 +54,15 @@ import { sourceRetained } from "./lib/sourceAuthority";
 import { registerEvidenceAsset, queueDeletion } from "./assets";
 import { retainedCloudFrames } from "../packages/media/cloud-frames";
 import { evidenceRepairContext } from "./workCloudEvidenceRepair";
-import { savedCloudIntentCurrent } from "./lib/workCloudSave";
+import {
+  savedCloudIntentCurrent,
+  savedCloudGrantCurrent,
+  savedCloudMonitorCurrent,
+} from "./lib/workCloudSave";
+import {
+  cloudRetryEligible,
+  cloudRetryRequest,
+} from "../packages/contracts/cloud-retry";
 import { recordAutomaticCatalogIntent } from "./lib/catalogPolicy";
 import { commitPersonalOrdered } from "./lib/personalOrderedCommit";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
@@ -645,11 +653,14 @@ type CloudApproval = {
   retainUntil?: number;
 };
 // Both entry points bind the same exact source/input/lease. The app wrapper
-// retains recent authentication; MCP creation requires a separately reviewed
+// uses the normal authenticated session; MCP creation requires a separately reviewed
 // versioned connection policy, never merely the two older OAuth scopes.
 async function approveExactCloudSource(
   ctx: MutationCtx,
-  owned: Awaited<ReturnType<typeof ownedSource>>,
+  owned: Pick<
+    Awaited<ReturnType<typeof ownedSource>>,
+    "source" | "actor" | "organization"
+  >,
   grant: Doc<"assistantGrants">,
   a: CloudApproval,
 ) {
@@ -767,6 +778,132 @@ async function approveExactCloudSource(
     state: "queued" as const,
     expiresAt: job.expiresAt,
     inputHash: input.inputHash,
+  };
+}
+
+/** A deliberate retry creates a new generation, never reopens an old lease. */
+export async function retrySavedCloudSource(
+  ctx: MutationCtx,
+  owned: Pick<
+    Awaited<ReturnType<typeof ownedSource>>,
+    "source" | "actor" | "organization"
+  >,
+  grant: Doc<"assistantGrants">,
+  request: z.infer<typeof cloudRetryRequest>,
+) {
+  const retry = cloudRetryRequest.parse(request);
+  const { source, actor, organization } = owned;
+  ensure(
+    await savedCloudGrantCurrent(ctx, actor, organization, grant),
+    "SETUP_REQUIRED",
+    "Complete Cloud setup in Connections before retrying.",
+  );
+  const keyHash = await digest(
+    canonicalJson({ sourceId: source._id, actor: actor._id, key: retry.key }),
+  );
+  const receipts = source.cloudRetryReceipts ?? [];
+  const previous = receipts.find((receipt) => receipt.keyHash === keyHash);
+  if (previous) {
+    ensure(
+      previous.generation === retry.generation &&
+        previous.revision === retry.revision,
+      "APPROVAL_STALE",
+      "This retry key belongs to a different post revision.",
+    );
+    return {
+      sourceId: source._id,
+      generation: previous.nextGeneration,
+      currentGeneration: source.generation,
+      status: source.personalAnalysis?.state ?? source.state,
+      reusedRequest: true,
+      analysisStarted: false as const,
+    };
+  }
+  ensure(
+    source.generation === retry.generation &&
+      source.updatedAt === retry.revision &&
+      cloudRetryEligible(source) &&
+      source.personalAnalysis?.actor === actor._id,
+    "APPROVAL_STALE",
+    "Only a failed or expired Cloud request that was never claimed can be retried. Preserve existing results and reconcile unknown work.",
+  );
+  ensure(
+    receipts.length < 20,
+    "QUOTA_EXCEEDED",
+    "This post reached its retry limit.",
+  );
+  ensure(
+    await savedCloudMonitorCurrent(ctx, grant),
+    "SETUP_REQUIRED",
+    "Resume your Cloud monitor in Connections before retrying.",
+  );
+  const identity = privateCloudMediaIdentity(source.url ?? source.canonical);
+  ensure(
+    ["instagram", "tiktok"].includes(identity.platform),
+    "SOURCE_UNAVAILABLE",
+    "Use a supported Reel or TikTok video.",
+  );
+  const prior = source.personalAnalysis!;
+  ensure(
+    prior.executor === "work_cloud",
+    "APPROVAL_STALE",
+    "Use the existing Cloud request.",
+  );
+  const defaults = grant.cloudSaveDefaults!;
+  const result = await approveExactCloudSource(
+    ctx,
+    { ...owned, source: { ...source, state: "failed" } },
+    grant,
+    {
+      sourceId: source._id,
+      generation: source.generation,
+      grantVersion: grant.version,
+      model: defaults.model,
+      effort: defaults.effort,
+      inputKind: "media",
+      retainUntil: Math.min(
+        Date.now() + defaults.retentionMs,
+        source.sourceRetentionUntil ?? Infinity,
+      ),
+    },
+  );
+  await ctx.db.patch(source._id, {
+    cloudRetryReceipts: [
+      ...receipts,
+      {
+        keyHash,
+        actor: actor._id,
+        generation: retry.generation,
+        revision: retry.revision,
+        nextGeneration: result.generation,
+        priorJobHash: await digest(canonicalJson(prior)),
+        priorInputHash: prior.cloud.inputHash,
+        priorPolicyHash: prior.cloud.policyHash,
+        priorGrantId: prior.cloud.grantId,
+        priorGrantVersion: prior.cloud.grantVersion,
+        priorClientId: prior.cloud.clientId,
+        priorState: prior.state,
+        priorApprovedAt: prior.approvedAt,
+        priorExpiresAt: prior.expiresAt,
+        priorModel: prior.model,
+        priorEffort: prior.effort,
+        createdAt: Date.now(),
+      },
+    ],
+    workCloudSaveIntent: undefined,
+  });
+  await audit(
+    ctx,
+    organization._id,
+    actor._id,
+    "work_cloud.never_claimed_retry",
+    `${source._id}:${retry.generation}:${result.generation}:${keyHash}`,
+  );
+  return {
+    ...result,
+    status: "waiting_for_cloud",
+    reusedRequest: false,
+    analysisStarted: false as const,
   };
 }
 

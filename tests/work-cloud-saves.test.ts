@@ -164,6 +164,345 @@ async function chatLinkSetup(monitor = true) {
   return { ...s, grant, args };
 }
 
+async function retryFixture(expired = false) {
+  const s = await setup();
+  const saved = await s.capture();
+  await s.start(saved.sourceId, saved.intentId!);
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(saved.sourceId))!;
+    const job = source.personalAnalysis!;
+    await ctx.db.patch(source._id, {
+      state: expired ? "queued" : "failed",
+      personalAnalysis: {
+        ...job,
+        state: expired ? "queued" : "cancelled",
+        expiresAt: expired ? Date.now() - 1 : job.expiresAt,
+      },
+    });
+  });
+  const source = (await s.t.run((ctx) => ctx.db.get(saved.sourceId)))!;
+  const retry = {
+    sourceId: source._id,
+    generation: source.generation,
+    revision: source.updatedAt,
+    key: "retry-once-fixture",
+  };
+  return { ...s, source, retry };
+}
+
+it.each([false, true])(
+  "explicitly retries a never-claimed request once, preserves its hold and records prior provenance: expired=%s",
+  async (expired) => {
+    const s = await retryFixture(expired);
+    const before = await s.t.run((ctx) =>
+      ctx.db.query("reservations").collect(),
+    );
+    expect(before).toHaveLength(1);
+    const result = await s.owner.mutation(
+      api.workCloudSaves.retrySaved,
+      s.retry,
+    );
+    expect(result).toMatchObject({
+      generation: 2,
+      status: "waiting_for_cloud",
+      reusedRequest: false,
+      analysisStarted: false,
+    });
+    const source = (await s.t.run((ctx) => ctx.db.get(s.source._id)))!;
+    expect(source.personalAnalysis).toMatchObject({
+      generation: 2,
+      executor: "work_cloud",
+      state: "queued",
+      model: "synthetic-model",
+      effort: "high",
+      cloud: { maxApiUsd: 0 },
+    });
+    expect(source.workCloudSaveIntent).toBeUndefined();
+    expect(source.cloudRetryReceipts).toHaveLength(1);
+    expect(source.cloudRetryReceipts![0]).toMatchObject({
+      generation: 1,
+      revision: s.retry.revision,
+      nextGeneration: 2,
+      priorState: expired ? "queued" : "cancelled",
+      priorModel: "synthetic-model",
+    });
+    const after = await s.t.run((ctx) =>
+      ctx.db.query("reservations").collect(),
+    );
+    expect(after).toHaveLength(2);
+    expect(after.find((row) => row._id === before[0]._id)).toEqual(before[0]);
+    expect(
+      await s.owner.mutation(api.workCloudSaves.retrySaved, s.retry),
+    ).toMatchObject({ generation: 2, reusedRequest: true });
+    expect(
+      await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+    ).toEqual(after);
+    await expect(
+      s.owner.mutation(api.workCloudSaves.retrySaved, {
+        ...s.retry,
+        key: "another-key",
+      }),
+    ).rejects.toThrow("APPROVAL_STALE");
+    expect((await s.t.run((ctx) => ctx.db.get(source._id)))?.generation).toBe(
+      2,
+    );
+  },
+);
+
+it.each([
+  "unknown",
+  "claimedAt",
+  "taskId",
+  "leaseTokenHash",
+  "consentId",
+  "preparationHash",
+  "ready",
+  "revision",
+  "grant",
+  "monitor",
+  "retention",
+])("preserves unsafe or stale retries after %s", async (change) => {
+  const s = await retryFixture();
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.source._id))!;
+    const job = source.personalAnalysis!;
+    if (job.executor !== "work_cloud" || !job.cloud.media)
+      throw new Error("Fixture must have a Cloud media request");
+    if (change === "unknown")
+      await ctx.db.patch(source._id, {
+        personalAnalysis: { ...job, state: "unknown" },
+      });
+    else if (
+      ["claimedAt", "taskId", "leaseTokenHash", "consentId"].includes(change)
+    )
+      await ctx.db.patch(source._id, {
+        personalAnalysis: {
+          ...job,
+          cloud: {
+            ...job.cloud,
+            [change]: change === "claimedAt" ? 0 : "fixture-claim",
+          },
+        },
+      });
+    else if (change === "preparationHash")
+      await ctx.db.patch(source._id, {
+        personalAnalysis: {
+          ...job,
+          cloud: {
+            ...job.cloud,
+            media: { ...job.cloud.media, preparationHash: "a".repeat(64) },
+          },
+        },
+      });
+    else if (change === "ready")
+      await ctx.db.patch(source._id, { state: "ready" });
+    else if (change === "revision")
+      await ctx.db.patch(source._id, { updatedAt: source.updatedAt + 1 });
+    else if (change === "grant")
+      await ctx.db.patch(s.grant.id, { state: "revoked" });
+    else if (change === "monitor") {
+      const rows = await ctx.db.query("assistantSubscriptions").collect();
+      for (const row of rows)
+        await ctx.db.patch(row._id, { state: "cancelled" });
+    } else if (change === "retention")
+      await ctx.db.patch(source._id, { sourceRetentionUntil: Date.now() - 1 });
+  });
+  const before = await s.t.run((ctx) => ctx.db.get(s.source._id));
+  const holds = await s.t.run((ctx) => ctx.db.query("reservations").collect());
+  await expect(
+    s.owner.mutation(api.workCloudSaves.retrySaved, s.retry),
+  ).rejects.toThrow(/APPROVAL_STALE|SETUP_REQUIRED|SOURCE_UNAVAILABLE/);
+  expect(await s.t.run((ctx) => ctx.db.get(s.source._id))).toEqual(before);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual(holds);
+});
+
+it("uses the same explicit retry through current MCP scopes and refuses overrides and ordinary-Save reset", async () => {
+  const s = await retryFixture();
+  const before = await s.t.run((ctx) => ctx.db.get(s.source._id));
+  expect(await s.capture()).toMatchObject({
+    status: "existing_work_preserved",
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(s.source._id))).toEqual(before);
+  const { sourceId, ...retry } = s.retry;
+  const args = {
+    profileId: s.org,
+    sourceId,
+    mode: "work_cloud" as const,
+    retry,
+  };
+  const status = await s.assistant.query(internal.assistant.getJobStatus, {
+    profileId: s.org,
+    sourceId,
+  });
+  expect(status.cloud_retry_eligible).toBe(true);
+  for (const overrides of [
+    { maxCredits: 10 },
+    { savedIntentId: "a".repeat(64) },
+    { generation: 1 },
+    { project: "anything" },
+  ])
+    await expect(
+      s.assistant.mutation(internal.assistant.requestAnalysis, {
+        ...args,
+        ...overrides,
+      }),
+    ).rejects.toThrow("INVALID_INPUT");
+  await expect(
+    s.assistant.mutation(api.workCloudSaves.retrySaved, s.retry),
+  ).rejects.toThrow("FORBIDDEN");
+  const restricted = s.t.withIdentity({
+    ...s.identity,
+    scope: "analysis:request jobs:read",
+  });
+  await expect(
+    restricted.mutation(internal.assistant.requestAnalysis, args),
+  ).rejects.toThrow();
+  const result = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    args,
+  );
+  expect(result).toMatchObject({ generation: 2, reused_request: false });
+  expect(
+    await s.assistant.mutation(internal.assistant.requestAnalysis, args),
+  ).toMatchObject({ generation: 2, reused_request: true });
+  expect(
+    (
+      await s.assistant.query(internal.assistant.getJobStatus, {
+        profileId: s.org,
+        sourceId,
+      })
+    ).cloud_retry_eligible,
+  ).toBe(false);
+});
+
+it("allows a normal-session deliberate retry but denies a different authenticated account", async () => {
+  const s = await retryFixture();
+  const foreignSubject = "user_99999999999999999999999999";
+  await s.t.mutation(internal.accounts.syncUser, {
+    subject: foreignSubject,
+    email: "other@example.test",
+    name: "Other",
+  });
+  await expect(
+    s.t
+      .withIdentity({ subject: foreignSubject })
+      .mutation(api.workCloudSaves.retrySaved, s.retry),
+  ).rejects.toThrow();
+  const normal = s.t.withIdentity({
+    subject,
+    auth_time: Math.floor(Date.now() / 1000) - 86400,
+  });
+  expect(
+    await normal.mutation(api.workCloudSaves.retrySaved, s.retry),
+  ).toMatchObject({ generation: 2, reusedRequest: false });
+});
+
+it("carries a deliberate retry through the actual MCP 2.0 schema and authenticated HTTP boundary", async () => {
+  const s = await retryFixture();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({ sub: subject })),
+  );
+  const http = (
+    assistantHttpTools as unknown as {
+      _handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }
+  )._handler;
+  const invoke = vi.fn(async (operation, args) => {
+    const response = await http(
+      {
+        runMutation: (reference: any, value: any) =>
+          s.assistant.mutation(reference, value),
+      },
+      new Request("https://synthetic.example/assistant-tools", {
+        method: "POST",
+        headers: { authorization: "Bearer synthetic-access-token-0123456789" },
+        body: JSON.stringify({ operation, args }),
+      }),
+    );
+    return {
+      ok: response.ok,
+      status: response.status,
+      value: await response.json(),
+    };
+  });
+  const mcp = createKnowledgeHandler(invoke, false, false, true);
+  const { sourceId, ...retry } = s.retry;
+  const send = async (value: unknown) => {
+    const body = {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "request_analysis",
+        arguments: {
+          profileId: s.org,
+          sourceId,
+          mode: "work_cloud",
+          retry: value,
+        },
+        _meta: {
+          "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+          "io.modelcontextprotocol/clientInfo": {
+            name: "Synthetic",
+            version: "1",
+          },
+          "io.modelcontextprotocol/clientCapabilities": {},
+        },
+      },
+    };
+    const response = await mcp.fetch(
+      new Request("https://scroll.companynerve.com/mcp", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          accept: "application/json, text/event-stream",
+          "mcp-protocol-version": "2026-07-28",
+          "mcp-method": "tools/call",
+          "mcp-name": "request_analysis",
+        },
+        body: JSON.stringify(body),
+      }),
+      {
+        parsedBody: body,
+        authInfo: {
+          token: "synthetic-token",
+          clientId,
+          scopes,
+          resource: new URL("https://scroll.companynerve.com/mcp"),
+          resourceMetadataUrl:
+            "https://scroll.companynerve.com/.well-known/oauth-protected-resource/mcp",
+        },
+      },
+    );
+    const raw = await response.text();
+    return JSON.parse(
+      response.headers.get("content-type")?.includes("text/event-stream")
+        ? raw
+            .split("\n")
+            .find((line) => line.startsWith("data: "))!
+            .slice(6)
+        : raw,
+    );
+  };
+  expect((await send({ ...retry, maxApiUsd: 10 })).result.isError).toBe(true);
+  expect(invoke).not.toHaveBeenCalled();
+  expect((await send(retry)).result.structuredContent).toMatchObject({
+    generation: 2,
+    reused_request: false,
+    analysis_started: false,
+  });
+  expect((await send(retry)).result.structuredContent).toMatchObject({
+    generation: 2,
+    reused_request: true,
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(sourceId)))?.cloudRetryReceipts,
+  ).toHaveLength(1);
+});
+
 it("queues an ordinary MCP link through native Events and saved Cloud defaults without per-post app review or a sending-chat runtime", async () => {
   const s = await chatLinkSetup();
   const response = await s.assistant.mutation(

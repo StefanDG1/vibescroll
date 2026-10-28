@@ -23,3 +23,11 @@ Sixteen focused Python cases pass, including actual overlapping download workers
 The native candidate completed its 29 public downloads and runtime setup in 86.675 seconds. Independent verification passed 25 runtime artifacts, 24 versions, 2,229 installed payloads and four canonical model pins, then rejected an unexpected sixth model file. This is successful provisioning with blocked readiness, not an accepted source analysis. Subsequent cleanup/readiness and a fresh actual app Save require their own recorded outcomes. The new bootstrap has not been published to the website merely because it was attached to the private native task.
 
 No plugin feature, OAuth client, grant, scope, schema or provider configuration changes belong to this decision. Keep Vercel included usage below USD20 and retain all previous spending holds.
+
+## Accepted private outcome
+
+The exact identified temporary file was removed after stable inventory/hash checks and completion of owned writers. Strict model verification passed before and after, without another download or weaker rules; actual V2 socket denial passed. The cause of the temporary file remains unknown.
+
+A subsequent actual app Save, with ChatGPT closed, automatically produced15 transcript segments,7 retained JPEGs and a matching thumbnail,3 insights and19 references from a29.548-second Reel. All displayed transcript segments, actual JPEG bytes/hashes/dimensions, canonical MCP retrieval and the full-size viewer passed. Save-to-result took417.742seconds; source-job approval to completion took315.058seconds. These timings include native scheduling and agent work, not just extraction. This is one accepted private run, not a reliability percentage or a manually certified transcription benchmark. The finite pilot paused after its reserved job.
+
+Exact Linux CI40681199434 passed for candidatec7ce9df. The frontend and new immutable bootstrap were published through one staged Basic build and same-build promotion, with canonical checks and normal domain assignment restored. The backend and plugin did not change. See the [sanitized acceptance and release receipt](../operations/evidence/launch-20261028-stable-v1-reel.json).

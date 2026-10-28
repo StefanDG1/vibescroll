@@ -606,13 +606,15 @@ it("keeps save-only explicit and does not widen an old app-only Cloud grant", as
   ).toBeUndefined();
 });
 
-it("saves a link and reports one-time monitor setup when background delivery is unavailable", async () => {
+it("distinguishes an inactive monitor from authentication or repeated Cloud setup", async () => {
   const s = await chatLinkSetup(false);
   const response = await s.assistant.mutation(
     internal.assistant.saveLink,
     s.args,
   );
-  expect(response.status).toBe("cloud_setup_required");
+  expect(response.status).toBe("cloud_monitor_inactive");
+  expect(response.note).toContain("Do not reconnect");
+  expect(response.note).toContain("execution allowance");
   const source = (await s.t.run((ctx) => ctx.db.get(response.source_id)))!;
   expect(source.state).toBe("needs_upload");
   expect(source.personalAnalysis).toBeUndefined();

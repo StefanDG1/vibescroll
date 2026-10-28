@@ -12,6 +12,8 @@ For implicit link saves, consider only currently active grants with links:save, 
 
 If the choice remains genuinely ambiguous or absent, return the allowlisted PROFILE_SELECTION_REQUIRED result with a get_profile next action. Keep raw backend errors, foreign workspace data and authorization details private. This result is distinct from expired-token authentication, so it must not request a new login, Cloud setup or OAuth app. Other operations preserve their existing selection behavior. Bound candidate reads to fifty approved grants and fail closed on overflow.
 
+Keep an inactive background monitor separate too: an already-configured grant returns cloud_monitor_inactive, preserving the saved post and explaining that its existing task needs to resume when execution allowance is available. It must not ask the user to recreate OAuth or repeat Cloud setup. Actual missing setup or expired/revoked authorization retains its separate checks.
+
 ## Acceptance
 
 Exercise the real Save mutation with multiple active grants and an existing eligible app default; a read-only default must not intercept a Save. Revoked permissions still deny access. Exercise authenticated HTTP for ambiguous selection and actual MCP 2.0 transport for the safe next action, with no leaked backend details or authentication challenge. Run full local checks and exact CI, then publish under standing release authority and verify implicit production Save, its stable replay and an already-ready result without another analysis.

@@ -113,16 +113,21 @@ async function automaticCloudReceipt(
       },
       note: "Continue with request_analysis using the reviewed Cloud defaults. This uses the analysis permission already configured for the connection; no per-post app review is needed.",
     };
-  if (
-    !(await savedCloudGrantCurrent(ctx, a.actor, a.organization, a.grant)) ||
-    !(await savedCloudMonitorCurrent(ctx, a.grant))
-  )
+  if (!(await savedCloudGrantCurrent(ctx, a.actor, a.organization, a.grant)))
     return {
       ...common,
       status: "cloud_setup_required",
       analysis_requested: false,
       setup_url: `https://scroll.companynerve.com/app/${a.organization._id}/connections`,
       note: "Saved. Complete or resume your own Cloud monitor once in Connections, then request analysis of this saved post. Do not use the per-post diagnostic review or switch funding.",
+    };
+  if (!(await savedCloudMonitorCurrent(ctx, a.grant)))
+    return {
+      ...common,
+      status: "cloud_monitor_inactive",
+      analysis_requested: false,
+      setup_url: `https://scroll.companynerve.com/app/${a.organization._id}/connections`,
+      note: "Saved. Your Cloud connection is configured, but its background task is not monitoring. Resume the existing task when its execution allowance is available. Do not reconnect, create another app or repeat Cloud setup.",
     };
   const queued = await queueSavedCloudIntent(
     ctx,

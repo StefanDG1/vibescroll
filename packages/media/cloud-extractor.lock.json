@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "cloud-media-tools-v1",
+  "pythonMinimum": [
+    3,
+    10
+  ],
+  "asrPython": [
+    3,
+    13
+  ],
+  "supportedPlatforms": [
+    "instagram",
+    "tiktok"
+  ],
+  "files": {
+    "cloud_job.py": {
+      "bytes": 6672,
+      "sha256": "5b6ee341c60cdd948b0d9c5facbc30988f0c85ef311be38b11191eb2b14c4865"
+    },
+    "cloud_ytdlp.py": {
+      "bytes": 617,
+      "sha256": "788ada9e95f7d49a9d23872780e37d1a6383b8d00814aab92d864c97f616ecfd"
+    },
+    "cloud_extraction.py": {
+      "bytes": 19558,
+      "sha256": "9f13925b3fa10383d1d98c47914ef704f510259519f34be62a666e313f9b000d"
+    },
+    "cloud_prepare.py": {
+      "bytes": 11606,
+      "sha256": "4662440be28d94e6765c0494852e9217a77c558a04554712c14f7b501d8c6f59"
+    },
+    "prepare_cloud_dependencies.py": {
+      "bytes": 3656,
+      "sha256": "76fce48e87dd54d9a52524c82a4ae4585470a7673be1af0c91d1639e1c238d0c"
+    },
+    "restore_cloud_frames.py": {
+      "bytes": 2557,
+      "sha256": "03acc9893759bd3b888c1e6269a8dee51c819001125256bef2cf573b483df7fb"
+    },
+    "local_whisper.py": {
+      "bytes": 5182,
+      "sha256": "cc9e1259af391ec707cf860aa0b2ffd59a166337480dff4bef049d59bef44f84"
+    },
+    "asr_verification.py": {
+      "bytes": 7397,
+      "sha256": "bd029b33c14401712298317012167486bb5a050e81e156376f477adb3effe28a"
+    },
+    "asr-model.lock.json": {
+      "bytes": 911,
+      "sha256": "f9d7f4a01c0a4a5f2b6f3d26cb412ae65166cc8ee14d3eb5a967fda0ef0405f5"
+    },
+    "cloud-downloader.lock.json": {
+      "bytes": 298,
+      "sha256": "8a17925dfd2b80f4d935e922375bf039f2bd7a8cd97a38c9b004bd89b112637b"
+    },
+    "requirements-captions.lock": {
+      "bytes": 604,
+      "sha256": "1017557c89656f55f4b9cae8a24251c502aa4958834f707038fa5b45c064429b"
+    }
+  }
+}

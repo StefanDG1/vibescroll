@@ -3,6 +3,15 @@ import { convexTest } from "convex-test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
+import {
+  workCloudMediaPolicy,
+  workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
+} from "../packages/contracts/work-cloud-text";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { socialHash } from "../packages/social/contracts";
 
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -159,7 +168,7 @@ it("creates one exact private Cloud job through MCP without repository or per-po
     leaseToken: claimed.leaseToken!,
   });
   expect(input).toMatchObject({
-    schemaVersion: "work-cloud-media-v2",
+    schemaVersion: "work-cloud-media-v3",
     maxApiUsd: 0,
     requestedModel: "synthetic-model",
   });
@@ -287,6 +296,19 @@ it.each([
       intake: await ctx.db.get(intakeId),
       reservations: await ctx.db.query("reservations").collect(),
     }));
+    await expect(
+      s.owner.query(api.assistantIntakeUi.status, { sourceId: s.sourceId }),
+    ).resolves.toBeNull();
+    for (const mode of ["cancel", "credits"] as const) {
+      await expect(
+        s.owner.mutation(api.assistantIntakeUi.act, {
+          sourceId: s.sourceId,
+          generation: 1,
+          mode,
+          ...(mode === "credits" ? { maxCredits: 10 } : {}),
+        }),
+      ).rejects.toThrow(/current Cloud request controls/);
+    }
     const result = await s.assistant.query(internal.assistant.getJobStatus, {
       profileId: s.org,
       sourceId: s.sourceId,
@@ -729,6 +751,42 @@ it("binds the reviewed media policy and respects revocation", async () => {
   });
   await expect(s.call()).rejects.toThrow(/FORBIDDEN/);
 });
+it.each([
+  workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
+])(
+  "preserves exact-source consent across a reviewed implementation patch",
+  async (policy) => {
+    const capabilities = (
+      p: typeof workCloudMediaPolicy | typeof workCloudMediaPolicyV2,
+    ) => {
+      const {
+        toolchain: _tools,
+        schemaVersion: _schema,
+        pipelineVersion: _pipeline,
+        ...limits
+      } = p;
+      return limits;
+    };
+    expect(capabilities(policy)).toEqual(capabilities(workCloudMediaPolicy));
+    const s = await setup();
+    const policyHash = await socialHash(canonicalJson(policy));
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.grant.id, { cloudRequestPolicyHash: policyHash }),
+    );
+    await expect(s.call()).resolves.toMatchObject({
+      source_id: s.sourceId,
+      status: "waiting_for_cloud",
+    });
+    const grant = await s.t.run((ctx) => ctx.db.get(s.grant.id));
+    expect(grant?.version).toBe(1);
+    expect(grant?.cloudRequestPolicyHash).toBe(
+      await socialHash(canonicalJson(policy)),
+    );
+  },
+);
 it("rejects expired retention, project or credit options and cross-mode Cloud options", async () => {
   const s = await setup();
   await expect(

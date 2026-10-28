@@ -47,7 +47,7 @@ export default async function Collections({
         </>
       )}
       <p>
-        <Link href="/discover">Optional regional discovery</Link> ·{" "}
+        <Link href="/discover">Discover collections</Link> ·{" "}
         <Link href="/example">Synthetic example</Link>
       </p>
     </PublicPage>

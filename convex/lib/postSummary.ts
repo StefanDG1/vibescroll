@@ -1,4 +1,7 @@
 import type { Doc } from "../_generated/dataModel";
+import { postDisplayTitle } from "../../packages/sources/display";
+import { acquisitionPolicy } from "../../packages/media/acquisition-runtime";
+import { retainedCloudFrames } from "../../packages/media/cloud-frames";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import {
   postSummaryV1,
@@ -55,6 +58,13 @@ export async function projectPostSource(
     kind: source.kind,
     sourceType: source.sourceType,
     title: source.title,
+    nativeMetadata: source.linkPreview
+      ? {
+          title: source.linkPreview.title,
+          authorName: source.linkPreview.authorName,
+          durationSeconds: source.linkPreview.durationSeconds,
+        }
+      : undefined,
     text: source.text,
     originalText: source.originalText,
     summary: source.summary,
@@ -91,13 +101,20 @@ export async function projectPostSource(
     sourceRetentionUntil: source.sourceRetentionUntil,
     creatorRights: source.creatorRights,
     thumbnailAssetId:
-      source.linkPreview?.state === "ready"
+      (source.linkPreview?.state === "ready"
         ? source.linkPreview.assetId
-        : undefined,
+        : undefined) ?? retainedCloudFrames(source)[0]?.assetId,
   };
   const contentRevision = await postRevision(content);
   const job = source.personalAnalysis;
   const currentJob = job?.generation === source.generation ? job : undefined;
+  const saveIntent =
+    !currentJob &&
+    source.workCloudSaveIntent?.analysisGeneration === undefined &&
+    source.workCloudSaveIntent?.generation === source.generation &&
+    ["saved", "needs_upload"].includes(source.state)
+      ? source.workCloudSaveIntent
+      : undefined;
   const ordered =
     source.orderedPreparation?.generation === source.generation
       ? source.orderedPreparation
@@ -117,6 +134,7 @@ export async function projectPostSource(
     currentJob?.expiresAt,
     recovering ? undefined : currentJob?.deadline,
     ordered?.deadline,
+    saveIntent?.expiresAt,
   );
   if (executionState === "running" || executionState === "recovering") {
     // Queued/preparing jobs intentionally have no lease. Claimed jobs must
@@ -133,7 +151,8 @@ export async function projectPostSource(
       executionState ?? "",
     ) &&
     (["queued", "processing"].includes(source.state) ||
-      executionState === "recovering");
+      executionState === "recovering" ||
+      (!!saveIntent && saveIntent.expiresAt > Date.now()));
   const progress = await revisionedProgress({
     version: "post-progress-v1",
     sourceId: source._id,
@@ -146,9 +165,13 @@ export async function projectPostSource(
         : "paired_computer"
       : ordered || source.managedAnalysisActor
         ? "managed"
-        : null,
+        : saveIntent
+          ? "work_cloud"
+          : null,
     executionState,
-    stage: optionalEnum(postStage.safeParse(currentJob?.stage)),
+    stage: saveIntent
+      ? "preflight"
+      : optionalEnum(postStage.safeParse(currentJob?.stage)),
     orderedPhase: optionalEnum(
       postOrderedPhase.safeParse(currentJob?.ordered?.phase ?? ordered?.phase),
     ),
@@ -178,23 +201,38 @@ export async function projectPostSource(
       claimExcerpt: insight.claim.slice(0, 240),
     });
   }
-  const thumbnail =
-    source.linkPreview?.state === "ready" && source.linkPreview.assetId
-      ? {
-          kind: "source-thumbnail-asset-v1" as const,
-          assetId: source.linkPreview.assetId,
-          sourceId: source._id,
-          generation: source.generation,
-        }
-      : null;
+  const thumbnailId =
+    (source.linkPreview?.state === "ready"
+      ? source.linkPreview.assetId
+      : undefined) ?? retainedCloudFrames(source)[0]?.assetId;
+  const thumbnail = thumbnailId
+    ? {
+        kind: "source-thumbnail-asset-v1" as const,
+        assetId: thumbnailId,
+        sourceId: source._id,
+        generation: source.generation,
+      }
+    : null;
+  let platform: string | null = null;
+  try {
+    if (source.url) platform = acquisitionPolicy(source.url).platform;
+  } catch {
+    /* Non-media sources keep their kind. */
+  }
   return postSummaryV1.parse({
     version: "post-summary-v1",
     sourceId: source._id,
     generation: source.generation,
     projection: "complete",
     contentRevision,
-    title: source.title.slice(0, 200),
+    title: postDisplayTitle(source).slice(0, 200),
+    authorName: source.linkPreview?.authorName?.slice(0, 160) ?? null,
+    durationSeconds:
+      source.linkPreview?.durationSeconds ??
+      source.acquisition?.durationSeconds ??
+      null,
     sourceKind: source.kind.slice(0, 40),
+    platform,
     coverage: source.coverage.slice(0, 64),
     capturedAt: date(source.createdAt),
     savedAt: date(source.originalSavedAt ?? source.createdAt),

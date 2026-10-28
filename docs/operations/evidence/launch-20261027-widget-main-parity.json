@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "widget-main-parity-v1",
+  "recordedAtUTC": "2026-10-27T03:26:17.160541+00:00",
+  "servingReference": "70c9aaca090a8906f6aa4f61826c1a260ec754c7",
+  "mainBaseline": "9967ac3",
+  "published": false,
+  "productionOrProviderMutation": false,
+  "newSourceJobs": 0,
+  "newHostedBuilds": 0,
+  "scope": [
+    "serving read/save widget and Connect guide parity",
+    "existing main source/grant authorization preserved",
+    "canonical post links",
+    "main ordered-media and finance validation preserved",
+    "fixed React/Hono versions and deployed Convex component identity preserved"
+  ],
+  "excluded": [
+    "unpublished knowledge:write extension",
+    "topic-editor receipt table/indexes",
+    "new grants",
+    "unbounded backfill publication"
+  ],
+  "regression": {
+    "realCurrentPrivateVariantDraftFixture": true,
+    "matchingCurrentRepositoryAndLibraryGrant": true,
+    "ordinaryAssistantProjectionAlreadyExcludedIt": true,
+    "before": "widget proposal list returned private-variant draft",
+    "after": "shared widget draft authorization denies list and direct read; draft unchanged",
+    "focusedTestsPassed": 63,
+    "initialFixtureCorrections": [
+      "cold integration import exceeded original5s test ceiling",
+      "synthetic identity corrected to supported issuer/subject shapes"
+    ],
+    "failedMainCheck": "generated API declaration omitted the new widget module; corrected type mapping"
+  },
+  "offlineDependencyInstall": {
+    "downloaded": 0,
+    "reused": 127,
+    "convexComponentPeerIdentitySettingsPreserved": true
+  },
+  "fullCheck": {
+    "outcome": "pass",
+    "vitestPassed": 2166,
+    "hostedSkips": 3,
+    "nodePassed": 19,
+    "pythonTests": 91,
+    "pythonWindowsSkips": 7,
+    "types": true,
+    "zeroWarningLint": true,
+    "validation": true,
+    "bothProductionBuilds": true,
+    "widgetProductionBuild": true
+  },
+  "exactLinuxCI": {
+    "runId": 40444380552,
+    "jobId": 121992296856,
+    "commit": "80091a4912268a592fb2097a7fcd4746cf5d4069",
+    "conclusion": "success",
+    "updatedAtUTC": "2026-10-27T03:33:49Z",
+    "fullCheckAndDependencyAudit": true,
+    "mandatoryRealLinuxDecoderDenialTestsIncluded": true
+  },
+  "mainPopulatedIndexMigration": "held separately",
+  "automaticReelAcceptance": "launch-20261027-automatic-reel-accepted.json",
+  "currentProduction": "launch-20261027-bootstrap-production.json",
+  "fullCheckCompletedUTC": "2026-10-27T03:28:01.112903+00:00",
+  "offlineComponentCompatibility": {
+    "atUTC": "2026-10-27T03:29:16.041Z",
+    "candidate": "80091a4912268a592fb2097a7fcd4746cf5d4069",
+    "servingBaseline": "70c9aaca090a8906f6aa4f61826c1a260ec754c7",
+    "hostedCalls": 0,
+    "reproducible": true,
+    "mainSchemaUnchangedByWidgetPort": true,
+    "servingComponentDefinitionsIdentical": true,
+    "componentDefinitions": 7,
+    "mainSchemaSHA256": "5826cdb5fe0d59dac57830589a66f688be678f0fa2f6f526b1331e696fe71621",
+    "publicRequestSHA256": "a6901351cf886f3ec79ed8357d6d1aef4a34908f095a152ed60cdedcb1957f08",
+    "priorMainMigrationGatePreserved": true,
+    "published": false
+  },
+  "componentDefinitionsNotInstances": 7
+}

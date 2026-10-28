@@ -1,5 +1,43 @@
 # VibeScroll foundational beliefs
 
+## F083: judge upgrades by evidence, October 28
+
+Keep the existing six beliefs. The owner's [versioned analysis direction](../adr/180-versioned-cloud-analysis-and-shared-selection.md) makes traceable evidence and reversible decisions more important: preserve prior results, compare candidates and promote the best approved compatible version. A newer model, higher reasoning setting or longer answer does not establish an improvement. Test quality against a frozen rubric and retain failures and dissent; do not turn a requested shared-data advantage into a proven customer-benefit claim.
+
+## F082: automatic Reel accepted in the private owner pilot, October27
+
+An actual app Save completed automatic native Work Cloud analysis with its ChatGPT tabs closed. The protected result has52 matching transcript segments,8 byte/hash-verified JPEGs, a matching thumbnail and6 insights with57 evidence references. The live setup prepares a verified disposable runtime before source authority. No new MCP app or repeated OAuth consent was needed. [Automatic evidence](../operations/evidence/launch-20261027-automatic-reel-accepted.json) and [production receipt](../operations/evidence/launch-20261027-bootstrap-production.json).
+
+This permits a narrow owner-pilot capability statement. It does not establish manually certified transcription accuracy, universal Instagram/TikTok support, cold customer onboarding, exact provider retention/model attestation or general commercial release. Keep the same audience, offer, six beliefs, private data, provider/privacy gates and no-paid-fallback rule. The current finite future-save allowance and subscription quota still limit execution. Earlier disabled/pending statements below are historical where superseded by this evidence.
+
+## F081: pinned setup and verified private tools, October 26
+
+The unpublished [single-download candidate](../adr/164-pinned-cloud-runtime-download.md) removes a GitHub setup dependency without changing accepted source pins or granting execution authority. Actual private native tests passed synthetic caption/JPEG preparation and offline ASR initialization. A real TikTok metadata read returned title, author and duration but no supported captions. No real source or automatic-analysis acceptance follows. Keep Cloud disabled until the event-to-result test passes; do not promise speech accuracy or general customer availability. Audience, prices, funding, privacy and every earlier budget hold remain unchanged.
+
+## F080: exact native setup message and tested browser limits, October26
+
+Connections now has an unpublished, gated setup-message candidate generated from a saved current grant. It carries library/client/version identifiers without credentials, post content or editable analysis settings. Runtime checks precede monitor creation and any source job. The owner browser test established synthetic JPEG handoff but the supplied TikTok hit a CAPTCHA/login overlay; captions, duration and source frames remain unverified. Keep the pinned caption-first downloader direction and existing disabled gates. This is setup guidance and local evidence, not automatic-media or customer-availability acceptance. Audience, prices, six beliefs, private data and the cumulative EUR8 cap with every old hold remain unchanged. See [ADR162](../adr/162-finite-app-save-cloud-intents.md) and the [browser receipt](../operations/evidence/launch-20261026-native-cloud-browser.json).
+
+## F079: finite app saves and actual native runtime limits, October26
+
+The owner-approved link-only flow now has a disabled implementation candidate under [ADR162](../adr/162-finite-app-save-cloud-intents.md). A reviewed one-time default and current native saved-link monitor permit a finite source-bound intent. The host prepares before the existing analysis job begins; save-only and unavailable routes preserve their meaning. The three-option picker and illustrated Help are live separately. Native notification/renewal and one active-task Reel do not prove automatic media: current nested decoder probes failed. Local UI/handler tests supply no customer outcome or general availability evidence. Preserve the audience, prices, six beliefs, private data, every provider/privacy gate and EUR8 cumulative cap with all old holds. No marketing campaign or automatic catalog contribution follows.
+
+## F078: three task locations, October 26
+
+The owner requires the same short choice in Save and setup: My own Cloud Work using the user's ChatGPT subscription, Recommended; VibeScroll's servers using credits bought separately; Local machine using the user's own subscription. Show disabled routes with setup/reconfiguration links and accessible More info. Keep saving without analysis separate. [ADR161](../adr/161-three-task-locations.md) records the implementation candidate and unchanged permissions, prices and credit approvals.
+
+Recommendation is the owner's direction, not proof of general availability. Native saved-link acknowledgement is live; automatic video analysis, supported bootstrap and image/runtime admission remain separate. Keep the existing audience, six beliefs, saved data, provider/privacy gates and cumulative EUR7.50 with every prior hold. No campaign, independent usability or customer-value claim follows.
+
+## F077: a fresh Reel completes in an active Cloud task, October 26
+
+The [production receipt](../operations/evidence/launch-20261026-cloud-reel-success.json) verifies one 49.483 second Instagram Reel through existing Cloud authority: 20 automatic English transcript segments, five insights, 23 citations and eight retained JPEGs. The authenticated post page, thumbnail, lazy gallery and image viewer passed desktop and 320px mobile checks. No captions were available for this source. The owner accepts either Reels or TikTok and approved a cumulative EUR7 cap; all earlier holds remain.
+
+This establishes one active-task URL-to-result path. It does not establish idle app-share wake, perfect transcript accuracy, customer benefit, TikTok support, full-main Home/region publication or public/provider clearance. The original disputed Reel displays its retained transcript; its exact-image repair remains open. Keep existing audience, prices, allowances, beliefs and private-content boundaries. No campaign or testimonial follows.
+
+## F076: direct posts and a smaller caption-first milestone
+
+The owner approved one-click, bookmarkable post pages, metadata-only recent additions on Home, progressive title/author/cover previews and caption reuse before local ASR. [ADR156](../adr/156-direct-post-pages-and-caption-first-cloud-milestone.md) retires region sharing, defers Telegram/public publisher expansion and prioritizes Work Cloud over additional runtime work. Preserve existing content and publication withdrawal, project actions, permissions, recovery and cumulative EUR5. These are owner requirements and implementation candidates, not new demand, accuracy, speed or production-acceptance evidence. The actual Reel, caption-path inline run and later idle Events wake each need their own verification.
+
 ## F075: one global catalog and minimal Cloud intake
 
 [ADR154](../adr/154-global-catalog-defaults-and-cloud-intake.md) records the owner's required default: eligible neutral analyses contribute to one global paid catalog, without a region or sharing picker. Removing a personal post does not remove canonical insights. Keep privacy, rights and moderation removals, private personalization and independent canonical ownership. One-time setup replaces routine reconnect/copy/approval steps; inline Work Cloud and background wake have distinct implementation requirements. These are accepted requirements, not current automatic-sharing or customer-availability claims. Audience, prices and the six beliefs stay unchanged.

@@ -7,6 +7,7 @@ import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
 import { audit, limit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { classifySourceUrl } from "../packages/sources/classify";
+import { postDisplayTitle } from "../packages/sources/display";
 import { captureAuthorized, digest, startSource } from "./product";
 import {
   chooseIntakeProjects,
@@ -23,7 +24,12 @@ import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { assistantGrantActive } from "../packages/policy/assistant";
-import { requestCloudFromAssistant } from "./workCloudAnalysis";
+import {
+  requestCloudFromAssistant,
+  requestSavedCloudFromAssistant,
+} from "./workCloudAnalysis";
+import { savedCloudIntentCurrent } from "./lib/workCloudSave";
+import { retainedCloudFrames } from "../packages/media/cloud-frames";
 import {
   evaluation as evaluationContract,
   assertReferences,
@@ -221,7 +227,7 @@ export const saveLink = internalMutation({
       source_id: id,
       profile_id: a.organization._id,
       status: "saved",
-      url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${id}`,
+      url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${id}`,
       analysis_started: false,
       receipt: await intakeReceipt(ctx, currentIntake, source),
       note: sourceReview
@@ -325,11 +331,22 @@ export const getJobStatus = internalQuery({
       source.personalAnalysis.generation === source.generation
         ? source.personalAnalysis
         : null;
-    // An earlier local intake is historical once this source generation has its
-    // own Cloud attempt. It cannot describe the current executor or offer a
-    // local/credit fallback for work whose Cloud outcome may be unknown.
+    const savedIntentCurrent = await savedCloudIntentCurrent(
+      ctx,
+      a.actor,
+      a.organization,
+      a.grant,
+      source,
+    );
+    const waitingForCloud =
+      savedIntentCurrent &&
+      source.workCloudSaveIntent!.analysisGeneration === undefined;
+    // A current app-Save Cloud intent or attempt supersedes the old intake's
+    // display. Preserve that intake without offering an alternate executor.
     const receipt =
-      !cloud && intake ? await intakeReceipt(ctx, intake, source) : null;
+      !cloud && !waitingForCloud && intake
+        ? await intakeReceipt(ctx, intake, source)
+        : null;
     const cloudStatus = cloud
       ? cloud.state === "queued"
         ? "waiting_for_cloud"
@@ -340,12 +357,27 @@ export const getJobStatus = internalQuery({
     return {
       source_id: source._id,
       profile_id: a.organization._id,
-      status: cloudStatus ?? receipt?.status ?? source.state,
+      status:
+        cloudStatus ??
+        (waitingForCloud
+          ? "waiting_for_cloud"
+          : (receipt?.status ?? source.state)),
+      title: postDisplayTitle(source).slice(0, 200),
       source_status: source.state,
       generation: source.generation,
       revision: source.updatedAt,
       grant_version: a.grant.version,
       cloud_request_policy: a.grant.cloudRequestPolicy ?? null,
+      saved_cloud_intent: savedIntentCurrent
+        ? {
+            id: source.workCloudSaveIntent!.id,
+            expires_at: source.workCloudSaveIntent!.expiresAt,
+            state:
+              source.workCloudSaveIntent!.analysisGeneration === undefined
+                ? "waiting_for_runtime"
+                : "consumed",
+          }
+        : null,
       processing: cloud
         ? {
             executor: "work_cloud",
@@ -353,9 +385,20 @@ export const getJobStatus = internalQuery({
             stage: cloud.stage,
           }
         : null,
+      evidence_repair: cloud?.cloud.media?.evidenceRepair
+        ? {
+            state: cloud.cloud.media.evidenceRepair.state,
+            expires_at: cloud.cloud.media.evidenceRepair.expiresAt,
+            lease_until: cloud.cloud.media.evidenceRepair.leaseUntil,
+            returned_frames: retainedCloudFrames(source).length,
+            required_frames: Array.isArray(source.orderedMedia?.post?.frames)
+              ? source.orderedMedia.post.frames.length
+              : 0,
+          }
+        : null,
       receipt,
       evidence_changed: changed,
-      url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+      url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
       note: changed
         ? "Evidence changed. Review it in VibeScroll before retrieving ideas."
         : "Status only; no private analysis or provider logs.",
@@ -379,6 +422,7 @@ export const requestAnalysis = internalMutation({
     maxCredits: v.optional(v.number()),
     revision: v.optional(v.number()),
     grantVersion: v.optional(v.number()),
+    savedIntentId: v.optional(v.string()),
     cloud: v.optional(
       v.object({
         model: v.string(),
@@ -404,6 +448,20 @@ export const requestAnalysis = internalMutation({
       "analysis:request",
     );
     if (args.mode === "work_cloud") {
+      if (args.savedIntentId !== undefined) {
+        ensure(
+          args.generation === undefined &&
+            args.revision === undefined &&
+            args.grantVersion === undefined &&
+            args.cloud === undefined &&
+            args.maxCredits === undefined &&
+            args.project === undefined &&
+            args.bestProjects === undefined,
+          "INVALID_INPUT",
+          "A saved Cloud intent fixes its own post, model, effort, retention and funding. Do not override them.",
+        );
+        return requestSavedCloudFromAssistant(ctx, source, args.savedIntentId);
+      }
       ensure(
         args.generation !== undefined &&
           args.revision !== undefined &&
@@ -424,6 +482,7 @@ export const requestAnalysis = internalMutation({
     }
     ensure(
       args.cloud === undefined &&
+        args.savedIntentId === undefined &&
         args.revision === undefined &&
         args.grantVersion === undefined,
       "INVALID_INPUT",
@@ -443,7 +502,7 @@ export const requestAnalysis = internalMutation({
         source_id: source._id,
         status: "approval_required",
         analysis_started: false,
-        review_url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+        review_url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
         note: "Review this typed source in VibeScroll. GitHub file selection, Reddit retrieval permission and supplied-text provenance need their source review; analysis and project work require separate current approval. This request queued no local media work, reserved no credits and started no retrieval or analysis.",
       };
     if (intake && args.mode) {
@@ -508,12 +567,12 @@ export const requestAnalysis = internalMutation({
       source_id: source._id,
       status: "approval_required",
       analysis_started: false,
-      review_url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+      review_url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
       note: "Review the current source, available provider, funding route and cap in VibeScroll. This request reserves no credits and starts no analysis.",
     };
   },
 });
-async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
+export async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
   if (id) return id;
   const p = await assistantPrincipal(ctx);
   const rows = await ctx.db
@@ -797,7 +856,7 @@ export const draftProjectSuggestion = internalMutation({
     };
   },
 });
-async function sourceFor(
+export async function sourceFor(
   ctx: QueryCtx,
   a: Awaited<ReturnType<typeof assistantGrant>>,
   sourceId: Id<"sources"> | null,
@@ -932,7 +991,7 @@ export const recordFeedback = internalMutation({
       version: version + 1,
       status: "recorded",
       benefit: "not_measured",
-      url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+      url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
       note: "Recorded your judgment. It does not change source evidence, manual quality reviews, preferences, funding or publication authority.",
     };
   },
@@ -1070,7 +1129,7 @@ export const search = internalQuery({
         ctx.db.normalizeId("sources", ref.sourceId),
       );
       if (!source) continue;
-      const url = `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`;
+      const url = `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`;
       const insights =
         source.state === "ready"
           ? (source.analysis?.insights ?? []).slice(0, 128)
@@ -1107,7 +1166,7 @@ export const search = internalQuery({
       )
         results.push({
           id: source._id,
-          title: source.title,
+          title: postDisplayTitle(source),
           url,
           state: source.state,
         });
@@ -1187,7 +1246,7 @@ export const fetch = internalQuery({
     }));
     return {
       id: args.id,
-      title: source.title,
+      title: postDisplayTitle(source),
       text: JSON.stringify({
         state: source.state,
         coverage: source.coverage,
@@ -1200,7 +1259,7 @@ export const fetch = internalQuery({
             }
           : {}),
       }),
-      url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+      url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
       profile_id: a.organization._id,
       grant_version: a.grant.version,
       more_ideas: index === undefined && all.length > 20,

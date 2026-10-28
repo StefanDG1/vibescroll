@@ -59,10 +59,10 @@ cd "$work_root/ffmpeg-9.0.2"
   --enable-swscale --enable-swresample \
   --enable-protocol=file,pipe --enable-indev=lavfi \
   --enable-filter=color,sine,scale,format,aresample,anull,null,buffer,buffersink,abuffer,abuffersink \
-  --enable-encoder=mpeg4,mjpeg,pcm_s16le,aac \
+  --enable-encoder=mpeg4,mjpeg,pcm_s16le,aac,rawvideo \
   --enable-decoder=mpeg4,mjpeg,pcm_s16le,aac,rawvideo,wrapped_avframe \
   --enable-demuxer=mov,matroska,image2,wav \
-  --enable-muxer=mp4,mov,image2,wav \
+  --enable-muxer=mp4,mov,image2,wav,rawvideo \
   --enable-parser=mpeg4video,mjpeg
 make -j2
 make install

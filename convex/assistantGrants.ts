@@ -9,6 +9,9 @@ import {
 } from "../packages/policy/assistant";
 import { ensure, containsSecret } from "../packages/policy";
 import { workCloudMediaPolicy } from "../packages/contracts/work-cloud-text";
+import { cloudSaveDefaults } from "./workCloudSaveSchema";
+import { savedCloudEnabled } from "./lib/workCloudSave";
+import { safeModel } from "../packages/runner/subscription-capabilities.mjs";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { digest } from "./product";
 import {
@@ -58,6 +61,7 @@ export const setup = query({
       workCloudMediaEnabled:
         cloudEligible && workCloudMediaAllowed(actor.subject),
       eventsEnabled: process.env.MCP_EVENTS_ENABLED === "true",
+      workCloudSavedEnabled: cloudEligible && savedCloudEnabled(actor.subject),
       devices: (
         await ctx.db
           .query("devices")
@@ -90,6 +94,7 @@ export const setup = query({
           intakePolicy: g.intakePolicy,
           analysisDefaults: g.analysisDefaults,
           cloudRequestPolicy: g.cloudRequestPolicy,
+          cloudSaveDefaults: g.cloudSaveDefaults,
           version: g.version,
           state: g.state,
           expiresAt: g.expiresAt,
@@ -156,6 +161,7 @@ export const save = mutation({
     intakePolicy: v.optional(v.literal("explicit_links")),
     analysisDefaults: v.optional(assistantAnalysisDefaults),
     cloudRequestPolicy: v.optional(v.literal("explicit_per_source_v1")),
+    cloudSaveDefaults: v.optional(cloudSaveDefaults),
     expectedVersion: v.number(),
     expiresAt: v.union(v.number(), v.null()),
     acknowledged: v.literal(true),
@@ -319,6 +325,28 @@ export const save = mutation({
         "Review your own private Cloud connection and turn off automatic local processing before allowing Cloud requests.",
       );
     }
+    if (a.cloudSaveDefaults) {
+      ensure(
+        savedCloudEnabled(actor.subject) &&
+          (await workCloudSourceEligible(ctx, organization, actor._id)) &&
+          a.cloudRequestPolicy === "explicit_per_source_v1" &&
+          a.libraryScope === "all" &&
+          !a.analysisDefaults?.enabled &&
+          [
+            "analysis:request",
+            "analysis:execute",
+            "events:subscribe",
+            "jobs:read",
+          ].every((scope) => a.scopes.includes(scope)) &&
+          safeModel(a.cloudSaveDefaults.model) &&
+          Number.isSafeInteger(a.cloudSaveDefaults.retentionMs) &&
+          a.cloudSaveDefaults.retentionMs >= 3600000 &&
+          a.cloudSaveDefaults.retentionMs <=
+            workCloudMediaPolicy.maximumResultRetentionMs,
+        "SETUP_REQUIRED",
+        "Automatic app saves require verified private Cloud setup, reviewed defaults and finite retention.",
+      );
+    }
     if (a.analysisDefaults?.enabled) {
       const device = await ctx.db.get(a.analysisDefaults.deviceId);
       const membership = await ctx.db
@@ -385,6 +413,7 @@ export const save = mutation({
       cloudRequestPolicyHash: a.cloudRequestPolicy
         ? await digest(canonicalJson(workCloudMediaPolicy))
         : undefined,
+      cloudSaveDefaults: a.cloudSaveDefaults,
       version: (old?.version ?? 0) + 1,
       state: "active" as const,
       expiresAt: a.expiresAt,

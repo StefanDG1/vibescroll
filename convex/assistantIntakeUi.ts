@@ -9,7 +9,28 @@ import {
   intakeNeedsSourceReview,
 } from "./lib/assistantIntake";
 import { startSource } from "./product";
+import type { QueryCtx } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
+import { savedCloudIntentCurrent } from "./lib/workCloudSave";
 const sourceArgs = { sourceId: v.id("sources") };
+async function cloudControlsCurrentSource(
+  ctx: QueryCtx,
+  actor: Doc<"users">,
+  organization: Doc<"organizations">,
+  source: Doc<"sources">,
+) {
+  if (
+    source.personalAnalysis?.executor === "work_cloud" &&
+    source.personalAnalysis.generation === source.generation
+  )
+    return true;
+  const intent = source.workCloudSaveIntent;
+  if (!intent) return false;
+  const grant = await ctx.db.get(intent.grantId);
+  return (
+    !!grant && savedCloudIntentCurrent(ctx, actor, organization, grant, source)
+  );
+}
 export const status = query({
   args: sourceArgs,
   handler: async (ctx, a) => {
@@ -19,7 +40,11 @@ export const status = query({
       "FORBIDDEN",
       "Source unavailable.",
     );
-    const { actor } = await access(ctx, source.organizationId);
+    const { actor, organization } = await access(ctx, source.organizationId);
+    // The historical local intake cannot describe this generation's Cloud
+    // executor, credit usage or controls. Its own Cloud panel owns that state.
+    if (await cloudControlsCurrentSource(ctx, actor, organization, source))
+      return null;
     const rows = await ctx.db
       .query("assistantIntakes")
       .withIndex("by_source", (q) => q.eq("sourceId", source._id))
@@ -48,10 +73,16 @@ export const act = mutation({
       "FORBIDDEN",
       "Source unavailable.",
     );
-    const { actor } = await writeAccess(ctx, source.organizationId, [
-      "owner",
-      "admin",
-    ]);
+    const { actor, organization } = await writeAccess(
+      ctx,
+      source.organizationId,
+      ["owner", "admin"],
+    );
+    ensure(
+      !(await cloudControlsCurrentSource(ctx, actor, organization, source)),
+      "APPROVAL_STALE",
+      "Use the current Cloud request controls.",
+    );
     const rows = await ctx.db
       .query("assistantIntakes")
       .withIndex("by_source", (q) => q.eq("sourceId", source._id))

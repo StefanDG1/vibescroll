@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { cloudSaveDefaults } from "./workCloudSaveSchema";
 export const assistantRepositoryBinding = v.object({
   repositoryId: v.id("repositories"),
   baseSha: v.string(),
@@ -65,6 +66,7 @@ export const assistantTables = {
         eventName: v.union(
           v.literal("work_cloud_waiting"),
           v.literal("work_cloud_connection_verified"),
+          v.literal("video_link_saved"),
         ),
       }),
     ),
@@ -87,7 +89,10 @@ export const assistantTables = {
       }),
       v.object({
         ...deliveryFields,
-        eventName: v.literal("work_cloud_waiting"),
+        eventName: v.union(
+          v.literal("work_cloud_waiting"),
+          v.literal("video_link_saved"),
+        ),
         sourceId: v.id("sources"),
         generation: v.number(),
       }),
@@ -164,6 +169,7 @@ export const assistantTables = {
     analysisDefaults: v.optional(assistantAnalysisDefaults),
     cloudRequestPolicy: v.optional(v.literal("explicit_per_source_v1")),
     cloudRequestPolicyHash: v.optional(v.string()),
+    cloudSaveDefaults: v.optional(cloudSaveDefaults),
     version: v.number(),
     state: v.union(v.literal("active"), v.literal("revoked")),
     expiresAt: v.union(v.number(), v.null()),

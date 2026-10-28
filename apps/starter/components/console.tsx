@@ -1,6 +1,12 @@
 "use client";
+import { isCloudObservedMedia } from "../../../packages/social/contracts";
 import { useState, useEffect, useRef, useEffectEvent, useId } from "react";
 import { useRouter } from "next/navigation";
+import { postPagePath } from "../../../packages/browser/post-route";
+import {
+  postDisplayTitle,
+  defaultLinkTitle,
+} from "../../../packages/sources/display";
 import { usePolling } from "@/lib/use-polling";
 import { AssistantConnections } from "./assistant-connections";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
@@ -11,6 +17,10 @@ import {
 } from "./work-cloud-text";
 import { UsageSummary } from "./usage-summary";
 import { usageOverview } from "../../../packages/billing/usage-overview";
+import {
+  sourceEvidenceFrames,
+  cloudCitationForDisplay,
+} from "../../../packages/media/cloud-frames";
 import Link from "next/link";
 import Image from "next/image";
 import { Brand } from "./site";
@@ -67,6 +77,7 @@ import { policyRelease } from "../../../packages/policy/publication";
 import { EvidenceViewer } from "./evidence-viewer";
 import { AnalysisReview } from "./analysis-review";
 import { SetupJourney } from "./setup-journey";
+import { TaskRuntimePicker } from "./task-runtime-picker";
 import { CreatorFollowing } from "./creator-following";
 import { ServiceCatalog } from "./service-catalog";
 import { CreatorDigest } from "./creator-digest";
@@ -95,6 +106,7 @@ import type { HomeSummaryV1 } from "../../../packages/contracts/post-summary";
 import { mergeHomePostProgress } from "../../../packages/browser/home-post-progress";
 type Initial = {
   homeSnapshot?: HomeSummaryV1;
+  homeProjectionPending?: boolean;
   workspaceSlice?:
     "library" | "connections" | "usage" | "projects" | "plans" | "source";
   role?: string;
@@ -111,6 +123,13 @@ type Initial = {
     personalAlphaEnabled?: boolean;
     linkAnalysisEnabled?: boolean;
     cloudAnalysisEnabled?: boolean;
+    processingRoute?: "local" | "cloud" | "save_only" | "work_cloud" | null;
+    workCloud?: {
+      available: boolean;
+      configured: boolean;
+      grantId: string | null;
+      grantVersion: number | null;
+    } | null;
     orderedPersonalAnalysisEnabled?: boolean;
   };
   sources: any[];
@@ -187,10 +206,9 @@ function SourceThumbnail({ source, demo }: { source: any; demo: boolean }) {
     (source.linkPreview?.assetId
       ? { id: source.linkPreview.assetId, kind: "frame" }
       : undefined) ??
-    (source.originalMediaEvidence ?? source.mediaEvidence ?? []).find(
-      (e: any) => e.kind === "frame",
-    ) ??
-    (source.personalMedia?.frames?.[0]
+    sourceEvidenceFrames(source)[0] ??
+    (!isCloudObservedMedia(source.orderedMedia?.post) &&
+    source.personalMedia?.frames?.[0]
       ? { id: source.personalMedia.frames[0].assetId, kind: "frame" }
       : undefined);
   const [failedId, setFailedId] = useState<string>(),
@@ -267,6 +285,8 @@ export function Console({
   const captureAccess = useRef(true);
   const [journey] = useState(() => createJourneyMeasurements(track));
   const captureOrigin = useRef<HTMLElement | null>(null);
+  const [publicationManagementOpen, setPublicationManagementOpen] =
+    useState(false);
   const router = useRouter(),
     [data, setData] = useState(initial),
     [view, setView] = useState(
@@ -777,7 +797,7 @@ export function Console({
       if (captureOrigin.current === origin) captureOrigin.current = null;
     };
     const generation = viewGeneration.current;
-    if ((data.compact || data.workspaceSlice) && !demo) {
+    if (!demo) {
       setBusy(true);
       try {
         if (refreshFlight.current) await refreshFlight.current;
@@ -856,6 +876,11 @@ export function Console({
   const home = homeData ?? data;
   const [homeProgressTime, setHomeProgressTime] = useState(Date.now);
   const nextHomeLeaseEnd = Math.min(
+    view === "source" &&
+      selected?.workCloudSaveIntent?.analysisGeneration === undefined &&
+      selected?.workCloudSaveIntent?.expiresAt > homeProgressTime
+      ? selected.workCloudSaveIntent.expiresAt
+      : Infinity,
     ...(view === "home"
       ? (home.homeSnapshot?.recent
           .filter((post) => post.progress.active)
@@ -876,6 +901,11 @@ export function Console({
     selected &&
     (["queued", "processing"].includes(selected.state) ||
       selected.personalAnalysis?.state === "recovering" ||
+      (!selected.personalAnalysis &&
+        !!selected.workCloudSaveIntent &&
+        selected.workCloudSaveIntent?.analysisGeneration === undefined &&
+        selected.workCloudSaveIntent?.generation === selected.generation &&
+        selected.workCloudSaveIntent.expiresAt > homeProgressTime) ||
       !!selected.privateSourceEligibility?.pendingRunId ||
       busy);
   const processing =
@@ -1230,7 +1260,7 @@ export function Console({
         if (value && (key !== "sort" || value !== "newest"))
           query.set(key, value);
       router.push(
-        `/app/${organizationId}/library/${encodeURIComponent(id(s))}${query.size ? `?${query}` : ""}`,
+        `${postPagePath(organizationId, id(s))}${query.size ? `?${query}` : ""}`,
       );
     }
   }
@@ -1368,7 +1398,9 @@ export function Console({
             <div>
               <h1 className={view === "library" ? "sr-only" : undefined}>
                 {view === "source"
-                  ? (selected?.title ?? "Source unavailable")
+                  ? selected
+                    ? postDisplayTitle(selected)
+                    : "Source unavailable"
                   : view === "proposal"
                     ? selected?.title
                     : view === "menu"
@@ -1617,6 +1649,8 @@ export function Console({
                     runs={home.runs}
                     libraryNext={home.libraryNext}
                     homeSnapshot={home.homeSnapshot}
+                    progressTime={homeProgressTime}
+                    homeProjectionPending={home.homeProjectionPending}
                     renderThumbnail={(summary) => (
                       <SourceThumbnail
                         key={`${home.homeSnapshot?.scopeKey}:${summary.sourceId}:${summary.generation}:${summary.thumbnail?.assetId}`}
@@ -1966,6 +2000,7 @@ export function Console({
                   readOnly={readOnly || data.role === "viewer"}
                   busy={busy}
                   canSuggestCategories={canSuggestCategories}
+                  canRepairEvidence={data.role === "owner"}
                   demo={demo}
                   org={organizationId}
                   repos={data.repositories}
@@ -2560,6 +2595,7 @@ export function Console({
                     Enable browser notification permission
                   </Button>
                   <CookieSettings className="secondary" />
+
                   <Button
                     busy={busy}
                     onClick={() =>
@@ -2600,67 +2636,20 @@ export function Console({
                     demo={demo}
                   />
                   <section className="panel">
-                    <h2>Use your plan for local analysis</h2>
+                    <h2>Task setup</h2>
                     <p>
-                      Prefer your own allowance for eligible AI requests and
-                      keep VibeScroll inference credits for other work. ChatGPT
-                      limits still apply; transcription, storage and cloud
-                      execution have separate costs.
+                      Choose where tasks run when saving a post or in Continue
+                      setup. My own Cloud Work uses your ChatGPT subscription
+                      and is recommended once automatic analysis is ready.
+                      VibeScroll's servers use separately bought credits. Local
+                      machine needs your own computer on.
                     </p>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: ".65rem",
-                        minHeight: 44,
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        style={{ width: 18, height: 18, flexShrink: 0 }}
-                        checked={data.aiPreference?.preferChatGPTPlan ?? false}
-                        disabled={demo || busy}
-                        onChange={async (event) => {
-                          const preferChatGPTPlan = event.target.checked;
-                          const result = await call("aiPreference", {
-                            organizationId,
-                            preferChatGPTPlan,
-                          });
-                          if (result)
-                            setData((current) => ({
-                              ...current,
-                              aiPreference: {
-                                ...current.aiPreference,
-                                preferChatGPTPlan,
-                                hostedStatus: "awaiting_commercial_access",
-                                active: false,
-                              },
-                            }));
-                        }}
-                      />
-                      Prefer my ChatGPT plan when available
-                    </label>
-                    <p className="notice" style={{ textAlign: "left" }}>
-                      Hosted subscription-funded analysis is awaiting OpenAI
-                      commercial access. This is separate from assistant library
-                      access. Saving this preference does not connect an
-                      account, grant consent, or change the funding route of a
-                      current task.
-                    </p>
-                    <p>
-                      Personal alpha accounts can pair a laptop and approve text
-                      and video analysis from the source screen. Audio is
-                      transcribed on that laptop; sampled frames and text use
-                      your connected ChatGPT account. Coding requires verified
-                      isolation and separate approval.
-                    </p>
-                    <a
-                      href="https://chatgpt.com/settings/usage"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Manage ChatGPT app access and usage
-                    </a>
+                    <Button busy={busy} onClick={() => void openCapture()}>
+                      Choose where to run analysis
+                    </Button>
+                    <Link href="/help/processing-and-recovery" prefetch={false}>
+                      Setup and costs guide
+                    </Link>
                   </section>
                   <div className="panel">
                     <h2>GitHub</h2>
@@ -2752,14 +2741,6 @@ export function Console({
                       Revoke credential
                     </Button>
                   </form>
-                  <div className="panel">
-                    <h2>Telegram</h2>
-                    <p>
-                      Planned for later. Use the web inbox now. Setup needs a
-                      BotFather bot, secret webhook, numeric-user pairing and
-                      replay tests.
-                    </p>
-                  </div>
                 </>
               )}
               {view === "runners" && (
@@ -2935,6 +2916,24 @@ export function Console({
                     </Link>
                   </div>
                   <CookieSettings className="secondary" />
+                  {!demo && organizationId && canSuggestCategories && (
+                    <details
+                      className="panel"
+                      onToggle={(event) =>
+                        setPublicationManagementOpen(event.currentTarget.open)
+                      }
+                    >
+                      <summary>Manage existing publications</summary>
+                      {publicationManagementOpen && (
+                        <PublicKnowledgePanel
+                          organizationId={organizationId}
+                          call={call}
+                          readOnly={readOnly}
+                          enabled
+                        />
+                      )}
+                    </details>
+                  )}
                   <Button
                     busy={busy}
                     onClick={() =>
@@ -3076,6 +3075,8 @@ export function Console({
               personalEnabled={data.aiPreference?.personalAlphaEnabled}
               linkAnalysisEnabled={data.aiPreference?.linkAnalysisEnabled}
               cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
+              preferredRoute={data.aiPreference?.processingRoute}
+              workCloud={data.aiPreference?.workCloud}
               sharedDraft={sharedDraft}
               demo={demo}
               organizationId={organizationId}
@@ -3119,17 +3120,36 @@ export function CaptureForm({
   personalEnabled = false,
   linkAnalysisEnabled = false,
   cloudEnabled = false,
+  preferredRoute,
+  workCloud = null,
   sharedDraft,
 }: any) {
   const [kind, setKind] = useState(existingSourceId ? "upload" : "url");
   const [saving, setSaving] = useState(false);
-  const [autoAnalyze, setAutoAnalyze] = useState(true);
+  const [autoAnalyze, setAutoAnalyze] = useState(
+    preferredRoute !== "save_only",
+  );
   const [analysisRoute, setAnalysisRoute] = useState(
-    personalEnabled ? "personal" : "cloud",
+    preferredRoute === "local"
+      ? "personal"
+      : preferredRoute === "work_cloud"
+        ? "work_cloud"
+        : preferredRoute === "cloud"
+          ? "cloud"
+          : preferredRoute === "save_only"
+            ? ""
+            : !existingSourceId && workCloud?.configured
+              ? "work_cloud"
+              : personalEnabled
+                ? "personal"
+                : cloudEnabled
+                  ? "cloud"
+                  : "",
   );
-  const eligible = devices.filter(
-    (d: any) => d.personalOwned && d.state === "paired" && d.personalOnline,
+  const paired = devices.filter(
+    (d: any) => d.personalOwned && d.state === "paired",
   );
+  const eligible = paired.filter((d: any) => d.personalOnline);
   const [chosenDevice, setChosenDevice] = useState(
     eligible.length === 1 ? id(eligible[0]) : "",
   );
@@ -3180,7 +3200,13 @@ export function CaptureForm({
     (kind === "upload" ||
       kind === "text" ||
       (linkAnalysisEnabled && ["url", "import"].includes(kind)));
-  const automatic = personalAutomatic || cloudAutomatic;
+  const workCloudAutomatic =
+    analysisRoute === "work_cloud" &&
+    autoAnalyze &&
+    kind === "url" &&
+    !existingSourceId &&
+    workCloud?.available;
+  const automatic = personalAutomatic || cloudAutomatic || workCloudAutomatic;
   const approval = {
     deviceId: chosenDevice,
     model: effectiveModel,
@@ -3189,6 +3215,14 @@ export function CaptureForm({
     maxComputeCredits: 10,
   };
   const checkAutomatic = async (f: FormData) => {
+    if (
+      analysisRoute === "work_cloud" &&
+      autoAnalyze &&
+      (!workCloudAutomatic || !workCloud?.grantId || !workCloud?.grantVersion)
+    )
+      throw new Error(
+        "Finish ChatGPT setup for this video link, or save without analysis. Cloud will not switch to another task location.",
+      );
     if (cloudAutomatic && f.get("cloudCredits") !== "on")
       throw new Error("Approve the processing-credit maximum before analysis.");
     if (!personalAutomatic) return;
@@ -3434,6 +3468,19 @@ export function CaptureForm({
         setImportError("");
         try {
           await checkAutomatic(f);
+          if (workCloudAutomatic) {
+            const result = await call("captureWorkCloud", {
+              organizationId,
+              key: crypto.randomUUID(),
+              title: String(f.get("title") || defaultLinkTitle),
+              url: f.get("url"),
+              rightsAttested: f.get("rights") === "on",
+              grantId: workCloud.grantId,
+              grantVersion: workCloud.grantVersion,
+            });
+            if (result?.sourceId) onDone(result.sourceId, true);
+            return;
+          }
           let sourceId = existingSourceId;
           if (existingSourceId)
             await call("attachSource", {
@@ -3446,7 +3493,10 @@ export function CaptureForm({
               organizationId,
               key: crypto.randomUUID(),
               kind,
-              title: String(f.get("title") || "Saved video"),
+              title: String(
+                f.get("title") ||
+                  (kind === "url" ? defaultLinkTitle : "Saved video"),
+              ),
               ...(kind === "url"
                 ? { url: f.get("url") }
                 : { text: f.get("text") }),
@@ -3637,17 +3687,46 @@ export function CaptureForm({
         <input name="rights" type="checkbox" required />I may submit this
         content for processing
       </label>
-      {personalEnabled && cloudEnabled && (
-        <label htmlFor="analysis-provider-choice">
-          Analysis provider
-          <ChoiceSelect
-            id="analysis-provider-choice"
-            value={analysisRoute}
-            onValueChange={(value) => setAnalysisRoute(value)}
-          >
-            <option value="personal">My ChatGPT plan · paired laptop</option>
-            <option value="cloud">Cloud processing · app credits</option>
-          </ChoiceSelect>
+      <TaskRuntimePicker
+        organizationId={organizationId}
+        value={
+          analysisRoute === "personal"
+            ? "local"
+            : analysisRoute === "cloud"
+              ? "cloud"
+              : analysisRoute === "work_cloud"
+                ? "work_cloud"
+                : undefined
+        }
+        onChange={(value) => {
+          if (value === "local") setAnalysisRoute("personal");
+          if (value === "cloud") setAnalysisRoute("cloud");
+          if (value === "work_cloud") setAnalysisRoute("work_cloud");
+        }}
+        serverAvailable={cloudEnabled}
+        workCloudAvailable={
+          !!workCloud?.available && kind === "url" && !existingSourceId
+        }
+        workCloudConfigured={workCloud?.configured}
+        localAvailable={personalEnabled}
+        localConfigured={paired.length > 0}
+        localStatus={
+          eligible.length
+            ? "check_before_running"
+            : paired.length
+              ? "offline"
+              : "setup_required"
+        }
+        disabled={saving || importBusy}
+      />
+      {analysisRoute === "work_cloud" && (
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={autoAnalyze}
+            onChange={(e) => setAutoAnalyze(e.target.checked)}
+          />
+          Analyze in my ChatGPT Cloud Work after saving
         </label>
       )}
       {personalEnabled &&
@@ -3775,11 +3854,13 @@ export function CaptureForm({
           </section>
         )}
       <p className="fine">
-        {cloudAutomatic
-          ? "Processing continues in the background. Public links are retrieved when the platform permits access."
-          : automatic
-            ? "Keep your paired laptop on until analysis finishes. Public links are retrieved when the platform permits access."
-            : "Saving does not start analysis. Supplied text has no implied audio or visual coverage."}
+        {workCloudAutomatic
+          ? "ChatGPT receives this link and checks its runtime before analysis. Your computer can be off. No VibeScroll processing credits or paid API fallback."
+          : cloudAutomatic
+            ? "Processing continues in the background. Public links are retrieved when the platform permits access."
+            : automatic
+              ? "Keep your paired laptop on until analysis finishes. Public links are retrieved when the platform permits access."
+              : "Saving does not start analysis. Supplied text has no implied audio or visual coverage."}
       </p>
       <button
         className="primary"
@@ -3858,6 +3939,7 @@ export function SourceDetail({
   readOnly,
   busy,
   canSuggestCategories,
+  canRepairEvidence = false,
   demo,
   org,
   repos,
@@ -3885,10 +3967,9 @@ export function SourceDetail({
   const [categoryDraft, setCategoryDraft] = useState("");
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const transcript = useRef<HTMLDetailsElement>(null);
-  const cloudSpeechSegments =
-    detail.orderedMedia?.post?.schemaVersion === "work-cloud-observed-media-v1"
-      ? detail.orderedMedia.post.segments
-      : null;
+  const cloudSpeechSegments = isCloudObservedMedia(detail.orderedMedia?.post)
+    ? detail.orderedMedia.post.segments
+    : null;
   const sourceId = id(source);
   const orderedSource = Boolean(
     detail.personalOrderedInput ||
@@ -3928,11 +4009,7 @@ export function SourceDetail({
       clearTimeout(timer);
     };
   }, [demo, retentionDeadline]);
-  const savedFrames = (
-    detail.originalMediaEvidence ??
-    detail.mediaEvidence ??
-    []
-  ).filter((e: any) => e.kind === "frame");
+  const savedFrames = sourceEvidenceFrames(detail, retentionTime);
   const suppliedMetadata =
     detail.personalOrderedInput?.metadata?.schemaVersion === "provided-media-v1"
       ? detail.personalOrderedInput.metadata
@@ -4024,7 +4101,7 @@ export function SourceDetail({
     // evidence only when this source or its linked proposal revision changes.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceId, sourceRevision, org, demo, authoritative, authoritativeDetail]);
-  const insights =
+  const sourceInsights =
     detail.analysis?.insights ??
     (demo
       ? detail.mainPoints?.map((title: string) => ({
@@ -4034,6 +4111,12 @@ export function SourceDetail({
         }))
       : []) ??
     [];
+  const insights = sourceInsights.map((insight: any) => ({
+    ...insight,
+    evidence: (insight.evidence ?? []).map((ref: any) =>
+      cloudCitationForDisplay(detail, ref, retentionTime),
+    ),
+  }));
   const summary =
     detail.summary ??
     (["queued", "processing"].includes(detail.state)
@@ -4095,23 +4178,13 @@ export function SourceDetail({
             call={strictCall}
             readOnly={readOnly}
           />
-          {detail.publicImportId ? (
+          {detail.publicImportId && (
             <SavedPublicSource
               sourceId={sourceId}
               call={strictCall}
               readOnly={readOnly}
               enabled
             />
-          ) : (
-            canSuggestCategories && (
-              <PublicKnowledgePanel
-                organizationId={org}
-                source={detail}
-                call={strictCall}
-                readOnly={readOnly}
-                enabled
-              />
-            )
           )}
         </>
       )}
@@ -4162,7 +4235,7 @@ export function SourceDetail({
           href={detail.url}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`Open original source: ${detail.title}`}
+          aria-label={`Open original source: ${postDisplayTitle(detail)}`}
         >
           <SourceThumbnail source={detail} demo={demo} />
           <span className="source-origin-copy">
@@ -4475,6 +4548,48 @@ export function SourceDetail({
               : "No main points yet. Review the source's analysis options."}
           </p>
         )}
+        {!demo &&
+          canRepairEvidence &&
+          !readOnly &&
+          detail.personalAnalysis?.executor === "work_cloud" &&
+          detail.personalAnalysis.state === "completed" &&
+          isCloudObservedMedia(detail.orderedMedia?.post) &&
+          detail.orderedMedia.post.frames.length > savedFrames.length && (
+            <details className="source-notes">
+              <summary>Restore missing screenshots</summary>
+              <p>
+                Restore the exact retained screenshots while preserving this
+                analysis. A connected Cloud task must perform the bounded
+                repair.
+              </p>
+              {detail.personalAnalysis.cloud.media?.evidenceRepair ? (
+                <p>
+                  Evidence repair:{" "}
+                  {detail.personalAnalysis.cloud.media.evidenceRepair.state}.
+                  Review that attempt before starting another.
+                </p>
+              ) : (
+                <Button
+                  busy={busy}
+                  onClick={async () => {
+                    const result = await call(
+                      "workCloudEvidenceRepairApprove",
+                      {
+                        sourceId,
+                        generation: detail.generation,
+                        preparationHash:
+                          detail.personalAnalysis.cloud.media.preparationHash,
+                        acknowledged: true,
+                      },
+                    );
+                    if (result) await onRefresh?.();
+                  }}
+                >
+                  Approve screenshot repair
+                </Button>
+              )}
+            </details>
+          )}
         <details
           id="source-transcript"
           ref={transcript}
@@ -4487,6 +4602,24 @@ export function SourceDetail({
               ? "Original supplied text and corrections"
               : "Original transcript and corrections"}
           </summary>
+          {isCloudObservedMedia(detail.orderedMedia?.post) &&
+            detail.orderedMedia.post.transcript && (
+              <p className="fine">
+                {detail.orderedMedia.post.transcript.origin.startsWith(
+                  "platform_",
+                )
+                  ? "Platform captions"
+                  : "Local speech processing"}
+                {" · "}
+                {detail.orderedMedia.post.transcript.language}
+                {detail.orderedMedia.post.transcript.origin === "platform_auto"
+                  ? " · Automatically generated"
+                  : ""}
+                {detail.orderedMedia.post.transcript.translated === true
+                  ? " · Translated"
+                  : ""}
+              </p>
+            )}
           {cloudSpeechSegments ? (
             cloudSpeechSegments.length ? (
               cloudSpeechSegments.map((segment: any) => (
@@ -4721,7 +4854,29 @@ export function SourceDetail({
           </details>
         )}
       </details>
+      {detail.workCloudSaveIntent &&
+        !detail.personalAnalysis &&
+        detail.workCloudSaveIntent.analysisGeneration === undefined && (
+          <section className="panel" aria-live="polite">
+            <h3>
+              {detail.workCloudSaveIntent.expiresAt > currentRetentionTime
+                ? "Waiting for ChatGPT"
+                : "Review Cloud setup"}
+            </h3>
+            <p>
+              {detail.workCloudSaveIntent.expiresAt > currentRetentionTime
+                ? "Your link is saved. ChatGPT checks its tools before starting analysis. Your computer can be off."
+                : "This request expired. Your post is still saved. Review setup before requesting analysis again."}
+            </p>
+            <a href={`/app/${org}/connections`}>Check Cloud setup</a>
+          </section>
+        )}
       {detail.state === "needs_upload" &&
+        !(
+          detail.workCloudSaveIntent &&
+          detail.workCloudSaveIntent.analysisGeneration === undefined &&
+          detail.workCloudSaveIntent.expiresAt > currentRetentionTime
+        ) &&
         !detail.currentRevisionId &&
         !["github_repository", "reddit_thread"].includes(detail.sourceType) && (
           <details className="panel" open={!detail.assistantIntake}>

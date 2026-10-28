@@ -179,4 +179,3 @@ def runtime_metadata(lock):
     import faster_whisper  # noqa: F401
     import ctranslate2  # noqa: F401
     import numpy  # noqa: F401
-

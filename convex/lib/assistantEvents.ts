@@ -1,5 +1,5 @@
 import type { QueryCtx, MutationCtx } from "../_generated/server";
-import type { Doc } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import {
   assistantClients,
   assistantGrantActive,
@@ -8,7 +8,7 @@ import { workspaceReadable } from "./workspacePrivacy";
 import { sourceWithinAssistantScope } from "./assistantSourceScope";
 import { workCloudSourceEligible } from "./workCloudSourceAccess";
 import { workCloudMediaAllowed, workCloudTextAllowed } from "./personalAccess";
-import { workCloudMediaPolicy } from "../../packages/contracts/work-cloud-text";
+import { workCloudRequestPolicies } from "../../packages/contracts/work-cloud-text";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { internal } from "../_generated/api";
 export async function cloudProfileEligible(
@@ -23,15 +23,19 @@ export async function cloudProfileEligible(
     "analysis:request",
     "analysis:execute",
   ] as const;
-  const policyHash = Array.from(
-    new Uint8Array(
-      await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(canonicalJson(workCloudMediaPolicy)),
-      ),
+  const policyHashes = await Promise.all(
+    workCloudRequestPolicies.map(async (policy) =>
+      Array.from(
+        new Uint8Array(
+          await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(canonicalJson(policy)),
+          ),
+        ),
+        (b) => b.toString(16).padStart(2, "0"),
+      ).join(""),
     ),
-    (b) => b.toString(16).padStart(2, "0"),
-  ).join("");
+  );
   return (
     eventsEnabled() &&
     actor.status === "active" &&
@@ -40,7 +44,7 @@ export async function cloudProfileEligible(
     assistantGrantActive(grant) &&
     grant.libraryScope === "all" &&
     grant.cloudRequestPolicy === "explicit_per_source_v1" &&
-    grant.cloudRequestPolicyHash === policyHash &&
+    policyHashes.includes(grant.cloudRequestPolicyHash ?? "") &&
     !grant.analysisDefaults?.enabled &&
     scopes.every(
       (scope) => grant.scopes.includes(scope) && client?.scopes.includes(scope),
@@ -199,6 +203,8 @@ export async function eventDeliveryCurrent(
   if (d.eventName === "work_cloud_connection_verified")
     return eventSubscriptionCurrent(ctx, s);
   const source = await ctx.db.get(d.sourceId);
+  if (d.eventName === "video_link_saved")
+    return videoLinkSavedCurrent(ctx, s, source, d);
   if (d.eventName === "work_cloud_waiting")
     return cloudWaitingCurrent(ctx, s, source, d);
   return (
@@ -208,6 +214,93 @@ export async function eventDeliveryCurrent(
     s.sourceId === d.sourceId &&
     (await eventSubscriptionCurrent(ctx, s, source))
   );
+}
+async function videoLinkSavedCurrent(
+  ctx: QueryCtx,
+  s: Doc<"assistantSubscriptions">,
+  source: Doc<"sources"> | null,
+  occurrence?: { generation: number; completedRevision: number },
+) {
+  if (
+    s.eventName !== "video_link_saved" ||
+    !source ||
+    source.organizationId !== s.organizationId ||
+    source.state === "deleted" ||
+    !source.rightsAttested ||
+    source.kind !== "url" ||
+    (source.sourceType ?? "media") !== "media" ||
+    (occurrence &&
+      (source.generation !== occurrence.generation ||
+        source.createdAt !== occurrence.completedRevision)) ||
+    !(await eventSubscriptionCurrent(ctx, s))
+  )
+    return false;
+  const grant = await ctx.db.get(s.grantId);
+  const organization = await ctx.db.get(s.organizationId);
+  return (
+    !!grant &&
+    !!organization &&
+    (await sourceWithinAssistantScope(
+      ctx,
+      grant,
+      organization,
+      s.actor,
+      source,
+      false,
+    ))
+  );
+}
+// Capture is the only caller. No library scan or analysis request follows.
+// The existing occurrence index stores the immutable creation time for this
+// event, so metadata previews and retries coalesce while the delivery is retained.
+export async function notifyVideoLinkSaved(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  actor: Id<"users">,
+) {
+  if (
+    !eventsEnabled() ||
+    source.kind !== "url" ||
+    (source.sourceType ?? "media") !== "media"
+  )
+    return;
+  // Profile installation already caps the organization at 20 subscriptions.
+  const subscriptions = await ctx.db
+    .query("assistantSubscriptions")
+    .withIndex("by_org", (q) => q.eq("organizationId", source.organizationId))
+    .take(21);
+  for (const s of subscriptions) {
+    if (s.actor !== actor || !(await videoLinkSavedCurrent(ctx, s, source)))
+      continue;
+    const existing = await ctx.db
+      .query("assistantDeliveries")
+      .withIndex("by_source_occurrence", (q) =>
+        q
+          .eq("subscriptionId", s._id)
+          .eq("sourceId", source._id)
+          .eq("generation", source.generation)
+          .eq("completedRevision", source.createdAt),
+      )
+      .unique();
+    if (existing) continue;
+    const now = Date.now();
+    const id = await ctx.db.insert("assistantDeliveries", {
+      organizationId: s.organizationId,
+      subscriptionId: s._id,
+      eventName: "video_link_saved",
+      sourceId: source._id,
+      generation: source.generation,
+      completedRevision: source.createdAt,
+      state: "pending",
+      attempts: 0,
+      dueAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await ctx.scheduler.runAfter(0, internal.assistantEventRuntime.deliver, {
+      id,
+    });
+  }
 }
 // Only approval and exact unclaimed-request reuse call this. Subscription creation
 // deliberately performs no retrospective source scan and grants no execution.

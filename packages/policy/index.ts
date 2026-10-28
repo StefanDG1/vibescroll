@@ -30,6 +30,7 @@ export function safeSourceUrl(raw: string) {
     "tiktok.com",
     "www.tiktok.com",
     "vm.tiktok.com",
+    "vt.tiktok.com",
     "vimeo.com",
     "www.vimeo.com",
   ];

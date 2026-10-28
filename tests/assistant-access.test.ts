@@ -390,9 +390,7 @@ it("retrieves only selected current metadata/citations and immediately denies re
     id: s.sourceId,
   });
   expect(JSON.stringify(result)).not.toContain("PRIVATE transcript");
-  expect(result.url).toContain(
-    `/app/${s.organizationId}/library/${s.sourceId}`,
-  );
+  expect(result.url).toContain(`/app/${s.organizationId}/posts/${s.sourceId}`);
   await s.t.run((ctx) =>
     ctx.db.patch(s.sourceId, { updatedAt: s.args.sources[0].revision + 1 }),
   );

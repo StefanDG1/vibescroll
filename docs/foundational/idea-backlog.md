@@ -1,5 +1,25 @@
 # Foundational idea backlog
 
+## F083: versioned shared analysis, October 28
+
+Source: owner request to force a second/later Reel analysis, cache reusable evidence, compare model outputs, select the best version and roll back. Decision: adopt the implementation direction under [ADR180](../adr/180-versioned-cloud-analysis-and-shared-selection.md), with Cloud link-to-insights ahead of widget work. The existing audience benefits only if the newer result is actually useful and reliable. Current private automatic tests support the transport/media path, not model superiority, customer value or shared Cloud publication.
+
+Counterargument: model names, reasoning settings and recency are poor substitutes for evidence quality. A shared result can also leak private context or survive a rights change unless contribution, retention and entitlement stay authoritative. Test preservation of version1 through successful/failed upgrades; zero-inference rollback; blinded candidate comparison; two-account compatible cache reuse; revocation and takedown across all caches. Keep prices, grants, spending caps, audience and six beliefs unchanged. Website availability copy waits for the recorded acceptance milestones.
+
+## F079: finite app saves and actual native runtime limits, October26
+
+The owner-approved link-only flow now has a disabled implementation candidate under [ADR162](../adr/162-finite-app-save-cloud-intents.md). A reviewed one-time default and current native saved-link monitor permit a finite source-bound intent. The host prepares before the existing analysis job begins; save-only and unavailable routes preserve their meaning. The three-option picker and illustrated Help are live separately. Native notification/renewal and one active-task Reel do not prove automatic media: current nested decoder probes failed. Local UI/handler tests supply no customer outcome or general availability evidence. Preserve the audience, prices, six beliefs, private data, every provider/privacy gate and EUR8 cumulative cap with all old holds. No marketing campaign or automatic catalog contribution follows.
+
+Counterargument: native wake and a connected badge cannot establish a usable media runtime. Test one actual laptop-off link through retained transcript, inspected JPEGs and cited analysis before enabling the route. No authority or spending follows the candidate.
+
+## F078: understandable task locations, October 26
+
+Source: the owner's exact three-option request. Decision: implement one shared picker and existing setup shortcuts, keeping unavailable routes visible and disabled. The objection is ambiguity between ChatGPT Cloud and VibeScroll-funded servers. Recommendation follows owner preference; readiness and customer comprehension remain separately tested. Keep all existing quotes, grants and saved data. See [ADR161](../adr/161-three-task-locations.md).
+
+## F077: one-platform live Cloud acceptance, October 26
+
+Source: owner direction and actual Cloud completion plus authenticated production browser checks. Decision: accept the single active-task Reel path and stop broadening live canaries. Counterargument: one successful ASR source cannot establish caption reuse, transcript accuracy, idle wake, TikTok reliability or general availability. Preserve the failed source's unknown generation and accounting, both TikToks, original-image repair and provider/privacy/release gates. All four briefs link the sanitized production receipt; no new benefit or campaign claim follows.
+
 ## F071: existing posts in a sole-owner Cloud experiment, October 25
 
 Source: the owner confirms they are the only production user and authorizes team/backend changes while preserving saved data. Need: return real Cloud analysis to existing posts with optional GitHub and minimal setup. Decision: ADR151 uses a separate current team grant and existing source/job, without adoption or copying. Counterargument: available MCP tools do not establish a connected executor, public media access or model execution. Verify current sole ownership at every protected stage, preserve all old insights and test a real cited result on the same production post. Shared-catalog and automatic dispatch acceptance remain separate. All four briefs keep their audience, prices and beliefs. Cumulative task limit EUR5 includes earlier holds.
@@ -491,3 +511,11 @@ Synchronized all four briefs with the reduced selected-source loading candidate 
 ## F075: global catalog and one-time Cloud intake, October25
 
 All four briefs now record owner-confirmed automatic neutral contribution, association-only personal removal and the supported Cloud intake distinction. ADR154 preserves actual moderation/provider/paid gates and every unclosed launch requirement. Current private-only results are not silently republished.
+
+## F080: current-grant native setup, October26
+
+Adopted as a disabled implementation candidate within the owner's one-time-setup request. Generate the exact current library/client/grant binding from saved permissions and provide clipboard/manual copying. Supporting evidence: native Events renewal and save acknowledgement work; synthetic Cloud image handoff works. Contrary evidence: nested decoder controls failed and one hosted-browser TikTok visit was blocked by CAPTCHA/login. The message must stop before a monitor/job when runtime readiness fails, preserve every server authority check and avoid paid/local fallbacks. Validate current-version copying, stale/disabled/revoked access, clipboard fallback, mobile layout and the same-job caption/JPEG/result chain. No customer, revenue, speed or general automatic-analysis claim follows.
+
+## F081: one pinned Cloud download and separate readiness, October 26
+
+All four briefs record verified private synthetic tools and real metadata-only limits. The website bundle remains unpublished, ASR setup is not speech accuracy, and automatic media remains disabled. Counterargument: a pinned download alone does not make per-user Cloud setup reliable. Test exact native retrieval, lease control and a real event-triggered retained result before customer claims. No audience, price, permissions or campaign changes. See [ADR164](../adr/164-pinned-cloud-runtime-download.md).

@@ -362,6 +362,7 @@ it("serves scoped Events through the actual modern SDK and excludes legacy/disab
     "analysis_completed",
     "work_cloud_waiting",
     "work_cloud_connection_verified",
+    "video_link_saved",
   ]);
   operation.mockClear();
   const denied = await run("events/list", {}, []);
@@ -385,7 +386,11 @@ it("serves scoped Events through the actual modern SDK and excludes legacy/disab
   const subscribed = await run("events/subscribe", params);
   expect((await packet(subscribed)).result.id).toBe("sub_synthetic");
   expect(operation).toHaveBeenCalledWith("events/subscribe", params);
-  for (const name of ["work_cloud_waiting", "work_cloud_connection_verified"]) {
+  for (const name of [
+    "work_cloud_waiting",
+    "work_cloud_connection_verified",
+    "video_link_saved",
+  ]) {
     operation.mockClear();
     const profile = {
       ...params,

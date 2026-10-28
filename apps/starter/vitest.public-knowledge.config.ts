@@ -11,6 +11,8 @@ export default defineConfig({
   },
   test: {
     include: [
+      "apps/starter/task-runtime-picker.test.ts",
+      "apps/starter/home-post-card.test.ts",
       "apps/starter/public-knowledge-web.test.ts",
       "apps/starter/source-acquisition-ui.test.ts",
       "apps/starter/integration-controls.test.ts",

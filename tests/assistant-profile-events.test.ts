@@ -5,6 +5,7 @@ import {
   eventSubscriptionCurrent,
   notifyCloudWaiting,
 } from "../convex/lib/assistantEvents";
+import { captureOne } from "../convex/product";
 import {
   eventArguments,
   profileEventArguments,
@@ -29,6 +30,7 @@ afterEach(() => {
 async function profileSetup(
   eventName:
     | "work_cloud_waiting"
+    | "video_link_saved"
     | "work_cloud_connection_verified" = "work_cloud_waiting",
 ) {
   const s = await setup();
@@ -113,6 +115,144 @@ async function profileSetup(
     deliveries,
   };
 }
+it("captures a video and queues an acknowledgement without creating analysis, including duplicate saves", async () => {
+  const s = await profileSetup("video_link_saved");
+  expect(await s.deliveries()).toEqual([]);
+  const first = await s.capture("abcdefghijk");
+  expect(first).toMatchObject({ state: "needs_upload", generation: 0 });
+  expect(first.personalAnalysis).toBeUndefined();
+  const second = await s.capture("lmnopqrstuv");
+  await s.capture("abcdefghijk");
+  await s.owner.mutation(api.product.capture, {
+    organizationId: s.organizationId,
+    kind: "url",
+    url: first.url,
+    key: "same-url-new-request",
+    title: "Save again",
+    rightsAttested: true,
+  });
+  const rows = await s.deliveries();
+  expect(rows.map((d) => "sourceId" in d && d.sourceId)).toEqual([
+    first._id,
+    second._id,
+  ]);
+  expect(rows.every((d) => d.eventName === "video_link_saved")).toBe(true);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual([]);
+  expect(await s.t.run((ctx) => ctx.db.get(first._id))).toEqual(first);
+});
+it("does not backfill and allows one explicit re-save without changing saved analysis", async () => {
+  const s = await profileSetup("video_link_saved");
+  await s.assistant.mutation(internal.assistantEvents.unsubscribe, {
+    subscriptionId: s.input.externalId,
+  });
+  const source = await s.capture("abcdefghijk");
+  await s.t.run((ctx) =>
+    ctx.db.patch(source._id, { state: "ready", updatedAt: Date.now() + 100 }),
+  );
+  const before = await s.t.run((ctx) => ctx.db.get(source._id));
+  await s.install();
+  expect(await s.deliveries()).toEqual([]);
+  await s.capture("abcdefghijk");
+  await s.capture("abcdefghijk");
+  expect(await s.deliveries()).toHaveLength(1);
+  expect(await s.t.run((ctx) => ctx.db.get(source._id))).toEqual(before);
+});
+it("excludes bulk captures, supplied text and non-video URLs", async () => {
+  const s = await profileSetup("video_link_saved");
+  await s.t
+    .withIdentity({ subject, issuer: "https://api.workos.com" })
+    .run((ctx) =>
+      captureOne(
+        ctx,
+        {
+          organizationId: s.organizationId,
+          kind: "url",
+          url: "https://www.youtube.com/watch?v=abcdefghijk",
+          key: "bulk-video-capture",
+          title: "Bulk import",
+          rightsAttested: true,
+        },
+        true,
+      ),
+    );
+  await s.owner.mutation(api.product.capture, {
+    organizationId: s.organizationId,
+    kind: "text",
+    text: "Supplied text",
+    key: "new-text-capture",
+    title: "Supplied text",
+    rightsAttested: true,
+  });
+  await s.owner.mutation(api.product.capture, {
+    organizationId: s.organizationId,
+    kind: "url",
+    url: "https://github.com/openai/openai-apps-sdk-examples",
+    key: "repository-capture",
+    title: "Repository",
+    rightsAttested: true,
+  });
+  expect(await s.deliveries()).toEqual([]);
+});
+it.each([
+  "grant",
+  "expiry",
+  "rights",
+  "generation",
+  "deleted",
+  "profile",
+  "policy",
+  "restore",
+  "preview",
+])("rechecks saved-video %s before delivery", async (change) => {
+  const s = await profileSetup("video_link_saved");
+  const source = await s.capture("abcdefghijk");
+  const d = (await s.deliveries())[0];
+  const claimed = (await s.t.mutation(internal.assistantEvents.claim, {
+    id: d._id,
+  }))!;
+  expect(claimed.delivery.eventName).toBe("video_link_saved");
+  if (change === "grant")
+    await s.owner.mutation(api.assistantGrants.revoke, {
+      id: s.grant.id,
+      expectedVersion: 1,
+    });
+  if (change === "expiry")
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.subscription._id, { expiresAt: Date.now() - 1 }),
+    );
+  if (change === "rights")
+    await s.t.run((ctx) => ctx.db.patch(source._id, { rightsAttested: false }));
+  if (change === "generation")
+    await s.t.run((ctx) => ctx.db.patch(source._id, { generation: 1 }));
+  if (change === "deleted")
+    await s.t.run((ctx) => ctx.db.patch(source._id, { state: "deleted" }));
+  if (change === "profile") {
+    const other = await s.owner.mutation(api.organizations.create, {
+      name: "Other profile",
+    });
+    await s.t.run((ctx) => ctx.db.patch(source._id, { organizationId: other }));
+  }
+  if (change === "policy")
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.grant.id, { cloudRequestPolicyHash: "stale" }),
+    );
+  if (change === "restore") vi.stubEnv("RESTORE_LOCK", "true");
+  if (change === "preview")
+    await s.t.run((ctx) =>
+      ctx.db.patch(source._id, {
+        updatedAt: Date.now() + 100,
+        title: "Preview title",
+      }),
+    );
+  expect(
+    await s.t.query(internal.assistantEvents.deliveryCurrent, {
+      id: d._id,
+      lease: claimed.delivery.lease,
+    }),
+  ).toBe(change === "preview");
+});
 it("keeps strict source/profile arguments and event-specific subscription IDs", () => {
   const p = {
     subject,

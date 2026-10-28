@@ -103,3 +103,7 @@ A current reviewed issue can create a bounded plan proposal. Plan acceptance and
 ## Private variant project references, October 24
 
 Private variant selection is explicit and currentness-bound. Quote/approval/claim/context/heartbeat/finish recheck the earned result and runtime. Unsupported workers cannot claim task3.0.0. Source removal and restore quarantine include private project tasks and no-topic evaluation rows. Unknown execution retains its hold.
+
+## Finite automatic Cloud saves candidate
+
+[ADR162](adr/162-finite-app-save-cloud-intents.md) records the optional app-save defaults and source-bound intent. Authenticated app capture stages at most24hours of exact authority, with no execution job or reservation. The native saved-link event remains identity-only. `get_job_status` returns a current intent only to its same actor/client/grant; `request_analysis(mode=work_cloud,savedIntentId=...)` consumes its fixed settings after host readiness. Changed/expired authority refuses consumption. Exact unclaimed replay reuses one generation; claimed/unknown work is preserved. Old grants, ordinary captures and creator/MCP intake gain no automatic authority. Deletion/recovery/retention and executor replacement clear this field. Both new gates default off, UI wiring and native media acceptance remain, and nothing is published.

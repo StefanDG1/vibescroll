@@ -7,6 +7,11 @@ import { publicPolicyDocuments } from "../packages/policy/public-documents.ts";
 import { policyRelease } from "../packages/policy/publication.ts";
 const root = resolve(import.meta.dirname, "..");
 const errors = [];
+execFileSync("python", ["scripts/build-cloud-media-package.py"], {
+  cwd: root,
+  stdio: "pipe",
+  timeout: 10000,
+});
 const release = JSON.parse(
   readFileSync(join(root, "legal/RELEASE-2026-10-03.json"), "utf8"),
 );

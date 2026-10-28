@@ -22,6 +22,7 @@ import type * as assistantLocal from "../assistantLocal.js";
 import type * as assistantLocalActions from "../assistantLocalActions.js";
 import type * as assistantLocalHttp from "../assistantLocalHttp.js";
 import type * as assistantSchema from "../assistantSchema.js";
+import type * as assistantWidget from "../assistantWidget.js";
 import type * as billing from "../billing.js";
 import type * as billingChanges from "../billingChanges.js";
 import type * as billingV1 from "../billingV1.js";
@@ -144,6 +145,11 @@ import type * as subscriptionTrials from "../subscriptionTrials.js";
 import type * as toolMaintenance from "../toolMaintenance.js";
 import type * as usageMaintenance from "../usageMaintenance.js";
 import type * as workCloudAnalysis from "../workCloudAnalysis.js";
+import type * as workCloudEvidenceRepair from "../workCloudEvidenceRepair.js";
+import type * as workCloudFrames from "../workCloudFrames.js";
+import type * as workCloudSaves from "../workCloudSaves.js";
+import type * as workCloudSaveSchema from "../workCloudSaveSchema.js";
+import type * as lib_workCloudSave from "../lib/workCloudSave.js";
 import type * as workflows from "../workflows.js";
 
 import type {
@@ -162,11 +168,12 @@ declare const fullApi: ApiFromModules<{
   assistantEventsHttp: typeof assistantEventsHttp;
   assistantGrants: typeof assistantGrants;
   assistantHttp: typeof assistantHttp;
-  "assistantIntakeUi": typeof assistantIntakeUi;
+  assistantIntakeUi: typeof assistantIntakeUi;
   assistantLocal: typeof assistantLocal;
   assistantLocalActions: typeof assistantLocalActions;
   assistantLocalHttp: typeof assistantLocalHttp;
   assistantSchema: typeof assistantSchema;
+  assistantWidget: typeof assistantWidget;
   billing: typeof billing;
   billingChanges: typeof billingChanges;
   billingV1: typeof billingV1;
@@ -289,6 +296,11 @@ declare const fullApi: ApiFromModules<{
   toolMaintenance: typeof toolMaintenance;
   usageMaintenance: typeof usageMaintenance;
   workCloudAnalysis: typeof workCloudAnalysis;
+  workCloudEvidenceRepair: typeof workCloudEvidenceRepair;
+  workCloudFrames: typeof workCloudFrames;
+  workCloudSaves: typeof workCloudSaves;
+  workCloudSaveSchema: typeof workCloudSaveSchema;
+  "lib/workCloudSave": typeof lib_workCloudSave;
   workflows: typeof workflows;
 }>;
 

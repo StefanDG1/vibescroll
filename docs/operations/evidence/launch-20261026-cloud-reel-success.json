@@ -1,0 +1,136 @@
+{
+  "verifiedDateUTC": "2026-10-26",
+  "scope": "One fresh Instagram Reel through an active Work Cloud task to the authenticated production app; not idle background dispatch",
+  "liveFrontend": "bba2715aa8fdb14501e0b54033addb1ff4f280ae",
+  "frontendDeployment": "dpl_5jR1ZeBebPX6j4xfYEcvgS8nUzbb",
+  "liveBackend": "f84285ff0b773344bc960179cb7dd9b823107a3c",
+  "backendPublishedAtUTC": "2026-10-26T01:26:18.773Z",
+  "backendCI": 40253761239,
+  "fullMainCandidate": "38b882fed44be6dcd347007e5c0646793bbe45f2",
+  "fullMainCI": 40254080207,
+  "fullMainDeployed": false,
+  "sourceId": "px70f4p0q5vd475anpdp346ytd8gwvqb",
+  "url": "https://www.instagram.com/reel/DeMoc7MxFPx/",
+  "postURL": "https://scroll.companynerve.com/app/nn7d15ckc9p6xsx0z7sd09w7298fey3s/posts/px70f4p0q5vd475anpdp346ytd8gwvqb",
+  "generation": 1,
+  "grantVersion": 8,
+  "repeatedAppAuthorization": false,
+  "canonicalRevision": 1792978121684,
+  "canonicalState": "ready",
+  "cloudState": "completed",
+  "nativeMetadataAccepted": {
+    "title": "Video by aiwithremy",
+    "authorName": "AI with Remy | Learn AI"
+  },
+  "media": {
+    "durationSeconds": 49.483,
+    "acquisitionSeconds": 4.743,
+    "captionTracks": 0,
+    "transcriptSegments": 20,
+    "transcriptProvenance": "local English automatic speech recognition, faster-whisper 1.2.1, verified cached small.en model",
+    "independentSpeechAccuracyReview": false,
+    "insights": 5,
+    "matchingCitations": 23,
+    "frameDimensions": [540, 960],
+    "allExactJPEGUploadsAccepted": true,
+    "frames": [
+      {
+        "timeMs": 0,
+        "bytes": 33446,
+        "assetId": "j573en7gnev1kbhzd96kd3hkpx8h11t1"
+      },
+      {
+        "timeMs": 6185,
+        "bytes": 38664,
+        "assetId": "j577xbbra1brvkpa4wv35594a18h0ht5"
+      },
+      {
+        "timeMs": 12370,
+        "bytes": 29794,
+        "assetId": "j57acebwk84qswyg4g5n1vrjj18h13f1"
+      },
+      {
+        "timeMs": 18556,
+        "bytes": 27359,
+        "assetId": "j576xtg638az7g5w7xk79wthrh8h0qd0"
+      },
+      {
+        "timeMs": 24741,
+        "bytes": 28345,
+        "assetId": "j571h8a54ajrje49ny9r90rfb58h004c"
+      },
+      {
+        "timeMs": 30926,
+        "bytes": 44880,
+        "assetId": "j57dygsxa1b0f4zb9d68nrnhdn8h1ty8"
+      },
+      {
+        "timeMs": 37112,
+        "bytes": 23502,
+        "assetId": "j5701bf0av1wnm4q9strrx8fdn8h0nyb"
+      },
+      {
+        "timeMs": 43297,
+        "bytes": 35260,
+        "assetId": "j575854pcaxwbe7500s0sbxw8s8h1b7q"
+      }
+    ]
+  },
+  "execution": {
+    "claimToCanonicalFetchSeconds": 339.885,
+    "taskTurnSeconds": 503.784,
+    "vibeScrollCalls": 20,
+    "automaticRetries": 0,
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "actualModelAndEffort": "unattested",
+    "paidAPIRouteOrProcessingCreditsSelected": false,
+    "decodingRestriction": "verified inherited Linux seccomp socket denial; not standalone VM attestation",
+    "toolsZIP_SHA256": "a3ea926a8a68696db277a600cf6512c86660c71a90651283884444238f7fe85e"
+  },
+  "authenticatedBrowserAcceptance": {
+    "method": "browser-harness against canonical production direct post page",
+    "readySummaryFiveInsightsAndCitationsVisible": true,
+    "retainedTimestampedTranscriptVisible": true,
+    "thumbnailDecoded540x960": true,
+    "lazySampledImagesDecodedOnEnteringViewport": true,
+    "expandedGalleryContainsEightFrames": true,
+    "frameFiveDialogDecoded540x960": true,
+    "dialogLabel": "24.7s · 5/8",
+    "desktopNoHorizontalOverflow": true,
+    "mobileViewport": [320, 740],
+    "mobileDocumentWidth": 320,
+    "mobileDialogDecodedWithoutOverflow": true,
+    "dialogClosedAndDeviceEmulationCleared": true,
+    "staleLocalComputerWaitingOrCreditControlsAbsent": true
+  },
+  "hostObservedCleanup": {
+    "localFilesDeleted": 25,
+    "localDirectoriesDeleted": 1,
+    "rawMediaAndPayloadsRemoved": true,
+    "retainedTokenReferenceCleared": true,
+    "sharedToolsAndModelCachesPreserved": true,
+    "acceptedAppAssetsRetained": true,
+    "providerHistoryDeletion": "not attested"
+  },
+  "preservation": {
+    "earlierFailedSource": "px797hpmxmysyg53z0ktspb60n8gwk6g generation 1 remains unknown; no reopen or replay",
+    "originalDisputedSource": "px7cyt2z0v554qsaq16gkb5ard8gvjyf retained transcript now displays; exact missing-image repair remains open",
+    "reservedTikTok": "px7885hahrs21f8eeq6chh2vxs8gxtap remains unanalyzed",
+    "suppliedTikTok": "px74ewzfcn7fg202sb6bkgzgt18h15g9 saved without analysis; host network policy blocks acquisition",
+    "cumulativeCapEUR": 7,
+    "retainedMaximumUSD": 7.275014256044614,
+    "workingCeilingUSD": 7.42,
+    "allOldUnknownAndFutureHoldsPreserved": true
+  },
+  "remaining": [
+    "Supported Events subscription and idle host wake for ordinary app-save/phone-only automatic execution",
+    "Original disputed Reel exact-pixel screenshot repair under separate fresh repair authority",
+    "Independent source-audio accuracy and insight usefulness review",
+    "Live native-caption-path example; fixture path passes but this source had no captions",
+    "Early native title/author presentation, recent Home cards and region retirement in the full-main candidate",
+    "Full-main populated-index migration and every retained provider/privacy/release gate",
+    "MCP reconnect/settings diagnostics deferred by owner",
+    "Rotation of credentials exposed by an earlier historical deployment-record read"
+  ]
+}

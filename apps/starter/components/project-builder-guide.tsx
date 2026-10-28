@@ -287,26 +287,30 @@ export function ProjectBuilderGuide({
             <>
               <h3>Connect processing</h3>
               <p>
-                Choose an available own-account or managed route in the setup
-                controls below. The paired-computer own-plan route needs your
-                eligible account and an awake paired computer. Managed cloud
-                uses its existing credits, entitlement and approved maximum.
+                Choose where tasks run in Continue setup. My own Cloud Work uses
+                your ChatGPT subscription and is our recommended direction.
+                VibeScroll's servers use credits bought separately. Local
+                machine uses your own subscription and needs your computer on.
+                Unavailable options stay disabled, with setup links beside them.
               </p>
-              <p>
-                Experimental Work Cloud text:{" "}
-                {snapshot.workCloudTextState === "available_unverified"
-                  ? "Available for text review; processing connection unverified."
-                  : snapshot.workCloudTextState === "unavailable"
-                    ? "Not available for this account."
-                    : "Text-review availability unverified."}{" "}
-                Review a supported text handoff without GitHub or a paired
-                computer. Successful host execution and video processing remain
-                unverified.{" "}
-                <Link href="/help/work-cloud-text-review" prefetch={false}>
-                  Read the text handoff guide
-                </Link>
-                .
-              </p>
+              <details>
+                <summary>Experimental text review</summary>
+                <p>
+                  Experimental Work Cloud text:{" "}
+                  {snapshot.workCloudTextState === "available_unverified"
+                    ? "Available for text review; processing connection unverified."
+                    : snapshot.workCloudTextState === "unavailable"
+                      ? "Not available for this account."
+                      : "Text-review availability unverified."}{" "}
+                  Review a supported text handoff without GitHub or a paired
+                  computer. Successful host execution and video processing
+                  remain unverified.{" "}
+                  <Link href="/help/work-cloud-text-review" prefetch={false}>
+                    Read the text handoff guide
+                  </Link>
+                  .
+                </p>
+              </details>
               <p>
                 Paired: {snapshot.paired ? "yes" : "not yet"}. Current account
                 observed: {snapshot.accountConnected ? "yes" : "not verified"}.

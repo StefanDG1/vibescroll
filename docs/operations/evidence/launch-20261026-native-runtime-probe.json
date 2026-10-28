@@ -1,0 +1,157 @@
+{
+  "observedDateUTC": "2026-10-26",
+  "status": "no_media_readiness_only_event_execution_host_reported",
+  "servingCommit": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
+  "chatURL": "https://chatgpt.com/c/6adf4371-7f2c-83eb-a9d8-6a1fae54101f",
+  "normalSetupTurn": {
+    "actualExecutionTool": "exec_command",
+    "exitCode": 0,
+    "timeoutSeconds": 10,
+    "python": "3.12.14",
+    "platform": "Linux6.18.55 x86_64",
+    "ffmpeg": true,
+    "ffprobe": true,
+    "ytDlpImportable": false,
+    "pysubs2Importable": false,
+    "fasterWhisperImportable": false,
+    "childOutput": "42",
+    "nonce": "vibescroll-native-exec-20261026-d82e6b942c3a",
+    "sha256": "40f1274458b5292a5e6e9ef2c7479c24b31be57fddc1e675dedff50b62e3376d"
+  },
+  "nativeEvent": {
+    "name": "work_cloud_connection_verified",
+    "grantVersion": 8,
+    "initialDelivery": {
+      "createdAt": 1793016796724,
+      "receivedAt": 1793016797521,
+      "httpStatus": 200,
+      "attempts": 1
+    },
+    "oneControlledIdleResume": {
+      "subscriptionCreatedAt": 1793018495115,
+      "callbackVerifiedAt": 1793018494907,
+      "receivedAt": 1793018495823,
+      "httpStatus": 200,
+      "attempts": 1
+    },
+    "laterReplyObserved": true,
+    "followupUserMessageOrManualRun": false,
+    "reportedExecutionTool": "exec_command",
+    "reportedExitCode": 0,
+    "reportedNonceAndHashMatch": true,
+    "reportedMarkerPresent": true,
+    "reportedMatchingMarkerRemoved": true,
+    "independentEventToolTraceVerified": false,
+    "limitation": "The later host reply reports command execution. The separately inspected initial setup trace has one command; the event-run command trace was not independently recovered. Either already delivered connection event may have produced the later reply."
+  },
+  "cleanup": {
+    "monitorPaused": true,
+    "subscriptionsRows": 0,
+    "deliveriesRows": 0,
+    "verifiedAtUTC": [
+      "2026-10-26T12:47:45.764420+00:00",
+      "2026-10-26T12:47:46.958632+00:00"
+    ],
+    "pluginStillAuthenticated": true
+  },
+  "effects": {
+    "sourceSaves": 0,
+    "sourceJobs": 0,
+    "mediaDownloads": 0,
+    "packageInstalls": 0,
+    "modelDownloadsOrInitializations": 0,
+    "paidApiSelected": false
+  },
+  "remainingAdmission": [
+    "independent event command trace",
+    "actual source-frame inspection",
+    "supported pinned package bootstrap",
+    "source-network policy and decoder isolation",
+    "verified ASR cache or narrower captions-only acceptance",
+    "asynchronous lease control",
+    "actual app Save to retained transcript/images/analysis"
+  ],
+  "budget": {
+    "cumulativeCapEUR": 8,
+    "retainedUsd": 8.295014256044613,
+    "unreservedUsd": 0.18498574395538725,
+    "probeHoldsUsd": 0.04,
+    "priorHoldsReleased": false,
+    "invoiceCertified": false,
+    "newAdmissionHoldUsd": 0.02,
+    "newBrowserMetadataHoldUsd": 0.03
+  },
+  "laterSetupAdmission": {
+    "observedDateUTC": "2026-10-26",
+    "source": "existing_native_Work_task_tool_cards_and_sanitized_report",
+    "python": "3.12.14",
+    "uid": 0,
+    "euid": 0,
+    "capabilitiesZero": {
+      "CapEff": true,
+      "CapPrm": true,
+      "CapAmb": true
+    },
+    "availableExecutables": [
+      "ffmpeg",
+      "ffprobe",
+      "bwrap",
+      "unshare",
+      "prlimit",
+      "uv",
+      "python3.12"
+    ],
+    "python313Available": false,
+    "imageToolReported": "view_image",
+    "imageToolInvoked": false,
+    "bubblewrapFull": {
+      "attempts": 1,
+      "exitCode": 1,
+      "markerExecuted": false,
+      "stderr": "bwrap: loopback: Failed to create NETLINK_ROUTE socket: Operation not permitted"
+    },
+    "bubblewrapFilesystemOnly": {
+      "attempts": 1,
+      "exitCode": 1,
+      "markerExecuted": false,
+      "stderr": "bwrap: setting up uid map: Operation not permitted"
+    },
+    "landlockAbiQuery": {
+      "returnValue": -1,
+      "errno": 38,
+      "rulesetCreated": false
+    },
+    "nativeMediaRuntimeAdmitted": false,
+    "monitorStateChanged": false,
+    "sourceMediaDownloads": 0,
+    "jobsCreated": 0,
+    "packageOrModelInstalls": 0,
+    "limitations": [
+      "normal setup-turn experiments only",
+      "independent event-run tool trace still not recovered",
+      "no source-frame inspection or decoder success",
+      "no bypass or escalation"
+    ]
+  },
+  "decoderCandidateCI": {
+    "commit": "89ef2ebbb5135d39741775e9c1197676069b628f",
+    "runId": "40335580297",
+    "jobId": "121616515895",
+    "status": "passed",
+    "linuxTestsTotal": 13,
+    "passed": 12,
+    "skipped": 1,
+    "skipReason": "unsupported-host CLI negative case is inapplicable on admitted Linux",
+    "realSocketAndExecTestsRan": true,
+    "nativeHostAdmitted": false,
+    "mandatoryFlagForwardingFix": {
+      "commit": "79c59a244b62a0bdd248c1ecebcddcab4e6e4d0e",
+      "runId": "40344437782",
+      "jobId": "121647479399",
+      "status": "passed",
+      "realLinuxSocketAndExecTestsRan": true,
+      "mandatoryFlagForwarded": true
+    }
+  },
+  "hostedBrowserFollowup": "launch-20261026-native-cloud-browser.json"
+}

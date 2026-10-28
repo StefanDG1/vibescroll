@@ -26,6 +26,7 @@ export function safeSourceUrl(raw) {
     "tiktok.com",
     "www.tiktok.com",
     "vm.tiktok.com",
+    "vt.tiktok.com",
     "vimeo.com",
     "www.vimeo.com",
   ];

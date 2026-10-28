@@ -1,0 +1,138 @@
+{
+  "recordedAtUTC": "2026-10-26T22:31:34.818686+00:00",
+  "scope": "published correction; next automatic source test pending runtime readiness",
+  "servingCommit": "21736e839e6d046ac305abc2469b5f1d37022dfb",
+  "sourceCommit": "321e041f1323b28f51afa08d38c401844943c864",
+  "actualStoppedAttempt": {
+    "closedTabAppSave": true,
+    "nativeCallbackHttpStatus": 200,
+    "callbackAttempts": 1,
+    "generation": 1,
+    "inspectionExitCode": 1,
+    "error": "unsupported_source",
+    "initialUrlMatchedContract": true,
+    "initialUrlAcceptedByPinnedValidator": true,
+    "returnedUrlFailure": "code-path conclusion, not separately labelled trace",
+    "actualReturnedUrlShape": "not persisted; unavailable",
+    "successfulSourceInspection": "one exit0 inferred from path; no separate child receipt",
+    "mediaAcquisitions": 0,
+    "asrFramesUploadsCompletion": false,
+    "relinquishmentAcceptedAfterValidHeartbeat": true,
+    "observedExpiryRefusal": false,
+    "replayed": false,
+    "temporaryRootsRemoved": "host-reported retained receipts",
+    "sharedCachesPreserved": true,
+    "freshProcessScan": false,
+    "providerHostStoppedAttestation": false,
+    "providerDeletionAndUsage": "unverified",
+    "pilotPaused": true
+  },
+  "reproducedOffline": {
+    "pinnedYtdlpVersion": "2026.10.21",
+    "providerRequests": 0,
+    "validExtractorAliasesRejectedBefore": [
+      "empty handle video",
+      "share/video",
+      "opaque author video"
+    ],
+    "firstRun": {
+      "focusedCases": 2,
+      "subtestErrors": 3,
+      "failures": 1
+    }
+  },
+  "correction": {
+    "submittedSourceScopeUnchanged": true,
+    "aliasesAcceptedOnlyInResolvedMetadata": true,
+    "requiresExistingTikTokHostHttpsNoCredentialsDefaultPortBoundedPath": true,
+    "newAliasesRequireTikTokExtractorAndMatchingNumericId": true,
+    "originalPostIdPreserved": true,
+    "canonicalBoundThroughPreparation": true,
+    "authorNameInferredFromPlaceholder": false,
+    "safeUnsupportedReturnedCode": "unsupported_resolved_source",
+    "newSourceInvocationRetryNetworkAccessOrFunding": false,
+    "oldManifestSHA256": "4bde8f3763802e7e2d8dd272e85804e63d06771dc9b416ebc6c72646ac524842",
+    "acceptedPoliciesAndArchivesPreserved": true,
+    "storedGrantOrIntentHashesPatched": false
+  },
+  "runtimeBundle": {
+    "path": "/downloads/cloud-runtime-49e57707a6924ca5.zip",
+    "bytes": 82057,
+    "files": 16,
+    "sha256": "49e57707a6924ca56f71343935ac1153ffe323752e63dc599d68dc3b0e466327",
+    "packageManifestSHA256": "d19ed8f6a932076c4617e31b345b4dd1ef1e478656d7ee957fdbf9eb3d3c1cc7",
+    "sourceCommit": "321e041f1323b28f51afa08d38c401844943c864"
+  },
+  "checks": {
+    "focusedCloudCases": 170,
+    "pythonExtractionCases": 19,
+    "pythonExtractionWindowsSkipped": 2,
+    "compatible": {
+      "exitCode": 0,
+      "vitestPassed": 1306,
+      "hostedSkipped": 3,
+      "nodePassed": 19,
+      "pythonCases": 72,
+      "windowsSkipped": 7
+    },
+    "main": {
+      "exitCode": 0,
+      "vitestPassed": 2140,
+      "hostedSkipped": 3,
+      "nodePassed": 19,
+      "pythonCases": 81,
+      "windowsSkipped": 7
+    },
+    "types": true,
+    "zeroWarningLint": true,
+    "validation": true,
+    "productionBuilds": true
+  },
+  "retainedPreparationNonpass": "formatter changed frozen JSON whitespace; restored exact serving blob and verified old SHA before committing",
+  "exactCI": {
+    "runId": 40413212611,
+    "jobId": 121888889043,
+    "conclusion": "success",
+    "fullCheckAndAuditPassed": true
+  },
+  "published": true,
+  "automaticMediaAccepted": false,
+  "newMediaAttemptsAfterCorrection": 0,
+  "updatedAtUTC": "2026-10-27T00:28:11.361266+00:00",
+  "publication": {
+    "frontendCommit": "21736e839e6d046ac305abc2469b5f1d37022dfb",
+    "backendCommit": "21736e839e6d046ac305abc2469b5f1d37022dfb",
+    "deploymentId": "dpl_BPn5PVxwP5NePQ4VGLUCUGLxkTzX",
+    "version": "0.1.0-alpha.20261026223215.g21736e839e6d",
+    "basicNormalQueuedBuilds": 1,
+    "stagedAndCanonicalHealthAndRuntimeVerified": true,
+    "sameBuildPromotion": true,
+    "normalAutoDomainAssignmentRestoredAndUiVerified": true,
+    "schemaIndexComponentAuthCronChanges": false
+  },
+  "currentSetup": {
+    "grantVersion": 11,
+    "sameActions": 9,
+    "sameProjectContexts": 5,
+    "newOauthScopes": 0,
+    "initialManifestPinFailure": "operator supplied unnormalized Windows working-file hash; archive and accepted lock were correct",
+    "toolsAndCaptionDependenciesPassedAfterCorrection": true,
+    "retainedAsrModelSizeMismatch": {
+      "expectedBytes": 483545366,
+      "observedBytes": 315699200,
+      "cause": "unknown"
+    },
+    "separateBoundedSetupOnlyRecovery": "in progress; no source/model API/new build",
+    "pilotPaused": true,
+    "newSourceGeneration": 0,
+    "newSourceJobs": 0
+  },
+  "ownerContinuationCondition": {
+    "vercelUsageBelowUSD": 20,
+    "lastObservedAccountUsageUSD": 17.35,
+    "includedCreditPeriod": "2026-10-01/2026-11-01",
+    "newEuroCapAsserted": false,
+    "priorAllowancesPreserved": true,
+    "notAnInvoice": true
+  }
+}

@@ -1,5 +1,29 @@
 # Foundational document change log
 
+## October 28: F083 versioned shared analysis
+
+Updated Research, Avatar, Offer, Beliefs and the index for the owner-requested versioning and focused Cloud release. Recorded preservation, comparison/rollback, entitled reuse, uncertainty about model quality and unvalidated paid-catalog value. The [V0-V5 plan](../launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) supplies concrete tests. No audience, price, allowance, provider/privacy permission, six-belief change, campaign or completed implementation is implied.
+
+## October27: F082 private automatic Reel acceptance
+
+All four briefs record the measured closed-tab owner result and current runtime/setup correction. Provider privacy, cold customer onboarding, platform breadth and speech accuracy remain separate. No audience, price, funding, belief or general customer claim changes.
+
+## October26: F079 finite app saves and runtime limits
+
+All four briefs distinguish the live three-choice picker from the disabled automatic-intent candidate. Recorded actual failed native adapters, supported-host research, one-time defaults, no premature job and preserved grants/funding. No audience, pricing, belief, outcome or campaign claim changes.
+
+## October 26: F078 three task locations
+
+All four briefs now record the owner-selected order, costs and quick setup links. The local candidate reuses current processing checks and keeps automatic ChatGPT Cloud disabled until admitted. No prices, allowances, permissions, audience or six beliefs change. Local browser/source checks remain separate from production publication and independent usability.
+
+## October 26: F077 fresh Reel result and bounded acceptance
+
+Synchronized all four briefs and the index with the sanitized live receipt. A fresh active-task Reel returns retained speech, JPEGs and cited analysis; actual app checks include mobile image rendering. Explicitly retained idle-wake, original-image-repair, accuracy, full-main and provider/privacy limits. EUR7 supersedes the older EUR5 cap; all earlier holds remain. No audience, price, allowance, campaign or customer-outcome claim changes.
+
+## October 25: F076 direct posts and reduced first-milestone scope
+
+Owner direction supersedes Home expansion before navigation and prioritizes caption-first link-to-Cloud acceptance. All four briefs reference ADR156 and preserve existing content, withdrawal, privacy and fiscal controls. Region sharing is retired; Telegram/public publisher expansion and additional runtime work are deferred. No production result, performance or customer claim is added.
+
 ## October 25: published F070 controls, acceptance pending
 
 Root reconciled F070 across the four briefs and index with the [actual compatible production receipt](../operations/evidence/launch-20261025-cloud-mcp-production.json). Exact MCP request controls are live; actual Cloud video, automatic dispatch, public commercial use and speed are not verified. No new audience, price, allowance, campaign or customer claim follows. The same USD3 cap and all provider/privacy gates remain.
@@ -386,3 +410,11 @@ Synchronized all four briefs with the reduced selected-source loading candidate 
 ## F075: global catalog and one-time Cloud intake, October25
 
 All four briefs now record owner-confirmed automatic neutral contribution, association-only personal removal and the supported Cloud intake distinction. ADR154 preserves actual moderation/provider/paid gates and every unclosed launch requirement. Current private-only results are not silently republished.
+
+## F080: current-grant native setup, October26
+
+All four briefs distinguish the gated setup-message candidate, synthetic JPEG handoff and blocked public TikTok visit. The owner's one-time setup direction is preserved; no prices, audience, permissions or live availability change. Actual automatic media remains unaccepted.
+
+## F081: one pinned Cloud download and separate readiness, October 26
+
+All four briefs record verified private synthetic tools and real metadata-only limits. The website bundle remains unpublished, ASR setup is not speech accuracy, and automatic media remains disabled. Counterargument: a pinned download alone does not make per-user Cloud setup reliable. Test exact native retrieval, lease control and a real event-triggered retained result before customer claims. No audience, price, permissions or campaign changes. See [ADR164](../adr/164-pinned-cloud-runtime-download.md).

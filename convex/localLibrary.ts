@@ -686,6 +686,7 @@ export async function sourceFinishCore(
     error: undefined,
     processingReceipt: undefined,
     personalAnalysis: undefined,
+    workCloudSaveIntent: undefined,
     speechProvenance: j.transcript.segments.length
       ? {
           model: "Local offline transcription",

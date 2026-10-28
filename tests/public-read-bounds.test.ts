@@ -146,19 +146,10 @@ async function setup(
   return { t, ...fixture, collection };
 }
 
-it("keeps a large anonymous regional census within 1.7 MB by sampling at most 25 full source checks", async () => {
+it("does not expose retired regional aggregates even with many old contributions", async () => {
   const s = await setup(110, 60000);
   const regions = await s.t.query(api.publicKnowledge.geography, {});
-  expect(regions).toEqual([
-    {
-      id: "europe",
-      label: "Europe",
-      latitude: 50,
-      longitude: 15,
-      contributors: "25+",
-      coverage: "bounded_snapshot",
-    },
-  ]);
+  expect(regions).toEqual([]);
   expect(JSON.stringify(regions)).not.toMatch(
     /actor|organization|createdAt|updatedAt|subject/,
   );

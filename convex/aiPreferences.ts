@@ -6,11 +6,49 @@ import { personalAllowed } from "./lib/personalAccess";
 import { freeWorkersConfigured } from "../packages/providers/workers-plan";
 import { hostedMediaAllowed } from "./lib/hostedMediaAccess";
 import { googleConfigured } from "../packages/providers/google-inference";
+import { savedCloudRoute } from "./lib/workCloudSave";
 export const read = query({
   args: { organizationId: v.id("organizations") },
+  returns: v.object({
+    preferChatGPTPlan: v.boolean(),
+    hostedStatus: v.literal("awaiting_commercial_access"),
+    active: v.literal(false),
+    personalAlphaEnabled: v.boolean(),
+    orderedPersonalAnalysisEnabled: v.boolean(),
+    cloudAnalysisEnabled: v.boolean(),
+    linkAnalysisEnabled: v.boolean(),
+    workCloud: v.union(
+      v.object({
+        available: v.boolean(),
+        configured: v.boolean(),
+        grantId: v.union(v.id("assistantGrants"), v.null()),
+        grantVersion: v.union(v.number(), v.null()),
+      }),
+      v.null(),
+    ),
+    processingRoute: v.union(
+      v.literal("local"),
+      v.literal("cloud"),
+      v.literal("save_only"),
+      v.literal("work_cloud"),
+      v.null(),
+    ),
+  }),
   handler: async (ctx, args) => {
-    const { actor } = await access(ctx, args.organizationId);
+    const { actor, organization } = await access(ctx, args.organizationId);
+    const setup =
+      organization.privateOwnerId === actor._id
+        ? await ctx.db
+            .query("librarySetup")
+            .withIndex("by_org", (q) =>
+              q.eq("organizationId", args.organizationId),
+            )
+            .unique()
+        : null;
     return {
+      workCloud: await savedCloudRoute(ctx, actor, organization),
+      processingRoute:
+        setup?.actor === actor._id ? (setup.processingRoute ?? null) : null,
       preferChatGPTPlan: actor.preferChatGPTPlan ?? false,
       hostedStatus: "awaiting_commercial_access" as const,
       active: false as const,

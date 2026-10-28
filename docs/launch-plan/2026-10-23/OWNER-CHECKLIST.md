@@ -1,4 +1,22 @@
+## October 26: private Cloud tools pass, automatic result still pending
+
+The actual native Work task passed pinned caption setup, synthetic JPEG viewing and offline ASR initialization under the separately tested provider-VM network denial. The real supplied TikTok metadata read returned a title/author and 104-second duration, with no supported caption candidates. The ASR tone test used the real model once and yielded no transcript; it supplies no speech-accuracy evidence. Exact cleanup of three partial model downloads restored the original cache bound. No new source/job, monitor activation, paid API or production release occurred. [Setup receipt](../../operations/evidence/launch-20261026-native-cloud-tools.json).
+
+The unpublished candidate now includes one pinned website tools ZIP and a fix for previews invalidating a pending app-Save intent. Both metadata-only and thumbnail regressions failed before the fix and pass after it. The serving frontend/backend remain ff7d88f. Current EUR8 ledger retains USD8.473014256044612, leaving USD0.006985743955388202 unreserved; these are conservative holds, not a settled invoice. Preserve all earlier holds, original-image repair, unknown/reserved posts, full-main index migration and every linked P/R/N/C/M gate. Finish compatible checks, then prepare a funded controlled release and actual automatic result test.
+
+## Current October26 checkpoint
+
+No new login, source link or repeated OAuth consent is requested. The owner-approved cumulative cap is EUR8. Serving frontend/backendff7d88f include the picker and illustrated Help; the finite-intent/setup-message candidate e855fe7 passed exact CI40349584407 but remains unpublished/off. The actual native Work decoder test now passes under the existing restricted provider VM, with source dfb4aca/exact CI40351522420 and8native tests without skips. A separately budgeted pinned caption-tools setup is pending; no analysis job is authorized by this readiness proof.
+
+Current retained maximumUSD8.355014256044612 leavesUSD0.12498574395538853 unreserved. All older holds remain. A new frontend release and live automatic-media acceptance need a concrete funded proposal; no cap increase is requested before the candidate is ready. Root still owns source-network/package/ASR-or-caption/lease and actual result acceptance, original exact-image repair and the rest of the linked plans. Full-main migration and provider/privacy/commercial, payment, independent-user and conditional signing gates remain. Older entries below are historical; use the [current handover](HANDOVER-2026-10-26.md).
+
 # What help is still needed to finish the plan
+
+## Current native Events checkpoint, October 26
+
+Actual app **Save source** to a later native ChatGPT acknowledgement passed in the private owner account. Compatible frontend/backend6cdcb1c are live; the same authenticated plugin discovered `video_link_saved` through Refresh tools without another login. The source, analysis, transcript, eight retained frames and generation stayed hash-identical, with no new analysis or paid route. Both temporary monitors are paused and their subscription/delivery rows were removed. See the [current handover](HANDOVER-2026-10-26.md), [actual receipt](../../operations/evidence/launch-20261026-saved-link-native-ack.json) and [setup runbook](../../operations/chatgpt-native-events.md).
+
+This closes the automatic saved-link notification checkpoint only. Next, connect explicit Work Cloud analysis intent in the existing Save flow to an exact approved job and `work_cloud_waiting`, preserving save-only behavior and reviewed grant/policy authority. Review any policy extension once rather than silently widening grant8. Then verify the event-triggered Work host has a supported media runtime and can finish the existing caption-first Reel pipeline. Physical-device notification, automatic media execution, original repair, live caption/TikTok acceptance and the full original P/R/N/C/M plans remain open. The cumulative cap is EUR7.50; every prior hold, both TikToks, unknown attempt, main-only Home/region/navigation migration and provider/privacy/release gate remain.
 
 ## Handover and reported quality issue, October 25
 

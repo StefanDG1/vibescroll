@@ -23,6 +23,10 @@ const operations = {
   setupJourney: ["query", api.setupJourney.status],
   workCloudTextPreview: ["query", api.workCloudAnalysis.preview],
   workCloudTextApprove: ["mutation", api.workCloudAnalysis.approve],
+  workCloudEvidenceRepairApprove: [
+    "mutation",
+    api.workCloudEvidenceRepair.approve,
+  ],
   saveSetupJourney: ["mutation", api.setupJourney.save],
   creatorFollowing: ["query", api.creators.list],
   creatorFollow: ["mutation", api.creators.follow],
@@ -135,6 +139,7 @@ const operations = {
   confirmProfile: ["mutation", api.profiles.confirmDraft],
   saveProfileDraft: ["mutation", api.profiles.saveDraft],
   capture: ["mutation", api.product.capture],
+  captureWorkCloud: ["mutation", api.workCloudSaves.capture],
   captureOrdered: ["mutation", api.product.captureOrdered],
   importLinks: ["mutation", api.imports.links],
   process: ["mutation", api.product.processSource],

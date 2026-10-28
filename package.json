@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit && tsc --project convex/tsconfig.json --noEmit && pnpm -r --if-present typecheck",
     "test": "vitest run --maxWorkers=2 && vitest run --config apps/starter/vitest.auth.config.ts && vitest run --config apps/starter/vitest.public-knowledge.config.ts && node --test tests/companion-installer.test.mjs && pnpm test:pcm && pnpm test:build-policy",
     "test:build-policy": "node --test tests/vercel-build-ignore.test.mjs",
-    "test:pcm": "python tests/local_pcm_test.py && python tests/public_proxy_test.py && python tests/media_sampling_test.py && python tests/ordered_media_test.py",
+    "test:pcm": "python tests/local_pcm_test.py && python tests/public_proxy_test.py && python tests/media_sampling_test.py && python tests/ordered_media_test.py && python tests/caption_extraction_test.py && python -B tests/caption_cache_readiness_test.py && python tests/decoder_network_denial_test.py && python tests/decoder_provider_vm_test.py && python scripts/build-cloud-runtime-package.py && python -B tests/bootstrap_asr_runtime_test.py && python -B scripts/build-asr-runtime-bootstrap.py",
     "validate": "node scripts/validate.mjs && node finance/pro-offer-20261024-calculate.mjs --check",
     "benchmark": "node scripts/evaluate-benchmark.ts",
     "chatgpt:local": "node packages/runner/chatgpt-cli.mjs",
@@ -30,7 +30,9 @@
     "setup:preflight": "node scripts/setup-preflight.mjs",
     "review:prepare": "node scripts/prepare-quality-review.ts",
     "costs:reconcile": "node scripts/reconcile-costs.ts",
-    "lint": "oxlint apps/starter convex packages tests scripts --react-plugin --jsx-a11y-plugin --nextjs-plugin --ignore-pattern 'packages/runner/protocol/**' --ignore-pattern 'convex/_generated/**' --ignore-pattern '**/node_modules/**' --max-warnings 0"
+    "lint": "oxlint apps/starter apps/widget/src apps/widget/designs apps/widget/harness convex packages tests scripts --react-plugin --jsx-a11y-plugin --nextjs-plugin --ignore-pattern 'packages/runner/protocol/**' --ignore-pattern 'packages/widget/resources.generated.ts' --ignore-pattern 'convex/_generated/**' --ignore-pattern '**/node_modules/**' --max-warnings 0",
+    "dev:widget": "pnpm --filter @vibescroll/widget dev",
+    "build:widget": "pnpm --filter @vibescroll/widget build"
   },
   "dependencies": {
     "@convex-dev/rate-limiter": "0.4.0",
@@ -49,7 +51,9 @@
     "parse5": "8.0.1",
     "repomix": "1.18.1",
     "stripe": "22.6.2",
-    "zod": "4.6.6"
+    "zod": "4.6.6",
+    "hono": "4.13.11",
+    "react": "19.3.0"
   },
   "devDependencies": {
     "@edge-runtime/vm": "5.0.0",

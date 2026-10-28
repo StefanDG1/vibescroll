@@ -38,6 +38,7 @@ vi.mock("react", async (original) => ({
 import { PublicKnowledgePanel } from "./components/public-knowledge-panel";
 import { PublicSaveContinuation } from "./components/public-save-continuation";
 import { SetupJourney } from "./components/setup-journey";
+import { TaskRuntimePicker } from "./components/task-runtime-picker";
 import { ProjectBuilderGuide } from "./components/project-builder-guide";
 import { advanceJourney } from "../../packages/onboarding/project-builder-journey";
 type Node = ReactElement<Record<string, any>>;
@@ -400,7 +401,7 @@ it("keeps authenticated withdrawal usable with a closed publication gate and dis
         title: "Synthetic collection",
       },
     ],
-    geography: [],
+    geography: [{ cell: "europe" }],
   };
   const call = vi.fn(async (operation: string) =>
     operation === "publicOwn" ? own : { withdrawn: true },
@@ -432,7 +433,9 @@ it("keeps authenticated withdrawal usable with a closed publication gate and dis
       (node) => text(node) === "Prepare exact public preview",
     ),
   ).toBe(false);
-  expect(button(tree, "Share selected region").props.disabled).toBe(true);
+  expect(
+    elements(tree).some((node) => text(node) === "Share selected region"),
+  ).toBe(false);
   expect(button(tree, "Withdraw edition").props.disabled).toBe(false);
   await button(tree, "Withdraw edition").props.onClick();
   expect(call).toHaveBeenCalledWith("withdrawEdition", {
@@ -440,7 +443,10 @@ it("keeps authenticated withdrawal usable with a closed publication gate and dis
     version: 2,
   });
   tree = view();
-  await button(tree, "Stop sharing my region").props.onClick();
+  button(tree, "Load my editions and collections").props.onClick();
+  await flush();
+  tree = view();
+  await button(tree, "Remove previously shared region").props.onClick();
   expect(call).toHaveBeenCalledWith("setGeography", {
     organizationId: "org-one",
     cell: null,
@@ -667,7 +673,7 @@ it("local prerequisite reports require explicit bounded JSON submission and pres
   expect(text(view())).toContain("local report is invalid");
 });
 it.each([undefined, "unavailable", "available_unverified"] as const)(
-  "discloses experimental text state %s without another request or a saved route change",
+  "renders the same execution picker for text state %s without another request or a saved route change",
   async (state) => {
     const snapshot = {
       route: "cloud",
@@ -695,27 +701,13 @@ it.each([undefined, "unavailable", "available_unverified"] as const)(
     const tree = render(SetupJourney, props);
     const copy = text(tree);
     expect(copy).toContain("Saved route:");
-    expect(copy).toContain("Managed cloud");
-    expect(copy).toContain("Managed processing:");
-    expect(copy).toContain("unavailable");
-    expect(copy).toContain(
-      state === "available_unverified"
-        ? "Available for text review; processing connection unverified."
-        : state === "unavailable"
-          ? "Not available for this account."
-          : "Text-review availability unverified.",
-    );
-    expect(copy).toContain("without GitHub or a paired computer");
-    expect(copy).toContain(
-      "Successful host execution and video processing remain unverified",
-    );
-    expect(
-      elements(tree).some(
-        (node) =>
-          node.props.href === "/help/work-cloud-text-review" &&
-          node.props.prefetch === false,
-      ),
-    ).toBe(true);
+    expect(copy).toContain("VibeScroll's servers");
+    const picker = elements(tree).find(
+      (node) => node.type === TaskRuntimePicker,
+    )!;
+    expect(picker.props.value).toBe("cloud");
+    expect(picker.props.serverAvailable).toBe(false);
+    expect(picker.props.localAvailable).toBe(false);
     expect(call).toHaveBeenCalledExactlyOnceWith("setupJourney", {
       organizationId: "distinct-route-owner",
     });
@@ -760,7 +752,7 @@ it("keeps the processing chapter's experimental text guidance distinct without a
       }),
     );
     expect(html).toContain("Connect processing");
-    expect(html).toContain("Managed cloud uses its existing credits");
+    expect(html).toContain("credits bought separately");
     expect(html).toContain(
       state === "available_unverified"
         ? "Available for text review; processing connection unverified."

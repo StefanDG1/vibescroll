@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { sharingRegions } from "../../../packages/sources/geography";
 import { PublicEditionContent } from "./public-edition-content";
 import type { PublicPayload } from "@/lib/public-knowledge-display";
 
@@ -72,8 +71,6 @@ function Panel({
     editions: string[];
   } | null>(null);
   const [collectionApproved, setCollectionApproved] = useState(false);
-  const [region, setRegion] = useState(""),
-    [regionConsent, setRegionConsent] = useState(false);
   async function act(operation: string, args: Record<string, unknown>) {
     if (!enabled || readOnly || busy) return null;
     const createsPublicAuthority =
@@ -564,70 +561,23 @@ function Panel({
           )}
         </>
       )}
-      <h3>Voluntary broad sharing region</h3>
-      <p>
-        This describes where contributors choose to share from, not a source
-        creator's location. No device or IP location is requested. Regions
-        appear only after the contributor threshold; exact counts and activity
-        times are not shown.
-      </p>
-      <label>
-        Broad region
-        <select
-          value={region}
-          onChange={(event) => setRegion(event.target.value)}
+      {Boolean(own?.geography.length) && (
+        <button
+          disabled={busy}
+          onClick={async () => {
+            if (
+              await act("setGeography", {
+                organizationId,
+                cell: null,
+                explicitlyOptedIn: false,
+              })
+            )
+              setOwn(null);
+          }}
         >
-          <option value="">Choose a region</option>
-          {sharingRegions.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={regionConsent}
-          onChange={(event) => setRegionConsent(event.target.checked)}
-        />
-        I choose to contribute this broad region to public aggregation.
-      </label>
-      <button
-        disabled={busy || !region || !regionConsent || !canPublish}
-        onClick={async () => {
-          if (
-            await act("setGeography", {
-              organizationId,
-              cell: region,
-              explicitlyOptedIn: true,
-            })
-          ) {
-            setRegionConsent(false);
-            setOwn(null);
-          }
-        }}
-      >
-        Share selected region
-      </button>
-      <button
-        disabled={busy}
-        onClick={async () => {
-          if (
-            await act("setGeography", {
-              organizationId,
-              cell: null,
-              explicitlyOptedIn: false,
-            })
-          ) {
-            setRegion("");
-            setRegionConsent(false);
-            setOwn(null);
-          }
-        }}
-      >
-        Stop sharing my region
-      </button>
+          Remove previously shared region
+        </button>
+      )}
       <p>
         <Link
           href="/help/actions-and-publication"

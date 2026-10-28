@@ -128,6 +128,24 @@ export async function workspaceData({
       preview: compactHome,
     });
     if (home.ready) return home;
+    // An unavailable projection must not silently fetch a full Library and
+    // analysis payload to render a metadata-only Home page.
+    const organization = await c.query(api.organizations.details, {
+      organizationId,
+    });
+    return {
+      compact: true as const,
+      homeProjectionPending: true,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      sources: [],
+      repositories: [],
+      proposals: [],
+      runs: [],
+      notifications: [],
+      usage: null,
+    };
   }
   if (view === "library") {
     const [context, categories, aiPreference] = await Promise.all([

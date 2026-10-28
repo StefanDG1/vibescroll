@@ -11,6 +11,7 @@ import { DashboardVisuals } from "./dashboard-visuals";
 import { KnowledgePreview } from "./knowledge-preview";
 import { DashboardTrace } from "./dashboard-trace";
 import { HomePostCard } from "./home-post-card";
+import { postPagePath } from "../../../packages/browser/post-route";
 import type {
   HomeSummaryV1,
   PostSummaryV1,
@@ -34,7 +35,9 @@ export function StudioHome({
   organizationId,
   demo = false,
   homeSnapshot,
+  progressTime,
   renderThumbnail,
+  homeProjectionPending = false,
 }: {
   sources: DashboardItem[];
   proposals: DashboardItem[];
@@ -53,7 +56,9 @@ export function StudioHome({
   organizationId?: string;
   demo?: boolean;
   homeSnapshot?: HomeSummaryV1;
+  progressTime?: number;
   renderThumbnail?: (summary: PostSummaryV1) => ReactNode;
+  homeProjectionPending?: boolean;
 }) {
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [highlightStopped, setHighlightStopped] = useState(false);
@@ -190,7 +195,7 @@ export function StudioHome({
       <div className="studio-shelves">
         <section aria-labelledby="studio-knowledge">
           <div className="row spread">
-            <h2 id="studio-knowledge">Recent posts</h2>
+            <h2 id="studio-knowledge">Recently added</h2>
             <Button variant="ghost" onClick={() => go("library")}>
               Explore library
               <ArrowRight size={16} aria-hidden="true" />
@@ -204,8 +209,12 @@ export function StudioHome({
                     key={`${homeSnapshot?.scopeKey}:${summary.sourceId}:${summary.generation}`}
                   >
                     <HomePostCard
+                      progressTime={progressTime}
                       summary={summary}
-                      href={`/app/${encodeURIComponent(organizationId ?? "")}/library/${encodeURIComponent(summary.sourceId)}`}
+                      href={postPagePath(
+                        organizationId ?? "",
+                        summary.sourceId,
+                      )}
                       onOpen={(sourceId) => {
                         const source = sources.find(
                           (item) => (item._id ?? item.id) === sourceId,
@@ -213,7 +222,7 @@ export function StudioHome({
                         if (source) onOpenSource(source);
                         else
                           window.location.assign(
-                            `/app/${encodeURIComponent(organizationId ?? "")}/library/${encodeURIComponent(sourceId)}`,
+                            postPagePath(organizationId ?? "", sourceId),
                           );
                       }}
                       thumbnailNode={renderThumbnail?.(summary)}
@@ -224,6 +233,11 @@ export function StudioHome({
             ) : (
               <p className="studio-empty">No recent posts are available.</p>
             )
+          ) : homeProjectionPending ? (
+            <p className="studio-empty">
+              Recent posts are temporarily unavailable. Your saved posts remain
+              in Library.
+            </p>
           ) : recent.length ? (
             <ul className="studio-list">
               {recent.map((s) => (

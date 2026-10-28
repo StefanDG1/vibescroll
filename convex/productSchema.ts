@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { personalAnalysisValue } from "./personalAnalysisSchema";
+import { cloudSaveIntent } from "./workCloudSaveSchema";
 import { v } from "convex/values";
 import { privateEvaluationOriginValue } from "../packages/contracts/private-evaluation-context";
 import { evaluationEvidenceRef } from "./knowledgeSchema";
@@ -291,6 +292,10 @@ export const productTables = {
     speechProvenance: v.optional(v.any()),
     linkPreview: v.optional(
       v.object({
+        title: v.optional(v.string()),
+        authorName: v.optional(v.string()),
+        durationSeconds: v.optional(v.number()),
+        origin: v.optional(v.union(v.literal("page"), v.literal("extractor"))),
         state: v.union(
           v.literal("queued"),
           v.literal("loading"),
@@ -369,6 +374,7 @@ export const productTables = {
     ),
     managedAnalysisActor: v.optional(v.id("users")),
     personalAnalysis: v.optional(personalAnalysisValue),
+    workCloudSaveIntent: v.optional(cloudSaveIntent),
     repositorySelection: v.optional(v.any()),
     selectionPendingKey: v.optional(v.string()),
     selectionActor: v.optional(v.id("users")),

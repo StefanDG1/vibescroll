@@ -317,7 +317,7 @@ export async function intakeReceipt(
 ) {
   const generation = intake.analysisGeneration ?? source.generation;
   const sourceReview = intakeNeedsSourceReview(source);
-  const reviewUrl = `https://scroll.companynerve.com/app/${source.organizationId}/library/${source._id}`;
+  const reviewUrl = `https://scroll.companynerve.com/app/${source.organizationId}/posts/${source._id}`;
   const reservations = (
     await Promise.all(
       [

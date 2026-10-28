@@ -27,6 +27,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }));
 import { PersonalSourceAnalysis, CaptureForm } from "./components/console";
+import { TaskRuntimePicker } from "./components/task-runtime-picker";
 type Node = ReactElement<Record<string, any>>;
 afterEach(() => {
   hooks.values = [];
@@ -34,6 +35,49 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
+it.each(["save_only", "cloud"])(
+  "preserves the saved %s route without falling back to local processing",
+  async (preferredRoute) => {
+    const call = vi.fn(async (_operation: string) => "saved-source");
+    hooks.index = 0;
+    const tree = CaptureForm({
+      organizationId: "workspace",
+      preferredRoute,
+      personalEnabled: true,
+      cloudEnabled: false,
+      linkAnalysisEnabled: true,
+      call,
+      onDone: vi.fn(),
+    });
+    const picker = elements(tree).find(
+      (node) => node.type === TaskRuntimePicker,
+    )!;
+    expect(picker.props.value).toBe(
+      preferredRoute === "cloud" ? "cloud" : undefined,
+    );
+    vi.stubGlobal("crypto", { randomUUID: () => "synthetic-save" });
+    vi.stubGlobal(
+      "FormData",
+      class {
+        get(name: string) {
+          return (
+            {
+              url: "https://www.instagram.com/reel/Example/",
+              rights: "on",
+            } as Record<string, string>
+          )[name];
+        }
+      },
+    );
+    await tree.props.onSubmit({
+      preventDefault() {},
+      currentTarget: { reset() {} },
+    });
+    expect(call.mock.calls.map(([operation]) => operation)).toEqual([
+      "capture",
+    ]);
+  },
+);
 it("uses actual selected effort for automatic URL capture and rejects missing choices before saving", async () => {
   const h = harness();
   h.device.subscriptionCapabilities.value.models[1].reasoningEfforts = ["high"];
@@ -97,6 +141,89 @@ it("uses actual selected effort for automatic URL capture and rejects missing ch
     maxComputeCredits: 10,
     sources: [{ id: "captured-source", generation: 0 }],
   });
+});
+it.each(
+  ["work_cloud", undefined, null].flatMap((preferredRoute) =>
+    [true, false].map((available) => ({ preferredRoute, available })),
+  ),
+)(
+  "uses configured Cloud with preference=$preferredRoute only when ready=$available and never falls back",
+  async ({ preferredRoute, available }) => {
+    const call = vi.fn(async () => ({
+      sourceId: "saved-source",
+      status: "waiting_for_cloud_setup",
+    }));
+    const done = vi.fn();
+    const props = {
+      organizationId: "workspace",
+      preferredRoute,
+      workCloud: {
+        available,
+        configured: true,
+        grantId: "grant",
+        grantVersion: 3,
+      },
+      personalEnabled: true,
+      cloudEnabled: true,
+      linkAnalysisEnabled: true,
+      call,
+      onDone: done,
+    };
+    vi.stubGlobal("crypto", { randomUUID: () => "synthetic-save" });
+    vi.stubGlobal(
+      "FormData",
+      class {
+        get(name: string) {
+          return (
+            {
+              url: "https://www.instagram.com/reel/Example/",
+              rights: "on",
+            } as Record<string, string>
+          )[name];
+        }
+      },
+    );
+    hooks.index = 0;
+    const tree = CaptureForm(props);
+    expect(
+      elements(tree).find((n) => n.type === TaskRuntimePicker)!.props.value,
+    ).toBe("work_cloud");
+    await tree.props.onSubmit({ preventDefault() {}, currentTarget: {} });
+    if (available) {
+      expect(call).toHaveBeenCalledExactlyOnceWith(
+        "captureWorkCloud",
+        expect.objectContaining({
+          grantId: "grant",
+          grantVersion: 3,
+          title: "Imported video link",
+          rightsAttested: true,
+        }),
+      );
+      expect(done).toHaveBeenCalledExactlyOnceWith("saved-source", true);
+    } else {
+      expect(call).not.toHaveBeenCalled();
+      expect(done).not.toHaveBeenCalled();
+    }
+  },
+);
+it.each([
+  { preferredRoute: "local", expected: "local" },
+  { preferredRoute: "cloud", expected: "cloud" },
+  { preferredRoute: "save_only", expected: undefined },
+  { existingSourceId: "upload-recovery", expected: "local" },
+])("preserves an explicit route or upload recovery: %j", (selection) => {
+  const tree = CaptureForm({
+    organizationId: "workspace",
+    personalEnabled: true,
+    cloudEnabled: true,
+    workCloud: { available: true, configured: true },
+    call: vi.fn(),
+    onDone: vi.fn(),
+    ...selection,
+  });
+  expect(
+    elements(tree).find((node) => node.type === TaskRuntimePicker)!.props.value,
+  ).toBe(selection.expected);
 });
 it("blocks expired automatic capture choices before a new source or upload grant", async () => {
   const h = harness();

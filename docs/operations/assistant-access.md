@@ -1,5 +1,13 @@
 # Configure scoped assistant access
 
+## Actual app Save to native ChatGPT reply accepted, October 26
+
+The owner's existing authenticated test plugin discovered `video_link_saved` through Refresh tools without another login. An actual app **Save source** click, after native monitor setup ended, produced a later acknowledgement containing the exact post ID. The signed callback returned HTTP200 on its first attempt. Before/after hashes confirm the saved source, analysis, transcript, frames and generation were unchanged. No media analysis, credits or paid API route ran. The earlier connection-event test also verified automatic renewal beyond its original OAuth-bound expiry.
+
+Frontend/backend `6cdcb1c` are live after exact CI and one controlled fixed Basic queued build. Normal domain assignment is restored. Both temporary canary monitors are paused; bounded reads confirm their subscription/delivery rows are gone. The original plugin stays installed and the new plugin stays authenticated. See the [exact setup/renewal runbook](chatgpt-native-events.md), [actual saved-link receipt](evidence/launch-20261026-saved-link-native-ack.json) and [ADR160](../adr/160-native-events-and-saved-video-acknowledgement.md).
+
+Automatic media execution remains the next acceptance step. Preserve the cumulative EUR7.50 cap, every prior hold, both TikToks, unknown work, original repair and release/provider/privacy gates.
+
 ## Profile Cloud Events candidate, October25
 
 The [offline-verified candidate](evidence/launch-20261025-catalog-cloud-events.json) adds two Events through the existing modern MCP transport. Both take exactly `{profileId, grantVersion}`. Neither grants execution or publication authority.
@@ -9,7 +17,7 @@ The [offline-verified candidate](evidence/launch-20261025-catalog-cloud-events.j
 
 Installation, delivery claim and transmission recheck current eligible owner, exact grant/client/consent, reviewed Cloud policy, all-library scope and Events/request/execution scopes. Existing encrypted callback authority, public-address restrictions, key rotation, bounded retries, revocation and restore quarantine remain. Legacy exact-source completion Events keep their existing arguments, identity and behavior.
 
-Subscriptions remain capped at30minutes and at earlier OAuth/grant expiry. The supported host must renew them; persistent background readiness is unverified until actual renewal succeeds. Matching protected keys and Events gates must be configured on both serving frontend and backend before the real host setup test. Do not reconnect OAuth, request another link or claim automatic save processing merely because tools are exposed. Standing authority, ordinary save/creator dispatch and neutral own-subscription catalog admission remain separate implementation stages. This candidate is not yet serving.
+Subscriptions remain capped at30minutes and at earlier OAuth/grant expiry. The supported host must renew them; renewal passed in the owner's October 26 connection test; automatic media execution remains unverified. Matching protected keys and Events gates must be configured on both serving frontend and backend before the real host setup test. Do not reconnect OAuth, request another link or claim automatic save processing merely because tools are exposed. Standing authority, ordinary save/creator dispatch and neutral own-subscription catalog admission remain separate implementation stages. The compatible four-Event implementation is serving; full-main publication remains held.
 
 ## Current explicit Work Cloud route, October 25
 
@@ -28,7 +36,7 @@ The version-one host sequence reuses current contracts:
 5. Complete within the lease using cited canonical JSON bound to that preparation. Mark uncertainty honestly. Omit optional usage/model/effort attestations that the runtime cannot verify. Never disclose raw media, lease credentials or signed URLs through the chat.
 6. Fetch the same source/profile once after acknowledged completion. Confirm the current result and protected citations, report actual counts and timings, then remove task-owned raw media/frames/audio and credentials. Preserve verified shared tool/model caches and unrelated files. A return-only timing is not fresh-video latency.
 
-This is an explicit user-request route and the current output remains `private_only`, without global catalog contribution. `save_link` does not automatically queue Cloud work or launch a host task. The inline host makes the separate exact-source request itself. Saves outside this active chat and creator follows still need an accepted background wake/execution bridge. The current Events implementation delivers `analysis_completed`, not waiting work. Root must prove a real supported host's subscription, delivery, renewal and execution bridge before adding standing-authorized waiting-work dispatch through the existing grants, jobs and deliveries. Never claim background execution from a registered event method or successful webhook alone. Keep all original provider, paid-entry, catalog, spending and independent acceptance gates.
+This is an explicit user-request route and the current output remains `private_only`, without global catalog contribution. `save_link` does not automatically queue Cloud work or launch a host task. The inline host makes the separate exact-source request itself. Saves outside this active chat and creator follows still need an accepted background wake/execution bridge. The serving Events catalog includes completion, explicitly approved waiting work and connection verification. Ordinary saved-video acknowledgement is now accepted in the private owner pilot. Native connection subscription, delivery, renewal and acknowledgement passed in the owner pilot. The actual saved-link acknowledgement has passed; a media execution bridge must still pass before adding standing-authorized analysis dispatch through the existing grants, jobs and deliveries. Never claim background execution from a registered event method or successful webhook alone. Keep all original provider, paid-entry, catalog, spending and independent acceptance gates.
 
 ## Earlier workspace checkpoint, October 24
 

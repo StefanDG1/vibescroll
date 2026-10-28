@@ -228,6 +228,7 @@ export async function requestServiceArtifactCore(
     processingStartedAt: now,
     error: undefined,
     personalAnalysis: undefined,
+    workCloudSaveIntent: undefined,
     typedAnalysisActor: undefined,
     analysisPipelineVersion: undefined,
     updatedAt: now,

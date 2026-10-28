@@ -10,6 +10,7 @@ import { pairingConfiguration } from "../packages/onboarding/pairing-configurati
 import { parsePreflightReport } from "../packages/onboarding/preflight-report";
 import { advanceJourney } from "../packages/onboarding/project-builder-journey";
 import { recommendProjectSkills } from "../packages/onboarding/skill-catalog";
+import { savedCloudRoute } from "./lib/workCloudSave";
 
 export const status = query({
   args: { organizationId: v.id("organizations") },
@@ -45,7 +46,9 @@ export const status = query({
       .query("assistantGrants")
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
       .take(30);
+    const workCloud = await savedCloudRoute(ctx, actor, organization);
     return {
+      workCloud,
       version: setup?.version ?? 0,
       journey: setup?.journey ?? null,
       // Only owner-authored metadata is matched locally. Repository text,
@@ -66,6 +69,7 @@ export const status = query({
           }
         : null,
       snapshot: {
+        workCloudAvailable: workCloud?.available ?? false,
         purposeSaved: setup?.confirmed === true,
         sourceSaved: sources.some((s) => s.state !== "deleted"),
         route: setup?.processingRoute,
@@ -108,7 +112,12 @@ export const save = mutation({
     organizationId: v.id("organizations"),
     expectedVersion: v.number(),
     route: v.optional(
-      v.union(v.literal("local"), v.literal("cloud"), v.literal("save_only")),
+      v.union(
+        v.literal("local"),
+        v.literal("cloud"),
+        v.literal("save_only"),
+        v.literal("work_cloud"),
+      ),
     ),
     importReviewed: v.optional(v.boolean()),
     preferencesReviewed: v.optional(v.boolean()),
@@ -116,7 +125,13 @@ export const save = mutation({
     journeyAction: v.optional(v.any()),
   },
   handler: async (ctx, a) => {
-    const { actor } = await privateLibrary(ctx, a.organizationId);
+    const { actor, organization } = await privateLibrary(ctx, a.organizationId);
+    if (a.route === "work_cloud")
+      ensure(
+        (await savedCloudRoute(ctx, actor, organization))?.available,
+        "SETUP_REQUIRED",
+        "Finish the reviewed ChatGPT saved-link setup before selecting automatic Cloud analysis.",
+      );
     await limit(ctx, `setup-journey:${actor._id}`, 30);
     const old = await ctx.db
       .query("librarySetup")

@@ -12,6 +12,10 @@ Ship a useful web and MCP product around Save, automatic Cloud analysis, cited r
 
 Remaining V4/V5 work includes the one-time future-contribution policy and automatic completion hook, safe shared in-flight production coalescing, all version-bound feedback consumers, latency/cold independent onboarding and an actual rights-cleared paid two-account cache test. The second account is signed in to Edge; its paid entitlement and sharing source are not verified. An additional backend publication slot has been requested within the existing budget and awaits its explicit response.
 
+## Ordinary ChatGPT links, next acceptance checkpoint
+
+The owner's mobile screenshot exposed a remaining foreground diagnostic path. [ADR182](../../adr/182-automatic-mcp-cloud-link-default.md) adds a separately reviewed app-and-ChatGPT V2 default, dispatches ordinary MCP saves to the existing native Events monitor and collapses manual review under Advanced. Old app-only grants do not widen. After local/full Linux validation, publish together with the compatible candidate only within explicit publication-count authority. Then refresh the existing app's tools if cached, review the broader default once, bind the monitor to the current grant and test one ordinary ChatGPT link without a sending-chat runtime or per-post app review. Results must update the post and configured Work task. Do not promise automatic app selection or push into arbitrary originating chats.
+
 ## Establish the baseline
 
 Use these facts rather than older pending checkpoints:

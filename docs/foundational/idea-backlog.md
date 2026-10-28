@@ -1,5 +1,9 @@
 # Foundational idea backlog
 
+## F085: ordinary ChatGPT links, October 28
+
+The owner expects the existing MCP app to use Cloud analysis by default without reviewing every video in the website. [ADR182](../adr/182-automatic-mcp-cloud-link-default.md) records the local V2 preference and native Events dispatch. Old app-only consent requires one review before broader use. Results return to the post and configured Work task; arbitrary-chat automatic selection or unsolicited completion is not claimed. Preserve the audience, prices, six beliefs and provider/privacy gates. Production acceptance of this ordinary-chat path remains pending.
+
 ## F083: versioned shared analysis, October 28
 
 Source: owner request to force a second/later Reel analysis, cache reusable evidence, compare model outputs, select the best version and roll back. Decision: adopt the implementation direction under [ADR180](../adr/180-versioned-cloud-analysis-and-shared-selection.md), with Cloud link-to-insights ahead of widget work. The existing audience benefits only if the newer result is actually useful and reliable. Current private automatic tests support the transport/media path, not model superiority, customer value or shared Cloud publication.

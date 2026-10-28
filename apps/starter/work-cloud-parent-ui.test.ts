@@ -275,3 +275,55 @@ it.each(["revoked", "gate", "selection"])(
     expect(render(props(next))).not.toContain("Resume this unclaimed");
   },
 );
+
+it.each([false, true])(
+  "keeps manual video review closed by default with automatic setup ready=%s",
+  async (ready) => {
+    const source = {
+      ...queued,
+      url: "https://www.instagram.com/reel/DeTest000001/",
+      state: "needs_upload",
+      generation: 0,
+      workCloudHandoff: null,
+      personalAnalysis: undefined,
+      workCloudLinkSetup: {
+        configured: ready,
+        monitorReady: ready,
+        chatLinksEnabled: ready,
+      },
+    };
+    server(source);
+    const parent = props(source);
+    render(parent);
+    await settle();
+    const html = render(parent);
+    expect(html).toContain("My own Cloud Work");
+    expect(html).toContain(
+      ready ? "Analyze using Cloud defaults" : "Complete or resume Cloud setup",
+    );
+    expect(html).toContain("Advanced: manual Cloud handoff");
+    expect(html).not.toContain("Review Work Cloud video");
+    expect(html).not.toContain("Experimental Work Cloud video");
+    expect(parent.strictCall).not.toHaveBeenCalled();
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.every(([url]) => !String(url).includes("work-cloud")),
+    ).toBe(true);
+  },
+);
+it("does not offer automatic video defaults for a separate unsupported source route", async () => {
+  const source = {
+    ...queued,
+    state: "needs_upload",
+    generation: 0,
+    workCloudHandoff: null,
+    personalAnalysis: undefined,
+    workCloudLinkSetup: null,
+  };
+  server(source);
+  const parent = props(source);
+  render(parent);
+  await settle();
+  expect(render(parent)).not.toContain("Analyze using Cloud defaults");
+});

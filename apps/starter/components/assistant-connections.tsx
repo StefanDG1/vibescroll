@@ -28,7 +28,7 @@ type Grant = {
   contextVersion?: number;
   cloudRequestPolicy?: "explicit_per_source_v1";
   cloudSaveDefaults?: {
-    version: "app-save-cloud-v1";
+    version: "app-save-cloud-v1" | "link-save-cloud-v2";
     model: string;
     effort: "low" | "medium" | "high" | "xhigh";
     retentionMs: number;
@@ -196,13 +196,13 @@ function AssistantAccessEditor({
     !!cloudRequestPolicy &&
     !!data?.workCloudSavedEnabled &&
     libraryScope === "all" &&
-    ["jobs:read", "events:subscribe"].every(
+    ["jobs:read", "events:subscribe", "links:save"].every(
       (scope) => scopes.includes(scope) && client?.scopes.includes(scope),
     );
   const cloudSaveDefaults =
     cloudSaveEligible && cloudSaves
       ? {
-          version: "app-save-cloud-v1",
+          version: "link-save-cloud-v2",
           model: cloudModel.trim(),
           effort: cloudEffort,
           retentionMs: Number(cloudRetentionDays) * 86400000,
@@ -697,7 +697,7 @@ function AssistantAccessEditor({
                       video in a supported Work Cloud chat using your own
                       ChatGPT subscription. GitHub is not required.{" "}
                       {data?.workCloudSavedEnabled
-                        ? "Automatic app saves require the separate defaults below and a native saved-link monitor."
+                        ? "Automatic app and ChatGPT links use the defaults below and one native Cloud monitor."
                         : "VibeScroll does not launch the Cloud task or automatically process new links."}{" "}
                       The task must support the required tools and network
                       access. Results stay private, with no paid API fallback.
@@ -723,20 +723,22 @@ function AssistantAccessEditor({
                               setAck("");
                             }}
                           />
-                          Allow analysis of video links I save in the app using
-                          My own Cloud Work
+                          Automatically analyze video links I save in the app or
+                          send to VibeScroll in ChatGPT
                         </label>
                         <p className="fine">
-                          Choose all posts and the status, Events and analysis
-                          actions above. Then finish the native saved-link
-                          monitor in ChatGPT once. Saving without analysis stays
-                          separate. Earlier saves and existing results are not
-                          automatically reprocessed.
+                          Choose all posts and the save, status, Events and
+                          analysis actions above. Then finish the native
+                          saved-link monitor in ChatGPT once. Saving without
+                          analysis stays separate. Once configured, any chat
+                          with VibeScroll available can queue your supported
+                          links without per-post app review. Earlier saves and
+                          existing results are not automatically reprocessed.
                         </p>
                         {cloudSaveDefaults && (
                           <details open>
                             <summary>
-                              Cloud defaults for future app saves
+                              Cloud defaults for app and ChatGPT links
                             </summary>
                             <label>
                               Model selected in your ChatGPT task

@@ -318,5 +318,13 @@
       "processing-and-recovery": "Existing illustrated one-time connection and monitor setup stays unchanged. Shared catalog enablement remains a separate gate."
     },
     "limits": "Local neutral contribution, paid cached reads, version-pinned notes and withdrawal guidance. No shared production publication, independent paid account acceptance, new screenshots or general availability claimed."
+  },
+  "automaticMcpCloudReview": {
+    "date": "2026-10-28",
+    "status": "source-reviewed-candidate",
+    "updated": [
+      "work-cloud-text-review"
+    ],
+    "limits": "V2 app and ChatGPT link defaults, existing native monitor, old grants unchanged, manual diagnostics collapsed. Local protocol/UI tests only; actual ordinary-chat production canary pending."
   }
 }

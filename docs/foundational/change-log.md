@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F085: ordinary ChatGPT links, October 28
+
+The owner expects the existing MCP app to use Cloud analysis by default without reviewing every video in the website. [ADR182](../adr/182-automatic-mcp-cloud-link-default.md) records the local V2 preference and native Events dispatch. Old app-only consent requires one review before broader use. Results return to the post and configured Work task; arbitrary-chat automatic selection or unsolicited completion is not claimed. Preserve the audience, prices, six beliefs and provider/privacy gates. Production acceptance of this ordinary-chat path remains pending.
+
 ## October 28: F083 versioned shared analysis
 
 Updated Research, Avatar, Offer, Beliefs and the index for the owner-requested versioning and focused Cloud release. Recorded preservation, comparison/rollback, entitled reuse, uncertainty about model quality and unvalidated paid-catalog value. The [V0-V5 plan](../launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) supplies concrete tests. No audience, price, allowance, provider/privacy permission, six-belief change, campaign or completed implementation is implied.

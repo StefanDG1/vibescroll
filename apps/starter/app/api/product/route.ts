@@ -128,6 +128,7 @@ const operations = {
   saveProfileDraft: ["mutation", api.profiles.saveDraft],
   capture: ["mutation", api.product.capture],
   captureWorkCloud: ["mutation", api.workCloudSaves.capture],
+  analyzeSavedWorkCloud: ["mutation", api.workCloudSaves.analyzeSaved],
   importLinks: ["mutation", api.imports.links],
   process: ["mutation", api.product.processSource],
   processBatch: ["mutation", api.product.processBatch],

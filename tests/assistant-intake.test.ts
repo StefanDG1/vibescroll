@@ -132,13 +132,13 @@ it("queues explicit links without per-link confirmation, preserves replay and wa
   const saved = await s.save();
   const replay = await s.save();
   expect(replay.source_id).toBe(saved.source_id);
-  expect(saved.receipt.status).toBe("waiting_for_computer");
+  expect(saved.receipt?.status).toBe("waiting_for_computer");
   expect(await s.status(saved.source_id)).toMatchObject({
     status: "waiting_for_computer",
     source_status: "needs_upload",
   });
-  expect(saved.receipt.balance).toMatchObject({ available: 30, total: 30 });
-  expect(saved.receipt.credit_offer).toMatchObject({
+  expect(saved.receipt?.balance).toMatchObject({ available: 30, total: 30 });
+  expect(saved.receipt?.credit_offer).toMatchObject({
     max_credits: 10,
     generation: 0,
   });
@@ -177,7 +177,7 @@ it("saves GitHub and Reddit metadata under the existing grant without inheriting
       },
     });
     expect(saved.note).toContain("Saved link metadata");
-    expect(saved.receipt.review_url).toBe(saved.url);
+    expect(saved.receipt?.review_url).toBe(saved.url);
     const source = (await s.t.run((ctx) => ctx.db.get(saved.source_id)))!;
     expect(await s.status(saved.source_id)).toMatchObject({
       status: "source_review_required",
@@ -317,7 +317,7 @@ it("requires review once for legacy grants and honors save-only override", async
   await expect(legacy.save()).rejects.toThrow("SETUP_REQUIRED");
   const s = await fixture();
   const saved = await s.save({ analyze: false });
-  expect(saved.receipt.credit_offer).toBeNull();
+  expect(saved.receipt?.credit_offer).toBeNull();
   await s.dispatch("hello", {
     profileBinding: s.profileBinding,
     model: "gpt-6.1-sol",
@@ -688,7 +688,7 @@ it("uses newly reviewed preferences when a user resubmits an existing saved link
   });
   const submitted = await s.save();
   expect(submitted.source_id).toBe(saved.source_id);
-  expect(submitted.receipt.status).toBe("waiting_for_computer");
+  expect(submitted.receipt?.status).toBe("waiting_for_computer");
   await s.dispatch("hello", {
     profileBinding: s.profileBinding,
     model: "gpt-6.1-sol",

@@ -262,6 +262,13 @@ export async function eventDeliveryCurrent(
     (await eventSubscriptionCurrent(ctx, s, source))
   );
 }
+// A newly authorized analysis intent is a distinct occurrence from an earlier
+// save-only acknowledgement. Legacy intents keep their original occurrence.
+function videoLinkSavedOccurrence(source: Doc<"sources">) {
+  return source.workCloudSaveIntent?.origin
+    ? Math.max(source.createdAt + 1, source.workCloudSaveIntent.createdAt)
+    : source.createdAt;
+}
 async function videoLinkSavedCurrent(
   ctx: QueryCtx,
   s: Doc<"assistantSubscriptions">,
@@ -278,7 +285,7 @@ async function videoLinkSavedCurrent(
     (source.sourceType ?? "media") !== "media" ||
     (occurrence &&
       (source.generation !== occurrence.generation ||
-        source.createdAt !== occurrence.completedRevision)) ||
+        videoLinkSavedOccurrence(source) !== occurrence.completedRevision)) ||
     !(await eventSubscriptionCurrent(ctx, s))
   )
     return false;
@@ -297,9 +304,9 @@ async function videoLinkSavedCurrent(
     ))
   );
 }
-// Capture is the only caller. No library scan or analysis request follows.
-// The existing occurrence index stores the immutable creation time for this
-// event, so metadata previews and retries coalesce while the delivery is retained.
+// Capture and exact saved-intent creation call this without a library scan.
+// The existing occurrence index coalesces repeated metadata and intent notices;
+// creating a delivery never creates an analysis job.
 export async function notifyVideoLinkSaved(
   ctx: MutationCtx,
   source: Doc<"sources">,
@@ -326,10 +333,31 @@ export async function notifyVideoLinkSaved(
           .eq("subscriptionId", s._id)
           .eq("sourceId", source._id)
           .eq("generation", source.generation)
-          .eq("completedRevision", source.createdAt),
+          .eq("completedRevision", videoLinkSavedOccurrence(source)),
       )
       .unique();
     if (existing) continue;
+    // Upgrade only a never-attempted pending acknowledgement in place. A sent,
+    // delivering or uncertain acknowledgement must not swallow a later intent.
+    if (source.workCloudSaveIntent?.origin) {
+      const prior = await ctx.db
+        .query("assistantDeliveries")
+        .withIndex("by_source_occurrence", (q) =>
+          q
+            .eq("subscriptionId", s._id)
+            .eq("sourceId", source._id)
+            .eq("generation", source.generation)
+            .eq("completedRevision", source.createdAt),
+        )
+        .unique();
+      if (prior?.state === "pending" && prior.attempts === 0) {
+        await ctx.db.patch(prior._id, {
+          completedRevision: videoLinkSavedOccurrence(source),
+          updatedAt: Date.now(),
+        });
+        continue;
+      }
+    }
     const now = Date.now();
     const id = await ctx.db.insert("assistantDeliveries", {
       organizationId: s.organizationId,
@@ -337,7 +365,7 @@ export async function notifyVideoLinkSaved(
       eventName: "video_link_saved",
       sourceId: source._id,
       generation: source.generation,
-      completedRevision: source.createdAt,
+      completedRevision: videoLinkSavedOccurrence(source),
       state: "pending",
       attempts: 0,
       dueAt: now,

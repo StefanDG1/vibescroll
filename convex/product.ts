@@ -6,6 +6,8 @@ import {
   catalogConfiguration,
 } from "./lib/cloudCatalog";
 import { notifyVideoLinkSaved } from "./lib/assistantEvents";
+import { savedCloudRoute } from "./lib/workCloudSave";
+import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
 import {
@@ -712,8 +714,34 @@ export const detail = query({
         reader.organization,
         reader.actor._id,
       ));
+    let automaticVideoSupported = false;
+    try {
+      automaticVideoSupported =
+        s.kind === "url" &&
+        ["instagram", "tiktok"].includes(
+          privateCloudMediaIdentity(s.url ?? s.canonical).platform,
+        );
+    } catch {
+      /* Other source routes keep their own setup. */
+    }
+    const automaticRoute =
+      cloudSourceEligible && automaticVideoSupported
+        ? await savedCloudRoute(ctx, reader.actor, reader.organization)
+        : null;
+    const automaticGrant = automaticRoute?.grantId
+      ? await ctx.db.get(automaticRoute.grantId)
+      : null;
     return {
       ...s,
+      workCloudLinkSetup: automaticRoute
+        ? {
+            configured: automaticRoute.configured,
+            monitorReady: automaticRoute.available,
+            chatLinksEnabled:
+              automaticGrant?.cloudSaveDefaults?.version ===
+              "link-save-cloud-v2",
+          }
+        : null,
       catalogContributionAvailable:
         !!catalogConfiguration() &&
         selected?.metadata.origin === "private" &&

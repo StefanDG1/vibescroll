@@ -2,6 +2,18 @@
 
 These routes are disabled by default. Supplied or retained text and public single-video links have separate readiness gates. An operator must verify and enable the supported route for your eligible account. A queued approval does not launch a host or mean analysis has started.
 
+## Automatic links from the app and ChatGPT
+
+This updated setup is a release candidate. On the older production screen, **Review Work Cloud video** is a manual diagnostic, not the intended automatic workflow.
+
+1. Open **Connections** and edit your existing VibeScroll connection. Keep the same MCP app.
+2. Select **Automatically analyze video links I save in the app or send to VibeScroll in ChatGPT**. Review your library, requested model, effort, retention and own-subscription funding, then save once. Older app-only settings need this one-time review before ChatGPT links can use the default.
+3. Complete or resume the prepared native Cloud monitor using the setup instructions. After a connection preference changes, bind the monitor to the current grant version. A connected MCP app by itself does not establish an active monitor.
+4. In a ChatGPT chat where VibeScroll is available, send a permitted Instagram Reel or TikTok and ask VibeScroll to save it. Analysis is the default for this setup. Say **save only** when you want no analysis. You should not open the app's manual review for each post.
+5. Open the returned post link for progress and the cited result. The configured Work task also receives completion. VibeScroll cannot insert an unsolicited result into every chat where you originally sent a link.
+
+The sending chat needs no downloader or video runtime. Native Events deliver the saved-link intent to your prepared Cloud Work task. If setup is unavailable, the link stays saved with a setup shortcut. Existing results and uncertain attempts are preserved. No paid fallback runs. Subscription limits, refresh-token expiry or revocation can still require attention; this is not a promise of permanent authentication. For a previously save-only pristine video, **Analyze using Cloud defaults** requests the configured route. **Advanced: manual Cloud handoff** is for deliberate diagnostics.
+
 ## Before you start
 
 Use your private library or an eligible team that you created and still own alone, a source you may process and the intended official Work Cloud connection. The team must have no active invitations. Its connection permissions are reviewed separately; posts stay in their existing library. GitHub, Docker Desktop and a paired computer are not required by this handoff. Your host's subscription and resource limits still apply. A model selection is a request; VibeScroll cannot attest the host's actual model, resource controls or usage.
@@ -45,7 +57,7 @@ If this option is absent, use the separately approved diagnostic handoff below w
 
 ## Review one diagnostic handoff
 
-1. Open the saved source. Look for **Experimental Work Cloud text** or **Experimental Work Cloud video**. An absent control means that route is unavailable.
+1. Open the saved source and expand **Advanced: manual Cloud handoff**. Look for **Experimental Work Cloud text** or **Experimental Work Cloud video**. An absent control means that route is unavailable.
 2. Select **Review Work Cloud text** or **Review Work Cloud video**, then choose the intended connection. Review the requested model and effort against the options in your official host. Choose the model explicitly if its Default setting can route to another model.
 3. Preview the exact source and connection. For video, review the private result's evidence-retention deadline. The current experimental maximum is thirty days. Raw provider files have a separate cleanup target; VibeScroll cannot verify their deletion or erase provider chat history.
 4. Approve your own subscription with maximum API spend **US$0**. This grants no paid fallback, project evaluation or catalog publication.

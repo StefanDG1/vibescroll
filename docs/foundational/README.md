@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## F085: ordinary ChatGPT links, October 28
+
+The owner expects the existing MCP app to use Cloud analysis by default without reviewing every video in the website. [ADR182](../adr/182-automatic-mcp-cloud-link-default.md) records the local V2 preference and native Events dispatch. Old app-only consent requires one review before broader use. Results return to the post and configured Work task; arbitrary-chat automatic selection or unsolicited completion is not claimed. Preserve the audience, prices, six beliefs and provider/privacy gates. Production acceptance of this ordinary-chat path remains pending.
+
 ## Current plan: F083 versioned shared analysis, October 28
 
 All four briefs now record the owner's [versioned Cloud link-to-insights priority](../adr/180-versioned-cloud-analysis-and-shared-selection.md). Immutable history, evidence reuse, comparison and rollback precede widget work. Model superiority, a shared-database advantage and willingness to pay remain hypotheses until their stated tests pass. Prices, audience, six beliefs, privacy/provider gates and current finite spending authority stay unchanged. These are planning updates, not customer-facing availability claims.

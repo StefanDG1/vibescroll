@@ -212,7 +212,8 @@ it("reviews automatic app-Save defaults separately and invalidates the acknowled
     target: { checked: true },
   });
   f.acknowledge();
-  const label = "Allow analysis of video links I save in the app";
+  const label =
+    "Automatically analyze video links I save in the app or send to VibeScroll in ChatGPT";
   expect(checkbox(f.render(), label).props.checked).toBe(false);
   checkbox(f.render(), label).props.onChange({ target: { checked: true } });
   expect(checkbox(f.render(), approvalLabel).props.checked).toBe(false);
@@ -224,7 +225,7 @@ it("reviews automatic app-Save defaults separately and invalidates the acknowled
     "saveAssistantGrant",
     expect.objectContaining({
       cloudSaveDefaults: {
-        version: "app-save-cloud-v1",
+        version: "link-save-cloud-v2",
         model: "gpt-6.1-sol",
         effort: "high",
         retentionMs: 7 * 86400000,

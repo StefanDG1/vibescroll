@@ -394,7 +394,7 @@ it("keeps Cloud requests unavailable by default or with only the text gate", asy
   }
 });
 it.each(["2025-11-25", "2026-07-28"])(
-  "guides an awake Cloud host inline without turning save into execution over %s",
+  "defaults ordinary links to prepared background Cloud while keeping diagnostics explicit over %s",
   async (protocol) => {
     const host = mcp(false, ["links:save", "analysis:request"], true, protocol);
     const tools = (await packet(await host.call("tools/list", {}))).result
@@ -403,30 +403,36 @@ it.each(["2025-11-25", "2026-07-28"])(
       const { description } = tools.find(
         (tool: { name: string }) => tool.name === name,
       );
-      expect(description).toMatch(/^For an exact supported video/);
-      expect(description).toContain("continue in this same user turn");
       expect(description).toContain(
-        "Before request_analysis or work_cloud_claim",
+        "save with analyze omitted or true by default",
       );
+      expect(description).toContain("link-save-cloud-v2");
+      expect(description).toContain("through native Events");
       expect(description).toContain(
-        "Save with analyze=false, then read get_job_status",
+        "sending chat does not need a video runtime",
       );
-      expect(description).toContain("explicit_per_source_v1");
-      expect(description).toContain("maxApiUsd=0");
-      expect(description).toContain("saving alone grants no Cloud execution");
+      expect(description).toContain("Do not ask for per-post app approval");
       expect(description).toContain(
-        "No pasted second message, Events subscription, GitHub or fresh per-post app approval",
+        "No paid API or alternate executor fallback",
       );
-      expect(description).toContain("private_only");
-      expect(description).toContain(
-        "does not automatically launch a host task",
-      );
-      expect(description).toContain(
-        "separately accepted background wake/execution bridge",
-      );
-      expect(description).toMatch(
-        /Never choose credits automatically|without automatically spending credits/,
-      );
+      expect(description).toContain("do not promise an unsolicited reply");
+      if (name === "request_analysis") {
+        expect(description).toContain(
+          "explicitly chosen foreground Work Cloud diagnostic",
+        );
+        expect(description).toContain(
+          "Before request_analysis or work_cloud_claim",
+        );
+        expect(description).toContain("maxApiUsd=0");
+        expect(description).toContain("saving alone grants no Cloud execution");
+      } else {
+        expect(description).not.toContain(
+          "Before request_analysis or work_cloud_claim",
+        );
+        expect(description).toContain(
+          "analyze=false only when the user wants save only",
+        );
+      }
     }
     const args = {
       url: "https://www.instagram.com/reel/ExactVideo/",

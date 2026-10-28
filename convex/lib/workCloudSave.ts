@@ -1,4 +1,4 @@
-import type { QueryCtx } from "../_generated/server";
+import type { QueryCtx, MutationCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
 import {
   assistantClients,
@@ -11,6 +11,10 @@ import { workCloudSourceEligible } from "./workCloudSourceAccess";
 import { digest } from "../product";
 import { sourceRetained } from "./sourceAuthority";
 import { eventSubscriptionCurrent } from "./assistantEvents";
+import { notifyVideoLinkSaved } from "./assistantEvents";
+import { audit } from "../lib";
+import { ensure } from "../../packages/policy";
+import { privateCloudMediaIdentity } from "../../packages/social/contracts";
 
 export const cloudSaveIntentLifetimeMs = 86400000;
 export function savedCloudEnabled(subject: string) {
@@ -135,6 +139,13 @@ export async function savedCloudIntentCurrent(
   const intent = source.workCloudSaveIntent;
   return (
     !!intent &&
+    intent.version === grant.cloudSaveDefaults?.version &&
+    (intent.version === "app-save-cloud-v1"
+      ? intent.origin === undefined || intent.origin === "app"
+      : intent.origin === "app" ||
+        (intent.origin === "mcp" &&
+          grant.intakePolicy === "explicit_links" &&
+          grant.scopes.includes("links:save"))) &&
     intent.actor === actor._id &&
     intent.grantId === grant._id &&
     intent.grantVersion === grant.version &&
@@ -159,4 +170,120 @@ export async function savedCloudIntentCurrent(
         intent.revision === source.updatedAt &&
         intent.sourceHash === (await savedCloudSourceHash(source)))
   );
+}
+
+/** Exact finite intent shared by app saves and separately reviewed MCP saves. */
+export async function queueSavedCloudIntent(
+  ctx: MutationCtx,
+  actor: Doc<"users">,
+  organization: Doc<"organizations">,
+  grant: Doc<"assistantGrants">,
+  source: Doc<"sources">,
+  origin: "app" | "mcp",
+) {
+  ensure(
+    await savedCloudGrantCurrent(ctx, actor, organization, grant),
+    "SETUP_REQUIRED",
+    "Review automatic Cloud setup once in Connections.",
+  );
+  ensure(
+    origin !== "mcp" ||
+      (grant.cloudSaveDefaults?.version === "link-save-cloud-v2" &&
+        grant.intakePolicy === "explicit_links" &&
+        grant.scopes.includes("links:save")),
+    "SETUP_REQUIRED",
+    "Your current automatic setting covers app saves. Review app and ChatGPT links once to enable this default.",
+  );
+  ensure(
+    await savedCloudMonitorCurrent(ctx, grant),
+    "SETUP_REQUIRED",
+    "Complete or resume your Cloud monitor once. No per-post app review is needed.",
+  );
+  const identity = privateCloudMediaIdentity(source.url ?? source.canonical);
+  ensure(
+    source.organizationId === organization._id &&
+      source.rightsAttested &&
+      ["instagram", "tiktok"].includes(identity.platform),
+    "SOURCE_UNAVAILABLE",
+    "Use a permitted Instagram or TikTok video in the current library.",
+  );
+  const preserved = {
+    sourceId: source._id,
+    status: "existing_work_preserved" as const,
+    intentId: null,
+    expiresAt: null,
+  };
+  if (
+    !["saved", "needs_upload"].includes(source.state) ||
+    source.generation !== 0 ||
+    source.personalAnalysis ||
+    source.analysis ||
+    source.orderedMedia ||
+    source.publicImportId ||
+    source.currentRevisionId ||
+    source.personalMedia ||
+    source.text ||
+    source.objectKey ||
+    !sourceRetained(source.sourceRetentionUntil)
+  )
+    return preserved;
+  if (await savedCloudIntentCurrent(ctx, actor, organization, grant, source)) {
+    await notifyVideoLinkSaved(ctx, source, actor._id);
+    return {
+      sourceId: source._id,
+      status: "waiting_for_cloud_setup" as const,
+      intentId: source.workCloudSaveIntent!.id,
+      expiresAt: source.workCloudSaveIntent!.expiresAt,
+    };
+  }
+  if (source.workCloudSaveIntent) return preserved;
+  const now = Date.now(),
+    defaults = grant.cloudSaveDefaults!;
+  const retainUntil = Math.min(
+    now + defaults.retentionMs,
+    source.sourceRetentionUntil ?? Infinity,
+  );
+  ensure(
+    retainUntil > now,
+    "SOURCE_UNAVAILABLE",
+    "Source retention has ended.",
+  );
+  const values = {
+    version: defaults.version,
+    origin,
+    actor: actor._id,
+    grantId: grant._id,
+    grantVersion: grant.version,
+    clientId: grant.clientId,
+    generation: source.generation,
+    revision: source.updatedAt,
+    sourceHash: await savedCloudSourceHash(source),
+    defaultsHash: await digest(canonicalJson(defaults)),
+    policyHash: await digest(canonicalJson(workCloudMediaPolicy)),
+    model: defaults.model,
+    effort: defaults.effort,
+    retainUntil,
+    createdAt: now,
+    expiresAt: Math.min(
+      now + cloudSaveIntentLifetimeMs,
+      retainUntil,
+      grant.expiresAt ?? Infinity,
+    ),
+  };
+  const id = await digest(canonicalJson({ sourceId: source._id, ...values }));
+  await ctx.db.patch(source._id, { workCloudSaveIntent: { ...values, id } });
+  await notifyVideoLinkSaved(ctx, (await ctx.db.get(source._id))!, actor._id);
+  await audit(
+    ctx,
+    organization._id,
+    actor._id,
+    "work_cloud.save_intent",
+    `${source._id}:${id}:${origin}`,
+  );
+  return {
+    sourceId: source._id,
+    status: "waiting_for_cloud_setup" as const,
+    intentId: id,
+    expiresAt: values.expiresAt,
+  };
 }

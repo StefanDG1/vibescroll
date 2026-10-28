@@ -3624,6 +3624,8 @@ export function SourceDetail({
   const [allFrames, setAllFrames] = useState(false);
   const [categoryDraft, setCategoryDraft] = useState("");
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [manualCloudOpen, setManualCloudOpen] = useState(false);
+  const [cloudRequestError, setCloudRequestError] = useState("");
   const transcript = useRef<HTMLDetailsElement>(null);
   const cloudSpeechSegments = isCloudObservedMedia(detail.orderedMedia?.post)
     ? detail.orderedMedia.post.segments
@@ -4879,18 +4881,73 @@ export function SourceDetail({
               detail.kind === "url" &&
               !detail.currentRevisionId)) &&
           !["ready", "queued", "processing"].includes(detail.state) && (
-            <WorkCloudText
-              sourceId={id(detail)}
-              organizationId={org}
-              generation={detail.generation}
+            <>
+              {detail.kind === "url" && detail.workCloudLinkSetup && (
+                <section className="panel">
+                  <h3>My own Cloud Work</h3>
+                  <p>
+                    {detail.workCloudLinkSetup?.chatLinksEnabled
+                      ? "New supported links sent to VibeScroll in ChatGPT or added with Cloud selected use your saved Cloud defaults. No per-post app review is needed."
+                      : "Complete automatic app and ChatGPT link setup once in Connections. After setup, supported links use your own Cloud Work without per-post review."}
+                  </p>
+                  {detail.workCloudLinkSetup?.monitorReady &&
+                  detail.generation === 0 &&
+                  !detail.personalAnalysis &&
+                  !detail.workCloudSaveIntent ? (
+                    <button
+                      className="primary"
+                      disabled={readOnly || detailLoading || busy}
+                      onClick={async () => {
+                        setCloudRequestError("");
+                        try {
+                          await strictCall("analyzeSavedWorkCloud", {
+                            sourceId,
+                          });
+                          onRefresh?.();
+                        } catch {
+                          setCloudRequestError(
+                            "The Cloud request was not confirmed. Check setup and the existing post before trying again.",
+                          );
+                        }
+                      }}
+                    >
+                      Analyze using Cloud defaults
+                    </button>
+                  ) : (
+                    <Link prefetch={false} href={`/app/${org}/connections`}>
+                      Complete or resume Cloud setup
+                    </Link>
+                  )}
+                  {cloudRequestError && <p role="alert">{cloudRequestError}</p>}
+                </section>
+              )}
+              <details
+                className="panel"
+                onToggle={(event) =>
+                  setManualCloudOpen(event.currentTarget.open)
+                }
+              >
+                <summary>Advanced: manual Cloud handoff</summary>
+                <p>
+                  Use this only for a deliberate diagnostic. Normal automatic
+                  links do not need this review.
+                </p>
+                {manualCloudOpen && (
+                  <WorkCloudText
+                    sourceId={id(detail)}
+                    organizationId={org}
+                    generation={detail.generation}
 
-              revision={detail.updatedAt}
-              media={detail.kind === "url" && !detail.currentRevisionId}
+                    revision={detail.updatedAt}
+                    media={detail.kind === "url" && !detail.currentRevisionId}
 
-              retentionUntil={detail.sourceRetentionUntil}
-              call={strictCall}
-              disabled={readOnly || detailLoading}
-            />
+                    retentionUntil={detail.sourceRetentionUntil}
+                    call={strictCall}
+                    disabled={readOnly || detailLoading}
+                  />
+                )}
+              </details>
+            </>
           )}
 
         {!demo &&

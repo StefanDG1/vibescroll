@@ -1,7 +1,10 @@
 import { v } from "convex/values";
 
 export const cloudSaveDefaults = v.object({
-  version: v.literal("app-save-cloud-v1"),
+  version: v.union(
+    v.literal("app-save-cloud-v1"),
+    v.literal("link-save-cloud-v2"),
+  ),
   model: v.string(),
   effort: v.union(
     v.literal("low"),
@@ -13,7 +16,11 @@ export const cloudSaveDefaults = v.object({
 });
 
 export const cloudSaveIntent = v.object({
-  version: v.literal("app-save-cloud-v1"),
+  version: v.union(
+    v.literal("app-save-cloud-v1"),
+    v.literal("link-save-cloud-v2"),
+  ),
+  origin: v.optional(v.union(v.literal("app"), v.literal("mcp"))),
   id: v.string(),
   actor: v.id("users"),
   grantId: v.id("assistantGrants"),

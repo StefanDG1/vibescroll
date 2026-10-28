@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
+import type { Id } from "../convex/_generated/dataModel";
 import { postDisplayTitle } from "../packages/sources/display";
 import { tools as assistantHttpTools } from "../convex/assistantHttp";
 import { createKnowledgeHandler } from "../packages/mcp/server";
@@ -12,6 +13,7 @@ const subject = "user_01234567890123456789012345";
 const clientId = "client_01234567890123456789012345";
 const issuer = "https://cloud-save-fixture.authkit.app";
 const scopes = [
+  "links:save",
   "analysis:request",
   "analysis:execute",
   "events:subscribe",
@@ -130,6 +132,276 @@ async function setup(optIn = true, originalWorkspace = false) {
     start,
   };
 }
+
+async function chatLinkSetup(monitor = true) {
+  const s = await setup();
+  const grant = await s.owner.mutation(api.assistantGrants.save, {
+    ...s.grantArgs,
+    expectedVersion: s.grant.version,
+    intakePolicy: "explicit_links",
+    cloudSaveDefaults: {
+      ...s.grantArgs.cloudSaveDefaults!,
+      version: "link-save-cloud-v2",
+    },
+  });
+  if (monitor)
+    await s.assistant.mutation(internal.assistantEvents.install, {
+      profileId: s.org,
+      grantVersion: grant.version,
+      eventName: "video_link_saved",
+      externalId: "sub_" + "b".repeat(64),
+      ciphertext: "synthetic-authority-v2",
+      keyVersion: "1",
+      expiresAt: Date.now() + 600000,
+      callbackVerifiedAt: Date.now(),
+    });
+  const args = {
+    profileId: s.org,
+    url: s.captureArgs.url,
+    title: "Reel sent from an ordinary chat",
+    key: "mcp-background-link-once",
+  };
+  return { ...s, grant, args };
+}
+
+it("queues an ordinary MCP link through native Events and saved Cloud defaults without per-post app review or a sending-chat runtime", async () => {
+  const s = await chatLinkSetup();
+  const response = await s.assistant.mutation(
+    internal.assistant.saveLink,
+    s.args,
+  );
+  expect(response.status).toBe("waiting_for_cloud");
+  expect(response).toMatchObject({
+    per_post_app_review_required: false,
+    analysis_requested: true,
+  });
+  expect(response.analysis_started).toBe(false);
+  expect(response.receipt).toBeNull();
+  const source = (await s.t.run((ctx) => ctx.db.get(response.source_id)))!;
+  expect(source.generation).toBe(0);
+  expect(source.personalAnalysis).toBeUndefined();
+  expect(source.workCloudSaveIntent?.version).toBe("link-save-cloud-v2");
+  expect(source.workCloudSaveIntent?.origin).toBe("mcp");
+  const status = await s.assistant.query(internal.assistant.getJobStatus, {
+    profileId: s.org,
+    sourceId: source._id,
+  });
+  expect(status.saved_cloud_intent?.state).toBe("waiting_for_runtime");
+  await s.start(source._id, source.workCloudSaveIntent!.id);
+  const started = (await s.t.run((ctx) => ctx.db.get(source._id)))!;
+  expect(started.personalAnalysis?.executor).toBe("work_cloud");
+  expect(
+    started.personalAnalysis?.executor === "work_cloud" &&
+      started.personalAnalysis.cloud.maxApiUsd,
+  ).toBe(0);
+  const repeated = await s.assistant.mutation(internal.assistant.saveLink, {
+    ...s.args,
+    key: "same-link-second-chat",
+  });
+  expect(repeated.status).toBe("existing_work_preserved");
+  expect((await s.t.run((ctx) => ctx.db.get(source._id)))?.generation).toBe(
+    started.generation,
+  );
+});
+
+it("uses the analysis tool's existing scope challenge when a save-only OAuth token needs to continue automatically", async () => {
+  const s = await chatLinkSetup();
+  const saveOnlyToken = s.t.withIdentity({
+    ...s.identity,
+    scope: "links:save",
+  });
+  const response = await saveOnlyToken.mutation(
+    internal.assistant.saveLink,
+    s.args,
+  );
+  expect(response).toMatchObject({ next_action: { tool: "request_analysis" } });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(response.source_id)))
+      ?.workCloudSaveIntent,
+  ).toBeUndefined();
+  const continued = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    { profileId: s.org, sourceId: response.source_id },
+  );
+  expect(continued.status).toBe("waiting_for_cloud");
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(response.source_id)))?.personalAnalysis,
+  ).toBeUndefined();
+});
+
+it("keeps save-only explicit and does not widen an old app-only Cloud grant", async () => {
+  const s = await chatLinkSetup();
+  const onlySaved = await s.assistant.mutation(internal.assistant.saveLink, {
+    ...s.args,
+    analyze: false,
+  });
+  expect(onlySaved.note).toBe("Saved only, as requested.");
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(onlySaved.source_id)))
+      ?.workCloudSaveIntent,
+  ).toBeUndefined();
+  const old = await setup();
+  const oldResponse = await old.assistant.mutation(
+    internal.assistant.saveLink,
+    { ...s.args, profileId: old.org, rightsAttested: true },
+  );
+  expect(oldResponse.status).toBe("cloud_setup_required");
+  expect(oldResponse).toMatchObject({ per_post_app_review_required: false });
+  expect(
+    (await old.t.run((ctx) => ctx.db.get(oldResponse.source_id)))
+      ?.workCloudSaveIntent,
+  ).toBeUndefined();
+});
+
+it("saves a link and reports one-time monitor setup when background delivery is unavailable", async () => {
+  const s = await chatLinkSetup(false);
+  const response = await s.assistant.mutation(
+    internal.assistant.saveLink,
+    s.args,
+  );
+  expect(response.status).toBe("cloud_setup_required");
+  const source = (await s.t.run((ctx) => ctx.db.get(response.source_id)))!;
+  expect(source.state).toBe("needs_upload");
+  expect(source.personalAnalysis).toBeUndefined();
+  expect(source.workCloudSaveIntent).toBeUndefined();
+});
+it.each(["2025-11-25", "2026-07-28"])(
+  "queues ordinary ChatGPT save_link through serialized MCP and authenticated HTTP: %s",
+  async (protocol) => {
+    const s = await chatLinkSetup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ sub: subject })),
+    );
+    const http = (
+      assistantHttpTools as unknown as {
+        _handler: (ctx: unknown, request: Request) => Promise<Response>;
+      }
+    )._handler;
+    const invoke = vi.fn(async (operation, args) => {
+      const response = await http(
+        {
+          runMutation: (reference: any, value: any) =>
+            s.assistant.mutation(reference, value),
+        },
+        new Request("https://synthetic.example/assistant-tools", {
+          method: "POST",
+          headers: {
+            authorization: "Bearer synthetic-access-token-0123456789",
+          },
+          body: JSON.stringify({ operation, args }),
+        }),
+      );
+      return {
+        ok: response.ok,
+        status: response.status,
+        value: await response.json(),
+      };
+    });
+    const mcp = createKnowledgeHandler(invoke, false, false, true);
+    const body = {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "save_link",
+        arguments: s.args,
+        ...(protocol === "2026-07-28"
+          ? {
+              _meta: {
+                "io.modelcontextprotocol/protocolVersion": protocol,
+                "io.modelcontextprotocol/clientInfo": {
+                  name: "Ordinary ChatGPT chat",
+                  version: "1",
+                },
+                "io.modelcontextprotocol/clientCapabilities": {},
+              },
+            }
+          : {}),
+      },
+    };
+    const response = await mcp.fetch(
+      new Request("https://scroll.companynerve.com/mcp", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          accept: "application/json, text/event-stream",
+          "mcp-protocol-version": protocol,
+          "mcp-method": "tools/call",
+          "mcp-name": "save_link",
+        },
+        body: JSON.stringify(body),
+      }),
+      {
+        parsedBody: body,
+        authInfo: {
+          token: "synthetic-token",
+          clientId,
+          scopes,
+          resource: new URL("https://scroll.companynerve.com/mcp"),
+          resourceMetadataUrl:
+            "https://scroll.companynerve.com/.well-known/oauth-protected-resource/mcp",
+        },
+      },
+    );
+    const raw = await response.text();
+    const result = JSON.parse(
+      response.headers.get("content-type")?.includes("text/event-stream")
+        ? raw
+            .split("\n")
+            .find((line) => line.startsWith("data: "))!
+            .slice(6)
+        : raw,
+    );
+    expect(result.result.isError).not.toBe(true);
+    expect(result.result.structuredContent).toMatchObject({
+      status: "waiting_for_cloud",
+      analysis_requested: true,
+      analysis_started: false,
+      per_post_app_review_required: false,
+    });
+    const source = (await s.t.run((ctx) =>
+      ctx.db.get(result.result.structuredContent.source_id as Id<"sources">),
+    ))!;
+    expect(source.workCloudSaveIntent).toMatchObject({
+      origin: "mcp",
+      version: "link-save-cloud-v2",
+    });
+    expect(source.personalAnalysis).toBeUndefined();
+    expect(
+      await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+    ).toHaveLength(0);
+  },
+);
+it("does not retry failed or unknown work, or accept per-post automatic executor overrides", async () => {
+  const s = await chatLinkSetup();
+  const saved = await s.assistant.mutation(internal.assistant.saveLink, {
+    ...s.args,
+    analyze: false,
+  });
+  await s.t.run((ctx) =>
+    ctx.db.patch(saved.source_id, { state: "failed", generation: 1 }),
+  );
+  expect(
+    await s.assistant.mutation(internal.assistant.requestAnalysis, {
+      profileId: s.org,
+      sourceId: saved.source_id,
+    }),
+  ).toMatchObject({
+    status: "existing_work_preserved",
+    analysis_requested: false,
+  });
+  await expect(
+    s.assistant.mutation(internal.assistant.requestAnalysis, {
+      profileId: s.org,
+      sourceId: saved.source_id,
+      maxCredits: 3,
+    }),
+  ).rejects.toThrow("reviewed connection defaults");
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(saved.source_id)))?.workCloudSaveIntent,
+  ).toBeUndefined();
+});
 it.each([
   [false, "2025-11-25"],
   [true, "2025-11-25"],
@@ -872,3 +1144,51 @@ it.each([false, true])(
     expect(await s.t.run((ctx) => ctx.db.get(intakeId))).toEqual(before);
   },
 );
+
+it("wakes the prepared host after a save-only acknowledgement was already delivered before scope continuation", async () => {
+  const s = await chatLinkSetup();
+  const saved = await s.assistant.mutation(internal.assistant.saveLink, {
+    ...s.args,
+    analyze: false,
+  });
+  const original = (
+    await s.t.run((ctx) => ctx.db.query("assistantDeliveries").collect())
+  )[0];
+  const claimed = await s.t.mutation(internal.assistantEvents.claim, {
+    id: original._id,
+  });
+  expect(claimed).not.toBeNull();
+  await s.t.mutation(internal.assistantEvents.finish, {
+    id: original._id,
+    lease: claimed!.delivery.lease!,
+    outcome: "received",
+    status: 200,
+  });
+  const continued = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    { profileId: s.org, sourceId: saved.source_id },
+  );
+  expect(continued.status).toBe("waiting_for_cloud");
+  const deliveries = await s.t.run((ctx) =>
+    ctx.db.query("assistantDeliveries").collect(),
+  );
+  expect(deliveries).toHaveLength(2);
+  expect(deliveries.find((d) => d._id === original._id)?.state).toBe(
+    "delivered",
+  );
+  const next = deliveries.find((d) => d._id !== original._id)!;
+  expect(next.completedRevision).toBeGreaterThan(original.completedRevision);
+  expect(
+    await s.t.mutation(internal.assistantEvents.claim, { id: next._id }),
+  ).not.toBeNull();
+  await s.assistant.mutation(internal.assistant.requestAnalysis, {
+    profileId: s.org,
+    sourceId: saved.source_id,
+  });
+  expect(
+    await s.t.run((ctx) => ctx.db.query("assistantDeliveries").collect()),
+  ).toHaveLength(2);
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(saved.source_id)))?.personalAnalysis,
+  ).toBeUndefined();
+});

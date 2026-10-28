@@ -38,7 +38,9 @@ export function workCloudMonitorMessage(
       (!Number.isFinite(grant.expiresAt) || grant.expiresAt <= now)) ||
     grant.libraryScope !== "all" ||
     grant.cloudRequestPolicy !== "explicit_per_source_v1" ||
-    grant.cloudSaveDefaults?.version !== "app-save-cloud-v1" ||
+    !["app-save-cloud-v1", "link-save-cloud-v2"].includes(
+      grant.cloudSaveDefaults?.version ?? "",
+    ) ||
     client?.id !== grant.clientId ||
     !required.every(
       (scope) => grant.scopes.includes(scope) && client.scopes.includes(scope),
@@ -50,7 +52,7 @@ export function workCloudMonitorMessage(
     grantVersion: grant.version,
     clientId: grant.clientId,
   });
-  return `Set up automatic VibeScroll app saves in this ChatGPT Work chat using Cloud and my own subscription. Use the connected VibeScroll plugin for this exact reviewed binding: ${binding}.
+  return `Set up automatic VibeScroll ${grant.cloudSaveDefaults?.version === "link-save-cloud-v2" ? "app and ChatGPT link saves" : "app saves"} in this ChatGPT Work chat using Cloud and my own subscription. Use the connected VibeScroll plugin for this exact reviewed binding: ${binding}.
 
 First prepare the reviewed tools-only bundle at https://scroll.companynerve.com${runtimePackage.path}, exactly ${runtimePackage.bytes} bytes with SHA256 ${runtimePackage.sha256}. Verify those bytes before extracting or executing anything. Allow only its fixed flat files, with no symlinks, duplicate or traversal paths; verify the enclosed caption-package manifest and source pins. The bundle includes the separately reviewed ${runtimePackage.adapterPolicy} launcher, which supplies network denial inside the actual supported provider VM. Preserve LICENSE. During setup only, its reviewed dependency script may install the two checksum-pinned pure-Python wheels without hooks. No GitHub account, repository, model or unreviewed executable is needed for this caption path. If the download or a required capability is blocked, stop without retrying or changing permissions.
 

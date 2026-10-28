@@ -328,6 +328,13 @@ export const save = mutation({
     }
     if (a.cloudSaveDefaults) {
       ensure(
+        a.cloudSaveDefaults.version !== "link-save-cloud-v2" ||
+          (a.intakePolicy === "explicit_links" &&
+            a.scopes.includes("links:save")),
+        "SETUP_REQUIRED",
+        "Automatic app and ChatGPT links need the one-time explicit-link saving permission.",
+      );
+      ensure(
         savedCloudEnabled(actor.subject) &&
           (await workCloudSourceEligible(ctx, organization, actor._id)) &&
           a.cloudRequestPolicy === "explicit_per_source_v1" &&

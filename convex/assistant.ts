@@ -1,8 +1,8 @@
 import { internalQuery } from "./_generated/server";
 import { internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
-import type { QueryCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
+import type { Id, Doc } from "./_generated/dataModel";
 import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
 import { audit, limit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
@@ -29,12 +29,102 @@ import {
   requestCloudFromAssistant,
   requestSavedCloudFromAssistant,
 } from "./workCloudAnalysis";
-import { savedCloudIntentCurrent } from "./lib/workCloudSave";
+import {
+  savedCloudIntentCurrent,
+  savedCloudGrantCurrent,
+  savedCloudMonitorCurrent,
+  queueSavedCloudIntent,
+} from "./lib/workCloudSave";
+import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import {
   evaluation as evaluationContract,
   assertReferences,
 } from "../packages/knowledge/contracts";
 const profile = { profileId: v.optional(v.id("organizations")) };
+
+async function automaticCloudReceipt(
+  ctx: MutationCtx,
+  a: Awaited<ReturnType<typeof assistantGrant>>,
+  source: Doc<"sources">,
+) {
+  const common = {
+    source_id: source._id,
+    profile_id: a.organization._id,
+    url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
+    analysis_started: false,
+    analysis_route: "own_cloud",
+    per_post_app_review_required: false,
+    receipt: null,
+  };
+  if (source.state === "ready")
+    return {
+      ...common,
+      status: "ready",
+      analysis_requested: false,
+      note: "Existing insights reused. No extraction or analysis was started.",
+    };
+  if (a.grant.cloudSaveDefaults?.version !== "link-save-cloud-v2")
+    return {
+      ...common,
+      status: "cloud_setup_required",
+      analysis_requested: false,
+      setup_url: `https://scroll.companynerve.com/app/${a.organization._id}/connections`,
+      note: "Saved. Enable automatic analysis of app and ChatGPT links once in Connections. Your older app-only or manual setting has not been expanded. You do not need to review each video in the app.",
+    };
+  let supported = false;
+  try {
+    supported = ["instagram", "tiktok"].includes(
+      privateCloudMediaIdentity(source.url ?? source.canonical).platform,
+    );
+  } catch {
+    /* A different source retains its separate supported route. */
+  }
+  if (!supported)
+    return {
+      ...common,
+      status: "unsupported_cloud_source",
+      analysis_requested: false,
+      note: "Saved. Automatic Cloud links currently support single Instagram and TikTok videos. Use the separately supported source route for this post.",
+    };
+  if (!a.scopes.includes("analysis:request"))
+    return {
+      ...common,
+      status: "saved",
+      analysis_requested: false,
+      next_action: {
+        tool: "request_analysis",
+        args: { profileId: a.organization._id, sourceId: source._id },
+      },
+      note: "Continue with request_analysis using the reviewed Cloud defaults. This uses the analysis permission already configured for the connection; no per-post app review is needed.",
+    };
+  if (
+    !(await savedCloudGrantCurrent(ctx, a.actor, a.organization, a.grant)) ||
+    !(await savedCloudMonitorCurrent(ctx, a.grant))
+  )
+    return {
+      ...common,
+      status: "cloud_setup_required",
+      analysis_requested: false,
+      setup_url: `https://scroll.companynerve.com/app/${a.organization._id}/connections`,
+      note: "Saved. Complete or resume your own Cloud monitor once in Connections, then request analysis of this saved post. Do not use the per-post diagnostic review or switch funding.",
+    };
+  const queued = await queueSavedCloudIntent(
+    ctx,
+    a.actor,
+    a.organization,
+    a.grant,
+    source,
+    "mcp",
+  );
+  return {
+    ...common,
+    status: queued.intentId ? "waiting_for_cloud" : "existing_work_preserved",
+    analysis_requested: !!queued.intentId,
+    note: queued.intentId
+      ? "Saved and queued automatically for your own Cloud Work. No per-post app approval is required. The configured Work task and this post will receive the result; a queued intent is not proof that analysis has started."
+      : "Existing work or an earlier outcome was preserved. No replacement, retry or alternate executor was started.",
+  };
+}
 export const redactIntakes = internalMutation({
   args: { sourceId: v.id("sources") },
   handler: async (ctx, args) => {
@@ -199,6 +289,15 @@ export const saveLink = internalMutation({
     }
     const intake = (await ctx.db.get(intakeId!))!;
     const sourceReview = intakeNeedsSourceReview(source);
+    if (
+      args.analyze !== false &&
+      a.grant.cloudRequestPolicy === "explicit_per_source_v1" &&
+      !sourceReview &&
+      !["failed", "cancelled", "local", "credits"].includes(
+        intake.queueState ?? "",
+      )
+    )
+      return automaticCloudReceipt(ctx, a, (await ctx.db.get(source._id))!);
     // Replays do not widen old work to a replacement grant or start duplicate jobs.
     if (
       !sourceReview &&
@@ -455,6 +554,24 @@ export const requestAnalysis = internalMutation({
       args.sourceId,
       "analysis:request",
     );
+    if (
+      args.mode === undefined &&
+      a.grant.cloudRequestPolicy === "explicit_per_source_v1"
+    ) {
+      ensure(
+        args.generation === undefined &&
+          args.revision === undefined &&
+          args.grantVersion === undefined &&
+          args.cloud === undefined &&
+          args.savedIntentId === undefined &&
+          args.maxCredits === undefined &&
+          args.project === undefined &&
+          args.bestProjects === undefined,
+        "INVALID_INPUT",
+        "Automatic Cloud requests use the reviewed connection defaults without per-post funding or executor overrides.",
+      );
+      return automaticCloudReceipt(ctx, a, source);
+    }
     if (args.mode === "work_cloud") {
       if (args.savedIntentId !== undefined) {
         ensure(

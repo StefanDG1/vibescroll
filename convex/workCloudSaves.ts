@@ -1,21 +1,45 @@
 import { v } from "convex/values";
 import { mutation } from "./lib/projectedMutations";
-import { writeAccess, audit } from "./lib";
-import { notifyVideoLinkSaved } from "./lib/assistantEvents";
+import { historySource } from "./lib/analysisHistory";
+import { writeAccess } from "./lib";
 import { ensure } from "../packages/policy";
-import { captureOne, digest } from "./product";
-import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
-import { workCloudMediaPolicy } from "../packages/contracts/work-cloud-text";
+import { captureOne } from "./product";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
-import { sourceRetained } from "./lib/sourceAuthority";
 import { cacheCandidate } from "./lib/cloudCatalog";
 import {
   savedCloudGrantCurrent,
-  savedCloudIntentCurrent,
-  savedCloudSourceHash,
-  cloudSaveIntentLifetimeMs,
+  queueSavedCloudIntent,
   savedCloudMonitorCurrent,
+  savedCloudRoute,
 } from "./lib/workCloudSave";
+
+export const analyzeSaved = mutation({
+  args: { sourceId: v.id("sources") },
+  returns: v.any(),
+  handler: async (ctx, { sourceId }) => {
+    const owner = await historySource(ctx, sourceId, true);
+    ensure(
+      !owner.grant,
+      "FORBIDDEN",
+      "Use the scoped MCP analysis action from a chat.",
+    );
+    const route = await savedCloudRoute(ctx, owner.actor, owner.organization);
+    ensure(
+      route?.available && route.grantId,
+      "SETUP_REQUIRED",
+      "Complete your one-time Cloud setup or resume the existing monitor in Connections.",
+    );
+    const grant = (await ctx.db.get(route.grantId))!;
+    return queueSavedCloudIntent(
+      ctx,
+      owner.actor,
+      owner.organization,
+      grant,
+      owner.source,
+      "app",
+    );
+  },
+});
 
 // App-only authenticated capture. Shared/MCP/creator capture never calls this.
 // An intent is not a job or lease. The native host prepares before consuming it.
@@ -105,104 +129,13 @@ export const capture = mutation({
       "APPROVAL_STALE",
       "This save key belongs to a different post. Review the link before continuing.",
     );
-    // Never reanalyse an existing result, failed/unknown attempt, active work or
-    // another executor. Re-saving cannot replace its evidence or funding route.
-    if (
-      !["saved", "needs_upload"].includes(source.state) ||
-      source.generation !== 0 ||
-      source.personalAnalysis ||
-      source.analysis ||
-      source.orderedMedia ||
-      source.publicImportId ||
-      source.currentRevisionId ||
-      source.personalMedia ||
-      source.text ||
-      source.objectKey ||
-      !sourceRetained(source.sourceRetentionUntil)
-    )
-      return {
-        sourceId,
-        status: "existing_work_preserved" as const,
-        intentId: null,
-        expiresAt: null,
-      };
-    if (
-      await savedCloudIntentCurrent(
-        ctx,
-        owner.actor,
-        owner.organization,
-        grant,
-        source,
-      )
-    ) {
-      await notifyVideoLinkSaved(ctx, source, owner.actor._id);
-      return {
-        sourceId,
-        status: "waiting_for_cloud_setup" as const,
-        intentId: source.workCloudSaveIntent!.id,
-        expiresAt: source.workCloudSaveIntent!.expiresAt,
-      };
-    }
-    // A stale intent requires explicit post review. Re-saving must not silently
-    // extend an expired approval or replace a previous grant/default binding.
-    if (source.workCloudSaveIntent)
-      return {
-        sourceId,
-        status: "existing_work_preserved" as const,
-        intentId: null,
-        expiresAt: null,
-      };
-    const now = Date.now(),
-      defaults = grant.cloudSaveDefaults!;
-    const retainUntil = Math.min(
-      now + defaults.retentionMs,
-      source.sourceRetentionUntil ?? Infinity,
-    );
-    ensure(
-      retainUntil > now,
-      "SOURCE_UNAVAILABLE",
-      "Source retention has ended.",
-    );
-    const values = {
-      version: "app-save-cloud-v1" as const,
-      actor: owner.actor._id,
-      grantId: grant._id,
-      grantVersion: grant.version,
-      clientId: grant.clientId,
-      generation: source.generation,
-      revision: source.updatedAt,
-      sourceHash: await savedCloudSourceHash(source),
-      defaultsHash: await digest(canonicalJson(defaults)),
-      policyHash: await digest(canonicalJson(workCloudMediaPolicy)),
-      model: defaults.model,
-      effort: defaults.effort,
-      retainUntil,
-      createdAt: now,
-      expiresAt: Math.min(
-        now + cloudSaveIntentLifetimeMs,
-        retainUntil,
-        grant.expiresAt ?? Infinity,
-      ),
-    };
-    const id = await digest(canonicalJson({ sourceId, ...values }));
-    await ctx.db.patch(sourceId, { workCloudSaveIntent: { ...values, id } });
-    await notifyVideoLinkSaved(
+    return queueSavedCloudIntent(
       ctx,
-      (await ctx.db.get(sourceId))!,
-      owner.actor._id,
+      owner.actor,
+      owner.organization,
+      grant,
+      source,
+      "app",
     );
-    await audit(
-      ctx,
-      a.organizationId,
-      owner.actor._id,
-      "work_cloud.save_intent",
-      `${sourceId}:${id}`,
-    );
-    return {
-      sourceId,
-      status: "waiting_for_cloud_setup" as const,
-      intentId: id,
-      expiresAt: values.expiresAt,
-    };
   },
 });

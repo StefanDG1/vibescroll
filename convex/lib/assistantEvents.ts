@@ -10,6 +10,7 @@ import { workCloudSourceEligible } from "./workCloudSourceAccess";
 import { workCloudMediaAllowed, workCloudTextAllowed } from "./personalAccess";
 import { workCloudRequestPolicies } from "../../packages/contracts/work-cloud-text";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
+import { privateCloudMediaCanonicalMatches } from "../../packages/social/contracts";
 import { internal } from "../_generated/api";
 export async function cloudProfileEligible(
   ctx: QueryCtx,
@@ -163,7 +164,7 @@ export async function cloudWaitingCurrent(
         source.sourceRetentionUntil > Date.now()) &&
       source.pendingAnalysisAttemptId === attempt._id &&
       source.generation === attempt.sourceGeneration &&
-      source.canonical === attempt.canonical &&
+      privateCloudMediaCanonicalMatches(source.canonical, attempt.canonical) &&
       attempt.sourceId === source._id &&
       attempt.state === "queued" &&
       !attempt.taskId &&

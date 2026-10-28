@@ -13,7 +13,7 @@ import { syntheticJpeg } from "./cloud-frame-fixture";
 import { createHash } from "node:crypto";
 
 const modules = import.meta.glob("../convex/**/*.ts");
-export async function analysisVersionFixture() {
+export async function analysisVersionFixture(withEvents = false) {
   const subject = "user_01234567890123456789012345",
     clientId = "client_01234567890123456789012345";
   const scopes = [
@@ -21,7 +21,9 @@ export async function analysisVersionFixture() {
     "analysis:execute",
     "knowledge:read",
     "jobs:read",
+    ...(withEvents ? ["events:subscribe"] : []),
   ];
+  if (withEvents) vi.stubEnv("MCP_EVENTS_ENABLED", "true");
   for (const key of [
     "MCP_ENABLED",
     "WORK_CLOUD_MEDIA_ENABLED",
@@ -53,14 +55,13 @@ export async function analysisVersionFixture() {
     sid: "app_consent_01234567890123456789012345",
   });
   const org = await owner.mutation(api.organizations.createPrivate, {});
-  const canonical = privateCloudMediaIdentity(
-    "https://www.instagram.com/reel/Abcdef12345/",
-  ).url;
+  const originalUrl = "https://www.instagram.com/reel/Abcdef12345/";
+  const canonical = privateCloudMediaIdentity(originalUrl).url;
   const sourceId = await owner.mutation(api.product.capture, {
     organizationId: org,
     key: "version-original-post",
     kind: "url",
-    url: canonical,
+    url: originalUrl,
     title: "Original retained post",
     rightsAttested: true,
   });
@@ -272,6 +273,17 @@ export async function analysisVersionFixture() {
     useOwnPlan: true as const,
     maxApiUsd: 0 as const,
   };
+  if (withEvents)
+    await assistant.mutation(internal.assistantEvents.install, {
+      eventName: "work_cloud_waiting",
+      profileId: org,
+      grantVersion: grant.version,
+      externalId: "sub_" + "a".repeat(64),
+      ciphertext: "synthetic-encrypted-authority",
+      keyVersion: "1",
+      expiresAt: Date.now() + 600000,
+      callbackVerifiedAt: Date.now(),
+    });
   return {
     t,
     owner,

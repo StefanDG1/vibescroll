@@ -14,7 +14,10 @@ import {
   versionLimits,
 } from "../../packages/contracts/analysis-versions";
 import { digest } from "../product";
-import { isCloudObservedMedia } from "../../packages/social/contracts";
+import {
+  isCloudObservedMedia,
+  privateCloudMediaCanonicalMatches,
+} from "../../packages/social/contracts";
 import { internal } from "../_generated/api";
 
 export async function historySource(
@@ -232,7 +235,7 @@ export async function retainedVersion(
       source.orderedMedia?.post.revisionHash === evidence.revisionHash &&
       source.rightsAttested &&
       sourceRetained(source.sourceRetentionUntil) &&
-      source.canonical === evidence.canonical,
+      privateCloudMediaCanonicalMatches(source.canonical, evidence.canonical),
     "SOURCE_UNAVAILABLE",
     "This version's retained evidence has expired or changed.",
   );

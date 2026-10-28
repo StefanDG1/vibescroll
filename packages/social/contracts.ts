@@ -206,6 +206,16 @@ export function privateCloudMediaIdentity(url: string) {
     identityUrl.pathname = identityUrl.pathname.replace(/^\/reels\//, "/reel/");
   return acquisitionPolicy(socialPostUrl(identityUrl.href).canonical);
 }
+export function privateCloudMediaCanonicalMatches(
+  sourceUrl: string,
+  retainedCanonical: string,
+): boolean {
+  try {
+    return privateCloudMediaIdentity(sourceUrl).url === retainedCanonical;
+  } catch {
+    return false;
+  }
+}
 // Private observations reported through one authenticated Cloud lease. These
 // are not a supplier receipt or independently verified media acquisition.
 export const cloudObservedMediaSchema = z

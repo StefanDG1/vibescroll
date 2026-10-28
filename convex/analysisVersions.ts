@@ -19,6 +19,7 @@ import { notifyVersionWaiting } from "./lib/assistantEvents";
 import { workCloudMediaAllowed } from "./lib/personalAccess";
 import { digest, reserve, settle } from "./product";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { privateCloudMediaCanonicalMatches } from "../packages/social/contracts";
 import {
   analysisConfiguration,
   analysisVersionProtocol,
@@ -514,7 +515,7 @@ async function executionContext(
       source.generation === attempt.sourceGeneration &&
       (args.generation === undefined ||
         args.generation === source.generation) &&
-      source.canonical === attempt.canonical,
+      privateCloudMediaCanonicalMatches(source.canonical, attempt.canonical),
     "APPROVAL_STALE",
     "The version request or source changed.",
   );

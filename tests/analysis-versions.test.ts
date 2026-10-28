@@ -1,12 +1,102 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { analysisVersionFixture } from "./analysis-version-fixture";
+import { cloudWaitingCurrent } from "../convex/lib/assistantEvents";
+import { privateCloudMediaCanonicalMatches } from "../packages/social/contracts";
 
 afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
+});
+it("matches the actual Reel URL alias without accepting another post or an invalid locator", () => {
+  const canonical = "https://www.instagram.com/p/De0mgVbtXE-/";
+  expect(
+    privateCloudMediaCanonicalMatches(
+      "https://www.instagram.com/reel/De0mgVbtXE-/",
+      canonical,
+    ),
+  ).toBe(true);
+  expect(
+    privateCloudMediaCanonicalMatches(
+      "https://www.instagram.com/reels/De0mgVbtXE-/",
+      canonical,
+    ),
+  ).toBe(true);
+  expect(
+    privateCloudMediaCanonicalMatches(
+      "https://www.instagram.com/reel/De4hAfmovyg/",
+      canonical,
+    ),
+  ).toBe(false);
+  expect(privateCloudMediaCanonicalMatches("not-a-post", canonical)).toBe(
+    false,
+  );
+});
+it("delivers and exports an alias-bound candidate but blocks a different post identity", async () => {
+  const s = await analysisVersionFixture(true);
+  const request = await s.request();
+  const snapshot = await s.t.run(async (ctx) => ({
+    source: (await ctx.db.get(s.sourceId))!,
+    attempt: (await ctx.db.get(request.attemptId))!,
+    subscription: (
+      await ctx.db
+        .query("assistantSubscriptions")
+        .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+        .take(1)
+    )[0],
+    deliveries: await ctx.db
+      .query("assistantDeliveries")
+      .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+      .take(2),
+  }));
+  expect(snapshot.deliveries).toMatchObject([
+    { analysisAttemptId: request.attemptId, state: "pending" },
+  ]);
+  const occurrence = {
+    generation: snapshot.attempt.sourceGeneration,
+    completedRevision: snapshot.attempt.createdAt,
+    analysisAttemptId: request.attemptId,
+  };
+  expect(
+    await s.t.run((ctx) =>
+      cloudWaitingCurrent(
+        ctx,
+        snapshot.subscription,
+        snapshot.source,
+        occurrence,
+      ),
+    ),
+  ).toBe(true);
+  for (const section of [
+    "analysisEvidence",
+    "analysisVersions",
+    "analysisAttempts",
+  ] as const) {
+    const exported = await s.owner.query(api.jobs.exportPage, {
+      organizationId: s.org,
+      section,
+      cursor: null,
+      asOf: Date.now(),
+    });
+    expect(exported.page).toHaveLength(1);
+  }
+  const changed = {
+    ...snapshot.source,
+    canonical: "https://www.instagram.com/reel/Different123/",
+  };
+  expect(
+    await s.t.run((ctx) =>
+      cloudWaitingCurrent(ctx, snapshot.subscription, changed, occurrence),
+    ),
+  ).toBe(false);
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, { canonical: changed.canonical }),
+  );
+  await expect(
+    s.owner.query(api.analysisVersions.read, { sourceId: s.sourceId }),
+  ).rejects.toThrow(/expired or changed/);
 });
 it("keeps human version numbers monotonic when enrolling a later extraction baseline", async () => {
   const s = await analysisVersionFixture();

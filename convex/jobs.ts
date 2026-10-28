@@ -12,6 +12,7 @@ import {
 import { RETRIEVAL_VERSION } from "../packages/repositories/retrieval";
 import { selectedInsights } from "../packages/insights/scope";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { privateCloudMediaCanonicalMatches } from "../packages/social/contracts";
 import {
   contentExportSections,
   exportRecord,
@@ -1222,7 +1223,10 @@ export const exportPage = query({
           evidence.sourceId !== source._id ||
           evidence.state !== "retained" ||
           evidence.retainUntil <= Date.now() ||
-          evidence.canonical !== source.canonical
+          !privateCloudMediaCanonicalMatches(
+            source.canonical,
+            evidence.canonical,
+          )
         )
           continue;
       }

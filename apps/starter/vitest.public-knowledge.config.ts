@@ -11,6 +11,7 @@ export default defineConfig({
   },
   test: {
     include: [
+      "apps/starter/source-progress-ui.test.ts",
       "apps/starter/recent-posts-ui.test.ts",
       "apps/starter/shared-cloud-evidence.test.ts",
       "apps/starter/task-runtime-picker.test.ts",

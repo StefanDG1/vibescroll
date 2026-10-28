@@ -90,6 +90,8 @@ import {
 import { SetupJourney } from "./setup-journey";
 import { TaskRuntimePicker } from "./task-runtime-picker";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
+import { SourceProgressPanel } from "./source-progress";
+import { sourceProgressDeadline } from "../../../packages/sources/progress";
 import { TypedSourceEvidence } from "./typed-source-evidence";
 import { PublicKnowledgePanel } from "./public-knowledge-panel";
 import { SavedPublicSource } from "./saved-public-source";
@@ -3611,22 +3613,31 @@ export function SourceDetail({
     )
     .sort()
     .join("|");
-  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.linkPreview?.updatedAt}:${source.personalAnalysis?.state}:${source.analysisSelectionRevision}:${source.pendingAnalysisAttemptId}:${source.sharedCloud?.recommendationRevision}:${source.sharedCloud?.notesUpdatedAt}:${source.analysisVersion?.id}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
+  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.linkPreview?.updatedAt}:${source.personalAnalysis?.state}:${source.personalAnalysis?.stage}:${source.personalAnalysis?.leaseUntil}:${source.workCloudSaveIntent?.expiresAt}:${source.analysisSelectionRevision}:${source.pendingAnalysisAttemptId}:${source.pendingAnalysisAttemptState}:${source.sharedCloud?.recommendationRevision}:${source.sharedCloud?.notesUpdatedAt}:${source.analysisVersion?.id}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
   const [retentionTime, setRetentionTime] = useState(Date.now);
+  const progressSource =
+    source.generation > detail.generation ||
+    source.updatedAt > detail.updatedAt ||
+    (source.generation === detail.generation &&
+      source.updatedAt === detail.updatedAt &&
+      source.state !== detail.state)
+      ? source
+      : detail;
   const retentionDeadline = Math.min(
     source.sourceRetentionUntil ?? Infinity,
     detail.sourceRetentionUntil ?? Infinity,
-    detail.workCloudSaveIntent?.analysisGeneration === undefined
-      ? (detail.workCloudSaveIntent?.expiresAt ?? Infinity)
-      : Infinity,
+  );
+  const statusDeadline = Math.min(
+    retentionDeadline,
+    sourceProgressDeadline(progressSource),
   );
   useEffect(() => {
-    if (demo || !Number.isFinite(retentionDeadline)) return;
+    if (demo || !Number.isFinite(statusDeadline)) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     const check = () => {
       if (!active) return;
-      const remaining = retentionDeadline - Date.now();
+      const remaining = statusDeadline - Date.now();
       if (remaining > 0)
         timer = setTimeout(check, Math.min(remaining, 2147483647));
       else setRetentionTime(Date.now());
@@ -3636,7 +3647,7 @@ export function SourceDetail({
       active = false;
       clearTimeout(timer);
     };
-  }, [demo, retentionDeadline]);
+  }, [demo, statusDeadline]);
   const savedFrames = sourceEvidenceFrames(detail, retentionTime);
   const untimedImages =
     detail.coverage === "visual_only" &&
@@ -3759,6 +3770,13 @@ export function SourceDetail({
     );
   return (
     <>
+      {!demo && !detailLoading && (
+        <SourceProgressPanel
+          source={progressSource}
+          now={Math.max(retentionTime, Date.now())}
+          organizationId={org}
+        />
+      )}
       {!demo && !detailLoading && (
         <>
           <SourceAcquisitionPanel
@@ -4495,23 +4513,6 @@ export function SourceDetail({
           </details>
         )}
       </details>
-      {detail.workCloudSaveIntent &&
-        !detail.personalAnalysis &&
-        detail.workCloudSaveIntent.analysisGeneration === undefined && (
-          <section className="panel" aria-live="polite">
-            <h3>
-              {detail.workCloudSaveIntent.expiresAt > retentionTime
-                ? "Waiting for ChatGPT"
-                : "Review Cloud setup"}
-            </h3>
-            <p>
-              {detail.workCloudSaveIntent.expiresAt > retentionTime
-                ? "Your link is saved. ChatGPT checks its tools before starting analysis. Your computer can be off."
-                : "This request expired. Your post is still saved. Review setup before requesting analysis again."}
-            </p>
-            <a href={`/app/${org}/connections`}>Check Cloud setup</a>
-          </section>
-        )}
       {detail.state === "needs_upload" &&
         !(
           detail.workCloudSaveIntent &&

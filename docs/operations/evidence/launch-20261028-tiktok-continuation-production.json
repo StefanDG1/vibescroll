@@ -1,0 +1,67 @@
+{
+  "kind": "same-generation-cloud-tiktok-completion-v1",
+  "observedAtUTC": "2026-10-28T22:47:32Z",
+  "productionCommit": "6ba77de3375541a10c5c5f04782252644d47e1bd",
+  "sourceId": "px70y842tvp0fxwsta3dfrkqcd8h4qd1",
+  "generation": 1,
+  "selectedVersionId": "xh781szm1mw1jz1rk6kjtyx0e98h411b",
+  "grantVersion": 12,
+  "initialFailure": "Native task allowance-record update did not persist after request creation; no claim or media execution had occurred.",
+  "continuation": "Foreground continuation of the same existing queued request under its already-reserved slot3; no replacement generation or slot4 use.",
+  "actualAuthenticatedVerification": {
+    "sourceHTTP": 200,
+    "state": "ready",
+    "catalogStatus": "published",
+    "insights": 4,
+    "transcriptSegments": 23,
+    "everyStoredTranscriptSegmentPresentInPageDOM": true,
+    "frames": 8,
+    "allFrameHTTP200": true,
+    "allFrameHashesAndSizesMatch": true,
+    "allFrameDimensions": [540, 960],
+    "thumbnailLoaded": true,
+    "previewCaptionFetched": true,
+    "generatedShortLinkTitleStillDisplayed": true
+  },
+  "timing": {
+    "approvedAt": 1793226813381,
+    "claimedAt": 1793227096917,
+    "completedAt": 1793227370928,
+    "requestToCompletionMsIncludingBookkeepingStop": 557547,
+    "claimToCompletionMs": 274011,
+    "speedTargetMet": false
+  },
+  "model": {
+    "requested": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "reportedModel": null,
+    "reportedEffort": null,
+    "providerAttested": false
+  },
+  "nativeMonitor": "paused",
+  "nativeBookkeepingAudit": {
+    "savedActionSHA256": "b60054724a4f8872d80df03902f6213e9aa49ed2067e59a0eae9b42471ce44c9",
+    "observedError": "state_persist_failed was a local read-back check, not a retained native provider error.",
+    "underlyingNativeUpdateResponseRetained": false,
+    "precisePlatformRejectionCauseKnown": false,
+    "staleActionState": "dispatch_reserved and inFlight",
+    "atomicRunCapOrConcurrencyControlExposed": false,
+    "nextFiniteCanaryRequires": "An exact source binding in the canonical ledger, or actual server-enforced allowance; do not depend on a model-written counter."
+  },
+  "cleanup": "Host reported removal of owned temporary media, execution copy and disposable runtime; shared tools/model and receipts retained.",
+  "providerDeletionAndSettledUsageVerified": false,
+  "budget": {
+    "existingAttemptOrdinal": 3,
+    "holdUSD": 0.17,
+    "allOldHoldsRetained": true,
+    "reservedPostUntouched": true,
+    "paidAIAPI": false,
+    "newDeployment": false
+  },
+  "limits": [
+    "Automatic event delivery created the request, but completion required operator continuation after native bookkeeping failed.",
+    "General unattended monitoring is not accepted; the task remains paused during its source-free bookkeeping audit.",
+    "Top-of-post progress and short-link title correction are separate local candidates, not live at this observation.",
+    "Independent cold onboarding, paid-customer acceptance and the latency target remain open."
+  ]
+}

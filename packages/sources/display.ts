@@ -14,7 +14,9 @@ export function postDisplayTitle(source: {
       : undefined;
     const tiktok = /^(?:www\.)?tiktok\.com$/.test(url.hostname)
       ? url.pathname.match(/^\/@[^/]+\/video\/(\d+)\/?$/)?.[1]
-      : undefined;
+      : /^(?:vm|vt)\.tiktok\.com$/.test(url.hostname)
+        ? url.pathname.match(/^\/([A-Za-z0-9]+)\/?$/)?.[1]
+        : undefined;
     generated = Boolean(
       (instagram && source.title === `Instagram Reel ${instagram}`) ||
       (tiktok && source.title === `TikTok video ${tiktok}`),

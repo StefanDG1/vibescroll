@@ -174,6 +174,21 @@ it("prefers actual native titles only over exact generated placeholders", () => 
   expect(postDisplayTitle({ linkPreview: { title: "Preview only" } })).toBe(
     "Preview only",
   );
+  for (const host of ["vm.tiktok.com", "vt.tiktok.com"]) {
+    const short = {
+      url: `https://${host}/ZGdX1NhMn/`,
+      title: "TikTok video ZGdX1NhMn",
+      linkPreview: { title: "Fetched caption" },
+    };
+    expect(postDisplayTitle(short)).toBe("Fetched caption");
+    expect(postDisplayTitle({ ...short, title: "My title" })).toBe("My title");
+    expect(
+      postDisplayTitle({
+        ...short,
+        url: "https://vm.tiktok.com.evil.test/ZGdX1NhMn/",
+      }),
+    ).toBe("TikTok video ZGdX1NhMn");
+  }
 });
 
 it("offers a bounded durable thumbnail fallback and suppresses revoked or expired images", () => {

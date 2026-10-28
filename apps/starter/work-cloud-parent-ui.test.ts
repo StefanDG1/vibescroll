@@ -182,6 +182,33 @@ it.each(["owner", "viewer", "unavailable"])(
     expect(parent.call).not.toHaveBeenCalled();
   },
 );
+it("keeps a post visible when its automatic intent expires and puts progress ahead of its summary", async () => {
+  const source = {
+    ...queued,
+    generation: 0,
+    state: "needs_upload",
+    personalAnalysis: undefined,
+    workCloudHandoff: undefined,
+    workCloudSaveIntent: { generation: 0, expiresAt: now + 1000 },
+    workCloudLinkSetup: { monitorReady: true },
+  };
+  server(source);
+  const parent = props(source);
+  render(parent);
+  await settle();
+  let html = render(parent);
+  expect(html).toContain("Waiting for ChatGPT");
+  expect(html.indexOf("Analysis progress")).toBeLessThan(
+    html.indexOf("AI summary"),
+  );
+  vi.advanceTimersByTime(1001);
+  html = render(parent);
+  expect(html).toContain("Analysis request expired");
+  expect(html).toContain("AI summary");
+  expect(html).not.toContain("This source is unavailable");
+  expect(parent.call).not.toHaveBeenCalled();
+  expect(parent.strictCall).not.toHaveBeenCalled();
+});
 it("keeps the existing unclaimed handoff after the actual source-detail refresh and a full remount without another approval", async () => {
   const saved = {
     ...queued,
@@ -234,7 +261,10 @@ it("hides an old unclaimed receipt immediately when the polled source is claimed
     updatedAt: now + 1,
     personalAnalysis: { executor: "work_cloud", state: "running" },
   };
-  expect(render(props(claimed))).not.toContain("Resume this unclaimed");
+  const html = render(props(claimed));
+  expect(html).not.toContain("Resume this unclaimed");
+  expect(html).not.toContain("Waiting for Cloud");
+  expect(html).toContain("Analyzing the evidence");
 });
 it.each(["gate", "revoked", "foreign", "viewer", "generation", "expired"])(
   "does not reveal fresh claim instructions after %s changes",

@@ -2610,6 +2610,12 @@ dialog.capture-modal::backdrop {
 .source-origin > svg {
   flex-shrink: 0;
 }
+.source-progress progress {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  accent-color: var(--primary);
+}
 
 .knowledge-library {
   display: grid;

@@ -18,6 +18,44 @@ import { syncDashboardCard } from "./dashboardProjection";
 // abort the underlying mutation; no eventually consistent private cache.
 const triggers = new Triggers<DataModel>();
 triggers.register("sources", async (ctx, change) => {
+  const before = change.oldDoc,
+    next = change.newDoc;
+  if (!before || !next || before.generation === next.generation) return;
+  if (
+    before.pendingAnalysisAttemptId &&
+    next.state !== "deleted" &&
+    process.env.RESTORE_LOCK !== "true"
+  ) {
+    const pending = await ctx.db.get(before.pendingAnalysisAttemptId);
+    ensure(
+      !pending || !["running", "unknown"].includes(pending.state),
+      "COST_RECONCILIATION_REQUIRED",
+      "Reconcile the retained-evidence attempt before replacing source input.",
+    );
+    if (pending?.state === "queued" && !pending.taskId)
+      await ctx.db.patch(pending._id, {
+        state: "cancelled",
+        diagnostic: "source_input_changed_before_claim",
+        updatedAt: Date.now(),
+      });
+  }
+  if (
+    next.selectedAnalysisVersionId ||
+    next.pendingAnalysisAttemptId ||
+    next.selectedAnalysisSummary !== undefined
+  ) {
+    await ctx.db.patch(change.id, {
+      selectedAnalysisVersionId: undefined,
+      analysisSelectionRevision: undefined,
+      pendingAnalysisAttemptId: undefined,
+      pendingAnalysisAttemptState: undefined,
+      selectedAnalysisSummary: undefined,
+      selectedAnalysisInsightCount: undefined,
+      selectedAnalysisMainPoints: undefined,
+    });
+  }
+});
+triggers.register("sources", async (ctx, change) => {
   const prior = change.oldDoc?.personalAnalysis;
   const next = change.newDoc;
   if (

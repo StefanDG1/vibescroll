@@ -1,4 +1,5 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
+import { selectedAnalysis } from "./lib/analysisHistory";
 import { notifyVideoLinkSaved } from "./lib/assistantEvents";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
@@ -563,9 +564,15 @@ export const library = query({
           ...source
         }) => ({
           ...source,
-          insightCount: analysis?.insights?.length ?? 0,
+          summary: source.selectedAnalysisSummary ?? source.summary,
+          insightCount:
+            source.selectedAnalysisInsightCount ??
+            analysis?.insights?.length ??
+            0,
           mainPoints:
-            analysis?.insights?.slice(0, 3).map((i: any) => i.title) ?? [],
+            source.selectedAnalysisMainPoints ??
+            analysis?.insights?.slice(0, 3).map((i: any) => i.title) ??
+            [],
         }),
       ),
       next: result.isDone ? null : result.continueCursor,
@@ -648,6 +655,7 @@ export const detail = query({
         "Source permission changed.",
       );
     if (s.orderedMedia && s.state === "ready") await currentOrderedSource(s);
+    const selected = await selectedAnalysis(ctx, s);
     const analysisHash = s.analysis
       ? await digest(JSON.stringify(s.analysis))
       : undefined;
@@ -684,6 +692,15 @@ export const detail = query({
       ));
     return {
       ...s,
+      ...(selected
+        ? {
+            analysis: selected.output,
+            summary: selected.output.summary,
+            analysisVersion: selected.metadata,
+            analysisHash: undefined,
+            analysisReview: undefined,
+          }
+        : {}),
       workCloudHandoff:
         reader.membership.role === "owner"
           ? ((await unclaimedCloudHandoff(
@@ -708,7 +725,10 @@ export const detail = query({
         cloudSourceEligible && workCloudTextAllowed(reader.actor.subject),
       workCloudMediaEnabled:
         cloudSourceEligible && workCloudMediaAllowed(reader.actor.subject),
-      analysisHash,
+      analysisHash:
+        selected && selected.metadata.provenance !== "legacy_recorded"
+          ? undefined
+          : analysisHash,
       analysisReview: currentReview?.qualityVerdict
         ? {
             verdict: currentReview.qualityVerdict,
@@ -1949,6 +1969,14 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     retrievalState: undefined,
     analysisPipelineVersion: undefined,
     publicImportId: undefined,
+    selectedAnalysisVersionId: undefined,
+    analysisSelectionRevision: undefined,
+    pendingAnalysisAttemptId: undefined,
+    pendingAnalysisAttemptState: undefined,
+    nextAnalysisVersionNumber: undefined,
+    selectedAnalysisSummary: undefined,
+    selectedAnalysisInsightCount: undefined,
+    selectedAnalysisMainPoints: undefined,
     typedAnalysisActor: undefined,
     sourceRetentionUntil: undefined,
     repositorySelection: undefined,
@@ -1971,6 +1999,11 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     cursor: null,
   });
   await ctx.db.patch(id, { categoryOverride: undefined });
+  await ctx.scheduler.runAfter(0, internal.analysisVersions.eraseSource, {
+    sourceId: id,
+    organizationId: s.organizationId,
+    stage: "versions",
+  });
   for (const asset of await ctx.db
     .query("assets")
     .withIndex("by_org_source", (q) =>

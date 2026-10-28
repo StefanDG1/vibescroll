@@ -320,6 +320,12 @@ export const deliver = internalAction({
               : d.eventName === "work_cloud_waiting"
                 ? {
                     schemaVersion: "work-cloud-waiting-v1",
+                    ...("analysisAttemptId" in d && d.analysisAttemptId
+                      ? {
+                          attemptId: d.analysisAttemptId,
+                          inputKind: "retained_evidence",
+                        }
+                      : {}),
                     sourceId: d.sourceId,
                     profileId: s.organizationId,
                     generation: d.generation,

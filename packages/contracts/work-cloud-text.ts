@@ -122,7 +122,9 @@ const lease = {
   ...source,
   leaseToken: z.string().uuid(),
 };
-export const workCloudClaimInput = z.object(source).strict();
+export const workCloudClaimInput = z
+  .object({ ...source, attemptId: z.string().min(1).max(100).optional() })
+  .strict();
 export const workCloudMcpRequestOptions = z.strictObject({
   model: z.string().min(1).max(100),
   effort: z.enum(["low", "medium", "high", "xhigh"]),
@@ -130,7 +132,14 @@ export const workCloudMcpRequestOptions = z.strictObject({
   maxApiUsd: z.literal(0),
   retainUntil: z.number().int().positive(),
 });
-export const workCloudLeaseInput = z.object(lease).strict();
+export const workCloudLeaseInput = z
+  .object({ ...lease, attemptId: z.string().min(1).max(100).optional() })
+  .strict();
+export const workCloudRetainedFrameInput = z.strictObject({
+  ...lease,
+  attemptId: z.string().min(1).max(100),
+  frameId: z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),
+});
 export const workCloudMetadata = z.strictObject({
   title: z.string().min(1).max(160).optional(),
   authorName: z.string().min(1).max(160).optional(),
@@ -189,6 +198,7 @@ export const workCloudPreparationStage = z.discriminatedUnion("stage", [
 export const workCloudCompleteInput = z
   .object({
     ...lease,
+    attemptId: z.string().min(1).max(100).optional(),
     // One bounded scalar preserves the MCP SDK's existing 256-element limit.
     // The backend separately validates the parsed canonical analysis schema.
     resultJson: z.string().min(2).max(120000),
@@ -208,8 +218,21 @@ export function parseWorkCloudResult(resultJson: string): unknown {
     throw Error("Cloud result exceeds its byte bound.");
   return JSON.parse(resultJson);
 }
+export function assistantResponseLimit(operation: string) {
+  return [
+    "work_cloud_input",
+    "work_cloud_retained_frame",
+    "analysis_version",
+  ].includes(operation)
+    ? 262144
+    : 100000;
+}
 
 export const workCloudTextOperations = [
+  z.strictObject({
+    operation: z.literal("work_cloud_retained_frame"),
+    args: workCloudRetainedFrameInput,
+  }),
   z.strictObject({
     operation: z.literal("work_cloud_repair_claim"),
     args: workCloudClaimInput,

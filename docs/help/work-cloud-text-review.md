@@ -14,7 +14,20 @@ This option appears only when the experimental video route is enabled for your a
 
 In a supported Work Cloud chat with VibeScroll connected, ask VibeScroll to analyze the saved post and provide its VibeScroll link. The assistant reads its current status and sends an exact own-subscription request with a model, effort, retention deadline and maximum API spend of US$0. After this setup, there is no additional app approval for each request. The host must prepare supported tools and restricted Internet permission before claiming work.
 
-The experimental limit is six new requests per hour. Repeating the identical unclaimed request returns the existing job. This manual waiting receipt does not configure a Cloud task. Eligible pilot accounts can separately set up native automatic app saves using [the setup guide](/help/processing-and-recovery). Automatic event wake has passed; complete automatic video-to-result acceptance remains pending. Old team workspaces do not become private because of their names, and this option does not move their posts. Existing analyzed posts retain their results; this first experimental media route accepts only unanalyzed posts.
+The experimental limit is six new source requests per hour. Repeating the identical unclaimed request returns the existing job. This manual waiting receipt does not configure a Cloud task. Eligible pilot accounts can separately set up native automatic app saves using [the setup guide](/help/processing-and-recovery). Two private owner Reel tests completed automatically with the chat tab closed. General customer setup and wider platform acceptance remain open. Old team workspaces do not become private because of their names, and this option does not move their posts.
+
+## Analyze an old post again
+
+For a completed Cloud video with retained evidence, open **Analysis versions** on its post page. History loads when you open it.
+
+1. Review the current result and retention. Choose **Analyze again** with a model and reasoning effort supported by your own Cloud task. This reuses the saved transcript and screenshots, uses your subscription and spends 0 VibeScroll credits.
+2. Keep the current result while the candidate runs. The configured monitor needs the current setup instructions for both new posts and approved reanalysis requests. If you set up an older save-only monitor, update that same Work task using **Set up ChatGPT** in Connections. Reuse the existing connection; a supported plugin rescan updates its tools without creating another app or expanding scopes.
+3. Open **Review version** when the candidate returns. Inspect its claims, quoted evidence and retained screenshots. **Compare with selected version** reports differences; it does not certify that a newer model is better.
+4. Choose **Use version** to select the result you prefer. Choose an earlier retained version to roll back. Selection and rollback start no analysis, download or transcription.
+
+Versions reuse one evidence bundle. Reanalysis cannot recover an expired transcript or missing screenshots. An unclaimed request expires safely. A claimed attempt with an unknown outcome needs reconciliation and is not automatically repeated. Source deletion, withdrawn rights and retention still apply to every version.
+
+Project actions currently remain bound to the original analysis for the current extraction. Existing project reviews preserve their original evidence. Select that original analysis before starting another project evaluation. Private version selection publishes nothing to the shared catalog.
 
 If this option is absent, use the separately approved diagnostic handoff below when available. Do not disconnect an existing connection, delete posts or switch to paid credits to work around unavailable access.
 
@@ -44,7 +57,7 @@ Open or bookmark the same post page to inspect the private result and citations.
 
 A lost claim, expired execution or uncertain completion is not automatically retried. Replacing source input does not remove that uncertainty or authorize another executor. Reconciliation with the real host remains necessary; do not delete and resubmit as a retry workaround. Privacy deletion remains available, but app deletion does not erase provider-retained task history.
 
-One real active-chat Reel result and native saved-link wake have passed separately. Complete automatic video-to-result, general-account setup and independent walkthrough acceptance remain pending. See [Processing, costs and recovery](/help/processing-and-recovery) for setup, the existing paired route and explicitly funded alternatives.
+Private owner automatic Reel results have passed with real returned images and matching displayed transcript text. Independent customer setup, manually certified speech accuracy and provider erasure remain unverified. See [Processing, costs and recovery](/help/processing-and-recovery) for setup, the existing paired route and explicitly funded alternatives.
 
 ## Confidence and rejected returns
 

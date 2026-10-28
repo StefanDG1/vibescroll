@@ -23,6 +23,7 @@ import { createIssueCore } from "./issues";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
+import { selectedAnalysis, retainedVersion } from "./lib/analysisHistory";
 import { assistantGrantActive } from "../packages/policy/assistant";
 import {
   requestCloudFromAssistant,
@@ -353,6 +354,9 @@ export const getJobStatus = internalQuery({
           ? cloud.state
           : source.state
       : null;
+    const pendingVersion = source.pendingAnalysisAttemptId
+      ? await ctx.db.get(source.pendingAnalysisAttemptId)
+      : null;
     return {
       source_id: source._id,
       profile_id: a.organization._id,
@@ -363,6 +367,22 @@ export const getJobStatus = internalQuery({
           : (receipt?.status ?? source.state)),
       title: postDisplayTitle(source).slice(0, 200),
       source_status: source.state,
+      selected_analysis_version_id: source.selectedAnalysisVersionId ?? null,
+      analysis_selection_revision: source.analysisSelectionRevision ?? 0,
+      pending_analysis_version:
+        pendingVersion &&
+        pendingVersion.actor === a.actor._id &&
+        pendingVersion.grantId === a.grant._id &&
+        pendingVersion.grantVersion === a.grant.version
+          ? {
+              attemptId: pendingVersion._id,
+              number: pendingVersion.number,
+              state: pendingVersion.state,
+              inputKind: "retained_evidence",
+              generation: pendingVersion.sourceGeneration,
+              expiresAt: pendingVersion.expiresAt,
+            }
+          : null,
       generation: source.generation,
       revision: source.updatedAt,
       grant_version: a.grant.version,
@@ -1111,10 +1131,14 @@ export const search = internalQuery({
         ctx.db.normalizeId("sources", ref.sourceId),
       );
       if (!source) continue;
+      const selected = await selectedAnalysis(ctx, source);
       const url = `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`;
       const insights =
         source.state === "ready"
-          ? (source.analysis?.insights ?? []).slice(0, 128)
+          ? ((selected?.output ?? source.analysis)?.insights ?? []).slice(
+              0,
+              128,
+            )
           : [];
       let matched = false;
       for (
@@ -1127,7 +1151,7 @@ export const search = internalQuery({
           `${source.title} ${idea.title} ${idea.claim}`.toLocaleLowerCase();
         if (words.every((w) => text.includes(w))) {
           results.push({
-            id: `${source._id}~${index}`,
+            id: `${source._id}${selected ? `@${selected.metadata.id}` : ""}~${index}`,
             title: String(idea.title ?? source.title).slice(0, 200),
             url,
             excerpt: String(idea.claim ?? "").slice(0, 600),
@@ -1136,6 +1160,7 @@ export const search = internalQuery({
               generation: source.generation,
               revision: source.updatedAt,
               insightId: idea.id,
+              ...(selected ? { analysisVersionId: selected.metadata.id } : {}),
             },
           });
           matched = true;
@@ -1176,11 +1201,18 @@ export const fetch = internalQuery({
       "INVALID_INPUT",
       "Invalid source identifier.",
     );
-    const [raw, indexRaw, ...extra] = args.id.split("~");
+    const [identity, indexRaw, ...extra] = args.id.split("~");
+    const [raw, versionRaw, ...identityExtra] = identity.split("@");
     const sourceId = ctx.db.normalizeId("sources", raw);
+    const versionId =
+      versionRaw === undefined
+        ? undefined
+        : ctx.db.normalizeId("analysisVersions", versionRaw);
     const index = indexRaw === undefined ? undefined : Number(indexRaw);
     ensure(
       sourceId &&
+        identityExtra.length === 0 &&
+        (versionRaw === undefined || !!versionId) &&
         extra.length === 0 &&
         (index === undefined ||
           (/^\d{1,3}$/.test(indexRaw) &&
@@ -1196,8 +1228,18 @@ export const fetch = internalQuery({
       ),
       source = await sourceFor(ctx, a, sourceId);
     ensure(source, "FORBIDDEN", "This post changed or is no longer granted.");
+    const selected = versionId
+      ? await retainedVersion(ctx, source, versionId).then(({ version }) => ({
+          output: version.output,
+          metadata: { id: version._id },
+        }))
+      : index === undefined
+        ? await selectedAnalysis(ctx, source)
+        : null;
     const all =
-      source.state === "ready" ? (source.analysis?.insights ?? []) : [];
+      source.state === "ready"
+        ? ((selected?.output ?? source.analysis)?.insights ?? [])
+        : [];
     if (index !== undefined)
       ensure(!!all[index], "FORBIDDEN", "Idea unavailable.");
     const ideas = index === undefined ? all.slice(0, 20) : [all[index]];
@@ -1210,6 +1252,7 @@ export const fetch = internalQuery({
         sourceId: source._id,
         generation: source.generation,
         revision: source.updatedAt,
+        ...(selected ? { analysisVersionId: selected.metadata.id } : {}),
         insightId: i.id,
       },
       evidence: typed

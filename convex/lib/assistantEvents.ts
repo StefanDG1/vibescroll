@@ -132,7 +132,11 @@ export async function cloudWaitingCurrent(
   ctx: QueryCtx,
   s: Doc<"assistantSubscriptions">,
   source: Doc<"sources"> | null,
-  occurrence?: { generation: number; completedRevision: number },
+  occurrence?: {
+    generation: number;
+    completedRevision: number;
+    analysisAttemptId?: Id<"analysisAttempts">;
+  },
 ) {
   if (
     s.eventName !== "work_cloud_waiting" ||
@@ -140,6 +144,48 @@ export async function cloudWaitingCurrent(
     !(await eventSubscriptionCurrent(ctx, s))
   )
     return false;
+  if (occurrence?.analysisAttemptId) {
+    const attempt = await ctx.db.get(occurrence.analysisAttemptId);
+    const evidence = attempt ? await ctx.db.get(attempt.evidenceId) : null;
+    const actor = await ctx.db.get(s.actor);
+    const grant = await ctx.db.get(s.grantId);
+    const organization = await ctx.db.get(s.organizationId);
+    return !!(
+      attempt &&
+      evidence &&
+      actor &&
+      grant &&
+      organization &&
+      source.organizationId === s.organizationId &&
+      source.state === "ready" &&
+      source.rightsAttested &&
+      (!source.sourceRetentionUntil ||
+        source.sourceRetentionUntil > Date.now()) &&
+      source.pendingAnalysisAttemptId === attempt._id &&
+      source.generation === attempt.sourceGeneration &&
+      source.canonical === attempt.canonical &&
+      attempt.sourceId === source._id &&
+      attempt.state === "queued" &&
+      !attempt.taskId &&
+      attempt.expiresAt > Date.now() &&
+      evidence.state === "retained" &&
+      evidence.retainUntil > Date.now() &&
+      attempt.actor === s.actor &&
+      attempt.grantId === s.grantId &&
+      attempt.grantVersion === s.grantVersion &&
+      attempt.clientId === s.clientId &&
+      attempt.createdAt === occurrence.completedRevision &&
+      occurrence.generation === attempt.sourceGeneration &&
+      workCloudMediaAllowed(actor.subject) &&
+      (await sourceWithinAssistantScope(
+        ctx,
+        grant,
+        organization,
+        actor._id,
+        source,
+      ))
+    );
+  }
   const job = source.personalAnalysis;
   if (
     source.organizationId !== s.organizationId ||
@@ -337,6 +383,55 @@ export async function notifyCloudWaiting(
       sourceId: source._id,
       generation: job.generation,
       completedRevision: job.approvedAt,
+      state: "pending",
+      attempts: 0,
+      dueAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await ctx.scheduler.runAfter(0, internal.assistantEventRuntime.deliver, {
+      id,
+    });
+  }
+}
+/** A fresh explicit version request uses the existing profile waiting event. */
+export async function notifyVersionWaiting(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  attempt: Doc<"analysisAttempts">,
+) {
+  if (!eventsEnabled()) return;
+  const subscriptions = await ctx.db
+    .query("assistantSubscriptions")
+    .withIndex("by_actor_client", (q) =>
+      q.eq("actor", attempt.actor).eq("clientId", attempt.clientId),
+    )
+    .take(21);
+  for (const s of subscriptions) {
+    const occurrence = {
+      generation: attempt.sourceGeneration,
+      completedRevision: attempt.createdAt,
+      analysisAttemptId: attempt._id,
+    };
+    if (!(await cloudWaitingCurrent(ctx, s, source, occurrence))) continue;
+    const existing = await ctx.db
+      .query("assistantDeliveries")
+      .withIndex("by_source_occurrence", (q) =>
+        q
+          .eq("subscriptionId", s._id)
+          .eq("sourceId", source._id)
+          .eq("generation", occurrence.generation)
+          .eq("completedRevision", occurrence.completedRevision),
+      )
+      .unique();
+    if (existing) continue;
+    const now = Date.now();
+    const id = await ctx.db.insert("assistantDeliveries", {
+      organizationId: source.organizationId,
+      subscriptionId: s._id,
+      eventName: "work_cloud_waiting",
+      sourceId: source._id,
+      ...occurrence,
       state: "pending",
       attempts: 0,
       dueAt: now,

@@ -76,6 +76,7 @@ import { ChoiceSelect } from "./choice-select";
 import { policyRelease } from "../../../packages/policy/publication";
 import { EvidenceViewer } from "./evidence-viewer";
 import { AnalysisReview } from "./analysis-review";
+import { AnalysisHistory } from "./analysis-history";
 import { SetupJourney } from "./setup-journey";
 import { TaskRuntimePicker } from "./task-runtime-picker";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
@@ -802,7 +803,11 @@ export function Console({
           selected.workCloudSaveIntent?.analysisGeneration === undefined &&
           selected.workCloudSaveIntent?.generation === selected.generation &&
           selected.workCloudSaveIntent?.expiresAt > Date.now()))) ||
-    data.sources.some((s) => ["queued", "processing"].includes(s.state)) ||
+    data.sources.some(
+      (s) =>
+        ["queued", "processing"].includes(s.state) ||
+        ["queued", "running"].includes(s.pendingAnalysisAttemptState),
+    ) ||
     data.repositories.some((r) =>
       ["preparing", "drafting_context"].includes(r.status),
     ) ||
@@ -3612,7 +3617,7 @@ export function SourceDetail({
     )
     .sort()
     .join("|");
-  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
+  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${source.analysisSelectionRevision}:${source.pendingAnalysisAttemptId}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
   const [retentionTime, setRetentionTime] = useState(Date.now);
   const retentionDeadline = Math.min(
     source.sourceRetentionUntil ?? Infinity,
@@ -3863,6 +3868,13 @@ export function SourceDetail({
       <div className="panel">
         <span className="coverage">{sourceCoverageLabel(detail.coverage)}</span>
         <h2>AI summary</h2>
+        {detail.analysisVersion && (
+          <p className="fine">
+            Version {detail.analysisVersion.number} selected. Requested{" "}
+            {detail.analysisVersion.requestedModel} ·{" "}
+            {detail.analysisVersion.requestedEffort}. Review the cited evidence.
+          </p>
+        )}
         <p>{overview}</p>
         {detail.error && (
           <p className="error" role="alert">
@@ -3907,6 +3919,19 @@ export function SourceDetail({
           </p>
         </details>
       </div>
+      {!demo &&
+        !detailLoading &&
+        detail.state === "ready" &&
+        isCloudObservedMedia(detail.orderedMedia?.post) && (
+          <AnalysisHistory
+            key={sourceId}
+            sourceId={sourceId}
+            revision={sourceRevision}
+            disabled={readOnly || busy || !detail.workCloudMediaEnabled}
+            call={strictCall ?? call}
+            onChange={() => onRefresh?.()}
+          />
+        )}
       <section className="panel">
         <h2>Main points</h2>
         {!demo &&
@@ -4510,140 +4535,158 @@ export function SourceDetail({
       </details>
       <section className="panel" id="source-analysis-actions">
         <h2>Applies to your projects</h2>
-        <a
-          href="/help/evaluate-an-idea-for-a-project"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Review project context and alternatives
-        </a>
-        {detail.analysis?.insights?.length > 0 && (
-          <>
+        {detail.analysisVersion &&
+          detail.analysisVersion.provenance !== "legacy_recorded" && (
             <p>
-              Use{" "}
-              {insightIds.length === detail.analysis.insights.length
-                ? "the whole post"
-                : `${insightIds.length} selected main points`}
-              .
+              Project actions below remain bound to the original analysis.
+              Existing project reviews keep their original evidence. Select the
+              original analysis before starting a new project evaluation.
             </p>
-            <details className="point-selection">
-              <summary>Advanced · choose main points</summary>
-              {detail.analysis.insights.map((insight: any) => (
-                <label key={insight.id}>
-                  <input
-                    type="checkbox"
-                    checked={!excludedInsights.includes(insight.id)}
-                    onChange={(event) =>
-                      setExcludedInsights((old) =>
-                        event.target.checked
-                          ? old.filter((key) => key !== insight.id)
-                          : [...old, insight.id],
-                      )
-                    }
-                  />
-                  {insight.title}
-                </label>
-              ))}
-            </details>
+          )}
+        <fieldset
+          disabled={
+            readOnly ||
+            busy ||
+            (detail.analysisVersion &&
+              detail.analysisVersion.provenance !== "legacy_recorded")
+          }
+          style={{ border: 0, padding: 0, minWidth: 0 }}
+        >
+          <a
+            href="/help/evaluate-an-idea-for-a-project"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Review project context and alternatives
+          </a>
+          {detail.analysis?.insights?.length > 0 && (
+            <>
+              <p>
+                Use{" "}
+                {insightIds.length === detail.analysis.insights.length
+                  ? "the whole post"
+                  : `${insightIds.length} selected main points`}
+                .
+              </p>
+              <details className="point-selection">
+                <summary>Advanced · choose main points</summary>
+                {detail.analysis.insights.map((insight: any) => (
+                  <label key={insight.id}>
+                    <input
+                      type="checkbox"
+                      checked={!excludedInsights.includes(insight.id)}
+                      onChange={(event) =>
+                        setExcludedInsights((old) =>
+                          event.target.checked
+                            ? old.filter((key) => key !== insight.id)
+                            : [...old, insight.id],
+                        )
+                      }
+                    />
+                    {insight.title}
+                  </label>
+                ))}
+              </details>
+              <button
+                className="secondary"
+                disabled={busy || readOnly || !insightIds.length}
+                onClick={() =>
+                  call("suggestRepositories", {
+                    id: id(source),
+                    insightIds,
+                    maxCredits: 10,
+                  })
+                }
+              >
+                Find up to five plausible projects, maximum 10 credits
+              </button>
+              <p className="fine">
+                This selection uses confirmed business profiles. It does not
+                establish implementation fit or approve coding. Evaluate a
+                project separately to inspect repository evidence.
+              </p>
+              {selection && (
+                <div>
+                  <p>
+                    {selection.candidates.length
+                      ? "Possible project matches"
+                      : "No plausible project match"}
+                  </p>
+                  {selection.noFitReason && <p>{selection.noFitReason}</p>}
+                  {selection.candidates.map((candidate: any) => (
+                    <article key={candidate.repositoryId}>
+                      <h3>
+                        {repos.find(
+                          (repo: any) => id(repo) === candidate.repositoryId,
+                        )?.fullName ?? "Selected project"}
+                      </h3>
+                      <p>{candidate.reason}</p>
+                      <button
+                        className="secondary"
+                        disabled={busy || readOnly || !insightIds.length}
+                        onClick={() =>
+                          call("match", {
+                            id: id(source),
+                            repositoryId: candidate.repositoryId,
+                            insightIds,
+                            maxCredits: 10,
+                          })
+                        }
+                      >
+                        Evaluate inspected repository, maximum 10 credits
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+          {detail.matches?.map((m: any) => (
+            <article key={m.repositoryId}>
+              <h3>{label(m.disposition)}</h3>
+              <p>{m.reason}</p>
+            </article>
+          ))}
+          {detail.proposals?.map((p: any) => (
             <button
               className="secondary"
-              disabled={busy || readOnly || !insightIds.length}
+              key={id(p)}
+              onClick={() => onProposal(p)}
+            >
+              {p.title} · {label(p.disposition)}
+            </button>
+          ))}
+          {repos.map((r: any) => (
+            <button
+              className="secondary"
+              key={id(r)}
+              disabled={
+                busy ||
+                readOnly ||
+                !insightIds.length ||
+                detail.state !== "ready" ||
+                !r.enabled ||
+                !r.confirmed
+              }
               onClick={() =>
-                call("suggestRepositories", {
+                call("match", {
                   id: id(source),
+                  repositoryId: id(r),
                   insightIds,
                   maxCredits: 10,
                 })
               }
             >
-              Find up to five plausible projects, maximum 10 credits
+              Match {r.fullName}, maximum 10 credits
             </button>
-            <p className="fine">
-              This selection uses confirmed business profiles. It does not
-              establish implementation fit or approve coding. Evaluate a project
-              separately to inspect repository evidence.
+          ))}
+          {!repos.length && !detail.matches?.length && (
+            <p>
+              No selected repository yet. Your source can remain useful as a
+              reference.
             </p>
-            {selection && (
-              <div>
-                <p>
-                  {selection.candidates.length
-                    ? "Possible project matches"
-                    : "No plausible project match"}
-                </p>
-                {selection.noFitReason && <p>{selection.noFitReason}</p>}
-                {selection.candidates.map((candidate: any) => (
-                  <article key={candidate.repositoryId}>
-                    <h3>
-                      {repos.find(
-                        (repo: any) => id(repo) === candidate.repositoryId,
-                      )?.fullName ?? "Selected project"}
-                    </h3>
-                    <p>{candidate.reason}</p>
-                    <button
-                      className="secondary"
-                      disabled={busy || readOnly || !insightIds.length}
-                      onClick={() =>
-                        call("match", {
-                          id: id(source),
-                          repositoryId: candidate.repositoryId,
-                          insightIds,
-                          maxCredits: 10,
-                        })
-                      }
-                    >
-                      Evaluate inspected repository, maximum 10 credits
-                    </button>
-                  </article>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-        {detail.matches?.map((m: any) => (
-          <article key={m.repositoryId}>
-            <h3>{label(m.disposition)}</h3>
-            <p>{m.reason}</p>
-          </article>
-        ))}
-        {detail.proposals?.map((p: any) => (
-          <button
-            className="secondary"
-            key={id(p)}
-            onClick={() => onProposal(p)}
-          >
-            {p.title} · {label(p.disposition)}
-          </button>
-        ))}
-        {repos.map((r: any) => (
-          <button
-            className="secondary"
-            key={id(r)}
-            disabled={
-              busy ||
-              readOnly ||
-              !insightIds.length ||
-              detail.state !== "ready" ||
-              !r.enabled ||
-              !r.confirmed
-            }
-            onClick={() =>
-              call("match", {
-                id: id(source),
-                repositoryId: id(r),
-                insightIds,
-                maxCredits: 10,
-              })
-            }
-          >
-            Match {r.fullName}, maximum 10 credits
-          </button>
-        ))}
-        {!repos.length && !detail.matches?.length && (
-          <p>
-            No selected repository yet. Your source can remain useful as a
-            reference.
-          </p>
-        )}
+          )}
+        </fieldset>
       </section>
       <div className="panel">
         <h2>Processing and retention</h2>

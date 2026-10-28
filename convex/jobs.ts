@@ -1193,6 +1193,40 @@ export const exportPage = query({
     const permitted = [];
     for (const row of rows.page) {
       if (
+        ["analysisEvidence", "analysisVersions", "analysisAttempts"].includes(
+          a.section,
+        )
+      ) {
+        const history = row as
+          | Doc<"analysisEvidence">
+          | Doc<"analysisVersions">
+          | Doc<"analysisAttempts">;
+        const source = history.sourceId
+          ? await ctx.db.get(history.sourceId)
+          : null;
+        const evidence =
+          "evidenceId" in history
+            ? await ctx.db.get(history.evidenceId)
+            : (history as Doc<"analysisEvidence">);
+        if (
+          !source ||
+          source.organizationId !== a.organizationId ||
+          source.state === "deleted" ||
+          !source.rightsAttested ||
+          !sourceRetained(source.sourceRetentionUntil) ||
+          !evidence ||
+          source.state !== "ready" ||
+          source.generation !== evidence.extractionGeneration ||
+          evidence.owner !== "private" ||
+          evidence.organizationId !== source.organizationId ||
+          evidence.sourceId !== source._id ||
+          evidence.state !== "retained" ||
+          evidence.retainUntil <= Date.now() ||
+          evidence.canonical !== source.canonical
+        )
+          continue;
+      }
+      if (
         (a.section === "publicImports" || a.section === "publicGeography") &&
         "actor" in row &&
         row.actor !== actor._id
@@ -1299,6 +1333,9 @@ export const exportPage = query({
             text: undefined,
             originalText: undefined,
             summary: undefined,
+            selectedAnalysisSummary: undefined,
+            selectedAnalysisMainPoints: undefined,
+            selectedAnalysisInsightCount: undefined,
             analysis: undefined,
             mediaEvidence: undefined,
             originalMediaEvidence: undefined,

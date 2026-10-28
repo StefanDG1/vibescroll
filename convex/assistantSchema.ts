@@ -93,6 +93,7 @@ export const assistantTables = {
           v.literal("work_cloud_waiting"),
           v.literal("video_link_saved"),
         ),
+        analysisAttemptId: v.optional(v.id("analysisAttempts")),
         sourceId: v.id("sources"),
         generation: v.number(),
       }),

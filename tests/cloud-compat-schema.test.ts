@@ -20,7 +20,7 @@ const base = "346b718baf91ba9847fbb707be7bbe069df57257";
 it("preserves all tables/config and permits only the exact Cloud validators and one C2 delivery index", () => {
   // The application exports 89 tables. The deployment's 131-table inventory
   // also includes component tables; their configuration is byte-checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(89);
+  expect(Object.keys(schema.tables)).toHaveLength(92);
   const old = execFileSync("git", ["show", `${base}:convex/productSchema.ts`], {
     encoding: "utf8",
   });
@@ -66,6 +66,19 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
       optional: true,
     });
     delete nextFields.workCloudSaveIntent;
+    for (const field of [
+      "selectedAnalysisVersionId",
+      "analysisSelectionRevision",
+      "pendingAnalysisAttemptId",
+      "pendingAnalysisAttemptState",
+      "nextAnalysisVersionNumber",
+      "selectedAnalysisSummary",
+      "selectedAnalysisInsightCount",
+      "selectedAnalysisMainPoints",
+    ]) {
+      expect(nextFields[field]?.optional).toBe(true);
+      delete nextFields[field];
+    }
     for (const [field, type] of [
       ["title", "string"],
       ["authorName", "string"],
@@ -137,7 +150,20 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
     "convex.config.ts",
     "crons.ts",
   ]) {
-    expect(readFileSync(`convex/${file}`, "utf8").replace(/\r\n/g, "\n")).toBe(
+    const content = readFileSync(`convex/${file}`, "utf8").replace(
+      /\r\n/g,
+      "\n",
+    );
+    expect(
+      file === "schema.ts"
+        ? content
+            .replace(
+              'import { analysisHistoryTables } from "./analysisHistorySchema";\n',
+              "",
+            )
+            .replace("  ...analysisHistoryTables,\n", "")
+        : content,
+    ).toBe(
       execFileSync("git", ["show", `${base}:convex/${file}`], {
         encoding: "utf8",
       }).replace(/\r\n/g, "\n"),
@@ -237,6 +263,10 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
         });
       } else {
         const waiting = structuredClone(prior.documentType);
+        waiting.value.analysisAttemptId = {
+          fieldType: { type: "id", tableName: "analysisAttempts" },
+          optional: true,
+        };
         waiting.value.eventName = {
           fieldType: {
             type: "union",

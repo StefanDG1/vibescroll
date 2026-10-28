@@ -109,6 +109,8 @@ export const waitingEvent = {
     z
       .object({
         schemaVersion: z.literal("work-cloud-waiting-v1"),
+        attemptId: z.string().optional(),
+        inputKind: z.literal("retained_evidence").optional(),
         sourceId: z.string(),
         profileId: z.string(),
         generation: z.number().int().nonnegative(),

@@ -1,4 +1,7 @@
 export const contentExportSections = [
+  "analysisEvidence",
+  "analysisVersions",
+  "analysisAttempts",
   "improvements",
   "improvementOutcomes",
   "improvementPolicies",
@@ -51,6 +54,8 @@ const privateFields = new Set([
   "lease",
   "credentialHash",
   "codeHash",
+  "leaseTokenHash",
+  "consentId",
 ]);
 const repositoryContext = new Set([
   "context",
@@ -66,6 +71,25 @@ export function exportRecord(
   section: ContentExportSection,
   value: unknown,
 ): unknown {
+  if (
+    (section === "analysisEvidence" || section === "analysisVersions") &&
+    value &&
+    typeof value === "object"
+  ) {
+    const row = value as Record<string, unknown>;
+    if (
+      row.state === "removed" ||
+      row.state === "blocked" ||
+      typeof row.retainUntil !== "number" ||
+      row.retainUntil <= Date.now()
+    ) {
+      return Object.fromEntries(
+        ["_id", "_creationTime", "state", "createdAt", "retainUntil"]
+          .filter((key) => key in row)
+          .map((key) => [key, row[key]]),
+      );
+    }
+  }
   if (section === "publicImports" && value && typeof value === "object") {
     // Actor ownership is enforced by the export query. Keep authored notes,
     // never a copied base artifact, permission/compatibility key or another actor.
@@ -92,6 +116,7 @@ export function exportRecord(
           .filter(
             ([key]) =>
               !privateFields.has(key) &&
+              !(section === "analysisEvidence" && key === "key") &&
               !(root && section === "publicReports" && key === "key") &&
               !(
                 root &&

@@ -1,7 +1,8 @@
 import { httpAction } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
+import { analysisVersionOperations } from "../packages/contracts/analysis-versions";
 import {
   widgetBrowseInput,
   widgetTopicInput,
@@ -45,6 +46,7 @@ const operations = z.discriminatedUnion("operation", [
     })
     .strict(),
   ...workCloudTextOperations,
+  ...analysisVersionOperations,
   z
     .object({
       operation: z.literal("draft_project_suggestion"),
@@ -277,34 +279,67 @@ export const tools = httpAction(async (ctx, request) => {
           sourceId: input.args.sourceId as Id<"sources">,
         });
         break;
-      case "work_cloud_input":
-        value = await ctx.runQuery(internal.workCloudAnalysis.input, {
+      case "work_cloud_retained_frame":
+        value = await ctx.runAction(internal.analysisVersionFrames.read, {
           ...input.args,
           sourceId: input.args.sourceId as Id<"sources">,
+          attemptId: input.args.attemptId as Id<"analysisAttempts">,
         });
+        break;
+      case "work_cloud_input":
+        value = input.args.attemptId
+          ? await ctx.runQuery(internal.analysisVersions.input, {
+              ...input.args,
+              sourceId: input.args.sourceId as Id<"sources">,
+              attemptId: input.args.attemptId as Id<"analysisAttempts">,
+            })
+          : await ctx.runQuery(internal.workCloudAnalysis.input, {
+              ...input.args,
+              sourceId: input.args.sourceId as Id<"sources">,
+            });
         break;
       case "work_cloud_claim":
       case "work_cloud_heartbeat":
       case "work_cloud_fail":
-        value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
-          ...input.args,
-          sourceId: input.args.sourceId as Id<"sources">,
-          operation:
-            input.operation === "work_cloud_claim"
-              ? "claim"
-              : input.operation === "work_cloud_heartbeat"
-                ? "heartbeat"
-                : "fail",
-        });
+        value = input.args.attemptId
+          ? await ctx.runMutation(internal.analysisVersions.dispatch, {
+              ...input.args,
+              sourceId: input.args.sourceId as Id<"sources">,
+              attemptId: input.args.attemptId as Id<"analysisAttempts">,
+              operation:
+                input.operation === "work_cloud_claim"
+                  ? "claim"
+                  : input.operation === "work_cloud_heartbeat"
+                    ? "heartbeat"
+                    : "fail",
+            })
+          : await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+              ...input.args,
+              sourceId: input.args.sourceId as Id<"sources">,
+              operation:
+                input.operation === "work_cloud_claim"
+                  ? "claim"
+                  : input.operation === "work_cloud_heartbeat"
+                    ? "heartbeat"
+                    : "fail",
+            });
         break;
       case "work_cloud_complete": {
         const { resultJson, ...args } = input.args;
-        value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
-          ...args,
-          sourceId: args.sourceId as Id<"sources">,
-          operation: "complete",
-          output: parseWorkCloudResult(resultJson),
-        });
+        value = args.attemptId
+          ? await ctx.runMutation(internal.analysisVersions.dispatch, {
+              ...args,
+              sourceId: args.sourceId as Id<"sources">,
+              attemptId: args.attemptId as Id<"analysisAttempts">,
+              operation: "complete",
+              output: parseWorkCloudResult(resultJson),
+            })
+          : await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+              ...args,
+              sourceId: args.sourceId as Id<"sources">,
+              operation: "complete",
+              output: parseWorkCloudResult(resultJson),
+            });
         break;
       }
       case "work_cloud_metadata": {
@@ -352,6 +387,40 @@ export const tools = httpAction(async (ctx, request) => {
         });
         break;
       }
+      case "analysis_history":
+        value = await ctx.runQuery(api.analysisVersions.history, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "analysis_version":
+        value = await ctx.runQuery(api.analysisVersions.read, {
+          sourceId: input.args.sourceId as Id<"sources">,
+          versionId: input.args.versionId as Id<"analysisVersions"> | undefined,
+        });
+        break;
+      case "compare_analysis_versions":
+        value = await ctx.runQuery(api.analysisVersions.compare, {
+          sourceId: input.args.sourceId as Id<"sources">,
+          beforeId: input.args.beforeId as Id<"analysisVersions">,
+          afterId: input.args.afterId as Id<"analysisVersions">,
+        });
+        break;
+      case "select_analysis_version":
+        value = await ctx.runMutation(api.analysisVersions.select, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+          versionId: input.args.versionId as Id<"analysisVersions">,
+        });
+        break;
+      case "request_analysis_version":
+        value = await ctx.runMutation(api.analysisVersions.request, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+          basedOnVersionId: input.args.basedOnVersionId as
+            Id<"analysisVersions"> | undefined,
+        });
+        break;
       case "draft_project_suggestion":
         value = await ctx.runMutation(
           internal.assistant.draftProjectSuggestion,

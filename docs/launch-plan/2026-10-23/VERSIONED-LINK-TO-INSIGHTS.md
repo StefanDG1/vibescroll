@@ -2,6 +2,8 @@
 
 Mode: how-to. Owner direction: October 28, 2026. Status: implementation plan, not an enabled-feature claim. [ADR 180](../../adr/180-versioned-cloud-analysis-and-shared-selection.md) defines the decision.
 
+Implementation checkpoint, 13:24 UTC: private evidence/version/attempt storage, retained-image reanalysis, lazy history, comparison, selection and rollback are local candidates. The final full local check passed 1,336 Vitest cases plus recorded skips, Node/Python suites, types, lint and both builds; exact-head CI, publication and native acceptance remain open. Shared contribution will use a separate explicit Cloud authority inside the existing artifact family with independently owned image bytes. No private result is retroactively publishable. See [implementation status](../../implementation-status.md).
+
 Ship a useful web and MCP product around Save, automatic Cloud analysis, cited results, reusable shared knowledge and safe upgrades. Keep the widget and the larger project/coding workflow out of this release's critical path. Preserve their requirements in the main completion plan.
 
 ## Establish the baseline
@@ -11,7 +13,7 @@ Use these facts rather than older pending checkpoints:
 - Production frontend is `c7ce9df1912aaffebd77a2f0b5de26298e7dc610`; backend is `70c9aaca090a8906f6aa4f61826c1a260ec754c7`. The latest [private automatic test](../../operations/evidence/launch-20261028-stable-v1-reel.json) returned 15 transcript segments, 7 real JPEGs, a thumbnail and 3 insights with 19 references. Save-to-result took about 7 minutes.
 - `convex/workCloudAnalysis.ts` currently requires an unanalyzed media post and clears the source's result when approving a new generation. It does not support safe second or later analyses. Existing `sourceRevisions` represent source evidence, not a complete media-analysis version history.
 - The serving `publicArtifacts` contract is edition-bound. The main candidate has independent service artifacts and private associations, but its service producer still requires `managed_api`. Cloud contribution and version selection need explicit integration. Do not assume that historical empty-store checks still hold.
-- The native owner pilot consumed its one reserved test allowance and is Paused. This plan does not resume it, reserve another analysis or raise a cap. Preserve cumulative EUR10.50, Vercel usage below USD20, old holds and the reserved unanalyzed post.
+- The native owner pilot consumed its previous one-job allowance and is Paused. The owner subsequently approved cumulative EUR12 and a separate USD1 envelope for at most four attempts and two compatible backend publications, plus at most two fixed Basic included-credit builds. Resume only a newly reviewed finite test; preserve all old holds, Vercel usage strictly below USD20 and the reserved unanalyzed post.
 
 ## Keep the data model small
 

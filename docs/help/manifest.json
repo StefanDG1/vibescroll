@@ -244,7 +244,7 @@
     },
     {
       "slug": "work-cloud-text-review",
-      "title": "Use experimental Work Cloud analysis",
+      "title": "Set up automatic Cloud analysis",
       "summary": "Set up exact private video requests through MCP, or review a separate diagnostic handoff.",
       "file": "work-cloud-text-review.md",
       "status": "approved",
@@ -322,9 +322,7 @@
   "automaticMcpCloudReview": {
     "date": "2026-10-28",
     "status": "source-reviewed-candidate",
-    "updated": [
-      "work-cloud-text-review"
-    ],
+    "updated": ["work-cloud-text-review"],
     "limits": "V2 app and ChatGPT link defaults, existing native monitor, old grants unchanged, manual diagnostics collapsed. Local protocol/UI tests only; actual ordinary-chat production canary pending."
   },
   "normalSessionPreferenceReview": {

@@ -1,16 +1,16 @@
-# Review an experimental Work Cloud request
+# Set up automatic Cloud analysis
 
-These routes are disabled by default. Supplied or retained text and public single-video links have separate readiness gates. An operator must verify and enable the supported route for your eligible account. A queued approval does not launch a host or mean analysis has started.
+Own ChatGPT Cloud analysis needs an eligible Cloud host, your connected VibeScroll app and one prepared native saved-link task. The current operator pilot is limited; a paused task does not process another link. A connected MCP app alone does not prove the task is Monitoring.
 
-## Automatic links from the app and ChatGPT
+## One-time setup
 
-This updated setup is a release candidate. On the older production screen, **Review Work Cloud video** is a manual diagnostic, not the intended automatic workflow.
+1. Open **Connections**, choose **My own Cloud Work**, then **Continue**. Keep your existing VibeScroll MCP connection. Standard access covers your library and confirmed projects within your actual account permissions. Routine setup uses your normal sign-in session.
+2. Open **Finish or resume ChatGPT setup**. Copy its message into one ChatGPT Work chat with Cloud and VibeScroll selected. Let readiness finish and wait for the native task to show **Monitoring**. Copying the message alone does not complete setup.
+3. Save a permitted Reel or TikTok in VibeScroll, or ask VibeScroll to save its link in a ChatGPT chat where the app is available. Cloud selection already means automatic analysis. Use **Save only** when you want no new processing.
+4. Open the returned post link for progress, transcript, sampled images and cited insights. A compatible existing catalog result is reused without another video analysis. The task also reports its outcome in its own chat; VibeScroll cannot insert an unsolicited result into every chat where a link was sent.
+5. Return to **Connections** to resume a paused task or complete a missing step. If settings genuinely change, use the setup message for the current grant version. Do not recreate the MCP app or repeat source review for every normal save.
 
-1. Open **Connections** and edit your existing VibeScroll connection. Keep the same MCP app.
-2. Select **Automatically analyze video links I save in the app or send to VibeScroll in ChatGPT**. Review your library, requested model, effort, retention and own-subscription funding, then save once. Older app-only settings need this one-time review before ChatGPT links can use the default.
-3. Complete or resume the prepared native Cloud monitor using the setup instructions. After a connection preference changes, bind the monitor to the current grant version. A connected MCP app by itself does not establish an active monitor.
-4. In a ChatGPT chat where VibeScroll is available, send a permitted Instagram Reel or TikTok and ask VibeScroll to save it. Analysis is the default for this setup. Say **save only** when you want no analysis. You should not open the app's manual review for each post.
-5. Open the returned post link for progress and the cited result. The configured Work task also receives completion. VibeScroll cannot insert an unsolicited result into every chat where you originally sent a link.
+Eligible neutral results can be retained in the shared catalog under the current service policy. Personal notes, repository context and project proposals stay private. Existing private-only results are not automatically published. Default result retention is **until deleted**; worker leases, raw downloads and authentication expire separately. See [Processing, costs and recovery](/help/processing-and-recovery) for the task-location guide.
 
 The sending chat needs no downloader or video runtime. Native Events deliver the saved-link intent to your prepared Cloud Work task. If setup is unavailable, the link stays saved with a setup shortcut. Existing results and uncertain attempts are preserved. No paid fallback runs. Subscription limits, refresh-token expiry or revocation can still require attention; this is not a promise of permanent authentication. For a previously save-only pristine video, **Analyze using Cloud defaults** requests the configured route. **Advanced: manual Cloud handoff** is for deliberate diagnostics.
 
@@ -75,7 +75,7 @@ The host binds its observations with `work_cloud_prepare` and uploads the requir
 
 ## Read the result or recover
 
-Open or bookmark the same post page to inspect the private result and citations. Library also links to it. This route creates no shared-catalog entry. Supplied-text citations do not prove that anyone watched a linked video or verified its claims.
+Open or bookmark the same post page to inspect the private result and citations. Library also links to it. The manual supplied-text diagnostic does not contribute to the catalog. Normal automatic video results can be eligible for neutral shared reuse under the current service policy. Supplied-text citations do not prove that anyone watched a linked video or verified its claims.
 
 **Revoke this request's app access** prevents further input and result return. Stop the host task too. VibeScroll cannot confirm provider cancellation or restore consumed subscription allowance.
 

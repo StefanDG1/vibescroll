@@ -56,7 +56,7 @@ function fixture(denied = false) {
   });
   return calls;
 }
-it("loads project review, context and scan prerequisites in five scoped reads without fetching library or billing", async () => {
+it("loads project review, context and scan prerequisites in six scoped reads including header Save setup without fetching library or billing", async () => {
   const calls = fixture();
   const result = await workspaceData({ org: organizationId, view: "projects" });
   expect(calls.map((c) => c.name)).toEqual([
@@ -65,6 +65,7 @@ it("loads project review, context and scan prerequisites in five scoped reads wi
     "product:repositories",
     "devices:list",
     "githubLinks:choices",
+    "aiPreferences:read",
   ]);
   expect(calls.every((c) => c.args.organizationId === organizationId)).toBe(
     true,
@@ -140,13 +141,14 @@ it("denies missing or unavailable selected sources instead of loading a broad wo
   );
 });
 it.each(["plans", "proposals"])(
-  "loads %s with two scoped reads and marks the slice for a fresh capture-context load",
+  "loads %s with three scoped reads including header Save setup",
   async (view) => {
     const calls = fixture();
     const result = await workspaceData({ org: organizationId, view });
     expect(calls.map((c) => c.name)).toEqual([
       "organizations:details",
       "product:proposals",
+      "aiPreferences:read",
     ]);
     expect(result).toMatchObject({
       workspaceSlice: "plans",

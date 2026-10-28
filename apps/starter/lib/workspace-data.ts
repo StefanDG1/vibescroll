@@ -3,7 +3,27 @@ import { backend, api } from "./backend";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 
-export async function workspaceData({
+// The header Save action exists on every workspace view, including metadata-only
+// lists. Supply its bounded task settings without fetching full post analyses.
+export async function workspaceData(
+  args: Parameters<typeof workspaceViewData>[0],
+) {
+  const data = await workspaceViewData(args);
+  if (
+    args.view === "shared" ||
+    ("role" in data && data.role === "viewer") ||
+    ("aiPreference" in data && data.aiPreference)
+  )
+    return data;
+  const aiPreference = await (
+    await backend()
+  ).query(api.aiPreferences.read, {
+    organizationId: args.org as Id<"organizations">,
+  });
+  return { ...data, aiPreference };
+}
+
+async function workspaceViewData({
   org,
   view = "",
   search = "",

@@ -155,6 +155,94 @@ async function sharedFixture() {
   };
 }
 
+it("uses a reference-only shared post in exact-version project context, with no owner leakage, new job or entitlement bypass", async () => {
+  const f = await sharedFixture();
+  const scopes = [
+    "analysis:request",
+    "analysis:execute",
+    "knowledge:read",
+    "jobs:read",
+    "events:subscribe",
+    "context:read",
+  ];
+  const clientId = "client_01234567890123456789012345";
+  vi.stubEnv(
+    "MCP_CLIENTS",
+    JSON.stringify([{ id: clientId, name: "Synthetic shared reader", scopes }]),
+  );
+  const projectId = await f.t.run((ctx) =>
+    ctx.db.insert("repositories", {
+      organizationId: f.secondOrg,
+      installationId: 77,
+      providerId: 88,
+      fullName: "second/owned",
+      branch: "main",
+      sha: "b".repeat(40),
+      enabled: true,
+      confirmed: true,
+      profile: "A TypeScript software product",
+      profileVersion: 1,
+      manifest: [],
+      status: "connected",
+      context: "PRIVATE SECOND REPOSITORY CODE",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }),
+  );
+  await f.second.mutation(api.assistantGrants.save, {
+    organizationId: f.secondOrg,
+    clientId,
+    sources: [],
+    libraryScope: "all",
+    scopes,
+    expectedVersion: 1,
+    expiresAt: null,
+    acknowledged: true,
+    repositories: [
+      {
+        repositoryId: projectId,
+        baseSha: "b".repeat(40),
+        profileVersion: 1,
+        selectionVersion: 0,
+      },
+    ],
+  });
+  const assistant = f.t.withIdentity({
+    subject: "user_03234567890123456789012345",
+    issuer: "https://fixture.authkit.app",
+    client_id: clientId,
+    scope: scopes.join(" "),
+    sid: "app_consent_03234567890123456789012345",
+  });
+  const args = { sourceId: f.secondSourceId, projectId };
+  const before = await f.t.run((ctx) => ctx.db.get(f.secondSourceId));
+  f.network.mockClear();
+  const context = await assistant.query(
+    internal.assistant.projectApplicationContext,
+    args,
+  );
+  expect(context.source).toMatchObject({
+    id: f.secondSourceId,
+    analysisVersionId: f.shared.version._id,
+    generation: 0,
+  });
+  expect(context.source.insights[0].reference.sourceId).toBe(f.secondSourceId);
+  expect(JSON.stringify(context)).not.toContain(f.sourceId);
+  expect(JSON.stringify(context)).not.toContain(f.org);
+  expect(JSON.stringify(context)).not.toContain(
+    "PRIVATE SECOND REPOSITORY CODE",
+  );
+  expect(f.network).not.toHaveBeenCalled();
+  const after = await f.t.run((ctx) => ctx.db.get(f.secondSourceId));
+  expect(after).toEqual(before);
+  expect(after?.analysis).toBeUndefined();
+  expect(after?.personalAnalysis).toBeUndefined();
+  await f.t.run((ctx) => ctx.db.patch(f.billingId, { status: "canceled" }));
+  await expect(
+    assistant.query(internal.assistant.projectApplicationContext, args),
+  ).rejects.toThrow();
+});
+
 it("ordinary Save reuses independent neutral evidence with no job, inference, media acquisition or byte copy", async () => {
   const f = await sharedFixture();
   const saved = (await f.t.run((ctx) => ctx.db.get(f.secondSourceId)))!;

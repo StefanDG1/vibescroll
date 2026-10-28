@@ -141,6 +141,8 @@ Ship each accepted stage with exact-head CI, fresh migration impact, one fixed B
 
 ## Make MCP cover the useful actions
 
+[ADR 187](../../adr/187-version-bound-mcp-project-context.md) defines the first useful project follow-up read: exact retained/shared analysis version, selected insight IDs and a confirmed project profile/base revision, under both current knowledge/context scopes. It performs no inference or writes. The subsequent evaluation/draft/completion loop must preserve those exact references and current authority; the read candidate is not yet production accepted.
+
 The [explicit never-claimed retry candidate](../../adr/186-explicit-never-claimed-cloud-retry.md) adds a deliberate post/MCP retry without weakening ordinary Save or unknown-attempt protection. It uses current Cloud defaults, one stable key and a fresh generation, while retaining previous holds and bounded attempt provenance. Local and production acceptance remain separate.
 
 Keep tools aligned with user goals, without requiring a custom widget:

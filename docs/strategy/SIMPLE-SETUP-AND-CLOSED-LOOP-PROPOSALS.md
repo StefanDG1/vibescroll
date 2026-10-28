@@ -24,6 +24,8 @@ Introduce an explicit additive retention mode and centralized retention helpers.
 
 ## Issue or draft PR is enough for V1
 
+The [exact-version project-context candidate](../adr/187-version-bound-mcp-project-context.md) starts this bridge with a dual-scoped read of retained insights and a confirmed project profile. It handles reference-only shared posts without copying their analysis. Private proposal persistence, host-reported evaluation, issue publication and authenticated completion feedback remain separate work; do not claim the read action completes them.
+
 The proposal flow can create a GitHub issue or draft pull request when that is the supported handoff. The user explicitly accepts this as a useful V1 instead of requiring direct desktop delivery. Bind the handoff to the exact source version/insights, confirmed project/repository and base revision. Explain a recommendation using matching categories/subcategories, then inspect current repository context and ask targeted questions only where needed.
 
 Include clear instructions for the implementing model to report completion or failure to VibeScroll. Supply a narrowly scoped completion action or capability tied to that proposal/run, with expiry, idempotency and no broad account credential in an issue/PR body. Public issue text is untrusted and cannot expand authority. The normal authenticated MCP completion tool can serve the callback; never embed bearer tokens in a public issue or repository file.

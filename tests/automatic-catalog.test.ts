@@ -298,6 +298,111 @@ it("records an uncertain shared copy without losing private results or automatic
   expect(s.network).toHaveBeenCalledTimes(calls);
 });
 
+it("reuses durable shared evidence for a later analysis version and deduplicates delayed publication replies", async () => {
+  const s = await setup();
+  vi.stubEnv(
+    "CLOUD_CATALOG_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...s.configuration,
+      defaultPolicy: {
+        ...s.configuration.defaultPolicy,
+        resultRetention: "until_deleted",
+      },
+    }),
+  );
+  await s.captureNewCompletion();
+  await s.t.run(async (ctx) =>
+    persistCloudResult(ctx, (await ctx.db.get(s.sourceId))!),
+  );
+  const first = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { sourceId: s.sourceId, actorId: s.actorId, generation: 1 },
+  );
+  if (!("contributionId" in first))
+    throw Error("Expected the first shared version");
+  const firstRow = (await s.t.run((ctx) => ctx.db.get(first.contributionId)))!;
+  const original = await s.t.run((ctx) =>
+    currentCloudArtifact(ctx, firstRow.artifactId),
+  );
+  vi.setSystemTime(s.now + 1000);
+  expect(
+    (
+      await s.t.action(internal.cloudCatalogActions.publishCompleted, {
+        sourceId: s.sourceId,
+        actorId: s.actorId,
+        generation: 1,
+      })
+    ).state,
+  ).toBe("published");
+  expect(s.network).toHaveBeenCalledTimes(2);
+  vi.setSystemTime(s.now + 86400000);
+  const requested = await s.assistant.mutation(api.analysisVersions.request, {
+    sourceId: s.sourceId,
+    expectedSelectionRevision: 0,
+    configuration: s.config,
+    key: "next-durable-shared-version",
+  });
+  const claim = await s.assistant.mutation(internal.analysisVersions.dispatch, {
+    sourceId: s.sourceId,
+    attemptId: requested.attemptId,
+    taskId: "synthetic-durable-version",
+    operation: "claim",
+  });
+  if (!claim.leaseToken) throw Error("Expected a fresh retained-analysis lease");
+  const lease = {
+    sourceId: s.sourceId,
+    attemptId: requested.attemptId,
+    taskId: "synthetic-durable-version",
+    leaseToken: claim.leaseToken,
+  };
+  const input = await s.assistant.query(internal.analysisVersions.input, lease);
+  await s.assistant.action(internal.analysisVersionFrames.read, {
+    ...lease,
+    frameId: input.frames[0].frameId,
+  });
+  const completed = await s.assistant.mutation(
+    internal.analysisVersions.dispatch,
+    {
+      ...lease,
+      operation: "complete",
+      output: {
+        schemaVersion: "analysis-version-output-v1",
+        sourceId: s.sourceId,
+        attemptId: requested.attemptId,
+        evidenceHash: input.evidenceHash,
+        postRevisionHash: input.postRevisionHash,
+        summary: "A distinct later neutral analysis.",
+        warnings: [],
+        insights: s.output.insights,
+      },
+    },
+  );
+  const beforeCopy = s.network.mock.calls.length;
+  const next = await s.t.action(internal.cloudCatalogActions.publishCompleted, {
+    sourceId: s.sourceId,
+    actorId: s.actorId,
+    generation: 1,
+    versionId: completed.versionId,
+  });
+  if (!("contributionId" in next))
+    throw Error("Expected the new shared version");
+  expect(next.state).toBe("published");
+  const nextRow = (await s.t.run((ctx) => ctx.db.get(next.contributionId)))!;
+  const current = await s.t.run((ctx) =>
+    currentCloudArtifact(ctx, nextRow.artifactId),
+  );
+  expect(current.evidence._id).toBe(original.evidence._id);
+  expect(current.version._id).not.toBe(original.version._id);
+  expect(current.artifact.retainUntil).not.toBe(original.artifact.retainUntil);
+  expect(current.version.output.summary).toBe(
+    "A distinct later neutral analysis.",
+  );
+  expect(s.network).toHaveBeenCalledTimes(beforeCopy);
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.analysis).toEqual(
+    s.output,
+  );
+});
+
 it("coalesces another account's save behind one producer and attaches the completed result without another job", async () => {
   const s = await setup();
   await s.captureNewCompletion();

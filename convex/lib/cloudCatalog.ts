@@ -682,7 +682,9 @@ async function currentCloudArtifactUncached(
       evidence.state === "retained" &&
       version.evidenceId === evidence._id &&
       version.retainUntil === artifact.retainUntil &&
-      evidence.retainUntil === artifact.retainUntil &&
+      (evidence.retainUntil === artifact.retainUntil ||
+        (evidence.resultRetention === "until_deleted" &&
+          artifact.resultRetention === "until_deleted")) &&
       version.resultRetention === artifact.resultRetention &&
       evidence.resultRetention === artifact.resultRetention &&
       evidence.evidenceHash === authority.evidenceHash &&

@@ -1,5 +1,11 @@
 # Implementation status
 
+## October 28: durable shared-evidence correction
+
+The final review reproduced a cache defect: different finite processing timestamps caused a later permanent analysis version to copy the same screenshots again. The retained regression fails under the prior timestamp comparison and passes with durable evidence reuse. Delayed publication replies now reuse their stored operation consent rather than generate a different consent from the current clock. Current permission, output/evidence hashes and takedowns are still revalidated. A new immutable analysis version shares the same independent evidence ID and causes no additional storage fetch/upload; the original private output remains unchanged.
+
+Full offline check7 passes 1,428 Vitest cases plus three hosted skips, 19 Node cases and 88 Python cases with seven Windows skips, validation/lint/types and both builds. Earlier red/failure logs remain. b1ffbeb passed exact Linux CI40757438329; this corrective successor needs its own exact CI/freeze before publication. The owner approved extending the existing counts to five backend releases and four Basic builds within the unchanged EUR12 cap; four/three are consumed. The correction stays inside that approved shared-results checkpoint and consumes no extra release/build/analysis attempt. Production is unchanged and actual two-account acceptance remains open.
+
 ## October 28, 19:43 UTC: automatic catalog and simple setup candidate checked
 
 The candidate implements a disclosed default neutral catalog for new authenticated requests, first-completion publication, independent JPEG storage, immutable shared versions, cache reuse, bounded in-flight waiters, operator model/effort preferences and explicit copy failure states. It records user-attested rights honestly rather than inventing a licence. A finite operator alpha entitlement permits the two authorized test accounts without fake billing. Existing exact permission variants and verified Pro checks remain compatible. None of this default is enabled in production yet.

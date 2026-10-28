@@ -267,6 +267,39 @@ async function prepareContribution(
     "INVALID_INPUT",
     "Use a stable contribution operation key.",
   );
+  const prior = await ctx.db
+    .query("catalogContributions")
+    .withIndex("by_org_source_key", (q) =>
+      q
+        .eq("organizationId", s.source.organizationId)
+        .eq("sourceId", s.source._id)
+        .eq("key", args.key),
+    )
+    .unique();
+  if (prior) {
+    const stored = cloudCatalogConsent.parse(prior.consent);
+    const expected = automaticActor
+      ? consentFor(s, stored.retainUntil)
+      : cloudCatalogConsent.parse(args.consent);
+    ensure(
+      prior.actor === s.actor._id &&
+        prior.versionId === args.versionId &&
+        prior.permissionHash === s.permissionHash &&
+        prior.evidenceHash === s.neutralEvidence.evidenceHash &&
+        prior.outputHash === s.outputHash &&
+        prior.consentHash === (await socialHash(canonicalJson(stored))) &&
+        canonicalJson(stored) === canonicalJson(expected) &&
+        canonicalJson(stored) ===
+          canonicalJson(consentFor(s, stored.retainUntil)) &&
+        (!automaticActor ||
+          prior.automaticPolicyHash === s.source.catalogPolicy!.policyHash),
+      "APPROVAL_STALE",
+      "The operation key identifies another contribution.",
+    );
+    if (prior.state === "published")
+      await currentCloudArtifact(ctx, prior.artifactId);
+    return { existing: true, contributionId: prior._id, state: prior.state };
+  }
   const consent = automaticActor
     ? consentFor(s)
     : cloudCatalogConsent.parse(args.consent);
@@ -278,25 +311,6 @@ async function prepareContribution(
     "APPROVAL_STALE",
     "Review the exact contribution and retention again.",
   );
-  const prior = await ctx.db
-    .query("catalogContributions")
-    .withIndex("by_org_source_key", (q) =>
-      q
-        .eq("organizationId", s.source.organizationId)
-        .eq("sourceId", s.source._id)
-        .eq("key", args.key),
-    )
-    .unique();
-  if (prior) {
-    ensure(
-      prior.actor === s.actor._id &&
-        prior.versionId === args.versionId &&
-        prior.consentHash === (await socialHash(canonicalJson(consent))),
-      "APPROVAL_STALE",
-      "The operation key identifies another contribution.",
-    );
-    return { existing: true, contributionId: prior._id, state: prior.state };
-  }
   await limit(ctx, `catalog-contribution:${s.actor._id}`, 3);
   const family = await catalogFamilyForProduction(
     ctx,
@@ -393,7 +407,9 @@ async function prepareContribution(
     if (
       !cloudArtifact(artifact) ||
       artifact.state !== "eligible" ||
-      artifact.retainUntil !== consent.retainUntil
+      artifact.resultRetention !== consent.resultRetention ||
+      (consent.resultRetention !== "until_deleted" &&
+        artifact.retainUntil !== consent.retainUntil)
     )
       continue;
     const authority = cloudCatalogAuthority.safeParse(artifact.authority);

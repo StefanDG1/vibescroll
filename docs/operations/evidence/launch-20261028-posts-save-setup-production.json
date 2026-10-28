@@ -1,0 +1,68 @@
+{
+  "kind": "metadata-save-setup-website-production-v1",
+  "observedAtUTC": "2026-10-28T21:21:39.849431+00:00",
+  "frontendCommit": "74cd6fce5c3eea7eda481298450abbc1ae5b71ca",
+  "frontendVersion": "0.1.0-alpha.20261028210406.g74cd6fce5c3e",
+  "deploymentId": "dpl_DNnbfqUC8CfBwCdEPoEWi2XTfXhJ",
+  "backendCommit": "2ed297dad17bf80959561119842708c09dbfbba8",
+  "exactCI": 40768808146,
+  "backendClosureUnchanged": true,
+  "newBackendPublication": false,
+  "build": {
+    "machine": "fixed Basic",
+    "queue": "normal",
+    "milliseconds": 33508,
+    "sameBuildPromoted": true
+  },
+  "canonicalChecks": {
+    "healthCommitMatched": true,
+    "postsMetadataHTTP": 200,
+    "postsTaskSettingsPresent": true,
+    "homeMetadataHTTP": 200,
+    "homeTaskSettingsPresent": true,
+    "metadataListsContainNoFullAnalyses": true,
+    "CloudSelectedByDefault": true,
+    "noSecondAnalysisCheckbox": true,
+    "manageSetupClosesDialog": true,
+    "manageSetupOpensConnections": true,
+    "guideCurrentOneTimeSteps": true,
+    "obsoleteGuideCheckboxRemoved": true,
+    "saveOnlyExistingReadySourcePassed": true,
+    "sourceGenerationStayed1": true,
+    "selectedVersionStayedSame": true,
+    "evidenceChanged": false,
+    "catalogStatusStayedPublished": true,
+    "noAdditionalAnalysisRun": true,
+    "normalDomainAssignmentRestored": true
+  },
+  "localChecks": {
+    "vitest": 1430,
+    "hostedSkips": 3,
+    "node": 19,
+    "python": 88,
+    "windowsPythonSkips": 7,
+    "validationLintTypesBuilds": true,
+    "stagedSecretFindings": 0
+  },
+  "scope": {
+    "ownerActualSharedAlphaPreviouslyAccepted": true,
+    "nativePilot": "Paused after finite canary",
+    "generalColdCustomerCloudAcceptance": false,
+    "paidCustomerAcceptance": false,
+    "knownFailureRetryComplete": false,
+    "projectIssuePRFeedbackLoopComplete": false
+  },
+  "budget": {
+    "cumulativeEUR": 12,
+    "existingBackendMediaEnvelopeUSD": 1,
+    "VercelStrictlyBelowUSD": 20,
+    "lastObservedVercelUSD": 17.73,
+    "allHoldsRetained": true,
+    "reservedPostUntouched": true,
+    "BasicBuildsApproved": 5,
+    "BasicBuildsDispatched": 5,
+    "actualBackendReleases": 5,
+    "paidAIAPI": false,
+    "cashOverage": false
+  }
+}

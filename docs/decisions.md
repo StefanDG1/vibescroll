@@ -1,5 +1,9 @@
 # Product decisions
 
+## October 28: versioned Cloud analysis and paid shared reuse
+
+[ADR180](adr/180-versioned-cloud-analysis-and-shared-selection.md) prioritizes the link-to-insights release over widget and broader workflow work. Deliberate reanalysis creates immutable candidates, preserving current results and exact citations. Default readers receive the best approved eligible version; stronger/newer model labels alone do not justify promotion. Comparison, personal pinning and audited rollback reuse retained evidence. Extend the existing shared artifact family and private associations with honest own-subscription provenance and current entitlement/rights checks. These are approved implementation requirements, not live features, additional funding or shared-publication permission for existing private outputs.
+
 ## Three task locations, October26
 
 [ADR161](adr/161-three-task-locations.md) implements the owner's shared three-choice picker: own ChatGPT Cloud Recommended, separately bought VibeScroll server credits, and local own-subscription processing. Keep unsupported routes visible but disabled, quick setup/reconfiguration and More info, and Save without analysis separate. This presentation change widens no grant or runtime availability and changes no saved data or funding approval. Production publication remains pending.

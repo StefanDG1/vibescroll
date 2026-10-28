@@ -1,3 +1,11 @@
+# Remaining acceptance and completion ledger
+
+## October 28: focused Cloud and versioning release
+
+Use the [V0-V5 implementation order and acceptance matrix](VERSIONED-LINK-TO-INSIGHTS.md#run-the-acceptance-matrix). Versioned reanalysis, exact historical citations, comparison, atomic promotion/rollback, neutral Cloud contribution, entitlement checks on every cached read and a two-account zero-inference cache hit are required before claiming the paid shared versioned product is ready. Keep widget and other larger-plan acceptance deferred and explicitly incomplete.
+
+The [October28 receipt](../../operations/evidence/launch-20261028-stable-v1-reel.json) accepts one further private automatic Reel, not those new features or general customer onboarding. The finite owner pilot is Paused after its test allowance. Preserve all existing budgets, reserved/unknown posts and provider/privacy gates. The paragraphs below are historical where superseded.
+
 ## October27 current production and automatic acceptance
 
 Frontend/backend70c9aac, canonical version0.1.0-alpha.20261027021744.g70c9aaca090a, are live after one fixed Basic build, staged/canonical byte checks and same-build promotion. An actual app Save completed automatically with ChatGPT tabs closed:52 transcript segments,8 byte/hash-verified JPEGs, matching thumbnail,6 insights and57 evidence references. The protected app updated without reload. This accepts the private owner Reel checkpoint; cold customer setup, broader platforms, original disputed repair and the rest of the linked plan remain open. [Automatic evidence](../../operations/evidence/launch-20261027-automatic-reel-accepted.json), [production evidence](../../operations/evidence/launch-20261027-bootstrap-production.json).
@@ -16,7 +24,6 @@ Compatible frontend/backend `ff7d88f` remain live with the three-option picker a
 
 The native provider browser passed synthetic JPEG handoff but one supplied TikTok visit hit a CAPTCHA/login overlay. Captions, duration, author, real frames and browser-cache deletion are unverified; no retry or bypass occurred. Keep the pinned caption-first downloader direction and actual runtime admission gate. No automatic-media success follows. EUR8 retainsUSD8.305014256044613 and leavesUSD0.17498574395538746 unreserved, with all old holds intact. Original-image repair, protected/reserved posts, unknown work, full-main index migration and every P/R/N/C/M release/provider/privacy gate remain. [Setup guide](../../operations/chatgpt-native-events.md), [browser evidence](../../operations/evidence/launch-20261026-native-cloud-browser.json) and [ADR162](../../adr/162-finite-app-save-cloud-intents.md).
 
-# Remaining acceptance and completion ledger
 
 ## Current native Events checkpoint, October 26
 

@@ -1,5 +1,11 @@
 # Foundational idea backlog
 
+## F083: versioned shared analysis, October 28
+
+Source: owner request to force a second/later Reel analysis, cache reusable evidence, compare model outputs, select the best version and roll back. Decision: adopt the implementation direction under [ADR180](../adr/180-versioned-cloud-analysis-and-shared-selection.md), with Cloud link-to-insights ahead of widget work. The existing audience benefits only if the newer result is actually useful and reliable. Current private automatic tests support the transport/media path, not model superiority, customer value or shared Cloud publication.
+
+Counterargument: model names, reasoning settings and recency are poor substitutes for evidence quality. A shared result can also leak private context or survive a rights change unless contribution, retention and entitlement stay authoritative. Test preservation of version1 through successful/failed upgrades; zero-inference rollback; blinded candidate comparison; two-account compatible cache reuse; revocation and takedown across all caches. Keep prices, grants, spending caps, audience and six beliefs unchanged. Website availability copy waits for the recorded acceptance milestones.
+
 ## F079: finite app saves and actual native runtime limits, October26
 
 The owner-approved link-only flow now has a disabled implementation candidate under [ADR162](../adr/162-finite-app-save-cloud-intents.md). A reviewed one-time default and current native saved-link monitor permit a finite source-bound intent. The host prepares before the existing analysis job begins; save-only and unavailable routes preserve their meaning. The three-option picker and illustrated Help are live separately. Native notification/renewal and one active-task Reel do not prove automatic media: current nested decoder probes failed. Local UI/handler tests supply no customer outcome or general availability evidence. Preserve the audience, prices, six beliefs, private data, every provider/privacy gate and EUR8 cumulative cap with all old holds. No marketing campaign or automatic catalog contribution follows.

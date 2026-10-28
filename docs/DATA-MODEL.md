@@ -1,5 +1,11 @@
 # Data model
 
+## Planned analysis versions, October 28
+
+[ADR180](adr/180-versioned-cloud-analysis-and-shared-selection.md) and the [versioned record contracts](launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md#keep-the-data-model-small) distinguish source revisions, shared evidence bundles, immutable analysis versions, finite attempts, approved selections and private associations. Reuse the existing artifact family; do not equate a source execution generation with version history or copy a full result per customer. This is a planned additive migration, not the current serving schema.
+
+Mode: reference. Names describe proposed Convex tables and serialized concepts.
+
 ## Home post projection
 
 `dashboardCards.postSummary` is an optional bounded `post-summary-v1` projection maintained by the existing atomic source-write triggers. It adds no table, queue or analysis store. `contentRevision` covers material source content; `progressRevision` also reflects stages, ordered phases and lease windows. Stage-only changes preserve the material hash and existing proposal version fences. Thumbnail pointers use the current authenticated evidence route, which checks the actual asset again.

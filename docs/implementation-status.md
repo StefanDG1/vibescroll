@@ -1,5 +1,9 @@
 # Implementation status
 
+## October 28: versioned shared analysis plan accepted
+
+The owner requests second/later analysis versions, comparison, best-approved selection, rollback and a paid reusable shared dataset, with the automatic Cloud/MCP link-to-insights release ahead of widget work. [ADR180](adr/180-versioned-cloud-analysis-and-shared-selection.md) and the [V0-V5 plan](launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) record the implementation order, data/cache contracts, existing overwrite and managed-only authority blockers, MCP actions and acceptance tests. Source inspection found no safe force-reanalysis path in serving Cloud media; the unanalyzed-post guard remains. No application code, live grants, data, job, monitor, billing or production state changed in this planning checkpoint. The accepted private run below remains the latest result evidence; versioned reanalysis and cross-user Cloud reuse are not claimed live.
+
 ## October27: serving widget integrated into the broader app candidate
 
 The broader main candidate now includes the widget and Connect guide already serving in production. It exports the existing scoped source/profile helpers, preserves private variant and retained-frame behavior, uses direct post URLs and carries the current browser dependencies with fixed Convex component peer identity. Main ordered-media tests and finance validation remain required. The unpublished knowledge:write editor, extra receipt table and indexes are excluded.

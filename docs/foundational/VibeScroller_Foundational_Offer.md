@@ -1,5 +1,9 @@
 # VibeScroll foundational offer
 
+## F083: planned reusable analysis history, October 28
+
+The next release priority is reliable Cloud link-to-insights with retained analysis versions, comparison, selection/rollback and entitled shared reuse under [ADR180](../adr/180-versioned-cloud-analysis-and-shared-selection.md). A paid catalog may offer access to reusable approved analysis and evidence, while private notes and project context stay private. History, shared Cloud contribution and cross-customer cache reuse are not live acceptance claims. Preserve existing prices, allowances and entitlement rules; no new checkout, guaranteed model superiority, savings claim or wider provider permission follows from the plan.
+
 ## F082: automatic Reel accepted in the private owner pilot, October27
 
 An actual app Save completed automatic native Work Cloud analysis with its ChatGPT tabs closed. The protected result has52 matching transcript segments,8 byte/hash-verified JPEGs, a matching thumbnail and6 insights with57 evidence references. The live setup prepares a verified disposable runtime before source authority. No new MCP app or repeated OAuth consent was needed. [Automatic evidence](../operations/evidence/launch-20261027-automatic-reel-accepted.json) and [production receipt](../operations/evidence/launch-20261027-bootstrap-production.json).

@@ -353,7 +353,9 @@ export const compare = query({
   },
 });
 
-export const sharedFrame = query({
+// A read-only mutation bypasses query caching at the byte-disclosure boundary.
+// The second call after storage I/O checks the current server time.
+export const sharedFrame = mutation({
   args: {
     sourceId: v.id("sources"),
     versionId: v.id("analysisVersions"),

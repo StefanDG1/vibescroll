@@ -192,14 +192,14 @@ it("ordinary Save reuses independent neutral evidence with no job, inference, me
   });
   expect(fetched.text).toContain(f.shared.output.insights[0].title);
   expect(JSON.stringify(fetched)).not.toContain("catalog/");
-  const frame = await f.second.query(api.analysisVersions.sharedFrame, {
+  const frame = await f.second.mutation(api.analysisVersions.sharedFrame, {
     sourceId: saved._id,
     versionId: f.shared.version._id,
     frameId: "frame-1",
   });
   expect(frame.sha256).toBe(f.shared.evidence.frames[0].sha256);
   await expect(
-    f.secondAssistant.query(api.analysisVersions.sharedFrame, {
+    f.secondAssistant.mutation(api.analysisVersions.sharedFrame, {
       sourceId: saved._id,
       versionId: f.shared.version._id,
       frameId: "frame-1",
@@ -389,7 +389,7 @@ it("canonical withdrawal stops app, MCP, frames and new cache hits immediately",
     }),
   ).rejects.toThrow();
   await expect(
-    f.second.query(api.analysisVersions.sharedFrame, {
+    f.second.mutation(api.analysisVersions.sharedFrame, {
       sourceId: f.secondSourceId,
       versionId: f.shared.version._id,
       frameId: "frame-1",
@@ -401,6 +401,30 @@ it("canonical withdrawal stops app, MCP, frames and new cache hits immediately",
   expect(metadata.items[0].summary).toBe("");
   expect(metadata.items[0].insightCount).toBe(0);
   expect(metadata.items[0].sharedAvailable).toBe(false);
+});
+
+it("checks the current server clock at the shared image boundary without changing source or storage state", async () => {
+  const f = await sharedFixture();
+  const sourceBefore = await f.t.run((ctx) => ctx.db.get(f.secondSourceId));
+  await f.second.mutation(api.analysisVersions.sharedFrame, {
+    sourceId: f.secondSourceId,
+    versionId: f.shared.version._id,
+    frameId: "frame-1",
+  });
+  expect(await f.t.run((ctx) => ctx.db.get(f.secondSourceId))).toEqual(
+    sourceBefore,
+  );
+  const billing = (await f.t.run((ctx) => ctx.db.get(f.billingId)))!;
+  // No expiry callback or billing write runs. A query result from before the
+  // deadline cannot be used for the final uncached authorization check.
+  vi.setSystemTime(billing.periodEnd + 1);
+  await expect(
+    f.second.mutation(api.analysisVersions.sharedFrame, {
+      sourceId: f.secondSourceId,
+      versionId: f.shared.version._id,
+      frameId: "frame-1",
+    }),
+  ).rejects.toThrow(/FORBIDDEN/);
 });
 
 it("reanalyzes shared evidence into a private candidate without mutating the catalog or copying screenshots", async () => {

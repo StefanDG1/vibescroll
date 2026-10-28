@@ -1,5 +1,9 @@
 # Implementation status
 
+## October 28, 16:22 UTC: shared candidate CI and uncached image check
+
+Commit `62153ce5608b2ac1f8625e40cca76c9a99e6fbbe` passed exact Linux CI40723018949. A final Convex review checked the [documented query-cache/time behavior](https://docs.convex.dev/understanding/best-practices/). Shared screenshot access now uses a read-only mutation for both checks around storage I/O, so the final byte disclosure checks the current server clock without relying on a cached query. It writes no source or storage state. A regression advances past paid-access expiry without running any scheduled callback and confirms denial. Full local validation passed again with 1,382 Vitest cases and the same recorded hosted/platform skips, 19 Node and 88 Python cases, all types/lint and both builds. Exact follow-up CI is pending. Production, permissions, native monitor, reserved data and release/analysis counts remain unchanged; the catalog remains disabled.
+
 ## October 28, 16:06 UTC: shared Cloud candidate, not enabled
 
 The new candidate extends the existing public artifact/import variants with independent neutral Cloud evidence. It adds three empty catalog tables and eleven indexes on those tables, for 95 root tables and 263 total root indexes including search indexes. Legacy populated-table indexes, components, authentication and crons remain unchanged. Current verified Pro access, exact reviewed reuse permission and retention fence Save, app/MCP reads, history, reanalysis and screenshot access. A cache hit creates an association with no source job, acquisition, ASR, inference or image copy. A private candidate cannot promote itself globally. Personal notes and corrections retain exact-version history. Global recommendation changes require a frozen evidence review and compare-and-set selection. Unsupported claims fail promotion.

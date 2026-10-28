@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { syntheticJpeg } from "../../tests/cloud-frame-fixture";
-const mock = vi.hoisted(() => ({ query: vi.fn() }));
+const mock = vi.hoisted(() => ({ mutation: vi.fn() }));
 vi.mock("./lib/backend", () => ({
-  backend: async () => ({ query: mock.query }),
+  backend: async () => ({ mutation: mock.mutation }),
   api: { analysisVersions: { sharedFrame: "sharedFrame" } },
 }));
 vi.mock("../../packages/providers/storage", () => ({
@@ -25,7 +25,7 @@ const binding = {
   }),
 };
 beforeEach(() => {
-  mock.query.mockResolvedValue(frame);
+  mock.mutation.mockResolvedValue(frame);
   vi.stubGlobal(
     "fetch",
     vi.fn(
@@ -48,8 +48,8 @@ it("proxies exact verified shared pixels privately and never redirects or return
   expect(response.headers.get("location")).toBeNull();
   expect(response.headers.get("content-type")).toBe("image/jpeg");
   expect(Buffer.from(await response.arrayBuffer())).toEqual(bytes);
-  expect(mock.query).toHaveBeenCalledTimes(2);
-  expect(mock.query.mock.calls[0][1]).toEqual({
+  expect(mock.mutation).toHaveBeenCalledTimes(2);
+  expect(mock.mutation.mock.calls[0][1]).toEqual({
     sourceId: "synthetic-source",
     versionId: "synthetic-version",
     frameId: "frame-1",
@@ -73,7 +73,7 @@ it("rejects an image whose bytes changed after retention", async () => {
   expect(await response.text()).not.toContain("storage.example.test");
 });
 it("rechecks entitlement and source authority after storage IO before returning any shared image bytes", async () => {
-  mock.query
+  mock.mutation
     .mockResolvedValueOnce(frame)
     .mockRejectedValueOnce(Error("revoked during IO"));
   const response = await GET(

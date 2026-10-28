@@ -26,7 +26,7 @@ export async function GET(
           versionId: versionId as Id<"analysisVersions">,
           frameId,
         };
-      const frame = await client.query(
+      const frame = await client.mutation(
         api.analysisVersions.sharedFrame,
         binding,
       );
@@ -64,7 +64,7 @@ export async function GET(
         dimensions.height !== frame.height
       )
         throw Error("Frame changed");
-      const current = await client.query(
+      const current = await client.mutation(
         api.analysisVersions.sharedFrame,
         binding,
       );

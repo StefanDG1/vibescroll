@@ -2,6 +2,10 @@
 
 Mode: how-to. Owner direction: October 28, 2026. Status: implementation plan, not an enabled-feature claim. [ADR 180](../../adr/180-versioned-cloud-analysis-and-shared-selection.md) defines the decision.
 
+## October 28 production checkpoint
+
+Frontend/backend2ed297d are live after exact CI40760497229 and an actual no-scan/no-backfill guarded release. Standard owner Continue, explicit until-deleted retention and the separate metadata-only Posts API passed canonical authenticated checks. Default neutral catalog controls are enabled with independent storage and honest user-attested authority. Current native readiness/grant12 monitor binding, the exact reserved Reel canary and independent-account cache hit remain pending. This is not paid-customer or general first-time Cloud acceptance. All five backend/four Basic build slots are consumed within the unchanged EUR12 cap; old holds and reserved posts remain protected. See [the production checkpoint](../../operations/evidence/launch-20261028-shared-catalog-setup-production.json) and [current status](../../implementation-status.md).
+
 ## Current checkpoint, October 28 at 19:43 UTC
 
 Backend b160007 is live; the website was restored to f6ecf74 after the new Posts API missed authentication-proxy coverage. The matching regression correction is in the next candidate. The default catalog is still off. The candidate now implements automatic neutral publication, independent evidence/cache hits, one producer with bounded waiters, version preference selection, durable results and simpler route-specific setup. Full local checks pass; exact CI, publication and the actual two-account test remain. Read the latest implementation-status entry before using older checkpoints below as a current-state description.

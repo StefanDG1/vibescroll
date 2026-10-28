@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## Current plan: F083 versioned shared analysis, October 28
+
+All four briefs now record the owner's [versioned Cloud link-to-insights priority](../adr/180-versioned-cloud-analysis-and-shared-selection.md). Immutable history, evidence reuse, comparison and rollback precede widget work. Model superiority, a shared-database advantage and willingness to pay remain hypotheses until their stated tests pass. Prices, audience, six beliefs, privacy/provider gates and current finite spending authority stay unchanged. These are planning updates, not customer-facing availability claims.
+
 ## F082: automatic Reel accepted in the private owner pilot, October27
 
 An actual app Save completed automatic native Work Cloud analysis with its ChatGPT tabs closed. The protected result has52 matching transcript segments,8 byte/hash-verified JPEGs, a matching thumbnail and6 insights with57 evidence references. The live setup prepares a verified disposable runtime before source authority. No new MCP app or repeated OAuth consent was needed. [Automatic evidence](../operations/evidence/launch-20261027-automatic-reel-accepted.json) and [production receipt](../operations/evidence/launch-20261027-bootstrap-production.json).

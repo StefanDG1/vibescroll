@@ -1,5 +1,9 @@
 # VibeScroll foundational research
 
+## F083: versioned shared analysis, October 28
+
+The owner requests immutable reanalysis, comparison and rollback, with the best approved compatible result reused through the paid shared catalog. [ADR180](../adr/180-versioned-cloud-analysis-and-shared-selection.md) and its linked plan define the test. Current evidence establishes private automatic Reel processing, not cross-customer Cloud contribution, model superiority or willingness to pay. Test whether version comparison improves factual grounding and whether a second authorized customer gets a zero-inference cache hit. Preserve the counterexample: a newer or more expensive model can introduce unsupported claims. Shared catalog value remains a product hypothesis, not a measured moat.
+
 ## F082: automatic Reel accepted in the private owner pilot, October27
 
 An actual app Save completed automatic native Work Cloud analysis with its ChatGPT tabs closed. The protected result has52 matching transcript segments,8 byte/hash-verified JPEGs, a matching thumbnail and6 insights with57 evidence references. The live setup prepares a verified disposable runtime before source authority. No new MCP app or repeated OAuth consent was needed. [Automatic evidence](../operations/evidence/launch-20261027-automatic-reel-accepted.json) and [production receipt](../operations/evidence/launch-20261027-bootstrap-production.json).

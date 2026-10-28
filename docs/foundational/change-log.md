@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## October 28: F083 versioned shared analysis
+
+Updated Research, Avatar, Offer, Beliefs and the index for the owner-requested versioning and focused Cloud release. Recorded preservation, comparison/rollback, entitled reuse, uncertainty about model quality and unvalidated paid-catalog value. The [V0-V5 plan](../launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) supplies concrete tests. No audience, price, allowance, provider/privacy permission, six-belief change, campaign or completed implementation is implied.
+
 ## October27: F082 private automatic Reel acceptance
 
 All four briefs record the measured closed-tab owner result and current runtime/setup correction. Provider privacy, cold customer onboarding, platform breadth and speech accuracy remain separate. No audience, price, funding, belief or general customer claim changes.

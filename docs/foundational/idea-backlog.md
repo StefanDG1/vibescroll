@@ -1,5 +1,11 @@
 # Foundational idea backlog
 
+## F083: versioned shared analysis, October 28
+
+Source: owner request to force a second/later Reel analysis, cache reusable evidence, compare model outputs, select the best version and roll back. Decision: adopt the implementation direction under [ADR180](../adr/180-versioned-cloud-analysis-and-shared-selection.md), with Cloud link-to-insights ahead of widget work. The existing audience benefits only if the newer result is actually useful and reliable. Current private automatic tests support the transport/media path, not model superiority, customer value or shared Cloud publication.
+
+Counterargument: model names, reasoning settings and recency are poor substitutes for evidence quality. A shared result can also leak private context or survive a rights change unless contribution, retention and entitlement stay authoritative. Test preservation of version1 through successful/failed upgrades; zero-inference rollback; blinded candidate comparison; two-account compatible cache reuse; revocation and takedown across all caches. Keep prices, grants, spending caps, audience and six beliefs unchanged. Website availability copy waits for the recorded acceptance milestones.
+
 ## F078: understandable task locations, October 26
 
 Source: the owner's exact three-option request. Decision: implement one shared picker and existing setup shortcuts, keeping unavailable routes visible and disabled. The objection is ambiguity between ChatGPT Cloud and VibeScroll-funded servers. Recommendation follows owner preference; readiness and customer comprehension remain separately tested. Keep all existing quotes, grants and saved data. See [ADR161](../adr/161-three-task-locations.md).

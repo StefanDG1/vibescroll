@@ -1,5 +1,9 @@
 # VibeScroll foundational avatar
 
+## F083: keep useful results while upgrading analysis, October 28
+
+The existing developer/founder audience needs to reuse a saved post and inspect a better analysis without losing old citations, notes or decisions. The owner prioritizes [versioned Cloud link-to-insights](../adr/180-versioned-cloud-analysis-and-shared-selection.md) ahead of widget and broader workflow work. This is a requested behavior, not independent audience validation. Test one-time setup and second-version comparison with a separate user; retain explicit uncertainty about perceived quality, acceptable latency and willingness to pay. The audience and existing beliefs stay unchanged.
+
 ## F082: automatic Reel accepted in the private owner pilot, October27
 
 An actual app Save completed automatic native Work Cloud analysis with its ChatGPT tabs closed. The protected result has52 matching transcript segments,8 byte/hash-verified JPEGs, a matching thumbnail and6 insights with57 evidence references. The live setup prepares a verified disposable runtime before source authority. No new MCP app or repeated OAuth consent was needed. [Automatic evidence](../operations/evidence/launch-20261027-automatic-reel-accepted.json) and [production receipt](../operations/evidence/launch-20261027-bootstrap-production.json).

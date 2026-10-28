@@ -1,4 +1,14 @@
-## October27 current production and automatic acceptance
+# Canonical remaining-work plan
+
+## October 28: release versioned link-to-insights first
+
+The next authoritative execution order is [V0-V5: versioned link-to-insights](VERSIONED-LINK-TO-INSIGHTS.md), under [ADR180](../../adr/180-versioned-cloud-analysis-and-shared-selection.md). Prioritize reliable automatic own-subscription Cloud processing, immutable reanalysis versions, comparison/rollback and entitled shared-catalog reuse. Keep the widget and broader project/coding features outside this release's critical path; preserve them in the larger completion plan.
+
+Production frontend is c7ce9df and backend70c9aac. The October28 private owner run passed15 speech segments,7 actual JPEGs, a matching thumbnail and3 insights/19 references with ChatGPT closed. It took about7minutes; this is not a general customer readiness or speed claim. The pilot consumed its finite reserved allowance and is Paused. Reanalysis, version history/rollback and shared Cloud cache contribution are planned, not live. No new analysis, scope, price or budget is authorized by this plan update. [Current evidence](../../operations/evidence/launch-20261028-stable-v1-reel.json).
+
+The new plan supersedes older next-step ordering and current-state statements below. Preserve their still-unfinished requirements and external gates.
+
+## October27 historical production and automatic acceptance
 
 Frontend/backend70c9aac, canonical version0.1.0-alpha.20261027021744.g70c9aaca090a, are live after one fixed Basic build, staged/canonical byte checks and same-build promotion. An actual app Save completed automatically with ChatGPT tabs closed:52 transcript segments,8 byte/hash-verified JPEGs, matching thumbnail,6 insights and57 evidence references. The protected app updated without reload. This accepts the private owner Reel checkpoint; cold customer setup, broader platforms, original disputed repair and the rest of the linked plan remain open. [Automatic evidence](../../operations/evidence/launch-20261027-automatic-reel-accepted.json), [production evidence](../../operations/evidence/launch-20261027-bootstrap-production.json).
 
@@ -9,8 +19,6 @@ The existing native monitor is enabled for the source in a current authorized sa
 The owner requests frequent production updates at major user improvements. Group related fixes into one tested release, verify its exact serving version and a focused real journey, then report what users can use and the next checkpoint. Preserve fixed Basic queued builds, the shared cumulative EUR9.50 cap, saved data, reserved/unknown work and provider/privacy gates. Do not wait for the entire large plan to finish before publishing an accepted useful milestone.
 
 The current judgment estimate is about 80% implementation and 35% verified production acceptance, with roughly ten percentage points of uncertainty. It averages the eleven C0-C10 umbrella domains without double-counting P/R/N/M labels; deferred C11/lifetime work is excluded. This is not code coverage or general customer availability. There are still zero accepted automatic app-Save-to-media-result production runs. The new funded one-TikTok canary is next after the separate widget release finishes and the exact current release is verified.
-
-# Canonical remaining-work plan
 
 ## October 25: explicit private MCP Cloud requests
 

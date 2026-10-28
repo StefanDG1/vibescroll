@@ -1,6 +1,6 @@
 # ADR 187: exact-version project context through MCP
 
-Date: October 28, 2026. Status: local implementation candidate, not deployed.
+Date: October 28, 2026. Status: deployed at d0fb903; native production read accepted October 29 after official Refresh tools on the existing connection, without new authentication. See [release evidence](../operations/evidence/launch-20261029-source-progress-production.json). The write/completion phase below remains planned.
 
 ## Problem
 

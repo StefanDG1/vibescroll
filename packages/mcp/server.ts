@@ -129,6 +129,24 @@ export function createKnowledgeHandler(
               }
             }
             const result = await invoke(name, args as Record<string, unknown>);
+            if (
+              !result.ok &&
+              result.value.code === "PROFILE_SELECTION_REQUIRED"
+            )
+              return {
+                content: [
+                  {
+                    type: "text" as const,
+                    text: JSON.stringify({
+                      code: "PROFILE_SELECTION_REQUIRED",
+                      error:
+                        "Choose a current VibeScroll workspace with get_profile and repeat this action with its profileId. Keep the existing connection; no new sign-in or Cloud setup is needed.",
+                      next_action: { tool: "get_profile", args: {} },
+                    }),
+                  },
+                ],
+                isError: true,
+              };
             if (!result.ok)
               return {
                 content: [

@@ -19,6 +19,7 @@ const scopes = [
 ];
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 async function fixture(configured = true) {
   vi.stubEnv("ACQUISITION_VERIFIED", "true");
@@ -127,6 +128,142 @@ async function fixture(configured = true) {
     profileBinding,
   };
 }
+it("saves a bare link into the user's current eligible app workspace despite another active grant", async () => {
+  const s = await fixture();
+  const other = await s.owner.mutation(api.organizations.create, {
+    name: "Other approved workspace",
+  });
+  await s.owner.mutation(api.assistantGrants.save, {
+    organizationId: other,
+    clientId,
+    sources: [],
+    libraryScope: "all",
+    scopes,
+    expectedVersion: 0,
+    expiresAt: null,
+    acknowledged: true,
+    intakePolicy: "explicit_links",
+  });
+  await s.t.run(async (ctx) => {
+    const actor = (await ctx.db
+      .query("users")
+      .withIndex("by_subject", (q) => q.eq("subject", subject))
+      .unique())!;
+    await ctx.db.patch(actor._id, { defaultWorkspaceId: s.org });
+  });
+  const { profileId: _profile, ...input } = s.input;
+  const result = await s.assistant.mutation(internal.assistant.saveLink, {
+    ...input,
+    analyze: false,
+  });
+  expect(result).toMatchObject({
+    profile_id: s.org,
+    status: "saved",
+    analysis_started: false,
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(result.source_id)))?.organizationId,
+  ).toBe(s.org);
+  const explicit = await s.assistant.mutation(internal.assistant.saveLink, {
+    ...input,
+    profileId: other,
+    key: "explicit-other-workspace-save",
+    analyze: false,
+  });
+  expect(explicit.profile_id).toBe(other);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual([]);
+});
+it("ignores a default workspace whose current grant cannot save links", async () => {
+  const s = await fixture();
+  const other = await s.owner.mutation(api.organizations.create, {
+    name: "Read-only library",
+  });
+  await s.owner.mutation(api.assistantGrants.save, {
+    organizationId: other,
+    clientId,
+    sources: [],
+    libraryScope: "all",
+    scopes: ["knowledge:read"],
+    expectedVersion: 0,
+    expiresAt: null,
+    acknowledged: true,
+  });
+  await s.t.run(async (ctx) => {
+    const actor = (await ctx.db
+      .query("users")
+      .withIndex("by_subject", (q) => q.eq("subject", subject))
+      .unique())!;
+    await ctx.db.patch(actor._id, { defaultWorkspaceId: other });
+  });
+  const { profileId: _profile, ...input } = s.input;
+  const result = await s.assistant.mutation(internal.assistant.saveLink, {
+    ...input,
+    analyze: false,
+  });
+  expect(result.profile_id).toBe(s.org);
+  await s.owner.mutation(api.assistantGrants.revoke, {
+    id: s.grant.id,
+    expectedVersion: s.grant.version,
+  });
+  await expect(
+    s.assistant.mutation(internal.assistant.saveLink, {
+      ...input,
+      key: "revoked-implicit-save",
+      analyze: false,
+    }),
+  ).rejects.toThrow("PROFILE_SELECTION_REQUIRED");
+});
+it("returns a workspace-selection error through authenticated HTTP instead of claiming OAuth expired", async () => {
+  const s = await fixture();
+  const other = await s.owner.mutation(api.organizations.create, {
+    name: "Another writable workspace",
+  });
+  await s.owner.mutation(api.assistantGrants.save, {
+    organizationId: other,
+    clientId,
+    sources: [],
+    libraryScope: "all",
+    scopes,
+    expectedVersion: 0,
+    expiresAt: null,
+    acknowledged: true,
+    intakePolicy: "explicit_links",
+  });
+  await s.t.run(async (ctx) => {
+    const actor = (await ctx.db
+      .query("users")
+      .withIndex("by_subject", (q) => q.eq("subject", subject))
+      .unique())!;
+    await ctx.db.patch(actor._id, { defaultWorkspaceId: undefined });
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({ sub: subject })),
+  );
+  const { profileId: _profile, ...input } = s.input;
+  const response = await s.assistant.fetch("/assistant-tools", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer synthetic-access-token-0123456789",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      operation: "save_link",
+      args: { ...input, analyze: false },
+    }),
+  });
+  expect(response.status).toBe(409);
+  expect(await response.json()).toMatchObject({
+    code: "PROFILE_SELECTION_REQUIRED",
+  });
+  expect(response.headers.get("www-authenticate")).toBeNull();
+  expect(
+    await s.t.run((ctx) => ctx.db.query("assistantIntakes").collect()),
+  ).toEqual([]);
+  vi.unstubAllGlobals();
+});
 it("queues explicit links without per-link confirmation, preserves replay and waits without spending", async () => {
   const s = await fixture();
   const saved = await s.save();

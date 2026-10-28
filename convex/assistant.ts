@@ -29,7 +29,10 @@ import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { selectedAnalysis, retainedVersion } from "./lib/analysisHistory";
-import { assistantGrantActive } from "../packages/policy/assistant";
+import {
+  assistantGrantActive,
+  type AssistantScope,
+} from "../packages/policy/assistant";
 import {
   requestCloudFromAssistant,
   requestSavedCloudFromAssistant,
@@ -179,7 +182,7 @@ export const saveLink = internalMutation({
   handler: async (ctx, args) => {
     const a = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "links:save"),
       "links:save",
     );
     ensure(
@@ -770,18 +773,32 @@ export const requestAnalysis = internalMutation({
     };
   },
 });
-export async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
+export async function selectedProfile(
+  ctx: QueryCtx,
+  id?: Id<"organizations">,
+  required?: AssistantScope,
+) {
   if (id) return id;
-  const p = await assistantPrincipal(ctx);
+  const p = await assistantPrincipal(ctx, required);
   const rows = await ctx.db
     .query("assistantGrants")
     .withIndex("by_actor_client", (q) =>
       q.eq("actor", p.actor._id).eq("clientId", p.client.id),
     )
     .take(51);
+  const selectionError = required ? "PROFILE_SELECTION_REQUIRED" : "FORBIDDEN";
+  ensure(
+    rows.length <= 50,
+    selectionError,
+    "Choose a current workspace with get_profile.",
+  );
   const available = [];
   for (const grant of rows) {
-    if (!assistantGrantActive(grant)) continue;
+    if (
+      !assistantGrantActive(grant) ||
+      (required && !grant.scopes.includes(required))
+    )
+      continue;
     const org = await ctx.db.get(grant.organizationId);
     const membership = await ctx.db
       .query("memberships")
@@ -789,12 +806,25 @@ export async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
         q.eq("organizationId", grant.organizationId).eq("userId", p.actor._id),
       )
       .unique();
-    if (workspaceReadable(org, p.actor._id) && membership)
+    if (
+      workspaceReadable(org, p.actor._id) &&
+      membership &&
+      (required !== "links:save" ||
+        ["owner", "admin", "member"].includes(membership.role))
+    )
       available.push(grant.organizationId);
   }
+  // This is the user's existing app workspace preference, not a new grant or
+  // an arbitrary choice between personal and business libraries.
+  if (
+    required &&
+    p.actor.defaultWorkspaceId &&
+    available.includes(p.actor.defaultWorkspaceId)
+  )
+    return p.actor.defaultWorkspaceId;
   ensure(
     available.length === 1,
-    "FORBIDDEN",
+    selectionError,
     "Choose one current approved profile with get_profile.",
   );
   return available[0];

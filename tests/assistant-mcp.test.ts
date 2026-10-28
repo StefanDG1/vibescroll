@@ -15,15 +15,46 @@ async function packet(response: Response) {
   }
   return response.json();
 }
-async function call(method: string, params: unknown, scopes: string[]) {
-  const body = { jsonrpc: "2.0", id: 1, method, params };
-  return createKnowledgeHandler(invoke).fetch(
+async function call(
+  method: string,
+  params: unknown,
+  scopes: string[],
+  backend: Parameters<typeof createKnowledgeHandler>[0] = invoke,
+  protocol = "2025-11-25",
+) {
+  const modern = protocol === "2026-07-28";
+  const modernParams = params as Record<string, unknown>;
+  const body = {
+    jsonrpc: "2.0",
+    id: 1,
+    method,
+    params: modern
+      ? {
+          ...modernParams,
+          _meta: {
+            "io.modelcontextprotocol/protocolVersion": protocol,
+            "io.modelcontextprotocol/clientInfo": {
+              name: "Synthetic acceptance client",
+              version: "1.0",
+            },
+            "io.modelcontextprotocol/clientCapabilities": {},
+          },
+        }
+      : params,
+  };
+  return createKnowledgeHandler(backend).fetch(
     new Request("https://scroll.companynerve.com/mcp", {
       method: "POST",
       headers: {
         "content-type": "application/json",
         accept: "application/json, text/event-stream",
-        "mcp-protocol-version": "2025-11-25",
+        "mcp-protocol-version": protocol,
+        ...(modern
+          ? {
+              "mcp-method": method,
+              "mcp-name": String(modernParams.name ?? ""),
+            }
+          : {}),
       },
       body: JSON.stringify(body),
     }),
@@ -40,6 +71,39 @@ async function call(method: string, params: unknown, scopes: string[]) {
     },
   );
 }
+it("returns a profile-selection next action through MCP 2 without asking to reconnect", async () => {
+  const response = await call(
+    "tools/call",
+    {
+      name: "save_link",
+      arguments: {
+        url: "https://vm.tiktok.com/Synthetic/",
+        title: "Saved link",
+        key: "synthetic-profile-key",
+        analyze: false,
+      },
+    },
+    ["links:save"],
+    async () => ({
+      ok: false,
+      status: 409,
+      value: {
+        code: "PROFILE_SELECTION_REQUIRED",
+        error: "PRIVATE backend detail",
+      },
+    }),
+    "2026-07-28",
+  );
+  const result = await packet(response);
+  const value = JSON.parse(result.result.content[0].text);
+  expect(value).toMatchObject({
+    code: "PROFILE_SELECTION_REQUIRED",
+    next_action: { tool: "get_profile", args: {} },
+  });
+  expect(value.error).toContain("no new sign-in or Cloud setup");
+  expect(JSON.stringify(result)).not.toContain("PRIVATE backend detail");
+  expect(result.result.isError).toBe(true);
+});
 it("exposes bounded read and explicit intake schemas through actual stateless MCP dispatch", async () => {
   const response = await call("tools/list", {}, [
     "knowledge:read",

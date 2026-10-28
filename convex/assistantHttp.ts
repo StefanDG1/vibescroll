@@ -509,7 +509,19 @@ export const tools = httpAction(async (ctx, request) => {
         break;
     }
     return Response.json(value, { headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      /\bPROFILE_SELECTION_REQUIRED:/.test(error.message)
+    )
+      return Response.json(
+        {
+          code: "PROFILE_SELECTION_REQUIRED",
+          error:
+            "Choose a current VibeScroll workspace with get_profile. Your existing OAuth connection can stay connected.",
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } },
+      );
     return deny();
   }
 });

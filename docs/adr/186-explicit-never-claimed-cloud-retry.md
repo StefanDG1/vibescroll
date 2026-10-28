@@ -12,6 +12,8 @@ Offer Retry using Cloud defaults on the post page only for a known never-claimed
 
 Require the current owner, supported Reel/TikTok identity, source retention, standing Cloud defaults and a current native monitor. App access uses the normal signed-in session. MCP also requires current request and execution scopes and the selected source grant. Do not permit model, credit, paid API, project or executor overrides on a retry.
 
+New retries and ordinary MCP requests share the existing six-request hourly allowance across clients. Check and consume that allowance atomically with approval. Duplicate keys and rejected approvals cannot consume an extra request.
+
 A failed/cancelled/expired request, or an expired queued request, qualifies only when its generation matches and it has no task ID, claim time, consent, lease hash, preparation, execution tokens, result or pending analysis version. Unknown work and prior results remain protected. A new request receives a new generation, input/policy binding, finite lease and zero-API funding through the existing approval path.
 
 Keep old reservations unchanged. Add one optional bounded source receipt array with at most twenty entries, recording the prior generation, revision, state, requested settings, grant/client, input/policy hashes, approval/expiry times and hash of the old job. The array also binds retry keys to the resulting generation. Repeated keys return that same request; mismatched or stale keys cannot create work. No table, index, component, scan, backfill or provider is added. Publication still requires actual schema-impact guards.

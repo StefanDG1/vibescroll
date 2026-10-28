@@ -261,6 +261,7 @@ it.each([
   "grant",
   "monitor",
   "retention",
+  "quota",
 ])("preserves unsafe or stale retries after %s", async (change) => {
   const s = await retryFixture();
   await s.t.run(async (ctx) => {
@@ -300,7 +301,18 @@ it.each([
       await ctx.db.patch(source._id, { updatedAt: source.updatedAt + 1 });
     else if (change === "grant")
       await ctx.db.patch(s.grant.id, { state: "revoked" });
-    else if (change === "monitor") {
+    else if (change === "quota") {
+      const row = await ctx.db
+        .query("limits")
+        .withIndex("by_key", (q) =>
+          q.eq("key", `work-cloud-mcp-hour:${s.actor}`),
+        )
+        .unique();
+      await ctx.db.patch(row!._id, {
+        window: Math.floor(Date.now() / 3600000),
+        count: 6,
+      });
+    } else if (change === "monitor") {
       const rows = await ctx.db.query("assistantSubscriptions").collect();
       for (const row of rows)
         await ctx.db.patch(row._id, { state: "cancelled" });
@@ -311,7 +323,9 @@ it.each([
   const holds = await s.t.run((ctx) => ctx.db.query("reservations").collect());
   await expect(
     s.owner.mutation(api.workCloudSaves.retrySaved, s.retry),
-  ).rejects.toThrow(/APPROVAL_STALE|SETUP_REQUIRED|SOURCE_UNAVAILABLE/);
+  ).rejects.toThrow(
+    /APPROVAL_STALE|SETUP_REQUIRED|SOURCE_UNAVAILABLE|QUOTA_EXCEEDED/,
+  );
   expect(await s.t.run((ctx) => ctx.db.get(s.source._id))).toEqual(before);
   expect(
     await s.t.run((ctx) => ctx.db.query("reservations").collect()),

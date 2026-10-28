@@ -29,6 +29,18 @@ Versions reuse one evidence bundle. Reanalysis cannot recover an expired transcr
 
 Project actions currently remain bound to the original analysis for the current extraction. Existing project reviews preserve their original evidence. Select that original analysis before starting another project evaluation. Private version selection publishes nothing to the shared catalog.
 
+## Shared versions and personal notes
+
+Shared Cloud knowledge is awaiting production acceptance. These controls appear only when the reviewed catalog route is enabled for your account and source.
+
+Saving a link with an eligible shared analysis can reuse its transcript, screenshots and insights immediately. This cache hit starts no Cloud task, download or transcription. Current verified catalog access, reuse permission and retention are checked again when you open a result or image.
+
+The post follows the reviewed catalog recommendation unless you select another version. **Follow recommended analysis** returns to that default. Your personal notes stay with the exact version you reviewed and return when you select it again. An upgrade does not move an old correction onto a different claim.
+
+For an existing compatible private version, **Contribute this version to shared knowledge** previews the exact transcript, screenshots, insights and retention period. Review and authorize that separate contribution only if you want it shared. Personal deletion keeps the independently authorized catalog copy; **Withdraw contribution** removes your contribution's authority. After deleting a personal post, find its receipt in **Privacy > Manage shared contributions**. Account deletion withdraws its remaining contribution authority. A shared recommendation still needs a separate evidence review. Private notes, projects and Cloud task credentials are excluded.
+
+Existing private-only results are not shared automatically. There is no extra connection or OAuth app to create for these version controls. A missing shared control does not mean your existing private analysis or connection is broken.
+
 If this option is absent, use the separately approved diagnostic handoff below when available. Do not disconnect an existing connection, delete posts or switch to paid credits to work around unavailable access.
 
 ## Review one diagnostic handoff

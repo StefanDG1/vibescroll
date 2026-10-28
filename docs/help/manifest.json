@@ -309,5 +309,14 @@
     "baseline": "63e5d0b617481aae4cb9931ad9a3120b3dd2a2e0",
     "updated": ["processing-and-recovery"],
     "limits": "No route activated. Actual synthetic screenshot and local keyboard/mobile checks; automatic Cloud video, production publication and independent setup remain separate."
+  },
+  "neutralCloudCatalogReview": {
+    "date": "2026-10-28",
+    "status": "source-reviewed-candidate",
+    "updated": ["work-cloud-text-review"],
+    "unaffectedWithReason": {
+      "processing-and-recovery": "Existing illustrated one-time connection and monitor setup stays unchanged. Shared catalog enablement remains a separate gate."
+    },
+    "limits": "Local neutral contribution, paid cached reads, version-pinned notes and withdrawal guidance. No shared production publication, independent paid account acceptance, new screenshots or general availability claimed."
   }
 }

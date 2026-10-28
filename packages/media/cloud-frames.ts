@@ -67,6 +67,18 @@ export function cloudFrameAssetCurrent(
   );
 }
 export function sourceEvidenceFrames(source: any, now = Date.now()) {
+  if (source.sharedCloud?.version === "shared-cloud-detail-v1")
+    return source.sharedCloud.retainUntil > now &&
+      (source.sourceRetentionUntil ?? Infinity) > now
+      ? source.sharedCloud.frames.map(
+          (frame: { reference: string; timestampMs: number }) => ({
+            id: frame.reference,
+            kind: "frame",
+            startMs: frame.timestampMs,
+            endMs: frame.timestampMs,
+          }),
+        )
+      : [];
   if (isCloudObservedMedia(source.orderedMedia?.post))
     return retainedCloudFrames(source, now).map((frame) => ({
       kind: "frame",
@@ -84,6 +96,30 @@ export function cloudCitationForDisplay(
   ref: any,
   now = Date.now(),
 ) {
+  if (
+    source.sharedCloud?.version === "shared-cloud-detail-v1" &&
+    ref.kind === "video_observation"
+  ) {
+    const shared = source.sharedCloud;
+    if (
+      shared.retainUntil <= now ||
+      (source.sourceRetentionUntil ?? Infinity) <= now
+    )
+      return ref;
+    const observation = shared.observations.find(
+      (entry: any) =>
+        entry.id === ref.id &&
+        entry.startMs === ref.startMs &&
+        entry.endMs === ref.endMs,
+    );
+    if (!observation) return ref;
+    if (observation.basis === "transcript")
+      return { ...ref, kind: "transcript" };
+    const frame = shared.frames.find(
+      (entry: any) => entry.id === ref.id && entry.timestampMs === ref.startMs,
+    );
+    return frame ? { ...ref, kind: "frame", id: frame.reference } : ref;
+  }
   if (
     !isCloudObservedMedia(source.orderedMedia?.post) ||
     ref.kind !== "video_observation"

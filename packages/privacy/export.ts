@@ -1,4 +1,5 @@
 export const contentExportSections = [
+  "catalogContributions",
   "analysisEvidence",
   "analysisVersions",
   "analysisAttempts",
@@ -56,6 +57,9 @@ const privateFields = new Set([
   "codeHash",
   "leaseTokenHash",
   "consentId",
+  "copyTokenHash",
+  "copyToken",
+  "storagePrefix",
 ]);
 const repositoryContext = new Set([
   "context",
@@ -101,6 +105,8 @@ export function exportRecord(
         "sourceId",
         "privateNote",
         "corrections",
+        "notesVersionId",
+        "notesHistory",
         "createdAt",
         "updatedAt",
       ]
@@ -130,6 +136,9 @@ export function exportRecord(
                 [
                   "analysis",
                   "summary",
+                  "selectedAnalysisSummary",
+                  "selectedAnalysisInsightCount",
+                  "selectedAnalysisMainPoints",
                   "text",
                   "originalText",
                   "mediaEvidence",

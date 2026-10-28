@@ -1,5 +1,9 @@
 # VibeScroll foundational avatar
 
+## F084: shared version candidate, October 28
+
+[ADR 181](../adr/181-neutral-cloud-catalog-in-existing-artifacts.md) records a local candidate for independently owned neutral evidence, current paid reuse, exact-version personal notes and reviewed recommendation changes. Synthetic two-account tests are engineering evidence. Existing private-only results, rights/provider/privacy gates and real paid production acceptance remain separate. Preserve the audience, prices, six beliefs and unvalidated willingness-to-pay hypothesis. No shared-data advantage, automatic future contribution or general availability is claimed.
+
 ## F083: keep useful results while upgrading analysis, October 28
 
 The existing developer/founder audience needs to reuse a saved post and inspect a better analysis without losing old citations, notes or decisions. The owner prioritizes [versioned Cloud link-to-insights](../adr/180-versioned-cloud-analysis-and-shared-selection.md) ahead of widget and broader workflow work. This is a requested behavior, not independent audience validation. Test one-time setup and second-version comparison with a separate user; retain explicit uncertainty about perceived quality, acceptable latency and willingness to pay. The audience and existing beliefs stay unchanged.

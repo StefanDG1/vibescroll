@@ -1,6 +1,8 @@
 import { backend, api } from "@/lib/backend";
 import { signedObject } from "../../../../../../packages/providers/storage";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
+import { jpegDimensions } from "../../../../../../packages/media/jpeg";
+import { createHash } from "node:crypto";
 const privateHeaders = {
   "Cache-Control": "private, no-store",
   "Referrer-Policy": "no-referrer",
@@ -13,6 +15,65 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const reference = (await params).id;
+    if (reference.startsWith("catalog~")) {
+      const [, sourceId, versionId, frameId, extra] = reference.split("~");
+      if (extra !== undefined || !sourceId || !versionId || !frameId)
+        throw Error("Invalid reference");
+      const client = await backend(),
+        binding = {
+          sourceId: sourceId as Id<"sources">,
+          versionId: versionId as Id<"analysisVersions">,
+          frameId,
+        };
+      const frame = await client.query(
+        api.analysisVersions.sharedFrame,
+        binding,
+      );
+      const response = await fetch(signedObject(frame.key, "GET", 15), {
+        redirect: "error",
+        cache: "no-store",
+        signal: AbortSignal.timeout(6000),
+      });
+      if (
+        !response.ok ||
+        response.headers.get("content-type")?.split(";")[0] !== "image/jpeg" ||
+        !response.body
+      )
+        throw Error("Unavailable");
+      const reader = response.body.getReader(),
+        chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        for (;;) {
+          const part = await reader.read();
+          if (part.done) break;
+          size += part.value.length;
+          if (size > frame.size || size > 150000) throw Error("Frame limit");
+          chunks.push(part.value);
+        }
+      } finally {
+        await reader.cancel().catch(() => {});
+      }
+      const bytes = Buffer.concat(chunks),
+        dimensions = jpegDimensions(bytes);
+      if (
+        bytes.length !== frame.size ||
+        createHash("sha256").update(bytes).digest("hex") !== frame.sha256 ||
+        dimensions.width !== frame.width ||
+        dimensions.height !== frame.height
+      )
+        throw Error("Frame changed");
+      const current = await client.query(
+        api.analysisVersions.sharedFrame,
+        binding,
+      );
+      if (JSON.stringify(current) !== JSON.stringify(frame))
+        throw Error("Authority changed");
+      return new Response(bytes, {
+        headers: { ...privateHeaders, "Content-Type": "image/jpeg" },
+      });
+    }
     const asset = await (
       await backend()
     ).query(api.assets.evidence, { id: (await params).id as Id<"assets"> });

@@ -1,5 +1,10 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
 import { selectedAnalysis } from "./lib/analysisHistory";
+import {
+  attachCloudCache,
+  cloudSourceMetadata,
+  catalogConfiguration,
+} from "./lib/cloudCatalog";
 import { notifyVideoLinkSaved } from "./lib/assistantEvents";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
@@ -380,6 +385,7 @@ export const library = query({
     cursor: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
+    ctx = knowledgeReadContext(ctx);
     await access(ctx, a.organizationId);
     ensure(
       !a.search || a.search.length <= 200,
@@ -555,25 +561,41 @@ export const library = query({
         page.push(source);
     }
     return {
-      items: page.map(
-        ({
-          text: _text,
-          analysis,
-          objectKey: _objectKey,
-          searchable: _searchable,
-          ...source
-        }) => ({
-          ...source,
-          summary: source.selectedAnalysisSummary ?? source.summary,
-          insightCount:
-            source.selectedAnalysisInsightCount ??
-            analysis?.insights?.length ??
-            0,
-          mainPoints:
-            source.selectedAnalysisMainPoints ??
-            analysis?.insights?.slice(0, 3).map((i: any) => i.title) ??
-            [],
-        }),
+      items: await Promise.all(
+        page.map(
+          async ({
+            text: _text,
+            analysis,
+            objectKey: _objectKey,
+            searchable: _searchable,
+            selectedAnalysisSummary: _selectedSummary,
+            selectedAnalysisInsightCount: _selectedCount,
+            selectedAnalysisMainPoints: _selectedPoints,
+            ...source
+          }) => {
+            const shared = await cloudSourceMetadata(ctx, {
+              ...source,
+              selectedAnalysisSummary: _selectedSummary,
+              selectedAnalysisInsightCount: _selectedCount,
+              selectedAnalysisMainPoints: _selectedPoints,
+            });
+            return {
+              ...source,
+              ...(shared ? { sharedAvailable: shared.available } : {}),
+              summary: shared
+                ? shared.summary
+                : (_selectedSummary ?? source.summary),
+              insightCount:
+                (shared ? shared.insightCount : _selectedCount) ??
+                analysis?.insights?.length ??
+                0,
+              mainPoints:
+                (shared ? shared.mainPoints : _selectedPoints) ??
+                analysis?.insights?.slice(0, 3).map((i: any) => i.title) ??
+                [],
+            };
+          },
+        ),
       ),
       next: result.isDone ? null : result.continueCursor,
       total: result.isDone && !a.cursor ? page.length : null,
@@ -692,6 +714,47 @@ export const detail = query({
       ));
     return {
       ...s,
+      catalogContributionAvailable:
+        !!catalogConfiguration() &&
+        selected?.metadata.origin === "private" &&
+        selected.metadata.provenance === "authenticated_host_reported",
+      ...(selected && "shared" in selected && selected.shared
+        ? {
+            sharedCloud: {
+              version: "shared-cloud-detail-v1",
+              canonical: selected.shared.prepared.canonical,
+              evidenceHash: selected.shared.prepared.evidenceHash,
+              sourceRevisionHash: selected.shared.prepared.sourceRevisionHash,
+              transcript: selected.shared.prepared.segments,
+              observations: selected.shared.prepared.observations,
+              retainUntil: selected.shared.evidence.retainUntil,
+              selectionMode: s.selectedAnalysisVersionId
+                ? "pinned"
+                : "recommended",
+              recommendationRevision: selected.shared.family.selectionRevision,
+              notesVersionId: selected.metadata.id,
+              notesUpdatedAt: selected.shared.layer.updatedAt,
+              privateNote:
+                selected.shared.layer.actor === reader.actor._id
+                  ? (selected.shared.layer.notesHistory.find(
+                      (note) => note.versionId === selected.metadata.id,
+                    )?.privateNote ?? "")
+                  : "",
+              corrections:
+                selected.shared.layer.actor === reader.actor._id
+                  ? (selected.shared.layer.notesHistory.find(
+                      (note) => note.versionId === selected.metadata.id,
+                    )?.corrections ?? [])
+                  : [],
+              canEditNotes: selected.shared.layer.actor === reader.actor._id,
+              frames: selected.shared.evidence.frames.map((f) => ({
+                id: f.frameId,
+                timestampMs: f.timestampMs,
+                reference: `catalog~${s._id}~${selected.metadata.id}~${f.frameId}`,
+              })),
+            },
+          }
+        : {}),
       ...(selected
         ? {
             analysis: selected.output,
@@ -896,6 +959,8 @@ export async function captureAuthorized(
     )
     .unique();
   if (old && old.state !== "deleted") {
+    if (a.kind === "url" && (await attachCloudCache(ctx, old, actor.actor._id)))
+      return old._id;
     if (!bulk && a.kind === "url")
       await notifyVideoLinkSaved(ctx, old, actor.actor._id);
     return old._id;
@@ -945,6 +1010,8 @@ export async function captureAuthorized(
     )
     .unique();
   if (dup && dup.state !== "deleted") {
+    if (a.kind === "url" && (await attachCloudCache(ctx, dup, actor.actor._id)))
+      return dup._id;
     if (!bulk && a.kind === "url")
       await notifyVideoLinkSaved(ctx, dup, actor.actor._id);
     return dup._id;
@@ -1023,10 +1090,14 @@ export async function captureAuthorized(
     if (asset) await ctx.db.patch(asset._id, { sourceId: id, updatedAt: now });
   }
   await audit(ctx, a.organizationId, actor.actor._id, "source.captured", id);
-  if (!bulk && a.kind === "url")
+  const reusedCatalog =
+    a.kind === "url" &&
+    (await attachCloudCache(ctx, (await ctx.db.get(id))!, actor.actor._id));
+  if (!bulk && a.kind === "url" && !reusedCatalog)
     await notifyVideoLinkSaved(ctx, (await ctx.db.get(id))!, actor.actor._id);
   if (
     a.kind === "url" &&
+    !reusedCatalog &&
     classified?.sourceType === "media" &&
     !suppressPreview &&
     process.env.LINK_PREVIEWS_ENABLED === "true"

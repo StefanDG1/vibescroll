@@ -224,3 +224,8 @@ Updated all four foundational briefs and the index for the explicit private MCP 
 ## F072: exact Cloud confidence and result return, October 25
 
 Source: actual owner-account media preparation, rejected completion and exact-payload offline reproduction. ADR152 conservatively reduces confidence and permits a fresh owner review of only the original retained result hash. Counterargument: returning a result cannot silently authorize more provider work or reconcile unknown usage. Current authority, immutable evidence, fixed completion window and no-overwrite tests are required. Production return remains pending; no campaign, price, customer or availability claim follows.
+
+
+## F084, October 28: local shared versions
+
+Updated all four briefs for ADR181. The local cache/version/notes tests do not establish rights-cleared production reuse or customer demand. Existing prices, audience, six beliefs and release gates remain unchanged.

@@ -113,31 +113,94 @@ export const publicTables = {
   })
     .index("by_org", ["organizationId"])
     .index("by_edition", ["editionId"]),
-  publicArtifacts: defineTable({
-    ...tenant,
-    editionId: v.id("publicEditions"),
-    editionVersion: v.number(),
-    compatibilityKey: v.string(),
-    contentHash: v.string(),
-    language: v.string(),
-    pipelineVersion: v.string(),
-    schemaVersion: v.string(),
-    coverage: v.string(),
-    state: v.union(v.literal("eligible"), v.literal("blocked")),
-  })
+  publicArtifacts: defineTable(
+    v.union(
+      v.object({
+        ...tenant,
+        editionId: v.id("publicEditions"),
+        editionVersion: v.number(),
+        compatibilityKey: v.string(),
+        contentHash: v.string(),
+        language: v.string(),
+        pipelineVersion: v.string(),
+        schemaVersion: v.string(),
+        coverage: v.string(),
+        state: v.union(v.literal("eligible"), v.literal("blocked")),
+      }),
+      v.object({
+        ...tenant,
+        origin: v.literal("cloud"),
+        summary: v.string(),
+        insightCount: v.number(),
+        mainPoints: v.array(v.string()),
+        familyId: v.id("catalogFamilies"),
+        versionId: v.id("analysisVersions"),
+        evidenceId: v.id("analysisEvidence"),
+        compatibilityKey: v.string(),
+        variantKey: v.string(),
+        contentHash: v.string(),
+        language: v.string(),
+        pipelineVersion: v.literal("work-cloud-retained-analysis-v1"),
+        schemaVersion: v.literal("neutral-cloud-analysis-v1"),
+        coverage: v.literal("sampled_transcript_frames"),
+        authority: v.any(),
+        storagePrefix: v.string(),
+        retainUntil: v.number(),
+        state: v.union(
+          v.literal("staging"),
+          v.literal("eligible"),
+          v.literal("blocked"),
+        ),
+        copyTokenHash: v.optional(v.string()),
+        copyExpiresAt: v.optional(v.number()),
+      }),
+    ),
+  )
     .index("by_org", ["organizationId"])
     .index("by_edition", ["editionId"])
     .index("by_compatibility", ["compatibilityKey"]),
-  publicImports: defineTable({
-    ...tenant,
-    actor: v.id("users"),
-    sourceId: v.id("sources"),
-    artifactId: v.id("publicArtifacts"),
-    editionVersion: v.number(),
-    compatibilityKey: v.string(),
-    privateNote: v.string(),
-    corrections: v.array(v.object({ insightId: v.string(), text: v.string() })),
-  })
+  publicImports: defineTable(
+    v.union(
+      v.object({
+        ...tenant,
+        actor: v.id("users"),
+        sourceId: v.id("sources"),
+        artifactId: v.id("publicArtifacts"),
+        editionVersion: v.number(),
+        compatibilityKey: v.string(),
+        privateNote: v.string(),
+        corrections: v.array(
+          v.object({ insightId: v.string(), text: v.string() }),
+        ),
+      }),
+      v.object({
+        ...tenant,
+        origin: v.literal("cloud"),
+        actor: v.id("users"),
+        sourceId: v.id("sources"),
+        artifactId: v.id("publicArtifacts"),
+        familyId: v.id("catalogFamilies"),
+        compatibilityKey: v.string(),
+        notesVersionId: v.id("analysisVersions"),
+        notesHistory: v.array(
+          v.object({
+            versionId: v.id("analysisVersions"),
+            privateNote: v.string(),
+            corrections: v.array(
+              v.object({ insightId: v.string(), text: v.string() }),
+            ),
+            updatedAt: v.number(),
+          }),
+        ),
+        inputCanonical: v.string(),
+        sourceGeneration: v.number(),
+        privateNote: v.string(),
+        corrections: v.array(
+          v.object({ insightId: v.string(), text: v.string() }),
+        ),
+      }),
+    ),
+  )
     .index("by_org", ["organizationId"])
     .index("by_source", ["sourceId"])
     .index("by_artifact", ["artifactId"])

@@ -8,6 +8,7 @@ import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { workCloudMediaPolicy } from "../packages/contracts/work-cloud-text";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { sourceRetained } from "./lib/sourceAuthority";
+import { cacheCandidate } from "./lib/cloudCatalog";
 import {
   savedCloudGrantCurrent,
   savedCloudIntentCurrent,
@@ -33,12 +34,44 @@ export const capture = mutation({
     status: v.union(
       v.literal("waiting_for_cloud_setup"),
       v.literal("existing_work_preserved"),
+      v.literal("reused_shared_analysis"),
     ),
     intentId: v.union(v.string(), v.null()),
     expiresAt: v.union(v.number(), v.null()),
   }),
   handler: async (ctx, a) => {
     const owner = await writeAccess(ctx, a.organizationId, ["owner"]);
+    const requestedIdentity = privateCloudMediaIdentity(a.url);
+    ensure(
+      ["instagram", "tiktok"].includes(requestedIdentity.platform),
+      "SOURCE_UNAVAILABLE",
+      "Automatic Cloud saves currently accept single Instagram or TikTok videos.",
+    );
+    if (await cacheCandidate(ctx, a.organizationId, a.url)) {
+      const sourceId = await captureOne(ctx, {
+        organizationId: a.organizationId,
+        key: a.key,
+        kind: "url",
+        url: a.url,
+        title: a.title,
+        rightsAttested: true,
+      });
+      const source = (await ctx.db.get(sourceId))!;
+      ensure(
+        source.url &&
+          privateCloudMediaIdentity(source.url).url === requestedIdentity.url,
+        "APPROVAL_STALE",
+        "This save key belongs to another post.",
+      );
+      return {
+        sourceId,
+        status: source.publicImportId
+          ? ("reused_shared_analysis" as const)
+          : ("existing_work_preserved" as const),
+        intentId: null,
+        expiresAt: null,
+      };
+    }
     const grant = await ctx.db.get(a.grantId);
     ensure(
       grant &&
@@ -56,12 +89,6 @@ export const capture = mutation({
       await savedCloudMonitorCurrent(ctx, grant),
       "SETUP_REQUIRED",
       "Complete or resume the saved-link monitor in ChatGPT before saving for Cloud analysis.",
-    );
-    const requestedIdentity = privateCloudMediaIdentity(a.url);
-    ensure(
-      ["instagram", "tiktok"].includes(requestedIdentity.platform),
-      "SOURCE_UNAVAILABLE",
-      "Automatic Cloud saves currently accept single Instagram or TikTok videos.",
     );
     const sourceId = await captureOne(ctx, {
       organizationId: a.organizationId,

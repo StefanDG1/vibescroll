@@ -1,5 +1,9 @@
 # VibeScroll foundational offer
 
+## F084: shared version candidate, October 28
+
+[ADR 181](../adr/181-neutral-cloud-catalog-in-existing-artifacts.md) records a local candidate for independently owned neutral evidence, current paid reuse, exact-version personal notes and reviewed recommendation changes. Synthetic two-account tests are engineering evidence. Existing private-only results, rights/provider/privacy gates and real paid production acceptance remain separate. Preserve the audience, prices, six beliefs and unvalidated willingness-to-pay hypothesis. No shared-data advantage, automatic future contribution or general availability is claimed.
+
 ## F083: planned reusable analysis history, October 28
 
 The next release priority is reliable Cloud link-to-insights with retained analysis versions, comparison, selection/rollback and entitled shared reuse under [ADR180](../adr/180-versioned-cloud-analysis-and-shared-selection.md). A paid catalog may offer access to reusable approved analysis and evidence, while private notes and project context stay private. History, shared Cloud contribution and cross-customer cache reuse are not live acceptance claims. Preserve existing prices, allowances and entitlement rules; no new checkout, guaranteed model superiority, savings claim or wider provider permission follows from the plan.

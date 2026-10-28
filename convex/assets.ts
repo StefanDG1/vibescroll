@@ -254,6 +254,11 @@ export const evidence = query({
     )
       fail("Evidence unavailable.");
     await access(ctx, asset.organizationId);
+    ensure(
+      asset.kind !== "cloud_catalog_frame",
+      "FORBIDDEN",
+      "Use the catalog's current version and access checks to read shared images.",
+    );
     if (asset.sourceId) {
       const source = await ctx.db.get(asset.sourceId);
       if (

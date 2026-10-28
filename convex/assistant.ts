@@ -1243,7 +1243,11 @@ export const fetch = internalQuery({
     if (index !== undefined)
       ensure(!!all[index], "FORBIDDEN", "Idea unavailable.");
     const ideas = index === undefined ? all.slice(0, 20) : [all[index]];
-    const typed = await sharedTypedCitations(ctx, source);
+    const typed = await sharedTypedCitations(
+      ctx,
+      source,
+      versionId ?? undefined,
+    );
     const insights = ideas.map((i: any) => ({
       id: String(i.id ?? "").slice(0, 200),
       title: String(i.title ?? "").slice(0, 200),

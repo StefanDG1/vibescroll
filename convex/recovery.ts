@@ -380,9 +380,14 @@ export const quarantinePage = internalMutation({
       .paginate({ cursor: a.cursor, numItems: 25 });
     for (const row of page.page) {
       if (
-        ["analysisEvidence", "analysisVersions", "analysisAttempts"].includes(
-          a.section,
-        )
+        [
+          "analysisEvidence",
+          "analysisVersions",
+          "analysisAttempts",
+          "catalogContributions",
+          "catalogAliases",
+          "catalogFamilies",
+        ].includes(a.section)
       ) {
         // Restored evidence and execution credentials cannot regain authority.
         await ctx.db.delete(row._id);

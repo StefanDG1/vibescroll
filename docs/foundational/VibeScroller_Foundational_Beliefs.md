@@ -1,5 +1,9 @@
 # VibeScroll foundational beliefs
 
+## F084: shared version candidate, October 28
+
+[ADR 181](../adr/181-neutral-cloud-catalog-in-existing-artifacts.md) records a local candidate for independently owned neutral evidence, current paid reuse, exact-version personal notes and reviewed recommendation changes. Synthetic two-account tests are engineering evidence. Existing private-only results, rights/provider/privacy gates and real paid production acceptance remain separate. Preserve the audience, prices, six beliefs and unvalidated willingness-to-pay hypothesis. No shared-data advantage, automatic future contribution or general availability is claimed.
+
 ## F083: judge upgrades by evidence, October 28
 
 Keep the existing six beliefs. The owner's [versioned analysis direction](../adr/180-versioned-cloud-analysis-and-shared-selection.md) makes traceable evidence and reversible decisions more important: preserve prior results, compare candidates and promote the best approved compatible version. A newer model, higher reasoning setting or longer answer does not establish an improvement. Test quality against a frozen rubric and retain failures and dissent; do not turn a requested shared-data advantage into a proven customer-benefit claim.

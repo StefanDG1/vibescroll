@@ -5,6 +5,9 @@
 // sourceRelationships contains only user-authored opaque links, grants no
 // authority and rechecks both source memberships/retention on every read.
 export const recoveryQuarantineSections = [
+  "catalogContributions",
+  "catalogAliases",
+  "catalogFamilies",
   "analysisEvidence",
   "analysisVersions",
   "analysisAttempts",

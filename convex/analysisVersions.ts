@@ -19,7 +19,19 @@ import { notifyVersionWaiting } from "./lib/assistantEvents";
 import { workCloudMediaAllowed } from "./lib/personalAccess";
 import { digest, reserve, settle } from "./product";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
-import { privateCloudMediaCanonicalMatches } from "../packages/social/contracts";
+import {
+  privateCloudMediaCanonicalMatches,
+  privateCloudMediaIdentity,
+} from "../packages/social/contracts";
+import {
+  cloudImport,
+  cloudSourceFamily,
+  cloudSourceVersion,
+  currentCloudArtifact,
+} from "./lib/cloudCatalog";
+import { retainedEvidenceContent } from "./lib/analysisHistory";
+import { savedCloudRoute } from "./lib/workCloudSave";
+import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import {
   analysisConfiguration,
   analysisVersionProtocol,
@@ -50,6 +62,7 @@ const configuration = v.object({
   maxApiUsd: v.literal(0),
 });
 const metadata = v.object({
+  origin: v.union(v.literal("private"), v.literal("service")),
   id: v.id("analysisVersions"),
   number: v.number(),
   state: v.string(),
@@ -107,6 +120,7 @@ export const history = query({
     ),
   }),
   handler: async (ctx, args) => {
+    ctx = knowledgeReadContext(ctx);
     const { source } = await historySource(ctx, args.sourceId);
     ensure(
       args.paginationOpts.numItems >= 1 &&
@@ -114,21 +128,60 @@ export const history = query({
       "INVALID_INPUT",
       "Read at most twenty version metadata rows at a time.",
     );
-    const result = await ctx.db
-      .query("analysisVersions")
-      .withIndex("by_org_source", (q) =>
-        q
-          .eq("organizationId", source.organizationId)
-          .eq("sourceId", source._id),
-      )
-      .order("desc")
-      .paginate(args.paginationOpts);
+    const layer = source.publicImportId
+      ? await ctx.db.get(source.publicImportId)
+      : null;
+    const shared = cloudImport(layer)
+      ? await cloudSourceFamily(ctx, source)
+      : null;
+    const sharedPrefix = "catalog-history:";
+    let sharedOffset: number | null = null;
+    let throughNumber = shared?.family.nextVersionNumber ?? 0;
+    if (args.paginationOpts.cursor?.startsWith(sharedPrefix)) {
+      ensure(
+        shared,
+        "INVALID_INPUT",
+        "This history cursor belongs to another source.",
+      );
+      const cursor = JSON.parse(
+        args.paginationOpts.cursor.slice(sharedPrefix.length),
+      );
+      ensure(
+        cursor.family === shared.family._id &&
+          Number.isSafeInteger(cursor.offset) &&
+          cursor.offset >= 0 &&
+          cursor.offset <= shared.family.members.length &&
+          Number.isSafeInteger(cursor.throughNumber) &&
+          cursor.throughNumber >= 0 &&
+          cursor.throughNumber <= shared.family.nextVersionNumber,
+        "INVALID_INPUT",
+        "Refresh shared history after its contents change.",
+      );
+      sharedOffset = cursor.offset;
+      throughNumber = cursor.throughNumber;
+    }
+    const result =
+      sharedOffset === null
+        ? await ctx.db
+            .query("analysisVersions")
+            .withIndex("by_org_source", (q) =>
+              q
+                .eq("organizationId", source.organizationId)
+                .eq("sourceId", source._id),
+            )
+            .order("desc")
+            .paginate(args.paginationOpts)
+        : { page: [], continueCursor: "", isDone: true };
     const pending = source.pendingAnalysisAttemptId
       ? await ctx.db.get(source.pendingAnalysisAttemptId)
       : null;
     const page = await Promise.all(
       result.page.map(async (version) => {
         const evidence = await ctx.db.get(version.evidenceId);
+        if (evidence?.owner === "service" && version.state === "ready") {
+          await retainedVersion(ctx, source, version._id);
+          return versionMetadata(version);
+        }
         return evidence &&
           source.state === "ready" &&
           source.generation === evidence.extractionGeneration &&
@@ -145,14 +198,56 @@ export const history = query({
             };
       }),
     );
+    let continueCursor = result.continueCursor,
+      isDone = result.isDone;
+    if (shared && result.isDone) {
+      const offset = sharedOffset ?? 0;
+      const members = shared.family.members
+        .filter((member) => member.number < throughNumber)
+        .reverse();
+      const end = Math.min(
+        members.length,
+        offset + args.paginationOpts.numItems - page.length,
+      );
+      for (const member of members.slice(offset, end)) {
+        const artifact = await ctx.db.get(member.artifactId);
+        if (
+          !artifact ||
+          artifact.state !== "eligible" ||
+          !("retainUntil" in artifact) ||
+          artifact.retainUntil <= Date.now()
+        )
+          continue;
+        const current = await currentCloudArtifact(ctx, artifact._id);
+        page.push(versionMetadata(current.version));
+      }
+      isDone = end >= members.length;
+      continueCursor = isDone
+        ? ""
+        : sharedPrefix +
+          JSON.stringify({
+            family: shared.family._id,
+            offset: end,
+            throughNumber,
+          });
+    }
+    const selectedVersionId =
+      source.selectedAnalysisVersionId ??
+      (shared?.family.selectedArtifactId
+        ? shared.family.members.find(
+            (m) => m.artifactId === shared.family.selectedArtifactId,
+          )?.versionId
+        : null) ??
+      null;
     return {
-      continueCursor: result.continueCursor,
-      isDone: result.isDone,
+      continueCursor,
+      isDone,
       page,
-      selectedVersionId: source.selectedAnalysisVersionId ?? null,
+      selectedVersionId,
       selectionRevision: source.analysisSelectionRevision ?? 0,
       baselineAvailable:
         !source.selectedAnalysisVersionId &&
+        !shared &&
         source.state === "ready" &&
         !!source.orderedMedia,
       pending:
@@ -180,6 +275,7 @@ export const read = query({
       v.object({
         id: v.string(),
         assetId: v.optional(v.id("assets")),
+        reference: v.optional(v.string()),
         timestampMs: v.number(),
         width: v.number(),
         height: v.number(),
@@ -188,7 +284,15 @@ export const read = query({
   }),
   handler: async (ctx, args) => {
     const { source } = await historySource(ctx, args.sourceId);
-    const id = args.versionId ?? source.selectedAnalysisVersionId;
+    const layer = source.publicImportId
+      ? await ctx.db.get(source.publicImportId)
+      : null;
+    const id =
+      args.versionId ??
+      source.selectedAnalysisVersionId ??
+      (cloudImport(layer)
+        ? (await cloudSourceVersion(ctx, source)).version._id
+        : null);
     ensure(
       id,
       "SOURCE_UNAVAILABLE",
@@ -197,18 +301,24 @@ export const read = query({
     const { version, evidence } = await retainedVersion(ctx, source, id);
     const identity = await ctx.auth.getUserIdentity();
     const includeEvidence = !identity || !isAssistantIdentity(identity);
+    const content = retainedEvidenceContent(evidence);
     return {
       version: versionMetadata(version),
       output: version.output,
       evidenceId: evidence._id,
       evidenceHash: evidence.evidenceHash,
       retainUntil: evidence.retainUntil,
-      post: includeEvidence ? evidence.prepared.post : null,
-      evidence: includeEvidence ? evidence.prepared.evidence : [],
+      post: includeEvidence ? content.post : null,
+      evidence: includeEvidence ? content.observations : [],
       frames: includeEvidence
         ? evidence.frames.map((f) => ({
             id: f.frameId,
             ...(f.assetId ? { assetId: f.assetId } : {}),
+            ...(evidence.owner === "service"
+              ? {
+                  reference: `catalog~${source._id}~${version._id}~${f.frameId}`,
+                }
+              : {}),
             timestampMs: f.timestampMs,
             width: f.width,
             height: f.height,
@@ -240,6 +350,79 @@ export const compare = query({
       retainedVersion(ctx, source, args.afterId),
     ]);
     return compareVersionOutputs(before.version.output, after.version.output);
+  },
+});
+
+export const sharedFrame = query({
+  args: {
+    sourceId: v.id("sources"),
+    versionId: v.id("analysisVersions"),
+    frameId: v.string(),
+  },
+  returns: v.object({
+    key: v.string(),
+    sha256: v.string(),
+    size: v.number(),
+    width: v.number(),
+    height: v.number(),
+    retainUntil: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    ensure(
+      identity && !isAssistantIdentity(identity),
+      "FORBIDDEN",
+      "Use the task's leased frame tool for assistant image access.",
+    );
+    const { source } = await historySource(ctx, args.sourceId);
+    const { evidence } = await retainedVersion(ctx, source, args.versionId);
+    ensure(
+      evidence.owner === "service",
+      "FORBIDDEN",
+      "Choose a shared evidence frame.",
+    );
+    await verifyRetainedAssets(ctx, source, evidence);
+    const frame = evidence.frames.find((f) => f.frameId === args.frameId);
+    ensure(frame, "SOURCE_UNAVAILABLE", "This screenshot is unavailable.");
+    return {
+      key: frame.key,
+      sha256: frame.sha256,
+      size: frame.size,
+      width: frame.width,
+      height: frame.height,
+      retainUntil: evidence.retainUntil,
+    };
+  },
+});
+
+export const followRecommendation = mutation({
+  args: { sourceId: v.id("sources"), expectedSelectionRevision: v.number() },
+  returns: v.object({ revision: v.number(), changed: v.boolean() }),
+  handler: async (ctx, args) => {
+    const { source, actor } = await historySource(ctx, args.sourceId, true);
+    await cloudSourceVersion(ctx, source);
+    const revision = source.analysisSelectionRevision ?? 0;
+    ensure(
+      revision === args.expectedSelectionRevision,
+      "APPROVAL_STALE",
+      "Refresh the current selection first.",
+    );
+    if (!source.selectedAnalysisVersionId) return { revision, changed: false };
+    await ctx.db.patch(source._id, {
+      selectedAnalysisVersionId: undefined,
+      selectedAnalysisSummary: undefined,
+      selectedAnalysisInsightCount: undefined,
+      selectedAnalysisMainPoints: undefined,
+      analysisSelectionRevision: revision + 1,
+    });
+    await audit(
+      ctx,
+      source.organizationId,
+      actor._id,
+      "catalog.follow_recommendation",
+      `${source._id}:${revision + 1}`,
+    );
+    return { revision: revision + 1, changed: true };
   },
 });
 
@@ -366,11 +549,17 @@ export async function requestRetainedAnalysis(
     args.basedOnVersionId ?? baseline._id,
   );
   const oldJob = source.personalAnalysis;
+  const savedRoute =
+    !a.grant && oldJob?.executor !== "work_cloud"
+      ? await savedCloudRoute(ctx, a.actor, a.organization)
+      : null;
   const grant =
     a.grant ??
     (oldJob?.executor === "work_cloud"
       ? await ctx.db.get(oldJob.cloud.grantId)
-      : null);
+      : savedRoute?.grantId
+        ? await ctx.db.get(savedRoute.grantId)
+        : null);
   const client =
     grant && assistantClients().find((c) => c.id === grant.clientId);
   ensure(
@@ -424,7 +613,7 @@ export async function requestRetainedAnalysis(
     basedOnVersionId: version._id,
     evidenceId: evidence._id,
     sourceGeneration: source.generation,
-    canonical: evidence.canonical,
+    canonical: privateCloudMediaIdentity(source.canonical).url,
     recipeHash,
     variantKey,
     inputHash: await digest(
@@ -646,8 +835,8 @@ export const input = internalQuery({
       leaseUntil: c.attempt.leaseUntil,
       deadline: c.attempt.deadline,
       maxApiUsd: 0,
-      transcript: c.evidence.prepared.post.segments,
-      observations: c.evidence.prepared.evidence,
+      transcript: retainedEvidenceContent(c.evidence).transcript,
+      observations: retainedEvidenceContent(c.evidence).observations,
       frames: c.evidence.frames.map(
         ({ frameId, timestampMs, width, height, sha256 }) => ({
           frameId,
@@ -856,7 +1045,7 @@ export const dispatch = internalMutation({
       attemptId: c.attempt._id,
       evidenceHash: c.evidence.evidenceHash,
       postRevisionHash: c.evidence.revisionHash,
-      evidence: c.evidence.prepared.evidence,
+      evidence: retainedEvidenceContent(c.evidence).observations,
     });
     for (const value of [args.reportedModel, args.reportedEffort])
       ensure(

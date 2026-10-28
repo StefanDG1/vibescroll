@@ -2,7 +2,7 @@ import { sourceRetained } from "./sourceAuthority";
 import { currentOrderedSource } from "./workCloudMediaSource";
 import { socialCitation } from "../../packages/social/analysis";
 import type { QueryCtx } from "../_generated/server";
-import type { Doc } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import { retainedSourceRevision } from "./sourceAuthority";
 import { ensure } from "../../packages/policy";
 import { typedCitationSummary } from "../../packages/sources/citations";
@@ -10,17 +10,75 @@ import type { InsightCitation } from "../../packages/proposals/evidence";
 import { sourcePolicyCurrent } from "./sourcePolicy";
 import { queryRead } from "./knowledgeReadContext";
 import { sourceInsightOutput } from "../../packages/contracts";
+import {
+  cloudImport,
+  cloudSourceFamily,
+  cloudSourceEvidence,
+  cloudSourceVersion,
+} from "./cloudCatalog";
+import { neutralCloudObservations } from "../../packages/contracts/cloud-catalog";
 
 // Call only after current membership and the exact assistant/team grant passed.
 export async function sharedTypedCitations(
   ctx: QueryCtx,
   source: Doc<"sources">,
+  versionId?: Id<"analysisVersions">,
 ) {
   return queryRead(
     ctx,
-    `shared-source-citations:${source._id}:${source.generation}:${source.updatedAt}`,
+    `shared-source-citations:${source._id}:${source.generation}:${source.updatedAt}:${versionId ?? "selected"}`,
     async () => {
       if (source.state !== "ready") return null;
+      const layer = source.publicImportId
+        ? await ctx.db.get(source.publicImportId)
+        : null;
+      if (cloudImport(layer)) {
+        await cloudSourceFamily(ctx, source);
+        const id = versionId ?? source.selectedAnalysisVersionId;
+        const version = id ? await ctx.db.get(id) : null;
+        let shared;
+        if (version?.owner === "private") {
+          const attempt = version.attemptId
+            ? await ctx.db.get(version.attemptId)
+            : null;
+          ensure(
+            version.state === "ready" &&
+              version.retainUntil > Date.now() &&
+              version.sourceId === source._id &&
+              version.organizationId === source.organizationId &&
+              attempt?.sourceId === source._id &&
+              attempt.sourceGeneration === source.generation &&
+              attempt.evidenceId === version.evidenceId &&
+              attempt.resultVersionId === version._id &&
+              attempt.state === "completed",
+            "SOURCE_UNAVAILABLE",
+            "This private candidate no longer matches its shared evidence.",
+          );
+          shared = await cloudSourceEvidence(ctx, source, version.evidenceId);
+        } else shared = await cloudSourceVersion(ctx, source, id);
+        const records = neutralCloudObservations(shared.prepared);
+        return {
+          sourceRevisionId: null,
+          sourceContentHash: shared.prepared.sourceRevisionHash,
+          coverage: {
+            method: "ordered_media",
+            retrieved: shared.prepared.frames.length,
+            omitted: 0,
+            omissions: [
+              "Shared neutral evidence from authenticated host-reported analysis. Frames are sampled; model settings and provider retention are unverified.",
+            ],
+          },
+          summarize: (evidence: InsightCitation[]) =>
+            evidence
+              .slice(0, 10)
+              .map((ref) =>
+                socialCitation(
+                  ref as Parameters<typeof socialCitation>[0],
+                  records,
+                ),
+              ),
+        };
+      }
       if (source.orderedMedia || source.analysis?.schemaVersion === "3.0.0") {
         ensure(
           sourceRetained(source.sourceRetentionUntil) &&

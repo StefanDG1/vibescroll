@@ -77,6 +77,11 @@ import { policyRelease } from "../../../packages/policy/publication";
 import { EvidenceViewer } from "./evidence-viewer";
 import { AnalysisReview } from "./analysis-review";
 import { AnalysisHistory } from "./analysis-history";
+import {
+  CloudCatalogContribution,
+  CloudCatalogReceipts,
+  SharedAnalysisNotes,
+} from "./cloud-catalog-controls";
 import { SetupJourney } from "./setup-journey";
 import { TaskRuntimePicker } from "./task-runtime-picker";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
@@ -816,7 +821,13 @@ export function Console({
     );
   usePolling(
     refreshData,
-    processing ? 15000 : view === "source" ? null : 60000,
+    processing
+      ? 15000
+      : view === "source"
+        ? selected?.sharedCloud
+          ? 60000
+          : null
+        : 60000,
     !demo && view !== "connections",
     view === "source"
       ? `${organizationId}:source:${selected ? id(selected) : ""}`
@@ -2631,6 +2642,14 @@ export function Console({
               )}
               {view === "privacy" && (
                 <>
+                  {!demo && (
+                    <CloudCatalogReceipts
+                      key={organizationId}
+                      organizationId={organizationId}
+                      disabled={readOnly || busy}
+                      call={(operation, args) => call(operation, args, true)}
+                    />
+                  )}
                   <MotionPreference control />
                   <div className="panel">
                     <h2>Your content and preferences</h2>
@@ -3608,7 +3627,7 @@ export function SourceDetail({
   const transcript = useRef<HTMLDetailsElement>(null);
   const cloudSpeechSegments = isCloudObservedMedia(detail.orderedMedia?.post)
     ? detail.orderedMedia.post.segments
-    : null;
+    : (detail.sharedCloud?.transcript ?? null);
   const sourceId = id(source);
   const proposalRevision = (source.proposals ?? [])
     .map(
@@ -3617,7 +3636,7 @@ export function SourceDetail({
     )
     .sort()
     .join("|");
-  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${source.analysisSelectionRevision}:${source.pendingAnalysisAttemptId}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
+  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${source.analysisSelectionRevision}:${source.pendingAnalysisAttemptId}:${source.sharedCloud?.recommendationRevision}:${source.sharedCloud?.notesUpdatedAt}:${source.analysisVersion?.id}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
   const [retentionTime, setRetentionTime] = useState(Date.now);
   const retentionDeadline = Math.min(
     source.sourceRetentionUntil ?? Infinity,
@@ -3698,6 +3717,13 @@ export function SourceDetail({
             mediaEvidence: undefined,
             originalMediaEvidence: undefined,
             repositorySelection: undefined,
+            sharedCloud: undefined,
+            analysisVersion: undefined,
+            personalMedia: undefined,
+            orderedMedia: undefined,
+            selectedAnalysisSummary: undefined,
+            selectedAnalysisMainPoints: undefined,
+            selectedAnalysisInsightCount: undefined,
             error:
               "Source details are unavailable. Check access before continuing.",
           });
@@ -3777,7 +3803,7 @@ export function SourceDetail({
             call={strictCall}
             readOnly={readOnly}
           />
-          {detail.publicImportId ? (
+          {detail.publicImportId && !detail.sharedCloud ? (
             <SavedPublicSource
               sourceId={sourceId}
               call={strictCall}
@@ -3922,16 +3948,59 @@ export function SourceDetail({
       {!demo &&
         !detailLoading &&
         detail.state === "ready" &&
-        isCloudObservedMedia(detail.orderedMedia?.post) && (
+        (isCloudObservedMedia(detail.orderedMedia?.post) ||
+          detail.sharedCloud) && (
           <AnalysisHistory
             key={sourceId}
             sourceId={sourceId}
             revision={sourceRevision}
-            disabled={readOnly || busy || !detail.workCloudMediaEnabled}
+            disabled={readOnly || busy}
+            reanalysisDisabled={!detail.workCloudMediaEnabled}
+            recommendationMode={detail.sharedCloud?.selectionMode}
             call={strictCall ?? call}
             onChange={() => onRefresh?.()}
           />
         )}
+      {detail.sharedCloud && (
+        <section className="panel" aria-label="Shared analysis">
+          <h2>Shared analysis</h2>
+          <p>
+            {detail.sharedCloud.selectionMode === "recommended"
+              ? "Following the reviewed catalog recommendation."
+              : "Using your selected version."}{" "}
+            Personal notes stay in your library and remain attached to the
+            version you reviewed.
+          </p>
+          <p className="fine">
+            Screenshots are sampled. Model settings are host-reported. Evidence
+            is available until{" "}
+            {new Date(detail.sharedCloud.retainUntil).toLocaleString()} while
+            your catalog access remains active.
+          </p>
+        </section>
+      )}
+      {detail.sharedCloud?.canEditNotes && (
+        <SharedAnalysisNotes
+          key={`${sourceId}:${detail.analysisVersion.id}:${detail.sharedCloud.notesUpdatedAt}`}
+          sourceId={sourceId}
+          versionId={detail.analysisVersion.id}
+          note={detail.sharedCloud.privateNote}
+          corrections={detail.sharedCloud.corrections}
+          updatedAt={detail.sharedCloud.notesUpdatedAt}
+          disabled={readOnly || busy}
+          call={strictCall ?? call}
+          onChange={() => onRefresh?.()}
+        />
+      )}
+      {detail.catalogContributionAvailable && (
+        <CloudCatalogContribution
+          key={`${sourceId}:${detail.analysisVersion.id}`}
+          sourceId={sourceId}
+          versionId={detail.analysisVersion.id}
+          disabled={readOnly || busy}
+          call={strictCall ?? call}
+        />
+      )}
       <section className="panel">
         <h2>Main points</h2>
         {!demo &&
@@ -4116,6 +4185,29 @@ export function SourceDetail({
                         })}
                       </ul>
                     )}
+                  {detail.sharedCloud && (
+                    <ul>
+                      {i.evidence.map((ref: any) => {
+                        const observation =
+                          detail.sharedCloud.observations.find(
+                            (entry: any) => entry.id === ref.id,
+                          );
+                        return (
+                          <li key={ref.id}>
+                            <blockquote>
+                              {observation?.text ?? "Observation unavailable."}
+                            </blockquote>
+                            <p className="fine">
+                              {observation?.basis}
+                              {observation?.uncertainty
+                                ? `. ${observation.uncertainty}`
+                                : ""}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
 
                   {detail.evidenceRegistry && (
                     <TypedSourceEvidence

@@ -5,6 +5,7 @@ import { usePolling } from "@/lib/use-polling";
 import { EvidenceViewer } from "./evidence-viewer";
 
 type Version = {
+  origin?: "private" | "service";
   id: string;
   number: number;
   state: string;
@@ -43,12 +44,16 @@ export function AnalysisHistory({
   sourceId,
   revision,
   disabled,
+  reanalysisDisabled = disabled,
+  recommendationMode,
   call,
   onChange,
 }: {
   sourceId: string;
   revision: string;
   disabled: boolean;
+  reanalysisDisabled?: boolean;
+  recommendationMode?: "recommended" | "pinned";
   call: (operation: string, args: unknown) => Promise<unknown>;
   onChange: () => void;
 }) {
@@ -77,7 +82,12 @@ export function AnalysisHistory({
       basis: string;
       uncertainty: string;
     }[];
-    frames: { id: string; assetId?: string; timestampMs: number }[];
+    frames: {
+      id: string;
+      assetId?: string;
+      reference?: string;
+      timestampMs: number;
+    }[];
   }>();
   const [frame, setFrame] = useState<string>();
   const [comparison, setComparison] = useState<{
@@ -200,6 +210,20 @@ export function AnalysisHistory({
               : "original analysis"}
             .
           </p>
+          {recommendationMode === "pinned" && (
+            <button
+              className="secondary"
+              disabled={disabled || busy}
+              onClick={() =>
+                act("analysisFollowRecommended", {
+                  sourceId,
+                  expectedSelectionRevision: history.selectionRevision,
+                })
+              }
+            >
+              Follow recommended analysis
+            </button>
+          )}
           {history.pending && (
             <output>
               Version {history.pending.number}: {history.pending.state}. Your
@@ -224,6 +248,7 @@ export function AnalysisHistory({
             <article key={version.id}>
               <h3>
                 Version {version.number}
+                {version.origin === "service" ? " · Shared" : " · Personal"}
                 {version.id === history.selectedVersionId ? " · Selected" : ""}
               </h3>
               <p>
@@ -319,11 +344,13 @@ export function AnalysisHistory({
                 <summary>Retained screenshots for this version</summary>
                 {view.frames.map(
                   (image, index) =>
-                    image.assetId && (
+                    (image.reference || image.assetId) && (
                       <button
                         className="secondary"
                         key={image.id}
-                        onClick={() => setFrame(image.assetId)}
+                        onClick={() =>
+                          setFrame(image.reference ?? image.assetId)
+                        }
                       >
                         Image {index + 1} at{" "}
                         {(image.timestampMs / 1000).toFixed(1)}s
@@ -380,8 +407,13 @@ export function AnalysisHistory({
                 <EvidenceViewer
                   key={frame}
                   frames={view.frames.flatMap((image) =>
-                    image.assetId
-                      ? [{ id: image.assetId, startMs: image.timestampMs }]
+                    image.reference || image.assetId
+                      ? [
+                          {
+                            id: (image.reference ?? image.assetId)!,
+                            startMs: image.timestampMs,
+                          },
+                        ]
                       : [],
                   )}
                   initialId={frame}
@@ -466,7 +498,9 @@ export function AnalysisHistory({
             </p>
             <button
               className="primary"
-              disabled={disabled || busy || !!history.pending}
+              disabled={
+                reanalysisDisabled || disabled || busy || !!history.pending
+              }
             >
               Analyze again
             </button>

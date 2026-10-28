@@ -440,7 +440,10 @@ export const saveEdition = mutation({
       .order("desc")
       .take(10);
     const artifact = candidates.find(
-      (a) => a.editionVersion === edition!.version && a.state === "eligible",
+      (a) =>
+        "editionVersion" in a &&
+        a.editionVersion === edition!.version &&
+        a.state === "eligible",
     );
     ensure(
       artifact && (await reusableArtifact(ctx, artifact._id)),
@@ -505,6 +508,7 @@ export const savedDetail = query({
     const available =
       !!base &&
       base.artifact.compatibilityKey === layer.compatibilityKey &&
+      "editionVersion" in layer &&
       base.edition.version === layer.editionVersion;
     return {
       available,

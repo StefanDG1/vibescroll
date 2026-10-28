@@ -19,6 +19,31 @@ import {
   privateCloudMediaCanonicalMatches,
 } from "../../packages/social/contracts";
 import { internal } from "../_generated/api";
+import {
+  cloudImport,
+  cloudSourceVersion,
+  cloudSourceEvidence,
+} from "./cloudCatalog";
+import {
+  neutralCloudEvidence,
+  neutralCloudObservations,
+} from "../../packages/contracts/cloud-catalog";
+
+export function retainedEvidenceContent(evidence: Doc<"analysisEvidence">) {
+  if (evidence.owner === "service") {
+    const prepared = neutralCloudEvidence.parse(evidence.prepared);
+    return {
+      post: prepared,
+      transcript: prepared.segments,
+      observations: neutralCloudObservations(prepared),
+    };
+  }
+  return {
+    post: evidence.prepared.post,
+    transcript: evidence.prepared.post.segments,
+    observations: evidence.prepared.evidence,
+  };
+}
 
 export async function historySource(
   ctx: QueryCtx,
@@ -76,6 +101,11 @@ export async function freezeAnalysisBaseline(
     return (
       await retainedVersion(ctx, source, source.selectedAnalysisVersionId)
     ).version;
+  }
+  if (source.publicImportId) {
+    const layer = await ctx.db.get(source.publicImportId);
+    if (cloudImport(layer))
+      return (await cloudSourceVersion(ctx, source)).version;
   }
   ensure(
     source.state === "ready" &&
@@ -212,6 +242,8 @@ export async function retainedVersion(
   versionId: Id<"analysisVersions">,
 ) {
   const version = await ctx.db.get(versionId);
+  if (version?.owner === "service")
+    return cloudSourceVersion(ctx, source, versionId);
   ensure(
     version &&
       version.state === "ready" &&
@@ -223,6 +255,23 @@ export async function retainedVersion(
     "This analysis version is unavailable to this source.",
   );
   const evidence = await ctx.db.get(version.evidenceId);
+  if (evidence?.owner === "service") {
+    await cloudSourceEvidence(ctx, source, evidence._id);
+    const attempt = version.attemptId
+      ? await ctx.db.get(version.attemptId)
+      : null;
+    ensure(
+      version.retainUntil > Date.now() &&
+        attempt?.sourceId === source._id &&
+        attempt.sourceGeneration === source.generation &&
+        attempt.evidenceId === evidence._id &&
+        attempt.resultVersionId === version._id &&
+        attempt.state === "completed",
+      "SOURCE_UNAVAILABLE",
+      "This private candidate no longer matches its saved shared post.",
+    );
+    return { version, evidence };
+  }
   ensure(
     evidence &&
       evidence.state === "retained" &&
@@ -256,6 +305,7 @@ export function versionMetadata(version: Doc<"analysisVersions">) {
     reportedModel: version.reportedModel ?? null,
     reportedEffort: version.reportedEffort ?? null,
     evaluation: version.evaluation,
+    origin: version.owner,
   };
 }
 export async function verifyRetainedAssets(
@@ -263,6 +313,10 @@ export async function verifyRetainedAssets(
   source: Doc<"sources">,
   evidence: Doc<"analysisEvidence">,
 ) {
+  if (evidence.owner === "service") {
+    await cloudSourceEvidence(ctx, source, evidence._id);
+    return;
+  }
   for (const frame of evidence.frames) {
     const asset = frame.assetId ? await ctx.db.get(frame.assetId) : null;
     ensure(
@@ -286,7 +340,21 @@ export async function verifyRetainedAssets(
   }
 }
 export async function selectedAnalysis(ctx: QueryCtx, source: Doc<"sources">) {
-  if (!source.selectedAnalysisVersionId) return null;
+  if (!source.selectedAnalysisVersionId) {
+    if (source.publicImportId) {
+      const layer = await ctx.db.get(source.publicImportId);
+      if (cloudImport(layer)) {
+        const shared = await cloudSourceVersion(ctx, source);
+        return {
+          output: shared.output,
+          metadata: versionMetadata(shared.version),
+          evidenceId: shared.evidence._id,
+          shared,
+        };
+      }
+    }
+    return null;
+  }
   const { version, evidence } = await retainedVersion(
     ctx,
     source,
@@ -296,6 +364,9 @@ export async function selectedAnalysis(ctx: QueryCtx, source: Doc<"sources">) {
     output: version.output,
     metadata: versionMetadata(version),
     evidenceId: evidence._id,
+    ...(evidence.owner === "service"
+      ? { shared: await cloudSourceEvidence(ctx, source, evidence._id) }
+      : {}),
   };
 }
 

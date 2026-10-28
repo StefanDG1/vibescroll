@@ -6,6 +6,12 @@ Implementation checkpoint, 14:44 UTC: the frontend serves `da275f4` and backend 
 
 Ship a useful web and MCP product around Save, automatic Cloud analysis, cited results, reusable shared knowledge and safe upgrades. Keep the widget and the larger project/coding workflow out of this release's critical path. Preserve their requirements in the main completion plan.
 
+## Shared candidate checkpoint, 16:03 UTC
+
+[ADR181](../../adr/181-neutral-cloud-catalog-in-existing-artifacts.md) records the gated local implementation. Ordinary Save and MCP reads reuse independent neutral service evidence after current verified Pro checks. Private retained reanalysis, exact shared history, pin/follow-recommendation, version-pinned notes, private image proxy, reviewed global promotion, withdrawal, storage accounting and quarantine have isolated tests. The candidate adds three initially empty tables and eleven indexes on those tables, preserving legacy artifact/import branches and all existing indexes. Full local checks passed 1,381 Vitest cases with recorded skips, Node/Python checks, both builds, all types/lint, zero audit advisories and no changed-source secret findings. Exact-head CI remains pending. Nothing in this paragraph is a production enablement claim.
+
+Remaining V4/V5 work includes the one-time future-contribution policy and automatic completion hook, safe shared in-flight production coalescing, all version-bound feedback consumers, latency/cold independent onboarding and an actual rights-cleared paid two-account cache test. The second account is signed in to Edge; its paid entitlement and sharing source are not verified. An additional backend publication slot has been requested within the existing budget and awaits its explicit response.
+
 ## Establish the baseline
 
 Use these facts rather than older pending checkpoints:

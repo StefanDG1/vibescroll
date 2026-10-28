@@ -4,6 +4,8 @@ import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { productTables } from "../convex/productSchema";
 import { assistantTables } from "../convex/assistantSchema";
+import { publicTables } from "../convex/publicSchema";
+import { cloudCatalogTables } from "../convex/cloudCatalogSchema";
 import schema from "../convex/schema";
 import { librarySpacesTables } from "../convex/librarySpacesSchema";
 import {
@@ -20,7 +22,31 @@ const base = "346b718baf91ba9847fbb707be7bbe069df57257";
 it("preserves all tables/config and permits only the exact Cloud validators and one C2 delivery index", () => {
   // The application exports 89 tables. The deployment's 131-table inventory
   // also includes component tables; their configuration is byte-checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(92);
+  expect(Object.keys(schema.tables)).toHaveLength(95);
+  expect(
+    Object.values(schema.tables).reduce((total, table) => {
+      const row = (
+        table as unknown as {
+          export(): {
+            indexes: unknown[];
+            searchIndexes: unknown[];
+            vectorIndexes: unknown[];
+          };
+        }
+      ).export();
+      return (
+        total +
+        row.indexes.length +
+        row.searchIndexes.length +
+        row.vectorIndexes.length
+      );
+    }, 0),
+  ).toBe(263);
+  expect(Object.keys(cloudCatalogTables).sort()).toEqual([
+    "catalogAliases",
+    "catalogContributions",
+    "catalogFamilies",
+  ]);
   const old = execFileSync("git", ["show", `${base}:convex/productSchema.ts`], {
     encoding: "utf8",
   });
@@ -145,7 +171,6 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
     "libraryScanSchema.ts",
     "dashboardSchema.ts",
     "localLibrarySchema.ts",
-    "publicSchema.ts",
     "pilotPaymentSchema.ts",
     "convex.config.ts",
     "crons.ts",
@@ -162,12 +187,44 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
               "",
             )
             .replace("  ...analysisHistoryTables,\n", "")
+            .replace(
+              'import { cloudCatalogTables } from "./cloudCatalogSchema";\n',
+              "",
+            )
+            .replace("  ...cloudCatalogTables,\n", "")
         : content,
     ).toBe(
       execFileSync("git", ["show", `${base}:convex/${file}`], {
         encoding: "utf8",
       }).replace(/\r\n/g, "\n"),
     );
+  }
+  const oldPublic = execFileSync(
+    "git",
+    ["show", `${base}:convex/publicSchema.ts`],
+    { encoding: "utf8" },
+  );
+  const beforePublic = new Function(
+    "defineTable",
+    "v",
+    oldPublic.replace(/^import[\s\S]*?;/gm, "").replace(/^export /gm, "") +
+      ";return publicTables;",
+  )(defineTable, v);
+  expect(Object.keys(publicTables)).toEqual(Object.keys(beforePublic));
+  for (const [name, table] of Object.entries(publicTables)) {
+    const current = (table as any).export(),
+      prior = beforePublic[name].export();
+    if (name === "publicArtifacts" || name === "publicImports") {
+      expect(current.documentType.type).toBe("union");
+      expect(current.documentType.value).toHaveLength(2);
+      expect(current.documentType.value[0]).toEqual(prior.documentType);
+      expect(current.documentType.value[1].value.origin.fieldType).toEqual({
+        type: "literal",
+        value: "cloud",
+      });
+      current.documentType = prior.documentType;
+    }
+    expect(current).toEqual(prior);
   }
   const oldLibrary = execFileSync(
     "git",

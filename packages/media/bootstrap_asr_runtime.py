@@ -1,10 +1,11 @@
-"""Prepare one disposable pinned ASR runtime before a source job, without models.
+"""Prepare pinned runtime and optional fresh model files before a source job.
 
 The caller verifies this helper's immutable bundle before running it. Existing
 directories are never repaired or used as installation targets. A new event may
 need a new runtime even when its separately verified model files remain present.
 """
 import argparse
+from concurrent.futures import ThreadPoolExecutor, wait
 import hashlib
 import json
 import os
@@ -27,6 +28,7 @@ MAX_FILES = 50000
 MAX_RUNTIME_BYTES = 1024 * 1024 * 1024
 MAX_COMBINED_BYTES = 2 * 1024 * 1024 * 1024
 DISPOSABLE_TOOLS_ALLOWANCE = 40 * 1024 * 1024
+MAX_DOWNLOAD_WORKERS = 4
 
 
 def plain(path, *, missing=False):
@@ -90,15 +92,31 @@ def public_url(value):
     return value
 
 
+def model_url(value):
+    parsed = urllib.parse.urlsplit(value)
+    host = parsed.hostname or ""
+    if (parsed.scheme != "https" or
+            not (host == "huggingface.co" or host.endswith(".huggingface.co") or host.endswith(".hf.co")) or
+            parsed.username or parsed.password or parsed.port not in (None, 443)):
+        raise ValueError("runtime_model_destination_invalid")
+    return value
+
+
 class PinnedRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         public_url(newurl)
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-def download(item, target, deadline, opener=None):
+class ModelRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        model_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def download(item, target, deadline, opener=None, *, validate_url=public_url):
     """One GET, ordinary verified HTTPS/proxy transport, no automatic retry."""
-    public_url(item["url"])
+    validate_url(item["url"])
     if target.exists():
         raise ValueError("runtime_download_target_exists")
     remaining = deadline - time.monotonic()
@@ -124,12 +142,84 @@ def download(item, target, deadline, opener=None):
         raise ValueError("runtime_download_pin_mismatch")
 
 
+def download_model(item, target, deadline):
+    return download(item, target, deadline,
+                    urllib.request.build_opener(ModelRedirect), validate_url=model_url)
+
+
 def archive_path(value):
     path = PurePosixPath(value)
     if (not value or len(value) > 500 or path.is_absolute() or ".." in path.parts or
             "\\" in value or ":" in value or "\0" in value):
         raise ValueError("runtime_archive_path_invalid")
     return path
+
+
+def fetch_pins(items, downloads, deadline, fetch):
+    """Join each bounded batch before another starts; never retry a failed pin."""
+    for item in items:
+        if Path(item["filename"]).name != item["filename"]:
+            raise ValueError("runtime_download_name_invalid")
+    if not items:
+        return
+    with ThreadPoolExecutor(max_workers=min(MAX_DOWNLOAD_WORKERS, len(items))) as pool:
+        for offset in range(0, len(items), MAX_DOWNLOAD_WORKERS):
+            if time.monotonic() >= deadline:
+                raise ValueError("runtime_setup_deadline")
+            batch = items[offset:offset + MAX_DOWNLOAD_WORKERS]
+
+            def checked(item):
+                target = downloads / item["filename"]
+                fetch(item, target, deadline)
+                pin_file(target, item)
+
+            futures = [pool.submit(checked, item) for item in batch]
+            wait(futures)
+            # All owned workers have finished, including when a pin failed.
+            # No later batch or installer can run after that failure.
+            for future in futures:
+                future.result()
+
+
+def prepare_model(directory, plan, deadline, *, fetch=download_model):
+    """Provision four exact files in a fresh root, without importing inference."""
+    directory = plain(directory, missing=True)
+    if directory.exists():
+        raise ValueError("fresh_model_directory_required")
+    model = plan["model"]["model"]
+    names = {"model.bin", "config.json", "tokenizer.json", "vocabulary.txt"}
+    if set(model["files"]) != names or set(plan["modelURLs"]) != names:
+        raise ValueError("runtime_model_plan_invalid")
+    items = []
+    for name, pin in model["files"].items():
+        url = plan["modelURLs"][name]
+        if url != f"https://huggingface.co/{model['repository']}/resolve/{model['revision']}/{name}":
+            raise ValueError("runtime_model_plan_invalid")
+        model_url(url)
+        items.append(dict(pin, filename=name, url=url))
+    total = sum(item["bytes"] for item in items)
+    other_bytes = sum(regular_bytes(item)[1] for item in directory.parent.iterdir()
+                      if item.name.startswith(".vibescroll-") and not item.is_symlink() and item.is_dir())
+    if (total > plan["limits"]["maximumDownloadBytes"] or
+            other_bytes + total + 4096 + DISPOSABLE_TOOLS_ALLOWANCE > MAX_COMBINED_BYTES):
+        raise ValueError("runtime_combined_cache_budget_invalid")
+    directory.mkdir(mode=0o700)
+    started = time.monotonic()
+    fetch_pins(items, directory, deadline, fetch)
+    if time.monotonic() >= deadline:
+        raise ValueError("runtime_setup_deadline")
+    manifest = {"repository": model["repository"], "revision": model["revision"],
+                "files": {name: pin["sha256"] for name, pin in model["files"].items()}}
+    encoded = (json.dumps(manifest, sort_keys=True) + "\n").encode()
+    if len(encoded) > 4096:
+        raise ValueError("runtime_receipt_limit")
+    temporary = directory / ".model-ready.partial"
+    with temporary.open("xb") as output:
+        output.write(encoded)
+    os.replace(temporary, directory / "vibescroller-model.json")
+    return {"directory": str(directory), "modelDownloads": len(items),
+            "downloadBytes": total, "modelConstructors": 0, "sourceJobs": 0,
+            "seconds": round(time.monotonic() - started, 3)}
 
 
 def unpack_python(archive, directory, maximum):
@@ -240,7 +330,7 @@ def verify_installed_payloads(directory, wheels):
     return count
 
 
-def prepare(directory, plan, *, fetch=download):
+def prepare(directory, plan, *, fetch=download, deadline=None):
     directory = plain(directory, missing=True)
     if directory.exists():
         raise ValueError("fresh_runtime_directory_required")
@@ -257,7 +347,8 @@ def prepare(directory, plan, *, fetch=download):
     uv = shutil.which("uv")
     if not uv or subprocess.run([uv, "--version"], capture_output=True, timeout=5).stdout.split()[:2] != [b"uv", b"0.13.4"]:
         raise ValueError("runtime_installer_unavailable")
-    deadline = time.monotonic() + plan["limits"]["maximumSeconds"]
+    setup_started = time.monotonic()
+    deadline = min(deadline or float("inf"), setup_started + plan["limits"]["maximumSeconds"])
     items = [dict(plan["python"], filename="python.tar.gz"), *plan["wheels"]]
     if (len(items) > 25 or sum(i["bytes"] for i in items) > plan["limits"]["maximumDownloadBytes"] or
             len({i["filename"] for i in items}) != len(items)):
@@ -266,12 +357,8 @@ def prepare(directory, plan, *, fetch=download):
     downloads = directory / "downloads"
     downloads.mkdir(mode=0o700)
     (directory / "temporary").mkdir(mode=0o700)
-    for item in items:
-        if Path(item["filename"]).name != item["filename"]:
-            raise ValueError("runtime_download_name_invalid")
-        target = downloads / item["filename"]
-        fetch(item, target, deadline)
-        pin_file(target, item)
+    fetch_pins(items, downloads, deadline, fetch)
+    downloads_finished = time.monotonic()
     unpack_python(downloads / "python.tar.gz", directory, maximum)
     expanded = sum(check_wheel(downloads / wheel["filename"], maximum) for wheel in plan["wheels"])
     if regular_bytes(directory)[1] + expanded > maximum:
@@ -289,6 +376,7 @@ def prepare(directory, plan, *, fetch=download):
     expected = {w["name"].lower().replace("_", "-"): w["version"] for w in plan["wheels"]}
     if observed != {"python": [3, 13, 17], "packages": expected}:
         raise ValueError("runtime_installed_versions_mismatch")
+    install_finished = time.monotonic()
     payloads = verify_installed_payloads(directory, plan["wheels"])
     count, total = regular_bytes(directory)
     if total + 4096 > maximum:
@@ -297,6 +385,12 @@ def prepare(directory, plan, *, fetch=download):
               "directory": str(directory), "interpreter": str(interpreter), "verifiedWheels": len(expected),
               "verifiedInstalledPayloads": payloads,
               "downloadRequests": len(items), "downloadBytes": sum(i["bytes"] for i in items),
+              "maximumConcurrentDownloads": MAX_DOWNLOAD_WORKERS,
+              "phaseSeconds": {
+                  "downloads": round(downloads_finished - setup_started, 3),
+                  "unpackInstallAndProbe": round(install_finished - downloads_finished, 3),
+                  "installedPayloadVerification": round(time.monotonic() - install_finished, 3),
+                  "totalBeforeReceipt": round(time.monotonic() - setup_started, 3)},
               "regularFilesBeforeReceipt": count, "regularBytesBeforeReceipt": total,
               "receiptMaximumBytes": 4096, "sourceJobs": 0, "modelDownloads": 0,
               "otherOwnedCacheBytesBefore": other_bytes, "runtimeMaximumBytes": maximum,
@@ -317,11 +411,26 @@ def prepare(directory, plan, *, fetch=download):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--directory", required=True)
+    parser.add_argument("--model-directory")
     args = parser.parse_args()
     root = Path(args.directory)
     if root.parent != Path("/workspace/scratch") or not re.fullmatch(r"\.vibescroll-asr-runtime-[a-f0-9]{8,32}", root.name):
         raise ValueError("runtime_owned_root_required")
-    print(json.dumps(prepare(root, load_plan())))
+    plan = load_plan()
+    deadline = time.monotonic() + plan["limits"]["maximumSeconds"]
+    model_result = None
+    if args.model_directory:
+        model_root = Path(args.model_directory)
+        if (model_root.parent != Path("/workspace/scratch") or
+                not re.fullmatch(r"\.vibescroll-asr-model-[a-f0-9]{8,32}", model_root.name)):
+            raise ValueError("runtime_owned_root_required")
+        if root.exists():
+            raise ValueError("fresh_runtime_directory_required")
+        model_result = prepare_model(model_root, plan, deadline)
+    result = prepare(root, plan, deadline=deadline)
+    if model_result:
+        result["modelSetup"] = model_result
+    print(json.dumps(result))
 
 
 if __name__ == "__main__":
@@ -330,6 +439,6 @@ if __name__ == "__main__":
     except (ValueError, OSError, subprocess.SubprocessError, tarfile.TarError, zipfile.BadZipFile) as error:
         # Transport exceptions can contain signed provider URLs. Never print them.
         code = str(error) if isinstance(error, ValueError) else ""
-        safe = code if re.fullmatch(r"(?:runtime_[a-z_]+|fresh_runtime_directory_required)", code) else "pinned_runtime_bootstrap_failed"
+        safe = code if re.fullmatch(r"(?:runtime_[a-z_]+|fresh_(?:runtime|model)_directory_required)", code) else "pinned_runtime_bootstrap_failed"
         print(json.dumps({"ready": False, "error": safe, "sourceJobs": 0}))
         raise SystemExit(2)

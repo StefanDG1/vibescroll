@@ -1,13 +1,13 @@
 {
   "schemaVersion": "native-asr-bootstrap-bundle-v1",
-  "path": "/downloads/asr-runtime-bootstrap-2a9597bc4f6e3003.zip",
-  "bytes": 30156,
-  "sha256": "2a9597bc4f6e300310205ea9fdefe8c42690489e001f769731c410c6d30eba81",
+  "path": "/downloads/asr-runtime-bootstrap-e7f0c287c686fb41.zip",
+  "bytes": 35546,
+  "sha256": "e7f0c287c686fb41403fa13e3225ecd538ab48732ded505a84277035791358d4",
   "expandedMaximumBytes": 65536,
   "files": {
     "bootstrap_asr_runtime.py": {
-      "bytes": 16240,
-      "sha256": "3627748c42b6d60a312cb692ac384e62883d381e05f29a96d174d34e87164d56"
+      "bytes": 21630,
+      "sha256": "681de88817820ea736b9b0fb89da26bb0b9ce6d290676b04537d26e6ff27f4c0"
     },
     "native-asr-setup-plan.lock.json": {
       "bytes": 12469,

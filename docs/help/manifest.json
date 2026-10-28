@@ -326,5 +326,11 @@
       "work-cloud-text-review"
     ],
     "limits": "V2 app and ChatGPT link defaults, existing native monitor, old grants unchanged, manual diagnostics collapsed. Local protocol/UI tests only; actual ordinary-chat production canary pending."
+  },
+  "normalSessionPreferenceReview": {
+    "date": "2026-10-28",
+    "status": "source-reviewed-candidate",
+    "updated": ["work-cloud-text-review"],
+    "limits": "Assistant access preferences use the normal signed-in app session; review and expiry remain. Unrelated credential, billing and source approvals retain their own controls. Publication and ordinary-chat canary pending."
   }
 }

@@ -1,0 +1,85 @@
+{
+  "kind": "automatic-mcp-cloud-compatible-release-v1",
+  "observedAtUTC": "2026-10-28T17:31:51.917416+00:00",
+  "commit": "f6ecf74334477e96cbff71c7502ce8293cf4dc5d",
+  "version": "0.1.0-alpha.20261028165515.gf6ecf7433447",
+  "ci": {
+    "runId": 40730704822,
+    "conclusion": "success",
+    "exactCommit": true
+  },
+  "backend": {
+    "published": true,
+    "cliExitCode": 0,
+    "finishAcknowledgedAtUTC": "2026-10-28T17:20:54.419Z",
+    "newInitiallyEmptyTables": 3,
+    "newIndexesOnNewTables": 11,
+    "rootTables": 95,
+    "rootIndexesIncludingSearch": 263,
+    "totalTablesWithComponents": 137,
+    "totalIndexesWithComponents": 297,
+    "populatedTableWalks": 0,
+    "existingIndexBackfills": 0,
+    "legacyRowsRemainValid": true,
+    "componentsAuthCronsChanged": false,
+    "activeLogSinks": 0,
+    "publicationTelemetryHoldRetained": true
+  },
+  "frontend": {
+    "deploymentId": "dpl_BKC6hrEHh7j6K98ViLYnpm7RiDnF",
+    "url": "https://scroll.companynerve.com",
+    "fixedBasicNormalQueue": true,
+    "buildMilliseconds": 48953,
+    "stagedProductionVerified": true,
+    "sameBuildPromoted": true,
+    "canonicalVersionMatched": true,
+    "normalDomainAssignmentRestoredAndUIChecked": true,
+    "bothRuntimeArchiveHashesMatched": true,
+    "newOneTimeSetupGuideVerified": true,
+    "actualPristinePostShowsAutomaticPanel": true,
+    "manualDiagnosticCollapsedAndUnmountedByDefault": true
+  },
+  "checks": {
+    "localVitestPassed": 1393,
+    "hostedSkipped": 3,
+    "nodeCases": 19,
+    "pythonCases": 88,
+    "windowsPlatformSkipped": 7,
+    "releaseGuardTests": 21,
+    "budgetGuardTests": 10,
+    "deterministicOfflinePreparations": 2,
+    "dependencyAdvisories": 0,
+    "stagedSourceSecretFindings": 0,
+    "compiledScanReviewedSdkDocumentationExamples": 2,
+    "compiledScanActualCredentialsDiscovered": 0
+  },
+  "budget": {
+    "cumulativeEUR": 12,
+    "planMaximumUSD": 1,
+    "additionalBackendPublicationCountApproved": true,
+    "actualBackendPublicationsUsed": 3,
+    "maximumBackendPublications": 3,
+    "includedBasicBuildsUsed": 2,
+    "maximumIncludedBasicBuilds": 2,
+    "lastAuthenticatedVercelUsageUSD": 17.68,
+    "usageCanLagOneHour": true,
+    "allPreviousHoldsRetained": true,
+    "noPaidAiApiOrAlternateFunding": true
+  },
+  "acceptance": {
+    "existingOriginalMcpConnectionStillReadsCurrentGrant": true,
+    "ordinaryChatAutomaticSourceCanaryCompleted": false,
+    "oneTimeV2PreferenceFreshAuthenticationPending": true,
+    "nativePilotPausedDuringSourceFreeReadiness": true,
+    "sourceJobStartedByThisRelease": false,
+    "reservedAndUnknownPostsUntouched": true,
+    "catalogEnabled": false,
+    "realPaidTwoAccountSharedReusePassed": false
+  },
+  "remaining": [
+    "owner one-time app-and-ChatGPT preference review and current monitor binding",
+    "actual ordinary ChatGPT MCP link canary and media/result verification",
+    "explicit verified content/provider/privacy sharing authority and genuine paid second-account cache acceptance",
+    "future contribution policy/completion hook, shared producer coalescing, remaining version-bound consumers and independent onboarding/latency"
+  ]
+}

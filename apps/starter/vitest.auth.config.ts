@@ -14,6 +14,7 @@ export default defineConfig({
     server: { deps: { inline: ["@workos-inc/authkit-nextjs"] } },
     include: [
       "apps/starter/auth-redirect.test.ts",
+      "apps/starter/high-risk-auth-redirect.test.ts",
       "apps/starter/billing-actions.test.ts",
       "apps/starter/product-errors.test.ts",
       "apps/starter/shared-refresh.test.ts",

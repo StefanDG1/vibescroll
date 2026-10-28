@@ -725,19 +725,22 @@ it.each([
   vi.stubEnv(key, key.startsWith("WORK_") ? "false" : "true");
   await expect(s.call()).rejects.toThrow();
 });
-it("requires fresh app authentication to install the new policy", async () => {
+it("uses the normal app session for an explicitly reviewed policy change", async () => {
   const s = await setup(false);
-  const stale = s.t.withIdentity({
+  const established = s.t.withIdentity({
     subject,
     auth_time: Math.floor(Date.now() / 1000) - 1000,
   });
   await expect(
-    stale.mutation(api.assistantGrants.save, {
+    established.mutation(api.assistantGrants.save, {
       ...s.grantArgs,
       cloudRequestPolicy: "explicit_per_source_v1",
       expectedVersion: 1,
     }),
-  ).rejects.toThrow(/Sign in again/);
+  ).resolves.toMatchObject({ version: 2 });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.personalAnalysis,
+  ).toBeUndefined();
 });
 it("binds the reviewed media policy and respects revocation", async () => {
   const s = await setup();

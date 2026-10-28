@@ -81,15 +81,12 @@ async function setup() {
     readerMembership,
   };
 }
-it("requires recent account authentication and exact selected versions; no source is moved, copied or processed", async () => {
+it("uses the normal account session and exact selected versions; no source is moved, copied or processed", async () => {
   const s = await setup();
   const old = s.t.withIdentity({
     subject: "grant-owner",
     auth_time: Math.floor(Date.now() / 1000) - 301,
   });
-  await expect(old.mutation(api.knowledgeGrants.save, s.args)).rejects.toThrow(
-    "Sign in again",
-  );
   await expect(
     s.owner.mutation(api.knowledgeGrants.save, {
       ...s.args,
@@ -97,7 +94,7 @@ it("requires recent account authentication and exact selected versions; no sourc
     }),
   ).rejects.toThrow("STALE_APPROVAL");
   const before = await s.t.run((ctx) => ctx.db.get(s.sourceId));
-  const grant = await s.owner.mutation(api.knowledgeGrants.save, s.args);
+  const grant = await old.mutation(api.knowledgeGrants.save, s.args);
   const page = await s.reader.query(api.knowledgeGrants.shared, {
     organizationId: s.recipientOrganizationId,
   });

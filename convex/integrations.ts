@@ -811,7 +811,10 @@ export const testKey = action({
     ctx,
     a,
   ): Promise<{ verified: boolean; availableModels: number }> => {
-    const actorId = await ctx.runQuery(api.jobs.authorizeCredential, a);
+    const actorId = await ctx.runQuery(api.jobs.authorizeCredential, {
+      ...a,
+      readOnly: true,
+    });
     const connection = await ctx.runQuery(internal.jobs.secret, {
       ...a,
       provider: "openai",

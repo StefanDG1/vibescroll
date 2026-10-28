@@ -571,7 +571,8 @@ textarea {
 .studio-list li + li {
   border-top: 1px solid var(--line);
 }
-.studio-list button {
+.studio-list button,
+.studio-list a {
   width: 100%;
   text-align: left;
   display: flex;
@@ -583,7 +584,8 @@ textarea {
   padding: 14px 8px;
   border-radius: 8px;
 }
-.studio-list button:hover {
+.studio-list button:hover,
+.studio-list a:hover {
   background: var(--panel);
 }
 .studio-list button > svg {
@@ -593,7 +595,8 @@ textarea {
 .studio-list button > svg:last-child {
   color: var(--subtle);
 }
-.studio-list button > span {
+.studio-list button > span,
+.studio-list a > span:not(.source-thumb) {
   flex: 1;
   min-width: 0;
 }

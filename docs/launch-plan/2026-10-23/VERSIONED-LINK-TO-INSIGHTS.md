@@ -16,6 +16,18 @@ Remaining V4/V5 work includes the one-time future-contribution policy and automa
 
 The owner's mobile screenshot exposed a remaining foreground diagnostic path. [ADR182](../../adr/182-automatic-mcp-cloud-link-default.md) adds a separately reviewed app-and-ChatGPT V2 default, dispatches ordinary MCP saves to the existing native Events monitor and collapses manual review under Advanced. Old app-only grants do not widen. After local/full Linux validation, publish together with the compatible candidate only within explicit publication-count authority. Then refresh the existing app's tools if cached, review the broader default once, bind the monitor to the current grant and test one ordinary ChatGPT link without a sending-chat runtime or per-post app review. Results must update the post and configured Work task. Do not promise automatic app selection or push into arbitrary originating chats.
 
+## Published controls checkpoint, 17:32 UTC
+
+The combined exact `f6ecf74334477e96cbff71c7502ce8293cf4dc5d` backend and frontend passed Linux CI, guarded publication, staged verification and same-build promotion. The production post screen now defaults to automatic setup and hides the manual diagnostic. The additional backend slot was explicitly approved within the existing envelope; all3 actual releases and2 included Basic builds are used. The ordinary-chat canary is still waiting for one fresh V2 preference review/current monitor binding, while source-free readiness is prepared. The catalog remains disabled, and shared rights/paid second-account acceptance and the remaining V4/V5 requirements above remain open. [Release evidence](../../operations/evidence/launch-20261028-automatic-mcp-cloud-release.json).
+
+## Latest owner direction: backend-first shared intelligence
+
+Read the mandatory [separate strategy and acceptance ledger](../../strategy/SHARED-INTELLIGENCE-MOAT.md). Routine saving, analysis, device/setup and permission checks must use the normal session; only explicitly high-risk actions keep fresh sign-in, with direct sign-in/back navigation. Replace routine internal grant/privacy ceremonies with supported defaults. Default eligible neutral analysis goes to the shared catalog automatically rather than an Advanced contribution card. Keep actual provider/content eligibility and source truth enforced by the service. No native provider token or successful extraction can be invented.
+
+Prioritize S1 normal-session audit and redirect, S2 supported automatic app/MCP authority and current native binding, S3 failed-run retry plus correct title/thumbnail and immutable candidates, S4 automatic catalog completion/shared hits/coalescing, S5 a separate metadata-only recent `/posts` API/page and canonical detail receipts, then S6 actual release/customer acceptance. The owner will handle later visual design; remove obsolete cards and put the necessary actions on the right pages. Preserve all saved data and protected/unknown attempts.
+
+S7-S9 track exact-version outcome feedback, blind A/B tests, model/effort/recipe comparison, useful-post trending/rankings, explainable recommendations and controlled analysis improvement against holdouts. They must remain in the roadmap, but do not block the useful V1 backend release. Requested model rank is not actual provider attestation or measured quality. No proposal acceptance/merge/popularity metric alone proves benefit.
+
 ## Establish the baseline
 
 Use these facts rather than older pending checkpoints:

@@ -277,7 +277,7 @@ it.each(["revoked", "gate", "selection"])(
 );
 
 it.each([false, true])(
-  "keeps manual video review closed by default with automatic setup ready=%s",
+  "removes obsolete manual video review when automatic setup is available, ready=%s",
   async (ready) => {
     const source = {
       ...queued,
@@ -301,7 +301,7 @@ it.each([false, true])(
     expect(html).toContain(
       ready ? "Analyze using Cloud defaults" : "Complete or resume Cloud setup",
     );
-    expect(html).toContain("Advanced: manual Cloud handoff");
+    expect(html).not.toContain("Advanced: manual Cloud handoff");
     expect(html).not.toContain("Review Work Cloud video");
     expect(html).not.toContain("Experimental Work Cloud video");
     expect(parent.strictCall).not.toHaveBeenCalled();

@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { mobileNavigationGroup } from "../apps/starter/lib/mobile-navigation";
 it("keeps detail and settings routes associated with their stable bottom destination", () => {
-  for (const view of ["library", "source", "shared"])
+  for (const view of ["library", "posts", "source", "shared"])
     expect(mobileNavigationGroup(view)).toBe("library");
   for (const view of [
     "projects",

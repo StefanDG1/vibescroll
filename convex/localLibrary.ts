@@ -10,7 +10,7 @@ import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
 import type { Id, Doc } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
-import { writeAccess, access, recentAuthentication, audit } from "./lib";
+import { writeAccess, access, audit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { personalAllowed } from "./lib/personalAccess";
 import { validateLocalRun } from "./lib/assistantIntake";
@@ -118,7 +118,6 @@ export const prepare = mutation({
       "owner",
       "admin",
     ]);
-    await recentAuthentication(ctx);
     ensure(
       personalAllowed(actor.subject) && a.useOwnPlan,
       "FORBIDDEN",

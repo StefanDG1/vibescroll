@@ -1,3 +1,4 @@
+import { recentAuthentication } from "./lib";
 import { isAssistantIdentity } from "../packages/policy/assistant";
 import { query } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
@@ -163,6 +164,7 @@ export const deleteAccount = mutation({
           fail("Transfer ownership or delete your organizations first.");
       }
     }
+    await recentAuthentication(ctx, "delete_account");
     await rememberDeletion(
       ctx,
       "account",

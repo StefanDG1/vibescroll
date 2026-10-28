@@ -969,7 +969,7 @@ export const selectRecommendation = mutation({
       "POLICY_BLOCKED",
       "Catalog publication is unavailable.",
     );
-    await recentAuthentication(ctx);
+    await recentAuthentication(ctx, "promote_catalog_recommendation");
     const { a, owner, review, reviewHash } = await recommendationReview(
       ctx,
       args.artifactId,

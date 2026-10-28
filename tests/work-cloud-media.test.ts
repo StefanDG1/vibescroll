@@ -593,7 +593,6 @@ it.each([
 );
 
 it.each([
-  "recent_auth",
   "rights",
   "role",
   "grant",
@@ -629,10 +628,7 @@ it.each([
     });
     const before = await s.t.run((ctx) => ctx.db.get(s.sourceId));
     await expect(
-      (change === "recent_auth" ? s.owner : s.freshOwner).mutation(
-        api.workCloudAnalysis.approve,
-        s.approval,
-      ),
+      s.owner.mutation(api.workCloudAnalysis.approve, s.approval),
     ).rejects.toThrow();
     expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(before);
   },

@@ -225,16 +225,13 @@ it("keeps Connect identities out of ordinary app queries, captures and account b
     (await s.t.run((ctx) => ctx.db.query("sources").collect())).length,
   ).toBe(1);
 });
-it("requires fresh owner review, current source versions and configured scopes without spending", async () => {
+it("requires reviewed current source versions and configured scopes without a recent-authentication timer or spending", async () => {
   const s = await setup();
   const old = s.t.withIdentity({
     subject,
     issuer: "https://api.workos.com",
     auth_time: Math.floor(Date.now() / 1000) - 301,
   });
-  await expect(old.mutation(api.assistantGrants.save, s.args)).rejects.toThrow(
-    "Sign in again",
-  );
   await expect(
     s.owner.mutation(api.assistantGrants.save, {
       ...s.args,
@@ -247,7 +244,7 @@ it("requires fresh owner review, current source versions and configured scopes w
       scopes: ["execution:write"],
     }),
   ).rejects.toThrow("INVALID_INPUT");
-  await s.owner.mutation(api.assistantGrants.save, s.args);
+  await old.mutation(api.assistantGrants.save, s.args);
   await expect(
     s.owner.mutation(api.assistantGrants.save, s.args),
   ).rejects.toThrow("STALE_APPROVAL");
@@ -328,7 +325,7 @@ it("keeps an explicitly reviewed all-library grant until revoked, including futu
     clock.mockRestore();
   }
 });
-it("retains timed expiry and fresh review, version and membership checks for access until revoked", async () => {
+it("retains timed expiry, explicit review, version and membership checks for access until revoked", async () => {
   const s = await setup();
   await expect(
     s.owner.mutation(api.assistantGrants.save, {
@@ -351,7 +348,7 @@ it("retains timed expiry and fresh review, version and membership checks for acc
         expectedVersion: 1,
         expiresAt: null,
       }),
-    ).rejects.toThrow("Sign in again");
+    ).resolves.toMatchObject({ version: 2 });
   } finally {
     clock.mockRestore();
   }
@@ -360,7 +357,7 @@ it("retains timed expiry and fresh review, version and membership checks for acc
   ).rejects.toThrow("STALE_APPROVAL");
   await s.owner.mutation(api.assistantGrants.save, {
     ...s.args,
-    expectedVersion: 1,
+    expectedVersion: 2,
     expiresAt: null,
   });
   await s.t.run(async (ctx) => {
@@ -1324,4 +1321,52 @@ it("projects a strict current private proposal only with both knowledge and sele
     coding_started: false,
     publication_started: false,
   });
+});
+
+it.each([undefined, 7 * 86400])(
+  "allows a valid normal app session with auth age %s to review assistant access",
+  async (age) => {
+    const s = await setup();
+    const normal = s.t.withIdentity({
+      subject,
+      issuer: "https://api.workos.com",
+      ...(age === undefined
+        ? {}
+        : { auth_time: Math.floor(Date.now() / 1000) - age }),
+    });
+    const grant = await normal.mutation(api.assistantGrants.save, s.args);
+    expect(grant.version).toBe(1);
+    expect(
+      await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+    ).toEqual([]);
+  },
+);
+it("still denies unsigned, assistant, inactive and read-only identities from changing grants", async () => {
+  const s = await setup();
+  await expect(s.t.mutation(api.assistantGrants.save, s.args)).rejects.toThrow(
+    "Sign in",
+  );
+  await expect(
+    s.assistant.mutation(api.assistantGrants.save, s.args),
+  ).rejects.toThrow("Sign in");
+  await s.t.run(async (ctx) => {
+    const membership = await ctx.db
+      .query("memberships")
+      .withIndex("by_org", (q) => q.eq("organizationId", s.organizationId))
+      .first();
+    await ctx.db.patch(membership!._id, { role: "viewer" });
+  });
+  await expect(
+    s.owner.mutation(api.assistantGrants.save, s.args),
+  ).rejects.toThrow("permission");
+  await s.t.run(async (ctx) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_subject", (q) => q.eq("subject", subject))
+      .unique();
+    await ctx.db.patch(user!._id, { status: "deleting" });
+  });
+  await expect(
+    s.owner.mutation(api.assistantGrants.save, s.args),
+  ).rejects.toThrow("Account unavailable");
 });

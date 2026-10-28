@@ -1,4 +1,8 @@
 "use client";
+import {
+  redirectForAuthentication,
+  SignInRedirect,
+} from "../lib/authentication";
 
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -178,6 +182,17 @@ export function PublicModeration() {
     try {
       await action();
     } catch (caught) {
+      if (
+        caught instanceof ModerationError &&
+        caught.code === "REAUTH_REQUIRED"
+      ) {
+        try {
+          redirectForAuthentication();
+        } catch (redirect) {
+          if (!(redirect instanceof SignInRedirect)) throw redirect;
+        }
+        return;
+      }
       setReports(null);
       setSelected(null);
       setInspection(null);

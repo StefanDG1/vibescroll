@@ -509,7 +509,8 @@
 .atlas-shell .choice-trigger,
 :root[data-app-theme] .choice-menu,
 .atlas-shell .capture-composer,
-.atlas-shell .studio-list button {
+.atlas-shell .studio-list button,
+.atlas-shell .studio-list a {
   background: var(--panel);
   color: var(--ink);
   border-color: var(--line);

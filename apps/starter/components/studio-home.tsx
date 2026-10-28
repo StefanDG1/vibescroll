@@ -150,9 +150,9 @@ export function StudioHome({
       <div className="studio-shelves">
         <section aria-labelledby="studio-knowledge">
           <div className="row spread">
-            <h2 id="studio-knowledge">Worth returning to</h2>
-            <Button variant="ghost" onClick={() => go("library")}>
-              Explore library
+            <h2 id="studio-knowledge">Recently added</h2>
+            <Button variant="ghost" onClick={() => go("posts")}>
+              All posts
               <ArrowRight size={16} aria-hidden="true" />
             </Button>
           </div>
@@ -183,7 +183,7 @@ export function StudioHome({
           {recent.length > 0 && (
             <p className="studio-coverage">
               Recent posts from the current page
-              {libraryNext ? ". More posts are in your library." : "."} These
+              {libraryNext ? ". More posts are on the Posts page." : "."} These
               are not full-library totals.
             </p>
           )}

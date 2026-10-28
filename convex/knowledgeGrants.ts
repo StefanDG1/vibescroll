@@ -3,7 +3,7 @@ import { mutation } from "./lib/projectedMutations";
 import type { QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { access, recentAuthentication, limit, audit } from "./lib";
+import { access, limit, audit } from "./lib";
 import { privateLibrary } from "./librarySpaces";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { ensure } from "../packages/policy";
@@ -179,7 +179,6 @@ export const save = mutation({
   },
   handler: async (ctx, a) => {
     const { actor } = await privateLibrary(ctx, a.organizationId);
-    await recentAuthentication(ctx);
     await limit(ctx, `team-grant:${a.organizationId}`, 10);
     const target = await access(ctx, a.recipientOrganizationId, [
       "owner",

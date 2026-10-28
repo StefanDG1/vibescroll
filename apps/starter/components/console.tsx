@@ -1,6 +1,10 @@
 "use client";
 import { useState, useEffect, useRef, useEffectEvent } from "react";
 import { useRouter } from "next/navigation";
+import {
+  redirectForAuthentication,
+  SignInRedirect,
+} from "../lib/authentication";
 import { usePolling } from "@/lib/use-polling";
 import { isCloudObservedMedia } from "../../../packages/social/contracts";
 import {
@@ -37,8 +41,6 @@ import {
   ShieldCheck,
   CreditCard,
   Plus,
-  FileText,
-  Link2,
   Video,
   Loader2,
   PanelLeftClose,
@@ -58,6 +60,9 @@ import { TeamKnowledgeSharing } from "./team-knowledge-sharing";
 import { SharedKnowledge } from "./shared-knowledge";
 import { PrivateLibrary } from "./private-library";
 import { StudioHome } from "./studio-home";
+import { RecentPosts } from "./recent-posts";
+import { PostThumbnail } from "./post-thumbnail";
+import { postThumbnailCandidates } from "../../../packages/sources/thumbnail";
 import { motion } from "motion/react";
 import { useInterfaceMotion } from "./motion-preference";
 import { mobileNavigationGroup } from "@/lib/mobile-navigation";
@@ -104,7 +109,13 @@ import {
 import type { ImportPreview } from "../../../packages/instagram-import";
 type Initial = {
   workspaceSlice?:
-    "source" | "library" | "connections" | "usage" | "projects" | "plans";
+    | "source"
+    | "library"
+    | "posts"
+    | "connections"
+    | "usage"
+    | "projects"
+    | "plans";
   compact?: boolean;
   privateLibrary?: boolean;
   sharedKnowledge?: { items: any[]; next: string | null };
@@ -128,6 +139,9 @@ type Initial = {
   };
   sources: any[];
   selectedSource?: any;
+  recentPosts?: import("convex/server").FunctionReturnType<
+    typeof import("../../../convex/_generated/api").api.posts.recent
+  >;
   selectedProposal?: any;
   categories?: {
     key: string;
@@ -196,43 +210,12 @@ const Button = ({
 );
 
 function SourceThumbnail({ source, demo }: { source: any; demo: boolean }) {
-  const frame =
-    (source.linkPreview?.assetId
-      ? { id: source.linkPreview.assetId, kind: "frame" }
-      : undefined) ??
-    sourceEvidenceFrames(source)[0] ??
-    (!isCloudObservedMedia(source.orderedMedia?.post) &&
-    source.personalMedia?.frames?.[0]
-      ? { id: source.personalMedia.frames[0].assetId, kind: "frame" }
-      : undefined);
-  const [failedId, setFailedId] = useState<string>(),
-    [loadedId, setLoadedId] = useState<string>();
-  const failed = Boolean(frame && failedId === frame.id),
-    loaded = Boolean(frame && loadedId === frame.id);
   return (
-    <span className="source-thumb" aria-hidden="true">
-      {!demo && frame && !failed && (
-        <Image
-          className={loaded ? "source-preview ready" : "source-preview"}
-          src={`/api/evidence/${encodeURIComponent(frame.id)}?inline=true`}
-          width={60}
-          height={76}
-          alt=""
-          unoptimized
-          loading="lazy"
-          onLoad={() => setLoadedId(frame.id)}
-          onError={() => setFailedId(frame.id)}
-        />
-      )}
-      {(!loaded || failed) &&
-        (source.kind === "text" ? (
-          <FileText size={24} strokeWidth={1.5} />
-        ) : source.kind === "upload" ? (
-          <Video size={24} strokeWidth={1.5} />
-        ) : (
-          <Link2 size={24} strokeWidth={1.5} />
-        ))}
-    </span>
+    <PostThumbnail
+      candidates={postThumbnailCandidates(source)}
+      kind={source.kind}
+      demo={demo}
+    />
   );
 }
 
@@ -308,7 +291,6 @@ export function Console({
     [noticeKind, setNoticeKind] = useState<"info" | "success" | "error">(
       "info",
     ),
-    [reauthReturnTo, setReauthReturnTo] = useState(""),
     [busy, setBusy] = useState(false),
     [libraryLoading, setLibraryLoading] = useState(
       (demo && demoState === "loading") ||
@@ -874,7 +856,6 @@ export function Console({
     setBusy(true);
     setNoticeKind("info");
     setNotice("");
-    setReauthReturnTo("");
     try {
       if (demo) {
         setNotice(
@@ -901,11 +882,7 @@ export function Console({
         );
       const body = await res.json();
       if (!res.ok) {
-        setReauthReturnTo(
-          body.code === "REAUTH_REQUIRED"
-            ? window.location.pathname + window.location.search
-            : "",
-        );
+        if (body.code === "REAUTH_REQUIRED") redirectForAuthentication();
         if (!demo)
           track("operation_failed", {
             operation,
@@ -987,8 +964,10 @@ export function Console({
       setNoticeKind("success");
       return body.result;
     } catch (e) {
-      setNoticeKind("error");
-      setNotice(e instanceof Error ? e.message : "The action failed.");
+      if (!(e instanceof SignInRedirect)) {
+        setNoticeKind("error");
+        setNotice(e instanceof Error ? e.message : "The action failed.");
+      }
       if (strict) throw e;
     } finally {
       setBusy(false);
@@ -1056,6 +1035,7 @@ export function Console({
         [
           "home",
           "library",
+          "posts",
           "projects",
           "improvements",
           "inbox",
@@ -1123,6 +1103,7 @@ export function Console({
   const nav = [
     ["home", "Home", Home],
     ["library", "Library", Library],
+    ["posts", "Posts", Video],
     ["projects", "Projects", GitBranch],
     ["improvements", "Improvements", FileCheck2],
     ["inbox", "Inbox", Inbox],
@@ -1156,7 +1137,7 @@ export function Console({
         </div>
         {demo && <p className="workspace-label">Demo workspace</p>}
         <nav aria-label="Application">
-          {nav.slice(0, 3).map(([key, title, Icon]) => (
+          {nav.slice(0, 4).map(([key, title, Icon]) => (
             <button
               type="button"
               key={key}
@@ -1270,7 +1251,7 @@ export function Console({
             {selected && (
               <Button
                 busy={busy}
-                onClick={() => go(view === "source" ? "library" : "proposals")}
+                onClick={() => go(view === "source" ? "posts" : "proposals")}
               >
                 Back to list
               </Button>
@@ -1280,15 +1261,6 @@ export function Console({
             message={notice}
             kind={noticeKind}
             onDismiss={() => setNotice("")}
-            action={
-              reauthReturnTo ? (
-                <a
-                  href={`/sign-in?reauth=true&returnTo=${encodeURIComponent(reauthReturnTo)}`}
-                >
-                  Sign in again
-                </a>
-              ) : undefined
-            }
           />
           {!accessAvailable ? (
             <section className="panel" role="alert">
@@ -1483,6 +1455,16 @@ export function Console({
                     busy={busy}
                   />
                 </>
+              )}
+              {view === "posts" && data.recentPosts && (
+                <RecentPosts
+                  key={organizationId}
+                  organizationId={organizationId}
+                  initialPage={data.recentPosts}
+                />
+              )}
+              {view === "posts" && !data.recentPosts && (
+                <output>Loading posts…</output>
               )}
               {view === "library" && librarySection === "posts" && (
                 <>
@@ -2448,8 +2430,8 @@ export function Console({
                     <p>
                       Provider charges are separate. The server encrypts this
                       credential; the browser does not retain it. Saving does
-                      not activate execution. Sign in again before saving or
-                      testing.
+                      not activate execution. A new sign-in is required only
+                      when saving a changed credential, not when testing.
                     </p>
                     <p>
                       Status:{" "}
@@ -3638,7 +3620,7 @@ export function SourceDetail({
     )
     .sort()
     .join("|");
-  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.personalAnalysis?.state}:${source.analysisSelectionRevision}:${source.pendingAnalysisAttemptId}:${source.sharedCloud?.recommendationRevision}:${source.sharedCloud?.notesUpdatedAt}:${source.analysisVersion?.id}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
+  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.linkPreview?.updatedAt}:${source.personalAnalysis?.state}:${source.analysisSelectionRevision}:${source.pendingAnalysisAttemptId}:${source.sharedCloud?.recommendationRevision}:${source.sharedCloud?.notesUpdatedAt}:${source.analysisVersion?.id}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
   const [retentionTime, setRetentionTime] = useState(Date.now);
   const retentionDeadline = Math.min(
     source.sourceRetentionUntil ?? Infinity,
@@ -3879,8 +3861,11 @@ export function SourceDetail({
         >
           <SourceThumbnail source={detail} demo={demo} />
           <span className="source-origin-copy">
-            <strong>Original source</strong>
-            <span>{detail.url}</span>
+            <strong>{postDisplayTitle(detail)}</strong>
+            {detail.linkPreview?.authorName && (
+              <span>{detail.linkPreview.authorName}</span>
+            )}
+            <span>Open original source</span>
           </span>
           <ArrowRight size={20} aria-hidden="true" />
         </a>
@@ -4921,32 +4906,34 @@ export function SourceDetail({
                   {cloudRequestError && <p role="alert">{cloudRequestError}</p>}
                 </section>
               )}
-              <details
-                className="panel"
-                onToggle={(event) =>
-                  setManualCloudOpen(event.currentTarget.open)
-                }
-              >
-                <summary>Advanced: manual Cloud handoff</summary>
-                <p>
-                  Use this only for a deliberate diagnostic. Normal automatic
-                  links do not need this review.
-                </p>
-                {manualCloudOpen && (
-                  <WorkCloudText
-                    sourceId={id(detail)}
-                    organizationId={org}
-                    generation={detail.generation}
+              {!detail.workCloudLinkSetup && (
+                <details
+                  className="panel"
+                  onToggle={(event) =>
+                    setManualCloudOpen(event.currentTarget.open)
+                  }
+                >
+                  <summary>Advanced: manual Cloud handoff</summary>
+                  <p>
+                    Use this only for a deliberate diagnostic. Normal automatic
+                    links do not need this review.
+                  </p>
+                  {manualCloudOpen && (
+                    <WorkCloudText
+                      sourceId={id(detail)}
+                      organizationId={org}
+                      generation={detail.generation}
 
-                    revision={detail.updatedAt}
-                    media={detail.kind === "url" && !detail.currentRevisionId}
+                      revision={detail.updatedAt}
+                      media={detail.kind === "url" && !detail.currentRevisionId}
 
-                    retentionUntil={detail.sourceRetentionUntil}
-                    call={strictCall}
-                    disabled={readOnly || detailLoading}
-                  />
-                )}
-              </details>
+                      retentionUntil={detail.sourceRetentionUntil}
+                      call={strictCall}
+                      disabled={readOnly || detailLoading}
+                    />
+                  )}
+                </details>
+              )}
             </>
           )}
 

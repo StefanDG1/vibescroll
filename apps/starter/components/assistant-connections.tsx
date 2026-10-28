@@ -132,7 +132,9 @@ function AssistantAccessEditor({
           response.redirected ||
           !response.headers.get("content-type")?.includes("application/json")
         )
-          throw Error("Reload Connections after signing in to review access.");
+          throw Error(
+            "Refresh Connections to check access. Sign in if your session has expired.",
+          );
         return (await response.json()).result;
       };
       const [access, projects] = await Promise.all([
@@ -163,7 +165,7 @@ function AssistantAccessEditor({
         setPageLoading(false);
         setAck("");
         setError(
-          "Access could not be checked. Reload Connections after signing in.",
+          "Access could not be checked. Refresh access, or sign in if your session has expired.",
         );
       }
     }
@@ -335,7 +337,7 @@ function AssistantAccessEditor({
       });
       if (!result)
         throw Error(
-          "Access was not saved. Complete the fresh sign-in prompt, reload, and review again.",
+          "Access was not saved. Refresh access and review the current settings again.",
         );
       setAck("");
       await load();
@@ -1138,15 +1140,8 @@ function AssistantAccessEditor({
                   . This replaces previous access.
                 </label>
                 <p className="fine">
-                  Saving needs a sign-in within five minutes.{" "}
-                  <a
-                    href={`/sign-in?reauth=true&returnTo=${encodeURIComponent(`/app/${organizationId}/connections`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Sign in again
-                  </a>
-                  , then return to this tab. Your selection stays here.
+                  Your current signed-in session is enough to save these
+                  preferences. You can change or turn off access here anytime.
                 </p>
                 {!projectDraftValid && (
                   <p className="fine">

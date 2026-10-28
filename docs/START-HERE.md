@@ -2,6 +2,10 @@
 
 Mode: how-to. Version: 1.0.0.
 
+## Mandatory current product direction
+
+Read [Shared intelligence and the VibeScroll moat](strategy/SHARED-INTELLIGENCE-MOAT.md) and [Versioned link to insights](launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) until their acceptance ledgers are complete. They contain the owner's latest backend-first priorities and supersede older routine permission/privacy ceremony where explicitly stated. Keep planned, locally tested and live claims separate.
+
 ## Establish the repository
 
 1. Read [Decisions](decisions.md).

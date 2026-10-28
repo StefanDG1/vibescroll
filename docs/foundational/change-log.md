@@ -1,8 +1,12 @@
 # Foundational document change log
 
+## F086: normal-session routine workflows, October 28
+
+The owner rejects repeated five-minute sign-in for normal permissions, saving, analysis and setup. [ADR183](../adr/183-normal-session-assistant-preferences.md) removes that hurdle from routine actions and retains it for the explicit high-risk actions. Those actions navigate directly through sign-in and back to the page without replaying the operation. The separate [shared-intelligence strategy](../strategy/SHARED-INTELLIGENCE-MOAT.md) preserves backend-first delivery, automatic eligible catalog reuse, safe retries, reliable post metadata and a separate recent Posts page. These changes are a locally tested candidate until the release record says otherwise. The owner's objection is not measured conversion evidence. Actual OAuth, roles, provider/funding authority, prices and audience remain unchanged.
+
 ## F085: ordinary ChatGPT links, October 28
 
-The owner expects the existing MCP app to use Cloud analysis by default without reviewing every video in the website. [ADR182](../adr/182-automatic-mcp-cloud-link-default.md) records the local V2 preference and native Events dispatch. Old app-only consent requires one review before broader use. Results return to the post and configured Work task; arbitrary-chat automatic selection or unsolicited completion is not claimed. Preserve the audience, prices, six beliefs and provider/privacy gates. Production acceptance of this ordinary-chat path remains pending.
+The owner expects the existing MCP app to use Cloud analysis by default without reviewing every video in the website. [ADR182](../adr/182-automatic-mcp-cloud-link-default.md) records the V2 preference and native Events dispatch, whose controls are now published at `f6ecf74`. Old app-only consent requires one review before broader use. Results return to the post and configured Work task; arbitrary-chat automatic selection or unsolicited completion is not claimed. Preserve the audience, prices, six beliefs and provider/privacy gates. Production acceptance of this ordinary-chat path remains pending.
 
 ## October 28: F083 versioned shared analysis
 

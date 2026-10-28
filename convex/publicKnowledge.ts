@@ -229,7 +229,6 @@ export const prepareEdition = mutation({
   },
   handler: async (ctx, a) => {
     enabled();
-    await recentAuthentication(ctx);
     const { source, actor } = await publicationSource(ctx, a.sourceId);
     ensure(
       source.generation === a.generation && source.updatedAt === a.revision,
@@ -307,7 +306,7 @@ export const publishEdition = mutation({
   },
   handler: async (ctx, a) => {
     enabled();
-    await recentAuthentication(ctx);
+    await recentAuthentication(ctx, "publish_private_edition");
     const edition = await ctx.db.get(a.id);
     ensure(edition, "SOURCE_UNAVAILABLE", "Publication is unavailable.");
     const { source, actor } = await publicationSource(ctx, edition!.sourceId);
@@ -662,7 +661,7 @@ export const publishCollection = mutation({
   },
   handler: async (ctx, a) => {
     enabled();
-    await recentAuthentication(ctx);
+    await recentAuthentication(ctx, "publish_public_collection");
     const row = await ctx.db.get(a.id);
     ensure(row, "SOURCE_UNAVAILABLE", "Collection unavailable.");
     await access(ctx, row!.organizationId, ["owner", "admin"]);
@@ -931,7 +930,6 @@ export const moderate = mutation({
   },
   handler: async (ctx, a) => {
     const actor = await moderator(ctx);
-    await recentAuthentication(ctx);
     const report = await ctx.db.get(a.reportId);
     ensure(report, "INVALID_INPUT", "Report unavailable.");
     if (a.action === "remove")

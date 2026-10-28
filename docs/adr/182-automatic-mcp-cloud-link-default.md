@@ -1,6 +1,6 @@
 # ADR 182: automatic Cloud intake from ordinary MCP chats
 
-Date: October 28, 2026. Status: locally implemented candidate, not yet published.
+Date: October 28, 2026. Status: controls published at `f6ecf74334477e96cbff71c7502ce8293cf4dc5d`; ordinary-chat production canary pending.
 
 ## Decision
 
@@ -17,3 +17,7 @@ The ordinary post view explains automatic setup. Its manual video handoff is laz
 VibeScroll must be available to the originating ChatGPT chat. This code cannot force app selection or unsolicited completion into an arbitrary originating chat. Results update the post and configured Work task. OAuth refresh, revocation, subscription limits and monitor readiness still apply; there is no forever-authentication promise.
 
 Isolated tests cover serialized MCP protocols 2025-11-25 and 2026-07-28 through authenticated HTTP into real Convex mutations, scope continuation, replay, save-only, old-grant preservation, monitor absence and closed-by-default manual UI. Full local and exact Linux checks must pass before publication. An actual ordinary-chat automatic production canary remains required. Existing provider/privacy/release gates, finite canary allowance, reserved source and cumulative budget remain unchanged.
+
+## Publication checkpoint
+
+Exact Linux CI and full local checks passed. The compatible backend and one fixed Basic production build were published and the same staged build promoted, with canonical identity and restored domain assignment verified. The actual normal post screen hides manual review by default. Existing V1 authority remains unchanged until the owner's one-time V2 review. Source-free readiness may proceed under the finite next-canary hold, but ordinary-chat automatic acceptance, independent customer onboarding and shared catalog enablement remain separate. See the [release receipt](../operations/evidence/launch-20261028-automatic-mcp-cloud-release.json).

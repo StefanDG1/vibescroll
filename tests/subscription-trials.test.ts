@@ -131,7 +131,7 @@ it("returns bounded results without modifying original analysis or charging a wa
   });
   expect(exported.page).toHaveLength(1);
 });
-it("requires personal access, consent, fresh authentication and same-workspace sources", async () => {
+it("requires personal access, consent and same-workspace sources using a normal session", async () => {
   const s = await setup();
   await expect(s.prepare({ useOwnPlan: false })).rejects.toThrow("FORBIDDEN");
   await expect(
@@ -156,7 +156,7 @@ it("requires personal access, consent, fresh authentication and same-workspace s
         effort: "low",
         useOwnPlan: true,
       }),
-  ).rejects.toThrow();
+  ).resolves.toBeDefined();
   vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", "[]");
   await expect(s.prepare()).rejects.toThrow("FORBIDDEN");
 });

@@ -1,7 +1,7 @@
 import { query, internalQuery } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
-import { access, writeAccess, audit, recentAuthentication, limit } from "./lib";
+import { access, writeAccess, audit, limit } from "./lib";
 import { requireInvoiceOperator } from "./lib/invoiceOperator";
 import { wallet } from "./product";
 import { pricing, ensure } from "../packages/policy";
@@ -313,7 +313,6 @@ export const submitReceipt = mutation({
   args: { id: v.id("invoiceTasks"), receipt: v.string() },
   handler: async (ctx, a) => {
     const actor = await requireInvoiceOperator(ctx);
-    await recentAuthentication(ctx);
     const task = await ctx.db.get(a.id);
     ensure(task, "NOT_FOUND", "Invoice task unavailable.");
     const reference = a.receipt.trim();

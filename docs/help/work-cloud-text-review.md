@@ -18,7 +18,7 @@ The sending chat needs no downloader or video runtime. Native Events deliver the
 
 Use your private library or an eligible team that you created and still own alone, a source you may process and the intended official Work Cloud connection. The team must have no active invitations. Its connection permissions are reviewed separately; posts stay in their existing library. GitHub, Docker Desktop and a paired computer are not required by this handoff. Your host's subscription and resource limits still apply. A model selection is a request; VibeScroll cannot attest the host's actual model, resource controls or usage.
 
-The connection needs **Read separately approved text or public video links and return private analysis**, `analysis:execute`, in both OAuth and the app's current grant. Existing read, save and local-request permissions do not include execution. Changing sensitive grants or approving work may require signing in again. Never paste credentials, bearer tokens or private configuration into a task.
+The connection needs **Read separately approved text or public video links and return private analysis**, `analysis:execute`, in both OAuth and the app's current grant. Existing read, save and local-request permissions do not include execution. Assistant preferences use your current signed-in session in the updated setup. An expired session needs sign-in; credentials and separately sensitive approvals retain their own checks. Never paste credentials, bearer tokens or private configuration into a task.
 
 ## Request a saved video from your Work Cloud chat
 

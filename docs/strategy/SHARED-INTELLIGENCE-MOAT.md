@@ -1,0 +1,73 @@
+# Shared intelligence, model quality and the VibeScroll moat
+
+Mode: explanation and standing product direction. Owner instruction: October 28, 2026. Status: required roadmap until the acceptance ledger below is complete. Read this document before planning or changing VibeScroll. Source: the owner's instructions in the ongoing link-to-insights conversation, including the later backend-first and simplified-authentication corrections. This is a product decision, not evidence that unimplemented features are live or that model quality, legal rights or customer value have been proved.
+
+## The product the owner wants
+
+Save a Reel or TikTok and get useful insights automatically. Routine saving, analysis, retry and permission checks use the normal signed-in session. VibeScroll should provision its own ordinary permissions and defaults automatically wherever the supported OAuth and account contract allows it. Do not add a second app permission ceremony after an existing MCP authorization when the verified scopes already cover the action. Actual provider authentication, subscription eligibility, supported native Events setup and funding remain real requirements; never invent a token or pretend an absent host is running.
+
+New sign-in belongs only to very high-risk changes, including deleting an account or an entire workspace, changing a paid-provider credential and deliberate external publication. When such a check is required, navigate directly to sign-in and return to the same page. Never replay deletion, payment or publication automatically after authentication. Remove the five-minute hurdle from routine app workflows and remove obsolete explanatory cards/buttons rather than layering another workaround over them.
+
+The shared catalog is the default destination for eligible neutral post analysis, not an Advanced privacy option or a routine per-post contribution request. Save creates or finds one canonical shared post, and a completed eligible analysis becomes a reusable immutable version. Users should not repeatedly approve internal analysis or catalog plumbing. The owner explicitly requests production shared reuse, not an indefinitely disabled demonstration. Keep actual provider/content/privacy eligibility enforceable by the service, with one clear product disclosure and the applicable account policy. Do not fabricate a provider licence or a successful extraction. Private account data, credentials, personal notes, repository context and personalized proposals are not neutral catalog content. Source failures, unknown attempts and takedowns cannot be exposed as ready shared analysis. Earlier per-source contribution dialogues are superseded as the intended normal product experience; existing technical gates must be resolved or reported, not hidden behind an invented success.
+
+Old videos need an easy Analyze again action, including failed examples. A known failed or unclaimed/cancelled attempt may receive one explicit new attempt under current authority and funding. Never reset or silently retry a claimed/unknown outcome. Ready posts can receive second, third and later candidate versions while the incumbent remains available. Preserve originals, immutable history, actual costs, comparison and rollback.
+
+Titles and thumbnails must be correct in each post view and recent-post list. Prefer verified native metadata and durable retained image assets. Update metadata before the long analysis when available. Missing retrieval must show an honest fallback, not a generated transcript or a permanently stale CDN image. Metadata lists must not load full transcripts, image bundles or analyses.
+
+Add a recent-posts page at `/app/<workspace>/posts`, separate from Library, with lazy metadata loading and links to `/app/<workspace>/posts/<post>`. Keep existing direct post pages and compatible old links. Recent posts also remain useful on Home. The owner will handle later visual redesign; prioritize backend contracts, route correctness, useful actions and removing obsolete cards. Do not spend this milestone redesigning the widget.
+
+## Why the shared database matters
+
+One permitted canonical post can reuse extraction, usable captions, transcript and sampled evidence across compatible analysis versions. A later save should reuse the best eligible cached version rather than repeat download, transcription and inference. A deliberate stronger-model run creates a candidate using compatible retained evidence where possible. Shared evidence needs independent ownership and retention so one user's personal deletion does not erase another authorized user's cache. Rights withdrawal and canonical takedown must still block access correctly.
+
+The owner decides which model and reasoning combinations are considered higher-tier candidates. Store that configuration as an explicit versioned quality policy. Newer release date, higher reasoning or a familiar model name is not a factual quality verdict. Preserve requested model/effort, host-reported execution, provider attestation status, extraction recipe, analysis recipe and evidence hashes separately. Current own-Cloud reports are not provider-attested model benchmarks.
+
+The defensible asset is a growing dataset linking source evidence, immutable insight versions and actual user outcomes. Its value is a hypothesis to test. A large copied-video store or an Elo chart alone does not prove a moat, exclusive rights, higher quality or willingness to pay.
+
+## Later experiments and learning
+
+Add blind pairwise A/B tests between compatible versions of the same post. Record the exact versions and exposure assignment before a preference or outcome. Preserve sticky cohorts, private pins, exclusions, explicit quality floors and a control. Never compare two different source populations and call the result a model improvement.
+
+Measure user preference separately from evidence quality and practical outcomes. Useful events include opening/reading an insight, saving it, accepting or rejecting a proposal, proceeding to implementation, accepting a resulting change and a later confirmed benefit. An accepted proposal, merged PR or popular post is not automatically a beneficial outcome. Record no-fit, already-implemented, incorrect, unsupported, not-actionable and negative outcomes too.
+
+Use those records to compare model families, model versions, reasoning settings and analysis recipes. Make an owner-controlled model ranking with sample counts, uncertainty, content/language slices, cost/latency and attestation limits. A lower-tier model may win on a particular task. Keep human preference, grounded correctness, usefulness and economics as distinct scores.
+
+Add ranking/trending views for useful posts and insights. Separate popularity from measured usefulness. Account for actual exposures, recency, repeated users and abuse so a feedback loop does not simply keep showing already-popular items. Recommendations should explain the source, why an insight fits, its uncertainty and the evidence or outcome behind the recommendation.
+
+Investigate why some insights perform better. Use an explicit feature taxonomy such as actionable steps, prerequisites, tradeoffs, evidence clarity, novelty, correctness and project applicability. Test changes to future analysis prompts/recipes against held-out examples and a frozen benchmark before broad promotion. Keep a control, audit model/prompt versions and support rollback. Do not let a self-generated score or engagement proxy automatically train the system to exaggerate claims.
+
+## Backend records and ownership
+
+Reuse the existing canonical catalog families/aliases, independent evidence, immutable analysis versions, personal imports and existing job/attempt model. Avoid a parallel catalog or duplicate blob store. Cache identity includes canonical content/revision, language, extraction/caption/ASR recipe, evidence/schema version and analysis recipe/model-policy version. A URL alone is not an unchanged-content fingerprint.
+
+One in-flight producer should serve equivalent requests. Reuse another completed authorized result freely within the policy, but do not pool subscriptions, charge the founder for another user's new work or transfer an active user's lease to someone else. Reconcile a failed/unknown producer before another expensive attempt. Funding and actual provider eligibility remain per user/run.
+
+Future feedback records must bind exact analysis version, insight ID, evidence revision, exposure/experiment and outcome type. Keep source-level outcomes, model evaluations and personal project outcomes distinguishable. Aggregate only the allowed neutral/consented signals; private code, notes, credentials and project context must not enter global ranking payloads.
+
+## Implementation order and acceptance ledger
+
+| Phase | Required outcome | Current acceptance |
+| --- | --- | --- |
+| S0 | Mandatory durable direction, updated grand plan and baseline preservation | This document and the linked plan are required; actual release evidence remains separate. |
+| S1 | Normal-session routine workflows; direct sign-in round trip only for explicit high-risk actions | Full routine-action audit and direct high-risk sign-in/back are locally implemented and checked. Production publication remains open. |
+| S2 | Supported default MCP/app permissions, native monitor binding, one automatic private link through actual insights | App/MCP controls are live at f6ecf74; broader default and latest canary are not accepted yet. |
+| S3 | Known-failure retry, candidate-only reanalysis, title/thumbnail persistence and direct-post receipts | Version history/rollback have private production evidence. Failed-retry and metadata acceptance need completion. |
+| S4 | Automatic eligible neutral completion, paid shared hit, in-flight coalescing, no per-post Advanced privacy ceremony | Core catalog is published but disabled. Automatic policy/completion, real eligible sharing and paid two-account acceptance remain open. |
+| S5 | Metadata-only recent-post API and separate `/posts` route, useful post actions in their proper pages | Dedicated `/posts` route and bounded metadata-only backend/API implemented locally, with existing indexed creation order, lazy pages and canonical detail links. Native-title selection and durable image fallback are locally tested. Production publication remains open. |
+| S6 | Production/no-GitHub/no-laptop customer journey, preserved data, accurate guide and release/rollback evidence | Private owner examples exist. Cold independent onboarding, latency and complete S2-S5 acceptance remain open. |
+| S7 | Version-bound feedback and blind A/B assignment, quality/outcome metrics and frozen holdouts | Later addition; do not block a useful S1-S6 V1 release. |
+| S8 | Trending/ranking, explainable recommendations and owner model/recipe benchmark with uncertainty | Later addition; depends on real S7 data and evaluated usefulness. |
+| S9 | Controlled recipe improvement loop and measured retention/value hypothesis | Later addition; no autonomous quality or business-success claim. |
+
+The detailed execution plan is [Versioned link to insights](../launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md). Read actual production/local distinctions in [implementation status](../implementation-status.md). Preserve the cumulative budget, fixed Basic/normal queue, reserved post, saved data, unknown attempts and actual provider/funding authority. A new product direction does not silently erase numeric release/build caps. Future agents must update this ledger and the detailed plan until each required phase is actually implemented and accepted.
+
+## Investigation record
+
+Primary sources read on October 28, 2026:
+
+- [Chatbot Arena research paper](https://arxiv.org/html/2403.04132v1) describes randomized anonymous pairwise comparisons and statistical ranking from user preferences. Application here: compare versions of the same source without model labels first, retain ties and report uncertainty. This supports an evaluation method, not a claim that Arena preference scores establish factual correctness or VibeScroll outcomes.
+- [HELM](https://arxiv.org/abs/2211.09110) evaluates models across scenarios and multiple metrics rather than one score. Application here: separate grounding, preference, practical outcomes, cost and latency, and compare compatible content/language slices. Do not reduce the owner model ranking to recency or one overall vote total.
+- [OpenAI evaluation best practices](https://developers.openai.com/api/docs/guides/evaluation-best-practices) recommends task-specific datasets, human calibration and comparative/pass-fail evaluation, and identifies position and verbosity bias in model judges. Application here: keep a frozen source-grounded benchmark and a held-out set, include failures/no-fit, and validate judge scores against real user/human labels before relying on them. No extra paid judge API is activated by this research.
+- [Google's Rules of ML](https://developers.google.com/machine-learning/guides/rules-of-ml), especially rules28-37, discusses training/serving skew, sampling and position-driven feedback loops. Application here: log what users actually saw, its position/version and assignment; clicks alone cannot establish that an insight is better. Keep ranking, exposure and later outcome records separate.
+
+Assessment: build shared reuse and exact version/outcome provenance first, then run small blind comparisons. This can create a useful dataset that another generic summarizer does not automatically have, but defensibility still depends on recurring users, permitted data, reliable labels and measured value. Ship S1-S6 without waiting for a large experiment engine. Collect the minimum compatible version/outcome identifiers early so S7 does not begin with untraceable historical clicks. Treat recipe changes as controlled candidates; do not automatically optimize future analysis against popularity or a self-generated score.

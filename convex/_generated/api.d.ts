@@ -113,6 +113,7 @@ import type * as pilotPaymentMaintenance from "../pilotPaymentMaintenance.js";
 import type * as planning from "../planning.js";
 import type * as privacy from "../privacy.js";
 import type * as product from "../product.js";
+import type * as posts from "../posts.js";
 import type * as publicKnowledge from "../publicKnowledge.js";
 import type * as sourceAcquisition from "../sourceAcquisition.js";
 import type * as sourceAcquisitionActions from "../sourceAcquisitionActions.js";
@@ -255,6 +256,7 @@ declare const fullApi: ApiFromModules<{
   planning: typeof planning;
   privacy: typeof privacy;
   product: typeof product;
+  posts: typeof posts;
   publicKnowledge: typeof publicKnowledge;
   sourceAcquisition: typeof sourceAcquisition;
   sourceAcquisitionActions: typeof sourceAcquisitionActions;

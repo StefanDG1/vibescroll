@@ -112,6 +112,26 @@ export async function workspaceData({
     });
     if (home.ready) return home;
   }
+  if (view === "posts") {
+    const [organization, recentPosts] = await Promise.all([
+      c.query(api.organizations.details, { organizationId }),
+      c.query(api.posts.recent, { organizationId }),
+    ]);
+    return {
+      workspaceSlice: "posts" as const,
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      recentPosts,
+      sources: [],
+      repositories: [],
+      proposals: [],
+      runs: [],
+      notifications: [],
+      usage: null,
+    };
+  }
   if (view === "library") {
     const [context, categories, aiPreference] = await Promise.all([
       c.query(api.product.libraryContext, { organizationId }),

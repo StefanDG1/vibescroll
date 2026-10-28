@@ -88,10 +88,11 @@ export const authorizeOwner = query({
   handler: (ctx, a) => access(ctx, a.organizationId, ["owner", "admin"]),
 });
 export const authorizeCredential = query({
-  args: org,
+  args: { ...org, readOnly: v.optional(v.literal(true)) },
   handler: async (ctx, a) => {
     const actor = await access(ctx, a.organizationId, ["owner"]);
-    await recentAuthentication(ctx);
+    if (!a.readOnly)
+      await recentAuthentication(ctx, "change_provider_credential");
     return actor.actor._id;
   },
 });

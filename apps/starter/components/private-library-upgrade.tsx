@@ -166,17 +166,6 @@ export function PrivateLibraryUpgradePanel({
       {error && (
         <p role="alert" className="error">
           {error}
-          {error.includes("Sign in again") && (
-            <>
-              {" "}
-              <Link
-                prefetch={false}
-                href={`/sign-in?reauth=true&returnTo=${encodeURIComponent(`/app/${organizationId}/team`)}`}
-              >
-                Sign in again to review this change
-              </Link>
-            </>
-          )}
         </p>
       )}
       {complete ? (

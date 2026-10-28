@@ -6,7 +6,7 @@ import {
   type MutationCtx,
 } from "./_generated/server";
 import type { Id, Doc } from "./_generated/dataModel";
-import { access, recentAuthentication, audit } from "./lib";
+import { access, audit } from "./lib";
 import { ensure } from "../packages/policy";
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
@@ -109,7 +109,6 @@ export const approve = mutation({
     const selected = await ctx.db.get(a.sourceId);
     ensure(selected, "SOURCE_UNAVAILABLE", "Source unavailable.");
     const auth = await access(ctx, selected.organizationId, ["owner"]);
-    await recentAuthentication(ctx);
     const c = await retainedSource(ctx, a.sourceId, a.generation, selected);
     ensure(
       workCloudMediaAllowed(auth.actor.subject) &&

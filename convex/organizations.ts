@@ -234,7 +234,6 @@ export const adoptPrivate = mutation({
   },
   handler: async (ctx, args) => {
     const a = await writeAccess(ctx, args.organizationId, ["owner"]);
-    await recentAuthentication(ctx);
     const now = Date.now();
     if (
       !Number.isSafeInteger(args.previewedAt) ||
@@ -502,6 +501,7 @@ export const remove = mutation({
       fail(
         "Cancel the subscription and refresh billing before deleting this organization.",
       );
+    await recentAuthentication(ctx, "delete_workspace");
     await rememberDeletion(ctx, "workspace", organizationId);
     await ctx.db.patch(organizationId, { status: "deleting" });
     await ctx.scheduler.runAfter(0, internal.maintenance.purgeOrganization, {

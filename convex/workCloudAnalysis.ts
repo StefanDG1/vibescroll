@@ -9,7 +9,7 @@ import {
 } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import type { Doc, Id } from "./_generated/dataModel";
-import { access, recentAuthentication, limit, audit } from "./lib";
+import { access, limit, audit } from "./lib";
 import {
   assistantClients,
   assistantGrantActive,
@@ -544,7 +544,6 @@ export const approve = mutation({
       "INVALID_INPUT",
       "Retention is explicit only for the media protocol.",
     );
-    await recentAuthentication(ctx);
     const grant = await selectedGrant(
       ctx,
       owned.source,

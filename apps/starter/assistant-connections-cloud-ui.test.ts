@@ -599,3 +599,24 @@ it("keeps a selectable setup message when browser clipboard permission is unavai
   expect(select).toHaveBeenCalledOnce();
   expect(f.call).not.toHaveBeenCalled();
 });
+
+it("uses the normal signed-in session without a five-minute sign-in instruction", async () => {
+  const f = await fixture();
+  f.configure();
+  checkbox(f.render(), cloudLabel).props.onChange({
+    target: { checked: true },
+  });
+  f.acknowledge();
+  expect(text(f.render())).toContain(
+    "Your current signed-in session is enough",
+  );
+  expect(text(f.render())).not.toContain("within five minutes");
+  expect(
+    elements(f.render()).some(
+      (node) =>
+        node.type === "a" && String(node.props.href).includes("reauth=true"),
+    ),
+  ).toBe(false);
+  await f.save();
+  expect(f.call).toHaveBeenCalledOnce();
+});

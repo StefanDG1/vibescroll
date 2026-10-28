@@ -5,7 +5,7 @@ import {
 import { query } from "./_generated/server";
 import { mutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
-import { access, audit, limit, recentAuthentication } from "./lib";
+import { access, audit, limit } from "./lib";
 import {
   assistantClients,
   assistantIssuer,
@@ -173,7 +173,6 @@ export const save = mutation({
       "admin",
       "member",
     ]);
-    await recentAuthentication(ctx);
     await limit(ctx, `assistant-grant:${actor._id}`, 10);
     const client = assistantClients().find((c) => c.id === a.clientId);
     ensure(

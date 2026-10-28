@@ -2,6 +2,10 @@
 
 Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/decisions.md), and the relevant implementation work package before changing code.
 
+## Current mandatory owner direction
+
+Until implemented and accepted, read [Shared intelligence and the VibeScroll moat](docs/strategy/SHARED-INTELLIGENCE-MOAT.md) and its [execution plan](docs/launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) before VibeScroll work. They preserve the October 28 backend-first direction, normal-session routine workflows, default shared reuse, failed-video retry, reliable metadata, separate recent-post routes and later experiments/model/outcome rankings. Update their acceptance ledgers; do not infer that planned capabilities are live.
+
 ## Build the specified product
 
 Build a web application first. Every library, proposal, approval, billing, and status workflow must work in a mobile browser. Installation of a desktop application is not a prerequisite. The optional runner exists only to execute authorized tasks on a paired computer.

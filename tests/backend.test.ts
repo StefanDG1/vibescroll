@@ -17,8 +17,14 @@ async function fixture() {
     email: "bob@example.test",
     name: "Bob",
   });
-  const alice = t.withIdentity({ subject: "alice" }),
-    bob = t.withIdentity({ subject: "bob" });
+  const alice = t.withIdentity({
+      subject: "alice",
+      auth_time: Math.floor(Date.now() / 1000),
+    }),
+    bob = t.withIdentity({
+      subject: "bob",
+      auth_time: Math.floor(Date.now() / 1000),
+    });
   const a = await alice.mutation(api.organizations.create, {
       name: "Organization A",
     }),

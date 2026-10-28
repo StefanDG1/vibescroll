@@ -421,6 +421,12 @@ export const tools = httpAction(async (ctx, request) => {
             Id<"analysisVersions"> | undefined,
         });
         break;
+      case "cancel_waiting_analysis_version":
+        value = await ctx.runMutation(api.analysisVersions.cancelWaiting, {
+          sourceId: input.args.sourceId as Id<"sources">,
+          attemptId: input.args.attemptId as Id<"analysisAttempts">,
+        });
+        break;
       case "draft_project_suggestion":
         value = await ctx.runMutation(
           internal.assistant.draftProjectSuggestion,

@@ -34,6 +34,7 @@ import {
   analysisCompareInput,
   versionSelection,
   analysisVersionRequest,
+  analysisCancelInput,
 } from "../contracts/analysis-versions";
 export function createKnowledgeHandler(
   invoke: (
@@ -357,6 +358,13 @@ export function createKnowledgeHandler(
             "Only when explicitly requested, queue a fresh private analysis of existing retained evidence with a stable operation key and current selection revision. Preserves the incumbent. Returns a new attemptId; claim/input/heartbeat/complete must all carry it. No downloader, ASR, frame upload, paid API or automatic publication. Inspect actual images via work_cloud_retained_frame before completion. New results require review before selection.",
             "analysis:request",
             analysisVersionRequest,
+            false,
+          );
+          register(
+            "cancel_waiting_analysis_version",
+            "Cancel only an explicitly selected, still-unclaimed retained-evidence request. Preserves the selected result. Cannot cancel or reset a running or unknown host task; stop that task separately and reconcile its outcome.",
+            "analysis:request",
+            analysisCancelInput,
             false,
           );
           register(

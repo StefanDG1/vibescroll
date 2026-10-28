@@ -401,7 +401,8 @@ export async function notifyVersionWaiting(
   source: Doc<"sources">,
   attempt: Doc<"analysisAttempts">,
 ) {
-  if (!eventsEnabled()) return;
+  if (!eventsEnabled()) return 0;
+  let queued = 0;
   const subscriptions = await ctx.db
     .query("assistantSubscriptions")
     .withIndex("by_actor_client", (q) =>
@@ -425,7 +426,10 @@ export async function notifyVersionWaiting(
           .eq("completedRevision", occurrence.completedRevision),
       )
       .unique();
-    if (existing) continue;
+    if (existing) {
+      queued++;
+      continue;
+    }
     const now = Date.now();
     const id = await ctx.db.insert("assistantDeliveries", {
       organizationId: source.organizationId,
@@ -442,7 +446,9 @@ export async function notifyVersionWaiting(
     await ctx.scheduler.runAfter(0, internal.assistantEventRuntime.deliver, {
       id,
     });
+    queued++;
   }
+  return queued;
 }
 export async function queueSourceCompletion(
   ctx: MutationCtx,

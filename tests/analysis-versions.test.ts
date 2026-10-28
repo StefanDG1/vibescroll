@@ -10,6 +10,68 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
+it("requires an app waiting subscription transactionally while allowing an authorized active MCP chat", async () => {
+  const s = await analysisVersionFixture(false);
+  await expect(s.request()).rejects.toThrow(/SETUP_REQUIRED/);
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("analysisAttempts")
+        .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+        .take(1),
+    ),
+  ).toEqual([]);
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.selectedAnalysisVersionId,
+  ).toBeUndefined();
+  expect(
+    await s.assistant.mutation(api.analysisVersions.request, {
+      sourceId: s.sourceId,
+      key: "active-chat-request",
+      configuration: s.config,
+      expectedSelectionRevision: 0,
+    }),
+  ).toMatchObject({ state: "queued" });
+});
+it("cancels only an unclaimed request and preserves the incumbent and unknown-work fence", async () => {
+  const s = await analysisVersionFixture();
+  const first = await s.request();
+  expect(
+    await s.owner.mutation(api.analysisVersions.cancelWaiting, {
+      sourceId: s.sourceId,
+      attemptId: first.attemptId,
+    }),
+  ).toEqual({ cancelled: true });
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.analysis).toEqual(
+    s.output,
+  );
+  const second = await s.request("new-request-after-cancel");
+  const claim = await s.assistant.mutation(internal.analysisVersions.dispatch, {
+    sourceId: s.sourceId,
+    attemptId: second.attemptId,
+    taskId: "claimed-before-cancel",
+    operation: "claim",
+  });
+  await expect(
+    s.owner.mutation(api.analysisVersions.cancelWaiting, {
+      sourceId: s.sourceId,
+      attemptId: second.attemptId,
+    }),
+  ).rejects.toThrow(/SOURCE_BUSY/);
+  await s.assistant.mutation(internal.analysisVersions.dispatch, {
+    sourceId: s.sourceId,
+    attemptId: second.attemptId,
+    taskId: "claimed-before-cancel",
+    leaseToken: claim.leaseToken,
+    operation: "fail",
+  });
+  await expect(
+    s.owner.mutation(api.analysisVersions.cancelWaiting, {
+      sourceId: s.sourceId,
+      attemptId: second.attemptId,
+    }),
+  ).rejects.toThrow(/SOURCE_BUSY/);
+});
 it("matches the actual Reel URL alias without accepting another post or an invalid locator", () => {
   const canonical = "https://www.instagram.com/p/De0mgVbtXE-/";
   expect(

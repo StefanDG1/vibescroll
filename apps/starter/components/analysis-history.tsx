@@ -161,9 +161,11 @@ export function AnalysisHistory({
       await load();
       onChange();
       return result;
-    } catch {
+    } catch (error) {
       setError(
-        "The change was not confirmed. Refresh history before trying again.",
+        error instanceof Error
+          ? error.message
+          : "The change was not confirmed. Refresh history before trying again.",
       );
     } finally {
       setBusy(false);
@@ -180,7 +182,12 @@ export function AnalysisHistory({
         before selecting it. You can return to any version while its evidence is
         retained.
       </p>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p role="alert">
+          {error}{" "}
+          <Link href="/help/work-cloud-text-review">Check Cloud setup</Link>.
+        </p>
+      )}
       {open && !history && !error && (
         <output>Loading version history...</output>
       )}
@@ -198,6 +205,20 @@ export function AnalysisHistory({
               Version {history.pending.number}: {history.pending.state}. Your
               selected result is preserved.
             </output>
+          )}
+          {history.pending?.state === "queued" && (
+            <button
+              className="secondary"
+              disabled={busy || disabled}
+              onClick={() =>
+                act("analysisCancelWaiting", {
+                  sourceId,
+                  attemptId: history.pending!.id,
+                })
+              }
+            >
+              Cancel waiting request
+            </button>
           )}
           {history.page.map((version) => (
             <article key={version.id}>

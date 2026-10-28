@@ -462,10 +462,15 @@ export async function requestRetainedAnalysis(
     pendingAnalysisAttemptState: "queued",
     nextAnalysisVersionNumber: number + 1,
   });
-  await notifyVersionWaiting(
+  const deliveries = await notifyVersionWaiting(
     ctx,
     (await ctx.db.get(source._id))!,
     (await ctx.db.get(attemptId))!,
+  );
+  ensure(
+    a.grant || deliveries > 0,
+    "SETUP_REQUIRED",
+    "Set up the current Cloud waiting-event monitor before requesting analysis from the app.",
   );
   await audit(
     ctx,
@@ -492,6 +497,55 @@ export const request = mutation({
     evidenceReused: v.boolean(),
   }),
   handler: requestRetainedAnalysis,
+});
+
+export const cancelWaiting = mutation({
+  args: { sourceId: v.id("sources"), attemptId: v.id("analysisAttempts") },
+  returns: v.object({ cancelled: v.literal(true) }),
+  handler: async (ctx, args) => {
+    const { source, actor } = await historySource(ctx, args.sourceId, true);
+    const attempt = await ctx.db.get(args.attemptId);
+    ensure(
+      attempt &&
+        attempt.sourceId === source._id &&
+        attempt.organizationId === source.organizationId &&
+        attempt.actor === actor._id,
+      "FORBIDDEN",
+      "This request is unavailable.",
+    );
+    if (attempt.state === "cancelled") return { cancelled: true as const };
+    ensure(
+      source.pendingAnalysisAttemptId === attempt._id &&
+        attempt.state === "queued" &&
+        !attempt.taskId &&
+        !attempt.leaseTokenHash &&
+        !attempt.consentId,
+      "SOURCE_BUSY",
+      "Only an unclaimed waiting request can be cancelled here. Stop claimed work in its Cloud task and reconcile its outcome.",
+    );
+    await ctx.db.patch(attempt._id, {
+      state: "cancelled",
+      updatedAt: Date.now(),
+    });
+    await ctx.db.patch(source._id, {
+      pendingAnalysisAttemptId: undefined,
+      pendingAnalysisAttemptState: undefined,
+    });
+    await settle(
+      ctx,
+      source.organizationId,
+      `analysisVersion:${attempt._id}`,
+      0,
+    );
+    await audit(
+      ctx,
+      source.organizationId,
+      actor._id,
+      "analysis_version_cancelled",
+      `${source._id}:${attempt._id}`,
+    );
+    return { cancelled: true as const };
+  },
 });
 
 async function executionContext(

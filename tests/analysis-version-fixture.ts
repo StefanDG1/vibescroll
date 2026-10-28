@@ -13,7 +13,7 @@ import { syntheticJpeg } from "./cloud-frame-fixture";
 import { createHash } from "node:crypto";
 
 const modules = import.meta.glob("../convex/**/*.ts");
-export async function analysisVersionFixture(withEvents = false) {
+export async function analysisVersionFixture(withEvents = true) {
   const subject = "user_01234567890123456789012345",
     clientId = "client_01234567890123456789012345";
   const scopes = [

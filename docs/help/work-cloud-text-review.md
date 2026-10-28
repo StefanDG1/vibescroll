@@ -20,8 +20,8 @@ The experimental limit is six new source requests per hour. Repeating the identi
 
 For a completed Cloud video with retained evidence, open **Analysis versions** on its post page. History loads when you open it.
 
-1. Review the current result and retention. Choose **Analyze again** with a model and reasoning effort supported by your own Cloud task. This reuses the saved transcript and screenshots, uses your subscription and spends 0 VibeScroll credits.
-2. Keep the current result while the candidate runs. The configured monitor needs the current setup instructions for both new posts and approved reanalysis requests. If you set up an older save-only monitor, update that same Work task using **Set up ChatGPT** in Connections. Reuse the existing connection; a supported plugin rescan updates its tools without creating another app or expanding scopes.
+1. Check Cloud setup first. The same Work task must monitor both new posts and approved reanalysis requests. If you set up an older save-only monitor, update it using **Set up ChatGPT** in Connections. Reuse the existing connection; a supported plugin rescan updates its tools without creating another app or expanding scopes. Wait for the task to confirm Monitoring.
+2. Review the current result and retention, then choose **Analyze again** with a model and reasoning effort supported by your own Cloud task. This reuses the saved transcript and screenshots, uses your subscription and spends 0 VibeScroll credits. Keep the current result while the candidate runs.
 3. Open **Review version** when the candidate returns. Inspect its claims, quoted evidence and retained screenshots. **Compare with selected version** reports differences; it does not certify that a newer model is better.
 4. Choose **Use version** to select the result you prefer. Choose an earlier retained version to roll back. Selection and rollback start no analysis, download or transcription.
 

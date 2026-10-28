@@ -8,6 +8,7 @@ const operations = {
   analysisCompare: ["query", api.analysisVersions.compare],
   analysisSelect: ["mutation", api.analysisVersions.select],
   analysisReanalyze: ["mutation", api.analysisVersions.request],
+  analysisCancelWaiting: ["mutation", api.analysisVersions.cancelWaiting],
   analysisEnroll: ["mutation", api.analysisVersions.enroll],
   previewPrivateAdoption: ["query", api.organizations.previewPrivateAdoption],
   adoptPrivateLibrary: ["mutation", api.organizations.adoptPrivate],

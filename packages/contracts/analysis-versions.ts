@@ -61,6 +61,10 @@ export const analysisCompareInput = z.strictObject({
   beforeId: identifier,
   afterId: identifier,
 });
+export const analysisCancelInput = z.strictObject({
+  sourceId: identifier,
+  attemptId: identifier,
+});
 export const analysisVersionOperations = [
   z.strictObject({
     operation: z.literal("analysis_history"),
@@ -81,6 +85,10 @@ export const analysisVersionOperations = [
   z.strictObject({
     operation: z.literal("request_analysis_version"),
     args: analysisVersionRequest,
+  }),
+  z.strictObject({
+    operation: z.literal("cancel_waiting_analysis_version"),
+    args: analysisCancelInput,
   }),
 ] as const;
 

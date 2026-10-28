@@ -1,5 +1,7 @@
 # Simple setup, persistent results and proposal feedback
 
+Also read [One Cloud assistant per user](ONE-CLOUD-ASSISTANT-PER-USER.md). The owner now prefers one named VibeScroll Assistant task per user, one short setup request, reuse of an existing monitor and accurate Open/Resume status. They are pasting the current message now and explicitly defer this redesign until later. The current long prompt and task-picker readiness issue remain implementation facts; the simpler flow is planned.
+
 Mode: standing owner direction and implementation plan. October 28, 2026. Status: required until implemented and accepted. These requirements steer the ongoing shared-database work; they do not replace it. The owner supplied production screenshots showing redundant Cloud controls and overloaded connection cards.
 
 ## Setup and defaults

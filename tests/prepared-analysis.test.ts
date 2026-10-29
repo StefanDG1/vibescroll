@@ -152,6 +152,107 @@ async function retain(s: Awaited<ReturnType<typeof fixture>>, runId: any) {
   return { prepared, evidenceId };
 }
 
+it("keeps a source-scoped immutable transcript response after failure and strips provider metadata", async () => {
+  const s = await fixture(),
+    { runId } = await s.begin();
+  const response = {
+    text: "Returned speech",
+    language: "en",
+    durationInSeconds: 10,
+    segments: [{ text: "Returned speech", startSecond: 0, endSecond: 10.003 }],
+  };
+  await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId,
+    kind: "asr_output",
+    receipt: {
+      ...response,
+      providerMetadata: { ignored: "not transcript data" },
+    },
+  });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId,
+    code: "INVALID_EVIDENCE",
+  });
+  const status = await s.owner.query(api.preparedAnalysis.status, { runId });
+  expect(status.receipt.asr_output).toEqual(response);
+  await expect(
+    s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+      runId,
+      kind: "asr_output",
+      receipt: { ...response, text: "Changed speech" },
+    }),
+  ).rejects.toThrow(/APPROVAL_STALE/);
+  await expect(
+    s.t
+      .withIdentity({ subject: "user_foreign_synthetic" })
+      .query(api.preparedAnalysis.status, { runId }),
+  ).rejects.toThrow();
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.analysis).toEqual(
+    s.output,
+  );
+});
+
+it("allows explicit retry of returned rejected ASR while preserving its hold and incumbent; timeouts stay blocked", async () => {
+  const s = await fixture(),
+    { runId } = await s.begin();
+  await s.t.mutation(internal.preparedAnalysis.claim, { runId });
+  await s.t.mutation(internal.preparedAnalysis.progress, {
+    runId,
+    stage: "transcribing",
+  });
+  vi.setSystemTime(Date.now() + 2500);
+  const asr = {
+    model: "microsoft/mai-transcribe-2",
+    provider: "azure",
+    startedAt: Date.now() - 2000,
+    completedAt: Date.now(),
+    providerSettledUsd: null,
+  };
+  await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId,
+    kind: "preparation",
+    receipt: { stopAcknowledged: true },
+  });
+  await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId,
+    kind: "asr",
+    receipt: asr,
+  });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId,
+    code: "INVALID_EVIDENCE",
+  });
+  const failed = await s.owner.query(api.preparedAnalysis.status, { runId });
+  expect(failed.state).toBe("failed");
+  expect(failed.receipt.asr).toEqual(asr);
+  // The previously deployed implementation called this same returned failure
+  // unknown. Reconciliation changes execution state, never its receipts/holds.
+  await s.t.run((ctx) => ctx.db.patch(runId, { state: "unknown" }));
+  expect(
+    await s.t.mutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+      runId,
+    }),
+  ).toBe(true);
+  const retry = await s.owner.mutation(api.preparedAnalysis.begin, {
+    ...s.args,
+    key: "explicit-second-preparation",
+  });
+  expect(retry.runId).not.toBe(runId);
+  await s.t.mutation(internal.preparedAnalysis.claim, { runId: retry.runId });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId: retry.runId,
+    code: "PROVIDER_TIMEOUT",
+  });
+  await expect(
+    s.t.mutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+      runId: retry.runId,
+    }),
+  ).rejects.toThrow(/COST_RECONCILIATION_REQUIRED/);
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.analysis).toEqual(
+    s.output,
+  );
+});
+
 function output(
   s: Awaited<ReturnType<typeof fixture>>,
   attemptId: string,

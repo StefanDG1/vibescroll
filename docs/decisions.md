@@ -1,5 +1,9 @@
 # Product decisions
 
+## October29: returned ASR evidence and explicit preparation retry
+
+[ADR194](adr/194-returned-transcription-evidence-and-retry.md) retains bounded private ASR responses before timing validation and separates known returned preparation failure from unknown inference. Receipts/financial holds and selected results remain intact. A retry remains explicit and bounded; no timeout reset, automatic fallback or shared-publication authority follows.
+
 ## October 29: requested-post cache, full-library add-on and individual Pro teams
 
 [ADR193](adr/193-requested-posts-catalog-addon-and-individual-pro-teams.md) records the latest direction: Pro cache reuse applies to requested posts, full-library browsing is a separate add-on/toggle with an owner admin concession, and each member has their own Pro and credits. Preserve precise preparation/analysis quote arithmetic and round the final settled total once. This supersedes older unrestricted-catalog packaging, not existing balances or contracts. Local implementation is not production acceptance.

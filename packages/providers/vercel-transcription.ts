@@ -1,34 +1,15 @@
-import { z } from "zod";
 import { createHash } from "node:crypto";
 import { ensure } from "../policy";
 import { readResponseBytes } from "./binary";
+import {
+  apiTranscriptResponse,
+  transcriptDiagnostics,
+} from "../contracts/transcription";
 
 export const preparedAsrModel = "microsoft/mai-transcribe-2" as const;
-const responseSchema = z.object({
-  text: z.string().max(60000),
-  language: z.string().min(1).max(40).nullable().optional(),
-  durationInSeconds: z
-    .number()
-    .finite()
-    .nonnegative()
-    .max(601)
-    .nullable()
-    .optional(),
-  segments: z
-    .array(
-      z.object({
-        text: z.string(),
-        startSecond: z.number(),
-        endSecond: z.number(),
-      }),
-    )
-    .max(240)
-    .default([]),
-  warnings: z.array(z.unknown()).max(20).optional(),
-});
 
 export function normalizedApiTranscript(value: unknown, durationMs: number) {
-  const result = responseSchema.parse(value);
+  const result = apiTranscriptResponse.parse(value);
   const segments = result.segments.map((s, i) => ({
     id: `speech-${i + 1}`,
     text: s.text.trim(),
@@ -65,6 +46,7 @@ export async function transcribePreparedAudio(
     apiKey: string;
     fetch?: typeof fetch;
     onReceipt?: (receipt: Record<string, unknown>) => Promise<void>;
+    onTranscript?: (response: unknown) => Promise<void>;
   },
 ) {
   ensure(
@@ -131,7 +113,15 @@ export async function transcribePreparedAudio(
     "INVALID_EVIDENCE",
     "Transcription response exceeded its bound.",
   );
+  const raw = JSON.parse(new TextDecoder().decode(bytes));
   const receipt = {
+    responseBytes: bytes.byteLength,
+    responseSha256: createHash("sha256").update(bytes).digest("hex"),
+    diagnostics: transcriptDiagnostics(raw, durationMs),
+    generationId:
+      typeof raw.providerMetadata?.gateway?.generationId === "string"
+        ? raw.providerMetadata.gateway.generationId.slice(0, 100)
+        : null,
     model: preparedAsrModel,
     provider: "azure",
     startedAt,
@@ -143,10 +133,10 @@ export async function transcribePreparedAudio(
     providerSettledUsd: null,
   };
   await options.onReceipt?.(receipt);
-  const result = normalizedApiTranscript(
-    JSON.parse(new TextDecoder().decode(bytes)),
-    durationMs,
-  );
+  // Commit the bounded private response before coordinate validation.
+  // A validator fix can reuse returned speech without another ASR request.
+  await options.onTranscript?.(apiTranscriptResponse.parse(raw));
+  const result = normalizedApiTranscript(raw, durationMs);
   return {
     ...result,
     provenance: {

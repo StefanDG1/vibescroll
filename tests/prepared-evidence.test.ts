@@ -7,6 +7,10 @@ import {
   normalizedApiTranscript,
   transcribePreparedAudio,
 } from "../packages/providers/vercel-transcription";
+import {
+  apiTranscriptResponse,
+  transcriptDiagnostics,
+} from "../packages/contracts/transcription";
 
 const base = {
   requestedCanonical: "https://www.instagram.com/reel/ABCdef12345/",
@@ -156,4 +160,74 @@ it("dispatches transcription once and preserves ambiguous failure instead of ret
     }),
   ).rejects.toThrow(/Timed out/);
   expect(requests).toHaveLength(2);
+});
+
+it("retains a bounded private response before rejecting invalid timing, without another dispatch", async () => {
+  const writes: string[] = [],
+    requests: string[] = [];
+  let saved: unknown, diagnostics: any;
+  const raw = {
+    text: "Retained returned speech",
+    language: "en",
+    durationInSeconds: 10,
+    segments: [
+      { text: "Retained returned speech", startSecond: 0, endSecond: 10.003 },
+    ],
+    providerMetadata: { gateway: { generationId: "synthetic-generation" } },
+  };
+  await expect(
+    transcribePreparedAudio(new Uint8Array(100), 10000, 0.01, {
+      apiKey: "test-key-only-not-a-credential",
+      fetch: async (url) => {
+        requests.push(String(url));
+        return requests.length === 1
+          ? Response.json({
+              data: [
+                {
+                  id: "microsoft/mai-transcribe-2",
+                  type: "transcription",
+                  pricing: {
+                    transcription_duration_cost_per_second: "0.00002778",
+                  },
+                },
+              ],
+            })
+          : Response.json(raw);
+      },
+      onReceipt: async (r) => {
+        writes.push("receipt");
+        diagnostics = r.diagnostics;
+      },
+      onTranscript: async (r) => {
+        writes.push("transcript");
+        saved = r;
+      },
+    }),
+  ).rejects.toThrow(/INVALID_EVIDENCE/);
+  expect(requests).toHaveLength(2);
+  expect(writes).toEqual(["receipt", "transcript"]);
+  expect(saved).toEqual(apiTranscriptResponse.parse(raw));
+  expect(saved).not.toHaveProperty("providerMetadata");
+  expect(diagnostics).toMatchObject({
+    schemaValid: true,
+    segmentCount: 1,
+    endOverflowMs: 3,
+  });
+});
+
+it("diagnoses malformed provider output without recording transcript text in diagnostics", () => {
+  const d = transcriptDiagnostics(
+    {
+      text: "private returned words",
+      segments: [
+        { text: "private returned words", startSecond: "bad", endSecond: 4 },
+      ],
+    },
+    10000,
+  );
+  expect(d).toMatchObject({
+    schemaValid: false,
+    issues: [{ path: "segments.0.startSecond" }],
+  });
+  expect(JSON.stringify(d)).not.toContain("private returned words");
 });

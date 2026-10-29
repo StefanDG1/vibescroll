@@ -1,5 +1,7 @@
 # Deliver insights from reusable prepared evidence
 
+First hosted attempt, October29: Sandbox preparation35.465s and successful MAI ASR1.904s were measured, but subsequentINVALID_EVIDENCE stopped the run before Muse. The original selected result/catalog remain unchanged. Exact failure condition is unproved because raw ASR coordinates were not retained. [Receipt](../../operations/evidence/launch-20261029-prepared-media-first-attempt.json). [ADR194](../../adr/194-returned-transcription-evidence-and-retry.md) adds private response/diagnostic retention and narrow returned-failure reconciliation before another live attempt. Whole-flow comparison remains unaccepted. Test policy is disabled and all holds remain.
+
 The latest [saved-post/catalog/team direction](../../strategy/POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md) is mandatory: base cache reuse for requested posts, separate full-library browsing add-on/toggle, each member's own Pro/credits, preparation quotes and final-only credit rounding. Keep this acceptance sequence aligned with that plan.
 
 Mode: how-to. Owner direction: October 29, 2026. Status: local implementation candidate; hosted comparison and release pending. No provider purchase or billing product is authorized.

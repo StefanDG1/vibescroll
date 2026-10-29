@@ -1,5 +1,11 @@
 # Implementation status
 
+## October29: hosted preparation measured; comparison not yet accepted
+
+The first Muse-path test used the permitted existing TikTok on406051f. Request-to-failure was40.547s. Actual Sandbox preparation took35.465s: metadata14.279s, download20.963s, decode23.539s, transfer33.113s, then acknowledged VM shutdown. MAI/Azure ASR returned in1.904s client time; Gateway shows1.50s/USD0.0021. Settled charges/deletion remain unverified. Validation stopped withINVALID_EVIDENCE while transcribing. The raw response was not retained, so the exact condition is unproved. Muse/new native comparison were not dispatched. [Attempt receipt](operations/evidence/launch-20261029-prepared-media-first-attempt.json).
+
+Progress updated through authenticated subscriptions without refresh. Existing title/thumbnail preclude a cold-preview timing claim. Incumbent generation, selected version, summary and insights remain unchanged/published. Test policy is disabled; all holds remain. The owner authorizes failed/queued/unanalyzed test posts and retaining good results. Preserve active/unresolved work and the specifically reserved post. [ADR194](adr/194-returned-transcription-evidence-and-retry.md) adds private immutable ASR response/diagnostic retention and narrow known-returned-failure reconciliation. Focused tests passed13 cases; this candidate is not deployed and does not prove the first failure's cause.
+
 ## October29: catalog browsing and individual-Pro backend published
 
 Website/backend406051f are live, version0.1.0-alpha.20261029144052.g406051fd87ab, deploymentdpl_G7D8JUwQZMu6h3zqBWXMJGhxwHnq. Exact Linux CI40893948000 and full local checks passed. The backend finish acknowledged publication, then a local summary guard rejected dependency-module accounting. Independent provider-source review and a read-only comparison proved all347 deployed root modules, including178 dependencies, match. No repeat publication occurred. Actual prediction scanned/backfilled no existing table; only empty mediaPreparations initialized four indexes. The original failed receipt/hold remains. [Production evidence](operations/evidence/launch-20261029-catalog-teams-production.json).

@@ -123,6 +123,16 @@ export const run = internalAction({
                     { runId, kind: "asr", receipt },
                   );
                 },
+                onTranscript: async (receipt) => {
+                  await ctx.runMutation(
+                    internal.preparedAnalysis.recordReceipt,
+                    {
+                      runId,
+                      kind: "asr_output",
+                      receipt,
+                    },
+                  );
+                },
               },
             )
           : Promise.resolve({
@@ -155,7 +165,7 @@ export const run = internalAction({
           ensure(
             metadata.size === frame.bytes.byteLength &&
               metadata.type?.split(";")[0] === "image/jpeg",
-            "INVALID_EVIDENCE",
+            "PREPARED_IMAGE_STORAGE_MISMATCH",
             "Stored image size or type changed.",
           );
           return {

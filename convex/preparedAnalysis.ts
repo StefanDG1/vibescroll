@@ -32,6 +32,7 @@ import { admitCloudMediaJob } from "./lib/workCloudAdmission";
 import { freezeAnalysisBaseline } from "./lib/analysisHistory";
 import { postDisplayTitle } from "../packages/sources/display";
 import { postThumbnailCandidates } from "../packages/sources/thumbnail";
+import { apiTranscriptResponse } from "../packages/contracts/transcription";
 
 const policySchema = z.strictObject({
   id: z.string().min(8).max(80),
@@ -143,7 +144,17 @@ export async function queuePreparedComparison(
   );
   ensure(
     policy.executor !== "gateway" ||
-      !prior.some((r) => r.executor === "gateway"),
+      !prior.some(
+        (r) =>
+          r.executor === "gateway" &&
+          !(
+            r.state === "failed" &&
+            knownReturnedPreparationFailure(
+              { ...r, state: r.receipt?.failure?.stage },
+              r.receipt?.failure?.code,
+            )
+          ),
+      ),
     "QUOTA_EXCEEDED",
     "The single approved Muse comparison is already reserved.",
   );
@@ -724,18 +735,24 @@ export const recordReceipt = internalMutation({
     kind: v.union(
       v.literal("preparation"),
       v.literal("asr"),
+      v.literal("asr_output"),
       v.literal("analysis"),
     ),
     receipt: v.any(),
   },
   returns: v.null(),
   handler: async (ctx, { runId, kind, receipt }) => {
-    const c = await current(ctx, runId),
-      text = canonicalJson(receipt);
+    const c = await current(ctx, runId);
+    // This private, source-scoped response survives validation failure. Strip
+    // transport/provider metadata before retaining transcript content.
+    const value =
+      kind === "asr_output" ? apiTranscriptResponse.parse(receipt) : receipt;
+    const text = canonicalJson(value);
     ensure(
       receipt &&
         typeof receipt === "object" &&
-        text.length <= 10000 &&
+        new TextEncoder().encode(text).byteLength <=
+          (kind === "asr_output" ? 500000 : 10000) &&
         !containsSecret(text),
       "INVALID_EVIDENCE",
       "Use a bounded sanitized provider receipt.",
@@ -747,11 +764,36 @@ export const recordReceipt = internalMutation({
         "A received provider receipt is immutable.",
       );
     await ctx.db.patch(runId, {
-      receipt: { ...c.run.receipt, [kind]: receipt },
+      receipt: { ...c.run.receipt, [kind]: value },
     });
     return null;
   },
 });
+
+function knownReturnedPreparationFailure(
+  run: Doc<"mediaPreparations">,
+  code?: string,
+) {
+  const receipt = run.receipt;
+  return (
+    run.executor === "gateway" &&
+    run.state === "transcribing" &&
+    ["INVALID_EVIDENCE", "PREPARED_IMAGE_STORAGE_MISMATCH"].includes(
+      code ?? "",
+    ) &&
+    receipt?.preparation?.stopAcknowledged === true &&
+    receipt.asr?.model === "microsoft/mai-transcribe-2" &&
+    receipt.asr.provider === "azure" &&
+    Number.isSafeInteger(receipt.asr.startedAt) &&
+    Number.isSafeInteger(receipt.asr.completedAt) &&
+    receipt.asr.completedAt >= receipt.asr.startedAt &&
+    receipt.asr.startedAt >= run.createdAt &&
+    receipt.asr.completedAt <= Date.now() &&
+    !receipt.analysis &&
+    !run.versionId &&
+    !run.attemptId
+  );
+}
 
 export const fail = internalMutation({
   args: { runId: v.id("mediaPreparations"), code: v.optional(v.string()) },
@@ -763,8 +805,13 @@ export const fail = internalMutation({
         code && /^[A-Z_]{3,60}$/.test(code)
           ? code
           : "PREPARATION_OUTCOME_UNCONFIRMED";
+      // Returned, rejected ASR is a known failed preparation, not a still-running
+      // analysis. Its financial hold/receipt remains until actual reconciliation.
+      const state = knownReturnedPreparationFailure(c.run, safeCode)
+        ? "failed"
+        : "unknown";
       await ctx.db.patch(runId, {
-        state: "unknown",
+        state,
         updatedAt: Date.now(),
         receipt: {
           ...c.run.receipt,
@@ -776,13 +823,43 @@ export const fail = internalMutation({
           ...c.source.personalMedia,
           version: "service-preparation-progress-v1",
           runId,
-          stage: "unknown",
+          stage: state,
           executor: c.run.executor,
           updatedAt: Date.now(),
         },
       });
     }
     return null;
+  },
+});
+
+export const reconcileReturnedFailure = internalMutation({
+  args: { runId: v.id("mediaPreparations") },
+  returns: v.boolean(),
+  handler: async (ctx, { runId }) => {
+    const c = await current(ctx, runId),
+      failure = c.run.receipt?.failure;
+    if (c.run.state === "failed") return true;
+    ensure(
+      c.run.state === "unknown" &&
+        failure?.stage === "transcribing" &&
+        knownReturnedPreparationFailure(
+          { ...c.run, state: failure.stage },
+          failure.code,
+        ),
+      "COST_RECONCILIATION_REQUIRED",
+      "Only a returned, rejected preparation with a stopped VM can be reconciled here.",
+    );
+    await ctx.db.patch(runId, { state: "failed", updatedAt: Date.now() });
+    if (c.source.personalMedia?.runId === runId)
+      await ctx.db.patch(c.source._id, {
+        personalMedia: {
+          ...c.source.personalMedia,
+          stage: "failed",
+          updatedAt: Date.now(),
+        },
+      });
+    return true;
   },
 });
 

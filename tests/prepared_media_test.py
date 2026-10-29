@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import wave
 
 MEDIA = Path(__file__).parents[1] / 'packages/media'
 sys.path.insert(0, str(MEDIA))
@@ -58,6 +59,10 @@ class PreparedMediaTests(unittest.TestCase):
                 else:
                     self.assertEqual(manifest['audio'], 'audio.wav')
                     self.assertTrue((root / 'audio.wav').read_bytes().startswith(b'RIFF'))
+                    with wave.open(str(root / 'audio.wav'), 'rb') as pcm:
+                        self.assertEqual((pcm.getnchannels(), pcm.getsampwidth(), pcm.getframerate()), (1, 2, 16000))
+                        # AAC padding can decode beyond the MP4's media timeline.
+                        self.assertLessEqual(pcm.getnframes(), math.ceil(manifest['durationSeconds'] * 16000) + 1)
 
     def test_missing_media_is_rejected_without_a_manifest(self):
         with tempfile.TemporaryDirectory() as directory:

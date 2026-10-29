@@ -1,5 +1,11 @@
 # Implementation status
 
+## October29: returned-ASR diagnostics live; decoder boundary reproduced and corrected locally
+
+Backend98b3b8e is deployed after exact CI40903753028, full offline checks and22 release guards. Actual12-component/138-table/301-index prediction required zero scans/backfills and changed no schema/index/auth/cron. No website build ran; website406051f remains live. The first rejected preparation was narrowly reconciled to failed, with its ASR receipt and financial hold preserved. No model/unknown inference was reset.
+
+The second fresh preparation retained the actual private ASR response. It has one ordered segment ending74328ms, provider duration74330ms and source duration74302ms. Validation rejected the26ms overflow before Muse. [ADR195](adr/195-source-bounded-pcm-before-asr.md) fixes real PCM extraction at the source duration. An owned3second AAC regression fails on the old decoder at48298 samples and passes after trimming. Strict transcript/citation validation is unchanged. The owner approved two more fresh passes, four total, within the sameUSD0.50/EUR14 limits. The corrected decoder is local; no successful Muse/native comparison is claimed yet. Policies were disabled after both tests. Good existing results and all holds remain.
+
 ## October29: hosted preparation measured; comparison not yet accepted
 
 The first Muse-path test used the permitted existing TikTok on406051f. Request-to-failure was40.547s. Actual Sandbox preparation took35.465s: metadata14.279s, download20.963s, decode23.539s, transfer33.113s, then acknowledged VM shutdown. MAI/Azure ASR returned in1.904s client time; Gateway shows1.50s/USD0.0021. Settled charges/deletion remain unverified. Validation stopped withINVALID_EVIDENCE while transcribing. The raw response was not retained, so the exact condition is unproved. Muse/new native comparison were not dispatched. [Attempt receipt](operations/evidence/launch-20261029-prepared-media-first-attempt.json).

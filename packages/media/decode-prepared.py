@@ -69,7 +69,9 @@ def prepare():
         run(['ffmpeg', '-nostdin', '-v', 'error', '-threads', '2',
              '-protocol_whitelist', 'file', '-i', str(source), '-vn',
              '-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le',
-             '-t', '600', str(ROOT / 'audio.wav')], 45)
+             # AAC packet padding can decode past the container timeline.
+             # Bound real PCM before ASR instead of altering returned timestamps.
+             '-t', str(duration), str(ROOT / 'audio.wav')], 45)
         assert (ROOT / 'audio.wav').stat().st_size <= 19_500_000
         output['audio'] = 'audio.wav'
     video_ms = duration_ms

@@ -253,6 +253,52 @@ it("allows explicit retry of returned rejected ASR while preserving its hold and
   );
 });
 
+it("enforces the expanded four-preparation limit even when every ASR response is a known rejection", async () => {
+  const s = await fixture();
+  const policy = JSON.parse(process.env.PREPARED_MEDIA_ALPHA_JSON!);
+  vi.stubEnv(
+    "PREPARED_MEDIA_ALPHA_JSON",
+    JSON.stringify({ ...policy, maximumRuns: 4 }),
+  );
+  for (let i = 0; i < 4; i++) {
+    const { runId } = await s.owner.mutation(api.preparedAnalysis.begin, {
+      ...s.args,
+      key: `four-preparation-${i}`,
+    });
+    await s.t.mutation(internal.preparedAnalysis.claim, { runId });
+    await s.t.mutation(internal.preparedAnalysis.progress, {
+      runId,
+      stage: "transcribing",
+    });
+    vi.setSystemTime(Date.now() + 2500);
+    await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+      runId,
+      kind: "preparation",
+      receipt: { stopAcknowledged: true },
+    });
+    await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+      runId,
+      kind: "asr",
+      receipt: {
+        model: "microsoft/mai-transcribe-2",
+        provider: "azure",
+        startedAt: Date.now() - 1000,
+        completedAt: Date.now(),
+      },
+    });
+    await s.t.mutation(internal.preparedAnalysis.fail, {
+      runId,
+      code: "INVALID_EVIDENCE",
+    });
+  }
+  await expect(
+    s.owner.mutation(api.preparedAnalysis.begin, {
+      ...s.args,
+      key: "fifth-preparation-blocked",
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+});
+
 function output(
   s: Awaited<ReturnType<typeof fixture>>,
   attemptId: string,

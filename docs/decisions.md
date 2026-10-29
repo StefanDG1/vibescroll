@@ -1,5 +1,9 @@
 # Product decisions
 
+## October29: source-bounded PCM
+
+[ADR195](adr/195-source-bounded-pcm-before-asr.md) trims decoded PCM to the actual source duration before ASR, preserving strict returned timing validation. Actual retained response and an owned AAC regression establish the failure. The owner approves four total fresh comparison passes within the existing allowance, retaining all earlier holds/results.
+
 ## October29: returned ASR evidence and explicit preparation retry
 
 [ADR194](adr/194-returned-transcription-evidence-and-retry.md) retains bounded private ASR responses before timing validation and separates known returned preparation failure from unknown inference. Receipts/financial holds and selected results remain intact. A retry remains explicit and bounded; no timeout reset, automatic fallback or shared-publication authority follows.

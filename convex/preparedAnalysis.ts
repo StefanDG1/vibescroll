@@ -38,7 +38,7 @@ const policySchema = z.strictObject({
   id: z.string().min(8).max(80),
   subject: z.string(),
   canonical: z.string().url(),
-  maximumRuns: z.number().int().min(1).max(2),
+  maximumRuns: z.number().int().min(1).max(4),
   maximumApiUsd: z.number().min(0.02).max(0.05),
   expiresAt: z.number().int(),
   contributorAllowed: z.literal(true),
@@ -135,7 +135,7 @@ export async function queuePreparedComparison(
     .withIndex("by_actor_policy", (q) =>
       q.eq("actor", actor._id).eq("policyId", policy.id),
     )
-    .take(3);
+    .take(5);
   ensure(
     prior.length < policy.maximumRuns &&
       !prior.some((r) => !["ready", "failed"].includes(r.state)),

@@ -1,6 +1,6 @@
 # ADR196: supported Muse schema and retained-evidence retry
 
-October29,2026. Status: local correction; hosted acceptance pending.
+October29,2026. Status: deployed at8f0435a; optional-mode assumption superseded by [ADR197](197-gateway-strict-schema-and-prepared-save-reuse.md). The live retry still returned HTTP400 through Gateway, with confirmed zero inference/cost. Preserve this failed result; it is not a successful model comparison.
 
 Backend809668e passed exact CI40906454557 and compatible publication with no schema/index changes, table scans or backfills. The third fresh hosted preparation confirms the audio boundary fix: the retained ASR segment ends at74302ms against the74302ms source, with zero overflow. Its real images and transcript were saved independently of analysis. The selected original version remains unchanged.
 

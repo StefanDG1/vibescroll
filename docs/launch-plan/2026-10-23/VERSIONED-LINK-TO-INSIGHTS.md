@@ -1,5 +1,7 @@
 # Release the versioned link-to-insights flow
 
+The8f0435a optional-schema correction is live but still rejected by Gateway with zero inference/cost. [ADR197](../../adr/197-gateway-strict-schema-and-prepared-save-reuse.md) derives a stricter supported provider schema and reuses exact prepared inputs for the native app-Save comparison. This next candidate remains local and preserves all existing shared/native results.
+
 October29 prepared-route checkpoint: backend809668e is deployed, and a fresh hosted preparation retains real images and zero-overflow ASR. Muse's subsequent zero-token optional-schema rejection is isolated; the supported-mode correction and finite retained retry are described in [ADR196](../../adr/196-muse-optional-schema-and-retained-retry.md). Full prepared API/native acceptance remains open. Existing native successful versions/shared cache stay intact.
 
 October29 production checkpoint406051f: owner full-catalog browsing/toggle, metadata-only listings, detail and image denial/restoration passed. Individual-Pro teams and version-bound sharing are deployed with isolated acceptance. The same original native Assistant was resumed with unchanged instructions/subscriptions and now reports automatic analysis enabled. [Receipt](../../operations/evidence/launch-20261029-catalog-teams-production.json). Managed/API shared publication, precise settlement and hosted comparison remain open. All monetary/data gates remain; check budgets before spending batches or material changes.

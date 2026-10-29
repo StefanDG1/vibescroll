@@ -14,6 +14,29 @@ import { readResponseBytes } from "./binary";
 
 export const preparedInsightModel = "meta/muse-spark-1.3-contributor" as const;
 
+// Gateway's Meta route enforces the strict subset even when strict=false.
+// Requiring our valid optional fields is a compatible subset of the app schema.
+export function preparedInsightProviderSchema() {
+  const schema = z.toJSONSchema(analysisVersionOutput);
+  const visit = (value: unknown) => {
+    if (!value || typeof value !== "object") return;
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    const node = value as Record<string, unknown>;
+    if (
+      node.type === "object" &&
+      node.properties &&
+      typeof node.properties === "object"
+    )
+      node.required = Object.keys(node.properties);
+    Object.values(node).forEach(visit);
+  };
+  visit(schema);
+  return schema;
+}
+
 export async function analyzePreparedEvidence(args: {
   sourceId: string;
   attemptId: string;
@@ -131,10 +154,8 @@ export async function analyzePreparedEvidence(args: {
           type: "json_schema",
           json_schema: {
             name: "vibescroll_analysis",
-            // Meta accepts optional properties in its normalized schema mode.
-            // Our application still validates the complete result and citations.
-            strict: false,
-            schema: z.toJSONSchema(analysisVersionOutput),
+            strict: true,
+            schema: preparedInsightProviderSchema(),
           },
         },
       }),

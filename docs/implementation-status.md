@@ -1,5 +1,11 @@
 # Implementation status
 
+## October29: Gateway adapter rejects optional fields; strict subset and Save reuse prepared
+
+Backend8f0435a is live after full local checks, exact CI40911019227,22 guards and actual unchanged-schema zero-scan/backfill publication. Its explicit retained retry returned HTTP400 with the same missing-required-icon error even with strict=false. Actual official Gateway generation lookup confirms both rejected Muse requests used zero tokens and zero total/upstream inference cost. No successful new Muse output is claimed.
+
+[ADR197](adr/197-gateway-strict-schema-and-prepared-save-reuse.md) derives a fully required provider schema without weakening application/citation validation. The local candidate also permits one distinctly funded second correction after fresh zero-inference proof, and an automatic app Save consuming the same successful prepared evidence through the existing native Assistant. The latter uses no new Sandbox/ASR/media copy, making the model inputs identical. This correction is not deployed yet; earlier results and all holds remain.
+
 ## October29: PCM correction live; Muse schema rejection isolated
 
 Backend809668e passed exact CI40906454557 and22 actual release guards with zero scans/backfills and unchanged schema/index/auth/cron. Website406051f remains live. The third fresh preparation retained real screenshots and a transcript whose final segment ends at74302ms, exactly the source duration, with zero overflow. The audio correction therefore passed its hosted boundary check. No incumbent analysis was replaced.

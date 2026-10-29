@@ -312,6 +312,7 @@ export const retryRejectedGateway = internalAction({
     runId: v.id("mediaPreparations"),
     key: v.string(),
     generationId: v.string(),
+    maximumApiUsd: v.optional(v.union(v.literal(0.02), v.literal(0.03))),
   },
   returns: v.null(),
   handler: async (ctx, a): Promise<null> => {
@@ -355,7 +356,12 @@ export const retryRejectedGateway = internalAction({
     );
     const claimed = await ctx.runMutation(
       internal.preparedAnalysis.claimGatewayRetry,
-      { runId: a.runId, key: a.key, generation: record.data },
+      {
+        runId: a.runId,
+        key: a.key,
+        generation: record.data,
+        ...(a.maximumApiUsd ? { maximumApiUsd: a.maximumApiUsd } : {}),
+      },
     );
     if (!claimed) return null;
     try {
@@ -396,7 +402,7 @@ export const retryRejectedGateway = internalAction({
         prepared: input.prepared,
         frames,
         apiKey,
-        maximumUsd: 0.03,
+        maximumUsd: input.maximumApiUsd,
         contributorAllowed: input.contributorAllowed,
         onReceipt: async (receipt) => {
           await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
@@ -408,7 +414,10 @@ export const retryRejectedGateway = internalAction({
         onRejection: async (receipt) => {
           await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
             runId: a.runId,
-            kind: "analysis_rejection",
+            kind:
+              input.retryOrdinal === 2
+                ? "analysis_retry_rejection"
+                : "analysis_rejection",
             receipt,
           });
         },

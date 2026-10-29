@@ -47,6 +47,7 @@ const policySchema = z.strictObject({
   expiresAt: z.number().int(),
   contributorAllowed: z.literal(true),
   executor: z.enum(["gateway", "work_cloud"]),
+  reuseEvidenceFromRunId: z.string().min(1).max(100).optional(),
 });
 
 const rejectedGeneration = z.object({
@@ -67,7 +68,7 @@ function gatewayDeadline(run: Doc<"mediaPreparations">) {
   const retry = run.receipt?.gatewayRetry;
   return retry?.state === "claimed" &&
     retry.evidenceId === run.evidenceId &&
-    retry.maximumApiUsd === 0.03 &&
+    [0.02, 0.03].includes(retry.maximumApiUsd) &&
     Number.isSafeInteger(retry.claimedAt) &&
     retry.claimedAt >= run.createdAt &&
     Number.isSafeInteger(retry.deadline) &&
@@ -234,6 +235,34 @@ export async function queuePreparedComparison(
     "SOURCE_BUSY",
     "The previous preparation is still unresolved.",
   );
+  const reuseRun =
+    policy.executor === "work_cloud" && policy.reuseEvidenceFromRunId
+      ? prior.find((r) => r._id === policy.reuseEvidenceFromRunId)
+      : null;
+  let reuseEvidence;
+  if (policy.reuseEvidenceFromRunId) {
+    ensure(
+      reuseRun?.state === "ready" &&
+        reuseRun.evidenceId &&
+        reuseRun.versionId &&
+        reuseRun.sourceId === source._id &&
+        reuseRun.generation === source.generation,
+      "SOURCE_UNAVAILABLE",
+      "Use an explicitly selected successful preparation for this exact source.",
+    );
+    const version = await ctx.db.get(reuseRun.versionId);
+    ensure(
+      version?.state === "ready" && version.evidenceId === reuseRun.evidenceId,
+      "SOURCE_UNAVAILABLE",
+      "The completed preparation version changed.",
+    );
+    reuseEvidence = await preparedEvidenceForSource(
+      ctx,
+      source,
+      reuseRun.evidenceId,
+    );
+    await verifyRetainedAssets(ctx, source, reuseEvidence);
+  }
   const id = await ctx.db.insert("mediaPreparations", {
     organizationId: source.organizationId,
     sourceId: source._id,
@@ -243,25 +272,48 @@ export async function queuePreparedComparison(
     generation: source.generation,
     canonical: privateCloudMediaIdentity(source.canonical).url,
     executor: policy.executor,
-    state: "queued",
+    state: reuseEvidence ? "evidence_ready" : "queued",
     createdAt: now,
     updatedAt: now,
     deadline: now + 900000,
     maximumApiUsd: policy.maximumApiUsd,
     ...(grant ? { grantId: grant._id, grantVersion: grant.version } : {}),
-    stages: [{ stage: "queued", at: now }],
+    ...(reuseEvidence
+      ? {
+          evidenceId: reuseEvidence._id,
+          receipt: {
+            reusedPreparation: {
+              runId: reuseRun!._id,
+              evidenceId: reuseEvidence._id,
+              preparationHash: reuseEvidence.extractionPreparationHash,
+              at: now,
+            },
+          },
+        }
+      : {}),
+    stages: [
+      { stage: "queued", at: now },
+      ...(reuseEvidence ? [{ stage: "evidence_ready", at: now }] : []),
+    ],
   });
   await ctx.db.patch(source._id, {
     personalMedia: {
       ...source.personalMedia,
       version: "service-preparation-progress-v1",
       runId: id,
-      stage: "queued",
+      stage: reuseEvidence ? "evidence_ready" : "queued",
       executor: policy.executor,
       updatedAt: now,
     },
   });
-  await ctx.scheduler.runAfter(0, internal.preparedMedia.run, { runId: id });
+  if (reuseEvidence)
+    await ctx.scheduler.runAfter(
+      0,
+      internal.preparedAnalysis.queueSubscription,
+      { runId: id },
+    );
+  else
+    await ctx.scheduler.runAfter(0, internal.preparedMedia.run, { runId: id });
   await ctx.scheduler.runAfter(900000, internal.preparedAnalysis.expire, {
     runId: id,
   });
@@ -567,7 +619,13 @@ export const finishGateway = internalMutation({
     });
     ensure(
       a.receipt?.model === "meta/muse-spark-1.3-contributor" &&
-        a.receipt.rateEstimateUsd <= c.run.maximumApiUsd,
+        Number.isFinite(a.receipt.rateEstimateUsd) &&
+        a.receipt.rateEstimateUsd >= 0 &&
+        a.receipt.rateEstimateUsd <=
+          Math.min(
+            c.run.maximumApiUsd,
+            c.run.receipt?.gatewayRetry?.maximumApiUsd ?? c.run.maximumApiUsd,
+          ),
       "COST_RECONCILIATION_REQUIRED",
       "The Gateway receipt exceeds its funded run.",
     );
@@ -598,7 +656,7 @@ export const finishGateway = internalMutation({
           protocol: "gateway-analysis-v1",
           model: a.receipt.model,
           effort: "medium",
-          structuredOutputMode: "meta-normalized-json-schema-v1",
+          structuredOutputMode: "gateway-meta-all-properties-required-v1",
           instructions: preparedAnalysisInstructions,
           outputSchema: z.toJSONSchema(analysisVersionOutput),
         }),
@@ -782,6 +840,7 @@ export const recordReceipt = internalMutation({
       v.literal("asr_output"),
       v.literal("analysis"),
       v.literal("analysis_rejection"),
+      v.literal("analysis_retry_rejection"),
     ),
     receipt: v.any(),
   },
@@ -929,12 +988,7 @@ async function retryGatewayContext(
     "Use this owner's active, explicitly funded retained-evidence Gateway request.",
   );
   const retry = c.run.receipt?.gatewayRetry;
-  if (retry) {
-    ensure(
-      retry.key === key,
-      "APPROVAL_STALE",
-      "This retained retry already has another operation key.",
-    );
+  if (retry?.key === key) {
     if (!claimed) return { ...c, existing: true as const };
     ensure(
       retry.state === "claimed" &&
@@ -950,7 +1004,10 @@ async function retryGatewayContext(
         c.run.receipt?.failure?.stage === "analyzing" &&
         c.run.receipt.failure.code === "PROVIDER_ERROR" &&
         !c.run.receipt.analysis &&
-        !c.run.versionId,
+        !c.run.versionId &&
+        (!retry ||
+          (!c.run.receipt.gatewayRetryHistory?.length &&
+            c.run.receipt.analysis_rejection?.httpStatus === 400)),
       "COST_RECONCILIATION_REQUIRED",
       "Only a confirmed rejected analysis request can use this retry.",
     );
@@ -981,7 +1038,8 @@ export const gatewayRetryInput = internalQuery({
           organizationId: c.run.organizationId,
           prepared: c.evidence.prepared,
           frames: c.evidence.frames,
-          maximumApiUsd: 0.03,
+          maximumApiUsd: c.run.receipt?.gatewayRetry?.maximumApiUsd ?? 0.03,
+          retryOrdinal: c.run.receipt?.gatewayRetry?.ordinal ?? 1,
           contributorAllowed: c.policy.contributorAllowed,
         };
   },
@@ -992,6 +1050,7 @@ export const claimGatewayRetry = internalMutation({
     runId: v.id("mediaPreparations"),
     key: v.string(),
     generation: v.any(),
+    maximumApiUsd: v.optional(v.union(v.literal(0.02), v.literal(0.03))),
   },
   returns: v.boolean(),
   handler: async (ctx, a) => {
@@ -999,13 +1058,24 @@ export const claimGatewayRetry = internalMutation({
     if (c.existing) return false;
     const generation = rejectedGeneration.parse(a.generation),
       at = Date.parse(generation.created_at);
+    const previous = c.run.receipt?.gatewayRetry,
+      maximumApiUsd = a.maximumApiUsd ?? 0.03;
+    ensure(
+      !previous ||
+        (maximumApiUsd === 0.02 &&
+          c.run.receipt.gatewayRejection?.id !== generation.id),
+      "APPROVAL_STALE",
+      "Only one separately funded second schema correction is allowed.",
+    );
     ensure(
       !c.run.receipt.analysis_rejection?.generationId ||
         c.run.receipt.analysis_rejection.generationId === generation.id,
       "COST_RECONCILIATION_REQUIRED",
       "The retained rejection identifies another generation.",
     );
-    const stage = [...c.run.stages].reverse().find((s) => s.stage === "analyzing");
+    const stage = [...c.run.stages]
+      .reverse()
+      .find((s) => s.stage === "analyzing");
     ensure(
       stage &&
         Number.isFinite(at) &&
@@ -1031,11 +1101,25 @@ export const claimGatewayRetry = internalMutation({
           binding: "operator_observed_gateway_generation",
           verifiedAt: now,
         },
-        originalGatewayFailure: c.run.receipt.failure,
+        originalGatewayFailure:
+          c.run.receipt.originalGatewayFailure ?? c.run.receipt.failure,
+        ...(previous
+          ? {
+              gatewayRetryHistory: [
+                {
+                  ...previous,
+                  rejection: c.run.receipt.analysis_rejection,
+                  gatewayRejection: c.run.receipt.gatewayRejection,
+                  failure: c.run.receipt.failure,
+                },
+              ],
+            }
+          : {}),
         gatewayRetry: {
           key: a.key,
           evidenceId: c.run.evidenceId,
-          maximumApiUsd: 0.03,
+          maximumApiUsd,
+          ordinal: previous ? 2 : 1,
           claimedAt: now,
           deadline,
           state: "claimed",

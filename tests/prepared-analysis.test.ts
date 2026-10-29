@@ -399,7 +399,7 @@ it("recovers a zero-inference Gateway rejection once from exact retained evidenc
       runId,
       key: "another-retry-key",
     }),
-  ).rejects.toThrow(/APPROVAL_STALE/);
+  ).rejects.toThrow(/COST_RECONCILIATION_REQUIRED/);
   const input = await s.t.query(internal.preparedAnalysis.gatewayRetryInput, {
     runId,
     key: args.key,
@@ -464,7 +464,163 @@ it("does not convert an ambiguous paid analysis or stale evidence authority into
   ).rejects.toThrow(/APPROVAL_STALE/);
 });
 
-it("uses Muse's supported optional-property schema mode, preserving local citation validation and rejection diagnostics", async () => {
+it("permits only one separately funded second schema correction after another proven zero-token rejection", async () => {
+  const s = await fixture(),
+    { runId } = await s.begin();
+  await retain(s, runId);
+  await s.t.mutation(internal.preparedAnalysis.progress, {
+    runId,
+    stage: "analyzing",
+  });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId,
+    code: "PROVIDER_ERROR",
+  });
+  const first = {
+    runId,
+    key: "first-schema-correction",
+    generation: rejectedGeneration(Date.now()),
+  };
+  await s.t.mutation(internal.preparedAnalysis.claimGatewayRetry, first);
+  vi.setSystemTime(Date.now() + 5000);
+  await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId,
+    kind: "analysis_rejection",
+    receipt: { httpStatus: 400, generationId: "gen_" + "b".repeat(26) },
+  });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId,
+    code: "PROVIDER_ERROR",
+  });
+  const second = {
+    runId,
+    key: "second-schema-correction",
+    maximumApiUsd: 0.02 as const,
+    generation: {
+      ...rejectedGeneration(Date.now()),
+      id: "gen_" + "b".repeat(26),
+    },
+  };
+  await expect(
+    s.t.mutation(internal.preparedAnalysis.claimGatewayRetry, {
+      ...second,
+      generation: first.generation,
+    }),
+  ).rejects.toThrow();
+  expect(
+    await s.t.mutation(internal.preparedAnalysis.claimGatewayRetry, second),
+  ).toBe(true);
+  const input = await s.t.query(internal.preparedAnalysis.gatewayRetryInput, {
+    runId,
+    key: second.key,
+    claimed: true,
+  });
+  expect(input).toMatchObject({ maximumApiUsd: 0.02, retryOrdinal: 2 });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(runId)))!.receipt.gatewayRetryHistory,
+  ).toHaveLength(1);
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId,
+    code: "PROVIDER_ERROR",
+  });
+  await expect(
+    s.t.query(internal.preparedAnalysis.gatewayRetryInput, {
+      runId,
+      key: "third-retry-is-blocked",
+    }),
+  ).rejects.toThrow(/COST_RECONCILIATION_REQUIRED/);
+});
+
+it("an app Save can automatically analyze one explicitly selected successful preparation without another download, ASR or asset copy", async () => {
+  const s = await fixture(),
+    { runId } = await s.begin(),
+    { prepared, evidenceId } = await retain(s, runId);
+  await s.t.mutation(internal.preparedAnalysis.progress, {
+    runId,
+    stage: "analyzing",
+  });
+  await s.t.mutation(internal.preparedAnalysis.finishGateway, {
+    runId,
+    output: output(s, runId, prepared),
+    receipt: { model: preparedInsightModel, rateEstimateUsd: 0.001 },
+  });
+  const policy = JSON.parse(process.env.PREPARED_MEDIA_ALPHA_JSON!);
+  vi.stubEnv(
+    "PREPARED_MEDIA_ALPHA_JSON",
+    JSON.stringify({
+      ...policy,
+      executor: "work_cloud",
+      maximumApiUsd: 0.02,
+      reuseEvidenceFromRunId: runId,
+    }),
+  );
+  const scheduledBefore = await s.t.run((ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect(),
+  );
+  const saved = await s.owner.mutation(api.workCloudSaves.capture, {
+    ...s.args,
+    key: "prepared-reuse-save",
+    title: s.source.title,
+    rightsAttested: true,
+    grantId: s.grant.id,
+    grantVersion: s.grant.version,
+  });
+  expect(saved.status).toBe("preparing_evidence");
+  const runs = await s.t.run((ctx) =>
+    ctx.db
+      .query("mediaPreparations")
+      .withIndex("by_org_source", (q) =>
+        q.eq("organizationId", s.org).eq("sourceId", s.sourceId),
+      )
+      .collect(),
+  );
+  const next = runs.find((r) => r._id !== runId)!;
+  expect(next).toMatchObject({
+    state: "evidence_ready",
+    evidenceId,
+    receipt: { reusedPreparation: { runId, evidenceId } },
+  });
+  const scheduledAfter = await s.t.run((ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect(),
+  );
+  const added = scheduledAfter.filter(
+    (r) => !scheduledBefore.some((old) => old._id === r._id),
+  );
+  expect(
+    added.some((r) => r.name.includes("preparedAnalysis:queueSubscription")),
+  ).toBe(true);
+  expect(added.some((r) => r.name.includes("preparedMedia:run"))).toBe(false);
+  const attemptId = await s.t.mutation(
+    internal.preparedAnalysis.queueSubscription,
+    { runId: next._id },
+  );
+  const attempt = await s.t.run((ctx) => ctx.db.get(attemptId));
+  expect(attempt!.evidenceId).toBe(evidenceId);
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.analysis).toEqual(
+    s.output,
+  );
+  // A stale or foreign evidence choice cannot silently fall back to acquisition.
+  vi.stubEnv(
+    "PREPARED_MEDIA_ALPHA_JSON",
+    JSON.stringify({
+      ...policy,
+      executor: "work_cloud",
+      reuseEvidenceFromRunId: "foreign-run",
+    }),
+  );
+  await expect(
+    s.owner.mutation(api.workCloudSaves.capture, {
+      ...s.args,
+      key: "foreign-evidence-save",
+      title: s.source.title,
+      rightsAttested: true,
+      grantId: s.grant.id,
+      grantVersion: s.grant.version,
+    }),
+  ).rejects.toThrow();
+});
+
+it("uses Gateway's strict required-property subset, preserving local citation validation and rejection diagnostics", async () => {
   const s = await fixture(),
     { runId } = await s.begin(),
     { prepared } = await retain(s, runId);
@@ -520,11 +676,15 @@ it("uses Muse's supported optional-property schema mode, preserving local citati
   expect(
     (await analyzePreparedEvidence({ ...args, fetch: transport })).output,
   ).toEqual(expected);
-  expect(requests[0].response_format.json_schema.strict).toBe(false);
+  expect(requests[0].response_format.json_schema.strict).toBe(true);
   expect(
     requests[0].response_format.json_schema.schema.properties.insights.items
       .required,
-  ).not.toContain("icon");
+  ).toContain("icon");
+  expect(
+    requests[0].response_format.json_schema.schema.properties.insights.items
+      .required,
+  ).toContain("topics");
   invalidCitation = true;
   await expect(
     analyzePreparedEvidence({ ...args, fetch: transport }),

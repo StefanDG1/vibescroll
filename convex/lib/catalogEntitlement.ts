@@ -5,6 +5,7 @@ import { isPaid } from "../../packages/company-config";
 import { ensure } from "../../packages/policy";
 import { queryRead } from "./knowledgeReadContext";
 import { cloudCatalogAlphaAccess } from "../../packages/contracts/cloud-catalog";
+import { workCloudSourceEligible } from "./workCloudSourceAccess";
 
 // Port the existing main candidate's verified Pro check. Call only after the
 // caller's current workspace access has been established; a cache key is not access.
@@ -34,7 +35,14 @@ export async function requireProCatalogAccess(
         const organization = await ctx.db.get(organizationId);
         const owner = organization?.privateOwnerId
           ? await ctx.db.get(organization.privateOwnerId)
-          : null;
+          : organization &&
+              (await workCloudSourceEligible(
+                ctx,
+                organization,
+                organization.createdBy,
+              ))
+            ? await ctx.db.get(organization.createdBy)
+            : null;
         if (
           organization?.status === "active" &&
           owner?.status === "active" &&

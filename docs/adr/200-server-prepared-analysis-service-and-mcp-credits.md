@@ -13,6 +13,8 @@ Operator configuration binds an immutable configuration ID, provider processing 
 
 An explicit total-job allowance also bounds an initial rollout without repeatedly asking about individual attempts. It is separate from daily/hourly limits and provider key spend caps. Preserve previous consumed/unknown jobs when extending it.
 
+The first production quote exposed an older workspace compatibility gap. A reviewed original sole-owner workspace may use its existing wallet only when its exact ID is configured as legacyOwnerFundingOrganizationId. The existing eligibility check still requires the creator to be the sole member with no active invitations. A second workspace is refused. The finite operator catalog entitlement can recognize that same eligible creator without adopting the workspace or fabricating Pro billing. Normal paid-account checks remain unchanged.
+
 Contributor processing permission is explicit and separate from source reuse authority. A flag does not establish provider rights. Keep the original OAuth connection, grant, native settings and monitor. Embedded UI and local execution remain deferred.
 
 ## Quotes and settlement

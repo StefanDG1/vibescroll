@@ -553,6 +553,36 @@ it("starts one reserved run from an exact MCP quote and rejects tampering and fo
       .query(api.preparedService.quote, s.request),
   ).rejects.toThrow();
 });
+it("uses only the configured original sole-owner legacy wallet without adoption or another workspace allowance", async () => {
+  const s = await fixture();
+  await s.t.run((c) => c.db.patch(s.org, { privateOwnerId: undefined }));
+  await expect(s.quote()).rejects.toThrow(/PERSONAL_FUNDING_REQUIRED/);
+  vi.stubEnv(
+    "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+    JSON.stringify({ ...s.config, legacyOwnerFundingOrganizationId: s.org }),
+  );
+  const run = await s.start();
+  await finish(s, run.runId!);
+  expect(
+    await s.owner.query(api.preparedService.status, { sourceId: s.sourceId }),
+  ).toMatchObject({ state: "ready", chargedCredits: 3 });
+  const organization = await s.t.run((c) => c.db.get(s.org));
+  expect(organization?.privateOwnerId).toBeUndefined();
+  const other = await s.owner.mutation(api.organizations.create, {
+    name: "Another sole-owner workspace",
+  });
+  const sourceId = await s.owner.mutation(api.product.capture, {
+    organizationId: other,
+    key: "other-legacy-save",
+    kind: "url",
+    url: "https://www.instagram.com/reel/Fresh000004/",
+    title: "Imported video link",
+    rightsAttested: true,
+  });
+  await expect(
+    s.owner.query(api.preparedService.quote, { sourceId, executor: "gateway" }),
+  ).rejects.toThrow(/PERSONAL_FUNDING_REQUIRED/);
+});
 it("settles actual duration once, preserves old balance/incumbent, and exposes only safe status through MCP", async () => {
   const s = await fixture(),
     a = await s.start(),

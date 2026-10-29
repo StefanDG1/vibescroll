@@ -6,12 +6,14 @@ Read the [owner request register](../strategy/OWNER-REQUEST-REGISTER.md), [conti
 
 ## Accepted production baseline
 
-- Website/backend commit: `fc2ef422aace635a122073ae59a396a62299d204`.
-- Website version: `0.1.0-alpha.20261029173811.gfc2ef422aace`.
-- Deployment: `dpl_DUTnyRBi5sxj2AWNHJA2HyuTXDE1`.
-- Exact Linux CI: `40923237655`. Local checks include 1,530 Vitest cases, Node/Python checks and both builds. Three hosted and seven Windows Python cases were skipped.
+- Website/backend commit: `b0ec5b6530362819206666a9077b516b895949bd`.
+- Website version: `0.1.0-alpha.20261029201911.gb0ec5b653036`.
+- Deployment: `dpl_8y7ZvcFhasQHA1GDCd2yEB7GKeo8`.
+- Exact Linux CI: `40947978157`. Local checks include 1,546 Vitest cases, Node/Python checks and both builds. Three hosted and seven Windows Python cases were skipped.
 - Backend publication acknowledged; actual 12-component/138-table/301-index prediction required zero scans/backfills and changed no schema/index/auth/cron. Fixed Basic queued website build took 41.749s, then staged checks and same-build promotion passed.
-- [Production receipt](evidence/launch-20261029-headless-mcp-production.json). Later documentation-only commits do not change this serving version.
+- [Prior headless receipt](evidence/launch-20261029-headless-mcp-production.json). This newer server-service release passed22 actual release guards and same-build staged promotion; its fresh analysis acceptance is pending.
+
+The service key is configured and verified. Vercel requires a USD1 minimum key budget; the owner created it with that cap. The service allowance remains ten jobs and USD0.30 aggregate API maximum inside the approved USD0.75 batch. The first real MCP quote found the owner's original sole-owner workspace lacks privateOwnerId. No job or credit charge occurred. Admission is temporarily disabled while the explicit original-wallet compatibility correction passes checks. The existing Assistant action is saved/verified as prepared-evidence only and remains monitoring. Do not call either fresh route accepted yet.
 
 ## What is accepted and what is conditional
 
@@ -51,7 +53,7 @@ The wider linked launch scope, cache-growth economics/Visualize extension, cold-
 
 Routine releases are delegated. Do not ask for another release/build-count exception. Preserve exact CI, actual compatible impact guards, same-build promotion and existing monetary/provider limits. Check spending before meaningful batches or material changes, not repeatedly between tiny steps.
 
-The last recorded cumulative cap is EUR14; the bounded comparison envelope was USD0.50. Subscription token usage is outside cash accounting. Vercel must stay strictly below USD20. Last observed usage17.97USD and conservative combined bound19.855USD are historical readings, not current free headroom. Read the local ledger before spending. No purchase, top-up, faster build, paid fallback or live billing migration is implied.
+The current cumulative cap is EUR15, with a new USD0.75 service/release batch for ten jobs. Preserve the earlier USD0.50 comparison envelope and every old hold. Subscription tokens are outside cash accounting. Vercel stays strictly below USD20. The latest batch reading is18.04USD, with a19.64USD conservative hosting bound after the completed fixed Basic build; these become historical after this checkpoint. Gateway inference uses its separate existing credit balance, not the hosting allowance. Its provider key cap is USD1 because of the observed minimum, while server admission limits aggregate API funding to USD0.30. No purchase, top-up, faster build, fallback or billing migration is authorized.
 
 Private operational identity, protected source, unknown attempts, budget holds and once-only release journals remain in the ignored operator outputs. The known local ledger is `C:/Code/VibeScroller/.worktrees/launch-20261022/outputs/launch-run/convex-rollout-budget.json`. Keep it out of commits. The active compatible checkout is `C:/Code/VibeScroller/.worktrees/link-cloud-compatible-20261025`; inspect its actual status before using these paths.
 

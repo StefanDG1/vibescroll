@@ -15,6 +15,7 @@ const configuration = z.strictObject({
   maximumDailyJobs: z.number().int().min(1).max(100),
   maximumHourlyJobs: z.number().int().min(1).max(20),
   maximumTotalJobs: z.number().int().min(1).max(1000).default(100),
+  legacyOwnerFundingOrganizationId: z.string().min(1).max(100).optional(),
   contributorAllowed: z.literal(true),
   providerPermissionReference: z.string().min(10).max(2000),
   catalogPublicationAllowed: z.boolean(),

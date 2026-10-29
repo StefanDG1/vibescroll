@@ -72,7 +72,10 @@ async function owner(
     "Analyze in your own personal workspace, then share retained results with a team.",
   );
   ensure(
-    a.organization.privateOwnerId === a.actor._id,
+    a.organization.privateOwnerId === a.actor._id ||
+      (!a.organization.privateOwnerId &&
+        preparedServiceConfiguration(a.actor.subject, true)
+          ?.legacyOwnerFundingOrganizationId === a.organization._id),
     "PERSONAL_FUNDING_REQUIRED",
     "Use your personal account's credit pool; workspaces do not create extra allowances.",
   );

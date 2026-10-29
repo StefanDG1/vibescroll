@@ -42,7 +42,9 @@ const policySchema = z.strictObject({
   id: z.string().min(8).max(80),
   subject: z.string(),
   canonical: z.string().url(),
-  maximumRuns: z.number().int().min(1).max(4),
+  maximumRuns: z.number().int().min(1).max(8),
+  maximumFreshPreparations: z.number().int().min(1).max(4).optional(),
+  maximumGatewayAnalyses: z.number().int().min(1).max(2).optional(),
   maximumApiUsd: z.number().min(0.02).max(0.05),
   expiresAt: z.number().int(),
   contributorAllowed: z.literal(true),
@@ -140,6 +142,27 @@ async function active(ctx: QueryCtx, id: Id<"mediaPreparations">) {
   return { ...c, policy };
 }
 
+function returnedGatewayPreparation(run: Doc<"mediaPreparations">) {
+  const a = run.receipt?.analysis;
+  return (
+    run.executor === "gateway" &&
+    run.state === "unknown" &&
+    run.evidenceId &&
+    run.receipt?.preparation?.stopAcknowledged === true &&
+    a?.model === "meta/muse-spark-1.3-contributor" &&
+    a.provider === "meta" &&
+    /^gen_[A-Za-z0-9]{20,80}$/.test(a.requestId ?? "") &&
+    Number.isSafeInteger(a.startedAt) &&
+    Number.isSafeInteger(a.completedAt) &&
+    a.startedAt >= run.createdAt &&
+    a.completedAt >= a.startedAt &&
+    a.completedAt <= Date.now() &&
+    Number.isFinite(a.rateEstimateUsd) &&
+    a.rateEstimateUsd >= 0 &&
+    a.rateEstimateUsd <= run.maximumApiUsd
+  );
+}
+
 export async function queuePreparedComparison(
   ctx: MutationCtx,
   source: Doc<"sources">,
@@ -168,26 +191,47 @@ export async function queuePreparedComparison(
     .withIndex("by_actor_policy", (q) =>
       q.eq("actor", actor._id).eq("policyId", policy.id),
     )
-    .take(5);
+    .take(9);
+  const explicitReturnedReuse = policy.reuseEvidenceFromRunId
+    ? prior.find(
+        (r) =>
+          r._id === policy.reuseEvidenceFromRunId &&
+          returnedGatewayPreparation(r),
+      )
+    : null;
   ensure(
     prior.length < policy.maximumRuns &&
-      !prior.some((r) => !["ready", "failed"].includes(r.state)),
+      !prior.some(
+        (r) =>
+          !["ready", "failed"].includes(r.state) &&
+          r._id !== explicitReturnedReuse?._id,
+      ),
     "QUOTA_EXCEEDED",
     "The bounded preparation comparison is already used or unresolved.",
   );
   ensure(
+    policy.reuseEvidenceFromRunId ||
+      prior.filter((r) => !r.receipt?.reusedPreparation).length <
+        (policy.maximumFreshPreparations ?? Math.min(4, policy.maximumRuns)),
+    "QUOTA_EXCEEDED",
+    "The separate fresh-preparation allowance is used.",
+  );
+  ensure(
     policy.executor !== "gateway" ||
-      !prior.some(
-        (r) =>
-          r.executor === "gateway" &&
-          !(
-            r.state === "failed" &&
-            knownReturnedPreparationFailure(
-              { ...r, state: r.receipt?.failure?.stage },
-              r.receipt?.failure?.code,
-            )
-          ),
-      ),
+      (policy.reuseEvidenceFromRunId
+        ? prior.filter((r) => r.executor === "gateway" && r.receipt?.analysis)
+            .length < (policy.maximumGatewayAnalyses ?? 1)
+        : !prior.some(
+            (r) =>
+              r.executor === "gateway" &&
+              !(
+                r.state === "failed" &&
+                knownReturnedPreparationFailure(
+                  { ...r, state: r.receipt?.failure?.stage },
+                  r.receipt?.failure?.code,
+                )
+              ),
+          )),
     "QUOTA_EXCEEDED",
     "The single approved Muse comparison is already reserved.",
   );
@@ -231,31 +275,37 @@ export async function queuePreparedComparison(
   const now = Date.now();
   ensure(
     !source.personalMedia?.runId ||
-      ["ready", "failed"].includes(source.personalMedia.stage),
+      ["ready", "failed"].includes(source.personalMedia.stage) ||
+      source.personalMedia.runId === explicitReturnedReuse?._id,
     "SOURCE_BUSY",
     "The previous preparation is still unresolved.",
   );
-  const reuseRun =
-    policy.executor === "work_cloud" && policy.reuseEvidenceFromRunId
-      ? prior.find((r) => r._id === policy.reuseEvidenceFromRunId)
-      : null;
+  const reuseRun = policy.reuseEvidenceFromRunId
+    ? prior.find((r) => r._id === policy.reuseEvidenceFromRunId)
+    : null;
   let reuseEvidence;
   if (policy.reuseEvidenceFromRunId) {
     ensure(
-      reuseRun?.state === "ready" &&
+      reuseRun &&
+        (reuseRun.state === "ready" ||
+          reuseRun._id === explicitReturnedReuse?._id) &&
         reuseRun.evidenceId &&
-        reuseRun.versionId &&
         reuseRun.sourceId === source._id &&
         reuseRun.generation === source.generation,
       "SOURCE_UNAVAILABLE",
       "Use an explicitly selected successful preparation for this exact source.",
     );
-    const version = await ctx.db.get(reuseRun.versionId);
-    ensure(
-      version?.state === "ready" && version.evidenceId === reuseRun.evidenceId,
-      "SOURCE_UNAVAILABLE",
-      "The completed preparation version changed.",
-    );
+    if (reuseRun.state === "ready") {
+      const version = reuseRun.versionId
+        ? await ctx.db.get(reuseRun.versionId)
+        : null;
+      ensure(
+        version?.state === "ready" &&
+          version.evidenceId === reuseRun.evidenceId,
+        "SOURCE_UNAVAILABLE",
+        "The completed preparation version changed.",
+      );
+    }
     reuseEvidence = await preparedEvidenceForSource(
       ctx,
       source,
@@ -263,6 +313,8 @@ export async function queuePreparedComparison(
     );
     await verifyRetainedAssets(ctx, source, reuseEvidence);
   }
+  const duration =
+    policy.executor === "gateway" && reuseEvidence ? 180000 : 900000;
   const id = await ctx.db.insert("mediaPreparations", {
     organizationId: source.organizationId,
     sourceId: source._id,
@@ -275,7 +327,7 @@ export async function queuePreparedComparison(
     state: reuseEvidence ? "evidence_ready" : "queued",
     createdAt: now,
     updatedAt: now,
-    deadline: now + 900000,
+    deadline: now + duration,
     maximumApiUsd: policy.maximumApiUsd,
     ...(grant ? { grantId: grant._id, grantVersion: grant.version } : {}),
     ...(reuseEvidence
@@ -306,7 +358,11 @@ export async function queuePreparedComparison(
       updatedAt: now,
     },
   });
-  if (reuseEvidence)
+  if (reuseEvidence && policy.executor === "gateway")
+    await ctx.scheduler.runAfter(0, internal.preparedMedia.runRetainedGateway, {
+      runId: id,
+    });
+  else if (reuseEvidence)
     await ctx.scheduler.runAfter(
       0,
       internal.preparedAnalysis.queueSubscription,
@@ -314,7 +370,7 @@ export async function queuePreparedComparison(
     );
   else
     await ctx.scheduler.runAfter(0, internal.preparedMedia.run, { runId: id });
-  await ctx.scheduler.runAfter(900000, internal.preparedAnalysis.expire, {
+  await ctx.scheduler.runAfter(duration, internal.preparedAnalysis.expire, {
     runId: id,
   });
   return id;
@@ -358,6 +414,65 @@ export const begin = mutation({
     );
     ensure(runId, "APPROVAL_STALE", "The comparison policy changed.");
     return { sourceId, runId };
+  },
+});
+
+export const claimRetainedGateway = internalMutation({
+  args: { runId: v.id("mediaPreparations") },
+  returns: v.boolean(),
+  handler: async (ctx, { runId }) => {
+    const c = await active(ctx, runId);
+    ensure(
+      c.run.executor === "gateway" &&
+        c.run.evidenceId &&
+        c.run.receipt?.reusedPreparation,
+      "APPROVAL_STALE",
+      "Use this explicitly funded retained-evidence analysis.",
+    );
+    if (c.run.state !== "evidence_ready") return false;
+    const now = Date.now();
+    await ctx.db.patch(runId, {
+      state: "analyzing",
+      updatedAt: now,
+      stages: [...c.run.stages, { stage: "analyzing", at: now }],
+    });
+    await ctx.db.patch(c.source._id, {
+      personalMedia: {
+        ...c.source.personalMedia,
+        stage: "analyzing",
+        updatedAt: now,
+      },
+    });
+    return true;
+  },
+});
+
+export const retainedGatewayInput = internalQuery({
+  args: { runId: v.id("mediaPreparations") },
+  returns: v.any(),
+  handler: async (ctx, { runId }) => {
+    const c = await active(ctx, runId);
+    ensure(
+      c.run.executor === "gateway" &&
+        c.run.state === "analyzing" &&
+        c.run.evidenceId &&
+        c.run.receipt?.reusedPreparation,
+      "APPROVAL_STALE",
+      "The finite retained-evidence analysis is no longer active.",
+    );
+    const evidence = await preparedEvidenceForSource(
+      ctx,
+      c.source,
+      c.run.evidenceId,
+    );
+    await verifyRetainedAssets(ctx, c.source, evidence);
+    return {
+      sourceId: c.source._id,
+      prepared: evidence.prepared,
+      frames: evidence.frames,
+      maximumApiUsd: c.run.maximumApiUsd,
+      contributorAllowed: c.policy.contributorAllowed,
+    };
   },
 });
 
@@ -656,7 +771,8 @@ export const finishGateway = internalMutation({
           protocol: "gateway-analysis-v1",
           model: a.receipt.model,
           effort: "medium",
-          structuredOutputMode: "gateway-meta-all-properties-required-v1",
+          structuredOutputMode:
+            "gateway-meta-trusted-binding-exact-citations-v2",
           instructions: preparedAnalysisInstructions,
           outputSchema: z.toJSONSchema(analysisVersionOutput),
         }),
@@ -841,6 +957,8 @@ export const recordReceipt = internalMutation({
       v.literal("analysis"),
       v.literal("analysis_rejection"),
       v.literal("analysis_retry_rejection"),
+      v.literal("analysis_output"),
+      v.literal("analysis_validation"),
     ),
     receipt: v.any(),
   },
@@ -856,7 +974,7 @@ export const recordReceipt = internalMutation({
       receipt &&
         typeof receipt === "object" &&
         new TextEncoder().encode(text).byteLength <=
-          (kind === "asr_output" ? 500000 : 10000) &&
+          (["asr_output", "analysis_output"].includes(kind) ? 500000 : 10000) &&
         !containsSecret(text),
       "INVALID_EVIDENCE",
       "Use a bounded sanitized provider receipt.",

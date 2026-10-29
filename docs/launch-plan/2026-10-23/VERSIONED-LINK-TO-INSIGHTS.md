@@ -1,5 +1,7 @@
 # Release the versioned link-to-insights flow
 
+Backend4892434 is live. Its Muse schema is accepted, but the answer was rejected before saving and the exact reason is unproved. [ADR198](../../adr/198-retained-model-output-and-trusted-bindings.md) records actual cost/timing, answer retention, trusted bindings and the approved bounded replacement. Existing native/shared results remain intact; the new prepared comparison is still open.
+
 The8f0435a optional-schema correction is live but still rejected by Gateway with zero inference/cost. [ADR197](../../adr/197-gateway-strict-schema-and-prepared-save-reuse.md) derives a stricter supported provider schema and reuses exact prepared inputs for the native app-Save comparison. This next candidate remains local and preserves all existing shared/native results.
 
 October29 prepared-route checkpoint: backend809668e is deployed, and a fresh hosted preparation retains real images and zero-overflow ASR. Muse's subsequent zero-token optional-schema rejection is isolated; the supported-mode correction and finite retained retry are described in [ADR196](../../adr/196-muse-optional-schema-and-retained-retry.md). Full prepared API/native acceptance remains open. Existing native successful versions/shared cache stay intact.

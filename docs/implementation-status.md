@@ -1,5 +1,11 @@
 # Implementation status
 
+## October29: Muse schema accepted; answer rejected after inference
+
+Backend4892434 is live after exact CI40913526188 and actual zero-scan/backfill publication. Website406051f remains live. The provider accepted the strict derived schema and returned a Muse answer in45.911s, with Gateway-confirmed costUSD0.0017286. Application validation then failed before a new version was stored. The returned answer and exact validation error were not retained, so its cause remains unproved. Original selected insights and all real screenshots remain intact; the automatic prepared native comparison has not run.
+
+[ADR198](adr/198-retained-model-output-and-trusted-bindings.md) adds private immutable answer retention/diagnostics, trusted server bindings and exact supplied citation choices. It also adds separately bounded retained-evidence API versions and permits explicit native reuse after a returned but rejected analysis, preserving its historical state and hold. Fifteen focused tests pass locally. The owner approved one replacement Muse answer within the same EUR14/USD0.50 caps and reconciliation of confirmed unused Gateway reserves; unknown infrastructure holds remain. The new correction is not deployed yet.
+
 ## October29: Gateway adapter rejects optional fields; strict subset and Save reuse prepared
 
 Backend8f0435a is live after full local checks, exact CI40911019227,22 guards and actual unchanged-schema zero-scan/backfill publication. Its explicit retained retry returned HTTP400 with the same missing-required-icon error even with strict=false. Actual official Gateway generation lookup confirms both rejected Muse requests used zero tokens and zero total/upstream inference cost. No successful new Muse output is claimed.

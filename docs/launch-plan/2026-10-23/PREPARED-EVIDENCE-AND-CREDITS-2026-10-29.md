@@ -162,6 +162,8 @@ Use this full formula before setting a credit pack: acquisition + isolated compu
 
 ## Deliver and test in phases
 
+Backend4892434's strict schema is accepted by Gateway, but its Muse answer failed application validation after45.911s/USD0.0017286. Actual content/error detail was not retained. [ADR198](../../adr/198-retained-model-output-and-trusted-bindings.md) fixes output retention, server bindings and exact citations, and separates retained API/native analysis from fresh preparation quotas. One replacement Muse answer and known-unused Gateway reconciliation are owner-approved within the same limits. Prepared-route success remains unclaimed.
+
 The ADR196 optional-mode retry was deployed at8f0435a but Gateway rejected it with the same HTTP400 and confirmed zero inference/cost. [ADR197](../../adr/197-gateway-strict-schema-and-prepared-save-reuse.md) replaces that adapter assumption with a fully required compatible provider schema. The native app-Save comparison will reuse the same successful evidence instead of spending the optional fourth fresh preparation. Report its reuse latency separately from fresh preparation and human debugging time. No successful prepared Muse/native comparison is claimed yet.
 
 October29 progress: compatible backend809668e is live; the source-bounded PCM fix passed the third hosted preparation with zero ASR overflow and retained real images. Muse stopped on a zero-token HTTP400 optional-schema rejection. [ADR196](../../adr/196-muse-optional-schema-and-retained-retry.md) corrects the supported schema mode and defines one finite explicit retry from retained evidence. The extra two fresh passes are approved, four total. Full API and automatic native comparisons, managed shared publication and settlement remain open.

@@ -20,6 +20,101 @@ import {
 } from "../packages/providers/binary";
 import { ensure, PolicyError } from "../packages/policy";
 
+export const runRetainedGateway = internalAction({
+  args: { runId: v.id("mediaPreparations") },
+  returns: v.null(),
+  handler: async (ctx, { runId }): Promise<null> => {
+    if (
+      !(await ctx.runMutation(internal.preparedAnalysis.claimRetainedGateway, {
+        runId,
+      }))
+    )
+      return null;
+    try {
+      const input = await ctx.runQuery(
+        internal.preparedAnalysis.retainedGatewayInput,
+        { runId },
+      );
+      const apiKey = process.env.VERCEL_AI_GATEWAY_API_KEY;
+      ensure(
+        apiKey && apiKey.length > 10,
+        "SETUP_REQUIRED",
+        "Configure the bounded Gateway credential.",
+      );
+      const frames = await Promise.all(
+        input.frames.map(async (f) => {
+          const response = await fetch(signedObject(f.key, "GET", 30), {
+            redirect: "error",
+            signal: AbortSignal.timeout(10000),
+          });
+          ensure(
+            response.ok,
+            "STORAGE_UNAVAILABLE",
+            "Retained source image is unavailable.",
+          );
+          return {
+            id: f.frameId,
+            bytes: await readResponseBytes(response, Math.min(f.size, 150000)),
+          };
+        }),
+      );
+      await ctx.runQuery(internal.preparedAnalysis.retainedGatewayInput, {
+        runId,
+      });
+      const result = await analyzePreparedEvidence({
+        sourceId: input.sourceId,
+        attemptId: runId,
+        prepared: input.prepared,
+        frames,
+        apiKey,
+        maximumUsd: input.maximumApiUsd,
+        contributorAllowed: input.contributorAllowed,
+        onReceipt: async (receipt) => {
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId,
+            kind: "analysis",
+            receipt,
+          });
+        },
+        onRejection: async (receipt) => {
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId,
+            kind: "analysis_rejection",
+            receipt,
+          });
+        },
+        onOutput: async (receipt) => {
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId,
+            kind: "analysis_output",
+            receipt,
+          });
+        },
+        onValidation: async (receipt) => {
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId,
+            kind: "analysis_validation",
+            receipt,
+          });
+        },
+      });
+      await ctx.runMutation(internal.preparedAnalysis.finishGateway, {
+        runId,
+        ...result,
+      });
+    } catch (error) {
+      await ctx.runMutation(internal.preparedAnalysis.fail, {
+        runId,
+        code:
+          error instanceof PolicyError
+            ? error.code
+            : "PREPARATION_OUTCOME_UNCONFIRMED",
+      });
+    }
+    return null;
+  },
+});
+
 export const run = internalAction({
   args: { runId: v.id("mediaPreparations") },
   returns: v.null(),
@@ -273,6 +368,20 @@ export const run = internalAction({
               receipt,
             });
           },
+          onOutput: async (receipt) => {
+            await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+              runId,
+              kind: "analysis_output",
+              receipt,
+            });
+          },
+          onValidation: async (receipt) => {
+            await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+              runId,
+              kind: "analysis_validation",
+              receipt,
+            });
+          },
         });
         await ctx.runMutation(internal.preparedAnalysis.finishGateway, {
           runId,
@@ -418,6 +527,20 @@ export const retryRejectedGateway = internalAction({
               input.retryOrdinal === 2
                 ? "analysis_retry_rejection"
                 : "analysis_rejection",
+            receipt,
+          });
+        },
+        onOutput: async (receipt) => {
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId: a.runId,
+            kind: "analysis_output",
+            receipt,
+          });
+        },
+        onValidation: async (receipt) => {
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId: a.runId,
+            kind: "analysis_validation",
             receipt,
           });
         },

@@ -9,15 +9,27 @@ import {
   validatePreparedEvidence,
 } from "../contracts/prepared-evidence";
 import { neutralCloudObservations } from "../contracts/cloud-catalog";
-import { ensure } from "../policy";
+import { ensure, PolicyError } from "../policy";
 import { readResponseBytes } from "./binary";
 
 export const preparedInsightModel = "meta/muse-spark-1.3-contributor" as const;
+const preparedInsightBody = analysisVersionOutput.pick({
+  summary: true,
+  warnings: true,
+  insights: true,
+});
 
 // Gateway's Meta route enforces the strict subset even when strict=false.
 // Requiring our valid optional fields is a compatible subset of the app schema.
-export function preparedInsightProviderSchema() {
-  const schema = z.toJSONSchema(analysisVersionOutput);
+export function preparedInsightProviderSchema(
+  citations: {
+    id: string;
+    kind: string;
+    startMs: number | null;
+    endMs: number | null;
+  }[],
+) {
+  const schema = z.toJSONSchema(preparedInsightBody);
   const visit = (value: unknown) => {
     if (!value || typeof value !== "object") return;
     if (Array.isArray(value)) {
@@ -34,6 +46,26 @@ export function preparedInsightProviderSchema() {
     Object.values(node).forEach(visit);
   };
   visit(schema);
+  const insight = schema.properties!.insights as any;
+  insight.items.properties.evidence.items = {
+    anyOf: citations.map((c) => ({
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        kind: { type: "string", const: c.kind },
+        id: { type: "string", const: c.id },
+        startMs:
+          c.startMs === null
+            ? { type: "null" }
+            : { type: "integer", const: c.startMs },
+        endMs:
+          c.endMs === null
+            ? { type: "null" }
+            : { type: "integer", const: c.endMs },
+      },
+      required: ["kind", "id", "startMs", "endMs"],
+    })),
+  };
   return schema;
 }
 
@@ -48,6 +80,8 @@ export async function analyzePreparedEvidence(args: {
   fetch?: typeof fetch;
   onReceipt?: (receipt: Record<string, unknown>) => Promise<void>;
   onRejection?: (receipt: Record<string, unknown>) => Promise<void>;
+  onOutput?: (receipt: Record<string, unknown>) => Promise<void>;
+  onValidation?: (receipt: Record<string, unknown>) => Promise<void>;
 }) {
   const prepared = await validatePreparedEvidence(args.prepared),
     e = prepared.evidence;
@@ -104,7 +138,6 @@ export async function analyzePreparedEvidence(args: {
     postRevisionHash: e.sourceRevisionHash,
   };
   const packet = {
-    ...binding,
     metadata: prepared.metadata,
     durationMs: e.durationMs,
     transcript: e.segments,
@@ -155,7 +188,7 @@ export async function analyzePreparedEvidence(args: {
           json_schema: {
             name: "vibescroll_analysis",
             strict: true,
-            schema: preparedInsightProviderSchema(),
+            schema: preparedInsightProviderSchema(neutralCloudObservations(e)),
           },
         },
       }),
@@ -235,15 +268,54 @@ export async function analyzePreparedEvidence(args: {
     providerSettledUsd: null,
   };
   await args.onReceipt?.(receipt);
+  const contentText = result.choices[0].message.content;
+  await args.onOutput?.({
+    model: result.model,
+    requestId: result.id ?? null,
+    responseSha256: createHash("sha256").update(contentText).digest("hex"),
+    content: contentText,
+    receivedAt: Date.now(),
+  });
   ensure(
     rateEstimateUsd <= args.maximumUsd,
     "COST_RECONCILIATION_REQUIRED",
     "Analysis usage exceeded its reserved cost.",
   );
-  const output = validateVersionOutput(
-    JSON.parse(result.choices[0].message.content),
-    { ...binding, evidence: neutralCloudObservations(e) },
-  );
+  let output;
+  try {
+    const body = preparedInsightBody.parse(JSON.parse(contentText));
+    output = validateVersionOutput(
+      { schemaVersion: "analysis-version-output-v1", ...binding, ...body },
+      { ...binding, evidence: neutralCloudObservations(e) },
+    );
+  } catch (error) {
+    const code =
+      error instanceof z.ZodError
+        ? "GATEWAY_OUTPUT_SCHEMA_INVALID"
+        : error instanceof SyntaxError
+          ? "GATEWAY_OUTPUT_JSON_INVALID"
+          : error instanceof Error &&
+              /^ANALYSIS_VERSION_[A-Z_]+$/.test(error.message)
+            ? error.message
+            : "GATEWAY_OUTPUT_VALIDATION_FAILED";
+    await args.onValidation?.({
+      code,
+      requestId: result.id ?? null,
+      responseSha256: createHash("sha256").update(contentText).digest("hex"),
+      ...(error instanceof z.ZodError
+        ? {
+            issues: error.issues
+              .slice(0, 20)
+              .map((i) => ({ path: i.path.join("."), code: i.code })),
+          }
+        : {}),
+      at: Date.now(),
+    });
+    throw new PolicyError(
+      "INVALID_EVIDENCE",
+      "The returned analysis failed validation; its private response and usage remain retained.",
+    );
+  }
   return {
     output,
     receipt,

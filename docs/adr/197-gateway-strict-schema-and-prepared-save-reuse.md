@@ -1,6 +1,6 @@
 # ADR197: Gateway strict schema and prepared Save reuse
 
-October29,2026. Status: local correction; hosted acceptance pending.
+October29,2026. Status: deployed at4892434. Strict schema passed Gateway, but the returned Muse answer failed application validation and was not retained. [ADR198](198-retained-model-output-and-trusted-bindings.md) preserves that failure and the next diagnostic/trusted-binding correction. Full comparison remains unaccepted.
 
 Backend8f0435a passed exact CI40911019227, all22 release guards and actual compatible publication at16:29:14UTC with zero scans/backfills and unchanged schemas/indexes/auth/crons. Website406051f remains serving. The retained retry reached the provider once and returned another HTTP400 naming optional icon, despite strict=false. The actual Gateway generation gen_01M647XR901138PNKBY37AXXND reports zero total/upstream cost and zero prompt/completion/native tokens. Preserve both rejected requests and all historical financial holds. Meta's direct API documentation did not establish Gateway adapter behavior; ADR196's assumption is superseded by this observed result.
 

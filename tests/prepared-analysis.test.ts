@@ -531,93 +531,273 @@ it("permits only one separately funded second schema correction after another pr
   ).rejects.toThrow(/COST_RECONCILIATION_REQUIRED/);
 });
 
-it("an app Save can automatically analyze one explicitly selected successful preparation without another download, ASR or asset copy", async () => {
+it.each([false, true])(
+  "an app Save can reuse independent prepared evidence without another download, ASR or asset copy, prior validation failed=%s",
+  async (rejected) => {
+    const s = await fixture(),
+      { runId } = await s.begin(),
+      { prepared, evidenceId } = await retain(s, runId);
+    await s.t.mutation(internal.preparedAnalysis.progress, {
+      runId,
+      stage: "analyzing",
+    });
+    if (rejected) {
+      vi.setSystemTime(Date.now() + 1000);
+      await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+        runId,
+        kind: "analysis",
+        receipt: {
+          model: preparedInsightModel,
+          provider: "meta",
+          requestId: "gen_" + "c".repeat(26),
+          startedAt: Date.now() - 500,
+          completedAt: Date.now(),
+          rateEstimateUsd: 0.001,
+        },
+      });
+      await s.t.mutation(internal.preparedAnalysis.fail, {
+        runId,
+        code: "INVALID_EVIDENCE",
+      });
+    } else
+      await s.t.mutation(internal.preparedAnalysis.finishGateway, {
+        runId,
+        output: output(s, runId, prepared),
+        receipt: { model: preparedInsightModel, rateEstimateUsd: 0.001 },
+      });
+    const policy = JSON.parse(process.env.PREPARED_MEDIA_ALPHA_JSON!);
+    vi.stubEnv(
+      "PREPARED_MEDIA_ALPHA_JSON",
+      JSON.stringify({
+        ...policy,
+        executor: "work_cloud",
+        maximumApiUsd: 0.02,
+        reuseEvidenceFromRunId: runId,
+      }),
+    );
+    const scheduledBefore = await s.t.run((ctx) =>
+      ctx.db.system.query("_scheduled_functions").collect(),
+    );
+    const saved = await s.owner.mutation(api.workCloudSaves.capture, {
+      ...s.args,
+      key: "prepared-reuse-save",
+      title: s.source.title,
+      rightsAttested: true,
+      grantId: s.grant.id,
+      grantVersion: s.grant.version,
+    });
+    expect(saved.status).toBe("preparing_evidence");
+    const runs = await s.t.run((ctx) =>
+      ctx.db
+        .query("mediaPreparations")
+        .withIndex("by_org_source", (q) =>
+          q.eq("organizationId", s.org).eq("sourceId", s.sourceId),
+        )
+        .collect(),
+    );
+    const next = runs.find((r) => r._id !== runId)!;
+    expect(next).toMatchObject({
+      state: "evidence_ready",
+      evidenceId,
+      receipt: { reusedPreparation: { runId, evidenceId } },
+    });
+    const scheduledAfter = await s.t.run((ctx) =>
+      ctx.db.system.query("_scheduled_functions").collect(),
+    );
+    const added = scheduledAfter.filter(
+      (r) => !scheduledBefore.some((old) => old._id === r._id),
+    );
+    expect(
+      added.some((r) => r.name.includes("preparedAnalysis:queueSubscription")),
+    ).toBe(true);
+    expect(added.some((r) => r.name.includes("preparedMedia:run"))).toBe(false);
+    const attemptId = await s.t.mutation(
+      internal.preparedAnalysis.queueSubscription,
+      { runId: next._id },
+    );
+    const attempt = await s.t.run((ctx) => ctx.db.get(attemptId));
+    expect(attempt!.evidenceId).toBe(evidenceId);
+    expect((await s.t.run((ctx) => ctx.db.get(runId)))!.state).toBe(
+      rejected ? "unknown" : "ready",
+    );
+    expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.analysis).toEqual(
+      s.output,
+    );
+    // A stale or foreign evidence choice cannot silently fall back to acquisition.
+    vi.stubEnv(
+      "PREPARED_MEDIA_ALPHA_JSON",
+      JSON.stringify({
+        ...policy,
+        executor: "work_cloud",
+        reuseEvidenceFromRunId: "foreign-run",
+      }),
+    );
+    await expect(
+      s.owner.mutation(api.workCloudSaves.capture, {
+        ...s.args,
+        key: "foreign-evidence-save",
+        title: s.source.title,
+        rightsAttested: true,
+        grantId: s.grant.id,
+        grantVersion: s.grant.version,
+      }),
+    ).rejects.toThrow();
+  },
+);
+
+it("retains a private immutable rejected model answer and bounded diagnostics without publishing it", async () => {
   const s = await fixture(),
     { runId } = await s.begin(),
-    { prepared, evidenceId } = await retain(s, runId);
-  await s.t.mutation(internal.preparedAnalysis.progress, {
+    raw = {
+      model: preparedInsightModel,
+      requestId: "gen_" + "d".repeat(26),
+      responseSha256: "f".repeat(64),
+      content: '{"summary":"Rejected model answer"}',
+    };
+  await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
     runId,
+    kind: "analysis_output",
+    receipt: raw,
+  });
+  await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId,
+    kind: "analysis_validation",
+    receipt: {
+      code: "GATEWAY_OUTPUT_SCHEMA_INVALID",
+      issues: [{ path: "insights", code: "invalid_type" }],
+    },
+  });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId,
+    code: "INVALID_EVIDENCE",
+  });
+  const status = await s.owner.query(api.preparedAnalysis.status, { runId });
+  expect(status.receipt.analysis_output).toEqual(raw);
+  expect(status.versionId).toBeNull();
+  await expect(
+    s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+      runId,
+      kind: "analysis_output",
+      receipt: { ...raw, content: "changed" },
+    }),
+  ).rejects.toThrow(/APPROVAL_STALE/);
+  await expect(
+    s.t
+      .withIdentity({ subject: "foreign-user" })
+      .query(api.preparedAnalysis.status, { runId }),
+  ).rejects.toThrow();
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.analysis).toEqual(
+    s.output,
+  );
+});
+
+it("creates one separately funded API version from independent evidence, preserving the rejected run and enforcing paid and fresh quotas separately", async () => {
+  const s = await fixture(),
+    first = await s.begin(),
+    { prepared, evidenceId } = await retain(s, first.runId);
+  await s.t.mutation(internal.preparedAnalysis.progress, {
+    runId: first.runId,
     stage: "analyzing",
   });
-  await s.t.mutation(internal.preparedAnalysis.finishGateway, {
-    runId,
-    output: output(s, runId, prepared),
-    receipt: { model: preparedInsightModel, rateEstimateUsd: 0.001 },
+  vi.setSystemTime(Date.now() + 1000);
+  const paid = {
+    model: preparedInsightModel,
+    provider: "meta",
+    requestId: "gen_" + "e".repeat(26),
+    startedAt: Date.now() - 500,
+    completedAt: Date.now(),
+    rateEstimateUsd: 0.001,
+  };
+  await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId: first.runId,
+    kind: "analysis",
+    receipt: paid,
+  });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId: first.runId,
+    code: "INVALID_EVIDENCE",
   });
   const policy = JSON.parse(process.env.PREPARED_MEDIA_ALPHA_JSON!);
   vi.stubEnv(
     "PREPARED_MEDIA_ALPHA_JSON",
     JSON.stringify({
       ...policy,
-      executor: "work_cloud",
+      maximumRuns: 3,
+      maximumFreshPreparations: 1,
+      maximumGatewayAnalyses: 2,
       maximumApiUsd: 0.02,
-      reuseEvidenceFromRunId: runId,
+      reuseEvidenceFromRunId: first.runId,
     }),
   );
-  const scheduledBefore = await s.t.run((ctx) =>
-    ctx.db.system.query("_scheduled_functions").collect(),
-  );
-  const saved = await s.owner.mutation(api.workCloudSaves.capture, {
+  const second = await s.owner.mutation(api.preparedAnalysis.begin, {
     ...s.args,
-    key: "prepared-reuse-save",
+    key: "separate-retained-api-version",
+  });
+  const r = (await s.t.run((ctx) => ctx.db.get(second.runId)))!;
+  expect(r).toMatchObject({
+    state: "evidence_ready",
+    evidenceId,
+    deadline: Date.now() + 180000,
+    receipt: { reusedPreparation: { runId: first.runId } },
+  });
+  expect(
+    await s.t.mutation(internal.preparedAnalysis.claimRetainedGateway, {
+      runId: second.runId,
+    }),
+  ).toBe(true);
+  expect(
+    await s.t.mutation(internal.preparedAnalysis.claimRetainedGateway, {
+      runId: second.runId,
+    }),
+  ).toBe(false);
+  expect(
+    await s.t.query(internal.preparedAnalysis.retainedGatewayInput, {
+      runId: second.runId,
+    }),
+  ).toMatchObject({ prepared, maximumApiUsd: 0.02 });
+  const versionId = await s.t.mutation(
+    internal.preparedAnalysis.finishGateway,
+    {
+      runId: second.runId,
+      output: output(s, second.runId, prepared),
+      receipt: paid,
+    },
+  );
+  const original = (await s.t.run((ctx) => ctx.db.get(first.runId)))!;
+  expect(original.state).toBe("unknown");
+  expect(original.receipt.analysis).toEqual(paid);
+  await expect(
+    s.owner.mutation(api.preparedAnalysis.begin, {
+      ...s.args,
+      key: "third-paid-analysis-blocked",
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+  vi.stubEnv(
+    "PREPARED_MEDIA_ALPHA_JSON",
+    JSON.stringify({
+      ...policy,
+      maximumRuns: 3,
+      maximumFreshPreparations: 1,
+      maximumGatewayAnalyses: 2,
+      maximumApiUsd: 0.02,
+      executor: "work_cloud",
+      reuseEvidenceFromRunId: first.runId,
+    }),
+  );
+  await s.owner.mutation(api.workCloudSaves.capture, {
+    ...s.args,
+    key: "native-uses-independent-evidence",
     title: s.source.title,
     rightsAttested: true,
     grantId: s.grant.id,
     grantVersion: s.grant.version,
   });
-  expect(saved.status).toBe("preparing_evidence");
-  const runs = await s.t.run((ctx) =>
-    ctx.db
-      .query("mediaPreparations")
-      .withIndex("by_org_source", (q) =>
-        q.eq("organizationId", s.org).eq("sourceId", s.sourceId),
-      )
-      .collect(),
-  );
-  const next = runs.find((r) => r._id !== runId)!;
-  expect(next).toMatchObject({
-    state: "evidence_ready",
-    evidenceId,
-    receipt: { reusedPreparation: { runId, evidenceId } },
-  });
-  const scheduledAfter = await s.t.run((ctx) =>
-    ctx.db.system.query("_scheduled_functions").collect(),
-  );
-  const added = scheduledAfter.filter(
-    (r) => !scheduledBefore.some((old) => old._id === r._id),
-  );
-  expect(
-    added.some((r) => r.name.includes("preparedAnalysis:queueSubscription")),
-  ).toBe(true);
-  expect(added.some((r) => r.name.includes("preparedMedia:run"))).toBe(false);
-  const attemptId = await s.t.mutation(
-    internal.preparedAnalysis.queueSubscription,
-    { runId: next._id },
-  );
-  const attempt = await s.t.run((ctx) => ctx.db.get(attemptId));
-  expect(attempt!.evidenceId).toBe(evidenceId);
   expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.analysis).toEqual(
     s.output,
   );
-  // A stale or foreign evidence choice cannot silently fall back to acquisition.
-  vi.stubEnv(
-    "PREPARED_MEDIA_ALPHA_JSON",
-    JSON.stringify({
-      ...policy,
-      executor: "work_cloud",
-      reuseEvidenceFromRunId: "foreign-run",
-    }),
+  expect((await s.t.run((ctx) => ctx.db.get(versionId)))!.evidenceId).toBe(
+    evidenceId,
   );
-  await expect(
-    s.owner.mutation(api.workCloudSaves.capture, {
-      ...s.args,
-      key: "foreign-evidence-save",
-      title: s.source.title,
-      rightsAttested: true,
-      grantId: s.grant.id,
-      grantVersion: s.grant.version,
-    }),
-  ).rejects.toThrow();
 });
 
 it("uses Gateway's strict required-property subset, preserving local citation validation and rejection diagnostics", async () => {
@@ -626,7 +806,9 @@ it("uses Gateway's strict required-property subset, preserving local citation va
     { prepared } = await retain(s, runId);
   const expected = output(s, runId, prepared),
     requests: any[] = [],
-    receipts: any[] = [];
+    receipts: any[] = [],
+    outputs: any[] = [],
+    validations: any[] = [];
   const args = {
     sourceId: s.sourceId,
     attemptId: runId,
@@ -664,12 +846,17 @@ it("uses Gateway's strict required-property subset, preserving local citation va
       );
     const result = structuredClone(expected);
     if (invalidCitation) result.insights[0].evidence[0].id = "invented-frame";
+    const body = {
+      summary: result.summary,
+      warnings: result.warnings,
+      insights: result.insights,
+    };
     return Response.json({
       id: "gen_" + "c".repeat(26),
       model: preparedInsightModel,
       usage: { prompt_tokens: 100, completion_tokens: 200 },
       choices: [
-        { finish_reason: "stop", message: { content: JSON.stringify(result) } },
+        { finish_reason: "stop", message: { content: JSON.stringify(body) } },
       ],
     });
   };
@@ -685,10 +872,45 @@ it("uses Gateway's strict required-property subset, preserving local citation va
     requests[0].response_format.json_schema.schema.properties.insights.items
       .required,
   ).toContain("topics");
+  expect(requests[0].response_format.json_schema.schema.required).toEqual([
+    "summary",
+    "warnings",
+    "insights",
+  ]);
+  expect(
+    requests[0].response_format.json_schema.schema.properties.insights.items
+      .properties.evidence.items.anyOf,
+  ).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        properties: expect.objectContaining({
+          id: { type: "string", const: "speech-1" },
+          startMs: { type: "integer", const: 0 },
+          endMs: { type: "integer", const: 1000 },
+        }),
+      }),
+    ]),
+  );
+  expect(requests[0].messages[1].content[0].text).not.toContain(s.sourceId);
   invalidCitation = true;
   await expect(
-    analyzePreparedEvidence({ ...args, fetch: transport }),
-  ).rejects.toThrow(/CITATION/);
+    analyzePreparedEvidence({
+      ...args,
+      fetch: transport,
+      onOutput: async (r) => {
+        outputs.push(r);
+      },
+      onValidation: async (r) => {
+        validations.push(r);
+      },
+    }),
+  ).rejects.toThrow(/INVALID_EVIDENCE/);
+  expect(outputs).toHaveLength(1);
+  expect(outputs[0].content).toContain("invented-frame");
+  expect(validations[0]).toMatchObject({
+    code: "ANALYSIS_VERSION_CITATION_INVALID",
+    responseSha256: outputs[0].responseSha256,
+  });
   invalidCitation = false;
   rejection = true;
   await expect(

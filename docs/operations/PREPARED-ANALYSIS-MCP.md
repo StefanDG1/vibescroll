@@ -1,6 +1,6 @@
 # Use prepared analysis through MCP
 
-Mode: technical how-to. Candidate behavior from [ADR 200](../adr/200-server-prepared-analysis-service-and-mcp-credits.md); [current state](CURRENT-STATE.md) records actual production acceptance.
+Mode: technical how-to. Implemented service from [ADR 200](../adr/200-server-prepared-analysis-service-and-mcp-credits.md); [current state](CURRENT-STATE.md) records actual production acceptance.
 
 ## Credit route
 
@@ -13,7 +13,7 @@ Mode: technical how-to. Candidate behavior from [ADR 200](../adr/200-server-prep
 
 Baseline is Muse Spark 1.3 Contributor at medium reasoning, with API ASR only when needed. Other model bands and commerce migration remain separately planned. Existing credit units are unchanged.
 
-If your host has cached the older tool list, use `request_analysis` with `mode:"credits"` to read the fixed-baseline quote. After acceptance, repeat with its returned generation and maxCredits. Read preparation and settled credits with `get_job_status`. This starts only the first analysis, reuses its deterministic operation on replay and requires no reconnect. Explicit new versions use quote/start.
+If your host has cached the older tool list, use `request_analysis` with `mode:"credits"` to read the fixed-baseline quote. After acceptance, repeat with its returned generation and maxCredits. Read preparation and settled credits with `get_job_status`. This admits first analysis and reuses its deterministic operation on replay; no reconnect is required. Other new versions use quote/start. For a confirmed settled failure, an explicit retry uses `{generation, revision, key}` from current status and a new stable key. Credit retries first return a quote; repeat its exact next_action arguments. Native retries use mode `work_cloud`, current defaults and at most one preparation credit. Active or unknown work cannot retry.
 
 ## Own-subscription route
 
@@ -28,3 +28,11 @@ Events are host-specific. A connected MCP does not create a generic backend API 
 Inspect status and the exact private receipt when authorized. Separate saved, preparing, waiting for Assistant, analyzing, ready, failed and unknown. Retained evidence needs no new acquisition. Unknown work keeps its hold until reconciled. Preserve failed attempts and leases.
 
 Provider configuration/funding, Pro access, OAuth, VibeScroll grant and native monitor are separate checks. Supported OAuth refresh avoids repeated normal sign-in, but credentials remain revocable. Ordinary permission changes use a normal session; account deletion retains stronger authentication.
+
+## October29 production pilot
+
+The original connected MCP successfully ran a fresh Muse credit request and a fresh server-prepared native retry. Both published independent neutral shared versions with eight byte-verified540x960 JPEGs. Actual cached MCP calls, version/history reads, final credit settlement and a zero-work warm Save passed. The existing native Assistant inspected all eight images and returned a completion message while remaining Monitoring; no setup prompt was pasted again. [Current acceptance](CURRENT-STATE.md) records the later ordinary Save canary and rollout limits.
+
+Use `analysis_history({sourceId, paginationOpts:{numItems:5,cursor:null}})` and `analysis_version({sourceId})` for the current selected result. History can contain a preserved private original and an independent service version with the same display number; their immutable IDs and origin distinguish them. Shared publication can select a service reference even when the raw source has no selected private version ID.
+
+This is the finite operator pilot, not completed public checkout/Pro-credit migration or independent cold-user onboarding. Only sources explicitly saved/requested populate the personal library. A later catalog browse entitlement does not copy the whole corpus into it. Embedded ChatGPT UI and local execution remain disabled/deferred.

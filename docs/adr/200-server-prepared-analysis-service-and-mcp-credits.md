@@ -1,7 +1,7 @@
 # ADR 200: server preparation and credit-funded MCP analysis
 
 Date: 2026-10-29
-Status: service and legacy-wallet correction published; fresh production acceptance pending
+Status: finite owner service pilot published and accepted; public rollout/commerce remains open
 
 ## Decision
 
@@ -49,3 +49,7 @@ Project prepared evidence through the existing neutral projection. Preserve `man
 Focused local cases cover real MCP/HTTP identity transport, tampering, idempotent start/complete, minute settlement, retained reuse, generation zero, app/MCP Save, truthful publication, two-account fulfillment and failed/unknown reservations. They do not establish live provider behavior.
 
 Run full checks, exact CI and actual compatible deployment guards. Then verify a fresh credit-funded run through MCP, actual transcript/JPEGs, metadata/progress, wallet, canonical version and independent shared artifact. Verify a fresh automatic native run using the prepared action. Record measured phase times and remaining rollout/commerce limits. Private-ready alone does not satisfy sharing acceptance.
+
+## Production acceptance
+
+Backend e0ca232 passed exact CI40957292958 and actual compatible publication guards. The fresh original-MCP Muse route and two native routes completed, including ordinary default Save. All three published independent neutral shared results and settled exact credits. [The dated receipt](../operations/evidence/launch-20261029-server-service-production.json) records24 actual JPEG checks, native result replies/continued Monitoring, timing, costs and limits. [Current state](../operations/CURRENT-STATE.md) is authoritative for the finite remaining allowance and unfinished public/cross-account acceptance. No new website build, prompt paste or OAuth reconnection was needed for the correction.

@@ -162,7 +162,7 @@ Detailed owners: [continuation](../operations/CONTINUE-VIBESCROLL.md), [failure/
 
 ## October29 continuation instruction
 
-R097: Add the faster-diagnosis lessons, then continue simpler server preparation until both analysis routes work reliably in production. Prioritize a complete credit-funded route through MCP. Preserve shared evidence, credits and own-subscription funding separation. No embedded UI/local work or silent paid fallback. [ADR 200](../adr/200-server-prepared-analysis-service-and-mcp-credits.md) and the [MCP procedure](../operations/PREPARED-ANALYSIS-MCP.md) define the implementation. Production acceptance requires exact deployed end-to-end evidence.
+R097: Add the faster-diagnosis lessons, then continue simpler server preparation until both analysis routes work reliably in production. Prioritize a complete credit-funded route through MCP. Preserve shared evidence, credits and own-subscription funding separation. No embedded UI/local work or silent paid fallback. [ADR 200](../adr/200-server-prepared-analysis-service-and-mcp-credits.md) and the [MCP procedure](../operations/PREPARED-ANALYSIS-MCP.md) define the implementation. Production acceptance requires exact deployed end-to-end evidence. The October29 server-service pilot now has fresh deployed credit/native acceptance with independent shared versions, actual image bytes and idempotent settlement; see [the service receipt](../operations/evidence/launch-20261029-server-service-production.json). General public commerce, cold onboarding and broad platform/reliability measurements remain open.
 
 ## Decisions that supersede earlier conversation choices
 

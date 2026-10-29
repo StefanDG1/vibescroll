@@ -14,7 +14,10 @@ import {
   objectMetadata,
   deleteObject,
 } from "../packages/providers/storage";
-import { exactArrayBuffer } from "../packages/providers/binary";
+import {
+  exactArrayBuffer,
+  readResponseBytes,
+} from "../packages/providers/binary";
 import { ensure, PolicyError } from "../packages/policy";
 
 export const run = internalAction({
@@ -263,6 +266,13 @@ export const run = internalAction({
               receipt,
             });
           },
+          onRejection: async (receipt) => {
+            await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+              runId,
+              kind: "analysis_rejection",
+              receipt,
+            });
+          },
         });
         await ctx.runMutation(internal.preparedAnalysis.finishGateway, {
           runId,
@@ -290,6 +300,131 @@ export const run = internalAction({
             }
           }),
         );
+    }
+    return null;
+  },
+});
+
+// Operator-requested recovery of a verified zero-inference rejection. This
+// consumes retained bytes and a fresh finite analysis authority, never media/ASR.
+export const retryRejectedGateway = internalAction({
+  args: {
+    runId: v.id("mediaPreparations"),
+    key: v.string(),
+    generationId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, a): Promise<null> => {
+    const first = await ctx.runQuery(
+      internal.preparedAnalysis.gatewayRetryInput,
+      { runId: a.runId, key: a.key },
+    );
+    if (first.existing) return null;
+    ensure(
+      /^gen_[A-Za-z0-9]{20,80}$/.test(a.generationId),
+      "INVALID_INPUT",
+      "Use the exact operator-observed Gateway generation.",
+    );
+    const apiKey = process.env.VERCEL_AI_GATEWAY_API_KEY;
+    ensure(
+      apiKey && apiKey.length > 10,
+      "SETUP_REQUIRED",
+      "Configure the bounded Gateway credential.",
+    );
+    const response = await fetch(
+      "https://ai-gateway.vercel.sh/v1/generation?id=" +
+        encodeURIComponent(a.generationId),
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        redirect: "error",
+        signal: AbortSignal.timeout(12000),
+      },
+    );
+    ensure(
+      response.ok,
+      "COST_RECONCILIATION_REQUIRED",
+      "Gateway did not verify the rejected generation.",
+    );
+    const record = JSON.parse(
+      new TextDecoder().decode(await readResponseBytes(response, 20000)),
+    );
+    ensure(
+      record.data?.id === a.generationId,
+      "COST_RECONCILIATION_REQUIRED",
+      "Gateway generation binding changed.",
+    );
+    const claimed = await ctx.runMutation(
+      internal.preparedAnalysis.claimGatewayRetry,
+      { runId: a.runId, key: a.key, generation: record.data },
+    );
+    if (!claimed) return null;
+    try {
+      const input = await ctx.runQuery(
+        internal.preparedAnalysis.gatewayRetryInput,
+        { runId: a.runId, key: a.key, claimed: true },
+      );
+      ensure(
+        !input.existing,
+        "APPROVAL_STALE",
+        "This retained retry is already finished.",
+      );
+      const frames = await Promise.all(
+        input.frames.map(async (frame: any) => {
+          const r = await fetch(signedObject(frame.key, "GET", 30), {
+            redirect: "error",
+            signal: AbortSignal.timeout(10000),
+          });
+          ensure(
+            r.ok,
+            "STORAGE_UNAVAILABLE",
+            "Retained source image is unavailable.",
+          );
+          return {
+            id: frame.frameId,
+            bytes: await readResponseBytes(r, Math.min(frame.size, 150000)),
+          };
+        }),
+      );
+      await ctx.runQuery(internal.preparedAnalysis.gatewayRetryInput, {
+        runId: a.runId,
+        key: a.key,
+        claimed: true,
+      });
+      const result = await analyzePreparedEvidence({
+        sourceId: input.sourceId,
+        attemptId: a.runId,
+        prepared: input.prepared,
+        frames,
+        apiKey,
+        maximumUsd: 0.03,
+        contributorAllowed: input.contributorAllowed,
+        onReceipt: async (receipt) => {
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId: a.runId,
+            kind: "analysis",
+            receipt,
+          });
+        },
+        onRejection: async (receipt) => {
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId: a.runId,
+            kind: "analysis_rejection",
+            receipt,
+          });
+        },
+      });
+      await ctx.runMutation(internal.preparedAnalysis.finishGateway, {
+        runId: a.runId,
+        ...result,
+      });
+    } catch (error) {
+      await ctx.runMutation(internal.preparedAnalysis.fail, {
+        runId: a.runId,
+        code:
+          error instanceof PolicyError
+            ? error.code
+            : "PREPARATION_OUTCOME_UNCONFIRMED",
+      });
     }
     return null;
   },

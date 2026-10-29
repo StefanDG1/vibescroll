@@ -29,7 +29,11 @@ import { insertAsset } from "./lib/storageUsage";
 import { savedCloudRoute, savedCloudGrantCurrent } from "./lib/workCloudSave";
 import { notifyVersionWaiting } from "./lib/assistantEvents";
 import { admitCloudMediaJob } from "./lib/workCloudAdmission";
-import { freezeAnalysisBaseline } from "./lib/analysisHistory";
+import {
+  freezeAnalysisBaseline,
+  preparedEvidenceForSource,
+  verifyRetainedAssets,
+} from "./lib/analysisHistory";
 import { postDisplayTitle } from "../packages/sources/display";
 import { postThumbnailCandidates } from "../packages/sources/thumbnail";
 import { apiTranscriptResponse } from "../packages/contracts/transcription";
@@ -44,6 +48,34 @@ const policySchema = z.strictObject({
   contributorAllowed: z.literal(true),
   executor: z.enum(["gateway", "work_cloud"]),
 });
+
+const rejectedGeneration = z.object({
+  id: z.string().regex(/^gen_[A-Za-z0-9]{20,80}$/),
+  created_at: z.string().max(50),
+  model: z.literal("meta/muse-spark-1.3-contributor"),
+  provider_name: z.literal("meta"),
+  finish_reason: z.literal("error"),
+  total_cost: z.literal(0),
+  upstream_inference_cost: z.literal(0),
+  tokens_prompt: z.literal(0),
+  tokens_completion: z.literal(0),
+  native_tokens_prompt: z.literal(0),
+  native_tokens_completion: z.literal(0),
+});
+
+function gatewayDeadline(run: Doc<"mediaPreparations">) {
+  const retry = run.receipt?.gatewayRetry;
+  return retry?.state === "claimed" &&
+    retry.evidenceId === run.evidenceId &&
+    retry.maximumApiUsd === 0.03 &&
+    Number.isSafeInteger(retry.claimedAt) &&
+    retry.claimedAt >= run.createdAt &&
+    Number.isSafeInteger(retry.deadline) &&
+    retry.deadline > retry.claimedAt &&
+    retry.deadline <= retry.claimedAt + 180000
+    ? retry.deadline
+    : run.deadline;
+}
 
 export function preparedPolicy(subject: string, canonical: string) {
   if (!process.env.PREPARED_MEDIA_ALPHA_JSON) return null;
@@ -517,7 +549,7 @@ export const finishGateway = internalMutation({
       return version._id;
     }
     ensure(
-      c.run.deadline > Date.now() &&
+      gatewayDeadline(c.run) > Date.now() &&
         c.run.executor === "gateway" &&
         c.run.state === "analyzing" &&
         c.run.evidenceId,
@@ -566,6 +598,7 @@ export const finishGateway = internalMutation({
           protocol: "gateway-analysis-v1",
           model: a.receipt.model,
           effort: "medium",
+          structuredOutputMode: "meta-normalized-json-schema-v1",
           instructions: preparedAnalysisInstructions,
           outputSchema: z.toJSONSchema(analysisVersionOutput),
         }),
@@ -581,7 +614,18 @@ export const finishGateway = internalMutation({
       state: "ready",
       versionId,
       updatedAt: now,
-      receipt: { ...c.run.receipt, analysis: a.receipt },
+      receipt: {
+        ...c.run.receipt,
+        analysis: a.receipt,
+        ...(c.run.receipt?.gatewayRetry
+          ? {
+              gatewayRetry: {
+                ...c.run.receipt.gatewayRetry,
+                state: "completed",
+              },
+            }
+          : {}),
+      },
       stages: [...c.run.stages, { stage: "ready", at: now }],
     });
     const select =
@@ -737,6 +781,7 @@ export const recordReceipt = internalMutation({
       v.literal("asr"),
       v.literal("asr_output"),
       v.literal("analysis"),
+      v.literal("analysis_rejection"),
     ),
     receipt: v.any(),
   },
@@ -863,6 +908,157 @@ export const reconcileReturnedFailure = internalMutation({
   },
 });
 
+async function retryGatewayContext(
+  ctx: QueryCtx,
+  runId: Id<"mediaPreparations">,
+  key: string,
+  claimed = false,
+) {
+  const c = await current(ctx, runId),
+    policy = preparedPolicy(c.actor.subject, c.run.canonical);
+  ensure(
+    /^[A-Za-z0-9_-]{8,64}$/.test(key) &&
+      policy?.id === c.run.policyId &&
+      policy.executor === "gateway" &&
+      policy.maximumApiUsd >= 0.03 &&
+      c.run.executor === "gateway" &&
+      c.run.evidenceId &&
+      !c.source.pendingAnalysisAttemptId &&
+      c.source.personalMedia?.runId === runId,
+    "APPROVAL_STALE",
+    "Use this owner's active, explicitly funded retained-evidence Gateway request.",
+  );
+  const retry = c.run.receipt?.gatewayRetry;
+  if (retry) {
+    ensure(
+      retry.key === key,
+      "APPROVAL_STALE",
+      "This retained retry already has another operation key.",
+    );
+    if (!claimed) return { ...c, existing: true as const };
+    ensure(
+      retry.state === "claimed" &&
+        c.run.state === "analyzing" &&
+        gatewayDeadline(c.run) > Date.now(),
+      "APPROVAL_STALE",
+      "The finite retained-analysis retry is no longer active.",
+    );
+  } else {
+    ensure(
+      !claimed &&
+        c.run.state === "unknown" &&
+        c.run.receipt?.failure?.stage === "analyzing" &&
+        c.run.receipt.failure.code === "PROVIDER_ERROR" &&
+        !c.run.receipt.analysis &&
+        !c.run.versionId,
+      "COST_RECONCILIATION_REQUIRED",
+      "Only a confirmed rejected analysis request can use this retry.",
+    );
+  }
+  const evidence = await preparedEvidenceForSource(
+    ctx,
+    c.source,
+    c.run.evidenceId!,
+  );
+  await verifyRetainedAssets(ctx, c.source, evidence);
+  return { ...c, existing: false as const, evidence, policy };
+}
+
+export const gatewayRetryInput = internalQuery({
+  args: {
+    runId: v.id("mediaPreparations"),
+    key: v.string(),
+    claimed: v.optional(v.boolean()),
+  },
+  returns: v.any(),
+  handler: async (ctx, a) => {
+    const c = await retryGatewayContext(ctx, a.runId, a.key, a.claimed);
+    return c.existing
+      ? { existing: true as const }
+      : {
+          existing: false as const,
+          sourceId: c.source._id,
+          organizationId: c.run.organizationId,
+          prepared: c.evidence.prepared,
+          frames: c.evidence.frames,
+          maximumApiUsd: 0.03,
+          contributorAllowed: c.policy.contributorAllowed,
+        };
+  },
+});
+
+export const claimGatewayRetry = internalMutation({
+  args: {
+    runId: v.id("mediaPreparations"),
+    key: v.string(),
+    generation: v.any(),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, a) => {
+    const c = await retryGatewayContext(ctx, a.runId, a.key);
+    if (c.existing) return false;
+    const generation = rejectedGeneration.parse(a.generation),
+      at = Date.parse(generation.created_at);
+    ensure(
+      !c.run.receipt.analysis_rejection?.generationId ||
+        c.run.receipt.analysis_rejection.generationId === generation.id,
+      "COST_RECONCILIATION_REQUIRED",
+      "The retained rejection identifies another generation.",
+    );
+    const stage = [...c.run.stages].reverse().find((s) => s.stage === "analyzing");
+    ensure(
+      stage &&
+        Number.isFinite(at) &&
+        at >= stage.at - 2000 &&
+        at <= c.run.receipt.failure.at + 2000,
+      "COST_RECONCILIATION_REQUIRED",
+      "The operator-observed rejected generation does not match this run's request window.",
+    );
+    const now = Date.now(),
+      deadline = Math.min(now + 180000, c.policy.expiresAt);
+    ensure(
+      deadline > now,
+      "APPROVAL_STALE",
+      "The explicit retry policy expired.",
+    );
+    await ctx.db.patch(a.runId, {
+      state: "analyzing",
+      updatedAt: now,
+      receipt: {
+        ...c.run.receipt,
+        gatewayRejection: {
+          ...generation,
+          binding: "operator_observed_gateway_generation",
+          verifiedAt: now,
+        },
+        originalGatewayFailure: c.run.receipt.failure,
+        gatewayRetry: {
+          key: a.key,
+          evidenceId: c.run.evidenceId,
+          maximumApiUsd: 0.03,
+          claimedAt: now,
+          deadline,
+          state: "claimed",
+        },
+      },
+      stages: [...c.run.stages, { stage: "analyzing", at: now }].slice(-24),
+    });
+    await ctx.db.patch(c.source._id, {
+      personalMedia: {
+        ...c.source.personalMedia,
+        stage: "analyzing",
+        updatedAt: now,
+      },
+    });
+    await ctx.scheduler.runAfter(
+      deadline - now,
+      internal.preparedAnalysis.expire,
+      { runId: a.runId },
+    );
+    return true;
+  },
+});
+
 export const expire = internalMutation({
   args: { runId: v.id("mediaPreparations") },
   returns: v.null(),
@@ -870,7 +1066,7 @@ export const expire = internalMutation({
     const run = await ctx.db.get(runId);
     if (
       !run ||
-      run.deadline > Date.now() ||
+      gatewayDeadline(run) > Date.now() ||
       ["ready", "failed", "unknown"].includes(run.state)
     )
       return null;

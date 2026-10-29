@@ -1,5 +1,11 @@
 # Implementation status
 
+## October29: PCM correction live; Muse schema rejection isolated
+
+Backend809668e passed exact CI40906454557 and22 actual release guards with zero scans/backfills and unchanged schema/index/auth/cron. Website406051f remains live. The third fresh preparation retained real screenshots and a transcript whose final segment ends at74302ms, exactly the source duration, with zero overflow. The audio correction therefore passed its hosted boundary check. No incumbent analysis was replaced.
+
+Muse then returned HTTP400 because strict schema mode rejects the application's optional icon property. Official Gateway generation lookup confirms zero inference tokens and zero total/upstream cost. [ADR196](adr/196-muse-optional-schema-and-retained-retry.md) uses Meta's supported optional-property mode with unchanged local output/citation validation and a separately funded, single-claim retained-evidence retry. This correction is local; successful API insights and the fresh automatic subscription comparison remain unclaimed. Earlier holds and the four-preparation ceiling remain protected.
+
 ## October29: returned-ASR diagnostics live; decoder boundary reproduced and corrected locally
 
 Backend98b3b8e is deployed after exact CI40903753028, full offline checks and22 release guards. Actual12-component/138-table/301-index prediction required zero scans/backfills and changed no schema/index/auth/cron. No website build ran; website406051f remains live. The first rejected preparation was narrowly reconciled to failed, with its ASR receipt and financial hold preserved. No model/unknown inference was reset.

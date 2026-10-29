@@ -4,6 +4,10 @@ import { api, internal } from "../convex/_generated/api";
 import { analysisVersionFixture } from "./analysis-version-fixture";
 import { makePreparedEvidence } from "../packages/contracts/prepared-evidence";
 import { sharedTypedCitations } from "../convex/lib/sourceCitations";
+import {
+  analyzePreparedEvidence,
+  preparedInsightModel,
+} from "../packages/providers/vercel-insights";
 
 afterEach(() => {
   vi.clearAllTimers();
@@ -320,6 +324,231 @@ function output(
     })),
   };
 }
+
+function rejectedGeneration(at: number) {
+  return {
+    id: "gen_" + "a".repeat(26),
+    created_at: new Date(at).toISOString(),
+    model: preparedInsightModel,
+    provider_name: "meta",
+    finish_reason: "error",
+    total_cost: 0,
+    upstream_inference_cost: 0,
+    tokens_prompt: 0,
+    tokens_completion: 0,
+    native_tokens_prompt: 0,
+    native_tokens_completion: 0,
+  };
+}
+
+it("recovers a zero-inference Gateway rejection once from exact retained evidence with a fresh finite deadline", async () => {
+  const s = await fixture(),
+    { runId } = await s.begin(),
+    { prepared, evidenceId } = await retain(s, runId);
+  await s.t.mutation(internal.preparedAnalysis.progress, {
+    runId,
+    stage: "analyzing",
+  });
+  const rejectedAt = Date.now();
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId,
+    code: "PROVIDER_ERROR",
+  });
+  const old = (await s.t.run((ctx) => ctx.db.get(runId)))!;
+  vi.setSystemTime(old.deadline + 1);
+  const args = {
+    runId,
+    key: "retained-analysis-retry",
+    generation: rejectedGeneration(rejectedAt),
+  };
+  // Cost, actual model and matching request time must all be established.
+  for (const generation of [
+    { ...args.generation, total_cost: 0.001 },
+    { ...args.generation, tokens_prompt: 1 },
+    { ...args.generation, model: "another-model" },
+    {
+      ...args.generation,
+      created_at: new Date(rejectedAt - 60000).toISOString(),
+    },
+  ]) {
+    await expect(
+      s.t.mutation(internal.preparedAnalysis.claimGatewayRetry, {
+        ...args,
+        generation,
+      }),
+    ).rejects.toThrow();
+  }
+  expect(
+    await Promise.all([
+      s.t.mutation(internal.preparedAnalysis.claimGatewayRetry, args),
+      s.t.mutation(internal.preparedAnalysis.claimGatewayRetry, args),
+    ]),
+  ).toEqual([true, false]);
+  const claimed = (await s.t.run((ctx) => ctx.db.get(runId)))!;
+  expect(claimed.deadline).toBe(old.deadline);
+  expect(claimed.receipt.originalGatewayFailure).toEqual(old.receipt.failure);
+  expect(claimed.receipt.gatewayRetry).toMatchObject({
+    state: "claimed",
+    evidenceId,
+    deadline: Date.now() + 180000,
+  });
+  await s.t.mutation(internal.preparedAnalysis.expire, { runId });
+  expect((await s.t.run((ctx) => ctx.db.get(runId)))!.state).toBe("analyzing");
+  await expect(
+    s.t.query(internal.preparedAnalysis.gatewayRetryInput, {
+      runId,
+      key: "another-retry-key",
+    }),
+  ).rejects.toThrow(/APPROVAL_STALE/);
+  const input = await s.t.query(internal.preparedAnalysis.gatewayRetryInput, {
+    runId,
+    key: args.key,
+    claimed: true,
+  });
+  expect(input).toMatchObject({ existing: false, prepared });
+  const versionId = await s.t.mutation(
+    internal.preparedAnalysis.finishGateway,
+    {
+      runId,
+      output: output(s, runId, prepared),
+      receipt: { model: preparedInsightModel, rateEstimateUsd: 0.001 },
+    },
+  );
+  expect((await s.t.run((ctx) => ctx.db.get(runId)))!).toMatchObject({
+    state: "ready",
+    versionId,
+    receipt: { gatewayRetry: { state: "completed" } },
+  });
+  expect(
+    await s.t.query(internal.preparedAnalysis.gatewayRetryInput, {
+      runId,
+      key: args.key,
+    }),
+  ).toEqual({ existing: true });
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.analysis).toEqual(
+    s.output,
+  );
+});
+
+it("does not convert an ambiguous paid analysis or stale evidence authority into a retained retry", async () => {
+  const s = await fixture(),
+    { runId } = await s.begin();
+  await retain(s, runId);
+  await s.t.mutation(internal.preparedAnalysis.progress, {
+    runId,
+    stage: "analyzing",
+  });
+  await s.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId,
+    kind: "analysis",
+    receipt: { model: preparedInsightModel, inputTokens: 10 },
+  });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId,
+    code: "PROVIDER_ERROR",
+  });
+  const args = {
+    runId,
+    key: "blocked-paid-retry",
+    generation: rejectedGeneration(Date.now()),
+  };
+  await expect(
+    s.t.mutation(internal.preparedAnalysis.claimGatewayRetry, args),
+  ).rejects.toThrow(/COST_RECONCILIATION_REQUIRED/);
+  await s.t.run((ctx) => ctx.db.patch(s.sourceId, { rightsAttested: false }));
+  await expect(
+    s.t.query(internal.preparedAnalysis.gatewayRetryInput, {
+      runId,
+      key: args.key,
+    }),
+  ).rejects.toThrow(/APPROVAL_STALE/);
+});
+
+it("uses Muse's supported optional-property schema mode, preserving local citation validation and rejection diagnostics", async () => {
+  const s = await fixture(),
+    { runId } = await s.begin(),
+    { prepared } = await retain(s, runId);
+  const expected = output(s, runId, prepared),
+    requests: any[] = [],
+    receipts: any[] = [];
+  const args = {
+    sourceId: s.sourceId,
+    attemptId: runId,
+    prepared,
+    frames: [{ id: "frame-1", bytes: s.bytes }],
+    apiKey: "synthetic-api-credential-only",
+    maximumUsd: 0.03,
+    contributorAllowed: true,
+  };
+  let rejection = false,
+    invalidCitation = false;
+  const transport: typeof fetch = async (url, init) => {
+    if (String(url).endsWith("/models"))
+      return Response.json({
+        data: [
+          {
+            id: preparedInsightModel,
+            modalities: { input: ["image"] },
+            tags: ["structured-output"],
+            pricing: { input: "0.0000001", output: "0.0000002" },
+          },
+        ],
+      });
+    requests.push(JSON.parse(init!.body as string));
+    if (rejection)
+      return Response.json(
+        {
+          id: "gen_" + "b".repeat(26),
+          error: {
+            message:
+              "Invalid schema " + args.apiKey + " https://private.example/test",
+          },
+        },
+        { status: 400 },
+      );
+    const result = structuredClone(expected);
+    if (invalidCitation) result.insights[0].evidence[0].id = "invented-frame";
+    return Response.json({
+      id: "gen_" + "c".repeat(26),
+      model: preparedInsightModel,
+      usage: { prompt_tokens: 100, completion_tokens: 200 },
+      choices: [
+        { finish_reason: "stop", message: { content: JSON.stringify(result) } },
+      ],
+    });
+  };
+  expect(
+    (await analyzePreparedEvidence({ ...args, fetch: transport })).output,
+  ).toEqual(expected);
+  expect(requests[0].response_format.json_schema.strict).toBe(false);
+  expect(
+    requests[0].response_format.json_schema.schema.properties.insights.items
+      .required,
+  ).not.toContain("icon");
+  invalidCitation = true;
+  await expect(
+    analyzePreparedEvidence({ ...args, fetch: transport }),
+  ).rejects.toThrow(/CITATION/);
+  invalidCitation = false;
+  rejection = true;
+  await expect(
+    analyzePreparedEvidence({
+      ...args,
+      fetch: transport,
+      onRejection: async (r) => {
+        receipts.push(r);
+      },
+    }),
+  ).rejects.toThrow(/PROVIDER_ERROR/);
+  expect(receipts).toHaveLength(1);
+  expect(receipts[0]).toMatchObject({
+    httpStatus: 400,
+    generationId: "gen_" + "b".repeat(26),
+    message: "Invalid schema [redacted] [url]",
+  });
+  expect(receipts[0].responseSha256).toMatch(/^[a-f0-9]{64}$/);
+  expect(requests).toHaveLength(3);
+});
 
 it("claims once, replays Save idempotently, fences concurrent preparation and preserves the incumbent pixels", async () => {
   const s = await fixture();

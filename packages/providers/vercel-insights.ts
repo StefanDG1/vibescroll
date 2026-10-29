@@ -24,6 +24,7 @@ export async function analyzePreparedEvidence(args: {
   contributorAllowed: boolean;
   fetch?: typeof fetch;
   onReceipt?: (receipt: Record<string, unknown>) => Promise<void>;
+  onRejection?: (receipt: Record<string, unknown>) => Promise<void>;
 }) {
   const prepared = await validatePreparedEvidence(args.prepared),
     e = prepared.evidence;
@@ -130,7 +131,9 @@ export async function analyzePreparedEvidence(args: {
           type: "json_schema",
           json_schema: {
             name: "vibescroll_analysis",
-            strict: true,
+            // Meta accepts optional properties in its normalized schema mode.
+            // Our application still validates the complete result and citations.
+            strict: false,
             schema: z.toJSONSchema(analysisVersionOutput),
           },
         },
@@ -138,6 +141,36 @@ export async function analyzePreparedEvidence(args: {
       signal: AbortSignal.timeout(120000),
     },
   );
+  if (!response.ok) {
+    const bytes = await readResponseBytes(response, 20000);
+    let body: any;
+    try {
+      body = JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      body = null;
+    }
+    const generation =
+      body?.id ?? response.headers.get("x-vercel-ai-gateway-generation-id");
+    await args.onRejection?.({
+      model: preparedInsightModel,
+      httpStatus: response.status,
+      receivedAt: Date.now(),
+      generationId:
+        typeof generation === "string" &&
+        /^gen_[A-Za-z0-9]{20,80}$/.test(generation)
+          ? generation
+          : null,
+      responseSha256: createHash("sha256").update(bytes).digest("hex"),
+      message:
+        typeof body?.error?.message === "string"
+          ? body.error.message
+              .split(args.apiKey)
+              .join("[redacted]")
+              .slice(0, 400)
+              .replace(/https?:\/\/\S+/g, "[url]")
+          : "The provider rejected this request.",
+    });
+  }
   ensure(
     response.ok,
     "PROVIDER_ERROR",

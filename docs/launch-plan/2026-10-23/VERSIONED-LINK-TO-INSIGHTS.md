@@ -1,5 +1,7 @@
 # Release the versioned link-to-insights flow
 
+Start with [current accepted state](../../operations/CURRENT-STATE.md) and the [owner register](../../strategy/OWNER-REQUEST-REGISTER.md). Production is last accepted atfc2ef42. Both prepared analyses saved; historical rejected/local/pending paragraphs below describe earlier attempts. Truthful managed/prepared shared publication and precise customer settlement remain the next backend work.
+
 Backend4892434 is live. Its Muse schema is accepted, but the answer was rejected before saving and the exact reason is unproved. [ADR198](../../adr/198-retained-model-output-and-trusted-bindings.md) records actual cost/timing, answer retention, trusted bindings and the approved bounded replacement. Existing native/shared results remain intact; the new prepared comparison is still open.
 
 The8f0435a optional-schema correction is live but still rejected by Gateway with zero inference/cost. [ADR197](../../adr/197-gateway-strict-schema-and-prepared-save-reuse.md) derives a stricter supported provider schema and reuses exact prepared inputs for the native app-Save comparison. This next candidate remains local and preserves all existing shared/native results.

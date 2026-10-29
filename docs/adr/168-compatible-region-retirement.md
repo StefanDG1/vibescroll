@@ -1,6 +1,6 @@
 # ADR 168: retire regional sharing on the compatible serving line
 
-Date: October 26, 2026. Status: implementation candidate, not published.
+Date: October 26, 2026. Status: deployed at3ac3247; [production receipt](../operations/evidence/launch-20261026-region-retirement.json). Pending language below describes the original candidate.
 
 ## Context
 

@@ -1,5 +1,13 @@
 # Implementation status
 
+Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
+
+## October29: conversation and failure audit recorded
+
+The owner requests retaining every requirement/correction and learning from the failed attempts. The [request register](strategy/OWNER-REQUEST-REGISTER.md) consolidates96 stable entries, including superseded choices, unfinished economics/Visualize work, delegated release authority and deferred UI/local work. The [failure reference](operations/FAILURES-AND-RECOVERY.md) records41 evidenced incidents and agent/process failures, their demonstrated fixes, unknown causes and unimplemented prevention work. The [continuation procedure](operations/CONTINUE-VIBESCROLL.md) covers diagnosis, safe retry, acceptance, release and cleanup. AGENTS/START-HERE require these entry points; historical plan/handover/ADR status is labelled to prevent stale instructions becoming new authority.
+
+The audit read the original October25 handover in its historical checkout, current October26/28 handovers, local ADRs/production receipts and three recent turns of the referenced benchmark chat. It is a semantic register of the visible owner conversation, not a claim to recover missing raw assistant/tool history or a verbatim attachment archive. Structural ID/entry-point checks, formatting, whitespace and validation of356 documents/12 skill snapshots passed; staged Gitleaks found zero leaks. A local `C:/Code/VibeScroller/AGENTS.md` pointer also directs agents starting in the multi-repository workspace to the versioned records. [Audit receipt](operations/evidence/launch-20261029-conversation-audit.json). No runtime/billing change, production deployment or source/model test was made; production remainsfc2ef42.
+
 ## October29: headless MCP and corrected history live
 
 Website/backendfc2ef422aace635a122073ae59a396a62299d204 are live, version0.1.0-alpha.20261029173811.gfc2ef422aace, deploymentdpl_DUTnyRBi5sxj2AWNHJA2HyuTXDE1. Exact Linux CI40923237655, full local checks and22 guards passed. Actual prediction covered12 components/138 tables/301 indexes with zero scans/backfills and unchanged schema/index/auth/cron. Fixed Basic normal-queue build took41.749s. Staged/canonical exact health and widgetEnabled=false passed, with same-build promotion and restored domain assignment.

@@ -1,6 +1,6 @@
 # ADR 186: explicit retry of never-claimed Cloud requests
 
-Date: October 28, 2026. Status: implementation candidate, not deployed.
+Date: October 28, 2026. Status: deployed at6ba77de; [production receipt](../operations/evidence/launch-20261028-safe-cloud-retry-production.json). Positive retry acceptance is isolated; production confirmed refusal on an already-ready result without mutation. Pending/count language below describes the historical proposal.
 
 ## Problem
 

@@ -1,5 +1,7 @@
 # Canonical completion acceptance
 
+Use [current accepted state](../../operations/CURRENT-STATE.md) and the [owner register](../../strategy/OWNER-REQUEST-REGISTER.md) before interpreting the historical ledger below. Existing native shared reuse/version history is accepted; managed/prepared shared publication, precise customer credits and independent fresh-flow/customer acceptance remain open. Old per-release count approvals and paused-pilot statements are historical.
+
 ## October 28: focused Cloud and versioning release
 
 Use the [V0-V5 implementation order and acceptance matrix](VERSIONED-LINK-TO-INSIGHTS.md#run-the-acceptance-matrix). Versioned reanalysis, exact historical citations, comparison, atomic promotion/rollback, neutral Cloud contribution, entitlement checks on every cached read and a two-account zero-inference cache hit are required before claiming the paid shared versioned product is ready. Keep widget and other larger-plan acceptance deferred and explicitly incomplete.

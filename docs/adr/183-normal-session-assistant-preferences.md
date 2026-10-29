@@ -1,6 +1,6 @@
 # ADR 183: normal sessions for routine actions, fresh sign-in for high-risk changes
 
-Date: October 28, 2026. Status: implementation candidate, not published. The owner broadened the original assistant-only correction to all routine five-minute sign-in checks and requested direct sign-in/back navigation.
+Date: October 28, 2026. Status: implemented/published; see the [auth/Posts failure receipt](../operations/evidence/launch-20261028-auth-posts-release.json) and [corrected production checkpoint](../operations/evidence/launch-20261028-shared-catalog-setup-production.json). Candidate/count restrictions below are historical and superseded by standing routine release authority. The owner broadened the original assistant-only correction to all routine five-minute sign-in checks and requested direct sign-in/back navigation.
 
 ## Decision
 

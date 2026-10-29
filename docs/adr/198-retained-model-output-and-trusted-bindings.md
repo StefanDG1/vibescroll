@@ -1,6 +1,6 @@
 # ADR198: retained model output and trusted server bindings
 
-October29,2026. Status: local correction; hosted acceptance pending.
+October29,2026. Status: historical correction, subsequently deployed at4fefc65. Both replacement Muse and automatic native analyses saved; see [current state](../operations/CURRENT-STATE.md) and [ADR199](199-deferred-chatgpt-ui-and-prepared-version-history.md). Pending statements below describe the original proposal.
 
 Backend4892434 passed exact CI40913526188 and22 guards, then compatible publication at16:43:18UTC with no scans/backfills/schema changes or website build. Gateway's strict all-properties schema was accepted. Muse returned HTTP200/stop after45911ms with8620 input tokens and4333 billed completion tokens, including2362 reasoning tokens. The usage receipt estimates USD0.0017286; official Gateway generation gen_01M648QTBNZPNTNEQP4EY5C514 confirms that total. The application then rejected the answer without saving a version. Its catch retained only a generic failure; the actual rejected content was not retained. The exact validation cause is therefore unproved. Do not invent a citation/binding diagnosis or rerun the consumed request silently.
 

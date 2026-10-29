@@ -4,6 +4,8 @@ Mode: how-to. Version: 1.0.0.
 
 ## Mandatory current product direction
 
+Begin with [current accepted state](operations/CURRENT-STATE.md), the [owner request register](strategy/OWNER-REQUEST-REGISTER.md) and [continuation procedure](operations/CONTINUE-VIBESCROLL.md). Consult the [failure reference](operations/FAILURES-AND-RECOVERY.md) before diagnosing a symptom. These records distinguish later owner corrections, historical failures, current production evidence and still-open acceptance. The old repository-establishment steps below describe original setup; do not export a second repository when continuing the existing application.
+
 Read [Saved posts, catalog access and individual Pro teams](strategy/POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md) for the latest requested-post cache reuse, separate full-library add-on, individual member subscriptions/credits and precise settlement requirements.
 
 For pricing/entitlements, read the [single Pro and credit-group plan](strategy/PRO-PRICING-AND-CREDITS.md): one hosted tier, Muse 1×, premium model bands, 300/500 comparison, digital-root-8 prices and a premium weekly interval. Runtime/Stripe migration is pending.

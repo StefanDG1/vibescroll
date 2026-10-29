@@ -1,5 +1,7 @@
 # Canonical remaining-work plan
 
+Read [current state](../../operations/CURRENT-STATE.md), the [owner register](../../strategy/OWNER-REQUEST-REGISTER.md) and [continuation](../../operations/CONTINUE-VIBESCROLL.md) first. Production is last accepted atfc2ef42. The snapshots below are historical where superseded; preserve their unfinished larger-plan requirements, not their old release counts, budgets or paused status.
+
 ## October 28: release versioned link-to-insights first
 
 The next authoritative execution order is [V0-V5: versioned link-to-insights](VERSIONED-LINK-TO-INSIGHTS.md), under [ADR180](../../adr/180-versioned-cloud-analysis-and-shared-selection.md). Prioritize reliable automatic own-subscription Cloud processing, immutable reanalysis versions, comparison/rollback and entitled shared-catalog reuse. Keep the widget and broader project/coding features outside this release's critical path; preserve them in the larger completion plan.

@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-29",
+  "commit": "fc2ef422aace635a122073ae59a396a62299d204",
+  "version": "0.1.0-alpha.20261029173811.gfc2ef422aace",
+  "deploymentId": "dpl_DUTnyRBi5sxj2AWNHJA2HyuTXDE1",
+  "exactCI": 40923237655,
+  "localVitest": 1530,
+  "releaseGuards": 22,
+  "backend": {
+    "acknowledgedAtUTC": "2026-10-29T17:41:59.422Z",
+    "components": 12,
+    "tables": 138,
+    "indexes": 301,
+    "scans": 0,
+    "backfills": 0,
+    "schemaIndexAuthCronChanged": false
+  },
+  "website": {
+    "fixedBasic": true,
+    "normalQueue": true,
+    "buildMs": 41749,
+    "stagedAndCanonicalHealthExact": true,
+    "sameBuildPromoted": true,
+    "domainAutoAssignmentRestored": true,
+    "descriptorWidgetEnabled": false,
+    "setupVerification": ["get_profile"]
+  },
+  "mcp": {
+    "originalConnectionPreserved": true,
+    "automaticAnalysis": true,
+    "setupRequired": false,
+    "grantVersion": 12,
+    "grantExpires": null,
+    "historyStates": ["ready", "ready", "ready"],
+    "historyInsightCounts": [5, 5, 4],
+    "originalSelectionPreserved": true,
+    "selectionRevision": 0
+  },
+  "noNewAnalysis": true,
+  "comparisonPolicyRemoved": true,
+  "exactTestKeyEnvironmentRemoved": true,
+  "exactProviderTestKeyRevoked": true,
+  "goodResultsPreserved": true,
+  "priorHoldsPreserved": true,
+  "lastObservedVercelUsageUSD": "17.97",
+  "conservativeCombinedUpperUSD": "19.855",
+  "managedPreparedSharedPublicationAccepted": false,
+  "preciseCustomerCreditSettlementAccepted": false,
+  "legacySourceRuntimeHealthy": false
+}

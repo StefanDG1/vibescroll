@@ -1,7 +1,7 @@
 # ADR 199: defer embedded ChatGPT UI and correct prepared version history
 
 Date: 2026-10-29
-Status: accepted; publication pending
+Status: accepted; deployed at fc2ef422aace635a122073ae59a396a62299d204
 
 ## Decision
 
@@ -22,3 +22,7 @@ Focused MCP and version tests cover absent production UI registrations, retained
 Managed/prepared shared publication, precise customer credits, mixed-source acceptance and paid commerce remain open. Earlier rejected attempts, financial holds, source permissions and the reserved post remain preserved.
 
 Full offline pnpm check passed on October29 with Windows/Node24.22.1/pnpm12.3.4: 1335 core,47 auth/hook and148 UI/public tests, Node/Python checks and both production builds. Three hosted integration and seven Windows Python cases remain skipped. A subsequent document validation passed352 documents and12 skill snapshots. Exact-head Linux CI and publication remain pending.
+
+## Production acceptance
+
+Exact CI40923237655 passed. Backend publication acknowledged at17:41:59UTC. Actual12-component prediction scanned/backfilled no existing table/index. Fixed Basic build41.749s passed staged exact health/descriptor and same-build promotion. Canonical health returnsfc2ef42 and widgetEnabled=false. Original MCP remains connected with automatic_analysis=true and no setup required. History now returns all three versions Ready, insight counts4/5/5, selected original and revision0. No new analysis ran. Temporary comparison policy/test-key environment were removed and the provider key revoked, preserving results and unrelated keys. See the [production receipt](../operations/evidence/launch-20261029-headless-mcp-production.json).

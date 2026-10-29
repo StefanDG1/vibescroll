@@ -1,5 +1,13 @@
 # Implementation status
 
+## October29: headless MCP and corrected history live
+
+Website/backendfc2ef422aace635a122073ae59a396a62299d204 are live, version0.1.0-alpha.20261029173811.gfc2ef422aace, deploymentdpl_DUTnyRBi5sxj2AWNHJA2HyuTXDE1. Exact Linux CI40923237655, full local checks and22 guards passed. Actual prediction covered12 components/138 tables/301 indexes with zero scans/backfills and unchanged schema/index/auth/cron. Fixed Basic normal-queue build took41.749s. Staged/canonical exact health and widgetEnabled=false passed, with same-build promotion and restored domain assignment.
+
+Ordinary MCP tools and Events remain connected. Current profile reports automatic_analysis=true, intake_setup_required=false and grant12 without expiry. No reconnect, setup prompt or new analysis was required. Actual history returns versions1/2/3 Ready with4/5/5 insights, selected original and revision0. The canonical post renders its native title and loaded images with no Removed history label. Temporary comparison policy/test-key environment were removed; the exact provider key was revoked, preserving results and unrelated keys. [Production receipt](operations/evidence/launch-20261029-headless-mcp-production.json).
+
+Managed/prepared shared publication, precise customer credits, mixed-source acceptance and the legacy source-runtime cache correction remain open. Prior comparison timings are separate measured phases, not two fresh full-link trials. No paid-customer billing migration is claimed.
+
 ## October29: both prepared analysis routes saved; embedded ChatGPT UI deferred
 
 Backend4fefc65 is live after exact CI40916773147 and22 actual release guards, with no scans/backfills/schema/index changes. Muse and the existing native Assistant saved five cited insights each from the same retained transcript and eight JPEGs. Original selection remains unchanged. Muse queued-to-stored took62.713s, automatic native189.216s. The earlier fresh preparation took41.093s. These separate measurements do not establish two fresh full-link timings. All eight authenticated image responses matched hashes and decoded at540x960. Gateway reports USD0.0097190288 across all task transcription/model generations; this is not a settled infrastructure invoice. [Comparison receipt](operations/evidence/launch-20261029-prepared-model-comparison.json).

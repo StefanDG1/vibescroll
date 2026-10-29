@@ -853,7 +853,7 @@ it("retries native preparation with current defaults and at most one credit, pre
       key: "retry-native-prepare",
     },
   };
-  const next: any = await s.assistant.mutation(
+  const next = await s.assistant.mutation(
     internal.assistant.requestAnalysis,
     args,
   );
@@ -861,12 +861,13 @@ it("retries native preparation with current defaults and at most one credit, pre
     status: "queued",
     analysis_route: "prepared_own_cloud",
   });
+  if (!("runId" in next) || !next.runId) throw Error("Expected prepared retry");
   expect(next.runId).not.toBe(initial.runId);
   expect(
     await s.assistant.mutation(internal.assistant.requestAnalysis, args),
   ).toMatchObject({ runId: next.runId, reused: true });
   const row = await s.t.run((c) => c.db.get(next.runId));
-  expect(row.receipt.admission.quote.maximumCredits).toBe(1);
+  expect(row!.receipt.admission.quote.maximumCredits).toBe(1);
 });
 it("rejects a changed tariff configuration or revoked entitlement before dispatch", async () => {
   const s = await fixture(),

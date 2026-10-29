@@ -15,6 +15,10 @@ import {
   eventUnsubscribe,
 } from "./events";
 import { z } from "zod";
+import {
+  preparedQuoteRequest,
+  preparedStartRequest,
+} from "../contracts/prepared-service";
 import { cloudRetryRequest } from "../contracts/cloud-retry";
 import { projectApplicationContextInput } from "../contracts/project-application";
 import { registerWidget } from "./widget";
@@ -299,6 +303,25 @@ export function createKnowledgeHandler(
           })
           .strict(),
         false,
+      );
+      register(
+        "quote_video_analysis",
+        "Quote server preparation and video analysis for a saved Reel/TikTok. When the user chooses VibeScroll credits, first save with analyze=false, then quote executor=gateway. The baseline is Muse Contributor medium; work_cloud uses the user's configured ChatGPT subscription and may charge preparation only. Existing ready results are free unless reanalyze=true is explicitly requested. Show maximumCredits and route before paid work. This read reserves nothing.",
+        "knowledge:read",
+        preparedQuoteRequest,
+      );
+      register(
+        "start_video_analysis",
+        "Start the exact quote the user accepted, carrying unchanged quoteHash/maximumCredits and one stable key. Server preparation downloads once, prefers captions, otherwise transcribes, stores real screenshots, then dispatches Muse credits or native ChatGPT reasoning. Never switch funding, invent a quote or retry unknown work. Return source/run/version links; use video_analysis_status for bounded follow-up and analysis_version/project-context tools for saved insights.",
+        "analysis:request",
+        preparedStartRequest,
+        false,
+      );
+      register(
+        "video_analysis_status",
+        "Read server-prepared video stages, reserved/charged credits, failure code and saved version link. Contains no provider credentials, raw model response or private logs. Do not poll repeatedly.",
+        "jobs:read",
+        z.strictObject({ sourceId: z.string().min(1).max(100) }),
       );
       const sourceRequest = z
         .object({

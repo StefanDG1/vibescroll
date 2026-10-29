@@ -1,3 +1,4 @@
+import { preparedServiceConfiguration } from "./preparedServicePolicy";
 import { resultRetained } from "../../packages/contracts/result-retention";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx, MutationCtx } from "../_generated/server";
@@ -400,6 +401,17 @@ async function unclaimedProducerExpired(
   producer: NonNullable<Doc<"catalogFamilies">["producer"]>,
 ) {
   const prior = await ctx.db.get(producer.sourceId);
+  // A stopped service preparation with settled credits has no live producer.
+  // Unknown, claimed and merely timed-out actions still retain their hold.
+  if (prior?.generation === producer.generation && prior.personalMedia?.runId) {
+    const id = ctx.db.normalizeId(
+      "mediaPreparations",
+      prior.personalMedia.runId,
+    );
+    const run = id ? await ctx.db.get(id) : null;
+    if (run?.state === "failed" && run.receipt?.billing?.state === "settled")
+      return true;
+  }
   // A task that was claimed, failed or has an unknown outcome keeps its hold.
   // Only an exact intent that never created a job is safe to replace.
   return (
@@ -632,6 +644,16 @@ async function currentCloudArtifactHeaderUncached(
   );
   const reviewed = await catalogPermission(ctx, family.canonical);
   const authority = cloudCatalogAuthority.parse(artifact.authority);
+  if (authority.version === "prepared-catalog-authority-v2") {
+    const config = preparedServiceConfiguration(undefined, true);
+    ensure(
+      config?.catalogPublicationAllowed &&
+        authority.processingReviewHash ===
+          (await socialHash(config.providerPermissionReference)),
+      "SOURCE_UNAVAILABLE",
+      "Prepared processing publication authority changed.",
+    );
+  }
   ensure(
     family.organizationId === reviewed.organization._id &&
       artifact.organizationId === reviewed.organization._id &&
@@ -688,6 +710,7 @@ async function currentCloudArtifactUncached(
       version.resultRetention === artifact.resultRetention &&
       evidence.resultRetention === artifact.resultRetention &&
       evidence.evidenceHash === authority.evidenceHash &&
+      version.provenance === authority.provenance &&
       version.recipeHash === authority.recipeHash &&
       version.requestedModel === authority.requestedModel &&
       version.requestedEffort === authority.requestedEffort,

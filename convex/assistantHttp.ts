@@ -2,6 +2,10 @@ import { httpAction } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
+import {
+  preparedQuoteRequest,
+  preparedStartRequest,
+} from "../packages/contracts/prepared-service";
 import { cloudRetryRequest } from "../packages/contracts/cloud-retry";
 import { projectApplicationContextInput } from "../packages/contracts/project-application";
 import { analysisVersionOperations } from "../packages/contracts/analysis-versions";
@@ -23,6 +27,18 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z.strictObject({
+    operation: z.literal("quote_video_analysis"),
+    args: preparedQuoteRequest,
+  }),
+  z.strictObject({
+    operation: z.literal("start_video_analysis"),
+    args: preparedStartRequest,
+  }),
+  z.strictObject({
+    operation: z.literal("video_analysis_status"),
+    args: z.strictObject({ sourceId: z.string().min(1).max(100) }),
+  }),
   z.strictObject({
     operation: z.literal("get_project_application_context"),
     args: projectApplicationContextInput,
@@ -486,6 +502,23 @@ export const tools = httpAction(async (ctx, request) => {
         value = await ctx.runQuery(internal.assistant.fetch, {
           ...input.args,
           profileId: selectedProfile,
+        });
+        break;
+      case "quote_video_analysis":
+        value = await ctx.runQuery(internal.preparedService.assistantQuote, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "start_video_analysis":
+        value = await ctx.runMutation(internal.preparedService.assistantStart, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "video_analysis_status":
+        value = await ctx.runQuery(internal.preparedService.assistantStatus, {
+          sourceId: input.args.sourceId as Id<"sources">,
         });
         break;
       case "save_link":

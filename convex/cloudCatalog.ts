@@ -1,3 +1,9 @@
+import {
+  isServicePreparedEvidence,
+  validatePreparedEvidence,
+} from "../packages/contracts/prepared-evidence";
+import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
+import { requireProCatalogAccess } from "./lib/catalogEntitlement";
 import { resultRetained } from "../packages/contracts/result-retention";
 import { preferredCatalogCandidate } from "../packages/contracts/catalog-recommendation";
 import {
@@ -97,7 +103,9 @@ async function automaticOwner(
       sourceRetained(source.sourceRetentionUntil) &&
       actor?.status === "active" &&
       organization?.status === "active" &&
-      workCloudMediaAllowed(actor.subject) &&
+      (workCloudMediaAllowed(actor.subject) ||
+        preparedServiceConfiguration(actor.subject)
+          ?.catalogPublicationAllowed) &&
       (await workCloudSourceEligible(ctx, organization, actorId)),
     "SOURCE_UNAVAILABLE",
     "This automatic contribution is no longer authorized.",
@@ -121,10 +129,55 @@ async function snapshot(
       "POLICY_BLOCKED",
       "Existing private versions are not retroactive catalog consent.",
     );
+  const servicePrepared = isServicePreparedEvidence(retained.evidence.prepared);
+  let preparedRun;
+  let processingReviewHash;
+  if (servicePrepared) {
+    await validatePreparedEvidence(retained.evidence.prepared);
+    await requireProCatalogAccess(ctx, owner.source.organizationId);
+    const config = preparedServiceConfiguration(owner.actor.subject);
+    const runId =
+      retained.version.provenance === "managed_api_reported"
+        ? ctx.db.normalizeId(
+            "mediaPreparations",
+            retained.version.output?.attemptId ?? "",
+          )
+        : null;
+    preparedRun = runId
+      ? await ctx.db.get(runId)
+      : retained.version.attemptId
+        ? await ctx.db
+            .query("mediaPreparations")
+            .withIndex("by_attempt", (q) =>
+              q.eq("attemptId", retained.version.attemptId),
+            )
+            .unique()
+        : null;
+    ensure(
+      config?.catalogPublicationAllowed &&
+        preparedRun?.state === "ready" &&
+        preparedRun.versionId === retained.version._id &&
+        preparedRun.evidenceId === retained.evidence._id &&
+        preparedRun.sourceId === owner.source._id &&
+        preparedRun.actor === owner.actor._id &&
+        preparedRun.receipt?.admission?.configurationId === config.id &&
+        (retained.version.provenance !== "managed_api_reported" ||
+          (preparedRun.executor === "gateway" &&
+            preparedRun.receipt?.analysis?.model ===
+              retained.version.reportedModel)),
+      "POLICY_BLOCKED",
+      "This prepared result lacks current independently reviewed publication authority.",
+    );
+    processingReviewHash = await socialHash(config.providerPermissionReference);
+  }
   ensure(
     retained.version.owner === "private" &&
-      retained.version.provenance === "authenticated_host_reported" &&
-      (retained.version.attemptId || retained.version.sourceCompletion) &&
+      (retained.version.provenance === "authenticated_host_reported" ||
+        (servicePrepared &&
+          retained.version.provenance === "managed_api_reported")) &&
+      (servicePrepared ||
+        retained.version.attemptId ||
+        retained.version.sourceCompletion) &&
       retained.version.recipeHash &&
       retained.version.requestedModel &&
       retained.version.requestedEffort,
@@ -164,13 +217,16 @@ async function snapshot(
     };
   }
   const neutral = await projectNeutralCloudVersion(
-    retained.evidence.prepared,
+    servicePrepared
+      ? (await validatePreparedEvidence(retained.evidence.prepared)).evidence
+      : retained.evidence.prepared,
     projectionOutput,
     "en",
     {
       sourceId: owner.source._id,
       attemptId:
         retained.version.attemptId ??
+        preparedRun?._id ??
         retained.version.sourceCompletion!.completionHash,
     },
   );
@@ -190,6 +246,8 @@ async function snapshot(
   return {
     ...owner,
     ...retained,
+    preparedRun,
+    processingReviewHash,
     neutralEvidence: neutral.evidence,
     analysis: neutral.analysis,
     outputHash: neutral.outputHash,
@@ -525,14 +583,26 @@ async function prepareContribution(
     ...(s.version.reportedEffort
       ? { reportedEffort: s.version.reportedEffort }
       : {}),
-    provenance: "authenticated_host_reported",
+    provenance: s.version.provenance,
     evaluation: "review_required",
   });
   const authority = cloudCatalogAuthority.parse({
-    version: "cloud-neutral-catalog-authority-v1",
-    funding: "own_subscription",
-    maxApiUsd: 0,
-    provenance: "authenticated_host_reported",
+    version: s.preparedRun
+      ? "prepared-catalog-authority-v2"
+      : "cloud-neutral-catalog-authority-v1",
+    funding:
+      s.preparedRun?.executor === "gateway" ? "credits" : "own_subscription",
+    maxApiUsd:
+      s.preparedRun?.executor === "gateway" ? s.preparedRun.maximumApiUsd : 0,
+    provenance: s.version.provenance,
+    ...(s.preparedRun
+      ? {
+          preparationFunding: "service_credits",
+          preparationMaximumApiUsd: s.preparedRun.maximumApiUsd,
+          processingReviewHash: s.processingReviewHash,
+          preparationRecipeHash: s.evidence.prepared.recipeHash,
+        }
+      : {}),
     canonical: s.permission.canonical,
     evidenceHash: s.neutralEvidence.evidenceHash,
     outputHash: s.outputHash,

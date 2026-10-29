@@ -6,6 +6,14 @@ Read [current state](CURRENT-STATE.md) before using a historical fix. Use the [c
 
 This record separates demonstrated causes, successful corrections, temporary recovery and unknown causes. A later successful run does not explain every earlier failure. Recommended prevention is not claimed implemented unless a cited test or receipt establishes it.
 
+## Use the shorter diagnostic first
+
+Before recreating credentials, compare a read and explicit-profile Save with implicit Save. Before repairing a cache, compare defined payload counts and RECORD self-entries. Before rerunning ASR, inspect stored segments, their API projection and actual image bytes. Check the actual host and Gateway adapter contracts instead of inventing prerequisites or borrowing another provider's behavior.
+
+Retained evidence needs reasoning, not another downloader/runtime installation. Keep setup restrictions separate from authorized job capabilities. Retain provider responses before validation. Test the complete MCP relay and authenticated second page, not only direct mutations and first-page rendering. Use standing release authority, one spending-batch check and one current-state record. Keep exact-original reconstruction, local execution and embedded UI off the critical path.
+
+These lessons now guide the simpler shared-preparation implementation. Their engineering acceptance remains separate from documenting them.
+
 ## Result integrity and extraction failures
 
 | ID  | Observed failure and established cause                                                                                                                                                 | Correction and evidence                                                                                                                                                                                                                                           | Prevention/acceptance still needed                                                                                                                                                                                                                     |
@@ -60,6 +68,8 @@ This record separates demonstrated causes, successful corrections, temporary rec
 | F41 | New Posts/Home Save entry points and setup guidance were incomplete after backend changes.                                                                                            | Small tested website correction and corrected guide; [receipt](evidence/launch-20261028-posts-save-setup-production.json).                                                                                                                                                                                                                                                      | Verify primary entry points on their actual pages after navigation/API changes. Backend acceptance does not imply every user can discover or start the feature.                                                                                        |
 
 ## Agent/process mistakes and their consequences
+
+F42, October29: focused tests passed while the production Next build failed on a circular schema import between cloud-catalog and prepared-evidence. Keep the dependency one-way: validate/unwrap prepared evidence at the backend adapter, then pass its neutral evidence to the catalog projection. The subsequent complete build passed. Run a production build before publication; test-runner module initialization alone does not prove bundled server-page initialization.
 
 These were avoidable execution problems, not requirements to make the product more restrictive.
 

@@ -1,4 +1,5 @@
 import { workCloudModelChoices } from "../packages/onboarding/work-cloud-models";
+import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import {
   workCloudTextAllowed,
   workCloudMediaAllowed,
@@ -63,6 +64,10 @@ export const setup = query({
         !!assistantIssuer(process.env.MCP_AUTH_ISSUER),
       privateLibrary: organization.privateOwnerId === actor._id,
       modelChoices: workCloudModelChoices,
+      serverPreparationEnabled:
+        cloudEligible &&
+        !!preparedServiceConfiguration(actor.subject)
+          ?.automaticOwnSubscriptionPreparation,
       workCloudTextEnabled:
         cloudEligible && workCloudTextAllowed(actor.subject),
       workCloudMediaEnabled:

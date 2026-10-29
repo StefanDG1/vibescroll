@@ -1,6 +1,7 @@
 import { resultRetained } from "../packages/contracts/result-retention";
 import { isServicePreparedEvidence } from "../packages/contracts/prepared-evidence";
 import { preparedEvidenceIsCurrent } from "./lib/preparedEvidenceAccess";
+import { settlePreparedCredits } from "./lib/preparedCredits";
 import { stopPreparedAttempt } from "./lib/preparedLifecycle";
 import { persistCloudResult } from "./lib/persistCloudResult";
 import { admitCloudMediaJob } from "./lib/workCloudAdmission";
@@ -1208,6 +1209,12 @@ export const dispatch = internalMutation({
         updatedAt: now,
         stages: [...run.stages, { stage: "ready", at: now }],
       });
+      await settlePreparedCredits(
+        ctx,
+        (await ctx.db.get(run._id))!,
+        c.evidence.prepared.evidence.durationMs,
+        "ready",
+      );
       const select =
         !c.source.selectedAnalysisVersionId &&
         !c.source.analysis &&
@@ -1250,10 +1257,7 @@ export const dispatch = internalMutation({
       "analysis_version_completed",
       `${c.source._id}:${c.attempt._id}:${versionId}`,
     );
-    if (
-      c.source.catalogPolicy &&
-      !isServicePreparedEvidence(c.evidence.prepared)
-    ) {
+    if (c.source.catalogPolicy) {
       await ctx.db.patch(c.source._id, {
         catalogStatus: { state: "pending", versionId, updatedAt: Date.now() },
       });

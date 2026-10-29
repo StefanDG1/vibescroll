@@ -244,6 +244,10 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 
 [ADR 147](adr/147-explicit-legacy-private-library-adoption.md) adds a reviewed opt-in for an older original-creator sole-owner workspace. It preserves IDs/content and refuses other members, active invitations and another private library. Existing Cloud privacy and funding gates remain; no automatic production migration follows.
 
-## October 26: native Events before automatic media analysis
+## October 29: shared preparation before both analyzers
+
+[ADR 200](adr/200-server-prepared-analysis-service-and-mcp-credits.md) connects the existing server-prepared evidence to exact MCP credit quotes, replay-safe settlement, native Events and truthful shared publication. It preserves old balances and does not activate the planned commerce migration. [MCP instructions](operations/PREPARED-ANALYSIS-MCP.md) describe the common quote/start/status contract. Production acceptance is recorded separately in current state.
+
+## October 26 native Events checkpoint
 
 [ADR 160](adr/160-native-events-and-saved-video-acknowledgement.md) records the accepted private ChatGPT connection renewal and actual app-save acknowledgement. The event is live in compatible6cdcb1c. Reuse the existing capture, scoped grants and signed delivery path; no new worker, queue or analysis authority follows from saving. Actual app-save acknowledgement precedes automatic media execution.

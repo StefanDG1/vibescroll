@@ -36,6 +36,7 @@ export async function prepareHostedEvidence(
   callbacks: {
     stage: (stage: string) => Promise<void>;
     metadata: (metadata: z.infer<typeof nativeMetadata>) => Promise<void>;
+    failed?: (receipt: Record<string, unknown>) => Promise<void>;
   },
 ) {
   const policy = acquisitionPolicy(url),
@@ -77,6 +78,7 @@ export async function prepareHostedEvidence(
   const sandbox = await createJobSandbox("acquisition", 120, policy.domains);
   times.created = Date.now();
   let stopped = false;
+  let succeeded = false;
   const command = async (script: string, timeoutMs: number) => {
     const result = await sandbox.commands.run(script, {
       user: "user",
@@ -228,6 +230,7 @@ export async function prepareHostedEvidence(
     await sandbox.kill();
     stopped = true;
     times.stopped = Date.now();
+    succeeded = true;
     return {
       metadata,
       manifest,
@@ -261,6 +264,18 @@ export async function prepareHostedEvidence(
       stopped: true as const,
     };
   } finally {
-    if (!stopped) await sandbox.kill();
+    if (!stopped) {
+      await sandbox.kill();
+      stopped = true;
+    }
+    if (!succeeded)
+      await callbacks.failed?.({
+        startedAt,
+        completedAt: Date.now(),
+        sandboxId: sandbox.sandboxId,
+        stopAcknowledged: stopped,
+        providerDeletionVerified: false,
+        times,
+      });
   }
 }

@@ -16,6 +16,7 @@ type Grant = Parameters<typeof workCloudMonitorMessage>[1] & {
   cloudSaveDefaults?: { version: string; model: string };
 };
 type Setup = {
+  serverPreparationEnabled?: boolean;
   checkedAt: number;
   processingRoute?: TaskRuntime;
   enabled: boolean;
@@ -141,6 +142,7 @@ function ConnectionSetup({ organizationId, call, readOnly, demo }: Props) {
               saved,
               client,
               data.checkedAt,
+              data.serverPreparationEnabled,
             ) ?? "")
           : "",
       );
@@ -163,6 +165,7 @@ function ConnectionSetup({ organizationId, call, readOnly, demo }: Props) {
           grant,
           client,
           setup.checkedAt,
+          setup.serverPreparationEnabled,
         ) ?? "")
       : "");
   return (

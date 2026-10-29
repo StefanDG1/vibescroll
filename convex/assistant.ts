@@ -48,6 +48,11 @@ import {
 } from "./lib/workCloudSave";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import {
+  queueAutomaticPreparedSource,
+  requestPreparedCredits,
+} from "./preparedService";
+import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
+import {
   evaluation as evaluationContract,
   assertReferences,
 } from "../packages/knowledge/contracts";
@@ -131,6 +136,18 @@ async function automaticCloudReceipt(
       setup_url: `https://scroll.companynerve.com/app/${a.organization._id}/connections`,
       note: "Saved. Your Cloud connection is configured, but its background task is not monitoring. Resume the existing task when its execution allowance is available. Do not reconnect, create another app or repeat Cloud setup.",
     };
+  if (a.scopes.includes("analysis:execute")) {
+    const prepared = await queueAutomaticPreparedSource(ctx, source, a.actor);
+    if (prepared)
+      return {
+        ...common,
+        status: prepared.state,
+        analysis_requested: true,
+        analysis_route: "prepared_own_cloud",
+        run_id: prepared.runId,
+        note: "Saved. Server preparation is queued, then your existing ChatGPT Assistant will analyze the retained transcript and screenshots. No paid API reasoning fallback.",
+      };
+  }
   const queued = await queueSavedCloudIntent(
     ctx,
     a.actor,
@@ -227,6 +244,20 @@ export const saveLink = internalMutation({
         "Project context OAuth permission is missing.",
       );
     const key = `mcp:${await digest(`${a.client.id}:${args.key}:${url}`)}`;
+    let serverPrepared = false;
+    if (
+      args.analyze !== false &&
+      preparedServiceConfiguration(a.actor.subject)
+        ?.automaticOwnSubscriptionPreparation
+    ) {
+      try {
+        serverPrepared = ["instagram", "tiktok"].includes(
+          privateCloudMediaIdentity(url).platform,
+        );
+      } catch {
+        /* Typed sources retain their own route. */
+      }
+    }
     const id = await captureAuthorized(
       ctx,
       {
@@ -240,6 +271,7 @@ export const saveLink = internalMutation({
       a,
       false,
       true,
+      serverPrepared,
     );
     const source = (await ctx.db.get(id))!;
     if (!source.assistantIntake)
@@ -471,10 +503,23 @@ export const getJobStatus = internalQuery({
     const waitingForCloud =
       savedIntentCurrent &&
       source.workCloudSaveIntent!.analysisGeneration === undefined;
+    const preparedId =
+      source.personalMedia?.version === "service-preparation-progress-v1" &&
+      typeof source.personalMedia.runId === "string"
+        ? ctx.db.normalizeId("mediaPreparations", source.personalMedia.runId)
+        : null;
+    const preparedRow = preparedId ? await ctx.db.get(preparedId) : null;
+    const preparedRun =
+      preparedRow?.organizationId === a.organization._id &&
+      preparedRow.sourceId === source._id &&
+      preparedRow.generation === source.generation &&
+      preparedRow.actor === a.actor._id
+        ? preparedRow
+        : null;
     // A current app-Save Cloud intent or attempt supersedes the old intake's
     // display. Preserve that intake without offering an alternate executor.
     const receipt =
-      !cloud && !waitingForCloud && intake
+      !preparedRun && !cloud && !waitingForCloud && intake
         ? await intakeReceipt(ctx, intake, source)
         : null;
     const cloudStatus = cloud
@@ -491,6 +536,7 @@ export const getJobStatus = internalQuery({
       source_id: source._id,
       profile_id: a.organization._id,
       status:
+        preparedRun?.state ??
         cloudStatus ??
         (waitingForCloud
           ? "waiting_for_cloud"
@@ -532,13 +578,25 @@ export const getJobStatus = internalQuery({
                 : "consumed",
           }
         : null,
-      processing: cloud
+      processing: preparedRun
         ? {
-            executor: "work_cloud",
-            state: cloud.state,
-            stage: cloud.stage,
+            executor:
+              preparedRun.executor === "gateway" ? "credits" : "work_cloud",
+            state: preparedRun.state,
+            stage: source.personalMedia.stage,
+            run_id: preparedRun._id,
+            maximum_credits:
+              preparedRun.receipt?.admission?.quote.maximumCredits ?? 0,
+            charged_credits:
+              preparedRun.receipt?.billing?.chargedCredits ?? null,
           }
-        : null,
+        : cloud
+          ? {
+              executor: "work_cloud",
+              state: cloud.state,
+              stage: cloud.stage,
+            }
+          : null,
       receipt,
       evidence_changed: changed,
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
@@ -713,6 +771,25 @@ export const requestAnalysis = internalMutation({
         review_url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
         note: "Review this typed source in VibeScroll. GitHub file selection, Reddit retrieval permission and supplied-text provenance need their source review; analysis and project work require separate current approval. This request queued no local media work, reserved no credits and started no retrieval or analysis.",
       };
+    if (
+      args.mode === "credits" &&
+      preparedServiceConfiguration(a.actor.subject)
+    ) {
+      const prepared = await requestPreparedCredits(ctx, {
+        sourceId: source._id,
+        generation: args.generation,
+        maxCredits: args.maxCredits,
+      });
+      return {
+        ...prepared,
+        source_id: source._id,
+        profile_id: a.organization._id,
+        status: prepared.state,
+        analysis_route: "prepared_credits",
+        analysis_started: false,
+        analysis_requested: "runId" in prepared && !!prepared.runId,
+      };
+    }
     if (intake && args.mode) {
       ensure(
         intake.grantVersion === a.grant.version,

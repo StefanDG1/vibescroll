@@ -247,36 +247,61 @@ export const cloudCatalogAssessment = z.strictObject({
     .max(2000)
     .refine((text) => !containsSecret(text)),
 });
+const cloudAuthorityCommon = z.strictObject({
+  canonical,
+  evidenceHash: hash,
+  outputHash: hash,
+  recipeHash: hash,
+  permissionId: cloudCatalogPermission.shape.id,
+  permissionHash: hash,
+  consentHash: hash,
+  contributedAt: timestamp,
+  retainUntil: timestamp,
+  resultRetention: z.literal("until_deleted").optional(),
+  requestedModel: z.string().regex(/^[A-Za-z0-9_.:-]{1,100}$/),
+  requestedEffort: z.enum(["low", "medium", "high", "xhigh"]),
+  reportedModel: z.string().min(1).max(100).nullable(),
+  reportedEffort: z.string().min(1).max(100).nullable(),
+  settingsProviderAttested: z.literal(false),
+});
 export const cloudCatalogAuthority = z
-  .strictObject({
-    version: z.literal("cloud-neutral-catalog-authority-v1"),
-    funding: z.literal("own_subscription"),
-    maxApiUsd: z.literal(0),
-    provenance: z.literal("authenticated_host_reported"),
-    canonical,
-    evidenceHash: hash,
-    outputHash: hash,
-    recipeHash: hash,
-    permissionId: cloudCatalogPermission.shape.id,
-    permissionHash: hash,
-    consentHash: hash,
-    contributedAt: timestamp,
-    retainUntil: timestamp,
-    resultRetention: z.literal("until_deleted").optional(),
-    requestedModel: z.string().regex(/^[A-Za-z0-9_.:-]{1,100}$/),
-    requestedEffort: z.enum(["low", "medium", "high", "xhigh"]),
-    reportedModel: z.string().min(1).max(100).nullable(),
-    reportedEffort: z.string().min(1).max(100).nullable(),
-    settingsProviderAttested: z.literal(false),
-  })
+  .union([
+    cloudAuthorityCommon.extend({
+      version: z.literal("cloud-neutral-catalog-authority-v1"),
+      funding: z.literal("own_subscription"),
+      maxApiUsd: z.literal(0),
+      provenance: z.literal("authenticated_host_reported"),
+    }),
+    cloudAuthorityCommon.extend({
+      version: z.literal("prepared-catalog-authority-v2"),
+      funding: z.enum(["own_subscription", "credits"]),
+      maxApiUsd: z.number().min(0).max(0.05),
+      provenance: z.enum([
+        "authenticated_host_reported",
+        "managed_api_reported",
+      ]),
+      preparationFunding: z.literal("service_credits"),
+      preparationMaximumApiUsd: z.number().min(0).max(0.05),
+      processingReviewHash: hash,
+      preparationRecipeHash: hash,
+      requestedModel: z.string().regex(/^[A-Za-z0-9_.:/-]{1,100}$/),
+    }),
+  ])
   .superRefine((value, ctx) => {
     if (
       value.retainUntil <= value.contributedAt ||
-      containsSecret(canonicalJson(value))
+      containsSecret(canonicalJson(value)) ||
+      (value.version === "prepared-catalog-authority-v2" &&
+        ((value.funding === "own_subscription" &&
+          (value.maxApiUsd !== 0 ||
+            value.provenance !== "authenticated_host_reported")) ||
+          (value.funding === "credits" &&
+            value.provenance !== "managed_api_reported")))
     )
       ctx.addIssue({
         code: "custom",
-        message: "Catalog authority timing or sensitive metadata is invalid.",
+        message:
+          "Catalog authority timing, provenance or sensitive metadata is invalid.",
       });
   });
 

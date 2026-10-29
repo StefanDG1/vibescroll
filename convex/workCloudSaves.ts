@@ -5,6 +5,8 @@ import { writeAccess } from "./lib";
 import { ensure } from "../packages/policy";
 import { captureOne, captureAuthorized } from "./product";
 import { preparedPolicy, queuePreparedComparison } from "./preparedAnalysis";
+import { queueAutomaticPreparedSource } from "./preparedService";
+import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { cacheCandidate } from "./lib/cloudCatalog";
 import { retrySavedCloudSource } from "./workCloudAnalysis";
@@ -32,6 +34,12 @@ export const analyzeSaved = mutation({
       "Complete your one-time Cloud setup or resume the existing monitor in Connections.",
     );
     const grant = (await ctx.db.get(route.grantId))!;
+    const prepared = await queueAutomaticPreparedSource(
+      ctx,
+      owner.source,
+      owner.actor,
+    );
+    if (prepared) return prepared;
     return queueSavedCloudIntent(
       ctx,
       owner.actor,
@@ -113,7 +121,10 @@ export const capture = mutation({
       "Automatic Cloud saves currently accept single Instagram or TikTok videos.",
     );
     const policy = preparedPolicy(owner.actor.subject, requestedIdentity.url);
-    if (policy?.executor === "work_cloud") {
+    const servicePrepared = preparedServiceConfiguration(
+      owner.actor.subject,
+    )?.automaticOwnSubscriptionPreparation;
+    if (policy?.executor === "work_cloud" || servicePrepared) {
       const grant = await ctx.db.get(a.grantId);
       ensure(
         grant &&
@@ -127,7 +138,7 @@ export const capture = mutation({
         "SETUP_REQUIRED",
         "The automatic Assistant setup changed.",
       );
-      // The bounded alpha prepares first. Only evidence_ready emits the native
+      // Preparation runs first. Only evidence_ready emits the native
       // waiting event; an earlier saved-link event would start a second decoder.
       const sourceId = await captureAuthorized(
         ctx,
@@ -140,6 +151,7 @@ export const capture = mutation({
           rightsAttested: true,
         },
         owner,
+        false,
         true,
         true,
       );
@@ -150,10 +162,19 @@ export const capture = mutation({
         "APPROVAL_STALE",
         "This Save key belongs to another link.",
       );
-      await queuePreparedComparison(ctx, source, owner.actor, a.key);
+      const service = servicePrepared
+        ? await queueAutomaticPreparedSource(ctx, source, owner.actor)
+        : null;
+      if (!servicePrepared)
+        await queuePreparedComparison(ctx, source, owner.actor, a.key);
       return {
         sourceId,
-        status: "preparing_evidence" as const,
+        status:
+          service?.state === "ready"
+            ? ("existing_work_preserved" as const)
+            : service?.state === "waiting_for_shared_analysis"
+              ? ("waiting_for_shared_analysis" as const)
+              : ("preparing_evidence" as const),
         intentId: null,
         expiresAt: null,
       };

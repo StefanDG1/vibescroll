@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as preparedService from "../preparedService.js";
 import type * as preparedAnalysis from "../preparedAnalysis.js";
 import type * as preparedMedia from "../preparedMedia.js";
 import type * as accounts from "../accounts.js";
@@ -159,6 +160,7 @@ declare const fullApi: ApiFromModules<{
   catalogBrowse: typeof catalogBrowse;
   preparedMedia: typeof preparedMedia;
   preparedAnalysis: typeof preparedAnalysis;
+  preparedService: typeof preparedService;
   accounts: typeof accounts;
   analysisVersions: typeof analysisVersions;
   analysisVersionFrames: typeof analysisVersionFrames;

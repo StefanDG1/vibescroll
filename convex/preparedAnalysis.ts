@@ -37,6 +37,10 @@ import {
 import { postDisplayTitle } from "../packages/sources/display";
 import { postThumbnailCandidates } from "../packages/sources/thumbnail";
 import { apiTranscriptResponse } from "../packages/contracts/transcription";
+import { preparedServiceRunPolicy } from "./lib/preparedServicePolicy";
+import { settlePreparedCredits } from "./lib/preparedCredits";
+import { requireProCatalogAccess } from "./lib/catalogEntitlement";
+import { sourceRetained } from "./lib/sourceAuthority";
 
 const policySchema = z.strictObject({
   id: z.string().min(8).max(80),
@@ -105,6 +109,7 @@ async function current(ctx: QueryCtx, id: Id<"mediaPreparations">) {
       source.generation === run.generation &&
       source.state !== "deleted" &&
       source.rightsAttested &&
+      sourceRetained(source.sourceRetentionUntil) &&
       process.env.RESTORE_LOCK !== "true" &&
       privateCloudMediaCanonicalMatches(source.canonical, run.canonical),
     "APPROVAL_STALE",
@@ -130,6 +135,15 @@ async function current(ctx: QueryCtx, id: Id<"mediaPreparations">) {
 
 async function active(ctx: QueryCtx, id: Id<"mediaPreparations">) {
   const c = await current(ctx, id);
+  if (c.run.receipt?.admission?.version === "prepared-service-admission-v1") {
+    ensure(
+      c.run.deadline > Date.now(),
+      "APPROVAL_STALE",
+      "The prepared job deadline elapsed.",
+    );
+    await requireProCatalogAccess(ctx, c.org._id);
+    return { ...c, policy: preparedServiceRunPolicy(c.run, c.actor) };
+  }
   const policy = preparedPolicy(c.actor.subject, c.run.canonical);
   ensure(
     c.run.deadline > Date.now() &&
@@ -671,7 +685,7 @@ export const retain = internalMutation({
     });
     await ctx.db.patch(a.runId, {
       evidenceId,
-      receipt: a.receipt,
+      receipt: { ...c.run.receipt, ...a.receipt },
       state: "evidence_ready",
       updatedAt: now,
       stages: [...c.run.stages, { stage: "evidence_ready", at: now }],
@@ -697,6 +711,13 @@ export const retain = internalMutation({
         updatedAt: now,
       },
     });
+    if (c.run.executor === "work_cloud")
+      await settlePreparedCredits(
+        ctx,
+        (await ctx.db.get(a.runId))!,
+        e.durationMs,
+        "ready",
+      );
     return evidenceId;
   },
 });
@@ -835,6 +856,27 @@ export const finishGateway = internalMutation({
         updatedAt: now,
       },
     });
+    await settlePreparedCredits(
+      ctx,
+      (await ctx.db.get(a.runId))!,
+      prepared.evidence.durationMs,
+      "ready",
+    );
+    if (c.run.receipt?.admission && c.source.catalogPolicy) {
+      await ctx.db.patch(c.source._id, {
+        catalogStatus: { state: "pending", versionId, updatedAt: now },
+      });
+      await ctx.scheduler.runAfter(
+        0,
+        internal.cloudCatalogActions.publishCompleted,
+        {
+          sourceId: c.source._id,
+          actorId: c.actor._id,
+          generation: c.source.generation,
+          versionId,
+        },
+      );
+    }
     return versionId;
   },
 });
@@ -952,6 +994,7 @@ export const recordReceipt = internalMutation({
     runId: v.id("mediaPreparations"),
     kind: v.union(
       v.literal("preparation"),
+      v.literal("preparation_failure"),
       v.literal("asr"),
       v.literal("asr_output"),
       v.literal("analysis"),
@@ -998,7 +1041,7 @@ function knownReturnedPreparationFailure(
 ) {
   const receipt = run.receipt;
   return (
-    run.executor === "gateway" &&
+    (run.executor === "gateway" || !!run.receipt?.admission) &&
     run.state === "transcribing" &&
     ["INVALID_EVIDENCE", "PREPARED_IMAGE_STORAGE_MISMATCH"].includes(
       code ?? "",
@@ -1029,9 +1072,22 @@ export const fail = internalMutation({
           : "PREPARATION_OUTCOME_UNCONFIRMED";
       // Returned, rejected ASR is a known failed preparation, not a still-running
       // analysis. Its financial hold/receipt remains until actual reconciliation.
-      const state = knownReturnedPreparationFailure(c.run, safeCode)
-        ? "failed"
-        : "unknown";
+      const stoppedPreparation =
+        c.run.receipt?.admission &&
+        (c.run.state === "queued" ||
+          c.run.receipt.preparation_failure?.stopAcknowledged === true) &&
+        !c.run.evidenceId &&
+        !c.run.attemptId &&
+        !c.run.receipt.analysis &&
+        !c.run.receipt.asr;
+      const state =
+        stoppedPreparation || knownReturnedPreparationFailure(c.run, safeCode)
+          ? "failed"
+          : c.run.receipt?.admission &&
+              (c.run.receipt.analysis_output ||
+                c.run.receipt.analysis_rejection)
+            ? "failed"
+            : "unknown";
       await ctx.db.patch(runId, {
         state,
         updatedAt: Date.now(),
@@ -1050,6 +1106,13 @@ export const fail = internalMutation({
           updatedAt: Date.now(),
         },
       });
+      if (state === "failed")
+        await settlePreparedCredits(
+          ctx,
+          (await ctx.db.get(runId))!,
+          1,
+          "returned_failure",
+        );
     }
     return null;
   },
@@ -1273,12 +1336,21 @@ export const expire = internalMutation({
     )
       return null;
     const now = Date.now(),
-      stage = run.state === "queued" ? "failed" : "unknown";
+      stage = ["queued", "evidence_ready"].includes(run.state)
+        ? "failed"
+        : "unknown";
     await ctx.db.patch(runId, {
       state: stage,
       updatedAt: now,
       stages: [...run.stages, { stage, at: now }],
     });
+    if (stage === "failed")
+      await settlePreparedCredits(
+        ctx,
+        (await ctx.db.get(runId))!,
+        1,
+        run.state === "queued" ? "never_started" : "returned_failure",
+      );
     const source = await ctx.db.get(run.sourceId);
     if (
       source &&

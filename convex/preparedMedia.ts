@@ -131,9 +131,16 @@ export const run = internalAction({
       ensure(
         apiKey && apiKey.length > 10,
         "SETUP_REQUIRED",
-        "Configure the bounded Vercel Gateway test credential.",
+        "Configure the service Gateway credential.",
       );
       const prepared = await prepareHostedEvidence(input.url, {
+        failed: async (receipt) => {
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId,
+            kind: "preparation_failure",
+            receipt,
+          });
+        },
         stage: async (stage) => {
           await ctx.runMutation(internal.preparedAnalysis.progress, {
             runId,
@@ -141,6 +148,14 @@ export const run = internalAction({
           });
         },
         metadata: async (metadata) => {
+          if (input.receipt?.admission)
+            ensure(
+              metadata.durationSeconds &&
+                Math.ceil(metadata.durationSeconds * 1000) <=
+                  input.receipt.admission.quote.durationMaximumMs,
+              "QUOTE_CHANGED",
+              "The video exceeds the reviewed duration bound.",
+            );
           await ctx.runMutation(internal.preparedAnalysis.progress, {
             runId,
             stage: "metadata",
@@ -330,8 +345,17 @@ export const run = internalAction({
         receipt: {
           preparation: preparationReceipt,
           asr: asr.receipt,
-          funding: "operator_api_test",
-          appCredits: 0,
+          funding: input.receipt?.admission
+            ? input.executor === "gateway"
+              ? "vibescroll_credits"
+              : "own_subscription_with_preparation_credits"
+            : "operator_api_test",
+          ...(input.receipt?.admission
+            ? {
+                appCreditsReserved:
+                  input.receipt.admission.quote.maximumCredits,
+              }
+            : { appCredits: 0 }),
           sourceBytes: prepared.sourceReceipt.sourceBytes,
         },
       });
@@ -352,7 +376,9 @@ export const run = internalAction({
           prepared: evidence,
           frames: prepared.frames.map((f) => ({ id: f.id, bytes: f.bytes })),
           apiKey,
-          maximumUsd: 0.03,
+          maximumUsd: input.receipt?.admission
+            ? input.maximumApiUsd - (asr.receipt?.costCeilingUsd ?? 0)
+            : Math.min(input.maximumApiUsd, 0.03),
           contributorAllowed: input.contributorAllowed,
           onReceipt: async (receipt) => {
             await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {

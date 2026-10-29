@@ -188,6 +188,8 @@ Ship useful accepted backend checkpoints rather than a widget redesign. Update t
 
 ## Verify the provider references before activation
 
+The normal service candidate is now specified in [ADR 200](../../adr/200-server-prepared-analysis-service-and-mcp-credits.md). It adds one quote/start/status contract, separate preparation credits, automatic prepared Save dispatch and truthful managed/native catalog publication over the existing tables. Local cases exercise first generation-zero results, two-account producer fulfillment and actual MCP/HTTP authorization. This is candidate evidence until exact CI, publication and fresh provider acceptance pass. Keep earlier comparison measurements labelled as retained-evidence comparisons.
+
 - [Sandbox pricing](https://vercel.com/docs/sandbox/pricing) and [pinned custom images](https://vercel.com/docs/sandbox/concepts/images).
 - [Gateway speech-to-text](https://vercel.com/docs/ai-gateway/modalities/speech-to-text), [live model catalog](https://ai-gateway.vercel.sh/v1/models), and [Gateway pricing](https://vercel.com/docs/ai-gateway/pricing).
 - [Meta model pricing and Contributor terms distinction](https://dev.meta.ai/models/muse-spark).

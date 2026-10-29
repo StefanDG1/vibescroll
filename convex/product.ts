@@ -964,6 +964,7 @@ export async function captureAuthorized(
   actor: Awaited<ReturnType<typeof access>>,
   bulk = false,
   suppressPreview = false,
+  suppressSavedEvent = false,
 ) {
   ensure(
     actor.organization._id === a.organizationId,
@@ -1003,7 +1004,7 @@ export async function captureAuthorized(
   if (old && old.state !== "deleted") {
     if (a.kind === "url" && (await attachCloudCache(ctx, old, actor.actor._id)))
       return old._id;
-    if (!bulk && a.kind === "url")
+    if (!bulk && !suppressSavedEvent && a.kind === "url")
       await notifyVideoLinkSaved(ctx, old, actor.actor._id);
     return old._id;
   }
@@ -1054,7 +1055,7 @@ export async function captureAuthorized(
   if (dup && dup.state !== "deleted") {
     if (a.kind === "url" && (await attachCloudCache(ctx, dup, actor.actor._id)))
       return dup._id;
-    if (!bulk && a.kind === "url")
+    if (!bulk && !suppressSavedEvent && a.kind === "url")
       await notifyVideoLinkSaved(ctx, dup, actor.actor._id);
     return dup._id;
   }
@@ -1135,7 +1136,7 @@ export async function captureAuthorized(
   const reusedCatalog =
     a.kind === "url" &&
     (await attachCloudCache(ctx, (await ctx.db.get(id))!, actor.actor._id));
-  if (!bulk && a.kind === "url" && !reusedCatalog)
+  if (!bulk && !suppressSavedEvent && a.kind === "url" && !reusedCatalog)
     await notifyVideoLinkSaved(ctx, (await ctx.db.get(id))!, actor.actor._id);
   if (
     a.kind === "url" &&

@@ -37,6 +37,7 @@ type Grant = {
   };
 };
 type Setup = {
+  serverPreparationEnabled?: boolean;
   devices?: {
     id: string;
     name: string;
@@ -453,6 +454,7 @@ function AssistantAccessEditor({
                       grant,
                       data.clients.find((c) => c.id === grant.clientId),
                       checkedAt,
+                      data.serverPreparationEnabled,
                     )
                   : null;
               return (

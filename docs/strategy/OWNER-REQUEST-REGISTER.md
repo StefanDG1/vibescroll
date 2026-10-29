@@ -160,6 +160,10 @@ Detailed owners: [continuation](../operations/CONTINUE-VIBESCROLL.md), [failure/
 | R095 | Browser debugging/login approvals; second controlled account in Edge; no passwords/MFA in chat.                             | Historical completed setup. Account identifiers and session details belong only in protected operations records. Second-account login is not permission to weaken account isolation.                                              |
 | R096 | "look at ... all the ways ... failed ... [so] other ai agents will solve the problems easier"; retain everything requested. | This register, current state, continuation guide and failure reference implement the documentation task. Runtime prevention items remain open unless existing tests/code prove them.                                              |
 
+## October29 continuation instruction
+
+R097: Add the faster-diagnosis lessons, then continue simpler server preparation until both analysis routes work reliably in production. Prioritize a complete credit-funded route through MCP. Preserve shared evidence, credits and own-subscription funding separation. No embedded UI/local work or silent paid fallback. [ADR 200](../adr/200-server-prepared-analysis-service-and-mcp-credits.md) and the [MCP procedure](../operations/PREPARED-ANALYSIS-MCP.md) define the implementation. Production acceptance requires exact deployed end-to-end evidence.
+
 ## Decisions that supersede earlier conversation choices
 
 | Earlier choice                                                        | Latest applicable direction                                                                                                                          |

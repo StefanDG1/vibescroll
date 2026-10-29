@@ -192,3 +192,9 @@ Ship useful accepted backend checkpoints rather than a widget redesign. Update t
 - [OpenAI MCP tools](https://developers.openai.com/plugins/build/mcp-server) and [native Events](https://developers.openai.com/plugins/build/mcp-events).
 
 The completed benchmark supplies model compatibility/quality observations. Official documentation supplies advertised capability and pricing. Neither substitutes for the hosted acceptance receipts required above.
+
+## October29 prepared-route checkpoint and deferred ChatGPT UI
+
+Both prepared-model routes now save immutable private candidates on backend4fefc65, using identical retained transcript/JPEG evidence. Muse queued-to-stored62.713s; automatic native189.216s. Separate fresh preparation41.093s; these are not two fresh full-link trials. Original selection is preserved and the native monitor remains active. Legacy source-runtime cache failure, managed/prepared shared publication and precise customer credits remain open. See the [comparison receipt](../../operations/evidence/launch-20261029-prepared-model-comparison.json).
+
+The owner deferred embedded ChatGPT UI on October29. Production will use ordinary MCP tools and saved-result website links; do not recreate or visually redesign the widget now. OAuth, Events and the existing plugin stay connected. ADR199 also corrects prepared versions incorrectly labelled removed by history. This combined change is a local candidate until exact CI/publication and read-back pass.

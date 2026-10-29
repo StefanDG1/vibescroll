@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-29",
+  "backendCommit": "4fefc6517812b9fdce2ec878079664c8623b5e48",
+  "sourceDurationMs": 74302,
+  "freshPreparation": {
+    "queuedToEvidenceMs": 41093,
+    "sandboxMs": 33311,
+    "asrMs": 1973,
+    "asrFinalEndMs": 74302,
+    "overflowMs": 0
+  },
+  "museRetained": {
+    "queuedToStoredMs": 62713,
+    "browserRequestToCompletionMs": 63216,
+    "providerMs": 59078,
+    "gatewayReportedUSD": "0.0017966",
+    "insights": 5
+  },
+  "nativeRetained": {
+    "queuedToStoredMs": 189216,
+    "browserRequestToCompletionMs": 190395,
+    "waitingToClaimMs": 67508,
+    "claimToStoredMs": 121520,
+    "insights": 5,
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "actualModelAttested": false,
+    "actualEffortAttested": false,
+    "automaticEventTriggered": true,
+    "monitorRemainsActive": true
+  },
+  "sameEvidenceForBoth": true,
+  "frameCount": 8,
+  "allOwnedFrameBytesAndDecodeVerified": true,
+  "originalSelectionPreserved": true,
+  "newVersionsPrivate": true,
+  "coldPreviewMeasured": false,
+  "twoFreshEndToEndTrials": false,
+  "managedSharedPublicationAccepted": false,
+  "preciseCustomerCreditsAccepted": false,
+  "historyProjectionCorrection": "local candidate ADR199, publication pending",
+  "legacySourceRuntimeHealthy": false,
+  "gatewayAllGenerationsReportedUSD": "0.0097190288",
+  "settledInfrastructureInvoiceVerified": false
+}

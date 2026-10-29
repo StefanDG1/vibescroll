@@ -15,6 +15,7 @@ import {
   eventSubscriptionId,
 } from "../../../../packages/mcp/events";
 import { createKnowledgeHandler } from "../../../../packages/mcp/server";
+import { embeddedUiEnabled } from "../../../../packages/widget/setup";
 import {
   cloudCompletionEnvelope,
   assistantResponseLimit,
@@ -176,7 +177,7 @@ export async function POST(request: Request) {
         process.env.WORK_CLOUD_TEXT_VERIFIED === "true",
       process.env.WORK_CLOUD_MEDIA_ENABLED === "true" &&
         process.env.WORK_CLOUD_MEDIA_VERIFIED === "true",
-      process.env.MCP_WIDGET_ENABLED === "true",
+      embeddedUiEnabled,
     );
     const input = new Request(request.url, {
       method: "POST",

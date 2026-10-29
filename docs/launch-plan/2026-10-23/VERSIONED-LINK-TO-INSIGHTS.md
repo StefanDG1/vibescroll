@@ -213,3 +213,9 @@ Record counts, timings, exact code, requested/observed settings, cache-stage hit
 ## Keep these items outside this release
 
 Defer widget polish, new provider families, creator following, broad model-upgrade sweeps, automatic judge tournaments, semantic merging of different videos, a new vector database, a public database endpoint and new billing products. Retain the existing database/object store and indexed reads. First prove one reliable Cloud job, one preserved second version, one rollback and one authorized cross-customer cache hit.
+
+## October29 prepared-route checkpoint and deferred ChatGPT UI
+
+Both prepared-model routes now save immutable private candidates on backend4fefc65, using identical retained transcript/JPEG evidence. Muse queued-to-stored62.713s; automatic native189.216s. Separate fresh preparation41.093s; these are not two fresh full-link trials. Original selection is preserved and the native monitor remains active. Legacy source-runtime cache failure, managed/prepared shared publication and precise customer credits remain open. See the [comparison receipt](../../operations/evidence/launch-20261029-prepared-model-comparison.json).
+
+The owner deferred embedded ChatGPT UI on October29. Production will use ordinary MCP tools and saved-result website links; do not recreate or visually redesign the widget now. OAuth, Events and the existing plugin stay connected. ADR199 also corrects prepared versions incorrectly labelled removed by history. This combined change is a local candidate until exact CI/publication and read-back pass.

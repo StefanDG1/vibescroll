@@ -1,5 +1,11 @@
 # Implementation status
 
+## October29: both prepared analysis routes saved; embedded ChatGPT UI deferred
+
+Backend4fefc65 is live after exact CI40916773147 and22 actual release guards, with no scans/backfills/schema/index changes. Muse and the existing native Assistant saved five cited insights each from the same retained transcript and eight JPEGs. Original selection remains unchanged. Muse queued-to-stored took62.713s, automatic native189.216s. The earlier fresh preparation took41.093s. These separate measurements do not establish two fresh full-link timings. All eight authenticated image responses matched hashes and decoded at540x960. Gateway reports USD0.0097190288 across all task transcription/model generations; this is not a settled infrastructure invoice. [Comparison receipt](operations/evidence/launch-20261029-prepared-model-comparison.json).
+
+The native task remains active after automatic completion. Its retained-evidence route skips legacy runtime setup. Legacy source cache failure remains unresolved. Direct new versions are ready/private; history incorrectly projects them as removed. [ADR199](adr/199-deferred-chatgpt-ui-and-prepared-version-history.md) corrects that read projection and disables production embedded ChatGPT UI at the owner's request while preserving ordinary MCP tools, Events, grants and the deferred local widget implementation. The combined correction is local, not yet published. Managed/prepared shared publication, customer credit settlement and paid commerce remain open.
+
 ## October29: Muse schema accepted; answer rejected after inference
 
 Backend4892434 is live after exact CI40913526188 and actual zero-scan/backfill publication. Website406051f remains live. The provider accepted the strict derived schema and returned a Muse answer in45.911s, with Gateway-confirmed costUSD0.0017286. Application validation then failed before a new version was stored. The returned answer and exact validation error were not retained, so its cause remains unproved. Original selected insights and all real screenshots remain intact; the automatic prepared native comparison has not run.

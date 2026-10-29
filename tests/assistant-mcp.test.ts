@@ -1,5 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { createKnowledgeHandler } from "../packages/mcp/server";
+import { embeddedUiEnabled } from "../packages/widget/setup";
 const invoke = vi.fn(async () => ({
   ok: true,
   status: 200,
@@ -21,6 +22,7 @@ async function call(
   scopes: string[],
   backend: Parameters<typeof createKnowledgeHandler>[0] = invoke,
   protocol = "2025-11-25",
+  features?: { events?: boolean; media?: boolean; widget?: boolean },
 ) {
   const modern = protocol === "2026-07-28";
   const modernParams = params as Record<string, unknown>;
@@ -42,7 +44,13 @@ async function call(
         }
       : params,
   };
-  return createKnowledgeHandler(backend).fetch(
+  return createKnowledgeHandler(
+    backend,
+    features?.events ?? false,
+    false,
+    features?.media ?? false,
+    features?.widget ?? false,
+  ).fetch(
     new Request("https://scroll.companynerve.com/mcp", {
       method: "POST",
       headers: {
@@ -71,6 +79,49 @@ async function call(
     },
   );
 }
+it("temporarily omits production embedded UI while retaining native analysis tools and headless metadata", async () => {
+  expect(embeddedUiEnabled).toBe(false);
+  const response = await packet(
+    await call(
+      "tools/list",
+      {},
+      [
+        "knowledge:read",
+        "jobs:read",
+        "links:save",
+        "analysis:request",
+        "analysis:execute",
+        "events:subscribe",
+      ],
+      invoke,
+      "2026-07-28",
+      { events: true, media: true, widget: embeddedUiEnabled },
+    ),
+  );
+  const tools = response.result.tools;
+  expect(tools.map((t: any) => t.name)).toEqual(
+    expect.arrayContaining([
+      "get_profile",
+      "save_link",
+      "work_cloud_claim",
+      "work_cloud_retained_frame",
+      "work_cloud_complete",
+    ]),
+  );
+  for (const name of [
+    "open_vibescroll",
+    "open_vibescroll_export",
+    "render_vibescroll_card",
+  ])
+    expect(tools.some((t: any) => t.name === name)).toBe(false);
+  expect(tools.every((t: any) => !t._meta?.ui)).toBe(true);
+  const resources = await packet(
+    await call("resources/list", {}, ["knowledge:read"], invoke, "2026-07-28", {
+      widget: embeddedUiEnabled,
+    }),
+  );
+  expect(resources.result?.resources ?? []).toEqual([]);
+});
 it("returns a profile-selection next action through MCP 2 without asking to reconnect", async () => {
   const response = await call(
     "tools/call",

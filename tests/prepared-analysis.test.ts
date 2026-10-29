@@ -993,6 +993,18 @@ it("stores exact prepared images, a managed candidate and immutable idempotent c
     internal.preparedAnalysis.finishGateway,
     { runId, output: result, receipt },
   );
+  const history = await s.owner.query(api.analysisVersions.history, {
+    sourceId: s.sourceId,
+    paginationOpts: { numItems: 5, cursor: null },
+  });
+  expect(history.page.find((v) => v.id === versionId)).toMatchObject({
+    state: "ready",
+    insightCount: result.insights.length,
+  });
+  expect(history.selectedVersionId).toBe(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.selectedAnalysisVersionId,
+  );
+  expect(history.selectedVersionId).not.toBe(versionId);
   expect(
     await s.t.mutation(internal.preparedAnalysis.finishGateway, {
       runId,
@@ -1109,6 +1121,14 @@ it.each([false, true])(
       await s.owner.query(api.preparedAnalysis.status, { runId: run!._id }),
     ).toMatchObject({ state: "ready" });
     const completed = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+    const history = await s.assistant.query(api.analysisVersions.history, {
+      sourceId: s.sourceId,
+      paginationOpts: { numItems: 5, cursor: null },
+    });
+    expect(history.page[0]).toMatchObject({
+      state: "ready",
+      insightCount: s.output.insights.length,
+    });
     if (initial) {
       expect(completed.state).toBe("ready");
       expect(completed.selectedAnalysisVersionId).toBeTruthy();

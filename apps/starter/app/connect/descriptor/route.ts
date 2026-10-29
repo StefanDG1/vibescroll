@@ -1,9 +1,12 @@
-import { setupDescriptor } from "../../../../../packages/widget/setup";
+import {
+  setupDescriptor,
+  embeddedUiEnabled,
+} from "../../../../../packages/widget/setup";
 export function GET() {
   return Response.json(
     {
       ...setupDescriptor,
-      widgetEnabled: process.env.MCP_WIDGET_ENABLED === "true",
+      widgetEnabled: embeddedUiEnabled,
     },
     {
       headers: {

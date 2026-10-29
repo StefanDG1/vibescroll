@@ -6,6 +6,31 @@ import { privateCloudMediaCanonicalMatches } from "../../packages/social/contrac
 import { sourceRetained } from "./sourceAuthority";
 import { ensure } from "../../packages/policy";
 
+export function preparedEvidenceIsCurrent(
+  source: Doc<"sources">,
+  evidence: Doc<"analysisEvidence"> | null,
+): evidence is Doc<"analysisEvidence"> {
+  return Boolean(
+    evidence &&
+    evidence.owner === "private" &&
+    evidence.organizationId === source.organizationId &&
+    evidence.sourceId === source._id &&
+    evidence.extractionGeneration === source.generation &&
+    evidence.state === "retained" &&
+    resultRetained(evidence) &&
+    source.state !== "deleted" &&
+    source.rightsAttested &&
+    sourceRetained(source.sourceRetentionUntil) &&
+    isServicePreparedEvidence(evidence.prepared) &&
+    evidence.prepared.evidence?.evidenceHash === evidence.evidenceHash &&
+    evidence.prepared.evidence?.sourceRevisionHash === evidence.revisionHash &&
+    privateCloudMediaCanonicalMatches(
+      source.canonical,
+      evidence.prepared.requestedCanonical,
+    ),
+  );
+}
+
 export async function preparedEvidenceForSource(
   ctx: QueryCtx,
   source: Doc<"sources">,
@@ -13,24 +38,7 @@ export async function preparedEvidenceForSource(
 ) {
   const evidence = await ctx.db.get(evidenceId);
   ensure(
-    evidence &&
-      evidence.owner === "private" &&
-      evidence.organizationId === source.organizationId &&
-      evidence.sourceId === source._id &&
-      evidence.extractionGeneration === source.generation &&
-      evidence.state === "retained" &&
-      resultRetained(evidence) &&
-      source.state !== "deleted" &&
-      source.rightsAttested &&
-      sourceRetained(source.sourceRetentionUntil) &&
-      isServicePreparedEvidence(evidence.prepared) &&
-      evidence.prepared.evidence?.evidenceHash === evidence.evidenceHash &&
-      evidence.prepared.evidence?.sourceRevisionHash ===
-        evidence.revisionHash &&
-      privateCloudMediaCanonicalMatches(
-        source.canonical,
-        evidence.prepared.requestedCanonical,
-      ),
+    preparedEvidenceIsCurrent(source, evidence),
     "SOURCE_UNAVAILABLE",
     "Prepared source evidence is unavailable or changed.",
   );

@@ -1,5 +1,9 @@
 import { appOrigin } from "./contracts";
 
+// Owner deferred the embedded ChatGPT interface on October 29. Keep the local
+// widget harness available; production exposes the ordinary MCP tools/Events.
+export const embeddedUiEnabled = false;
+
 export const setupDescriptor = {
   schemaVersion: "vibescroll-setup-v1",
   server: {
@@ -10,10 +14,10 @@ export const setupDescriptor = {
   },
   instructions: `${appOrigin}/connect/agent`,
   accountSetup: `${appOrigin}/app`,
-  verification: ["get_profile", "open_vibescroll"],
+  verification: ["get_profile"],
   notes: [
     "Adding an MCP server does not install the optional plugin skills.",
-    "The host must support MCP Apps to display widgets.",
+    "The embedded ChatGPT interface is deferred; use tools and saved-result website links.",
     "Use official browser authentication. Never paste credentials into chat.",
   ],
 } as const;
@@ -54,7 +58,7 @@ Refresh the client session as required, then verify actual tool availability. A 
 
 ## Onboarding
 Call get_profile. Select one explicitly approved workspace using its profile_id.
-Open open_vibescroll to show the workspace when MCP Apps is supported.
+The embedded interface is deferred. Open approved saved-result links on the VibeScroll website.
 Review missing account/grant setup through ${appOrigin}/app. Existing grants and processing defaults keep their authority until explicitly reviewed.
 Customers use their own account and supported plan. Subscription purchase and billing remain on the independent website; the plugin does not initiate purchase or upgrade flows.
 

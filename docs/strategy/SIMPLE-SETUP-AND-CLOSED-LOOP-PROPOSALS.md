@@ -51,3 +51,9 @@ Keep cumulative spending, old unknown holds, the reserved post, fixed Basic queu
 ## Model shortlist evidence, October 28
 
 Read the official model selector in the existing Run readiness test Work Cloud chat without changing the selection. It displayed GPT-6.1 Sol, GPT-6.1 Terra, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, GPT-5.6 Sol, GPT-5.6 Terra and GPT-5.6 Luna. The candidate uses those eight labelled choices; existing requested settings remain selectable instead of silently changing. This establishes the observed account's menu, not universal plan entitlement or actual inference attestation. The native monitor was still Paused. Setup must check the individual host/model. No private model endpoint or paid API was used.
+
+## October29 prepared-route checkpoint and deferred ChatGPT UI
+
+Both prepared-model routes now save immutable private candidates on backend4fefc65, using identical retained transcript/JPEG evidence. Muse queued-to-stored62.713s; automatic native189.216s. Separate fresh preparation41.093s; these are not two fresh full-link trials. Original selection is preserved and the native monitor remains active. Legacy source-runtime cache failure, managed/prepared shared publication and precise customer credits remain open. See the [comparison receipt](../operations/evidence/launch-20261029-prepared-model-comparison.json).
+
+The owner deferred embedded ChatGPT UI on October29. Production will use ordinary MCP tools and saved-result website links; do not recreate or visually redesign the widget now. OAuth, Events and the existing plugin stay connected. ADR199 also corrects prepared versions incorrectly labelled removed by history. This combined change is a local candidate until exact CI/publication and read-back pass.

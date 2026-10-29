@@ -1,5 +1,6 @@
 import { resultRetained } from "../packages/contracts/result-retention";
 import { isServicePreparedEvidence } from "../packages/contracts/prepared-evidence";
+import { preparedEvidenceIsCurrent } from "./lib/preparedEvidenceAccess";
 import { stopPreparedAttempt } from "./lib/preparedLifecycle";
 import { persistCloudResult } from "./lib/persistCloudResult";
 import { admitCloudMediaJob } from "./lib/workCloudAdmission";
@@ -192,9 +193,13 @@ export const history = query({
         return evidence &&
           source.state === "ready" &&
           source.generation === evidence.extractionGeneration &&
-          source.orderedMedia?.post.revisionHash === evidence.revisionHash &&
+          (isServicePreparedEvidence(evidence.prepared)
+            ? preparedEvidenceIsCurrent(source, evidence)
+            : source.orderedMedia?.post.revisionHash ===
+              evidence.revisionHash) &&
           evidence.state === "retained" &&
           resultRetained(evidence) &&
+          resultRetained(version) &&
           version.state === "ready"
           ? versionMetadata(version)
           : {

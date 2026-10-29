@@ -49,7 +49,7 @@ import {
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import {
   queueAutomaticPreparedSource,
-  requestPreparedCredits,
+  requestPreparedFromAssistant,
 } from "./preparedService";
 import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import {
@@ -589,6 +589,7 @@ export const getJobStatus = internalQuery({
               preparedRun.receipt?.admission?.quote.maximumCredits ?? 0,
             charged_credits:
               preparedRun.receipt?.billing?.chargedCredits ?? null,
+            failure_code: preparedRun.receipt?.failure?.code ?? null,
           }
         : cloud
           ? {
@@ -698,6 +699,21 @@ export const requestAnalysis = internalMutation({
           "FORBIDDEN",
           "Only the owner can retry this post.",
         );
+        if (preparedServiceConfiguration(a.actor.subject)) {
+          const prepared = await requestPreparedFromAssistant(ctx, {
+            sourceId: source._id,
+            executor: "work_cloud",
+            retry: args.retry,
+          });
+          return {
+            ...prepared,
+            source_id: source._id,
+            status: prepared.state,
+            analysis_route: "prepared_own_cloud",
+            analysis_started: false,
+            analysis_requested: "runId" in prepared && !!prepared.runId,
+          };
+        }
         const receipt = await retrySavedCloudSource(
           ctx,
           { source, ...execution },
@@ -747,7 +763,7 @@ export const requestAnalysis = internalMutation({
     }
     ensure(
       args.cloud === undefined &&
-        args.retry === undefined &&
+        (args.retry === undefined || args.mode === "credits") &&
         args.savedIntentId === undefined &&
         args.revision === undefined &&
         args.grantVersion === undefined,
@@ -775,10 +791,11 @@ export const requestAnalysis = internalMutation({
       args.mode === "credits" &&
       preparedServiceConfiguration(a.actor.subject)
     ) {
-      const prepared = await requestPreparedCredits(ctx, {
+      const prepared = await requestPreparedFromAssistant(ctx, {
         sourceId: source._id,
         generation: args.generation,
         maxCredits: args.maxCredits,
+        retry: args.retry,
       });
       return {
         ...prepared,

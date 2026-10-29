@@ -71,6 +71,19 @@ class PreparedMediaTests(unittest.TestCase):
                 decoder(root)()
             self.assertFalse((root / 'manifest.json').exists())
 
+    def test_actual_duration_is_checked_before_pcm_frames_or_caption_processing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i',
+                            'color=c=green:s=160x240:r=10:d=3', '-c:v', 'mpeg4',
+                            '-f', 'mp4', str(root / 'input')], check=True, capture_output=True)
+            (root / 'request.json').write_text(json.dumps({'maximumDurationMs': 2000}))
+            with self.assertRaisesRegex(AssertionError, 'reviewed_duration_exceeded'):
+                decoder(root)()
+            self.assertFalse((root / 'manifest.json').exists())
+            self.assertFalse((root / 'audio.wav').exists())
+            self.assertEqual(list(root.glob('frame-*.jpg')), [])
+
 
 if __name__ == '__main__':
     unittest.main()

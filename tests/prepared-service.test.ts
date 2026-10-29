@@ -8,6 +8,10 @@ import { cloudCatalogFixture } from "./cloud-catalog-fixture";
 import { tools as assistantHttpTools } from "../convex/assistantHttp";
 import { createKnowledgeHandler } from "../packages/mcp/server";
 import { workCloudMonitorMessage } from "../packages/onboarding/work-cloud-monitor";
+const preparationMock = vi.hoisted(() => ({ run: vi.fn() }));
+vi.mock("../packages/providers/prepared-media", () => ({
+  prepareHostedEvidence: preparationMock.run,
+}));
 vi.mock("../packages/providers/storage", () => ({
   signedObject: (key: string) =>
     `https://storage.example.test/${encodeURIComponent(key)}`,
@@ -736,6 +740,133 @@ it("supports cached MCP clients through the existing credit command and safe job
     status: "ready",
     processing: { charged_credits: 3 },
   });
+});
+it("retains metadata without an extractor duration and defers the mandatory bound to decoding", async () => {
+  const s = await freshSource(await fixture());
+  const request = { sourceId: s.sourceId, executor: "gateway" as const };
+  const q = await s.owner.query(api.preparedService.quote, request);
+  const run = await s.owner.mutation(api.preparedService.start, {
+    ...request,
+    key: "missing-duration-test",
+    quoteHash: q.quoteHash,
+    maximumCredits: q.maximumCredits,
+  });
+  preparationMock.run.mockImplementationOnce(async (_url, callbacks) => {
+    expect(callbacks.maximumDurationMs).toBe(180000);
+    await callbacks.stage("metadata");
+    await callbacks.metadata({
+      title: "Actual platform title",
+      authorName: "Creator",
+      resolvedCanonical: s.source.canonical,
+    });
+    await callbacks.failed({ stopAcknowledged: true, completedAt: Date.now() });
+    throw new Error("Synthetic later download failure");
+  });
+  await s.t.action(internal.preparedMedia.run, { runId: run.runId! });
+  const source = await s.t.run((c) => c.db.get(s.sourceId));
+  expect(source!.linkPreview).toMatchObject({
+    title: "Actual platform title",
+    state: "ready",
+  });
+  expect(
+    await s.owner.query(api.preparedService.status, { sourceId: s.sourceId }),
+  ).toMatchObject({ state: "failed", chargedCredits: 0 });
+});
+it("retries a settled prepared failure through cached MCP and replays the retry key without dispatching twice", async () => {
+  const s = await freshSource(await fixture());
+  const args = {
+    profileId: s.org,
+    sourceId: s.sourceId,
+    mode: "credits" as const,
+  };
+  const first: any = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    args,
+  );
+  const initial: any = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    {
+      ...args,
+      generation: s.source.generation,
+      maxCredits: first.quote.maximumCredits,
+    },
+  );
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId: initial.runId,
+    code: "SOURCE_UNAVAILABLE",
+  });
+  const source = (await s.t.run((c) => c.db.get(s.sourceId)))!;
+  const retry = {
+    generation: source.generation,
+    revision: source.updatedAt,
+    key: "explicit-safe-retry",
+  };
+  const q: any = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    { ...args, retry },
+  );
+  const accepted = {
+    ...args,
+    retry,
+    generation: source.generation,
+    maxCredits: q.quote.maximumCredits,
+  };
+  const second: any = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    accepted,
+  );
+  expect(second.runId).not.toBe(initial.runId);
+  await s.t.mutation(internal.preparedAnalysis.claim, { runId: second.runId });
+  expect(
+    await s.assistant.mutation(internal.assistant.requestAnalysis, accepted),
+  ).toMatchObject({ runId: second.runId, reused: true });
+  await expect(
+    s.assistant.mutation(internal.assistant.requestAnalysis, {
+      ...args,
+      retry: { ...retry, key: "other-retry-key" },
+    }),
+  ).rejects.toThrow(/SOURCE_BUSY/);
+});
+it("retries native preparation with current defaults and at most one credit, preserving the failed row", async () => {
+  const s = await freshSource(await fixture());
+  await nativeReady(s);
+  const request = { sourceId: s.sourceId, executor: "work_cloud" as const };
+  const q = await s.owner.query(api.preparedService.quote, request);
+  const initial = await s.owner.mutation(api.preparedService.start, {
+    ...request,
+    key: "first-native-prepare",
+    quoteHash: q.quoteHash,
+    maximumCredits: q.maximumCredits,
+  });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId: initial.runId!,
+    code: "SOURCE_UNAVAILABLE",
+  });
+  const source = (await s.t.run((c) => c.db.get(s.sourceId)))!;
+  const args = {
+    profileId: s.org,
+    sourceId: s.sourceId,
+    mode: "work_cloud" as const,
+    retry: {
+      generation: source.generation,
+      revision: source.updatedAt,
+      key: "retry-native-prepare",
+    },
+  };
+  const next: any = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    args,
+  );
+  expect(next).toMatchObject({
+    status: "queued",
+    analysis_route: "prepared_own_cloud",
+  });
+  expect(next.runId).not.toBe(initial.runId);
+  expect(
+    await s.assistant.mutation(internal.assistant.requestAnalysis, args),
+  ).toMatchObject({ runId: next.runId, reused: true });
+  const row = await s.t.run((c) => c.db.get(next.runId));
+  expect(row.receipt.admission.quote.maximumCredits).toBe(1);
 });
 it("rejects a changed tariff configuration or revoked entitlement before dispatch", async () => {
   const s = await fixture(),

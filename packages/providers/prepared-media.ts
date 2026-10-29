@@ -10,7 +10,7 @@ import { preparedDecoder } from "../media/preparedDecoder";
 import { preparedExtraction } from "../media/preparedExtraction";
 import { decoderManifest } from "../media/manifest";
 import { jpegDimensions } from "../media/jpeg";
-import { ensure } from "../policy";
+import { ensure, PolicyError } from "../policy";
 import { readResponseBytes } from "./binary";
 
 const downloader = {
@@ -37,11 +37,20 @@ export async function prepareHostedEvidence(
     stage: (stage: string) => Promise<void>;
     metadata: (metadata: z.infer<typeof nativeMetadata>) => Promise<void>;
     failed?: (receipt: Record<string, unknown>) => Promise<void>;
+    maximumDurationMs?: number;
   },
 ) {
   const policy = acquisitionPolicy(url),
     times: Record<string, number> = {};
   const startedAt = Date.now();
+  const maximumDurationMs = callbacks.maximumDurationMs ?? 600000;
+  ensure(
+    Number.isSafeInteger(maximumDurationMs) &&
+      maximumDurationMs > 0 &&
+      maximumDurationMs <= 600000,
+    "INVALID_INPUT",
+    "Use a bounded media duration.",
+  );
   // The trusted controller verifies the pinned public tool before sending it to an isolated job.
   const toolResponse = await fetch(downloader.url, {
     signal: AbortSignal.timeout(15000),
@@ -79,6 +88,8 @@ export async function prepareHostedEvidence(
   times.created = Date.now();
   let stopped = false;
   let succeeded = false;
+  let phase = "write_files";
+  let failure: Record<string, unknown> | null = null;
   const command = async (script: string, timeoutMs: number) => {
     const result = await sandbox.commands.run(script, {
       user: "user",
@@ -95,7 +106,7 @@ export async function prepareHostedEvidence(
     await sandbox.files.write([
       {
         path: "/home/user/media/request.json",
-        data: JSON.stringify({ url: policy.url }),
+        data: JSON.stringify({ url: policy.url, maximumDurationMs }),
       },
       { path: "/home/user/media/acquire.py", data: acquirer },
       { path: "/home/user/media/acquire-prepared.py", data: preparedAcquirer },
@@ -107,6 +118,8 @@ export async function prepareHostedEvidence(
       { path: "/home/user/tools/yt-dlp", data: tool },
       { path: "/home/user/tools/pysubs2.zip", data: parserBytes },
     ]);
+    times.filesWritten = Date.now();
+    phase = "permissions";
     const permissions = await sandbox.commands.run(
       "chmod 700 /home/user/tools/yt-dlp",
       { user: "root", timeoutMs: 5000 },
@@ -116,8 +129,11 @@ export async function prepareHostedEvidence(
       "POLICY_BLOCKED",
       "Downloader permissions could not be established.",
     );
+    times.permissions = Date.now();
+    phase = "acquisition_isolation";
     await hardenAcquisition(sandbox);
     times.isolated = Date.now();
+    phase = "metadata";
     await callbacks.stage("metadata");
     await command(
       "python3 /home/user/media/acquire-prepared.py inspect",
@@ -134,13 +150,16 @@ export async function prepareHostedEvidence(
     const metadata = nativeMetadata.parse(JSON.parse(metadataBytes));
     times.metadata = Date.now();
     await callbacks.metadata(metadata);
+    phase = "download";
     await callbacks.stage("downloading");
     await command(
       "python3 /home/user/media/acquire-prepared.py download",
       60000,
     );
     times.downloaded = Date.now();
+    phase = "decoder_isolation";
     await hardenSandbox(sandbox);
+    phase = "decode";
     await callbacks.stage("preparing");
     await command("python3 /home/user/media/decode-prepared.py", 65000);
     times.decoded = Date.now();
@@ -151,6 +170,12 @@ export async function prepareHostedEvidence(
       "Media manifest exceeded its bound.",
     );
     const manifest = decoderManifest(JSON.parse(raw), true);
+    ensure(
+      Math.round(manifest.durationSeconds * 1000) <= maximumDurationMs,
+      "QUOTE_CHANGED",
+      "The decoded video exceeds the reviewed duration bound.",
+    );
+    phase = "transfer";
     ensure(
       manifest.frames.length >= 1 && manifest.frames.length <= 8,
       "INVALID_EVIDENCE",
@@ -263,6 +288,18 @@ export async function prepareHostedEvidence(
       sandboxId: sandbox.sandboxId,
       stopped: true as const,
     };
+  } catch (error) {
+    // Retain only bounded classifications, never provider messages, URLs or stderr.
+    failure = {
+      phase,
+      code:
+        error instanceof PolicyError ? error.code : "PROVIDER_REQUEST_FAILED",
+      errorType:
+        error instanceof Error && /^[A-Za-z0-9_]{1,60}$/.test(error.name)
+          ? error.name
+          : "Error",
+    };
+    throw error;
   } finally {
     if (!stopped) {
       await sandbox.kill();
@@ -276,6 +313,7 @@ export async function prepareHostedEvidence(
         stopAcknowledged: stopped,
         providerDeletionVerified: false,
         times,
+        failure,
       });
   }
 }

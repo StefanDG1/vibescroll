@@ -28,6 +28,7 @@ import {
 } from "./lib/analysisHistory";
 import { recordAutomaticCatalogIntent } from "./lib/catalogPolicy";
 import { reserveCatalogProducer } from "./lib/cloudCatalog";
+import { cloudRetryRequest } from "../packages/contracts/cloud-retry";
 
 const requested = {
   sourceId: v.id("sources"),
@@ -455,15 +456,28 @@ export const assistantStart = internalMutation({
 });
 
 // Existing MCP clients can use their already-discovered credit request shape.
-// This admits only the first fixed-baseline analysis of a source generation.
+// This admits first analysis and explicit retries of settled failures.
 // New versions and model choices use the exact quote/start contract above.
-export async function requestPreparedCredits(
+export async function requestPreparedFromAssistant(
   ctx: MutationCtx,
-  args: { sourceId: Id<"sources">; generation?: number; maxCredits?: number },
+  args: {
+    sourceId: Id<"sources">;
+    generation?: number;
+    maxCredits?: number;
+    executor?: "gateway" | "work_cloud";
+    retry?: { generation: number; revision: number; key: string };
+  },
 ) {
   const a = await owner(ctx, args.sourceId, true);
-  const key = `mcp-credit-${a.source._id}-${a.source.generation}`;
-  if (args.maxCredits !== undefined) {
+  const executor = args.executor ?? "gateway";
+  const retry = args.retry ? cloudRetryRequest.parse(args.retry) : undefined;
+  const key = retry
+    ? `mcp-retry-${await digest(canonicalJson({ sourceId: args.sourceId, executor, retry }))}`.slice(
+        0,
+        64,
+      )
+    : `mcp-credit-${a.source._id}-${a.source.generation}`;
+  if (args.maxCredits !== undefined || executor === "work_cloud") {
     const prior = await ctx.db
       .query("mediaPreparations")
       .withIndex("by_org_source_key", (q) =>
@@ -475,23 +489,45 @@ export async function requestPreparedCredits(
       .unique();
     if (prior) {
       ensure(
-        args.generation === prior.generation &&
-          args.maxCredits === prior.receipt?.admission?.quote.maximumCredits,
+        (retry?.generation ?? args.generation) === prior.generation &&
+          prior.executor === executor &&
+          (executor === "work_cloud" ||
+            args.maxCredits === prior.receipt?.admission?.quote.maximumCredits),
         "QUOTE_CHANGED",
         "Use the current source and accepted credit cap.",
       );
       return startHandler(ctx, {
         sourceId: args.sourceId,
-        executor: "gateway",
+        executor,
         key,
         quoteHash: prior.receipt.admission.quoteHash,
-        maximumCredits: args.maxCredits,
+        maximumCredits: prior.receipt.admission.quote.maximumCredits,
       });
     }
   }
+  if (retry) {
+    const latest = await ctx.db
+      .query("mediaPreparations")
+      .withIndex("by_org_source", (q) =>
+        q
+          .eq("organizationId", a.source.organizationId)
+          .eq("sourceId", args.sourceId),
+      )
+      .order("desc")
+      .first();
+    ensure(
+      retry.generation === a.source.generation &&
+        retry.revision === a.source.updatedAt &&
+        latest?.generation === retry.generation &&
+        latest.state === "failed" &&
+        latest.receipt?.billing?.state === "settled",
+      "SOURCE_BUSY",
+      "Retry requires the current post revision and a confirmed settled failure. Active or uncertain work must be reconciled first.",
+    );
+  }
   const q = await quoteFor(ctx, a, {
     sourceId: args.sourceId,
-    executor: "gateway",
+    executor,
   });
   if (q.quote.cacheHit)
     return {
@@ -501,7 +537,7 @@ export async function requestPreparedCredits(
       cacheHit: true,
       chargedCredits: 0,
     };
-  if (args.maxCredits === undefined)
+  if (args.maxCredits === undefined && executor === "gateway")
     return {
       state: "quote_required",
       quote: { ...q.quote, quoteHash: q.quoteHash },
@@ -512,22 +548,25 @@ export async function requestPreparedCredits(
           mode: "credits",
           generation: a.source.generation,
           maxCredits: q.quote.maximumCredits,
+          ...(retry ? { retry } : {}),
         },
       },
       note: "Review and accept the maximum service credits, then repeat this exact credit request. Preparation and Muse analysis are included; no native job starts.",
     };
   ensure(
-    args.generation === a.source.generation &&
-      args.maxCredits === q.quote.maximumCredits,
+    executor === "work_cloud"
+      ? !!retry && q.quote.maximumCredits <= 1
+      : args.generation === a.source.generation &&
+          args.maxCredits === q.quote.maximumCredits,
     "QUOTE_CHANGED",
     "Read the current credit quote before starting this fixed-baseline analysis.",
   );
   return startHandler(ctx, {
     sourceId: args.sourceId,
-    executor: "gateway",
+    executor,
     key,
     quoteHash: q.quoteHash,
-    maximumCredits: args.maxCredits,
+    maximumCredits: q.quote.maximumCredits,
   });
 }
 

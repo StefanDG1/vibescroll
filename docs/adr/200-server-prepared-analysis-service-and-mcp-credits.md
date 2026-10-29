@@ -1,7 +1,7 @@
 # ADR 200: server preparation and credit-funded MCP analysis
 
 Date: 2026-10-29
-Status: implemented candidate; exact CI, publication and fresh production acceptance pending
+Status: service and legacy-wallet correction published; fresh production acceptance pending
 
 ## Decision
 
@@ -26,7 +26,7 @@ Tariff `prepared-service-credits-v1` uses the existing service-credit denominati
 - Native subscription reasoning costs zero analysis credits. Fresh preparation still costs one service credit.
 - A ready compatible result costs zero and starts no task. Explicit reanalysis creates a new version while preserving the incumbent.
 
-Before download, unknown duration uses the configured maximum as an upper quote. Oversized metadata stops before download. Settlement uses actual decoded duration and cannot exceed the accepted cap. The API ceiling covers ASR and inference; deduct the precise ASR ceiling before inference. Refuse a configuration that cannot cover both.
+Before download, unknown duration uses the configured maximum as an upper quote. Known oversized metadata stops before download. Missing extractor duration is permitted; actual decoded duration is mandatory before PCM, frames, ASR and inference. Settlement uses actual decoded duration and cannot exceed the accepted cap. The API ceiling covers ASR and inference; deduct the precise ASR ceiling before inference. Refuse a configuration that cannot cover both.
 
 The quote hash binds source generation/selection, identity, executor, model/effort, evidence reuse, configuration, native grant and maximum credits. A stable operation key admits once. Replays return that row; stale quotes start no work. Known returned failures release unused analysis credits, while retained preparation may be charged. Never-dispatched expiry releases its reservation. Unknown work retains its hold and blocks duplicates. Preserve older comparison attempts.
 
@@ -36,7 +36,7 @@ V1 examines twenty source preparation records and refuses a twenty-first histori
 
 `quote_video_analysis`, `start_video_analysis` and `video_analysis_status` share contracts through actual MCP 2, the strict HTTP relay and authenticated Convex functions. The app product endpoint exposes the same functions. Credit callers first save with `analyze=false`, then obtain acceptance of the returned cap.
 
-Cached clients can also call the existing `request_analysis(mode=credits)` to read a fixed Muse quote, then repeat with its generation and accepted maxCredits. Its deterministic source-generation key reuses the same run after a lost response. `get_job_status` returns preparation stage and reserved/settled credits. This compatibility path admits first analysis only; new versions use the new quote/start contract.
+Cached clients can also call the existing `request_analysis(mode=credits)` to read a fixed Muse quote, then repeat with its generation and accepted maxCredits. Its deterministic source-generation key reuses the same run after a lost response. `get_job_status` returns preparation stage and reserved/settled credits. The retry correction admits explicit current-generation/revision retries of confirmed settled failures under a new stable key. Active or unknown work cannot retry. Other new versions use the new quote/start contract.
 
 Configured automatic native accounts admit preparation directly from app or ordinary MCP Save. Suppress the obsolete saved-link wake while retaining capture rate limits. Emit the existing evidence-ready event after retention. Generation zero is valid for a first retained-evidence analysis.
 

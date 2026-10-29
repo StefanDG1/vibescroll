@@ -40,6 +40,13 @@ def prepare():
                           '-of', 'json', str(source)], 15))
     duration = float(info['format']['duration'])
     assert math.isfinite(duration) and 0 < duration <= 600
+    request = ROOT / 'request.json'
+    maximum_ms = 600000
+    if request.exists():
+        assert not request.is_symlink() and request.stat().st_size <= 3000
+        maximum_ms = json.loads(request.read_text())['maximumDurationMs']
+        assert type(maximum_ms) is int and 0 < maximum_ms <= 600000
+    assert round(duration * 1000) <= maximum_ms, 'reviewed_duration_exceeded'
     streams = info['streams']
     assert len(streams) <= 4
     video = [s for s in streams if s['codec_type'] == 'video']

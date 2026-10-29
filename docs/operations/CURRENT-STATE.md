@@ -6,14 +6,14 @@ Read the [owner request register](../strategy/OWNER-REQUEST-REGISTER.md), [conti
 
 ## Accepted production baseline
 
-- Website/backend commit: `b0ec5b6530362819206666a9077b516b895949bd`.
+- Website commit: `b0ec5b6530362819206666a9077b516b895949bd`. Backend: `47b8990f32ba7029751ffcf46ff1843627374e42` (exact CI `40953376766`, acknowledged compatible publication).
 - Website version: `0.1.0-alpha.20261029201911.gb0ec5b653036`.
 - Deployment: `dpl_8y7ZvcFhasQHA1GDCd2yEB7GKeo8`.
 - Exact Linux CI: `40947978157`. Local checks include 1,546 Vitest cases, Node/Python checks and both builds. Three hosted and seven Windows Python cases were skipped.
 - Backend publication acknowledged; actual 12-component/138-table/301-index prediction required zero scans/backfills and changed no schema/index/auth/cron. Fixed Basic queued website build took 41.749s, then staged checks and same-build promotion passed.
 - [Prior headless receipt](evidence/launch-20261029-headless-mcp-production.json). This newer server-service release passed22 actual release guards and same-build staged promotion; its fresh analysis acceptance is pending.
 
-The service key is configured and verified. Vercel requires a USD1 minimum key budget; the owner created it with that cap. The service allowance remains ten jobs and USD0.30 aggregate API maximum inside the approved USD0.75 batch. The first real MCP quote found the owner's original sole-owner workspace lacks privateOwnerId. No job or credit charge occurred. Admission is temporarily disabled while the explicit original-wallet compatibility correction passes checks. The existing Assistant action is saved/verified as prepared-evidence only and remains monitoring. Do not call either fresh route accepted yet.
+The service key is configured and verified. Vercel requires a USD1 minimum key budget; the owner created it with that cap. Server admission remains ten jobs and USD0.30 aggregate API maximum inside the approved USD0.75 batch. The explicit original-wallet compatibility correction is live, with no data migration or duplicate wallet. Service admission is enabled for the finite owner pilot. Two fresh attempts stopped before ASR/inference and refunded all app credits: API metadata was rejected by a controller duration check; native preparation failed during Sandbox setup. The deleted native VM has no retrievable session logs, so its exact cause is unproved. Eight jobs remain. The Assistant's exact prepared-only action remains saved/verified and monitoring. Neither fresh route is accepted yet.
 
 ## What is accepted and what is conditional
 
@@ -23,7 +23,7 @@ The service key is configured and verified. Vercel requires a USD1 minimum key b
 | Original MCP          | Current owner connection valid, automatic analysis enabled, no setup required, grant 12 without expiry                      | Token, grant, monitor, runtime and quota are distinct. This is not independent customer onboarding.                                  |
 | Embedded ChatGPT UI   | Disabled; ordinary tools and Events remain                                                                                  | Do not recreate the plugin or redesign the widget now. Historical rendered cards can remain in old conversations.                    |
 | Automatic native flow | Prior ordinary MCP Save completed via Events, real speech/images/insights and shared publication, monitor enabled afterward | Legacy source runtime later reported a corrupt cached Python payload. General fresh-source reliability is not currently established. |
-| Existing shared cache | Independent neutral native artifacts and cross-account reference reuse accepted                                             | New managed/service-prepared versions still do not publish into it.                                                                  |
+| Existing shared cache | Independent neutral native artifacts and cross-account reference reuse accepted                                             | Service-prepared publication code is live and locally tested; independent fresh production acceptance is pending.                    |
 | Full catalog          | Owner operator grant, toggle, bounded metadata/detail, thumbnails and entitlement-checked image bytes accepted              | Paid add-on purchase/webhook activation is open. Browsing does not populate personal Posts.                                          |
 | Versions              | Current test history returns versions1/2/3 Ready with4/5/5 insights; original selected/revision0 preserved                  | Requested native model/effort are not independent provider attestation. Best-version quality ranking is later work.                  |
 | Teams                 | Individual-Pro membership and version-bound sharing code deployed, with isolated acceptance                                 | Complete paid-member invitation/access and customer commerce acceptance remain open.                                                 |

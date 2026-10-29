@@ -134,6 +134,7 @@ export const run = internalAction({
         "Configure the service Gateway credential.",
       );
       const prepared = await prepareHostedEvidence(input.url, {
+        maximumDurationMs: input.receipt?.admission?.quote.durationMaximumMs,
         failed: async (receipt) => {
           await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
             runId,
@@ -148,19 +149,21 @@ export const run = internalAction({
           });
         },
         metadata: async (metadata) => {
-          if (input.receipt?.admission)
-            ensure(
-              metadata.durationSeconds &&
-                Math.ceil(metadata.durationSeconds * 1000) <=
-                  input.receipt.admission.quote.durationMaximumMs,
-              "QUOTE_CHANGED",
-              "The video exceeds the reviewed duration bound.",
-            );
           await ctx.runMutation(internal.preparedAnalysis.progress, {
             runId,
             stage: "metadata",
             metadata,
           });
+          if (
+            input.receipt?.admission &&
+            metadata.durationSeconds !== undefined
+          )
+            ensure(
+              Math.round(metadata.durationSeconds * 1000) <=
+                input.receipt.admission.quote.durationMaximumMs,
+              "QUOTE_CHANGED",
+              "The video exceeds the reviewed duration bound.",
+            );
         },
       });
       const preparationReceipt = {

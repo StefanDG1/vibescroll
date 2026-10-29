@@ -113,3 +113,9 @@ Use the next stable F number and a dated private/sanitized receipt. Record these
 - Exact local/CI/staging/production assertions. Mark skipped or unavailable observations explicitly.
 - Actual versus reserved/unsettled cost, cleanup outcome, rollback and any unknown external action.
 - Remaining prevention work and the requirement IDs it serves. Update current state only after verified changes.
+
+F45, October29: the preparation controller treated yt-dlp's optional duration as mandatory, rejecting successful metadata before publishing the title. Publish bounded metadata first; reject a known oversize duration, and enforce the reviewed bound again against actual ffprobe duration before PCM, frames, ASR or analysis. Keep a real media regression for missing extractor duration and oversize decoded media. The actual first rejected metadata was not retained, so do not claim its duration was missing rather than oversized.
+
+F46, October29: a preparation failure receipt recorded only timestamps and cleanup. After the ephemeral VM was deleted, the native setup failure could not be diagnosed from provider command logs (404). Record a safe phase and error classification before cleanup; never retain raw SDK messages, signed URLs or unrestricted stderr. Keep acknowledged stop distinct from independent provider deletion verification.
+
+F47, October29: cached MCP clients reused a deterministic source-generation key forever, including after a confirmed refunded failure. Support an explicit retry key bound to current generation/revision and a settled failure. Replay that key idempotently before checking mutable revision; block active/unknown work and preserve the prior attempt. A new connector or reauthentication does not fix operation-key semantics.

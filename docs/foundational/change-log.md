@@ -237,3 +237,11 @@ Source: actual owner-account media preparation, rejected completion and exact-pa
 ## F084, October 28: local shared versions
 
 Updated all four briefs for ADR181. The local cache/version/notes tests do not establish rights-cleared production reuse or customer demand. Existing prices, audience, six beliefs and release gates remain unchanged.
+
+
+## F087, October29: one hosted Pro target
+
+Updated all four briefs, their index/backlog, PRD, decisions, Billing and the mandatory pricing plan for the explicit owner correction. Read the old catalogue/finance assumptions, D17/D19, Managed Payments costing, shared-intelligence plan and current offer before adopting it. The new price and 500 duration credits conflict with old tiers/trial/units; current runtime and Stripe remain unchanged. Cost estimates distinguish observed model charges, advertised provider rates and unknown hosted/operating quantities. Independent demand, hosted timing, commercial migration and self-hosting acceptance remain unclaimed.
+
+
+F087 follow-up: the owner restored weekly as a premium interval, proposed300 credits, requested curated models/high reasoning and digital-root-8 prices, and clarified that premium models spend more credits rather than subsidizing them from Muse1×. The current plan/cost engine distinguishes observed Muse high spend, unknown hosted costs and token-ceiling stress. The working EUR8/week50, EUR35/month300, EUR350/year300/month comparison is unimplemented; no80% net-profit promise, catalogue migration or component installation is claimed.

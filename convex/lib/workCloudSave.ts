@@ -49,6 +49,20 @@ export async function savedCloudMonitorCurrent(
       return true;
   return false;
 }
+
+/** Read status only. Local defaults and native Cloud defaults are distinct. */
+export async function automaticAnalysisEnabled(
+  ctx: QueryCtx,
+  actor: Doc<"users">,
+  organization: Doc<"organizations">,
+  grant: Doc<"assistantGrants">,
+) {
+  if (grant.analysisDefaults?.enabled) return true;
+  return (
+    (await savedCloudGrantCurrent(ctx, actor, organization, grant)) &&
+    (await savedCloudMonitorCurrent(ctx, grant))
+  );
+}
 export async function savedCloudRoute(
   ctx: QueryCtx,
   actor: Doc<"users">,

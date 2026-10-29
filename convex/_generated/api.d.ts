@@ -31,6 +31,8 @@ import type * as billing from "../billing.js";
 import type * as billingChanges from "../billingChanges.js";
 import type * as billingV1 from "../billingV1.js";
 import type * as categories from "../categories.js";
+import type * as catalogAccess from "../catalogAccess.js";
+import type * as catalogBrowse from "../catalogBrowse.js";
 import type * as cloud from "../cloud.js";
 import type * as cloudCatalog from "../cloudCatalog.js";
 import type * as cloudCatalogActions from "../cloudCatalogActions.js";
@@ -153,6 +155,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  catalogAccess: typeof catalogAccess;
+  catalogBrowse: typeof catalogBrowse;
   preparedMedia: typeof preparedMedia;
   preparedAnalysis: typeof preparedAnalysis;
   accounts: typeof accounts;

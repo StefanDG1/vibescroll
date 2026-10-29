@@ -26,7 +26,14 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
-async function setup(optIn = true, originalWorkspace = false) {
+async function setup(
+  optIn = true,
+  originalWorkspace = false,
+  readStatus = false,
+) {
+  const fixtureScopes = readStatus
+    ? [...scopes, "context:read", "knowledge:read"]
+    : scopes;
   for (const key of [
     "MCP_ENABLED",
     "MCP_EVENTS_ENABLED",
@@ -40,7 +47,7 @@ async function setup(optIn = true, originalWorkspace = false) {
   vi.stubEnv("MCP_AUTH_ISSUER", issuer);
   vi.stubEnv(
     "MCP_CLIENTS",
-    JSON.stringify([{ id: clientId, name: "Fixture", scopes }]),
+    JSON.stringify([{ id: clientId, name: "Fixture", scopes: fixtureScopes }]),
   );
   vi.stubEnv("LINK_PREVIEWS_ENABLED", "false");
   const t = convexTest(schema, modules);
@@ -64,7 +71,7 @@ async function setup(optIn = true, originalWorkspace = false) {
     subject,
     issuer,
     client_id: clientId,
-    scope: scopes.join(" "),
+    scope: fixtureScopes.join(" "),
     sid: "app_consent_01234567890123456789012345",
   };
   const assistant = t.withIdentity(identity);
@@ -73,7 +80,8 @@ async function setup(optIn = true, originalWorkspace = false) {
     clientId,
     sources: [],
     libraryScope: "all" as const,
-    scopes,
+    scopes: fixtureScopes,
+    ...(readStatus ? { contextScope: "all_confirmed" as const } : {}),
     cloudRequestPolicy: "explicit_per_source_v1" as const,
     expectedVersion: 0,
     expiresAt: null,
@@ -133,8 +141,8 @@ async function setup(optIn = true, originalWorkspace = false) {
   };
 }
 
-async function chatLinkSetup(monitor = true) {
-  const s = await setup();
+async function chatLinkSetup(monitor = true, readStatus = false) {
+  const s = await setup(true, false, readStatus);
   const grant = await s.owner.mutation(api.assistantGrants.save, {
     ...s.grantArgs,
     expectedVersion: s.grant.version,
@@ -163,6 +171,53 @@ async function chatLinkSetup(monitor = true) {
   };
   return { ...s, grant, args };
 }
+
+it.each([true, false])(
+  "reports native Cloud automation in profile and widget status, monitor=%s",
+  async (monitor) => {
+    const s = await chatLinkSetup(monitor, true);
+    const profile = await s.assistant.query(internal.assistant.getProfile, {
+      profileId: s.org,
+    });
+    const widget = await s.assistant.query(internal.assistantWidget.state, {
+      profileId: s.org,
+    });
+    expect(profile.profiles[0].automatic_analysis).toBe(monitor);
+    expect(widget.automatic_analysis).toBe(monitor);
+    expect(
+      (await s.t.run((ctx) => ctx.db.get(s.grant.id)))?.analysisDefaults,
+    ).toBeUndefined();
+    expect(await s.t.run((ctx) => ctx.db.query("sources").collect())).toEqual(
+      [],
+    );
+    expect(
+      await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+    ).toEqual([]);
+  },
+);
+
+it("stops reporting Cloud automation when the monitor expires or service is disabled", async () => {
+  const s = await chatLinkSetup(true, true);
+  const read = () =>
+    s.assistant.query(internal.assistant.getProfile, { profileId: s.org });
+  expect((await read()).profiles[0].automatic_analysis).toBe(true);
+  vi.stubEnv("WORK_CLOUD_SAVED_LINKS_ENABLED", "false");
+  expect((await read()).profiles[0].automatic_analysis).toBe(false);
+  vi.stubEnv("WORK_CLOUD_SAVED_LINKS_ENABLED", "true");
+  vi.advanceTimersByTime(600001);
+  expect((await read()).profiles[0].automatic_analysis).toBe(false);
+});
+
+it("does not confuse manual Cloud permission with automatic analysis", async () => {
+  const s = await setup(false, false, true);
+  const profile = await s.assistant.query(internal.assistant.getProfile, {
+    profileId: s.org,
+  });
+  expect(profile.profiles[0]).toMatchObject({
+    automatic_analysis: false,
+    cloud_request_policy: "explicit_per_source_v1",
+  });
+});
 
 async function retryFixture(expired = false) {
   const s = await setup();

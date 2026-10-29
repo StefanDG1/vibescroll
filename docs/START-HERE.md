@@ -4,6 +4,10 @@ Mode: how-to. Version: 1.0.0.
 
 ## Mandatory current product direction
 
+Read [Saved posts, catalog access and individual Pro teams](strategy/POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md) for the latest requested-post cache reuse, separate full-library add-on, individual member subscriptions/credits and precise settlement requirements.
+
+For pricing/entitlements, read the [single Pro and credit-group plan](strategy/PRO-PRICING-AND-CREDITS.md): one hosted tier, Muse 1×, premium model bands, 300/500 comparison, digital-root-8 prices and a premium weekly interval. Runtime/Stripe migration is pending.
+
 Read [Shared intelligence and the VibeScroll moat](strategy/SHARED-INTELLIGENCE-MOAT.md) and [Versioned link to insights](launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) until their acceptance ledgers are complete. They contain the owner's latest backend-first priorities and supersede older routine permission/privacy ceremony where explicitly stated. Keep planned, locally tested and live claims separate.
 
 Also read [Simple setup, persistent results and proposal feedback](strategy/SIMPLE-SETUP-AND-CLOSED-LOOP-PROPOSALS.md) until accepted. It preserves the later owner screenshots and the required issue/PR completion loop.

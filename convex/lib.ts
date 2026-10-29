@@ -5,6 +5,9 @@ import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { isPaid } from "../packages/company-config";
 import { workspaceReadable } from "./lib/workspacePrivacy";
+import { billingFor } from "./lib/billingAccess";
+import { requireTeamSubscription } from "./lib/accountSubscription";
+export { billingFor } from "./lib/billingAccess";
 export function fail(message: string): never {
   throw new ConvexError(message);
 }
@@ -58,13 +61,9 @@ export async function access(
     return fail("Organization unavailable.");
   if (roles && !roles.includes(membership.role))
     return fail("You do not have permission for this action.");
+  await requireTeamSubscription(ctx, actor, organization);
   return { actor, membership, organization };
 }
-export const billingFor = (ctx: QueryCtx, id: Id<"organizations">) =>
-  ctx.db
-    .query("billing")
-    .withIndex("by_org", (q) => q.eq("organizationId", id))
-    .unique();
 export async function writeAccess(
   ctx: MutationCtx,
   organizationId: Id<"organizations">,

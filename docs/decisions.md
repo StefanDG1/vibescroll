@@ -1,5 +1,13 @@
 # Product decisions
 
+## October 29: requested-post cache, full-library add-on and individual Pro teams
+
+[ADR193](adr/193-requested-posts-catalog-addon-and-individual-pro-teams.md) records the latest direction: Pro cache reuse applies to requested posts, full-library browsing is a separate add-on/toggle with an owner admin concession, and each member has their own Pro and credits. Preserve precise preparation/analysis quote arithmetic and round the final settled total once. This supersedes older unrestricted-catalog packaging, not existing balances or contracts. Local implementation is not production acceptance.
+
+## October 29: one hosted Pro, model bands and pricing analysis
+
+Follow [ADR192](adr/192-single-hosted-pro-duration-credits.md) and the [standing pricing plan](strategy/PRO-PRICING-AND-CREDITS.md). One paid hosted Pro supersedes D17's two tiers and the hosted free preview. Weekly remains a premium interval alongside monthly/annual. Compare 300/500 credits, Muse 1×, higher-credit model groups, high reasoning and digital-root-8 prices. The working EUR 8/week50, EUR 35/month300, EUR 350/year300/month offer is a comparison, not a final price migration. Distinguish delivery gross margin, contribution before ads/fixed costs and operating profit; an 80% ambition is not an established net margin. Preserve old subscriptions, balances and commercial gates.
+
 ## October 28: versioned Cloud analysis and paid shared reuse
 
 [ADR180](adr/180-versioned-cloud-analysis-and-shared-selection.md) prioritizes the link-to-insights release over widget and broader workflow work. Deliberate reanalysis creates immutable candidates, preserving current results and exact citations. Default readers receive the best approved eligible version; stronger/newer model labels alone do not justify promotion. Comparison, personal pinning and audited rollback reuse retained evidence. Extend the existing shared artifact family and private associations with honest own-subscription provenance and current entitlement/rights checks. These are approved implementation requirements, not live features, additional funding or shared-publication permission for existing private outputs.

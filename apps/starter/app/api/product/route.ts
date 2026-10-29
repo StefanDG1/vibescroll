@@ -3,6 +3,11 @@ import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
+  catalogAccess: ["query", api.catalogAccess.status],
+  setCatalogBrowsing: ["mutation", api.catalogAccess.setEnabled],
+  catalogBrowse: ["query", api.catalogBrowse.list],
+  catalogPost: ["mutation", api.catalogBrowse.detail],
+  createTeamWorkspace: ["mutation", api.organizations.createTeam],
   preparedComparisonBegin: ["mutation", api.preparedAnalysis.begin],
   preparedComparisonStatus: ["query", api.preparedAnalysis.status],
   cloudCatalogPreview: ["query", api.cloudCatalog.preview],

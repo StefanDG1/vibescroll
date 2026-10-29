@@ -16,20 +16,49 @@ export async function GET(
 ) {
   try {
     const reference = (await params).id;
-    if (reference.startsWith("catalog~")) {
-      const [, sourceId, versionId, frameId, extra] = reference.split("~");
-      if (extra !== undefined || !sourceId || !versionId || !frameId)
-        throw Error("Invalid reference");
-      const client = await backend(),
-        binding = {
+    if (
+      reference.startsWith("catalog~") ||
+      reference.startsWith("catalog-browse~")
+    ) {
+      const client = await backend();
+      let loadFrame: () => Promise<{
+        key: string;
+        size: number;
+        sha256: string;
+        width: number;
+        height: number;
+      }>;
+      if (reference.startsWith("catalog-browse~")) {
+        const [, organizationId, familyId, artifactId, frameId, extra] =
+          reference.split("~");
+        if (
+          extra !== undefined ||
+          !organizationId ||
+          !familyId ||
+          !artifactId ||
+          !frameId
+        )
+          throw Error("Invalid reference");
+        const binding = {
+          organizationId: organizationId as Id<"organizations">,
+          familyId: familyId as Id<"catalogFamilies">,
+          artifactId: artifactId as Id<"publicArtifacts">,
+          frameId,
+        };
+        loadFrame = () => client.mutation(api.catalogBrowse.frame, binding);
+      } else {
+        const [, sourceId, versionId, frameId, extra] = reference.split("~");
+        if (extra !== undefined || !sourceId || !versionId || !frameId)
+          throw Error("Invalid reference");
+        const binding = {
           sourceId: sourceId as Id<"sources">,
           versionId: versionId as Id<"analysisVersions">,
           frameId,
         };
-      const frame = await client.mutation(
-        api.analysisVersions.sharedFrame,
-        binding,
-      );
+        loadFrame = () =>
+          client.mutation(api.analysisVersions.sharedFrame, binding);
+      }
+      const frame = await loadFrame();
       const response = await fetch(signedObject(frame.key, "GET", 15), {
         redirect: "error",
         cache: "no-store",
@@ -64,10 +93,7 @@ export async function GET(
         dimensions.height !== frame.height
       )
         throw Error("Frame changed");
-      const current = await client.mutation(
-        api.analysisVersions.sharedFrame,
-        binding,
-      );
+      const current = await loadFrame();
       if (JSON.stringify(current) !== JSON.stringify(frame))
         throw Error("Authority changed");
       return new Response(bytes, {

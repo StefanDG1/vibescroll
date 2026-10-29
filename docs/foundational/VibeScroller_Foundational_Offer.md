@@ -1,5 +1,11 @@
 # VibeScroll foundational offer
 
+## F087: one hosted Pro, model bands and pricing research, October29
+
+The owner selects one hosted Pro with workspaces/all implemented features and paid shared-cache access; free distribution is self-hosted code without that dataset. Later corrections consider 300 versus 500 monthly credits, premium weekly billing, Muse 1.3 Contributor at 1×, more credits for better API models, rounded cost groups priced for high reasoning and digital-root-8 prices. The working comparison is EUR8/week (50 credits), EUR35/month (300) and EUR350/year (300 granted monthly). Prices/allowance remain proposals pending the measured pipeline and versioned billing migration. Existing runtime/Stripe prices and balances are unchanged.
+
+[ADR192](../adr/192-single-hosted-pro-duration-credits.md) and the [standing pricing plan](../strategy/PRO-PRICING-AND-CREDITS.md) preserve customer terms and distinguish observed Muse cost from maximum-token stress reservations, gross/contribution/operating margins and unsupported profit claims. Audience and six beliefs are unchanged. Simpler choice, willingness to pay and cache value remain hypotheses; no campaign, real price change or independent self-host acceptance follows.
+
 ## F086: normal-session routine workflows, October 28
 
 The owner rejects repeated five-minute sign-in for normal permissions, saving, analysis and setup. [ADR183](../adr/183-normal-session-assistant-preferences.md) removes that hurdle from routine actions and retains it for the explicit high-risk actions. Those actions navigate directly through sign-in and back to the page without replaying the operation. The separate [shared-intelligence strategy](../strategy/SHARED-INTELLIGENCE-MOAT.md) preserves backend-first delivery, automatic eligible catalog reuse, safe retries, reliable post metadata and a separate recent Posts page. These changes are a locally tested candidate until the release record says otherwise. The owner's objection is not measured conversion evidence. Actual OAuth, roles, provider/funding authority, prices and audience remain unchanged.

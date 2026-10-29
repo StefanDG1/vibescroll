@@ -214,6 +214,25 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
               "",
             )
             .replace("  ...preparedAnalysisTables,\n", "")
+            .replace("    fullCatalogEnabled: v.optional(v.boolean()),\n", "")
+            .replace(
+              `    fullCatalogGrant: v.optional(
+      v.object({
+        source: v.union(v.literal("operator"), v.literal("billing_addon")),
+        grantedAt: v.number(),
+        expiresAt: v.optional(v.number()),
+        revokedAt: v.optional(v.number()),
+        billingSubscriptionId: v.optional(v.string()),
+        reason: v.string(),
+      }),
+    ),
+`,
+              "",
+            )
+            .replace(
+              '    memberSubscriptionPolicy: v.optional(v.literal("individual_pro_v1")),\n',
+              "",
+            )
         : content,
     ).toBe(
       execFileSync("git", ["show", `${base}:convex/${file}`], {
@@ -276,6 +295,14 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
         },
       });
       current.documentType.value.processingRoute = oldRoute;
+    }
+    if (name === "teamKnowledgeGrants") {
+      const fields = current.documentType.value.sources.fieldType.value.value;
+      expect(fields.analysisVersionId).toEqual({
+        fieldType: { type: "id", tableName: "analysisVersions" },
+        optional: true,
+      });
+      delete fields.analysisVersionId;
     }
     expect(current).toEqual(prior);
   }

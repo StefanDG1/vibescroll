@@ -21,6 +21,7 @@ import {
   intakeNeedsSourceReview,
 } from "./lib/assistantIntake";
 import { workspaceReadable } from "./lib/workspacePrivacy";
+import { teamSubscriptionCurrent } from "./lib/accountSubscription";
 import { internal } from "./_generated/api";
 import { assistantProject } from "./lib/assistantProject";
 import { evaluationCurrent } from "./knowledge";
@@ -43,6 +44,7 @@ import {
   savedCloudGrantCurrent,
   savedCloudMonitorCurrent,
   queueSavedCloudIntent,
+  automaticAnalysisEnabled,
 } from "./lib/workCloudSave";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import {
@@ -814,6 +816,7 @@ export async function selectedProfile(
     if (
       workspaceReadable(org, p.actor._id) &&
       membership &&
+      (await teamSubscriptionCurrent(ctx, p.actor, org!)) &&
       (required !== "links:save" ||
         ["owner", "admin", "member"].includes(membership.role))
     )
@@ -879,6 +882,7 @@ export const getProfile = internalQuery({
         )
         .unique();
       if (!workspaceReadable(org, p.actor._id) || !member) continue;
+      if (!(await teamSubscriptionCurrent(ctx, p.actor, org!))) continue;
       const context =
         grant.contextVersion === undefined &&
         grant.contextScope !== "all_confirmed"
@@ -982,7 +986,12 @@ export const getProfile = internalQuery({
         name: org!.name.slice(0, 200),
         grant_version: grant.version,
         expires_at: grant.expiresAt,
-        automatic_analysis: grant.analysisDefaults?.enabled ?? false,
+        automatic_analysis: await automaticAnalysisEnabled(
+          ctx,
+          p.actor,
+          org!,
+          grant,
+        ),
         cloud_request_policy: grant.cloudRequestPolicy ?? null,
         intake_setup_required: grant.intakePolicy !== "explicit_links",
         default_output: "extraction_and_organization",

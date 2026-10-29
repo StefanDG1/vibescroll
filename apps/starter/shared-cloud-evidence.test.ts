@@ -4,7 +4,10 @@ import { syntheticJpeg } from "../../tests/cloud-frame-fixture";
 const mock = vi.hoisted(() => ({ mutation: vi.fn() }));
 vi.mock("./lib/backend", () => ({
   backend: async () => ({ mutation: mock.mutation }),
-  api: { analysisVersions: { sharedFrame: "sharedFrame" } },
+  api: {
+    analysisVersions: { sharedFrame: "sharedFrame" },
+    catalogBrowse: { frame: "browseFrame" },
+  },
 }));
 vi.mock("../../packages/providers/storage", () => ({
   signedObject: () => "https://storage.example.test/private-signed-frame",
@@ -82,4 +85,52 @@ it("rechecks entitlement and source authority after storage IO before returning 
   );
   expect(response.status).toBe(404);
   expect(await response.text()).toContain("Evidence unavailable");
+});
+
+it("uses the separate add-on boundary for a browsed frame without manufacturing a personal save", async () => {
+  const response = await GET(
+    new Request("https://example.test/api/evidence/reference?inline=true"),
+    {
+      params: Promise.resolve({
+        id: "catalog-browse~viewer-org~family~artifact~frame-1",
+      }),
+    },
+  );
+  expect(response.status).toBe(200);
+  expect(mock.mutation.mock.calls).toEqual([
+    [
+      "browseFrame",
+      {
+        organizationId: "viewer-org",
+        familyId: "family",
+        artifactId: "artifact",
+        frameId: "frame-1",
+      },
+    ],
+    [
+      "browseFrame",
+      {
+        organizationId: "viewer-org",
+        familyId: "family",
+        artifactId: "artifact",
+        frameId: "frame-1",
+      },
+    ],
+  ]);
+  expect(response.headers.get("cache-control")).toBe("private, no-store");
+});
+
+it("denies a browsed frame if the full-catalog toggle changes during storage IO", async () => {
+  mock.mutation
+    .mockResolvedValueOnce(frame)
+    .mockRejectedValueOnce(Error("toggle disabled"));
+  const response = await GET(
+    new Request("https://example.test/api/evidence/reference"),
+    {
+      params: Promise.resolve({
+        id: "catalog-browse~viewer-org~family~artifact~frame-1",
+      }),
+    },
+  );
+  expect(response.status).toBe(404);
 });

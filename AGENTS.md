@@ -4,11 +4,17 @@ Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/deci
 
 ## Current mandatory owner direction
 
+Read [Saved posts, catalog access and individual Pro teams](docs/strategy/POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md) before entitlement, sharing, preparation or credit work until accepted. Base Pro reuses cache for requested posts; full-library browsing is a separate add-on/toggle with an explicit owner admin concession. Each team member has their own Pro and credits. Quote preparation and analysis separately, preserve precise intermediate units and round only at final settlement. Preserve legacy balances and distinguish planned commerce from live behavior.
+
+Read [One hosted Pro and credit groups](docs/strategy/PRO-PRICING-AND-CREDITS.md) before pricing, entitlement, onboarding or cache-access work until migration is accepted. Preserve the owner's single paid hosted tier, Muse 1×/premium credit bands, high-reasoning budgets, digital-root-8 prices and premium weekly interval. The 300/500 allowance and price comparison is a proposal, not changed runtime prices, customer terms or balances.
+
 Until implemented and accepted, read [Shared intelligence and the VibeScroll moat](docs/strategy/SHARED-INTELLIGENCE-MOAT.md) and its [execution plan](docs/launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) before VibeScroll work. They preserve the October 28 backend-first direction, normal-session routine workflows, default shared reuse, failed-video retry, reliable metadata, separate recent-post routes and later experiments/model/outcome rankings. Update their acceptance ledgers; do not infer that planned capabilities are live.
 
 Also read [Simple setup, persistent results and proposal feedback](docs/strategy/SIMPLE-SETUP-AND-CLOSED-LOOP-PROPOSALS.md). It preserves the later owner screenshots/corrections: route-specific setup, automatic Cloud Save without a second checkbox, ordinary access defaults, real model choices, results until deleted and a scoped issue/PR completion loop. These requirements remain active alongside the shared backend until accepted.
 
 ## Build the specified product
+
+For new or substantially rebuilt assistant-related UI, prefer suitable assistant-ui components. The owner confirmed this preference on October 29, 2026. Start with the model selector and reasoning controls; reuse existing VibeScroll components where they already fit. Inspect the selected component's current dependencies and licence. This preference does not require a frontend rewrite or delay backend acceptance. See [the component plan](docs/strategy/MODEL-CATALOGUE-AND-CREDIT-BANDS.md).
 
 Build a web application first. Every library, proposal, approval, billing, and status workflow must work in a mobile browser. Installation of a desktop application is not a prerequisite. The optional runner exists only to execute authorized tasks on a paired computer.
 

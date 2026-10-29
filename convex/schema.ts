@@ -44,6 +44,17 @@ export default defineSchema({
     profileVerifiedAt: v.optional(v.number()),
     preferChatGPTPlan: v.optional(v.boolean()),
     defaultWorkspaceId: v.optional(v.id("organizations")),
+    fullCatalogEnabled: v.optional(v.boolean()),
+    fullCatalogGrant: v.optional(
+      v.object({
+        source: v.union(v.literal("operator"), v.literal("billing_addon")),
+        grantedAt: v.number(),
+        expiresAt: v.optional(v.number()),
+        revokedAt: v.optional(v.number()),
+        billingSubscriptionId: v.optional(v.string()),
+        reason: v.string(),
+      }),
+    ),
   }).index("by_subject", ["subject"]),
   organizations: defineTable({
     name: v.string(),
@@ -51,6 +62,7 @@ export default defineSchema({
     createdBy: v.id("users"),
     createdAt: v.number(),
     privateOwnerId: v.optional(v.id("users")),
+    memberSubscriptionPolicy: v.optional(v.literal("individual_pro_v1")),
   })
     .index("by_creator", ["createdBy"])
     .index("by_private_owner", ["privateOwnerId"]),

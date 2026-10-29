@@ -14,6 +14,7 @@ export const librarySpacesTables = {
         sourceId: v.id("sources"),
         generation: v.number(),
         revision: v.number(),
+        analysisVersionId: v.optional(v.id("analysisVersions")),
       }),
     ),
     version: v.number(),

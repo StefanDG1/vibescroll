@@ -1,5 +1,7 @@
 # Deliver insights from reusable prepared evidence
 
+The latest [saved-post/catalog/team direction](../../strategy/POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md) is mandatory: base cache reuse for requested posts, separate full-library browsing add-on/toggle, each member's own Pro/credits, preparation quotes and final-only credit rounding. Keep this acceptance sequence aligned with that plan.
+
 Mode: how-to. Owner direction: October 29, 2026. Status: local implementation candidate; hosted comparison and release pending. No provider purchase or billing product is authorized.
 
 Latest owner correction: use yt-dlp and FFmpeg with the existing Vercel Sandbox. Do not add ScrapeCreators, Transloadit, or another acquisition/media-processing service. The owner selected automatic Save through the existing VibeScroll Assistant for the subscription comparison and approved a new USD0.50 envelope, cumulative EUR14, using existing balances only and Vercel strictly below USD20. It covers two fresh preparations, transcription, one Muse analysis and verification. Subscription usage is excluded from cash. Keep every old hold and the reserved post. No new media/API analysis test has started yet.
@@ -9,6 +11,10 @@ Latest owner correction: use yt-dlp and FFmpeg with the existing Vercel Sandbox.
 Follow this plan for the next link-to-insights implementation. Read the [versioned analysis plan](VERSIONED-LINK-TO-INSIGHTS.md), [shared intelligence requirements](../../strategy/SHARED-INTELLIGENCE-MOAT.md), and [simple setup requirements](../../strategy/SIMPLE-SETUP-AND-CLOSED-LOOP-PROPOSALS.md) alongside it. Preserve their accepted production behavior. This plan supersedes their next-step recommendation to perform all acquisition and ASR inside the subscription host, and their offline-ASR-only default for the proposed managed route. It does not enable paid fallback for existing subscription jobs.
 
 Owner sequencing update, October 29: postpone the Local Machine executor and its adapter. The active implementation and comparison cover hosted preparation, Muse API and the existing automatic ChatGPT Assistant only. Keep the local choice disabled until a later accepted milestone. Local verification commands are engineering checks, not implementation of the local execution route.
+
+## Pricing target update
+
+Follow the [single-Pro and model-group plan](../../strategy/PRO-PRICING-AND-CREDITS.md): one paid hosted tier, free self-hosted code without the hosted dataset, Muse1×, higher-credit model groups and bounded high reasoning. Compare300/500 credits and digital-root-8 weekly/monthly/annual prices before a versioned migration. P4 must preserve old units/purchases, one pool across workspaces, zero-credit compatible cache hits and no duplicate charge. Measure the pipeline before treating token ceilings and unknown infrastructure time as expected costs. Existing billing mappings and balances remain unchanged.
 
 ## Preserve the accepted baseline
 

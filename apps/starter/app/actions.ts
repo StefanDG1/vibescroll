@@ -171,7 +171,7 @@ async function run(
 export async function createOrganization(_: FormState, d: FormData) {
   return run(async () => {
     const c = await backend();
-    const id = await c.mutation(api.organizations.create, {
+    const id = await c.mutation(api.organizations.createTeam, {
       name: val(d, "name"),
     });
     return { path: `/app/${id}${continuation(d)}` };
@@ -185,6 +185,16 @@ export async function createPrivateLibrary(_: FormState, d: FormData) {
     return {
       path: `/app/${id}${continuation(d)}`,
     };
+  });
+}
+export async function setCatalogBrowsing(_: FormState, d: FormData) {
+  return run(async () => {
+    await (
+      await backend()
+    ).mutation(api.catalogAccess.setEnabled, {
+      enabled: d.get("enabled") === "on",
+    });
+    return { message: "Catalog browsing preference saved." };
   });
 }
 export async function saveProject(_: FormState, d: FormData) {

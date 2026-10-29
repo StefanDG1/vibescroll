@@ -1,13 +1,79 @@
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "../convex/schema";
 import { referencesGranted } from "../convex/knowledgeGrants";
 import { api, internal } from "../convex/_generated/api";
+import { cloudCatalogFixture } from "./cloud-catalog-fixture";
 const modules = import.meta.glob("../convex/**/*.ts");
+beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
+  vi.clearAllTimers();
   vi.useRealTimers();
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
+
+it("shares a retained version and keeps its exact version after selection changes", async () => {
+  const f = await cloudCatalogFixture();
+  const before = (await f.t.run((ctx) => ctx.db.get(f.sourceId)))!;
+  const incumbent = before.selectedAnalysisVersionId!;
+  await f.owner.mutation(api.analysisVersions.select, {
+    sourceId: f.sourceId,
+    versionId: f.versionId,
+    expectedSelectionRevision: before.analysisSelectionRevision ?? 0,
+  });
+  const team = await f.owner.mutation(api.organizations.create, {
+    name: "Version sharing",
+  });
+  const source = (await f.t.run((ctx) => ctx.db.get(f.sourceId)))!;
+  const grant = await f.owner.mutation(api.knowledgeGrants.save, {
+    organizationId: f.org,
+    recipientOrganizationId: team,
+    expectedVersion: 0,
+    sources: [
+      {
+        sourceId: f.sourceId,
+        generation: source.generation,
+        revision: source.updatedAt,
+      },
+    ],
+    expiresAt: Date.now() + 86400000,
+    acknowledged: true,
+  });
+  const result = await f.owner.query(api.knowledgeGrants.fetchShared, {
+    organizationId: team,
+    grantId: grant.id,
+    sourceId: f.sourceId,
+  });
+  expect(result.insights).toHaveLength(f.output.insights.length);
+  expect(result.insights[0].reference.analysisVersionId).toBe(f.versionId);
+  const binding = { ...result.insights[0].reference, sourceId: f.sourceId };
+  const row = (await f.t.run((ctx) => ctx.db.get(grant.id)))!;
+  expect(await f.t.run((ctx) => referencesGranted(ctx, row, [binding]))).toBe(
+    true,
+  );
+  expect(
+    await f.t.run((ctx) =>
+      referencesGranted(ctx, row, [
+        { ...binding, analysisVersionId: undefined },
+      ]),
+    ),
+  ).toBe(false);
+  await f.owner.mutation(api.analysisVersions.select, {
+    sourceId: f.sourceId,
+    versionId: incumbent,
+    expectedSelectionRevision: source.analysisSelectionRevision ?? 0,
+  });
+  const after = await f.owner.query(api.knowledgeGrants.fetchShared, {
+    organizationId: team,
+    grantId: grant.id,
+    sourceId: f.sourceId,
+  });
+  expect(after.insights).toEqual(result.insights);
+  expect((await f.t.run((ctx) => ctx.db.get(f.sourceId)))!.analysis).toEqual(
+    before.analysis,
+  );
 });
 async function setup() {
   const t = convexTest(schema, modules);

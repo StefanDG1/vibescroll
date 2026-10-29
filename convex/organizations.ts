@@ -16,6 +16,10 @@ import {
 import { internal } from "./_generated/api";
 import { rememberDeletion } from "./lib/deletionMarkers";
 import { workspaceReadable } from "./lib/workspacePrivacy";
+import {
+  requireAccountPro,
+  requireTeamSubscription,
+} from "./lib/accountSubscription";
 export const ensureDefault = mutation({
   args: { preferredId: v.optional(v.id("organizations")) },
   handler: async (ctx, { preferredId }) => {
@@ -96,6 +100,38 @@ export const create = mutation({
     if (!actor.defaultWorkspaceId)
       await ctx.db.patch(actor._id, { defaultWorkspaceId: id });
     await audit(ctx, id, actor._id, "organization.created", id);
+    return id;
+  },
+});
+
+// New paid teams have individual subscriptions. Legacy workspaces retain their
+// existing contract until an explicit migration, rather than being backfilled.
+export const createTeam = mutation({
+  args: { name: v.string() },
+  returns: v.id("organizations"),
+  handler: async (ctx, { name }) => {
+    const actor = await user(ctx);
+    await requireAccountPro(ctx, actor);
+    await limit(ctx, `org:${actor._id}`, 5);
+    const memberships = await ctx.db
+      .query("memberships")
+      .withIndex("by_user", (q) => q.eq("userId", actor._id))
+      .take(10);
+    if (memberships.length >= 10)
+      fail("You can belong to at most 10 organizations.");
+    const id = await ctx.db.insert("organizations", {
+      name: short(name),
+      status: "active",
+      createdBy: actor._id,
+      createdAt: Date.now(),
+      memberSubscriptionPolicy: "individual_pro_v1",
+    });
+    await ctx.db.insert("memberships", {
+      organizationId: id,
+      userId: actor._id,
+      role: "owner",
+    });
+    await audit(ctx, id, actor._id, "organization.team_created", id);
     return id;
   },
 });
@@ -442,6 +478,7 @@ export const acceptInvite = mutation({
     const org = await ctx.db.get(inv.organizationId);
     if (!org || org.status !== "active" || org.privateOwnerId)
       fail("Organization unavailable.");
+    await requireTeamSubscription(ctx, actor, org);
     const existing = await ctx.db
       .query("memberships")
       .withIndex("by_pair", (q) =>

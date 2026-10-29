@@ -1,6 +1,6 @@
 import type { QueryCtx } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
-import { billingFor } from "../lib";
+import { billingFor } from "./billingAccess";
 import { isPaid } from "../../packages/company-config";
 import { ensure } from "../../packages/policy";
 import { queryRead } from "./knowledgeReadContext";

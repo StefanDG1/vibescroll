@@ -11,6 +11,8 @@ import { assistantProject } from "./lib/assistantProject";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { draftCurrent } from "./issues";
 import { ensure } from "../packages/policy";
+import { automaticAnalysisEnabled } from "./lib/workCloudSave";
+import { teamSubscriptionCurrent } from "./lib/accountSubscription";
 
 const profile = { profileId: v.optional(v.id("organizations")) };
 const url = (org: string, suffix = "") =>
@@ -148,7 +150,12 @@ export const profiles = internalQuery({
             .eq("userId", p.actor._id),
         )
         .unique();
-      if (org && member && workspaceReadable(org, p.actor._id))
+      if (
+        org &&
+        member &&
+        workspaceReadable(org, p.actor._id) &&
+        (await teamSubscriptionCurrent(ctx, p.actor, org))
+      )
         profiles.push({
           profile_id: org._id,
           name: org.name.slice(0, 200),
@@ -196,7 +203,12 @@ export const state = internalQuery({
       grant_version: a.grant.version,
       expires_at: a.grant.expiresAt,
       scope: a.grant.libraryScope ?? "selected_sources",
-      automatic_analysis: a.grant.analysisDefaults?.enabled ?? false,
+      automatic_analysis: await automaticAnalysisEnabled(
+        ctx,
+        a.actor,
+        a.organization,
+        a.grant,
+      ),
       cloud_request_policy: a.grant.cloudRequestPolicy ?? null,
       processing_route:
         setup?.actor === a.actor._id ? (setup.processingRoute ?? null) : null,

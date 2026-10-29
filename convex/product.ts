@@ -72,6 +72,12 @@ import {
 } from "../packages/media/acquisition";
 const org = { organizationId: v.id("organizations") };
 export async function wallet(ctx: MutationCtx, id: Id<"organizations">) {
+  const organization = await ctx.db.get(id);
+  ensure(
+    organization?.memberSubscriptionPolicy !== "individual_pro_v1",
+    "PERSONAL_FUNDING_REQUIRED",
+    "Analyze from your personal account using your own credits, then share the result with your team.",
+  );
   let w = await ctx.db
     .query("wallets")
     .withIndex("by_org", (q) => q.eq("organizationId", id))

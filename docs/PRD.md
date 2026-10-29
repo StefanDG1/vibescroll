@@ -1,5 +1,13 @@
 # Product requirements
 
+## Requested-post subscriptions and individual Pro teams, October 29
+
+Follow [ADR193](adr/193-requested-posts-catalog-addon-and-individual-pro-teams.md) and [its standing plan](strategy/POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md). Only requested posts enter a user's library. Base Pro includes their compatible cached results; full-library browsing is a separate add-on/toggle. Each team member needs their own Pro and credits. Preparation can have a separate quote; preserve precise intermediates and round once at final settlement. Paid commerce/migration and production acceptance remain open.
+
+## Single hosted Pro target, October 29
+
+[ADR192](adr/192-single-hosted-pro-duration-credits.md) replaces the two-tier/hosted-free offer with one hosted Pro, workspaces/all implemented features and paid hosted shared-cache access. Free open-source distribution is self-hosted without the dataset. The [pricing plan](strategy/PRO-PRICING-AND-CREDITS.md) compares300/500 monthly credits, Muse 1×/premium bands with high reasoning, digital-root-8 prices and a premium weekly interval. Proposed prices/allowances require a versioned migration; runtime/Stripe mappings, customer terms and balances remain intact. This amendment declares no new live feature.
+
 ## Focused production release, October 28
 
 Follow [ADR180](adr/180-versioned-cloud-analysis-and-shared-selection.md) and the [versioned link-to-insights plan](launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md). Release reliable automatic Cloud analysis, safe second/later analysis versions, comparison, selection/rollback and entitled shared cache reuse first. Preserve all old valid results, exact evidence references and private overlays. Default to the best approved compatible analysis, with optional personal version pins. Widgets and the rest of the larger product remain deferred from this release, not accepted or removed. The existing private owner tests do not prove these new features or general customer readiness.

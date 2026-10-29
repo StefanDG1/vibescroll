@@ -8,6 +8,7 @@ import {
 } from "../../packages/policy/assistant";
 import { ensure } from "../../packages/policy";
 import { workspaceReadable } from "./workspacePrivacy";
+import { requireTeamSubscription } from "./accountSubscription";
 export async function assistantPrincipal(
   ctx: QueryCtx,
   required?: AssistantScope,
@@ -93,5 +94,6 @@ export async function assistantGrant(
       "FORBIDDEN",
       "Write access is unavailable.",
     );
+  await requireTeamSubscription(ctx, principal.actor, organization);
   return { ...principal, organization, membership, grant };
 }

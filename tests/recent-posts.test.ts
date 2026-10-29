@@ -191,6 +191,32 @@ it("prefers actual native titles only over exact generated placeholders", () => 
   }
 });
 
+it("uses the native caption for generic assistant Save titles while preserving a deliberate custom title", () => {
+  const url = "https://vm.tiktok.com/ZGdX1LnNb/";
+  for (const title of ["Saved TikTok", "Saved TikTok video", "TikTok video"])
+    expect(
+      postDisplayTitle({
+        url,
+        title,
+        linkPreview: { title: "Actual creator caption" },
+      }),
+    ).toBe("Actual creator caption");
+  expect(
+    postDisplayTitle({
+      url,
+      title: "SEO idea for my project",
+      linkPreview: { title: "Actual creator caption" },
+    }),
+  ).toBe("SEO idea for my project");
+  expect(
+    postDisplayTitle({
+      url,
+      title: "TikTok video zGdX1LnNb",
+      linkPreview: { title: "Actual creator caption" },
+    }),
+  ).toBe("TikTok video zGdX1LnNb");
+});
+
 it("offers a bounded durable thumbnail fallback and suppresses revoked or expired images", () => {
   const source = {
     rightsAttested: true,

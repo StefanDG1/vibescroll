@@ -1,6 +1,6 @@
 # ADR 189: enforce worker capacity in the job transaction
 
-Date: October 29, 2026. Status: finite admission deployed at e9c3467; generous recurring owner policy is a local follow-up candidate.
+Date: October 29, 2026. Status: generous recurring owner policy deployed and configured at647b089. [Production receipt](../operations/evidence/launch-20261029-owner-rates-concurrency-production.json).
 
 The owner subsequently requested unlimited or generous personal usage. Use100 new analyses per UTC day and20 per hour for their authenticated account, with no artificial expiry or recurring sign-in. A revocable operator configuration selects this standing daily policy; other users' restrictions are unchanged. Initial extraction and retained-evidence reanalysis share the same daily counter. Ready-cache reads and idempotent requests remain free. Keep the existing short burst limit. This rate limit is not a monetary reservation or a promise of provider subscription capacity. Paid API fallback remains zero and Vercel must stay belowUSD20. The first finite10-job configuration was actually written and read back after the e9c3467 backend-only publication; the recurring policy is not live until the follow-up release/configuration succeeds.
 

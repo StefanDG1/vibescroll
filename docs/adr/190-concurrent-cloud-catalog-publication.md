@@ -1,6 +1,6 @@
 # ADR 190: retain simultaneous saves and reconcile overlapping publication
 
-Date: October29,2026. Status: local candidate, not deployed.
+Date: October29,2026. Status: deployed at647b089 after isolated acceptance and exact CI. No production concurrency test was run, as requested. [Release receipt](../operations/evidence/launch-20261029-owner-rates-concurrency-production.json).
 
 The owner requires two people analyzing the same post at about the same time to keep their saves and shared results without errors. Production testing is not required for this addition. Use isolated real backend mutations/actions with synthetic accounts, results and screenshot storage.
 

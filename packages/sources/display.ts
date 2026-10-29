@@ -18,8 +18,16 @@ export function postDisplayTitle(source: {
         ? url.pathname.match(/^\/([A-Za-z0-9]+)\/?$/)?.[1]
         : undefined;
     generated = Boolean(
-      (instagram && source.title === `Instagram Reel ${instagram}`) ||
-      (tiktok && source.title === `TikTok video ${tiktok}`),
+      (instagram &&
+        (source.title?.match(/^instagram reel ([A-Za-z0-9_-]+)$/i)?.[1] ===
+          instagram ||
+          /^(?:saved )?instagram(?: reel| video)?$/i.test(
+            source.title?.trim() ?? "",
+          ))) ||
+      (tiktok &&
+        (source.title?.match(/^tiktok video ([A-Za-z0-9_-]+)$/i)?.[1] ===
+          tiktok ||
+          /^(?:saved )?tiktok(?: video)?$/i.test(source.title?.trim() ?? ""))),
     );
   } catch {
     // A malformed locator must not turn a custom title into a placeholder.

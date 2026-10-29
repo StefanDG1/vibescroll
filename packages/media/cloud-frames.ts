@@ -71,6 +71,18 @@ export function cloudFrameAssetCurrent(
   );
 }
 export function sourceEvidenceFrames(source: any, now = Date.now()) {
+  if (
+    source.preparedService?.version === "service-prepared-detail-v1" &&
+    source.state !== "deleted" &&
+    source.rightsAttested &&
+    (source.sourceRetentionUntil ?? Infinity) > now
+  )
+    return source.preparedService.frames.map((f: any) => ({
+      id: f.reference,
+      kind: "frame",
+      startMs: f.timestampMs,
+      endMs: f.timestampMs,
+    }));
   if (source.sharedCloud?.version === "shared-cloud-detail-v1")
     return resultRetained(source.sharedCloud, now) &&
       (source.sourceRetentionUntil ?? Infinity) > now
@@ -100,6 +112,21 @@ export function cloudCitationForDisplay(
   ref: any,
   now = Date.now(),
 ) {
+  if (
+    source.preparedService?.version === "service-prepared-detail-v1" &&
+    ref.kind === "video_observation"
+  ) {
+    const observed = source.preparedService.observations.find(
+      (o: any) =>
+        o.id === ref.id && o.startMs === ref.startMs && o.endMs === ref.endMs,
+    );
+    if (!observed) return ref;
+    if (observed.basis === "transcript") return { ...ref, kind: "transcript" };
+    const frame = source.preparedService.frames.find(
+      (f: any) => f.id === ref.id && f.timestampMs === ref.startMs,
+    );
+    return frame ? { ...ref, kind: "frame", id: frame.reference } : ref;
+  }
   if (
     source.sharedCloud?.version === "shared-cloud-detail-v1" &&
     ref.kind === "video_observation"

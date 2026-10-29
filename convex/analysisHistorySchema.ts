@@ -77,6 +77,7 @@ export const analysisHistoryTables = {
     provenance: v.union(
       v.literal("legacy_recorded"),
       v.literal("authenticated_host_reported"),
+      v.literal("managed_api_reported"),
     ),
     evaluation: v.literal("review_required"),
   })
@@ -90,7 +91,7 @@ export const analysisHistoryTables = {
     actor: v.id("users"),
     key: v.string(),
     createdAt: v.number(),
-    basedOnVersionId: v.id("analysisVersions"),
+    basedOnVersionId: v.optional(v.id("analysisVersions")),
     evidenceId: v.id("analysisEvidence"),
     sourceGeneration: v.number(),
     canonical: v.string(),

@@ -5,8 +5,14 @@ import { Button } from "@companynerve/ui";
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "../../../convex/_generated/api";
 import { PostThumbnail } from "./post-thumbnail";
+import { usePostsLive } from "@/lib/use-source-live";
+import { sourceProgress } from "../../../packages/sources/progress";
 
 type Page = FunctionReturnType<typeof api.posts.recent>;
+type Post = Page["items"][number] & {
+  progressTitle?: string;
+  preparationStage?: string;
+};
 
 export function RecentPosts({
   organizationId,
@@ -15,12 +21,46 @@ export function RecentPosts({
   organizationId: string;
   initialPage: Page;
 }) {
-  const [items, setItems] = useState<Page["items"]>(initialPage.items);
+  const [items, setItems] = useState<Post[]>(initialPage.items);
   const [next, setNext] = useState<string | null>(initialPage.next);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const marker = useRef<HTMLDivElement>(null);
   const flight = useRef<AbortController | null>(null);
+  const visibleIds = items.slice(0, 20).map((post) => post.id);
+  usePostsLive(organizationId, visibleIds, true, (metadata) => {
+    if (!metadata) {
+      setItems([]);
+      setError("Posts are unavailable. Refresh to check access.");
+      return;
+    }
+    const byId = new Map<string, any>(
+      metadata.map((source: any) => [source._id, source]),
+    );
+    setItems((current) =>
+      current.flatMap<Post>((post) => {
+        const source = byId.get(post.id);
+        if (!source) return visibleIds.includes(post.id) ? [] : [post];
+        return [
+          {
+            ...post,
+            title: source.title,
+            authorName: source.linkPreview?.authorName ?? post.authorName,
+            state: source.state,
+            generation: source.generation,
+            thumbnailAssetIds: [
+              ...new Set([
+                ...(source.thumbnailAssetIds ?? []),
+                ...post.thumbnailAssetIds,
+              ]),
+            ].slice(0, 3),
+            progressTitle: sourceProgress(source, Date.now())?.title,
+            preparationStage: source.personalMedia?.stage,
+          },
+        ];
+      }),
+    );
+  });
   const load = useCallback(
     async (cursor?: string) => {
       if (flight.current) return;
@@ -97,7 +137,7 @@ export function RecentPosts({
       {items.length > 0 && (
         <ul className="studio-list">
           {items.map((post) => (
-            <li key={post.id}>
+            <li key={post.id} data-preparation-stage={post.preparationStage}>
               <Link
                 href={`/app/${organizationId}/posts/${post.id}`}
                 prefetch={false}
@@ -111,9 +151,10 @@ export function RecentPosts({
                   <small>
                     {[
                       post.authorName,
-                      post.state === "ready"
-                        ? "Insights ready"
-                        : post.state.replaceAll("_", " "),
+                      post.progressTitle ??
+                        (post.state === "ready"
+                          ? "Insights ready"
+                          : post.state.replaceAll("_", " ")),
                     ]
                       .filter(Boolean)
                       .join(" · ")}

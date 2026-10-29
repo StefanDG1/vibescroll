@@ -3,6 +3,8 @@ import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
+  preparedComparisonBegin: ["mutation", api.preparedAnalysis.begin],
+  preparedComparisonStatus: ["query", api.preparedAnalysis.status],
   cloudCatalogPreview: ["query", api.cloudCatalog.preview],
   cloudCatalogContribute: ["action", api.cloudCatalogActions.contribute],
   cloudCatalogWithdraw: ["mutation", api.cloudCatalog.withdrawContribution],

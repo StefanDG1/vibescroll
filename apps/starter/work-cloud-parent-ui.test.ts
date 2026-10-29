@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+// These direct-render fixtures drive the existing REST/approval lifecycle.
+// WebSocket auth and subscription teardown have their own focused fixture.
+vi.mock("@/lib/use-source-live", () => ({
+  useSourceLive: vi.fn(),
+  usePostsLive: vi.fn(),
+}));
 const state = vi.hoisted(() => ({
   direct: false,
   cells: [] as any[],

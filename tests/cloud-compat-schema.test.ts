@@ -6,6 +6,7 @@ import { productTables } from "../convex/productSchema";
 import { assistantTables } from "../convex/assistantSchema";
 import { publicTables } from "../convex/publicSchema";
 import { cloudCatalogTables } from "../convex/cloudCatalogSchema";
+import { preparedAnalysisTables } from "../convex/preparedAnalysisSchema";
 import schema from "../convex/schema";
 import { librarySpacesTables } from "../convex/librarySpacesSchema";
 import {
@@ -20,9 +21,20 @@ import {
 import { readFileSync } from "node:fs";
 const base = "346b718baf91ba9847fbb707be7bbe069df57257";
 it("preserves all tables/config and permits only the exact Cloud validators and one C2 delivery index", () => {
-  // The application exports 89 tables. The deployment's 131-table inventory
-  // also includes component tables; their configuration is byte-checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(95);
+  // Include the explicitly new, initially empty preparation table. Component
+  // configuration and every historical table/index remain checked below.
+  expect(Object.keys(schema.tables)).toHaveLength(96);
+  expect(Object.keys(preparedAnalysisTables)).toEqual(["mediaPreparations"]);
+  expect(
+    (preparedAnalysisTables.mediaPreparations as any)
+      .export()
+      .indexes.map((i: any) => i.indexDescriptor),
+  ).toEqual([
+    "by_org_source_key",
+    "by_actor_policy",
+    "by_attempt",
+    "by_org_source",
+  ]);
   expect(
     Object.values(schema.tables).reduce((total, table) => {
       const row = (
@@ -41,7 +53,7 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
         row.vectorIndexes.length
       );
     }, 0),
-  ).toBe(263);
+  ).toBe(267);
   expect(Object.keys(cloudCatalogTables).sort()).toEqual([
     "catalogAliases",
     "catalogContributions",
@@ -197,6 +209,11 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
               "",
             )
             .replace("  ...cloudCatalogTables,\n", "")
+            .replace(
+              'import { preparedAnalysisTables } from "./preparedAnalysisSchema";\n',
+              "",
+            )
+            .replace("  ...preparedAnalysisTables,\n", "")
         : content,
     ).toBe(
       execFileSync("git", ["show", `${base}:convex/${file}`], {

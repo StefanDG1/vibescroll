@@ -45,6 +45,7 @@ export const config = {
     "/sign-up",
     "/callback",
     "/api/product",
+    "/api/realtime/:path*",
     "/api/source/:path*",
     "/api/uploads/:path*",
     "/api/evidence/:path*",

@@ -159,7 +159,7 @@ export async function cloudWaitingCurrent(
       grant &&
       organization &&
       source.organizationId === s.organizationId &&
-      source.state === "ready" &&
+      (source.state === "ready" || (!attempt.basedOnVersionId && source.personalMedia?.version === "service-preparation-progress-v1")) &&
       source.rightsAttested &&
       (!source.sourceRetentionUntil ||
         source.sourceRetentionUntil > Date.now()) &&

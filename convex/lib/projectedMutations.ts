@@ -22,6 +22,22 @@ triggers.register("sources", async (ctx, change) => {
     next = change.newDoc;
   if (!before || !next || before.generation === next.generation) return;
   if (
+    before.personalMedia?.version === "service-preparation-progress-v1" &&
+    next.state !== "deleted" &&
+    process.env.RESTORE_LOCK !== "true"
+  ) {
+    const id = ctx.db.normalizeId(
+      "mediaPreparations",
+      before.personalMedia.runId,
+    );
+    const preparation = id ? await ctx.db.get(id) : null;
+    ensure(
+      preparation && ["ready", "failed"].includes(preparation.state),
+      "SOURCE_BUSY",
+      "Reconcile the current media preparation before replacing source input.",
+    );
+  }
+  if (
     before.pendingAnalysisAttemptId &&
     next.state !== "deleted" &&
     process.env.RESTORE_LOCK !== "true"

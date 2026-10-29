@@ -3,7 +3,8 @@ import { mutation } from "./lib/projectedMutations";
 import { historySource } from "./lib/analysisHistory";
 import { writeAccess } from "./lib";
 import { ensure } from "../packages/policy";
-import { captureOne } from "./product";
+import { captureOne, captureAuthorized } from "./product";
+import { preparedPolicy, queuePreparedComparison } from "./preparedAnalysis";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { cacheCandidate } from "./lib/cloudCatalog";
 import { retrySavedCloudSource } from "./workCloudAnalysis";
@@ -98,6 +99,7 @@ export const capture = mutation({
       v.literal("waiting_for_shared_analysis"),
       v.literal("existing_work_preserved"),
       v.literal("reused_shared_analysis"),
+      v.literal("preparing_evidence"),
     ),
     intentId: v.union(v.string(), v.null()),
     expiresAt: v.union(v.number(), v.null()),
@@ -110,6 +112,52 @@ export const capture = mutation({
       "SOURCE_UNAVAILABLE",
       "Automatic Cloud saves currently accept single Instagram or TikTok videos.",
     );
+    const policy = preparedPolicy(owner.actor.subject, requestedIdentity.url);
+    if (policy?.executor === "work_cloud") {
+      const grant = await ctx.db.get(a.grantId);
+      ensure(
+        grant &&
+          grant.version === a.grantVersion &&
+          (await savedCloudGrantCurrent(
+            ctx,
+            owner.actor,
+            owner.organization,
+            grant,
+          )),
+        "SETUP_REQUIRED",
+        "The automatic Assistant setup changed.",
+      );
+      // The bounded alpha prepares first. Only evidence_ready emits the native
+      // waiting event; an earlier saved-link event would start a second decoder.
+      const sourceId = await captureAuthorized(
+        ctx,
+        {
+          organizationId: a.organizationId,
+          key: a.key,
+          kind: "url",
+          url: a.url,
+          title: a.title,
+          rightsAttested: true,
+        },
+        owner,
+        true,
+        true,
+      );
+      const source = (await ctx.db.get(sourceId))!;
+      ensure(
+        source.url &&
+          privateCloudMediaIdentity(source.url).url === requestedIdentity.url,
+        "APPROVAL_STALE",
+        "This Save key belongs to another link.",
+      );
+      await queuePreparedComparison(ctx, source, owner.actor, a.key);
+      return {
+        sourceId,
+        status: "preparing_evidence" as const,
+        intentId: null,
+        expiresAt: null,
+      };
+    }
     if (await cacheCandidate(ctx, a.organizationId, a.url)) {
       const sourceId = await captureOne(ctx, {
         organizationId: a.organizationId,

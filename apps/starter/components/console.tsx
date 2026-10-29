@@ -6,6 +6,7 @@ import {
   SignInRedirect,
 } from "../lib/authentication";
 import { usePolling } from "@/lib/use-polling";
+import { useSourceLive, usePostsLive } from "@/lib/use-source-live";
 import { isCloudObservedMedia } from "../../../packages/social/contracts";
 import {
   postDisplayTitle,
@@ -784,6 +785,37 @@ export function Console({
     return (await response.json()).items;
   }
   const home = homeData ?? data;
+  const livePostIds = home.sources.slice(0, 20).map(id);
+  usePostsLive(
+    organizationId,
+    livePostIds,
+    !demo && ["home", "posts", "library"].includes(view),
+    (posts) => {
+      if (!posts) {
+        void refreshData();
+        return;
+      }
+      const metadata = new Map<string, any>(posts.map((p: any) => [p._id, p]));
+      const merge = (current: Initial) => ({
+        ...current,
+        sources: current.sources.flatMap((source: any) => {
+          const next = metadata.get(id(source));
+          if (!next) return livePostIds.includes(id(source)) ? [] : [source];
+          return [
+            {
+              ...source,
+              ...next,
+              personalMedia: next.personalMedia
+                ? { ...source.personalMedia, ...next.personalMedia }
+                : source.personalMedia,
+            },
+          ];
+        }),
+      });
+      setData(merge);
+      setHomeData((current) => (current ? merge(current) : null));
+    },
+  );
   const processing =
     (view === "source" &&
       selected &&
@@ -1460,7 +1492,7 @@ export function Console({
               )}
               {view === "posts" && data.recentPosts && (
                 <RecentPosts
-                  key={organizationId}
+                  key={`${organizationId}:${data.recentPosts.items[0]?.id ?? "empty"}`}
                   organizationId={organizationId}
                   initialPage={data.recentPosts}
                 />
@@ -3602,10 +3634,39 @@ export function SourceDetail({
   const [manualCloudOpen, setManualCloudOpen] = useState(false);
   const [cloudRequestError, setCloudRequestError] = useState("");
   const transcript = useRef<HTMLDetailsElement>(null);
-  const cloudSpeechSegments = isCloudObservedMedia(detail.orderedMedia?.post)
-    ? detail.orderedMedia.post.segments
-    : (detail.sharedCloud?.transcript ?? null);
+  const cloudSpeechSegments =
+    detail.preparedService?.transcript ??
+    (isCloudObservedMedia(detail.orderedMedia?.post)
+      ? detail.orderedMedia.post.segments
+      : (detail.sharedCloud?.transcript ?? null));
   const sourceId = id(source);
+  const liveVersion = useRef<string | undefined>(undefined);
+  useSourceLive(sourceId, !demo, (next) => {
+    if (!next) {
+      setDetail({
+        _id: sourceId,
+        state: "deleted",
+        error: "This post is unavailable.",
+      });
+      void onRefresh?.();
+      return;
+    }
+    setDetail((previous: any) =>
+      previous._id === next._id
+        ? {
+            ...previous,
+            ...next,
+            personalMedia: next.personalMedia
+              ? { ...previous.personalMedia, ...next.personalMedia }
+              : previous.personalMedia,
+          }
+        : previous,
+    );
+    const version = `${next.selectedAnalysisVersionId}:${next.personalMedia?.versionId}`;
+    if (liveVersion.current !== undefined && liveVersion.current !== version)
+      void onRefresh?.();
+    liveVersion.current = version;
+  });
   const proposalRevision = (source.proposals ?? [])
     .map(
       (proposal: any) =>
@@ -3613,7 +3674,7 @@ export function SourceDetail({
     )
     .sort()
     .join("|");
-  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.linkPreview?.updatedAt}:${source.personalAnalysis?.state}:${source.personalAnalysis?.stage}:${source.personalAnalysis?.leaseUntil}:${source.workCloudSaveIntent?.expiresAt}:${source.analysisSelectionRevision}:${source.pendingAnalysisAttemptId}:${source.pendingAnalysisAttemptState}:${source.sharedCloud?.recommendationRevision}:${source.sharedCloud?.notesUpdatedAt}:${source.analysisVersion?.id}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
+  const sourceRevision = `${source.generation}:${source.updatedAt}:${source.linkPreview?.updatedAt}:${source.personalAnalysis?.state}:${source.personalAnalysis?.stage}:${source.personalAnalysis?.leaseUntil}:${source.workCloudSaveIntent?.expiresAt}:${source.analysisSelectionRevision}:${source.personalMedia?.versionId}:${source.pendingAnalysisAttemptId}:${source.pendingAnalysisAttemptState}:${source.sharedCloud?.recommendationRevision}:${source.sharedCloud?.notesUpdatedAt}:${source.analysisVersion?.id}:${proposalRevision}:${workCloudHandoffKey(source.workCloudHandoff)}`;
   const [retentionTime, setRetentionTime] = useState(Date.now);
   const progressSource =
     source.generation > detail.generation ||
@@ -3706,6 +3767,7 @@ export function SourceDetail({
             sharedCloud: undefined,
             analysisVersion: undefined,
             personalMedia: undefined,
+            preparedService: undefined,
             orderedMedia: undefined,
             selectedAnalysisSummary: undefined,
             selectedAnalysisMainPoints: undefined,
@@ -3945,6 +4007,7 @@ export function SourceDetail({
         !detailLoading &&
         detail.state === "ready" &&
         (isCloudObservedMedia(detail.orderedMedia?.post) ||
+          detail.preparedService ||
           detail.sharedCloud) && (
           <AnalysisHistory
             key={sourceId}

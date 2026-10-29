@@ -1,4 +1,6 @@
 import { resultRetained } from "../packages/contracts/result-retention";
+import { isServicePreparedEvidence } from "../packages/contracts/prepared-evidence";
+import { stopPreparedAttempt } from "./lib/preparedLifecycle";
 import { persistCloudResult } from "./lib/persistCloudResult";
 import { admitCloudMediaJob } from "./lib/workCloudAdmission";
 import { v } from "convex/values";
@@ -52,6 +54,7 @@ import {
   recordSelection,
   versionMetadata,
   verifyRetainedAssets,
+  preparedEvidenceForSource,
 } from "./lib/analysisHistory";
 
 const configuration = v.object({
@@ -745,6 +748,7 @@ export const cancelWaiting = mutation({
       state: "cancelled",
       updatedAt: Date.now(),
     });
+    await stopPreparedAttempt(ctx, attempt, "failed");
     await ctx.db.patch(source._id, {
       pendingAnalysisAttemptId: undefined,
       pendingAnalysisAttemptState: undefined,
@@ -812,11 +816,9 @@ async function executionContext(
     "APPROVAL_STALE",
     "The version's current Cloud grant changed.",
   );
-  const { evidence } = await retainedVersion(
-    ctx,
-    source,
-    attempt.basedOnVersionId,
-  );
+  const evidence = attempt.basedOnVersionId
+    ? (await retainedVersion(ctx, source, attempt.basedOnVersionId)).evidence
+    : await preparedEvidenceForSource(ctx, source, attempt.evidenceId);
   ensure(
     evidence._id === attempt.evidenceId && attempt.expiresAt > Date.now(),
     "APPROVAL_STALE",
@@ -915,7 +917,9 @@ async function currentRetainedFrame(
     ensure(
       asset &&
         asset.state === "complete" &&
-        asset.kind === "work_cloud_frame" &&
+        (asset.kind === "work_cloud_frame" ||
+          (isServicePreparedEvidence(c.evidence.prepared) &&
+            asset.kind === "prepared_frame")) &&
         asset.organizationId === c.source.organizationId &&
         asset.sourceId === c.source._id &&
         asset.sourceGeneration === c.evidence.extractionGeneration &&
@@ -1027,6 +1031,29 @@ export const dispatch = internalMutation({
       await ctx.db.patch(c.source._id, {
         pendingAnalysisAttemptState: "running",
       });
+      if (!c.attempt.basedOnVersionId) {
+        const run = await ctx.db
+          .query("mediaPreparations")
+          .withIndex("by_attempt", (q) => q.eq("attemptId", c.attempt._id))
+          .unique();
+        ensure(
+          run?.state === "waiting_for_assistant",
+          "APPROVAL_STALE",
+          "Prepared analysis state changed.",
+        );
+        await ctx.db.patch(run._id, {
+          state: "analyzing",
+          updatedAt: now,
+          stages: [...run.stages, { stage: "analyzing", at: now }],
+        });
+        await ctx.db.patch(c.source._id, {
+          personalMedia: {
+            ...c.source.personalMedia,
+            stage: "analyzing",
+            updatedAt: now,
+          },
+        });
+      }
       await ctx.scheduler.runAfter(
         Math.max(0, deadline - now),
         internal.analysisVersions.expire,
@@ -1069,6 +1096,7 @@ export const dispatch = internalMutation({
       await ctx.db.patch(c.source._id, {
         pendingAnalysisAttemptState: "unknown",
       });
+      await stopPreparedAttempt(ctx, c.attempt, "unknown");
       return { accepted: true, state: "unknown", incumbentPreserved: true };
     }
     ensure(
@@ -1159,6 +1187,51 @@ export const dispatch = internalMutation({
         pendingAnalysisAttemptId: undefined,
         pendingAnalysisAttemptState: undefined,
       });
+    if (!c.attempt.basedOnVersionId) {
+      const run = await ctx.db
+        .query("mediaPreparations")
+        .withIndex("by_attempt", (q) => q.eq("attemptId", c.attempt._id))
+        .unique();
+      ensure(
+        run && run.evidenceId === c.evidence._id,
+        "APPROVAL_STALE",
+        "Prepared analysis binding changed.",
+      );
+      await ctx.db.patch(run._id, {
+        state: "ready",
+        versionId,
+        updatedAt: now,
+        stages: [...run.stages, { stage: "ready", at: now }],
+      });
+      const select =
+        !c.source.selectedAnalysisVersionId &&
+        !c.source.analysis &&
+        !c.source.publicImportId;
+      await ctx.db.patch(c.source._id, {
+        ...(select
+          ? {
+              state: "ready" as const,
+              updatedAt: now,
+              coverage: retainedEvidenceContent(c.evidence).transcript.length
+                ? ("full_sampled" as const)
+                : ("visual_only" as const),
+              selectedAnalysisVersionId: versionId,
+              analysisSelectionRevision: 0,
+              selectedAnalysisSummary: output.summary,
+              selectedAnalysisInsightCount: output.insights.length,
+              selectedAnalysisMainPoints: output.insights
+                .slice(0, 3)
+                .map((i) => i.title),
+            }
+          : {}),
+        personalMedia: {
+          ...c.source.personalMedia,
+          stage: "ready",
+          versionId,
+          updatedAt: now,
+        },
+      });
+    }
     await settle(
       ctx,
       c.source.organizationId,
@@ -1172,7 +1245,10 @@ export const dispatch = internalMutation({
       "analysis_version_completed",
       `${c.source._id}:${c.attempt._id}:${versionId}`,
     );
-    if (c.source.catalogPolicy) {
+    if (
+      c.source.catalogPolicy &&
+      !isServicePreparedEvidence(c.evidence.prepared)
+    ) {
       await ctx.db.patch(c.source._id, {
         catalogStatus: { state: "pending", versionId, updatedAt: Date.now() },
       });
@@ -1203,6 +1279,7 @@ export const expire = internalMutation({
   handler: async (ctx, { attemptId }) => {
     const a = await ctx.db.get(attemptId);
     if (a && a.state === "queued" && !a.taskId && a.expiresAt <= Date.now()) {
+      await stopPreparedAttempt(ctx, a, "failed");
       await ctx.db.patch(a._id, {
         state: "cancelled",
         diagnostic: "unclaimed_request_expired",
@@ -1217,6 +1294,7 @@ export const expire = internalMutation({
       await settle(ctx, a.organizationId, `analysisVersion:${a._id}`, 0);
     }
     if (a && a.state === "running" && a.deadline <= Date.now()) {
+      await stopPreparedAttempt(ctx, a, "unknown");
       await ctx.db.patch(a._id, {
         state: "unknown",
         diagnostic: "execution_deadline_unresolved",
@@ -1306,6 +1384,7 @@ export const eraseSource = internalMutation({
       v.literal("versions"),
       v.literal("attempts"),
       v.literal("evidence"),
+      v.literal("preparations"),
     ),
   },
   returns: v.null(),
@@ -1323,7 +1402,9 @@ export const eraseSource = internalMutation({
         ? "analysisVersions"
         : args.stage === "attempts"
           ? "analysisAttempts"
-          : "analysisEvidence";
+          : args.stage === "evidence"
+            ? "analysisEvidence"
+            : "mediaPreparations";
     const rows = await ctx.db
       .query(table)
       .withIndex("by_org_source", (q) =>
@@ -1339,10 +1420,15 @@ export const eraseSource = internalMutation({
         internal.analysisVersions.eraseSource,
         args,
       );
-    else if (args.stage !== "evidence")
+    else if (args.stage !== "preparations")
       await ctx.scheduler.runAfter(0, internal.analysisVersions.eraseSource, {
         ...args,
-        stage: args.stage === "versions" ? "attempts" : "evidence",
+        stage:
+          args.stage === "versions"
+            ? "attempts"
+            : args.stage === "attempts"
+              ? "evidence"
+              : "preparations",
       });
     return null;
   },

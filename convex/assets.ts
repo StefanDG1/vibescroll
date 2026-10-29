@@ -11,6 +11,7 @@ import { cloudFrameAssetCurrent } from "../packages/media/cloud-frames";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { wallet } from "./product";
 import { hostedSourceAllowed } from "./lib/hostedMediaAccess";
+import { preparedAssetCurrent } from "./lib/preparedEvidenceAccess";
 export async function queueDeletion(ctx: MutationCtx, key: string) {
   await dispatchDeletion(ctx, key, false);
 }
@@ -267,7 +268,9 @@ export const evidence = query({
         !sourceRetained(source.sourceRetentionUntil) ||
         source.state === "deleted" ||
         (asset.kind === "work_cloud_frame" &&
-          !cloudFrameAssetCurrent(source, asset))
+          !cloudFrameAssetCurrent(source, asset)) ||
+        (asset.kind === "prepared_frame" &&
+          !(await preparedAssetCurrent(ctx, source, asset)))
       )
         fail("Evidence unavailable.");
     }

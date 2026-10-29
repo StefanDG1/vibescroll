@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as preparedAnalysis from "../preparedAnalysis.js";
+import type * as preparedMedia from "../preparedMedia.js";
 import type * as accounts from "../accounts.js";
 import type * as analysisVersions from "../analysisVersions.js";
 import type * as analysisVersionFrames from "../analysisVersionFrames.js";
@@ -151,6 +153,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  preparedMedia: typeof preparedMedia;
+  preparedAnalysis: typeof preparedAnalysis;
   accounts: typeof accounts;
   analysisVersions: typeof analysisVersions;
   analysisVersionFrames: typeof analysisVersionFrames;

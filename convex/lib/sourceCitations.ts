@@ -18,6 +18,14 @@ import {
   cloudSourceVersion,
 } from "./cloudCatalog";
 import { neutralCloudObservations } from "../../packages/contracts/cloud-catalog";
+import {
+  isServicePreparedEvidence,
+  servicePreparedEvidence,
+} from "../../packages/contracts/prepared-evidence";
+import {
+  preparedEvidenceForSource,
+  verifyPrivateEvidenceAssets,
+} from "./preparedEvidenceAccess";
 
 // Call only after current membership and the exact assistant/team grant passed.
 export async function sharedTypedCitations(
@@ -27,9 +35,60 @@ export async function sharedTypedCitations(
 ) {
   return queryRead(
     ctx,
-    `shared-source-citations:${source._id}:${source.generation}:${source.updatedAt}:${versionId ?? "selected"}`,
+    `shared-source-citations:${source._id}:${source.generation}:${source.updatedAt}:${versionId ?? source.selectedAnalysisVersionId ?? "selected"}`,
     async () => {
       if (source.state !== "ready") return null;
+      const selectedId = versionId ?? source.selectedAnalysisVersionId;
+      const selected = selectedId ? await ctx.db.get(selectedId) : null;
+      const selectedEvidence = selected
+        ? await ctx.db.get(selected.evidenceId)
+        : null;
+      if (
+        selected &&
+        selectedEvidence &&
+        isServicePreparedEvidence(selectedEvidence.prepared)
+      ) {
+        ensure(
+          selected.owner === "private" &&
+            selected.organizationId === source.organizationId &&
+            selected.sourceId === source._id &&
+            selected.state === "ready" &&
+            selected.output &&
+            resultRetained(selected),
+          "SOURCE_UNAVAILABLE",
+          "This private analysis version changed.",
+        );
+        const evidence = await preparedEvidenceForSource(
+          ctx,
+          source,
+          selected.evidenceId,
+        );
+        await verifyPrivateEvidenceAssets(ctx, source, evidence);
+        const records = neutralCloudObservations(
+          servicePreparedEvidence.parse(evidence.prepared).evidence,
+        );
+        return {
+          sourceRevisionId: null,
+          sourceContentHash: evidence.revisionHash,
+          coverage: {
+            method: "ordered_media",
+            retrieved: evidence.frames.length,
+            omitted: 0,
+            omissions: [
+              "Service-prepared transcript and sampled source screenshots. Sampling does not establish complete visual coverage or independent claim verification.",
+            ],
+          },
+          summarize: (references: InsightCitation[]) =>
+            references
+              .slice(0, 10)
+              .map((ref) =>
+                socialCitation(
+                  ref as Parameters<typeof socialCitation>[0],
+                  records,
+                ),
+              ),
+        };
+      }
       const layer = source.publicImportId
         ? await ctx.db.get(source.publicImportId)
         : null;

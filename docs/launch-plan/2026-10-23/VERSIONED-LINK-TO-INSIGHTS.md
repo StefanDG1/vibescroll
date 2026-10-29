@@ -1,5 +1,9 @@
 # Release the versioned link-to-insights flow
 
+## October 29 next implementation: prepare once, choose the analysis executor
+
+Follow [Deliver insights from reusable prepared evidence](PREPARED-EVIDENCE-AND-CREDITS-2026-10-29.md) for the next backend work. It incorporates the completed 22-model benchmark and adds the missing hosted Sandbox creation, extraction, transfer, teardown, and cost comparison. Reuse one evidence record across VibeScroll-credit Gateway analysis, supported foreground MCP analysis, and the optional automatic subscription host. The latest owner correction excludes additional media services: use yt-dlp/FFmpeg on Vercel Sandbox and measure full Muse API versus ChatGPT subscription latency, including preparation, transcription, and early reactive metadata updates. Paid ASR and Gateway completion require truthful new funding/provenance contracts; existing zero-API jobs never acquire a paid fallback. The plan is documentation only, with no new live test, deployment, or billing activation. Preserve the accepted baseline below and update actual acceptance separately.
+
 Mode: how-to. Owner direction: October 28, 2026. Status: implementation plan, not an enabled-feature claim. [ADR 180](../../adr/180-versioned-cloud-analysis-and-shared-selection.md) defines the decision.
 
 ## October 28 production checkpoint

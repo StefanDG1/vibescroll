@@ -17,6 +17,7 @@ export function SourceProgressPanel({
       aria-label="Analysis progress"
       aria-live="polite"
       aria-atomic="true"
+      data-preparation-stage={source.personalMedia?.stage}
     >
       <h2>{progress.title}</h2>
       {progress.busy && <progress aria-label={progress.title} />}

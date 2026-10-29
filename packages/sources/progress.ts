@@ -1,6 +1,7 @@
 type ProgressSource = {
   generation?: number;
   state?: string;
+  personalMedia?: { version?: string; stage?: string; updatedAt?: number };
   personalAnalysis?: {
     executor?: string;
     state?: string;
@@ -29,6 +30,36 @@ export function sourceProgress(
   source: ProgressSource,
   now: number,
 ): SourceProgress | null {
+  if (source.personalMedia?.version === "service-preparation-progress-v1") {
+    const stage = source.personalMedia.stage;
+    const titles: Record<string, string> = {
+      queued: "Video queued",
+      starting: "Starting media worker",
+      metadata: "Reading post details",
+      downloading: "Downloading video",
+      preparing: "Preparing screenshots and audio",
+      transcribing: "Preparing the transcript",
+      evidence_ready: "Evidence saved",
+      waiting_for_assistant: "Waiting for your VibeScroll Assistant",
+      analyzing: "Analyzing transcript and screenshots",
+      validating: "Checking the insights",
+    };
+    if (stage && titles[stage])
+      return {
+        title: titles[stage],
+        busy: true,
+        description:
+          "This page updates automatically. You can leave and return later.",
+      };
+    if (stage === "unknown" || stage === "failed")
+      return {
+        title: "Processing needs attention",
+        busy: false,
+        description:
+          "Completion is not confirmed. Your saved post and previous analysis are still available.",
+        action: "analysis",
+      };
+  }
   const pending = source.pendingAnalysisAttemptState;
   if (pending === "queued" || pending === "running")
     return {

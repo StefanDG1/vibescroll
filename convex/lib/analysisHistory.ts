@@ -1,4 +1,12 @@
+import {
+  preparedEvidenceForSource,
+  verifyPrivateEvidenceAssets,
+} from "./preparedEvidenceAccess";
 import { resultRetained } from "../../packages/contracts/result-retention";
+import {
+  isServicePreparedEvidence,
+  servicePreparedEvidence,
+} from "../../packages/contracts/prepared-evidence";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { access, audit } from "../lib";
@@ -31,6 +39,14 @@ import {
 } from "../../packages/contracts/cloud-catalog";
 
 export function retainedEvidenceContent(evidence: Doc<"analysisEvidence">) {
+  if (isServicePreparedEvidence(evidence.prepared)) {
+    const prepared = servicePreparedEvidence.parse(evidence.prepared).evidence;
+    return {
+      post: { ...prepared, revisionHash: prepared.sourceRevisionHash },
+      transcript: prepared.segments,
+      observations: neutralCloudObservations(prepared),
+    };
+  }
   if (evidence.owner === "service") {
     const prepared = neutralCloudEvidence.parse(evidence.prepared);
     return {
@@ -299,6 +315,15 @@ export async function retainedVersion(
     "This analysis version is unavailable to this source.",
   );
   const evidence = await ctx.db.get(version.evidenceId);
+  if (evidence && isServicePreparedEvidence(evidence.prepared)) {
+    await preparedEvidenceForSource(ctx, source, evidence._id);
+    ensure(
+      resultRetained(version),
+      "SOURCE_UNAVAILABLE",
+      "This analysis version is no longer retained.",
+    );
+    return { version, evidence };
+  }
   if (evidence?.owner === "service") {
     await cloudSourceEvidence(ctx, source, evidence._id);
     const attempt = version.attemptId
@@ -352,6 +377,8 @@ export function versionMetadata(version: Doc<"analysisVersions">) {
     origin: version.owner,
   };
 }
+
+export { preparedEvidenceForSource };
 export async function verifyRetainedAssets(
   ctx: QueryCtx,
   source: Doc<"sources">,
@@ -361,28 +388,7 @@ export async function verifyRetainedAssets(
     await cloudSourceEvidence(ctx, source, evidence._id);
     return;
   }
-  for (const frame of evidence.frames) {
-    const asset = frame.assetId ? await ctx.db.get(frame.assetId) : null;
-    ensure(
-      asset &&
-        asset.state === "complete" &&
-        asset.kind === "work_cloud_frame" &&
-        asset.organizationId === source.organizationId &&
-        asset.sourceId === source._id &&
-        asset.sourceGeneration === evidence.extractionGeneration &&
-        asset.key === frame.key &&
-        asset.size === frame.size &&
-        ((asset.expiresAt !== undefined && asset.expiresAt > Date.now()) ||
-          (evidence.resultRetention === "until_deleted" &&
-            asset.expiresAt === undefined)) &&
-        !(await ctx.db
-          .query("objectDeletions")
-          .withIndex("by_key", (q) => q.eq("key", asset.key))
-          .unique()),
-      "SOURCE_UNAVAILABLE",
-      "This version's retained screenshots are no longer available.",
-    );
-  }
+  await verifyPrivateEvidenceAssets(ctx, source, evidence);
 }
 export async function selectedAnalysis(ctx: QueryCtx, source: Doc<"sources">) {
   if (!source.selectedAnalysisVersionId) {
@@ -409,6 +415,20 @@ export async function selectedAnalysis(ctx: QueryCtx, source: Doc<"sources">) {
     output: version.output,
     metadata: versionMetadata(version),
     evidenceId: evidence._id,
+    ...(isServicePreparedEvidence(evidence.prepared)
+      ? {
+          preparedService: {
+            version: "service-prepared-detail-v1",
+            transcript: retainedEvidenceContent(evidence).transcript,
+            observations: retainedEvidenceContent(evidence).observations,
+            frames: evidence.frames.map((f) => ({
+              id: f.frameId,
+              reference: f.assetId,
+              timestampMs: f.timestampMs,
+            })),
+          },
+        }
+      : {}),
     ...(evidence.owner === "service"
       ? { shared: await cloudSourceEvidence(ctx, source, evidence._id) }
       : {}),

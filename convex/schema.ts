@@ -1,4 +1,5 @@
 import { assistantTables } from "./assistantSchema";
+import { preparedAnalysisTables } from "./preparedAnalysisSchema";
 import { analysisHistoryTables } from "./analysisHistorySchema";
 import { cloudCatalogTables } from "./cloudCatalogSchema";
 import { librarySpacesTables } from "./librarySpacesSchema";
@@ -20,6 +21,7 @@ export const role = v.union(
   v.literal("viewer"),
 );
 export default defineSchema({
+  ...preparedAnalysisTables,
   ...cloudCatalogTables,
   ...analysisHistoryTables,
   ...assistantTables,

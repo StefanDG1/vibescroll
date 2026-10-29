@@ -790,6 +790,9 @@ export const detail = query({
         : {}),
       ...(selected
         ? {
+            ...("preparedService" in selected && selected.preparedService
+              ? { preparedService: selected.preparedService }
+              : {}),
             analysis: selected.output,
             summary: selected.output.summary,
             analysisVersion: selected.metadata,

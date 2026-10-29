@@ -1,5 +1,11 @@
 # Implementation status
 
+## Shared-database clarification and current read check
+
+The core shared catalog is live, rather than deferred until the experiment/ranking work. A current original-MCP status read confirms the latest automatic TikTok is ready and its catalog status is published. Its retained immutable version is readable through MCP. Actual cross-account reuse was accepted on October 28: the second authenticated account saved its own association in 609.6 ms, received all eight matching shared screenshots and started no new Cloud job. The stored save kept references instead of another full analysis/media bundle, and the first account's private source remained inaccessible to it. The latest concurrent-publication changes are deployed and have isolated simultaneous-account/action acceptance; no new production concurrency test was run, as requested.
+
+Shared access currently uses verified Pro entitlement or the finite approved alpha-account exception. The actual paid-customer purchase/entitlement journey and production personal-deletion/takedown acceptance remain open; no billing record or payment was invented for testing. Project/outcome feedback, blind A/B tests, model rankings and trending are later layers, not prerequisites for the already-working shared cache. The shared roadmap acceptance table now reflects the live general monitor instead of its historical paused pilot.
+
 ## October29: general automatic TikTok flow accepted; title correction live
 
 Website/backend55887625112942850a9d848f6f686e02e4a1c382 are live, version0.1.0-alpha.20261029005247.g558876251129, deploymentdpl_EoSYYdMmxSkvoyWYfpJNY4bLnt7e. Exact CI40796907512,35 release/budget guards, actual zero-scan/backfill compatible publication and the36119ms fixed Basic normal-queue build passed. Staged health/help, same-build promotion and canonical exact-commit checks passed; normal custom-domain assignment is restored. The earlier diagnostic post now visibly shows its native caption in the heading/origin card and a loaded thumbnail. Stored title, generation1, immutable selected version,4 insights,14 segments and8 frames remain unchanged. [Title release](operations/evidence/launch-20261029-native-title-production.json).

@@ -1,6 +1,6 @@
 # ADR 188: choose the existing app workspace for implicit MCP saves
 
-Date: October 29, 2026. Status: local candidate, not yet deployed.
+Date: October 29, 2026. Status: deployed and accepted at4c72afd. See the [production receipt](../operations/evidence/launch-20261029-phone-save-production.json). Original OAuth implicit Save and ready-cache reuse passed; new automatic analysis is a separate acceptance item.
 
 ## Problem
 

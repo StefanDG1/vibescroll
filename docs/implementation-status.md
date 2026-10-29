@@ -1,5 +1,13 @@
 # Implementation status
 
+## October 29: phone Save fix live; owner expands worker capacity
+
+Website/backend4c72afd356c05044cb345063116ba136f60d4894 are live, version0.1.0-alpha.20261028235320.g4c72afd356c0. Exact CI40790408434,35 release/budget guards, actual zero-scan/zero-backfill publication and the37731ms normal Basic build passed. Staged checks, same-build promotion, canonical exact-commit health and normal domain-assignment restoration passed. Original OAuth implicit phone Save now reuses the same source/key; already-ready Save starts no analysis. No reauthentication or new MCP app was required. [Production receipt](operations/evidence/launch-20261029-phone-save-production.json).
+
+The owner approved EUR12.50/USD0.38 extra infrastructure, then requested at least ten additional videos and excluded their ChatGPT subscription usage from cash budgeting. Preserve old holds and the reserved post. Keep Vercel strictly below USD20; no paid AI API or credit purchase. The old USD0.17 attempt amount is a conservative hold, not a measured AI charge. Slot5 is reserved for px71jkve7h68hfefa3yxh3t7sn8h58pv, TikTok ZGdX1LnNb, maximum generation1. Exact-source foreground processing was sent to the existing native chat; completion remains pending. General Monitoring stays paused until server admission is deployed and configured.
+
+[ADR189](adr/189-server-enforced-cloud-worker-allowance.md) implements finite operator admission in the common app/MCP job transaction without mutable prompt counters or schema changes. The candidate also corrects hourly counter units so minute-based maintenance cannot remove them prematurely. Initial115 focused tests passed. Full checks, exact CI, backend-only publication, actual configuration and production acceptance remain required. Ten-video capacity is not live yet.
+
 ## October 29: phone MCP Save routing reproduced and fixed locally
 
 The owner's phone chat TikTok save failed on https://vm.tiktok.com/ZGdX1LnNb/. An original-connector Save reproduction without profileId failed identically, while get_profile succeeded. A bounded production function-log read established the actual cause: assistant.saveLink threw FORBIDDEN because selectedProfile required exactly one active approved workspace. It counted grants unrelated to Save and ignored the user's existing app default. The same OAuth connection saved the link with an explicit current profile, analyze=false, as px71jkve7h68hfefa3yxh3t7sn8h58pv. No new analysis, re-login, scope or grant change was needed. A normal /app visit confirms the app default is the expected current workspace.

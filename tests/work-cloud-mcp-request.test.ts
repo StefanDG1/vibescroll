@@ -846,3 +846,154 @@ it("bounds new requests per actor/hour, while retrying queued work is free", asy
   vi.advanceTimersByTime(3600000);
   expect(await s.call(request)).toMatchObject({ reused_request: false });
 });
+
+it("admits ten new videos across app and MCP, keeps replays free and refuses the eleventh", async () => {
+  const s = await setup(true, true);
+  const startsAt = Date.now(),
+    expiresAt = startsAt + 86400000;
+  vi.stubEnv(
+    "WORK_CLOUD_ADMISSION_JSON",
+    JSON.stringify({
+      id: "ten-video-fixture",
+      subject,
+      maximumJobs: 10,
+      startsAt,
+      expiresAt,
+    }),
+  );
+  await s.call();
+  await s.t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("limits")
+      .withIndex("by_key", (q) =>
+        q.eq("key", `work-cloud-admission:${s.actorId}:ten-video-fixture`),
+      )
+      .unique();
+    await ctx.db.patch(row!._id, { count: 9 });
+  });
+  expect(await s.call()).toMatchObject({ reused_request: true });
+  const add = async (suffix: string) => {
+    const sourceId = await s.owner.mutation(api.product.capture, {
+      organizationId: s.org,
+      kind: "url",
+      url: `https://www.youtube.com/watch?v=abcdefghij${suffix}`,
+      title: "Synthetic allowance source",
+      key: `allowance-${suffix}`,
+      rightsAttested: true,
+    });
+    return (await s.t.run((ctx) => ctx.db.get(sourceId)))!;
+  };
+  const tenth = await add("m");
+  const tenthRequest = {
+    ...s.request,
+    sourceId: tenth._id,
+    generation: tenth.generation,
+    revision: tenth.updatedAt,
+  };
+  expect(await s.call(tenthRequest)).toMatchObject({ reused_request: false });
+  expect(await s.call(tenthRequest)).toMatchObject({ reused_request: true });
+  const next = await add("n");
+  const appSelection = {
+    sourceId: next._id,
+    grantId: s.grant.id,
+    inputKind: "media" as const,
+    retainUntil: s.request.cloud.retainUntil,
+  };
+  const preview = await s.owner.query(
+    api.workCloudAnalysis.preview,
+    appSelection,
+  );
+  await expect(
+    s.owner.mutation(api.workCloudAnalysis.approve, {
+      ...appSelection,
+      generation: preview.generation,
+      grantVersion: preview.grantVersion,
+      expectedInputHash: preview.inputHash,
+      model: s.request.cloud.model,
+      effort: s.request.cloud.effort,
+      useOwnPlan: true,
+      maxApiUsd: 0,
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+  await expect(
+    s.call({
+      ...s.request,
+      sourceId: next._id,
+      generation: next.generation,
+      revision: next.updatedAt,
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+  expect((await s.t.run((ctx) => ctx.db.get(next._id)))?.generation).toBe(0);
+  // An hour boundary does not replenish the finite allowance.
+  vi.advanceTimersByTime(3600000);
+  await s.t.mutation(internal.maintenance.cleanup, {});
+  const allowance = await s.t.run((ctx) =>
+    ctx.db
+      .query("limits")
+      .withIndex("by_key", (q) =>
+        q.eq("key", `work-cloud-admission:${s.actorId}:ten-video-fixture`),
+      )
+      .unique(),
+  );
+  expect(allowance).toMatchObject({
+    count: 10,
+    window: Math.ceil(expiresAt / 60000),
+  });
+  await expect(
+    s.call({
+      ...s.request,
+      sourceId: next._id,
+      generation: next.generation,
+      revision: next.updatedAt,
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+});
+
+it("retains the hourly counter through minute-based maintenance and preserves legacy count", async () => {
+  const s = await setup(true, true);
+  await s.t.run((ctx) =>
+    ctx.db.insert("limits", {
+      key: `work-cloud-mcp-hour:${s.actorId}`,
+      window: Math.floor(Date.now() / 3600000),
+      count: 4,
+    }),
+  );
+  await s.call();
+  await s.t.mutation(internal.maintenance.cleanup, {});
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("limits")
+        .withIndex("by_key", (q) =>
+          q.eq("key", `work-cloud-mcp-hour:${s.actorId}`),
+        )
+        .unique(),
+    ),
+  ).toMatchObject({ count: 5, window: Math.floor(Date.now() / 3600000) * 60 });
+});
+
+it.each(["invalid", "future", "expired"])(
+  "fails closed for %s operator allowance without creating work",
+  async (kind) => {
+    const s = await setup();
+    vi.stubEnv(
+      "WORK_CLOUD_ADMISSION_JSON",
+      kind === "invalid"
+        ? "{"
+        : JSON.stringify({
+            id: "bounded",
+            subject,
+            maximumJobs: 10,
+            startsAt: Date.now() + (kind === "future" ? 60000 : -120000),
+            expiresAt: Date.now() + (kind === "future" ? 120000 : -60000),
+          }),
+    );
+    await expect(s.call()).rejects.toThrow(/SETUP_REQUIRED|QUOTA_EXCEEDED/);
+    expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.generation).toBe(
+      0,
+    );
+    expect(
+      await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+    ).toHaveLength(0);
+  },
+);

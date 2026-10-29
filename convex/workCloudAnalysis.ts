@@ -67,6 +67,7 @@ import { recordAutomaticCatalogIntent } from "./lib/catalogPolicy";
 import { commitPersonalOrdered } from "./lib/personalOrderedCommit";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
 import { syncCategories } from "./categories";
+import { admitCloudMediaJob } from "./lib/workCloudAdmission";
 import { syncKnowledge, recordRetentionAttention } from "./knowledge";
 import insightSchema from "../contracts/insight.schema.json";
 import sourceInsightSchema from "../contracts/source-insight-v2.schema.json";
@@ -700,6 +701,7 @@ async function approveExactCloudSource(
     "APPROVAL_STALE",
     "The approved source input changed.",
   );
+  if (a.inputKind === "media") await admitCloudMediaJob(ctx, owned.actor);
   await limit(ctx, `work-cloud-approval:${owned.actor._id}`, 6);
   if (a.inputKind === "media")
     await recordAutomaticCatalogIntent(ctx, owned.source, owned.actor);
@@ -850,7 +852,6 @@ export async function retrySavedCloudSource(
     "Use the existing Cloud request.",
   );
   const defaults = grant.cloudSaveDefaults!;
-  await countNewCloudRequest(ctx, actor._id);
   const result = await approveExactCloudSource(
     ctx,
     { ...owned, source: { ...source, state: "failed" } },
@@ -1045,9 +1046,8 @@ export async function requestCloudFromAssistant(
     "APPROVAL_STALE",
     "The source or its selected execution scope changed.",
   );
-  // Six fresh requests per actor per hour, across OAuth clients. Queued replays
-  // return above and cannot consume another generation or reservation.
-  await countNewCloudRequest(ctx, a.actor._id);
+  // Atomic admission occurs in the common app/MCP approval below. Queued
+  // replays return above without consuming another generation or allowance.
   const approved = await approveExactCloudSource(
     ctx,
     { source, ...a },
@@ -1072,25 +1072,6 @@ export async function requestCloudFromAssistant(
     false,
   );
 }
-// All new MCP requests and deliberate retries share this actor-wide allowance.
-// A later approval refusal rolls this write back in the same transaction.
-async function countNewCloudRequest(ctx: MutationCtx, actor: Id<"users">) {
-  const key = `work-cloud-mcp-hour:${actor}`;
-  const window = Math.floor(Date.now() / 3600000);
-  const row = await ctx.db
-    .query("limits")
-    .withIndex("by_key", (q) => q.eq("key", key))
-    .unique();
-  ensure(
-    row?.window !== window || row.count < 6,
-    "QUOTA_EXCEEDED",
-    "The six-request hourly Cloud limit is reached.",
-  );
-  const counter = { window, count: row?.window === window ? row.count + 1 : 1 };
-  if (row) await ctx.db.patch(row._id, counter);
-  else await ctx.db.insert("limits", { key, ...counter });
-}
-
 function cloudRequestReceipt(
   value: {
     sourceId: Id<"sources">;

@@ -1,0 +1,14 @@
+{
+  "candidate": "406051fd87ab0ea0dc4aed81383bab7661022309",
+  "date": "2026-10-29",
+  "environment": "production",
+  "exactLinuxCI": 40893948000,
+  "localCheck": {"command":"pnpm check via scripts/run-offline.mjs","core":1321,"authHooks":47,"uiPublic":148,"builds":2,"hostedSkipped":3,"windowsPythonSkipped":7},
+  "backend": {"finishAcknowledged":true,"initialCliExit":1,"postAckGuardFailure":"Module-diff summary intentionally omits _deps and _system; expected projection included dependencies.","independentReadOnlyReconciliation":true,"exactModuleHashes":347,"dependenciesIncluded":178,"existingScansOrBackfills":0,"onlyNewEmptyTable":"mediaPreparations","newIndexes":4,"repeatPublication":false,"unknownHoldRetained":true},
+  "website": {"deploymentId":"dpl_G7D8JUwQZMu6h3zqBWXMJGhxwHnq","version":"0.1.0-alpha.20261029144052.g406051fd87ab","fixedBasicNormalQueue":true,"buildMilliseconds":56915,"stagedAndCanonicalExactHealth":true,"signedOutCatalogRequiresSignIn":true,"sameBuildPromoted":true,"domainAssignmentRestored":true,"rollbackDeployment":"dpl_EoSYYdMmxSkvoyWYfpJNY4bLnt7e"},
+  "catalog": {"ownerOperatorGrantEnabledAndReadBack":true,"fabricatedBilling":false,"metadataOnlyItems":4,"loadedThumbnails":4,"detailHttp":200,"segments":34,"frameReferences":8,"insights":4,"actualRenderedHeadings":true,"disabledListingRefused":true,"disabledImageHttp":404,"restoredImageHttp":200,"jpegBytes":41545,"jpegSha256":"022a05334f05b8b43547f1319dbae2890ea6eb8e079d7139c0f0f28cc25e42c8","cacheControl":"private, no-store","finalBrowsingEnabled":true,"personalPostsMetadataOnlyHttp200":true,"newAnalysis":false},
+  "nativeAssistant": {"sameOriginalConnectorGrant12":true,"observedPaused":true,"supportedUiResume":true,"instructionsAndBothSubscriptionsUnchanged":true,"editorSerializationSha256":"48601f4e18fc766417beb7d0871b57fff1de98ec7e0b7051ec7bfc39eb0be439","originalMcpAutomaticAnalysisAfterResume":true,"newTaskOrSourceJob":false},
+  "isolatedAcceptanceOnly": ["individual-Pro team invitation/access cancellation","no team wallet mint or owner spending","version-bound cache-only team sharing and withdrawal"],
+  "open": ["managed/API shared publication","precise settlement","hosted comparison","paid add-on commerce","legacy price/balance migration","independent commercial onboarding"],
+  "budget": {"cumulativeEUR":14,"comparisonUSD":0.5,"observedVercelUSD":17.92,"strictVercelCeilingUSD":20,"oldHoldsAndReservedSourcePreserved":true,"purchasesOrTopups":false}
+}

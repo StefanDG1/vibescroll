@@ -1,6 +1,6 @@
 # Saved posts, catalog access and individual Pro teams
 
-Mode: standing owner direction. Updated October 29, 2026. Status: implementation in progress; production acceptance remains open.
+Mode: standing owner direction. Updated October 29, 2026. Status: catalog checkpoint406051f deployed and owner browsing accepted; route/credit/commerce acceptance remains open.
 
 Read this plan before catalog access, workspace membership, preparation or credit settlement work until accepted. It refines the [shared intelligence plan](SHARED-INTELLIGENCE-MOAT.md), [pricing plan](PRO-PRICING-AND-CREDITS.md) and [prepared-evidence execution plan](../launch-plan/2026-10-23/PREPARED-EVIDENCE-AND-CREDITS-2026-10-29.md).
 
@@ -39,8 +39,8 @@ Reserve atomically and settle once against the exact reservation. Replays never 
 ## Acceptance ledger
 
 - [ ] Requested-post associations remain separate from full-catalog browsing in production.
-- [ ] Full-catalog entitlement/toggle, metadata pages, detail and image checks pass production verification.
-- [ ] Owner admin access is enabled and read back without billing fabrication.
+- [x] Full-catalog operator entitlement/toggle, metadata pages, detail and image checks pass production verification. Paid purchase remains separate.
+- [x] Owner admin access is enabled and read back without billing fabrication.
 - [ ] Each new team member's own Pro is enforced; team creation never funds another account.
 - [ ] Retained results can be shared through the existing paid-team knowledge-sharing path.
 - [ ] Both analysis routes publish truthful independent shared versions and preserve originals.
@@ -48,4 +48,4 @@ Reserve atomically and settle once against the exact reservation. Replays never 
 - [ ] Real full-flow timing/cost receipts and early reactive metadata pass.
 - [ ] Price/allowance, add-on commerce and legacy balance migration have separate acceptance.
 
-These catalog/team changes are local when this document is introduced. Passing fixtures are not production acceptance. Preserve monetary caps, old holds, the reserved post and Vercel strictly below USD20.
+Catalog/team code is deployed at406051f. Owner browsing, revocation/restoration and images passed production checks. Individual-Pro teams/version-bound sharing have isolated acceptance; paid commerce remains open. [Receipt](../operations/evidence/launch-20261029-catalog-teams-production.json). Preserve caps, old holds, reserved post and Vercel belowUSD20. Check spending before meaningful batches, as the owner requests.

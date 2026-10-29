@@ -1,5 +1,7 @@
 # Shared intelligence, model quality and the VibeScroll moat
 
+Production checkpoint406051f adds bounded full-library browsing with a separate grant/toggle. Owner admin access, metadata-only listing, detail, thumbnails and image revocation/restoration passed. Personal Posts remains separate. Individual-Pro teams/version-bound sharing are deployed with isolated acceptance. The same native Assistant was resumed without instruction/setup changes; original MCP reports automatic analysis enabled. [Receipt](../operations/evidence/launch-20261029-catalog-teams-production.json). Managed/API shared publication, precise credits and the hosted comparison remain open.
+
 Latest October29 direction: [Saved posts, catalog access and individual Pro teams](POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md) separates requested-post cache reuse from the full-library add-on/toggle. Each member has their own Pro and credits. Preparation can have a separate quote; preserve precise intermediate units and round once at final settlement. The owner requests an enabled admin browsing concession. These refinements supersede older unrestricted-catalog packaging below; production acceptance is pending.
 
 Pricing update, October29: the [mandatory single-Pro plan](PRO-PRICING-AND-CREDITS.md) makes hosted shared-cache access part of the one paid subscription. Free self-hosted code has its own database but no entitlement to this hosted dataset. Existing catalogue grants and active subscribers require a versioned migration; do not remove their access as a side effect of this target.

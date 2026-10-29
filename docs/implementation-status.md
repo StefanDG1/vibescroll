@@ -1,5 +1,13 @@
 # Implementation status
 
+## October29: ten-video server admission live; recurring owner policy and concurrent publication prepared
+
+Backend e9c34676935b6ffa5dc7f2ab4877a7a16ce00782 is live after exact CI40792986933,35 release/budget guards, two identical offline preparations and an actual zero-scan/no-backfill publication. The exact10-job owner configuration was written once and read back. No website build ran; website4c72afd remains live. Original personal-alpha subject was read from the named current production setting, not inferred from email. General Monitoring remains paused. The runtime setup interruption was reconciled: one exact incomplete root was found with no ready proof. A separate pre-recorded bootstrap succeeded in45.741s and independent verification took8.879s. Its verified reusable tool runtime is preserved; no model download or source job occurred during setup. Exact TikTok processing was then dispatched under reserved ordinal6, with ordinal5's unknown setup hold unchanged. No completion is claimed yet.
+
+The owner now requests unlimited or generous personal usage. [ADR189](adr/189-server-enforced-cloud-worker-allowance.md) adds a standing100/day,20/hour policy without artificial expiry or repeat sign-in, shared by new extraction and retained reanalysis. The existing shorter burst limit stays. Subscription usage is outside cash accounting; API fallback stays zero and Vercel belowUSD20. This follow-up policy is locally tested, not live yet.
+
+The owner also requires simultaneous users to keep both saves/results and explicitly permits isolated testing instead of production tests. [ADR190](adr/190-concurrent-cloud-catalog-publication.md) preserves the existing transactionally selected producer/waiter system and fixes overlapping automatic publication: wait for the first bounded screenshot copy, reuse equivalent shared output and keep distinct private versions. Initial19 focused catalog tests and the later actual two-account reservation test passed. Full combined checks, exact CI and any publication remain pending.
+
 ## October 29: phone Save fix live; owner expands worker capacity
 
 Website/backend4c72afd356c05044cb345063116ba136f60d4894 are live, version0.1.0-alpha.20261028235320.g4c72afd356c0. Exact CI40790408434,35 release/budget guards, actual zero-scan/zero-backfill publication and the37731ms normal Basic build passed. Staged checks, same-build promotion, canonical exact-commit health and normal domain-assignment restoration passed. Original OAuth implicit phone Save now reuses the same source/key; already-ready Save starts no analysis. No reauthentication or new MCP app was required. [Production receipt](operations/evidence/launch-20261029-phone-save-production.json).

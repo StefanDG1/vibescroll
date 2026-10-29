@@ -149,22 +149,62 @@ export const publishCompleted = internalAction({
     actorId: v.id("users"),
     generation: v.number(),
     versionId: v.optional(v.id("analysisVersions")),
+    waitAttempt: v.optional(v.number()),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
+    const waitAttempt = args.waitAttempt ?? 0;
+    ensure(
+      Number.isInteger(waitAttempt) && waitAttempt >= 0 && waitAttempt <= 12,
+      "INVALID_INPUT",
+      "Use a bounded catalog publication attempt.",
+    );
+    const { waitAttempt: _waitAttempt, ...selection } = args;
     let versionId = args.versionId;
+    const waitForCopy = async () => {
+      if (waitAttempt >= 12) return false;
+      await ctx.runMutation(internal.cloudCatalog.automaticOutcome, {
+        sourceId: args.sourceId,
+        actorId: args.actorId,
+        generation: args.generation,
+        ...(versionId ? { versionId } : {}),
+        state: "pending",
+      });
+      await ctx.scheduler.runAfter(
+        15000,
+        internal.cloudCatalogActions.publishCompleted,
+        {
+          ...selection,
+          waitAttempt: waitAttempt + 1,
+        },
+      );
+      return true;
+    };
     try {
       const prepared = await ctx.runMutation(
         internal.cloudCatalog.prepareAutomatic,
-        args,
+        selection,
       );
       if (prepared) versionId = prepared.versionId;
       if (!prepared) return { state: "skipped" };
+      if (prepared.state === "waiting_for_equivalent") {
+        if (await waitForCopy()) return { state: "pending" };
+        await ctx.runMutation(internal.cloudCatalog.automaticOutcome, {
+          sourceId: args.sourceId,
+          actorId: args.actorId,
+          generation: args.generation,
+          ...(versionId ? { versionId } : {}),
+          state: "unknown",
+        });
+        return { state: "unknown" };
+      }
       const outcome = await copyPreparedContribution(ctx, prepared);
       if (outcome.state === "published")
         await ctx.runMutation(internal.cloudCatalog.finishAutomatic, {
           contributionId: outcome.contributionId,
         });
+      else if (outcome.state === "copying" && (await waitForCopy()))
+        return { ...outcome, state: "pending" };
       else
         await ctx.runMutation(internal.cloudCatalog.automaticOutcome, {
           sourceId: args.sourceId,
@@ -173,7 +213,9 @@ export const publishCompleted = internalAction({
           ...(versionId ? { versionId } : {}),
           state: "unknown",
         });
-      return outcome;
+      return outcome.state === "copying"
+        ? { ...outcome, state: "unknown" }
+        : outcome;
     } catch {
       await ctx.runMutation(internal.cloudCatalog.automaticOutcome, {
         sourceId: args.sourceId,

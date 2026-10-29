@@ -241,6 +241,113 @@ it("serves a separate-account cache association with an explicit alpha entitleme
   ).toBeNull();
 });
 
+it("keeps overlapping completion deliveries pending until their one screenshot copy finishes", async () => {
+  const s = await setup();
+  await s.captureNewCompletion();
+  let release!: () => void, entered!: () => void;
+  const copying = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  s.network.mockImplementation(async (_url: string, init?: RequestInit) => {
+    if (init?.method === "PUT") return new Response(null, { status: 200 });
+    entered();
+    await gate;
+    return new Response(s.bytes, { headers: { "content-type": "image/jpeg" } });
+  });
+  const selection = { sourceId: s.sourceId, actorId: s.actorId, generation: 1 };
+  const first = s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    selection,
+  );
+  await copying;
+  const overlap = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    selection,
+  );
+  expect(overlap.state).toBe("pending");
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.catalogStatus?.state,
+  ).toBe("pending");
+  expect(s.network).toHaveBeenCalledTimes(1);
+  release();
+  expect((await first).state).toBe("published");
+  expect(
+    (
+      await s.t.action(internal.cloudCatalogActions.publishCompleted, {
+        ...selection,
+        waitAttempt: 1,
+      })
+    ).state,
+  ).toBe("published");
+  expect(s.network).toHaveBeenCalledTimes(2);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("publicArtifacts").collect()),
+  ).toHaveLength(1);
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(source.catalogStatus?.state).toBe("published");
+  expect(source.analysis).toEqual(s.output);
+});
+
+it("joins an equivalent version during publication and preserves both private versions without duplicate image copies", async () => {
+  const s = await setup();
+  await s.captureNewCompletion();
+  const selection = { sourceId: s.sourceId, actorId: s.actorId, generation: 1 };
+  const first = await s.t.mutation(
+    internal.cloudCatalog.prepareAutomatic,
+    selection,
+  );
+  if (!first || !("copyToken" in first))
+    throw Error("Expected the first copy reservation");
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  const original = (await s.t.run((ctx) =>
+    ctx.db.get(source.selectedAnalysisVersionId!),
+  ))!;
+  const secondVersionId = await s.t.run(async (ctx) => {
+    const { _id, _creationTime, ...version } = original;
+    return ctx.db.insert("analysisVersions", { ...version, number: 2 });
+  });
+  const overlap = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { ...selection, versionId: secondVersionId },
+  );
+  expect(overlap.state).toBe("pending");
+  expect(s.network).not.toHaveBeenCalled();
+  for (let waitAttempt = 1; waitAttempt <= 4; waitAttempt++)
+    expect(
+      (
+        await s.t.action(internal.cloudCatalogActions.publishCompleted, {
+          ...selection,
+          versionId: secondVersionId,
+          waitAttempt,
+        })
+      ).state,
+    ).toBe("pending");
+  await s.t.mutation(internal.cloudCatalog.commitCopy, {
+    contributionId: first.contributionId!,
+    copyToken: first.copyToken!,
+  });
+  await s.t.mutation(internal.cloudCatalog.finishAutomatic, {
+    contributionId: first.contributionId!,
+  });
+  const completed = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { ...selection, versionId: secondVersionId, waitAttempt: 1 },
+  );
+  expect(completed.state).toBe("published");
+  expect(s.network).not.toHaveBeenCalled();
+  expect(
+    await s.t.run((ctx) => ctx.db.query("publicArtifacts").collect()),
+  ).toHaveLength(1);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("catalogContributions").collect()),
+  ).toHaveLength(2);
+  expect(await s.t.run((ctx) => ctx.db.get(original._id))).toEqual(original);
+  expect(await s.t.run((ctx) => ctx.db.get(secondVersionId))).toBeTruthy();
+});
+
 it("derives stable per-post authority from an honest standing policy and rejects retrospective or mismatched requests", async () => {
   const s = await setup();
   const a = await s.t.run((ctx) =>
@@ -348,7 +455,8 @@ it("reuses durable shared evidence for a later analysis version and deduplicates
     taskId: "synthetic-durable-version",
     operation: "claim",
   });
-  if (!claim.leaseToken) throw Error("Expected a fresh retained-analysis lease");
+  if (!claim.leaseToken)
+    throw Error("Expected a fresh retained-analysis lease");
   const lease = {
     sourceId: s.sourceId,
     attemptId: requested.attemptId,
@@ -463,6 +571,85 @@ it("coalesces another account's save behind one producer and attaches the comple
   expect(family.producer).toBeUndefined();
   expect(family.waiters).toEqual([]);
   expect(s.network).toHaveBeenCalledTimes(2);
+});
+
+it("reserves one producer for two accounts arriving together and keeps both saved sources", async () => {
+  const s = await setup();
+  const secondSubject = "user_06234567890123456789012345";
+  const secondActor = await s.t.mutation(internal.accounts.syncUser, {
+    subject: secondSubject,
+    email: "simultaneous@example.test",
+    name: "Second saver",
+    verified: true,
+  });
+  s.alpha([s.subject, secondSubject]);
+  const second = s.t.withIdentity({ subject: secondSubject });
+  const secondOrg = await second.mutation(api.organizations.createPrivate, {});
+  const secondSource = await second.mutation(api.product.capture, {
+    organizationId: secondOrg,
+    key: "simultaneous-save",
+    kind: "url",
+    title: "Second independent save",
+    url: s.prepared.post.canonical,
+    rightsAttested: true,
+  });
+  const reserve = (
+    sourceId: typeof s.sourceId,
+    actorId: typeof s.actorId,
+    intent: string,
+  ) =>
+    s.t.run(async (ctx) => {
+      const source = (await ctx.db.get(sourceId))!,
+        actor = (await ctx.db.get(actorId))!;
+      return reserveCatalogProducer(
+        ctx,
+        source,
+        actor,
+        await catalogPermission(ctx, source.canonical),
+        intent,
+        s.now + 86400000,
+        s.now + 7 * 86400000,
+      );
+    });
+  const results = await Promise.all([
+    reserve(s.sourceId, s.actorId, "simultaneous-first"),
+    reserve(secondSource, secondActor, "simultaneous-second"),
+  ]);
+  expect(results[0].familyId).toBe(results[1].familyId);
+  expect(results.filter((r) => r.waiting)).toHaveLength(1);
+  const family = (await s.t.run((ctx) => ctx.db.get(results[0].familyId)))!;
+  expect(family.producer).toBeTruthy();
+  expect(family.waiters).toHaveLength(1);
+  expect(family.waiters![0].sourceId).not.toBe(family.producer!.sourceId);
+  expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toBeTruthy();
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(secondSource)))?.organizationId,
+  ).toBe(secondOrg);
+  expect(s.network).not.toHaveBeenCalled();
+});
+
+it("bounds publication waiting and leaves completed personal analysis intact when the copy stays unresolved", async () => {
+  const s = await setup();
+  await s.captureNewCompletion();
+  const selection = { sourceId: s.sourceId, actorId: s.actorId, generation: 1 };
+  await s.t.mutation(internal.cloudCatalog.prepareAutomatic, selection);
+  const result = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { ...selection, waitAttempt: 12 },
+  );
+  expect(result.state).toBe("unknown");
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(source.state).toBe("ready");
+  expect(source.catalogStatus?.state).toBe("unknown");
+  expect(source.analysis).toEqual(s.output);
+  expect(source.generation).toBe(1);
+  expect(s.network).not.toHaveBeenCalled();
+  await expect(
+    s.t.action(internal.cloudCatalogActions.publishCompleted, {
+      ...selection,
+      waitAttempt: 13,
+    }),
+  ).rejects.toThrow(/INVALID_INPUT/);
 });
 
 it("keeps acknowledged results and shared JPEGs beyond the processing window while explicit withdrawal still erases them", async () => {

@@ -311,7 +311,6 @@ async function prepareContribution(
     "APPROVAL_STALE",
     "Review the exact contribution and retention again.",
   );
-  await limit(ctx, `catalog-contribution:${s.actor._id}`, 3);
   const family = await catalogFamilyForProduction(
     ctx,
     s.permission,
@@ -367,12 +366,21 @@ async function prepareContribution(
     copyTokenHash = await socialHash(copyToken),
     consentHash = await socialHash(canonicalJson(consent));
   if (equivalent) {
+    if (
+      automaticActor &&
+      cloudArtifact(equivalent) &&
+      equivalent.state === "staging" &&
+      equivalent.copyExpiresAt !== undefined &&
+      equivalent.copyExpiresAt > now
+    )
+      return { existing: true, state: "waiting_for_equivalent" as const };
     ensure(
       cloudArtifact(equivalent) && equivalent.state === "eligible",
       "SOURCE_BUSY",
       "An equivalent contribution is unresolved or unavailable.",
     );
     await currentCloudArtifact(ctx, equivalent._id);
+    await limit(ctx, `catalog-contribution:${s.actor._id}`, 3);
     const id = await ctx.db.insert("catalogContributions", {
       organizationId: s.source.organizationId,
       actor: s.actor._id,
@@ -401,6 +409,7 @@ async function prepareContribution(
     });
     return { existing: true, contributionId: id, state: "published" };
   }
+  await limit(ctx, `catalog-contribution:${s.actor._id}`, 3);
   let reused: Awaited<ReturnType<typeof currentCloudArtifact>> | null = null;
   for (const member of family.members) {
     const artifact = await ctx.db.get(member.artifactId);
@@ -637,7 +646,15 @@ async function prepareContribution(
 export const prepare = internalMutation({
   args: { ...selected, key: v.string(), consent: v.any() },
   returns: v.any(),
-  handler: (ctx, args) => prepareContribution(ctx, args),
+  handler: async (ctx, args) => {
+    const prepared = await prepareContribution(ctx, args);
+    ensure(
+      "contributionId" in prepared,
+      "SOURCE_BUSY",
+      "The shared copy is still pending.",
+    );
+    return prepared;
+  },
 });
 
 export const prepareAutomatic = internalMutation({
@@ -760,7 +777,11 @@ export const automaticOutcome = internalMutation({
     sourceId: v.id("sources"),
     actorId: v.id("users"),
     generation: v.number(),
-    state: v.union(v.literal("unknown"), v.literal("failed")),
+    state: v.union(
+      v.literal("unknown"),
+      v.literal("failed"),
+      v.literal("pending"),
+    ),
     versionId: v.optional(v.id("analysisVersions")),
   },
   returns: v.null(),

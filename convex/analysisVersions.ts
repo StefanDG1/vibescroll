@@ -1,5 +1,6 @@
 import { resultRetained } from "../packages/contracts/result-retention";
 import { persistCloudResult } from "./lib/persistCloudResult";
+import { admitCloudMediaJob } from "./lib/workCloudAdmission";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { z } from "zod";
@@ -600,6 +601,7 @@ export async function requestRetainedAnalysis(
     "LIMIT_EXCEEDED",
     "This post reached its analysis-history limit.",
   );
+  await admitCloudMediaJob(ctx, a.actor, { configuredOnly: true });
   await limit(ctx, `analysis-version-request:${a.actor._id}`, 10);
   await recordAutomaticCatalogIntent(ctx, source, a.actor);
   const now = Date.now();

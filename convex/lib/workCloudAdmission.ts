@@ -8,12 +8,18 @@ const allowanceSchema = z
     id: z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),
     subject: z.string().min(1).max(120),
     maximumJobs: z.number().int().min(1).max(100),
+    period: z.enum(["allowance", "day"]).default("allowance"),
+    maximumHourlyJobs: z.number().int().min(1).max(100).optional(),
     startsAt: z.number().int().nonnegative(),
-    expiresAt: z.number().int().positive(),
+    expiresAt: z.number().int().positive().nullable(),
   })
   .strict()
-  .refine(
-    (a) => a.expiresAt > a.startsAt && a.expiresAt - a.startsAt <= 7 * 86400000,
+  .refine((a) =>
+    a.period === "day"
+      ? a.expiresAt === null || a.expiresAt > a.startsAt
+      : a.expiresAt !== null &&
+        a.expiresAt > a.startsAt &&
+        a.expiresAt - a.startsAt <= 7 * 86400000,
   );
 
 // Admission is part of the same mutation as job creation. A refused approval
@@ -21,6 +27,7 @@ const allowanceSchema = z
 export async function admitCloudMediaJob(
   ctx: MutationCtx,
   actor: Doc<"users">,
+  options: { configuredOnly?: boolean } = {},
 ) {
   const now = Date.now();
   const configured = process.env.WORK_CLOUD_ADMISSION_JSON;
@@ -40,13 +47,16 @@ export async function admitCloudMediaJob(
     );
     if (result.data.subject === actor.subject) allowance = result.data;
   }
+  if (!allowance && options.configuredOnly) return;
   if (allowance) {
     ensure(
-      now >= allowance.startsAt && now < allowance.expiresAt,
+      now >= allowance.startsAt &&
+        (allowance.expiresAt === null || now < allowance.expiresAt),
       "QUOTA_EXCEEDED",
       "The current Cloud worker allowance has ended.",
     );
-    const key = `work-cloud-admission:${actor._id}:${allowance.id}`;
+    const day = Math.floor(now / 86400000);
+    const key = `work-cloud-admission:${actor._id}:${allowance.id}${allowance.period === "day" ? `:day:${day}` : ""}`;
     const row = await ctx.db
       .query("limits")
       .withIndex("by_key", (q) => q.eq("key", key))
@@ -59,7 +69,10 @@ export async function admitCloudMediaJob(
     // limits.window uses MINUTES. Keep the durable allowance through its expiry;
     // the existing minute-based maintenance job can remove it only afterwards.
     const counter = {
-      window: Math.ceil(allowance.expiresAt / 60000),
+      window:
+        allowance.period === "day"
+          ? (day + 1) * 1440
+          : Math.ceil(allowance.expiresAt! / 60000),
       count: (row?.count ?? 0) + 1,
     };
     if (row) await ctx.db.patch(row._id, counter);
@@ -75,7 +88,9 @@ export async function admitCloudMediaJob(
   // Preserve a current legacy hours-valued counter while migrating its units.
   const count =
     row && (row.window === window || row.window === hour) ? row.count : 0;
-  const maximum = allowance ? Math.max(6, allowance.maximumJobs) : 6;
+  const maximum = allowance
+    ? (allowance.maximumHourlyJobs ?? Math.max(6, allowance.maximumJobs))
+    : 6;
   ensure(
     count < maximum,
     "QUOTA_EXCEEDED",

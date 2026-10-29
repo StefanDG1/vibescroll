@@ -972,6 +972,102 @@ it("retains the hourly counter through minute-based maintenance and preserves le
   ).toMatchObject({ count: 5, window: Math.floor(Date.now() / 3600000) * 60 });
 });
 
+it("allows a standing owner policy with 100 daily jobs, 20 hourly jobs and a UTC daily reset", async () => {
+  vi.setSystemTime(new Date("2026-10-29T23:59:00Z"));
+  const s = await setup(true, true);
+  vi.stubEnv(
+    "WORK_CLOUD_ADMISSION_JSON",
+    JSON.stringify({
+      id: "generous-owner",
+      subject,
+      maximumJobs: 100,
+      period: "day",
+      maximumHourlyJobs: 20,
+      startsAt: Date.now(),
+      expiresAt: null,
+    }),
+  );
+  await s.call();
+  const dayKey = `work-cloud-admission:${s.actorId}:generous-owner:day:${Math.floor(Date.now() / 86400000)}`;
+  await s.t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("limits")
+      .withIndex("by_key", (q) => q.eq("key", dayKey))
+      .unique();
+    await ctx.db.patch(row!._id, { count: 99 });
+  });
+  const nextId = await s.owner.mutation(api.product.capture, {
+    organizationId: s.org,
+    kind: "url",
+    url: "https://www.youtube.com/watch?v=abcdefghijm",
+    title: "Daily-limit source",
+    key: "generous-second",
+    rightsAttested: true,
+  });
+  const next = (await s.t.run((ctx) => ctx.db.get(nextId)))!;
+  const request = {
+    ...s.request,
+    sourceId: nextId,
+    generation: next.generation,
+    revision: next.updatedAt,
+  };
+  expect(await s.call(request)).toMatchObject({ reused_request: false });
+  expect(await s.call(request)).toMatchObject({ reused_request: true });
+  const thirdId = await s.owner.mutation(api.product.capture, {
+    organizationId: s.org,
+    kind: "url",
+    url: "https://www.youtube.com/watch?v=abcdefghijn",
+    title: "Next-day source",
+    key: "generous-third",
+    rightsAttested: true,
+  });
+  const third = (await s.t.run((ctx) => ctx.db.get(thirdId)))!;
+  const thirdRequest = {
+    ...s.request,
+    sourceId: thirdId,
+    generation: third.generation,
+    revision: third.updatedAt,
+  };
+  await expect(s.call(thirdRequest)).rejects.toThrow(/QUOTA_EXCEEDED/);
+  vi.advanceTimersByTime(120000);
+  await s.t.mutation(internal.maintenance.cleanup, {});
+  expect(await s.call(thirdRequest)).toMatchObject({ reused_request: false });
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("limits")
+        .withIndex("by_key", (q) => q.eq("key", dayKey))
+        .unique(),
+    ),
+  ).toMatchObject({ count: 100 });
+  await s.t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("limits")
+      .withIndex("by_key", (q) =>
+        q.eq("key", `work-cloud-mcp-hour:${s.actorId}`),
+      )
+      .unique();
+    await ctx.db.patch(row!._id, { count: 20 });
+  });
+  const fourthId = await s.owner.mutation(api.product.capture, {
+    organizationId: s.org,
+    kind: "url",
+    url: "https://www.youtube.com/watch?v=abcdefghijo",
+    title: "Hourly-limit source",
+    key: "generous-fourth",
+    rightsAttested: true,
+  });
+  const fourth = (await s.t.run((ctx) => ctx.db.get(fourthId)))!;
+  await expect(
+    s.call({
+      ...s.request,
+      sourceId: fourthId,
+      generation: fourth.generation,
+      revision: fourth.updatedAt,
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+});
+
 it.each(["invalid", "future", "expired"])(
   "fails closed for %s operator allowance without creating work",
   async (kind) => {

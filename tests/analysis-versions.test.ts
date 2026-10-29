@@ -10,6 +10,47 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
+it("shares the configured owner daily allowance with retained reanalysis and keeps its idempotent replay free", async () => {
+  const s = await analysisVersionFixture();
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  const actor = (await s.t.run((ctx) =>
+    ctx.db.get(source.personalAnalysis!.actor),
+  ))!;
+  vi.stubEnv(
+    "WORK_CLOUD_ADMISSION_JSON",
+    JSON.stringify({
+      id: "owner-version-policy",
+      subject: actor.subject,
+      maximumJobs: 100,
+      maximumHourlyJobs: 20,
+      period: "day",
+      startsAt: Date.now(),
+      expiresAt: null,
+    }),
+  );
+  const requested = await s.request();
+  const replay = await s.request();
+  expect(replay.attemptId).toBe(requested.attemptId);
+  const key = `work-cloud-admission:${actor._id}:owner-version-policy:day:${Math.floor(Date.now() / 86400000)}`;
+  const row = await s.t.run((ctx) =>
+    ctx.db
+      .query("limits")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique(),
+  );
+  expect(row?.count).toBe(1);
+  await s.owner.mutation(api.analysisVersions.cancelWaiting, {
+    sourceId: s.sourceId,
+    attemptId: requested.attemptId,
+  });
+  await s.t.run((ctx) => ctx.db.patch(row!._id, { count: 100 }));
+  await expect(s.request("owner-limit-new-version")).rejects.toThrow(
+    /QUOTA_EXCEEDED/,
+  );
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.analysis).toEqual(
+    s.output,
+  );
+});
 it("requires an app waiting subscription transactionally while allowing an authorized active MCP chat", async () => {
   const s = await analysisVersionFixture(false);
   await expect(s.request()).rejects.toThrow(/SETUP_REQUIRED/);

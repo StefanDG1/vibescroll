@@ -1,5 +1,11 @@
 # Simple setup, persistent results and proposal feedback
 
+Current October29 acceptance: the same native VibeScroll Assistant remains Monitoring after an actual ordinary MCP Save completed automatically, with no extra prompt or per-post approval. Owner rates100/day,20/hour/no-expiry are live. Results, matching transcript and real screenshots are shared/published and retained until deleted. Native Ready reply was read; mobile push delivery is not verified. [Evidence](../operations/evidence/launch-20261029-general-automatic-tiktok-accepted.json). Exact-version proposal/issue feedback remains the next backend phase.
+
+## Shared website and ChatGPT presentation, deferred
+
+The owner wants the ChatGPT view to reuse the website's components and interactions rather than maintain a separate design. Both already use React and the same backend, but their presentation/data adapters differ. Extract shared source cards, insight cards, Save composition, progress, tokens and compact post detail alongside packages/ui. Keep thin website session/router and ChatGPT MCP/host adapters. Do not embed the entire authenticated Next.js site or forward browser cookies into the widget. Its frame/auth assumptions differ, and host actions must remain authorized MCP calls. Use a compact Home/recent-posts/detail flow and link to the full website for account/billing. The current backend/worker priority takes precedence over implementing this visual work. This is consistent with [OpenAI's MCP UI guidance](https://developers.openai.com/plugins/build/chatgpt-ui); it is not a claim that the shared presentation has already been built.
+
 Also read [One Cloud assistant per user](ONE-CLOUD-ASSISTANT-PER-USER.md). The owner now prefers one named VibeScroll Assistant task per user, one short setup request, reuse of an existing monitor and accurate Open/Resume status. They are pasting the current message now and explicitly defer this redesign until later. The current long prompt and task-picker readiness issue remain implementation facts; the simpler flow is planned.
 
 Mode: standing owner direction and implementation plan. October 28, 2026. Status: required until implemented and accepted. These requirements steer the ongoing shared-database work; they do not replace it. The owner supplied production screenshots showing redundant Cloud controls and overloaded connection cards.

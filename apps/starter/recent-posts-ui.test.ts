@@ -1,6 +1,10 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { isValidElement, type ReactElement } from "react";
 
+// Pagination has its own hook fixture; the realtime transport is covered by
+// source-live.test.ts and must not start a session request in this unit test.
+vi.mock("./lib/use-source-live", () => ({ usePostsLive: vi.fn() }));
+
 const hooks = vi.hoisted(() => ({
   cells: [] as any[],
   index: 0,

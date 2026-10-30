@@ -74,3 +74,7 @@ Use UTF-8 explicitly when reading/writing Windows documents. Use structured tool
 ## Existing Windows offline-check runtime
 
 Use the installed project tools instead of reinstalling caption dependencies. Prepend `C:/Code/VibeScroller/.worktrees/launch-20261022/outputs/tools/node-v24.22.1-win-x64` and `C:/Code/VibeScroller/.worktrees/launch-20261022/outputs/launch-run/prepared-evidence-oct29-local-python` to this command process’s PATH, then run `node scripts/run-offline.mjs pnpm check` from the compatible checkout. The Python wrapper pins its existing local caption dependency directory. Verify these paths if the checkout/tool installation moves. Preserve failed logs; a billing fixture timeout must be reproduced separately before changing unrelated production logic or increasing limits.
+
+## Library layout after shared CSS changes
+
+Run the read-only browser-harness regression against a production-build preview: `python scripts/check-library-layout.py --output outputs/library-layout-check.json`. It checks desktop1440px and mobile390px, Tree/Folders and both CSS themes. Wrappers must contain the44px controls, labels must have usable nonzero width, and the page must fit its viewport. The current production regression failed these assertions even though all topic text existed. Use a hydrated production preview; SSR markup alone is not interaction acceptance. An optional canonical check uses `--url https://scroll.companynerve.com/demo?view=library`. The script only opens/closes its own read-only demo tab.

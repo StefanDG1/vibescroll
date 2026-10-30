@@ -1,0 +1,20 @@
+{
+  "status": "local candidate",
+  "baselineWebsite": "8974c3908c1e4a19f326188a9e889c8981fa5cc7",
+  "rootCause": "leftover grouped selector assigned 24px badge dimensions to topic card wrappers",
+  "actualProductionReproduced": true,
+  "beforeCardWidth": 24,
+  "beforeLabelWidth": 0,
+  "geometryRegressionFailsBefore": true,
+  "productionBuildPreviewCasesPassed": 8,
+  "desktopWidth": 1440,
+  "mobileWidth": 390,
+  "representations": ["Tree", "Folders"],
+  "cssThemes": ["light", "dark"],
+  "desktopAndMobileScreenshotsInspected": true,
+  "frontendTestsPassed": 149,
+  "lintPassed": true,
+  "websiteBuildPassed": true,
+  "backendChanged": false,
+  "newAnalysisDispatched": 0
+}

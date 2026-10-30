@@ -1298,7 +1298,10 @@
   border-radius: 12px;
   z-index: 5;
 }
-.hybrid-node-card,
+.hybrid-node-card {
+  position: relative;
+  min-width: 0;
+}
 .hybrid-proposal-slot {
   width: 24px;
   height: 24px;

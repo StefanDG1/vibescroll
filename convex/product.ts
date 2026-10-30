@@ -1,6 +1,10 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
 import { cloudRetryEligible } from "../packages/contracts/cloud-retry";
-import { selectedAnalysis } from "./lib/analysisHistory";
+import {
+  selectedAnalysis,
+  chatProposalEvidenceReadable,
+} from "./lib/analysisHistory";
+import { isChatProposalDetail } from "../packages/contracts/chat-proposals";
 import {
   attachCloudCache,
   cloudSourceMetadata,
@@ -2232,6 +2236,11 @@ export const proposals = query({
     const permitted = [];
     for (const p of rows) {
       if (
+        isChatProposalDetail(p.detail) &&
+        !(await chatProposalEvidenceReadable(ctx, p))
+      )
+        continue;
+      if (
         p.references &&
         !(await referencesCurrent(ctx, p.organizationId, p.references))
       )
@@ -2247,6 +2256,12 @@ export const proposal = query({
     const p = await ctx.db.get(a.id);
     if (!p) fail("Proposal unavailable.");
     await access(ctx, p.organizationId);
+    ensure(
+      !isChatProposalDetail(p.detail) ||
+        (await chatProposalEvidenceReadable(ctx, p)),
+      "FORBIDDEN",
+      "The proposal's retained evidence is unavailable.",
+    );
     ensure(
       !p.references ||
         (await referencesCurrent(ctx, p.organizationId, p.references)),

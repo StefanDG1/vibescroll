@@ -33,20 +33,23 @@ import {
   Home,
   Library,
   GitBranch,
+  Plug,
+  Plus,
+  Video,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ArrowRight,
+  FileEdit,
+} from "./icons/iconoir";
+import {
   Inbox,
   FileCheck2,
   GitPullRequest,
   Gauge,
-  Plug,
   Laptop,
   ShieldCheck,
   CreditCard,
-  Plus,
-  Video,
   Loader2,
-  PanelLeftClose,
-  PanelLeftOpen,
-  ArrowRight,
   Lightbulb,
   Check,
 } from "lucide-react";
@@ -309,6 +312,7 @@ export function Console({
     ),
     [planText, setPlanText] = useState(JSON.stringify(blankPlan, null, 2)),
     [railCollapsed, setRailCollapsed] = useState(false),
+    [libraryPreferencesOpen, setLibraryPreferencesOpen] = useState(false),
     [pairing, setPairing] = useState<{
       id: string;
       fingerprint: string;
@@ -1142,7 +1146,7 @@ export function Console({
     ["improvements", "Improvements", FileCheck2],
     ["inbox", "Inbox", Inbox],
     ["runs", "Runs & PRs", GitPullRequest],
-    ["proposals", "Proposals", FileCheck2],
+    ["proposals", "Proposals", FileEdit],
     ["usage", "Usage", Gauge],
     ["connections", "Connections", Plug],
     ["runners", "Computers", Laptop],
@@ -1154,7 +1158,7 @@ export function Console({
   ).length;
   return (
     <div
-      className={`product-shell atlas-shell ${railCollapsed ? "rail-collapsed" : ""}`}
+      className={`product-shell atlas-shell quiet-shell ${railCollapsed ? "rail-collapsed" : ""}`}
     >
       <AppTheme />
       <aside className="product-rail">
@@ -1171,23 +1175,29 @@ export function Console({
         </div>
         {demo && <p className="workspace-label">Demo workspace</p>}
         <nav aria-label="Application">
-          {nav.slice(0, 4).map(([key, title, Icon]) => (
-            <button
-              type="button"
-              key={key}
-              aria-current={view === key ? "page" : undefined}
-              className={view === key ? "active" : ""}
-              onClick={() => go(key)}
-            >
-              <Icon size={19} strokeWidth={1.7} aria-hidden="true" />
-              {title}
-              {key === "inbox" && data.notifications.some((n) => !n.read) && (
-                <span className="nav-count">
-                  {data.notifications.filter((n) => !n.read).length}
-                </span>
-              )}
-            </button>
-          ))}
+          {nav
+            .filter(([key]) =>
+              ["home", "posts", "library", "projects", "proposals"].includes(
+                key,
+              ),
+            )
+            .map(([key, title, Icon]) => (
+              <button
+                type="button"
+                key={key}
+                aria-current={view === key ? "page" : undefined}
+                className={view === key ? "active" : ""}
+                onClick={() => go(key)}
+              >
+                <Icon size={19} strokeWidth={1.7} aria-hidden="true" />
+                {title}
+                {key === "inbox" && data.notifications.some((n) => !n.read) && (
+                  <span className="nav-count">
+                    {data.notifications.filter((n) => !n.read).length}
+                  </span>
+                )}
+              </button>
+            ))}
         </nav>
         <div className="rail-bottom">
           <button type="button" onClick={() => go("connections")}>
@@ -1450,21 +1460,6 @@ export function Console({
                       disabled={readOnly}
                     />
                   )}
-                  {data.privateLibrary && !demo && (
-                    <div id="library-purpose">
-                      <PrivateLibrary
-                        key={organizationId}
-                        organizationId={organizationId}
-                        call={call}
-                        readOnly={readOnly}
-                        onOpenSource={findSource}
-                        onSave={() => {
-                          void openCapture();
-                        }}
-                        onProjects={() => go("projects")}
-                      />
-                    </div>
-                  )}
                   <StudioHome
                     organizationId={organizationId}
                     demo={demo}
@@ -1488,6 +1483,28 @@ export function Console({
                     readOnly={readOnly}
                     busy={busy}
                   />
+                  {data.privateLibrary && !demo && (
+                    <details
+                      id="library-purpose"
+                      className="quiet-overview"
+                      onToggle={(event) =>
+                        setLibraryPreferencesOpen(event.currentTarget.open)
+                      }
+                    >
+                      <summary>Library preferences</summary>
+                      {libraryPreferencesOpen && (
+                        <PrivateLibrary
+                          key={organizationId}
+                          organizationId={organizationId}
+                          call={call}
+                          readOnly={readOnly}
+                          onOpenSource={findSource}
+                          onSave={() => void openCapture()}
+                          onProjects={() => go("projects")}
+                        />
+                      )}
+                    </details>
+                  )}
                 </>
               )}
               {view === "posts" && data.recentPosts && (
@@ -2190,105 +2207,122 @@ export function Console({
                       ))}
                     </div>
                   </section>
-                  <section className="panel">
-                    <h2>Review and edit the plan</h2>
-                    <a
-                      href="/help/evaluate-an-idea-for-a-project"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Project decision and plan help
-                    </a>
-                    <Button
-                      busy={busy}
-                      disabled={selected.review !== "accepted"}
-                      onClick={() =>
-                        call("draftPlan", {
-                          id: id(selected),
-                          version: selected.version,
-                          maxCredits: 10,
-                        })
-                      }
-                    >
-                      Draft an editable plan, maximum 10 credits
-                    </Button>
-                    {selected.planDraft &&
-                      selected.planDraftVersion === selected.version && (
-                        <details>
-                          <summary>Unconfirmed AI plan draft</summary>
-                          <pre>
-                            {JSON.stringify(selected.planDraft, null, 2)}
-                          </pre>
-                          <Button
-                            busy={busy}
-                            onClick={() =>
-                              setPlanText(
-                                JSON.stringify(selected.planDraft, null, 2),
-                              )
+                  {selected.detail?.schemaVersion ===
+                  "chat-project-proposal-v1" ? (
+                    <section className="panel">
+                      <h2>Continue in your chat</h2>
+                      <p>
+                        This proposal is saved. You can reopen and refine it in
+                        ChatGPT or Codex.
+                      </p>
+                      <p>
+                        Implementation handoff is not available for this
+                        planning draft yet.
+                      </p>
+                    </section>
+                  ) : (
+                    <>
+                      <section className="panel">
+                        <h2>Review and edit the plan</h2>
+                        <a
+                          href="/help/evaluate-an-idea-for-a-project"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Project decision and plan help
+                        </a>
+                        <Button
+                          busy={busy}
+                          disabled={selected.review !== "accepted"}
+                          onClick={() =>
+                            call("draftPlan", {
+                              id: id(selected),
+                              version: selected.version,
+                              maxCredits: 10,
+                            })
+                          }
+                        >
+                          Draft an editable plan, maximum 10 credits
+                        </Button>
+                        {selected.planDraft &&
+                          selected.planDraftVersion === selected.version && (
+                            <details>
+                              <summary>Unconfirmed AI plan draft</summary>
+                              <pre>
+                                {JSON.stringify(selected.planDraft, null, 2)}
+                              </pre>
+                              <Button
+                                busy={busy}
+                                onClick={() =>
+                                  setPlanText(
+                                    JSON.stringify(selected.planDraft, null, 2),
+                                  )
+                                }
+                              >
+                                Copy draft into the editable plan
+                              </Button>
+                              <p>
+                                Review and save a new version before execution.
+                                This draft grants no coding permission.
+                              </p>
+                            </details>
+                          )}
+                        <p>
+                          Acceptance does not authorize execution. Files marked
+                          existing must appear in the repository snapshot.
+                          Saving creates a new immutable plan hash.
+                        </p>
+                        <PlanEditor
+                          value={planText}
+                          onChange={setPlanText}
+                          disabled={busy || readOnly}
+                        />
+                        <Button
+                          busy={busy}
+                          disabled={selected.review !== "accepted"}
+                          onClick={async () => {
+                            try {
+                              await call("editPlan", {
+                                id: id(selected),
+                                version: selected.version,
+                                plan: reviewedPlan(planText),
+                              });
+                            } catch {
+                              setNotice(
+                                "Add a scope, at least one file, implementation step and check. Keep all required sections and valid JSON.",
+                              );
                             }
-                          >
-                            Copy draft into the editable plan
-                          </Button>
-                          <p>
-                            Review and save a new version before execution. This
-                            draft grants no coding permission.
-                          </p>
-                        </details>
-                      )}
-                    <p>
-                      Acceptance does not authorize execution. Files marked
-                      existing must appear in the repository snapshot. Saving
-                      creates a new immutable plan hash.
-                    </p>
-                    <PlanEditor
-                      value={planText}
-                      onChange={setPlanText}
-                      disabled={busy || readOnly}
-                    />
-                    <Button
-                      busy={busy}
-                      disabled={selected.review !== "accepted"}
-                      onClick={async () => {
-                        try {
-                          await call("editPlan", {
-                            id: id(selected),
-                            version: selected.version,
-                            plan: reviewedPlan(planText),
-                          });
-                        } catch {
-                          setNotice(
-                            "Add a scope, at least one file, implementation step and check. Keep all required sections and valid JSON.",
-                          );
-                        }
-                      }}
-                    >
-                      Save new plan version
-                    </Button>
-                    <Button
-                      busy={busy}
-                      onClick={() => {
-                        downloadText(
-                          "vibescroller-plan.json",
-                          planText,
-                          "application/json",
-                        );
-                        if (!demo)
-                          journey.planExported(
-                            `${id(selected)}:${selected.version}:${selected.updatedAt}`,
-                            "json",
-                          );
-                      }}
-                    >
-                      Export plan
-                    </Button>
-                  </section>
-                  <ExecutionApproval
-                    proposal={selected}
-                    call={call}
-                    routes={data.customerRoutes}
-                    usage={data.usage}
-                    busy={busy}
-                  />
+                          }}
+                        >
+                          Save new plan version
+                        </Button>
+                        <Button
+                          busy={busy}
+                          onClick={() => {
+                            downloadText(
+                              "vibescroller-plan.json",
+                              planText,
+                              "application/json",
+                            );
+                            if (!demo)
+                              journey.planExported(
+                                `${id(selected)}:${selected.version}:${selected.updatedAt}`,
+                                "json",
+                              );
+                          }}
+                        >
+                          Export plan
+                        </Button>
+                      </section>
+                      <ExecutionApproval
+                        proposal={selected}
+                        call={call}
+                        routes={data.customerRoutes}
+                        usage={data.usage}
+                        busy={busy}
+                      />
+                    </>
+                  )}
                 </>
               )}
               {view === "runs" && (

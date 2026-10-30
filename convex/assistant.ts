@@ -1160,120 +1160,131 @@ export const projectApplicationContext = internalQuery({
     codingAuthorized: v.literal(false),
     publicationAuthorized: v.literal(false),
   }),
-  handler: async (ctx, args) => {
-    ctx = knowledgeReadContext(ctx);
-    const row = await ctx.db.get(args.sourceId);
-    ensure(
-      row && (!args.profileId || row.organizationId === args.profileId),
-      "FORBIDDEN",
-      "Choose a saved post in the current workspace.",
-    );
-    const reader = await assistantGrant(
-      ctx,
-      row.organizationId,
-      "knowledge:read",
-    );
-    const source = await sourceFor(ctx, reader, row._id);
-    ensure(
-      source?.state === "ready",
-      "SOURCE_UNAVAILABLE",
-      "Choose a completed retained analysis.",
-    );
-    const projectReader = await assistantGrant(
-      ctx,
-      row.organizationId,
-      "context:read",
-    );
-    const project = await assistantProject(ctx, projectReader, args.projectId);
-    const selected = await selectedAnalysis(ctx, source);
-    const versionId = args.analysisVersionId ?? selected?.metadata.id;
-    ensure(
-      versionId,
-      "SOURCE_UNAVAILABLE",
-      "This legacy post needs a retained analysis version before project planning.",
-    );
-    const { version, evidence } = await retainedVersion(ctx, source, versionId);
-    const output =
-      version.owner === "service"
-        ? neutralCloudAnalysis.parse(version.output)
-        : socialAnalysisOutput.parse(version.output);
-    const requested = args.insightIds;
-    ensure(
-      requested === undefined ||
-        (requested.length > 0 &&
-          requested.length <= 8 &&
-          new Set(requested).size === requested.length &&
-          requested.every((id) =>
-            output.insights.some((insight) => insight.id === id),
-          )),
-      "INVALID_EVIDENCE",
-      "Choose at most eight distinct insights from this exact analysis version.",
-    );
-    const insights = requested
-      ? requested.map((id) =>
-          output.insights.find((insight) => insight.id === id)!,
-        )
-      : output.insights.slice(0, 8);
-    const data = {
-      grantVersion: reader.grant.version,
-      source: {
-        id: source._id,
-        analysisVersionId: version._id,
-        versionNumber: version.number,
-        evidenceHash: evidence.evidenceHash,
-        revisionHash: evidence.revisionHash,
-        outputHash: version.outputHash,
-        generation: source.generation,
-        sourceRevision: source.updatedAt,
-        selected: selected?.metadata.id === version._id,
-        summary: output.summary,
-        insights: insights.map((insight) => ({
-          ...insight,
-          reference: {
-            sourceId: source._id,
-            analysisVersionId: version._id,
-            insightId: insight.id,
-          },
-        })),
-        omittedInsights: output.insights.length - insights.length,
-      },
-      project: {
-        id: project._id,
-        name: project.fullName,
-        baseSha: project.sha,
-        profileVersion: project.profileVersion,
-        selectionVersion: project.selectionVersion ?? 0,
-        profile: project.profile,
-        repositoryCodeIncluded: false as const,
-      },
-      potentialMatches: projectCategoryMatches(
-        insights.flatMap((insight) => insight.categories),
-        project.profile,
-      ),
-      analysisStarted: false as const,
-      creditsSpent: 0 as const,
-      codingAuthorized: false as const,
-      publicationAuthorized: false as const,
-    };
-    const serialized = canonicalJson(data);
-    ensure(
-      new TextEncoder().encode(serialized).byteLength <= 120000 &&
-        !containsSecret(serialized),
-      "POLICY_BLOCKED",
-      "The selected planning context exceeds its safe size or credential bound.",
-    );
-    return {
-      ...data,
-      contextHash: await digest(
-        canonicalJson({
-          actor: reader.actor._id,
-          clientId: reader.client.id,
-          ...data,
-        }),
-      ),
-    };
-  },
+  handler: projectApplicationContextCore,
 });
+
+export async function projectApplicationContextCore(
+  ctx: QueryCtx,
+  args: {
+    profileId?: Id<"organizations">;
+    sourceId: Id<"sources">;
+    projectId: Id<"repositories">;
+    analysisVersionId?: Id<"analysisVersions">;
+    insightIds?: string[];
+  },
+) {
+  ctx = knowledgeReadContext(ctx);
+  const row = await ctx.db.get(args.sourceId);
+  ensure(
+    row && (!args.profileId || row.organizationId === args.profileId),
+    "FORBIDDEN",
+    "Choose a saved post in the current workspace.",
+  );
+  const reader = await assistantGrant(
+    ctx,
+    row.organizationId,
+    "knowledge:read",
+  );
+  const source = await sourceFor(ctx, reader, row._id);
+  ensure(
+    source?.state === "ready",
+    "SOURCE_UNAVAILABLE",
+    "Choose a completed retained analysis.",
+  );
+  const projectReader = await assistantGrant(
+    ctx,
+    row.organizationId,
+    "context:read",
+  );
+  const project = await assistantProject(ctx, projectReader, args.projectId);
+  const selected = await selectedAnalysis(ctx, source);
+  const versionId = args.analysisVersionId ?? selected?.metadata.id;
+  ensure(
+    versionId,
+    "SOURCE_UNAVAILABLE",
+    "This legacy post needs a retained analysis version before project planning.",
+  );
+  const { version, evidence } = await retainedVersion(ctx, source, versionId);
+  const output =
+    version.owner === "service"
+      ? neutralCloudAnalysis.parse(version.output)
+      : socialAnalysisOutput.parse(version.output);
+  const requested = args.insightIds;
+  ensure(
+    requested === undefined ||
+      (requested.length > 0 &&
+        requested.length <= 8 &&
+        new Set(requested).size === requested.length &&
+        requested.every((id) =>
+          output.insights.some((insight) => insight.id === id),
+        )),
+    "INVALID_EVIDENCE",
+    "Choose at most eight distinct insights from this exact analysis version.",
+  );
+  const insights = requested
+    ? requested.map((id) =>
+        output.insights.find((insight) => insight.id === id)!,
+      )
+    : output.insights.slice(0, 8);
+  const data = {
+    grantVersion: reader.grant.version,
+    source: {
+      id: source._id,
+      analysisVersionId: version._id,
+      versionNumber: version.number,
+      evidenceHash: evidence.evidenceHash,
+      revisionHash: evidence.revisionHash,
+      outputHash: version.outputHash,
+      generation: source.generation,
+      sourceRevision: source.updatedAt,
+      selected: selected?.metadata.id === version._id,
+      summary: output.summary,
+      insights: insights.map((insight) => ({
+        ...insight,
+        reference: {
+          sourceId: source._id,
+          analysisVersionId: version._id,
+          insightId: insight.id,
+        },
+      })),
+      omittedInsights: output.insights.length - insights.length,
+    },
+    project: {
+      id: project._id,
+      name: project.fullName,
+      baseSha: project.sha,
+      profileVersion: project.profileVersion,
+      selectionVersion: project.selectionVersion ?? 0,
+      profile: project.profile,
+      repositoryCodeIncluded: false as const,
+    },
+    potentialMatches: projectCategoryMatches(
+      insights.flatMap((insight) => insight.categories),
+      project.profile,
+    ),
+    analysisStarted: false as const,
+    creditsSpent: 0 as const,
+    codingAuthorized: false as const,
+    publicationAuthorized: false as const,
+  };
+  const serialized = canonicalJson(data);
+  ensure(
+    new TextEncoder().encode(serialized).byteLength <= 120000 &&
+      !containsSecret(serialized),
+    "POLICY_BLOCKED",
+    "The selected planning context exceeds its safe size or credential bound.",
+  );
+  return {
+    ...data,
+    contextHash: await digest(
+      canonicalJson({
+        actor: reader.actor._id,
+        clientId: reader.client.id,
+        ...data,
+      }),
+    ),
+  };
+}
 
 export const draftProjectSuggestion = internalMutation({
   args: {

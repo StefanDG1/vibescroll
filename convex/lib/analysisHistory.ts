@@ -15,7 +15,7 @@ import { sourceWithinAssistantScope } from "./assistantSourceScope";
 import { sourceRetained } from "./sourceAuthority";
 import { currentOrderedSource } from "./workCloudMediaSource";
 import { retainedCloudFrames } from "../../packages/media/cloud-frames";
-import { ensure } from "../../packages/policy";
+import { ensure, PolicyError } from "../../packages/policy";
 import { isAssistantIdentity } from "../../packages/policy/assistant";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import {
@@ -23,6 +23,40 @@ import {
   versionLimits,
 } from "../../packages/contracts/analysis-versions";
 import { digest } from "../product";
+import { chatProposalDetail } from "../../packages/contracts/chat-proposals";
+
+/** Read authority for a planning draft follows its exact retained analysis, not raw source.analysis. */
+export async function chatProposalEvidenceReadable(
+  ctx: QueryCtx,
+  proposal: Doc<"proposals">,
+) {
+  const parsed = chatProposalDetail.safeParse(proposal.detail);
+  if (!parsed.success) return false;
+  const source = await ctx.db.get(proposal.sourceId);
+  if (
+    !source ||
+    source.organizationId !== proposal.organizationId ||
+    source.state === "deleted" ||
+    !source.rightsAttested ||
+    !sourceRetained(source.sourceRetentionUntil)
+  )
+    return false;
+  try {
+    const { version, evidence } = await retainedVersion(
+      ctx,
+      source,
+      parsed.data._chat.binding.analysisVersionId as Id<"analysisVersions">,
+    );
+    return (
+      version.outputHash === parsed.data._chat.binding.outputHash &&
+      evidence.evidenceHash === parsed.data._chat.binding.evidenceHash &&
+      evidence.revisionHash === parsed.data._chat.binding.revisionHash
+    );
+  } catch (error) {
+    if (error instanceof PolicyError) return false;
+    throw error;
+  }
+}
 import {
   isCloudObservedMedia,
   privateCloudMediaCanonicalMatches,

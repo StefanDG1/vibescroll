@@ -1,5 +1,6 @@
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
+import { isChatProposalDetail } from "../../packages/contracts/chat-proposals";
 import { retainedSourceRevision } from "./sourceAuthority";
 import { sourcePolicyCurrent } from "./sourcePolicy";
 import {
@@ -8,6 +9,8 @@ import {
   actorCurrent,
 } from "../knowledge";
 export async function improvementCurrent(ctx: QueryCtx, p: Doc<"proposals">) {
+  // Chat-written profile-level drafts carry no inspected-code execution authority.
+  if (isChatProposalDetail(p.detail)) return false;
   if (p.detail?.schemaVersion === "2.0.0") {
     const source = await ctx.db.get(p.sourceId);
     const row = source?.currentRevisionId

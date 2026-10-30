@@ -155,7 +155,7 @@ async function sharedFixture() {
   };
 }
 
-it("uses a reference-only shared post in exact-version project context, with no owner leakage, new job or entitlement bypass", async () => {
+it("uses a reference-only shared post in exact-version context and a durable chat proposal, with no owner leakage, new job or entitlement bypass", async () => {
   const f = await sharedFixture();
   const scopes = [
     "analysis:request",
@@ -164,6 +164,7 @@ it("uses a reference-only shared post in exact-version project context, with no 
     "jobs:read",
     "events:subscribe",
     "context:read",
+    "suggestions:draft",
   ];
   const clientId = "client_01234567890123456789012345";
   vi.stubEnv(
@@ -237,9 +238,51 @@ it("uses a reference-only shared post in exact-version project context, with no 
   expect(after).toEqual(before);
   expect(after?.analysis).toBeUndefined();
   expect(after?.personalAnalysis).toBeUndefined();
+  const proposal = await assistant.mutation(internal.assistantProposals.save, {
+    ...args,
+    analysisVersionId: context.source.analysisVersionId,
+    insightIds: context.source.insights.map((i) => i.id),
+    contextHash: context.contextHash,
+    expectedVersion: 0,
+    key: "shared-chat-proposal",
+    body: {
+      title: "Check the shared idea against this project",
+      disposition: "needs_context",
+      currentProblem:
+        "Verify whether the project has the source's proposed behavior.",
+      proposedChange: "Inspect the selected revision before choosing a change.",
+      benefitHypothesis: null,
+      risks: ["Repository code has not been inspected."],
+      nonGoals: [],
+      acceptanceCriteria: [
+        "Compare the source evidence with the implementation.",
+      ],
+      verificationNeeds: ["Inspect the selected code."],
+    },
+  });
+  expect(proposal).toMatchObject({
+    creditsSpent: 0,
+    analysisStarted: false,
+    version: 1,
+  });
+  expect(JSON.stringify(proposal)).not.toContain(f.sourceId);
+  expect(JSON.stringify(proposal)).not.toContain(f.org);
+  const reopened = await assistant.query(internal.assistantProposals.read, {
+    proposalId: proposal.proposalId,
+  });
+  expect(reopened.analysisVersionId).toBe(f.shared.version._id);
+  expect(
+    await f.second.query(api.product.proposal, { id: proposal.proposalId }),
+  ).not.toBeNull();
+  expect(f.network).not.toHaveBeenCalled();
   await f.t.run((ctx) => ctx.db.patch(f.billingId, { status: "canceled" }));
   await expect(
     assistant.query(internal.assistant.projectApplicationContext, args),
+  ).rejects.toThrow();
+  await expect(
+    assistant.query(internal.assistantProposals.read, {
+      proposalId: proposal.proposalId,
+    }),
   ).rejects.toThrow();
 });
 

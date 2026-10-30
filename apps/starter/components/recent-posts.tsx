@@ -7,6 +7,7 @@ import type { api } from "../../../convex/_generated/api";
 import { PostThumbnail } from "./post-thumbnail";
 import { usePostsLive } from "@/lib/use-source-live";
 import { sourceProgress } from "../../../packages/sources/progress";
+import { ArrowRight } from "./icons/iconoir";
 
 type Page = FunctionReturnType<typeof api.posts.recent>;
 type Post = Page["items"][number] & {
@@ -135,7 +136,7 @@ export function RecentPosts({
         Newest saved posts. Open a post for its insights and analysis options.
       </p>
       {items.length > 0 && (
-        <ul className="studio-list">
+        <ul className="studio-list quiet-post-list">
           {items.map((post) => (
             <li key={post.id} data-preparation-stage={post.preparationStage}>
               <Link
@@ -160,6 +161,7 @@ export function RecentPosts({
                       .join(" · ")}
                   </small>
                 </span>
+                <ArrowRight size={18} />
               </Link>
             </li>
           ))}

@@ -1,5 +1,7 @@
 # Simple setup, persistent results and proposal feedback
 
+October29 latest direction: [Chat workflows and the saved-post reader](CHAT-FIRST-DEMO.md) prioritizes proposals composed in ChatGPT/Codex and persisted through MCP, then a shared website reader and later compact embedded view. This supersedes older widget deferral only as a planned, shared-component checkpoint; no UI is reenabled until actual acceptance. Direct hosted ChatGPT-plan integration remains paused. Use CURRENT-STATE for live facts instead of dated checkpoints below.
+
 Current-state authority: [accepted production snapshot](../operations/CURRENT-STATE.md) and [owner register](OWNER-REQUEST-REGISTER.md). Embedded ChatGPT UI is disabled/deferred; original MCP remains connected. Historical paused-pilot/finite-slot statements below are not the current owner policy. Independent short setup, managed/prepared publication and proposal completion feedback remain open.
 
 Current October29 acceptance: the same native VibeScroll Assistant remains Monitoring after an actual ordinary MCP Save completed automatically, with no extra prompt or per-post approval. Owner rates100/day,20/hour/no-expiry are live. Results, matching transcript and real screenshots are shared/published and retained until deleted. Native Ready reply was read; mobile push delivery is not verified. [Evidence](../operations/evidence/launch-20261029-general-automatic-tiktok-accepted.json). Exact-version proposal/issue feedback remains the next backend phase.

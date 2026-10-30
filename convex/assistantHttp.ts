@@ -8,6 +8,13 @@ import {
 } from "../packages/contracts/prepared-service";
 import { cloudRetryRequest } from "../packages/contracts/cloud-retry";
 import { projectApplicationContextInput } from "../packages/contracts/project-application";
+import {
+  saveProjectProposalInput,
+  getProjectProposalInput,
+  listProjectProposalsInput,
+  chatProposalOperations,
+  chatProposalFailure,
+} from "../packages/contracts/chat-proposals";
 import { analysisVersionOperations } from "../packages/contracts/analysis-versions";
 import {
   widgetBrowseInput,
@@ -27,6 +34,18 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z.strictObject({
+    operation: z.literal("save_project_proposal"),
+    args: saveProjectProposalInput,
+  }),
+  z.strictObject({
+    operation: z.literal("get_project_proposal"),
+    args: getProjectProposalInput,
+  }),
+  z.strictObject({
+    operation: z.literal("list_project_proposals"),
+    args: listProjectProposalsInput,
+  }),
   z.strictObject({
     operation: z.literal("quote_video_analysis"),
     args: preparedQuoteRequest,
@@ -201,6 +220,7 @@ const operations = z.discriminatedUnion("operation", [
     .strict(),
 ]);
 export const tools = httpAction(async (ctx, request) => {
+  let operation: string | undefined;
   const deny = (status = 403) =>
     Response.json(
       {
@@ -216,9 +236,17 @@ export const tools = httpAction(async (ctx, request) => {
     if (!bearer || process.env.MCP_ENABLED !== "true") return deny(401);
     const input = operations.parse(
       await readAssistantBody(request, 262144, (value) =>
-        cloudCompletionEnvelope(value) ? 262144 : 8192,
+        cloudCompletionEnvelope(value)
+          ? 262144
+          : value &&
+              typeof value === "object" &&
+              "operation" in value &&
+              value.operation === "save_project_proposal"
+            ? 32768
+            : 8192,
       ),
     );
+    operation = input.operation;
     const expected = await ctx.runMutation(internal.assistant.throttle, {});
     const issuer = assistantIssuer(process.env.MCP_AUTH_ISSUER);
     if (!issuer || issuer !== expected.issuer) return deny(401);
@@ -492,6 +520,31 @@ export const tools = httpAction(async (ctx, request) => {
           },
         );
         break;
+      case "save_project_proposal":
+        value = await ctx.runMutation(internal.assistantProposals.save, {
+          ...input.args,
+          profileId: selectedProfile,
+          sourceId: input.args.sourceId as Id<"sources">,
+          projectId: input.args.projectId as Id<"repositories">,
+          analysisVersionId: input.args
+            .analysisVersionId as Id<"analysisVersions">,
+          proposalId: input.args.proposalId as Id<"proposals"> | undefined,
+        });
+        break;
+      case "get_project_proposal":
+        value = await ctx.runQuery(internal.assistantProposals.read, {
+          ...input.args,
+          profileId: selectedProfile,
+          proposalId: input.args.proposalId as Id<"proposals">,
+        });
+        break;
+      case "list_project_proposals":
+        value = await ctx.runQuery(internal.assistantProposals.list, {
+          ...input.args,
+          profileId: selectedProfile,
+          projectId: input.args.projectId as Id<"repositories"> | undefined,
+        });
+        break;
       case "search":
         value = await ctx.runQuery(internal.assistant.search, {
           ...input.args,
@@ -543,6 +596,23 @@ export const tools = httpAction(async (ctx, request) => {
     }
     return Response.json(value, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    if (operation && chatProposalOperations.has(operation)) {
+      const code =
+        error instanceof Error
+          ? error.message.match(
+              /\b(APPROVAL_STALE|IDEMPOTENCY_CONFLICT|POLICY_BLOCKED|INVALID_INPUT|LIMIT_REACHED):/,
+            )?.[1]
+          : undefined;
+      const failure = chatProposalFailure(code);
+      if (failure)
+        return Response.json(failure, {
+          status:
+            code === "APPROVAL_STALE" || code === "IDEMPOTENCY_CONFLICT"
+              ? 409
+              : 400,
+          headers: { "Cache-Control": "no-store" },
+        });
+    }
     if (
       error instanceof Error &&
       /\bPROFILE_SELECTION_REQUIRED:/.test(error.message)

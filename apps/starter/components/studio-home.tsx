@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ArrowRight, Bookmark, GitBranch, Link2 } from "lucide-react";
+import { ArrowRight, Bookmark, GitBranch, Link2 } from "./icons/iconoir";
 import { Button } from "@companynerve/ui";
 import {
   dashboardActions,
@@ -47,7 +47,7 @@ export function StudioHome({
   demo?: boolean;
 }) {
   const [dismissed, setDismissed] = useState<string[]>([]);
-  const [highlightStopped, setHighlightStopped] = useState(false);
+  const [overviewOpen, setOverviewOpen] = useState(false);
   const actions = dashboardActions({ sources, proposals, repositories, runs });
   const next =
     actions.find((a) => !dismissed.includes(a.key)) ?? actions.at(-1)!;
@@ -59,50 +59,37 @@ export function StudioHome({
       onOpenProposal(action.target);
     else go(action.destination);
   };
-  const recent = sources.filter((s) => s.state !== "deleted").slice(0, 3);
+  const recent = sources.filter((s) => s.state !== "deleted").slice(0, 6);
   const projects = repositories.filter((r) => r.enabled).slice(0, 3);
   return (
     <div className="studio-home">
-      <DashboardVisuals
-        sources={sources}
-        proposals={proposals}
-        repositories={repositories}
-        runs={runs}
-        go={go}
-        compact={compact}
-      >
+      <div className="quiet-home-start">
         <section className="studio-welcome" aria-label="Your next useful step">
           <div className="studio-next">
             <h2>{next.title}</h2>
             <p>{next.reason}</p>
-            <div className="row">
-              <Button
-                className={
-                  next.destination === "capture" && !highlightStopped
-                    ? "studio-cta"
-                    : ""
-                }
-                onPointerEnter={() => setHighlightStopped(true)}
-                onPointerDown={() => setHighlightStopped(true)}
-                onFocus={() => setHighlightStopped(true)}
-                onAnimationEnd={() => setHighlightStopped(true)}
-                disabled={busy || (readOnly && next.destination === "capture")}
-                onClick={() => open(next)}
-              >
-                {next.action}
-                <ArrowRight size={17} aria-hidden="true" />
-              </Button>
-              {next.key !== "capture" && (
+            {next.destination !== "capture" && (
+              <div className="row">
                 <Button
-                  variant="ghost"
-                  onClick={() =>
-                    setDismissed((current) => [...current, next.key])
-                  }
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => open(next)}
                 >
-                  Later
+                  {next.action}
+                  <ArrowRight size={17} aria-hidden="true" />
                 </Button>
-              )}
-            </div>
+                {next.key !== "capture" && (
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      setDismissed((current) => [...current, next.key])
+                    }
+                  >
+                    Later
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </section>
         <form
@@ -131,22 +118,7 @@ export function StudioHome({
             <ArrowRight size={20} aria-hidden="true" />
           </button>
         </form>
-        {organizationId && (
-          <KnowledgePreview
-            organizationId={organizationId}
-            demo={demo}
-            onOpen={() => go("library")}
-          />
-        )}
-      </DashboardVisuals>
-      <DashboardTrace
-        sources={sources}
-        proposals={proposals}
-        runs={runs}
-        onOpenSource={onOpenSource}
-        onOpenProposal={onOpenProposal}
-        go={go}
-      />
+      </div>
       <div className="studio-shelves">
         <section aria-labelledby="studio-knowledge">
           <div className="row spread">
@@ -161,7 +133,7 @@ export function StudioHome({
               {recent.map((s) => (
                 <li key={s._id ?? s.id}>
                   <button type="button" onClick={() => onOpenSource(s)}>
-                    <Bookmark size={19} aria-hidden="true" />
+                    <Bookmark size={20} />
                     <span>
                       <strong>{s.title}</strong>
                       <small>
@@ -225,6 +197,40 @@ export function StudioHome({
           )}
         </section>
       </div>
+      <details
+        className="quiet-overview"
+        onToggle={(event) => setOverviewOpen(event.currentTarget.open)}
+      >
+        <summary>Library overview and activity</summary>
+        {overviewOpen && (
+          <>
+            <DashboardVisuals
+              sources={sources}
+              proposals={proposals}
+              repositories={repositories}
+              runs={runs}
+              go={go}
+              compact={compact}
+            >
+              {organizationId && (
+                <KnowledgePreview
+                  organizationId={organizationId}
+                  demo={demo}
+                  onOpen={() => go("library")}
+                />
+              )}
+            </DashboardVisuals>
+            <DashboardTrace
+              sources={sources}
+              proposals={proposals}
+              runs={runs}
+              onOpenSource={onOpenSource}
+              onOpenProposal={onOpenProposal}
+              go={go}
+            />
+          </>
+        )}
+      </details>
       <section
         className="studio-review"
         aria-label="Project activity and decisions"

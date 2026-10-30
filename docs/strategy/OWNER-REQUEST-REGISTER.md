@@ -182,6 +182,24 @@ R097: Add the faster-diagnosis lessons, then continue simpler server preparation
 | Local execution now                                                   | Deferred under R023/R024 and the owner's explicit later instruction.                                                                                 |
 | Older benchmark chat recommends managed media services                | This conversation excludes ScrapeCreators/Transloadit under R013.                                                                                    |
 
+## Direct plan usage, October29
+
+R098: Replace Work Cloud dependence where supported with one-time Sign in with ChatGPT, worker-prepared images/transcript and direct subscription inference, reusable for project proposals. Work in small testable stages; authorized failed/incomplete posts may supply a later canary. The owner reports sending a request with no known response and asks whether the MIT project can already use the public flow. [The direct plan](DIRECT-CHATGPT-PLAN.md) and [ADR201](../adr/201-direct-chatgpt-plan-access-and-evidence-adapter.md) distinguish self-hosted public registration from hosted commercial access. Transport-free adaptation is implemented locally; hosted approval/client, OAuth, distributed renewal, live inference and production acceptance remain unverified. Preserve existing accepted routes until replacement acceptance.
+
+Later owner direction: stop this integration if hosted access is not yet possible. Hosted approval remains unverified, so work is paused. Retain the uncommitted local draft; no production activation, application submission/follow-up or deferred local workaround is authorized by this pause. Resume after provider access is verified and the owner requests continuation.
+
+## Chat workflows and the visual reader, October29
+
+R099: Make ChatGPT/Codex chats the near-term assistant interface for searching insights, applying them to projects, composing proposals and saving/updating proposals/feedback through authenticated MCP and suitable skills. Use existing credits for new server work while direct hosted plan use remains paused. Preserve durable exact-version state across chats. [Chat-first demo plan](CHAT-FIRST-DEMO.md), checkpoint1, covers the write-back gap beyond existing server-evaluation draft tools.
+
+R100: Make the web home screen a polished, scrollable view of the user's saved ready posts, with prominent source/playback, adjacent insights, project connections and progressive detail. Keep metadata-first lazy loading, deep links, real-time processing states and supported playback fallbacks. [Reader/feed checkpoints2–3](CHAT-FIRST-DEMO.md) define acceptance.
+
+R101: Prefer suitable assistant-ui components and share the accepted website presentation with a compact future MCP Apps view. The latest request authorizes this design direction; it does not immediately reenable the old disabled widget. Keep headless tools useful and avoid duplicate chat/backend implementations. [Checkpoint4](CHAT-FIRST-DEMO.md) requires actual supported-host acceptance before activation. R098 remains paused.
+
+## Visual simplification, October30
+
+R102: Quickly redesign the app toward assistant-ui/Codex, avoid overloading the interface, research a different icon library and use suitable shadcn components or MCP where available. [Design reference](../design/QUIET-APP-REDESIGN-2026-10-30.md) and [ADR203](../adr/203-quiet-app-shell-and-iconoir.md) record the local neutral shell, reused primitives, Iconoir MIT subset and collapsed secondary home content. No connected shadcn MCP was found. Saved-insight searches had bounded incomplete coverage. Local full checks and desktop/mobile browser acceptance passed; publication remains pending, with production unchanged.
+
 ## Source coverage and limits
 
 The audit used the visible owner conversation, current checkout/ADRs, dated production receipts, the October 26/28 handovers and a bounded read of **Compare video model options**. The originally named October 25 handover was found and read in the historical `cloud-p2-main-parity-20261024` checkout; it is absent from this compatible branch. Its implementation hypothesis is not current authority. The complete older main-branch R/P/N/C/M scope remains linked from the [launch index](../launch-plan/2026-10-23/README.md); this register does not mark that work accepted.

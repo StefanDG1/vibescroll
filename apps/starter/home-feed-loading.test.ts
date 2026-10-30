@@ -247,12 +247,10 @@ it("clears rendered and cached content on access loss and aborts pending reads",
 it("revalidates a detail read that raced the first live version observation", async () => {
   const { view, pending, fetch } = setup(page(1));
   render(view);
-  pending
-    .get("/api/feed/source-0?organizationId=workspace")!
-    .resolve({
-      ok: true,
-      json: async () => ({ id: "source-0", analysisVersionId: "old" }),
-    });
+  pending.get("/api/feed/source-0?organizationId=workspace")!.resolve({
+    ok: true,
+    json: async () => ({ id: "source-0", analysisVersionId: "old" }),
+  });
   await flush();
   render(view);
   hooks.live!([
@@ -272,16 +270,36 @@ it("revalidates a detail read that raced the first live version observation", as
       .detail,
   ).toBeUndefined();
   expect(fetch).toHaveBeenCalledTimes(2);
-  pending
-    .get("/api/feed/source-0?organizationId=workspace")!
-    .resolve({
-      ok: true,
-      json: async () => ({ id: "source-0", analysisVersionId: "new" }),
-    });
+  pending.get("/api/feed/source-0?organizationId=workspace")!.resolve({
+    ok: true,
+    json: async () => ({ id: "source-0", analysisVersionId: "new" }),
+  });
   await flush();
   tree = render(view);
   expect(
     elements(tree).find((node) => node.props.post?.id === "source-0")!.props
       .detail.analysisVersionId,
   ).toBe("new");
+});
+
+it("keeps the authorized shared poster when live metadata has no local thumbnail", () => {
+  const initial = page(1);
+  initial.items[0].thumbnailAssetIds = ["cached-shared-frame"];
+  const { view } = setup(initial);
+  render(view);
+  hooks.live!([
+    {
+      _id: "source-0",
+      state: "ready",
+      generation: 1,
+      title: "Cached post",
+      updatedAt: 1,
+      thumbnailAssetIds: [],
+    },
+  ]);
+  const tree = render(view);
+  expect(
+    elements(tree).find((node) => node.props.post?.id === "source-0")!.props
+      .post.thumbnailAssetIds,
+  ).toEqual(["cached-shared-frame"]);
 });

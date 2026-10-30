@@ -130,7 +130,12 @@ export function HomeFeed({
             state: source.state,
             generation: source.generation,
             authorName: source.linkPreview?.authorName ?? post.authorName,
-            thumbnailAssetIds: source.thumbnailAssetIds ?? [],
+            thumbnailAssetIds: [
+              ...new Set([
+                ...(source.thumbnailAssetIds ?? []),
+                ...post.thumbnailAssetIds,
+              ]),
+            ].slice(0, 3),
           },
         ];
       }),
@@ -513,7 +518,11 @@ function FeedArticle({
               />
             ) : (
               <PostThumbnail
-                candidates={detail?.thumbnailAssetIds ?? post.thumbnailAssetIds}
+                candidates={
+                  detail?.thumbnailAssetIds.length
+                    ? detail.thumbnailAssetIds
+                    : post.thumbnailAssetIds
+                }
                 kind={post.kind}
               />
             )}

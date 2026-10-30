@@ -1,7 +1,7 @@
 {
   "websiteBase": "c80038bc95ff10104036c92901f6d2211a73984f",
   "backendBase": "c862450aafa3f49e7756965a0bbc566f038323f1",
-  "status": "local candidate; exact CI/publication and real ChatGPT acceptance pending",
+  "status": "historical local candidate; final 6a9d3e1 published and accepted in the linked production receipt",
   "fullLocalCheckPassed": true,
   "nineOfficialAppBridgeCasesPassed": true,
   "syntheticOnlyBrowserWrites": true,
@@ -30,5 +30,6 @@
   "nativeDialogUnmountCleanupAdded": true,
   "ownerApprovedCumulativeEUR": 15.5,
   "approvedReleaseBatchUSD": 0.1,
-  "maximumNewAnalysisRuns": 0
+  "maximumNewAnalysisRuns": 0,
+  "productionReceipt": "launch-20261030-shared-proposals-compact-production.json"
 }

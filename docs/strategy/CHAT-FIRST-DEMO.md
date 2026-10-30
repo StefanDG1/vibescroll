@@ -92,3 +92,9 @@ Reader update: ADR205 is live at website6b2df2f, with the backend unchanged. Sou
 ## October30 active continuation
 
 R110 reactivates compact MCP UI after the owner explicitly asks for it. It follows the shared website proposal action, not a copied full application. ADR207 unifies normal-session website and MCP planning drafts, adds stable detail URLs and fixes repository/project namespace links. ADR208 reuses those accepted components behind the existing MCP Apps bridge. Advanced routes stay on the website. Direct hosted ChatGPT inference and local execution remain paused/deferred. These are candidates until their dated acceptance records say otherwise.
+
+## October30 shared proposal and compact host acceptance
+
+ADR207/208 are live at6a9d3e1. The original connected ChatGPT plugin opened the shared reader, loaded saved posts, expanded insights, chose a project, saved a private needs-context draft and opened its stable website URL. Continue in chat read version1 and returned a grounded plan and questions without changes. The normal website API refined the same object to version2, with no credits, analysis or implementation. This accepts the owner-host path; independent cold onboarding remains open. One supported Refresh tools plus exact-request retry recovered the first unconfirmed save; its original host error was not retained. Do not recreate OAuth or retry a changed draft.
+
+Next prioritize backend acceptance of independently entitled reuse of new service-prepared artifacts and deletion/takedown boundaries, then scoped issue/draft-PR handoff/completion feedback. Continue the full saved-ready-post feed/playback work without another wholesale shell redesign. Public Pro/add-on commerce, model/outcome ranking and communities remain explicit separate milestones. [Production evidence](../operations/evidence/launch-20261030-shared-proposals-compact-production.json).

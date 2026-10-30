@@ -38,7 +38,7 @@ Reserve atomically and settle once against the exact reservation. Replays never 
 
 ## Acceptance ledger
 
-- [ ] Requested-post associations remain separate from full-catalog browsing in production.
+- [x] Requested-post associations remain separate from full-catalog browsing in production. Independent authorized second-account acceptance reused one service-prepared version and eight byte-matched JPEGs without jobs, credits or full-catalog entitlement. [Receipt](../operations/evidence/launch-20261030-independent-service-cache-production.json).
 - [x] Full-catalog operator entitlement/toggle, metadata pages, detail and image checks pass production verification. Paid purchase remains separate.
 - [x] Owner admin access is enabled and read back without billing fabrication.
 - [ ] Each new team member's own Pro is enforced; team creation never funds another account.

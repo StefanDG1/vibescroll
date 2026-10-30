@@ -1,6 +1,6 @@
 # Signed GitHub issue observations for frozen proposals
 
-Date: October 30, 2026. Status: local candidate, not production acceptance. Continues ADR209 and owner requirements R062/R063/R099.
+Date: October 30, 2026. Status: deployed at8e97e18; real provider lifecycle acceptance remains open. Continues ADR209 and owner requirements R062/R063/R099.
 
 ## Decision
 
@@ -23,3 +23,5 @@ A GitHub App needs the Issues repository permission and an issues-event subscrip
 Focused proposal/transport tests cover exact binding, replay, foreign IDs/URLs, malformed locators, state ordering, concurrent edits/reports, deleted-source disclosure, signature denial and restore lock. Record final counts and production evidence in CURRENT-STATE and a dated receipt. Do not forge a live GitHub delivery with an operator secret as provider acceptance.
 
 [GitHub issues webhook contract](https://docs.github.com/en/webhooks/webhook-events-and-payloads#issues) documents GitHub App availability, issue action payloads and at least read-level Issues permission.
+
+Production publication: exact CI41105141135, two deterministic offline preparations,22 guards and actual compatible finish acknowledgement passed. Full local check passed1591 Vitest cases/3skips; Linux CI passed1589/5skips plus types, lint, Node/Python checks, builds and dependency audit. Existing MCP profile and the unchanged version2 proposal passed reads. No real issue, new scope, website build or analysis was created. [Receipt](../operations/evidence/launch-20261030-proposal-issue-events-production.json).

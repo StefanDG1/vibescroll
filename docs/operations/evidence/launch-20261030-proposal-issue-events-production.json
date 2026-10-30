@@ -1,0 +1,60 @@
+{
+  "publishedAtUTC": "2026-10-30T18:22:31.255232+00:00",
+  "status": "backend deployed; real signed-provider lifecycle canary open",
+  "backendCommit": "8e97e18c6aab2d8750b5b6ff10fb763e1c45e3fe",
+  "websiteCommit": "c51f8f09b032e4a6535aa543b03018422f149d1c",
+  "websiteDeployment": "dpl_6Yntv4fjynZ6F6rEdBLD8GDyEFNd",
+  "exactCI": 41105141135,
+  "ciVitestPassed": 1589,
+  "ciVitestSkipped": 5,
+  "localFullCheckPassed": true,
+  "localVitestPassed": 1591,
+  "localVitestSkipped": 3,
+  "deterministicOfflinePreparations": 2,
+  "releaseGuardsPassed": 22,
+  "actualCompatiblePublicationAcknowledged": true,
+  "publicationFinishAcknowledgement": "finish_push",
+  "components": 12,
+  "tables": 138,
+  "indexes": 301,
+  "schemaChanges": 0,
+  "indexChanges": 0,
+  "populatedScans": 0,
+  "backfills": 0,
+  "componentChanges": 0,
+  "newScopes": 0,
+  "newWebsiteBuilds": 0,
+  "newAnalysisRuns": 0,
+  "newProviderIssuesCreated": 0,
+  "newPullRequestsCreated": 0,
+  "productionMcpProfile": {
+    "automaticAnalysis": true,
+    "setupRequired": false,
+    "grantVersion": 12,
+    "expiresAt": null
+  },
+  "productionExistingProposal": {
+    "version": 2,
+    "review": "unreviewed",
+    "frozenHandoffPreserved": true,
+    "reportCount": 1,
+    "providerObservationAbsent": true
+  },
+  "behavior": "Existing signature-verified GitHub issue webhook binds the exact frozen title/body, repository and issue identity, then retains bounded open/closed observations independently from model reports. It rejects copied markers, foreign or replaced issues, expired/deleted source access, replay and older timestamps. Conflicting same-second states become unknown.",
+  "limits": [
+    "Real GitHub issue publication, configured Issues-event subscription and signed provider delivery remain unverified.",
+    "PR correlation, CI, merge and measured benefit are not implemented by this observation.",
+    "Existing website metadata does not yet display the new observation; permitted MCP proposal reads return it.",
+    "Planning-context checks remain unchanged."
+  ],
+  "budget": {
+    "cumulativeCapEUR": 15.5,
+    "suballocationUSD": 0.027,
+    "oldHoldsRetained": true,
+    "lastVercelUsageUSD": 18.28,
+    "conservativeHostingUpperUSD": 19.98,
+    "actualInfrastructureCostSettled": false,
+    "purchasesOrTopups": false
+  },
+  "productionUnsignedWebhookRejectedHTTP400": true
+}

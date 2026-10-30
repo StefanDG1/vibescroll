@@ -6,7 +6,7 @@ Read the [owner request register](../strategy/OWNER-REQUEST-REGISTER.md), [conti
 
 ## Accepted production baseline
 
-- Website commit: `c51f8f09b032e4a6535aa543b03018422f149d1c`. Backend remains `8974c3908c1e4a19f326188a9e889c8981fa5cc7`.
+- Website commit: `c51f8f09b032e4a6535aa543b03018422f149d1c`. Backend is `8e97e18c6aab2d8750b5b6ff10fb763e1c45e3fe`.
 - Website version: `0.1.0-alpha.20261030173606.gc51f8f09b032`.
 - Deployment: `dpl_6Yntv4fjynZ6F6rEdBLD8GDyEFNd`.
 - Library layout repair is live. Exact CI41100236714 and the32.956s fixed Basic build passed; staged exact health/readable geometry, same-build promotion and canonical alias/health passed. The canonical demo passed eight desktop/mobile × Tree/Folders × light/dark geometry cases. Actual signed-in desktop/mobile Tree screenshots and mobile Folders showed readable labels and no page overflow. The extracted CSS had incorrectly assigned24px badge dimensions to topic wrappers; the original standalone rule is restored. Backend and saved data are unchanged. [Repair receipt](evidence/launch-20261030-library-layout-production.json).
@@ -50,7 +50,7 @@ The comparison-only policy and exact Gateway test-key environment were removed a
 
 ## Current unfinished critical path
 
-ADR209 is live for frozen private issue handoffs and authenticated model-reported completion/blocked/failure data in the existing proposal record. The existing evaluated-library publisher is unchanged; direct chat-proposal publication, verified GitHub lifecycle and a real issue/PR canary remain open. Independent service-artifact cache reuse is accepted through the authorized second account in Chrome incognito: one ordinary Save attached the exact six-insight version, transcript and eight byte-matched JPEGs with zero credits/jobs. Both private-source boundaries and full-catalog denial passed. Paid commerce and destructive live takedown remain open. [Cache acceptance](evidence/launch-20261030-independent-service-cache-production.json).
+ADR209 remains live for frozen private handoffs and authenticated model reports. ADR210 is now deployed for bounded signed GitHub issue status, preserving the frozen package and reports. Real issue creation/subscription/delivery and PR/CI/merge acceptance remain open. [Backend release](evidence/launch-20261030-proposal-issue-events-production.json). The existing evaluated-library publisher is unchanged; direct chat-proposal publication, verified GitHub lifecycle and a real issue/PR canary remain open. Independent service-artifact cache reuse is accepted through the authorized second account in Chrome incognito: one ordinary Save attached the exact six-insight version, transcript and eight byte-matched JPEGs with zero credits/jobs. Both private-source boundaries and full-catalog denial passed. Paid commerce and destructive live takedown remain open. [Cache acceptance](evidence/launch-20261030-independent-service-cache-production.json).
 
 Owner approved a cumulative EUR15.50 ceiling and a USD0.10 shared-proposal/compact-UI release batch, with at most one backend publication, one included-credit Basic build and one private proposal canary. No new analysis, paid AI, purchase or top-up. All earlier financial holds, analysis capacity, protected sources and Vercel strictly belowUSD20 remain. The prior EUR15 record is historical. The bounded batch is published and accepted below. All infrastructure holds remain unsettled.
 
@@ -82,6 +82,6 @@ Private operational identity, protected source, unknown attempts, budget holds a
 
 Update this file in place after a verified production change. Preserve dated detailed receipts elsewhere. Record a new accepted commit, actual assertions, remaining limits and next checkpoint together.
 
-## Current local candidate
+## Latest backend checkpoint
 
-ADR210 adds bounded signed GitHub issue observations to existing frozen proposal handoffs, with no new table/index/component, MCP scope or publisher. Focused exact-binding/HMAC/replay/concurrency tests and root TypeScript pass; full checks, exact CI, actual compatibility guards, publication and real GitHub lifecycle acceptance remain pending. Production remains the accepted baseline above.
+ADR210 is deployed at8e97e18 with exact CI41105141135, full local checks, two deterministic offline preparations,22 release guards and actual compatible finish acknowledgement. No schema/index/component change, scan/backfill, new scope, website build or analysis occurred. The original MCP profile still has automatic analysis enabled with no setup required. The prior proposal is unchanged at version2/unreviewed with one report and no fabricated provider observation. An unsigned production webhook request returned HTTP400. A real signed GitHub issue lifecycle canary, PR/CI/merge correlation and website display remain open. [Receipt](evidence/launch-20261030-proposal-issue-events-production.json).

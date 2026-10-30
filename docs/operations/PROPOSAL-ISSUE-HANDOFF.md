@@ -14,6 +14,10 @@ Handoff reporting expires after thirty days. The saved proposal, issue package a
 
 A completion report can be recorded after repository HEAD advances without granting new planning authority. The separate planning read/edit can require refreshed project context before further planning. That is a project-context check, not a request to recreate the MCP connection.
 
-## Signed issue status candidate
+## Automatic GitHub issue status
 
-ADR210 adds a local candidate for automatic status observations from the existing signed GitHub App webhook. The initial issue must contain the exact prepared package; another issue cannot replace its binding. Open/closed status and GitHub edits remain separate from model completion, CI, merge and benefit. It is not deployed merely because this guide describes it. Actual issue publication and a real provider delivery remain unverified.
+ADR210 is deployed for signed issue observations. Create the issue using the exact prepared title and body, including its proposal link and recovery marker. The connected GitHub App needs at least read-level Issues permission and an issues-event subscription to the existing webhook endpoint. Do not reconnect VibeScroll solely for this feature.
+
+The first matching delivery binds that exact issue. Later opened/edited/closed/reopened deliveries update its bounded observation; another issue cannot replace it. The saved MCP proposal can expose open/closed status, observation time and whether GitHub text still matches the frozen package. Conflicting states with the same provider timestamp return unknown. An issue being closed does not prove implementation, CI, merge or benefit.
+
+A real issue publication and signed provider delivery are still unverified. The existing website metadata does not yet display this observation. PR lifecycle correlation remains separate.

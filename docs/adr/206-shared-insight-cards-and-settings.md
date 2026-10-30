@@ -1,6 +1,6 @@
 # Shared insight cards and focused post settings
 
-Date: October 30, 2026. Status: local candidate. Owner requirements R105–R108.
+Date: October 30, 2026. Status: deployed at website c80038b; backend unchanged. Owner requirements R105–R108.
 
 ## Decision
 
@@ -21,3 +21,5 @@ These are source-level discovery hints, not a repository suitability assessment.
 ## Verification
 
 Require full local checks and final TypeScript, actual drawer/card desktop and phone interaction, unchanged Library behavior, exact CI and staged same-build promotion. Parent source authorization/evidence tests inspect drawer contents through a test-only presenter. Separate real-component tests verify lazy closed/open rendering. Browser acceptance must cover Escape/focus, nested evidence/transcript navigation, mobile overflow and background scroll. No backend publication or analysis run is required.
+
+Acceptance: corrected root checks, final types/build, dependency audit, changed-source secret scan and exact CI41050137306 passed. Same-build promotion and canonical exact health passed. Actual post interaction includes four cards, retained540×960 preview, separate evidence, lazy transcript navigation, nested Escape/focus and phone geometry. Actual production Library Tree/Folders switching passed. A phone screenshot timed out; no screenshot acceptance is claimed. See [the dated receipt](../operations/evidence/launch-20261030-insight-cards-production.json). Project hints are discovery-only; the complete application/proposal bridge and real priority/activity signals remain open.

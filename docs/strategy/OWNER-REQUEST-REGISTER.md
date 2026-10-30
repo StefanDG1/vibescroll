@@ -218,6 +218,10 @@ R107: Recommend projects quickly using content/category/context fit, meaningful 
 
 R108: Reuse the existing Library insight row/expanded component shown in the owner's screenshot, or extract shared components from it. Do not create an unrelated second card design. Preserve Library interactions, proposal badges and source authority.
 
+R109: Preserve the existing Library tree diagram and folder view. Reusing insight controls on Posts must not replace either representation, its filing controls, remembered navigation or proposal badges. The deployed c80038b checkpoint retains both and has actual production switching acceptance; the navigation label Explore points to that same Library route.
+
+R105-R109 acceptance: [ADR206](../adr/206-shared-insight-cards-and-settings.md) and the [production receipt](../operations/evidence/launch-20261030-insight-cards-production.json) record the live five destinations, gear settings, reused insight control and retained Tree/Folders. R107 is partial: topic hints and reasons are live, but actual priority/activity ranking and direct proposal application remain open. No model call, backend publication or analysis ran for this checkpoint.
+
 ## Source coverage and limits
 
 The audit used the visible owner conversation, current checkout/ADRs, dated production receipts, the October 26/28 handovers and a bounded read of **Compare video model options**. The originally named October 25 handover was found and read in the historical `cloud-p2-main-parity-20261024` checkout; it is absent from this compatible branch. Its implementation hypothesis is not current authority. The complete older main-branch R/P/N/C/M scope remains linked from the [launch index](../launch-plan/2026-10-23/README.md); this register does not mark that work accepted.

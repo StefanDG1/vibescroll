@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { prepared } from "./chat-proposal-fixture";
+import { createHmac } from "node:crypto";
+import { proposalIssueLocator } from "../packages/contracts/proposal-work";
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
@@ -253,4 +255,190 @@ it("accepts a frozen-task report after HEAD advances without authorizing plannin
   await expect(f.prepare()).rejects.toThrow(/APPROVAL_STALE/);
   await f.t.run((ctx) => ctx.db.patch(f.projectId, { enabled: false }));
   await expect(f.report()).rejects.toThrow(/FORBIDDEN/);
+});
+
+async function issueEventFixture() {
+  const f = await handoffFixture();
+  const event = {
+    installationId: 42,
+    providerId: 55,
+    repository: "owned/synthetic",
+    issueId: 1234,
+    number: 42,
+    url: "https://github.com/owned/synthetic/issues/42",
+    title: f.handoff.title,
+    body: f.handoff.body,
+    state: "open",
+    updatedAt: Math.floor(Date.now() / 1000) * 1000,
+  };
+  const observe = (args = event) =>
+    f.t.mutation(internal.assistantProposalWork.observeIssue, args);
+  const read = async () =>
+    (await f.t.run((ctx) => ctx.db.get(f.proposal.proposalId)))!;
+  return { ...f, event, observe, stored: read };
+}
+
+it("binds a signed issue to the exact frozen handoff, preserves reports and records closed separately from completion", async () => {
+  const f = await issueEventFixture();
+  await f.report();
+  const before = await f.stored();
+  expect(await f.observe()).toBe(true);
+  expect(await f.observe()).toBe(false);
+  vi.advanceTimersByTime(2000);
+  expect(
+    await f.observe({
+      ...f.event,
+      state: "closed",
+      updatedAt: f.event.updatedAt + 2000,
+    }),
+  ).toBe(true);
+  const after = await f.stored();
+  expect(after).toMatchObject({
+    version: before.version,
+    review: before.review,
+  });
+  expect(after.detail.handoff.reports).toEqual(before.detail.handoff.reports);
+  expect(after.detail.handoff.githubIssue).toMatchObject({
+    provenance: "signed_github_webhook",
+    number: 42,
+    state: "closed",
+    bodyMatchesFrozen: true,
+  });
+  expect(after.detail.handoff.githubIssue).not.toHaveProperty(
+    "verifiedCompletion",
+  );
+  expect(
+    (
+      await f.assistant.query(internal.assistantProposals.read, {
+        proposalId: f.proposal.proposalId,
+      })
+    ).handoff?.githubIssue?.state,
+  ).toBe("closed");
+  expect(await f.t.run((ctx) => ctx.db.query("runs").take(1))).toEqual([]);
+  expect(await f.t.run((ctx) => ctx.db.query("issueAttempts").take(1))).toEqual(
+    [],
+  );
+});
+
+it("rejects copied markers, foreign repositories, malformed IDs, rebinds and stale or ambiguous issue ordering", async () => {
+  const f = await issueEventFixture();
+  for (const patch of [
+    { body: f.event.body + "\nDifferent issue" },
+    { title: "Other issue" },
+    { installationId: 99 },
+    { providerId: 99 },
+    { repository: "foreign/synthetic" },
+    { url: "https://github.com/foreign/synthetic/issues/42" },
+    { body: f.event.body.replace(f.proposal.proposalId, "notavalidconvexid") },
+    { updatedAt: Date.now() + 86400000 },
+  ])
+    expect(await f.observe({ ...f.event, ...patch })).toBe(false);
+  expect(await f.observe()).toBe(true);
+  expect(await f.observe({ ...f.event, issueId: 999 })).toBe(false);
+  expect(
+    await f.observe({
+      ...f.event,
+      number: 43,
+      url: "https://github.com/owned/synthetic/issues/43",
+    }),
+  ).toBe(false);
+  expect(
+    await f.observe({ ...f.event, updatedAt: f.event.updatedAt - 1000 }),
+  ).toBe(false);
+  expect(await f.observe({ ...f.event, state: "closed" })).toBe(true);
+  expect((await f.stored()).detail.handoff.githubIssue.state).toBe("unknown");
+  expect(await f.observe()).toBe(false);
+  vi.advanceTimersByTime(2000);
+  expect(
+    await f.observe({ ...f.event, updatedAt: f.event.updatedAt + 2000 }),
+  ).toBe(true);
+  expect((await f.stored()).detail.handoff.githubIssue.state).toBe("open");
+  expect(
+    proposalIssueLocator(
+      f.event.body + `\n<!-- vibescroll-handoff:${f.handoff.id} -->`,
+    ),
+  ).toBeNull();
+});
+
+it("retains provider observations and concurrent proposal edits/reports without following changed source authority", async () => {
+  const f = await issueEventFixture();
+  await Promise.all([
+    f.observe(),
+    f.report(),
+    f.assistant.mutation(internal.assistantProposals.save, {
+      ...f.saveInput,
+      proposalId: f.proposal.proposalId,
+      expectedVersion: 1,
+      expectedReview: "unreviewed",
+      key: "edit-while-issue-arrives",
+      body: { ...f.saveInput.body, title: "Refined proposal title" },
+    }),
+  ]);
+  let p = await f.stored();
+  expect(p.version).toBe(2);
+  expect(p.detail.title).toBe("Refined proposal title");
+  expect(p.detail.handoff.reports).toHaveLength(1);
+  expect(p.detail.handoff.githubIssue.state).toBe("open");
+  vi.advanceTimersByTime(2000);
+  await f.observe({
+    ...f.event,
+    body: f.event.body + "\nEdited on GitHub",
+    updatedAt: f.event.updatedAt + 2000,
+  });
+  p = await f.stored();
+  expect(p.detail.handoff.githubIssue.bodyMatchesFrozen).toBe(false);
+  expect(p.detail.handoff.body).toBe(f.handoff.body);
+  await f.t.run((ctx) => ctx.db.patch(f.sourceId, { state: "deleted" }));
+  expect(
+    await f.observe({
+      ...f.event,
+      state: "closed",
+      updatedAt: f.event.updatedAt + 3000,
+    }),
+  ).toBe(false);
+  await expect(
+    f.assistant.query(internal.assistantProposals.read, {
+      proposalId: f.proposal.proposalId,
+    }),
+  ).rejects.toThrow(/FORBIDDEN|SOURCE_UNAVAILABLE/);
+});
+
+it("authenticates the actual GitHub webhook before observing a proposal issue and preserves the restore lock", async () => {
+  const f = await issueEventFixture();
+  const secret = "synthetic-webhook-test-only";
+  vi.stubEnv("GITHUB_WEBHOOK_SECRET", secret);
+  const body = JSON.stringify({
+    action: "opened",
+    installation: { id: 42 },
+    repository: { id: 55, full_name: "owned/synthetic" },
+    issue: {
+      id: 1234,
+      number: 42,
+      html_url: f.event.url,
+      title: f.event.title,
+      body: f.event.body,
+      state: "open",
+      updated_at: new Date(f.event.updatedAt).toISOString(),
+    },
+  });
+  const input = {
+    body,
+    delivery: "synthetic-delivery-0123456789",
+    signature: "sha256=" + "0".repeat(64),
+  };
+  expect(await f.t.action(internal.githubEvents.webhook, input)).toMatchObject({
+    status: 400,
+    category: "SIGNATURE_INVALID",
+  });
+  expect((await f.stored()).detail.handoff.githubIssue).toBeUndefined();
+  input.signature =
+    "sha256=" + createHmac("sha256", secret).update(body).digest("hex");
+  expect(await f.t.action(internal.githubEvents.webhook, input)).toEqual({
+    status: 200,
+  });
+  expect((await f.stored()).detail.handoff.githubIssue.state).toBe("open");
+  vi.stubEnv("RESTORE_LOCK", "true");
+  expect(await f.t.action(internal.githubEvents.webhook, input)).toMatchObject({
+    status: 503,
+  });
 });

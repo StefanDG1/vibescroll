@@ -81,3 +81,7 @@ The current cumulative cap is EUR15.50, with the bounded USD0.10 proposal/UI rel
 Private operational identity, protected source, unknown attempts, budget holds and once-only release journals remain in the ignored operator outputs. The known local ledger is `C:/Code/VibeScroller/.worktrees/launch-20261022/outputs/launch-run/convex-rollout-budget.json`. Keep it out of commits. The active compatible checkout is `C:/Code/VibeScroller/.worktrees/link-cloud-compatible-20261025`; inspect its actual status before using these paths.
 
 Update this file in place after a verified production change. Preserve dated detailed receipts elsewhere. Record a new accepted commit, actual assertions, remaining limits and next checkpoint together.
+
+## Current local candidate
+
+ADR210 adds bounded signed GitHub issue observations to existing frozen proposal handoffs, with no new table/index/component, MCP scope or publisher. Focused exact-binding/HMAC/replay/concurrency tests and root TypeScript pass; full checks, exact CI, actual compatibility guards, publication and real GitHub lifecycle acceptance remain pending. Production remains the accepted baseline above.

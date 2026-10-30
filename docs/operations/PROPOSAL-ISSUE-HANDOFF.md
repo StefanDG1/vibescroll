@@ -13,3 +13,7 @@ You can start with: “Read my VibeScroll proposal, check the project, and prepa
 Handoff reporting expires after thirty days. The saved proposal, issue package and received reports remain retained under the existing result policy. Current access is checked again for every read/write. Issue text cannot grant coding, billing or publication authority.
 
 A completion report can be recorded after repository HEAD advances without granting new planning authority. The separate planning read/edit can require refreshed project context before further planning. That is a project-context check, not a request to recreate the MCP connection.
+
+## Signed issue status candidate
+
+ADR210 adds a local candidate for automatic status observations from the existing signed GitHub App webhook. The initial issue must contain the exact prepared package; another issue cannot replace its binding. Open/closed status and GitHub edits remain separate from model completion, CI, merge and benefit. It is not deployed merely because this guide describes it. Actual issue publication and a real provider delivery remain unverified.

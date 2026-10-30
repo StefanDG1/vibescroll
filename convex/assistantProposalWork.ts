@@ -4,6 +4,7 @@ import { assistantGrant } from "./lib/assistantPrincipal";
 import { readAuthorized } from "./assistantProposals";
 import { sourceFor } from "./assistant";
 import { audit, limit } from "./lib";
+import { sourceRetained } from "./lib/sourceAuthority";
 import { ensure, containsSecret } from "../packages/policy";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { socialHash } from "../packages/social/contracts";
@@ -13,6 +14,7 @@ import {
   reportProjectOutcomeInput,
   proposalIssueHandoff,
   proposalIssueBody,
+  proposalIssueLocator,
 } from "../packages/contracts/proposal-work";
 
 const profile = {
@@ -317,5 +319,113 @@ export const report = internalMutation({
       verifiedMerge: false,
       verifiedBenefit: false,
     };
+  },
+});
+
+// Only the signature-verified webhook invokes this exact-record observation.
+// It grants no access, publication, coding, CI, merge or benefit authority.
+export const observeIssue = internalMutation({
+  args: {
+    installationId: v.number(),
+    providerId: v.number(),
+    repository: v.string(),
+    issueId: v.number(),
+    number: v.number(),
+    url: v.string(),
+    title: v.string(),
+    body: v.string(),
+    state: v.string(),
+    updatedAt: v.number(),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, a) => {
+    const now = Date.now();
+    if (
+      process.env.RESTORE_LOCK === "true" ||
+      ![a.installationId, a.providerId, a.issueId, a.number].every(
+        (n) => Number.isSafeInteger(n) && n > 0,
+      ) ||
+      !Number.isSafeInteger(a.updatedAt) ||
+      a.updatedAt > now + 300000 ||
+      !["open", "closed"].includes(a.state) ||
+      a.title.length > 160 ||
+      a.body.length > 24000
+    )
+      return false;
+    const locator = proposalIssueLocator(a.body);
+    const id = locator && ctx.db.normalizeId("proposals", locator.proposalId);
+    const proposal = id ? await ctx.db.get(id) : null;
+    if (!locator || !proposal || proposal.organizationId !== locator.profileId)
+      return false;
+    const parsed = chatProposalDetail.safeParse(proposal.detail);
+    if (!parsed.success) return false;
+    const detail = parsed.data,
+      handoff = detail.handoff;
+    if (!handoff || handoff.id !== locator.handoffId) return false;
+    const repo = await ctx.db.get(proposal.repositoryId);
+    const organization = await ctx.db.get(proposal.organizationId);
+    const source = await ctx.db.get(proposal.sourceId);
+    if (
+      organization?.status !== "active" ||
+      !source ||
+      source.state === "deleted" ||
+      source.organizationId !== proposal.organizationId ||
+      !sourceRetained(source.sourceRetentionUntil) ||
+      !repo?.enabled ||
+      repo.organizationId !== proposal.organizationId ||
+      repo._id !== handoff.repositoryId ||
+      repo.fullName !== handoff.repository ||
+      repo.installationId !== a.installationId ||
+      repo.providerId !== a.providerId ||
+      repo.fullName !== a.repository ||
+      a.url !== `https://github.com/${repo.fullName}/issues/${a.number}` ||
+      a.updatedAt + 1000 < handoff.createdAt
+    )
+      return false;
+    const old = handoff.githubIssue;
+    if (
+      old &&
+      (old.issueId !== a.issueId ||
+        old.number !== a.number ||
+        old.url !== a.url ||
+        old.providerUpdatedAt > a.updatedAt)
+    )
+      return false;
+    const bodyMatchesFrozen =
+      a.title === handoff.title &&
+      (await socialHash(a.body)) === handoff.bodyHash;
+    if (!old && !bodyMatchesFrozen) return false;
+    const eventHash = await socialHash(canonicalJson(a));
+    if (old?.eventHash === eventHash) return false;
+    const sameTime = old?.providerUpdatedAt === a.updatedAt;
+    // GitHub timestamps have second resolution. Conflicting states at the same
+    // timestamp cannot establish ordering, even if one delivery arrived later.
+    if (sameTime && old.state === "unknown") return false;
+    const state = sameTime && old.state !== a.state ? "unknown" : a.state;
+    const githubIssue = {
+      provenance: "signed_github_webhook" as const,
+      issueId: a.issueId,
+      number: a.number,
+      url: a.url,
+      state,
+      providerUpdatedAt: a.updatedAt,
+      observedAt: now,
+      bodyMatchesFrozen: sameTime
+        ? old.bodyMatchesFrozen && bodyMatchesFrozen
+        : bodyMatchesFrozen,
+      eventHash,
+    };
+    const next = chatProposalDetail.parse({
+      ...detail,
+      handoff: { ...handoff, githubIssue },
+    });
+    // Provider facts must not invalidate an already-retained proposal at its byte limit.
+    if (new TextEncoder().encode(canonicalJson(next)).length > 100000)
+      return false;
+    await ctx.db.patch(proposal._id, {
+      detail: next,
+      updatedAt: Math.max(now, proposal.updatedAt + 1),
+    });
+    return true;
   },
 });

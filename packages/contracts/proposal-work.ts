@@ -33,6 +33,17 @@ export const proposalWorkReport = reportProjectOutcomeInput
     reportedAt: z.number().int().nonnegative(),
     provenance: z.literal("authenticated_model_report"),
   });
+export const proposalGithubIssueObservation = z.strictObject({
+  provenance: z.literal("signed_github_webhook"),
+  issueId: z.number().int().positive(),
+  number: z.number().int().positive(),
+  url: z.string().url().max(300),
+  state: z.enum(["open", "closed", "unknown"]),
+  providerUpdatedAt: z.number().int().nonnegative(),
+  observedAt: z.number().int().nonnegative(),
+  bodyMatchesFrozen: z.boolean(),
+  eventHash: hash,
+});
 export const proposalIssueHandoff = z.strictObject({
   schemaVersion: z.literal("proposal-issue-handoff-v1"),
   id: key,
@@ -51,7 +62,29 @@ export const proposalIssueHandoff = z.strictObject({
   createdAt: z.number().int().nonnegative(),
   expiresAt: z.number().int().nonnegative(),
   reports: z.array(proposalWorkReport).max(8),
+  githubIssue: proposalGithubIssueObservation.optional(),
 });
+
+// This untrusted locator is usable only after signature and repository checks.
+// Requiring the exact initial frozen body prevents a copied marker from binding
+// an unrelated issue. Later observations remain facts about the bound issue.
+export function proposalIssueLocator(body: string) {
+  const links = [
+    ...body.matchAll(
+      /^Proposal: https:\/\/scroll\.companynerve\.com\/app\/([a-z0-9]{1,100})\/proposals\/([a-z0-9]{1,100})\r?$/gm,
+    ),
+  ];
+  const markers = [
+    ...body.matchAll(/<!-- vibescroll-handoff:([A-Za-z0-9_-]{8,64}) -->/g),
+  ];
+  return links.length === 1 && markers.length === 1
+    ? {
+        profileId: links[0][1],
+        proposalId: links[0][2],
+        handoffId: markers[0][1],
+      }
+    : null;
+}
 
 export function proposalIssueBody(input: {
   title: string;

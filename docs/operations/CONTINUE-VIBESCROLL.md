@@ -70,3 +70,7 @@ Do not replay an old private release script merely because it once worked. Those
 Use `rg` with narrow paths, `--max-columns` and generated-file exclusions. In particular exclude `packages/widget/resources.generated.ts` from broad text output. Inspect every result of batched reads. Store large private responses and print only the fields needed for the decision.
 
 Use UTF-8 explicitly when reading/writing Windows documents. Use structured tool arguments or exact body files for PRs and JSON. Fail the script on each failed dependency rather than allowing later commands to create a misleading success exit. Do not interpolate untrusted text into shell code. Use known verified project IDs and refresh browser target/AX state when IDs become stale.
+
+## Existing Windows offline-check runtime
+
+Use the installed project tools instead of reinstalling caption dependencies. Prepend `C:/Code/VibeScroller/.worktrees/launch-20261022/outputs/tools/node-v24.22.1-win-x64` and `C:/Code/VibeScroller/.worktrees/launch-20261022/outputs/launch-run/prepared-evidence-oct29-local-python` to this command process’s PATH, then run `node scripts/run-offline.mjs pnpm check` from the compatible checkout. The Python wrapper pins its existing local caption dependency directory. Verify these paths if the checkout/tool installation moves. Preserve failed logs; a billing fixture timeout must be reproduced separately before changing unrelated production logic or increasing limits.

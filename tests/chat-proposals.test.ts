@@ -1,18 +1,14 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { analysisVersionFixture } from "./analysis-version-fixture";
 import { api, internal } from "../convex/_generated/api";
 import { createKnowledgeHandler } from "../packages/mcp/server";
 import { tools as assistantHttpTools } from "../convex/assistantHttp";
-const subject = "user_01234567890123456789012345";
-const clientId = "client_01234567890123456789012345";
-const scopes = [
-  "knowledge:read",
-  "context:read",
-  "suggestions:draft",
-  "analysis:request",
-  "analysis:execute",
-  "jobs:read",
-];
+import {
+  body,
+  clientId,
+  prepared,
+  scopes,
+  subject,
+} from "./chat-proposal-fixture";
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
   vi.clearAllTimers();
@@ -20,109 +16,6 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
-async function fixture() {
-  const f = await analysisVersionFixture(false);
-  const enrolled = await f.owner.mutation(api.analysisVersions.enroll, {
-    sourceId: f.sourceId,
-  });
-  vi.stubEnv(
-    "MCP_CLIENTS",
-    JSON.stringify([{ id: clientId, name: "Synthetic application", scopes }]),
-  );
-  const now = Date.now();
-  const projectId = await f.t.run((ctx) =>
-    ctx.db.insert("repositories", {
-      organizationId: f.org,
-      installationId: 42,
-      providerId: 55,
-      fullName: "owned/synthetic",
-      branch: "main",
-      sha: "a".repeat(40),
-      enabled: true,
-      confirmed: true,
-      profile: "A software product with testing and an AI assistant.",
-      profileVersion: 1,
-      manifest: ["README.md"],
-      status: "connected",
-      context: "PRIVATE REPOSITORY CODE MUST STAY OUT",
-      createdAt: now,
-      updatedAt: now,
-    }),
-  );
-  const grant = await f.owner.mutation(api.assistantGrants.save, {
-    organizationId: f.org,
-    clientId,
-    sources: [],
-    libraryScope: "all",
-    scopes,
-    expectedVersion: f.grant.version,
-    expiresAt: null,
-    acknowledged: true,
-    repositories: [
-      {
-        repositoryId: projectId,
-        baseSha: "a".repeat(40),
-        profileVersion: 1,
-        selectionVersion: 0,
-      },
-    ],
-  });
-  const identity = {
-    subject,
-    issuer: "https://fixture.authkit.app",
-    client_id: clientId,
-    scope: scopes.join(" "),
-    sid: "app_consent_01234567890123456789012345",
-  };
-  const assistant = f.t.withIdentity(identity);
-  const input = { sourceId: f.sourceId, projectId };
-  return {
-    ...f,
-    assistant,
-    identity,
-    projectId,
-    versionId: enrolled.versionId,
-    grant,
-    input,
-    read: (args = input) =>
-      assistant.query(internal.assistant.projectApplicationContext, args),
-  };
-}
-
-const body = {
-  title: "Review a useful idea for this project",
-  disposition: "needs_context" as const,
-  currentProblem: "The project profile may benefit from this source idea.",
-  proposedChange:
-    "Inspect the current implementation before choosing a change.",
-  benefitHypothesis:
-    "This might improve the workflow, subject to verification.",
-  risks: ["The project code has not been inspected."],
-  nonGoals: ["No implementation starts here."],
-  acceptanceCriteria: ["Verify the source claim against current project code."],
-  verificationNeeds: ["Inspect the selected repository revision."],
-};
-async function prepared() {
-  const f = await fixture();
-  const context = await f.read();
-  const input = {
-    ...f.input,
-    analysisVersionId: f.versionId,
-    insightIds: context.source.insights.map((i: any) => i.id),
-    contextHash: context.contextHash,
-    expectedVersion: 0,
-    key: "create-chat-proposal-one",
-    body,
-  };
-  return {
-    ...f,
-    context,
-    input,
-    save: (args = input) =>
-      f.assistant.mutation(internal.assistantProposals.save, args),
-  };
-}
-
 it("saves a profile-level proposal in existing records and reopens it without model calls or evidence copies", async () => {
   const f = await prepared();
   const network = vi.fn(() => {
@@ -430,6 +323,41 @@ it("routes save, read and list through MCP2 and authenticated HTTP while rejecti
   expect(invoke).not.toHaveBeenCalled();
   const saved = (await send("save_project_proposal", f.input)).result
     .structuredContent;
+  const preparedIssue = (
+    await send("prepare_project_issue", {
+      proposalId: saved.proposalId,
+      expectedVersion: saved.version,
+      expectedReview: saved.review,
+      contextHash: saved.contextHash,
+      key: "prepare-through-real-relay",
+    })
+  ).result.structuredContent;
+  expect(preparedIssue).toMatchObject({
+    publicationStarted: false,
+    creditsSpent: 0,
+  });
+  const report = {
+    proposalId: saved.proposalId,
+    handoffId: preparedIssue.handoff.id,
+    key: "report-through-real-relay",
+    status: "blocked",
+    summary:
+      "Repository inspection is still required. No implementation was attempted.",
+    workUrls: [],
+    commitSha: null,
+  };
+  expect(
+    (
+      await send("report_project_outcome", report, [
+        "knowledge:read",
+        "context:read",
+      ])
+    ).error,
+  ).toBeDefined();
+  expect(
+    (await send("report_project_outcome", report)).result.structuredContent,
+  ).toMatchObject({ verifiedMerge: false, report: { status: "blocked" } });
+
   expect(saved).toMatchObject({
     version: 1,
     body,
@@ -444,8 +372,8 @@ it("routes save, read and list through MCP2 and authenticated HTTP while rejecti
     (await send("list_project_proposals", { profileId: f.org })).result
       .structuredContent.items,
   ).toHaveLength(1);
-  expect(invoke).toHaveBeenCalledTimes(3);
-  expect(provider).toHaveBeenCalledTimes(3);
+  expect(invoke).toHaveBeenCalledTimes(5);
+  expect(provider).toHaveBeenCalledTimes(5);
   const stale = (
     await send("save_project_proposal", {
       ...f.input,

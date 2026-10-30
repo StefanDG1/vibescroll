@@ -1,3 +1,7 @@
+import {
+  prepareProjectIssueInput,
+  reportProjectOutcomeInput,
+} from "../packages/contracts/proposal-work";
 import { httpAction } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
@@ -34,6 +38,14 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z.strictObject({
+    operation: z.literal("prepare_project_issue"),
+    args: prepareProjectIssueInput,
+  }),
+  z.strictObject({
+    operation: z.literal("report_project_outcome"),
+    args: reportProjectOutcomeInput,
+  }),
   z.strictObject({
     operation: z.literal("save_project_proposal"),
     args: saveProjectProposalInput,
@@ -519,6 +531,20 @@ export const tools = httpAction(async (ctx, request) => {
               Id<"analysisVersions"> | undefined,
           },
         );
+        break;
+      case "prepare_project_issue":
+        value = await ctx.runMutation(internal.assistantProposalWork.prepare, {
+          ...input.args,
+          profileId: selectedProfile,
+          proposalId: input.args.proposalId as Id<"proposals">,
+        });
+        break;
+      case "report_project_outcome":
+        value = await ctx.runMutation(internal.assistantProposalWork.report, {
+          ...input.args,
+          profileId: selectedProfile,
+          proposalId: input.args.proposalId as Id<"proposals">,
+        });
         break;
       case "save_project_proposal":
         value = await ctx.runMutation(internal.assistantProposals.save, {

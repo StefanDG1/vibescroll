@@ -17,6 +17,7 @@ import type * as analysisVersionFrames from "../analysisVersionFrames.js";
 import type * as aiPreferences from "../aiPreferences.js";
 import type * as assets from "../assets.js";
 import type * as assistant from "../assistant.js";
+import type * as assistantProposalWork from "../assistantProposalWork.js";
 import type * as assistantProposals from "../assistantProposals.js";
 import type * as projectPlanning from "../projectPlanning.js";
 import type * as assistantWidget from "../assistantWidget.js";
@@ -170,6 +171,7 @@ declare const fullApi: ApiFromModules<{
   assets: typeof assets;
   assistant: typeof assistant;
   assistantProposals: typeof assistantProposals;
+  assistantProposalWork: typeof assistantProposalWork;
   projectPlanning: typeof projectPlanning;
   assistantWidget: typeof assistantWidget;
   assistantEventRuntime: typeof assistantEventRuntime;

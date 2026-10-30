@@ -48,6 +48,8 @@ The comparison-only policy and exact Gateway test-key environment were removed a
 
 ## Current unfinished critical path
 
+ADR209 is the current local candidate: one frozen private issue handoff and authenticated model-reported completion/blocked/failure data in the existing proposal record. It is not yet deployed. The existing evaluated-library publisher is unchanged; direct chat-proposal publication, verified GitHub lifecycle and a real issue/PR canary remain open. Independent new service-artifact cache acceptance awaits the second-account browser session; isolated reference-only reuse tests pass.
+
 Owner approved a cumulative EUR15.50 ceiling and a USD0.10 shared-proposal/compact-UI release batch, with at most one backend publication, one included-credit Basic build and one private proposal canary. No new analysis, paid AI, purchase or top-up. All earlier financial holds, analysis capacity, protected sources and Vercel strictly belowUSD20 remain. The prior EUR15 record is historical. The bounded batch is published and accepted below. All infrastructure holds remain unsettled.
 
 Latest owner direction R110 reactivates a compact MCP UI after the shared website proposal action. ADR207/208 are deployed and accepted for the bounded owner workflow. Direct hosted ChatGPT inference and local execution remain paused/deferred.

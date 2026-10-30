@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { proposalIssueHandoff } from "./proposal-work";
 import { analysisVersionOutput } from "./analysis-versions";
 
 const id = z.string().min(1).max(100);
@@ -37,6 +38,7 @@ export const chatProposalBinding = z.strictObject({
 });
 export const chatProposalDetail = chatProposalBody.extend({
   schemaVersion: z.literal("chat-project-proposal-v1"),
+  handoff: proposalIssueHandoff.optional(),
   repositoryId: id,
   baseSha: z.string().regex(/^[a-f0-9]{40}$/),
   profileVersion: z.number().int().positive(),
@@ -107,6 +109,8 @@ export const listProjectProposalsInput = z.strictObject({
 });
 
 export const chatProposalOperations = new Set([
+  "prepare_project_issue",
+  "report_project_outcome",
   "save_project_proposal",
   "get_project_proposal",
   "list_project_proposals",

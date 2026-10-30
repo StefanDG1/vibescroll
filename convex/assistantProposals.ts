@@ -23,7 +23,10 @@ import {
 
 const profile = { profileId: v.optional(v.id("organizations")) };
 
-async function readAuthorized(ctx: QueryCtx, proposal: Doc<"proposals">) {
+export async function readAuthorized(
+  ctx: QueryCtx,
+  proposal: Doc<"proposals">,
+) {
   ensure(
     isChatProposalDetail(proposal.detail),
     "INVALID_INPUT",
@@ -75,6 +78,7 @@ function snapshot(
       detail._chat.clientId === "vibescroll_web"
         ? ("web_planning" as const)
         : ("chat_planning" as const),
+    handoff: detail.handoff ?? null,
     repositoryCodeIncluded: false as const,
     creditsSpent: 0 as const,
     analysisStarted: false as const,
@@ -267,6 +271,7 @@ export async function saveProjectProposalCore(
     : null;
   const detail = chatProposalDetail.parse({
     ...input.body,
+    ...(proposal?.detail.handoff ? { handoff: proposal.detail.handoff } : {}),
     schemaVersion: "chat-project-proposal-v1",
     repositoryId: context.project.id,
     baseSha: context.project.baseSha,
@@ -298,7 +303,7 @@ export async function saveProjectProposalCore(
     },
   });
   ensure(
-    new TextEncoder().encode(canonicalJson(detail)).length <= 60000,
+    new TextEncoder().encode(canonicalJson(detail)).length <= 100000,
     "INVALID_INPUT",
     "This proposal exceeds its stored size bound.",
   );

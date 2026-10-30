@@ -1,4 +1,5 @@
 "use client";
+import { ProjectProposalComposer } from "./project-proposal-composer";
 import { PostInsightReader } from "./post-insight-reader";
 import { InsightCardControl } from "./insight-card-control";
 import { SettingsPanel } from "./settings-panel";
@@ -118,6 +119,7 @@ import type { ImportPreview } from "../../../packages/instagram-import";
 type Initial = {
   workspaceSlice?:
     | "source"
+    | "proposal"
     | "library"
     | "posts"
     | "connections"
@@ -914,10 +916,15 @@ export function Console({
             operation,
             code: body.code ?? "UNKNOWN",
           });
-        throw new Error(body.error);
+        throw Object.assign(new Error(body.error), {
+          code: body.code,
+          outcome: "rejected",
+        });
       }
       if (
         [
+          "projectPlanningContext",
+          "projectProposalSave",
           "workCloudTextPreview",
           "workCloudTextApprove",
           "checkPersonalSession",
@@ -1889,7 +1896,12 @@ export function Console({
                           (p) => p.repositoryId === id(r),
                         );
                         return (
-                          <article className="panel atlas-project" key={id(r)}>
+                          <article
+                            className="panel atlas-project"
+                            key={id(r)}
+                            id={`repository-${id(r)}`}
+                            tabIndex={-1}
+                          >
                             <GitBranch size={24} aria-hidden="true" />
                             <h2>
                               {r.fullName ?? r.name ?? "Selected project"}
@@ -5158,33 +5170,34 @@ export function SourceDetail({
                   >
                     <p>{i.claim}</p>
                     {i.interpretation && <p>{i.interpretation}</p>}
-                    {projectSuggestions?.versionId ===
-                      (detail.analysisVersion?.id ?? null) &&
-                    projectSuggestions.items.length > 0 ? (
-                      <div className="insight-project-suggestions">
-                        <h4>Suggested projects</h4>
-                        {projectSuggestions.items.map((project: any) => (
-                          <Link
-                            key={project.id}
-                            prefetch={false}
-                            href={`/app/${org}/projects/${project.id}`}
-                            className="project-choice-row"
-                          >
-                            <span>
-                              {project.name}
-                              <small>
-                                Topic overlap:{" "}
-                                {project.topics
-                                  .map((t: string) => t.replaceAll("_", " "))
-                                  .join(", ")}
-                              </small>
-                            </span>
-                            <span>
-                              Review <ArrowRight size={16} aria-hidden="true" />
-                            </span>
-                          </Link>
-                        ))}
-                      </div>
+                    {detail.analysisVersion?.id ? (
+                      <ProjectProposalComposer
+                        key={`${sourceId}:${detail.analysisVersion.id}:${i.id}`}
+                        organizationId={org}
+                        sourceId={sourceId}
+                        analysisVersionId={detail.analysisVersion.id}
+                        insight={{
+                          id: i.id,
+                          title: i.title || i.claim,
+                          claim: i.claim,
+                        }}
+                        projects={repos
+                          .filter(
+                            (r: any) =>
+                              r.enabled &&
+                              r.confirmed &&
+                              r.status === "connected",
+                          )
+                          .map((r: any) => ({ id: id(r), name: r.fullName }))}
+                        suggestions={
+                          projectSuggestions?.versionId ===
+                          detail.analysisVersion.id
+                            ? projectSuggestions.items
+                            : []
+                        }
+                        disabled={readOnly || !canSuggestCategories || demo}
+                        call={strictCall}
+                      />
                     ) : (
                       <a className="button" href="#source-analysis-actions">
                         Choose a project

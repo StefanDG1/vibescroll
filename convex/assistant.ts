@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Id, Doc } from "./_generated/dataModel";
 import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
-import { audit, limit } from "./lib";
+import { access, audit, limit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { classifySourceUrl } from "../packages/sources/classify";
 import { postDisplayTitle } from "../packages/sources/display";
@@ -23,15 +23,23 @@ import {
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { teamSubscriptionCurrent } from "./lib/accountSubscription";
 import { internal } from "./_generated/api";
-import { assistantProject } from "./lib/assistantProject";
+import {
+  assistantProject,
+  currentPlanningProject,
+} from "./lib/assistantProject";
 import { evaluationCurrent } from "./knowledge";
 import { createIssueCore } from "./issues";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
-import { selectedAnalysis, retainedVersion } from "./lib/analysisHistory";
+import {
+  historySource,
+  selectedAnalysis,
+  retainedVersion,
+} from "./lib/analysisHistory";
 import {
   assistantGrantActive,
+  isAssistantIdentity,
   type AssistantScope,
 } from "../packages/policy/assistant";
 import {
@@ -1160,7 +1168,15 @@ export const projectApplicationContext = internalQuery({
     codingAuthorized: v.literal(false),
     publicationAuthorized: v.literal(false),
   }),
-  handler: projectApplicationContextCore,
+  handler: async (ctx, args) => {
+    const result = await projectApplicationContextCore(ctx, args);
+    ensure(
+      result.grantVersion !== null,
+      "FORBIDDEN",
+      "Use the normal website planning endpoint for app sessions.",
+    );
+    return { ...result, grantVersion: result.grantVersion };
+  },
 });
 
 export async function projectApplicationContextCore(
@@ -1180,23 +1196,31 @@ export async function projectApplicationContextCore(
     "FORBIDDEN",
     "Choose a saved post in the current workspace.",
   );
-  const reader = await assistantGrant(
-    ctx,
-    row.organizationId,
-    "knowledge:read",
-  );
-  const source = await sourceFor(ctx, reader, row._id);
+  const identity = await ctx.auth.getUserIdentity();
+  const viaAssistant = !!identity && isAssistantIdentity(identity);
+  const reader = viaAssistant
+    ? await assistantGrant(ctx, row.organizationId, "knowledge:read")
+    : {
+        ...(await access(ctx, row.organizationId)),
+        grant: null,
+        client: { id: "vibescroll_web" },
+      };
+  const source =
+    viaAssistant && reader.grant
+      ? await sourceFor(ctx, reader, row._id)
+      : (await historySource(ctx, row._id)).source;
   ensure(
     source?.state === "ready",
     "SOURCE_UNAVAILABLE",
     "Choose a completed retained analysis.",
   );
-  const projectReader = await assistantGrant(
-    ctx,
-    row.organizationId,
-    "context:read",
-  );
-  const project = await assistantProject(ctx, projectReader, args.projectId);
+  const project = viaAssistant
+    ? await assistantProject(
+        ctx,
+        await assistantGrant(ctx, row.organizationId, "context:read"),
+        args.projectId,
+      )
+    : await currentPlanningProject(ctx, row.organizationId, args.projectId);
   const selected = await selectedAnalysis(ctx, source);
   const versionId = args.analysisVersionId ?? selected?.metadata.id;
   ensure(
@@ -1227,7 +1251,7 @@ export async function projectApplicationContextCore(
       )
     : output.insights.slice(0, 8);
   const data = {
-    grantVersion: reader.grant.version,
+    grantVersion: reader.grant?.version ?? null,
     source: {
       id: source._id,
       analysisVersionId: version._id,

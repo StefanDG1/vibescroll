@@ -79,8 +79,8 @@ async function call(
     },
   );
 }
-it("temporarily omits production embedded UI while retaining native analysis tools and headless metadata", async () => {
-  expect(embeddedUiEnabled).toBe(false);
+it("retains a headless mode without changing native analysis tools", async () => {
+  expect(embeddedUiEnabled).toBe(true);
   const response = await packet(
     await call(
       "tools/list",
@@ -95,7 +95,7 @@ it("temporarily omits production embedded UI while retaining native analysis too
       ],
       invoke,
       "2026-07-28",
-      { events: true, media: true, widget: embeddedUiEnabled },
+      { events: true, media: true, widget: false },
     ),
   );
   const tools = response.result.tools;
@@ -117,7 +117,7 @@ it("temporarily omits production embedded UI while retaining native analysis too
   expect(tools.every((t: any) => !t._meta?.ui)).toBe(true);
   const resources = await packet(
     await call("resources/list", {}, ["knowledge:read"], invoke, "2026-07-28", {
-      widget: embeddedUiEnabled,
+      widget: false,
     }),
   );
   expect(resources.result?.resources ?? []).toEqual([]);
@@ -616,4 +616,49 @@ it("accepts exact direct-source metadata URLs under links:save and keeps unsuppo
     expect(result.result.isError).toBe(true);
     expect(invoke).not.toHaveBeenCalled();
   }
+});
+
+it("exposes compact resources and shared proposal tools to the app without changing their OAuth scopes", async () => {
+  const response = await packet(
+    await call(
+      "tools/list",
+      {},
+      [
+        "knowledge:read",
+        "context:read",
+        "suggestions:draft",
+        "jobs:read",
+        "links:save",
+      ],
+      invoke,
+      "2026-07-28",
+      { widget: embeddedUiEnabled },
+    ),
+  );
+  const tools = response.result.tools;
+  for (const name of [
+    "open_vibescroll",
+    "render_vibescroll_card",
+    "fetch",
+    "save_link",
+    "get_project_application_context",
+    "save_project_proposal",
+  ])
+    expect(
+      tools.find((t: any) => t.name === name)?._meta.ui.visibility,
+    ).toContain("app");
+  const draft = tools.find((t: any) => t.name === "save_project_proposal");
+  expect(draft._meta.securitySchemes[0].scopes).toEqual([
+    "knowledge:read",
+    "context:read",
+    "suggestions:draft",
+  ]);
+  const resources = await packet(
+    await call("resources/list", {}, ["knowledge:read"], invoke, "2026-07-28", {
+      widget: true,
+    }),
+  );
+  expect(
+    resources.result.resources.some((r: any) => r.uri.includes("/card/")),
+  ).toBe(true);
 });

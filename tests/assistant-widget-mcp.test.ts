@@ -182,7 +182,7 @@ it("renders ordinary fetched results as inline cards without changing headless c
   expect(
     listed.result.tools.find(
       (tool: { name: string }) => tool.name === "get_job_status",
-    )._meta.ui,
+    )._meta.ui?.resourceUri,
   ).toBeUndefined();
   const value = {
     id: "source-id~2",

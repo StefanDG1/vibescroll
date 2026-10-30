@@ -15,6 +15,7 @@ export const insightSchema = z.object({
       generation: z.number(),
       revision: z.number(),
       insightId: z.string(),
+      analysisVersionId: z.string().optional(),
     })
     .optional(),
   evidence: z.array(z.record(z.string(), z.unknown())).default([]),
@@ -31,6 +32,7 @@ export const sourceSchema = z.object({
   url: z.string(),
   insights: z.array(insightSchema).default([]),
   more_ideas: z.boolean().optional(),
+  analysisVersionId: z.string().optional(),
 });
 export type Source = z.infer<typeof sourceSchema>;
 export const profileSchema = z.object({
@@ -72,6 +74,8 @@ export function fetchSource(data: ToolRecord): Source {
     revision:
       (parsed.insights as Insight[] | undefined)?.[0]?.reference?.revision ?? 0,
     more_ideas: data.more_ideas,
+    analysisVersionId: (parsed.insights as Insight[] | undefined)?.[0]
+      ?.reference?.analysisVersionId,
   });
 }
 export function evidenceLabel(reference: ToolRecord): string {
@@ -109,7 +113,8 @@ export async function reauthorizeSources(
       if (
         current.id !== source.id ||
         current.generation !== source.generation ||
-        current.revision !== source.revision
+        current.revision !== source.revision ||
+        current.analysisVersionId !== source.analysisVersionId
       )
         throw new Error(
           "Source evidence changed. Refresh and select its current insights before sharing or exporting.",

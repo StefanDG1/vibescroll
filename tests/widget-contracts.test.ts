@@ -130,3 +130,61 @@ it("rejects unexpected private fields and oversized widget result envelopes", ()
     }),
   ).toThrow();
 });
+
+it("does not use a selected older analysis version after the retained selection changes", async () => {
+  const result = (version: string) => ({
+    id: "source",
+    title: "Saved",
+    url: "https://scroll.companynerve.com/app/org/posts/source",
+    text: JSON.stringify({
+      state: "ready",
+      insights: [
+        {
+          id: "idea",
+          title: "Idea",
+          claim: "Claim",
+          reference: {
+            sourceId: "source",
+            generation: 1,
+            revision: 10,
+            insightId: "idea",
+            analysisVersionId: version,
+          },
+          evidence: [],
+        },
+      ],
+    }),
+  });
+  const source = fetchSource(result("old-version"));
+  expect(source.analysisVersionId).toBe("old-version");
+  await expect(
+    reauthorizeSources(async () => result("new-version"), "org", [source]),
+  ).rejects.toThrow("Source evidence changed");
+});
+it("distinguishes a returned draft rejection from an unknown tool outcome without dumping tool content", () => {
+  expect.assertions(4);
+  try {
+    decodeToolResult({
+      isError: true,
+      structuredContent: {
+        code: "APPROVAL_STALE",
+        private: "must never appear",
+      },
+    });
+  } catch (error) {
+    expect(error).toMatchObject({
+      code: "APPROVAL_STALE",
+      outcome: "rejected",
+    });
+    expect(String(error)).not.toContain("must never appear");
+  }
+  try {
+    decodeToolResult({
+      isError: true,
+      structuredContent: { code: "UNKNOWN", private: "must never appear" },
+    });
+  } catch (error) {
+    expect(error).not.toHaveProperty("outcome");
+    expect(String(error)).not.toContain("must never appear");
+  }
+});

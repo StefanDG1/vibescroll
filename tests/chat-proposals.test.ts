@@ -559,3 +559,148 @@ it("does not recreate a deleted proposal when an update is retried", async () =>
   ).rejects.toThrow(/FORBIDDEN/);
   expect(await f.t.run((ctx) => ctx.db.query("proposals").take(2))).toEqual([]);
 });
+
+async function webPrepared() {
+  const f = await prepared();
+  const args = {
+    ...f.input,
+    analysisVersionId: f.versionId,
+    insightIds: f.context.source.insights.map((i: { id: string }) => i.id),
+  };
+  const context = await f.owner.query(api.projectPlanning.context, {
+    sourceId: args.sourceId,
+    projectId: args.projectId,
+    analysisVersionId: args.analysisVersionId,
+    insightIds: args.insightIds,
+  });
+  const input = {
+    ...args,
+    contextHash: context.contextHash,
+    key: "web-proposal-create-one",
+  };
+  return {
+    ...f,
+    webContext: context,
+    webInput: input,
+    webSave: () => f.owner.mutation(api.projectPlanning.save, input),
+  };
+}
+
+it("creates one website draft for duplicate requests and exposes the same exact version to MCP", async () => {
+  const f = await webPrepared();
+  const [one, two] = await Promise.all([f.webSave(), f.webSave()]);
+  expect(one.proposalId).toBe(two.proposalId);
+  expect(one).toMatchObject({
+    origin: "web_planning",
+    creditsSpent: 0,
+    analysisStarted: false,
+    codingAuthorized: false,
+    publicationAuthorized: false,
+  });
+  expect(JSON.stringify(one)).not.toContain(
+    "PRIVATE REPOSITORY CODE MUST STAY OUT",
+  );
+  const chat = await f.assistant.query(internal.assistantProposals.read, {
+    proposalId: one.proposalId,
+  });
+  expect(chat).toMatchObject({
+    proposalId: one.proposalId,
+    body,
+    version: 1,
+    analysisVersionId: f.versionId,
+  });
+  const edited = await f.assistant.mutation(internal.assistantProposals.save, {
+    ...f.input,
+    contextHash: chat.contextHash,
+    proposalId: one.proposalId,
+    expectedVersion: 1,
+    expectedReview: "unreviewed",
+    key: "chat-refine-web-proposal",
+    body: { ...body, title: "Refined in chat" },
+  });
+  expect(edited.version).toBe(2);
+  expect(await f.webSave()).toMatchObject({
+    proposalId: one.proposalId,
+    version: 2,
+    replayed: true,
+    body: { title: "Refined in chat" },
+  });
+  expect(
+    (await f.owner.query(api.product.proposal, { id: one.proposalId })).version,
+  ).toBe(2);
+});
+
+it("lets a normal app session plan without MCP setup, while revoked assistant access stays denied", async () => {
+  const f = await webPrepared();
+  await f.owner.mutation(api.assistantGrants.revoke, {
+    id: f.grant.id,
+    expectedVersion: f.grant.version,
+  });
+  vi.stubEnv("MCP_ENABLED", "false");
+  const saved = await f.webSave();
+  expect(saved.origin).toBe("web_planning");
+  await expect(
+    f.assistant.query(internal.assistantProposals.read, {
+      proposalId: saved.proposalId,
+    }),
+  ).rejects.toThrow(/FORBIDDEN/);
+});
+
+it("does not accept assistant tokens on normal website endpoints or reuse route-bound context hashes", async () => {
+  const f = await webPrepared();
+  const args = {
+    sourceId: f.sourceId,
+    projectId: f.projectId,
+    analysisVersionId: f.versionId,
+    insightIds: f.webInput.insightIds,
+  };
+  await expect(
+    f.assistant.query(api.projectPlanning.context, args),
+  ).rejects.toThrow(/Sign in/);
+  await expect(
+    f.assistant.mutation(api.projectPlanning.save, f.webInput),
+  ).rejects.toThrow(/Sign in/);
+  await expect(f.t.query(api.projectPlanning.context, args)).rejects.toThrow(
+    /Sign in/,
+  );
+  await expect(
+    f.owner.mutation(api.projectPlanning.save, {
+      ...f.webInput,
+      contextHash: f.context.contextHash,
+    }),
+  ).rejects.toThrow(/APPROVAL_STALE/);
+});
+
+it("rechecks source and confirmed project context before a website draft is saved", async () => {
+  const f = await webPrepared();
+  await f.t.run((ctx) => ctx.db.patch(f.projectId, { profileVersion: 2 }));
+  await expect(f.webSave()).rejects.toThrow(/APPROVAL_STALE/);
+  await f.t.run((ctx) => ctx.db.patch(f.projectId, { confirmed: false }));
+  await expect(f.webSave()).rejects.toThrow(/APPROVAL_STALE/);
+  expect(await f.t.run((ctx) => ctx.db.query("proposals").take(1))).toEqual([]);
+});
+
+it("allows a viewer to read authorized planning context but never to create a proposal", async () => {
+  const f = await webPrepared();
+  await f.t.run(async (ctx) => {
+    const membership = await ctx.db
+      .query("memberships")
+      .withIndex("by_org", (q) => q.eq("organizationId", f.org))
+      .first();
+    if (!membership) throw Error("Missing fixture membership");
+    await ctx.db.patch(membership._id, { role: "viewer" });
+  });
+  const input = f.webInput;
+  expect(
+    (
+      await f.owner.query(api.projectPlanning.context, {
+        sourceId: input.sourceId,
+        projectId: input.projectId,
+        analysisVersionId: input.analysisVersionId,
+        insightIds: input.insightIds,
+      })
+    ).source.id,
+  ).toBe(f.sourceId);
+  await expect(f.webSave()).rejects.toThrow(/permission/);
+  expect(await f.t.run((ctx) => ctx.db.query("proposals").take(1))).toEqual([]);
+});

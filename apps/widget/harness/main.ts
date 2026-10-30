@@ -28,6 +28,7 @@ type Receipt = {
   name?: string;
   source?: string;
   profile?: string;
+  requestKey?: string;
 };
 const receipts: Receipt[] = [];
 function record(event: string, data: Omit<Receipt, "event"> = {}) {
@@ -47,6 +48,7 @@ async function load() {
   if (bridge) await bridge.close();
   receipts.length = 0;
   revoked = false;
+  let saveRequests = 0;
   const kind = resource.value as keyof typeof widgetResources;
   frame.style.maxWidth = kind === "card" ? "680px" : "none";
   frame.style.height = kind === "card" ? "100px" : "900px";
@@ -68,6 +70,10 @@ async function load() {
     {
       hostContext: {
         theme,
+        safeAreaInsets:
+          options.get("safe") === "1"
+            ? { top: 24, right: 12, bottom: 24, left: 12 }
+            : { top: 0, right: 0, bottom: 0, left: 0 },
         displayMode: kind === "workspace" ? "fullscreen" : "inline",
         availableDisplayModes: ["inline", "fullscreen"],
       },
@@ -84,12 +90,30 @@ async function load() {
       name,
       source: typeof args?.id === "string" ? args.id : undefined,
       profile: typeof args?.profileId === "string" ? args.profileId : undefined,
+      requestKey: typeof args?.key === "string" ? args.key : undefined,
     });
     if (revoked)
       return {
         isError: true,
         content: [{ type: "text", text: "Synthetic grant revoked" }],
       };
+    if (name === "save_project_proposal") {
+      saveRequests++;
+      if (
+        saveRequests === 1 &&
+        ["unknown-once", "stale-once"].includes(options.get("save") ?? "")
+      )
+        return {
+          isError: true,
+          structuredContent: {
+            code:
+              options.get("save") === "stale-once"
+                ? "APPROVAL_STALE"
+                : "UNKNOWN",
+          },
+          content: [],
+        };
+    }
     const data = await demoCall(name, (args ?? {}) as ToolRecord);
     if (
       name === "fetch" &&

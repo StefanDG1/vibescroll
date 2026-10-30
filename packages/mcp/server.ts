@@ -102,6 +102,16 @@ export function createKnowledgeHandler(
                 ? requireScopes(scope)
                 : requireScopes(...scope),
             _meta: {
+              ...(widgetEnabled &&
+              [
+                "get_profile",
+                "get_job_status",
+                "get_project_application_context",
+                "save_project_proposal",
+                "get_project_proposal",
+              ].includes(name)
+                ? { ui: { visibility: ["model", "app"] } }
+                : {}),
               ...(widgetEnabled && ["fetch", "save_link"].includes(name)
                 ? {
                     ui: {

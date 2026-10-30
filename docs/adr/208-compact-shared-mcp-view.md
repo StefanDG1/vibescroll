@@ -1,0 +1,17 @@
+# Compact MCP view from shared website components
+
+Date: October30,2026. Status: local candidate. Owner requirement R110 supersedes the earlier embedded UI deferral for this focused view.
+
+Use the existing connected MCP server, MCP Apps bridge and supported host styles. Preserve plugin identity, OAuth and Events. Share the Library insight row, post layout, evidence drawer, deterministic hints and proposal composer with the website. Supply a host adapter for tools and approved website links. Do not copy website sessions, routers or the whole application into an iframe.
+
+Show one selected post and its expandable insights, with bounded recent saves, link capture and current progress. Let a user select a current granted project and save the same planning draft through MCP. Advanced evidence/media, versions, accounts, billing and full Library exploration open the canonical website. Both existing website Tree and Folders stay intact. Ordinary MCP tools remain useful without UI.
+
+The iframe obtains authority from current MCP calls, never website cookies. Recheck before a deliberate disclosure or mutation, preserve exact analysis versions and clear inaccessible/stale data. No model, analysis, project evaluation or spending starts on render. Save uses the user's existing reviewed route; failed or unknown jobs are not retried automatically. Use host capabilities for messaging, model context and approved links; follow safe areas, theme and responsive sizing. Keep historical read-only export support separately.
+
+Official references inspected October30: [OpenAI UI guide](https://developers.openai.com/plugins/build/chatgpt-ui), [Extensions contracts](https://github.com/openai/mcp-extensions/blob/main/docs/spec.md) and [patterns](https://github.com/openai/mcp-extensions/blob/main/docs/patterns.md). Use standard MCP Apps metadata and ui/* bridge for base interactions; extensions supply supported host styling and entrypoints. No new provider integration, dependency or AI funding product is required.
+
+Require actual protocol-harness read/write/error tests, responsive light/dark browser checks, exact CI, compatible release and intended-host acceptance. Local preview is not ChatGPT acceptance; cached host discovery and real OAuth writes must be checked separately. A failed host integration can roll back to the previously accepted build without rebuilding or deleting data.
+
+Local acceptance: the actual built HTML passed nine cases through the official AppBridge with synthetic projections, including shared expansion/evidence focus, proposal save/follow-up, exact unknown-response replay, editable stale rejection, absent messaging capability, revocation,375px safe areas, explicit Save and historical read-only exports. Host theme changes preserve an open proposal draft. Card/workspace bundles are about772KB before compression, below the previous full widget; this is not a runtime latency measurement. Shared controls/style live in one module; historical exports keep a separate entry. Full local checks passed. Real ChatGPT discovery/OAuth/UI acceptance and publication remain pending.
+
+Run `python apps/widget/harness/compact-check.py` with the local Vite harness on port4319. Every browser action uses browser-harness. Separate native clicks and verification into CLI steps; the combined action/poll script did not observe the iframe update, while separate steps did. Do not treat that automation failure as a component defect. Detailed initial logs remain private.

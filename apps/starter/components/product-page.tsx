@@ -11,6 +11,7 @@ export async function ProductPage({
   category = "",
   sort = "newest",
   sourceId,
+  proposalId,
   compactHome = false,
   reviewDraftId,
   sharedSourceId,
@@ -26,6 +27,7 @@ export async function ProductPage({
   category?: string;
   sort?: string;
   sourceId?: string;
+  proposalId?: string;
   compactHome?: boolean;
   reviewDraftId?: string;
   sharedSourceId?: string;
@@ -42,11 +44,17 @@ export async function ProductPage({
     category,
     sort,
     sourceId,
+    proposalId,
     compactHome,
     sharedSourceId,
     sharedGrantId,
   });
   if (sourceId && !("selectedSource" in initial && initial.selectedSource))
+    notFound();
+  if (
+    proposalId &&
+    !("selectedProposal" in initial && initial.selectedProposal)
+  )
     notFound();
   return (
     <Console
@@ -61,9 +69,13 @@ export async function ProductPage({
       }
       compactHomePreview={compactHome}
       initialReviewDraftId={reviewDraftId}
-      key={`${org}:${sourceId ?? "workspace"}`}
+      key={`${org}:${sourceId ?? proposalId ?? "workspace"}`}
       initialSource={
-        "selectedSource" in initial ? initial.selectedSource : null
+        "selectedSource" in initial
+          ? initial.selectedSource
+          : "selectedProposal" in initial
+            ? initial.selectedProposal
+            : null
       }
       initialSharedDraft={draft.slice(0, 2048)}
       publicEdition={publicEdition}

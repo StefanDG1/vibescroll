@@ -3,6 +3,8 @@ import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
+  projectPlanningContext: ["query", api.projectPlanning.context],
+  projectProposalSave: ["mutation", api.projectPlanning.save],
   preparedAnalysisQuote: ["query", api.preparedService.quote],
   preparedAnalysisStart: ["mutation", api.preparedService.start],
   preparedAnalysisStatus: ["query", api.preparedService.status],
@@ -284,6 +286,10 @@ export async function POST(req: NextRequest) {
         "This workspace has reached its source or repository allowance.",
       BASE_CHANGED:
         "The repository changed. Refresh its snapshot and review a new plan.",
+      IDEMPOTENCY_CONFLICT:
+        "This request already saved different draft content. Open the saved proposal before making another edit.",
+      LIMIT_REACHED:
+        "This post has reached its proposal limit. Open an existing draft.",
       APPROVAL_STALE:
         "Something changed since the last review. Review the latest idea or plan.",
       MATCH_IN_PROGRESS:

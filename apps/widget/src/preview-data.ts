@@ -41,6 +41,7 @@ const sources = [
         generation: 1,
         revision: 100 + index,
         insightId: `idea-${index}`,
+        analysisVersionId: `demo-analysis-version-${index}`,
       },
       evidence: [{ kind: "speech", startMs: 102000, endMs: 138000 }],
     },
@@ -58,6 +59,21 @@ export async function demoCall(
   name: string,
   args: ToolRecord,
 ): Promise<ToolRecord> {
+  if (name === "get_project_application_context")
+    return {
+      contextHash: "c".repeat(64),
+      source: { analysisVersionId: args.analysisVersionId },
+    };
+  if (name === "save_project_proposal")
+    return {
+      proposalId: "demo-planning-proposal",
+      version: 1,
+      creditsSpent: 0,
+      analysisStarted: false,
+      codingAuthorized: false,
+    };
+  if (name === "get_project_proposal")
+    return { proposalId: "demo-planning-proposal", version: 1 };
   if (name === "get_profile" || name === "widget_profiles")
     return {
       profiles: [

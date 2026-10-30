@@ -238,6 +238,36 @@ it("uses a reference-only shared post in exact-version context and a durable cha
   expect(after).toEqual(before);
   expect(after?.analysis).toBeUndefined();
   expect(after?.personalAnalysis).toBeUndefined();
+  const webContext = await f.second.query(api.projectPlanning.context, {
+    ...args,
+    analysisVersionId: context.source.analysisVersionId,
+    insightIds: context.source.insights.map((i) => i.id),
+  });
+  const webProposal = await f.second.mutation(api.projectPlanning.save, {
+    ...args,
+    analysisVersionId: context.source.analysisVersionId,
+    insightIds: context.source.insights.map((i) => i.id),
+    contextHash: webContext.contextHash,
+    expectedVersion: 0,
+    key: "shared-web-proposal",
+    body: {
+      title: "Review this shared insight",
+      disposition: "needs_context",
+      currentProblem: "Assess the current project need",
+      proposedChange: null,
+      benefitHypothesis: null,
+      risks: [],
+      nonGoals: [],
+      acceptanceCriteria: [],
+      verificationNeeds: ["Inspect code"],
+    },
+  });
+  expect(webProposal).toMatchObject({
+    origin: "web_planning",
+    analysisVersionId: f.shared.version._id,
+    creditsSpent: 0,
+  });
+  expect(JSON.stringify(webProposal)).not.toContain(f.sourceId);
   const proposal = await assistant.mutation(internal.assistantProposals.save, {
     ...args,
     analysisVersionId: context.source.analysisVersionId,
@@ -276,6 +306,9 @@ it("uses a reference-only shared post in exact-version context and a durable cha
   ).not.toBeNull();
   expect(f.network).not.toHaveBeenCalled();
   await f.t.run((ctx) => ctx.db.patch(f.billingId, { status: "canceled" }));
+  await expect(
+    f.second.query(api.product.proposal, { id: webProposal.proposalId }),
+  ).rejects.toThrow();
   await expect(
     assistant.query(internal.assistant.projectApplicationContext, args),
   ).rejects.toThrow();

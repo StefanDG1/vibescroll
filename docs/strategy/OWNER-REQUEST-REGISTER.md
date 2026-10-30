@@ -222,6 +222,8 @@ R109: Preserve the existing Library tree diagram and folder view. Reusing insigh
 
 R105-R109 acceptance: [ADR206](../adr/206-shared-insight-cards-and-settings.md) and the [production receipt](../operations/evidence/launch-20261030-insight-cards-production.json) record the live five destinations, gear settings, reused insight control and retained Tree/Folders. R107 is partial: topic hints and reasons are live, but actual priority/activity ranking and direct proposal application remain open. No model call, backend publication or analysis ran for this checkpoint.
 
+R110: October30 owner reactivates a compact MCP UI using existing website components. Keep it focused on the selected post, insights, project choice and proposal action; link advanced/full Library/account controls to the website. Preserve the existing plugin identity, OAuth scopes and ordinary tools. This later instruction supersedes the earlier UI deferral for this compact shared implementation. It does not reopen direct hosted ChatGPT-plan inference or local execution.
+
 ## Source coverage and limits
 
 The audit used the visible owner conversation, current checkout/ADRs, dated production receipts, the October 26/28 handovers and a bounded read of **Compare video model options**. The originally named October 25 handover was found and read in the historical `cloud-p2-main-parity-20261024` checkout; it is absent from this compatible branch. Its implementation hypothesis is not current authority. The complete older main-branch R/P/N/C/M scope remains linked from the [launch index](../launch-plan/2026-10-23/README.md); this register does not mark that work accepted.

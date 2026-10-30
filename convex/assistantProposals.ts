@@ -1,11 +1,16 @@
 import { v } from "convex/values";
 import { z } from "zod";
-import { internalQuery, type QueryCtx } from "./_generated/server";
+import {
+  internalQuery,
+  type QueryCtx,
+  type MutationCtx,
+} from "./_generated/server";
 import { internalMutation } from "./lib/projectedMutations";
 import type { Doc, Id } from "./_generated/dataModel";
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { projectApplicationContextCore, selectedProfile } from "./assistant";
-import { audit, limit } from "./lib";
+import { access, audit, limit } from "./lib";
+import { isAssistantIdentity } from "../packages/policy/assistant";
 import { ensure, containsSecret, PolicyError } from "../packages/policy";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { socialHash } from "../packages/social/contracts";
@@ -66,7 +71,10 @@ function snapshot(
         context.project.selectionVersion &&
       detail._chat.binding.sourceGeneration === context.source.generation &&
       detail._chat.binding.sourceRevision === context.source.sourceRevision,
-    origin: "chat_planning" as const,
+    origin:
+      detail._chat.clientId === "vibescroll_web"
+        ? ("web_planning" as const)
+        : ("chat_planning" as const),
     repositoryCodeIncluded: false as const,
     creditsSpent: 0 as const,
     analysisStarted: false as const,
@@ -88,233 +96,257 @@ function bodyOf(detail: ReturnType<typeof chatProposalDetail.parse>) {
   );
 }
 
+export const proposalSaveArgs = {
+  ...profile,
+  sourceId: v.id("sources"),
+  projectId: v.id("repositories"),
+  analysisVersionId: v.id("analysisVersions"),
+  insightIds: v.array(v.string()),
+  contextHash: v.string(),
+  proposalId: v.optional(v.id("proposals")),
+  expectedVersion: v.number(),
+  expectedReview: v.optional(v.string()),
+  key: v.string(),
+  body: v.any(),
+};
+
+type ProposalSaveArgs = {
+  profileId?: Id<"organizations">;
+  sourceId: Id<"sources">;
+  projectId: Id<"repositories">;
+  analysisVersionId: Id<"analysisVersions">;
+  insightIds: string[];
+  contextHash: string;
+  proposalId?: Id<"proposals">;
+  expectedVersion: number;
+  expectedReview?: string;
+  key: string;
+  body: unknown;
+};
 export const save = internalMutation({
-  args: {
-    ...profile,
-    sourceId: v.id("sources"),
-    projectId: v.id("repositories"),
-    analysisVersionId: v.id("analysisVersions"),
-    insightIds: v.array(v.string()),
-    contextHash: v.string(),
-    proposalId: v.optional(v.id("proposals")),
-    expectedVersion: v.number(),
-    expectedReview: v.optional(v.string()),
-    key: v.string(),
-    body: v.any(),
-  },
+  args: proposalSaveArgs,
   returns: v.any(),
-  handler: async (ctx, args) => {
-    const input = saveProjectProposalInput.parse(args);
-    const source = await ctx.db.get(args.sourceId);
-    ensure(
-      source && (!args.profileId || args.profileId === source.organizationId),
-      "FORBIDDEN",
-      "Choose a post in the current workspace.",
-    );
-    const writer = await assistantGrant(
-      ctx,
-      source.organizationId,
-      "suggestions:draft",
-    );
-    ensure(
-      ["owner", "admin"].includes(writer.membership.role),
-      "FORBIDDEN",
-      "This workspace role cannot edit proposals.",
-    );
-    const requestHash = await socialHash(canonicalJson(input));
-    let proposal = args.proposalId ? await ctx.db.get(args.proposalId) : null;
-    ensure(
-      !args.proposalId || proposal,
-      "FORBIDDEN",
-      "The proposal no longer exists. An update cannot recreate it.",
-    );
-    if (!args.proposalId) {
-      const candidates = await ctx.db
-        .query("proposals")
-        .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
-        .take(101);
-      proposal =
-        candidates.find(
-          (p) =>
-            isChatProposalDetail(p.detail) &&
-            p.detail._chat?.creator === writer.actor._id &&
-            p.detail._chat?.clientId === writer.client.id &&
-            p.detail._chat?.createKey === input.key,
-        ) ?? null;
-      ensure(
-        proposal || candidates.length < 101,
-        "LIMIT_REACHED",
-        "Open an existing proposal for this post before creating another.",
-      );
-    }
-    if (proposal) {
-      ensure(
-        proposal.organizationId === source.organizationId &&
-          proposal.sourceId === args.sourceId &&
-          proposal.repositoryId === args.projectId,
-        "FORBIDDEN",
-        "A proposal cannot move to another post or project.",
-      );
-      const read = await readAuthorized(ctx, proposal);
-      ensure(
-        read.detail._chat.binding.analysisVersionId ===
-          args.analysisVersionId &&
-          canonicalJson(read.detail.insightIds) ===
-            canonicalJson(args.insightIds),
-        "APPROVAL_STALE",
-        "Create another proposal when choosing different insight evidence.",
-      );
-      const operation = read.detail._chat.operations.find(
-        (entry) => entry.key === input.key,
-      );
-      const createReplay =
-        !args.proposalId && read.detail._chat.createKey === input.key;
-      if (operation || createReplay) {
-        ensure(
-          (createReplay ? read.detail._chat.createHash : operation!.hash) ===
-            requestHash,
-          "IDEMPOTENCY_CONFLICT",
-          "This operation key was already used with different proposal content.",
-        );
-        return {
-          ...snapshot(proposal, read),
-          body: bodyOf(read.detail),
-          replayed: true,
-          appliedVersion: createReplay ? 1 : operation!.version,
+  handler: saveProjectProposalCore,
+});
+
+export async function saveProjectProposalCore(
+  ctx: MutationCtx,
+  args: ProposalSaveArgs,
+) {
+  const input = saveProjectProposalInput.parse(args);
+  const source = await ctx.db.get(args.sourceId);
+  ensure(
+    source && (!args.profileId || args.profileId === source.organizationId),
+    "FORBIDDEN",
+    "Choose a post in the current workspace.",
+  );
+  const identity = await ctx.auth.getUserIdentity();
+  const writer =
+    identity && isAssistantIdentity(identity)
+      ? await assistantGrant(ctx, source.organizationId, "suggestions:draft")
+      : {
+          ...(await access(ctx, source.organizationId, ["owner", "admin"])),
+          client: { id: "vibescroll_web" },
         };
-      }
-      ensure(
-        args.proposalId &&
-          proposal.version === input.expectedVersion &&
-          proposal.review === input.expectedReview,
-        "APPROVAL_STALE",
-        "The proposal changed. Read it before updating your draft.",
-      );
-      ensure(
-        !proposal.plan && !proposal.planDraft,
-        "APPROVAL_STALE",
-        "A proposal with an existing implementation plan must use its review workflow.",
-      );
-    }
-    const context = await projectApplicationContextCore(ctx, {
-      profileId: args.profileId,
-      sourceId: args.sourceId,
-      projectId: args.projectId,
-      analysisVersionId: args.analysisVersionId,
-      insightIds: args.insightIds,
-    });
+  ensure(
+    ["owner", "admin"].includes(writer.membership.role),
+    "FORBIDDEN",
+    "This workspace role cannot edit proposals.",
+  );
+  const requestHash = await socialHash(canonicalJson(input));
+  let proposal = args.proposalId ? await ctx.db.get(args.proposalId) : null;
+  ensure(
+    !args.proposalId || proposal,
+    "FORBIDDEN",
+    "The proposal no longer exists. An update cannot recreate it.",
+  );
+  if (!args.proposalId) {
+    const candidates = await ctx.db
+      .query("proposals")
+      .withIndex("by_source", (q) => q.eq("sourceId", args.sourceId))
+      .take(101);
+    proposal =
+      candidates.find(
+        (p) =>
+          isChatProposalDetail(p.detail) &&
+          p.detail._chat?.creator === writer.actor._id &&
+          p.detail._chat?.clientId === writer.client.id &&
+          p.detail._chat?.createKey === input.key,
+      ) ?? null;
     ensure(
-      context.contextHash === input.contextHash,
+      proposal || candidates.length < 101,
+      "LIMIT_REACHED",
+      "Open an existing proposal for this post before creating another.",
+    );
+  }
+  if (proposal) {
+    ensure(
+      proposal.organizationId === source.organizationId &&
+        proposal.sourceId === args.sourceId &&
+        proposal.repositoryId === args.projectId,
+      "FORBIDDEN",
+      "A proposal cannot move to another post or project.",
+    );
+    const read = await readAuthorized(ctx, proposal);
+    ensure(
+      read.detail._chat.binding.analysisVersionId === args.analysisVersionId &&
+        canonicalJson(read.detail.insightIds) ===
+          canonicalJson(args.insightIds),
       "APPROVAL_STALE",
-      "The source, selected insights or project context changed. Read the context again.",
+      "Create another proposal when choosing different insight evidence.",
     );
-    const serializedBody = canonicalJson(input.body);
+    const operation = read.detail._chat.operations.find(
+      (entry) => entry.key === input.key,
+    );
+    const createReplay =
+      !args.proposalId && read.detail._chat.createKey === input.key;
+    if (operation || createReplay) {
+      ensure(
+        (createReplay ? read.detail._chat.createHash : operation!.hash) ===
+          requestHash,
+        "IDEMPOTENCY_CONFLICT",
+        "This operation key was already used with different proposal content.",
+      );
+      return {
+        ...snapshot(proposal, read),
+        body: bodyOf(read.detail),
+        replayed: true,
+        appliedVersion: createReplay ? 1 : operation!.version,
+      };
+    }
     ensure(
-      new TextEncoder().encode(serializedBody).length <= 20000 &&
-        !containsSecret(serializedBody) &&
-        !/(?:X-Amz-|X-Goog-|[?&](?:token|sig|signature|key)=|\/api\/evidence\/)/i.test(
-          serializedBody,
-        ),
-      "POLICY_BLOCKED",
-      "Keep credentials, signed media URLs and private asset capabilities out of a proposal.",
+      args.proposalId &&
+        proposal.version === input.expectedVersion &&
+        proposal.review === input.expectedReview,
+      "APPROVAL_STALE",
+      "The proposal changed. Read it before updating your draft.",
     );
-    await limit(
-      ctx,
-      `chat-proposal:${source.organizationId}:${writer.actor._id}`,
-      60,
+    ensure(
+      !proposal.plan && !proposal.planDraft,
+      "APPROVAL_STALE",
+      "A proposal with an existing implementation plan must use its review workflow.",
     );
-    const version = (proposal?.version ?? 0) + 1;
-    const evidence = [
-      ...new Map(
-        context.source.insights
-          .flatMap((insight) => insight.evidence)
-          .map((ref) => [canonicalJson(ref), ref]),
-      ).values(),
-    ];
-    const prior = proposal
-      ? chatProposalDetail.parse(proposal.detail)._chat
-      : null;
-    const detail = chatProposalDetail.parse({
-      ...input.body,
-      schemaVersion: "chat-project-proposal-v1",
-      repositoryId: context.project.id,
+  }
+  const context = await projectApplicationContextCore(ctx, {
+    profileId: args.profileId,
+    sourceId: args.sourceId,
+    projectId: args.projectId,
+    analysisVersionId: args.analysisVersionId,
+    insightIds: args.insightIds,
+  });
+  ensure(
+    context.contextHash === input.contextHash,
+    "APPROVAL_STALE",
+    "The source, selected insights or project context changed. Read the context again.",
+  );
+  const serializedBody = canonicalJson(input.body);
+  ensure(
+    new TextEncoder().encode(serializedBody).length <= 20000 &&
+      !containsSecret(serializedBody) &&
+      !/(?:X-Amz-|X-Goog-|[?&](?:token|sig|signature|key)=|\/api\/evidence\/)/i.test(
+        serializedBody,
+      ),
+    "POLICY_BLOCKED",
+    "Keep credentials, signed media URLs and private asset capabilities out of a proposal.",
+  );
+  await limit(
+    ctx,
+    `chat-proposal:${source.organizationId}:${writer.actor._id}`,
+    60,
+  );
+  const version = (proposal?.version ?? 0) + 1;
+  const evidence = [
+    ...new Map(
+      context.source.insights
+        .flatMap((insight) => insight.evidence)
+        .map((ref) => [canonicalJson(ref), ref]),
+    ).values(),
+  ];
+  const prior = proposal
+    ? chatProposalDetail.parse(proposal.detail)._chat
+    : null;
+  const detail = chatProposalDetail.parse({
+    ...input.body,
+    schemaVersion: "chat-project-proposal-v1",
+    repositoryId: context.project.id,
+    baseSha: context.project.baseSha,
+    profileVersion: context.project.profileVersion,
+    insightIds: args.insightIds,
+    sourceEvidence: evidence,
+    repositoryEvidence: [],
+    _chat: {
+      binding: {
+        analysisVersionId: context.source.analysisVersionId,
+        insightIds: args.insightIds,
+        evidenceHash: context.source.evidenceHash,
+        outputHash: context.source.outputHash,
+        revisionHash: context.source.revisionHash,
+        sourceGeneration: context.source.generation,
+        sourceRevision: context.source.sourceRevision,
+        selectionVersion: context.project.selectionVersion,
+      },
+      contextHash: context.contextHash,
+      creator: prior?.creator ?? writer.actor._id,
+      clientId: prior?.clientId ?? writer.client.id,
+      createKey: prior?.createKey ?? input.key,
+      createHash: prior?.createHash ?? requestHash,
+      operations: [
+        ...(prior?.operations ?? []),
+        { key: input.key, hash: requestHash, version },
+      ].slice(-32),
+      planningOnly: true,
+    },
+  });
+  ensure(
+    new TextEncoder().encode(canonicalJson(detail)).length <= 60000,
+    "INVALID_INPUT",
+    "This proposal exceeds its stored size bound.",
+  );
+  const now = Date.now();
+  const values = {
+    updatedAt: now,
+    title: detail.title,
+    detail,
+    disposition: detail.disposition,
+    version,
+    review: "unreviewed",
+  };
+  const proposalId =
+    proposal?._id ??
+    (await ctx.db.insert("proposals", {
+      ...values,
+      organizationId: source.organizationId,
+      createdAt: now,
+      sourceId: source._id,
+      repositoryId: args.projectId,
       baseSha: context.project.baseSha,
       profileVersion: context.project.profileVersion,
-      insightIds: args.insightIds,
-      sourceEvidence: evidence,
-      repositoryEvidence: [],
-      _chat: {
-        binding: {
-          analysisVersionId: context.source.analysisVersionId,
-          insightIds: args.insightIds,
-          evidenceHash: context.source.evidenceHash,
-          outputHash: context.source.outputHash,
-          revisionHash: context.source.revisionHash,
-          sourceGeneration: context.source.generation,
-          sourceRevision: context.source.sourceRevision,
-          selectionVersion: context.project.selectionVersion,
-        },
-        contextHash: context.contextHash,
-        creator: prior?.creator ?? writer.actor._id,
-        clientId: prior?.clientId ?? writer.client.id,
-        createKey: prior?.createKey ?? input.key,
-        createHash: prior?.createHash ?? requestHash,
-        operations: [
-          ...(prior?.operations ?? []),
-          { key: input.key, hash: requestHash, version },
-        ].slice(-32),
-        planningOnly: true,
-      },
+    }));
+  if (proposal)
+    await ctx.db.patch(proposalId, {
+      ...values,
+      baseSha: context.project.baseSha,
+      profileVersion: context.project.profileVersion,
+      reviewerCorrection: undefined,
+      planHash: undefined,
     });
-    ensure(
-      new TextEncoder().encode(canonicalJson(detail)).length <= 60000,
-      "INVALID_INPUT",
-      "This proposal exceeds its stored size bound.",
-    );
-    const now = Date.now();
-    const values = {
-      updatedAt: now,
-      title: detail.title,
-      detail,
-      disposition: detail.disposition,
-      version,
-      review: "unreviewed",
-    };
-    const proposalId =
-      proposal?._id ??
-      (await ctx.db.insert("proposals", {
-        ...values,
-        organizationId: source.organizationId,
-        createdAt: now,
-        sourceId: source._id,
-        repositoryId: args.projectId,
-        baseSha: context.project.baseSha,
-        profileVersion: context.project.profileVersion,
-      }));
-    if (proposal)
-      await ctx.db.patch(proposalId, {
-        ...values,
-        baseSha: context.project.baseSha,
-        profileVersion: context.project.profileVersion,
-        reviewerCorrection: undefined,
-        planHash: undefined,
-      });
-    const saved = (await ctx.db.get(proposalId))!;
-    await audit(
-      ctx,
-      source.organizationId,
-      writer.actor._id,
-      "assistant.proposal_saved",
-      proposalId,
-    );
-    return {
-      ...snapshot(saved, { detail, context }),
-      body: bodyOf(detail),
-      replayed: false,
-      appliedVersion: version,
-    };
-  },
-});
+  const saved = (await ctx.db.get(proposalId))!;
+  await audit(
+    ctx,
+    source.organizationId,
+    writer.actor._id,
+    writer.client.id === "vibescroll_web"
+      ? "web.proposal_saved"
+      : "assistant.proposal_saved",
+    proposalId,
+  );
+  return {
+    ...snapshot(saved, { detail, context }),
+    body: bodyOf(detail),
+    replayed: false,
+    appliedVersion: version,
+  };
+}
 
 export const read = internalQuery({
   args: { ...profile, proposalId: v.id("proposals") },

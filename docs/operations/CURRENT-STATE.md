@@ -47,6 +47,8 @@ The comparison-only policy and exact Gateway test-key environment were removed a
 
 ## Current unfinished critical path
 
+Latest owner direction R110 reactivates a compact MCP UI after the shared website proposal action. ADR207/208 are the active local candidates. Production embedded UI remains disabled at the accepted baseline until those candidates are released and checked in the intended host; direct hosted ChatGPT inference and local execution remain paused/deferred.
+
 October30: the [quiet app shell](../design/QUIET-APP-REDESIGN-2026-10-30.md), R102/ADR203, and [durable chat proposals](../adr/204-chat-written-project-proposals.md), R099, are deployed at the baseline above. New save/read/list tools use existing scopes and indexed proposal records. They bind current project context and exact retained private/shared insights, support idempotent version/review-aware edits and keep planning-only drafts out of execution. Production SDK persistence and signed-in app reads passed. Isolated tests cover the actual MCP/HTTP relay; actual fresh-host tool discovery/OAuth write is still open. Do not recreate the connection to repair the separate CLI harness failure.
 
 Next in the [chat-first plan](../strategy/CHAT-FIRST-DEMO.md): verify the newly exposed tools through a fresh host discovery, then build the shared standalone post/insight reader and reuse it in the metadata-first home feed. The quiet shell does not complete that reader. Issue/draft-PR handoff and completion feedback follow. Embedded UI stays disabled until the shared website components are accepted. The same component code can be reused with a thin host adapter; copying website cookies/router behavior into an iframe is not the authentication contract.

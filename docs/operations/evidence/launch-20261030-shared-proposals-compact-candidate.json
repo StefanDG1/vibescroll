@@ -1,0 +1,26 @@
+{
+  "websiteBase": "c80038bc95ff10104036c92901f6d2211a73984f",
+  "backendBase": "c862450aafa3f49e7756965a0bbc566f038323f1",
+  "status": "local candidate; exact CI/publication and real ChatGPT acceptance pending",
+  "fullLocalCheckPassed": true,
+  "nineOfficialAppBridgeCasesPassed": true,
+  "syntheticOnlyBrowserWrites": true,
+  "cases": [
+    "shared controls and focus",
+    "draft save, host theme preservation and follow-up message",
+    "unknown save exact replay",
+    "known stale rejection keeps editable draft",
+    "message capability absent",
+    "revocation clears old content",
+    "375px fit and safe areas",
+    "explicit link Save only",
+    "historical export read-only"
+  ],
+  "websiteNormalAuthAndMcpIsolationPassed": true,
+  "sharedReferenceOnlyWebDraftPassed": true,
+  "stableDraftRetryKeyPassed": true,
+  "proposalDetailBoundedReadPassed": true,
+  "noSchemaIndexOrComponentChangePlanned": true,
+  "newLiveAnalysisJobs": 0,
+  "liveProposalWrites": 0
+}

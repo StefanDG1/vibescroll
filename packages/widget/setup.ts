@@ -1,8 +1,8 @@
 import { appOrigin } from "./contracts";
 
-// Owner deferred the embedded ChatGPT interface on October 29. Keep the local
-// widget harness available; production exposes the ordinary MCP tools/Events.
-export const embeddedUiEnabled = false;
+// R110 reactivates a focused view using shared website components.
+// Ordinary tools and Events remain usable without the UI.
+export const embeddedUiEnabled = true;
 
 export const setupDescriptor = {
   schemaVersion: "vibescroll-setup-v1",
@@ -17,7 +17,7 @@ export const setupDescriptor = {
   verification: ["get_profile"],
   notes: [
     "Adding an MCP server does not install the optional plugin skills.",
-    "The embedded ChatGPT interface is deferred; use tools and saved-result website links.",
+    "The compact interface uses current MCP access. Advanced controls open the VibeScroll website.",
     "Use official browser authentication. Never paste credentials into chat.",
   ],
 } as const;

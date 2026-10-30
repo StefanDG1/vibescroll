@@ -80,12 +80,21 @@ export function HostProvider({ children }: { children: ReactNode }) {
       if (current?.theme) applyDocumentTheme(current.theme);
       if (current?.styles?.variables)
         applyHostStyleVariables(current.styles.variables);
+      for (const edge of ["top", "right", "bottom", "left"] as const) {
+        const inset = current?.safeAreaInsets?.[edge] ?? 0;
+        document.documentElement.style.setProperty(
+          `--vibescroll-safe-${edge}`,
+          `${Math.max(0, Math.min(200, inset))}px`,
+        );
+      }
       const route = parseAppRoute(extensions.deepLink.getCurrent()?.url);
       setState((old) => ({
         ...old,
         theme: current?.theme === "dark" ? "dark" : "light",
         fullscreen: current?.displayMode === "fullscreen",
-        ...(route ? { route } : {}),
+        ...(route && JSON.stringify(route) !== JSON.stringify(old.route)
+          ? { route }
+          : {}),
       }));
     };
     app.ontoolresult = (result) => {

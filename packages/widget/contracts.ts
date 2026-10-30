@@ -1,3 +1,4 @@
+import { chatProposalFailure } from "../contracts/chat-proposals";
 import { z } from "zod";
 
 export const widgetVersion = "vibescroll-widget-v1";
@@ -164,10 +165,22 @@ export type ToolResult = {
   content?: { type: string; text?: string }[];
 };
 export function decodeToolResult(result: ToolResult): ToolRecord {
-  if (result.isError)
+  if (result.isError) {
+    const data = result.structuredContent;
+    const code =
+      data && typeof data === "object" && "code" in data
+        ? data.code
+        : undefined;
+    const failure = chatProposalFailure(code);
+    if (failure)
+      throw Object.assign(new Error(failure.error), {
+        code,
+        outcome: "rejected",
+      });
     throw new Error(
-      "VibeScroll could not complete this request. Review your connection or try again.",
+      "This request was not confirmed. Open VibeScroll to check its status before retrying.",
     );
+  }
   let value = result.structuredContent;
   if (value === undefined) {
     const text = result.content?.find((item) => item.type === "text")?.text;

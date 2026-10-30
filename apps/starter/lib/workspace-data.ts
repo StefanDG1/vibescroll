@@ -234,6 +234,34 @@ async function workspaceViewData({
       aiPreference,
     };
   }
+  if (view === "proposal") {
+    if (!proposalId) throw Error("Proposal unavailable.");
+    const [organization, selectedProposal] = await Promise.all([
+      c.query(api.organizations.details, { organizationId }),
+      c.query(api.product.proposal, { id: proposalId as Id<"proposals"> }),
+    ]);
+    if (selectedProposal.organizationId !== organizationId)
+      throw Error("Proposal unavailable.");
+    const devices =
+      selectedProposal.detail?.schemaVersion === "chat-project-proposal-v1"
+        ? []
+        : await c.query(api.devices.list, { organizationId });
+    return {
+      workspaceSlice: "proposal" as const,
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      selectedProposal,
+      sources: [],
+      repositories: [],
+      proposals: [],
+      runs: [],
+      notifications: [],
+      usage: null,
+      devices,
+    };
+  }
   if (view === "projects" || view === "plans" || view === "proposals") {
     const [organization, proposals, repositories, devices, githubChoices] =
       await Promise.all([

@@ -16,6 +16,8 @@ Until implemented and accepted, read [Shared intelligence and the VibeScroll moa
 
 Also read [Simple setup, persistent results and proposal feedback](docs/strategy/SIMPLE-SETUP-AND-CLOSED-LOOP-PROPOSALS.md). It preserves the later owner screenshots/corrections: route-specific setup, automatic Cloud Save without a second checkbox, ordinary access defaults, real model choices, results until deleted and a scoped issue/PR completion loop. These requirements remain active alongside the shared backend until accepted.
 
+For Home/feed, proposal-review or engagement/analytics work, read the [Home feed and plan review plan](docs/design/HOME-FEED-AND-PLAN-REVIEW.md) and [assistant-ui catalogue review](docs/design/ASSISTANT-UI-CATALOGUE-REVIEW-2026-10-30.md) until accepted. R115-R120 require design selection before interface implementation, content-first custom mobile chrome, bounded feed loading, preserved Library views and a single version-bound Approve & create issue action.
+
 ## Build the specified product
 
 For new or substantially rebuilt assistant-related UI, prefer suitable assistant-ui components. The owner confirmed this preference on October 29, 2026. Start with the model selector and reasoning controls; reuse existing VibeScroll components where they already fit. Inspect the selected component's current dependencies and licence. This preference does not require a frontend rewrite or delay backend acceptance. See [the component plan](docs/strategy/MODEL-CATALOGUE-AND-CREDIT-BANDS.md).

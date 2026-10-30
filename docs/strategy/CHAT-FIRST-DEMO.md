@@ -108,3 +108,7 @@ This completes the private handoff/report part of checkpoint5. It does not accep
 ## October30 backend verification continuation
 
 Independent service-cache reuse passed through the authorized second browser account, without full-catalog browsing or credits. ADR210 is deployed for signed issue observations through the existing webhook. It does not complete real issue publication/provider delivery, PR lifecycle/CI/merge, paid commerce, team onboarding or the saved-ready-post feed/playback. Keep those acceptance levels separate. The original plugin needs no reconnect.
+
+## October30 selected next design task
+
+R115-R120 expand the saved-ready-post reader into the Home feed and proposal-review journey. Follow [the standing Home plan](../design/HOME-FEED-AND-PLAN-REVIEW.md) and [complete assistant-ui review](../design/ASSISTANT-UI-CATALOGUE-REVIEW-2026-10-30.md). Desktop has source/insights/project-plan columns; mobile removes repeated app chrome and uses task-specific review. The owner chooses a generated concept before interface implementation. Likes, intake counts and analytics remain separate later milestones. One ✓ action approves the exact plan and creates its issue, as explicitly chosen by the owner; it does not launch coding. Preserve current live behavior and distinguish image concepts from implemented functionality.

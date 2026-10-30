@@ -94,3 +94,7 @@ The owner selected VibeScroll marketing/styling. The existing MCP reused the ret
 ## Latest website checkpoint
 
 The accepted R112-R114 subset includes the authored hero preview, observed analysis stages/safe errors, exact credit meter and transparent topic-fit disclosure. Full local check, focused final checks/build, exact CI and canonical verification passed. Browser acceptance covers8 states, recovery,4 gallery layouts,4 hero layouts and8 Library cases. These are live atb8162b5; see the production receipt above. [Component and scoring plan](../design/ASSISTANT-ELEMENTS-AND-PROJECT-FIT.md). Similar-proposal history/outcome scoring, tooltip/logo integration and per-run credit detail remain open. No new analysis, scopes, billing migration or backend publication is part of this website-only checkpoint.
+
+## Current design work, not published
+
+R115-R120 now preserve the owner's analyzed-post Home feed, custom content-first mobile layout, three desktop columns, versioned plan discussion/review and one-click Approve & create issue choice. Actual current Home/Post screenshots and three generated concepts are retained privately; mockup counts are illustrative. The entire151-entry assistant-ui catalogue has a selection record. [Home plan](../design/HOME-FEED-AND-PLAN-REVIEW.md), [catalogue review](../design/ASSISTANT-UI-CATALOGUE-REVIEW-2026-10-30.md). The owner selects/edits a concept before interface implementation. No application/dependency/backend/production change, new source processing or GitHub publication was performed for this design checkpoint.

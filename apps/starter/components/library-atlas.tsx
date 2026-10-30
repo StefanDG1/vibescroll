@@ -1,4 +1,5 @@
 "use client";
+import { InsightCardControl } from "./insight-card-control";
 import { useEffect, useState } from "react";
 import {
   Search,
@@ -6,19 +7,6 @@ import {
   Folder,
   ChevronDown,
   ChevronRight,
-  Compass,
-  ListChecks,
-  Lightbulb,
-  Code,
-  ChartNoAxesCombined,
-  Megaphone,
-  UsersRound,
-  Palette,
-  Shield,
-  Workflow,
-  BookOpen,
-  Heart,
-  Wrench,
   FileText,
   SlidersHorizontal,
   CircleHelp,
@@ -44,21 +32,6 @@ import { topicPath } from "@/lib/topic-tree";
 import { insightPresentation } from "../../../packages/insights/presentation";
 import type { LibraryPlace } from "@/lib/library-place";
 import { useInterfaceMotion } from "./motion-preference";
-const insightIcons = {
-  compass: Compass,
-  checklist: ListChecks,
-  lightbulb: Lightbulb,
-  code: Code,
-  chart: ChartNoAxesCombined,
-  megaphone: Megaphone,
-  users: UsersRound,
-  palette: Palette,
-  shield: Shield,
-  workflow: Workflow,
-  book: BookOpen,
-  heart: Heart,
-  wrench: Wrench,
-};
 function HelpNote({
   children,
   label = "About these connections",
@@ -154,7 +127,6 @@ function EvidenceList({
             {members.slice(0, visible).map((member: any) => {
               const presentation = insightPresentation(member.evidence.insight),
                 label = titleCase(presentation.title),
-                Icon = insightIcons[presentation.icon],
                 expanded = member._id === insightId,
                 steps = openReferenceProposals(
                   badges,
@@ -174,60 +146,29 @@ function EvidenceList({
               );
               return (
                 <li key={member._id} data-selected={expanded}>
-                  <div className="hybrid-insight-card-control">
-                    <button
-                      className="hybrid-insight-select"
-                      aria-label={`Inspect ${member.evidence.insight.claim}${count ? `, ${count} open proposals` : ""}`}
-                      aria-expanded={expanded}
-                      data-has-bubble={!!count}
-                      onPointerDown={() => setPointer(true)}
-                      onKeyDown={() => setPointer(false)}
-                      onClick={(event) => {
-                        setPointer(event.detail > 0);
-                        const next = expanded ? null : member._id;
-                        setInsightId(next);
-                        onRemember({ insightId: next ?? undefined });
-                      }}
-                    >
-                      <span
-                        className="hybrid-insight-icon"
-                        data-icon={presentation.icon}
-                        data-tone={
-                          Object.keys(insightIcons).indexOf(presentation.icon) %
-                          4
-                        }
-                      >
-                        <Icon aria-hidden="true" />
-                      </span>
-                      <span className="hybrid-insight-copy">
-                        <strong title={label}>{label}</strong>
-                        <small>
-                          <FileText size={14} aria-hidden="true" />
-                          <span
-                            className="hybrid-source-label"
-                            title={member.evidence.title}
-                          >
-                            {demo
-                              ? member.evidence.title.replace(
-                                  "Synthetic example",
-                                  "Example",
-                                )
-                              : member.evidence.title}
-                          </span>
-                        </small>
-                      </span>
-                      {!!count && (
-                        <span
-                          className="hybrid-proposal-slot"
-                          aria-hidden="true"
-                        />
-                      )}
-                      {expanded ? (
-                        <ChevronDown size={18} aria-hidden="true" />
-                      ) : (
-                        <ChevronRight size={18} aria-hidden="true" />
-                      )}
-                    </button>
+                  <InsightCardControl
+                    title={label}
+                    subtitle={
+                      demo
+                        ? member.evidence.title.replace(
+                            "Synthetic example",
+                            "Example",
+                          )
+                        : member.evidence.title
+                    }
+                    icon={presentation.icon}
+                    expanded={expanded}
+                    hasBadge={!!count}
+                    aria-label={`Inspect ${member.evidence.insight.claim}${count ? `, ${count} open proposals` : ""}`}
+                    onPointerDown={() => setPointer(true)}
+                    onKeyDown={() => setPointer(false)}
+                    onClick={(event) => {
+                      setPointer(event.detail > 0);
+                      const next = expanded ? null : member._id;
+                      setInsightId(next);
+                      onRemember({ insightId: next ?? undefined });
+                    }}
+                  >
                     <ProposalBubbleButton
                       count={count}
                       name={label}
@@ -239,7 +180,7 @@ function EvidenceList({
                         )
                       }
                     />
-                  </div>
+                  </InsightCardControl>
                   <motion.div
                     className="hybrid-insight-details"
                     initial={false}

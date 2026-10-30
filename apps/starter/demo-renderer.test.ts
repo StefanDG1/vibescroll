@@ -4,6 +4,20 @@ import { renderToStaticMarkup } from "react-dom/server";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }));
+// Inspect settings contents for source/evidence authorization tests. The real
+// drawer's closed/open rendering is checked separately, plus browser acceptance.
+vi.mock("./components/settings-panel", async () => {
+  const { createElement } = await import("react");
+  return {
+    SettingsPanel: ({
+      children,
+      title,
+    }: {
+      children: import("react").ReactNode;
+      title: string;
+    }) => createElement("section", { "aria-label": title }, children),
+  };
+});
 import { Console, SourceDetail } from "./components/console";
 import Demo from "./app/demo/page";
 import { libraryDemoDrafts, libraryDemoSources } from "./lib/library-demo";
@@ -64,16 +78,16 @@ it("opens the actual source evidence reached from a demo library link", async ()
   const source = libraryDemoSources[0];
   const html = await renderDemo({ view: "library", source: source._id });
   expect(html).toContain("Back to list");
-  expect(html).toContain("AI summary");
-  expect(html).toContain("Main points");
+  expect(html).toContain("Insights");
+  expect(html).toContain("post-insight-reader");
   expect(html).toContain(source.summary);
 });
 
 it("leaves an unknown source on the ordinary demo library", async () => {
   const html = await renderDemo({ view: "library", source: "unknown-source" });
-  expect(html).not.toContain("AI summary");
+  expect(html).not.toContain("post-insight-reader");
   expect(html).not.toContain("Back to list");
-  expect(html).toContain('<h1 class="sr-only">Library</h1>');
+  expect(html).toContain('<h1 class="sr-only">Explore</h1>');
 });
 
 it.each(["loading", "error", "empty"])(
@@ -84,7 +98,7 @@ it.each(["loading", "error", "empty"])(
       source: libraryDemoSources[0]._id,
       uiState,
     });
-    expect(html).not.toContain("AI summary");
+    expect(html).not.toContain("post-insight-reader");
     expect(html).not.toContain("Back to list");
     if (uiState === "loading") expect(html).toContain('aria-busy="true"');
     if (uiState === "error")

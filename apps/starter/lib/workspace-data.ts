@@ -1,4 +1,5 @@
 import "server-only";
+import { suggestProjects } from "./project-suggestions";
 import { backend, api } from "./backend";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { usageOverview } from "../../../packages/billing/usage-overview";
@@ -189,6 +190,7 @@ async function workspaceViewData({
       privateLibrary: organization.private,
       role: organization.role,
       selectedSource,
+      projectSuggestions: suggestProjects(selectedSource, repositories),
       repositories: repositories.map(
         ({ _id, fullName, enabled, confirmed, status }) => ({
           _id,

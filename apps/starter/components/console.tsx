@@ -1,5 +1,8 @@
 "use client";
 import { PostInsightReader } from "./post-insight-reader";
+import { InsightCardControl } from "./insight-card-control";
+import { SettingsPanel } from "./settings-panel";
+import { insightPresentation } from "../../../packages/insights/presentation";
 import { useState, useEffect, useRef, useEffectEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -90,7 +93,6 @@ import { AnalysisHistory } from "./analysis-history";
 import {
   CloudCatalogContribution,
   CloudCatalogReceipts,
-  SharedAnalysisNotes,
 } from "./cloud-catalog-controls";
 import { SetupJourney } from "./setup-journey";
 import { TaskRuntimePicker } from "./task-runtime-picker";
@@ -145,6 +147,7 @@ type Initial = {
   };
   sources: any[];
   selectedSource?: any;
+  projectSuggestions?: import("../lib/project-suggestions").ProjectSuggestions;
   recentPosts?: import("convex/server").FunctionReturnType<
     typeof import("../../../convex/_generated/api").api.posts.recent
   >;
@@ -1125,9 +1128,10 @@ export function Console({
   }
   const nav = [
     ["home", "Home", Home],
-    ["library", "Library", Library],
+    ["library", "Explore", Library],
+    ["save", "Save", Plus],
     ["posts", "Posts", Video],
-    ["projects", "Projects", GitBranch],
+    ["projects", "Work", GitBranch],
     ["improvements", "Improvements", FileCheck2],
     ["inbox", "Inbox", Inbox],
     ["runs", "Runs & PRs", GitPullRequest],
@@ -1162,17 +1166,22 @@ export function Console({
         <nav aria-label="Application">
           {nav
             .filter(([key]) =>
-              ["home", "posts", "library", "projects", "proposals"].includes(
-                key,
-              ),
+              ["home", "library", "save", "projects"].includes(key),
             )
             .map(([key, title, Icon]) => (
               <button
                 type="button"
                 key={key}
-                aria-current={view === key ? "page" : undefined}
-                className={view === key ? "active" : ""}
-                onClick={() => go(key)}
+                aria-current={
+                  mobileNavigationGroup(view) === key ? "page" : undefined
+                }
+                className={mobileNavigationGroup(view) === key ? "active" : ""}
+                disabled={
+                  key === "save" && ((readOnly && !demo) || !accessAvailable)
+                }
+                onClick={() =>
+                  key === "save" ? setCaptureOpen(true) : go(key)
+                }
               >
                 <Icon size={19} strokeWidth={1.7} aria-hidden="true" />
                 {title}
@@ -1185,10 +1194,6 @@ export function Console({
             ))}
         </nav>
         <div className="rail-bottom">
-          <button type="button" onClick={() => go("connections")}>
-            <Plug size={18} />
-            Connections
-          </button>
           <AccountMenu go={go} demo={demo} profile={profile} />
         </div>
       </aside>
@@ -1286,6 +1291,34 @@ export function Console({
               </Button>
             )}
           </div>
+          {[
+            "projects",
+            "proposals",
+            "proposal",
+            "runs",
+            "improvements",
+          ].includes(view) && (
+            <nav className="work-sections" aria-label="Work sections">
+              {[
+                ["projects", "Projects"],
+                ["proposals", "Proposals"],
+                ["runs", "Tasks"],
+              ].map(([key, title]) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-current={
+                    view === key || (key === "proposals" && view === "proposal")
+                      ? "page"
+                      : undefined
+                  }
+                  onClick={() => go(key)}
+                >
+                  {title}
+                </button>
+              ))}
+            </nav>
+          )}
           <NoticeToast
             message={notice}
             kind={noticeKind}
@@ -1821,6 +1854,7 @@ export function Console({
                   demo={demo}
                   org={organizationId}
                   repos={data.repositories}
+                  projectSuggestions={data.projectSuggestions}
                   devices={data.devices ?? []}
                   personalEnabled={
                     !demo && data.aiPreference?.personalAlphaEnabled === true
@@ -2799,7 +2833,7 @@ export function Console({
             onClick={() => go("projects")}
           >
             <GitBranch size={20} aria-hidden="true" />
-            Projects
+            Work
           </button>
           <AccountMenu
             go={go}
@@ -3626,6 +3660,7 @@ export function SourceDetail({
   demo,
   org,
   repos,
+  projectSuggestions,
   devices,
   personalEnabled,
   linkAnalysisEnabled,
@@ -3644,8 +3679,29 @@ export function SourceDetail({
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [manualCloudOpen, setManualCloudOpen] = useState(false);
   const [publicationMounted, setPublicationMounted] = useState(false);
+  const [postSettingsOpen, setPostSettingsOpen] = useState(false);
+  const [settingsAnchor, setSettingsAnchor] = useState<string | null>(null);
+  const [expandedInsight, setExpandedInsight] = useState<number | null>(null);
   const [cloudRequestError, setCloudRequestError] = useState("");
   const transcript = useRef<HTMLDetailsElement>(null);
+  function openPostSettings(anchor: string) {
+    setSettingsAnchor(anchor);
+    setPostSettingsOpen(true);
+    if (anchor === "source-transcript") setTranscriptOpen(true);
+  }
+  useEffect(() => {
+    if (!postSettingsOpen || !settingsAnchor) return;
+    const timer = setTimeout(() => {
+      const target = document.getElementById(settingsAnchor);
+      if (target) {
+        if (target instanceof HTMLDetailsElement) target.open = true;
+        target.scrollIntoView({ block: "start" });
+        target.focus({ preventScroll: true });
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [postSettingsOpen, settingsAnchor]);
+
   const cloudSpeechSegments =
     detail.preparedService?.transcript ??
     (isCloudObservedMedia(detail.orderedMedia?.post)
@@ -3844,131 +3900,33 @@ export function SourceDetail({
     );
   return (
     <>
-      {!demo && !detailLoading && (
-        <SourceProgressPanel
-          source={progressSource}
-          now={Math.max(retentionTime, Date.now())}
-          organizationId={org}
-        />
-      )}
-      {!demo && !detailLoading && (
-        <>
-          <SourceAcquisitionPanel
-            source={detail}
-            call={strictCall}
-            readOnly={readOnly}
-            onAnalyze={() =>
-              document
-                .getElementById("source-analysis-actions")
-                ?.scrollIntoView({ block: "start" })
-            }
-          />
-          {detail.publicImportId && !detail.sharedCloud ? (
-            <SavedPublicSource
-              sourceId={sourceId}
-              call={strictCall}
-              readOnly={readOnly}
-              enabled
-            />
-          ) : null}
-        </>
-      )}
-      {!demo && !detailLoading && detail.evidenceRegistry && (
-        <section className="panel">
-          <h2>Acquired source evidence</h2>
-          <p>
-            Inspect this retained revision before approving analysis. Retrieval
-            and analysis are separate actions.
-          </p>
-          <TypedSourceEvidence
-            evidenceRegistry={detail.evidenceRegistry}
-            sourceRevision={detail.sourceRevision}
-          />
-          <a
-            href="/help/first-useful-insight"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Evidence and coverage help
-          </a>
-        </section>
-      )}
-      {viewFrame && (
-        <EvidenceViewer
-          key={viewFrame}
-          frames={
-            savedFrames.some((f: any) => f.id === viewFrame)
-              ? savedFrames
-              : [
-                  {
-                    id: viewFrame,
-                    startMs:
-                      insights
-                        .flatMap((i: any) => i.evidence ?? [])
-                        .find((e: any) => e.id === viewFrame)?.startMs ?? 0,
-                  },
-                ]
-          }
-          initialId={viewFrame}
-          untimed={untimedImages}
-          onClose={() => setViewFrame(undefined)}
-        />
-      )}
-      <PostInsightReader
-        sourcePreview={
-          detail.url && (
-            <a
-              className="panel source-origin"
-              href={detail.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Open original source: ${postDisplayTitle(detail)}`}
-            >
-              <SourceThumbnail source={detail} demo={demo} />
-              <span className="source-origin-copy">
-                <strong>{postDisplayTitle(detail)}</strong>
-                {detail.linkPreview?.authorName && (
-                  <span>{detail.linkPreview.authorName}</span>
-                )}
-                <span>Open original source</span>
-              </span>
-              <ArrowRight size={20} aria-hidden="true" />
-            </a>
-          )
-        }
-      >
-        {detail.assistantIntake && (
-          <AssistantIntakeStatus
-            key={`${sourceId}:${detail.state}`}
-            sourceId={sourceId}
-            demo={demo}
-            call={call}
-          />
-        )}
-        <div className="panel">
-          <span className="coverage">
-            {sourceCoverageLabel(detail.coverage)}
-          </span>
-          <h2>AI summary</h2>
-          {detail.analysisVersion && (
-            <p className="fine">
-              Version {detail.analysisVersion.number} selected. Requested{" "}
-              {detail.analysisVersion.requestedModel} ·{" "}
-              {detail.analysisVersion.requestedEffort}. Review the cited
-              evidence.
-            </p>
-          )}
-          <p>{overview}</p>
-          {detail.error && (
-            <p className="error" role="alert">
-              {detail.error}
-            </p>
-          )}
-          <p className="fine">
-            {detail.coverage === "full_sampled"
-              ? "Frames are sampled. Automatic transcripts can contain errors."
-              : "Review the evidence coverage and analysis notes."}
-          </p>
+      <div className="post-reader-tools">
+        <SettingsPanel
+          title="Post settings"
+          triggerLabel="Post settings"
+          open={postSettingsOpen}
+          onOpenChange={(open) => {
+            setPostSettingsOpen(open);
+            if (!open) setSettingsAnchor(null);
+          }}
+        >
+          {!demo &&
+            !detailLoading &&
+            detail.state === "ready" &&
+            (isCloudObservedMedia(detail.orderedMedia?.post) ||
+              detail.preparedService ||
+              detail.sharedCloud) && (
+              <AnalysisHistory
+                key={sourceId}
+                sourceId={sourceId}
+                revision={sourceRevision}
+                disabled={readOnly || busy}
+                reanalysisDisabled={!detail.workCloudMediaEnabled}
+                recommendationMode={detail.sharedCloud?.selectionMode}
+                call={strictCall ?? call}
+                onChange={() => onRefresh?.()}
+              />
+            )}
           <details className="source-notes">
             <summary>Full summary and analysis notes</summary>
             {overview !== summary && <p>{summary}</p>}
@@ -4000,67 +3958,7 @@ export function SourceDetail({
                 ? `Post published ${new Date(detail.publishedAt).toLocaleString()}.`
                 : "Post publication date unavailable."}
             </p>
-          </details>
-        </div>
-        {!demo &&
-          !detailLoading &&
-          detail.state === "ready" &&
-          (isCloudObservedMedia(detail.orderedMedia?.post) ||
-            detail.preparedService ||
-            detail.sharedCloud) && (
-            <AnalysisHistory
-              key={sourceId}
-              sourceId={sourceId}
-              revision={sourceRevision}
-              disabled={readOnly || busy}
-              reanalysisDisabled={!detail.workCloudMediaEnabled}
-              recommendationMode={detail.sharedCloud?.selectionMode}
-              call={strictCall ?? call}
-              onChange={() => onRefresh?.()}
-            />
-          )}
-        {detail.sharedCloud && (
-          <section className="panel" aria-label="Shared analysis">
-            <h2>Shared analysis</h2>
-            <p>
-              {detail.sharedCloud.selectionMode === "recommended"
-                ? "Following the reviewed catalog recommendation."
-                : "Using your selected version."}{" "}
-              Personal notes stay in your library and remain attached to the
-              version you reviewed.
-            </p>
-            <p className="fine">
-              Screenshots are sampled. Model settings are host-reported.
-              Evidence is available until{" "}
-              {new Date(detail.sharedCloud.retainUntil).toLocaleString()} while
-              your catalog access remains active.
-            </p>
-          </section>
-        )}
-        {detail.sharedCloud?.canEditNotes && (
-          <SharedAnalysisNotes
-            key={`${sourceId}:${detail.analysisVersion.id}:${detail.sharedCloud.notesUpdatedAt}`}
-            sourceId={sourceId}
-            versionId={detail.analysisVersion.id}
-            note={detail.sharedCloud.privateNote}
-            corrections={detail.sharedCloud.corrections}
-            updatedAt={detail.sharedCloud.notesUpdatedAt}
-            disabled={readOnly || busy}
-            call={strictCall ?? call}
-            onChange={() => onRefresh?.()}
-          />
-        )}
-        {detail.catalogContributionAvailable && (
-          <CloudCatalogContribution
-            key={`${sourceId}:${detail.analysisVersion.id}`}
-            sourceId={sourceId}
-            versionId={detail.analysisVersion.id}
-            disabled={readOnly || busy}
-            call={strictCall ?? call}
-          />
-        )}
-        <section className="panel">
-          <h2>Main points</h2>
+          </details>{" "}
           {!demo &&
             !detailLoading &&
             detail.state === "ready" &&
@@ -4081,216 +3979,6 @@ export function SourceDetail({
                 }
               />
             )}
-          {!detailLoading && insights.length > 1 && (
-            <nav className="insight-index" aria-label="Main points">
-              {insights.map((insight: any, index: number) => (
-                <a key={insight.id ?? index} href={`#insight-${index}`}>
-                  {insight.title}
-                </a>
-              ))}
-            </nav>
-          )}
-          {detailLoading && (
-            <output aria-live="polite">
-              <Loader2 className="spinner" size={16} aria-hidden="true" />{" "}
-              Loading source details…
-            </output>
-          )}
-          {!detailLoading &&
-            insights.map((i: any, index: number) => (
-              <article
-                className="insight"
-                id={`insight-${index}`}
-                key={i.id ?? i.title}
-                tabIndex={-1}
-              >
-                <h3>{i.title}</h3>
-                <p>{i.claim}</p>
-                <p>{i.interpretation}</p>
-                {(i.confidence || demo) && (
-                  <span className="status">
-                    {i.confidence ?? "Synthetic evidence"}
-                  </span>
-                )}
-                {!!i.evidence?.length && (
-                  <details
-                    className="insight-evidence"
-                    onToggle={(event) => {
-                      if (!demo && event.currentTarget.open)
-                        for (const e of i.evidence ?? [])
-                          journey?.citation(
-                            `${sourceId}:${detail.generation}:${detail.updatedAt}:${i.id}:${e.id}`,
-                            e.kind,
-                            detail.coverage,
-                          );
-                    }}
-                  >
-                    <summary>
-                      Evidence · {i.evidence.length}{" "}
-                      {i.evidence.length === 1 ? "reference" : "references"}
-                    </summary>
-                    <ul className="evidence-links">
-                      {i.evidence?.map((e: any) => (
-                        <li key={e.id}>
-                          {e.kind === "frame" && !demo && (
-                            <button
-                              type="button"
-                              className="evidence-link"
-                              onClick={(event) => {
-                                event.currentTarget.focus({
-                                  preventScroll: true,
-                                });
-                                setViewFrame(e.id);
-                              }}
-                            >
-                              {untimedImages
-                                ? imageLabel(e.id)
-                                : `Frame · ${(e.startMs / 1000).toFixed(1)}s`}
-                            </button>
-                          )}
-                          {e.kind === "transcript" && (
-                            <a
-                              href="#source-transcript"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                setTranscriptOpen(true);
-                                const target = transcript.current;
-                                if (target) {
-                                  target.open = true;
-                                  target.scrollIntoView({ block: "start" });
-                                  target.focus({ preventScroll: true });
-                                }
-                              }}
-                            >
-                              Transcript ·{" "}
-                              {e.startMs === null
-                                ? "supplied text"
-                                : `${(e.startMs / 1000).toFixed(1)}s`}
-                            </a>
-                          )}
-                          {e.kind === "caption" &&
-                            detail.acquisition?.description && (
-                              <a
-                                href="#source-caption"
-                                onClick={() => {
-                                  const target = document.getElementById(
-                                    "source-caption",
-                                  ) as HTMLDetailsElement | null;
-                                  if (target) {
-                                    target.open = true;
-                                    target.focus({ preventScroll: true });
-                                  }
-                                }}
-                              >
-                                Post caption
-                              </a>
-                            )}
-                          {[
-                            "github_file",
-                            "reddit_post",
-                            "reddit_comment",
-                            "supplied_text",
-                          ].includes(e.kind) && (
-                            <span>
-                              {label(e.kind)} · see cited excerpt below
-                            </span>
-                          )}
-                          {![
-                            "github_file",
-                            "reddit_post",
-                            "reddit_comment",
-                            "supplied_text",
-                          ].includes(e.kind) &&
-                            e.kind !== "caption" &&
-                            e.kind !== "transcript" &&
-                            (e.kind !== "frame" || demo) && (
-                              <span>
-                                {label(e.kind)} ·{" "}
-                                {e.startMs === null
-                                  ? "Supplied text"
-                                  : `${(e.startMs / 1000).toFixed(1)}s`}
-                              </span>
-                            )}
-                        </li>
-                      ))}
-                    </ul>
-                    {detail.orderedMedia &&
-                      !isCloudObservedMedia(detail.orderedMedia.post) && (
-                        <ul>
-                          {i.evidence.map((ref: any) => {
-                            const citation = socialCitation(
-                              ref,
-                              detail.orderedMedia.evidence,
-                            );
-
-                            const record = detail.orderedMedia.evidence.find(
-                              (e: any) =>
-                                e.id === ref.id && e.kind === ref.kind,
-                            );
-
-                            return (
-                              <li key={ref.id}>
-                                <p>
-                                  Observed video - {ref.kind} -{" "}
-                                  {ref.startMs === null
-                                    ? "untimed"
-                                    : `${(ref.startMs / 1000).toFixed(1)}s`}{" "}
-                                  - {citation.basis}
-                                </p>
-                                <p>{record?.text}</p>
-                                {citation.uncertainty && (
-                                  <p>{citation.uncertainty}</p>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    {detail.sharedCloud && (
-                      <ul>
-                        {i.evidence.map((ref: any) => {
-                          const observation =
-                            detail.sharedCloud.observations.find(
-                              (entry: any) => entry.id === ref.id,
-                            );
-                          return (
-                            <li key={ref.id}>
-                              <blockquote>
-                                {observation?.text ??
-                                  "Observation unavailable."}
-                              </blockquote>
-                              <p className="fine">
-                                {observation?.basis}
-                                {observation?.uncertainty
-                                  ? `. ${observation.uncertainty}`
-                                  : ""}
-                              </p>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-
-                    {detail.evidenceRegistry && (
-                      <TypedSourceEvidence
-                        evidenceRegistry={detail.evidenceRegistry.filter(
-                          (record: any) =>
-                            i.evidence.some((e: any) => e.id === record.id),
-                        )}
-                        sourceRevision={detail.sourceRevision}
-                      />
-                    )}
-                  </details>
-                )}
-              </article>
-            ))}
-          {!detailLoading && !insights.length && !detail.error && (
-            <p>
-              {["processing", "queued"].includes(detail.state)
-                ? "Analysis is underway."
-                : "No main points yet. Review the source's analysis options."}
-            </p>
-          )}
           {!demo &&
             canRepairEvidence &&
             !readOnly &&
@@ -4387,757 +4075,1157 @@ export function SourceDetail({
               <p>Confirmed correction: {detail.analysis.correctedText}</p>
             )}
           </details>
-        </section>
-      </PostInsightReader>
-      {detail.acquisition?.description && (
-        <details id="source-caption" className="panel" tabIndex={-1}>
-          <summary>Post caption</summary>
-          <p style={{ whiteSpace: "pre-wrap" }}>
-            {detail.acquisition.description}
-          </p>
-        </details>
-      )}
-      {!demo && savedFrames.length > 0 && (
-        <section
-          className="panel"
-          aria-label={untimedImages ? "Image evidence" : "Video evidence"}
-        >
-          <h2>{untimedImages ? "Image evidence" : "Video evidence"}</h2>
-          <div className="evidence-grid">
-            {visibleFrames.map((frame: any) => (
-              <figure key={frame.id}>
-                <button
-                  type="button"
-                  className="evidence-image-button"
-                  onClick={(event) => {
-                    event.currentTarget.focus({ preventScroll: true });
-                    setViewFrame(frame.id);
-                  }}
-                >
-                  <Image
-                    src={`/api/evidence/${encodeURIComponent(frame.id)}?inline=true`}
-                    alt={
-                      untimedImages
-                        ? `Private source ${imageLabel(frame.id).toLowerCase()}`
-                        : `Private sampled video frame at ${(frame.startMs / 1000).toFixed(1)} seconds`
-                    }
-                    width={960}
-                    height={540}
-                    unoptimized
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </button>
-                <figcaption>
-                  {untimedImages
-                    ? imageLabel(frame.id)
-                    : `${(frame.startMs / 1000).toFixed(1)}s`}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-          {savedFrames.length > visibleFrames.length || allFrames ? (
-            <Button onClick={() => setAllFrames(!allFrames)}>
-              {allFrames
-                ? `Show fewer ${untimedImages ? "images" : "frames"}`
-                : `View all ${savedFrames.length} ${untimedImages ? "images" : "frames"}`}
-            </Button>
-          ) : null}
-          <p className="fine">
-            {untimedImages
-              ? "Images support the analysis. Open one to inspect the evidence."
-              : "Selected frames support the analysis. Sampling can miss short scenes."}
-          </p>
-        </section>
-      )}
-      {detail.privateLibrary && !demo && !detailLoading && (
-        <section
-          className="panel source-notes"
-          aria-label="Private space filing"
-        >
-          <h2>File this post</h2>
-          <p className="fine">
-            Personal and Business are views of your private library. Filing
-            never shares this post or runs another analysis.
-          </p>
-          <div className="row">
-            {(["personal", "business"] as const).map((space) => (
-              <label key={space} className="check">
-                <input
-                  type="checkbox"
-                  checked={(detail.spaces ?? []).includes(space)}
-                  disabled={readOnly || busy}
-                  onChange={async (event) => {
-                    const spaces = event.target.checked
-                      ? [...(detail.spaces ?? []), space]
-                      : (detail.spaces ?? []).filter(
-                          (s: string) => s !== space,
-                        );
-                    const result = await call("fileSourceSpaces", {
-                      organizationId: org,
-                      sourceId,
-                      spaces,
-                    });
-                    if (result)
-                      setDetail((old: any) => ({
-                        ...old,
-                        spaces: result.spaces,
-                      }));
-                  }}
-                />
-                {space === "personal" ? "Personal" : "Business"}
-              </label>
-            ))}
-          </div>
-        </section>
-      )}
-      {detail.privateLibrary && !demo && !detailLoading && (
-        <TeamKnowledgeSharing
-          key={sourceId}
-          organizationId={org}
-          source={detail}
-          call={call}
-          readOnly={readOnly}
-        />
-      )}
-      <details
-        className="panel source-notes"
-        onToggle={(e) => {
-          if (e.currentTarget.open)
-            setCategoryDraft(
-              (detail.categoryNames ?? [])
-                .filter(
-                  (_: string, index: number) =>
-                    !detail.categoryKeys?.[index]?.startsWith("domain_"),
-                )
-                .join(", "),
-            );
-        }}
-      >
-        <summary>
-          Categories
-          {detail.categoryNames?.length
-            ? ` (${detail.categoryNames.length})`
-            : ""}
-        </summary>
-        {!readOnly && (
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const names = categoryDraft
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean);
-              const result = await call("assignCategories", {
-                id: sourceId,
-                names,
-              });
-              if (result?.saved)
-                setDetail({
-                  ...detail,
-                  categoryNames: result.names,
-                  categoryKeys: result.keys,
-                });
+          {detail.acquisition?.description && (
+            <details id="source-caption" className="panel" tabIndex={-1}>
+              <summary>Post caption</summary>
+              <p style={{ whiteSpace: "pre-wrap" }}>
+                {detail.acquisition.description}
+              </p>
+            </details>
+          )}
+          {!demo && savedFrames.length > 0 && (
+            <section
+              className="panel"
+              aria-label={untimedImages ? "Image evidence" : "Video evidence"}
+            >
+              <h2>{untimedImages ? "Image evidence" : "Video evidence"}</h2>
+              <div className="evidence-grid">
+                {visibleFrames.map((frame: any) => (
+                  <figure key={frame.id}>
+                    <button
+                      type="button"
+                      className="evidence-image-button"
+                      onClick={(event) => {
+                        event.currentTarget.focus({ preventScroll: true });
+                        setViewFrame(frame.id);
+                      }}
+                    >
+                      <Image
+                        src={`/api/evidence/${encodeURIComponent(frame.id)}?inline=true`}
+                        alt={
+                          untimedImages
+                            ? `Private source ${imageLabel(frame.id).toLowerCase()}`
+                            : `Private sampled video frame at ${(frame.startMs / 1000).toFixed(1)} seconds`
+                        }
+                        width={960}
+                        height={540}
+                        unoptimized
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </button>
+                    <figcaption>
+                      {untimedImages
+                        ? imageLabel(frame.id)
+                        : `${(frame.startMs / 1000).toFixed(1)}s`}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+              {savedFrames.length > visibleFrames.length || allFrames ? (
+                <Button onClick={() => setAllFrames(!allFrames)}>
+                  {allFrames
+                    ? `Show fewer ${untimedImages ? "images" : "frames"}`
+                    : `View all ${savedFrames.length} ${untimedImages ? "images" : "frames"}`}
+                </Button>
+              ) : null}
+              <p className="fine">
+                {untimedImages
+                  ? "Images support the analysis. Open one to inspect the evidence."
+                  : "Selected frames support the analysis. Sampling can miss short scenes."}
+              </p>
+            </section>
+          )}
+          {detail.privateLibrary && !demo && !detailLoading && (
+            <section
+              className="panel source-notes"
+              aria-label="Private space filing"
+            >
+              <h2>File this post</h2>
+              <p className="fine">
+                Personal and Business are views of your private library. Filing
+                never shares this post or runs another analysis.
+              </p>
+              <div className="row">
+                {(["personal", "business"] as const).map((space) => (
+                  <label key={space} className="check">
+                    <input
+                      type="checkbox"
+                      checked={(detail.spaces ?? []).includes(space)}
+                      disabled={readOnly || busy}
+                      onChange={async (event) => {
+                        const spaces = event.target.checked
+                          ? [...(detail.spaces ?? []), space]
+                          : (detail.spaces ?? []).filter(
+                              (s: string) => s !== space,
+                            );
+                        const result = await call("fileSourceSpaces", {
+                          organizationId: org,
+                          sourceId,
+                          spaces,
+                        });
+                        if (result)
+                          setDetail((old: any) => ({
+                            ...old,
+                            spaces: result.spaces,
+                          }));
+                      }}
+                    />
+                    {space === "personal" ? "Personal" : "Business"}
+                  </label>
+                ))}
+              </div>
+            </section>
+          )}
+          {detail.privateLibrary && !demo && !detailLoading && (
+            <TeamKnowledgeSharing
+              key={sourceId}
+              organizationId={org}
+              source={detail}
+              call={call}
+              readOnly={readOnly}
+            />
+          )}
+          <details
+            className="panel source-notes"
+            onToggle={(e) => {
+              if (e.currentTarget.open)
+                setCategoryDraft(
+                  (detail.categoryNames ?? [])
+                    .filter(
+                      (_: string, index: number) =>
+                        !detail.categoryKeys?.[index]?.startsWith("domain_"),
+                    )
+                    .join(", "),
+                );
             }}
           >
-            <label>
-              Separate categories with commas
-              <input
-                value={categoryDraft}
-                maxLength={400}
-                onChange={(e) => setCategoryDraft(e.target.value)}
-                placeholder="Music, Reading, Product design"
-              />
-            </label>
-            <button
-              type="submit"
-              className="secondary"
-              disabled={busy}
-              aria-busy={busy || undefined}
+            <summary>
+              Categories
+              {detail.categoryNames?.length
+                ? ` (${detail.categoryNames.length})`
+                : ""}
+            </summary>
+            {!readOnly && (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const names = categoryDraft
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+                  const result = await call("assignCategories", {
+                    id: sourceId,
+                    names,
+                  });
+                  if (result?.saved)
+                    setDetail({
+                      ...detail,
+                      categoryNames: result.names,
+                      categoryKeys: result.keys,
+                    });
+                }}
+              >
+                <label>
+                  Separate categories with commas
+                  <input
+                    value={categoryDraft}
+                    maxLength={400}
+                    onChange={(e) => setCategoryDraft(e.target.value)}
+                    placeholder="Music, Reading, Product design"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  className="secondary"
+                  disabled={busy}
+                  aria-busy={busy || undefined}
+                >
+                  {busy ? "Saving…" : "Save categories"}
+                </button>
+              </form>
+            )}
+            {!demo && canSuggestCategories && !!detail.categoryKeys?.length && (
+              <details>
+                <summary>Suggest a shared category</summary>
+                <p className="fine">
+                  Only this category name is submitted for review. Your videos
+                  and insights stay private. Workspace owners and admins can
+                  submit.
+                </p>
+                {detail.categoryKeys.map((key: string, index: number) => (
+                  <Button
+                    key={key}
+                    busy={busy}
+                    onClick={() =>
+                      call("suggestCategory", { organizationId: org, key })
+                    }
+                  >
+                    Suggest {detail.categoryNames[index]}
+                  </Button>
+                ))}
+              </details>
+            )}
+          </details>
+          {detail.state === "needs_upload" &&
+            !(
+              detail.workCloudSaveIntent &&
+              detail.workCloudSaveIntent.analysisGeneration === undefined &&
+              detail.workCloudSaveIntent.expiresAt > retentionTime
+            ) &&
+            !detail.currentRevisionId &&
+            !["github_repository", "reddit_thread"].includes(
+              detail.sourceType,
+            ) && (
+              <details className="panel" open={!detail.assistantIntake}>
+                <summary>
+                  {detail.assistantIntake
+                    ? "Supply content if link retrieval fails"
+                    : "Supply permitted content"}
+                </summary>
+                <p>
+                  {detail.assistantIntake
+                    ? "Automatic analysis uses your saved link. If retrieval fails, you can attach permitted media or a transcript here."
+                    : "This saved URL has no verified audiovisual analysis. Attach a permitted upload or supplied transcript to this saved source."}
+                </p>
+                <CaptureForm
+                  demo={demo}
+                  organizationId={org}
+                  call={call}
+                  existingSourceId={id(source)}
+                  existingGeneration={detail.generation}
+                  devices={devices}
+                  personalEnabled={personalEnabled}
+                  linkAnalysisEnabled={linkAnalysisEnabled}
+                  onDone={() => {}}
+                />
+              </details>
+            )}
+          <details className="panel" hidden={Boolean(detail.publicImportId)}>
+            <summary>Edit summary, tags and transcript correction</summary>
+            <form
+              key={`${id(source)}:${detail.updatedAt}`}
+              className="form-grid"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const f = new FormData(e.currentTarget);
+                await call("editSource", {
+                  id: id(source),
+                  summary: f.get("summary"),
+                  tags: String(f.get("tags") ?? "")
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean),
+                  ...(f.get("correction")
+                    ? { correctedText: f.get("correction") }
+                    : {}),
+                });
+              }}
             >
-              {busy ? "Saving…" : "Save categories"}
-            </button>
-          </form>
-        )}
-        {!demo && canSuggestCategories && !!detail.categoryKeys?.length && (
-          <details>
-            <summary>Suggest a shared category</summary>
-            <p className="fine">
-              Only this category name is submitted for review. Your videos and
-              insights stay private. Workspace owners and admins can submit.
-            </p>
-            {detail.categoryKeys.map((key: string, index: number) => (
-              <Button
-                key={key}
-                busy={busy}
+              <label>
+                Summary
+                <textarea
+                  name="summary"
+                  maxLength={1500}
+                  defaultValue={detail.summary ?? ""}
+                />
+              </label>
+              <label>
+                Tags, separated by commas
+                <input
+                  name="tags"
+                  defaultValue={detail.tags?.join(", ") ?? ""}
+                />
+              </label>
+              <label
+                hidden={Boolean(
+                  detail.currentRevisionId ||
+                  detail.publicImportId ||
+                  ["github_repository", "reddit_thread"].includes(
+                    detail.sourceType,
+                  ),
+                )}
+              >
+                Transcript correction, retained beside the original
+                <textarea
+                  name="correction"
+                  disabled={Boolean(
+                    detail.currentRevisionId ||
+                    detail.publicImportId ||
+                    ["github_repository", "reddit_thread"].includes(
+                      detail.sourceType,
+                    ),
+                  )}
+                  maxLength={60000}
+                  defaultValue={detail.analysis?.correctedText ?? ""}
+                />
+              </label>
+              <button className="primary">Save source edits</button>
+            </form>
+          </details>
+          {detail.catalogContributionAvailable && (
+            <CloudCatalogContribution
+              key={`${sourceId}:${detail.analysisVersion.id}`}
+              sourceId={sourceId}
+              versionId={detail.analysisVersion.id}
+              disabled={readOnly || busy}
+              call={strictCall ?? call}
+            />
+          )}
+          <section className="panel" aria-label="Advanced project evaluation">
+            <h2>Applies to your projects</h2>
+            {detail.analysisVersion &&
+              detail.analysisVersion.provenance !== "legacy_recorded" && (
+                <p>
+                  Project actions below remain bound to the original analysis.
+                  Existing project reviews keep their original evidence. Select
+                  the original analysis before starting a new project
+                  evaluation.
+                </p>
+              )}
+            <fieldset
+              disabled={
+                readOnly ||
+                busy ||
+                (detail.analysisVersion &&
+                  detail.analysisVersion.provenance !== "legacy_recorded")
+              }
+              style={{ border: 0, padding: 0, minWidth: 0 }}
+            >
+              <a
+                href="/help/evaluate-an-idea-for-a-project"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Review project context and alternatives
+              </a>
+              {detail.analysis?.insights?.length > 0 && (
+                <>
+                  <p>
+                    Use{" "}
+                    {insightIds.length === detail.analysis.insights.length
+                      ? "the whole post"
+                      : `${insightIds.length} selected main points`}
+                    .
+                  </p>
+                  <details className="point-selection">
+                    <summary>Advanced · choose main points</summary>
+                    {detail.analysis.insights.map((insight: any) => (
+                      <label key={insight.id}>
+                        <input
+                          type="checkbox"
+                          checked={!excludedInsights.includes(insight.id)}
+                          onChange={(event) =>
+                            setExcludedInsights((old) =>
+                              event.target.checked
+                                ? old.filter((key) => key !== insight.id)
+                                : [...old, insight.id],
+                            )
+                          }
+                        />
+                        {insight.title}
+                      </label>
+                    ))}
+                  </details>
+                  <button
+                    className="secondary"
+                    disabled={busy || readOnly || !insightIds.length}
+                    onClick={() =>
+                      call("suggestRepositories", {
+                        id: id(source),
+                        insightIds,
+                        maxCredits: 10,
+                      })
+                    }
+                  >
+                    Find up to five plausible projects, maximum 10 credits
+                  </button>
+                  <p className="fine">
+                    This selection uses confirmed business profiles. It does not
+                    establish implementation fit or approve coding. Evaluate a
+                    project separately to inspect repository evidence.
+                  </p>
+                  {selection && (
+                    <div>
+                      <p>
+                        {selection.candidates.length
+                          ? "Possible project matches"
+                          : "No plausible project match"}
+                      </p>
+                      {selection.noFitReason && <p>{selection.noFitReason}</p>}
+                      {selection.candidates.map((candidate: any) => (
+                        <article key={candidate.repositoryId}>
+                          <h3>
+                            {repos.find(
+                              (repo: any) =>
+                                id(repo) === candidate.repositoryId,
+                            )?.fullName ?? "Selected project"}
+                          </h3>
+                          <p>{candidate.reason}</p>
+                          <button
+                            className="secondary"
+                            disabled={busy || readOnly || !insightIds.length}
+                            onClick={() =>
+                              call("match", {
+                                id: id(source),
+                                repositoryId: candidate.repositoryId,
+                                insightIds,
+                                maxCredits: 10,
+                              })
+                            }
+                          >
+                            Evaluate inspected repository, maximum 10 credits
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+              {detail.matches?.map((m: any) => (
+                <article key={m.repositoryId}>
+                  <h3>{label(m.disposition)}</h3>
+                  <p>{m.reason}</p>
+                </article>
+              ))}
+              {detail.proposals?.map((p: any) => (
+                <button
+                  className="secondary"
+                  key={id(p)}
+                  onClick={() => onProposal(p)}
+                >
+                  {p.title} · {label(p.disposition)}
+                </button>
+              ))}
+              {repos.map((r: any) => (
+                <button
+                  className="secondary"
+                  key={id(r)}
+                  disabled={
+                    busy ||
+                    readOnly ||
+                    !insightIds.length ||
+                    detail.state !== "ready" ||
+                    !r.enabled ||
+                    !r.confirmed
+                  }
+                  onClick={() =>
+                    call("match", {
+                      id: id(source),
+                      repositoryId: id(r),
+                      insightIds,
+                      maxCredits: 10,
+                    })
+                  }
+                >
+                  Match {r.fullName}, maximum 10 credits
+                </button>
+              ))}
+              {!repos.length && !detail.matches?.length && (
+                <p>
+                  No selected repository yet. Your source can remain useful as a
+                  reference.
+                </p>
+              )}
+            </fieldset>
+          </section>
+          <div className="panel" id="post-processing-options" tabIndex={-1}>
+            <h2>Processing and retention</h2>
+            {detail.localAnalysisReceipt && (
+              <p>
+                GPT-6.1 Sol · Medium · Your Codex subscription · 0 app credits.{" "}
+                {detail.localAnalysisReceipt.frames} sampled frames; video
+                coverage is sampled.
+              </p>
+            )}
+            {!detail.localAnalysisReceipt && detail.processingReceipt && (
+              <details>
+                <summary>
+                  Cloud · {detail.processingReceipt.chargedCredits} credits ·{" "}
+                  {Math.round(
+                    (detail.processingReceipt.completedAt -
+                      detail.processingReceipt.startedAt) /
+                      1000,
+                  )}
+                  s
+                </summary>
+                <p>
+                  Model: {detail.processingReceipt.model}. Funded by your
+                  VibeScroll allowance.
+                </p>
+                <p>
+                  Inference estimate:{" "}
+                  {new Intl.NumberFormat("en", {
+                    style: "currency",
+                    currency: "EUR",
+                    minimumFractionDigits: 4,
+                    maximumFractionDigits: 4,
+                  }).format(detail.processingReceipt.inferenceMicros / 1000000)}
+                  . This includes a conservative currency and tax provision; it
+                  is not a provider invoice. Cloud preparation used{" "}
+                  {detail.processingReceipt.computeCredits} processing credits.
+                </p>
+                <p>
+                  {detail.processingReceipt.inputTokens.toLocaleString()} input
+                  tokens ·{" "}
+                  {detail.processingReceipt.outputTokens.toLocaleString()}{" "}
+                  output tokens, including thinking.
+                </p>
+                {detail.processingReceipt.reusedMedia && (
+                  <p>Previously prepared speech and frames were reused.</p>
+                )}
+              </details>
+            )}
+            {isCloudObservedMedia(detail.orderedMedia?.post) && (
+              <section className="panel">
+                <h3>Private host-reported media observations</h3>
+                <p>
+                  Partial sampled video evidence reported by the connected host.
+                  Retained screenshots can be opened through their citations.
+                  Source acquisition, model settings and raw-media deletion
+                  remain host-reported.
+                </p>
+                <p>
+                  App result retained until{" "}
+                  {new Date(
+                    detail.orderedMedia.post.retainUntil,
+                  ).toLocaleString()}
+                  .
+                </p>
+                {detail.orderedMedia.post.caption && (
+                  <p>{detail.orderedMedia.post.caption}</p>
+                )}
+              </section>
+            )}
+
+            {detail.speechProvenance && (
+              <details>
+                <summary>Transcription details</summary>
+                <p>
+                  {detail.speechProvenance.model} ·{" "}
+                  {detail.speechProvenance.language || "Language uncertain"} ·
+                  approximate timestamps
+                </p>
+                {detail.speechProvenance.uncertainty && (
+                  <p>{detail.speechProvenance.uncertainty}</p>
+                )}
+              </details>
+            )}
+            {detail.workCloudPrivateLibraryRequired && !readOnly && (
+              <section className="card">
+                <h3>Work Cloud needs your private library</h3>
+                <p>
+                  This older workspace still uses team access. Review whether it
+                  can become your private library while keeping these posts and
+                  links in place.
+                </p>
+                <Link
+                  prefetch={false}
+                  href={`/app/${org}/team#private-library`}
+                >
+                  Review private-library setup
+                </Link>
+              </section>
+            )}
+            {(detail.workCloudTextEnabled || detail.workCloudMediaEnabled) &&
+              !detail.publicImportId &&
+              ((detail.workCloudTextEnabled &&
+                (detail.kind === "text" || detail.currentRevisionId)) ||
+                (detail.workCloudMediaEnabled &&
+                  detail.kind === "url" &&
+                  !detail.currentRevisionId)) &&
+              !["ready", "processing"].includes(detail.state) &&
+              (detail.state !== "queued" || detail.workCloudRetryEligible) && (
+                <>
+                  {detail.kind === "url" && detail.workCloudLinkSetup && (
+                    <section className="panel">
+                      <h3>My own Cloud Work</h3>
+                      <p>
+                        {detail.workCloudLinkSetup?.chatLinksEnabled
+                          ? "New supported links sent to VibeScroll in ChatGPT or added with Cloud selected use your saved Cloud defaults. No per-post app review is needed."
+                          : "Complete automatic app and ChatGPT link setup once in Connections. After setup, supported links use your own Cloud Work without per-post review."}
+                      </p>
+                      {detail.workCloudLinkSetup?.monitorReady &&
+                      (detail.workCloudRetryEligible ||
+                        (detail.generation === 0 &&
+                          !detail.personalAnalysis &&
+                          !detail.workCloudSaveIntent)) ? (
+                        <button
+                          className="primary"
+                          disabled={readOnly || detailLoading || busy}
+                          onClick={async () => {
+                            setCloudRequestError("");
+                            try {
+                              await strictCall(
+                                detail.workCloudRetryEligible
+                                  ? "retrySavedWorkCloud"
+                                  : "analyzeSavedWorkCloud",
+                                detail.workCloudRetryEligible
+                                  ? {
+                                      sourceId,
+                                      generation: detail.generation,
+                                      revision: detail.updatedAt,
+                                      key: crypto.randomUUID(),
+                                    }
+                                  : { sourceId },
+                              );
+                              onRefresh?.();
+                            } catch {
+                              setCloudRequestError(
+                                "The Cloud request was not confirmed. Check setup and the existing post before trying again.",
+                              );
+                            }
+                          }}
+                        >
+                          {detail.workCloudRetryEligible
+                            ? "Retry using Cloud defaults"
+                            : "Analyze using Cloud defaults"}
+                        </button>
+                      ) : (
+                        <Link prefetch={false} href={`/app/${org}/connections`}>
+                          Complete or resume Cloud setup
+                        </Link>
+                      )}
+                      {cloudRequestError && (
+                        <p role="alert">{cloudRequestError}</p>
+                      )}
+                    </section>
+                  )}
+                  {!detail.workCloudLinkSetup && (
+                    <details
+                      className="panel"
+                      onToggle={(event) =>
+                        setManualCloudOpen(event.currentTarget.open)
+                      }
+                    >
+                      <summary>Advanced: manual Cloud handoff</summary>
+                      <p>
+                        Use this only for a deliberate diagnostic. Normal
+                        automatic links do not need this review.
+                      </p>
+                      {manualCloudOpen && (
+                        <WorkCloudText
+                          sourceId={id(detail)}
+                          organizationId={org}
+                          generation={detail.generation}
+
+                          revision={detail.updatedAt}
+                          media={
+                            detail.kind === "url" && !detail.currentRevisionId
+                          }
+
+                          retentionUntil={detail.sourceRetentionUntil}
+                          call={strictCall}
+                          disabled={readOnly || detailLoading}
+                        />
+                      )}
+                    </details>
+                  )}
+                </>
+              )}
+
+            {!demo &&
+              !readOnly &&
+              !detailLoading &&
+              detail.state === "queued" &&
+              source.state === "queued" &&
+              id(detail) === sourceId &&
+              detail.generation === source.generation &&
+              detail.updatedAt === source.updatedAt &&
+              detail.organizationId === org &&
+              detail.workCloudHandoff &&
+              source.workCloudHandoff !== null &&
+              (source.workCloudHandoff === undefined ||
+                workCloudHandoffKey(source.workCloudHandoff) ===
+                  workCloudHandoffKey(detail.workCloudHandoff)) &&
+              (detail.workCloudHandoff.media
+                ? source.workCloudMediaEnabled !== false
+                : source.workCloudTextEnabled !== false) &&
+              (detail.workCloudHandoff.media
+                ? detail.workCloudMediaEnabled
+                : detail.workCloudTextEnabled) && (
+                <PersistedWorkCloudHandoff
+                  receipt={detail.workCloudHandoff}
+                  sourceId={sourceId}
+                  organizationId={org}
+                  generation={detail.generation}
+                  revision={detail.updatedAt}
+                />
+              )}
+            {detail.personalAnalysis?.executor === "work_cloud" && (
+              <section className="panel">
+                <h3>Private Work Cloud request</h3>
+
+                <p>
+                  State: {detail.personalAnalysis.state}. Funding: your own
+                  subscription; API allowance 0 USD.
+                </p>
+
+                <p>
+                  Host execution, model settings, subscription usage and
+                  raw-media retention are unverified. The task ID is a client
+                  correlation UUID, not host attestation.
+                </p>
+
+                {["queued", "running"].includes(
+                  detail.personalAnalysis.state,
+                ) && (
+                  <button
+                    className="secondary"
+                    disabled={readOnly || detailLoading || busy}
+                    onClick={() =>
+                      call("cancelPersonalAnalysis", { id: id(detail) })
+                    }
+                  >
+                    Revoke app access to this request
+                  </button>
+                )}
+
+                <p>
+                  Stop the host task separately. Revocation does not confirm
+                  host cancellation or restore allowance. No alternate provider
+                  starts automatically.
+                </p>
+              </section>
+            )}
+
+            {personalEnabled &&
+              detail.personalAnalysis?.executor !== "work_cloud" && (
+                <PersonalSourceAnalysis
+                  key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
+
+                  source={detail}
+
+                  devices={devices}
+
+                  linkAnalysisEnabled={linkAnalysisEnabled}
+
+                  call={call}
+                />
+              )}
+
+            {detail.error && <p role="alert">{detail.error}</p>}
+            {cloudEnabled && detail.state !== "ready" && (
+              <button
+                className="primary"
+                disabled={
+                  busy || ["queued", "processing"].includes(detail.state)
+                }
                 onClick={() =>
-                  call("suggestCategory", { organizationId: org, key })
+                  call("process", { id: id(source), maxCredits: 10 })
                 }
               >
-                Suggest {detail.categoryNames[index]}
-              </Button>
-            ))}
-          </details>
-        )}
-      </details>
-      {detail.state === "needs_upload" &&
-        !(
-          detail.workCloudSaveIntent &&
-          detail.workCloudSaveIntent.analysisGeneration === undefined &&
-          detail.workCloudSaveIntent.expiresAt > retentionTime
-        ) &&
-        !detail.currentRevisionId &&
-        !["github_repository", "reddit_thread"].includes(detail.sourceType) && (
-          <details className="panel" open={!detail.assistantIntake}>
-            <summary>
-              {detail.assistantIntake
-                ? "Supply content if link retrieval fails"
-                : "Supply permitted content"}
-            </summary>
-            <p>
-              {detail.assistantIntake
-                ? "Automatic analysis uses your saved link. If retrieval fails, you can attach permitted media or a transcript here."
-                : "This saved URL has no verified audiovisual analysis. Attach a permitted upload or supplied transcript to this saved source."}
-            </p>
-            <CaptureForm
-              demo={demo}
-              organizationId={org}
-              call={call}
-              existingSourceId={id(source)}
-              existingGeneration={detail.generation}
-              devices={devices}
-              personalEnabled={personalEnabled}
-              linkAnalysisEnabled={linkAnalysisEnabled}
-              onDone={() => {}}
-            />
-          </details>
-        )}
-      <details className="panel" hidden={Boolean(detail.publicImportId)}>
-        <summary>Edit summary, tags and transcript correction</summary>
-        <form
-          key={`${id(source)}:${detail.updatedAt}`}
-          className="form-grid"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const f = new FormData(e.currentTarget);
-            await call("editSource", {
-              id: id(source),
-              summary: f.get("summary"),
-              tags: String(f.get("tags") ?? "")
-                .split(",")
-                .map((t) => t.trim())
-                .filter(Boolean),
-              ...(f.get("correction")
-                ? { correctedText: f.get("correction") }
-                : {}),
-            });
-          }}
-        >
-          <label>
-            Summary
-            <textarea
-              name="summary"
-              maxLength={1500}
-              defaultValue={detail.summary ?? ""}
-            />
-          </label>
-          <label>
-            Tags, separated by commas
-            <input name="tags" defaultValue={detail.tags?.join(", ") ?? ""} />
-          </label>
-          <label
-            hidden={Boolean(
-              detail.currentRevisionId ||
-              detail.publicImportId ||
-              ["github_repository", "reddit_thread"].includes(
-                detail.sourceType,
-              ),
+                Analyze in cloud, up to 10 credits
+              </button>
             )}
-          >
-            Transcript correction, retained beside the original
-            <textarea
-              name="correction"
-              disabled={Boolean(
-                detail.currentRevisionId ||
-                detail.publicImportId ||
-                ["github_repository", "reddit_thread"].includes(
-                  detail.sourceType,
-                ),
-              )}
-              maxLength={60000}
-              defaultValue={detail.analysis?.correctedText ?? ""}
-            />
-          </label>
-          <button className="primary">Save source edits</button>
-        </form>
-      </details>
-      <section className="panel" id="source-analysis-actions">
-        <h2>Applies to your projects</h2>
-        {detail.analysisVersion &&
-          detail.analysisVersion.provenance !== "legacy_recorded" && (
+            <button
+              className="secondary"
+              onClick={() => {
+                if (
+                  confirm(
+                    "Delete this source and its private evidence? Existing GitHub PRs remain on GitHub.",
+                  )
+                )
+                  call("deleteSource", { id: id(source) });
+              }}
+            >
+              Delete source
+            </button>
             <p>
-              Project actions below remain bound to the original analysis.
-              Existing project reviews keep their original evidence. Select the
-              original analysis before starting a new project evaluation.
+              Benefit remains unmeasured. A merged PR does not prove the idea
+              worked.
             </p>
-          )}
-        <fieldset
-          disabled={
-            readOnly ||
-            busy ||
-            (detail.analysisVersion &&
-              detail.analysisVersion.provenance !== "legacy_recorded")
-          }
-          style={{ border: 0, padding: 0, minWidth: 0 }}
-        >
+          </div>
+          {!demo &&
+            !detailLoading &&
+            canSuggestCategories &&
+            !(detail.publicImportId && !detail.sharedCloud) && (
+              <details
+                className="panel"
+                onToggle={(event) => {
+                  if (event.currentTarget.open) setPublicationMounted(true);
+                }}
+              >
+                <summary>Advanced privacy and publication</summary>
+                {publicationMounted && (
+                  <PublicKnowledgePanel
+                    organizationId={org}
+                    source={detail}
+                    call={strictCall}
+                    readOnly={readOnly}
+                    enabled
+                  />
+                )}
+              </details>
+            )}
+        </SettingsPanel>
+      </div>
+      {!demo && !detailLoading && (
+        <SourceProgressPanel
+          source={progressSource}
+          now={Math.max(retentionTime, Date.now())}
+          organizationId={org}
+        />
+      )}
+      {!demo && !detailLoading && (
+        <>
+          <SourceAcquisitionPanel
+            source={detail}
+            call={strictCall}
+            readOnly={readOnly}
+            onAnalyze={() => openPostSettings("post-processing-options")}
+          />
+          {detail.publicImportId && !detail.sharedCloud ? (
+            <SavedPublicSource
+              sourceId={sourceId}
+              call={strictCall}
+              readOnly={readOnly}
+              enabled
+            />
+          ) : null}
+        </>
+      )}
+      {!demo && !detailLoading && detail.evidenceRegistry && (
+        <section className="panel">
+          <h2>Acquired source evidence</h2>
+          <p>
+            Inspect this retained revision before approving analysis. Retrieval
+            and analysis are separate actions.
+          </p>
+          <TypedSourceEvidence
+            evidenceRegistry={detail.evidenceRegistry}
+            sourceRevision={detail.sourceRevision}
+          />
           <a
-            href="/help/evaluate-an-idea-for-a-project"
+            href="/help/first-useful-insight"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Review project context and alternatives
+            Evidence and coverage help
           </a>
-          {detail.analysis?.insights?.length > 0 && (
-            <>
-              <p>
-                Use{" "}
-                {insightIds.length === detail.analysis.insights.length
-                  ? "the whole post"
-                  : `${insightIds.length} selected main points`}
-                .
-              </p>
-              <details className="point-selection">
-                <summary>Advanced · choose main points</summary>
-                {detail.analysis.insights.map((insight: any) => (
-                  <label key={insight.id}>
-                    <input
-                      type="checkbox"
-                      checked={!excludedInsights.includes(insight.id)}
-                      onChange={(event) =>
-                        setExcludedInsights((old) =>
-                          event.target.checked
-                            ? old.filter((key) => key !== insight.id)
-                            : [...old, insight.id],
-                        )
-                      }
-                    />
-                    {insight.title}
-                  </label>
-                ))}
-              </details>
-              <button
-                className="secondary"
-                disabled={busy || readOnly || !insightIds.length}
-                onClick={() =>
-                  call("suggestRepositories", {
-                    id: id(source),
-                    insightIds,
-                    maxCredits: 10,
-                  })
-                }
+        </section>
+      )}
+      {viewFrame && (
+        <EvidenceViewer
+          key={viewFrame}
+          frames={
+            savedFrames.some((f: any) => f.id === viewFrame)
+              ? savedFrames
+              : [
+                  {
+                    id: viewFrame,
+                    startMs:
+                      insights
+                        .flatMap((i: any) => i.evidence ?? [])
+                        .find((e: any) => e.id === viewFrame)?.startMs ?? 0,
+                  },
+                ]
+          }
+          initialId={viewFrame}
+          untimed={untimedImages}
+          onClose={() => setViewFrame(undefined)}
+        />
+      )}
+      <PostInsightReader
+        sourcePreview={
+          detail.url && (
+            <a
+              className="panel source-origin"
+              href={detail.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Open original source: ${postDisplayTitle(detail)}`}
+            >
+              <SourceThumbnail source={detail} demo={demo} />
+              <span className="source-origin-copy">
+                <strong>{postDisplayTitle(detail)}</strong>
+                {detail.linkPreview?.authorName && (
+                  <span>{detail.linkPreview.authorName}</span>
+                )}
+                <span>Open original source</span>
+              </span>
+              <ArrowRight size={20} aria-hidden="true" />
+            </a>
+          )
+        }
+      >
+        {detail.assistantIntake && (
+          <AssistantIntakeStatus
+            key={`${sourceId}:${detail.state}`}
+            sourceId={sourceId}
+            demo={demo}
+            call={call}
+          />
+        )}
+        <div className="post-overview">
+          <p>{overview}</p>
+          {detail.error && (
+            <p className="error" role="alert">
+              {detail.error}
+            </p>
+          )}
+        </div>
+        <section className="post-insights">
+          <h2>Insights</h2>
+          {detailLoading && (
+            <output aria-live="polite">
+              <Loader2 className="spinner" size={16} aria-hidden="true" />{" "}
+              Loading source details…
+            </output>
+          )}
+          {!detailLoading &&
+            insights.map((i: any, index: number) => (
+              <article
+                className="post-insight-card"
+                id={`insight-${index}`}
+                key={i.id ?? i.title}
+                data-selected={expandedInsight === index}
               >
-                Find up to five plausible projects, maximum 10 credits
-              </button>
-              <p className="fine">
-                This selection uses confirmed business profiles. It does not
-                establish implementation fit or approve coding. Evaluate a
-                project separately to inspect repository evidence.
-              </p>
-              {selection && (
-                <div>
-                  <p>
-                    {selection.candidates.length
-                      ? "Possible project matches"
-                      : "No plausible project match"}
-                  </p>
-                  {selection.noFitReason && <p>{selection.noFitReason}</p>}
-                  {selection.candidates.map((candidate: any) => (
-                    <article key={candidate.repositoryId}>
-                      <h3>
-                        {repos.find(
-                          (repo: any) => id(repo) === candidate.repositoryId,
-                        )?.fullName ?? "Selected project"}
-                      </h3>
-                      <p>{candidate.reason}</p>
-                      <button
-                        className="secondary"
-                        disabled={busy || readOnly || !insightIds.length}
-                        onClick={() =>
-                          call("match", {
-                            id: id(source),
-                            repositoryId: candidate.repositoryId,
-                            insightIds,
-                            maxCredits: 10,
-                          })
-                        }
-                      >
-                        Evaluate inspected repository, maximum 10 credits
-                      </button>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-          {detail.matches?.map((m: any) => (
-            <article key={m.repositoryId}>
-              <h3>{label(m.disposition)}</h3>
-              <p>{m.reason}</p>
-            </article>
-          ))}
-          {detail.proposals?.map((p: any) => (
-            <button
-              className="secondary"
-              key={id(p)}
-              onClick={() => onProposal(p)}
-            >
-              {p.title} · {label(p.disposition)}
-            </button>
-          ))}
-          {repos.map((r: any) => (
-            <button
-              className="secondary"
-              key={id(r)}
-              disabled={
-                busy ||
-                readOnly ||
-                !insightIds.length ||
-                detail.state !== "ready" ||
-                !r.enabled ||
-                !r.confirmed
-              }
-              onClick={() =>
-                call("match", {
-                  id: id(source),
-                  repositoryId: id(r),
-                  insightIds,
-                  maxCredits: 10,
-                })
-              }
-            >
-              Match {r.fullName}, maximum 10 credits
-            </button>
-          ))}
-          {!repos.length && !detail.matches?.length && (
-            <p>
-              No selected repository yet. Your source can remain useful as a
-              reference.
-            </p>
-          )}
-        </fieldset>
-      </section>
-      <div className="panel">
-        <h2>Processing and retention</h2>
-        {detail.localAnalysisReceipt && (
-          <p>
-            GPT-6.1 Sol · Medium · Your Codex subscription · 0 app credits.{" "}
-            {detail.localAnalysisReceipt.frames} sampled frames; video coverage
-            is sampled.
-          </p>
-        )}
-        {!detail.localAnalysisReceipt && detail.processingReceipt && (
-          <details>
-            <summary>
-              Cloud · {detail.processingReceipt.chargedCredits} credits ·{" "}
-              {Math.round(
-                (detail.processingReceipt.completedAt -
-                  detail.processingReceipt.startedAt) /
-                  1000,
-              )}
-              s
-            </summary>
-            <p>
-              Model: {detail.processingReceipt.model}. Funded by your VibeScroll
-              allowance.
-            </p>
-            <p>
-              Inference estimate:{" "}
-              {new Intl.NumberFormat("en", {
-                style: "currency",
-                currency: "EUR",
-                minimumFractionDigits: 4,
-                maximumFractionDigits: 4,
-              }).format(detail.processingReceipt.inferenceMicros / 1000000)}
-              . This includes a conservative currency and tax provision; it is
-              not a provider invoice. Cloud preparation used{" "}
-              {detail.processingReceipt.computeCredits} processing credits.
-            </p>
-            <p>
-              {detail.processingReceipt.inputTokens.toLocaleString()} input
-              tokens · {detail.processingReceipt.outputTokens.toLocaleString()}{" "}
-              output tokens, including thinking.
-            </p>
-            {detail.processingReceipt.reusedMedia && (
-              <p>Previously prepared speech and frames were reused.</p>
-            )}
-          </details>
-        )}
-        {isCloudObservedMedia(detail.orderedMedia?.post) && (
-          <section className="panel">
-            <h3>Private host-reported media observations</h3>
-            <p>
-              Partial sampled video evidence reported by the connected host.
-              Retained screenshots can be opened through their citations. Source
-              acquisition, model settings and raw-media deletion remain
-              host-reported.
-            </p>
-            <p>
-              App result retained until{" "}
-              {new Date(detail.orderedMedia.post.retainUntil).toLocaleString()}.
-            </p>
-            {detail.orderedMedia.post.caption && (
-              <p>{detail.orderedMedia.post.caption}</p>
-            )}
-          </section>
-        )}
-
-        {detail.speechProvenance && (
-          <details>
-            <summary>Transcription details</summary>
-            <p>
-              {detail.speechProvenance.model} ·{" "}
-              {detail.speechProvenance.language || "Language uncertain"} ·
-              approximate timestamps
-            </p>
-            {detail.speechProvenance.uncertainty && (
-              <p>{detail.speechProvenance.uncertainty}</p>
-            )}
-          </details>
-        )}
-        {detail.workCloudPrivateLibraryRequired && !readOnly && (
-          <section className="card">
-            <h3>Work Cloud needs your private library</h3>
-            <p>
-              This older workspace still uses team access. Review whether it can
-              become your private library while keeping these posts and links in
-              place.
-            </p>
-            <Link prefetch={false} href={`/app/${org}/team#private-library`}>
-              Review private-library setup
-            </Link>
-          </section>
-        )}
-        {(detail.workCloudTextEnabled || detail.workCloudMediaEnabled) &&
-          !detail.publicImportId &&
-          ((detail.workCloudTextEnabled &&
-            (detail.kind === "text" || detail.currentRevisionId)) ||
-            (detail.workCloudMediaEnabled &&
-              detail.kind === "url" &&
-              !detail.currentRevisionId)) &&
-          !["ready", "processing"].includes(detail.state) &&
-          (detail.state !== "queued" || detail.workCloudRetryEligible) && (
-            <>
-              {detail.kind === "url" && detail.workCloudLinkSetup && (
-                <section className="panel">
-                  <h3>My own Cloud Work</h3>
-                  <p>
-                    {detail.workCloudLinkSetup?.chatLinksEnabled
-                      ? "New supported links sent to VibeScroll in ChatGPT or added with Cloud selected use your saved Cloud defaults. No per-post app review is needed."
-                      : "Complete automatic app and ChatGPT link setup once in Connections. After setup, supported links use your own Cloud Work without per-post review."}
-                  </p>
-                  {detail.workCloudLinkSetup?.monitorReady &&
-                  (detail.workCloudRetryEligible ||
-                    (detail.generation === 0 &&
-                      !detail.personalAnalysis &&
-                      !detail.workCloudSaveIntent)) ? (
-                    <button
-                      className="primary"
-                      disabled={readOnly || detailLoading || busy}
-                      onClick={async () => {
-                        setCloudRequestError("");
-                        try {
-                          await strictCall(
-                            detail.workCloudRetryEligible
-                              ? "retrySavedWorkCloud"
-                              : "analyzeSavedWorkCloud",
-                            detail.workCloudRetryEligible
-                              ? {
-                                  sourceId,
-                                  generation: detail.generation,
-                                  revision: detail.updatedAt,
-                                  key: crypto.randomUUID(),
-                                }
-                              : { sourceId },
-                          );
-                          onRefresh?.();
-                        } catch {
-                          setCloudRequestError(
-                            "The Cloud request was not confirmed. Check setup and the existing post before trying again.",
-                          );
-                        }
-                      }}
-                    >
-                      {detail.workCloudRetryEligible
-                        ? "Retry using Cloud defaults"
-                        : "Analyze using Cloud defaults"}
-                    </button>
-                  ) : (
-                    <Link prefetch={false} href={`/app/${org}/connections`}>
-                      Complete or resume Cloud setup
-                    </Link>
-                  )}
-                  {cloudRequestError && <p role="alert">{cloudRequestError}</p>}
-                </section>
-              )}
-              {!detail.workCloudLinkSetup && (
-                <details
-                  className="panel"
-                  onToggle={(event) =>
-                    setManualCloudOpen(event.currentTarget.open)
+                <InsightCardControl
+                  title={i.title || i.claim}
+                  subtitle={i.claim}
+                  icon={insightPresentation(i).icon}
+                  expanded={expandedInsight === index}
+                  aria-controls={`insight-content-${index}`}
+                  onClick={() =>
+                    setExpandedInsight(expandedInsight === index ? null : index)
                   }
                 >
-                  <summary>Advanced: manual Cloud handoff</summary>
-                  <p>
-                    Use this only for a deliberate diagnostic. Normal automatic
-                    links do not need this review.
-                  </p>
-                  {manualCloudOpen && (
-                    <WorkCloudText
-                      sourceId={id(detail)}
-                      organizationId={org}
-                      generation={detail.generation}
+                  <SettingsPanel
+                    title="Insight evidence"
+                    triggerLabel={`Evidence and options for ${i.title || i.claim}`}
+                    onOpenChange={(open) => {
+                      if (open && !demo)
+                        for (const e of i.evidence ?? [])
+                          journey?.citation(
+                            `${sourceId}:${detail.generation}:${detail.updatedAt}:${i.id}:${e.id}`,
+                            e.kind,
+                            detail.coverage,
+                          );
+                    }}
+                  >
+                    <p>{i.title || i.claim}</p>
+                    {i.confidence && <p>Confidence: {i.confidence}</p>}
+                    <section className="insight-evidence">
+                      <ul className="evidence-links">
+                        {i.evidence?.map((e: any) => (
+                          <li key={e.id}>
+                            {e.kind === "frame" && !demo && (
+                              <button
+                                type="button"
+                                className="evidence-link"
+                                onClick={(event) => {
+                                  event.currentTarget.focus({
+                                    preventScroll: true,
+                                  });
+                                  setViewFrame(e.id);
+                                }}
+                              >
+                                {untimedImages
+                                  ? imageLabel(e.id)
+                                  : `Frame · ${(e.startMs / 1000).toFixed(1)}s`}
+                              </button>
+                            )}
+                            {e.kind === "transcript" && (
+                              <a
+                                href="#source-transcript"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  openPostSettings("source-transcript");
+                                }}
+                              >
+                                Transcript ·{" "}
+                                {e.startMs === null
+                                  ? "supplied text"
+                                  : `${(e.startMs / 1000).toFixed(1)}s`}
+                              </a>
+                            )}
+                            {e.kind === "caption" &&
+                              detail.acquisition?.description && (
+                                <a
+                                  href="#source-caption"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    openPostSettings("source-caption");
+                                  }}
+                                >
+                                  Post caption
+                                </a>
+                              )}
+                            {[
+                              "github_file",
+                              "reddit_post",
+                              "reddit_comment",
+                              "supplied_text",
+                            ].includes(e.kind) && (
+                              <span>
+                                {label(e.kind)} · see cited excerpt below
+                              </span>
+                            )}
+                            {![
+                              "github_file",
+                              "reddit_post",
+                              "reddit_comment",
+                              "supplied_text",
+                            ].includes(e.kind) &&
+                              e.kind !== "caption" &&
+                              e.kind !== "transcript" &&
+                              (e.kind !== "frame" || demo) && (
+                                <span>
+                                  {label(e.kind)} ·{" "}
+                                  {e.startMs === null
+                                    ? "Supplied text"
+                                    : `${(e.startMs / 1000).toFixed(1)}s`}
+                                </span>
+                              )}
+                          </li>
+                        ))}
+                      </ul>
+                      {detail.orderedMedia &&
+                        !isCloudObservedMedia(detail.orderedMedia.post) && (
+                          <ul>
+                            {i.evidence.map((ref: any) => {
+                              const citation = socialCitation(
+                                ref,
+                                detail.orderedMedia.evidence,
+                              );
 
-                      revision={detail.updatedAt}
-                      media={detail.kind === "url" && !detail.currentRevisionId}
+                              const record = detail.orderedMedia.evidence.find(
+                                (e: any) =>
+                                  e.id === ref.id && e.kind === ref.kind,
+                              );
 
-                      retentionUntil={detail.sourceRetentionUntil}
-                      call={strictCall}
-                      disabled={readOnly || detailLoading}
-                    />
-                  )}
-                </details>
-              )}
-            </>
-          )}
+                              return (
+                                <li key={ref.id}>
+                                  <p>
+                                    Observed video - {ref.kind} -{" "}
+                                    {ref.startMs === null
+                                      ? "untimed"
+                                      : `${(ref.startMs / 1000).toFixed(1)}s`}{" "}
+                                    - {citation.basis}
+                                  </p>
+                                  <p>{record?.text}</p>
+                                  {citation.uncertainty && (
+                                    <p>{citation.uncertainty}</p>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      {detail.sharedCloud && (
+                        <ul>
+                          {i.evidence.map((ref: any) => {
+                            const observation =
+                              detail.sharedCloud.observations.find(
+                                (entry: any) => entry.id === ref.id,
+                              );
+                            return (
+                              <li key={ref.id}>
+                                <blockquote>
+                                  {observation?.text ??
+                                    "Observation unavailable."}
+                                </blockquote>
+                                <p className="fine">
+                                  {observation?.basis}
+                                  {observation?.uncertainty
+                                    ? `. ${observation.uncertainty}`
+                                    : ""}
+                                </p>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
 
-        {!demo &&
-          !readOnly &&
-          !detailLoading &&
-          detail.state === "queued" &&
-          source.state === "queued" &&
-          id(detail) === sourceId &&
-          detail.generation === source.generation &&
-          detail.updatedAt === source.updatedAt &&
-          detail.organizationId === org &&
-          detail.workCloudHandoff &&
-          source.workCloudHandoff !== null &&
-          (source.workCloudHandoff === undefined ||
-            workCloudHandoffKey(source.workCloudHandoff) ===
-              workCloudHandoffKey(detail.workCloudHandoff)) &&
-          (detail.workCloudHandoff.media
-            ? source.workCloudMediaEnabled !== false
-            : source.workCloudTextEnabled !== false) &&
-          (detail.workCloudHandoff.media
-            ? detail.workCloudMediaEnabled
-            : detail.workCloudTextEnabled) && (
-            <PersistedWorkCloudHandoff
-              receipt={detail.workCloudHandoff}
-              sourceId={sourceId}
-              organizationId={org}
-              generation={detail.generation}
-              revision={detail.updatedAt}
-            />
-          )}
-        {detail.personalAnalysis?.executor === "work_cloud" && (
-          <section className="panel">
-            <h3>Private Work Cloud request</h3>
-
-            <p>
-              State: {detail.personalAnalysis.state}. Funding: your own
-              subscription; API allowance 0 USD.
-            </p>
-
-            <p>
-              Host execution, model settings, subscription usage and raw-media
-              retention are unverified. The task ID is a client correlation
-              UUID, not host attestation.
-            </p>
-
-            {["queued", "running"].includes(detail.personalAnalysis.state) && (
-              <button
-                className="secondary"
-                disabled={readOnly || detailLoading || busy}
-                onClick={() =>
-                  call("cancelPersonalAnalysis", { id: id(detail) })
+                      {detail.evidenceRegistry && (
+                        <TypedSourceEvidence
+                          evidenceRegistry={detail.evidenceRegistry.filter(
+                            (record: any) =>
+                              i.evidence.some((e: any) => e.id === record.id),
+                          )}
+                          sourceRevision={detail.sourceRevision}
+                        />
+                      )}
+                    </section>
+                  </SettingsPanel>
+                </InsightCardControl>
+                {
+                  <div
+                    hidden={expandedInsight !== index}
+                    className="post-insight-detail"
+                    id={`insight-content-${index}`}
+                  >
+                    <p>{i.claim}</p>
+                    {i.interpretation && <p>{i.interpretation}</p>}
+                    {projectSuggestions?.versionId ===
+                      (detail.analysisVersion?.id ?? null) &&
+                    projectSuggestions.items.length > 0 ? (
+                      <div className="insight-project-suggestions">
+                        <h4>Suggested projects</h4>
+                        {projectSuggestions.items.map((project: any) => (
+                          <Link
+                            key={project.id}
+                            prefetch={false}
+                            href={`/app/${org}/projects/${project.id}`}
+                            className="project-choice-row"
+                          >
+                            <span>
+                              {project.name}
+                              <small>
+                                Topic overlap:{" "}
+                                {project.topics
+                                  .map((t: string) => t.replaceAll("_", " "))
+                                  .join(", ")}
+                              </small>
+                            </span>
+                            <span>
+                              Review <ArrowRight size={16} aria-hidden="true" />
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <a className="button" href="#source-analysis-actions">
+                        Choose a project
+                      </a>
+                    )}
+                  </div>
                 }
-              >
-                Revoke app access to this request
-              </button>
-            )}
-
+              </article>
+            ))}
+          {!detailLoading && !insights.length && !detail.error && (
             <p>
-              Stop the host task separately. Revocation does not confirm host
-              cancellation or restore allowance. No alternate provider starts
-              automatically.
+              {["processing", "queued"].includes(detail.state)
+                ? "Analysis is underway."
+                : "No main points yet. Review the source's analysis options."}
             </p>
-          </section>
-        )}
-
-        {personalEnabled &&
-          detail.personalAnalysis?.executor !== "work_cloud" && (
-            <PersonalSourceAnalysis
-              key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
-
-              source={detail}
-
-              devices={devices}
-
-              linkAnalysisEnabled={linkAnalysisEnabled}
-
-              call={call}
-            />
           )}
-
-        {detail.error && <p role="alert">{detail.error}</p>}
-        {cloudEnabled && detail.state !== "ready" && (
-          <button
-            className="primary"
-            disabled={busy || ["queued", "processing"].includes(detail.state)}
-            onClick={() => call("process", { id: id(source), maxCredits: 10 })}
-          >
-            Analyze in cloud, up to 10 credits
-          </button>
+        </section>
+      </PostInsightReader>
+      <section className="post-project-choices" id="source-analysis-actions">
+        <h2>Projects</h2>
+        {repos
+          .filter((r: any) => r.enabled)
+          .map((r: any) => (
+            <Link
+              key={id(r)}
+              prefetch={false}
+              href={`/app/${org}/projects/${id(r)}`}
+              className="project-choice-row"
+            >
+              <span>{r.fullName}</span>
+              <span>
+                Review project <ArrowRight size={16} aria-hidden="true" />
+              </span>
+            </Link>
+          ))}
+        {!repos.some((r: any) => r.enabled) && (
+          <Link prefetch={false} href={`/app/${org}/projects`}>
+            Choose a project
+          </Link>
         )}
-        <button
-          className="secondary"
-          onClick={() => {
-            if (
-              confirm(
-                "Delete this source and its private evidence? Existing GitHub PRs remain on GitHub.",
-              )
-            )
-              call("deleteSource", { id: id(source) });
-          }}
-        >
-          Delete source
-        </button>
-        <p>
-          Benefit remains unmeasured. A merged PR does not prove the idea
-          worked.
-        </p>
-      </div>
-      {!demo &&
-        !detailLoading &&
-        canSuggestCategories &&
-        !(detail.publicImportId && !detail.sharedCloud) && (
-          <details
-            className="panel"
-            onToggle={(event) => {
-              if (event.currentTarget.open) setPublicationMounted(true);
-            }}
-          >
-            <summary>Advanced privacy and publication</summary>
-            {publicationMounted && (
-              <PublicKnowledgePanel
-                organizationId={org}
-                source={detail}
-                call={strictCall}
-                readOnly={readOnly}
-                enabled
-              />
-            )}
-          </details>
-        )}
+      </section>
     </>
   );
 }

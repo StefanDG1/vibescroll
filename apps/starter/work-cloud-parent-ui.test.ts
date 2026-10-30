@@ -53,6 +53,20 @@ vi.mock("react", async (original) => {
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }));
+// Inspect settings contents for source/evidence authorization tests. The real
+// drawer's closed/open rendering is checked separately, plus browser acceptance.
+vi.mock("./components/settings-panel", async () => {
+  const { createElement } = await import("react");
+  return {
+    SettingsPanel: ({
+      children,
+      title,
+    }: {
+      children: import("react").ReactNode;
+      title: string;
+    }) => createElement("section", { "aria-label": title }, children),
+  };
+});
 import { SourceDetail } from "./components/console";
 const now = 1800000000000,
   org = "private-owner-org";
@@ -205,12 +219,12 @@ it("keeps a post visible when its automatic intent expires and puts progress ahe
   let html = render(parent);
   expect(html).toContain("Waiting for ChatGPT");
   expect(html.indexOf("Analysis progress")).toBeLessThan(
-    html.indexOf("AI summary"),
+    html.indexOf("Insights"),
   );
   vi.advanceTimersByTime(1001);
   html = render(parent);
   expect(html).toContain("Analysis request expired");
-  expect(html).toContain("AI summary");
+  expect(html).toContain("Insights");
   expect(html).not.toContain("This source is unavailable");
   expect(parent.call).not.toHaveBeenCalled();
   expect(parent.strictCall).not.toHaveBeenCalled();

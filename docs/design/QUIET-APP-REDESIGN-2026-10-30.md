@@ -37,3 +37,7 @@ Chrome's normal browser-harness connection initially requested remote-debugging 
 No deployment, schema change, data migration, paid model request or spending occurred for this redesign. Direct hosted ChatGPT-plan work stays paused, and the old embedded widget stays disabled. Keep the approved Vercel/funding boundaries when a reviewed release is ready.
 
 Publication: c862450 is live under the [October30 receipt](../operations/evidence/launch-20261030-quiet-chat-proposals-production.json). Signed-in Home/proposal desktop and phone checks passed. The full shared post/insight reader remains checkpoint2.
+
+## Owner refinement: shared insight rows
+
+R105–R108 supersede the earlier extra sidebar destinations. Use Home, Explore, Save, Work and Account, with Work tabs and Connections under Account. The post reuses the exact Library row rather than starting another visual design. Expand an insight to read it; its gear opens evidence. Post settings holds management/history/notes information. Saved notes remain intact although their main reader card is removed. See [ADR206](../adr/206-shared-insight-cards-and-settings.md) for interaction and project-hint limits. This refinement is a candidate until its own acceptance receipt is recorded.

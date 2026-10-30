@@ -6,9 +6,10 @@ Read the [owner request register](../strategy/OWNER-REQUEST-REGISTER.md), [conti
 
 ## Accepted production baseline
 
-- Website commit: `6b2df2f06a0d45af4b335b3204f428fa049a0a39`. Backend remains `c862450aafa3f49e7756965a0bbc566f038323f1`.
-- Website version: `0.1.0-alpha.20261030105108.g6b2df2f06a0d`.
-- Deployment: `dpl_399Hh35seHe5hgnWuy8ZQoNCHapd`.
+- Website commit: `9fb9d7dc66172c3c7aa97bf124c98cc2ef2828d4`. Backend remains `c862450aafa3f49e7756965a0bbc566f038323f1`.
+- Website version: `0.1.0-alpha.20261030110732.g9fb9d7dc6617`.
+- Deployment: `dpl_Hjgxny6XvzVA7eJqygvhGaFSUmC9`.
+- Post cleanup exact CI41045808912 and the corrected full local check passed. The37.837s Basic build was staged and promoted once. Production confirms Related sources is absent and privacy/publication is closed below the reader. [Cleanup receipt](evidence/launch-20261030-post-cleanup-production.json). New five-destination navigation, gear settings and shared expandable Library insight cards are the next candidate; do not claim them live.
 - Website exact CI41043791562 passed. The frontend-only shared reader passed local desktop/phone and light/dark checks, staged exact health, same-build promotion and canonical exact health. Basic build50.234s. Actual signed-in post loads a540×960 retained thumbnail and six cited insights. Phone width390px has no horizontal overflow. [Reader receipt](evidence/launch-20261030-shared-reader-production.json). No backend publication or analysis ran. Subsequent baseline evidence below refers to the prior backend/proposal checkpoint unless explicitly stated otherwise.
 - Exact Linux CI: `40990404017`, with1,559 passed/5skipped Vitest cases, types, lint, Node/Python checks and both builds. Full local check passed1,565 cases/3skips, including four separately paused adapter cases excluded from this commit; the shipping tree's types passed afterward. Dependency audit and changed-source secret scan found zero unresolved issues/findings.
 - Backend publication acknowledged. Actual12-component/138-table/301-index prediction required zero scans/backfills and changed no schema/index/auth/cron. All22 release guards passed. Fixed Basic queued build took41.752s; staged exact health, same-build promotion and canonical exact health passed. Normal domain assignment was restored.

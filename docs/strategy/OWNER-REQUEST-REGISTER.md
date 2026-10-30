@@ -208,6 +208,16 @@ R103: Further caption-specific work is not a current priority while transcriptio
 
 R104: Remove the Related sources card from the post view. Put advanced privacy/publication controls lower down or in advanced settings. Keep existing saved relationships and permission/publication enforcement. The local reader cleanup removes the unused source-choice loader, moves publication controls to the end of the post and mounts them only on first expansion, preserving form state after that. Publication requires exact CI and browser acceptance.
 
+## Navigation and focused insight interaction, October30
+
+R105: Restore five primary destinations with Account, Home, Work for projects/proposals/tasks and Explore for connected insights; use Save as the fifth destination. Keep existing post URLs and entry from Home. Connection settings belong under Account.
+
+R106: Lead with the video and quickly accessible insights. Remove Shared analysis and private-note cards from the main post, preserving saved notes/data. Put versions and other management controls in a gear-triggered side panel or popup. Insight cards expand on click; their evidence belongs behind a separate insight settings/evidence control. Keep the interface concise and accessible.
+
+R107: Recommend projects quickly using content/category/context fit, meaningful project recency and explicit importance when those signals exist. Prefer deterministic hints with visible reasons and no extra credit cost before adding paid model ranking. Do not infer importance from synchronization time or treat a topic hint as inspected repository suitability. A deeper, explicitly quoted application is separate. The current repository projection has context but no explicit priority or meaningful activity ranking fields; record that gap rather than inventing them.
+
+R108: Reuse the existing Library insight row/expanded component shown in the owner's screenshot, or extract shared components from it. Do not create an unrelated second card design. Preserve Library interactions, proposal badges and source authority.
+
 ## Source coverage and limits
 
 The audit used the visible owner conversation, current checkout/ADRs, dated production receipts, the October 26/28 handovers and a bounded read of **Compare video model options**. The originally named October 25 handover was found and read in the historical `cloud-p2-main-parity-20261024` checkout; it is absent from this compatible branch. Its implementation hypothesis is not current authority. The complete older main-branch R/P/N/C/M scope remains linked from the [launch index](../launch-plan/2026-10-23/README.md); this register does not mark that work accepted.

@@ -200,6 +200,10 @@ R101: Prefer suitable assistant-ui components and share the accepted website pre
 
 R102: Quickly redesign the app toward assistant-ui/Codex, avoid overloading the interface, research a different icon library and use suitable shadcn components or MCP where available. [Design reference](../design/QUIET-APP-REDESIGN-2026-10-30.md) and [ADR203](../adr/203-quiet-app-shell-and-iconoir.md) record the local neutral shell, reused primitives, Iconoir MIT subset and collapsed secondary home content. No connected shadcn MCP was found. Saved-insight searches had bounded incomplete coverage. Deployed at c862450 after exact CI and compatible publication; signed-in Home/proposal and phone overflow checks passed. The full reader remains separate.
 
+## Caption priority, October30
+
+R103: Further caption-specific work is not a current priority while transcription works quickly and well enough. Continue the remaining roadmap and deploy tested improvements as work progresses. Preserve existing caption reuse, but remove a dedicated caption extraction/canary milestone from the release critical path. This does not waive transcript accuracy, source availability or truthful processing status.
+
 ## Source coverage and limits
 
 The audit used the visible owner conversation, current checkout/ADRs, dated production receipts, the October 26/28 handovers and a bounded read of **Compare video model options**. The originally named October 25 handover was found and read in the historical `cloud-p2-main-parity-20261024` checkout; it is absent from this compatible branch. Its implementation hypothesis is not current authority. The complete older main-branch R/P/N/C/M scope remains linked from the [launch index](../launch-plan/2026-10-23/README.md); this register does not mark that work accepted.

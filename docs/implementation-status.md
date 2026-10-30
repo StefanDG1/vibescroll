@@ -2,6 +2,12 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## October30: shared reader layout, local candidate
+
+R103 deprioritizes further caption-specific work while preserving transcription and existing caption reuse. ADR205 begins the shared reader with a presentation-only source/insight layout: retained thumbnail and original-source metadata beside existing insights on desktop, above on smaller screens, and a link to the current project controls. Existing citations, transcript, live status, version history and permission/funding checks remain in their route adapter. No player, new provider, model request or backend change is introduced.
+
+The root offline full check passed, including lint, types, all tests and both production builds. Final shipping types passed again after adding the labeled synthetic source-preview fixture. Browser verification is pending Chrome's remote-debugging permission. This reader is not deployed; production remains c862450. Exact CI and browser acceptance must precede its frontend-only publication.
+
 ## October30: quiet shell and durable proposals live
 
 Website/backendc862450 passed exact CI40990404017 with1,559 passed/5skipped Vitest cases, types/lint, Node/Python and both builds. All22 compatible release guards passed; actual12-component/138-table/301-index prediction required zero scans/backfills and changed no schema/index/auth/cron. The41.752s fixed Basic build passed staged exact health and same-build promotion; canonical health reports the exact alpha version. See [the production receipt](operations/evidence/launch-20261030-quiet-chat-proposals-production.json).

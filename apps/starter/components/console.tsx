@@ -1,4 +1,5 @@
 "use client";
+import { PostInsightReader } from "./post-insight-reader";
 import { useState, useEffect, useRef, useEffectEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -3956,469 +3957,481 @@ export function SourceDetail({
           onClose={() => setViewFrame(undefined)}
         />
       )}
-      {detail.url && (
-        <a
-          className="panel source-origin"
-          href={detail.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`Open original source: ${postDisplayTitle(detail)}`}
-        >
-          <SourceThumbnail source={detail} demo={demo} />
-          <span className="source-origin-copy">
-            <strong>{postDisplayTitle(detail)}</strong>
-            {detail.linkPreview?.authorName && (
-              <span>{detail.linkPreview.authorName}</span>
-            )}
-            <span>Open original source</span>
-          </span>
-          <ArrowRight size={20} aria-hidden="true" />
-        </a>
-      )}
-      {detail.assistantIntake && (
-        <AssistantIntakeStatus
-          key={`${sourceId}:${detail.state}`}
-          sourceId={sourceId}
-          demo={demo}
-          call={call}
-        />
-      )}
-      <div className="panel">
-        <span className="coverage">{sourceCoverageLabel(detail.coverage)}</span>
-        <h2>AI summary</h2>
-        {detail.analysisVersion && (
-          <p className="fine">
-            Version {detail.analysisVersion.number} selected. Requested{" "}
-            {detail.analysisVersion.requestedModel} ·{" "}
-            {detail.analysisVersion.requestedEffort}. Review the cited evidence.
-          </p>
-        )}
-        <p>{overview}</p>
-        {detail.error && (
-          <p className="error" role="alert">
-            {detail.error}
-          </p>
-        )}
-        <p className="fine">
-          {detail.coverage === "full_sampled"
-            ? "Frames are sampled. Automatic transcripts can contain errors."
-            : "Review the evidence coverage and analysis notes."}
-        </p>
-        <details className="source-notes">
-          <summary>Full summary and analysis notes</summary>
-          {overview !== summary && <p>{summary}</p>}
-          {!!detail.analysis?.warnings?.length && (
-            <section aria-label="Analysis limitations">
-              <h3>Limitations and uncertainty</h3>
-              <ul>
-                {detail.analysis.warnings.map(
-                  (warning: string, index: number) => (
-                    <li key={index}>{warning}</li>
-                  ),
+      <PostInsightReader
+        sourcePreview={
+          detail.url && (
+            <a
+              className="panel source-origin"
+              href={detail.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Open original source: ${postDisplayTitle(detail)}`}
+            >
+              <SourceThumbnail source={detail} demo={demo} />
+              <span className="source-origin-copy">
+                <strong>{postDisplayTitle(detail)}</strong>
+                {detail.linkPreview?.authorName && (
+                  <span>{detail.linkPreview.authorName}</span>
                 )}
-              </ul>
-            </section>
-          )}
-          {detail.url && (
-            <a href={detail.url} target="_blank" rel="noopener noreferrer">
-              Original source
+                <span>Open original source</span>
+              </span>
+              <ArrowRight size={20} aria-hidden="true" />
             </a>
+          )
+        }
+      >
+        {detail.assistantIntake && (
+          <AssistantIntakeStatus
+            key={`${sourceId}:${detail.state}`}
+            sourceId={sourceId}
+            demo={demo}
+            call={call}
+          />
+        )}
+        <div className="panel">
+          <span className="coverage">
+            {sourceCoverageLabel(detail.coverage)}
+          </span>
+          <h2>AI summary</h2>
+          {detail.analysisVersion && (
+            <p className="fine">
+              Version {detail.analysisVersion.number} selected. Requested{" "}
+              {detail.analysisVersion.requestedModel} ·{" "}
+              {detail.analysisVersion.requestedEffort}. Review the cited
+              evidence.
+            </p>
+          )}
+          <p>{overview}</p>
+          {detail.error && (
+            <p className="error" role="alert">
+              {detail.error}
+            </p>
           )}
           <p className="fine">
-            {detail.createdAt
-              ? `Captured ${new Date(detail.createdAt).toLocaleString()}.`
-              : "Synthetic example; no real capture date."}
-            {detail.originalSavedAt
-              ? ` Original save date supplied by the import: ${new Date(detail.originalSavedAt).toLocaleString()}.`
-              : " Original save date unknown."}{" "}
-            {detail.publishedAt
-              ? `Post published ${new Date(detail.publishedAt).toLocaleString()}.`
-              : "Post publication date unavailable."}
+            {detail.coverage === "full_sampled"
+              ? "Frames are sampled. Automatic transcripts can contain errors."
+              : "Review the evidence coverage and analysis notes."}
           </p>
-        </details>
-      </div>
-      {!demo &&
-        !detailLoading &&
-        detail.state === "ready" &&
-        (isCloudObservedMedia(detail.orderedMedia?.post) ||
-          detail.preparedService ||
-          detail.sharedCloud) && (
-          <AnalysisHistory
-            key={sourceId}
+          <details className="source-notes">
+            <summary>Full summary and analysis notes</summary>
+            {overview !== summary && <p>{summary}</p>}
+            {!!detail.analysis?.warnings?.length && (
+              <section aria-label="Analysis limitations">
+                <h3>Limitations and uncertainty</h3>
+                <ul>
+                  {detail.analysis.warnings.map(
+                    (warning: string, index: number) => (
+                      <li key={index}>{warning}</li>
+                    ),
+                  )}
+                </ul>
+              </section>
+            )}
+            {detail.url && (
+              <a href={detail.url} target="_blank" rel="noopener noreferrer">
+                Original source
+              </a>
+            )}
+            <p className="fine">
+              {detail.createdAt
+                ? `Captured ${new Date(detail.createdAt).toLocaleString()}.`
+                : "Synthetic example; no real capture date."}
+              {detail.originalSavedAt
+                ? ` Original save date supplied by the import: ${new Date(detail.originalSavedAt).toLocaleString()}.`
+                : " Original save date unknown."}{" "}
+              {detail.publishedAt
+                ? `Post published ${new Date(detail.publishedAt).toLocaleString()}.`
+                : "Post publication date unavailable."}
+            </p>
+          </details>
+        </div>
+        {!demo &&
+          !detailLoading &&
+          detail.state === "ready" &&
+          (isCloudObservedMedia(detail.orderedMedia?.post) ||
+            detail.preparedService ||
+            detail.sharedCloud) && (
+            <AnalysisHistory
+              key={sourceId}
+              sourceId={sourceId}
+              revision={sourceRevision}
+              disabled={readOnly || busy}
+              reanalysisDisabled={!detail.workCloudMediaEnabled}
+              recommendationMode={detail.sharedCloud?.selectionMode}
+              call={strictCall ?? call}
+              onChange={() => onRefresh?.()}
+            />
+          )}
+        {detail.sharedCloud && (
+          <section className="panel" aria-label="Shared analysis">
+            <h2>Shared analysis</h2>
+            <p>
+              {detail.sharedCloud.selectionMode === "recommended"
+                ? "Following the reviewed catalog recommendation."
+                : "Using your selected version."}{" "}
+              Personal notes stay in your library and remain attached to the
+              version you reviewed.
+            </p>
+            <p className="fine">
+              Screenshots are sampled. Model settings are host-reported.
+              Evidence is available until{" "}
+              {new Date(detail.sharedCloud.retainUntil).toLocaleString()} while
+              your catalog access remains active.
+            </p>
+          </section>
+        )}
+        {detail.sharedCloud?.canEditNotes && (
+          <SharedAnalysisNotes
+            key={`${sourceId}:${detail.analysisVersion.id}:${detail.sharedCloud.notesUpdatedAt}`}
             sourceId={sourceId}
-            revision={sourceRevision}
+            versionId={detail.analysisVersion.id}
+            note={detail.sharedCloud.privateNote}
+            corrections={detail.sharedCloud.corrections}
+            updatedAt={detail.sharedCloud.notesUpdatedAt}
             disabled={readOnly || busy}
-            reanalysisDisabled={!detail.workCloudMediaEnabled}
-            recommendationMode={detail.sharedCloud?.selectionMode}
             call={strictCall ?? call}
             onChange={() => onRefresh?.()}
           />
         )}
-      {detail.sharedCloud && (
-        <section className="panel" aria-label="Shared analysis">
-          <h2>Shared analysis</h2>
-          <p>
-            {detail.sharedCloud.selectionMode === "recommended"
-              ? "Following the reviewed catalog recommendation."
-              : "Using your selected version."}{" "}
-            Personal notes stay in your library and remain attached to the
-            version you reviewed.
-          </p>
-          <p className="fine">
-            Screenshots are sampled. Model settings are host-reported. Evidence
-            is available until{" "}
-            {new Date(detail.sharedCloud.retainUntil).toLocaleString()} while
-            your catalog access remains active.
-          </p>
-        </section>
-      )}
-      {detail.sharedCloud?.canEditNotes && (
-        <SharedAnalysisNotes
-          key={`${sourceId}:${detail.analysisVersion.id}:${detail.sharedCloud.notesUpdatedAt}`}
-          sourceId={sourceId}
-          versionId={detail.analysisVersion.id}
-          note={detail.sharedCloud.privateNote}
-          corrections={detail.sharedCloud.corrections}
-          updatedAt={detail.sharedCloud.notesUpdatedAt}
-          disabled={readOnly || busy}
-          call={strictCall ?? call}
-          onChange={() => onRefresh?.()}
-        />
-      )}
-      {detail.catalogContributionAvailable && (
-        <CloudCatalogContribution
-          key={`${sourceId}:${detail.analysisVersion.id}`}
-          sourceId={sourceId}
-          versionId={detail.analysisVersion.id}
-          disabled={readOnly || busy}
-          call={strictCall ?? call}
-        />
-      )}
-      <section className="panel">
-        <h2>Main points</h2>
-        {!demo &&
-          !detailLoading &&
-          detail.state === "ready" &&
-          detail.analysisHash && (
-            <AnalysisReview
-              key={`${sourceId}:${detail.generation}:${detail.analysisHash}`}
-              sourceId={sourceId}
-              generation={detail.generation}
-              analysisHash={detail.analysisHash}
-              initial={detail.analysisReview}
-              disabled={readOnly || busy}
-              call={call}
-              onSaved={(review) =>
-                setDetail((current: any) => ({
-                  ...current,
-                  analysisReview: review,
-                }))
-              }
-            />
+        {detail.catalogContributionAvailable && (
+          <CloudCatalogContribution
+            key={`${sourceId}:${detail.analysisVersion.id}`}
+            sourceId={sourceId}
+            versionId={detail.analysisVersion.id}
+            disabled={readOnly || busy}
+            call={strictCall ?? call}
+          />
+        )}
+        <section className="panel">
+          <h2>Main points</h2>
+          {!demo &&
+            !detailLoading &&
+            detail.state === "ready" &&
+            detail.analysisHash && (
+              <AnalysisReview
+                key={`${sourceId}:${detail.generation}:${detail.analysisHash}`}
+                sourceId={sourceId}
+                generation={detail.generation}
+                analysisHash={detail.analysisHash}
+                initial={detail.analysisReview}
+                disabled={readOnly || busy}
+                call={call}
+                onSaved={(review) =>
+                  setDetail((current: any) => ({
+                    ...current,
+                    analysisReview: review,
+                  }))
+                }
+              />
+            )}
+          {!detailLoading && insights.length > 1 && (
+            <nav className="insight-index" aria-label="Main points">
+              {insights.map((insight: any, index: number) => (
+                <a key={insight.id ?? index} href={`#insight-${index}`}>
+                  {insight.title}
+                </a>
+              ))}
+            </nav>
           )}
-        {!detailLoading && insights.length > 1 && (
-          <nav className="insight-index" aria-label="Main points">
-            {insights.map((insight: any, index: number) => (
-              <a key={insight.id ?? index} href={`#insight-${index}`}>
-                {insight.title}
-              </a>
-            ))}
-          </nav>
-        )}
-        {detailLoading && (
-          <output aria-live="polite">
-            <Loader2 className="spinner" size={16} aria-hidden="true" /> Loading
-            source details…
-          </output>
-        )}
-        {!detailLoading &&
-          insights.map((i: any, index: number) => (
-            <article
-              className="insight"
-              id={`insight-${index}`}
-              key={i.id ?? i.title}
-              tabIndex={-1}
-            >
-              <h3>{i.title}</h3>
-              <p>{i.claim}</p>
-              <p>{i.interpretation}</p>
-              {(i.confidence || demo) && (
-                <span className="status">
-                  {i.confidence ?? "Synthetic evidence"}
-                </span>
-              )}
-              {!!i.evidence?.length && (
-                <details
-                  className="insight-evidence"
-                  onToggle={(event) => {
-                    if (!demo && event.currentTarget.open)
-                      for (const e of i.evidence ?? [])
-                        journey?.citation(
-                          `${sourceId}:${detail.generation}:${detail.updatedAt}:${i.id}:${e.id}`,
-                          e.kind,
-                          detail.coverage,
-                        );
-                  }}
-                >
-                  <summary>
-                    Evidence · {i.evidence.length}{" "}
-                    {i.evidence.length === 1 ? "reference" : "references"}
-                  </summary>
-                  <ul className="evidence-links">
-                    {i.evidence?.map((e: any) => (
-                      <li key={e.id}>
-                        {e.kind === "frame" && !demo && (
-                          <button
-                            type="button"
-                            className="evidence-link"
-                            onClick={(event) => {
-                              event.currentTarget.focus({
-                                preventScroll: true,
-                              });
-                              setViewFrame(e.id);
-                            }}
-                          >
-                            {untimedImages
-                              ? imageLabel(e.id)
-                              : `Frame · ${(e.startMs / 1000).toFixed(1)}s`}
-                          </button>
-                        )}
-                        {e.kind === "transcript" && (
-                          <a
-                            href="#source-transcript"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              setTranscriptOpen(true);
-                              const target = transcript.current;
-                              if (target) {
-                                target.open = true;
-                                target.scrollIntoView({ block: "start" });
-                                target.focus({ preventScroll: true });
-                              }
-                            }}
-                          >
-                            Transcript ·{" "}
-                            {e.startMs === null
-                              ? "supplied text"
-                              : `${(e.startMs / 1000).toFixed(1)}s`}
-                          </a>
-                        )}
-                        {e.kind === "caption" &&
-                          detail.acquisition?.description && (
+          {detailLoading && (
+            <output aria-live="polite">
+              <Loader2 className="spinner" size={16} aria-hidden="true" />{" "}
+              Loading source details…
+            </output>
+          )}
+          {!detailLoading &&
+            insights.map((i: any, index: number) => (
+              <article
+                className="insight"
+                id={`insight-${index}`}
+                key={i.id ?? i.title}
+                tabIndex={-1}
+              >
+                <h3>{i.title}</h3>
+                <p>{i.claim}</p>
+                <p>{i.interpretation}</p>
+                {(i.confidence || demo) && (
+                  <span className="status">
+                    {i.confidence ?? "Synthetic evidence"}
+                  </span>
+                )}
+                {!!i.evidence?.length && (
+                  <details
+                    className="insight-evidence"
+                    onToggle={(event) => {
+                      if (!demo && event.currentTarget.open)
+                        for (const e of i.evidence ?? [])
+                          journey?.citation(
+                            `${sourceId}:${detail.generation}:${detail.updatedAt}:${i.id}:${e.id}`,
+                            e.kind,
+                            detail.coverage,
+                          );
+                    }}
+                  >
+                    <summary>
+                      Evidence · {i.evidence.length}{" "}
+                      {i.evidence.length === 1 ? "reference" : "references"}
+                    </summary>
+                    <ul className="evidence-links">
+                      {i.evidence?.map((e: any) => (
+                        <li key={e.id}>
+                          {e.kind === "frame" && !demo && (
+                            <button
+                              type="button"
+                              className="evidence-link"
+                              onClick={(event) => {
+                                event.currentTarget.focus({
+                                  preventScroll: true,
+                                });
+                                setViewFrame(e.id);
+                              }}
+                            >
+                              {untimedImages
+                                ? imageLabel(e.id)
+                                : `Frame · ${(e.startMs / 1000).toFixed(1)}s`}
+                            </button>
+                          )}
+                          {e.kind === "transcript" && (
                             <a
-                              href="#source-caption"
-                              onClick={() => {
-                                const target = document.getElementById(
-                                  "source-caption",
-                                ) as HTMLDetailsElement | null;
+                              href="#source-transcript"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                setTranscriptOpen(true);
+                                const target = transcript.current;
                                 if (target) {
                                   target.open = true;
+                                  target.scrollIntoView({ block: "start" });
                                   target.focus({ preventScroll: true });
                                 }
                               }}
                             >
-                              Post caption
+                              Transcript ·{" "}
+                              {e.startMs === null
+                                ? "supplied text"
+                                : `${(e.startMs / 1000).toFixed(1)}s`}
                             </a>
                           )}
-                        {[
-                          "github_file",
-                          "reddit_post",
-                          "reddit_comment",
-                          "supplied_text",
-                        ].includes(e.kind) && (
-                          <span>{label(e.kind)} · see cited excerpt below</span>
-                        )}
-                        {![
-                          "github_file",
-                          "reddit_post",
-                          "reddit_comment",
-                          "supplied_text",
-                        ].includes(e.kind) &&
-                          e.kind !== "caption" &&
-                          e.kind !== "transcript" &&
-                          (e.kind !== "frame" || demo) && (
+                          {e.kind === "caption" &&
+                            detail.acquisition?.description && (
+                              <a
+                                href="#source-caption"
+                                onClick={() => {
+                                  const target = document.getElementById(
+                                    "source-caption",
+                                  ) as HTMLDetailsElement | null;
+                                  if (target) {
+                                    target.open = true;
+                                    target.focus({ preventScroll: true });
+                                  }
+                                }}
+                              >
+                                Post caption
+                              </a>
+                            )}
+                          {[
+                            "github_file",
+                            "reddit_post",
+                            "reddit_comment",
+                            "supplied_text",
+                          ].includes(e.kind) && (
                             <span>
-                              {label(e.kind)} ·{" "}
-                              {e.startMs === null
-                                ? "Supplied text"
-                                : `${(e.startMs / 1000).toFixed(1)}s`}
+                              {label(e.kind)} · see cited excerpt below
                             </span>
                           )}
-                      </li>
-                    ))}
-                  </ul>
-                  {detail.orderedMedia &&
-                    !isCloudObservedMedia(detail.orderedMedia.post) && (
+                          {![
+                            "github_file",
+                            "reddit_post",
+                            "reddit_comment",
+                            "supplied_text",
+                          ].includes(e.kind) &&
+                            e.kind !== "caption" &&
+                            e.kind !== "transcript" &&
+                            (e.kind !== "frame" || demo) && (
+                              <span>
+                                {label(e.kind)} ·{" "}
+                                {e.startMs === null
+                                  ? "Supplied text"
+                                  : `${(e.startMs / 1000).toFixed(1)}s`}
+                              </span>
+                            )}
+                        </li>
+                      ))}
+                    </ul>
+                    {detail.orderedMedia &&
+                      !isCloudObservedMedia(detail.orderedMedia.post) && (
+                        <ul>
+                          {i.evidence.map((ref: any) => {
+                            const citation = socialCitation(
+                              ref,
+                              detail.orderedMedia.evidence,
+                            );
+
+                            const record = detail.orderedMedia.evidence.find(
+                              (e: any) =>
+                                e.id === ref.id && e.kind === ref.kind,
+                            );
+
+                            return (
+                              <li key={ref.id}>
+                                <p>
+                                  Observed video - {ref.kind} -{" "}
+                                  {ref.startMs === null
+                                    ? "untimed"
+                                    : `${(ref.startMs / 1000).toFixed(1)}s`}{" "}
+                                  - {citation.basis}
+                                </p>
+                                <p>{record?.text}</p>
+                                {citation.uncertainty && (
+                                  <p>{citation.uncertainty}</p>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    {detail.sharedCloud && (
                       <ul>
                         {i.evidence.map((ref: any) => {
-                          const citation = socialCitation(
-                            ref,
-                            detail.orderedMedia.evidence,
-                          );
-
-                          const record = detail.orderedMedia.evidence.find(
-                            (e: any) => e.id === ref.id && e.kind === ref.kind,
-                          );
-
+                          const observation =
+                            detail.sharedCloud.observations.find(
+                              (entry: any) => entry.id === ref.id,
+                            );
                           return (
                             <li key={ref.id}>
-                              <p>
-                                Observed video - {ref.kind} -{" "}
-                                {ref.startMs === null
-                                  ? "untimed"
-                                  : `${(ref.startMs / 1000).toFixed(1)}s`}{" "}
-                                - {citation.basis}
+                              <blockquote>
+                                {observation?.text ??
+                                  "Observation unavailable."}
+                              </blockquote>
+                              <p className="fine">
+                                {observation?.basis}
+                                {observation?.uncertainty
+                                  ? `. ${observation.uncertainty}`
+                                  : ""}
                               </p>
-                              <p>{record?.text}</p>
-                              {citation.uncertainty && (
-                                <p>{citation.uncertainty}</p>
-                              )}
                             </li>
                           );
                         })}
                       </ul>
                     )}
-                  {detail.sharedCloud && (
-                    <ul>
-                      {i.evidence.map((ref: any) => {
-                        const observation =
-                          detail.sharedCloud.observations.find(
-                            (entry: any) => entry.id === ref.id,
-                          );
-                        return (
-                          <li key={ref.id}>
-                            <blockquote>
-                              {observation?.text ?? "Observation unavailable."}
-                            </blockquote>
-                            <p className="fine">
-                              {observation?.basis}
-                              {observation?.uncertainty
-                                ? `. ${observation.uncertainty}`
-                                : ""}
-                            </p>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
 
-                  {detail.evidenceRegistry && (
-                    <TypedSourceEvidence
-                      evidenceRegistry={detail.evidenceRegistry.filter(
-                        (record: any) =>
-                          i.evidence.some((e: any) => e.id === record.id),
-                      )}
-                      sourceRevision={detail.sourceRevision}
-                    />
-                  )}
-                </details>
-              )}
-            </article>
-          ))}
-        {!detailLoading && !insights.length && !detail.error && (
-          <p>
-            {["processing", "queued"].includes(detail.state)
-              ? "Analysis is underway."
-              : "No main points yet. Review the source's analysis options."}
-          </p>
-        )}
-        {!demo &&
-          canRepairEvidence &&
-          !readOnly &&
-          detail.personalAnalysis?.executor === "work_cloud" &&
-          detail.personalAnalysis.state === "completed" &&
-          isCloudObservedMedia(detail.orderedMedia?.post) &&
-          detail.orderedMedia.post.frames.length > savedFrames.length && (
-            <details className="source-notes">
-              <summary>Restore missing screenshots</summary>
-              <p>
-                Restore the exact retained screenshots while preserving this
-                analysis. A connected Cloud task must perform the bounded
-                repair.
-              </p>
-              {detail.personalAnalysis.cloud.media?.evidenceRepair ? (
+                    {detail.evidenceRegistry && (
+                      <TypedSourceEvidence
+                        evidenceRegistry={detail.evidenceRegistry.filter(
+                          (record: any) =>
+                            i.evidence.some((e: any) => e.id === record.id),
+                        )}
+                        sourceRevision={detail.sourceRevision}
+                      />
+                    )}
+                  </details>
+                )}
+              </article>
+            ))}
+          {!detailLoading && !insights.length && !detail.error && (
+            <p>
+              {["processing", "queued"].includes(detail.state)
+                ? "Analysis is underway."
+                : "No main points yet. Review the source's analysis options."}
+            </p>
+          )}
+          {!demo &&
+            canRepairEvidence &&
+            !readOnly &&
+            detail.personalAnalysis?.executor === "work_cloud" &&
+            detail.personalAnalysis.state === "completed" &&
+            isCloudObservedMedia(detail.orderedMedia?.post) &&
+            detail.orderedMedia.post.frames.length > savedFrames.length && (
+              <details className="source-notes">
+                <summary>Restore missing screenshots</summary>
                 <p>
-                  Evidence repair:{" "}
-                  {detail.personalAnalysis.cloud.media.evidenceRepair.state}.
-                  Review that attempt before starting another.
+                  Restore the exact retained screenshots while preserving this
+                  analysis. A connected Cloud task must perform the bounded
+                  repair.
                 </p>
-              ) : (
-                <Button
-                  busy={busy}
-                  onClick={async () => {
-                    const result = await call(
-                      "workCloudEvidenceRepairApprove",
-                      {
-                        sourceId,
-                        generation: detail.generation,
-                        preparationHash:
-                          detail.personalAnalysis.cloud.media.preparationHash,
-                        acknowledged: true,
-                      },
-                    );
-                    if (result) await onRefresh?.();
-                  }}
-                >
-                  Approve screenshot repair
-                </Button>
-              )}
-            </details>
-          )}
-        <details
-          id="source-transcript"
-          ref={transcript}
-          tabIndex={-1}
-          open={transcriptOpen}
-          onToggle={(event) => setTranscriptOpen(event.currentTarget.open)}
-        >
-          <summary>
-            {detail.kind === "text"
-              ? "Original supplied text and corrections"
-              : "Original transcript and corrections"}
-          </summary>
-          {cloudSpeechSegments ? (
-            cloudSpeechSegments.length ? (
-              cloudSpeechSegments.map((segment: any) => (
-                <div key={segment.id}>
-                  <p className="fine">
-                    Original transcript segment:{" "}
-                    {(segment.startMs / 1000).toFixed(1)}–
-                    {(segment.endMs / 1000).toFixed(1)} seconds.
+                {detail.personalAnalysis.cloud.media?.evidenceRepair ? (
+                  <p>
+                    Evidence repair:{" "}
+                    {detail.personalAnalysis.cloud.media.evidenceRepair.state}.
+                    Review that attempt before starting another.
                   </p>
-                  <p style={{ whiteSpace: "pre-wrap" }}>{segment.text}</p>
-                </div>
-              ))
+                ) : (
+                  <Button
+                    busy={busy}
+                    onClick={async () => {
+                      const result = await call(
+                        "workCloudEvidenceRepairApprove",
+                        {
+                          sourceId,
+                          generation: detail.generation,
+                          preparationHash:
+                            detail.personalAnalysis.cloud.media.preparationHash,
+                          acknowledged: true,
+                        },
+                      );
+                      if (result) await onRefresh?.();
+                    }}
+                  >
+                    Approve screenshot repair
+                  </Button>
+                )}
+              </details>
+            )}
+          <details
+            id="source-transcript"
+            ref={transcript}
+            tabIndex={-1}
+            open={transcriptOpen}
+            onToggle={(event) => setTranscriptOpen(event.currentTarget.open)}
+          >
+            <summary>
+              {detail.kind === "text"
+                ? "Original supplied text and corrections"
+                : "Original transcript and corrections"}
+            </summary>
+            {cloudSpeechSegments ? (
+              cloudSpeechSegments.length ? (
+                cloudSpeechSegments.map((segment: any) => (
+                  <div key={segment.id}>
+                    <p className="fine">
+                      Original transcript segment:{" "}
+                      {(segment.startMs / 1000).toFixed(1)}–
+                      {(segment.endMs / 1000).toFixed(1)} seconds.
+                    </p>
+                    <p style={{ whiteSpace: "pre-wrap" }}>{segment.text}</p>
+                  </div>
+                ))
+              ) : (
+                <p>Original transcript is unavailable.</p>
+              )
             ) : (
-              <p>Original transcript is unavailable.</p>
-            )
-          ) : (
-            <>
-              <p style={{ whiteSpace: "pre-wrap" }}>
-                {detail.originalText ??
-                  detail.text ??
-                  (detail.kind === "text"
-                    ? "Original supplied text is unavailable."
-                    : "Original transcript is unavailable.")}
-              </p>
-              {detail.originalText && (
-                <p>Current user correction: {detail.text}</p>
-              )}
-            </>
-          )}
-          {!cloudSpeechSegments &&
-            (detail.originalMediaEvidence ?? detail.mediaEvidence)
-              ?.filter((e: any) => e.kind === "transcript")
-              .map((e: any) => (
-                <p key={e.id} className="fine">
-                  Original transcript segment: {(e.startMs / 1000).toFixed(1)}–
-                  {(e.endMs / 1000).toFixed(1)} seconds.
+              <>
+                <p style={{ whiteSpace: "pre-wrap" }}>
+                  {detail.originalText ??
+                    detail.text ??
+                    (detail.kind === "text"
+                      ? "Original supplied text is unavailable."
+                      : "Original transcript is unavailable.")}
                 </p>
-              ))}
-          {detail.analysis?.correctedText && (
-            <p>Confirmed correction: {detail.analysis.correctedText}</p>
-          )}
-        </details>
-      </section>
+                {detail.originalText && (
+                  <p>Current user correction: {detail.text}</p>
+                )}
+              </>
+            )}
+            {!cloudSpeechSegments &&
+              (detail.originalMediaEvidence ?? detail.mediaEvidence)
+                ?.filter((e: any) => e.kind === "transcript")
+                .map((e: any) => (
+                  <p key={e.id} className="fine">
+                    Original transcript segment: {(e.startMs / 1000).toFixed(1)}
+                    –{(e.endMs / 1000).toFixed(1)} seconds.
+                  </p>
+                ))}
+            {detail.analysis?.correctedText && (
+              <p>Confirmed correction: {detail.analysis.correctedText}</p>
+            )}
+          </details>
+        </section>
+      </PostInsightReader>
       {detail.acquisition?.description && (
         <details id="source-caption" className="panel" tabIndex={-1}>
           <summary>Post caption</summary>

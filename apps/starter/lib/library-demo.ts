@@ -160,6 +160,9 @@ export const libraryDemoDrafts = libraryDemoProposals.map((p) => ({
 }));
 export const libraryDemoSources = libraryDemoMembers.map((m) => ({
   _id: m._id,
+  ...(m._id === "demo-0"
+    ? { kind: "url", url: "https://example.com/synthetic-post" }
+    : {}),
   title: m.evidence.title,
   state: "ready",
   coverage: "synthetic",

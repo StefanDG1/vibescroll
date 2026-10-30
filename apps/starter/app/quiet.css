@@ -414,3 +414,59 @@
 .atlas-project[id] {
   scroll-margin-top: 100px;
 }
+
+/* Only Home adopts the selected content-first feed shell. Library stays unchanged. */
+.quiet-shell.feed-view .product-main {
+  max-width: 1560px;
+  padding: 24px 32px 64px;
+}
+.quiet-shell.feed-view .product-top,
+.quiet-shell.feed-view .page-heading {
+  display: none;
+}
+.quiet-shell.feed-view .product-rail {
+  width: 84px;
+  padding: 18px 8px;
+}
+.quiet-shell.feed-view .rail-brand {
+  padding: 0;
+  margin-bottom: 32px;
+  justify-content: center;
+}
+.quiet-shell.feed-view .rail-brand .brand {
+  font-size: 0;
+  gap: 0;
+}
+.quiet-shell.feed-view .rail-brand > button,
+.quiet-shell.feed-view .workspace-label {
+  display: none;
+}
+.quiet-shell.feed-view .product-rail nav button {
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px 4px;
+  font-size: 11px;
+}
+.quiet-shell.feed-view .rail-bottom {
+  padding: 12px 0 0;
+}
+.quiet-shell.feed-view .account-trigger {
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11px;
+  padding: 8px 0;
+}
+.quiet-shell.feed-view .account-trigger > svg {
+  display: none;
+}
+@media (max-width: 720px) {
+  .quiet-shell.feed-view .product-rail {
+    display: none;
+  }
+  .quiet-shell.feed-view .product-main {
+    padding: 0 0 96px;
+  }
+  .quiet-shell.feed-view:has(.demo-banner) {
+    --feed-banner-height: 60px;
+  }
+}

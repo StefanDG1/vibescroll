@@ -1,0 +1,128 @@
+.artifact {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  min-width: 0;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 76px;
+  border: 0;
+  padding: 15px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.header:hover {
+  background: var(--soft);
+}
+.header:focus-visible,
+.body a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  height: 36px;
+  background: color-mix(in srgb, var(--teal) 9%, var(--panel));
+  color: var(--teal);
+  border-radius: 10px;
+}
+.label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.label strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.label small {
+  color: var(--subtle);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.status {
+  color: var(--teal);
+  font-size: 11px;
+  background: color-mix(in srgb, var(--teal) 9%, var(--panel));
+  padding: 4px 7px;
+  border-radius: 5px;
+}
+.header > svg {
+  flex-shrink: 0;
+  transition: transform 180ms ease-out;
+}
+.rotated {
+  transform: rotate(180deg);
+}
+.fit {
+  margin: 0 15px 12px;
+}
+.body {
+  padding: 4px 18px 18px;
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.body[hidden] {
+  display: none;
+}
+.body h3 {
+  margin: 8px 0 14px;
+  font-size: 19px;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+.body h4 {
+  margin: 20px 0 6px;
+  font-size: 13px;
+}
+.body p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.body ul {
+  padding-left: 20px;
+  margin: 0;
+}
+.body li + li {
+  margin-top: 6px;
+}
+.body footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.body footer span {
+  font-size: 11px;
+  color: var(--subtle);
+}
+.body a {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--teal);
+}
+@media (prefers-reduced-motion: reduce) {
+  .header > svg {
+    transition: none;
+  }
+}

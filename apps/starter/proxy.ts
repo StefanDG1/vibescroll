@@ -52,6 +52,7 @@ export const config = {
     "/api/workspace/:path*",
     "/api/library/:path*",
     "/api/posts/:path*",
+    "/api/feed/:path*",
     "/api/accounting/:path*",
     "/api/github/:path*",
   ],

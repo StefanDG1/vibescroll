@@ -22,4 +22,4 @@ The `seo-audit` skill is copied from coreyhaines31/marketingskills at commit `5b
 
 ## assistant-ui Elements
 
-The analysis step list and error state adapt the MIT-licensed AgentPlan and ErrorState components from assistant-ui/assistant-ui at commit `3fa379f814dadb02b9f9ad04e31c2d2ba92df094`, copyright2026 AgentbaseAI Inc. The complete [MIT notice](licenses/assistant-ui-elements-3fa379f.txt) is retained. Adaptations use VibeScroll styles, explicit observed stage states, indeterminate progress and server-approved recovery actions. No assistant-ui inference/chat runtime is installed.
+The analysis step list, error state and expandable saved-plan card adapt the MIT-licensed AgentPlan, ErrorState and ArtifactCard components from assistant-ui/assistant-ui at commit `3fa379f814dadb02b9f9ad04e31c2d2ba92df094`, copyright2026 AgentbaseAI Inc. The complete [MIT notice](licenses/assistant-ui-elements-3fa379f.txt) is retained. Adaptations use VibeScroll styles, explicit observed stage states, indeterminate progress and server-approved recovery actions. No assistant-ui inference/chat runtime is installed.

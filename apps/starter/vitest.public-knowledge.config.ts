@@ -11,6 +11,8 @@ export default defineConfig({
   },
   test: {
     include: [
+      "apps/starter/home-feed-ui.test.ts",
+      "apps/starter/home-feed-loading.test.ts",
       "apps/starter/assistant-elements-ui.test.ts",
       "apps/starter/settings-panel-ui.test.ts",
       "apps/starter/source-progress-ui.test.ts",

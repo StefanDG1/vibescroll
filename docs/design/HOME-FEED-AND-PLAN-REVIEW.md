@@ -104,3 +104,9 @@ The [complete assistant-ui catalogue review](ASSISTANT-UI-CATALOGUE-REVIEW-2026-
 6. **Trends and outcomes:** real analytics with honest sample sizes, then calibrated recommendation/model/outcome experiments. This follows the working feed/review journey.
 
 Test with labeled synthetic fixtures first, then existing authorized saved results without fresh analysis. Cover empty, long-title/many-insight, streaming, offline, stale versions, duplicate events, simultaneous approvals, issue timeout, deletion and revoked image access. Test real touch/keyboard/wheel boundaries, enlarged text, mobile keyboard, desktop widths and both themes. Use staged/exact-version publication under actual budget/provider gates. No preview alone completes a milestone.
+
+## R122 implementation checkpoint
+
+The first working feed is implemented under [ADR212](../adr/212-metadata-first-home-feed.md). It uses the selected desktop/mobile shell, natural post-to-next-post page scrolling, indexed metadata pages, at most three retained full analyses, live version invalidation and source-access clearing. Existing saved plans expand inline with actual topic-fit disclosures; the existing replay-safe manual proposal seed is reachable for a selected insight. Library Tree/Folders and standalone routes are preserved. The first production-build visual/native pass and all eight Library layout cases passed locally.
+
+This is delivery step2 and the saved-plan portion of step3. Website publication and independent private-data acceptance are not implied by local tests. Quoted AI plan generation, durable inline conversation/refinement, single-action issue publication, comment drafts restored across navigation, new-result discovery and richer ranking remain open. No fake conversation, engagement total, media player or generated plan substitutes for those capabilities.

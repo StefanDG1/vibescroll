@@ -68,7 +68,7 @@ import { NoticeToast } from "./notice-toast";
 import { TeamKnowledgeSharing } from "./team-knowledge-sharing";
 import { SharedKnowledge } from "./shared-knowledge";
 import { PrivateLibrary } from "./private-library";
-import { StudioHome } from "./studio-home";
+import { HomeFeed } from "./home-feed";
 import { RecentPosts } from "./recent-posts";
 import { PostThumbnail } from "./post-thumbnail";
 import { postThumbnailCandidates } from "../../../packages/sources/thumbnail";
@@ -95,7 +95,6 @@ import {
   CloudCatalogContribution,
   CloudCatalogReceipts,
 } from "./cloud-catalog-controls";
-import { SetupJourney } from "./setup-journey";
 import { TaskRuntimePicker } from "./task-runtime-picker";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
 import { SourceProgressPanel } from "./source-progress";
@@ -1158,7 +1157,7 @@ export function Console({
   ).length;
   return (
     <div
-      className={`product-shell atlas-shell quiet-shell ${railCollapsed ? "rail-collapsed" : ""}`}
+      className={`product-shell atlas-shell quiet-shell ${view === "home" ? "feed-view" : railCollapsed ? "rail-collapsed" : ""}`}
     >
       <AppTheme />
       <aside className="product-rail">
@@ -1190,9 +1189,7 @@ export function Console({
                 disabled={
                   key === "save" && ((readOnly && !demo) || !accessAvailable)
                 }
-                onClick={() =>
-                  key === "save" ? setCaptureOpen(true) : go(key)
-                }
+                onClick={() => (key === "save" ? void openCapture() : go(key))}
               >
                 <Icon size={19} strokeWidth={1.7} aria-hidden="true" />
                 {title}
@@ -1278,7 +1275,11 @@ export function Console({
             className={`page-heading ${view === "source" ? "source-heading" : ""}`}
           >
             <div>
-              <h1 className={view === "library" ? "sr-only" : undefined}>
+              <h1
+                className={
+                  ["library", "home"].includes(view) ? "sr-only" : undefined
+                }
+              >
                 {view === "source"
                   ? selected
                     ? postDisplayTitle(selected)
@@ -1480,37 +1481,17 @@ export function Console({
                       disabled={readOnly}
                     />
                   )}
-                  {data.privateLibrary && !demo && (
-                    <SetupJourney
-                      organizationId={organizationId}
-                      call={strictCall}
-                      onNavigate={go}
-                      onSave={() => void openCapture()}
-                      disabled={readOnly}
-                    />
-                  )}
-                  <StudioHome
-                    organizationId={organizationId}
-                    demo={demo}
+                  <HomeFeed
                     key={organizationId}
-                    sources={home.sources}
-                    proposals={home.proposals}
-                    repositories={home.repositories}
-                    runs={home.runs}
-                    libraryNext={home.libraryNext}
-                    compact={home.compact}
-                    draft={sharedDraft}
-                    onDraft={setSharedDraft}
+                    organizationId={organizationId}
+                    initialPage={home.recentPosts}
+                    demo={demo}
+                    readOnly={readOnly}
+                    call={strictCall}
                     onSave={() => {
                       void openCapture();
                     }}
-                    onOpenSource={findSource}
-                    onOpenProposal={(proposal) => {
-                      void openProposal(id(proposal));
-                    }}
-                    go={go}
-                    readOnly={readOnly}
-                    busy={busy}
+                    onPosts={() => go("posts")}
                   />
                   {data.privateLibrary && !demo && (
                     <details

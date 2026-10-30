@@ -127,11 +127,11 @@ async function workspaceViewData({
     };
   }
   if (!view || view === "home") {
-    const home = await c.query(api.dashboard.home, {
-      organizationId,
-      preview: compactHome,
-    });
-    if (home.ready) return home;
+    const [home, recentPosts] = await Promise.all([
+      c.query(api.dashboard.home, { organizationId, preview: compactHome }),
+      c.query(api.posts.recent, { organizationId }),
+    ]);
+    if (home.ready) return { ...home, recentPosts };
   }
   if (view === "posts") {
     const [organization, recentPosts] = await Promise.all([

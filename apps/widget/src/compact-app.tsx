@@ -38,6 +38,7 @@ export function CompactApp() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [source, setSource] = useState<Source | null>(null);
   const [job, setJob] = useState<ToolRecord | null>(null);
+  const [pollExpired, setPollExpired] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -102,6 +103,7 @@ export function CompactApp() {
       setSource(null);
       setRows([]);
       setJob(null);
+      setPollExpired(false);
       setExpanded(null);
     }
     try {
@@ -186,9 +188,13 @@ export function CompactApp() {
       !status.active ||
       document.hidden ||
       pollFlight.current ||
-      Date.now() - originalJobStarted.current > 300000
+      pollExpired
     )
       return;
+    if (Date.now() - originalJobStarted.current > 300000) {
+      setPollExpired(true);
+      return;
+    }
     pollFlight.current = true;
     const ticket = epoch.current;
     try {
@@ -216,12 +222,12 @@ export function CompactApp() {
   });
   const sourceId = source?.id;
   useEffect(() => {
-    if (!sourceId || !status.active) return;
+    if (!sourceId || !status.active || pollExpired) return;
     const timer = setInterval(() => {
       void poll();
     }, 5000);
     return () => clearInterval(timer);
-  }, [sourceId, status.active]);
+  }, [sourceId, status.active, pollExpired]);
   async function saveLink(event: React.FormEvent) {
     event.preventDefault();
     if (busy || !profileId) return;
@@ -360,7 +366,9 @@ export function CompactApp() {
                 Recent posts
               </button>
               <div className="compact-post-title">
-                <h1>{source.title}</h1>
+                <h1>
+                  {typeof job?.title === "string" ? job.title : source.title}
+                </h1>
                 <button
                   aria-label="Refresh this post"
                   className="icon-button"
@@ -374,8 +382,12 @@ export function CompactApp() {
               </div>
               {(status.active || source.state !== "ready") && (
                 <section className="compact-progress" aria-live="polite">
-                  <strong>{status.label}</strong>
-                  {status.active && <progress aria-label={status.label} />}
+                  <strong>
+                    {pollExpired ? "Check latest status" : status.label}
+                  </strong>
+                  {status.active && !pollExpired && (
+                    <progress aria-label={status.label} />
+                  )}
                   <button
                     className="compact-open"
                     onClick={() => {

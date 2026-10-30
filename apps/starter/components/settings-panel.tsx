@@ -32,19 +32,17 @@ export function SettingsPanel({
   }
   useEffect(() => {
     const element = dialog.current;
-    if (!element) return;
-    if (open) {
-      if (!element.open) {
-        previousFocus.current = document.activeElement;
-        element.showModal();
-      }
-    } else if (element.open) {
-      element.close();
+    if (!element || !open) return;
+    previousFocus.current = document.activeElement;
+    const triggerElement = trigger.current;
+    if (!element.open) element.showModal();
+    return () => {
+      if (element.open) element.close();
       const previous = previousFocus.current;
       if (previous instanceof HTMLElement && previous.isConnected)
         previous.focus({ preventScroll: true });
-      else trigger.current?.focus({ preventScroll: true });
-    }
+      else triggerElement?.focus({ preventScroll: true });
+    };
   }, [open]);
   useEffect(() => {
     if (!open) return;
@@ -88,6 +86,7 @@ export function SettingsPanel({
           change(false);
         }}
         onClose={() => {
+          if (!dialog.current || dialog.current.open) return;
           setLocalOpen(false);
           onOpenChange?.(false);
         }}

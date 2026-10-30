@@ -150,6 +150,9 @@ it("saves a profile-level proposal in existing records and reopens it without mo
     id: saved.proposalId,
   });
   expect(app.title).toBe(body.title);
+  expect(saved.reviewUrl).toBe(
+    `https://scroll.companynerve.com/app/${f.org}/proposals/${saved.proposalId}`,
+  );
   expect(app.detail.repositoryEvidence).toEqual([]);
   expect(app.detail.sourceEvidence.length).toBeGreaterThan(0);
   expect(JSON.stringify(app.detail)).not.toContain(

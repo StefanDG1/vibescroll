@@ -4,6 +4,9 @@ Usage: python apps/widget/harness/compact-check.py
 The Vite harness must already be running locally on port4319. Synthetic data only.
 """
 import ast
+import hashlib
+import sys
+import time
 import json
 from pathlib import Path
 import shutil
@@ -28,11 +31,22 @@ for node in tree.body[first_case:]:
                 else: statements.append(ast.get_source_segment(source, part))
     else: statements.append(ast.get_source_segment(source, node))
 
+if "--progress-only" in sys.argv:
+    start = next(i for i,s in enumerate(statements) if s.startswith("open_case('resource=card&job=waiting'"))
+    end = next(i for i,s in enumerate(statements[start+1:],start+1) if s.startswith("open_case('resource=export'"))
+    statements = statements[start:end] + ["Path('outputs/redesign-20261030/compact-progress-protocol-results.json').write_text(json.dumps(results,indent=2),encoding='utf-8')", "raw_cdp('Target.closeTarget',targetId=parent_target)"]
+
 state_file = Path("outputs/redesign-20261030/compact-protocol-state.json")
 if state_file.exists(): state_file.unlink()
 executable = shutil.which("browser-harness")
 if not executable: raise RuntimeError("browser-harness is required")
+artifact = Path("packages/widget/resources.generated.ts")
+artifact_hash = hashlib.sha256(artifact.read_bytes()).hexdigest()
+artifact_mtime = artifact.stat().st_mtime_ns
 for index, statement in enumerate(statements):
+    if artifact.stat().st_mtime_ns != artifact_mtime or hashlib.sha256(artifact.read_bytes()).hexdigest() != artifact_hash:
+        raise RuntimeError("Built UI changed during protocol checks; stop local builds and use one frozen artifact.")
+    if statement.startswith("until(lambda: 'Check latest status'"): time.sleep(6)
     code = prelude + "\n" + f"_state_path=Path({str(state_file)!r})\nif _state_path.exists(): globals().update(json.loads(_state_path.read_text(encoding='utf-8')))\n"
     code += statement + "\n"
     code += "_saved={k:globals()[k] for k in ['results','count','writes','parent_target','parent_session','child_session'] if k in globals()}\n_state_path.write_text(json.dumps(_saved),encoding='utf-8')\n"

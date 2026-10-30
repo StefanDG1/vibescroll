@@ -115,6 +115,30 @@ async function load() {
         };
     }
     const data = await demoCall(name, (args ?? {}) as ToolRecord);
+    if (options.get("job") === "waiting") {
+      if (name === "fetch" && typeof data.text === "string") {
+        const value = JSON.parse(data.text);
+        value.state = "queued";
+        value.insights = [];
+        data.title = "Initial saved link";
+        data.text = JSON.stringify(value);
+      }
+      if (name === "get_job_status")
+        return {
+          structuredContent: {
+            ...data,
+            title: "Metadata arrived before analysis",
+            status: "preparing",
+            source_status: "queued",
+            processing: {
+              executor: "work_cloud",
+              state: "preparing",
+              stage: "preparing",
+            },
+          },
+          content: [],
+        };
+    }
     if (
       name === "fetch" &&
       options.get("references") === "5" &&

@@ -22,5 +22,13 @@
   "proposalDetailBoundedReadPassed": true,
   "noSchemaIndexOrComponentChangePlanned": true,
   "newLiveAnalysisJobs": 0,
-  "liveProposalWrites": 0
+  "liveProposalWrites": 0,
+  "initialNineBridgeCasesPassed": true,
+  "latestSharedControlsAndFollowupPassed": true,
+  "finalProgressFocusedBridgePassed": true,
+  "fullRepeatBrowserInputLimitation": "Later full reruns missed the expansion in a subsequent iframe case. Its exact automation/focus cause remains unproved. Initial nine-case acceptance is retained; final targeted progress acceptance passed. Real host acceptance remains required.",
+  "nativeDialogUnmountCleanupAdded": true,
+  "ownerApprovedCumulativeEUR": 15.5,
+  "approvedReleaseBatchUSD": 0.1,
+  "maximumNewAnalysisRuns": 0
 }

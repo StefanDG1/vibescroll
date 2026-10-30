@@ -47,6 +47,8 @@ The comparison-only policy and exact Gateway test-key environment were removed a
 
 ## Current unfinished critical path
 
+Owner approved a cumulative EUR15.50 ceiling and a USD0.10 shared-proposal/compact-UI release batch, with at most one backend publication, one included-credit Basic build and one private proposal canary. No new analysis, paid AI, purchase or top-up. All earlier financial holds, analysis capacity, protected sources and Vercel strictly belowUSD20 remain. The prior EUR15 record is historical. Publication is still pending.
+
 Latest owner direction R110 reactivates a compact MCP UI after the shared website proposal action. ADR207/208 are the active local candidates. Production embedded UI remains disabled at the accepted baseline until those candidates are released and checked in the intended host; direct hosted ChatGPT inference and local execution remain paused/deferred.
 
 October30: the [quiet app shell](../design/QUIET-APP-REDESIGN-2026-10-30.md), R102/ADR203, and [durable chat proposals](../adr/204-chat-written-project-proposals.md), R099, are deployed at the baseline above. New save/read/list tools use existing scopes and indexed proposal records. They bind current project context and exact retained private/shared insights, support idempotent version/review-aware edits and keep planning-only drafts out of execution. Production SDK persistence and signed-in app reads passed. Isolated tests cover the actual MCP/HTTP relay; actual fresh-host tool discovery/OAuth write is still open. Do not recreate the connection to repair the separate CLI harness failure.

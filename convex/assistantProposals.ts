@@ -80,7 +80,7 @@ function snapshot(
     analysisStarted: false as const,
     codingAuthorized: false as const,
     publicationAuthorized: false as const,
-    reviewUrl: `https://scroll.companynerve.com/app/${proposal.organizationId}/proposals`,
+    reviewUrl: `https://scroll.companynerve.com/app/${proposal.organizationId}/proposals/${proposal._id}`,
   };
 }
 

@@ -108,6 +108,15 @@ until(lambda: "Designing a useful first experience" in body(), "explicit link sa
 assert sum(r.get('name')=='save_link' for r in receipts())==1
 note("explicit link capture opens its current source without starting work on render")
 
+open_case('resource=card&job=waiting',680)
+until(lambda: 'Metadata arrived before analysis' in body(), 'early metadata title')
+assert childjs("!!document.querySelector('progress')")
+childjs("window._realNow=Date.now; Date.now=()=>window._realNow()+310000")
+until(lambda: 'Check latest status' in body(), 'finite visible polling')
+assert not childjs("!!document.querySelector('progress')")
+assert sum(r.get('name')=='get_job_status' for r in receipts()) == 1
+note("early metadata is visible before analysis and expired polling does not imply live progress")
+
 open_case('resource=export',680)
 until(lambda: 'Fixture snapshot' in body(), 'historical read-only export')
 assert any(r['event']=='file-read' for r in receipts())

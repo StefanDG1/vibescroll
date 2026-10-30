@@ -56,6 +56,10 @@ export function ProjectProposalComposer({
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (flight.current || disabled || savedId) return;
+    if (!pending.current && (!title.trim() || !goal.trim())) {
+      setError("Add a title and a goal for this proposal.");
+      return;
+    }
     flight.current = true;
     setSubmitting(true);
     setError("");
@@ -111,7 +115,7 @@ export function ProjectProposalComposer({
     event.preventDefault();
     Promise.resolve(onNavigate(event.currentTarget.href)).catch(() =>
       setError(
-        "The host did not open the proposal. Open it from VibeScroll's Proposals page.",
+        "The host did not open the page. Open VibeScroll in your browser to continue.",
       ),
     );
   }

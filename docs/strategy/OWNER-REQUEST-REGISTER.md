@@ -204,6 +204,10 @@ R102: Quickly redesign the app toward assistant-ui/Codex, avoid overloading the 
 
 R103: Further caption-specific work is not a current priority while transcription works quickly and well enough. Continue the remaining roadmap and deploy tested improvements as work progresses. Preserve existing caption reuse, but remove a dedicated caption extraction/canary milestone from the release critical path. This does not waive transcript accuracy, source availability or truthful processing status.
 
+## Post-view simplification, October30
+
+R104: Remove the Related sources card from the post view. Put advanced privacy/publication controls lower down or in advanced settings. Keep existing saved relationships and permission/publication enforcement. The local reader cleanup removes the unused source-choice loader, moves publication controls to the end of the post and mounts them only on first expansion, preserving form state after that. Publication requires exact CI and browser acceptance.
+
 ## Source coverage and limits
 
 The audit used the visible owner conversation, current checkout/ADRs, dated production receipts, the October 26/28 handovers and a bounded read of **Compare video model options**. The originally named October 25 handover was found and read in the historical `cloud-p2-main-parity-20261024` checkout; it is absent from this compatible branch. Its implementation hypothesis is not current authority. The complete older main-branch R/P/N/C/M scope remains linked from the [launch index](../launch-plan/2026-10-23/README.md); this register does not mark that work accepted.

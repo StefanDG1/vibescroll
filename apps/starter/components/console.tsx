@@ -101,7 +101,6 @@ import { TypedSourceEvidence } from "./typed-source-evidence";
 import { PublicKnowledgePanel } from "./public-knowledge-panel";
 import { SavedPublicSource } from "./saved-public-source";
 import { PublicSaveContinuation } from "./public-save-continuation";
-import { SourceRelationships } from "./source-relationships";
 import {
   availableProcessingCredits,
   cloudExecutionEstimate,
@@ -773,21 +772,6 @@ export function Console({
     } finally {
       setBusy(false);
     }
-  }
-  async function relatedSourceChoices() {
-    const response = await fetch(`/api/library/${organizationId}`, {
-      cache: "no-store",
-    });
-    if (response.redirected || [401, 403, 404].includes(response.status)) {
-      clearAccess();
-      throw Error("Source unavailable.");
-    }
-    if (
-      !response.ok ||
-      !response.headers.get("content-type")?.includes("application/json")
-    )
-      throw Error("Source choices unavailable.");
-    return (await response.json()).items;
   }
   const home = homeData ?? data;
   const livePostIds = home.sources.slice(0, 20).map(id);
@@ -1830,12 +1814,6 @@ export function Console({
                     data.workspaceSlice === "source" &&
                     data.selectedSource === selected
                   }
-                  loadRelatedSources={
-                    data.workspaceSlice === "source"
-                      ? relatedSourceChoices
-                      : undefined
-                  }
-                  sources={data.sources}
                   readOnly={readOnly}
                   busy={busy}
                   canSuggestCategories={canSuggestCategories}
@@ -3640,12 +3618,10 @@ export function CaptureForm({
 export function SourceDetail({
   source,
   authoritative = false,
-  sources,
   readOnly,
   busy,
   canSuggestCategories,
   canRepairEvidence = false,
-  loadRelatedSources,
   onRefresh,
   demo,
   org,
@@ -3667,6 +3643,7 @@ export function SourceDetail({
   const [categoryDraft, setCategoryDraft] = useState("");
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [manualCloudOpen, setManualCloudOpen] = useState(false);
+  const [publicationMounted, setPublicationMounted] = useState(false);
   const [cloudRequestError, setCloudRequestError] = useState("");
   const transcript = useRef<HTMLDetailsElement>(null);
   const cloudSpeechSegments =
@@ -3886,13 +3863,6 @@ export function SourceDetail({
                 ?.scrollIntoView({ block: "start" })
             }
           />
-          <SourceRelationships
-            sourceId={sourceId}
-            sources={sources}
-            loadSources={loadRelatedSources}
-            call={strictCall}
-            readOnly={readOnly}
-          />
           {detail.publicImportId && !detail.sharedCloud ? (
             <SavedPublicSource
               sourceId={sourceId}
@@ -3900,20 +3870,7 @@ export function SourceDetail({
               readOnly={readOnly}
               enabled
             />
-          ) : (
-            canSuggestCategories && (
-              <details className="panel">
-                <summary>Advanced privacy and publication</summary>
-                <PublicKnowledgePanel
-                  organizationId={org}
-                  source={detail}
-                  call={strictCall}
-                  readOnly={readOnly}
-                  enabled
-                />
-              </details>
-            )
-          )}
+          ) : null}
         </>
       )}
       {!demo && !detailLoading && detail.evidenceRegistry && (
@@ -5159,6 +5116,28 @@ export function SourceDetail({
           worked.
         </p>
       </div>
+      {!demo &&
+        !detailLoading &&
+        canSuggestCategories &&
+        !(detail.publicImportId && !detail.sharedCloud) && (
+          <details
+            className="panel"
+            onToggle={(event) => {
+              if (event.currentTarget.open) setPublicationMounted(true);
+            }}
+          >
+            <summary>Advanced privacy and publication</summary>
+            {publicationMounted && (
+              <PublicKnowledgePanel
+                organizationId={org}
+                source={detail}
+                call={strictCall}
+                readOnly={readOnly}
+                enabled
+              />
+            )}
+          </details>
+        )}
     </>
   );
 }

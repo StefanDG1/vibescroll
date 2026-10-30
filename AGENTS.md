@@ -20,6 +20,8 @@ Also read [Simple setup, persistent results and proposal feedback](docs/strategy
 
 For new or substantially rebuilt assistant-related UI, prefer suitable assistant-ui components. The owner confirmed this preference on October 29, 2026. Start with the model selector and reasoning controls; reuse existing VibeScroll components where they already fit. Inspect the selected component's current dependencies and licence. This preference does not require a frontend rewrite or delay backend acceptance. See [the component plan](docs/strategy/MODEL-CATALOGUE-AND-CREDIT-BANDS.md).
 
+For analysis status, credit meters and project recommendations, read the [assistant-elements and fit plan](docs/design/ASSISTANT-ELEMENTS-AND-PROJECT-FIT.md) until accepted. Topic coverage is the current first subset; similarity/history/outcome scoring, meaningful priority/activity, duplicate-proposal opening, tooltips and provider logos remain tracked work. Preserve exact balances, observed states and honest score arithmetic.
+
 Build a web application first. Every library, proposal, approval, billing, and status workflow must work in a mobile browser. Installation of a desktop application is not a prerequisite. The optional runner exists only to execute authorized tasks on a paired computer.
 
 Use the existing CompanyNerve foundation. Export into a new repository and preserve tested authentication, tenancy, billing, and deletion boundaries. Inspect the actual exported source before assigning paths or replacing components. Paths described as proposed in this package are targets, not claims about upstream files.

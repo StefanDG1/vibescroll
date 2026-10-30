@@ -251,3 +251,7 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## October 26 native Events checkpoint
 
 [ADR 160](adr/160-native-events-and-saved-video-acknowledgement.md) records the accepted private ChatGPT connection renewal and actual app-save acknowledgement. The event is live in compatible6cdcb1c. Reuse the existing capture, scoped grants and signed delivery path; no new worker, queue or analysis authority follows from saving. Actual app-save acknowledgement precedes automatic media execution.
+
+## October30: observed status, credits and topic-fit scores
+
+[ADR211](adr/211-observed-status-credit-meter-and-topic-fit.md) records the deployed first subset and the separate history/outcome-scoring plan. Retain observed stages, exact integer credit balances and explicit topic arithmetic without an inflated baseline.

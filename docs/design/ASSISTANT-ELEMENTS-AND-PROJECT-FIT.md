@@ -38,3 +38,7 @@ The saved000h component-library insights support copy/customization and document
 ## Acceptance
 
 Local implementation, exact CI, website publication and real-host acceptance are distinct. Test native keyboard/disclosure/recovery interactions, viewport bounds and dark/light themes. Keep numeric credit calculations in integer units and final-only rounding. Test mixed expiry/revocation/unknown holds. Topic scores must fall when matches disappear, must not match non-goals, and must not imply history was searched. No analysis run is required to verify these presentation components. Update current state only after actual publication.
+
+## Accepted first subset
+
+Websiteb8162b5 and the bundled MCP reader publish observed stages/safe errors, a credit meter from actual pools and topic-coverage-v1 on suggested projects. Exact CI, canonical website checks and ten local compact-protocol cases passed. The score is source-wide and the suggested list remains bounded to three matching projects. History/similarity, duplicate-proposal opening, meaningful activity/priority, outcome scoring, tooltip/logo integration and per-run credit breakdown remain future steps. No fresh real-host score interaction is claimed by the local protocol result. [Production receipt](../operations/evidence/launch-20261030-assistant-elements-production.json).

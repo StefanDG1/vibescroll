@@ -1,6 +1,6 @@
 # Show the source-to-insight result in the hero
 
-Mode: implementation note. Owner request R112; GitHub issue196. Local candidate until production acceptance.
+Mode: implementation note. Owner request R112; GitHub issue196. Published and browser-verified atb8162b5; see the assistant-elements production receipt.
 
 Use the existing white/charcoal/green palette, existing font and shared InsightCardControl. A compact synthetic source tile beside two expandable insights makes the product workflow visible. Stack the source and insights on narrow screens. Keep the primary Try one post action and a public example link. Remove decorative stacks and their dead styles. New preview styles are module-scoped; public hero rules stay under .public-site.
 

@@ -1,6 +1,6 @@
 # ADR 212: metadata-first Home feed
 
-Status: implemented locally, production acceptance pending. October30,2026. Owner requirements R115-R122.
+Status: first feed checkpoint accepted in production. October30–31,2026. Owner requirements R115-R122.
 
 ## Decision
 
@@ -29,3 +29,5 @@ Home's compact rail is scoped to Home. Other pages keep their previous shell. Th
 - Production-build browser checks cover desktop/mobile and both themes, no horizontal overflow, natural column overflow, five destinations, mobile cue above navigation, native click/Enter expansion, evidence dialog Escape/focus restoration and Next post focus.
 - Recheck all eight existing desktop/mobile, light/dark, Tree/Folders Library cases. Browser checks use synthetic saved-result fixtures; actual private Home acceptance remains separate.
 - Preserve monetary/provider gates. One compatible frontend release requires exact CI, actual fixed Basic/normal queue settings, staged verification and same-build promotion. No backend publication or fresh media test belongs to this checkpoint.
+
+Production acceptance: [exact-commit CI, staged/same-build publication and canonical evidence](../operations/evidence/launch-20261031-home-feed-production.json). Websitecd78c9b is live; backend8e97e18 is unchanged. Inline discussion, generation and combined issue publication remain open.

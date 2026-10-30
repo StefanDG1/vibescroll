@@ -99,7 +99,11 @@ import { SetupJourney } from "./setup-journey";
 import { TaskRuntimePicker } from "./task-runtime-picker";
 import { SourceAcquisitionPanel } from "./source-acquisition-panel";
 import { SourceProgressPanel } from "./source-progress";
-import { sourceProgressDeadline } from "../../../packages/sources/progress";
+import { ErrorState } from "./assistant-elements/error-state";
+import {
+  sourceProgress,
+  sourceProgressDeadline,
+} from "../../../packages/sources/progress";
 import { TypedSourceEvidence } from "./typed-source-evidence";
 import { PublicKnowledgePanel } from "./public-knowledge-panel";
 import { SavedPublicSource } from "./saved-public-source";
@@ -4877,6 +4881,7 @@ export function SourceDetail({
           source={progressSource}
           now={Math.max(retentionTime, Date.now())}
           organizationId={org}
+          onReviewAnalysis={() => openPostSettings("post-processing-options")}
         />
       )}
       {!demo && !detailLoading && (
@@ -4971,11 +4976,27 @@ export function SourceDetail({
         )}
         <div className="post-overview">
           <p>{overview}</p>
-          {detail.error && (
-            <p className="error" role="alert">
-              {detail.error}
-            </p>
-          )}
+          {detail.error &&
+            !sourceProgress(
+              progressSource,
+              Math.max(retentionTime, Date.now()),
+            ) && (
+              <ErrorState
+                title="Analysis needs attention"
+                detail="The analysis could not finish. Your post is saved. Review the processing options to continue."
+                action={
+                  <a
+                    href="#post-processing-options"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      openPostSettings("post-processing-options");
+                    }}
+                  >
+                    Review analysis options
+                  </a>
+                }
+              />
+            )}
         </div>
         <section className="post-insights">
           <h2>Insights</h2>

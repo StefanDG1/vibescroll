@@ -23,6 +23,7 @@ export type SourceProgress = {
   description: string;
   busy: boolean;
   action?: "setup" | "analysis";
+  tone?: "error" | "attention";
 };
 
 /** Display only. This never authorizes, retries or changes a job. */
@@ -44,7 +45,7 @@ export function sourceProgress(
       analyzing: "Analyzing transcript and screenshots",
       validating: "Checking the insights",
     };
-    if (stage && titles[stage])
+    if (stage && Object.hasOwn(titles, stage))
       return {
         title: titles[stage],
         busy: true,
@@ -56,8 +57,11 @@ export function sourceProgress(
         title: "Processing needs attention",
         busy: false,
         description:
-          "Completion is not confirmed. Your saved post and previous analysis are still available.",
+          source.state === "ready"
+            ? "Completion is not confirmed. Your current analysis is still available. Review this attempt before trying again."
+            : "Completion is not confirmed. Your post is saved. Review this attempt before trying again.",
         action: "analysis",
+        tone: stage === "failed" ? "error" : "attention",
       };
   }
   const pending = source.pendingAnalysisAttemptState;
@@ -75,6 +79,18 @@ export function sourceProgress(
         "The new attempt has no confirmed outcome. Your current analysis is still available. Review its status before trying again.",
       busy: false,
       action: "analysis",
+      tone: "attention",
+    };
+  if (["failed", "cancelled", "expired"].includes(pending ?? ""))
+    return {
+      title: "New analysis stopped",
+      description:
+        source.state === "ready"
+          ? "Your current analysis is still available. Review the new attempt before trying again."
+          : "Your post is still saved. Review this attempt before trying again.",
+      busy: false,
+      action: "analysis",
+      tone: pending === "failed" ? "error" : "attention",
     };
   if (source.state === "ready") return null;
   const job = source.personalAnalysis;
@@ -87,6 +103,7 @@ export function sourceProgress(
           "Processing has no confirmed outcome. Review its status before trying again.",
         busy: false,
         action: "analysis",
+        tone: "attention",
       };
     if (job.state === "queued") {
       if (job.expiresAt !== undefined && job.expiresAt <= now)
@@ -96,6 +113,7 @@ export function sourceProgress(
             "Cloud did not start this request in time. Your post is saved. Review the analysis options to continue.",
           busy: false,
           action: "analysis",
+          tone: "attention",
         };
       return {
         title: "Waiting for Cloud",
@@ -113,6 +131,7 @@ export function sourceProgress(
             "The last processing lease expired. Completion is not confirmed. Review status before starting another attempt.",
           busy: false,
           action: "analysis",
+          tone: "attention",
         };
       return {
         title:
@@ -131,6 +150,7 @@ export function sourceProgress(
           "No completed analysis was saved for this request. Review the analysis options below to continue.",
         busy: false,
         action: "analysis",
+        tone: job.state === "failed" ? "error" : "attention",
       };
   }
   const intent = source.workCloudSaveIntent;
@@ -146,6 +166,7 @@ export function sourceProgress(
           "Your post is still saved. Review Cloud setup before requesting analysis again.",
         busy: false,
         action: "setup",
+        tone: "attention",
       };
     const needsSetup = source.workCloudLinkSetup?.monitorReady === false;
     return {
@@ -155,6 +176,7 @@ export function sourceProgress(
         : "Your link is saved. ChatGPT has not started video processing yet. This page updates automatically.",
       busy: !needsSetup,
       action: "setup",
+      ...(needsSetup ? { tone: "attention" as const } : {}),
     };
   }
   if (
@@ -169,6 +191,79 @@ export function sourceProgress(
       action: "analysis",
     };
   return null;
+}
+
+export type SourceProgressStep = {
+  id: string;
+  label: string;
+  state: "complete" | "running" | "waiting" | "pending";
+};
+
+/** Coarse prerequisites only; never invent per-stage percentages, ETA or model reasoning. */
+export function sourceProgressSteps(
+  source: ProgressSource,
+  now: number,
+): SourceProgressStep[] {
+  if (!sourceProgress(source, now)?.busy) return [];
+  const service =
+    source.personalMedia?.version === "service-preparation-progress-v1";
+  const stage = source.personalMedia?.stage ?? "";
+  const serviceIndex: Record<string, number> = {
+    queued: 0,
+    starting: 0,
+    metadata: 0,
+    downloading: 0,
+    preparing: 1,
+    transcribing: 1,
+    evidence_ready: 2,
+    waiting_for_assistant: 2,
+    analyzing: 2,
+    validating: 3,
+  };
+  let labels: string[],
+    active: number,
+    waiting = false;
+  if (service && Object.hasOwn(serviceIndex, stage)) {
+    labels = [
+      "Get the post",
+      "Prepare transcript and screenshots",
+      "Analyze evidence",
+      "Save insights",
+    ];
+    active = serviceIndex[stage];
+    waiting = ["queued", "evidence_ready", "waiting_for_assistant"].includes(
+      stage,
+    );
+  } else if (
+    ["queued", "running"].includes(source.pendingAnalysisAttemptState ?? "")
+  ) {
+    labels = ["Analyze saved evidence", "Save the new version"];
+    active = 0;
+    waiting = source.pendingAnalysisAttemptState === "queued";
+  } else {
+    labels = ["Prepare evidence", "Analyze evidence", "Save insights"];
+    const job = source.personalAnalysis;
+    if (job?.state === "running") {
+      if (job.stage === "acquiring") active = 0;
+      else if (job.stage === "analyzing") active = 1;
+      else return [];
+    } else {
+      active = 0;
+      waiting = true;
+    }
+  }
+  return labels.map((label, index) => ({
+    id: String(index),
+    label,
+    state:
+      index < active
+        ? "complete"
+        : index > active
+          ? "pending"
+          : waiting
+            ? "waiting"
+            : "running",
+  }));
 }
 
 /** A request timeout must never hide a retained post. */

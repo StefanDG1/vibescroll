@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   sourceProgress,
   sourceProgressDeadline,
+  sourceProgressSteps,
 } from "../../packages/sources/progress";
 import { SourceProgressPanel } from "./components/source-progress";
 
@@ -72,11 +73,66 @@ it("does not turn unknown outcomes or expired leases into a retry or completion 
   for (const source of [job("unknown"), job("running", { leaseUntil: 1000 })]) {
     const html = render(source);
     expect(html).toContain("before");
-    expect(html).toContain("#source-analysis-actions");
+    expect(html).toContain("#post-processing-options");
     expect(html).not.toContain("<progress");
     expect(html).not.toContain("<button");
   }
   expect(render(job("failed"))).toContain("Analysis stopped");
+});
+
+it("uses observed service stages and keeps waiting distinct from inference without numeric estimates", () => {
+  const service = (stage: string) => ({
+    state: "processing",
+    personalMedia: {
+      version: "service-preparation-progress-v1",
+      stage,
+    },
+  });
+  expect(
+    sourceProgressSteps(service("queued"), 1000).map((s) => s.state),
+  ).toEqual(["waiting", "pending", "pending", "pending"]);
+  expect(
+    sourceProgressSteps(service("transcribing"), 1000).map((s) => s.state),
+  ).toEqual(["complete", "running", "pending", "pending"]);
+  expect(
+    sourceProgressSteps(service("waiting_for_assistant"), 1000).map(
+      (s) => s.state,
+    ),
+  ).toEqual(["complete", "complete", "waiting", "pending"]);
+  const html = render(service("analyzing"));
+  expect(html).toContain('data-slot="agent-plan"');
+  expect(html).toContain("Processing details");
+  expect(html).not.toMatch(/aria-valuenow|\d+%|ETA|Thinking/);
+  expect(sourceProgressSteps(service("failed"), 1000)).toEqual([]);
+  expect(sourceProgress(service("__proto__"), 1000)).toBeNull();
+});
+
+it("renders a safe error state without auto retry and preserves incumbent versions on failure", () => {
+  const html = render({
+    state: "ready",
+    pendingAnalysisAttemptState: "failed",
+  });
+  expect(html).toContain('data-slot="error-state"');
+  expect(html).toContain('role="alert"');
+  expect(html).toContain("current analysis is still available");
+  expect(html).toContain("#post-processing-options");
+  expect(html).not.toContain("<button");
+  expect(html).not.toContain("<progress");
+  expect(
+    render({ state: "failed", pendingAnalysisAttemptState: "failed" }),
+  ).not.toContain("current analysis is still available");
+  const unknown = render(job("unknown"));
+  expect(unknown).toContain('role="status"');
+  expect(unknown).not.toContain('role="alert"');
+  const steps = sourceProgressSteps(
+    { state: "ready", pendingAnalysisAttemptState: "running" },
+    1000,
+  );
+  expect(steps.map((s) => s.label)).toEqual([
+    "Analyze saved evidence",
+    "Save the new version",
+  ]);
+  expect(steps[0].state).toBe("running");
 });
 it("keeps incumbent results distinct from pending versions and ignores local executors", () => {
   expect(render({ state: "ready" })).toBe("");

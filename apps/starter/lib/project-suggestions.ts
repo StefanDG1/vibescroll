@@ -2,7 +2,13 @@ import { projectCategoryMatches } from "../../../packages/contracts/project-appl
 
 export type ProjectSuggestions = {
   versionId: string | null;
-  items: { id: string; name: string; topics: string[] }[];
+  items: { id: string; name: string; topics: string[]; fit: TopicFit }[];
+};
+export type TopicFit = {
+  rubric: "topic-coverage-v1";
+  matched: number;
+  total: number;
+  criteria: { category: string; matched: boolean; terms: string[] }[];
 };
 type Source = {
   categoryKeys?: string[];
@@ -70,6 +76,17 @@ export function suggestProjects(
         id: p._id,
         name: p.fullName,
         topics: matched.map((m) => m.category),
+        fit: {
+          rubric: "topic-coverage-v1" as const,
+          matched: matched.length,
+          total: topics.length,
+          criteria: topics.map((category) => ({
+            category,
+            matched: matched.some((m) => m.category === category),
+            terms:
+              matched.find((m) => m.category === category)?.matchedTerms ?? [],
+          })),
+        },
         score: matched.length,
       };
     })

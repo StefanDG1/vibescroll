@@ -1,5 +1,15 @@
 # Foundational document change log
 
+## F089: explain progress, credits and project fit, October30
+
+The owner requests assistant-ui-style observed analysis stages/errors, a credit-use meter and project-fit breakdowns that encourage useful proposals. Start with real job states, exact balances and explicit topic coverage. Similar-proposal history, importance and outcomes need authorized data before scoring. Do not inflate a baseline or claim improved conversion, successful implementation or a success probability. Keep extra detail behind disclosures, preserve Library Tree/Folders and use shared website/MCP controls. Provider logos are presentation, not proof of model support. [Implementation plan](../design/ASSISTANT-ELEMENTS-AND-PROJECT-FIT.md). This is owner direction and a local candidate, not production or customer-validation evidence. Prices, audience, authority and six beliefs remain unchanged.
+
+## F088: show a synthetic product result in the hero, October30
+
+The owner selected VibeScroll marketing/styling for a real saved-insight-to-issue trial. The retained before-after visual idea supports an explicitly unvalidated design hypothesis: a compact source tile beside reusable expandable insight cards may explain the product more clearly than decorative stacks. The public example uses authored synthetic text, no private media or creator imagery, and no conversion/performance claim. Audience, offer, prices, permissions and the six beliefs are unchanged.
+
+Issue196 and its exact frozen body received a real signed opened callback in the same saved proposal. This is engineering workflow evidence, not customer validation or proof of marketing effectiveness. The hero implementation remains local until its dated production receipt. [Implementation note](../design/LANDING-HERO-INSIGHTS-2026-10-30.md), [provider trial](../operations/evidence/launch-20261030-live-project-issue-production.json).
+
 ## F086: normal-session routine workflows, October 28
 
 The owner rejects repeated five-minute sign-in for normal permissions, saving, analysis and setup. [ADR183](../adr/183-normal-session-assistant-preferences.md) removes that hurdle from routine actions and retains it for the explicit high-risk actions. Those actions navigate directly through sign-in and back to the page without replaying the operation. The separate [shared-intelligence strategy](../strategy/SHARED-INTELLIGENCE-MOAT.md) preserves backend-first delivery, automatic eligible catalog reuse, safe retries, reliable post metadata and a separate recent Posts page. These changes are a locally tested candidate until the release record says otherwise. The owner's objection is not measured conversion evidence. Actual OAuth, roles, provider/funding authority, prices and audience remain unchanged.
@@ -233,15 +243,12 @@ Updated all four foundational briefs and the index for the explicit private MCP 
 
 Source: actual owner-account media preparation, rejected completion and exact-payload offline reproduction. ADR152 conservatively reduces confidence and permits a fresh owner review of only the original retained result hash. Counterargument: returning a result cannot silently authorize more provider work or reconcile unknown usage. Current authority, immutable evidence, fixed completion window and no-overwrite tests are required. Production return remains pending; no campaign, price, customer or availability claim follows.
 
-
 ## F084, October 28: local shared versions
 
 Updated all four briefs for ADR181. The local cache/version/notes tests do not establish rights-cleared production reuse or customer demand. Existing prices, audience, six beliefs and release gates remain unchanged.
 
-
 ## F087, October29: one hosted Pro target
 
 Updated all four briefs, their index/backlog, PRD, decisions, Billing and the mandatory pricing plan for the explicit owner correction. Read the old catalogue/finance assumptions, D17/D19, Managed Payments costing, shared-intelligence plan and current offer before adopting it. The new price and 500 duration credits conflict with old tiers/trial/units; current runtime and Stripe remain unchanged. Cost estimates distinguish observed model charges, advertised provider rates and unknown hosted/operating quantities. Independent demand, hosted timing, commercial migration and self-hosting acceptance remain unclaimed.
-
 
 F087 follow-up: the owner restored weekly as a premium interval, proposed300 credits, requested curated models/high reasoning and digital-root-8 prices, and clarified that premium models spend more credits rather than subsidizing them from Muse1×. The current plan/cost engine distinguishes observed Muse high spend, unknown hosted costs and token-ceiling stress. The working EUR8/week50, EUR35/month300, EUR350/year300/month comparison is unimplemented; no80% net-profit promise, catalogue migration or component installation is claimed.

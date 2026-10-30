@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { UsageOverview } from "../../../packages/billing/usage-overview";
+import { CreditMeter } from "./assistant-elements/credit-meter";
 const number = new Intl.NumberFormat("en");
 
 function date(timestamp: number) {
@@ -28,40 +29,11 @@ export function UsageSummary({
     <div className="usage-summary">
       <section className="panel usage-allowance">
         <h2>Your allowance</h2>
-        <dl className="usage-balances">
-          <div>
-            <dt>Available credits</dt>
-            <dd>{number.format(usage.available)}</dd>
-          </div>
-          <div>
-            <dt>Reserved credits</dt>
-            <dd>{number.format(usage.reserved)}</dd>
-          </div>
-        </dl>
-        {usage.activeAllowance > 0 ? (
-          <>
-            <label
-              className="usage-meter-label"
-              htmlFor="usage-allowance-meter"
-            >
-              Available from unexpired allowances
-            </label>
-            <meter
-              id="usage-allowance-meter"
-              className="usage-meter"
-              min={0}
-              max={usage.activeAllowance}
-              value={usage.available}
-              aria-valuetext={`${number.format(usage.available)} available credits from ${number.format(usage.activeAllowance)} unexpired allowance credits`}
-            />
-            <div className="usage-meter-range" aria-hidden="true">
-              <span>0</span>
-              <span>{number.format(usage.activeAllowance)} credits</span>
-            </div>
-          </>
-        ) : (
-          <p>No unexpired processing allowance.</p>
-        )}
+        <CreditMeter
+          used={usage.activeSpent}
+          reserved={usage.activeReserved}
+          available={usage.available}
+        />
         {usage.nextExpiry !== null && (
           <p className="fine">
             Next available allowance expires {date(usage.nextExpiry)} (UTC).

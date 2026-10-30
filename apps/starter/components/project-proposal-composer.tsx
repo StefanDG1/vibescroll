@@ -3,6 +3,8 @@ import { useId, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@companynerve/ui";
 import { SettingsPanel } from "./settings-panel";
+import { ProjectFitBreakdown } from "./assistant-elements/project-fit-breakdown";
+import type { TopicFit } from "../lib/project-suggestions";
 import { projectProposalDraft } from "../../../packages/contracts/project-proposal-draft";
 import type { z } from "zod";
 import type { saveProjectProposalInput } from "../../../packages/contracts/chat-proposals";
@@ -26,7 +28,7 @@ export function ProjectProposalComposer({
   analysisVersionId: string;
   insight: { id: string; title: string; claim: string };
   projects: Project[];
-  suggestions: (Project & { topics: string[] })[];
+  suggestions: (Project & { topics: string[]; fit?: TopicFit })[];
   disabled: boolean;
   call: (operation: string, args: unknown) => Promise<any>;
   onNavigate?: (url: string) => void | Promise<void>;
@@ -140,24 +142,28 @@ export function ProjectProposalComposer({
         <>
           <h4>Suggested projects</h4>
           {suggestions.map((p) => (
-            <button
-              type="button"
-              className="project-choice-row"
-              key={p.id}
-              disabled={disabled}
-              onClick={() => choose(p.id)}
-            >
-              <span>
-                {p.name}
-                <small>
-                  Topic overlap:{" "}
-                  {p.topics.map((t) => t.replaceAll("_", " ")).join(", ")}
-                </small>
-              </span>
-              <span>
-                Use insight <ArrowRight size={16} aria-hidden="true" />
-              </span>
-            </button>
+            <div key={p.id}>
+              <button
+                type="button"
+                className="project-choice-row"
+                disabled={disabled}
+                onClick={() => choose(p.id)}
+              >
+                <span>
+                  {p.name}
+                  <small>
+                    Topic overlap:{" "}
+                    {p.topics.map((t) => t.replaceAll("_", " ")).join(", ")}
+                  </small>
+                </span>
+                <span>
+                  Draft proposal <ArrowRight size={16} aria-hidden="true" />
+                </span>
+              </button>
+              {p.fit && (
+                <ProjectFitBreakdown fit={p.fit} projectName={p.name} />
+              )}
+            </div>
           ))}
         </>
       )}

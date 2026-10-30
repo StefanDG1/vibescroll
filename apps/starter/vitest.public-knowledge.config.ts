@@ -11,6 +11,7 @@ export default defineConfig({
   },
   test: {
     include: [
+      "apps/starter/assistant-elements-ui.test.ts",
       "apps/starter/settings-panel-ui.test.ts",
       "apps/starter/source-progress-ui.test.ts",
       "apps/starter/recent-posts-ui.test.ts",

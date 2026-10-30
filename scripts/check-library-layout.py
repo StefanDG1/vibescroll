@@ -24,17 +24,20 @@ def run(code):
 
 
 target = run(f"""
-import json, time
+import json
 t = new_tab({args.url!r})
+print('LAYOUT:' + json.dumps(t))
+""")
+run(f"activate_tab({target!r})\ncdp('Emulation.setFocusEmulationEnabled', enabled=True)")
+run("""
+import time
 wait_for_load()
-cdp('Emulation.setFocusEmulationEnabled', enabled=True)
 deadline=time.monotonic()+12
 while js("document.documentElement.getAttribute('data-app-theme')") not in ('light','dark'):
     if time.monotonic()>deadline: raise AssertionError('Library client did not hydrate')
     time.sleep(.1)
-print('LAYOUT:' + json.dumps(t))
 """)
-prefix = f"switch_tab({target!r}, activate=False)\n"
+prefix = f"if current_tab().get('targetId') != {target!r}: switch_tab({target!r}, activate=False)\n"
 cases = []
 try:
     for width in (1440, 390):

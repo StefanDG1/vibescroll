@@ -2616,6 +2616,43 @@ dialog.capture-modal::backdrop {
   max-width: 32rem;
   accent-color: var(--primary);
 }
+.source-progress-details {
+  margin-top: 16px;
+}
+.source-progress-details summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: list-item;
+  align-content: center;
+}
+.analysis-status-demo-intro {
+  max-width: 700px;
+  margin: 48px auto;
+}
+.analysis-status-demo {
+  display: grid;
+  gap: 24px;
+  margin-top: 32px;
+}
+.analysis-status-demo label {
+  display: grid;
+  gap: 8px;
+}
+.analysis-status-demo select {
+  min-height: 44px;
+  padding: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.analysis-status-demo .source-progress {
+  margin: 0;
+}
+.analysis-status-demo .panel {
+  background: var(--panel);
+  color: var(--ink);
+}
 
 .knowledge-library {
   display: grid;

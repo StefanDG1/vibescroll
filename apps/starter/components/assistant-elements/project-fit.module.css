@@ -1,0 +1,81 @@
+.breakdown {
+  margin-block: 4px 14px;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.breakdown summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  width: fit-content;
+  max-width: 100%;
+  cursor: pointer;
+  color: var(--subtle);
+  font-size: 0.8125rem;
+  border-radius: 4px;
+}
+.breakdown summary::after {
+  content: "+";
+  font-size: 1rem;
+}
+.breakdown[open] summary::after {
+  content: "−";
+}
+.breakdown summary:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+.breakdown strong {
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+}
+.breakdown strong > span {
+  color: var(--subtle);
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+.content {
+  padding-bottom: 12px;
+  overflow-wrap: anywhere;
+}
+.content p {
+  font-size: 0.8125rem;
+  color: var(--subtle);
+  margin: 0 0 12px;
+}
+.content ul {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 0 0 12px;
+}
+.content li {
+  display: flex;
+  gap: 8px;
+  align-items: start;
+  font-size: 0.8125rem;
+}
+.content li > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--teal);
+}
+.content li > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  text-transform: capitalize;
+}
+.content small {
+  display: block;
+  color: var(--subtle);
+  text-transform: none;
+}
+.content li > span:last-child {
+  font-variant-numeric: tabular-nums;
+}
+.content .note {
+  margin: 0;
+  font-size: 0.75rem;
+}

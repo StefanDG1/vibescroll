@@ -13,9 +13,42 @@ it("uses confirmed topic/context overlap without changing the inputs or copying 
   const before = JSON.stringify([source, project]);
   expect(suggestProjects(source, [project])).toEqual({
     versionId: "v1",
-    items: [{ id: "p1", name: "owned/example", topics: ["marketing"] }],
+    items: [
+      {
+        id: "p1",
+        name: "owned/example",
+        topics: ["marketing"],
+        fit: {
+          rubric: "topic-coverage-v1",
+          matched: 1,
+          total: 1,
+          criteria: [
+            { category: "marketing", matched: true, terms: ["marketing"] },
+          ],
+        },
+      },
+    ],
   });
   expect(JSON.stringify([source, project])).toBe(before);
+});
+it("reports missing topic matches without a favorable baseline or invented history", () => {
+  const result = suggestProjects(
+    { categoryKeys: ["marketing", "coding", "coding"] },
+    [project],
+  );
+  expect(result.items[0].fit).toEqual({
+    rubric: "topic-coverage-v1",
+    matched: 1,
+    total: 2,
+    criteria: [
+      { category: "marketing", matched: true, terms: ["marketing"] },
+      { category: "coding", matched: false, terms: [] },
+    ],
+  });
+  expect(
+    suggestProjects({ categoryKeys: ["coding"] }, [project]).items,
+  ).toEqual([]);
+  expect(JSON.stringify(result)).not.toMatch(/history|probability|success/);
 });
 it("does not recommend unconfirmed, disabled or disconnected projects, or match a non-goal", () => {
   expect(

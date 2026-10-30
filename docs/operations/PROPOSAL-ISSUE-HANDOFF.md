@@ -20,4 +20,4 @@ ADR210 is deployed for signed issue observations. Create the issue using the exa
 
 The first matching delivery binds that exact issue. Later opened/edited/closed/reopened deliveries update its bounded observation; another issue cannot replace it. The saved MCP proposal can expose open/closed status, observation time and whether GitHub text still matches the frozen package. Conflicting states with the same provider timestamp return unknown. An issue being closed does not prove implementation, CI, merge or benefit.
 
-A real issue publication and signed provider delivery are still unverified. The existing website metadata does not yet display this observation. PR lifecycle correlation remains separate.
+Real issue196 publication and its signed opened delivery are accepted. Later live state transitions remain unverified. The existing website metadata does not yet display this observation. PR lifecycle correlation remains separate.

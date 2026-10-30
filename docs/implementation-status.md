@@ -2,6 +2,12 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## October30: quiet shell and durable proposals live
+
+Website/backendc862450 passed exact CI40990404017 with1,559 passed/5skipped Vitest cases, types/lint, Node/Python and both builds. All22 compatible release guards passed; actual12-component/138-table/301-index prediction required zero scans/backfills and changed no schema/index/auth/cron. The41.752s fixed Basic build passed staged exact health and same-build promotion; canonical health reports the exact alpha version. See [the production receipt](operations/evidence/launch-20261030-quiet-chat-proposals-production.json).
+
+Signed-in Home and the retained proposal list/detail passed browser checks; the390px proposal view has no horizontal overflow. A once-only official SDK proof used exact shared-version context read through actual MCP OAuth, then created, reopened, edited and replayed a private draft, preserving version2 with zero credits/analysis. Temporary credential files were removed. The generic CLI test path failed for an existing profile read too; SDK methods passed and no app authentication change was made. Fresh ChatGPT discovery and actual OAuth write of the new tools remain unverified. The paused direct adapter was preserved outside the deployable source tree and excluded from this commit. No extra source analysis, provider purchase or budget increase ran; all old holds remain.
+
 ## October30: quiet redesign, local candidate
 
 R102/[ADR203](adr/203-quiet-app-shell-and-iconoir.md) implements a neutral app shell with Iconoir's pinned MIT SVG subset, existing Radix/shadcn-style controls, direct Proposals navigation and collapsed secondary home content. See the [design reference](design/QUIET-APP-REDESIGN-2026-10-30.md). Metadata pagination, source/evidence authorization, theme preference, analysis settings and the five mobile actions remain. The compact home uses decorative post icons; the Posts page keeps its real protected thumbnails. No backend deployment or hosted request was made.

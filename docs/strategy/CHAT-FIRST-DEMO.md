@@ -84,3 +84,5 @@ This file records the owner's direction and a delivery plan. It deploys no featu
 The owner asked whether the entire app could be copied into the plugin. Reuse the accepted presentation components, styles and view models with a thin authenticated MCP Apps adapter. Website cookies, server components and router state are not the iframe authentication/navigation contract. Preserve one source of UI behavior rather than maintaining a copied application. Embedded UI remains deferred until website acceptance.
 
 Checkpoint1 is implemented locally under ADR204. The quiet shell is separately browser-checked under ADR203; it does not close the full post/insight reader checkpoint. Both remain unpublished pending exact CI and compatible release.
+
+Publication update: c862450 is live. Checkpoint1 persistence is accepted through the official SDK and app; new-tool host discovery/OAuth write remains open. The quiet shell passed local and production browser checks. Checkpoint2, the complete post/insight reader, is next.

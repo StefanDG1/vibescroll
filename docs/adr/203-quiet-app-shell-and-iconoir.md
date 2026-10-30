@@ -1,6 +1,6 @@
 # ADR 203: quiet app shell and Iconoir
 
-Date: October 30, 2026. Status: implemented and visually checked locally; publication pending.
+Date: October 30, 2026. Status: deployed at c862450, with local visual checks and signed-in production Home/proposal acceptance. See the October30 production receipt.
 
 The owner requests an uncluttered assistant-ui/Codex visual direction with suitable shadcn components and a different icon library. Follow [the design reference](../design/QUIET-APP-REDESIGN-2026-10-30.md), R102.
 

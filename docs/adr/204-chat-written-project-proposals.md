@@ -1,6 +1,6 @@
 # ADR 204: chat-written project proposals in existing records
 
-Date: October 30, 2026. Status: implemented and tested locally, not deployed.
+Date: October 30, 2026. Status: deployed at c862450. SDK persistence and signed-in app reads accepted; fresh-host MCP discovery/OAuth write remains unverified.
 
 ## Direction
 
@@ -24,3 +24,7 @@ Implementation/local tests, actual backend preparation, exact CI, controlled pub
 ## Local evidence
 
 The37-case focused suite passes private and independent reference-only shared versions through the context, HTTP and MCP routes. It covers duplicate/racing creates, competing edits, unchanged-version manual review, deletion, entitlement/grant revocation and capability-bearing content. A valid draft larger than8KiB passes the dedicated32KiB HTTP envelope; stale edits and conflicting operation keys return static actionable errors instead of misleading reconnect guidance. Root types, lint, tests and both builds pass. Two offline official-CLI preparations match exactly. Actual compatible prediction, exact CI, publication and production write/read acceptance remain separate.
+
+## Production acceptance
+
+Exact CI40990404017 and all22 deployment guards passed. Actual unchanged12-component/138-table/301-index publication required no scans/backfills. The original MCP returned exact shared-version context under existing OAuth. A bounded official SDK admin acting-as proof created a private deferred proposal, read it, edited it to version2, replayed the original create without overwrite and reopened it. No analysis, evidence copy or credits ran. The signed-in website listed/opened the same draft and hid implementation controls. The generic CLI `/api/function` harness failed even for an existing profile query; its exact cause remains unproved. SDK query/mutation succeeds. Do not describe this operator proof as fresh ChatGPT tool discovery or actual OAuth proposal-write acceptance. See [the release receipt](../operations/evidence/launch-20261030-quiet-chat-proposals-production.json).

@@ -190,7 +190,7 @@ Later owner direction: stop this integration if hosted access is not yet possibl
 
 ## Chat workflows and the visual reader, October29
 
-R099: Make ChatGPT/Codex chats the near-term assistant interface for searching insights, applying them to projects, composing proposals and saving/updating proposals/feedback through authenticated MCP and suitable skills. Use existing credits for new server work while direct hosted plan use remains paused. Preserve durable exact-version state across chats. [Chat-first demo plan](CHAT-FIRST-DEMO.md), checkpoint1, covers the write-back gap beyond existing server-evaluation draft tools.
+R099: Make ChatGPT/Codex chats the near-term assistant interface for searching insights, applying them to projects, composing proposals and saving/updating proposals/feedback through authenticated MCP and suitable skills. Use existing credits for new server work while direct hosted plan use remains paused. Preserve durable exact-version state across chats. [Chat-first demo plan](CHAT-FIRST-DEMO.md), checkpoint1, covers the write-back gap beyond existing server-evaluation draft tools. Deployed at c862450: create/read/versioned edit/replay passed through the official SDK and signed-in app, using shared retained evidence without credits or analysis. Fresh-host tool discovery and actual OAuth proposal write remain unverified.
 
 R100: Make the web home screen a polished, scrollable view of the user's saved ready posts, with prominent source/playback, adjacent insights, project connections and progressive detail. Keep metadata-first lazy loading, deep links, real-time processing states and supported playback fallbacks. [Reader/feed checkpoints2–3](CHAT-FIRST-DEMO.md) define acceptance.
 
@@ -198,7 +198,7 @@ R101: Prefer suitable assistant-ui components and share the accepted website pre
 
 ## Visual simplification, October30
 
-R102: Quickly redesign the app toward assistant-ui/Codex, avoid overloading the interface, research a different icon library and use suitable shadcn components or MCP where available. [Design reference](../design/QUIET-APP-REDESIGN-2026-10-30.md) and [ADR203](../adr/203-quiet-app-shell-and-iconoir.md) record the local neutral shell, reused primitives, Iconoir MIT subset and collapsed secondary home content. No connected shadcn MCP was found. Saved-insight searches had bounded incomplete coverage. Local full checks and desktop/mobile browser acceptance passed; publication remains pending, with production unchanged.
+R102: Quickly redesign the app toward assistant-ui/Codex, avoid overloading the interface, research a different icon library and use suitable shadcn components or MCP where available. [Design reference](../design/QUIET-APP-REDESIGN-2026-10-30.md) and [ADR203](../adr/203-quiet-app-shell-and-iconoir.md) record the local neutral shell, reused primitives, Iconoir MIT subset and collapsed secondary home content. No connected shadcn MCP was found. Saved-insight searches had bounded incomplete coverage. Deployed at c862450 after exact CI and compatible publication; signed-in Home/proposal and phone overflow checks passed. The full reader remains separate.
 
 ## Source coverage and limits
 

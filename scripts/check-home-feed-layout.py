@@ -26,7 +26,7 @@ def run(code):
 target = run(f"import json\nt=new_tab({args.url!r})\nprint('FEED:'+json.dumps(t))")
 cases = []
 try:
-    run(f"activate_tab({target!r})\ncdp('Emulation.setFocusEmulationEnabled',enabled=True)")
+    run(f"switch_tab({target!r},activate=True)\ncdp('Emulation.setFocusEmulationEnabled',enabled=True)")
     run("""
 assert wait_for_load(timeout=12)
 assert js("document.querySelectorAll('[data-feed-post]').length")==2
@@ -36,13 +36,16 @@ assert js("document.querySelectorAll('[data-feed-post]').length")==2
         for theme in ("light", "dark"):
             run(prefix + f"""
 cdp('Emulation.setDeviceMetricsOverride',width={width},height=900,deviceScaleFactor=1,mobile=False)
-js("document.documentElement.dataset.appTheme='{theme}';window.scrollTo(0,0)")
+js("document.documentElement.dataset.appTheme='{theme}';document.documentElement.classList.toggle('dark','{theme}'==='dark');document.documentElement.style.colorScheme='{theme}';window.scrollTo({{top:0,behavior:'instant'}})")
 """)
             case = run(prefix + """
 import json
-m=js('''(()=>{const a=document.querySelector('[data-feed-post]'),c=a.firstElementChild;return {width:innerWidth,pageWidth:document.documentElement.scrollWidth,display:getComputedStyle(c).display,overflow:[...c.children].map(e=>getComputedStyle(e).overflowY),cueBottom:a.querySelector('a[href^="#"]').getBoundingClientRect().bottom,navTop:document.querySelector('.mobile-nav').getBoundingClientRect().top,headerHidden:getComputedStyle(document.querySelector('.product-top')).display==='none',destinations:document.querySelectorAll('.mobile-nav button').length};})()''')
+m=js('''(()=>{const a=document.querySelector('[data-feed-post]'),c=a.firstElementChild,cols=[...a.querySelectorAll('[data-feed-column]')],nav=document.querySelector('.mobile-nav'),mobile=innerWidth<721,next=document.querySelectorAll('[data-feed-post]')[1],source=cols[0].getBoundingClientRect(),insights=cols[1].getBoundingClientRect();return {width:innerWidth,height:innerHeight,pageWidth:document.documentElement.scrollWidth,display:getComputedStyle(c).display,columns:cols.map(e=>({height:e.getBoundingClientRect().height,overflow:getComputedStyle(e).overflowY})),cueBottom:a.querySelector('[class*=mobileCue]').getBoundingClientRect().bottom,navTop:nav.getBoundingClientRect().top,peek:mobile?nav.getBoundingClientRect().top-insights.top:innerHeight-next.getBoundingClientRect().top,headerHidden:getComputedStyle(document.querySelector('.product-top')).display==='none',destinations:document.querySelectorAll('.mobile-nav button').length,snap:getComputedStyle(document.documentElement).scrollSnapType,engagement:!!a.querySelector('[data-slot=post-engagement]'),sourceBottom:source.bottom,composerHeight:a.querySelector('textarea').getBoundingClientRect().height};})()''')
 assert m['pageWidth']<=m['width'],m
-assert all(v=='visible' for v in m['overflow']),m
+assert all(v['height']<=m['height'] for v in m['columns']),m
+assert m['peek']>=20 and m['peek']<=65,m
+assert m['snap'].startswith('y') and m['engagement'],m
+assert m['composerHeight']<=48,m
 assert m['headerHidden'] and m['destinations']==5,m
 if m['width']<721:assert m['cueBottom']<=m['navTop'],m
 print('FEED:'+json.dumps(m))

@@ -21,6 +21,14 @@ export type FeedProposal = {
   disposition: string;
   currentProblem?: string;
   proposedChange?: string;
+  steps?: string[];
+  insightIds?: string[];
+  discussion?: {
+    id: string;
+    author: string;
+    body: string;
+    role: "user" | "assistant";
+  }[];
   acceptanceCriteria: string[];
 };
 export type FeedDetail = {
@@ -37,6 +45,8 @@ export type FeedDetail = {
   proposals: FeedProposal[];
   suggestions: ProjectSuggestions;
   projects: { id: string; name: string }[];
+  durationMs?: number | null;
+  engagement?: { likes: number; shares: number; liked: boolean };
 };
 
 /** Keep first-seen ordering when cursor pages overlap. A later page can refresh metadata. */
@@ -67,4 +77,9 @@ export function sourceReadKey(source: {
     source.analysisSelectionRevision ?? 0,
     source.updatedAt ?? 0,
   ]);
+}
+
+export function projectLabel(name: string) {
+  const label = name.split("/").at(-1) ?? name;
+  return label.toLowerCase() === "vibescroll" ? "VibeScroll" : label;
 }

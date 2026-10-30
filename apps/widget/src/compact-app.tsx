@@ -264,7 +264,7 @@ export function CompactApp() {
   async function continueProposal(proposalId: string) {
     await host.call("get_project_proposal", { profileId, proposalId });
     await host.message(
-      `Continue my VibeScroll proposal ${proposalId} in profile ${profileId}. Use get_project_proposal to read its exact current draft, then review the selected insight and project context. Ask focused questions where context is missing and propose a concrete plan. Saving a draft does not authorize coding, spending or publication.`,
+      `Continue my VibeScroll proposal ${proposalId} in profile ${profileId}. Use get_project_proposal to read its exact current draft, then review all post insights and project context. Ask focused questions where context is missing and propose a concrete plan. Saving a draft does not authorize coding, spending or publication.`,
     );
   }
   async function proposalCall(operation: string, args: unknown) {

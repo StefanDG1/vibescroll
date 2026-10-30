@@ -45,3 +45,29 @@ it("rejects an empty goal or oversized draft before a write is attempted", async
     projectProposalDraft({ ...input, change: "x".repeat(4001) }),
   ).rejects.toThrow();
 });
+
+it("retains all twenty insights and binds retry identity to the entire post context", async () => {
+  const insightIds = Array.from(
+    { length: 20 },
+    (_, index) => `insight-${index}`,
+  );
+  const all = await projectProposalDraft({ ...input, insightIds });
+  expect(all.insightIds).toEqual(insightIds);
+  expect(
+    await projectProposalDraft({ ...input, insightIds: [...insightIds] }),
+  ).toEqual(all);
+  expect(
+    (
+      await projectProposalDraft({
+        ...input,
+        insightIds: insightIds.slice(0, -1),
+      })
+    ).key,
+  ).not.toBe(all.key);
+  await expect(
+    projectProposalDraft({ ...input, insightIds: [] }),
+  ).rejects.toThrow();
+  await expect(
+    projectProposalDraft({ ...input, insightIds: [...insightIds, "extra"] }),
+  ).rejects.toThrow();
+});

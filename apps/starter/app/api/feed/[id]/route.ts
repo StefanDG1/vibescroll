@@ -1,5 +1,5 @@
 import { backend, api } from "@/lib/backend";
-import { suggestProjects } from "@/lib/project-suggestions";
+import { postTopics, suggestProjects } from "@/lib/project-suggestions";
 import type { FeedDetail } from "@/lib/home-feed";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { postDisplayTitle } from "../../../../../../packages/sources/display";
@@ -38,7 +38,7 @@ export async function GET(
       authorName: source.linkPreview?.authorName ?? null,
       url: source.url ?? null,
       summary: source.summary ?? "",
-      categoryKeys: source.categoryKeys ?? [],
+      categoryKeys: postTopics(source),
       thumbnailAssetIds: postThumbnailCandidates(source),
       analysisVersionId: source.analysisVersion?.id ?? null,
       insights: (source.analysis?.insights ?? []).map((insight: any) => ({
@@ -63,6 +63,12 @@ export async function GET(
             projects.find((project) => project._id === proposal.repositoryId)
               ?.fullName ?? "Project",
           version: proposal.version,
+          insightIds:
+            proposal.detail?.insightIds ??
+            proposal.references
+              ?.map((reference: any) => reference.insightId)
+              .filter(Boolean) ??
+            [],
           review: proposal.review,
           disposition: proposal.disposition,
           currentProblem: proposal.detail?.currentProblem,

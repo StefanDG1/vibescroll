@@ -14,7 +14,7 @@ export const context = query({
     sourceId: v.id("sources"),
     projectId: v.id("repositories"),
     analysisVersionId: v.id("analysisVersions"),
-    insightIds: v.array(v.string()),
+    insightIds: v.optional(v.array(v.string())),
   },
   returns: v.any(),
   handler: async (ctx, args) => {

@@ -1237,19 +1237,19 @@ export async function projectApplicationContextCore(
   ensure(
     requested === undefined ||
       (requested.length > 0 &&
-        requested.length <= 8 &&
+        requested.length <= 20 &&
         new Set(requested).size === requested.length &&
         requested.every((id) =>
           output.insights.some((insight) => insight.id === id),
         )),
     "INVALID_EVIDENCE",
-    "Choose at most eight distinct insights from this exact analysis version.",
+    "Choose distinct insights from this exact analysis version (up to twenty).",
   );
   const insights = requested
     ? requested.map((id) =>
         output.insights.find((insight) => insight.id === id)!,
       )
-    : output.insights.slice(0, 8);
+    : output.insights;
   const data = {
     grantVersion: reader.grant?.version ?? null,
     source: {

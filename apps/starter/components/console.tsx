@@ -1157,7 +1157,7 @@ export function Console({
   ).length;
   return (
     <div
-      className={`product-shell atlas-shell quiet-shell ${view === "home" ? "feed-view" : railCollapsed ? "rail-collapsed" : ""}`}
+      className={`product-shell atlas-shell quiet-shell ${view === "home" ? `feed-view ${demo ? "feed-demo" : ""}` : railCollapsed ? "rail-collapsed" : ""}`}
     >
       <AppTheme />
       <aside className="product-rail">
@@ -5183,6 +5183,8 @@ export function SourceDetail({
                           title: i.title || i.claim,
                           claim: i.claim,
                         }}
+                        insights={detail.analysis.insights}
+                        sourceTitle={detail.title}
                         projects={repos
                           .filter(
                             (r: any) =>

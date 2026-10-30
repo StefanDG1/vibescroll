@@ -5,7 +5,7 @@ export const projectApplicationContextInput = z.strictObject({
   sourceId: z.string().min(1).max(100),
   projectId: z.string().min(1).max(100),
   analysisVersionId: z.string().min(1).max(100).optional(),
-  insightIds: z.array(z.string().min(1).max(100)).min(1).max(8).optional(),
+  insightIds: z.array(z.string().min(1).max(100)).min(1).max(20).optional(),
 });
 
 const categoryTerms: Record<string, string[]> = {

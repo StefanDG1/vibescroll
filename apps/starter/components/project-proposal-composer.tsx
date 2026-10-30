@@ -16,6 +16,8 @@ export function ProjectProposalComposer({
   sourceId,
   analysisVersionId,
   insight,
+  insights,
+  sourceTitle,
   projects,
   suggestions,
   disabled,
@@ -27,6 +29,8 @@ export function ProjectProposalComposer({
   sourceId: string;
   analysisVersionId: string;
   insight: { id: string; title: string; claim: string };
+  insights?: { id: string; title?: string; claim: string }[];
+  sourceTitle?: string;
   projects: Project[];
   suggestions: (Project & { topics: string[]; fit?: TopicFit })[];
   disabled: boolean;
@@ -39,7 +43,10 @@ export function ProjectProposalComposer({
   const [projectId, setProjectId] = useState(
     suggestions[0]?.id ?? projects[0]?.id ?? "",
   );
-  const [title, setTitle] = useState(insight.title.slice(0, 160));
+  const contextInsights = insights ?? [insight];
+  const [title, setTitle] = useState(
+    (sourceTitle ?? insight.title).slice(0, 160),
+  );
   const [goal, setGoal] = useState("");
   const [change, setChange] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -71,13 +78,17 @@ export function ProjectProposalComposer({
           sourceId,
           projectId,
           analysisVersionId,
-          insightIds: [insight.id],
         });
+        // Resolve the complete, authorized version on the server. A compact
+        // reader may display only a preview of its insights.
+        const insightIds = context.source.insights.map(
+          (item: { id: string }) => item.id,
+        );
         pending.current = await projectProposalDraft({
           sourceId,
           projectId,
           analysisVersionId,
-          insightId: insight.id,
+          insightIds,
           contextHash: context.contextHash,
           title,
           goal,
@@ -191,7 +202,17 @@ export function ProjectProposalComposer({
         open={open}
         onOpenChange={setOpen}
       >
-        <p className="proposal-source-claim">{insight.claim}</p>
+        <details className="proposal-source-claim">
+          <summary>All post insights included</summary>
+          <ul>
+            {contextInsights.map((item) => (
+              <li key={item.id}>
+                <strong>{item.title}</strong>
+                <p>{item.claim}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
         {savedId ? (
           <section aria-live="polite">
             <h3>Proposal saved</h3>
@@ -271,7 +292,7 @@ export function ProjectProposalComposer({
               rows={4}
             />
             <p className="fine">
-              Saves a draft with this insight. No analysis credits or
+              Saves a draft with all post insights. No analysis credits or
               implementation start here.
             </p>
             {error && <p role="alert">{error}</p>}

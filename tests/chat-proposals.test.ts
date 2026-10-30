@@ -1,3 +1,5 @@
+import { socialHash } from "../packages/social/contracts";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { createKnowledgeHandler } from "../packages/mcp/server";
@@ -634,4 +636,36 @@ it("allows a viewer to read authorized planning context but never to create a pr
   ).toBe(f.sourceId);
   await expect(f.webSave()).rejects.toThrow(/permission/);
   expect(await f.t.run((ctx) => ctx.db.query("proposals").take(1))).toEqual([]);
+});
+
+it("saves and replays the full twenty-insight website context without truncating its binding", async () => {
+  const f = await webPrepared();
+  const output = {
+    ...f.output,
+    insights: Array.from({ length: 20 }, (_, index) => ({
+      ...f.output.insights[0],
+      id: `complete-${index}`,
+    })),
+  };
+  const outputHash = await socialHash(canonicalJson(output));
+  await f.t.run((ctx) => ctx.db.patch(f.versionId, { output, outputHash }));
+  const context = await f.owner.query(api.projectPlanning.context, {
+    sourceId: f.sourceId,
+    projectId: f.projectId,
+    analysisVersionId: f.versionId,
+  });
+  const input = {
+    ...f.webInput,
+    insightIds: context.source.insights.map((item) => item.id),
+    contextHash: context.contextHash,
+    key: "full-post-website-draft",
+  };
+  const saved = await f.owner.mutation(api.projectPlanning.save, input);
+  expect(
+    (await f.owner.query(api.product.proposal, { id: saved.proposalId })).detail
+      .insightIds,
+  ).toEqual(output.insights.map((item) => item.id));
+  expect(await f.owner.mutation(api.projectPlanning.save, input)).toMatchObject(
+    { proposalId: saved.proposalId, replayed: true },
+  );
 });

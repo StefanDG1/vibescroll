@@ -37,10 +37,7 @@ const categories = [
 ];
 
 // Sync timestamps are not user activity or priority. Do not invent those signals.
-export function suggestProjects(
-  source: Source,
-  projects: Project[],
-): ProjectSuggestions {
+export function postTopics(source: Source): string[] {
   const insights = source.analysis?.insights ?? [];
   const explicit = [
     ...new Set([
@@ -48,7 +45,7 @@ export function suggestProjects(
       ...insights.flatMap((i) => i.categories ?? []),
     ]),
   ];
-  const topics = explicit.length
+  return explicit.length
     ? explicit
     : projectCategoryMatches(
         categories,
@@ -57,6 +54,13 @@ export function suggestProjects(
           ...insights.map((i) => `${i.title ?? ""} ${i.claim ?? ""}`),
         ].join(" "),
       ).map((m) => m.category);
+}
+
+export function suggestProjects(
+  source: Source,
+  projects: Project[],
+): ProjectSuggestions {
+  const topics = postTopics(source);
   const items = projects
     .filter((p) => p.enabled && p.confirmed && p.status === "connected")
     .map((p) => {

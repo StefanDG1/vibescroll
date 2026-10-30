@@ -1,0 +1,51 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 44px;
+  color: var(--ink);
+}
+.row button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 550;
+  cursor: pointer;
+}
+.reaction {
+  display: inline-flex;
+}
+.row button:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+}
+.row button:disabled svg {
+  color: var(--subtle);
+}
+.row button .liked {
+  color: #fa315b;
+}
+.separator {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+}
+.row .more {
+  margin-left: auto;
+  width: 36px;
+}
+.row button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.row button:hover:not(:disabled) {
+  color: var(--teal);
+}

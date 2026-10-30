@@ -62,7 +62,11 @@ export async function demoCall(
   if (name === "get_project_application_context")
     return {
       contextHash: "c".repeat(64),
-      source: { analysisVersionId: args.analysisVersionId },
+      source: {
+        analysisVersionId: args.analysisVersionId,
+        insights:
+          sources.find((source) => source.id === args.sourceId)?.insights ?? [],
+      },
     };
   if (name === "save_project_proposal")
     return {

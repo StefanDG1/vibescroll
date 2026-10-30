@@ -3,7 +3,7 @@ import { suggestProjects } from "./project-suggestions";
 
 const project = {
   _id: "synthetic-project",
-  fullName: "VibeScroll demo",
+  fullName: "VibeScroll",
   enabled: true,
   confirmed: true,
   status: "connected",
@@ -50,7 +50,11 @@ export const feedDemoDetails: Record<string, FeedDetail> = Object.fromEntries(
       ];
       const suggestions = suggestProjects(
         { analysisVersion: { id: `${id}-version` }, analysis: { insights } },
-        [project],
+        [
+          project,
+          { ...project, _id: "synthetic-marketing", fullName: "Marketing" },
+          { ...project, _id: "synthetic-onboarding", fullName: "Onboarding" },
+        ],
       );
       return [
         id,
@@ -64,6 +68,8 @@ export const feedDemoDetails: Record<string, FeedDetail> = Object.fromEntries(
             "A synthetic walkthrough of a clearer first-use experience. Example content only.",
           categoryKeys: ["product_design", "marketing"],
           thumbnailAssetIds: [],
+          durationMs: 48000,
+          engagement: { likes: 128, shares: 56, liked: true },
           analysisVersionId: `${id}-version`,
           insights,
           suggestions,
@@ -83,10 +89,41 @@ export const feedDemoDetails: Record<string, FeedDetail> = Object.fromEntries(
                       "The first screen asks for setup before showing a useful result.",
                     proposedChange:
                       "Offer a labeled interactive example, then let visitors connect a project when they are ready.",
+                    steps: [
+                      "Add a small interactive example to the first screen.",
+                      "Keep project setup as the next optional action.",
+                    ],
+                    insightIds: insights.map((insight) => insight.id),
+                    discussion: [
+                      {
+                        id: "example-user",
+                        author: "You",
+                        role: "user",
+                        body: "Can we keep the example simple on mobile?",
+                      },
+                      {
+                        id: "example-assistant",
+                        author: "VibeScroll",
+                        role: "assistant",
+                        body: "Yes. Start with one post, its insights and a clear next step.",
+                      },
+                    ],
                     acceptanceCriteria: [
                       "The example works on desktop and mobile.",
                       "Keep account, credit and authorization behavior unchanged.",
                     ],
+                  },
+                  {
+                    id: "synthetic-marketing-plan",
+                    title: "Keep the first promise clear",
+                    projectId: "synthetic-marketing",
+                    projectName: "Marketing",
+                    version: 1,
+                    review: "unreviewed",
+                    disposition: "relevant",
+                    proposedChange:
+                      "Explain the first useful result with one short example.",
+                    acceptanceCriteria: ["One visible primary action."],
                   },
                 ]
               : [],

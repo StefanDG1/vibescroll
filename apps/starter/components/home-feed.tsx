@@ -3,26 +3,12 @@ import {
   useCallback,
   useEffect,
   useEffectEvent,
-  useId,
   useRef,
   useState,
 } from "react";
-import Image from "next/image";
-import {
-  ArrowDown,
-  ArrowUpRight,
-  ChevronDown,
-  Link2,
-  Settings2,
-} from "lucide-react";
+import { Link2 } from "lucide-react";
 import { Button } from "@companynerve/ui";
-import { InsightCardControl } from "./insight-card-control";
-import { PostThumbnail } from "./post-thumbnail";
-import { ProjectProposalComposer } from "./project-proposal-composer";
-import { SettingsPanel } from "./settings-panel";
 import { ErrorState } from "./assistant-elements/error-state";
-import { ProposalArtifact } from "./assistant-elements/proposal-artifact";
-import { insightPresentation } from "../../../packages/insights/presentation";
 import {
   feedNeighbors,
   mergeFeedPage,
@@ -33,6 +19,7 @@ import {
 } from "@/lib/home-feed";
 import { feedDemoDetails, feedDemoPage } from "@/lib/home-feed-demo";
 import { usePostsLive } from "@/lib/use-source-live";
+import { FeedPostCard } from "./home-feed-post";
 import styles from "./home-feed.module.css";
 
 type Props = {
@@ -328,17 +315,12 @@ export function HomeFeed({
 
   return (
     <section className={styles.feed} aria-label="Your analyzed posts">
-      <div className={styles.toolbar}>
-        <span>For your projects</span>
-        <button type="button" onClick={onPosts}>
-          All posts <ArrowUpRight size={15} aria-hidden="true" />
-        </button>
-      </div>
+      {demo && <span className={styles.demoLabel}>Synthetic demo</span>}
       {!loaded && !error && (
         <output className={styles.initialLoading}>Loading your posts…</output>
       )}
       {readyPosts.map((post, index) => (
-        <FeedArticle
+        <FeedPostCard
           key={post.id}
           post={post}
           detail={details[post.id]}
@@ -358,7 +340,7 @@ export function HomeFeed({
             });
             setRevision((value) => value + 1);
           }}
-          nextId={readyPosts[index + 1]?.id}
+          nextPost={readyPosts[index + 1]}
         />
       ))}
       {loaded && !error && readyPosts.length === 0 && (
@@ -418,310 +400,5 @@ export function HomeFeed({
         )}
       </div>
     </section>
-  );
-}
-
-function FeedArticle({
-  post,
-  detail,
-  active,
-  demo,
-  error,
-  organizationId,
-  readOnly,
-  call,
-  base,
-  onVisible,
-  onRetry,
-  nextId,
-}: {
-  post: FeedPost;
-  detail?: FeedDetail;
-  active: boolean;
-  demo: boolean;
-  error?: string;
-  organizationId: string;
-  readOnly: boolean;
-  call: Props["call"];
-  base: string;
-  onVisible: () => void;
-  onRetry: () => void;
-  nextId?: string;
-}) {
-  const article = useRef<HTMLElement>(null);
-  const reportVisible = useEffectEvent(onVisible);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [proposalLimit, setProposalLimit] = useState(3);
-  const uid = useId();
-  const sourceHref = demo ? `/demo?source=demo-0` : `${base}/posts/${post.id}`;
-  const insights = active ? (detail?.insights ?? []) : [];
-  const expandedInsight =
-    selected === null
-      ? insights[0]
-      : insights.find((item) => item.id === selected);
-  const insight = expandedInsight ?? insights[0];
-  useEffect(() => {
-    if (!article.current || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) reportVisible();
-      },
-      { rootMargin: "-10% 0px -55% 0px" },
-    );
-    observer.observe(article.current);
-    return () => observer.disconnect();
-  }, []);
-  useEffect(() => {
-    if (!detail || !article.current || typeof ResizeObserver === "undefined")
-      return;
-    const element = article.current;
-    const observer = new ResizeObserver(() =>
-      element.style.setProperty(
-        "--feed-measured-height",
-        `${element.getBoundingClientRect().height}px`,
-      ),
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [detail]);
-  function skip() {
-    const heading = document.getElementById(`feed-title-${nextId}`);
-    document.getElementById(`feed-post-${nextId}`)?.scrollIntoView({
-      block: "start",
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "instant"
-        : "smooth",
-    });
-    heading?.focus({ preventScroll: true });
-  }
-  return (
-    <article
-      id={`feed-post-${post.id}`}
-      ref={article}
-      className={styles.post}
-      data-feed-post={post.id}
-      data-loaded={!!detail && active}
-    >
-      <div className={styles.columns}>
-        <section
-          className={styles.source}
-          aria-labelledby={`feed-title-${post.id}`}
-        >
-          <div className={styles.poster}>
-            {demo ? (
-              <Image
-                src="/product/overview-poster.png"
-                alt="Synthetic VibeScroll walkthrough"
-                fill
-                sizes="(max-width: 720px) 100vw, 340px"
-                className={styles.demoPoster}
-              />
-            ) : (
-              <PostThumbnail
-                candidates={
-                  detail?.thumbnailAssetIds.length
-                    ? detail.thumbnailAssetIds
-                    : post.thumbnailAssetIds
-                }
-                kind={post.kind}
-              />
-            )}
-            <div className={styles.creator}>
-              <span className={styles.avatar}>
-                {(detail?.authorName ?? post.authorName ?? "V")
-                  .slice(0, 1)
-                  .toUpperCase()}
-              </span>
-              <span>
-                {detail?.authorName ?? post.authorName ?? "Saved post"}
-              </span>
-              <a
-                href={sourceHref}
-                aria-label={`Open post options for ${post.title}`}
-              >
-                <Settings2 size={18} aria-hidden="true" />
-              </a>
-            </div>
-            <div className={styles.mobileOverlay}>
-              <strong>{detail?.title ?? post.title}</strong>
-              <a href={`#${uid}-insights`}>
-                Scroll for insights <ChevronDown size={17} aria-hidden="true" />
-              </a>
-            </div>
-          </div>
-          <div className={styles.sourceCopy}>
-            <h2 id={`feed-title-${post.id}`} tabIndex={-1}>
-              {detail?.title ?? post.title}
-            </h2>
-            {detail?.categoryKeys.length ? (
-              <ul className={styles.tags} aria-label="Topics">
-                {detail.categoryKeys.map((topic) => (
-                  <li key={topic}>{topic.replaceAll("_", " ")}</li>
-                ))}
-              </ul>
-            ) : null}
-            {detail?.summary && <p>{detail.summary}</p>}
-            <div className={styles.sourceActions}>
-              <a href={sourceHref}>
-                Post details <ArrowUpRight size={15} aria-hidden="true" />
-              </a>
-              {detail?.url && (
-                <a href={detail.url} target="_blank" rel="noopener noreferrer">
-                  Open original <ArrowUpRight size={15} aria-hidden="true" />
-                </a>
-              )}
-            </div>
-          </div>
-        </section>
-        <section
-          id={`${uid}-insights`}
-          className={styles.insights}
-          aria-label={`Insights for ${post.title}`}
-        >
-          <div className={styles.sectionHeading}>
-            <h2>Insights</h2>
-            {detail && active && <span>{insights.length}</span>}
-          </div>
-          {error && active ? (
-            <ErrorState
-              title="Insights unavailable"
-              detail={error}
-              onRetry={onRetry}
-              action={<a href={sourceHref}>Open post</a>}
-            />
-          ) : !detail || !active ? (
-            <FeedSkeleton label="Insights load as this post approaches" />
-          ) : insights.length ? (
-            insights.map((item) => {
-              const open = expandedInsight?.id === item.id;
-              return (
-                <article
-                  key={item.id}
-                  className={styles.insight}
-                  data-selected={open}
-                >
-                  <InsightCardControl
-                    title={item.title ?? item.claim}
-                    subtitle={open ? "Selected insight" : item.claim}
-                    icon={insightPresentation(item).icon}
-                    expanded={open}
-                    aria-controls={`${uid}-${item.id}`}
-                    onClick={() => setSelected(open ? "closed" : item.id)}
-                  >
-                    <SettingsPanel
-                      title="Insight evidence"
-                      triggerLabel={`Evidence for ${item.title ?? item.claim}`}
-                    >
-                      <p>{item.claim}</p>
-                      <a href={sourceHref}>
-                        View source evidence and transcript{" "}
-                        <ArrowUpRight size={15} aria-hidden="true" />
-                      </a>
-                    </SettingsPanel>
-                  </InsightCardControl>
-                  <div
-                    id={`${uid}-${item.id}`}
-                    hidden={!open}
-                    className={styles.claim}
-                  >
-                    <p>{item.claim}</p>
-                  </div>
-                </article>
-              );
-            })
-          ) : (
-            <p className={styles.note}>
-              No insights are available for this version.{" "}
-              <a href={sourceHref}>Open post</a>
-            </p>
-          )}
-        </section>
-        <section
-          className={styles.plans}
-          aria-label={`Project plans for ${post.title}`}
-        >
-          <div className={styles.sectionHeading}>
-            <h2>Apply to a project</h2>
-          </div>
-          {!detail || !active ? (
-            <FeedSkeleton label="Project plans load with this post" />
-          ) : (
-            <>
-              {detail.proposals
-                .slice(0, proposalLimit)
-                .map((proposal, index) => (
-                  <ProposalArtifact
-                    key={proposal.id}
-                    proposal={proposal}
-                    initiallyOpen={index === 0}
-                    fit={
-                      detail.suggestions.items.find(
-                        (project) => project.id === proposal.projectId,
-                      )?.fit
-                    }
-                    href={
-                      demo
-                        ? `/demo?proposal=${proposal.id}`
-                        : `${base}/proposals/${proposal.id}`
-                    }
-                  />
-                ))}
-              {detail.proposals.length > proposalLimit && (
-                <button
-                  type="button"
-                  className={styles.morePlans}
-                  onClick={() => setProposalLimit((value) => value + 3)}
-                >
-                  More saved plans
-                </button>
-              )}
-              {insight && detail.analysisVersionId ? (
-                <div className={styles.compose}>
-                  <h3>
-                    {detail.proposals.length
-                      ? "Use another insight"
-                      : "Turn an insight into a plan"}
-                  </h3>
-                  <p>{insight.title ?? insight.claim}</p>
-                  <ProjectProposalComposer
-                    key={`${post.id}:${detail.analysisVersionId}:${insight.id}`}
-                    organizationId={organizationId}
-                    sourceId={post.id}
-                    analysisVersionId={detail.analysisVersionId}
-                    insight={{
-                      ...insight,
-                      title: insight.title ?? insight.claim,
-                    }}
-                    projects={detail.projects}
-                    suggestions={detail.suggestions.items}
-                    disabled={readOnly || demo}
-                    call={call}
-                  />
-                </div>
-              ) : (
-                <p className={styles.note}>
-                  Open the post to review its analysis and project options.
-                </p>
-              )}
-            </>
-          )}
-        </section>
-      </div>
-      {nextId && (
-        <button type="button" className={styles.next} onClick={skip}>
-          Next post <ArrowDown size={17} aria-hidden="true" />
-        </button>
-      )}
-    </article>
-  );
-}
-
-function FeedSkeleton({ label }: { label: string }) {
-  return (
-    <output className={styles.skeleton} aria-label={label}>
-      <span />
-      <span />
-      <span />
-    </output>
   );
 }

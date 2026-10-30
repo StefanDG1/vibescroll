@@ -14,7 +14,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it("keeps a real topic-fit disclosure on a collapsed saved plan without a pretend approval action", () => {
+it("keeps a real topic-fit disclosure on a collapsed saved plan with clearly disabled preview actions", () => {
   const detail = feedDemoDetails["feed-demo-0"];
   const html = renderToStaticMarkup(
     createElement(ProposalArtifact, {
@@ -26,10 +26,11 @@ it("keeps a real topic-fit disclosure on a collapsed saved plan without a preten
   expect(html).toContain('aria-expanded="false"');
   expect(html).toContain("Topic fit");
   expect(html).toContain("100");
-  expect(html).toContain("Open plan");
-  expect(html).not.toMatch(
-    /Approve|Needs changes|Send message|Assistant replied/,
-  );
+  expect(html).toContain("Plan options for VibeScroll");
+  expect(html).toContain("Approve &amp; create issue");
+  expect(html).toMatch(/<button[^>]+disabled[^>]*title="Issue creation/);
+  expect(html).toContain("Proposal discussion, not connected yet");
+  expect(html).not.toMatch(/Needs changes|Assistant replied/);
 });
 
 it("does not score a planning seed as a ready proposal", () => {

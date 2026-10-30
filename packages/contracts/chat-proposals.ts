@@ -28,7 +28,7 @@ export const chatProposalBody = z.strictObject({
 });
 export const chatProposalBinding = z.strictObject({
   analysisVersionId: id,
-  insightIds: z.array(id).min(1).max(8),
+  insightIds: z.array(id).min(1).max(20),
   evidenceHash: hash,
   outputHash: hash,
   revisionHash: hash,
@@ -42,11 +42,11 @@ export const chatProposalDetail = chatProposalBody.extend({
   repositoryId: id,
   baseSha: z.string().regex(/^[a-f0-9]{40}$/),
   profileVersion: z.number().int().positive(),
-  insightIds: z.array(id).min(1).max(8),
+  insightIds: z.array(id).min(1).max(20),
   sourceEvidence: z
     .array(analysisVersionOutput.shape.insights.element.shape.evidence.element)
     .min(1)
-    .max(240),
+    .max(600),
   repositoryEvidence: z.array(z.never()).max(0),
   _chat: z.strictObject({
     binding: chatProposalBinding,
@@ -79,7 +79,7 @@ export const saveProjectProposalInput = z
     sourceId: id,
     projectId: id,
     analysisVersionId: id,
-    insightIds: z.array(id).min(1).max(8),
+    insightIds: z.array(id).min(1).max(20),
     contextHash: hash,
     proposalId: id.optional(),
     expectedVersion: z.number().int().nonnegative(),

@@ -7,7 +7,8 @@ export async function projectProposalDraft(input: {
   sourceId: string;
   projectId: string;
   analysisVersionId: string;
-  insightId: string;
+  insightId?: string;
+  insightIds?: string[];
   contextHash: string;
   title: string;
   goal: string;
@@ -17,7 +18,7 @@ export async function projectProposalDraft(input: {
     sourceId: input.sourceId,
     projectId: input.projectId,
     analysisVersionId: input.analysisVersionId,
-    insightIds: [input.insightId],
+    insightIds: input.insightIds ?? (input.insightId ? [input.insightId] : []),
     contextHash: input.contextHash,
     expectedVersion: 0,
     body: {

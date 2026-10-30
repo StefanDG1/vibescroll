@@ -142,6 +142,29 @@ it("combines one exact version and current confirmed project without media, repo
   ).toHaveLength(0);
 });
 
+it("defaults to the whole post, including insights beyond the former eight-insight limit", async () => {
+  const f = await fixture();
+  const output = {
+    ...f.output,
+    insights: Array.from({ length: 20 }, (_, index) => ({
+      ...f.output.insights[0],
+      id: `whole-post-${index}`,
+    })),
+  };
+  const outputHash = await socialHash(canonicalJson(output));
+  await f.t.run((ctx) => ctx.db.patch(f.versionId, { output, outputHash }));
+  const context = await f.read();
+  expect(context.source.insights.map((item) => item.id)).toEqual(
+    output.insights.map((item) => item.id),
+  );
+  expect(context.source.omittedInsights).toBe(0);
+  const explicit = await f.assistant.query(
+    internal.assistant.projectApplicationContext,
+    { ...f.input, insightIds: output.insights.map((item) => item.id) },
+  );
+  expect(explicit.contextHash).toBe(context.contextHash);
+});
+
 it.each(["knowledge:read", "context:read"])(
   "requires actual OAuth and grant scope %s",
   async (scope) => {

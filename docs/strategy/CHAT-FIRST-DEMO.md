@@ -86,3 +86,5 @@ The owner asked whether the entire app could be copied into the plugin. Reuse th
 Checkpoint1 is implemented locally under ADR204. The quiet shell is separately browser-checked under ADR203; it does not close the full post/insight reader checkpoint. Both remain unpublished pending exact CI and compatible release.
 
 Publication update: c862450 is live. Checkpoint1 persistence is accepted through the official SDK and app; new-tool host discovery/OAuth write remains open. The quiet shell passed local and production browser checks. Checkpoint2, the complete post/insight reader, is next.
+
+Reader update: ADR205 is live at website6b2df2f, with the backend unchanged. Source preview and insight presentation now share a component; local and real-post production checks passed. Checkpoint2 remains partial until management sections, supported playback and project interactions are simplified; checkpoint3 home-feed reuse remains open. The owner deprioritized further caption-specific work under R103.

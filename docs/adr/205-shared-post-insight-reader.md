@@ -1,6 +1,6 @@
 # ADR 205: shared post and insight reader
 
-Date: October 30, 2026. Status: local candidate, not deployed.
+Date: October 30, 2026. Status: deployed at website6b2df2f; backend unchanged.
 
 The owner prioritizes the rest of the plan over further caption-specific extraction work. Preserve usable captions and the working transcription path, but do not delay the reader, proposal workflow or releases for a dedicated caption canary.
 
@@ -11,3 +11,5 @@ Use child slots supplied by the route adapter rather than copying the source ana
 This checkpoint uses a retained preview and an original-source link. Supported inline playback, active-only feed loading, project recommendations and the compact MCP view remain later work. No autoplay, universal platform player, fresh inference or complete reader acceptance is implied by this layout change.
 
 Require root checks, desktop/mobile browser acceptance, exact CI, staged health and same-build promotion before publication. No backend bundle, schema, provider or credit change is needed.
+
+Acceptance: root local checks, final types/build and exact CI41043791562 passed. Local desktop/phone dark and desktop light visual checks passed. The staged build passed exact health and phone layout checks, then the same build was promoted. Production loaded a real540×960 retained thumbnail and six insights, expanded citation references and had no phone overflow. No analysis or credits ran. See [the production receipt](../operations/evidence/launch-20261030-shared-reader-production.json). Management-section simplification, playback and home-feed integration remain open.

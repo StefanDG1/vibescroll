@@ -2,6 +2,12 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## October30: shared reader layout live
+
+Website6b2df2f passed exact CI41043791562, staged/canonical exact health and same-build promotion after a50.234s fixed Basic build. Backendc862450 is unchanged. Local full checks, final types/build, desktop/phone dark and desktop light checks passed. The project shortcut is47.59px tall and reached the existing project controls without starting work. Production loaded the real retained540×960 thumbnail and six insights; citations expanded and the390px phone layout had no horizontal overflow. See [the receipt](operations/evidence/launch-20261030-shared-reader-production.json).
+
+This is the first shared reader component, not complete playback/feed acceptance. Management sections above it, active-only home detail and supported playback remain. Caption-specific work is deprioritized under R103. The release ran no backend publication, analysis, transcription or credit charge. Chrome permission was granted and the normal browser connection succeeded.
+
 ## October30: shared reader layout, local candidate
 
 R103 deprioritizes further caption-specific work while preserving transcription and existing caption reuse. ADR205 begins the shared reader with a presentation-only source/insight layout: retained thumbnail and original-source metadata beside existing insights on desktop, above on smaller screens, and a link to the current project controls. Existing citations, transcript, live status, version history and permission/funding checks remain in their route adapter. No player, new provider, model request or backend change is introduced.

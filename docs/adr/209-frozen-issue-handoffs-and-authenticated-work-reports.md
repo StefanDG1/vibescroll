@@ -1,6 +1,6 @@
 # Frozen issue handoffs and authenticated work reports
 
-Date: October30,2026. Status: local candidate; not production acceptance. Owner requirements R062/R063/R099 and the setup/proposal feedback plan.
+Date: October30,2026. Status: deployed at8974c39; bounded owner-host acceptance passed. Owner requirements R062/R063/R099 and the setup/proposal feedback plan.
 
 Keep the existing evaluated-library issue publisher unchanged. A chat planning draft is not a repository evaluation or an implementation approval. Its first supported handoff is a frozen private issue package that an already authorized GitHub integration can publish after the user reviews the repository and exact text.
 
@@ -15,3 +15,5 @@ An authenticated model report is an attributed claim. It does not establish veri
 The existing MCP scopes suffice: knowledge/context plus suggestions:draft for preparation, and knowledge/context plus feedback:write for reporting. Keep the current plugin, OAuth and native monitor. The next release needs exact CI, actual compatibility guards, funding and intended-host acceptance; local relay tests alone do not establish production behavior.
 
 Local acceptance: the full offline check before the final HEAD-advance correction passed1,586 Vitest cases/3skips, Node/Python checks, types/lint and both builds. The final reporting correction and regression passed37 focused proposal/shared-cache/actual-relay cases, TypeScript and lint. Dependency audit found no known advisories. The earlier full attempt hit an unrelated billing fixture timeout; the unchanged billing suite passed independently and the full repeat passed. Exact CI and live acceptance remain required.
+
+Production acceptance: exact CI41091371752,22 guards, actual compatible publication and a49.620s fixed Basic build passed. The existing original ChatGPT plugin called read/prepare/report/read on the same proposal. It retained one frozen handoff and one blocked report at version2/unreviewed; website metadata independently matched. No GitHub publication, implementation, analysis, paid AI, reconnect or new scope occurred. See [the production receipt](../operations/evidence/launch-20261030-proposal-work-production.json). Provider-verified lifecycle and a real issue/PR canary remain open. Reporting tolerates HEAD advancement; the separate planning read/edit still requires its current project-context checks.

@@ -815,3 +815,9 @@
     margin: auto;
   }
 }
+
+@media (max-width: 720px) {
+  .mobileNext {
+    display: none;
+  }
+}

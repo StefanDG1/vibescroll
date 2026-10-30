@@ -323,3 +323,10 @@
 .readArea ul {
   list-style: disc;
 }
+
+@media (max-width: 720px) {
+  .artifact[data-expanded="true"] {
+    flex: 0 0 100%;
+    min-height: 0;
+  }
+}

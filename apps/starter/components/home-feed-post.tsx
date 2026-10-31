@@ -18,12 +18,19 @@ import { SettingsPanel } from "./settings-panel";
 import { ErrorState } from "./assistant-elements/error-state";
 import { ProposalArtifact } from "./assistant-elements/proposal-artifact";
 import { insightPresentation } from "../../../packages/insights/presentation";
-import { projectLabel, type FeedDetail, type FeedPost } from "@/lib/home-feed";
+import {
+  projectLabel,
+  type FeedDetail,
+  type FeedPost,
+  type FeedEngagement,
+} from "@/lib/home-feed";
 import styles from "./home-feed.module.css";
 
 export function FeedPostCard({
   post,
   detail,
+  engagement: observedEngagement,
+  onReaction,
   active,
   demo,
   error,
@@ -37,6 +44,10 @@ export function FeedPostCard({
 }: {
   post: FeedPost;
   detail?: FeedDetail;
+  engagement?: FeedEngagement;
+  onReaction: (
+    value: Pick<FeedEngagement, "scopeKey" | "liked" | "revision">,
+  ) => void;
   active: boolean;
   demo: boolean;
   error?: string;
@@ -54,6 +65,9 @@ export function FeedPostCard({
   const [expandedPlan, setExpandedPlan] = useState<string | null>();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [demoLiked, setDemoLiked] = useState(true);
+  const [likeBusy, setLikeBusy] = useState(false);
+  const [likeError, setLikeError] = useState("");
+  const likeFlight = useRef(false);
   const uid = useId();
   const sourceHref = demo ? `/demo?source=demo-0` : `${base}/posts/${post.id}`;
   const title = detail?.title ?? post.title;
@@ -69,15 +83,38 @@ export function FeedPostCard({
       : insights.find((item) => item.id === selected);
   const insight = insights[0];
   const analysisVersionId = detail?.analysisVersionId;
-  const proposals = active ? (detail?.proposals.slice(0, 3) ?? []) : [];
+  const proposals = active ? (detail?.proposals ?? []) : [];
   const openPlan = expandedPlan === undefined ? proposals[0]?.id : expandedPlan;
   const recommendations =
     detail?.suggestions.items
       .filter(
         (project) => !proposals.some((plan) => plan.projectId === project.id),
       )
-      .slice(0, 3 - proposals.length) ?? [];
-  const engagement = detail?.engagement;
+      .slice(0, Math.max(0, 3 - proposals.length)) ?? [];
+  const engagement = demo ? detail?.engagement : observedEngagement;
+  async function like() {
+    if (!engagement || likeFlight.current) return;
+    likeFlight.current = true;
+    setLikeBusy(true);
+    setLikeError("");
+    try {
+      const result = await call("setPostLike", {
+        organizationId,
+        sourceId: post.id,
+        liked: !engagement.liked,
+        expectedRevision: engagement.revision,
+        key: crypto.randomUUID(),
+      });
+      onReaction(result);
+    } catch {
+      setLikeError(
+        "Could not confirm your reaction. Check its updated state before trying again.",
+      );
+    } finally {
+      likeFlight.current = false;
+      setLikeBusy(false);
+    }
+  }
   useEffect(() => {
     if (!article.current || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
@@ -109,11 +146,21 @@ export function FeedPostCard({
       title={title}
       url={`https://scroll.companynerve.com/app/${organizationId}/posts/${post.id}`}
       likes={
-        demo && engagement ? engagement.likes + (demoLiked ? 0 : -1) : undefined
+        demo && engagement
+          ? engagement.likes + (demoLiked ? 0 : -1)
+          : engagement?.likes
       }
-      shares={demo ? engagement?.shares : undefined}
-      liked={demo && demoLiked}
-      onLike={demo ? () => setDemoLiked((value) => !value) : undefined}
+      shares={engagement?.shares}
+      liked={demo ? demoLiked : engagement?.liked}
+      onLike={
+        demo
+          ? () => setDemoLiked((value) => !value)
+          : engagement && !readOnly
+            ? () => void like()
+            : undefined
+      }
+      busy={likeBusy}
+      notice={likeError}
       onSettings={() => setSettingsOpen(true)}
     />
   );

@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { v } from "convex/values";
+import { engagementEnabled } from "./lib/postEngagement";
+import { readPostEngagement } from "./lib/postEngagementRead";
 import { query, internalQuery } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -7,7 +9,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { writeAccess, access } from "./lib";
 import { captureAuthorized, digest, reserve } from "./product";
-import { ensure, containsSecret } from "../packages/policy";
+import { ensure, containsSecret, PolicyError } from "../packages/policy";
 import {
   privateCloudMediaIdentity,
   privateCloudMediaCanonicalMatches,
@@ -1428,23 +1430,35 @@ function liveMetadata(source: Doc<"sources">) {
   };
 }
 
-export const liveMany = query({
-  args: {
-    organizationId: v.id("organizations"),
-    sourceIds: v.array(v.id("sources")),
+const liveManyArgs = {
+  organizationId: v.id("organizations"),
+  sourceIds: v.array(v.id("sources")),
+  withEngagement: v.optional(v.boolean()),
+};
+async function liveManyData(
+  ctx: QueryCtx,
+  {
+    organizationId,
+    sourceIds,
+    withEngagement,
+  }: {
+    organizationId: Id<"organizations">;
+    sourceIds: Id<"sources">[];
+    withEngagement?: boolean;
   },
-  returns: v.any(),
-  handler: async (ctx, { organizationId, sourceIds }) => {
-    ensure(
-      sourceIds.length <= 20 && new Set(sourceIds).size === sourceIds.length,
-      "INVALID_INPUT",
-      "Subscribe to one visible metadata page.",
-    );
-    await access(ctx, organizationId);
-    const sources = await Promise.all(
-      sourceIds.map((sourceId) => ctx.db.get(sourceId)),
-    );
-    return sources
+) {
+  ensure(
+    sourceIds.length <= (withEngagement ? 3 : 20) &&
+      new Set(sourceIds).size === sourceIds.length,
+    "INVALID_INPUT",
+    "Subscribe to one visible metadata page.",
+  );
+  const { actor } = await access(ctx, organizationId);
+  const sources = await Promise.all(
+    sourceIds.map((sourceId) => ctx.db.get(sourceId)),
+  );
+  const metadata = await Promise.all(
+    sources
       .filter(
         (s): s is Doc<"sources"> =>
           !!s &&
@@ -1452,6 +1466,64 @@ export const liveMany = query({
           s.state !== "deleted" &&
           (s.sourceRetentionUntil ?? Infinity) > Date.now(),
       )
-      .map(liveMetadata);
+      .map(async (source) => {
+        let engagement = null;
+        if (withEngagement && engagementEnabled() && source.state === "ready") {
+          try {
+            engagement = await readPostEngagement(ctx, source, actor._id);
+          } catch (error) {
+            if (!(error instanceof PolicyError)) throw error;
+          }
+        }
+        return {
+          ...liveMetadata(source),
+          ...(withEngagement ? { engagement } : {}),
+        };
+      }),
+  );
+  return { metadata, actorId: actor._id };
+}
+export const liveMany = query({
+  args: liveManyArgs,
+  returns: v.any(),
+  handler: async (ctx, args) => (await liveManyData(ctx, args)).metadata,
+});
+export const feedLive = query({
+  args: liveManyArgs,
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    ensure(
+      args.sourceIds.length <= 3,
+      "INVALID_INPUT",
+      "Subscribe to at most three feed posts.",
+    );
+    const { metadata, actorId } = await liveManyData(ctx, args);
+    const { organizationId } = args;
+    const recent = await ctx.db
+      .query("dashboardCards")
+      .withIndex("by_org_kind_state", (q) =>
+        q
+          .eq("organizationId", organizationId)
+          .eq("kind", "source")
+          .eq("state", "ready"),
+      )
+      .order("desc")
+      .take(20);
+    return {
+      sources: metadata,
+      readerId: actorId,
+      recentReady: recent
+        .filter(
+          (row) =>
+            row.sourceId &&
+            row.rightsAttested &&
+            (row.sourceRetentionUntil ?? Infinity) > Date.now(),
+        )
+        .map((row) => ({
+          id: row.sourceId!,
+          generation: row.generation ?? 0,
+          createdAt: row.createdAt,
+        })),
+    };
   },
 });

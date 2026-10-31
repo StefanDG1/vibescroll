@@ -37,6 +37,11 @@
   height: 22px;
   background: var(--line);
 }
+.notice {
+  margin: 4px 0;
+  color: var(--ink);
+  font-size: 0.8rem;
+}
 .row .more {
   margin-left: auto;
   width: 36px;

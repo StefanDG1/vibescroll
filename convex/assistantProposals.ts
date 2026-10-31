@@ -277,11 +277,26 @@ export async function saveProjectProposalCore(
         .map((ref) => [canonicalJson(ref), ref]),
     ).values(),
   ];
-  const prior = proposal
-    ? chatProposalDetail.parse(proposal.detail)._chat
-    : null;
+  const retained = proposal ? chatProposalDetail.parse(proposal.detail) : null;
+  const prior = retained?._chat ?? null;
+  // Older MCP clients omit steps. Preserve routine edits without silently
+  // carrying an old implementation plan into a different project context.
+  if (input.body.steps === undefined && retained?.steps?.length)
+    ensure(
+      proposal!.baseSha === context.project.baseSha &&
+        proposal!.profileVersion === context.project.profileVersion &&
+        retained._chat.binding.selectionVersion ===
+          context.project.selectionVersion &&
+        retained._chat.binding.sourceGeneration === context.source.generation &&
+        retained._chat.binding.sourceRevision === context.source.sourceRevision,
+      "APPROVAL_STALE",
+      "Review and include the saved steps before rebinding this plan to changed context.",
+    );
   const detail = chatProposalDetail.parse({
     ...input.body,
+    ...(input.body.steps === undefined && retained?.steps
+      ? { steps: retained.steps }
+      : {}),
     ...(proposal?.detail.handoff ? { handoff: proposal.detail.handoff } : {}),
     ...(proposal?.detail.work ? { work: proposal.detail.work } : {}),
     schemaVersion: "chat-project-proposal-v1",

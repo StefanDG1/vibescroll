@@ -2,6 +2,14 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { cloudCatalogFixture } from "./cloud-catalog-fixture";
 import { currentCloudArtifact } from "../convex/lib/cloudCatalog";
+import { associateContributedCloudVersion } from "../convex/lib/cloudCatalog";
+import {
+  recordPostSave,
+  engagementCounter,
+  privatePostKey,
+} from "../convex/lib/postEngagement";
+import counterTest from "@convex-dev/sharded-counter/test";
+import { requireProCatalogAccess } from "../convex/lib/catalogEntitlement";
 
 vi.mock("../packages/providers/storage", () => ({
   signedObject: (key: string) =>
@@ -15,8 +23,29 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-async function sharedFixture() {
+async function sharedFixture(trackEngagement = false) {
   const f = await cloudCatalogFixture();
+  if (trackEngagement) {
+    counterTest.register(f.t);
+    vi.stubEnv("POST_ENGAGEMENT_ENABLED", "true");
+    await f.t.run(async (ctx) => {
+      const org = (await ctx.db.get(f.org))!;
+      await ctx.db.patch(org.privateOwnerId!, {
+        profileVerifiedAt: Date.now(),
+      });
+    });
+    vi.stubEnv(
+      "CLOUD_CATALOG_ALPHA_ACCESS_JSON",
+      JSON.stringify({
+        version: "catalog-operator-alpha-access-v1",
+        reviewedAt: Date.now() - 1000,
+        expiresAt: Date.now() + 86400000,
+        subjects: ["user_01234567890123456789012345"],
+        reviewReference:
+          "Synthetic operator access for engagement migration, not paid billing",
+      }),
+    );
+  }
   const network = vi.fn(async (_url: string, init?: RequestInit) =>
     init?.method === "PUT"
       ? new Response(null, { status: 200 })
@@ -154,6 +183,71 @@ async function sharedFixture() {
     network,
   };
 }
+
+it("merges private preferences into shared engagement and counts each requesting user once", async () => {
+  const f = await sharedFixture(true);
+  expect(
+    await f.second.query(api.postEngagement.read, {
+      organizationId: f.secondOrg,
+      sourceIds: [f.secondSourceId],
+    }),
+  ).toMatchObject([{ shares: 1 }]);
+  await f.owner.mutation(api.postEngagement.setLike, {
+    organizationId: f.org,
+    sourceId: f.sourceId,
+    liked: true,
+    expectedRevision: 0,
+    key: "private-like-before-share",
+  });
+  const userId = (await f.t.run((ctx) =>
+    ctx.db
+      .query("postEngagement")
+      .withIndex("by_key", (q) => q.eq("key", privatePostKey(f.sourceId)))
+      .first(),
+  ))!.userId;
+  await f.owner.run(async (ctx) => {
+    const source = (await ctx.db.get(f.sourceId))!;
+    await requireProCatalogAccess(ctx, f.org);
+    await recordPostSave(ctx, source, userId);
+    const associated = await associateContributedCloudVersion(
+      ctx,
+      source,
+      userId,
+      f.shared.artifact._id,
+    );
+    expect(associated).toBe(true);
+  });
+  const read = () =>
+    f.owner.query(api.postEngagement.read, {
+      organizationId: f.org,
+      sourceIds: [f.sourceId],
+    });
+  expect(await read()).toMatchObject([
+    { likes: 1, shares: 2, liked: true, revision: 1 },
+  ]);
+  await f.second.mutation(api.postEngagement.setLike, {
+    organizationId: f.secondOrg,
+    sourceId: f.secondSourceId,
+    liked: true,
+    expectedRevision: 0,
+    key: "second-reader-like",
+  });
+  expect(await read()).toMatchObject([{ likes: 2, shares: 2 }]);
+  await f.second.mutation(api.product.capture, {
+    organizationId: f.secondOrg,
+    key: "repeated-global-save",
+    kind: "url",
+    url: f.prepared.post.canonical,
+    title: "Same shared post",
+    rightsAttested: true,
+  });
+  expect(await read()).toMatchObject([{ likes: 2, shares: 2 }]);
+  expect(
+    await f.t.run((ctx) =>
+      engagementCounter().count(ctx, `${privatePostKey(f.sourceId)}:likes`),
+    ),
+  ).toBe(0);
+});
 
 it("uses a reference-only shared post in exact-version context and a durable chat proposal, with no owner leakage, new job or entitlement bypass", async () => {
   const f = await sharedFixture();

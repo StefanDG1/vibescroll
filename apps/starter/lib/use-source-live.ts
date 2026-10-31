@@ -16,14 +16,17 @@ export function usePostsLive(
   sourceIds: string[],
   enabled: boolean,
   update: (value: any) => void,
+  withEngagement = false,
+  withFeedHead = false,
 ) {
   useMetadataLive(
-    "many",
+    withFeedHead ? "feed" : "many",
     JSON.stringify({
       organizationId,
       sourceIds: [...new Set(sourceIds)].slice(0, 20),
+      ...(withEngagement ? { withEngagement: true } : {}),
     }),
-    enabled && sourceIds.length > 0,
+    enabled && (withFeedHead || sourceIds.length > 0),
     update,
   );
 }
@@ -37,7 +40,7 @@ export function useProposalLive(
 }
 
 function useMetadataLive(
-  mode: "one" | "many" | "proposal",
+  mode: "one" | "many" | "proposal" | "feed",
   scope: string,
   enabled: boolean,
   update: (value: any) => void,
@@ -76,11 +79,13 @@ function useMetadataLive(
           }
         });
         client.onUpdate(
-          mode === "proposal"
-            ? api.proposalLoop.read
-            : mode === "one"
-              ? api.preparedAnalysis.live
-              : api.preparedAnalysis.liveMany,
+          mode === "feed"
+            ? api.preparedAnalysis.feedLive
+            : mode === "proposal"
+              ? api.proposalLoop.read
+              : mode === "one"
+                ? api.preparedAnalysis.live
+                : api.preparedAnalysis.liveMany,
           JSON.parse(scope),
           (value) => {
             if (!controller.signal.aborted) receive(value);

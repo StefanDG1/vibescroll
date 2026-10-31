@@ -23,6 +23,7 @@ import { cloudCatalogFamilyKey } from "../../packages/contracts/cloud-catalog";
 import { sourceRetained } from "./sourceAuthority";
 import { internal } from "../_generated/api";
 import { queryRead } from "./knowledgeReadContext";
+import { recordPostSave } from "./postEngagement";
 
 export type CloudArtifact = Extract<
   Doc<"publicArtifacts">,
@@ -275,6 +276,7 @@ async function attachResult(
         : {}),
     updatedAt: Math.max(now, source.updatedAt + 1),
   });
+  await recordPostSave(ctx, (await ctx.db.get(source._id))!, actor);
   return true;
 }
 

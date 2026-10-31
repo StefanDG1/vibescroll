@@ -3,6 +3,8 @@ import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
+  setPostLike: ["mutation", api.postEngagement.setLike],
+  postEngagementRead: ["query", api.postEngagement.read],
   proposalDiscussion: ["query", api.proposalLoop.read],
   proposalReply: ["mutation", api.proposalLoop.reply],
   proposalComment: ["mutation", api.proposalLoop.comment],

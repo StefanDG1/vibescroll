@@ -11,6 +11,7 @@ import {
   catalogConfiguration,
 } from "./lib/cloudCatalog";
 import { notifyVideoLinkSaved } from "./lib/assistantEvents";
+import { recordPostSave } from "./lib/postEngagement";
 import { savedCloudRoute } from "./lib/workCloudSave";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
@@ -975,6 +976,11 @@ export async function captureAuthorized(
     "FORBIDDEN",
     "Capture scope mismatch.",
   );
+  const saved = async (id: Id<"sources">) => {
+    if (!bulk)
+      await recordPostSave(ctx, (await ctx.db.get(id))!, actor.actor._id);
+    return id;
+  };
   ensure(
     process.env.DISABLE_CAPTURE !== "true",
     "POLICY_BLOCKED",
@@ -1007,10 +1013,10 @@ export async function captureAuthorized(
     .unique();
   if (old && old.state !== "deleted") {
     if (a.kind === "url" && (await attachCloudCache(ctx, old, actor.actor._id)))
-      return old._id;
+      return saved(old._id);
     if (!bulk && !suppressSavedEvent && a.kind === "url")
       await notifyVideoLinkSaved(ctx, old, actor.actor._id);
-    return old._id;
+    return saved(old._id);
   }
   const classified = a.kind === "url" ? classifySourceUrl(a.url ?? "") : null;
   let canonical =
@@ -1058,10 +1064,10 @@ export async function captureAuthorized(
     .unique();
   if (dup && dup.state !== "deleted") {
     if (a.kind === "url" && (await attachCloudCache(ctx, dup, actor.actor._id)))
-      return dup._id;
+      return saved(dup._id);
     if (!bulk && !suppressSavedEvent && a.kind === "url")
       await notifyVideoLinkSaved(ctx, dup, actor.actor._id);
-    return dup._id;
+    return saved(dup._id);
   }
   const w = await wallet(ctx, a.organizationId);
   let counts = await ctx.db
@@ -1159,7 +1165,7 @@ export async function captureAuthorized(
         context: null,
       },
     );
-  return id;
+  return saved(id);
 }
 export async function queueLinkPreview(ctx: MutationCtx, id: Id<"sources">) {
   if (process.env.LINK_PREVIEWS_ENABLED !== "true") return false;

@@ -126,6 +126,7 @@ import type * as planning from "../planning.js";
 import type * as privacy from "../privacy.js";
 import type * as product from "../product.js";
 import type * as posts from "../posts.js";
+import type * as postEngagement from "../postEngagement.js";
 import type * as publicKnowledge from "../publicKnowledge.js";
 import type * as sourceAcquisition from "../sourceAcquisition.js";
 import type * as sourceAcquisitionActions from "../sourceAcquisitionActions.js";
@@ -281,6 +282,7 @@ declare const fullApi: ApiFromModules<{
   privacy: typeof privacy;
   product: typeof product;
   posts: typeof posts;
+  postEngagement: typeof postEngagement;
   publicKnowledge: typeof publicKnowledge;
   sourceAcquisition: typeof sourceAcquisition;
   sourceAcquisitionActions: typeof sourceAcquisitionActions;
@@ -339,6 +341,7 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  shardedCounter: import("@convex-dev/sharded-counter/_generated/component.js").ComponentApi<"shardedCounter">;
   agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
   rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
   resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;

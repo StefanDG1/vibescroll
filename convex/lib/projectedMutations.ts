@@ -13,10 +13,27 @@ import { queueSourceCompletion, eventsEnabled } from "./assistantEvents";
 import { internal, components } from "../_generated/api";
 import { ensure } from "../../packages/policy";
 import { syncDashboardCard } from "./dashboardProjection";
+import { privatePostKey } from "./postEngagement";
 
 // Use the existing helper's atomic write triggers. Failed projection writes
 // abort the underlying mutation; no eventually consistent private cache.
 const triggers = new Triggers<DataModel>();
+triggers.register("sources", async (ctx, change) => {
+  if (
+    change.oldDoc &&
+    change.oldDoc.state !== "deleted" &&
+    (!change.newDoc || change.newDoc.state === "deleted")
+  ) {
+    const tracked = await ctx.db
+      .query("postEngagement")
+      .withIndex("by_key", (q) => q.eq("key", privatePostKey(change.id)))
+      .first();
+    if (tracked)
+      await ctx.scheduler.runAfter(0, internal.postEngagement.retirePrivate, {
+        sourceId: change.id,
+      });
+  }
+});
 triggers.register("proposals", async (ctx, change) => {
   if (change.newDoc || !change.oldDoc?.detail.work) return;
   const threadId = change.oldDoc.detail.work.threadId;

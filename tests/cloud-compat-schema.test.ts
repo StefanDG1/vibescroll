@@ -9,6 +9,7 @@ import { cloudCatalogTables } from "../convex/cloudCatalogSchema";
 import { preparedAnalysisTables } from "../convex/preparedAnalysisSchema";
 import schema from "../convex/schema";
 import { proposalLoopTables } from "../convex/proposalLoopSchema";
+import { postEngagementTables } from "../convex/postEngagementSchema";
 import { librarySpacesTables } from "../convex/librarySpacesSchema";
 import {
   cloudSaveDefaults,
@@ -21,10 +22,23 @@ import {
 } from "../convex/lib/prObservation";
 import { readFileSync } from "node:fs";
 const base = "346b718baf91ba9847fbb707be7bbe069df57257";
-it("preserves historical schemas/config while admitting reviewed empty proposal tables and the Agent component", () => {
+it("preserves historical schemas/config while admitting reviewed empty proposal/engagement tables and components", () => {
   // Include the explicitly new, initially empty preparation table. Component
   // configuration and every historical table/index remain checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(98);
+  expect(Object.keys(schema.tables)).toHaveLength(99);
+  expect(Object.keys(postEngagementTables)).toEqual(["postEngagement"]);
+  expect((postEngagementTables.postEngagement as any).export().indexes).toEqual(
+    [
+      { indexDescriptor: "by_user_key", fields: ["userId", "key"] },
+      { indexDescriptor: "by_key", fields: ["key"] },
+      { indexDescriptor: "by_user", fields: ["userId"] },
+      {
+        indexDescriptor: "by_key_like_time",
+        fields: ["key", "liked", "likeUpdatedAt"],
+      },
+      { indexDescriptor: "by_key_save_time", fields: ["key", "savedAt"] },
+    ],
+  );
   expect(Object.keys(proposalLoopTables)).toEqual([
     "proposalOperations",
     "proposalServiceCounters",
@@ -72,7 +86,7 @@ it("preserves historical schemas/config while admitting reviewed empty proposal 
         row.vectorIndexes.length
       );
     }, 0),
-  ).toBe(272);
+  ).toBe(277);
   expect(Object.keys(cloudCatalogTables).sort()).toEqual([
     "catalogAliases",
     "catalogContributions",
@@ -219,6 +233,11 @@ it("preserves historical schemas/config while admitting reviewed empty proposal 
       file === "schema.ts"
         ? content
             .replace(
+              'import { postEngagementTables } from "./postEngagementSchema";\n',
+              "",
+            )
+            .replace("  ...postEngagementTables,\n", "")
+            .replace(
               'import { proposalLoopTables } from "./proposalLoopSchema";\n',
               "",
             )
@@ -264,6 +283,11 @@ it("preserves historical schemas/config while admitting reviewed empty proposal 
                 "",
               )
               .replace("app.use(agent);\n", "")
+              .replace(
+                'import shardedCounter from "@convex-dev/sharded-counter/convex.config.js";\n',
+                "",
+              )
+              .replace("app.use(shardedCounter);\n", "")
           : content,
     ).toBe(
       execFileSync("git", ["show", `${base}:convex/${file}`], {

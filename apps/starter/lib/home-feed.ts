@@ -31,6 +31,13 @@ export type FeedProposal = {
   }[];
   acceptanceCriteria: string[];
 };
+export type FeedEngagement = {
+  scopeKey: string;
+  likes: number;
+  shares: number;
+  liked: boolean;
+  revision: number;
+};
 export type FeedDetail = {
   id: string;
   generation: number;
@@ -46,7 +53,7 @@ export type FeedDetail = {
   suggestions: ProjectSuggestions;
   projects: { id: string; name: string }[];
   durationMs?: number | null;
-  engagement?: { likes: number; shares: number; liked: boolean };
+  engagement?: FeedEngagement;
 };
 
 /** Keep first-seen ordering when cursor pages overlap. A later page can refresh metadata. */

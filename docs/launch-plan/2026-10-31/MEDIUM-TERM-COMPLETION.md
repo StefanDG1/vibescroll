@@ -44,3 +44,9 @@ October31 checkpoint: targeted snapshot refresh, BASE_CHANGED preservation and c
 - [ ] M5 paid-workspace/catalogue readiness and reviewed migration package.
 
 Update this checklist and the linked subsystem acceptance ledgers as evidence arrives. Do not mark a milestone complete merely because an external gate is disabled or a synthetic demo passes.
+
+### M1 candidate, October31
+
+ADR216 implements current-user likes, distinct successful Saves and private-to-shared preference merging using the official sharded-counter component. It adds one empty root table and one empty component namespace; every existing table/index must remain unchanged. A separate feedLive query preserves the old metadata protocol, discovers newly ready cards without moving the reader, and restores an account/workspace session bookmark. An expired cursor falls back to the current authenticated page. The existing plan column now exposes every returned proposal. Older MCP edits preserve omitted implementation steps and refuse to carry them across a changed source/repository binding.
+
+Full offline local checks, the focused concurrency/authorization/shared-reuse tests and twelve desktop/mobile/light/dark feed/Library geometry cases passed. Exact CI, actual empty-table publication guards, native production reactions/bookmark acceptance and canonical verification remain pending. The production baseline remains b9417e0; the engagement flag remains off.

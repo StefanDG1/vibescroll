@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Check, Heart, MoreVertical, Share2 } from "lucide-react";
 import styles from "./post-engagement.module.css";
 
-/** Count adapters are optional until durable engagement is available. Unknown totals stay unknown. */
+/** Unknown totals stay unknown; outbound sharing never increments inbound Saves. */
 export function PostEngagement({
   title,
   url,
@@ -12,6 +12,8 @@ export function PostEngagement({
   liked = false,
   onLike,
   onSettings,
+  busy = false,
+  notice = "",
 }: {
   title: string;
   url: string;
@@ -20,6 +22,8 @@ export function PostEngagement({
   liked?: boolean;
   onLike?: () => void;
   onSettings: () => void;
+  busy?: boolean;
+  notice?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -41,69 +45,79 @@ export function PostEngagement({
     }
   }
   return (
-    <div className={styles.row} data-slot="post-engagement">
-      <span
-        className={styles.reaction}
-        title={onLike ? "Like this post" : "Likes are not connected yet"}
-      >
+    <>
+      <div className={styles.row} data-slot="post-engagement">
+        <span
+          className={styles.reaction}
+          title={onLike ? "Like this post" : "Likes unavailable"}
+        >
+          <button
+            type="button"
+            aria-label={liked ? "Unlike post" : "Like post"}
+            aria-pressed={liked}
+            disabled={!onLike || busy}
+            aria-busy={busy}
+            onClick={onLike}
+          >
+            <Heart
+              size={25}
+              fill={liked ? "currentColor" : "none"}
+              className={liked ? styles.liked : undefined}
+              aria-hidden="true"
+            />
+            <span
+              aria-label={
+                likes === undefined
+                  ? "Like total unavailable"
+                  : `${likes} likes`
+              }
+            >
+              {likes ?? "—"}
+            </span>
+          </button>
+        </span>
+        <span className={styles.separator} aria-hidden="true" />
         <button
           type="button"
-          aria-label={liked ? "Unlike post" : "Like post"}
-          aria-pressed={liked}
-          disabled={!onLike}
-          onClick={onLike}
+          onClick={() => {
+            void share();
+          }}
+          aria-label="Share post"
+          title="Share this post"
         >
-          <Heart
-            size={25}
-            fill={liked ? "currentColor" : "none"}
-            className={liked ? styles.liked : undefined}
-            aria-hidden="true"
-          />
+          {copied ? (
+            <Check size={24} aria-hidden="true" />
+          ) : (
+            <Share2 size={24} aria-hidden="true" />
+          )}
           <span
+            title="Recorded saves to VibeScroll since tracking began. Each person counts once."
             aria-label={
-              likes === undefined ? "Like total unavailable" : `${likes} likes`
+              shares === undefined
+                ? "Share total unavailable"
+                : `${shares} recorded saves to VibeScroll`
             }
           >
-            {likes ?? "—"}
+            {shares ?? "—"}
           </span>
         </button>
-      </span>
-      <span className={styles.separator} aria-hidden="true" />
-      <button
-        type="button"
-        onClick={() => {
-          void share();
-        }}
-        aria-label="Share post"
-        title="Share this post"
-      >
-        {copied ? (
-          <Check size={24} aria-hidden="true" />
-        ) : (
-          <Share2 size={24} aria-hidden="true" />
-        )}
-        <span
-          title="Shares to VibeScroll"
-          aria-label={
-            shares === undefined
-              ? "Share total unavailable"
-              : `${shares} shares to VibeScroll`
-          }
+        <button
+          type="button"
+          onClick={onSettings}
+          className={styles.more}
+          aria-label="Post settings"
         >
-          {shares ?? "—"}
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={onSettings}
-        className={styles.more}
-        aria-label="Post settings"
-      >
-        <MoreVertical size={22} aria-hidden="true" />
-      </button>
-      <output className="sr-only" aria-live="polite">
-        {announcement}
-      </output>
-    </div>
+          <MoreVertical size={22} aria-hidden="true" />
+        </button>
+        <output className="sr-only" aria-live="polite">
+          {announcement}
+        </output>
+      </div>
+      {notice && (
+        <p role="alert" className={styles.notice}>
+          {notice}
+        </p>
+      )}
+    </>
   );
 }

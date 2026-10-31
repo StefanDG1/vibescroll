@@ -158,6 +158,9 @@ importers:
       '@convex-dev/resend':
         specifier: 0.2.8
         version: 0.2.8(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
+      '@convex-dev/sharded-counter':
+        specifier: 0.2.3
+        version: 0.2.3(convex@1.46.0(react@19.3.0))
       '@convex-dev/workflow':
         specifier: 0.4.8
         version: 0.4.8(@convex-dev/workpool@0.4.12(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0))(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))
@@ -833,6 +836,11 @@ packages:
     peerDependencies:
       convex: ^1.43.0
       convex-helpers: ^0.1.106
+
+  '@convex-dev/sharded-counter@0.2.3':
+    resolution: {integrity: sha512-rKiUHt/cThlj9qiLUe8nGXWQOvotqynyv4WcH5chwfQmXn2SJvt9yMFkVudXRuJl+NIAxSwY9JY0POfB2YZDEg==}
+    peerDependencies:
+      convex: ^1.25.4
 
   '@convex-dev/workflow@0.4.8':
     resolution: {integrity: sha512-5TFdzgGOBOLwEArr+bjilK/iTelPQkuMcFAY1QlvFKIdoxYMuLcJrukjVTtgwVyrTAv28+Bm3PWS1ud635rVew==}
@@ -6134,6 +6142,10 @@ snapshots:
     transitivePeerDependencies:
       - '@react-email/render'
       - react
+
+  '@convex-dev/sharded-counter@0.2.3(convex@1.46.0(react@19.3.0))':
+    dependencies:
+      convex: 1.46.0(react@19.3.0)
 
   '@convex-dev/workflow@0.4.8(@convex-dev/workpool@0.4.12(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0))(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))':
     dependencies:

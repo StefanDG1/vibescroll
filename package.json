@@ -40,6 +40,7 @@
     "@convex-dev/agent": "0.7.9",
     "@convex-dev/rate-limiter": "0.4.0",
     "@convex-dev/resend": "0.2.8",
+    "@convex-dev/sharded-counter": "0.2.3",
     "@convex-dev/workflow": "0.4.8",
     "@convex-dev/workpool": "0.4.12",
     "@modelcontextprotocol/server": "2.3.1",

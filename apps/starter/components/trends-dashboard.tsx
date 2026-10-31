@@ -131,8 +131,7 @@ export function TrendsDashboard({
     <section className={styles.dashboard} aria-label="Workspace Trends">
       <div className={styles.heading}>
         <div>
-          <p className={styles.eyebrow}>Your saved posts</p>
-          <h2>What’s getting attention</h2>
+          <h2>Post activity</h2>
         </div>
         <label>
           <span className="sr-only">Activity window</span>

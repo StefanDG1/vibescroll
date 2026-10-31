@@ -21,10 +21,6 @@
 .method {
   color: var(--subtle);
 }
-.eyebrow {
-  margin: 0;
-  font-size: 0.8125rem;
-}
 .heading select {
   min-height: 44px;
   padding: 0.5rem 0.75rem;
@@ -152,6 +148,9 @@
   padding-block: 1rem;
 }
 @media (max-width: 600px) {
+  :global(.trends-view .product-top) {
+    display: none;
+  }
   .heading {
     align-items: flex-start;
   }

@@ -1177,7 +1177,7 @@ export function Console({
   ).length;
   return (
     <div
-      className={`product-shell atlas-shell quiet-shell ${view === "home" ? `feed-view ${demo ? "feed-demo" : ""}` : railCollapsed ? "rail-collapsed" : ""}`}
+      className={`product-shell atlas-shell quiet-shell ${view === "trends" ? "trends-view" : ""} ${view === "home" ? `feed-view ${demo ? "feed-demo" : ""}` : railCollapsed ? "rail-collapsed" : ""}`}
     >
       <AppTheme />
       <aside className="product-rail">
@@ -1297,7 +1297,9 @@ export function Console({
             <div>
               <h1
                 className={
-                  ["library", "home"].includes(view) ? "sr-only" : undefined
+                  ["library", "home", "trends"].includes(view)
+                    ? "sr-only"
+                    : undefined
                 }
               >
                 {view === "source"

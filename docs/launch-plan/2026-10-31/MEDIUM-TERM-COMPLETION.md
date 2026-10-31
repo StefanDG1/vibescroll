@@ -38,8 +38,8 @@ October31 checkpoint: targeted snapshot refresh, BASE_CHANGED preservation and c
 - [x] Reconcile scope, actual baseline, latest euro price-preparation choice and acceptance boundaries.
 - [ ] M0 proposal/MCP/GitHub acceptance.
 - [x] M1 feed continuity/engagement; implemented and production checked. Independent shared-account/arrival acceptance is separately unclaimed in the receipt.
-- [ ] M2 project fit/outcomes.
-- [x] M3 bounded Trends implemented and checked in production; initial-read/live ordering hardening remains tracked with M2.
+- [x] M2 bounded project fit/history, duplicate opening and separate observed outcomes; measured benefit remains unknown.
+- [x] M3 bounded Trends implemented and checked in production; fallback/live ordering regression passed.
 - [ ] M4 OpenAI funding/curated model routes.
 - [ ] M5 paid-workspace/catalogue readiness and reviewed migration package.
 
@@ -62,3 +62,7 @@ A separate Trends route under Explore uses at most12 recent requested ready post
 ### M2/M3 production checkpoint
 
 Website/backend6d1ff38 passed exact CI, actual compatibility admission and staged/canonical Trends4/feed4/Library8. Native Like changed the live metric and original Unlike was restored;7/30-day selection and mobile fit passed. Existing MCP context hints work without reconnecting. See [the receipt](../../operations/evidence/launch-20261031-history-trends-production.json). M2 remains open until repeated priority edits retain the returned revision, current plans get honest scores even with zero topic overlap, and Trends fallback reads cannot replace newer live data or access denial. These are the next small correction checkpoint before M4. No model/media run is needed.
+
+### M2 correction accepted
+
+Website/backendbed2094 passed full local checks, exact CI41232157316, two preparations,17 actual compatibility guards and staged/canonical Trends4/feed4/Library8. Native current-plan opening with honest0/100 fit and three suggestions passed. Two consecutive priority changes without refresh acknowledged revisions1/2 and restored the original Normal preference. Controlled tests cover the live/fallback race and denial. No analysis, model or credit use occurred. [Receipt](../../operations/evidence/launch-20261031-fit-correction-production.json). Continue M4, then M5; M0 external issue/discovery acceptance remains separate.

@@ -3,6 +3,10 @@ import type { Doc } from "../_generated/dataModel";
 import { preparedCreditQuote } from "../../packages/contracts/prepared-service";
 import { settle } from "../product";
 import { ensure } from "../../packages/policy";
+import {
+  apiModelSelection,
+  apiModelTariff,
+} from "../../packages/contracts/api-models";
 
 export async function settlePreparedCredits(
   ctx: MutationCtx,
@@ -13,6 +17,10 @@ export async function settlePreparedCredits(
   const a = run.receipt?.admission;
   if (a?.version !== "prepared-service-admission-v1") return;
   const quote = a.quote;
+  const model =
+    quote.apiTariff === apiModelTariff
+      ? apiModelSelection(quote.model, quote.effort).id
+      : undefined;
   const credits =
     outcome === "never_started"
       ? 0
@@ -24,6 +32,7 @@ export async function settlePreparedCredits(
             durationMs,
             run.executor,
             quote.reusedEvidenceId !== null,
+            model,
           ).maximum;
   ensure(
     Number.isSafeInteger(credits) &&

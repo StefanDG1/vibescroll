@@ -255,10 +255,21 @@ async function workspaceViewData({
     ]);
     if (selectedProposal.organizationId !== organizationId)
       throw Error("Proposal unavailable.");
-    const devices =
-      selectedProposal.detail?.schemaVersion === "chat-project-proposal-v1"
-        ? []
-        : await c.query(api.devices.list, { organizationId });
+    const isChatProposal =
+      selectedProposal.detail?.schemaVersion === "chat-project-proposal-v1";
+    const [devices, projectSuggestions] = await Promise.all([
+      isChatProposal
+        ? Promise.resolve([])
+        : c.query(api.devices.list, { organizationId }),
+      isChatProposal
+        ? c
+            .query(api.projectRecommendations.read, {
+              organizationId,
+              sourceId: selectedProposal.sourceId,
+            })
+            .catch(() => undefined)
+        : Promise.resolve(undefined),
+    ]);
     return {
       workspaceSlice: "proposal" as const,
       compact: false,
@@ -266,6 +277,7 @@ async function workspaceViewData({
       privateLibrary: organization.private,
       role: organization.role,
       selectedProposal,
+      projectSuggestions,
       sources: [],
       repositories: [],
       proposals: [],

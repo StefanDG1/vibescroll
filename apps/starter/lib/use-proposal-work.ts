@@ -21,6 +21,7 @@ export function useProposalWork(
   const [older, setOlder] = useState<any[]>([]);
   const [olderCursor, setOlderCursor] = useState<string | null>();
   const flight = useRef(false);
+  const liveRevision = useRef(0);
   const pending = useRef<{
     operation: string;
     args: Record<string, unknown>;
@@ -84,16 +85,20 @@ export function useProposalWork(
   }
   const accept = useEffectEvent(receive);
   const connected = !!call;
-  useProposalLive(proposalId, enabled && connected, receive);
+  useProposalLive(proposalId, enabled && connected, (value) => {
+    liveRevision.current++;
+    receive(value);
+  });
   useEffect(() => {
     if (!enabled || !connected) return;
     let current = true;
+    const revision = liveRevision.current;
     void invoke("proposalDiscussion", { proposalId })
       .then((value) => {
-        if (current) accept(value);
+        if (current && liveRevision.current === revision) accept(value);
       })
       .catch(() => {
-        if (current)
+        if (current && liveRevision.current === revision)
           setError("Could not load this discussion. Your plan is still saved.");
       });
     return () => {

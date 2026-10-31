@@ -6,6 +6,8 @@ Read the [owner request register](../strategy/OWNER-REQUEST-REGISTER.md), [conti
 
 ## Accepted production baseline
 
+Local candidate only: ADR218 adapter/quotes, managed model/effort controls, exact counted-input grant reservation and the shared standalone plan reader pass full local checks. Final focused UI/demo checks and dependency audit passed. Key/policy are not configured in production; no OpenAI inference/canary is claimed. Publish only after exact CI and actual compatibility guards, then verify native UI and retained-evidence provenance/settlement.
+
 - The owner-approved native Home plan action created [issue197](https://github.com/StefanDG1/vibescroll/issues/197) once from exact proposal version4. Its GitHub API receipt and actual signed opened webhook both match the frozen body; the original MCP reads the same accepted plan/receipts. Exact authenticated replay returned the same completed operation. Open issue and Copy work prompt are shown. No coding, model or credit use. The standalone proposal route still has the older handoff-unavailable panel and must reuse the working artifact. [Combined issue receipt](evidence/launch-20261031-combined-issue-production.json).
 
 - Website and backend commit: `bed20948153d370f041ae5cb5837f8bec2c5f865`.

@@ -168,7 +168,20 @@ async function snapshot(
       "POLICY_BLOCKED",
       "This prepared result lacks current independently reviewed publication authority.",
     );
-    processingReviewHash = await socialHash(config.providerPermissionReference);
+    processingReviewHash = preparedRun.receipt?.admission?.quote?.openAi
+      ? preparedRun.receipt.admission.quote.openAi.processingReviewHash
+      : await socialHash(config.providerPermissionReference);
+    if (preparedRun.receipt?.admission?.quote?.openAi)
+      ensure(
+        /^[a-f0-9]{64}$/.test(processingReviewHash ?? "") &&
+          preparedRun.receipt.analysisDispatch?.authorityId ===
+            preparedRun.receipt.admission.quote.openAi.authorityId &&
+          preparedRun.receipt.analysis?.protocol ===
+            "openai-responses-prepared-v1" &&
+          preparedRun.receipt.analysis.model === retained.version.reportedModel,
+        "POLICY_BLOCKED",
+        "The result lacks its independent OpenAI processing review.",
+      );
   }
   ensure(
     retained.version.owner === "private" &&

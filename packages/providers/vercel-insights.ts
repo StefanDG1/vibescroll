@@ -13,7 +13,7 @@ import { ensure, PolicyError } from "../policy";
 import { readResponseBytes } from "./binary";
 
 export const preparedInsightModel = "meta/muse-spark-1.3-contributor" as const;
-const preparedInsightBody = analysisVersionOutput.pick({
+export const preparedInsightBody = analysisVersionOutput.pick({
   summary: true,
   warnings: true,
   insights: true,

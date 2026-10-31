@@ -18,6 +18,7 @@ const operations = {
   proposalIssueRetry: ["mutation", api.proposalIssues.retry],
   projectPlanningContext: ["query", api.projectPlanning.context],
   projectProposalSave: ["mutation", api.projectPlanning.save],
+  preparedAnalysisOptions: ["query", api.preparedService.options],
   preparedAnalysisQuote: ["query", api.preparedService.quote],
   preparedAnalysisStart: ["mutation", api.preparedService.start],
   preparedAnalysisStatus: ["query", api.preparedService.status],

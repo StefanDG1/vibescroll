@@ -1,5 +1,7 @@
 "use client";
 import { ProjectProposalComposer } from "./project-proposal-composer";
+import { StandaloneProposal } from "./standalone-proposal";
+import { PreparedAnalysisControl } from "./prepared-analysis-control";
 import { PostInsightReader } from "./post-insight-reader";
 import { InsightCardControl } from "./insight-card-control";
 import { SettingsPanel } from "./settings-panel";
@@ -745,7 +747,7 @@ export function Console({
     setBusy(true);
     try {
       const response = await fetch(
-        `/api/workspace/${organizationId}?view=full&proposalId=${encodeURIComponent(proposalId)}`,
+        `/api/workspace/${organizationId}?view=proposal&proposalId=${encodeURIComponent(proposalId)}`,
         { cache: "no-store" },
       );
       if ([401, 403, 404].includes(response.status) || response.redirected)
@@ -2120,154 +2122,164 @@ export function Console({
                   )}
                 </>
               )}
-              {view === "proposal" && selected && (
-                <>
-                  <ProposalTrail
+              {view === "proposal" &&
+                selected &&
+                (selected.detail?.schemaVersion ===
+                "chat-project-proposal-v1" ? (
+                  <StandaloneProposal
                     proposal={selected}
-                    runs={data.runs.filter(
-                      (r) => r.proposalId === id(selected),
-                    )}
+                    organizationId={organizationId}
+                    fit={
+                      data.projectSuggestions?.items.find(
+                        (p) => p.id === selected.repositoryId,
+                      )?.fit
+                    }
+                    call={strictCall}
+                    readOnly={readOnly}
+                    demo={demo}
                   />
-                  <span className="status">{label(selected.disposition)}</span>
-                  {selected.reviewerCorrection && (
-                    <p className="notice">
-                      Reviewer correction:{" "}
-                      {label(selected.reviewerCorrection.to)}. Original model
-                      assessment: {label(selected.reviewerCorrection.from)}.
-                      Reason: {selected.reviewerCorrection.reason}
-                    </p>
-                  )}
-                  {!demo && (
-                    <form
-                      className="panel form-grid"
-                      onSubmit={async (event) => {
-                        event.preventDefault();
-                        const form = new FormData(event.currentTarget);
-                        await call("decide", {
-                          id: id(selected),
-                          version: selected.version,
-                          decision: "accepted",
-                          disposition: form.get("disposition"),
-                          note: form.get("reason"),
-                        });
-                      }}
-                    >
-                      <h2>Review the assessment</h2>
-                      <label>
-                        Reviewer assessment
-                        <ChoiceSelect
-                          name="disposition"
-                          defaultValue={selected.disposition}
+                ) : (
+                  <>
+                    <ProposalTrail
+                      proposal={selected}
+                      runs={data.runs.filter(
+                        (r) => r.proposalId === id(selected),
+                      )}
+                    />
+                    <span className="status">
+                      {label(selected.disposition)}
+                    </span>
+                    {selected.reviewerCorrection && (
+                      <p className="notice">
+                        Reviewer correction:{" "}
+                        {label(selected.reviewerCorrection.to)}. Original model
+                        assessment: {label(selected.reviewerCorrection.from)}.
+                        Reason: {selected.reviewerCorrection.reason}
+                      </p>
+                    )}
+                    {!demo && (
+                      <form
+                        className="panel form-grid"
+                        onSubmit={async (event) => {
+                          event.preventDefault();
+                          const form = new FormData(event.currentTarget);
+                          await call("decide", {
+                            id: id(selected),
+                            version: selected.version,
+                            decision: "accepted",
+                            disposition: form.get("disposition"),
+                            note: form.get("reason"),
+                          });
+                        }}
+                      >
+                        <h2>Review the assessment</h2>
+                        <label>
+                          Reviewer assessment
+                          <ChoiceSelect
+                            name="disposition"
+                            defaultValue={selected.disposition}
+                          >
+                            {[
+                              "relevant",
+                              "no_fit",
+                              "already_implemented",
+                              "unsupported_claim",
+                              "needs_context",
+                              "defer",
+                            ].map((value) => (
+                              <option key={value} value={value}>
+                                {label(value)}
+                              </option>
+                            ))}
+                          </ChoiceSelect>
+                        </label>
+                        <label>
+                          Evidence and reason for any correction
+                          <textarea
+                            name="reason"
+                            maxLength={2000}
+                            placeholder="Explain the source and repository evidence. Changing an assessment requires a reason."
+                          />
+                        </label>
+                        <button
+                          className="primary"
+                          disabled={busy}
+                          type="submit"
                         >
-                          {[
-                            "relevant",
-                            "no_fit",
-                            "already_implemented",
-                            "unsupported_claim",
-                            "needs_context",
-                            "defer",
-                          ].map((value) => (
-                            <option key={value} value={value}>
-                              {label(value)}
-                            </option>
-                          ))}
-                        </ChoiceSelect>
-                      </label>
-                      <label>
-                        Evidence and reason for any correction
-                        <textarea
-                          name="reason"
-                          maxLength={2000}
-                          placeholder="Explain the source and repository evidence. Changing an assessment requires a reason."
-                        />
-                      </label>
-                      <button className="primary" disabled={busy} type="submit">
-                        Accept reviewed relevant proposal
-                      </button>
-                    </form>
-                  )}
+                          Accept reviewed relevant proposal
+                        </button>
+                      </form>
+                    )}
 
-                  <section className="panel">
-                    <h2>Why this project?</h2>
-                    <p>{selected.detail?.currentProblem}</p>
-                    <h3>Proposed change</h3>
-                    <p>
-                      {selected.detail?.proposedChange ??
-                        "No code change recommended."}
-                    </p>
-                    <h3>Expected benefit, as a hypothesis</h3>
-                    <p>
-                      {selected.detail?.benefitHypothesis ??
-                        "No benefit claim."}
-                    </p>
-                    <h3>Risks and reasons to reject</h3>
-                    <ul>
-                      {selected.detail?.risks?.map((s: string) => (
-                        <li key={s}>{s}</li>
-                      ))}
-                    </ul>
-                    <h3>Acceptance criteria</h3>
-                    <ul>
-                      {selected.detail?.acceptanceCriteria?.map((s: string) => (
-                        <li key={s}>{s}</li>
-                      ))}
-                    </ul>
-                    <details>
-                      <summary>Source and repository evidence</summary>
-                      <pre>
-                        {JSON.stringify(
-                          {
-                            source: selected.detail?.sourceEvidence,
-                            repository: selected.detail?.repositoryEvidence,
-                          },
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </details>
-                    <div className="row wrap">
-                      {["rejected", "deferred", "accepted"].map((d) => (
-                        <Button
-                          busy={busy}
-                          key={d}
-                          primary={d === "accepted"}
-                          disabled={
-                            d === "accepted" &&
-                            selected.disposition !== "relevant"
-                          }
-                          onClick={async () => {
-                            await call("decide", {
-                              id: id(selected),
-                              version: selected.version,
-                              decision: d,
-                              note: "",
-                            });
-                            if (demo) setSelected({ ...selected, review: d });
-                          }}
-                        >
-                          {d === "accepted"
-                            ? "Accept proposal"
-                            : d === "rejected"
-                              ? "Reject"
-                              : "Defer"}
-                        </Button>
-                      ))}
-                    </div>
-                  </section>
-                  {selected.detail?.schemaVersion ===
-                  "chat-project-proposal-v1" ? (
                     <section className="panel">
-                      <h2>Continue in your chat</h2>
+                      <h2>Why this project?</h2>
+                      <p>{selected.detail?.currentProblem}</p>
+                      <h3>Proposed change</h3>
                       <p>
-                        This proposal is saved. You can reopen and refine it in
-                        ChatGPT or Codex.
+                        {selected.detail?.proposedChange ??
+                          "No code change recommended."}
                       </p>
+                      <h3>Expected benefit, as a hypothesis</h3>
                       <p>
-                        Implementation handoff is not available for this
-                        planning draft yet.
+                        {selected.detail?.benefitHypothesis ??
+                          "No benefit claim."}
                       </p>
+                      <h3>Risks and reasons to reject</h3>
+                      <ul>
+                        {selected.detail?.risks?.map((s: string) => (
+                          <li key={s}>{s}</li>
+                        ))}
+                      </ul>
+                      <h3>Acceptance criteria</h3>
+                      <ul>
+                        {selected.detail?.acceptanceCriteria?.map(
+                          (s: string) => (
+                            <li key={s}>{s}</li>
+                          ),
+                        )}
+                      </ul>
+                      <details>
+                        <summary>Source and repository evidence</summary>
+                        <pre>
+                          {JSON.stringify(
+                            {
+                              source: selected.detail?.sourceEvidence,
+                              repository: selected.detail?.repositoryEvidence,
+                            },
+                            null,
+                            2,
+                          )}
+                        </pre>
+                      </details>
+                      <div className="row wrap">
+                        {["rejected", "deferred", "accepted"].map((d) => (
+                          <Button
+                            busy={busy}
+                            key={d}
+                            primary={d === "accepted"}
+                            disabled={
+                              d === "accepted" &&
+                              selected.disposition !== "relevant"
+                            }
+                            onClick={async () => {
+                              await call("decide", {
+                                id: id(selected),
+                                version: selected.version,
+                                decision: d,
+                                note: "",
+                              });
+                              if (demo) setSelected({ ...selected, review: d });
+                            }}
+                          >
+                            {d === "accepted"
+                              ? "Accept proposal"
+                              : d === "rejected"
+                                ? "Reject"
+                                : "Defer"}
+                          </Button>
+                        ))}
+                      </div>
                     </section>
-                  ) : (
                     <>
                       <section className="panel">
                         <h2>Review and edit the plan</h2>
@@ -2369,9 +2381,8 @@ export function Console({
                         busy={busy}
                       />
                     </>
-                  )}
-                </>
-              )}
+                  </>
+                ))}
               {view === "runs" && (
                 <>
                   {data.runs.length ? (
@@ -3944,6 +3955,21 @@ export function SourceDetail({
             if (!open) setSettingsAnchor(null);
           }}
         >
+          {!demo && !detailLoading && detail.kind === "url" && (
+            <PreparedAnalysisControl
+              key={sourceId}
+              sourceId={sourceId}
+              ready={detail.state === "ready"}
+              revision={sourceRevision}
+              disabled={
+                readOnly ||
+                busy ||
+                ["processing", "queued"].includes(detail.state)
+              }
+              call={strictCall ?? call}
+              onChange={() => onRefresh?.()}
+            />
+          )}
           {!demo &&
             !detailLoading &&
             detail.state === "ready" &&

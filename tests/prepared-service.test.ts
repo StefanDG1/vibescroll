@@ -222,6 +222,100 @@ async function finish(s: Awaited<ReturnType<typeof fixture>>, runId: any) {
   );
   return { ...e, versionId, output, receipt };
 }
+function enableOpenAi(s: Awaited<ReturnType<typeof fixture>>) {
+  const policy = {
+    version: "openai-promotional-grant-v1",
+    id: "openai-fixture-grant",
+    enabled: true,
+    organizationId: "org-" + "a".repeat(20),
+    projectId: "proj_" + "b".repeat(20),
+    verifiedAt: Date.now() - 1000,
+    expiresAt: Date.now() + 86400000,
+    noPaidBillingPlan: true,
+    maximumJobs: 1,
+    maximumRequestNanoUsd: 25000000,
+    maximumTotalNanoUsd: 25000000,
+    verifiedGrantBalanceNanoUsd: 24000000000,
+    allowedModels: ["gpt-6-luna"],
+    subjects: [s.actor.subject],
+    contentPolicy: "public_prepared_evidence_only",
+    providerPermissionReference:
+      "Synthetic reviewed OpenAI public evidence processing",
+  };
+  vi.stubEnv("OPENAI_PROMOTIONAL_CONFIGURATION_JSON", JSON.stringify(policy));
+  vi.stubEnv("OPENAI_PROMOTIONAL_API_KEY", "sk-synthetic-no-authority");
+  return policy;
+}
+async function openAiRetained(s: Awaited<ReturnType<typeof fixture>>) {
+  const previous = await s.start("retain-before-openai");
+  const incumbent = await finish(s, previous.runId!);
+  const policy = enableOpenAi(s);
+  vi.stubEnv("VERCEL_AI_GATEWAY_API_KEY", "");
+  const request = {
+    ...s.request,
+    model: "gpt-6-luna" as const,
+    effort: "max" as const,
+  };
+  const quote = await s.owner.query(api.preparedService.quote, request);
+  const run = await s.owner.mutation(api.preparedService.start, {
+    ...request,
+    key: "retained-openai-once",
+    quoteHash: quote.quoteHash,
+    maximumCredits: quote.maximumCredits,
+  });
+  return { previous, incumbent, policy, request, quote, run };
+}
+function mockOpenAi(
+  s: Awaited<ReturnType<typeof fixture>>,
+  mode: "ready" | "count_failed" | "timeout" = "ready",
+) {
+  const transport = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.startsWith("https://storage.example.test/"))
+      return new Response(s.bytes, {
+        headers: { "content-type": "image/jpeg" },
+      });
+    if (url.endsWith("/input_tokens"))
+      return mode === "count_failed"
+        ? new Response(null, { status: 503 })
+        : Response.json({ object: "response.input_tokens", input_tokens: 100 });
+    if (url === "https://api.openai.com/v1/responses") {
+      if (mode === "timeout")
+        throw new DOMException("Timed out", "TimeoutError");
+      return Response.json({
+        id: "resp_synthetic",
+        status: "completed",
+        model: "gpt-6-luna",
+        service_tier: "default",
+        reasoning: { effort: "max" },
+        output: [
+          {
+            type: "message",
+            role: "assistant",
+            content: [
+              {
+                type: "output_text",
+                text: JSON.stringify({
+                  summary: "Retained evidence lesson",
+                  warnings: [],
+                  insights: s.output.insights,
+                }),
+              },
+            ],
+          },
+        ],
+        usage: {
+          input_tokens: 100,
+          output_tokens: 200,
+          input_tokens_details: { cached_tokens: 20 },
+        },
+      });
+    }
+    if (init?.method === "PUT") return new Response(null, { status: 200 });
+    throw Error("Unexpected network request");
+  });
+  vi.stubGlobal("fetch", transport);
+  return transport;
+}
 async function nativeReady(s: Awaited<ReturnType<typeof fixture>>) {
   vi.stubEnv("WORK_CLOUD_SAVED_LINKS_ENABLED", "true");
   vi.stubEnv("WORK_CLOUD_SAVED_LINKS_VERIFIED", "true");
@@ -693,6 +787,197 @@ it("does not reserve or dispatch for ready-cache reads", async () => {
     maximumCredits: 0,
   });
   expect(x).toMatchObject({ cacheHit: true, chargedCredits: 0, runId: null });
+});
+it("reuses prepared JPEGs for a once-funded OpenAI version and publishes truthful max-effort provenance", async () => {
+  const s = await fixture(true),
+    a = await openAiRetained(s);
+  expect(a.quote).toMatchObject({
+    preparationCredits: 0,
+    analysisCredits: 6,
+    maximumCredits: 6,
+    model: "gpt-6-luna",
+    effort: "max",
+    reusedEvidenceId: a.incumbent.evidenceId,
+  });
+  expect(
+    await s.owner.query(api.preparedService.options, { sourceId: s.sourceId }),
+  ).toMatchObject({
+    available: true,
+    models: [{ id: "gpt-6-luna", defaultEffort: "max", creditMultiplier: 3 }],
+  });
+  const calls = mockOpenAi(s);
+  await s.t.action(internal.preparedMedia.runRetainedGateway, {
+    runId: a.run.runId!,
+  });
+  const status = await s.owner.query(api.preparedService.status, {
+    sourceId: s.sourceId,
+  });
+  expect(status).toMatchObject({
+    state: "ready",
+    chargedCredits: 6,
+    billingState: "settled",
+  });
+  const row = (await s.t.run((c) => c.db.get(a.run.runId!)))!;
+  expect(row.evidenceId).toBe(a.incumbent.evidenceId);
+  expect(row.receipt.analysisDispatch).toMatchObject({
+    model: "gpt-6-luna",
+    effort: "max",
+    inputTokens: 100,
+  });
+  expect(row.receipt.analysis).toMatchObject({
+    provider: "openai",
+    model: "gpt-6-luna",
+    reportedEffort: "max",
+    funding: { route: "openai_promotional_grant", cashFallbackAllowed: false },
+  });
+  const version = (await s.t.run((c) => c.db.get(row.versionId!)))!;
+  expect(version).toMatchObject({
+    provenance: "managed_api_reported",
+    requestedModel: "gpt-6-luna",
+    requestedEffort: "max",
+  });
+  expect(
+    (await s.t.run((c) => c.db.get(s.sourceId)))!.selectedAnalysisVersionId,
+  ).toBe(s.source.selectedAnalysisVersionId);
+  await s.t.action(internal.preparedMedia.runRetainedGateway, {
+    runId: a.run.runId!,
+  });
+  expect(
+    calls.mock.calls.filter(
+      ([url]) => url === "https://api.openai.com/v1/responses",
+    ),
+  ).toHaveLength(1);
+  expect(calls.mock.calls.every(([url]) => !url.includes("gateway"))).toBe(
+    true,
+  );
+  expect(
+    await s.t.run((c) =>
+      c.db
+        .query("proposalServiceCounters")
+        .withIndex("by_policy", (q) =>
+          q.eq("policyId", "openai-grant:" + a.policy.id),
+        )
+        .unique(),
+    ),
+  ).toMatchObject({ jobs: 1 });
+  await expect(
+    s.owner.query(api.preparedService.quote, a.request),
+  ).rejects.toThrow(/BUDGET_EXCEEDED/);
+  const preview = await s.owner.query(api.cloudCatalog.preview, {
+    sourceId: s.sourceId,
+    versionId: row.versionId!,
+  });
+  const contribution = await s.owner.action(
+    api.cloudCatalogActions.contribute,
+    {
+      sourceId: s.sourceId,
+      versionId: row.versionId!,
+      key: "openai-catalog-copy",
+      consent: preview.consent,
+    },
+  );
+  expect(contribution.state).toBe("published");
+  const shared = (await s.t.run((c) => c.db.get(contribution.contributionId)))!;
+  const artifact = await s.t.run((c) => c.db.get(shared.artifactId));
+  expect(artifact).toMatchObject({
+    authority: {
+      requestedModel: "gpt-6-luna",
+      requestedEffort: "max",
+      version: "prepared-catalog-authority-v2",
+      provenance: "managed_api_reported",
+    },
+  });
+});
+it("returns retained OpenAI credits after a failed count without consuming a generation slot", async () => {
+  const s = await fixture(),
+    a = await openAiRetained(s),
+    calls = mockOpenAi(s, "count_failed");
+  await s.t.action(internal.preparedMedia.runRetainedGateway, {
+    runId: a.run.runId!,
+  });
+  expect(
+    await s.owner.query(api.preparedService.status, { sourceId: s.sourceId }),
+  ).toMatchObject({
+    state: "failed",
+    chargedCredits: 0,
+    billingState: "settled",
+  });
+  expect(
+    calls.mock.calls.some(
+      ([url]) => url === "https://api.openai.com/v1/responses",
+    ),
+  ).toBe(false);
+  expect(
+    await s.t.run((c) =>
+      c.db
+        .query("proposalServiceCounters")
+        .withIndex("by_policy", (q) =>
+          q.eq("policyId", "openai-grant:" + a.policy.id),
+        )
+        .unique(),
+    ),
+  ).toBeNull();
+  expect(
+    await s.owner.query(api.preparedService.quote, a.request),
+  ).toMatchObject({ maximumCredits: 6 });
+});
+it("holds unknown OpenAI generations and cannot spend the same finite grant slot twice", async () => {
+  const s = await fixture(),
+    a = await openAiRetained(s),
+    calls = mockOpenAi(s, "timeout");
+  await s.t.action(internal.preparedMedia.runRetainedGateway, {
+    runId: a.run.runId!,
+  });
+  expect(
+    await s.owner.query(api.preparedService.status, { sourceId: s.sourceId }),
+  ).toMatchObject({
+    state: "unknown",
+    chargedCredits: null,
+    billingState: "reserved",
+  });
+  expect(
+    calls.mock.calls.filter(
+      ([url]) => url === "https://api.openai.com/v1/responses",
+    ),
+  ).toHaveLength(1);
+  await expect(
+    s.owner.query(api.preparedService.quote, a.request),
+  ).rejects.toThrow(/BUDGET_EXCEEDED/);
+});
+it("invalidates an OpenAI quote when the verified funding policy changes and keeps cache reuse free", async () => {
+  const s = await fixture();
+  const previous = await s.start("retain-before-policy-change");
+  await finish(s, previous.runId!);
+  enableOpenAi(s);
+  const request = {
+    ...s.request,
+    model: "gpt-6-luna" as const,
+    effort: "max" as const,
+  };
+  const q = await s.owner.query(api.preparedService.quote, request);
+  const policy = JSON.parse(process.env.OPENAI_PROMOTIONAL_CONFIGURATION_JSON!);
+  vi.stubEnv(
+    "OPENAI_PROMOTIONAL_CONFIGURATION_JSON",
+    JSON.stringify({ ...policy, expiresAt: policy.expiresAt - 1000 }),
+  );
+  await expect(
+    s.owner.mutation(api.preparedService.start, {
+      ...request,
+      key: "changed-openai-policy",
+      quoteHash: q.quoteHash,
+      maximumCredits: q.maximumCredits,
+    }),
+  ).rejects.toThrow(/QUOTE_CHANGED/);
+  vi.stubEnv("OPENAI_PROMOTIONAL_CONFIGURATION_JSON", "");
+  await expect(
+    s.owner.query(api.preparedService.quote, request),
+  ).rejects.toThrow(/MODEL_UNAVAILABLE/);
+  expect(
+    await s.owner.query(api.preparedService.quote, {
+      ...request,
+      reanalyze: false,
+    }),
+  ).toMatchObject({ cacheHit: true, maximumCredits: 0 });
 });
 it("supports cached MCP clients through the existing credit command and safe job status", async () => {
   const s = await freshSource(await fixture());

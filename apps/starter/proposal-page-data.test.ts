@@ -5,6 +5,7 @@ vi.mock("./lib/backend", () => ({
   api: {
     organizations: { details: "org" },
     product: { proposal: "proposal" },
+    projectRecommendations: { read: "recommendations" },
     devices: { list: "devices" },
     aiPreferences: { read: "preferences" },
   },
@@ -16,9 +17,11 @@ it("loads one planning proposal and bounded header preferences without the libra
     if (operation === "org")
       return { name: "Workspace", private: true, role: "owner" };
     if (operation === "preferences") return { processingRoute: "work_cloud" };
+    if (operation === "recommendations") return { items: [], versionId: null };
     if (operation === "proposal")
       return {
         _id: "draft",
+        sourceId: "source",
         organizationId: "workspace",
         detail: { schemaVersion: "chat-project-proposal-v1" },
       };
@@ -34,6 +37,7 @@ it("loads one planning proposal and bounded header preferences without the libra
   expect(query.mock.calls.map(([operation]) => operation)).toEqual([
     "org",
     "proposal",
+    "recommendations",
     "preferences",
   ]);
 });

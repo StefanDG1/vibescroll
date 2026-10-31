@@ -285,6 +285,14 @@ export const cloudCatalogAuthority = z
       processingReviewHash: hash,
       preparationRecipeHash: hash,
       requestedModel: z.string().regex(/^[A-Za-z0-9_.:/-]{1,100}$/),
+      requestedEffort: z.enum([
+        "none",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+      ]),
     }),
   ])
   .superRefine((value, ctx) => {

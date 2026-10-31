@@ -43,6 +43,7 @@ import { preparedServiceRunPolicy } from "./lib/preparedServicePolicy";
 import { settlePreparedCredits } from "./lib/preparedCredits";
 import { requireProCatalogAccess } from "./lib/catalogEntitlement";
 import { sourceRetained } from "./lib/sourceAuthority";
+import { openAiRunAuthority, reserveOpenAiGeneration } from "./lib/openAiGrant";
 
 const policySchema = z.strictObject({
   id: z.string().min(8).max(80),
@@ -144,7 +145,10 @@ async function active(ctx: QueryCtx, id: Id<"mediaPreparations">) {
       "The prepared job deadline elapsed.",
     );
     await requireProCatalogAccess(ctx, c.org._id);
-    return { ...c, policy: preparedServiceRunPolicy(c.run, c.actor) };
+    const policy = preparedServiceRunPolicy(c.run, c.actor);
+    if (c.run.receipt?.admission?.quote?.openAi)
+      await openAiRunAuthority(c.run, c.actor.subject);
+    return { ...c, policy };
   }
   const policy = preparedPolicy(c.actor.subject, c.run.canonical);
   ensure(
@@ -488,7 +492,49 @@ export const retainedGatewayInput = internalQuery({
       frames: evidence.frames,
       maximumApiUsd: c.run.maximumApiUsd,
       contributorAllowed: c.policy.contributorAllowed,
+      receipt: c.run.receipt,
     };
+  },
+});
+
+export const openAiInput = internalQuery({
+  args: { runId: v.id("mediaPreparations") },
+  returns: v.any(),
+  handler: async (ctx, { runId }) => {
+    const c = await active(ctx, runId);
+    const a = await openAiRunAuthority(c.run, c.actor.subject);
+    return {
+      model: a.selection.id,
+      effort: a.selection.effort,
+      maximumNanoUsd: a.quote.maximumNanoUsd,
+      grant: {
+        id: a.policy.id,
+        organizationId: a.policy.organizationId,
+        projectId: a.policy.projectId,
+        validUntil: a.policy.expiresAt,
+        noPaidBillingPlan: true as const,
+        allowedModels: a.policy.allowedModels,
+      },
+    };
+  },
+});
+export const openAiDispatch = internalMutation({
+  args: {
+    runId: v.id("mediaPreparations"),
+    dispatch: v.object({
+      requestHash: v.string(),
+      inputTokens: v.number(),
+      maximumOutputTokens: v.number(),
+      model: v.string(),
+      effort: v.string(),
+      maximumNanoUsd: v.number(),
+    }),
+  },
+  returns: v.null(),
+  handler: async (ctx, { runId, dispatch }) => {
+    const c = await active(ctx, runId);
+    await reserveOpenAiGeneration(ctx, c.run, c.actor.subject, dispatch);
+    return null;
   },
 });
 
@@ -755,8 +801,37 @@ export const finishGateway = internalMutation({
       postRevisionHash: evidence.revisionHash,
       evidence: neutralCloudObservations(prepared.evidence),
     });
+    const openAi = c.run.receipt?.admission?.quote?.openAi;
+    const requestedModel = openAi
+      ? c.run.receipt!.admission.quote.model
+      : "meta/muse-spark-1.3-contributor";
+    const requestedEffort = openAi
+      ? c.run.receipt!.admission.quote.effort
+      : "medium";
+    if (openAi)
+      ensure(
+        c.run.receipt?.analysisDispatch?.authorityId === openAi.authorityId &&
+          c.run.receipt.analysisDispatch.model === requestedModel &&
+          c.run.receipt.analysisDispatch.effort === requestedEffort &&
+          a.receipt?.requestHash ===
+            c.run.receipt.analysisDispatch.requestHash &&
+          a.receipt?.protocol === "openai-responses-prepared-v1" &&
+          a.receipt.provider === "openai" &&
+          a.receipt.effort === requestedEffort &&
+          a.receipt.serviceTier === "default" &&
+          a.receipt.funding?.authorityId === openAi.authorityId &&
+          a.receipt.funding?.cashFallbackAllowed === false &&
+          canonicalJson(a.receipt) === canonicalJson(c.run.receipt.analysis) &&
+          a.receipt.responseSha256 ===
+            c.run.receipt.analysis_output?.responseSha256 &&
+          Number.isSafeInteger(a.receipt.ceilingNanoUsd) &&
+          a.receipt.ceilingNanoUsd >= 0 &&
+          a.receipt.ceilingNanoUsd <= openAi.maximumNanoUsd,
+        "COST_RECONCILIATION_REQUIRED",
+        "The OpenAI result differs from its dispatched authority or retained receipt.",
+      );
     ensure(
-      a.receipt?.model === "meta/muse-spark-1.3-contributor" &&
+      a.receipt?.model === requestedModel &&
         Number.isFinite(a.receipt.rateEstimateUsd) &&
         a.receipt.rateEstimateUsd >= 0 &&
         a.receipt.rateEstimateUsd <=
@@ -791,19 +866,26 @@ export const finishGateway = internalMutation({
       retainUntil: evidence.retainUntil,
       recipeHash: await digest(
         canonicalJson({
-          protocol: "gateway-analysis-v1",
+          protocol: openAi
+            ? "openai-responses-prepared-v1"
+            : "gateway-analysis-v1",
           model: a.receipt.model,
-          effort: "medium",
-          structuredOutputMode:
-            "gateway-meta-trusted-binding-exact-citations-v2",
+          effort: requestedEffort,
+          structuredOutputMode: openAi
+            ? "openai-responses-counted-exact-citations-v1"
+            : "gateway-meta-trusted-binding-exact-citations-v2",
           instructions: preparedAnalysisInstructions,
           outputSchema: z.toJSONSchema(analysisVersionOutput),
         }),
       ),
       requestedModel: a.receipt.model,
-      requestedEffort: "medium",
+      requestedEffort,
       reportedModel: a.receipt.model,
-      reportedEffort: "medium",
+      ...(openAi
+        ? typeof a.receipt.reportedEffort === "string"
+          ? { reportedEffort: a.receipt.reportedEffort }
+          : {}
+        : { reportedEffort: "medium" }),
       provenance: "managed_api_reported",
       evaluation: "review_required",
     });
@@ -1082,8 +1164,20 @@ export const fail = internalMutation({
         !c.run.attemptId &&
         !c.run.receipt.analysis &&
         !c.run.receipt.asr;
+      // OpenAI generation must acquire its durable dispatch marker first. A
+      // retained-evidence run without that marker cannot have sent a generation;
+      // do not leave user credits held after a count/storage/configuration error.
+      const undispatchedRetainedOpenAi =
+        c.run.receipt?.admission?.quote?.openAi &&
+        c.run.receipt.reusedPreparation &&
+        c.run.state === "analyzing" &&
+        !c.run.receipt.analysisDispatch &&
+        !c.run.receipt.analysis &&
+        !c.run.attemptId;
       const state =
-        stoppedPreparation || knownReturnedPreparationFailure(c.run, safeCode)
+        stoppedPreparation ||
+        undispatchedRetainedOpenAi ||
+        knownReturnedPreparationFailure(c.run, safeCode)
           ? "failed"
           : c.run.receipt?.admission &&
               (c.run.receipt.analysis_output ||

@@ -447,13 +447,13 @@ export function createKnowledgeHandler(
       );
       register(
         "quote_video_analysis",
-        "Quote server preparation and video analysis for a saved Reel/TikTok. When the user chooses VibeScroll credits, first save with analyze=false, then quote executor=gateway. The baseline is Muse Contributor medium; work_cloud uses the user's configured ChatGPT subscription and may charge preparation only. Existing ready results are free unless reanalyze=true is explicitly requested. Show maximumCredits and route before paid work. This read reserves nothing.",
+        "Quote server preparation and video analysis for a saved Reel/TikTok. For credits, save with analyze=false then quote executor=gateway; model/effort are optional exact managed API choices, enabled by current account funding. Default: Muse Contributor medium. OpenAI uses ordinary API funding, never a ChatGPT login. work_cloud uses the user's configured subscription and may charge preparation only; do not pass API model/effort there. Ready-cache reuse is free and cachedAnalysis identifies its actual model; a selected new model does not relabel cached output. Use reanalyze=true only for an explicit new version. Show maximumCredits/route before work. This read reserves nothing.",
         "knowledge:read",
         preparedQuoteRequest,
       );
       register(
         "start_video_analysis",
-        "Start the exact quote the user accepted, carrying unchanged quoteHash/maximumCredits and one stable key. Server preparation downloads once, prefers captions, otherwise transcribes, stores real screenshots, then dispatches Muse credits or native ChatGPT reasoning. Never switch funding, invent a quote or retry unknown work. Return source/run/version links; use video_analysis_status for bounded follow-up and analysis_version/project-context tools for saved insights.",
+        "Start the accepted quote with unchanged quoteHash/maximumCredits, model/effort/reanalyze and one stable key. Reuse retained transcripts/JPEGs when quoted; otherwise prepare once. Managed API dispatch uses the quoted exact provider/model; work_cloud uses the existing native ChatGPT route. Never switch funding, invent a quote or retry unknown work. New versions preserve the incumbent. Return source/run/version links; use video_analysis_status for bounded follow-up and analysis_version/project-context tools for saved insights.",
         "analysis:request",
         preparedStartRequest,
         false,

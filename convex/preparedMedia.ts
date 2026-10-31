@@ -1,5 +1,7 @@
 "use node";
-import { internalAction } from "./_generated/server";
+import { internalAction, type ActionCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { analyzeOpenAiPreparedEvidence } from "../packages/providers/openai-prepared-insights";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { z } from "zod";
@@ -20,6 +22,102 @@ import {
 } from "../packages/providers/binary";
 import { ensure, PolicyError } from "../packages/policy";
 
+async function analyzeServicePreparedEvidence(
+  ctx: ActionCtx,
+  runId: Id<"mediaPreparations">,
+  input: {
+    sourceId: Id<"sources">;
+    receipt?: any;
+    maximumApiUsd: number;
+    contributorAllowed: boolean;
+  },
+  prepared: unknown,
+  frames: { id: string; bytes: Uint8Array }[],
+  maximumUsd: number,
+) {
+  const callbacks = {
+    onReceipt: async (receipt: Record<string, unknown>) => {
+      await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+        runId,
+        kind: "analysis",
+        receipt,
+      });
+    },
+    onOutput: async (receipt: Record<string, unknown>) => {
+      await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+        runId,
+        kind: "analysis_output",
+        receipt,
+      });
+    },
+    onValidation: async (receipt: Record<string, unknown>) => {
+      await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+        runId,
+        kind: "analysis_validation",
+        receipt,
+      });
+    },
+  };
+  if (input.receipt?.admission?.quote?.openAi) {
+    const authority = await ctx.runQuery(
+      internal.preparedAnalysis.openAiInput,
+      { runId },
+    );
+    const apiKey = process.env.OPENAI_PROMOTIONAL_API_KEY;
+    ensure(
+      apiKey,
+      "SETUP_REQUIRED",
+      "The selected OpenAI service credential is unavailable.",
+    );
+    return analyzeOpenAiPreparedEvidence({
+      sourceId: input.sourceId,
+      attemptId: runId,
+      prepared,
+      frames,
+      model: authority.model,
+      effort: authority.effort,
+      grant: authority.grant,
+      apiKey,
+      // Flooring a floating legacy authorization cap cannot expand permission.
+      // Token usage and settlement remain integer/final-only arithmetic.
+      maximumNanoUsd: Math.min(
+        authority.maximumNanoUsd,
+        Math.floor(maximumUsd * 1e9),
+      ),
+      onDispatch: async (dispatch) => {
+        await ctx.runMutation(internal.preparedAnalysis.openAiDispatch, {
+          runId,
+          dispatch,
+        });
+      },
+      ...callbacks,
+    });
+  }
+  const apiKey = process.env.VERCEL_AI_GATEWAY_API_KEY;
+  ensure(
+    apiKey && apiKey.length > 10,
+    "SETUP_REQUIRED",
+    "Configure the bounded Gateway credential.",
+  );
+  return analyzePreparedEvidence({
+    sourceId: input.sourceId,
+    attemptId: runId,
+    prepared,
+    frames,
+    apiKey,
+    maximumUsd,
+    contributorAllowed: input.contributorAllowed,
+    ...callbacks,
+    onRejection: async (receipt) => {
+      await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+        runId,
+        kind: "analysis_rejection",
+        receipt,
+      });
+    },
+  });
+}
+
 export const runRetainedGateway = internalAction({
   args: { runId: v.id("mediaPreparations") },
   returns: v.null(),
@@ -34,12 +132,6 @@ export const runRetainedGateway = internalAction({
       const input = await ctx.runQuery(
         internal.preparedAnalysis.retainedGatewayInput,
         { runId },
-      );
-      const apiKey = process.env.VERCEL_AI_GATEWAY_API_KEY;
-      ensure(
-        apiKey && apiKey.length > 10,
-        "SETUP_REQUIRED",
-        "Configure the bounded Gateway credential.",
       );
       const frames = await Promise.all(
         input.frames.map(async (f) => {
@@ -61,43 +153,14 @@ export const runRetainedGateway = internalAction({
       await ctx.runQuery(internal.preparedAnalysis.retainedGatewayInput, {
         runId,
       });
-      const result = await analyzePreparedEvidence({
-        sourceId: input.sourceId,
-        attemptId: runId,
-        prepared: input.prepared,
+      const result = await analyzeServicePreparedEvidence(
+        ctx,
+        runId,
+        input,
+        input.prepared,
         frames,
-        apiKey,
-        maximumUsd: input.maximumApiUsd,
-        contributorAllowed: input.contributorAllowed,
-        onReceipt: async (receipt) => {
-          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
-            runId,
-            kind: "analysis",
-            receipt,
-          });
-        },
-        onRejection: async (receipt) => {
-          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
-            runId,
-            kind: "analysis_rejection",
-            receipt,
-          });
-        },
-        onOutput: async (receipt) => {
-          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
-            runId,
-            kind: "analysis_output",
-            receipt,
-          });
-        },
-        onValidation: async (receipt) => {
-          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
-            runId,
-            kind: "analysis_validation",
-            receipt,
-          });
-        },
-      });
+        input.maximumApiUsd,
+      );
       await ctx.runMutation(internal.preparedAnalysis.finishGateway, {
         runId,
         ...result,
@@ -373,45 +436,16 @@ export const run = internalAction({
           stage: "analyzing",
         });
         await ctx.runQuery(internal.preparedAnalysis.input, { runId });
-        const result = await analyzePreparedEvidence({
-          sourceId: input.sourceId,
-          attemptId: runId,
-          prepared: evidence,
-          frames: prepared.frames.map((f) => ({ id: f.id, bytes: f.bytes })),
-          apiKey,
-          maximumUsd: input.receipt?.admission
+        const result = await analyzeServicePreparedEvidence(
+          ctx,
+          runId,
+          input,
+          evidence,
+          prepared.frames.map((f) => ({ id: f.id, bytes: f.bytes })),
+          input.receipt?.admission
             ? input.maximumApiUsd - (asr.receipt?.costCeilingUsd ?? 0)
             : Math.min(input.maximumApiUsd, 0.03),
-          contributorAllowed: input.contributorAllowed,
-          onReceipt: async (receipt) => {
-            await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
-              runId,
-              kind: "analysis",
-              receipt,
-            });
-          },
-          onRejection: async (receipt) => {
-            await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
-              runId,
-              kind: "analysis_rejection",
-              receipt,
-            });
-          },
-          onOutput: async (receipt) => {
-            await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
-              runId,
-              kind: "analysis_output",
-              receipt,
-            });
-          },
-          onValidation: async (receipt) => {
-            await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
-              runId,
-              kind: "analysis_validation",
-              receipt,
-            });
-          },
-        });
+        );
         await ctx.runMutation(internal.preparedAnalysis.finishGateway, {
           runId,
           ...result,

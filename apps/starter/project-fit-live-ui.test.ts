@@ -5,6 +5,7 @@ const hooks = vi.hoisted(() => ({
   index: 0,
   effects: [] as (() => unknown)[],
   live: undefined as undefined | ((value: any) => void),
+  proposalLive: undefined as undefined | ((value: any) => void),
 }));
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
@@ -29,6 +30,13 @@ vi.mock("react", async (original) => ({
   },
 }));
 vi.mock("./lib/use-source-live", () => ({
+  useProposalLive: (
+    _id: string,
+    _enabled: boolean,
+    callback: (value: any) => void,
+  ) => {
+    hooks.proposalLive = callback;
+  },
   useTrendsLive: (
     _org: string,
     _days: number,
@@ -42,6 +50,7 @@ vi.mock("./lib/use-source-live", () => ({
 import { ProjectFitBreakdown } from "./components/assistant-elements/project-fit-breakdown";
 import { ProjectProposalComposer } from "./components/project-proposal-composer";
 import { TrendsDashboard } from "./components/trends-dashboard";
+import { useProposalWork } from "./lib/use-proposal-work";
 type Node = ReactElement<Record<string, any>>;
 function elements(value: unknown): Node[] {
   if (Array.isArray(value)) return value.flatMap(elements);
@@ -81,6 +90,7 @@ afterEach(() => {
   hooks.index = 0;
   hooks.effects = [];
   hooks.live = undefined;
+  hooks.proposalLive = undefined;
   vi.unstubAllGlobals();
 });
 
@@ -183,3 +193,32 @@ it.each([false, true])(
       if (typeof cleanup === "function") cleanup();
   },
 );
+
+it("does not restore an older initial proposal snapshot after a live access denial", async () => {
+  let finish!: (value: any) => void;
+  const call = vi.fn(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  hooks.index = 0;
+  useProposalWork("plan", true, call);
+  const cleanups = hooks.effects.splice(0).map((effect) => effect());
+  hooks.proposalLive!(null);
+  finish({
+    actorId: "actor",
+    version: 4,
+    discussionRevision: 0,
+    current: true,
+    messages: { isDone: true, page: [] },
+    body: { disposition: "relevant" },
+  });
+  await Promise.resolve();
+  await Promise.resolve();
+  hooks.index = 0;
+  const current = useProposalWork("plan", true, call);
+  expect(current.snapshot).toBeNull();
+  expect(current.error).toContain("access changed");
+  for (const cleanup of cleanups) if (typeof cleanup === "function") cleanup();
+});

@@ -2,7 +2,7 @@
 
 Mode: reference. Owner direction: October 29,2026. Status: researched implementation plan; no model/price/provider was activated.
 
-Use [the single-Pro pricing plan](PRO-PRICING-AND-CREDITS.md). Muse 1.3 Contributor is the 1× baseline. More expensive models spend more of the user's credits rather than increasing the cost assigned to every baseline analysis. Group similar complete costs into simple bands, initially 1×, 2×, 5×, 10× and 20×; add larger bands only when needed. A model is not priced by its brand or release date.
+Use [the single-Pro pricing plan](PRO-PRICING-AND-CREDITS.md). Muse 1.3 Contributor is the 1Ã— baseline. More expensive models spend more of the user's credits rather than increasing the cost assigned to every baseline analysis. Group similar complete costs into simple bands, initially 1Ã—, 2Ã—, 5Ã—, 10Ã— and 20Ã—; add larger bands only when needed. A model is not priced by its brand or release date.
 
 ## Curated catalogue
 
@@ -10,7 +10,7 @@ Keep a short reviewed list, not every Gateway model. The owner does not need Ope
 
 | Family                 | Candidate                                                             | Evidence and disposition                                                                                                                                                                                               |
 | ---------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Baseline               | `meta/muse-spark-1.3-contributor`                                     | Owner benchmark includes high reasoning at USD0.0034287. Default1× for compatible public material. Provider Contributor conditions still apply.                                                                        |
+| Baseline               | `meta/muse-spark-1.3-contributor`                                     | Owner benchmark includes high reasoning at USD0.0034287. Default1Ã— for compatible public material. Provider Contributor conditions still apply.                                                                       |
 | OpenAI                 | `openai/gpt-6.1-sol`, optionally `openai/gpt-6.1-terra`               | Current benchmark evidence; preserve exact reasoning and provider provenance. Medium common-source runs do not establish highest-setting cost/quality. GPT5.6 Sol remains historical/optional, not a required default. |
 | Gemini                 | `google/gemini-4-argon`                                               | Best native-video candidate in the completed benchmark; can also receive prepared evidence. Cost/quality differs from Muse. Do not add low-quality old Flash variants merely because cheap.                            |
 | Claude                 | `anthropic/claude-sonnet-5.5`, `anthropic/claude-opus-5.5`            | Present with vision in the inspected Gateway catalogue. Source-to-insights quality, reasoning settings, region and full price quote remain untested. Keep unavailable until accepted.                                  |
@@ -24,7 +24,7 @@ Store exact provider/model ID, supported reasoning settings, highest supported s
 
 Budget each group's highest supported reasoning inside a finite token/time limit. Lower reasoning can have the same clearly displayed tariff. Unbounded output, extra tools or a larger evidence packet needs a new quote. Hidden reasoning can consume the output cap before visible JSON completes; handle truncation as a failure, preserve its real cost and avoid automatic unlimited repair calls.
 
-Estimate whole-job cost, including shared preparation/ASR and per-model billed input/output, region and initial cache-write cost. Round the ratio up to the next band. Under the calculator's example 50k input/12k billed-output cap, the current OpenAI examples fall provisionally into 10×/20×; these are design quotes, not accepted public prices or claimed completed high-setting runs. Recompute when limits or prices change. Do not price the Muse allowance as though it ran those models.
+Estimate whole-job cost, including shared preparation/ASR and per-model billed input/output, region and initial cache-write cost. Round the ratio up to the next band. Under the calculator's example 50k input/12k billed-output cap, the current OpenAI examples fall provisionally into 10Ã—/20Ã—; these are design quotes, not accepted public prices or claimed completed high-setting runs. Recompute when limits or prices change. Do not price the Muse allowance as though it ran those models.
 
 Keep expected cost and reservation maximum separate. The common-source Muse high observation is about USD0.00343, not a guaranteed constant or the maximum possible invoice. An all-calls-hit-the-token-ceiling stress budget must not silently become expected spend or a demand-validated subscription price. Reasoning effort alone does not specify token usage.
 
@@ -40,7 +40,7 @@ Preferred component to evaluate: [assistant-ui ModelSelector](https://www.assist
 
 Smaller alternative: [Vercel AI Elements ModelSelector](https://elements.ai-sdk.dev/components/model-selector). It supplies a cmdk-based searchable, keyboard-navigable grouped model palette with logos, but reasoning and VibeScroll quotes need composition. It fits shadcn/Tailwind conventions and does not require moving inference into a new frontend runtime. [Repository licence](https://github.com/vercel/ai-elements/blob/main/LICENSE) is Apache2.0. A plain [shadcn Combobox](https://ui.shadcn.com/docs/components/combobox) is the lowest-level fallback.
 
-Use a shared curated registry for app setup, per-analysis selection and future embedded UI, filtered by actual funding route and supported capabilities. Keep search optional for a short list, put Recommended first, display `1× · 1 credit/min` rather than raw API token prices, and show reasoning only for models that support it. Advanced route/provider details stay outside the everyday flow. Avoid automatically installing the whole component catalogue or a second chat framework. Component research is not deployment; backend link-to-insights acceptance remains first.
+Use a shared curated registry for app setup, per-analysis selection and future embedded UI, filtered by actual funding route and supported capabilities. Keep search optional for a short list, put Recommended first, display `1Ã— Â· 1 credit/min` rather than raw API token prices, and show reasoning only for models that support it. Advanced route/provider details stay outside the everyday flow. Avoid automatically installing the whole component catalogue or a second chat framework. Component research is not deployment; backend link-to-insights acceptance remains first.
 
 ## Acceptance
 
@@ -52,3 +52,5 @@ Use a shared curated registry for app setup, per-analysis selection and future e
 - [ ] Verify real whole-flow cost before promising margins, performance or supported model availability.
 
 Sources inspected October 29: [Gateway catalogue](https://ai-gateway.vercel.sh/v1/models), the completed owner benchmark in `outputs/model-research/2026-10-29/`, the component documentation/licences above, and [OpenAI reasoning cost controls](https://developers.openai.com/api/docs/guides/reasoning). No paid inference or package installation was needed for this research.
+
+October31 local candidate under ADR218: reuse the existing accessible Radix ChoiceSelect for the two available route-filtered entries rather than install the complete assistant-ui runtime/cmdk/popover stack for a short list. The current assistant-ui standalone ModelSelector/effort documentation was inspected again. API model and reasoning choices appear together only for managed analysis. Muse remains1x; Luna3x and Sol50x are conservative candidate groups from the inspected bounded Standard token rates; Sol remains unavailable pending acceptance and a sufficient reservation. These are implemented local tariffs, not published prices or quality verdicts. The browser never sends an arbitrary model ID or chooses a provider fallback. Actual production canary and keyboard/mobile acceptance remain open.

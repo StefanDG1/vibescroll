@@ -29,16 +29,46 @@ import {
 import { recordAutomaticCatalogIntent } from "./lib/catalogPolicy";
 import { reserveCatalogProducer } from "./lib/cloudCatalog";
 import { cloudRetryRequest } from "../packages/contracts/cloud-retry";
+import {
+  apiModelSelection,
+  apiModelTariff,
+  apiModels,
+  type ApiModelId,
+  type ApiEffort,
+} from "../packages/contracts/api-models";
+import {
+  openAiQuoteAuthority,
+  openAiGrantConfiguration,
+} from "./lib/openAiGrant";
 
 const requested = {
   sourceId: v.id("sources"),
   executor: v.union(v.literal("gateway"), v.literal("work_cloud")),
   reanalyze: v.optional(v.boolean()),
+  model: v.optional(
+    v.union(
+      v.literal("meta/muse-spark-1.3-contributor"),
+      v.literal("gpt-6-luna"),
+      v.literal("gpt-6.1-sol"),
+    ),
+  ),
+  effort: v.optional(
+    v.union(
+      v.literal("none"),
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("xhigh"),
+      v.literal("max"),
+    ),
+  ),
 };
 type Request = {
   sourceId: Id<"sources">;
   executor: "gateway" | "work_cloud";
   reanalyze?: boolean;
+  model?: ApiModelId;
+  effort?: ApiEffort;
 };
 
 async function owner(
@@ -156,20 +186,46 @@ async function quoteFor(
     }
   }
   const cacheHit = ready && !request.reanalyze;
+  const cachedVersion =
+    cacheHit && a.source.selectedAnalysisVersionId
+      ? await ctx.db.get(a.source.selectedAnalysisVersionId)
+      : null;
+  ensure(
+    request.executor === "gateway" || (!request.model && !request.effort),
+    "INVALID_INPUT",
+    "Use your saved subscription model settings for the assistant route.",
+  );
+  const apiModel =
+    request.executor === "gateway"
+      ? apiModelSelection(
+          request.model ?? "meta/muse-spark-1.3-contributor",
+          request.effort,
+        )
+      : null;
+  const openAi =
+    !cacheHit && apiModel?.provider === "openai_responses"
+      ? await openAiQuoteAuthority(ctx, a.actor.subject, apiModel.id)
+      : null;
   const durationMaximumMs = evidence
     ? evidence.prepared.evidence.durationMs
     : config.maximumDurationMs;
   const cost = cacheHit
     ? { preparation: 0, analysis: 0, maximum: 0 }
-    : preparedCreditQuote(durationMaximumMs, request.executor, !!evidence);
+    : preparedCreditQuote(
+        durationMaximumMs,
+        request.executor,
+        !!evidence,
+        apiModel?.id,
+      );
   if (!cacheHit && request.executor === "gateway")
     ensure(
       config.maximumApiUsd >=
-        0.02 + (evidence ? 0 : (durationMaximumMs / 1000) * 0.00002778),
+        (openAi ? openAi.policy.maximumRequestNanoUsd / 1e9 : 0.02) +
+          (evidence ? 0 : (durationMaximumMs / 1000) * 0.00002778),
       "SETUP_REQUIRED",
       "The configured API envelope must cover both transcription and analysis before dispatch.",
     );
-  if (!cacheHit && (request.executor === "gateway" || !evidence))
+  if (!cacheHit && ((request.executor === "gateway" && !openAi) || !evidence))
     ensure(
       process.env.VERCEL_AI_GATEWAY_API_KEY,
       "SETUP_REQUIRED",
@@ -198,21 +254,49 @@ async function quoteFor(
     reanalyze: request.reanalyze ?? false,
     model:
       request.executor === "gateway"
-        ? "meta/muse-spark-1.3-contributor"
+        ? apiModel!.id
         : (grant?.cloudSaveDefaults?.model ?? null),
     effort:
       request.executor === "gateway"
-        ? "medium"
+        ? apiModel!.effort
         : (grant?.cloudSaveDefaults?.effort ?? null),
     durationMaximumMs,
     reusedEvidenceId: evidence?._id ?? null,
     cacheHit,
+    // model/effort describe a new requested run, never relabel cached output.
+    cachedAnalysis: cacheHit
+      ? {
+          versionId: cachedVersion?._id ?? null,
+          model:
+            cachedVersion?.reportedModel ??
+            cachedVersion?.requestedModel ??
+            null,
+          effort:
+            cachedVersion?.reportedEffort ??
+            cachedVersion?.requestedEffort ??
+            null,
+        }
+      : null,
     preparationCredits: cost.preparation,
     analysisCredits: cost.analysis,
     maximumCredits: cost.maximum,
     grantId: grant?._id ?? null,
     grantVersion: grant?.version ?? null,
     maximumApiUsd: config.maximumApiUsd,
+    ...(openAi
+      ? {
+          apiTariff: apiModelTariff,
+          openAi: {
+            ...openAi.quote,
+            processingReviewHash: await digest(
+              canonicalJson({
+                preparation: config.providerPermissionReference,
+                analysis: openAi.policy.providerPermissionReference,
+              }),
+            ),
+          },
+        }
+      : {}),
   };
   return {
     quote,
@@ -232,6 +316,45 @@ async function quoteHandler(ctx: QueryCtx, args: Request) {
     note: "Preparation and analysis are quoted separately. Final started-minute analysis uses actual video duration; old balances and purchases keep their denomination.",
   };
 }
+export const options = query({
+  args: { sourceId: v.id("sources") },
+  returns: v.any(),
+  handler: async (ctx, { sourceId }) => {
+    const a = await owner(ctx, sourceId);
+    const config = preparedServiceConfiguration(a.actor.subject);
+    if (!config) return { available: false, models: [] };
+    const policy = openAiGrantConfiguration(a.actor.subject);
+    const counter = policy
+      ? await ctx.db
+          .query("proposalServiceCounters")
+          .withIndex("by_policy", (q) =>
+            q.eq("policyId", `openai-grant:${policy.id}`),
+          )
+          .unique()
+      : null;
+    const ids: ApiModelId[] = [];
+    if (process.env.VERCEL_AI_GATEWAY_API_KEY && config.contributorAllowed)
+      ids.push("meta/muse-spark-1.3-contributor");
+    // Sol has not passed production acceptance and is not offered for dispatch.
+    if (
+      policy?.allowedModels.includes("gpt-6-luna") &&
+      process.env.OPENAI_PROMOTIONAL_API_KEY &&
+      (counter?.jobs ?? 0) < policy.maximumJobs
+    )
+      ids.push("gpt-6-luna");
+    return {
+      available: ids.length > 0,
+      models: ids.map((id) => ({
+        id,
+        name: apiModels[id].name,
+        efforts: apiModels[id].efforts,
+        defaultEffort: apiModels[id].defaultEffort,
+        creditMultiplier: apiModels[id].creditMultiplier,
+      })),
+    };
+  },
+});
+
 export const quote = query({
   args: requested,
   returns: v.any(),

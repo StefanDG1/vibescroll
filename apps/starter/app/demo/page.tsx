@@ -100,12 +100,19 @@ export default async function Demo({
                   sourceId: "src_demo_001",
                   repositoryId: "synthetic-project",
                   title: "Preview a useful result before setup",
+                  repo: { fullName: "synthetic/demo-planner" },
                   review: "unreviewed",
                   disposition: "relevant",
                   version: 1,
                   baseSha: "a".repeat(40),
                   profileVersion: 1,
                   detail: {
+                    schemaVersion: "chat-project-proposal-v1",
+                    steps: [
+                      "Show a labeled example.",
+                      "Keep project setup optional.",
+                    ],
+                    insightIds: ["synthetic-insight"],
                     currentProblem:
                       "The synthetic setup flow asks for configuration before showing a useful result.",
                     proposedChange:

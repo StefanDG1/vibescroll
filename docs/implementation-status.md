@@ -2,6 +2,12 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## October31: retained OpenAI candidate and canonical plan reader
+
+ADR218 now has a direct ordinary Responses adapter, curated API model/effort tariff, exact multimodal input counting and once-only finite grant admission. It reuses the existing preparation, reservation, immutable version and catalogue stores without a schema/index/component/auth/cron change. Post settings add managed model/effort quotes and deliberate reanalysis. Ready-cache quotes identify the actual cached model separately. The standalone chat-created proposal page reuses the working feed artifact; initial HTTP reads cannot replace newer live data or denial.
+
+Windows `node scripts/run-offline.mjs pnpm check` passed validation, lint, all typechecks/test suites and both production builds. The first run stopped on five new UI lint warnings; those were corrected without suppressions before the successful full run. The final small demo fixture/format changes then passed22 focused UI/demo regressions. `node scripts/audit-dependencies.mjs` passed with one reviewed moderate registry advisory and no unresolved findings. The two existing help-file tracing warnings remain.37 focused provider/credit tests passed, including retained max-effort generation/catalogue provenance, once-only charging, failure before dispatch, unknown holds, changed funding and exhaustion; two selector tests cover exact quote/double clicks and stale responses. No real source/inference, production configuration or release has occurred for this candidate. Exact CI, compatible publication, native desktop/phone checks and a bounded retained-evidence canary remain required.
+
 ## October31: targeted snapshot recovery and euro pricing preparation
 
 R128 follows the [medium-term plan](launch-plan/2026-10-31/MEDIUM-TERM-COMPLETION.md). ADR215 implements a fenced owner/admin refresh for one repository without changing other selected projects, confirmed profiles, discussion or credits. BASE_CHANGED remains a specific asynchronous issue failure and avoids an ineffective blind retry. Model prompts request concise unnumbered steps; the existing ordered-list renderer also removes redundant prefixes. No schema/index/component/auth/cron changes are involved.

@@ -1,0 +1,15 @@
+.reader {
+  width: 100%;
+  max-width: 880px;
+  margin-inline: auto;
+  height: min(760px, calc(100dvh - 210px));
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+@media (max-width: 720px) {
+  .reader {
+    height: calc(100dvh - 210px);
+    min-height: 360px;
+  }
+}

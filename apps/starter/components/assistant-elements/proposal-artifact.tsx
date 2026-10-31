@@ -86,6 +86,13 @@ export function ProposalArtifact({
     setLocalOpen(!open);
     onOpenChange?.(!open);
   }
+  if (live === null)
+    return (
+      <ErrorState
+        title="Plan unavailable"
+        detail="Your access changed. Reopen this plan from your current workspace."
+      />
+    );
   return (
     <article
       className={styles.artifact}

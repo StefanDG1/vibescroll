@@ -33,7 +33,7 @@ Full communities/moderation, blind A/B assignments, statistically meaningful mod
 
 ## Progress
 
-October31 candidate: targeted snapshot refresh, BASE_CHANGED preservation, concise step rendering and an isolated euro pricing preview are implemented locally. The useful synthetic-demo issue text is prepared in [the canary review](PROPOSAL-ISSUE-CANARY.md). Its live publication awaits the owner's exact review. Native new-tool discovery and independent publication remain open. While external acceptance is pending, prepare independent feed/history work locally; publish it only after its own checks. The current production baseline remains487d184.
+October31 checkpoint: targeted snapshot refresh, BASE_CHANGED preservation and concise step rendering are live atb9417e0 after exact CI, actual compatibility guards and staged/canonical checks. The original MCP reads fresh context and the reviewed version4/five-step plan without reconnecting; GitHub issue preflight passes. The useful synthetic-demo issue text is prepared in [the canary review](PROPOSAL-ISSUE-CANARY.md), with publication awaiting the owner's exact review. Native new-tool discovery remains open. The euro pricing preview is prepared separately and changes no live prices. While external acceptance is pending, continue independent feed/history work locally and publish only after its own checks. [Production receipt](../../operations/evidence/launch-20261031-snapshot-recovery-production.json).
 
 - [x] Reconcile scope, actual baseline, latest euro price-preparation choice and acceptance boundaries.
 - [ ] M0 proposal/MCP/GitHub acceptance.

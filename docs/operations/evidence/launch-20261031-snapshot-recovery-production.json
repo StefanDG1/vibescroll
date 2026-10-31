@@ -1,0 +1,69 @@
+{
+  "observedAtUTC": "2026-10-31T16:31:00Z",
+  "websiteCommit": "b9417e00fe19faabd21dd90cc102a15695ac61fb",
+  "backendCommit": "b9417e00fe19faabd21dd90cc102a15695ac61fb",
+  "version": "0.1.0-alpha.20261031161403.gb9417e00fe19",
+  "deploymentId": "dpl_Ht7kXN8fkjhFQKZ8LfJfwn8okm8R",
+  "exactCI": {
+    "run": 41218700138,
+    "passed": true,
+    "vitestPassed": 1643,
+    "vitestSkipped": 5
+  },
+  "backend": {
+    "deterministicPreparations": 2,
+    "publicationGuardsPassed": 12,
+    "schemaIndexComponentAuthCronChanges": 0,
+    "populatedScansOrBackfills": 0,
+    "finishAcknowledged": true
+  },
+  "website": {
+    "fixedBasicBuild": true,
+    "normalQueue": true,
+    "buildDurationMs": 46134,
+    "stagedExactHealth": true,
+    "stagedFeedCases": 4,
+    "stagedLibraryCases": 8,
+    "sameBuildPromoted": true,
+    "canonicalExactHealth": true,
+    "canonicalFeedCases": 4,
+    "canonicalLibraryCases": 8,
+    "domainAutoAssignmentRestored": true,
+    "nativeRefreshControlDesktopAndPhone": true,
+    "nativeRefreshClickedInBrowser": false
+  },
+  "acceptance": {
+    "normalSessionSingleProjectRefresh": true,
+    "storedBaseBefore": "95f4265b12707d6e1f8b152381a3693ff4677f1b",
+    "storedBaseAfter": "cf19602d086334600e4c03d592e9641ab10dbfae",
+    "selectionVersionBefore": 22,
+    "selectionVersionAfter": 23,
+    "confirmedProfileVersionPreserved": 7,
+    "otherFiveProjectSelectionAndBaseVersionsPreserved": true,
+    "originalMcpReadFreshContextWithoutReconnect": true,
+    "reviewedProposalVersion": 4,
+    "reviewedProposalSteps": 5,
+    "appAndOriginalMcpReadSameVersion": true,
+    "githubIssuePreflightPassed": true,
+    "newIssuePublished": false,
+    "analysisRuns": 0,
+    "apiModelCalls": 0,
+    "creditsSpent": 0
+  },
+  "pricing": {
+    "candidateOnly": true,
+    "eurMonthly": 35,
+    "eurAnnual": 350,
+    "eurWeekly": 17,
+    "monthlyCreditsForMonthlyAndAnnual": 300,
+    "weeklyCreditsConfirmed": false,
+    "liveStripeOrBalanceChanges": false
+  },
+  "remaining": [
+    "Owner review before the prepared public issue canary",
+    "Native invocation of new MCP discussion/publication tools after supported host discovery refresh",
+    "Remaining medium-term feed, fit, Trends, funding and commerce readiness"
+  ],
+  "settledInfrastructureUsageClaimed": false,
+  "oldFinancialHoldsPreserved": true
+}

@@ -52,3 +52,5 @@ Before live activation, present the exact account/product/price IDs, old-price m
 - [ ] Live publication/customer migration approved and verified.
 
 M5 is prepared, not commercially activated. Do not call the whole medium-term plan complete while these acceptance items remain open.
+
+The Stripe connector returned `UNAUTHORIZED` and requires reauthentication. The owner has been asked to reconnect Stripe only. No Stripe sandbox object or customer was created, and no test or live charge was attempted. Continue with the existing product identity and reviewed candidate after access returns; VibeScroll and ChatGPT do not need reconnecting.

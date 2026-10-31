@@ -1,6 +1,6 @@
 # Curated models, reasoning and credit groups
 
-Mode: reference. Owner direction: October 29,2026. Status: researched implementation plan; no model/price/provider was activated.
+Mode: reference. Owner direction: October29,2026. Updated October31. Status: curated managed registry and one retained-evidence Luna/max owner canary live; broader model/customer rollout remains open. Read ADR218 and current state for actual funding and acceptance rather than treating the earlier research candidates as available choices.
 
 Use [the single-Pro pricing plan](PRO-PRICING-AND-CREDITS.md). Muse 1.3 Contributor is the 1Ã— baseline. More expensive models spend more of the user's credits rather than increasing the cost assigned to every baseline analysis. Group similar complete costs into simple bands, initially 1Ã—, 2Ã—, 5Ã—, 10Ã— and 20Ã—; add larger bands only when needed. A model is not priced by its brand or release date.
 
@@ -44,13 +44,13 @@ Use a shared curated registry for app setup, per-analysis selection and future e
 
 ## Acceptance
 
-- [ ] Verify exact installed component licence/dependencies and integrate only the needed selector with existing styling.
-- [ ] Model/effort/quote uses one server-authoritative registry and hides unavailable routes.
+- [x] Inspect current assistant-ui standalone selector dependencies/licence; reuse the existing accessible Radix ChoiceSelect for the short accepted list without adding a chat runtime.
+- [x] Model/effort/quote uses one server-authoritative registry and hides unavailable routes; native owner selection/Maximum/quote/reanalysis passed.
 - [ ] Test keyboard, mobile, long names, provider groups, reasoning changes, unknown/stale model IDs and unsupported settings.
-- [ ] Test band rounding, minute boundaries, maximum reasoning/output, changed prices, cache hits and immutable reanalysis history.
+- [x] Controlled band/minute/effort/output/changed-price/cache tests and actual immutable retained reanalysis/shared-result reads passed.
 - [ ] Run bounded quality checks for newly added models under a separate actual allowance; the current two-preparation/one-Muse test does not fund Claude/Gemini sweeps.
 - [ ] Verify real whole-flow cost before promising margins, performance or supported model availability.
 
 Sources inspected October 29: [Gateway catalogue](https://ai-gateway.vercel.sh/v1/models), the completed owner benchmark in `outputs/model-research/2026-10-29/`, the component documentation/licences above, and [OpenAI reasoning cost controls](https://developers.openai.com/api/docs/guides/reasoning). No paid inference or package installation was needed for this research.
 
-October31 local candidate under ADR218: reuse the existing accessible Radix ChoiceSelect for the two available route-filtered entries rather than install the complete assistant-ui runtime/cmdk/popover stack for a short list. The current assistant-ui standalone ModelSelector/effort documentation was inspected again. API model and reasoning choices appear together only for managed analysis. Muse remains1x; Luna3x and Sol50x are conservative candidate groups from the inspected bounded Standard token rates; Sol remains unavailable pending acceptance and a sufficient reservation. These are implemented local tariffs, not published prices or quality verdicts. The browser never sends an arbitrary model ID or chooses a provider fallback. Actual production canary and keyboard/mobile acceptance remain open.
+October31 accepted owner route under ADR218: the current assistant-ui standalone ModelSelector/effort documentation was inspected; the short list reuses existing Radix ChoiceSelect. API model and reasoning choices appear together only for managed analysis. Muse remains1x; Luna3x is the tested owner tariff. Sol50x remains an unavailable registry candidate pending its own acceptance/reservation. These groups supersede the earlier illustrative OpenAI bands above, without changing existing subscriptions or claiming quality superiority. Native Luna/max selection and the explicit3credit retained-version quote completed in production, preserving the selected result and publishing a readable shared version. The browser cannot supply arbitrary model IDs or select paid fallback. Full keyboard/mobile model-control coverage and new optional MCP-field host invocation remain unclaimed. The one-job OpenAI allowance is consumed. [Receipt](../operations/evidence/launch-20261031-openai-model-production.json).

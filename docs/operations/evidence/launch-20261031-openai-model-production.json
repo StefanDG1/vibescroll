@@ -1,7 +1,7 @@
 {
-  "observedAtUTC": "2026-10-31T20:35:49Z",
+  "observedAtUTC": "2026-10-31T21:00:36.045387+00:00",
   "websiteCommit": "7faa7f2c313362850275ae2de532d31d6774aabf",
-  "backendCommit": "7faa7f2c313362850275ae2de532d31d6774aabf",
+  "backendCommit": "2510081684fac4991bc8fac5449b65c295a01c8f",
   "exactCI": 41238274722,
   "deploymentId": "dpl_AYnr9kjbGxbHFkuTXB6EAG5prBBd",
   "release": {
@@ -58,15 +58,35 @@
     "contributionId": "xs70c3h0ga0ter8bmtf0a0gbts8ha67b",
     "artifactId": "vx7e8nv48gchrx9nbzykrvfd4d8hathg",
     "copyState": "published",
-    "automaticReadbackState": "failed",
-    "rootCause": "Catalogue reader still compares a prepared OpenAI artifact against the Gateway-only processing review hash.",
-    "correction": "Reproduced locally; automatic reader and inactive-funding regression pass. Compatible backend correction and existing-copy reconciliation pending. No second generation authorized by this record."
+    "automaticReadbackState": "published",
+    "rootCause": "The initial catalogue reader compared a prepared OpenAI artifact against the Gateway-only processing review hash.",
+    "correction": {
+      "backendCommit": "2510081684fac4991bc8fac5449b65c295a01c8f",
+      "exactCI": 41240594528,
+      "fullLocalCheckPassed": true,
+      "deterministicPreparations": 2,
+      "actualPublicationGuards": 17,
+      "activeSchemasCompared": 14,
+      "schemaIndexComponentAuthCronChanges": 0,
+      "populatedScansOrBackfills": 0,
+      "finishAcknowledged": true,
+      "sameExistingCopyReconciled": true,
+      "additionalWebsiteBuild": false,
+      "additionalGenerationOrMedia": false
+    },
+    "initialAutomaticReadbackState": "failed",
+    "sharedVersionId": "xh7dzqya00k2xegjzqqk8w6x7x8hbx1w",
+    "normalSessionSharedVersionRead": true,
+    "originalMCPSharedVersionRead": true,
+    "decodedMatchingFrames": 8,
+    "incumbentUnchanged": true
   },
   "limits": [
     "One retained-evidence owner canary, not a fresh link or broad model quality/speed benchmark.",
     "OpenAI allowance is consumed; further grant capacity needs the pending owner decision.",
     "Sol and other new providers remain unavailable for execution.",
     "New optional MCP model fields still need supported host tool discovery; existing job/version reads passed.",
-    "Live Pro billing and customer migration remain review-gated."
+    "Live Pro billing and customer migration remain review-gated.",
+    "Grant exhaustion preserves completed-result reads in production; expiry/disable and processing-permission revocation passed controlled tests. No provider invoice or broad quality/reliability benchmark is claimed."
   ]
 }

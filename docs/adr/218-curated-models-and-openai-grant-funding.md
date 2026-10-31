@@ -1,8 +1,8 @@
 # ADR218: curated API models and promotional OpenAI funding
 
-Date: October31,2026. Status: live owner model canary; catalogue read correction pending.
+Date: October31,2026. Status: live owner model canary and corrected shared-result read accepted; further capacity pending.
 
-Production update: website/backend7faa7f2 passed exact CI and compatible publication. A native retained-evidence Luna/max version completed with7insights in81.563s,3credits and an estimated USD0.006545375 upper cost; it preserved the incumbent. The original MCP reads it. Automatic catalogue read-back exposed the old Gateway-only processing-review check; its correction/reconciliation remains required before full acceptance. [Receipt](../operations/evidence/launch-20261031-openai-model-production.json).
+Production update: website7faa7f2 and backend2510081 passed their exact CI and compatible publication checks. A native retained-evidence Luna/max version completed with7insights in81.563s,3credits and an estimated USD0.006545375 upper cost; it preserved the incumbent. The original MCP reads the same candidate and corrected shared version. The initial Gateway-only shared-reader check was reproduced and corrected, and the existing copy was reconciled without another generation, media pass or website build. All eight shared JPEGs decode and match the retained original bytes. The one-job grant allowance is consumed; broader capacity and new optional model-field host invocation remain open. [Receipt](../operations/evidence/launch-20261031-openai-model-production.json).
 
 ## Use the existing preparation and version store
 
@@ -18,7 +18,7 @@ Use integer nanodollars for token-rate arithmetic and explicit started-minute cr
 
 ## Restrict funding and capability
 
-The owner's linked API organization has an unused eligible grant and no started paid API billing plan. A restricted project key was created, encrypted with Windows DPAPI in ignored operator storage and tested only with model listing and a synthetic input-token count. No source or inference was used. The current account grants Luna and Sol; the max-effort structured schema counted49tokens. Exact account IDs, grant amounts/expiry and key material are private operational records.
+The owner's linked API organization had an unused eligible grant and no started paid API billing plan at inspection. A restricted project key was created, encrypted with Windows DPAPI in ignored operator storage and first tested with model listing and a synthetic input-token count. The later bounded source canary is accepted above. The current account grants Luna and Sol; account access does not enable Sol execution. Exact account IDs, grant amounts/expiry and key material are private operational records.
 
 Use the server secret boundary and an explicit finite funding policy, expiry and actor/job allowance. No purchases, Auto Recharge, purchased-credit fallback, another provider fallback, ChatGPT session pooling or API-key Codex use. The current provider contract automatically uses purchased credits after free credits when purchased funds exist; the grant by itself is not a promo-only API guarantee. Keep the no-paid-billing prerequisite explicit and stop routing if that prerequisite or grant authority changes. The test reservation is bounded under the existing medium-term allowance. Do not invent authority for unlimited nominal API spend.
 

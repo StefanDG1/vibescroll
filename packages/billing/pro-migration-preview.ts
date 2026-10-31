@@ -58,16 +58,28 @@ function anniversary(anchor: number, monthOffset: number) {
 export function candidateGrantWindows(args: {
   interval: ProInterval;
   anchorUTC: number;
+  // Use the verified Stripe period, including its original month-end anchor.
+  periodEndUTC: number;
   personId: string;
   subscriptionId: string;
 }) {
   timestamp(args.anchorUTC);
+  timestamp(args.periodEndUTC);
   if (
     !Object.hasOwn(terms, args.interval) ||
     !/^[A-Za-z0-9_-]{3,100}$/.test(args.personId) ||
     !/^sub_[A-Za-z0-9]{3,100}$/.test(args.subscriptionId)
   )
     throw Error("INVALID_PRO_CANDIDATE");
+  const duration = args.periodEndUTC - args.anchorUTC;
+  if (
+    (args.interval === "week" && duration !== 7 * dayMs) ||
+    (args.interval === "month" &&
+      (duration < 28 * dayMs || duration > 31 * dayMs)) ||
+    (args.interval === "year" &&
+      args.periodEndUTC !== anniversary(args.anchorUTC, 12))
+  )
+    throw Error("INVALID_PROVIDER_BILLING_PERIOD");
   const count = args.interval === "year" ? 12 : 1;
   return Array.from({ length: count }, (_, index) => {
     const startUTC =
@@ -75,9 +87,9 @@ export function candidateGrantWindows(args: {
         ? args.anchorUTC
         : anniversary(args.anchorUTC, index);
     const endUTC =
-      args.interval === "week"
-        ? startUTC + 7 * dayMs
-        : anniversary(args.anchorUTC, index + 1);
+      args.interval === "year"
+        ? anniversary(args.anchorUTC, index + 1)
+        : args.periodEndUTC;
     return {
       key: `${proCandidateVersion}:${args.personId}:${args.subscriptionId}:${startUTC}`,
       personId: args.personId,

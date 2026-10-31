@@ -1,6 +1,8 @@
 # Current accepted VibeScroll state
 
-Mode: reference. Snapshot reviewed October 31, 2026, Europe/Berlin. This is the current-state entry point, not a live dashboard or spending authority. Check provider state before the next hosted operation.
+Mode: reference. Snapshot reviewed November1,2026, Europe/Berlin. This is the current-state entry point, not a live dashboard or spending authority. Check provider state before the next hosted operation.
+
+November1 sandbox continuation: the owner completed Stripe consent, but this Codex connector still returns `UNAUTHORIZED`. Do not request the same consent again. The existing isolated VibeScroller sandbox is verified through a scoped test-only key. Three candidate Pro prices, three initial payments and three renewals passed, with all eight old prices unchanged. One failed monthly renewal, recovery of the same invoice, exact payment replay and period-end cancellation passed. Six paid invoice graphs and the corrected provider-period calendar pass the opt-in receipt tests. This is sandbox/offline acceptance, not signed webhook delivery, application wallet migration or live billing activation. Production below is unchanged. Follow [ADR220](../adr/220-provider-bound-pro-credit-periods.md) and [the migration review](../launch-plan/2026-10-31/PRO-MIGRATION-REVIEW.md).
 
 Read the [owner request register](../strategy/OWNER-REQUEST-REGISTER.md), [continuation guide](CONTINUE-VIBESCROLL.md) and [failure reference](FAILURES-AND-RECOVERY.md). Historical handovers, ADR status lines and implementation-status entries describe their dated checkpoint. They do not supersede this snapshot without later evidence.
 

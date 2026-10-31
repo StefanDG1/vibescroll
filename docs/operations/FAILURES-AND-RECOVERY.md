@@ -2,6 +2,18 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November1 Stripe sandbox lessons
+
+Dashboard login, completed ChatGPT plugin consent and Codex connector credentials are distinct. The connector still returned `UNAUTHORIZED` after the owner completed consent. Use the verified isolated sandbox/scoped SDK fallback for authorized tests; do not repeat consent or switch production's live key to test mode.
+
+The first synthetic card declines were caused by missing billing countries under an existing merchant rule. The initial block-list diagnosis was incomplete. Inspect the exact payment's matched predicate, then correct synthetic fixture data. Both attempts had no created subscription/invoice. Adding the explicitly allowed country resolved them without disabling fraud protection or changing live settings.
+
+Stripe's issuer-decline fixtures cannot attach to a Customer. `pm_card_chargeDeclinedInsufficientFunds` failed at attachment, before changing the synthetic subscription. The official testing page explicitly directs attached-card failure tests to `pm_card_chargeCustomerFail`; that fixture produced the intended failed renewal. Read the fixture's stage semantics before treating a failed test setup as product failure. Preserve both outcomes and request IDs.
+
+A clamped monthly renewal start does not replace Stripe's original anchor. Actual November30→December31 evidence exposed an offline preview that would have ended credits on December30. Use verified subscription-item and paid-line periods. Invoice-level period fields describe preceding billing activity in these receipts and cannot supply the new grant end. Match exact customer/subscription/price/line objects, preserve stable grant keys and test six actual initial/renewal graphs. Sandbox API events are not proof of signed webhook delivery or app wallet writes. [ADR220](../adr/220-provider-bound-pro-credit-periods.md).
+
+API-key pages can expose complete credentials in accessibility names even when the visible table masks them. Do not print raw AX node names or full DOM/response captures on credential surfaces. Filter to exact nonsecret controls first, redact complete credential patterns before any output and capture secrets only into the approved encrypted channel. An overly broad cleanup AX response exposed sandbox keys in tool output; the owned temporary key was expired and API401 verified. The owner authorized rotation of the two pre-existing sandbox keys; both rotations selected immediate old-key expiry, their replacements were encrypted and read-only checks matched the existing sandbox catalogue. No live key was involved. Keep the incident and recovery receipts in the private handover without copying token values.
+
 Read [current state](CURRENT-STATE.md) before using a historical fix. Use the [continuation procedure](CONTINUE-VIBESCROLL.md) to act on this reference. Owner requirements have stable IDs in the [request register](../strategy/OWNER-REQUEST-REGISTER.md).
 
 This record separates demonstrated causes, successful corrections, temporary recovery and unknown causes. A later successful run does not explain every earlier failure. Recommended prevention is not claimed implemented unless a cited test or receipt establishes it.

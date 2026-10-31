@@ -14,6 +14,7 @@ it("grants annual credits monthly from the original UTC anniversary without mont
     ...identity,
     interval: "year",
     anchorUTC: Date.UTC(2028, 0, 31, 12, 34, 56),
+    periodEndUTC: Date.UTC(2029, 0, 31, 12, 34, 56),
   });
   expect(grants).toHaveLength(12);
   expect(
@@ -31,6 +32,7 @@ it("grants annual credits monthly from the original UTC anniversary without mont
       ...identity,
       interval: "year",
       anchorUTC: grants[0].startUTC,
+      periodEndUTC: grants[11].endUTC,
     }),
   ).toEqual(grants);
 });
@@ -40,6 +42,7 @@ it("gives weekly 75 credits for exactly seven days, including a daylight-saving 
     ...identity,
     interval: "week",
     anchorUTC,
+    periodEndUTC: anchorUTC + 7 * 86400000,
   });
   expect(grant).toMatchObject({
     credits: 75,
@@ -48,16 +51,42 @@ it("gives weekly 75 credits for exactly seven days, including a daylight-saving 
     expiryRule: "expire_unused_allowance_keep_reserved_holds",
   });
   expect(
-    candidateGrantWindows({ ...identity, interval: "month", anchorUTC })[0]
-      .credits,
+    candidateGrantWindows({
+      ...identity,
+      interval: "month",
+      anchorUTC,
+      periodEndUTC: Date.UTC(2026, 10, 24, 12),
+    })[0].credits,
   ).toBe(300);
   expect(() =>
     candidateGrantWindows({
       ...identity,
       interval: "__proto__" as any,
       anchorUTC,
+      periodEndUTC: anchorUTC + 7 * 86400000,
     }),
   ).toThrow();
+});
+it("uses the verified monthly end after Stripe clamps a renewal start", () => {
+  const args = {
+    ...identity,
+    interval: "month" as const,
+    anchorUTC: Date.UTC(2026, 10, 30, 12),
+    periodEndUTC: Date.UTC(2026, 11, 31, 12),
+  };
+  const [grant] = candidateGrantWindows(args);
+  expect(grant.endUTC).toBe(Date.UTC(2026, 11, 31, 12));
+  expect(grant.credits).toBe(300);
+  expect(candidateGrantWindows(args)).toEqual([grant]);
+  for (const periodEndUTC of [
+    args.anchorUTC,
+    args.anchorUTC - 1,
+    NaN,
+    args.anchorUTC + 32 * 86400000,
+  ])
+    expect(() => candidateGrantWindows({ ...args, periodEndUTC })).toThrow();
+  expect(() => candidateGrantWindows({ ...args, interval: "week" })).toThrow();
+  expect(() => candidateGrantWindows({ ...args, interval: "year" })).toThrow();
 });
 it("verifies isolated sandbox prices and refuses live, changed-tax, duplicate or wrong-interval mappings", () => {
   const prices = (
@@ -75,7 +104,7 @@ it("verifies isolated sandbox prices and refuses live, changed-tax, duplicate or
     tax_behavior: "inclusive",
     recurring: { interval, interval_count: 1 },
     metadata: {
-        product: "vibescroller",
+      product: "vibescroller",
       policy: proCandidateVersion,
       tier: "pro",
     },

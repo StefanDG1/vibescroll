@@ -341,12 +341,21 @@ async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
     originalText: undefined,
     summary: undefined,
     analysis: undefined,
+    selectedAnalysisVersionId: undefined,
+    analysisSelectionRevision: undefined,
+    pendingAnalysisAttemptId: undefined,
+    pendingAnalysisAttemptState: undefined,
+    nextAnalysisVersionNumber: undefined,
+    selectedAnalysisSummary: undefined,
+    selectedAnalysisInsightCount: undefined,
+    selectedAnalysisMainPoints: undefined,
     mediaEvidence: undefined,
     originalMediaEvidence: undefined,
     personalMedia: undefined,
     orderedMedia: undefined,
     acquisition: undefined,
     personalAnalysis: undefined,
+    workCloudSaveIntent: undefined,
     repositorySelection: undefined,
     searchable: source.title,
     coverage: "metadata_only",
@@ -370,7 +379,19 @@ export const quarantinePage = internalMutation({
       .query(a.section)
       .paginate({ cursor: a.cursor, numItems: 25 });
     for (const row of page.page) {
-      if (a.section === "pilotPaymentObservations") {
+      if (
+        [
+          "analysisEvidence",
+          "analysisVersions",
+          "analysisAttempts",
+          "catalogContributions",
+          "catalogAliases",
+          "catalogFamilies",
+        ].includes(a.section)
+      ) {
+        // Restored evidence and execution credentials cannot regain authority.
+        await ctx.db.delete(row._id);
+      } else if (a.section === "pilotPaymentObservations") {
         // Keep the opaque dedup key: old verified webhook replay must not
         // recreate an observation that restoration has withdrawn.
         await ctx.db.patch(row._id as Doc<"pilotPaymentObservations">["_id"], {

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "vibescroll",
+  "version": "0.1.0-alpha.1",
+  "description": "Save permitted sources, inspect cited insights and review their relevance to your selected projects.",
+  "author": {
+    "name": "VibeScroll contributors",
+    "url": "https://scroll.companynerve.com"
+  },
+  "homepage": "https://scroll.companynerve.com/connect",
+  "repository": "https://github.com/StefanDG1/vibescroll",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/vibescroll-setup/SKILL.md",
+      "interface": {
+        "displayName": "VibeScroll",
+        "shortDescription": "Use your saved knowledge",
+        "longDescription": "Save sources, explore current cited insights, inspect evidence and prepare private project suggestions using your reviewed VibeScroll connection.",
+        "developerName": "VibeScroll",
+        "category": "Productivity",
+        "capabilities": ["Interactive", "Read", "Write"],
+        "websiteURL": "https://scroll.companynerve.com",
+        "privacyPolicyURL": "https://scroll.companynerve.com/privacy",
+        "termsOfServiceURL": "https://scroll.companynerve.com/terms",
+        "defaultPrompt": [
+          "Open my VibeScroll library",
+          "Save this video and find the useful insights",
+          "Which of my saved ideas could help my selected project?"
+        ],
+        "logo": "./assets/icon.png",
+        "composerIcon": "./assets/icon.png"
+      }
+    }
+  }
+}

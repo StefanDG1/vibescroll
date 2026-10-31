@@ -4,6 +4,11 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { queueDeletion } from "./assets";
 import { rememberDeletion } from "./lib/deletionMarkers";
+import { cloudArtifact } from "./lib/cloudCatalog";
+import {
+  retireCloudArtifact,
+  withdrawCatalogContribution,
+} from "./lib/cloudCatalogRetention";
 export const deletionJob = internalQuery({
   args: { jobId: v.id("deletionJobs") },
   handler: (ctx, { jobId }) => ctx.db.get(jobId),
@@ -28,6 +33,9 @@ export const purgeOrganization = internalMutation({
       return;
     }
     for (const table of [
+      "catalogContributions",
+      "catalogAliases",
+      "catalogFamilies",
       "publicEditions",
       "publicCollections",
       "publicReports",
@@ -35,6 +43,9 @@ export const purgeOrganization = internalMutation({
       "publicArtifacts",
       "publicImports",
       "publicGeography",
+      "analysisAttempts",
+      "analysisVersions",
+      "analysisEvidence",
       "sourceRevisions",
       "sourceAcquisitions",
       "sourceRelationships",
@@ -47,6 +58,7 @@ export const purgeOrganization = internalMutation({
       "librarySetup",
       "sourceSpaces",
       "dashboardCards",
+      "projectRecommendationPreferences",
       "improvements",
       "improvementOutcomes",
       "improvementPolicies",
@@ -79,6 +91,7 @@ export const purgeOrganization = internalMutation({
       "repositoryContent",
       "repositoryManifests",
       "proposals",
+      "proposalOperations",
       "runs",
       "wallets",
       "reservations",
@@ -99,6 +112,21 @@ export const purgeOrganization = internalMutation({
         .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
         .take(100);
       for (const row of rows) {
+        if (table === "catalogContributions")
+          await withdrawCatalogContribution(
+            ctx,
+            row as import("./_generated/dataModel").Doc<"catalogContributions">,
+          );
+        if (
+          table === "publicArtifacts" &&
+          cloudArtifact(
+            row as import("./_generated/dataModel").Doc<"publicArtifacts">,
+          )
+        )
+          await retireCloudArtifact(
+            ctx,
+            row._id as import("./_generated/dataModel").Id<"publicArtifacts">,
+          );
         if (table === "assets") await queueDeletion(ctx, (row as any).key);
         await ctx.db.delete(row._id);
       }

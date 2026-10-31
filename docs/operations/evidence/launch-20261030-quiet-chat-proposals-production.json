@@ -1,0 +1,77 @@
+{
+  "observedAtUTC": "2026-10-30T02:37:46Z",
+  "commit": "c862450aafa3f49e7756965a0bbc566f038323f1",
+  "websiteVersion": "0.1.0-alpha.20261030021307.gc862450aafa3",
+  "deploymentId": "dpl_7NxNHZhEyGqX3zKXv6bwwEhv7u2x",
+  "ciRun": 40990404017,
+  "ci": {
+    "passed": true,
+    "vitestPassed": 1559,
+    "vitestSkipped": 5,
+    "types": true,
+    "lint": true,
+    "productionBuilds": 2,
+    "dependencyAuditUnresolved": 0
+  },
+  "local": {
+    "fullCheckPassed": true,
+    "vitestPassed": 1565,
+    "vitestSkipped": 3,
+    "includesFourPausedAdapterTestsExcludedFromCommit": true,
+    "shippingTreeTypesPassed": true,
+    "secretScanFindings": 0,
+    "focusedProposalContextSharedTestsPassed": 37,
+    "deterministicOfflinePreparations": 2,
+    "releaseGuardTestsPassed": 22
+  },
+  "backend": {
+    "finishAcknowledged": true,
+    "components": 12,
+    "tables": 138,
+    "indexes": 301,
+    "scans": 0,
+    "backfills": 0,
+    "schemaChanged": false,
+    "indexesChanged": false,
+    "authChanged": false,
+    "cronChanged": false,
+    "logSinksBeforePublication": 0,
+    "telemetryCompletionUnverifiedHoldRetained": true
+  },
+  "website": {
+    "fixedBasic": true,
+    "normalQueue": true,
+    "buildDurationMs": 41752,
+    "stagedHealthExact": true,
+    "sameBuildPromoted": true,
+    "canonicalHealthExact": true,
+    "normalDomainAssignmentRestored": true,
+    "signedInHomeRendered": true,
+    "signedInProposalListedAndOpened": true,
+    "phoneWidth": 390,
+    "phoneHorizontalOverflow": false,
+    "localLightDarkVisualChecks": true,
+    "planningOnlyDraftHidesImplementationControls": true
+  },
+  "proposal": {
+    "officialSdkAdminActingAsAccepted": true,
+    "createReadEditReplayReadAccepted": true,
+    "finalVersion": 2,
+    "originalCreateReplayPreservesFinalVersion": true,
+    "sharedRetainedVersionUsed": true,
+    "goodPrivateDraftRetained": true,
+    "analysisStarted": false,
+    "creditsSpent": 0,
+    "credentialFileDeleted": true,
+    "actualMcpOAuthContextReadAccepted": true,
+    "actualNewMcpOAuthWriteAccepted": false,
+    "freshChatToolDiscoveryAccepted": false
+  },
+  "limits": [
+    "The generic CLI /api/function acting-as path returned Server Error even for an existing profile query. Its exact cause remains unproved; the SDK query/mutation path passed. No earlier write was found before the SDK create.",
+    "New MCP tool schemas and authenticated HTTP relay passed isolated integration tests; production persistence and app reads passed. Fresh ChatGPT tool discovery and the actual OAuth write call are still unverified.",
+    "The full shared post/insight reader and issue/PR handoff are later checkpoints.",
+    "Direct hosted ChatGPT-plan use stays paused, embedded UI stays disabled and local execution stays deferred.",
+    "No analysis run, source acquisition, schema migration, paid model call, purchase or billing migration occurred. Prior holds remain; provider invoices are not settled by this receipt."
+  ]
+}

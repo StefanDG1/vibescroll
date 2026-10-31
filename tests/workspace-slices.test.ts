@@ -22,7 +22,36 @@ function fixture(denied = false) {
     if (name === "organizations:details")
       return { name: "Synthetic", private: true, role: "owner" };
     if (name === "product:repositories")
-      return [{ _id: "repo", fullName: "synthetic/project", enabled: true }];
+      return [
+        {
+          _id: "repo",
+          fullName: "synthetic/project",
+          enabled: true,
+          confirmed: true,
+          status: "ready",
+          profile: "Private repository context",
+          snapshotPaths: ["private/path"],
+        },
+      ];
+    if (name === "product:detail")
+      return {
+        _id: args.id,
+        organizationId,
+        state: "ready",
+        analysis: { insights: [{ id: "point", claim: "Retained claim" }] },
+        proposals: [{ _id: "source-proposal" }],
+        privateSourceEligibility: { available: true },
+        workCloudMediaEnabled: true,
+      };
+    if (name === "aiPreferences:read")
+      return { personalAlphaEnabled: true, cloudAnalysisEnabled: true };
+    if (name === "projectRecommendations:read")
+      return {
+        versionId: "version",
+        rubric: "topic-history-priority-v2",
+        items: [],
+        creditsSpent: 0,
+      };
     if (name === "product:proposals")
       return [
         { _id: "proposal", repositoryId: "repo", title: "Synthetic plan" },
@@ -34,7 +63,7 @@ function fixture(denied = false) {
   });
   return calls;
 }
-it("loads project review, context and scan prerequisites in five scoped reads without fetching library or billing", async () => {
+it("loads project review, context and scan prerequisites in six scoped reads including header Save setup without fetching library or billing", async () => {
   const calls = fixture();
   const result = await workspaceData({ org: organizationId, view: "projects" });
   expect(calls.map((c) => c.name)).toEqual([
@@ -43,6 +72,7 @@ it("loads project review, context and scan prerequisites in five scoped reads wi
     "product:repositories",
     "devices:list",
     "githubLinks:choices",
+    "aiPreferences:read",
   ]);
   expect(calls.every((c) => c.args.organizationId === organizationId)).toBe(
     true,
@@ -56,14 +86,78 @@ it("loads project review, context and scan prerequisites in five scoped reads wi
     devices: [{ _id: "device" }],
   });
 });
+it("loads one source, its bounded recommendation signals and action prerequisites in six reads without library, unrelated runs or usage", async () => {
+  const calls = fixture();
+  const result = await workspaceData({
+    org: organizationId,
+    view: "source",
+    sourceId: "selected-post",
+  });
+  expect(calls.map((call) => call.name)).toEqual([
+    "organizations:details",
+    "product:detail",
+    "product:repositories",
+    "devices:list",
+    "aiPreferences:read",
+    "projectRecommendations:read",
+  ]);
+  expect(calls[1].args).toEqual({ id: "selected-post", organizationId });
+  expect(calls[5].args).toEqual({ sourceId: "selected-post", organizationId });
+  expect(result).toMatchObject({
+    workspaceSlice: "source",
+    sources: [],
+    proposals: [],
+    runs: [],
+    notifications: [],
+    usage: null,
+    selectedSource: {
+      _id: "selected-post",
+      analysis: { insights: [{ claim: "Retained claim" }] },
+      proposals: [{ _id: "source-proposal" }],
+      privateSourceEligibility: { available: true },
+      workCloudMediaEnabled: true,
+    },
+    repositories: [
+      {
+        _id: "repo",
+        fullName: "synthetic/project",
+        enabled: true,
+        confirmed: true,
+      },
+    ],
+    devices: [{ _id: "device" }],
+    aiPreference: { personalAlphaEnabled: true },
+  });
+  expect(JSON.stringify(result)).not.toContain("Private repository context");
+  expect(JSON.stringify(result)).not.toContain("private/path");
+});
+it("denies missing or unavailable selected sources instead of loading a broad workspace fallback", async () => {
+  let calls = fixture();
+  await expect(
+    workspaceData({ org: organizationId, view: "source" }),
+  ).rejects.toThrow("Source unavailable");
+  expect(calls).toHaveLength(0);
+  calls = fixture(true);
+  await expect(
+    workspaceData({
+      org: organizationId,
+      view: "source",
+      sourceId: "denied-post",
+    }),
+  ).rejects.toThrow("ACCESS_LOST");
+  expect(calls.some((call) => /library|usage|overview/.test(call.name))).toBe(
+    false,
+  );
+});
 it.each(["plans", "proposals"])(
-  "loads %s with two scoped reads and marks the slice for a fresh capture-context load",
+  "loads %s with three scoped reads including header Save setup",
   async (view) => {
     const calls = fixture();
     const result = await workspaceData({ org: organizationId, view });
     expect(calls.map((c) => c.name)).toEqual([
       "organizations:details",
       "product:proposals",
+      "aiPreferences:read",
     ]);
     expect(result).toMatchObject({
       workspaceSlice: "plans",

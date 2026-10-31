@@ -2,6 +2,10 @@
 
 Mode: reference. Prices are proposed launch prices. Production Stripe IDs are created only with operator authorization.
 
+## Current target, October 29
+
+The owner selects one paid hosted Pro with workspaces/all implemented features and entitled shared-cache access. Free distribution is self-hosted code without that dataset. Compare 300/500 monthly credits, Muse 1× and cost-group multipliers for other models including high reasoning. The working comparison is EUR 8/week (50 credits), EUR 35/month (300) and EUR 350/year (300 granted monthly); all prices reduce to8. These are proposals, not a changed live catalogue. [ADR192](adr/192-single-hosted-pro-duration-credits.md) and the [mandatory pricing plan](strategy/PRO-PRICING-AND-CREDITS.md) preserve current subscriptions, old purchased credits and staged migration. The older catalogue/trial/credit ceiling below remains the current serialized implementation reference, not the new product target.
+
 ## Catalogue
 
 Consumer prices are configured as tax-inclusive totals where tax applies. The receipt separately identifies the applicable treatment. Under an exemption, do not label the price as a zero-percent taxable sale.

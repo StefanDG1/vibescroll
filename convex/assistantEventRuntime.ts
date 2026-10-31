@@ -101,6 +101,7 @@ export const subscribe = internalAction({
         v.literal("analysis_completed"),
         v.literal("work_cloud_waiting"),
         v.literal("work_cloud_connection_verified"),
+        v.literal("video_link_saved"),
       ),
     ),
     profileId: v.id("organizations"),
@@ -292,7 +293,11 @@ export const deliver = internalAction({
       const body = JSON.stringify({
         eventId,
         name: d.eventName ?? "analysis_completed",
-        timestamp: new Date(d.completedRevision).toISOString(),
+        timestamp: new Date(
+          d.eventName === "video_link_saved"
+            ? d.createdAt
+            : d.completedRevision,
+        ).toISOString(),
         data:
           d.eventName === "work_cloud_connection_verified"
             ? {
@@ -302,26 +307,42 @@ export const deliver = internalAction({
                 status: "webhook_verified",
                 hostExecutionVerified: false,
               }
-            : d.eventName === "work_cloud_waiting"
+            : d.eventName === "video_link_saved"
               ? {
-                  schemaVersion: "work-cloud-waiting-v1",
+                  schemaVersion: "video-link-saved-v1",
                   sourceId: d.sourceId,
                   profileId: s.organizationId,
                   generation: d.generation,
                   grantVersion: s.grantVersion,
-                  approvedAt: d.completedRevision,
-                  status: "waiting",
-                  reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/library/${d.sourceId}`,
+                  status: "saved",
+                  reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/posts/${d.sourceId}`,
                 }
-              : {
-                  sourceId: d.sourceId,
-                  profileId: s.organizationId,
-                  status: "ready",
-                  evidenceChanged:
-                    d.completedRevision !==
-                    ("revision" in s ? s.revision : undefined),
-                  reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/library/${d.sourceId}`,
-                },
+              : d.eventName === "work_cloud_waiting"
+                ? {
+                    schemaVersion: "work-cloud-waiting-v1",
+                    ...("analysisAttemptId" in d && d.analysisAttemptId
+                      ? {
+                          attemptId: d.analysisAttemptId,
+                          inputKind: "retained_evidence",
+                        }
+                      : {}),
+                    sourceId: d.sourceId,
+                    profileId: s.organizationId,
+                    generation: d.generation,
+                    grantVersion: s.grantVersion,
+                    approvedAt: d.completedRevision,
+                    status: "waiting",
+                    reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/library/${d.sourceId}`,
+                  }
+                : {
+                    sourceId: d.sourceId,
+                    profileId: s.organizationId,
+                    status: "ready",
+                    evidenceChanged:
+                      d.completedRevision !==
+                      ("revision" in s ? s.revision : undefined),
+                    reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/library/${d.sourceId}`,
+                  },
         cursor: null,
       });
       const receipt = await sendWebhook(

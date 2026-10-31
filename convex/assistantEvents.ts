@@ -17,6 +17,7 @@ const selected = {
       v.literal("analysis_completed"),
       v.literal("work_cloud_waiting"),
       v.literal("work_cloud_connection_verified"),
+      v.literal("video_link_saved"),
     ),
   ),
   profileId: v.id("organizations"),
@@ -31,7 +32,8 @@ async function reviewed(
     eventName?:
       | "analysis_completed"
       | "work_cloud_waiting"
-      | "work_cloud_connection_verified";
+      | "work_cloud_connection_verified"
+      | "video_link_saved";
     sourceId?: import("./_generated/dataModel").Id<"sources">;
     generation?: number;
     grantVersion: number;
@@ -247,7 +249,9 @@ export const install = internalMutation({
           }
         : {
             eventName: args.eventName as
-              "work_cloud_waiting" | "work_cloud_connection_verified",
+              | "work_cloud_waiting"
+              | "work_cloud_connection_verified"
+              | "video_link_saved",
           }),
       externalId: args.externalId,
       ciphertext: args.ciphertext,

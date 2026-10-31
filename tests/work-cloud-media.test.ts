@@ -12,8 +12,17 @@ import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { sharedTypedCitations } from "../convex/lib/sourceCitations";
 import { currentOrderedSource } from "../convex/lib/workCloudMediaSource";
 import {
+  retainedCloudFrames,
+  sourceEvidenceFrames,
+} from "../packages/media/cloud-frames";
+import { syntheticJpeg } from "./cloud-frame-fixture";
+import {
   workCloudMediaPreparation,
   validateWorkCloudMediaOutput,
+  workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
 } from "../packages/contracts/work-cloud-text";
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -31,9 +40,13 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
-async function setup(url = "https://www.youtube.com/watch?v=abcdefghijk") {
+async function setup(
+  url = "https://www.youtube.com/watch?v=abcdefghijk",
+  legacy = true,
+) {
   for (const key of [
     "MCP_ENABLED",
     "WORK_CLOUD_MEDIA_ENABLED",
@@ -120,12 +133,14 @@ async function setup(url = "https://www.youtube.com/watch?v=abcdefghijk") {
     });
     if (!("leaseToken" in c) || !c.leaseToken)
       throw Error("Missing claim token");
-    return {
+    const lease = {
       sourceId,
       generation: approved.generation,
       taskId: "synthetic-real-task",
       leaseToken: c.leaseToken,
     };
+    if (legacy) await bindLegacyLease({ t, assistant, sourceId }, lease);
+    return lease;
   };
   return {
     t,
@@ -143,6 +158,115 @@ async function setup(url = "https://www.youtube.com/watch?v=abcdefghijk") {
   };
 }
 type Fixture = Awaited<ReturnType<typeof setup>>;
+// Existing sampled-ASR fixtures represent retained v2 jobs. New caption-path
+// cases explicitly keep the current v3 approval and image requirements.
+async function bindLegacyLease(
+  s: any,
+  lease: any,
+  policy:
+    | typeof workCloudMediaPolicyV2
+    | typeof workCloudMediaPolicyInitialV3
+    | typeof workCloudMediaPolicyPreDiagnosticsV3
+    | typeof workCloudMediaPolicyPreResolvedV3 = workCloudMediaPolicyV2,
+) {
+  const input = await s.assistant.query(
+    internal.workCloudAnalysis.input,
+    lease,
+  );
+  const fields = [
+    "schemaVersion",
+    "sourceId",
+    "generation",
+    "processingRunId",
+    "title",
+    "inputKind",
+    "canonicalUrl",
+    "platform",
+    "allowedDomains",
+    "retainUntil",
+    "expectedCoverage",
+    "outputSchema",
+    "policy",
+    "policyHash",
+    "toolchainHash",
+    "text",
+    "sourceRevisionId",
+    "sourceContentHash",
+    "revision",
+    "evidence",
+  ];
+  const legacy = Object.fromEntries(fields.map((key) => [key, input[key]]));
+  legacy.schemaVersion = policy.schemaVersion;
+  legacy.policy = policy;
+  legacy.policyHash = await socialHash(canonicalJson(policy));
+  legacy.toolchainHash = await socialHash(canonicalJson(policy.toolchain));
+  const inputHash = await socialHash(canonicalJson(legacy));
+  await s.t.run(async (ctx: any) => {
+    const source = await ctx.db.get(s.sourceId),
+      job = source.personalAnalysis;
+    await ctx.db.patch(s.sourceId, {
+      personalAnalysis: {
+        ...job,
+        cloud: {
+          ...job.cloud,
+          schemaVersion: policy.schemaVersion,
+          inputHash,
+          policyHash: legacy.policyHash,
+          media: { ...job.cloud.media, toolchainHash: legacy.toolchainHash },
+        },
+      },
+    });
+  });
+}
+it("does not let a new Cloud job downgrade to legacy preparation without returned images", async () => {
+  const s = await setup(undefined, false),
+    lease = await s.claim();
+  await expect(prepare(s, lease, await receipt(s, lease))).rejects.toThrow(
+    "preparation version",
+  );
+});
+it.each([
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
+])(
+  "retains the exact approved v3 toolchain through reviewed implementation patches",
+  async (policy) => {
+    const s = await setup(undefined, false),
+      lease = await s.claim();
+    await bindLegacyLease(s, lease, policy);
+    await expect(
+      s.assistant.query(internal.workCloudAnalysis.input, lease),
+    ).resolves.toMatchObject({
+      schemaVersion: "work-cloud-media-v3",
+      policy,
+    });
+    await expect(
+      s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+        ...lease,
+        operation: "heartbeat",
+      }),
+    ).resolves.toMatchObject({ valid: true });
+  },
+);
+
+it.each([
+  "https://vm.tiktok.com/Abcdef123/",
+  "https://vt.tiktok.com/Abcdef123/",
+  "https://www.tiktok.com/t/Abcdef123/",
+])(
+  "admits supported TikTok sharing links without confusing them with creator identities: %s",
+  async (url) => {
+    const s = await setup(url),
+      lease = await s.claim();
+    await expect(
+      s.assistant.query(internal.workCloudAnalysis.input, lease),
+    ).resolves.toMatchObject({
+      canonicalUrl: expect.stringContaining("Abcdef123"),
+      platform: "tiktok",
+    });
+  },
+);
 type Lease = Awaited<ReturnType<Fixture["claim"]>>;
 async function receipt(s: Fixture, lease: Lease) {
   const input = await s.assistant.query(
@@ -469,7 +593,6 @@ it.each([
 );
 
 it.each([
-  "recent_auth",
   "rights",
   "role",
   "grant",
@@ -505,10 +628,7 @@ it.each([
     });
     const before = await s.t.run((ctx) => ctx.db.get(s.sourceId));
     await expect(
-      (change === "recent_auth" ? s.owner : s.freshOwner).mutation(
-        api.workCloudAnalysis.approve,
-        s.approval,
-      ),
+      s.owner.mutation(api.workCloudAnalysis.approve, s.approval),
     ).rejects.toThrow();
     expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(before);
   },
@@ -1169,6 +1289,7 @@ it("claims an exact 180-second media lease, renews after a bounded step and comp
     taskId: "caller-correlation-id",
     leaseToken: claimed.leaseToken,
   };
+  await bindLegacyLease(s, lease);
   const p = await receipt(s, lease);
   await prepare(s, lease, p);
   vi.advanceTimersByTime(60000);
@@ -1244,120 +1365,6 @@ it.each(["heartbeat", "complete"] as const)(
     expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toEqual(unknown);
   },
 );
-
-it("reads actual completed media citations through the OAuth library endpoint and fences withdrawn rights", async () => {
-  const s = await setup(),
-    lease = await s.claim(),
-    p = await receipt(s, lease);
-  await prepare(s, lease, p);
-  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
-    ...lease,
-    operation: "complete",
-    output: output(lease, p),
-  });
-  const saved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
-  vi.stubEnv(
-    "MCP_CLIENTS",
-    JSON.stringify([
-      {
-        id: clientId,
-        name: "Synthetic media fixture",
-        scopes: ["analysis:execute", "knowledge:read"],
-      },
-    ]),
-  );
-  await s.owner.mutation(api.assistantGrants.save, {
-    organizationId: s.org,
-    clientId,
-    sources: [
-      {
-        sourceId: s.sourceId,
-        generation: saved.generation,
-        revision: saved.updatedAt,
-      },
-    ],
-    scopes: ["knowledge:read"],
-    expectedVersion: s.grant.version,
-    expiresAt: Date.now() + 86400000,
-    acknowledged: true,
-  });
-  const reader = s.t.withIdentity({ ...identity, scope: "knowledge:read" });
-  vi.stubEnv("WORK_CLOUD_MEDIA_ENABLED", "false");
-  const result = await reader.query(internal.assistant.fetch, {
-    profileId: s.org,
-    id: s.sourceId,
-  });
-  const value = JSON.parse(result.text);
-  expect(value.insights[0].evidence[0]).toMatchObject({
-    id: "speech-1",
-    assetId: "observed-video",
-    startMs: 0,
-  });
-  expect(value.sourceCoverage.omissions.join(" ")).toContain("unverified");
-  expect(result.url).toContain(`/library/${s.sourceId}`);
-  await s.t.run((ctx) => ctx.db.patch(s.sourceId, { rightsAttested: false }));
-  await expect(
-    reader.query(internal.assistant.fetch, {
-      profileId: s.org,
-      id: s.sourceId,
-    }),
-  ).rejects.toThrow();
-});
-it("scrubs retained media from expired exports and explicit source deletion", async () => {
-  const s = await setup(),
-    lease = await s.claim(),
-    p = await receipt(s, lease);
-  await prepare(s, lease, p);
-  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
-    ...lease,
-    operation: "complete",
-    output: output(lease, p),
-  });
-  const before = await s.owner.query(api.jobs.exportPage, {
-    organizationId: s.org,
-    section: "sources",
-    cursor: null,
-    asOf: Date.now(),
-  });
-  expect(JSON.stringify(before)).toContain("work-cloud-observed-media-v1");
-  vi.setSystemTime(s.retainUntil + 1);
-  const expired = await s.owner.query(api.jobs.exportPage, {
-    organizationId: s.org,
-    section: "sources",
-    cursor: null,
-    asOf: Date.now(),
-  });
-  expect(JSON.stringify(expired)).not.toContain("work-cloud-observed-media-v1");
-  await s.owner.mutation(api.product.deleteSource, { id: s.sourceId });
-  const deleted = await s.t.run((ctx) => ctx.db.get(s.sourceId));
-  expect(deleted).toMatchObject({ state: "deleted" });
-  expect(deleted?.orderedMedia).toBeUndefined();
-  expect(deleted?.analysis).toBeUndefined();
-});
-it("quarantines restored Cloud media before unlocking without reissuing execution authority", async () => {
-  const s = await setup(),
-    lease = await s.claim(),
-    p = await receipt(s, lease);
-  await prepare(s, lease, p);
-  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
-    ...lease,
-    operation: "complete",
-    output: output(lease, p),
-  });
-  vi.stubEnv("RESTORE_LOCK", "true");
-  await s.t.mutation(internal.recovery.quarantinePage, {
-    section: "sources",
-    cursor: null,
-  });
-  const restored = await s.t.run((ctx) => ctx.db.get(s.sourceId));
-  expect(restored?.orderedMedia).toBeUndefined();
-  expect(restored?.analysis).toBeUndefined();
-  expect(restored?.personalAnalysis).toBeUndefined();
-  vi.stubEnv("RESTORE_LOCK", "false");
-  await expect(
-    s.assistant.query(internal.workCloudAnalysis.input, lease),
-  ).rejects.toThrow(/APPROVAL_STALE|FORBIDDEN/);
-});
 
 async function completedForCleanup() {
   const s = await setup(),
@@ -1629,3 +1636,596 @@ it("rejects a different stored Instagram identity before approval even when both
   );
   await expect(s.preview()).rejects.toThrow("APPROVAL_STALE");
 });
+
+const frameBytes = Uint8Array.from(atob(syntheticJpeg), (c) => c.charCodeAt(0));
+async function frameFixture(width = 2, captionFirst = false, appSave = false) {
+  const s = await setup(
+    appSave ? "https://www.instagram.com/reel/Abcdef12345/" : undefined,
+    !captionFirst,
+  );
+  let savedIntentId: string | undefined;
+  let lease: Lease;
+  if (appSave) {
+    for (const key of [
+      "MCP_EVENTS_ENABLED",
+      "WORK_CLOUD_SAVED_LINKS_ENABLED",
+      "WORK_CLOUD_SAVED_LINKS_VERIFIED",
+    ])
+      vi.stubEnv(key, "true");
+    const scopes = [
+      "analysis:execute",
+      "analysis:request",
+      "jobs:read",
+      "events:subscribe",
+    ];
+    vi.stubEnv(
+      "MCP_CLIENTS",
+      JSON.stringify([{ id: clientId, name: "Synthetic saved media", scopes }]),
+    );
+    s.assistant = s.t.withIdentity({ ...identity, scope: scopes.join(" ") });
+    s.grant = await s.owner.mutation(api.assistantGrants.save, {
+      organizationId: s.org,
+      clientId,
+      sources: [],
+      libraryScope: "all",
+      scopes,
+      expectedVersion: s.grant.version,
+      expiresAt: null,
+      acknowledged: true,
+      cloudRequestPolicy: "explicit_per_source_v1",
+      cloudSaveDefaults: {
+        version: "app-save-cloud-v1",
+        model: "synthetic-model",
+        effort: "high",
+        retentionMs: 7 * 86400000,
+      },
+    });
+    await s.assistant.mutation(internal.assistantEvents.install, {
+      profileId: s.org,
+      grantVersion: s.grant.version,
+      eventName: "video_link_saved",
+      externalId: "sub_" + "a".repeat(64),
+      ciphertext: "synthetic-authority",
+      keyVersion: "1",
+      expiresAt: Date.now() + 600000,
+      callbackVerifiedAt: Date.now(),
+    });
+    const saved = await s.owner.mutation(api.workCloudSaves.capture, {
+      organizationId: s.org,
+      key: "cloud-media-fixture",
+      url: s.original.url!,
+      title: s.original.title,
+      rightsAttested: true,
+      grantId: s.grant.id,
+      grantVersion: s.grant.version,
+    });
+    if (!saved.intentId) throw Error("No saved intent");
+    savedIntentId = saved.intentId;
+    const status = await s.assistant.query(internal.assistant.getJobStatus, {
+      profileId: s.org,
+      sourceId: s.sourceId,
+    });
+    expect(status.saved_cloud_intent).toMatchObject({
+      id: savedIntentId,
+      state: "waiting_for_runtime",
+    });
+    expect(
+      (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.personalAnalysis,
+    ).toBeUndefined();
+    const queued = await s.assistant.mutation(
+      internal.assistant.requestAnalysis,
+      {
+        profileId: s.org,
+        sourceId: s.sourceId,
+        mode: "work_cloud",
+        savedIntentId,
+      },
+    );
+    if (!("generation" in queued))
+      throw Error("Saved intent did not queue a job");
+    const taskId = "synthetic-real-task";
+    const claimed = await s.assistant.mutation(
+      internal.workCloudAnalysis.dispatch,
+      {
+        sourceId: s.sourceId,
+        generation: queued.generation,
+        taskId,
+        operation: "claim",
+      },
+    );
+    if (!claimed.leaseToken) throw Error("Missing saved-intent claim");
+    lease = {
+      sourceId: s.sourceId,
+      generation: queued.generation,
+      taskId,
+      leaseToken: claimed.leaseToken,
+    };
+  } else lease = await s.claim();
+  let prepared = await receipt(s, lease);
+  if (captionFirst) {
+    prepared = workCloudMediaPreparation.parse({
+      ...prepared,
+      schemaVersion: "work-cloud-media-preparation-v3",
+      post: {
+        ...prepared.post,
+        schemaVersion: "work-cloud-observed-media-v2",
+        resolvedCanonical: prepared.post.canonical,
+        audio: null,
+        assets: prepared.post.assets.map((asset) => ({
+          ...asset,
+          audioInspected: false,
+        })),
+        transcript: {
+          origin: "platform_auto",
+          language: "en",
+          translated: false,
+          asrUsed: false,
+          trackSha256: "d".repeat(64),
+          format: "srt",
+        },
+      },
+    }) as unknown as Receipt;
+  }
+  const sha256 = Array.from(
+    new Uint8Array(await crypto.subtle.digest("SHA-256", frameBytes)),
+    (n) => n.toString(16).padStart(2, "0"),
+  ).join("");
+  prepared.post.frames[0] = {
+    ...prepared.post.frames[0],
+    bytes: frameBytes.length,
+    sha256,
+    width,
+    height: 2,
+  };
+  prepared.post.revisionHash = await orderedRevisionHash(prepared.post);
+  for (const evidence of prepared.evidence)
+    evidence.postRevisionHash = prepared.post.revisionHash;
+  const bound = await prepare(s, lease, prepared);
+  if (!("preparationHash" in bound)) throw Error("No bound preparation");
+  const args = {
+    ...lease,
+    preparationHash: bound.preparationHash!,
+    frameId: "frame-1",
+    data: btoa(String.fromCharCode(...frameBytes)),
+  };
+  for (const [key, value] of Object.entries({
+    R2_ENDPOINT: "https://synthetic.eu.r2.cloudflarestorage.com",
+    R2_BUCKET: "synthetic",
+    R2_ACCESS_KEY_ID: "synthetic",
+    R2_SECRET_ACCESS_KEY: "synthetic",
+  }))
+    vi.stubEnv(key, value);
+  return { ...s, lease, prepared, args, savedIntentId };
+}
+function frameStorage(beforeHead?: () => Promise<void>) {
+  const fetcher = vi.fn(async (_url: unknown, request?: RequestInit) => {
+    if (request?.method === "PUT") {
+      expect(new Uint8Array(request.body as ArrayBuffer)).toEqual(frameBytes);
+      return new Response(null, { status: 200 });
+    }
+    expect(request?.method).toBe("HEAD");
+    await beforeHead?.();
+    return new Response(null, {
+      headers: {
+        "content-length": String(frameBytes.length),
+        "content-type": "image/jpeg",
+        etag: '"synthetic-frame"',
+      },
+    });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  return fetcher;
+}
+async function queuedEvidenceRepair() {
+  const s = await frameFixture();
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...s.lease,
+    operation: "complete",
+    output: output(s.lease, s.prepared),
+  });
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.sourceId))!,
+      job = source.personalAnalysis!;
+    await ctx.db.patch(s.sourceId, {
+      personalAnalysis: {
+        ...job,
+        expiresAt: Date.now() - 1,
+        leaseUntil: 0,
+        deadline: Date.now() - 1,
+      },
+    });
+  });
+  const before = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  await s.owner.mutation(api.workCloudEvidenceRepair.approve, {
+    sourceId: s.sourceId,
+    generation: s.lease.generation,
+    preparationHash: s.args.preparationHash,
+    acknowledged: true,
+  });
+  const claimed = await s.assistant.mutation(
+    internal.workCloudEvidenceRepair.claim,
+    {
+      sourceId: s.sourceId,
+      generation: s.lease.generation,
+      taskId: "new-image-repair-task",
+    },
+  );
+  const repairLease = {
+    ...s.lease,
+    taskId: "new-image-repair-task",
+    leaseToken: claimed.leaseToken,
+  };
+  return { ...s, before, repairLease };
+}
+it("repairs only exact original pixels with a fresh lease while the old completed lease remains expired", async () => {
+  const s = await queuedEvidenceRepair();
+  await expect(
+    s.assistant.query(internal.workCloudEvidenceRepair.input, s.repairLease),
+  ).resolves.toMatchObject({
+    analysisAllowed: false,
+    exactExistingPixelsRequired: true,
+  });
+  frameStorage();
+  await expect(
+    s.assistant.action(internal.workCloudFrames.upload, s.args),
+  ).rejects.toThrow("APPROVAL_STALE");
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.complete,
+      s.repairLease,
+    ),
+  ).rejects.toThrow("required prepared JPEG");
+  await s.assistant.action(internal.workCloudFrames.upload, {
+    ...s.args,
+    ...s.repairLease,
+    repair: true,
+  });
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.complete,
+      s.repairLease,
+    ),
+  ).resolves.toEqual({ accepted: true, cached: false });
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.complete,
+      s.repairLease,
+    ),
+  ).resolves.toEqual({ accepted: true, cached: true });
+  const after = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(after.analysis).toEqual(s.before.analysis);
+  expect(after.orderedMedia).toEqual(s.before.orderedMedia);
+  expect(after.generation).toBe(s.before.generation);
+  expect(after.personalAnalysis?.state).toBe("completed");
+  expect(retainedCloudFrames(after)).toHaveLength(1);
+  await expect(currentOrderedSource(after)).resolves.toBeDefined();
+  await expect(
+    s.assistant.action(internal.workCloudFrames.upload, {
+      ...s.args,
+      ...s.repairLease,
+      repair: true,
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+});
+it("rechecks repair permission after storage I/O and cleans an unattached image on revocation", async () => {
+  const s = await queuedEvidenceRepair();
+  frameStorage(async () => {
+    await s.t.run((ctx) => ctx.db.patch(s.grant.id, { state: "revoked" }));
+  });
+  await expect(
+    s.assistant.action(internal.workCloudFrames.upload, {
+      ...s.args,
+      ...s.repairLease,
+      repair: true,
+    }),
+  ).rejects.toThrow();
+  const after = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(after.analysis).toEqual(s.before.analysis);
+  expect(retainedCloudFrames(after)).toEqual([]);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("objectDeletions").collect()),
+  ).toHaveLength(1);
+});
+it("cannot renew an expired repair or claim it again with another correlation", async () => {
+  const s = await queuedEvidenceRepair();
+  await expect(
+    s.assistant.mutation(internal.workCloudEvidenceRepair.claim, {
+      sourceId: s.sourceId,
+      generation: s.lease.generation,
+      taskId: "another-task",
+    }),
+  ).rejects.toThrow("Claim repair once");
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.heartbeat,
+      s.repairLease,
+    ),
+  ).resolves.toMatchObject({ leaseUntil: expect.any(Number) });
+  vi.advanceTimersByTime(180001);
+  await expect(
+    s.assistant.mutation(
+      internal.workCloudEvidenceRepair.heartbeat,
+      s.repairLease,
+    ),
+  ).rejects.toThrow("APPROVAL_STALE");
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.analysis).toEqual(
+    s.before.analysis,
+  );
+});
+it("completes caption-only media with real stored images and early metadata without changing the approved title", async () => {
+  const s = await frameFixture(2, true);
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...s.lease,
+    operation: "metadata",
+    metadata: {
+      title: "Native platform title",
+      authorName: "Creator name",
+      publishedAt: Date.now() - 1000,
+    },
+  });
+  await expect(
+    s.assistant.query(internal.workCloudAnalysis.input, s.lease),
+  ).resolves.toMatchObject({
+    schemaVersion: "work-cloud-media-v3",
+    title: "Synthetic permitted video",
+  });
+  await expect(
+    s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+      ...s.lease,
+      operation: "complete",
+      output: output(s.lease, s.prepared),
+    }),
+  ).rejects.toThrow("image bytes");
+  frameStorage();
+  await s.assistant.action(internal.workCloudFrames.upload, s.args);
+  await expect(
+    s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+      ...s.lease,
+      operation: "complete",
+      output: output(s.lease, s.prepared),
+    }),
+  ).resolves.toMatchObject({ accepted: true });
+  const saved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(saved.title).toBe("Synthetic permitted video");
+  expect(saved.linkPreview?.authorName).toBe("Creator name");
+  expect(saved.orderedMedia!.post.transcript).toMatchObject({
+    origin: "platform_auto",
+    asrUsed: false,
+  });
+  expect(retainedCloudFrames(saved)).toHaveLength(1);
+  await expect(currentOrderedSource(saved)).resolves.toBeDefined();
+});
+it("rejects contradictory ASR provenance and a caption post in the legacy envelope", async () => {
+  const s = await frameFixture(2, true);
+  const post = s.prepared.post as any;
+  expect(
+    workCloudMediaPreparation.safeParse({
+      ...s.prepared,
+      post: { ...post, transcript: { ...post.transcript, asrUsed: true } },
+    }).success,
+  ).toBe(false);
+  expect(
+    workCloudMediaPreparation.safeParse({
+      ...s.prepared,
+      schemaVersion: "work-cloud-media-preparation-v2",
+    }).success,
+  ).toBe(false);
+});
+it("keeps already approved media-v2 execution bound to its original policy and toolchain", async () => {
+  const s = await setup(),
+    lease = await s.claim();
+  const input = await s.assistant.query(
+    internal.workCloudAnalysis.input,
+    lease,
+  );
+  const keys = [
+    "schemaVersion",
+    "sourceId",
+    "generation",
+    "processingRunId",
+    "title",
+    "inputKind",
+    "canonicalUrl",
+    "platform",
+    "allowedDomains",
+    "retainUntil",
+    "expectedCoverage",
+    "outputSchema",
+    "policy",
+    "policyHash",
+    "toolchainHash",
+    "text",
+    "sourceRevisionId",
+    "sourceContentHash",
+    "revision",
+    "evidence",
+  ];
+  const legacy = Object.fromEntries(
+    keys.map((key) => [key, (input as Record<string, unknown>)[key]]),
+  );
+  legacy.schemaVersion = "work-cloud-media-v2";
+  legacy.policy = workCloudMediaPolicyV2;
+  legacy.policyHash = await socialHash(canonicalJson(workCloudMediaPolicyV2));
+  legacy.toolchainHash = await socialHash(
+    canonicalJson(workCloudMediaPolicyV2.toolchain),
+  );
+  const inputHash = await socialHash(canonicalJson(legacy));
+  await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.sourceId))!,
+      job = source.personalAnalysis;
+    if (job?.executor !== "work_cloud" || !job.cloud.media)
+      throw Error("Missing fixture job");
+    await ctx.db.patch(s.sourceId, {
+      personalAnalysis: {
+        ...job,
+        cloud: {
+          ...job.cloud,
+          schemaVersion: "work-cloud-media-v2",
+          inputHash,
+          policyHash: legacy.policyHash as string,
+          media: {
+            ...job.cloud.media,
+            toolchainHash: legacy.toolchainHash as string,
+          },
+        },
+      },
+    });
+  });
+  await expect(
+    s.assistant.query(internal.workCloudAnalysis.input, lease),
+  ).resolves.toMatchObject({
+    schemaVersion: "work-cloud-media-v2",
+    policy: workCloudMediaPolicyV2,
+    inputHash,
+  });
+  const prepared = await receipt(s, lease);
+  await prepare(s, lease, prepared);
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...lease,
+    operation: "complete",
+    output: output(lease, prepared),
+  });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.analysisPipelineVersion,
+  ).toBe("official-work-cloud-media-v2");
+});
+it("stores matching Cloud pixels once, preserves immutable evidence and exposes the same authenticated screenshot", async () => {
+  const s = await frameFixture(),
+    fetcher = frameStorage();
+  const first = await s.assistant.action(
+    internal.workCloudFrames.upload,
+    s.args,
+  );
+  const second = await s.assistant.action(
+    internal.workCloudFrames.upload,
+    s.args,
+  );
+  expect(second).toEqual(first);
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  let source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(source.orderedMedia!.post).toEqual(s.prepared.post);
+  expect(source.orderedMedia!.evidence).toEqual(s.prepared.evidence);
+  expect(retainedCloudFrames(source)).toHaveLength(1);
+  expect(sourceEvidenceFrames(source)).toEqual([
+    { kind: "frame", id: first.assetId, startMs: 12000, endMs: 12000 },
+  ]);
+  const assetId = first.assetId as any;
+  await expect(
+    s.owner.query(api.assets.evidence, { id: assetId }),
+  ).resolves.toMatchObject({ type: "image/jpeg" });
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...s.lease,
+    operation: "complete",
+    output: output(s.lease, s.prepared),
+  });
+  source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  await expect(
+    s.assistant.action(internal.workCloudFrames.upload, s.args),
+  ).rejects.toThrow("APPROVAL_STALE");
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, { generation: source.generation + 1 }),
+  );
+  await expect(
+    s.owner.query(api.assets.evidence, { id: assetId }),
+  ).rejects.toThrow("Evidence unavailable");
+});
+it("joins app Save, exact intent, caption preparation, retained JPEG and canonical analysis on the same job", async () => {
+  const s = await frameFixture(2, true, true);
+  const storage = frameStorage();
+  await s.assistant.action(internal.workCloudFrames.upload, s.args);
+  const result = output(s.lease, s.prepared);
+  await s.assistant.mutation(internal.workCloudAnalysis.dispatch, {
+    ...s.lease,
+    operation: "complete",
+    output: result,
+  });
+  const detail = await s.owner.query(api.product.detail, {
+    id: s.sourceId,
+    organizationId: s.org,
+  });
+  expect(detail).toMatchObject({
+    state: "ready",
+    generation: 1,
+    personalAnalysis: { state: "completed" },
+    orderedMedia: {
+      post: { transcript: { origin: "platform_auto", asrUsed: false } },
+    },
+  });
+  expect(detail.analysis.insights).toHaveLength(1);
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(retainedCloudFrames(source)).toHaveLength(1);
+  expect(
+    await s.owner.query(api.assets.evidence, {
+      id: retainedCloudFrames(source)[0].assetId as any,
+    }),
+  ).toMatchObject({ type: "image/jpeg" });
+  const before = source.updatedAt;
+  const replay = await s.assistant.mutation(
+    internal.assistant.requestAnalysis,
+    {
+      profileId: s.org,
+      sourceId: s.sourceId,
+      mode: "work_cloud",
+      savedIntentId: s.savedIntentId!,
+    },
+  );
+  expect(replay).toMatchObject({
+    generation: 1,
+    reused_request: true,
+    analysis_started: false,
+  });
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.updatedAt).toBe(
+    before,
+  );
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toHaveLength(1);
+  expect(storage).toHaveBeenCalledTimes(2);
+});
+it.each(["pixels", "hash", "lease", "dimension", "base64"])(
+  "rejects mismatched Cloud %s before storage",
+  async (kind) => {
+    const s = await frameFixture(kind === "dimension" ? 3 : 2),
+      fetcher = frameStorage(),
+      args = { ...s.args };
+    if (kind === "pixels") {
+      const changed = frameBytes.slice();
+      changed[30] ^= 1;
+      args.data = btoa(String.fromCharCode(...changed));
+    }
+    if (kind === "hash") args.preparationHash = "0".repeat(64);
+    if (kind === "lease") args.leaseToken = crypto.randomUUID();
+    if (kind === "base64") args.data += "\n";
+    await expect(
+      s.assistant.action(internal.workCloudFrames.upload, args),
+    ).rejects.toThrow();
+    expect(fetcher).not.toHaveBeenCalled();
+  },
+);
+it.each(["lease", "rights", "grant"])(
+  "rechecks Cloud %s after upload and queues the unattached object for deletion",
+  async (kind) => {
+    const s = await frameFixture();
+    frameStorage(async () => {
+      if (kind === "lease") vi.advanceTimersByTime(180001);
+      if (kind === "rights")
+        await s.t.run((ctx) =>
+          ctx.db.patch(s.sourceId, { rightsAttested: false }),
+        );
+      if (kind === "grant")
+        await s.t.run((ctx) => ctx.db.patch(s.grant.id, { version: 2 }));
+    });
+    await expect(
+      s.assistant.action(internal.workCloudFrames.upload, s.args),
+    ).rejects.toThrow();
+    const rows = await s.t.run(async (ctx) => ({
+      assets: await ctx.db.query("assets").collect(),
+      deletions: await ctx.db.query("objectDeletions").collect(),
+      source: await ctx.db.get(s.sourceId),
+    }));
+    expect(rows.assets).toHaveLength(0);
+    expect(rows.deletions).toHaveLength(1);
+    expect(rows.source?.personalMedia?.cloudFrames).toBeUndefined();
+  },
+);

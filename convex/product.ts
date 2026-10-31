@@ -1,4 +1,19 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
+import { cloudRetryEligible } from "../packages/contracts/cloud-retry";
+import {
+  selectedAnalysis,
+  chatProposalEvidenceReadable,
+} from "./lib/analysisHistory";
+import { isChatProposalDetail } from "../packages/contracts/chat-proposals";
+import {
+  attachCloudCache,
+  cloudSourceMetadata,
+  catalogConfiguration,
+} from "./lib/cloudCatalog";
+import { notifyVideoLinkSaved } from "./lib/assistantEvents";
+import { recordPostSave } from "./lib/postEngagement";
+import { savedCloudRoute } from "./lib/workCloudSave";
+import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
 import {
@@ -62,6 +77,12 @@ import {
 } from "../packages/media/acquisition";
 const org = { organizationId: v.id("organizations") };
 export async function wallet(ctx: MutationCtx, id: Id<"organizations">) {
+  const organization = await ctx.db.get(id);
+  ensure(
+    organization?.memberSubscriptionPolicy !== "individual_pro_v1",
+    "PERSONAL_FUNDING_REQUIRED",
+    "Analyze from your personal account using your own credits, then share the result with your team.",
+  );
   let w = await ctx.db
     .query("wallets")
     .withIndex("by_org", (q) => q.eq("organizationId", id))
@@ -378,6 +399,7 @@ export const library = query({
     cursor: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
+    ctx = knowledgeReadContext(ctx);
     await access(ctx, a.organizationId);
     ensure(
       !a.search || a.search.length <= 200,
@@ -553,19 +575,41 @@ export const library = query({
         page.push(source);
     }
     return {
-      items: page.map(
-        ({
-          text: _text,
-          analysis,
-          objectKey: _objectKey,
-          searchable: _searchable,
-          ...source
-        }) => ({
-          ...source,
-          insightCount: analysis?.insights?.length ?? 0,
-          mainPoints:
-            analysis?.insights?.slice(0, 3).map((i: any) => i.title) ?? [],
-        }),
+      items: await Promise.all(
+        page.map(
+          async ({
+            text: _text,
+            analysis,
+            objectKey: _objectKey,
+            searchable: _searchable,
+            selectedAnalysisSummary: _selectedSummary,
+            selectedAnalysisInsightCount: _selectedCount,
+            selectedAnalysisMainPoints: _selectedPoints,
+            ...source
+          }) => {
+            const shared = await cloudSourceMetadata(ctx, {
+              ...source,
+              selectedAnalysisSummary: _selectedSummary,
+              selectedAnalysisInsightCount: _selectedCount,
+              selectedAnalysisMainPoints: _selectedPoints,
+            });
+            return {
+              ...source,
+              ...(shared ? { sharedAvailable: shared.available } : {}),
+              summary: shared
+                ? shared.summary
+                : (_selectedSummary ?? source.summary),
+              insightCount:
+                (shared ? shared.insightCount : _selectedCount) ??
+                analysis?.insights?.length ??
+                0,
+              mainPoints:
+                (shared ? shared.mainPoints : _selectedPoints) ??
+                analysis?.insights?.slice(0, 3).map((i: any) => i.title) ??
+                [],
+            };
+          },
+        ),
       ),
       next: result.isDone ? null : result.continueCursor,
       total: result.isDone && !a.cursor ? page.length : null,
@@ -647,6 +691,7 @@ export const detail = query({
         "Source permission changed.",
       );
     if (s.orderedMedia && s.state === "ready") await currentOrderedSource(s);
+    const selected = await selectedAnalysis(ctx, s);
     const analysisHash = s.analysis
       ? await digest(JSON.stringify(s.analysis))
       : undefined;
@@ -681,8 +726,91 @@ export const detail = query({
         reader.organization,
         reader.actor._id,
       ));
+    let automaticVideoSupported = false;
+    try {
+      automaticVideoSupported =
+        s.kind === "url" &&
+        ["instagram", "tiktok"].includes(
+          privateCloudMediaIdentity(s.url ?? s.canonical).platform,
+        );
+    } catch {
+      /* Other source routes keep their own setup. */
+    }
+    const automaticRoute =
+      cloudSourceEligible && automaticVideoSupported
+        ? await savedCloudRoute(ctx, reader.actor, reader.organization)
+        : null;
+    const automaticGrant = automaticRoute?.grantId
+      ? await ctx.db.get(automaticRoute.grantId)
+      : null;
     return {
       ...s,
+      workCloudLinkSetup: automaticRoute
+        ? {
+            configured: automaticRoute.configured,
+            monitorReady: automaticRoute.available,
+            chatLinksEnabled:
+              automaticGrant?.cloudSaveDefaults?.version ===
+              "link-save-cloud-v2",
+          }
+        : null,
+      workCloudRetryEligible: cloudSourceEligible && cloudRetryEligible(s),
+      catalogContributionAvailable:
+        !!catalogConfiguration() &&
+        selected?.metadata.origin === "private" &&
+        selected.metadata.provenance === "authenticated_host_reported",
+      ...(selected && "shared" in selected && selected.shared
+        ? {
+            sharedCloud: {
+              version: "shared-cloud-detail-v1",
+              canonical: selected.shared.prepared.canonical,
+              evidenceHash: selected.shared.prepared.evidenceHash,
+              sourceRevisionHash: selected.shared.prepared.sourceRevisionHash,
+              transcript: selected.shared.prepared.segments,
+              observations: selected.shared.prepared.observations,
+              retainUntil: selected.shared.evidence.retainUntil,
+              ...(selected.shared.evidence.resultRetention
+                ? { resultRetention: selected.shared.evidence.resultRetention }
+                : {}),
+              selectionMode: s.selectedAnalysisVersionId
+                ? "pinned"
+                : "recommended",
+              recommendationRevision: selected.shared.family.selectionRevision,
+              notesVersionId: selected.metadata.id,
+              notesUpdatedAt: selected.shared.layer.updatedAt,
+              privateNote:
+                selected.shared.layer.actor === reader.actor._id
+                  ? (selected.shared.layer.notesHistory.find(
+                      (note) => note.versionId === selected.metadata.id,
+                    )?.privateNote ?? "")
+                  : "",
+              corrections:
+                selected.shared.layer.actor === reader.actor._id
+                  ? (selected.shared.layer.notesHistory.find(
+                      (note) => note.versionId === selected.metadata.id,
+                    )?.corrections ?? [])
+                  : [],
+              canEditNotes: selected.shared.layer.actor === reader.actor._id,
+              frames: selected.shared.evidence.frames.map((f) => ({
+                id: f.frameId,
+                timestampMs: f.timestampMs,
+                reference: `catalog~${s._id}~${selected.metadata.id}~${f.frameId}`,
+              })),
+            },
+          }
+        : {}),
+      ...(selected
+        ? {
+            ...("preparedService" in selected && selected.preparedService
+              ? { preparedService: selected.preparedService }
+              : {}),
+            analysis: selected.output,
+            summary: selected.output.summary,
+            analysisVersion: selected.metadata,
+            analysisHash: undefined,
+            analysisReview: undefined,
+          }
+        : {}),
       workCloudHandoff:
         reader.membership.role === "owner"
           ? ((await unclaimedCloudHandoff(
@@ -707,7 +835,10 @@ export const detail = query({
         cloudSourceEligible && workCloudTextAllowed(reader.actor.subject),
       workCloudMediaEnabled:
         cloudSourceEligible && workCloudMediaAllowed(reader.actor.subject),
-      analysisHash,
+      analysisHash:
+        selected && selected.metadata.provenance !== "legacy_recorded"
+          ? undefined
+          : analysisHash,
       analysisReview: currentReview?.qualityVerdict
         ? {
             verdict: currentReview.qualityVerdict,
@@ -838,12 +969,18 @@ export async function captureAuthorized(
   actor: Awaited<ReturnType<typeof access>>,
   bulk = false,
   suppressPreview = false,
+  suppressSavedEvent = false,
 ) {
   ensure(
     actor.organization._id === a.organizationId,
     "FORBIDDEN",
     "Capture scope mismatch.",
   );
+  const saved = async (id: Id<"sources">) => {
+    if (!bulk)
+      await recordPostSave(ctx, (await ctx.db.get(id))!, actor.actor._id);
+    return id;
+  };
   ensure(
     process.env.DISABLE_CAPTURE !== "true",
     "POLICY_BLOCKED",
@@ -874,7 +1011,13 @@ export async function captureAuthorized(
       q.eq("organizationId", a.organizationId).eq("key", a.key),
     )
     .unique();
-  if (old && old.state !== "deleted") return old._id;
+  if (old && old.state !== "deleted") {
+    if (a.kind === "url" && (await attachCloudCache(ctx, old, actor.actor._id)))
+      return saved(old._id);
+    if (!bulk && !suppressSavedEvent && a.kind === "url")
+      await notifyVideoLinkSaved(ctx, old, actor.actor._id);
+    return saved(old._id);
+  }
   const classified = a.kind === "url" ? classifySourceUrl(a.url ?? "") : null;
   let canonical =
     a.kind === "url"
@@ -919,7 +1062,13 @@ export async function captureAuthorized(
       q.eq("organizationId", a.organizationId).eq("canonical", canonical),
     )
     .unique();
-  if (dup && dup.state !== "deleted") return dup._id;
+  if (dup && dup.state !== "deleted") {
+    if (a.kind === "url" && (await attachCloudCache(ctx, dup, actor.actor._id)))
+      return saved(dup._id);
+    if (!bulk && !suppressSavedEvent && a.kind === "url")
+      await notifyVideoLinkSaved(ctx, dup, actor.actor._id);
+    return saved(dup._id);
+  }
   const w = await wallet(ctx, a.organizationId);
   let counts = await ctx.db
     .query("sourceCounts")
@@ -994,8 +1143,14 @@ export async function captureAuthorized(
     if (asset) await ctx.db.patch(asset._id, { sourceId: id, updatedAt: now });
   }
   await audit(ctx, a.organizationId, actor.actor._id, "source.captured", id);
+  const reusedCatalog =
+    a.kind === "url" &&
+    (await attachCloudCache(ctx, (await ctx.db.get(id))!, actor.actor._id));
+  if (!bulk && !suppressSavedEvent && a.kind === "url" && !reusedCatalog)
+    await notifyVideoLinkSaved(ctx, (await ctx.db.get(id))!, actor.actor._id);
   if (
     a.kind === "url" &&
+    !reusedCatalog &&
     classified?.sourceType === "media" &&
     !suppressPreview &&
     process.env.LINK_PREVIEWS_ENABLED === "true"
@@ -1010,7 +1165,7 @@ export async function captureAuthorized(
         context: null,
       },
     );
-  return id;
+  return saved(id);
 }
 export async function queueLinkPreview(ctx: MutationCtx, id: Id<"sources">) {
   if (process.env.LINK_PREVIEWS_ENABLED !== "true") return false;
@@ -1812,6 +1967,7 @@ export const attachSource = mutation({
       analysis: undefined,
       searchable: [s.title, a.text, ...s.tags].filter(Boolean).join(" "),
       personalAnalysis: undefined,
+      workCloudSaveIntent: undefined,
       personalMedia: undefined,
       orderedMedia: undefined,
       acquisition: undefined,
@@ -1929,6 +2085,7 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     originalMediaEvidence: undefined,
     correctionAuthor: undefined,
     personalAnalysis: undefined,
+    workCloudSaveIntent: undefined,
     personalMedia: undefined,
     orderedMedia: undefined,
     acquisition: undefined,
@@ -1936,6 +2093,14 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     retrievalState: undefined,
     analysisPipelineVersion: undefined,
     publicImportId: undefined,
+    selectedAnalysisVersionId: undefined,
+    analysisSelectionRevision: undefined,
+    pendingAnalysisAttemptId: undefined,
+    pendingAnalysisAttemptState: undefined,
+    nextAnalysisVersionNumber: undefined,
+    selectedAnalysisSummary: undefined,
+    selectedAnalysisInsightCount: undefined,
+    selectedAnalysisMainPoints: undefined,
     typedAnalysisActor: undefined,
     sourceRetentionUntil: undefined,
     repositorySelection: undefined,
@@ -1958,6 +2123,11 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     cursor: null,
   });
   await ctx.db.patch(id, { categoryOverride: undefined });
+  await ctx.scheduler.runAfter(0, internal.analysisVersions.eraseSource, {
+    sourceId: id,
+    organizationId: s.organizationId,
+    stage: "versions",
+  });
   for (const asset of await ctx.db
     .query("assets")
     .withIndex("by_org_source", (q) =>
@@ -2072,6 +2242,11 @@ export const proposals = query({
     const permitted = [];
     for (const p of rows) {
       if (
+        isChatProposalDetail(p.detail) &&
+        !(await chatProposalEvidenceReadable(ctx, p))
+      )
+        continue;
+      if (
         p.references &&
         !(await referencesCurrent(ctx, p.organizationId, p.references))
       )
@@ -2087,6 +2262,12 @@ export const proposal = query({
     const p = await ctx.db.get(a.id);
     if (!p) fail("Proposal unavailable.");
     await access(ctx, p.organizationId);
+    ensure(
+      !isChatProposalDetail(p.detail) ||
+        (await chatProposalEvidenceReadable(ctx, p)),
+      "FORBIDDEN",
+      "The proposal's retained evidence is unavailable.",
+    );
     ensure(
       !p.references ||
         (await referencesCurrent(ctx, p.organizationId, p.references)),

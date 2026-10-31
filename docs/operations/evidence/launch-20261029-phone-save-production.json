@@ -1,0 +1,15 @@
+{
+  "kind": "implicit-mcp-phone-save-production-v1",
+  "observedAtUTC": "2026-10-29T00:10:17Z",
+  "commit": "4c72afd356c05044cb345063116ba136f60d4894",
+  "version": "0.1.0-alpha.20261028235320.g4c72afd356c0",
+  "deploymentId": "dpl_AMJFT36FNCkgohfiR5JjDKrtu2tQ",
+  "exactCI": 40790408434,
+  "releaseGuards": 35,
+  "actualMigration": {"components":12,"tables":137,"indexes":297,"tableScans":0,"indexBackfills":0,"schemaChanges":0},
+  "website": {"basicBuildMilliseconds":37731,"normalQueue":true,"stagedHealth":200,"stagedGuide":200,"sameBuildPromoted":true,"canonicalHealth":200,"canonicalCommitMatched":true,"normalDomainAssignmentRestored":true},
+  "phoneSave": {"originalOAuthConnection":true,"rootFailure":"implicit workspace selection","implicitProfileReproductionFailedBeforeRelease":true,"explicitProfileSaveSucceeded":true,"implicitProfileSaveSucceededAfterRelease":true,"sameSourceAndStableKeyReused":true,"sourceId":"px71jkve7h68hfefa3yxh3t7sn8h58pv","analysisStartedBySaveTest":false,"reauthenticationRequired":false,"scopesOrGrantChanged":false},
+  "readyResultReplay": {"sameGeneration":true,"newAcquisition":false,"newAnalysis":false},
+  "nativeMonitor": "paused after previous exact-source attempt; not general automatic acceptance",
+  "oldHoldsAndReservedPostPreserved":true
+}

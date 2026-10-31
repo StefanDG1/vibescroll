@@ -40,6 +40,7 @@ export default async function Demo({
             ? "source"
             : [
                   "library",
+                  "trends",
                   "projects",
                   "proposals",
                   "runs",

@@ -1,9 +1,30 @@
 import "server-only";
+import { suggestProjects } from "./project-suggestions";
 import { backend, api } from "./backend";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 
-export async function workspaceData({
+// The header Save action exists on every workspace view, including metadata-only
+// lists. Supply its bounded task settings without fetching full post analyses.
+export async function workspaceData(
+  args: Parameters<typeof workspaceViewData>[0],
+) {
+  const data = await workspaceViewData(args);
+  if (
+    args.view === "shared" ||
+    ("role" in data && data.role === "viewer") ||
+    ("aiPreference" in data && data.aiPreference)
+  )
+    return data;
+  const aiPreference = await (
+    await backend()
+  ).query(api.aiPreferences.read, {
+    organizationId: args.org as Id<"organizations">,
+  });
+  return { ...data, aiPreference };
+}
+
+async function workspaceViewData({
   org,
   view = "",
   search = "",
@@ -30,7 +51,7 @@ export async function workspaceData({
 }) {
   const c = await backend(),
     organizationId = org as Id<"organizations">;
-  if (view === "account" || view === "menu") {
+  if (view === "account" || view === "menu" || view === "trends") {
     const organization = await c.query(api.organizations.details, {
       organizationId,
     });
@@ -106,11 +127,31 @@ export async function workspaceData({
     };
   }
   if (!view || view === "home") {
-    const home = await c.query(api.dashboard.home, {
-      organizationId,
-      preview: compactHome,
-    });
-    if (home.ready) return home;
+    const [home, recentPosts] = await Promise.all([
+      c.query(api.dashboard.home, { organizationId, preview: compactHome }),
+      c.query(api.posts.recent, { organizationId }),
+    ]);
+    if (home.ready) return { ...home, recentPosts };
+  }
+  if (view === "posts") {
+    const [organization, recentPosts] = await Promise.all([
+      c.query(api.organizations.details, { organizationId }),
+      c.query(api.posts.recent, { organizationId }),
+    ]);
+    return {
+      workspaceSlice: "posts" as const,
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      recentPosts,
+      sources: [],
+      repositories: [],
+      proposals: [],
+      runs: [],
+      notifications: [],
+      usage: null,
+    };
   }
   if (view === "library") {
     const [context, categories, aiPreference] = await Promise.all([
@@ -126,6 +167,58 @@ export async function workspaceData({
       aiPreference,
       sources: [],
       runs: [],
+      usage: null,
+    };
+  }
+  if (view === "source") {
+    if (!sourceId) throw Error("Source unavailable.");
+    const [
+      organization,
+      selectedSource,
+      repositories,
+      devices,
+      aiPreference,
+      recommendations,
+    ] = await Promise.all([
+      c.query(api.organizations.details, { organizationId }),
+      c.query(api.product.detail, {
+        id: sourceId as Id<"sources">,
+        organizationId,
+      }),
+      c.query(api.product.repositories, { organizationId }),
+      c.query(api.devices.list, { organizationId }),
+      c.query(api.aiPreferences.read, { organizationId }),
+      c
+        .query(api.projectRecommendations.read, {
+          organizationId,
+          sourceId: sourceId as Id<"sources">,
+        })
+        .catch(() => null),
+    ]);
+    return {
+      workspaceSlice: "source" as const,
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      selectedSource,
+      projectSuggestions:
+        recommendations ?? suggestProjects(selectedSource, repositories),
+      repositories: repositories.map(
+        ({ _id, fullName, enabled, confirmed, status }) => ({
+          _id,
+          fullName,
+          enabled,
+          confirmed,
+          status,
+        }),
+      ),
+      devices,
+      aiPreference,
+      sources: [],
+      proposals: [],
+      runs: [],
+      notifications: [],
       usage: null,
     };
   }
@@ -152,6 +245,34 @@ export async function workspaceData({
       customerRoutes,
       connections,
       aiPreference,
+    };
+  }
+  if (view === "proposal") {
+    if (!proposalId) throw Error("Proposal unavailable.");
+    const [organization, selectedProposal] = await Promise.all([
+      c.query(api.organizations.details, { organizationId }),
+      c.query(api.product.proposal, { id: proposalId as Id<"proposals"> }),
+    ]);
+    if (selectedProposal.organizationId !== organizationId)
+      throw Error("Proposal unavailable.");
+    const devices =
+      selectedProposal.detail?.schemaVersion === "chat-project-proposal-v1"
+        ? []
+        : await c.query(api.devices.list, { organizationId });
+    return {
+      workspaceSlice: "proposal" as const,
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      selectedProposal,
+      sources: [],
+      repositories: [],
+      proposals: [],
+      runs: [],
+      notifications: [],
+      usage: null,
+      devices,
     };
   }
   if (view === "projects" || view === "plans" || view === "proposals") {

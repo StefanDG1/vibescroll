@@ -1,12 +1,18 @@
 import { internalQuery } from "./_generated/server";
 import { internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
-import type { QueryCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
+import type { Id, Doc } from "./_generated/dataModel";
 import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
-import { audit, limit } from "./lib";
+import { access, audit, limit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { classifySourceUrl } from "../packages/sources/classify";
+import { postDisplayTitle } from "../packages/sources/display";
+import { cloudRetryEligible } from "../packages/contracts/cloud-retry";
+import { projectCategoryMatches } from "../packages/contracts/project-application";
+import { socialAnalysisOutput } from "../packages/social/analysis";
+import { neutralCloudAnalysis } from "../packages/contracts/cloud-catalog";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { captureAuthorized, digest, startSource } from "./product";
 import {
   chooseIntakeProjects,
@@ -15,20 +21,167 @@ import {
   intakeNeedsSourceReview,
 } from "./lib/assistantIntake";
 import { workspaceReadable } from "./lib/workspacePrivacy";
+import { teamSubscriptionCurrent } from "./lib/accountSubscription";
 import { internal } from "./_generated/api";
-import { assistantProject } from "./lib/assistantProject";
+import {
+  assistantProject,
+  currentPlanningProject,
+} from "./lib/assistantProject";
 import { evaluationCurrent } from "./knowledge";
 import { createIssueCore } from "./issues";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
-import { assistantGrantActive } from "../packages/policy/assistant";
-import { requestCloudFromAssistant } from "./workCloudAnalysis";
+import { samePostPlans } from "./lib/projectRecommendationHistory";
+import {
+  historySource,
+  selectedAnalysis,
+  retainedVersion,
+} from "./lib/analysisHistory";
+import {
+  assistantGrantActive,
+  isAssistantIdentity,
+  type AssistantScope,
+} from "../packages/policy/assistant";
+import {
+  requestCloudFromAssistant,
+  requestSavedCloudFromAssistant,
+  retrySavedCloudSource,
+} from "./workCloudAnalysis";
+import {
+  savedCloudIntentCurrent,
+  savedCloudGrantCurrent,
+  savedCloudMonitorCurrent,
+  queueSavedCloudIntent,
+  automaticAnalysisEnabled,
+} from "./lib/workCloudSave";
+import { privateCloudMediaIdentity } from "../packages/social/contracts";
+import {
+  queueAutomaticPreparedSource,
+  requestPreparedFromAssistant,
+} from "./preparedService";
+import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import {
   evaluation as evaluationContract,
   assertReferences,
 } from "../packages/knowledge/contracts";
 const profile = { profileId: v.optional(v.id("organizations")) };
+
+async function automaticCloudReceipt(
+  ctx: MutationCtx,
+  a: Awaited<ReturnType<typeof assistantGrant>>,
+  source: Doc<"sources">,
+) {
+  const common = {
+    source_id: source._id,
+    profile_id: a.organization._id,
+    url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
+    analysis_started: false,
+    analysis_route: "own_cloud",
+    per_post_app_review_required: false,
+    receipt: null,
+  };
+  if (source.state === "ready")
+    return {
+      ...common,
+      status: "ready",
+      analysis_requested: false,
+      note: "Existing insights reused. No extraction or analysis was started.",
+    };
+  if (source.catalogWait && source.catalogWait.expiresAt > Date.now())
+    return {
+      ...common,
+      status: "waiting_for_shared_analysis",
+      analysis_requested: false,
+      note: "This post is already being analysed. Its shared result will appear here when ready; no new extraction, model run or funding was started.",
+    };
+  if (a.grant.cloudSaveDefaults?.version !== "link-save-cloud-v2")
+    return {
+      ...common,
+      status: "cloud_setup_required",
+      analysis_requested: false,
+      setup_url: `https://scroll.companynerve.com/app/${a.organization._id}/connections`,
+      note: "Saved. Enable automatic analysis of app and ChatGPT links once in Connections. Your older app-only or manual setting has not been expanded. You do not need to review each video in the app.",
+    };
+  let supported = false;
+  try {
+    supported = ["instagram", "tiktok"].includes(
+      privateCloudMediaIdentity(source.url ?? source.canonical).platform,
+    );
+  } catch {
+    /* A different source retains its separate supported route. */
+  }
+  if (!supported)
+    return {
+      ...common,
+      status: "unsupported_cloud_source",
+      analysis_requested: false,
+      note: "Saved. Automatic Cloud links currently support single Instagram and TikTok videos. Use the separately supported source route for this post.",
+    };
+  if (!a.scopes.includes("analysis:request"))
+    return {
+      ...common,
+      status: "saved",
+      analysis_requested: false,
+      next_action: {
+        tool: "request_analysis",
+        args: { profileId: a.organization._id, sourceId: source._id },
+      },
+      note: "Continue with request_analysis using the reviewed Cloud defaults. This uses the analysis permission already configured for the connection; no per-post app review is needed.",
+    };
+  if (!(await savedCloudGrantCurrent(ctx, a.actor, a.organization, a.grant)))
+    return {
+      ...common,
+      status: "cloud_setup_required",
+      analysis_requested: false,
+      setup_url: `https://scroll.companynerve.com/app/${a.organization._id}/connections`,
+      note: "Saved. Complete or resume your own Cloud monitor once in Connections, then request analysis of this saved post. Do not use the per-post diagnostic review or switch funding.",
+    };
+  if (!(await savedCloudMonitorCurrent(ctx, a.grant)))
+    return {
+      ...common,
+      status: "cloud_monitor_inactive",
+      analysis_requested: false,
+      setup_url: `https://scroll.companynerve.com/app/${a.organization._id}/connections`,
+      note: "Saved. Your Cloud connection is configured, but its background task is not monitoring. Resume the existing task when its execution allowance is available. Do not reconnect, create another app or repeat Cloud setup.",
+    };
+  if (a.scopes.includes("analysis:execute")) {
+    const prepared = await queueAutomaticPreparedSource(ctx, source, a.actor);
+    if (prepared)
+      return {
+        ...common,
+        status: prepared.state,
+        analysis_requested: true,
+        analysis_route: "prepared_own_cloud",
+        run_id: prepared.runId,
+        note: "Saved. Server preparation is queued, then your existing ChatGPT Assistant will analyze the retained transcript and screenshots. No paid API reasoning fallback.",
+      };
+  }
+  const queued = await queueSavedCloudIntent(
+    ctx,
+    a.actor,
+    a.organization,
+    a.grant,
+    source,
+    "mcp",
+  );
+  return {
+    ...common,
+    status:
+      queued.status === "waiting_for_shared_analysis"
+        ? queued.status
+        : queued.intentId
+          ? "waiting_for_cloud"
+          : "existing_work_preserved",
+    analysis_requested: !!queued.intentId,
+    note:
+      queued.status === "waiting_for_shared_analysis"
+        ? "This post is already being analysed. Its shared result will appear here when ready; no new extraction, model run or funding was started."
+        : queued.intentId
+          ? "Saved and queued automatically for your own Cloud Work. No per-post app approval is required. The configured Work task and this post will receive the result; a queued intent is not proof that analysis has started."
+          : "Existing work or an earlier outcome was preserved. No replacement, retry or alternate executor was started.",
+  };
+}
 export const redactIntakes = internalMutation({
   args: { sourceId: v.id("sources") },
   handler: async (ctx, args) => {
@@ -62,7 +215,7 @@ export const saveLink = internalMutation({
   handler: async (ctx, args) => {
     const a = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "links:save"),
       "links:save",
     );
     ensure(
@@ -100,6 +253,20 @@ export const saveLink = internalMutation({
         "Project context OAuth permission is missing.",
       );
     const key = `mcp:${await digest(`${a.client.id}:${args.key}:${url}`)}`;
+    let serverPrepared = false;
+    if (
+      args.analyze !== false &&
+      preparedServiceConfiguration(a.actor.subject)
+        ?.automaticOwnSubscriptionPreparation
+    ) {
+      try {
+        serverPrepared = ["instagram", "tiktok"].includes(
+          privateCloudMediaIdentity(url).platform,
+        );
+      } catch {
+        /* Typed sources retain their own route. */
+      }
+    }
     const id = await captureAuthorized(
       ctx,
       {
@@ -113,6 +280,7 @@ export const saveLink = internalMutation({
       a,
       false,
       true,
+      serverPrepared,
     );
     const source = (await ctx.db.get(id))!;
     if (!source.assistantIntake)
@@ -193,6 +361,15 @@ export const saveLink = internalMutation({
     }
     const intake = (await ctx.db.get(intakeId!))!;
     const sourceReview = intakeNeedsSourceReview(source);
+    if (
+      args.analyze !== false &&
+      a.grant.cloudRequestPolicy === "explicit_per_source_v1" &&
+      !sourceReview &&
+      !["failed", "cancelled", "local", "credits"].includes(
+        intake.queueState ?? "",
+      )
+    )
+      return automaticCloudReceipt(ctx, a, (await ctx.db.get(source._id))!);
     // Replays do not widen old work to a replacement grant or start duplicate jobs.
     if (
       !sourceReview &&
@@ -325,11 +502,35 @@ export const getJobStatus = internalQuery({
       source.personalAnalysis.generation === source.generation
         ? source.personalAnalysis
         : null;
-    // An earlier local intake is historical once this source generation has its
-    // own Cloud attempt. It cannot describe the current executor or offer a
-    // local/credit fallback for work whose Cloud outcome may be unknown.
+    const savedIntentCurrent = await savedCloudIntentCurrent(
+      ctx,
+      a.actor,
+      a.organization,
+      a.grant,
+      source,
+    );
+    const waitingForCloud =
+      savedIntentCurrent &&
+      source.workCloudSaveIntent!.analysisGeneration === undefined;
+    const preparedId =
+      source.personalMedia?.version === "service-preparation-progress-v1" &&
+      typeof source.personalMedia.runId === "string"
+        ? ctx.db.normalizeId("mediaPreparations", source.personalMedia.runId)
+        : null;
+    const preparedRow = preparedId ? await ctx.db.get(preparedId) : null;
+    const preparedRun =
+      preparedRow?.organizationId === a.organization._id &&
+      preparedRow.sourceId === source._id &&
+      preparedRow.generation === source.generation &&
+      preparedRow.actor === a.actor._id
+        ? preparedRow
+        : null;
+    // A current app-Save Cloud intent or attempt supersedes the old intake's
+    // display. Preserve that intake without offering an alternate executor.
     const receipt =
-      !cloud && intake ? await intakeReceipt(ctx, intake, source) : null;
+      !preparedRun && !cloud && !waitingForCloud && intake
+        ? await intakeReceipt(ctx, intake, source)
+        : null;
     const cloudStatus = cloud
       ? cloud.state === "queued"
         ? "waiting_for_cloud"
@@ -337,22 +538,75 @@ export const getJobStatus = internalQuery({
           ? cloud.state
           : source.state
       : null;
+    const pendingVersion = source.pendingAnalysisAttemptId
+      ? await ctx.db.get(source.pendingAnalysisAttemptId)
+      : null;
     return {
       source_id: source._id,
       profile_id: a.organization._id,
-      status: cloudStatus ?? receipt?.status ?? source.state,
+      status:
+        preparedRun?.state ??
+        cloudStatus ??
+        (waitingForCloud
+          ? "waiting_for_cloud"
+          : (receipt?.status ?? source.state)),
+      title: postDisplayTitle(source).slice(0, 200),
       source_status: source.state,
+      catalog_status: source.catalogStatus?.state ?? null,
+      selected_analysis_version_id: source.selectedAnalysisVersionId ?? null,
+      analysis_selection_revision: source.analysisSelectionRevision ?? 0,
+      pending_analysis_version:
+        pendingVersion &&
+        pendingVersion.actor === a.actor._id &&
+        pendingVersion.grantId === a.grant._id &&
+        pendingVersion.grantVersion === a.grant.version
+          ? {
+              attemptId: pendingVersion._id,
+              number: pendingVersion.number,
+              state: pendingVersion.state,
+              inputKind: "retained_evidence",
+              generation: pendingVersion.sourceGeneration,
+              expiresAt: pendingVersion.expiresAt,
+            }
+          : null,
       generation: source.generation,
       revision: source.updatedAt,
+      cloud_retry_eligible:
+        cloudRetryEligible(source) &&
+        a.membership.role === "owner" &&
+        (await savedCloudGrantCurrent(ctx, a.actor, a.organization, a.grant)),
       grant_version: a.grant.version,
       cloud_request_policy: a.grant.cloudRequestPolicy ?? null,
-      processing: cloud
+      saved_cloud_intent: savedIntentCurrent
         ? {
-            executor: "work_cloud",
-            state: cloud.state,
-            stage: cloud.stage,
+            id: source.workCloudSaveIntent!.id,
+            expires_at: source.workCloudSaveIntent!.expiresAt,
+            state:
+              source.workCloudSaveIntent!.analysisGeneration === undefined
+                ? "waiting_for_runtime"
+                : "consumed",
           }
         : null,
+      processing: preparedRun
+        ? {
+            executor:
+              preparedRun.executor === "gateway" ? "credits" : "work_cloud",
+            state: preparedRun.state,
+            stage: source.personalMedia.stage,
+            run_id: preparedRun._id,
+            maximum_credits:
+              preparedRun.receipt?.admission?.quote.maximumCredits ?? 0,
+            charged_credits:
+              preparedRun.receipt?.billing?.chargedCredits ?? null,
+            failure_code: preparedRun.receipt?.failure?.code ?? null,
+          }
+        : cloud
+          ? {
+              executor: "work_cloud",
+              state: cloud.state,
+              stage: cloud.stage,
+            }
+          : null,
       receipt,
       evidence_changed: changed,
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
@@ -379,6 +633,14 @@ export const requestAnalysis = internalMutation({
     maxCredits: v.optional(v.number()),
     revision: v.optional(v.number()),
     grantVersion: v.optional(v.number()),
+    savedIntentId: v.optional(v.string()),
+    retry: v.optional(
+      v.object({
+        generation: v.number(),
+        revision: v.number(),
+        key: v.string(),
+      }),
+    ),
     cloud: v.optional(
       v.object({
         model: v.string(),
@@ -403,7 +665,93 @@ export const requestAnalysis = internalMutation({
       args.sourceId,
       "analysis:request",
     );
+    if (
+      args.mode === undefined &&
+      a.grant.cloudRequestPolicy === "explicit_per_source_v1"
+    ) {
+      ensure(
+        args.generation === undefined &&
+          args.revision === undefined &&
+          args.grantVersion === undefined &&
+          args.cloud === undefined &&
+          args.savedIntentId === undefined &&
+          args.retry === undefined &&
+          args.maxCredits === undefined &&
+          args.project === undefined &&
+          args.bestProjects === undefined,
+        "INVALID_INPUT",
+        "Automatic Cloud requests use the reviewed connection defaults without per-post funding or executor overrides.",
+      );
+      return automaticCloudReceipt(ctx, a, source);
+    }
     if (args.mode === "work_cloud") {
+      if (args.retry !== undefined) {
+        ensure(
+          args.generation === undefined &&
+            args.revision === undefined &&
+            args.grantVersion === undefined &&
+            args.cloud === undefined &&
+            args.savedIntentId === undefined &&
+            args.maxCredits === undefined &&
+            args.project === undefined &&
+            args.bestProjects === undefined,
+          "INVALID_INPUT",
+          "A deliberate retry uses current Cloud defaults without funding, model or project overrides.",
+        );
+        const execution = await assistantGrant(
+          ctx,
+          source.organizationId,
+          "analysis:execute",
+        );
+        ensure(
+          execution.membership.role === "owner",
+          "FORBIDDEN",
+          "Only the owner can retry this post.",
+        );
+        if (preparedServiceConfiguration(a.actor.subject)) {
+          const prepared = await requestPreparedFromAssistant(ctx, {
+            sourceId: source._id,
+            executor: "work_cloud",
+            retry: args.retry,
+          });
+          return {
+            ...prepared,
+            source_id: source._id,
+            status: prepared.state,
+            analysis_route: "prepared_own_cloud",
+            analysis_started: false,
+            analysis_requested: "runId" in prepared && !!prepared.runId,
+          };
+        }
+        const receipt = await retrySavedCloudSource(
+          ctx,
+          { source, ...execution },
+          execution.grant,
+          args.retry,
+        );
+        return {
+          source_id: source._id,
+          generation: receipt.generation,
+          status: receipt.status,
+          reused_request: receipt.reusedRequest,
+          analysis_started: false,
+          url: `https://scroll.companynerve.com/app/${source.organizationId}/posts/${source._id}`,
+        };
+      }
+      if (args.savedIntentId !== undefined) {
+        ensure(
+          args.generation === undefined &&
+            args.revision === undefined &&
+            args.grantVersion === undefined &&
+            args.cloud === undefined &&
+            args.maxCredits === undefined &&
+            args.project === undefined &&
+            args.bestProjects === undefined,
+          "INVALID_INPUT",
+          "A saved Cloud intent fixes its own post, model, effort, retention and funding. Do not override them.",
+        );
+        return requestSavedCloudFromAssistant(ctx, source, args.savedIntentId);
+      }
       ensure(
         args.generation !== undefined &&
           args.revision !== undefined &&
@@ -424,6 +772,8 @@ export const requestAnalysis = internalMutation({
     }
     ensure(
       args.cloud === undefined &&
+        (args.retry === undefined || args.mode === "credits") &&
+        args.savedIntentId === undefined &&
         args.revision === undefined &&
         args.grantVersion === undefined,
       "INVALID_INPUT",
@@ -446,6 +796,26 @@ export const requestAnalysis = internalMutation({
         review_url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
         note: "Review this typed source in VibeScroll. GitHub file selection, Reddit retrieval permission and supplied-text provenance need their source review; analysis and project work require separate current approval. This request queued no local media work, reserved no credits and started no retrieval or analysis.",
       };
+    if (
+      args.mode === "credits" &&
+      preparedServiceConfiguration(a.actor.subject)
+    ) {
+      const prepared = await requestPreparedFromAssistant(ctx, {
+        sourceId: source._id,
+        generation: args.generation,
+        maxCredits: args.maxCredits,
+        retry: args.retry,
+      });
+      return {
+        ...prepared,
+        source_id: source._id,
+        profile_id: a.organization._id,
+        status: prepared.state,
+        analysis_route: "prepared_credits",
+        analysis_started: false,
+        analysis_requested: "runId" in prepared && !!prepared.runId,
+      };
+    }
     if (intake && args.mode) {
       ensure(
         intake.grantVersion === a.grant.version,
@@ -513,18 +883,32 @@ export const requestAnalysis = internalMutation({
     };
   },
 });
-async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
+export async function selectedProfile(
+  ctx: QueryCtx,
+  id?: Id<"organizations">,
+  required?: AssistantScope,
+) {
   if (id) return id;
-  const p = await assistantPrincipal(ctx);
+  const p = await assistantPrincipal(ctx, required);
   const rows = await ctx.db
     .query("assistantGrants")
     .withIndex("by_actor_client", (q) =>
       q.eq("actor", p.actor._id).eq("clientId", p.client.id),
     )
     .take(51);
+  const selectionError = required ? "PROFILE_SELECTION_REQUIRED" : "FORBIDDEN";
+  ensure(
+    rows.length <= 50,
+    selectionError,
+    "Choose a current workspace with get_profile.",
+  );
   const available = [];
   for (const grant of rows) {
-    if (!assistantGrantActive(grant)) continue;
+    if (
+      !assistantGrantActive(grant) ||
+      (required && !grant.scopes.includes(required))
+    )
+      continue;
     const org = await ctx.db.get(grant.organizationId);
     const membership = await ctx.db
       .query("memberships")
@@ -532,12 +916,26 @@ async function selectedProfile(ctx: QueryCtx, id?: Id<"organizations">) {
         q.eq("organizationId", grant.organizationId).eq("userId", p.actor._id),
       )
       .unique();
-    if (workspaceReadable(org, p.actor._id) && membership)
+    if (
+      workspaceReadable(org, p.actor._id) &&
+      membership &&
+      (await teamSubscriptionCurrent(ctx, p.actor, org!)) &&
+      (required !== "links:save" ||
+        ["owner", "admin", "member"].includes(membership.role))
+    )
       available.push(grant.organizationId);
   }
+  // This is the user's existing app workspace preference, not a new grant or
+  // an arbitrary choice between personal and business libraries.
+  if (
+    required &&
+    p.actor.defaultWorkspaceId &&
+    available.includes(p.actor.defaultWorkspaceId)
+  )
+    return p.actor.defaultWorkspaceId;
   ensure(
     available.length === 1,
-    "FORBIDDEN",
+    selectionError,
     "Choose one current approved profile with get_profile.",
   );
   return available[0];
@@ -587,8 +985,10 @@ export const getProfile = internalQuery({
         )
         .unique();
       if (!workspaceReadable(org, p.actor._id) || !member) continue;
+      if (!(await teamSubscriptionCurrent(ctx, p.actor, org!))) continue;
       const context =
-        grant.contextVersion === undefined
+        grant.contextVersion === undefined &&
+        grant.contextScope !== "all_confirmed"
           ? null
           : await ctx.db
               .query("librarySetup")
@@ -597,8 +997,22 @@ export const getProfile = internalQuery({
               )
               .unique();
       const projects = [];
+      const projectRefs =
+        grant.contextScope === "all_confirmed" && selected
+          ? (
+              await ctx.db
+                .query("repositories")
+                .withIndex("by_org", (q) =>
+                  q.eq("organizationId", grant.organizationId),
+                )
+                .take(20)
+            )
+              .filter((r) => r.enabled && r.confirmed)
+              .slice(0, 5)
+              .map((r) => ({ repositoryId: r._id }))
+          : (grant.repositories ?? []).slice(0, 5);
       if (selected)
-        for (const ref of (grant.repositories ?? []).slice(0, 5)) {
+        for (const ref of projectRefs) {
           let repository;
           try {
             repository = await assistantProject(
@@ -675,14 +1089,22 @@ export const getProfile = internalQuery({
         name: org!.name.slice(0, 200),
         grant_version: grant.version,
         expires_at: grant.expiresAt,
-        automatic_analysis: grant.analysisDefaults?.enabled ?? false,
+        automatic_analysis: await automaticAnalysisEnabled(
+          ctx,
+          p.actor,
+          org!,
+          grant,
+        ),
         cloud_request_policy: grant.cloudRequestPolicy ?? null,
         intake_setup_required: grant.intakePolicy !== "explicit_links",
         default_output: "extraction_and_organization",
-        selected_project_count: (grant.repositories ?? []).length,
+        selected_project_count: projectRefs.length,
+        project_scope: grant.contextScope ?? "selected",
         projects,
         context:
-          context?.confirmed && context.version === grant.contextVersion
+          context?.confirmed &&
+          (grant.contextScope === "all_confirmed" ||
+            context.version === grant.contextVersion)
             ? {
                 goal: context.goal.slice(0, 500),
                 interests: context.interests
@@ -692,6 +1114,7 @@ export const getProfile = internalQuery({
               }
             : undefined,
         context_changed:
+          grant.contextScope !== "all_confirmed" &&
           grant.contextVersion !== undefined &&
           (!context?.confirmed || context.version !== grant.contextVersion),
       });
@@ -704,6 +1127,221 @@ export const getProfile = internalQuery({
     };
   },
 });
+export const projectApplicationContext = internalQuery({
+  args: {
+    ...profile,
+    sourceId: v.id("sources"),
+    projectId: v.id("repositories"),
+    analysisVersionId: v.optional(v.id("analysisVersions")),
+    insightIds: v.optional(v.array(v.string())),
+  },
+  returns: v.object({
+    contextHash: v.string(),
+    grantVersion: v.number(),
+    source: v.object({
+      id: v.id("sources"),
+      analysisVersionId: v.id("analysisVersions"),
+      versionNumber: v.number(),
+      evidenceHash: v.string(),
+      revisionHash: v.string(),
+      outputHash: v.string(),
+      generation: v.number(),
+      sourceRevision: v.number(),
+      selected: v.boolean(),
+      summary: v.string(),
+      insights: v.array(v.any()),
+      omittedInsights: v.number(),
+    }),
+    project: v.object({
+      id: v.id("repositories"),
+      name: v.string(),
+      baseSha: v.string(),
+      profileVersion: v.number(),
+      selectionVersion: v.number(),
+      profile: v.string(),
+      repositoryCodeIncluded: v.literal(false),
+    }),
+    potentialMatches: v.array(
+      v.object({ category: v.string(), matchedTerms: v.array(v.string()) }),
+    ),
+    priorProposals: v.object({
+      limited: v.boolean(),
+      items: v.array(
+        v.object({
+          id: v.id("proposals"),
+          title: v.string(),
+          version: v.number(),
+          review: v.string(),
+          current: v.boolean(),
+          outcome: v.object({
+            githubIssueState: v.union(
+              v.literal("open"),
+              v.literal("closed"),
+              v.literal("unknown"),
+              v.null(),
+            ),
+            githubObservedAt: v.union(v.number(), v.null()),
+            issuePublicationConfirmed: v.boolean(),
+            modelReportedStatus: v.union(
+              v.literal("completed"),
+              v.literal("blocked"),
+              v.literal("failed"),
+              v.null(),
+            ),
+            measuredBenefit: v.null(),
+          }),
+        }),
+      ),
+    }),
+    analysisStarted: v.literal(false),
+    creditsSpent: v.literal(0),
+    codingAuthorized: v.literal(false),
+    publicationAuthorized: v.literal(false),
+  }),
+  handler: async (ctx, args) => {
+    const result = await projectApplicationContextCore(ctx, args);
+    ensure(
+      result.grantVersion !== null,
+      "FORBIDDEN",
+      "Use the normal website planning endpoint for app sessions.",
+    );
+    return { ...result, grantVersion: result.grantVersion };
+  },
+});
+
+export async function projectApplicationContextCore(
+  ctx: QueryCtx,
+  args: {
+    profileId?: Id<"organizations">;
+    sourceId: Id<"sources">;
+    projectId: Id<"repositories">;
+    analysisVersionId?: Id<"analysisVersions">;
+    insightIds?: string[];
+  },
+) {
+  ctx = knowledgeReadContext(ctx);
+  const row = await ctx.db.get(args.sourceId);
+  ensure(
+    row && (!args.profileId || row.organizationId === args.profileId),
+    "FORBIDDEN",
+    "Choose a saved post in the current workspace.",
+  );
+  const identity = await ctx.auth.getUserIdentity();
+  const viaAssistant = !!identity && isAssistantIdentity(identity);
+  const reader = viaAssistant
+    ? await assistantGrant(ctx, row.organizationId, "knowledge:read")
+    : {
+        ...(await access(ctx, row.organizationId)),
+        grant: null,
+        client: { id: "vibescroll_web" },
+      };
+  const source =
+    viaAssistant && reader.grant
+      ? await sourceFor(ctx, reader, row._id)
+      : (await historySource(ctx, row._id)).source;
+  ensure(
+    source?.state === "ready",
+    "SOURCE_UNAVAILABLE",
+    "Choose a completed retained analysis.",
+  );
+  const project = viaAssistant
+    ? await assistantProject(
+        ctx,
+        await assistantGrant(ctx, row.organizationId, "context:read"),
+        args.projectId,
+      )
+    : await currentPlanningProject(ctx, row.organizationId, args.projectId);
+  const selected = await selectedAnalysis(ctx, source);
+  const versionId = args.analysisVersionId ?? selected?.metadata.id;
+  ensure(
+    versionId,
+    "SOURCE_UNAVAILABLE",
+    "This legacy post needs a retained analysis version before project planning.",
+  );
+  const { version, evidence } = await retainedVersion(ctx, source, versionId);
+  const output =
+    version.owner === "service"
+      ? neutralCloudAnalysis.parse(version.output)
+      : socialAnalysisOutput.parse(version.output);
+  const requested = args.insightIds;
+  ensure(
+    requested === undefined ||
+      (requested.length > 0 &&
+        requested.length <= 20 &&
+        new Set(requested).size === requested.length &&
+        requested.every((id) =>
+          output.insights.some((insight) => insight.id === id),
+        )),
+    "INVALID_EVIDENCE",
+    "Choose distinct insights from this exact analysis version (up to twenty).",
+  );
+  const insights = requested
+    ? requested.map((id) =>
+        output.insights.find((insight) => insight.id === id)!,
+      )
+    : output.insights;
+  const data = {
+    grantVersion: reader.grant?.version ?? null,
+    source: {
+      id: source._id,
+      analysisVersionId: version._id,
+      versionNumber: version.number,
+      evidenceHash: evidence.evidenceHash,
+      revisionHash: evidence.revisionHash,
+      outputHash: version.outputHash,
+      generation: source.generation,
+      sourceRevision: source.updatedAt,
+      selected: selected?.metadata.id === version._id,
+      summary: output.summary,
+      insights: insights.map((insight) => ({
+        ...insight,
+        reference: {
+          sourceId: source._id,
+          analysisVersionId: version._id,
+          insightId: insight.id,
+        },
+      })),
+      omittedInsights: output.insights.length - insights.length,
+    },
+    project: {
+      id: project._id,
+      name: project.fullName,
+      baseSha: project.sha,
+      profileVersion: project.profileVersion,
+      selectionVersion: project.selectionVersion ?? 0,
+      profile: project.profile,
+      repositoryCodeIncluded: false as const,
+    },
+    potentialMatches: projectCategoryMatches(
+      insights.flatMap((insight) => insight.categories),
+      project.profile,
+    ),
+    analysisStarted: false as const,
+    creditsSpent: 0 as const,
+    codingAuthorized: false as const,
+    publicationAuthorized: false as const,
+  };
+  const priorProposals = await samePostPlans(ctx, source, project, version._id);
+  const serialized = canonicalJson({ ...data, priorProposals });
+  ensure(
+    new TextEncoder().encode(serialized).byteLength <= 120000 &&
+      !containsSecret(serialized),
+    "POLICY_BLOCKED",
+    "The selected planning context exceeds its safe size or credential bound.",
+  );
+  return {
+    ...data,
+    priorProposals,
+    contextHash: await digest(
+      canonicalJson({
+        actor: reader.actor._id,
+        clientId: reader.client.id,
+        ...data,
+      }),
+    ),
+  };
+}
+
 export const draftProjectSuggestion = internalMutation({
   args: {
     ...profile,
@@ -791,7 +1429,7 @@ export const draftProjectSuggestion = internalMutation({
     };
   },
 });
-async function sourceFor(
+export async function sourceFor(
   ctx: QueryCtx,
   a: Awaited<ReturnType<typeof assistantGrant>>,
   sourceId: Id<"sources"> | null,
@@ -1064,10 +1702,14 @@ export const search = internalQuery({
         ctx.db.normalizeId("sources", ref.sourceId),
       );
       if (!source) continue;
+      const selected = await selectedAnalysis(ctx, source);
       const url = `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`;
       const insights =
         source.state === "ready"
-          ? (source.analysis?.insights ?? []).slice(0, 128)
+          ? ((selected?.output ?? source.analysis)?.insights ?? []).slice(
+              0,
+              128,
+            )
           : [];
       let matched = false;
       for (
@@ -1080,7 +1722,7 @@ export const search = internalQuery({
           `${source.title} ${idea.title} ${idea.claim}`.toLocaleLowerCase();
         if (words.every((w) => text.includes(w))) {
           results.push({
-            id: `${source._id}~${index}`,
+            id: `${source._id}${selected ? `@${selected.metadata.id}` : ""}~${index}`,
             title: String(idea.title ?? source.title).slice(0, 200),
             url,
             excerpt: String(idea.claim ?? "").slice(0, 600),
@@ -1089,6 +1731,7 @@ export const search = internalQuery({
               generation: source.generation,
               revision: source.updatedAt,
               insightId: idea.id,
+              ...(selected ? { analysisVersionId: selected.metadata.id } : {}),
             },
           });
           matched = true;
@@ -1101,7 +1744,7 @@ export const search = internalQuery({
       )
         results.push({
           id: source._id,
-          title: source.title,
+          title: postDisplayTitle(source),
           url,
           state: source.state,
         });
@@ -1129,11 +1772,18 @@ export const fetch = internalQuery({
       "INVALID_INPUT",
       "Invalid source identifier.",
     );
-    const [raw, indexRaw, ...extra] = args.id.split("~");
+    const [identity, indexRaw, ...extra] = args.id.split("~");
+    const [raw, versionRaw, ...identityExtra] = identity.split("@");
     const sourceId = ctx.db.normalizeId("sources", raw);
+    const versionId =
+      versionRaw === undefined
+        ? undefined
+        : ctx.db.normalizeId("analysisVersions", versionRaw);
     const index = indexRaw === undefined ? undefined : Number(indexRaw);
     ensure(
       sourceId &&
+        identityExtra.length === 0 &&
+        (versionRaw === undefined || !!versionId) &&
         extra.length === 0 &&
         (index === undefined ||
           (/^\d{1,3}$/.test(indexRaw) &&
@@ -1149,12 +1799,26 @@ export const fetch = internalQuery({
       ),
       source = await sourceFor(ctx, a, sourceId);
     ensure(source, "FORBIDDEN", "This post changed or is no longer granted.");
+    const selected = versionId
+      ? await retainedVersion(ctx, source, versionId).then(({ version }) => ({
+          output: version.output,
+          metadata: { id: version._id },
+        }))
+      : index === undefined
+        ? await selectedAnalysis(ctx, source)
+        : null;
     const all =
-      source.state === "ready" ? (source.analysis?.insights ?? []) : [];
+      source.state === "ready"
+        ? ((selected?.output ?? source.analysis)?.insights ?? [])
+        : [];
     if (index !== undefined)
       ensure(!!all[index], "FORBIDDEN", "Idea unavailable.");
     const ideas = index === undefined ? all.slice(0, 20) : [all[index]];
-    const typed = await sharedTypedCitations(ctx, source);
+    const typed = await sharedTypedCitations(
+      ctx,
+      source,
+      versionId ?? undefined,
+    );
     const insights = ideas.map((i: any) => ({
       id: String(i.id ?? "").slice(0, 200),
       title: String(i.title ?? "").slice(0, 200),
@@ -1163,6 +1827,7 @@ export const fetch = internalQuery({
         sourceId: source._id,
         generation: source.generation,
         revision: source.updatedAt,
+        ...(selected ? { analysisVersionId: selected.metadata.id } : {}),
         insightId: i.id,
       },
       evidence: typed
@@ -1181,7 +1846,7 @@ export const fetch = internalQuery({
     }));
     return {
       id: args.id,
-      title: source.title,
+      title: postDisplayTitle(source),
       text: JSON.stringify({
         state: source.state,
         coverage: source.coverage,

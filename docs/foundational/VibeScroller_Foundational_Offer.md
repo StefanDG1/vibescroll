@@ -1,5 +1,57 @@
 # VibeScroll foundational offer
 
+## F091: prepared single-Pro euro prices, October31
+
+The owner selected preparation of EUR35/month, EUR350/year and EUR17/week. Monthly/annual target300 credits granted monthly; the weekly grant remains under review. This supersedes F087's EUR8/week candidate, not historical receipts or current runtime/Stripe terms. The isolated [pricing preview](../../contracts/pro-pricing-candidate.json) and [standing plan](../strategy/PRO-PRICING-AND-CREDITS.md) preserve existing customers/purchases, one personal pool across teams and requested-post cache access. No live price, checkout, customer migration, profit claim or campaign follows. Audience, evidence requirements and six beliefs remain unchanged.
+
+## F090: saved-post feed and plan review, October30
+
+The owner requests a personal analyzed-post Home feed, three desktop columns and content-first custom mobile screens without a repeated app banner. Connect insights to a small set of project plans, expose real generation/ready states, keep comments/refinement in a continuous tab-free plan conversation, and remove the separate Needs changes/X action under R121. The owner explicitly chose one Approve & create issue action, followed by an issue link/copyable work prompt rather than automatic coding. Likes and VibeScroll intake counts can inform later creator/category/subcategory analytics; popularity is not measured quality or benefit. Three generated concepts use sample data. The owner selected A's desktop taste/expanding cards, B's tab-free plan conversation and C's mobile media overlay; matching light/dark refinements precede interface changes. The full151-item assistant-ui catalogue is inventoried, with only suitable combinations proposed. [Standing plan](../design/HOME-FEED-AND-PLAN-REVIEW.md), [catalogue review](../design/ASSISTANT-UI-CATALOGUE-REVIEW-2026-10-30.md). This is requested product direction, not new production or customer evidence. Existing audience, prices and six beliefs remain unchanged.
+
+## F089: explain progress, credits and project fit, October30
+
+The owner requests assistant-ui-style observed analysis stages/errors, a credit-use meter and project-fit breakdowns that encourage useful proposals. Start with real job states, exact balances and explicit topic coverage. Similar-proposal history, importance and outcomes need authorized data before scoring. Do not inflate a baseline or claim improved conversion, successful implementation or a success probability. Keep extra detail behind disclosures, preserve Library Tree/Folders and use shared website/MCP controls. Provider logos are presentation, not proof of model support. [Implementation plan](../design/ASSISTANT-ELEMENTS-AND-PROJECT-FIT.md). The first status/credit/topic-coverage subset is live atb8162b5. Richer scoring remains a plan, without customer-validation evidence. Prices, audience, authority and six beliefs remain unchanged.
+
+## F088: show a synthetic product result in the hero, October30
+
+The owner selected VibeScroll marketing/styling for a real saved-insight-to-issue trial. The retained before-after visual idea supports an explicitly unvalidated design hypothesis: a compact source tile beside reusable expandable insight cards may explain the product more clearly than decorative stacks. The public example uses authored synthetic text, no private media or creator imagery, and no conversion/performance claim. Audience, offer, prices, permissions and the six beliefs are unchanged.
+
+Issue196 and its exact frozen body received a real signed opened callback in the same saved proposal. This is engineering workflow evidence, not customer validation or proof of marketing effectiveness. The hero is live atb8162b5 with desktop/phone keyboard/focus acceptance; this does not establish marketing effectiveness. [Implementation note](../design/LANDING-HERO-INSIGHTS-2026-10-30.md), [provider trial](../operations/evidence/launch-20261030-live-project-issue-production.json).
+
+## F087: one hosted Pro, model bands and pricing research, October29
+
+The owner selects one hosted Pro with workspaces/all implemented features and paid shared-cache access; free distribution is self-hosted code without that dataset. Later corrections consider 300 versus 500 monthly credits, premium weekly billing, Muse 1.3 Contributor at 1×, more credits for better API models, rounded cost groups priced for high reasoning and digital-root-8 prices. The working comparison is EUR8/week (50 credits), EUR35/month (300) and EUR350/year (300 granted monthly). Prices/allowance remain proposals pending the measured pipeline and versioned billing migration. Existing runtime/Stripe prices and balances are unchanged.
+
+[ADR192](../adr/192-single-hosted-pro-duration-credits.md) and the [standing pricing plan](../strategy/PRO-PRICING-AND-CREDITS.md) preserve customer terms and distinguish observed Muse cost from maximum-token stress reservations, gross/contribution/operating margins and unsupported profit claims. Audience and six beliefs are unchanged. Simpler choice, willingness to pay and cache value remain hypotheses; no campaign, real price change or independent self-host acceptance follows.
+
+## F086: normal-session routine workflows, October 28
+
+The owner rejects repeated five-minute sign-in for normal permissions, saving, analysis and setup. [ADR183](../adr/183-normal-session-assistant-preferences.md) removes that hurdle from routine actions and retains it for the explicit high-risk actions. Those actions navigate directly through sign-in and back to the page without replaying the operation. The separate [shared-intelligence strategy](../strategy/SHARED-INTELLIGENCE-MOAT.md) preserves backend-first delivery, automatic eligible catalog reuse, safe retries, reliable post metadata and a separate recent Posts page. These changes are a locally tested candidate until the release record says otherwise. The owner's objection is not measured conversion evidence. Actual OAuth, roles, provider/funding authority, prices and audience remain unchanged.
+
+## F085: ordinary ChatGPT links, October 28
+
+The owner expects the existing MCP app to use Cloud analysis by default without reviewing every video in the website. [ADR182](../adr/182-automatic-mcp-cloud-link-default.md) records the V2 preference and native Events dispatch, whose controls are now published at `f6ecf74`. Old app-only consent requires one review before broader use. Results return to the post and configured Work task; arbitrary-chat automatic selection or unsolicited completion is not claimed. Preserve the audience, prices, six beliefs and provider/privacy gates. Production acceptance of this ordinary-chat path remains pending.
+
+## F084: shared version candidate, October 28
+
+[ADR 181](../adr/181-neutral-cloud-catalog-in-existing-artifacts.md) records a local candidate for independently owned neutral evidence, current paid reuse, exact-version personal notes and reviewed recommendation changes. Synthetic two-account tests are engineering evidence. Existing private-only results, rights/provider/privacy gates and real paid production acceptance remain separate. Preserve the audience, prices, six beliefs and unvalidated willingness-to-pay hypothesis. No shared-data advantage, automatic future contribution or general availability is claimed.
+
+## F083: planned reusable analysis history, October 28
+
+The next release priority is reliable Cloud link-to-insights with retained analysis versions, comparison, selection/rollback and entitled shared reuse under [ADR180](../adr/180-versioned-cloud-analysis-and-shared-selection.md). A paid catalog may offer access to reusable approved analysis and evidence, while private notes and project context stay private. History, shared Cloud contribution and cross-customer cache reuse are not live acceptance claims. Preserve existing prices, allowances and entitlement rules; no new checkout, guaranteed model superiority, savings claim or wider provider permission follows from the plan.
+
+## F082: automatic Reel accepted in the private owner pilot, October27
+
+An actual app Save completed automatic native Work Cloud analysis with its ChatGPT tabs closed. The protected result has52 matching transcript segments,8 byte/hash-verified JPEGs, a matching thumbnail and6 insights with57 evidence references. The live setup prepares a verified disposable runtime before source authority. No new MCP app or repeated OAuth consent was needed. [Automatic evidence](../operations/evidence/launch-20261027-automatic-reel-accepted.json) and [production receipt](../operations/evidence/launch-20261027-bootstrap-production.json).
+
+This permits a narrow owner-pilot capability statement. It does not establish manually certified transcription accuracy, universal Instagram/TikTok support, cold customer onboarding, exact provider retention/model attestation or general commercial release. Keep the same audience, offer, six beliefs, private data, provider/privacy gates and no-paid-fallback rule. The current finite future-save allowance and subscription quota still limit execution. Earlier disabled/pending statements below are historical where superseded by this evidence.
+
+## F078: three task locations, October 26
+
+The owner requires the same short choice in Save and setup: My own Cloud Work using the user's ChatGPT subscription, Recommended; VibeScroll's servers using credits bought separately; Local machine using the user's own subscription. Show disabled routes with setup/reconfiguration links and accessible More info. Keep saving without analysis separate. [ADR161](../adr/161-three-task-locations.md) records the implementation candidate and unchanged permissions, prices and credit approvals.
+
+Recommendation is the owner's direction, not proof of general availability. Native saved-link acknowledgement is live; automatic video analysis, supported bootstrap and image/runtime admission remain separate. Keep the existing audience, six beliefs, saved data, provider/privacy gates and cumulative EUR7.50 with every prior hold. No campaign, independent usability or customer-value claim follows.
+
 ## F072: honest confidence and exact Cloud result recovery
 
 [ADR 152](../adr/152-conservative-cloud-result-return.md) records accepted real-media preparation and a failed production return due to overstated confidence. Preserve citations and reduce affected labels to uncertain; exact owner-reviewed result recovery permits no new execution. Actual completed return remains pending. Keep the audience, prices, six beliefs, proprietary catalog and provider/privacy gates unchanged. Cumulative EUR5 includes all earlier holds; no customer, speed or commercial-availability claim follows.

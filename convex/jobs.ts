@@ -1,3 +1,4 @@
+import { resultRetained } from "../packages/contracts/result-retention";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import {
   repositoryManifest,
@@ -12,6 +13,7 @@ import {
 import { RETRIEVAL_VERSION } from "../packages/repositories/retrieval";
 import { selectedInsights } from "../packages/insights/scope";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { privateCloudMediaCanonicalMatches } from "../packages/social/contracts";
 import {
   contentExportSections,
   exportRecord,
@@ -87,10 +89,11 @@ export const authorizeOwner = query({
   handler: (ctx, a) => access(ctx, a.organizationId, ["owner", "admin"]),
 });
 export const authorizeCredential = query({
-  args: org,
+  args: { ...org, readOnly: v.optional(v.literal(true)) },
   handler: async (ctx, a) => {
     const actor = await access(ctx, a.organizationId, ["owner"]);
-    await recentAuthentication(ctx);
+    if (!a.readOnly)
+      await recentAuthentication(ctx, "change_provider_credential");
     return actor.actor._id;
   },
 });
@@ -1193,6 +1196,43 @@ export const exportPage = query({
     const permitted = [];
     for (const row of rows.page) {
       if (
+        ["analysisEvidence", "analysisVersions", "analysisAttempts"].includes(
+          a.section,
+        )
+      ) {
+        const history = row as
+          | Doc<"analysisEvidence">
+          | Doc<"analysisVersions">
+          | Doc<"analysisAttempts">;
+        const source = history.sourceId
+          ? await ctx.db.get(history.sourceId)
+          : null;
+        const evidence =
+          "evidenceId" in history
+            ? await ctx.db.get(history.evidenceId)
+            : (history as Doc<"analysisEvidence">);
+        if (
+          !source ||
+          source.organizationId !== a.organizationId ||
+          source.state === "deleted" ||
+          !source.rightsAttested ||
+          !sourceRetained(source.sourceRetentionUntil) ||
+          !evidence ||
+          source.state !== "ready" ||
+          source.generation !== evidence.extractionGeneration ||
+          evidence.owner !== "private" ||
+          evidence.organizationId !== source.organizationId ||
+          evidence.sourceId !== source._id ||
+          evidence.state !== "retained" ||
+          !resultRetained(evidence) ||
+          !privateCloudMediaCanonicalMatches(
+            source.canonical,
+            evidence.canonical,
+          )
+        )
+          continue;
+      }
+      if (
         (a.section === "publicImports" || a.section === "publicGeography") &&
         "actor" in row &&
         row.actor !== actor._id
@@ -1299,6 +1339,9 @@ export const exportPage = query({
             text: undefined,
             originalText: undefined,
             summary: undefined,
+            selectedAnalysisSummary: undefined,
+            selectedAnalysisMainPoints: undefined,
+            selectedAnalysisInsightCount: undefined,
             analysis: undefined,
             mediaEvidence: undefined,
             originalMediaEvidence: undefined,

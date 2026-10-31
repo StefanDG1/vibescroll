@@ -1,3 +1,4 @@
+import { recentAuthentication } from "./lib";
 import { isAssistantIdentity } from "../packages/policy/assistant";
 import { query } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
@@ -6,6 +7,7 @@ import { v } from "convex/values";
 import { user, fail, limit } from "./lib";
 import { subjectHash, rememberDeletion } from "./lib/deletionMarkers";
 import { workspaceReadable } from "./lib/workspacePrivacy";
+import { removeEngagement } from "./lib/postEngagement";
 export const syncUser = internalMutation({
   args: {
     subject: v.string(),
@@ -163,6 +165,7 @@ export const deleteAccount = mutation({
           fail("Transfer ownership or delete your organizations first.");
       }
     }
+    await recentAuthentication(ctx, "delete_account");
     await rememberDeletion(
       ctx,
       "account",
@@ -206,9 +209,22 @@ export const finishDelete = internalMutation({
       .withIndex("by_actor_client", (q) => q.eq("actor", job.userId))
       .take(100);
     for (const grant of grants) await ctx.db.delete(grant._id);
+    const reactions = await ctx.db
+      .query("postEngagement")
+      .withIndex("by_user", (q) => q.eq("userId", job.userId))
+      .take(50);
+    for (const reaction of reactions) await removeEngagement(ctx, reaction);
+    const projectPreferences = await ctx.db
+      .query("projectRecommendationPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", job.userId))
+      .take(50);
+    for (const preference of projectPreferences)
+      await ctx.db.delete(preference._id);
     if (
       subscriptions.length > 0 ||
       grants.length === 100 ||
+      reactions.length === 50 ||
+      projectPreferences.length === 50 ||
       intakes.length === 100
     ) {
       await ctx.scheduler.runAfter(0, internal.accounts.finishDelete, {

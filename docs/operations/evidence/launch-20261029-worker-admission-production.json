@@ -1,0 +1,18 @@
+{
+  "kind":"server-worker-admission-production-v1",
+  "commit":"e9c34676935b6ffa5dc7f2ab4877a7a16ce00782",
+  "exactCI":40792986933,
+  "releasedAtUTC":"2026-10-29T00:22:51.989Z",
+  "releaseGuards":35,
+  "backendPublished":true,
+  "actualSchemaScans":0,
+  "actualIndexBackfills":0,
+  "websiteBuilds":0,
+  "websiteCommit":"4c72afd356c05044cb345063116ba136f60d4894",
+  "configuration":{"writeAcknowledged":true,"exactReadbackMatched":true,"newVideoJobs":10,"configuredAtUTC":"2026-10-29T00:28:51.152Z","reauthenticationRequired":false},
+  "localAcceptance":{"vitest":1480,"nodeChecks":19,"pythonTests":88,"typesLintValidationBothBuilds":true},
+  "reusableRuntime":{"bootstrapSeconds":45.741,"independentVerificationSeconds":8.879,"artifacts":25,"cpythonFiles":3480,"packageVersions":24,"installedPayloads":2229,"modelDownloads":0,"sourceJobsDuringSetup":0,"v2SocketDenialPassed":true,"hostReportedProofSHA256":"3d6634267f8b59f7ca7152df9d3ba0fc353b604f85caf9904c51d3825fe48390","crossRestartAvailabilityGuaranteed":false},
+  "nativeMonitor":"paused; exact TikTok foreground continuation dispatched separately",
+  "standingDailyPolicy":"follow-up candidate, not this release",
+  "oldHoldsAndReservedPostPreserved":true
+}

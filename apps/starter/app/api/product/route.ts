@@ -3,8 +3,54 @@ import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
+  setPostLike: ["mutation", api.postEngagement.setLike],
+  postTrends: ["query", api.postTrends.read],
+  projectRecommendations: ["query", api.projectRecommendations.read],
+  setProjectPriority: ["mutation", api.projectRecommendations.setPriority],
+  postEngagementRead: ["query", api.postEngagement.read],
+  proposalDiscussion: ["query", api.proposalLoop.read],
+  proposalReply: ["mutation", api.proposalLoop.reply],
+  proposalComment: ["mutation", api.proposalLoop.comment],
+  proposalPlanQuote: ["query", api.proposalLoop.quote],
+  proposalPlanStart: ["mutation", api.proposalLoop.start],
+  proposalIssuePreview: ["action", api.proposalIssueActions.preview],
+  proposalIssueApprove: ["mutation", api.proposalIssues.approve],
+  proposalIssueRetry: ["mutation", api.proposalIssues.retry],
+  projectPlanningContext: ["query", api.projectPlanning.context],
+  projectProposalSave: ["mutation", api.projectPlanning.save],
+  preparedAnalysisQuote: ["query", api.preparedService.quote],
+  preparedAnalysisStart: ["mutation", api.preparedService.start],
+  preparedAnalysisStatus: ["query", api.preparedService.status],
+  catalogAccess: ["query", api.catalogAccess.status],
+  setCatalogBrowsing: ["mutation", api.catalogAccess.setEnabled],
+  catalogBrowse: ["query", api.catalogBrowse.list],
+  catalogPost: ["mutation", api.catalogBrowse.detail],
+  createTeamWorkspace: ["mutation", api.organizations.createTeam],
+  preparedComparisonBegin: ["mutation", api.preparedAnalysis.begin],
+  preparedComparisonStatus: ["query", api.preparedAnalysis.status],
+  cloudCatalogPreview: ["query", api.cloudCatalog.preview],
+  cloudCatalogContribute: ["action", api.cloudCatalogActions.contribute],
+  cloudCatalogWithdraw: ["mutation", api.cloudCatalog.withdrawContribution],
+  cloudCatalogNotes: ["mutation", api.cloudCatalog.saveNotes],
+  cloudCatalogOwn: ["query", api.cloudCatalog.own],
+  analysisHistory: ["query", api.analysisVersions.history],
+  analysisVersion: ["query", api.analysisVersions.read],
+  analysisCompare: ["query", api.analysisVersions.compare],
+  analysisSelect: ["mutation", api.analysisVersions.select],
+  analysisFollowRecommended: [
+    "mutation",
+    api.analysisVersions.followRecommendation,
+  ],
+  analysisReanalyze: ["mutation", api.analysisVersions.request],
+  analysisCancelWaiting: ["mutation", api.analysisVersions.cancelWaiting],
+  analysisKeepResult: ["mutation", api.analysisVersions.keepResult],
+  analysisEnroll: ["mutation", api.analysisVersions.enroll],
   previewPrivateAdoption: ["query", api.organizations.previewPrivateAdoption],
   adoptPrivateLibrary: ["mutation", api.organizations.adoptPrivate],
+  workCloudEvidenceRepairApprove: [
+    "mutation",
+    api.workCloudEvidenceRepair.approve,
+  ],
   workCloudTextPreview: ["query", api.workCloudAnalysis.preview],
   workCloudTextApprove: ["mutation", api.workCloudAnalysis.approve],
   publicModerationReports: ["query", api.publicKnowledge.reports],
@@ -37,6 +83,7 @@ const operations = {
   assistantIntakeAction: ["mutation", api.assistantIntakeUi.act],
   assistantSetup: ["query", api.assistantGrants.setup],
   assistantProjectChoices: ["query", api.assistantGrants.projectChoices],
+  continueAssistantSetup: ["mutation", api.assistantGrants.continueSetup],
   saveAssistantGrant: ["mutation", api.assistantGrants.save],
   revokeAssistantGrant: ["mutation", api.assistantGrants.revoke],
   autoOrganizeExploreTopics: ["mutation", api.knowledgeExplore.autoOrganize],
@@ -103,10 +150,14 @@ const operations = {
   issuePublish: ["action", api.issueActions.publish],
   issueRefresh: ["action", api.issueActions.refresh],
   selectRepositories: ["action", api.integrations.selectRepositories],
+  refreshRepository: ["action", api.integrations.refreshRepository],
   refreshGithubChoices: ["action", api.githubOAuth.refreshChoices],
   confirmProfile: ["mutation", api.profiles.confirmDraft],
   saveProfileDraft: ["mutation", api.profiles.saveDraft],
   capture: ["mutation", api.product.capture],
+  captureWorkCloud: ["mutation", api.workCloudSaves.capture],
+  analyzeSavedWorkCloud: ["mutation", api.workCloudSaves.analyzeSaved],
+  retrySavedWorkCloud: ["mutation", api.workCloudSaves.retrySaved],
   importLinks: ["mutation", api.imports.links],
   process: ["mutation", api.product.processSource],
   processBatch: ["mutation", api.product.processBatch],
@@ -200,6 +251,8 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     const messages: Record<string, string> = {
+      PERSONAL_FUNDING_REQUIRED:
+        "Use your personal credit account for this plan.",
       ACCESS_LOST:
         "Your session or workspace access changed. Sign in again to continue.",
       EVIDENCE_REQUIRED:
@@ -249,6 +302,10 @@ export async function POST(req: NextRequest) {
         "This workspace has reached its source or repository allowance.",
       BASE_CHANGED:
         "The repository changed. Refresh its snapshot and review a new plan.",
+      IDEMPOTENCY_CONFLICT:
+        "This request already saved different draft content. Open the saved proposal before making another edit.",
+      LIMIT_REACHED:
+        "This post has reached its proposal limit. Open an existing draft.",
       APPROVAL_STALE:
         "Something changed since the last review. Review the latest idea or plan.",
       MATCH_IN_PROGRESS:
@@ -313,9 +370,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: category
-          ? category === "CONTEXT_REQUIRED" && operationName.startsWith("scan")
-            ? "Confirm the selected projects’ proposed context in Projects before starting this scan."
-            : messages[category]
+          ? category === "SETUP_REQUIRED" &&
+            operationName.startsWith("proposalPlan")
+            ? "Credit plan generation is not enabled for this account yet. You can still refine this saved proposal through your existing ChatGPT connection."
+            : category === "CONTEXT_REQUIRED" &&
+                operationName.startsWith("scan")
+              ? "Confirm the selected projects’ proposed context in Projects before starting this scan."
+              : messages[category]
           : "This action could not be completed. Check its latest status before trying again.",
         code: category ?? "UNCLASSIFIED",
       },

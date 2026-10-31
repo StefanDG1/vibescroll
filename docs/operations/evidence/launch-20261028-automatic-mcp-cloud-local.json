@@ -1,0 +1,58 @@
+{
+  "kind": "automatic-mcp-cloud-local-v1",
+  "observedAtUTC": "2026-10-28T16:55:13.579116+00:00",
+  "environment": "Windows isolated synthetic tests; no production mutation",
+  "sourceBaselineCommit": "da128d78299ac754d74ea227cbf1f6d19036a989",
+  "candidateFilesBoundByGitCommit": true,
+  "checks": {
+    "fullCheck": {
+      "exitCode": 0,
+      "vitestPassed": 1393,
+      "hostedSkipped": 3,
+      "nodeCases": 19,
+      "pythonCases": 88,
+      "windowsPlatformSkipped": 7,
+      "types": true,
+      "lint": true,
+      "validation": true,
+      "bothProductionBuilds": true
+    },
+    "dependencyAudit": {
+      "passed": true,
+      "advisories": 0
+    },
+    "mcpProtocols": [
+      "2025-11-25",
+      "2026-07-28"
+    ],
+    "paths": [
+      "ordinary save_link -> serialized MCP -> authenticated HTTP -> exact Convex saved intent",
+      "scope continuation via request_analysis without foreground runtime",
+      "save-only and old app-only grant preservation",
+      "current monitor required; no alternate funding",
+      "delivered save-only event followed by fresh intent wakeup",
+      "never-attempted pending event upgrades; duplicates coalesce",
+      "normal source view keeps manual diagnostic unmounted"
+    ]
+  },
+  "preserved": {
+    "productionFrontend": "da275f423dc454a06ce42be37aa53dca23bfd0bb",
+    "productionBackend": "b03a48080c560bdd3ea8b7f3931f49f8a71cca96",
+    "newProductionPublications": 0,
+    "newLiveAnalysisAttempts": 0,
+    "nativePilotPaused": true,
+    "catalogEnabled": false,
+    "reservedPostUntouched": true
+  },
+  "remaining": [
+    "exact Linux CI",
+    "additional backend publication slot within existing cap",
+    "one-time V2 preference review/current monitor binding after publication",
+    "actual ordinary-chat automatic production canary"
+  ],
+  "limitations": [
+    "synthetic host/provider/billing fixtures do not prove production or independent customer acceptance",
+    "no automatic app selection or unsolicited completion into arbitrary originating chats",
+    "no permanent authentication promise"
+  ]
+}

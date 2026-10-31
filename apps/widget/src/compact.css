@@ -1,0 +1,258 @@
+@import "@openai/mcp-extensions/app/styles.css";
+@import "../../../packages/reader/controls.css";
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: var(
+    --font-sans,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif
+  );
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.compact-root {
+  --panel: var(--color-background-primary, #fff);
+  --ink: var(--color-text-primary, #242424);
+  --subtle: var(--color-text-secondary, #636367);
+  --line: var(--color-border-primary, #e7e7e9);
+  --teal: #356e5e;
+  --hybrid-active: #eef3f1;
+  --hybrid-blue: #e6effb;
+  --hybrid-yellow: #fff5d4;
+  --hybrid-purple: #f1eafb;
+  padding: max(16px, var(--vibescroll-safe-top, env(safe-area-inset-top)))
+    max(16px, var(--vibescroll-safe-right, env(safe-area-inset-right)))
+    max(20px, var(--vibescroll-safe-bottom, env(safe-area-inset-bottom)))
+    max(16px, var(--vibescroll-safe-left, env(safe-area-inset-left)));
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 14px;
+  max-width: 760px;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+.compact-root[data-theme="dark"] {
+  --panel: var(--color-background-primary, #202020);
+  --ink: var(--color-text-primary, #eeeeef);
+  --subtle: var(--color-text-secondary, #b0b0b4);
+  --line: var(--color-border-primary, #343437);
+  --teal: #a7cebf;
+  --hybrid-active: #263c33;
+  --hybrid-blue: #223548;
+  --hybrid-yellow: #403a25;
+  --hybrid-purple: #392d45;
+}
+.compact-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.compact-header strong {
+  font-size: 17px;
+}
+.compact-open,
+.compact-back,
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px;
+  background: transparent;
+  color: var(--subtle);
+  border: 0;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.compact-back {
+  padding-left: 0;
+}
+.compact-root h1 {
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 650;
+  margin: 16px 0;
+}
+.compact-post-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.compact-post-title h1 {
+  margin: 8px 0 20px;
+}
+.compact-post-title .icon-button {
+  flex-shrink: 0;
+}
+.compact-root .button,
+.compact-root .proposal-composer button[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: none;
+}
+.compact-root .proposal-composer button[type="submit"] {
+  background: var(--ink);
+  color: var(--panel);
+}
+.compact-root .hybrid-insight-select {
+  grid-template-columns: 36px minmax(0, 1fr) 18px;
+  gap: 10px;
+  padding: 12px;
+}
+.compact-root .hybrid-insight-icon {
+  width: 36px;
+  height: 36px;
+}
+.compact-root .hybrid-insight-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.compact-root .hybrid-insight-copy strong {
+  font-size: 14px;
+}
+.compact-root .post-insight-card {
+  border-radius: 13px;
+}
+.compact-root .post-settings-content {
+  padding-inline: 18px;
+}
+.compact-root .post-insight-reader p {
+  font-size: 14px;
+}
+.compact-root .post-insight-detail {
+  padding-inline: 14px;
+}
+.compact-workspace {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--subtle);
+}
+.compact-workspace select {
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.compact-save {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 18px 0 24px;
+}
+.compact-save input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 8px;
+}
+.compact-save button {
+  width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--panel);
+}
+.compact-recent > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 0;
+  text-align: left;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+.compact-recent span {
+  min-width: 0;
+}
+.compact-recent strong,
+.compact-recent small {
+  display: block;
+}
+.compact-recent small {
+  color: var(--subtle);
+  margin-top: 5px;
+}
+.compact-progress {
+  display: grid;
+  gap: 10px;
+  padding-block: 12px;
+}
+.compact-progress progress {
+  width: 100%;
+}
+.compact-demo,
+.compact-loading,
+.fine {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--subtle);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:root:has(.compact-root[data-theme="light"]) {
+  color-scheme: light;
+  background: var(--color-background-primary, #fff);
+}
+:root:has(.compact-root[data-theme="dark"]) {
+  color-scheme: dark;
+  background: var(--color-background-primary, #202020);
+}

@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+// These direct-render fixtures drive the existing REST/approval lifecycle.
+// WebSocket auth and subscription teardown have their own focused fixture.
+vi.mock("@/lib/use-source-live", () => ({
+  useSourceLive: vi.fn(),
+  usePostsLive: vi.fn(),
+}));
 const state = vi.hoisted(() => ({
   direct: false,
   cells: [] as any[],
@@ -47,6 +53,20 @@ vi.mock("react", async (original) => {
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }));
+// Inspect settings contents for source/evidence authorization tests. The real
+// drawer's closed/open rendering is checked separately, plus browser acceptance.
+vi.mock("./components/settings-panel", async () => {
+  const { createElement } = await import("react");
+  return {
+    SettingsPanel: ({
+      children,
+      title,
+    }: {
+      children: import("react").ReactNode;
+      title: string;
+    }) => createElement("section", { "aria-label": title }, children),
+  };
+});
 import { SourceDetail } from "./components/console";
 const now = 1800000000000,
   org = "private-owner-org";
@@ -182,6 +202,33 @@ it.each(["owner", "viewer", "unavailable"])(
     expect(parent.call).not.toHaveBeenCalled();
   },
 );
+it("keeps a post visible when its automatic intent expires and puts progress ahead of its summary", async () => {
+  const source = {
+    ...queued,
+    generation: 0,
+    state: "needs_upload",
+    personalAnalysis: undefined,
+    workCloudHandoff: undefined,
+    workCloudSaveIntent: { generation: 0, expiresAt: now + 1000 },
+    workCloudLinkSetup: { monitorReady: true },
+  };
+  server(source);
+  const parent = props(source);
+  render(parent);
+  await settle();
+  let html = render(parent);
+  expect(html).toContain("Waiting for ChatGPT");
+  expect(html.indexOf("Analysis progress")).toBeLessThan(
+    html.indexOf("Insights"),
+  );
+  vi.advanceTimersByTime(1001);
+  html = render(parent);
+  expect(html).toContain("Analysis request expired");
+  expect(html).toContain("Insights");
+  expect(html).not.toContain("This source is unavailable");
+  expect(parent.call).not.toHaveBeenCalled();
+  expect(parent.strictCall).not.toHaveBeenCalled();
+});
 it("keeps the existing unclaimed handoff after the actual source-detail refresh and a full remount without another approval", async () => {
   const saved = {
     ...queued,
@@ -234,7 +281,10 @@ it("hides an old unclaimed receipt immediately when the polled source is claimed
     updatedAt: now + 1,
     personalAnalysis: { executor: "work_cloud", state: "running" },
   };
-  expect(render(props(claimed))).not.toContain("Resume this unclaimed");
+  const html = render(props(claimed));
+  expect(html).not.toContain("Resume this unclaimed");
+  expect(html).not.toContain("Waiting for Cloud");
+  expect(html).toContain("Analyzing the evidence");
 });
 it.each(["gate", "revoked", "foreign", "viewer", "generation", "expired"])(
   "does not reveal fresh claim instructions after %s changes",
@@ -275,3 +325,102 @@ it.each(["revoked", "gate", "selection"])(
     expect(render(props(next))).not.toContain("Resume this unclaimed");
   },
 );
+
+it.each([false, true])(
+  "removes obsolete manual video review when automatic setup is available, ready=%s",
+  async (ready) => {
+    const source = {
+      ...queued,
+      url: "https://www.instagram.com/reel/DeTest000001/",
+      state: "needs_upload",
+      generation: 0,
+      workCloudHandoff: null,
+      personalAnalysis: undefined,
+      workCloudLinkSetup: {
+        configured: ready,
+        monitorReady: ready,
+        chatLinksEnabled: ready,
+      },
+    };
+    server(source);
+    const parent = props(source);
+    render(parent);
+    await settle();
+    const html = render(parent);
+    expect(html).toContain("My own Cloud Work");
+    expect(html).toContain(
+      ready ? "Analyze using Cloud defaults" : "Complete or resume Cloud setup",
+    );
+    expect(html).not.toContain("Advanced: manual Cloud handoff");
+    expect(html).not.toContain("Review Work Cloud video");
+    expect(html).not.toContain("Experimental Work Cloud video");
+    expect(parent.strictCall).not.toHaveBeenCalled();
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.every(([url]) => !String(url).includes("work-cloud")),
+    ).toBe(true);
+  },
+);
+it("does not offer automatic video defaults for a separate unsupported source route", async () => {
+  const source = {
+    ...queued,
+    state: "needs_upload",
+    generation: 0,
+    workCloudHandoff: null,
+    personalAnalysis: undefined,
+    workCloudLinkSetup: null,
+  };
+  server(source);
+  const parent = props(source);
+  render(parent);
+  await settle();
+  expect(render(parent)).not.toContain("Analyze using Cloud defaults");
+});
+
+it.each(["failed", "queued"])(
+  "offers an explicit Cloud retry for an eligible never-claimed %s request without starting it on render",
+  async (status) => {
+    const source = {
+      ...queued,
+      state: status,
+      url: "https://www.instagram.com/reel/DeTest000001/",
+      workCloudHandoff: null,
+      workCloudRetryEligible: true,
+      workCloudLinkSetup: {
+        configured: true,
+        monitorReady: true,
+        chatLinksEnabled: true,
+      },
+    };
+    server(source);
+    const parent = props(source);
+    render(parent);
+    await settle();
+    const html = render(parent);
+    expect(html).toContain("Retry using Cloud defaults");
+    expect(html).not.toContain("Analyze using Cloud defaults");
+    expect(parent.strictCall).not.toHaveBeenCalled();
+  },
+);
+
+it("keeps a failed claimed/unknown attempt out of the retry flow", async () => {
+  const source = {
+    ...queued,
+    state: "failed",
+    workCloudHandoff: null,
+    personalAnalysis: { executor: "work_cloud", state: "unknown" },
+    workCloudRetryEligible: false,
+    workCloudLinkSetup: {
+      configured: true,
+      monitorReady: true,
+      chatLinksEnabled: true,
+    },
+  };
+  server(source);
+  const parent = props(source);
+  render(parent);
+  await settle();
+  expect(render(parent)).not.toContain("Retry using Cloud defaults");
+  expect(parent.strictCall).not.toHaveBeenCalled();
+});

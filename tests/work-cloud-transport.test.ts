@@ -7,6 +7,8 @@ import {
   parseWorkCloudResult,
   workCloudCompleteInput,
   workCloudLeaseInput,
+  workCloudFrameInput,
+  workCloudPreparationStage,
   validateWorkCloudTextOutput,
 } from "../packages/contracts/work-cloud-text";
 
@@ -16,6 +18,98 @@ const lease = {
   taskId: "actual-host-task",
   leaseToken: crypto.randomUUID(),
 };
+it.each(["metadata", "frame"])(
+  "returns %s through the existing connected preparation tool and authenticated handler",
+  async (stage) => {
+    const issuer = "https://synthetic-test.authkit.app";
+    vi.stubEnv("MCP_ENABLED", "true");
+    vi.stubEnv("MCP_AUTH_ISSUER", issuer);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ sub: "synthetic-subject" })),
+    );
+    const runMutation = vi.fn(
+      async (_op: unknown, args: Record<string, unknown>) =>
+        Object.keys(args).length === 0
+          ? { issuer, subject: "synthetic-subject" }
+          : { accepted: true },
+    );
+    const runAction = vi.fn(async () => ({ assetId: "synthetic-frame" }));
+    const payload = {
+      schemaVersion: "work-cloud-media-stage-v1",
+      stage,
+      ...(stage === "metadata"
+        ? { metadata: { title: "Native title", authorName: "Creator" } }
+        : {
+            frameId: "frame-1",
+            preparationHash: "a".repeat(64),
+            data: Buffer.alloc(81920, 1).toString("base64"),
+          }),
+    };
+    const args = { ...lease, preparationJson: JSON.stringify(payload) };
+    const host = mcp(false, ["analysis:execute"], true);
+    expect(
+      (
+        await packet(
+          await host.call("tools/call", {
+            name: "work_cloud_prepare",
+            arguments: args,
+          }),
+        )
+      ).result.isError,
+    ).not.toBe(true);
+    expect(host.invoke).toHaveBeenCalledExactlyOnceWith(
+      "work_cloud_prepare",
+      args,
+    );
+    const handler = (
+      assistantHttpTools as unknown as {
+        _handler: (ctx: unknown, request: Request) => Promise<Response>;
+      }
+    )._handler;
+    const response = await handler(
+      { runMutation, runAction },
+      new Request("https://synthetic.example/assistant-tools", {
+        method: "POST",
+        headers: { authorization: "Bearer synthetic-access-token-0123456789" },
+        body: JSON.stringify({ operation: "work_cloud_prepare", args }),
+      }),
+    );
+    expect(response.status).toBe(200);
+    const validated = workCloudPreparationStage.parse(payload);
+    if (validated.stage === "metadata") {
+      expect(runMutation.mock.calls[1][1]).toEqual({
+        ...lease,
+        operation: "metadata",
+        metadata: validated.metadata,
+      });
+      expect(runAction).not.toHaveBeenCalled();
+    } else {
+      expect(runAction).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
+        ...lease,
+        frameId: validated.frameId,
+        preparationHash: validated.preparationHash,
+        data: validated.data,
+      });
+      expect(runMutation).toHaveBeenCalledOnce();
+    }
+    for (const patch of [
+      { sourceId: "other-source" },
+      { leaseToken: crypto.randomUUID() },
+      { extra: true },
+      ...(stage === "frame"
+        ? [
+            { data: "a".repeat(109232) },
+            { data: Buffer.alloc(81921).toString("base64") },
+          ]
+        : []),
+    ]) {
+      expect(
+        workCloudPreparationStage.safeParse({ ...payload, ...patch }).success,
+      ).toBe(false);
+    }
+  },
+);
 it("rejects deeply nested unknown output before recursive hashing or serialization", () => {
   let extra: unknown = null;
   for (let i = 0; i < 20000; i++) extra = { nested: extra };
@@ -127,6 +221,104 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 it.each(["2025-11-25", "2026-07-28"])(
+  "transports native metadata and separate repair authority over %s",
+  async (protocol) => {
+    const host = mcp(false, ["analysis:execute"], true, protocol);
+    const tools = (await packet(await host.call("tools/list", {}))).result
+      .tools;
+    for (const [name, args] of [
+      [
+        "work_cloud_metadata",
+        {
+          ...lease,
+          metadata: { title: "Native title", authorName: "Creator" },
+        },
+      ],
+      [
+        "work_cloud_repair_claim",
+        {
+          sourceId: lease.sourceId,
+          generation: lease.generation,
+          taskId: "fresh-repair",
+        },
+      ],
+      ["work_cloud_repair_input", lease],
+      ["work_cloud_repair_heartbeat", lease],
+      ["work_cloud_repair_complete", lease],
+      [
+        "work_cloud_frame",
+        {
+          ...lease,
+          repair: true,
+          frameId: "frame-1",
+          preparationHash: "a".repeat(64),
+          data: "YQ==",
+        },
+      ],
+    ] as const) {
+      expect(tools.some((tool: { name: string }) => tool.name === name)).toBe(
+        true,
+      );
+      const result = await packet(
+        await host.call("tools/call", { name, arguments: args }),
+      );
+      expect(result.result.isError).not.toBe(true);
+      expect(host.invoke).toHaveBeenLastCalledWith(name, args);
+      const disabled = mcp(false, ["analysis:execute"], false, protocol);
+      await disabled.call("tools/call", { name, arguments: args });
+      expect(disabled.invoke).not.toHaveBeenCalled();
+    }
+  },
+);
+it.each(["2025-11-25", "2026-07-28"])(
+  "transports bounded frame bytes only through the media capability over %s",
+  async (protocol) => {
+    const host = mcp(false, ["analysis:execute"], true, protocol);
+    const args = {
+      ...lease,
+      frameId: "frame-1",
+      preparationHash: "a".repeat(64),
+      data: "YQ==",
+    };
+    const response = await packet(
+      await host.call("tools/call", {
+        name: "work_cloud_frame",
+        arguments: args,
+      }),
+    );
+    expect(response.result.isError).not.toBe(true);
+    expect(host.invoke).toHaveBeenCalledExactlyOnceWith(
+      "work_cloud_frame",
+      args,
+    );
+    const disabled = mcp(true, ["analysis:execute"], false, protocol);
+    await disabled.call("tools/call", {
+      name: "work_cloud_frame",
+      arguments: args,
+    });
+    expect(disabled.invoke).not.toHaveBeenCalled();
+    expect(
+      workCloudFrameInput.safeParse({ ...args, data: "a".repeat(200004) })
+        .success,
+    ).toBe(false);
+    expect(
+      workCloudFrameInput.safeParse({ ...args, data: "YQ==\n" }).success,
+    ).toBe(false);
+    expect(
+      cloudCompletionEnvelope({ operation: "work_cloud_frame", args }),
+    ).toBe(true);
+    expect(
+      cloudCompletionEnvelope(
+        {
+          method: "tools/call",
+          params: { name: "work_cloud_frame", arguments: args },
+        },
+        true,
+      ),
+    ).toBe(true);
+  },
+);
+it.each(["2025-11-25", "2026-07-28"])(
   "transports exact Cloud requests and preserves legacy modes over %s",
   async (protocol) => {
     const host = mcp(
@@ -202,7 +394,7 @@ it("keeps Cloud requests unavailable by default or with only the text gate", asy
   }
 });
 it.each(["2025-11-25", "2026-07-28"])(
-  "guides an awake Cloud host inline without turning save into execution over %s",
+  "defaults ordinary links to prepared background Cloud while keeping diagnostics explicit over %s",
   async (protocol) => {
     const host = mcp(false, ["links:save", "analysis:request"], true, protocol);
     const tools = (await packet(await host.call("tools/list", {}))).result
@@ -211,30 +403,36 @@ it.each(["2025-11-25", "2026-07-28"])(
       const { description } = tools.find(
         (tool: { name: string }) => tool.name === name,
       );
-      expect(description).toMatch(/^For an exact supported video/);
-      expect(description).toContain("continue in this same user turn");
       expect(description).toContain(
-        "Before request_analysis or work_cloud_claim",
+        "save with analyze omitted or true by default",
       );
+      expect(description).toContain("link-save-cloud-v2");
+      expect(description).toContain("through native Events");
       expect(description).toContain(
-        "Save with analyze=false, then read get_job_status",
+        "sending chat does not need a video runtime",
       );
-      expect(description).toContain("explicit_per_source_v1");
-      expect(description).toContain("maxApiUsd=0");
-      expect(description).toContain("saving alone grants no Cloud execution");
+      expect(description).toContain("Do not ask for per-post app approval");
       expect(description).toContain(
-        "No pasted second message, Events subscription, GitHub or fresh per-post app approval",
+        "No paid API or alternate executor fallback",
       );
-      expect(description).toContain("private_only");
-      expect(description).toContain(
-        "does not automatically launch a host task",
-      );
-      expect(description).toContain(
-        "separately accepted background wake/execution bridge",
-      );
-      expect(description).toMatch(
-        /Never choose credits automatically|without automatically spending credits/,
-      );
+      expect(description).toContain("do not promise an unsolicited reply");
+      if (name === "request_analysis") {
+        expect(description).toContain(
+          "explicitly chosen foreground Work Cloud diagnostic",
+        );
+        expect(description).toContain(
+          "Before request_analysis or work_cloud_claim",
+        );
+        expect(description).toContain("maxApiUsd=0");
+        expect(description).toContain("saving alone grants no Cloud execution");
+      } else {
+        expect(description).not.toContain(
+          "Before request_analysis or work_cloud_claim",
+        );
+        expect(description).toContain(
+          "analyze=false only when the user wants save only",
+        );
+      }
     }
     const args = {
       url: "https://www.instagram.com/reel/ExactVideo/",

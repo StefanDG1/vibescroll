@@ -1,0 +1,85 @@
+{
+  "recordedAtUTC": "2026-10-30T23:03:55.809890+00:00",
+  "websiteCommit": "cd78c9bc8cffe4bab959c3f0ac6fbfd5be938898",
+  "websiteVersion": "0.1.0-alpha.20261030224737.gcd78c9bc8cff",
+  "backendCommit": "8e97e18c6aab2d8750b5b6ff10fb763e1c45e3fe",
+  "deploymentId": "dpl_HFAg1AqkoAmxq4mXDEq24g1DHf3y",
+  "exactCI": 41140446455,
+  "ciVitest": {
+    "passed": 1610,
+    "skipped": 5
+  },
+  "localFullCheckBeforeFinalTwoLoadingRegressions": {
+    "passed": 1610,
+    "skipped": 3
+  },
+  "finalFocusedFeedUiAndLoadingTests": 12,
+  "feedHelperTests": 3,
+  "authenticationTests": 49,
+  "zeroWarningLint": true,
+  "typesPassed": true,
+  "bothProductionBuildsPassed": true,
+  "dependencyAudit": "no known vulnerabilities",
+  "secretScanFindings": 0,
+  "basicBuildSeconds": 46.335,
+  "fixedBasicNormalQueueVerified": true,
+  "sameBuildPromoted": true,
+  "canonicalExactHealthAndAlias": true,
+  "normalDomainAssignmentRestorationAcknowledged": true,
+  "localBrowser": {
+    "feedThemeViewportCases": 4,
+    "libraryThemeViewportRepresentationCases": 8,
+    "nativeInsightClickAndEnter": true,
+    "nativePlanClickAndEnter": true,
+    "evidenceDialogEscapeAndFocusRestoration": true,
+    "nextPostScrollAndFocus": true
+  },
+  "stagedBrowser": {
+    "feedThemeViewportCases": 4,
+    "nativeClickAndEnter": true,
+    "phone320NoOverflow": true
+  },
+  "canonicalBrowser": {
+    "feedThemeViewportCases": 4,
+    "libraryThemeViewportRepresentationCases": 8,
+    "authenticatedHome": {
+      "readyPostCards": 10,
+      "loadedDetails": 2,
+      "firstPostInsights": 5,
+      "firstPostSavedPlans": 1,
+      "suggestedProjects": 3,
+      "thumbnailDecoded": true,
+      "desktopNoOverflow": true,
+      "phone390NoOverflow": true,
+      "mobileCueAboveNavigation": true,
+      "draftOpenerWithoutSaving": true
+    }
+  },
+  "newAnalysisRuns": 0,
+  "backendPublications": 0,
+  "newGitHubIssues": 0,
+  "newScopes": false,
+  "reconnect": false,
+  "newDependencies": false,
+  "balanceOrTariffMigration": false,
+  "funding": {
+    "cumulativeCapEUR": 15.5,
+    "boundedReleaseMaximumUSD": 0.025,
+    "includedBasicBuildMaximumUSD": 0.02,
+    "verificationMaximumUSD": 0.005,
+    "observedVercelUsageBeforeBuildUSD": 18.33,
+    "conservativeHostingPreflightUpperUSD": 19.991,
+    "oldFinancialHoldsRetained": true,
+    "actualSettledInfrastructureCost": null
+  },
+  "remaining": [
+    "Quoted AI plan generation",
+    "Durable inline proposal discussion and refinement",
+    "Combined exact-version approval and once-only GitHub issue publication",
+    "Unsent discussion restoration and new-ready-post discovery",
+    "Likes, intake metrics and trends"
+  ],
+  "additionalAcceptanceNotClaimed": [
+    "An optional extra live cache-eviction navigation probe was interrupted by a disconnected browser session before its click. Mock loading tests cover eviction/late responses; live acceptance covers the initial bounded neighborhood only."
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "kind":"native-placeholder-title-production-v1",
+  "commit":"55887625112942850a9d848f6f686e02e4a1c382",
+  "version":"0.1.0-alpha.20261029005247.g558876251129",
+  "exactCI":40796907512,
+  "deploymentId":"dpl_EoSYYdMmxSkvoyWYfpJNY4bLnt7e",
+  "backendPublished":true,
+  "schemaScans":0,
+  "indexBackfills":0,
+  "schemaChanges":0,
+  "releaseAndBudgetGuards":35,
+  "localChecks":{"vitest":1487,"node":19,"python":88,"hostedSkips":3,"windowsPythonSkips":7,"typesLintValidationAndBothBuilds":true},
+  "frontend":{"fixedBasic":true,"normalQueue":true,"buildingAt":1793235840599,"readyAt":1793235876718,"buildMilliseconds":36119,"stagedHealthAndGuideHTTP200":true,"exactCommitMatched":true,"sameBuildPromotion":true,"canonicalHealthHTTP200":true,"canonicalCommitMatched":true,"normalDomainAssignmentRestored":true},
+  "actualPostVerification":{"sourceId":"px71jkve7h68hfefa3yxh3t7sn8h58pv","nativeCaptionVisibleInHeadingAndOriginCard":true,"thumbnailLoaded":true,"storedTitlePreserved":"Saved TikTok","generationUnchanged":1,"selectedVersionUnchanged":"xh759kzrcbmqnw2k2q0kgnb8th8h6r6z","insightsUnchanged":4,"segmentsUnchanged":14,"framesUnchanged":8,"catalogStillPublished":true,"newAnalysis":false},
+  "budget":{"observedVercelUSD":17.82,"conservativeUpperUSD":19.75,"cumulativeEUR":13,"oldHoldsRetained":true,"reservedPostUntouched":true,"paidAIAPI":false}
+}

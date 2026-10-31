@@ -27,3 +27,5 @@ private/
 
 # Local design reference measurements and comparison artifacts.
 .impeccable/build/
+.impeccable/questions/
+apps/widget/dist/

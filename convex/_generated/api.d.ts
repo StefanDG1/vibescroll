@@ -8,10 +8,23 @@
  * @module
  */
 
+import type * as preparedService from "../preparedService.js";
+import type * as preparedAnalysis from "../preparedAnalysis.js";
+import type * as preparedMedia from "../preparedMedia.js";
 import type * as accounts from "../accounts.js";
+import type * as analysisVersions from "../analysisVersions.js";
+import type * as analysisVersionFrames from "../analysisVersionFrames.js";
 import type * as aiPreferences from "../aiPreferences.js";
 import type * as assets from "../assets.js";
 import type * as assistant from "../assistant.js";
+import type * as assistantProposalWork from "../assistantProposalWork.js";
+import type * as assistantProposals from "../assistantProposals.js";
+import type * as projectPlanning from "../projectPlanning.js";
+import type * as proposalIssues from "../proposalIssues.js";
+import type * as proposalIssueActions from "../proposalIssueActions.js";
+import type * as proposalLoop from "../proposalLoop.js";
+import type * as proposalLoopActions from "../proposalLoopActions.js";
+import type * as assistantWidget from "../assistantWidget.js";
 import type * as assistantEventRuntime from "../assistantEventRuntime.js";
 import type * as assistantEvents from "../assistantEvents.js";
 import type * as assistantEventsHttp from "../assistantEventsHttp.js";
@@ -26,7 +39,11 @@ import type * as billing from "../billing.js";
 import type * as billingChanges from "../billingChanges.js";
 import type * as billingV1 from "../billingV1.js";
 import type * as categories from "../categories.js";
+import type * as catalogAccess from "../catalogAccess.js";
+import type * as catalogBrowse from "../catalogBrowse.js";
 import type * as cloud from "../cloud.js";
+import type * as cloudCatalog from "../cloudCatalog.js";
+import type * as cloudCatalogActions from "../cloudCatalogActions.js";
 import type * as commerce from "../commerce.js";
 import type * as credentialRotation from "../credentialRotation.js";
 import type * as crons from "../crons.js";
@@ -108,6 +125,10 @@ import type * as pilotPaymentMaintenance from "../pilotPaymentMaintenance.js";
 import type * as planning from "../planning.js";
 import type * as privacy from "../privacy.js";
 import type * as product from "../product.js";
+import type * as posts from "../posts.js";
+import type * as postEngagement from "../postEngagement.js";
+import type * as postTrends from "../postTrends.js";
+import type * as projectRecommendations from "../projectRecommendations.js";
 import type * as publicKnowledge from "../publicKnowledge.js";
 import type * as sourceAcquisition from "../sourceAcquisition.js";
 import type * as sourceAcquisitionActions from "../sourceAcquisitionActions.js";
@@ -131,6 +152,11 @@ import type * as subscriptionTrials from "../subscriptionTrials.js";
 import type * as toolMaintenance from "../toolMaintenance.js";
 import type * as usageMaintenance from "../usageMaintenance.js";
 import type * as workCloudAnalysis from "../workCloudAnalysis.js";
+import type * as workCloudEvidenceRepair from "../workCloudEvidenceRepair.js";
+import type * as workCloudFrames from "../workCloudFrames.js";
+import type * as workCloudSaves from "../workCloudSaves.js";
+import type * as workCloudSaveSchema from "../workCloudSaveSchema.js";
+import type * as lib_workCloudSave from "../lib/workCloudSave.js";
 import type * as workflows from "../workflows.js";
 
 import type {
@@ -140,17 +166,31 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  workCloudAnalysis: typeof workCloudAnalysis;
+  catalogAccess: typeof catalogAccess;
+  catalogBrowse: typeof catalogBrowse;
+  preparedMedia: typeof preparedMedia;
+  preparedAnalysis: typeof preparedAnalysis;
+  preparedService: typeof preparedService;
   accounts: typeof accounts;
+  analysisVersions: typeof analysisVersions;
+  analysisVersionFrames: typeof analysisVersionFrames;
   aiPreferences: typeof aiPreferences;
   assets: typeof assets;
   assistant: typeof assistant;
+  assistantProposals: typeof assistantProposals;
+  assistantProposalWork: typeof assistantProposalWork;
+  projectPlanning: typeof projectPlanning;
+  proposalIssues: typeof proposalIssues;
+  proposalIssueActions: typeof proposalIssueActions;
+  proposalLoop: typeof proposalLoop;
+  proposalLoopActions: typeof proposalLoopActions;
+  assistantWidget: typeof assistantWidget;
   assistantEventRuntime: typeof assistantEventRuntime;
   assistantEvents: typeof assistantEvents;
   assistantEventsHttp: typeof assistantEventsHttp;
   assistantGrants: typeof assistantGrants;
   assistantHttp: typeof assistantHttp;
-  "assistantIntakeUi": typeof assistantIntakeUi;
+  assistantIntakeUi: typeof assistantIntakeUi;
   assistantLocal: typeof assistantLocal;
   assistantLocalActions: typeof assistantLocalActions;
   assistantLocalHttp: typeof assistantLocalHttp;
@@ -160,6 +200,8 @@ declare const fullApi: ApiFromModules<{
   billingV1: typeof billingV1;
   categories: typeof categories;
   cloud: typeof cloud;
+  cloudCatalog: typeof cloudCatalog;
+  cloudCatalogActions: typeof cloudCatalogActions;
   commerce: typeof commerce;
   credentialRotation: typeof credentialRotation;
   crons: typeof crons;
@@ -241,6 +283,10 @@ declare const fullApi: ApiFromModules<{
   planning: typeof planning;
   privacy: typeof privacy;
   product: typeof product;
+  posts: typeof posts;
+  postEngagement: typeof postEngagement;
+  postTrends: typeof postTrends;
+  projectRecommendations: typeof projectRecommendations;
   publicKnowledge: typeof publicKnowledge;
   sourceAcquisition: typeof sourceAcquisition;
   sourceAcquisitionActions: typeof sourceAcquisitionActions;
@@ -263,6 +309,12 @@ declare const fullApi: ApiFromModules<{
   subscriptionTrials: typeof subscriptionTrials;
   toolMaintenance: typeof toolMaintenance;
   usageMaintenance: typeof usageMaintenance;
+  workCloudAnalysis: typeof workCloudAnalysis;
+  workCloudFrames: typeof workCloudFrames;
+  workCloudEvidenceRepair: typeof workCloudEvidenceRepair;
+  workCloudSaves: typeof workCloudSaves;
+  workCloudSaveSchema: typeof workCloudSaveSchema;
+  "lib/workCloudSave": typeof lib_workCloudSave;
   workflows: typeof workflows;
 }>;
 
@@ -293,6 +345,8 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  shardedCounter: import("@convex-dev/sharded-counter/_generated/component.js").ComponentApi<"shardedCounter">;
+  agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
   rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
   resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
   workflow: import("@convex-dev/workflow/_generated/component.js").ComponentApi<"workflow">;

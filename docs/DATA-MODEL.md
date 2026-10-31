@@ -1,5 +1,9 @@
 # Data model
 
+## Planned analysis versions, October 28
+
+[ADR180](adr/180-versioned-cloud-analysis-and-shared-selection.md) and the [versioned record contracts](launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md#keep-the-data-model-small) distinguish source revisions, shared evidence bundles, immutable analysis versions, finite attempts, approved selections and private associations. Reuse the existing artifact family; do not equate a source execution generation with version history or copy a full result per customer. This is a planned additive migration, not the current serving schema.
+
 Mode: reference. Names describe proposed Convex tables and serialized concepts.
 
 ## Shared fields

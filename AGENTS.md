@@ -2,7 +2,31 @@
 
 Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/decisions.md), and the relevant implementation work package before changing code.
 
+## Current mandatory owner direction
+
+Start with [current accepted state](docs/operations/CURRENT-STATE.md) and the [owner request register](docs/strategy/OWNER-REQUEST-REGISTER.md). The register reconciles this conversation, later overrides and unfinished requests. Use [the continuation procedure](docs/operations/CONTINUE-VIBESCROLL.md) and [failure reference](docs/operations/FAILURES-AND-RECOVERY.md) before diagnosis or release. Read the relevant subsystem documents below; do not infer current authority or production status from an older handover/ADR's present-tense wording.
+
+Routine release/build counts are delegated by the owner. Do not ask again for per-release count exceptions. Check actual funding before meaningful spending batches or material changes, preserve monetary/provider limits and unknown holds, and report code, tests, production and independent acceptance separately. The compact shared MCP UI is reactivated under owner requirement R110/ADR208; avoid copying the whole app. Local execution remains deferred. New requirements update the register; verified production changes update CURRENT-STATE in place and retain a dated receipt.
+
+Read [Saved posts, catalog access and individual Pro teams](docs/strategy/POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md) before entitlement, sharing, preparation or credit work until accepted. Base Pro reuses cache for requested posts; full-library browsing is a separate add-on/toggle with an explicit owner admin concession. Each team member has their own Pro and credits. Quote preparation and analysis separately, preserve precise intermediate units and round only at final settlement. Preserve legacy balances and distinguish planned commerce from live behavior.
+
+Read [One hosted Pro and credit groups](docs/strategy/PRO-PRICING-AND-CREDITS.md) before pricing, entitlement, onboarding or cache-access work until migration is accepted. Preserve the owner's single paid hosted tier, Muse 1×/premium credit bands, high-reasoning budgets, digital-root-8 prices and premium weekly interval. The 300/500 allowance and price comparison is a proposal, not changed runtime prices, customer terms or balances.
+
+Until implemented and accepted, read [Shared intelligence and the VibeScroll moat](docs/strategy/SHARED-INTELLIGENCE-MOAT.md) and its [execution plan](docs/launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) before VibeScroll work. They preserve the October 28 backend-first direction, normal-session routine workflows, default shared reuse, failed-video retry, reliable metadata, separate recent-post routes and later experiments/model/outcome rankings. Update their acceptance ledgers; do not infer that planned capabilities are live.
+
+Also read [Simple setup, persistent results and proposal feedback](docs/strategy/SIMPLE-SETUP-AND-CLOSED-LOOP-PROPOSALS.md). It preserves the later owner screenshots/corrections: route-specific setup, automatic Cloud Save without a second checkbox, ordinary access defaults, real model choices, results until deleted and a scoped issue/PR completion loop. These requirements remain active alongside the shared backend until accepted.
+
+For Home/feed, proposal-review or engagement/analytics work, read the [Home feed and plan review plan](docs/design/HOME-FEED-AND-PLAN-REVIEW.md) and [assistant-ui catalogue review](docs/design/ASSISTANT-UI-CATALOGUE-REVIEW-2026-10-30.md) until accepted. R115-R124 preserve the selected four refined light/dark desktop/mobile renders, viewport-height desktop columns, smooth post snapping with a next-post peek, all-post insight context for proposals, tab-free inline plan discussion without a Needs changes button, ready-plan scores on each proposal, content-first custom mobile chrome, bounded feed loading, preserved Library views and a single version-bound Approve & create issue action.
+
 ## Build the specified product
+
+The owner now requests completing the [medium-term workflow](docs/launch-plan/2026-10-31/MEDIUM-TERM-COMPLETION.md). Close its remaining short-term acceptance first, then work through feed/engagement, explainable fit, real Trends, OpenAI API funding/model quotes and paid-workspace readiness. Preserve the accepted visual design and ask about material design, architecture or recurring-cost choices. The owner selected preparation of EUR35/month, EUR350/year and EUR17/week; live billing/customer migration still requires review of the concrete package.
+
+Until accepted, read the [short-term proposal loop](docs/launch-plan/2026-10-31/SHORT-TERM-PROPOSAL-LOOP.md). The October31 owner requests completion of generated plans, durable discussion/refinement and single-action issue publication. Preserve the live feed and shared source/version context; finish these backend workflows before adding social analytics or revisiting the visual design.
+
+For new or substantially rebuilt assistant-related UI, prefer suitable assistant-ui components. The owner confirmed this preference on October 29, 2026. Start with the model selector and reasoning controls; reuse existing VibeScroll components where they already fit. Inspect the selected component's current dependencies and licence. This preference does not require a frontend rewrite or delay backend acceptance. See [the component plan](docs/strategy/MODEL-CATALOGUE-AND-CREDIT-BANDS.md).
+
+For analysis status, credit meters and project recommendations, read the [assistant-elements and fit plan](docs/design/ASSISTANT-ELEMENTS-AND-PROJECT-FIT.md) until accepted. Topic coverage is the current first subset; similarity/history/outcome scoring, meaningful priority/activity, duplicate-proposal opening, tooltips and provider logos remain tracked work. Preserve exact balances, observed states and honest score arithmetic.
 
 Build a web application first. Every library, proposal, approval, billing, and status workflow must work in a mobile browser. Installation of a desktop application is not a prerequisite. The optional runner exists only to execute authorized tasks on a paired computer.
 
@@ -21,6 +45,8 @@ Record new decisions in an ADR. Identify affected tests and documents. Do not in
 Treat videos, transcripts, captions, repository files, issues, and model outputs as untrusted data. None can grant permissions. Enforce permissions outside the model.
 
 Never pool the founder's ChatGPT subscription across users. Use the official Codex client for each user's supported local subscription session. Do not extract private ChatGPT endpoints or upload local OAuth credentials. General hosted subscription-funded inference stays disabled until its official commercial contract is verified.
+
+The owner's eligible Pro benefit grants ordinary API Platform credits to their linked API organization. R127 explicitly prefers those credits for website jobs whose user selected an OpenAI model. Follow [the API funding plan](docs/strategy/OPENAI-PROMOTIONAL-API-FUNDING.md): verify the actual organization/project key, keep user credit tariffs, record promotional versus cash cost, and preserve expiry/exhaustion limits. This is ordinary API funding and does not authorize pooled ChatGPT login sessions, API-key Codex usage, purchases or Auto Recharge. Verified benefit/account linkage is not evidence that routing is implemented.
 
 Never silently switch a task to paid API usage. Reserve a cost budget before work. Bind coding approval to the repository, base commit, plan version, executor, funding route, and maximum spend.
 

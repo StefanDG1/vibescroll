@@ -1,5 +1,43 @@
 # Foundational idea backlog
 
+## F090: saved-post feed and plan review, October30
+
+The owner requests a personal analyzed-post Home feed, three desktop columns and content-first custom mobile screens without a repeated app banner. Connect insights to a small set of project plans, expose real generation/ready states, keep comments/refinement in a continuous tab-free plan conversation, and remove the separate Needs changes/X action under R121. The owner explicitly chose one Approve & create issue action, followed by an issue link/copyable work prompt rather than automatic coding. Likes and VibeScroll intake counts can inform later creator/category/subcategory analytics; popularity is not measured quality or benefit. Three generated concepts use sample data. The owner selected A's desktop taste/expanding cards, B's tab-free plan conversation and C's mobile media overlay; matching light/dark refinements precede interface changes. The full151-item assistant-ui catalogue is inventoried, with only suitable combinations proposed. [Standing plan](../design/HOME-FEED-AND-PLAN-REVIEW.md), [catalogue review](../design/ASSISTANT-UI-CATALOGUE-REVIEW-2026-10-30.md). This is requested product direction, not new production or customer evidence. Existing audience, prices and six beliefs remain unchanged.
+
+## F089: explain progress, credits and project fit, October30
+
+The owner requests assistant-ui-style observed analysis stages/errors, a credit-use meter and project-fit breakdowns that encourage useful proposals. Start with real job states, exact balances and explicit topic coverage. Similar-proposal history, importance and outcomes need authorized data before scoring. Do not inflate a baseline or claim improved conversion, successful implementation or a success probability. Keep extra detail behind disclosures, preserve Library Tree/Folders and use shared website/MCP controls. Provider logos are presentation, not proof of model support. [Implementation plan](../design/ASSISTANT-ELEMENTS-AND-PROJECT-FIT.md). The first status/credit/topic-coverage subset is live atb8162b5. Richer scoring remains a plan, without customer-validation evidence. Prices, audience, authority and six beliefs remain unchanged.
+
+## F088: show a synthetic product result in the hero, October30
+
+The owner selected VibeScroll marketing/styling for a real saved-insight-to-issue trial. The retained before-after visual idea supports an explicitly unvalidated design hypothesis: a compact source tile beside reusable expandable insight cards may explain the product more clearly than decorative stacks. The public example uses authored synthetic text, no private media or creator imagery, and no conversion/performance claim. Audience, offer, prices, permissions and the six beliefs are unchanged.
+
+Issue196 and its exact frozen body received a real signed opened callback in the same saved proposal. This is engineering workflow evidence, not customer validation or proof of marketing effectiveness. The hero is live atb8162b5 with desktop/phone keyboard/focus acceptance; this does not establish marketing effectiveness. [Implementation note](../design/LANDING-HERO-INSIGHTS-2026-10-30.md), [provider trial](../operations/evidence/launch-20261030-live-project-issue-production.json).
+
+## F087: one hosted Pro, model bands and pricing research, October29
+
+The owner selects one hosted Pro with workspaces/all implemented features and paid shared-cache access; free distribution is self-hosted code without that dataset. Later corrections consider 300 versus 500 monthly credits, premium weekly billing, Muse 1.3 Contributor at 1×, more credits for better API models, rounded cost groups priced for high reasoning and digital-root-8 prices. The working comparison is EUR8/week (50 credits), EUR35/month (300) and EUR350/year (300 granted monthly). Prices/allowance remain proposals pending the measured pipeline and versioned billing migration. Existing runtime/Stripe prices and balances are unchanged.
+
+[ADR192](../adr/192-single-hosted-pro-duration-credits.md) and the [standing pricing plan](../strategy/PRO-PRICING-AND-CREDITS.md) preserve customer terms and distinguish observed Muse cost from maximum-token stress reservations, gross/contribution/operating margins and unsupported profit claims. Audience and six beliefs are unchanged. Simpler choice, willingness to pay and cache value remain hypotheses; no campaign, real price change or independent self-host acceptance follows.
+
+## F086: normal-session routine workflows, October 28
+
+The owner rejects repeated five-minute sign-in for normal permissions, saving, analysis and setup. [ADR183](../adr/183-normal-session-assistant-preferences.md) removes that hurdle from routine actions and retains it for the explicit high-risk actions. Those actions navigate directly through sign-in and back to the page without replaying the operation. The separate [shared-intelligence strategy](../strategy/SHARED-INTELLIGENCE-MOAT.md) preserves backend-first delivery, automatic eligible catalog reuse, safe retries, reliable post metadata and a separate recent Posts page. These changes are a locally tested candidate until the release record says otherwise. The owner's objection is not measured conversion evidence. Actual OAuth, roles, provider/funding authority, prices and audience remain unchanged.
+
+## F085: ordinary ChatGPT links, October 28
+
+The owner expects the existing MCP app to use Cloud analysis by default without reviewing every video in the website. [ADR182](../adr/182-automatic-mcp-cloud-link-default.md) records the V2 preference and native Events dispatch, whose controls are now published at `f6ecf74`. Old app-only consent requires one review before broader use. Results return to the post and configured Work task; arbitrary-chat automatic selection or unsolicited completion is not claimed. Preserve the audience, prices, six beliefs and provider/privacy gates. Production acceptance of this ordinary-chat path remains pending.
+
+## F083: versioned shared analysis, October 28
+
+Source: owner request to force a second/later Reel analysis, cache reusable evidence, compare model outputs, select the best version and roll back. Decision: adopt the implementation direction under [ADR180](../adr/180-versioned-cloud-analysis-and-shared-selection.md), with Cloud link-to-insights ahead of widget work. The existing audience benefits only if the newer result is actually useful and reliable. Current private automatic tests support the transport/media path, not model superiority, customer value or shared Cloud publication.
+
+Counterargument: model names, reasoning settings and recency are poor substitutes for evidence quality. A shared result can also leak private context or survive a rights change unless contribution, retention and entitlement stay authoritative. Test preservation of version1 through successful/failed upgrades; zero-inference rollback; blinded candidate comparison; two-account compatible cache reuse; revocation and takedown across all caches. Keep prices, grants, spending caps, audience and six beliefs unchanged. Website availability copy waits for the recorded acceptance milestones.
+
+## F078: understandable task locations, October 26
+
+Source: the owner's exact three-option request. Decision: implement one shared picker and existing setup shortcuts, keeping unavailable routes visible and disabled. The objection is ambiguity between ChatGPT Cloud and VibeScroll-funded servers. Recommendation follows owner preference; readiness and customer comprehension remain separately tested. Keep all existing quotes, grants and saved data. See [ADR161](../adr/161-three-task-locations.md).
+
 ## F066: preserve older saved posts through explicit privacy repair, October 24
 
 A real connected account can expose Cloud tools while an older workspace still has team permissions. Its name does not establish privacy. [ADR 147](../adr/147-explicit-legacy-private-library-adoption.md) prepares an explicit original-creator/sole-owner upgrade using the existing workspace and unchanged post/project IDs. Current membership, invitations, recent authentication and another private library are checked again before adoption. Team collaboration uses a separate workspace.

@@ -2,6 +2,7 @@ import type { QueryCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
 import { sourceRetained } from "./sourceAuthority";
 import { sharedTypedCitations } from "./sourceCitations";
+import { cloudImport, cloudSourceFamily } from "./cloudCatalog";
 
 /** Call only after the current actor, membership and grant have been authorized. */
 export async function sourceWithinAssistantScope(
@@ -42,6 +43,13 @@ export async function sourceWithinAssistantScope(
     );
   if (!granted) return false;
   try {
+    const layer = source.publicImportId
+      ? await ctx.db.get(source.publicImportId)
+      : null;
+    if (cloudImport(layer)) {
+      await cloudSourceFamily(ctx, source);
+      return true;
+    }
     await sharedTypedCitations(ctx, source);
     return true;
   } catch {

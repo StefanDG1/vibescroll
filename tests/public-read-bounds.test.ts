@@ -146,45 +146,8 @@ async function setup(
   return { t, ...fixture, collection };
 }
 
-it("keeps a large anonymous regional census within 1.7 MB by sampling at most 25 full source checks", async () => {
-  const s = await setup(110, 60000);
-  const regions = await s.t.query(api.publicKnowledge.geography, {});
-  expect(regions).toEqual([
-    {
-      id: "europe",
-      label: "Europe",
-      latitude: 50,
-      longitude: 15,
-      contributors: "25+",
-      coverage: "bounded_snapshot",
-    },
-  ]);
-  expect(JSON.stringify(regions)).not.toMatch(
-    /actor|organization|createdAt|updatedAt|subject/,
-  );
-});
-
-it("also bounds payload reads when a contributor opted in from a different workspace than their latest edition", async () => {
-  const s = await setup(110, 0, 1700000, true);
-  await s.t.run(async (ctx) => {
-    const other = await ctx.db.insert("organizations", {
-      name: "Other synthetic contributor workspace",
-      status: "active",
-      createdBy: s.owner,
-      createdAt: Date.now(),
-    });
-    for (const row of await ctx.db
-      .query("publicGeography")
-      .withIndex("by_org", (q) => q.eq("organizationId", s.org))
-      .collect()) {
-      await ctx.db.insert("memberships", {
-        organizationId: other,
-        userId: row.actor,
-        role: "admin",
-      });
-      await ctx.db.patch(row._id, { organizationId: other });
-    }
-  });
+it("returns no retired regional data even with a zero-byte read budget", async () => {
+  const s = await setup(110, 60000, 0);
   expect(await s.t.query(api.publicKnowledge.geography, {})).toEqual([]);
 });
 

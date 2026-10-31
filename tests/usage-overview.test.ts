@@ -19,9 +19,37 @@ it("excludes expired and revoked authority while retaining unresolved expired ho
     reserved: 20,
     expiredReserved: 8,
     activeAllowance: 35,
+    activeSpent: 19,
+    activeReserved: 12,
     nextExpiry: 300,
     trial: true,
   });
+});
+it("projects settled use independently of the recent page and rejects aggregate overflow", () => {
+  const summary = usageOverview({
+    wallet: {},
+    pools: [{ granted: 300, spent: 120, reserved: 30 }],
+    entries: [],
+  });
+  expect(summary).toMatchObject({
+    activeSpent: 120,
+    activeReserved: 30,
+    available: 150,
+    recent: [],
+  });
+  expect(
+    usageOverview({
+      wallet: {},
+      pools: [
+        {
+          granted: Number.MAX_SAFE_INTEGER,
+          spent: Number.MAX_SAFE_INTEGER,
+          reserved: 1,
+        },
+      ],
+      entries: [],
+    }),
+  ).toBeNull();
 });
 it("does not invent allowance or settled provider bills from missing or invalid records", () => {
   expect(usageOverview(null)).toBeNull();

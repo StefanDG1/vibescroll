@@ -1,5 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { createKnowledgeHandler } from "../packages/mcp/server";
+import { embeddedUiEnabled } from "../packages/widget/setup";
 const invoke = vi.fn(async () => ({
   ok: true,
   status: 200,
@@ -15,15 +16,53 @@ async function packet(response: Response) {
   }
   return response.json();
 }
-async function call(method: string, params: unknown, scopes: string[]) {
-  const body = { jsonrpc: "2.0", id: 1, method, params };
-  return createKnowledgeHandler(invoke).fetch(
+async function call(
+  method: string,
+  params: unknown,
+  scopes: string[],
+  backend: Parameters<typeof createKnowledgeHandler>[0] = invoke,
+  protocol = "2025-11-25",
+  features?: { events?: boolean; media?: boolean; widget?: boolean },
+) {
+  const modern = protocol === "2026-07-28";
+  const modernParams = params as Record<string, unknown>;
+  const body = {
+    jsonrpc: "2.0",
+    id: 1,
+    method,
+    params: modern
+      ? {
+          ...modernParams,
+          _meta: {
+            "io.modelcontextprotocol/protocolVersion": protocol,
+            "io.modelcontextprotocol/clientInfo": {
+              name: "Synthetic acceptance client",
+              version: "1.0",
+            },
+            "io.modelcontextprotocol/clientCapabilities": {},
+          },
+        }
+      : params,
+  };
+  return createKnowledgeHandler(
+    backend,
+    features?.events ?? false,
+    false,
+    features?.media ?? false,
+    features?.widget ?? false,
+  ).fetch(
     new Request("https://scroll.companynerve.com/mcp", {
       method: "POST",
       headers: {
         "content-type": "application/json",
         accept: "application/json, text/event-stream",
-        "mcp-protocol-version": "2025-11-25",
+        "mcp-protocol-version": protocol,
+        ...(modern
+          ? {
+              "mcp-method": method,
+              "mcp-name": String(modernParams.name ?? ""),
+            }
+          : {}),
       },
       body: JSON.stringify(body),
     }),
@@ -40,6 +79,82 @@ async function call(method: string, params: unknown, scopes: string[]) {
     },
   );
 }
+it("retains a headless mode without changing native analysis tools", async () => {
+  expect(embeddedUiEnabled).toBe(true);
+  const response = await packet(
+    await call(
+      "tools/list",
+      {},
+      [
+        "knowledge:read",
+        "jobs:read",
+        "links:save",
+        "analysis:request",
+        "analysis:execute",
+        "events:subscribe",
+      ],
+      invoke,
+      "2026-07-28",
+      { events: true, media: true, widget: false },
+    ),
+  );
+  const tools = response.result.tools;
+  expect(tools.map((t: any) => t.name)).toEqual(
+    expect.arrayContaining([
+      "get_profile",
+      "save_link",
+      "work_cloud_claim",
+      "work_cloud_retained_frame",
+      "work_cloud_complete",
+    ]),
+  );
+  for (const name of [
+    "open_vibescroll",
+    "open_vibescroll_export",
+    "render_vibescroll_card",
+  ])
+    expect(tools.some((t: any) => t.name === name)).toBe(false);
+  expect(tools.every((t: any) => !t._meta?.ui)).toBe(true);
+  const resources = await packet(
+    await call("resources/list", {}, ["knowledge:read"], invoke, "2026-07-28", {
+      widget: false,
+    }),
+  );
+  expect(resources.result?.resources ?? []).toEqual([]);
+});
+it("returns a profile-selection next action through MCP 2 without asking to reconnect", async () => {
+  const response = await call(
+    "tools/call",
+    {
+      name: "save_link",
+      arguments: {
+        url: "https://vm.tiktok.com/Synthetic/",
+        title: "Saved link",
+        key: "synthetic-profile-key",
+        analyze: false,
+      },
+    },
+    ["links:save"],
+    async () => ({
+      ok: false,
+      status: 409,
+      value: {
+        code: "PROFILE_SELECTION_REQUIRED",
+        error: "PRIVATE backend detail",
+      },
+    }),
+    "2026-07-28",
+  );
+  const result = await packet(response);
+  const value = JSON.parse(result.result.content[0].text);
+  expect(value).toMatchObject({
+    code: "PROFILE_SELECTION_REQUIRED",
+    next_action: { tool: "get_profile", args: {} },
+  });
+  expect(value.error).toContain("no new sign-in or Cloud setup");
+  expect(JSON.stringify(result)).not.toContain("PRIVATE backend detail");
+  expect(result.result.isError).toBe(true);
+});
 it("exposes bounded read and explicit intake schemas through actual stateless MCP dispatch", async () => {
   const response = await call("tools/list", {}, [
     "knowledge:read",
@@ -362,6 +477,7 @@ it("serves scoped Events through the actual modern SDK and excludes legacy/disab
     "analysis_completed",
     "work_cloud_waiting",
     "work_cloud_connection_verified",
+    "video_link_saved",
   ]);
   operation.mockClear();
   const denied = await run("events/list", {}, []);
@@ -385,7 +501,11 @@ it("serves scoped Events through the actual modern SDK and excludes legacy/disab
   const subscribed = await run("events/subscribe", params);
   expect((await packet(subscribed)).result.id).toBe("sub_synthetic");
   expect(operation).toHaveBeenCalledWith("events/subscribe", params);
-  for (const name of ["work_cloud_waiting", "work_cloud_connection_verified"]) {
+  for (const name of [
+    "work_cloud_waiting",
+    "work_cloud_connection_verified",
+    "video_link_saved",
+  ]) {
     operation.mockClear();
     const profile = {
       ...params,
@@ -496,4 +616,106 @@ it("accepts exact direct-source metadata URLs under links:save and keeps unsuppo
     expect(result.result.isError).toBe(true);
     expect(invoke).not.toHaveBeenCalled();
   }
+});
+
+it("exposes compact resources and shared proposal tools to the app without changing their OAuth scopes", async () => {
+  const response = await packet(
+    await call(
+      "tools/list",
+      {},
+      [
+        "knowledge:read",
+        "context:read",
+        "suggestions:draft",
+        "jobs:read",
+        "links:save",
+      ],
+      invoke,
+      "2026-07-28",
+      { widget: embeddedUiEnabled },
+    ),
+  );
+  const tools = response.result.tools;
+  for (const name of [
+    "open_vibescroll",
+    "render_vibescroll_card",
+    "fetch",
+    "save_link",
+    "get_project_application_context",
+    "save_project_proposal",
+  ])
+    expect(
+      tools.find((t: any) => t.name === name)?._meta.ui.visibility,
+    ).toContain("app");
+  const draft = tools.find((t: any) => t.name === "save_project_proposal");
+  expect(draft._meta.securitySchemes[0].scopes).toEqual([
+    "knowledge:read",
+    "context:read",
+    "suggestions:draft",
+  ]);
+  const resources = await packet(
+    await call("resources/list", {}, ["knowledge:read"], invoke, "2026-07-28", {
+      widget: true,
+    }),
+  );
+  expect(
+    resources.result.resources.some((r: any) => r.uri.includes("/card/")),
+  ).toBe(true);
+});
+
+it("exposes the durable proposal loop with explicit paid-start and external-publication boundaries", async () => {
+  const scopes = [
+    "knowledge:read",
+    "context:read",
+    "suggestions:draft",
+    "analysis:request",
+    "analysis:execute",
+  ];
+  const response = await packet(
+    await call("tools/list", {}, scopes, invoke, "2026-07-28"),
+  );
+  const tools = response.result.tools;
+  for (const name of [
+    "get_proposal_discussion",
+    "add_proposal_message",
+    "quote_project_plan",
+    "start_project_plan",
+    "preview_project_issue",
+    "approve_project_issue",
+    "retry_project_issue",
+  ])
+    expect(tools.some((t: any) => t.name === name)).toBe(true);
+  expect(
+    tools.find((t: any) => t.name === "start_project_plan")._meta
+      .securitySchemes[0].scopes,
+  ).toContain("analysis:execute");
+  expect(
+    tools.find((t: any) => t.name === "approve_project_issue").annotations,
+  ).toMatchObject({
+    readOnlyHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  });
+  const result = await packet(
+    await call(
+      "tools/call",
+      {
+        name: "add_proposal_message",
+        arguments: {
+          proposalId: "proposal-one",
+          expectedVersion: 1,
+          key: "discussion-key-one",
+          text: "Keep it concise.",
+        },
+      },
+      scopes,
+      invoke,
+      "2026-07-28",
+    ),
+  );
+  expect(result.result.isError).not.toBe(true);
+  expect(invoke).toHaveBeenCalledWith(
+    "add_proposal_message",
+    expect.objectContaining({ text: "Keep it concise." }),
+  );
 });

@@ -1,5 +1,6 @@
 import { personalAnalysisValue } from "./personalAnalysisSchema";
 import { defineTable } from "convex/server";
+import { cloudSaveIntent } from "./workCloudSaveSchema";
 import { v } from "convex/values";
 import { sourceType, retrievalState } from "./sourceSchema";
 import {
@@ -234,6 +235,7 @@ export const productTables = {
     bytes: v.number(),
   }).index("by_org", ["organizationId"]),
   assets: defineTable({
+    sourceGeneration: v.optional(v.number()),
     ...tenant,
     key: v.string(),
     sourceId: v.optional(v.id("sources")),
@@ -250,12 +252,76 @@ export const productTables = {
     .index("by_expiry", ["expiresAt"]),
   sources: defineTable({
     ...tenant,
+    cloudRetryReceipts: v.optional(
+      v.array(
+        v.object({
+          keyHash: v.string(),
+          actor: v.id("users"),
+          generation: v.number(),
+          revision: v.number(),
+          nextGeneration: v.number(),
+          priorJobHash: v.string(),
+          priorInputHash: v.string(),
+          priorPolicyHash: v.string(),
+          priorGrantId: v.id("assistantGrants"),
+          priorGrantVersion: v.number(),
+          priorClientId: v.string(),
+          priorState: v.string(),
+          priorApprovedAt: v.number(),
+          priorExpiresAt: v.number(),
+          priorModel: v.string(),
+          priorEffort: v.string(),
+          createdAt: v.number(),
+        }),
+      ),
+    ),
     sourceType: v.optional(sourceType),
     currentRevisionId: v.optional(v.id("sourceRevisions")),
     retrievalState: v.optional(retrievalState),
     publicImportId: v.optional(v.id("publicImports")),
+    selectedAnalysisVersionId: v.optional(v.id("analysisVersions")),
+    analysisSelectionRevision: v.optional(v.number()),
+    pendingAnalysisAttemptId: v.optional(v.id("analysisAttempts")),
+    pendingAnalysisAttemptState: v.optional(
+      v.union(v.literal("queued"), v.literal("running"), v.literal("unknown")),
+    ),
+    nextAnalysisVersionNumber: v.optional(v.number()),
+    selectedAnalysisSummary: v.optional(v.string()),
+    selectedAnalysisInsightCount: v.optional(v.number()),
+    selectedAnalysisMainPoints: v.optional(v.array(v.string())),
     analysisPipelineVersion: v.optional(v.string()),
     sourceRetentionUntil: v.optional(v.number()),
+    resultRetention: v.optional(v.literal("until_deleted")),
+    catalogStatus: v.optional(
+      v.object({
+        state: v.union(
+          v.literal("pending"),
+          v.literal("published"),
+          v.literal("unknown"),
+          v.literal("failed"),
+        ),
+        updatedAt: v.number(),
+        versionId: v.optional(v.id("analysisVersions")),
+        artifactId: v.optional(v.id("publicArtifacts")),
+      }),
+    ),
+    catalogPolicy: v.optional(
+      v.object({
+        version: v.literal("automatic-neutral-catalog-v1"),
+        policyHash: v.string(),
+        disclosureVersion: v.string(),
+        actor: v.id("users"),
+        requestedAt: v.number(),
+      }),
+    ),
+    catalogWait: v.optional(
+      v.object({
+        familyId: v.id("catalogFamilies"),
+        actor: v.id("users"),
+        generation: v.number(),
+        expiresAt: v.number(),
+      }),
+    ),
     typedAnalysisActor: v.optional(v.id("users")),
     localAnalysisReceipt: v.optional(v.any()),
     processingStartedAt: v.optional(v.number()),
@@ -263,6 +329,10 @@ export const productTables = {
     speechProvenance: v.optional(v.any()),
     linkPreview: v.optional(
       v.object({
+        title: v.optional(v.string()),
+        authorName: v.optional(v.string()),
+        durationSeconds: v.optional(v.number()),
+        origin: v.optional(v.union(v.literal("page"), v.literal("extractor"))),
         state: v.union(
           v.literal("queued"),
           v.literal("loading"),
@@ -297,6 +367,7 @@ export const productTables = {
       }),
     ),
     personalAnalysis: v.optional(personalAnalysisValue),
+    workCloudSaveIntent: v.optional(cloudSaveIntent),
     repositorySelection: v.optional(v.any()),
     selectionPendingKey: v.optional(v.string()),
     selectionActor: v.optional(v.id("users")),

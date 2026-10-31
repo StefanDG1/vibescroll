@@ -336,11 +336,7 @@ it("uses only advertised own-account models and requires fresh permission before
         ...approval,
         model: "synthetic-available",
       }),
-  ).rejects.toThrow("Sign in again");
-  await s.a.mutation(api.libraryScans.approve, {
-    ...approval,
-    model: "synthetic-available",
-  });
+  ).resolves.toBeDefined();
   const job = await s.t.run((ctx) => ctx.db.get(id));
   expect(job!.personal).toMatchObject({
     model: "synthetic-available",

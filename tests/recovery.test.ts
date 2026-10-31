@@ -17,8 +17,14 @@ async function setup() {
     email: "recovery-b@example.test",
     name: "Synthetic",
   });
-  const a = t.withIdentity({ subject: "synthetic-recovery-a" }),
-    b = t.withIdentity({ subject: "synthetic-recovery-b" });
+  const a = t.withIdentity({
+      subject: "synthetic-recovery-a",
+      auth_time: Math.floor(Date.now() / 1000),
+    }),
+    b = t.withIdentity({
+      subject: "synthetic-recovery-b",
+      auth_time: Math.floor(Date.now() / 1000),
+    });
   const org = await a.mutation(api.organizations.create, {
       name: "Synthetic restore A",
     }),

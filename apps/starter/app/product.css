@@ -1194,6 +1194,84 @@ summary {
   display: grid;
   gap: 16px;
 }
+.task-runtime-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.task-runtime-picker legend {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.task-runtime-option {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.task-runtime-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+}
+.task-runtime-choice input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin-top: 3px;
+  padding: 0;
+  flex-shrink: 0;
+  accent-color: var(--ink);
+}
+.task-runtime-choice > span {
+  min-width: 0;
+}
+.task-runtime-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.task-runtime-recommended {
+  font-size: 0.73rem;
+  font-weight: 500;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.task-runtime-description,
+.task-runtime-status {
+  display: block;
+  margin-top: 4px;
+}
+.task-runtime-status {
+  color: var(--subtle);
+  font-size: 0.8rem;
+}
+.task-runtime-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 18px;
+  margin-left: 28px;
+  font-size: 0.82rem;
+}
+.task-runtime-actions > a,
+.task-runtime-actions summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+.task-runtime-actions details {
+  min-width: 0;
+  flex: 1 1 110px;
+}
+.task-runtime-actions p {
+  max-width: 62ch;
+  line-height: 1.6;
+}
 label {
   display: grid;
   gap: 7px;
@@ -2532,6 +2610,49 @@ dialog.capture-modal::backdrop {
 .source-origin > svg {
   flex-shrink: 0;
 }
+.source-progress progress {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  accent-color: var(--primary);
+}
+.source-progress-details {
+  margin-top: 16px;
+}
+.source-progress-details summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: list-item;
+  align-content: center;
+}
+.analysis-status-demo-intro {
+  max-width: 700px;
+  margin: 48px auto;
+}
+.analysis-status-demo {
+  display: grid;
+  gap: 24px;
+  margin-top: 32px;
+}
+.analysis-status-demo label {
+  display: grid;
+  gap: 8px;
+}
+.analysis-status-demo select {
+  min-height: 44px;
+  padding: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.analysis-status-demo .source-progress {
+  margin: 0;
+}
+.analysis-status-demo .panel {
+  background: var(--panel);
+  color: var(--ink);
+}
 
 .knowledge-library {
   display: grid;
@@ -2847,6 +2968,16 @@ dialog.capture-modal::backdrop {
   justify-content: space-between;
   padding: 16px 0;
   border-bottom: 1px solid var(--line);
+}
+.assistant-cloud-monitor-setup {
+  flex-basis: 100%;
+  min-width: 0;
+  order: 1;
+}
+.assistant-cloud-monitor-setup textarea {
+  display: block;
+  max-width: 100%;
+  margin: 8px 0 12px;
 }
 .assistant-context {
   padding-left: 16px;

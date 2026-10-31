@@ -45,7 +45,7 @@ async function setup() {
     }),
   };
 }
-it("requires an allowlisted operator and recent authentication before reading provider data", async () => {
+it("requires an allowlisted operator and uses the normal session for export authorization", async () => {
   const { t } = await setup();
   await expect(
     t
@@ -61,8 +61,8 @@ it("requires an allowlisted operator and recent authentication before reading pr
         subject: "synthetic-operator",
         auth_time: Date.now() / 1000 - 301,
       })
-      .action(api.settlementAccounting.download, { month: "2026-09" }),
-  ).rejects.toThrow("Sign in again");
+      .mutation(api.invoiceOperations.authorizeSettlementExport, {}),
+  ).resolves.toEqual({ authorized: true });
   expect(mocks.account).not.toHaveBeenCalled();
 });
 it("rejects invalid periods, mismatched credentials and foreign accounts before listing transactions", async () => {

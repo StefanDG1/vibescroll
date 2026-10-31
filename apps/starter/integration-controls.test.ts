@@ -37,6 +37,7 @@ vi.mock("react", async (original) => ({
 import { PublicKnowledgePanel } from "./components/public-knowledge-panel";
 import { PublicSaveContinuation } from "./components/public-save-continuation";
 import { SetupJourney } from "./components/setup-journey";
+import { TaskRuntimePicker } from "./components/task-runtime-picker";
 type Node = ReactElement<Record<string, any>>;
 function render<T>(component: (props: T) => unknown, props: T) {
   hooks.index = 0;
@@ -126,7 +127,9 @@ it("keeps authenticated withdrawal usable with a closed publication gate and dis
       (node) => text(node) === "Prepare exact public preview",
     ),
   ).toBe(false);
-  expect(button(tree, "Share selected region").props.disabled).toBe(true);
+  expect(
+    elements(tree).some((node) => text(node) === "Share selected region"),
+  ).toBe(false);
   expect(button(tree, "Withdraw edition").props.disabled).toBe(false);
   await button(tree, "Withdraw edition").props.onClick();
   expect(call).toHaveBeenCalledWith("withdrawEdition", {
@@ -305,3 +308,47 @@ it("local prerequisite reports require explicit bounded JSON submission and pres
   expect(call.mock.calls.length).toBe(before);
   expect(text(view())).toContain("local report is invalid");
 });
+
+it.each([undefined, "unavailable", "available_unverified"] as const)(
+  "renders the same execution picker for text state %s without another request or a saved route change",
+  async (state) => {
+    const snapshot = {
+      route: "cloud",
+      cloudAvailable: false,
+      localEligible: false,
+      sampleCited: false,
+      paired: false,
+      accountConnected: false,
+      workerAvailable: false,
+      workCloudTextState: state,
+    };
+    const call = vi.fn(async (_operation: string, _args: any) => ({
+      version: 1,
+      snapshot,
+    }));
+    const props = {
+      organizationId: "distinct-route-owner",
+      call,
+      onNavigate: vi.fn(),
+      onSave: vi.fn(),
+    };
+    render(SetupJourney, props);
+    for (const effect of hooks.effects.splice(0)) effect();
+    await flush();
+    const tree = render(SetupJourney, props);
+    const copy = text(tree);
+    expect(copy).toContain("Saved route:");
+    expect(copy).toContain("VibeScroll's servers");
+    const picker = elements(tree).find(
+      (node) => node.type === TaskRuntimePicker,
+    )!;
+    expect(picker.props.value).toBe("cloud");
+    expect(picker.props.serverAvailable).toBe(false);
+    expect(picker.props.localAvailable).toBe(false);
+    expect(call).toHaveBeenCalledExactlyOnceWith("setupJourney", {
+      organizationId: "distinct-route-owner",
+    });
+    expect(props.onNavigate).not.toHaveBeenCalled();
+    expect(props.onSave).not.toHaveBeenCalled();
+  },
+);

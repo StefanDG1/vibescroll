@@ -1,0 +1,82 @@
+{
+  "atUTC": "2026-10-28T20:22:30.191615+00:00",
+  "commit": "2ed297dad17bf80959561119842708c09dbfbba8",
+  "version": "0.1.0-alpha.20261028200745.g2ed297dad17b",
+  "deploymentId": "dpl_6TEHCd9wuMQ97Vkya3oNTk4t7guS",
+  "websiteAndBackendLive": true,
+  "exactCI": 40760497229,
+  "authenticatedPosts": {
+    "first": 20,
+    "second": 19,
+    "duplicates": 0,
+    "metadataOnly": true,
+    "paginationHTTP": 200
+  },
+  "ownerGrant": {
+    "version": 12,
+    "libraryScope": "all",
+    "contextScope": "all_confirmed",
+    "resultRetention": "until_deleted",
+    "freshSignInRequired": false
+  },
+  "retainedOriginal": {
+    "source": "px7dkg5w0a1zgs65k1ngyyncms8gwfct",
+    "selectedVersion": "xh7f7pqp2g0x9yeyj4aej040xn8h46z9",
+    "resultRetention": "until_deleted",
+    "payloadUnchanged": true,
+    "frames": 7
+  },
+  "catalogControlsReadback": true,
+  "sharedAcceptance": "pending actual reserved canary and second-account save",
+  "normalDomainAssignmentRestored": true,
+  "noNewInferenceYet": true,
+  "kind": "shared-catalog-setup-production-checkpoint-v1",
+  "observedAtUTC": "2026-10-28T20:24:00Z",
+  "schema": {
+    "components": 12,
+    "tables": 137,
+    "indexes": 297,
+    "existingWalks": 0,
+    "indexBackfills": 0,
+    "newIndexes": 0,
+    "newTables": 0
+  },
+  "checks": {
+    "vitest": 1428,
+    "hostedSkips": 3,
+    "node": 19,
+    "python": 88,
+    "windowsPythonSkips": 7,
+    "releaseGuards": 22,
+    "budgetGuards": 13,
+    "typesLintBuilds": true,
+    "freshDependencyAdvisories": 0,
+    "emittedScan": "two exact unchanged upstream @example findings; no new finding"
+  },
+  "deployment": {
+    "machine": "fixed Basic",
+    "queue": "normal",
+    "buildMilliseconds": 45133,
+    "sameBuildPromoted": true,
+    "stagedAuthenticatedAcceptance": false,
+    "canonicalAuthenticatedAcceptance": true
+  },
+  "scopeLimits": {
+    "paidCatalogAcceptance": false,
+    "twoAccountActualReuse": false,
+    "newAutomaticCanary": false,
+    "generalConsumerCloudEligibility": false,
+    "projectIssuePRFeedbackLoop": false
+  },
+  "catalog": {
+    "enabledAndReadback": true,
+    "rightsBasis": "user_attested",
+    "independentlyLicensed": false,
+    "ownIndependentStorageOrganization": true,
+    "secondAccountAccess": "finite operator alpha; not a paid subscription"
+  },
+  "lastObservedVercelUSD": 17.71,
+  "cumulativeCapEUR": 12,
+  "allOldHoldsRetained": true,
+  "reservedPostUntouched": true
+}

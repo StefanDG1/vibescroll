@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-30",
+  "timezone": "Europe/Berlin",
+  "kind": "generated UI references, illustrative data",
+  "files": [
+    {
+      "file": "refined-desktop-light.png",
+      "sha256": "eb9df72090d2d159ed941def5310fea7c56d8dfd19625db02efacbcef3df8f5b",
+      "selected": true
+    },
+    {
+      "file": "refined-desktop-dark.png",
+      "sha256": "d35635cf31a0b33eb66815d1139a01c15b172be59774193a82ad94f1f082d328",
+      "selected": true
+    },
+    {
+      "file": "refined-mobile-light.png",
+      "sha256": "cf325a163ef45e2401024c0d42a398c8153cd5c2c1ede2406470695ac83bddfd",
+      "selected": true
+    },
+    {
+      "file": "refined-mobile-dark.png",
+      "sha256": "1b0eb5d7a82eadf45307dcef0d85e9a8ba3aa80d2a172b3ddf11da4f784c6913",
+      "selected": true
+    }
+  ]
+}

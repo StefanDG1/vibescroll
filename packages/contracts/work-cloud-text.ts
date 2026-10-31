@@ -7,8 +7,13 @@ import {
 import { socialAnalysisOutput } from "../social/analysis";
 import downloader from "../../infra/downloader.json";
 import asr from "../media/asr-model.lock.json";
+import cloudDownloader from "../media/cloud-downloader.lock.json";
+import extractionPackage from "../media/cloud-extractor.lock.json";
+import initialV3Package from "../media/cloud-extractor-initial-v3.lock.json";
+import preDiagnosticsV3Package from "../media/cloud-extractor-pre-diagnostics-v3.lock.json";
+import preResolvedV3Package from "../media/cloud-extractor-pre-resolved-v3.lock.json";
 
-export const workCloudMediaPolicy = {
+export const workCloudMediaPolicyV2 = {
   schemaVersion: "work-cloud-media-v2",
   pipelineVersion: "official-work-cloud-media-v2",
   funding: "own_subscription",
@@ -32,11 +37,73 @@ export const workCloudMediaPolicy = {
   provenance: "authenticated_host_reported",
   toolchain: { version: "cloud-sampled-preparation-v2", downloader, asr },
 } as const;
-export const workCloudMediaPreparation = z.strictObject({
-  schemaVersion: z.literal("work-cloud-media-preparation-v2"),
-  post: cloudObservedMediaSchema,
-  evidence: z.array(socialEvidenceSchema).max(248),
-});
+export const workCloudMediaPolicy = {
+  ...workCloudMediaPolicyV2,
+  schemaVersion: "work-cloud-media-v3",
+  pipelineVersion: "official-work-cloud-media-v3",
+  toolchain: {
+    ...workCloudMediaPolicyV2.toolchain,
+    downloader: cloudDownloader,
+    extractionPackage,
+    captionParser: {
+      version: "1.9.0",
+      sha256:
+        "83f1979cb7e064294f0c8473ef672ca2e5c0a7172bbf8ae9b4337899d5cdf01f",
+    },
+    version: "cloud-caption-preparation-v3",
+  },
+} as const;
+// Keep accepted jobs reproducible across the reviewed decoder patch. The
+// source/cost/privacy limits are unchanged; only implementation pins differ.
+export const workCloudMediaPolicyInitialV3 = {
+  ...workCloudMediaPolicy,
+  toolchain: {
+    ...workCloudMediaPolicy.toolchain,
+    extractionPackage: initialV3Package,
+  },
+} as const;
+// Existing approvals retain their exact pre-diagnostics implementation pins.
+export const workCloudMediaPolicyPreDiagnosticsV3 = {
+  ...workCloudMediaPolicy,
+  toolchain: {
+    ...workCloudMediaPolicy.toolchain,
+    extractionPackage: preDiagnosticsV3Package,
+  },
+} as const;
+// Accepted jobs retain the implementation used before resolved-URL handling.
+export const workCloudMediaPolicyPreResolvedV3 = {
+  ...workCloudMediaPolicy,
+  toolchain: {
+    ...workCloudMediaPolicy.toolchain,
+    extractionPackage: preResolvedV3Package,
+  },
+} as const;
+export const workCloudRequestPolicies = [
+  workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
+  workCloudMediaPolicy,
+] as const;
+export const workCloudMediaPreparation = z
+  .strictObject({
+    schemaVersion: z.enum([
+      "work-cloud-media-preparation-v2",
+      "work-cloud-media-preparation-v3",
+    ]),
+    post: cloudObservedMediaSchema,
+    evidence: z.array(socialEvidenceSchema).max(248),
+  })
+  .superRefine((value, ctx) => {
+    if (
+      (value.schemaVersion === "work-cloud-media-preparation-v3") !==
+      (value.post.schemaVersion === "work-cloud-observed-media-v2")
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Caption-aware observations require media-v3 preparation.",
+      });
+  });
 export const validateWorkCloudMediaOutput = (value: unknown) =>
   socialAnalysisOutput.parse(value);
 
@@ -55,7 +122,9 @@ const lease = {
   ...source,
   leaseToken: z.string().uuid(),
 };
-export const workCloudClaimInput = z.object(source).strict();
+export const workCloudClaimInput = z
+  .object({ ...source, attemptId: z.string().min(1).max(100).optional() })
+  .strict();
 export const workCloudMcpRequestOptions = z.strictObject({
   model: z.string().min(1).max(100),
   effort: z.enum(["low", "medium", "high", "xhigh"]),
@@ -63,16 +132,73 @@ export const workCloudMcpRequestOptions = z.strictObject({
   maxApiUsd: z.literal(0),
   retainUntil: z.number().int().positive(),
 });
-export const workCloudLeaseInput = z.object(lease).strict();
+export const workCloudLeaseInput = z
+  .object({ ...lease, attemptId: z.string().min(1).max(100).optional() })
+  .strict();
+export const workCloudRetainedFrameInput = z.strictObject({
+  ...lease,
+  attemptId: z.string().min(1).max(100),
+  frameId: z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),
+});
+export const workCloudMetadata = z.strictObject({
+  title: z.string().min(1).max(160).optional(),
+  authorName: z.string().min(1).max(160).optional(),
+  durationSeconds: z.number().positive().max(600).optional(),
+  publishedAt: z.number().int().positive().optional(),
+});
+export const workCloudMetadataInput = z.strictObject({
+  ...lease,
+  metadata: workCloudMetadata,
+});
 export const workCloudPrepareInput = z
   .object({
     ...lease,
     preparationJson: z.string().min(2).max(120000),
   })
   .strict();
+export const workCloudFrameInput = z.strictObject({
+  ...lease,
+  repair: z.literal(true).optional(),
+  frameId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),
+  preparationHash: z.string().regex(/^[a-f0-9]{64}$/),
+  data: z
+    .string()
+    .min(4)
+    .max(200000)
+    .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
+});
+// Existing connected hosts may retain their original six-tool catalog. Keep
+// staged media return on the already available bounded preparation scalar.
+export const workCloudPreparationStage = z.discriminatedUnion("stage", [
+  z.strictObject({
+    schemaVersion: z.literal("work-cloud-media-stage-v1"),
+    stage: z.literal("metadata"),
+    metadata: workCloudMetadata,
+  }),
+  z.strictObject({
+    schemaVersion: z.literal("work-cloud-media-stage-v1"),
+    stage: z.literal("frame"),
+    ...workCloudFrameInput.omit({
+      sourceId: true,
+      generation: true,
+      taskId: true,
+      leaseToken: true,
+    }).shape,
+    // 80 KiB fits the original 120000-byte scalar, including its envelope.
+    data: workCloudFrameInput.shape.data
+      .max(109228)
+      .refine(
+        (data) =>
+          (data.length / 4) * 3 -
+            (data.endsWith("==") ? 2 : data.endsWith("=") ? 1 : 0) <=
+          81920,
+      ),
+  }),
+]);
 export const workCloudCompleteInput = z
   .object({
     ...lease,
+    attemptId: z.string().min(1).max(100).optional(),
     // One bounded scalar preserves the MCP SDK's existing 256-element limit.
     // The backend separately validates the parsed canonical analysis schema.
     resultJson: z.string().min(2).max(120000),
@@ -92,8 +218,45 @@ export function parseWorkCloudResult(resultJson: string): unknown {
     throw Error("Cloud result exceeds its byte bound.");
   return JSON.parse(resultJson);
 }
+export function assistantResponseLimit(operation: string) {
+  return [
+    "work_cloud_input",
+    "work_cloud_retained_frame",
+    "analysis_version",
+  ].includes(operation)
+    ? 262144
+    : 100000;
+}
 
 export const workCloudTextOperations = [
+  z.strictObject({
+    operation: z.literal("work_cloud_retained_frame"),
+    args: workCloudRetainedFrameInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_repair_claim"),
+    args: workCloudClaimInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_repair_input"),
+    args: workCloudLeaseInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_repair_heartbeat"),
+    args: workCloudLeaseInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_repair_complete"),
+    args: workCloudLeaseInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_metadata"),
+    args: workCloudMetadataInput,
+  }),
+  z.strictObject({
+    operation: z.literal("work_cloud_frame"),
+    args: workCloudFrameInput,
+  }),
   z
     .object({
       operation: z.literal("work_cloud_prepare"),
@@ -137,9 +300,11 @@ export function cloudCompletionEnvelope(value: unknown, mcp = false) {
   if (!mcp)
     return (
       "operation" in value &&
-      ["work_cloud_complete", "work_cloud_prepare"].includes(
-        value.operation as string,
-      )
+      [
+        "work_cloud_complete",
+        "work_cloud_prepare",
+        "work_cloud_frame",
+      ].includes(value.operation as string)
     );
   if (
     !("method" in value) ||
@@ -152,7 +317,7 @@ export function cloudCompletionEnvelope(value: unknown, mcp = false) {
     !!params &&
     typeof params === "object" &&
     "name" in params &&
-    ["work_cloud_complete", "work_cloud_prepare"].includes(
+    ["work_cloud_complete", "work_cloud_prepare", "work_cloud_frame"].includes(
       params.name as string,
     )
   );

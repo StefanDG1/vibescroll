@@ -1,0 +1,36 @@
+{
+  "observedAtUTC": "2026-10-30T19:05:04.747764+00:00",
+  "backendCommit": "8e97e18c6aab2d8750b5b6ff10fb763e1c45e3fe",
+  "websiteCommit": "c51f8f09b032e4a6535aa543b03018422f149d1c",
+  "route": "existing authenticated VibeScroll MCP proposal/save/read/prepare; authorized GitHub create; signed provider webhook; MCP readback",
+  "sourceId": "px7daqmpamn8s0ad5man74r1as8h72n5",
+  "analysisVersionId": "xh7ah9nr1xrb6sqe9nqzjrkzf98h6eke",
+  "insightIds": ["before-after-format"],
+  "proposalId": "p57c0s8q45qkptdsqgmzsx0cx98h8p11",
+  "proposalVersion": 1,
+  "proposalReview": "unreviewed",
+  "handoffId": "work_1a1157464e034c6cbf1358d58441380d",
+  "repository": "StefanDG1/vibescroll",
+  "issueNumber": 196,
+  "issueUrl": "https://github.com/StefanDG1/vibescroll/issues/196",
+  "exactFrozenTitleAndBodyReadBack": true,
+  "issueState": "open",
+  "providerObservation": {
+    "provenance": "signed_github_webhook",
+    "issueId": 6125221265,
+    "number": 196,
+    "state": "open",
+    "bodyMatchesFrozen": true,
+    "providerUpdatedAt": 1793386611000,
+    "observedAt": 1793386613462
+  },
+  "noReconnectOrNewScope": true,
+  "newAnalysisRuns": 0,
+  "creditsSpent": 0,
+  "newDeploymentsForTrial": 0,
+  "limits": [
+    "Only the real opened delivery is accepted; closed/reopened/edited ordering has isolated tests.",
+    "This receipt does not establish implementation, PR, CI, merge, benefit or public paid onboarding.",
+    "The styling implementation is a separate local candidate until its release receipt."
+  ]
+}

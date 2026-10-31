@@ -32,6 +32,7 @@ const inputSchema = z.discriminatedUnion("operation", [
               "analysis_completed",
               "work_cloud_waiting",
               "work_cloud_connection_verified",
+              "video_link_saved",
             ])
             .optional(),
           profileId: z.string().min(1).max(100),

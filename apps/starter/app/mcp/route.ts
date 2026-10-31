@@ -15,7 +15,11 @@ import {
   eventSubscriptionId,
 } from "../../../../packages/mcp/events";
 import { createKnowledgeHandler } from "../../../../packages/mcp/server";
-import { cloudCompletionEnvelope } from "../../../../packages/contracts/work-cloud-text";
+import { embeddedUiEnabled } from "../../../../packages/widget/setup";
+import {
+  cloudCompletionEnvelope,
+  assistantResponseLimit,
+} from "../../../../packages/contracts/work-cloud-text";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 const metadata =
@@ -164,7 +168,7 @@ export async function POST(request: Request) {
         });
         const value = await readAssistantBody(
           response,
-          operation === "work_cloud_input" ? 262144 : 100000,
+          assistantResponseLimit(operation),
         );
         return { ok: response.ok, status: response.status, value };
       },
@@ -173,6 +177,7 @@ export async function POST(request: Request) {
         process.env.WORK_CLOUD_TEXT_VERIFIED === "true",
       process.env.WORK_CLOUD_MEDIA_ENABLED === "true" &&
         process.env.WORK_CLOUD_MEDIA_VERIFIED === "true",
+      embeddedUiEnabled,
     );
     const input = new Request(request.url, {
       method: "POST",

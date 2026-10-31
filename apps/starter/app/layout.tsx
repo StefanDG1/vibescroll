@@ -8,6 +8,7 @@ import "./globals.css";
 import "./product.css";
 import "./studio.css";
 import "./atlas.css";
+import "./quiet.css";
 export const metadata: Metadata = {
   title: {
     default: company.product.name,

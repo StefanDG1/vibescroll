@@ -10,13 +10,96 @@ import {
   customMutation,
 } from "convex-helpers/server/customFunctions";
 import { queueSourceCompletion, eventsEnabled } from "./assistantEvents";
-import { internal } from "../_generated/api";
+import { internal, components } from "../_generated/api";
 import { ensure } from "../../packages/policy";
 import { syncDashboardCard } from "./dashboardProjection";
+import { privatePostKey } from "./postEngagement";
 
 // Use the existing helper's atomic write triggers. Failed projection writes
 // abort the underlying mutation; no eventually consistent private cache.
 const triggers = new Triggers<DataModel>();
+triggers.register("sources", async (ctx, change) => {
+  if (
+    change.oldDoc &&
+    change.oldDoc.state !== "deleted" &&
+    (!change.newDoc || change.newDoc.state === "deleted")
+  ) {
+    const tracked = await ctx.db
+      .query("postEngagement")
+      .withIndex("by_key", (q) => q.eq("key", privatePostKey(change.id)))
+      .first();
+    if (tracked)
+      await ctx.scheduler.runAfter(0, internal.postEngagement.retirePrivate, {
+        sourceId: change.id,
+      });
+  }
+});
+triggers.register("proposals", async (ctx, change) => {
+  if (change.newDoc || !change.oldDoc?.detail.work) return;
+  const threadId = change.oldDoc.detail.work.threadId;
+  if (typeof threadId === "string")
+    await ctx.runMutation(components.agent.threads.deleteAllForThreadIdAsync, {
+      threadId,
+      limit: 50,
+    });
+  await ctx.scheduler.runAfter(0, internal.proposalLoop.retire, {
+    proposalId: change.id,
+  });
+});
+triggers.register("sources", async (ctx, change) => {
+  const before = change.oldDoc,
+    next = change.newDoc;
+  if (!before || !next || before.generation === next.generation) return;
+  if (
+    before.personalMedia?.version === "service-preparation-progress-v1" &&
+    next.state !== "deleted" &&
+    process.env.RESTORE_LOCK !== "true"
+  ) {
+    const id = ctx.db.normalizeId(
+      "mediaPreparations",
+      before.personalMedia.runId,
+    );
+    const preparation = id ? await ctx.db.get(id) : null;
+    ensure(
+      preparation && ["ready", "failed"].includes(preparation.state),
+      "SOURCE_BUSY",
+      "Reconcile the current media preparation before replacing source input.",
+    );
+  }
+  if (
+    before.pendingAnalysisAttemptId &&
+    next.state !== "deleted" &&
+    process.env.RESTORE_LOCK !== "true"
+  ) {
+    const pending = await ctx.db.get(before.pendingAnalysisAttemptId);
+    ensure(
+      !pending || !["running", "unknown"].includes(pending.state),
+      "COST_RECONCILIATION_REQUIRED",
+      "Reconcile the retained-evidence attempt before replacing source input.",
+    );
+    if (pending?.state === "queued" && !pending.taskId)
+      await ctx.db.patch(pending._id, {
+        state: "cancelled",
+        diagnostic: "source_input_changed_before_claim",
+        updatedAt: Date.now(),
+      });
+  }
+  if (
+    next.selectedAnalysisVersionId ||
+    next.pendingAnalysisAttemptId ||
+    next.selectedAnalysisSummary !== undefined
+  ) {
+    await ctx.db.patch(change.id, {
+      selectedAnalysisVersionId: undefined,
+      analysisSelectionRevision: undefined,
+      pendingAnalysisAttemptId: undefined,
+      pendingAnalysisAttemptState: undefined,
+      selectedAnalysisSummary: undefined,
+      selectedAnalysisInsightCount: undefined,
+      selectedAnalysisMainPoints: undefined,
+    });
+  }
+});
 triggers.register("sources", async (ctx, change) => {
   const prior = change.oldDoc?.personalAnalysis;
   const next = change.newDoc;

@@ -2,7 +2,7 @@ import { query, internalQuery } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { access, writeAccess, audit, recentAuthentication } from "./lib";
+import { access, writeAccess, audit } from "./lib";
 import { ensure } from "../packages/policy";
 import {
   actorCurrent,
@@ -191,7 +191,6 @@ export const approve = mutation({
     );
     let personal: Doc<"libraryScans">["personal"] = undefined;
     if (a.funding === "own_plan") {
-      await recentAuthentication(ctx);
       const device = a.deviceId ? await ctx.db.get(a.deviceId) : null;
       ensure(
         personalAllowed(actor.subject) &&

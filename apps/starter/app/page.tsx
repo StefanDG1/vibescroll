@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ProductMedia } from "@/components/product-media";
 import { PublicPage } from "@/components/site";
 import { ScrollShowScenes } from "@/components/scrollshow-scenes";
+import { LandingInsightPreview } from "@/components/landing-insight-preview";
 
 export const metadata = {
   title: "Make scrolling useful",
@@ -15,47 +16,31 @@ export default function Home() {
     <PublicPage>
       <div className="scrollshow-home">
         <section className="ss-hero" aria-labelledby="home-title">
-          <div className="ss-stack ss-stack-left" aria-hidden="true">
-            <span />
-            <span />
-            <span>
-              <i />
-              <i />
-              <i />
-            </span>
-          </div>
-          <div className="ss-stack ss-stack-right" aria-hidden="true">
-            <span />
-            <span />
-            <span>
-              <i />
-              <i />
-              <i />
-            </span>
-          </div>
-          <p className="ss-motto">Make scrolling useful.</p>
-          <h1 id="home-title">
-            Find the ideas worth applying to your product.
-          </h1>
-          <p className="ss-lead">
-            Save a post. Inspect the cited idea. Connect your GitHub project
-            when you want to review what fits, then decide what to build.
-          </p>
-          <div className="ss-actions">
-            <Link className="primary" href="/app" prefetch={false}>
-              Try one post
+          <div className="ss-hero-copy">
+            <p className="ss-motto">Make scrolling useful.</p>
+            <h1 id="home-title">
+              Find the ideas worth applying to your product.
+            </h1>
+            <p className="ss-lead">
+              Save a post. Inspect the cited idea. Review what fits your
+              project.
+            </p>
+            <div className="ss-actions">
+              <Link className="primary" href="/app" prefetch={false}>
+                Try one post
+              </Link>
+              <a className="secondary" href="#product-demo">
+                See how it works
+              </a>
+            </div>
+            <p className="ss-note">
+              Start with a post. Connect a project when you're ready.
+            </p>
+            <Link className="ss-example-link" href="/example">
+              View an example without signing in
             </Link>
-            <a className="secondary" href="#product-demo">
-              See how it works
-            </a>
           </div>
-          <p className="ss-note">
-            General source analysis does not require GitHub. Processing needs an
-            eligible, ready route. Connect GitHub for project context.
-          </p>
-          <Link className="ss-example-link" href="/example">
-            View an example without signing in
-          </Link>
+          <LandingInsightPreview />
         </section>
         <section
           id="product-demo"

@@ -1,0 +1,90 @@
+{
+  "kind": "private-automatic-retained-reanalysis-acceptance-v1",
+  "observedAtUTC": "2026-10-28T14:44:34Z",
+  "frontendCommit": "da275f423dc454a06ce42be37aa53dca23bfd0bb",
+  "backendCommit": "b03a48080c560bdd3ea8b7f3931f49f8a71cca96",
+  "backendExactCi": 40705686327,
+  "backendPublication": {
+    "finishPushAcknowledged": true,
+    "exactLiveRootModulesMatched": 304,
+    "schemaIndexComponentAuthCronChanges": false,
+    "newWebsiteBuild": false,
+    "postAcknowledgementGuardFailure": "The local finish checker incorrectly included internal dependency filenames in the public module-path diff. All exact live root-module hashes subsequently matched the frozen tested candidate in a separate bounded read. The failure receipt and full cost hold remain; publication was not retried."
+  },
+  "setup": {
+    "existingOriginalConnectionReused": true,
+    "supportedRefreshToolsUsed": true,
+    "newOauthScopes": false,
+    "sameNativePilotReused": true,
+    "waitingEventAdded": true,
+    "savedLinkEventPreserved": true,
+    "automaticSubscriptionRenewalObserved": true
+  },
+  "execution": {
+    "initialAppFailures": 2,
+    "initialFailure": "SOURCE_UNAVAILABLE before any attempt or baseline committed; a same-key diagnostic replay confirmed the saved /reel/ versus evidence /p/ comparison bug.",
+    "successfulAttempts": 1,
+    "appRequestAcceptedAtUTC": "2026-10-28T14:32:31.510Z",
+    "completedAtUTC": "2026-10-28T14:37:31.185Z",
+    "totalMs": 299675,
+    "queueToClaimMs": 114677,
+    "claimToCompleteMs": 184998,
+    "nativeChatTabClosedUntilAfterDurableCompletion": true,
+    "manualWakeOrRunNow": false,
+    "eventDeliveryAttempts": 1,
+    "eventHttpStatus": 200,
+    "sourceGenerationPreserved": 1,
+    "retainedJpegReadsAcknowledged": 7,
+    "candidateVersion": 2,
+    "candidateInsights": 4,
+    "candidateReferences": 27,
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "reportedModel": null,
+    "reportedEffort": null,
+    "settingsProviderAttested": false,
+    "acquisitionAsrPreparationUploadsReported": 0,
+    "sameEvidenceBundleAndAssetIdsForBothVersions": true,
+    "pilotStateAfterCanary": "paused"
+  },
+  "browserAndMcp": {
+    "candidateClaimsAndQuotedEvidenceOpened": true,
+    "actualRetainedScriptCardViewedAtMs": 11080,
+    "comparison": {
+      "addedIdentifiers": 4,
+      "removedIdentifiers": 3,
+      "changedIdentifiers": 0,
+      "qualityVerdict": "review_required"
+    },
+    "version2SelectionRevision": 1,
+    "rollbackToVersion1SelectionRevision": 2,
+    "bothVersionsRemainReady": true,
+    "originalVersionInsights": 3,
+    "originalVersionReferences": 19,
+    "originalAnalysisEvidenceJobAndMediaHashesUnchangedAfterRollback": true,
+    "exactVersion1McpReadPassed": true,
+    "exactVersion2McpReadAfterRollbackPassed": true,
+    "inferenceDuringSelectionAndRollback": 0,
+    "independentMobileDeviceTest": false
+  },
+  "budget": {
+    "cumulativeOwnerCapEUR": 12,
+    "canaryMaximumUsdHoldRetained": 0.17,
+    "analysisAttemptsUsedOfFour": 1,
+    "actualBackendReleasesUsedOfTwo": 2,
+    "grossBackendDispatchRecords": 3,
+    "preflightOnlyDispatchesBeforeStartPush": 1,
+    "allEarlierCostHoldsPreserved": true,
+    "lastObservedVercelIncludedUsageUSD": 17.67,
+    "strictVercelCeilingUSD": 20,
+    "paidAiApiOrAlternateFunding": false
+  },
+  "open": [
+    "Private owner acceptance only; general customer readiness remains gated.",
+    "The five-minute retained run misses the three-minute warm target; 114.677 seconds elapsed before claim.",
+    "The candidate is retained for review, not certified better; the original version is selected.",
+    "Missing-subscription prevention and unclaimed cancellation are locally tested follow-up changes, not deployed in this receipt.",
+    "Rights-cleared neutral contribution, independent service-owned images and real entitled second-account reuse remain open.",
+    "Provider erasure, certified speech accuracy and settled usage remain unverified."
+  ]
+}

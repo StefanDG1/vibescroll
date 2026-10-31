@@ -1,0 +1,93 @@
+{
+  "kind": "cloud-catalog-local-acceptance-v1",
+  "observedAtUTC": "2026-10-28T16:07:17.437605+00:00",
+  "environment": "Windows local worktree, synthetic accounts/permission/billing/JPEGs",
+  "parentCommit": "4c9ac0ccf0a9dac406bfdb0a758b87bfa6a1bf9f",
+  "productionEnabled": false,
+  "fullCheck": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "passed": true,
+    "vitestPassed": 1381,
+    "hostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 88,
+    "pythonPlatformSkipped": 7,
+    "validationLintAllTypesBothBuilds": true,
+    "logSha256": "a2642e7a14304732233a8ba84f436e1cafc6f56a553f138f72e2641c15219a3b"
+  },
+  "dependencyAudit": {
+    "registryAdvisories": 0,
+    "unresolved": 0
+  },
+  "changedSourceSecretScan": {
+    "findings": 0
+  },
+  "schema": {
+    "rootTables": 95,
+    "totalRootIndexesIncludingSearch": 263,
+    "newEmptyTables": 3,
+    "indexesOnlyOnNewTables": 11,
+    "legacyTableIndexesComponentsAuthCronsChanged": false
+  },
+  "tests": [
+    "ordinary authenticated second-account Save and Cloud-selected warm cache hit create no source job, acquisition, ASR, inference or image copy",
+    "current verified Pro/rights/retention/identity/generation checks on app, MCP, history, private candidate and frame reads",
+    "actual synthetic JPEG copies bind SHA/dimensions and independent ownership; matching candidates share one evidence bundle",
+    "storage ceiling checked before uploads; retired objects remain counted until physical deletion receipt",
+    "private candidate, reviewed global selection, pin/follow, exact historical read and version-pinned notes survive upgrades/rollback",
+    "source removal preserves independent shared copy; own receipt remains manageable after source deletion",
+    "canonical withdrawal and withdrawal during image IO prevent late publication and disclosure",
+    "private image proxy rechecks authority after IO; it returns no signed URL or redirect",
+    "legacy schema/artifact/import behavior and recovery quarantine remain checked"
+  ],
+  "productionAcceptance": {
+    "lastVerifiedFrontend": "da275f423dc454a06ce42be37aa53dca23bfd0bb",
+    "lastVerifiedBackend": "b03a48080c560bdd3ea8b7f3931f49f8a71cca96",
+    "privateAutomaticVersionAndRollback": "accepted separately",
+    "sharedCatalog": "not enabled; real paid two-account and rights-cleared source acceptance pending",
+    "secondAccountBrowser": "owner reports signed in to Edge; entitlement unverified"
+  },
+  "budget": {
+    "cumulativeEUR": 12,
+    "newEnvelopeMaximumUSD": 1,
+    "actualBackendPublicationsUsed": 2,
+    "actualBackendPublicationLimit": 2,
+    "additionalBackendSlotApproval": "requested, unanswered",
+    "basicBuildsUsed": 1,
+    "basicBuildsLimit": 2,
+    "liveAnalysisAttemptsUsed": 1,
+    "liveAnalysisAttemptLimit": 4,
+    "lastVercelIncludedUsageUSD": 17.67,
+    "strictVercelCeilingUSD": 20,
+    "newPublicationOrAnalysisInThisLocalCheckpoint": false,
+    "oldHoldsReservedSourceUnknownAttemptsPreserved": true
+  },
+  "remaining": [
+    "exact-head CI and bounded release authorization/preflight",
+    "explicit one-time future-save contribution policy and automatic completion integration",
+    "shared in-flight producer coalescing",
+    "version-bound feedback and remaining downstream consumers",
+    "cold/restarted independent onboarding and latency acceptance",
+    "rights-cleared paid two-account production cache test"
+  ],
+  "exactLinuxCI": {
+    "candidate": "62153ce5608b2ac1f8625e40cca76c9a99e6fbbe",
+    "run": 40723018949,
+    "result": "success"
+  },
+  "authorizationReviewFollowup": {
+    "observedAtUTC": "2026-10-28T16:22:34.031524+00:00",
+    "change": "Use an uncached read-only mutation before and after shared-image storage IO; do not rely on a cached query at the byte-disclosure boundary.",
+    "mutatesSourceOrStorageState": false,
+    "currentClockExpiryRegression": true,
+    "fullLocalCheckPassed": true,
+    "vitestPassed": 1382,
+    "hostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 88,
+    "pythonPlatformSkipped": 7,
+    "logSha256": "4fad508b6416aa487dfcc8d10130783bb0f462288487a0bd32061365727f9c6f",
+    "exactLinuxCIFollowup": "pending",
+    "source": "https://docs.convex.dev/understanding/best-practices/"
+  }
+}

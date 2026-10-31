@@ -1,0 +1,363 @@
+{
+  "recordedAtUtc": "2026-10-25T23:38:40.177330+00:00",
+  "status": "compatible candidate not published",
+  "baseline": "675dea24804d3ed730cdec2aa5f858ddbcd07594",
+  "sourceDigest": "bb7dfd10ab089e50cc724d27a92caacd4c6edc40b9ffe617c13976f99e6b30b7",
+  "sourceHashes": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "88e6b100b21f0907fd53880735ebe0a9cbd69a1cc0d202b3539c4e4fe1f60ebf"
+    },
+    {
+      "path": "apps/starter/app/api/product/route.ts",
+      "sha256": "efc2a5ffa4f18adf8344d7a4989e3f4572f2fc7f3aa4ddea856401ae08e00011"
+    },
+    {
+      "path": "apps/starter/app/app/[org]/posts/[id]/page.tsx",
+      "sha256": "8a3d97d9464b6b4a19ade0354d0b46ece2856a78f5392dd7578d231fd31af81a"
+    },
+    {
+      "path": "apps/starter/components/console.tsx",
+      "sha256": "ac0a3dc840404d95cc9bc293c3945b9cc8c2a3ef82a4b20d7fb3ea90e7f7abd5"
+    },
+    {
+      "path": "apps/starter/components/evidence-viewer.tsx",
+      "sha256": "c97f706b88488bb4a4c3a0d3578714cfd89376418fab62a0f066b051efd00b93"
+    },
+    {
+      "path": "apps/starter/components/product-page.tsx",
+      "sha256": "9385f86230110b5972711ef6414d63870828a2dd9392ad7c87a3fd43eb7ad453"
+    },
+    {
+      "path": "apps/starter/components/source-relationships.tsx",
+      "sha256": "6f2da65c36af67050e935f600c0a978f7620e85cb477d164fac4b50683943874"
+    },
+    {
+      "path": "apps/starter/demo-renderer.test.ts",
+      "sha256": "07cb5a0abdafe66b73eab2af8e8714ccde334325b9850cacb8c9cc13c419c3dc"
+    },
+    {
+      "path": "apps/starter/lib/use-polling.ts",
+      "sha256": "ed89119e46fc2bf8078d630a58b49fe55ae1de2dc6fad554d77dd3b629d57052"
+    },
+    {
+      "path": "apps/starter/lib/workspace-data.ts",
+      "sha256": "974b58c46920ff0e61d6b994e1b97150e113ea4a220449975e7d95afa63461ae"
+    },
+    {
+      "path": "convex/_generated/api.d.ts",
+      "sha256": "18a963cdbd61565955326fcbe15c1cd7975428a4800171aa3d28231dbdbe9aa4"
+    },
+    {
+      "path": "convex/assets.ts",
+      "sha256": "374743b763264c4e163dd39049fab18615458b98363d0ecdecf06d5d8db99c29"
+    },
+    {
+      "path": "convex/assistantHttp.ts",
+      "sha256": "591b4b9b34acb41d16dba9106793578c55d5ddd2830853758bec9aad3b79d395"
+    },
+    {
+      "path": "convex/lib/workCloudMediaSource.ts",
+      "sha256": "4c0a1135e579ce91299665c8fcbed847e9be9f5af0931268d98372ae836c5d8e"
+    },
+    {
+      "path": "convex/personalAnalysisSchema.ts",
+      "sha256": "6a86b68a0b9dc4e8d972b4b2d1b9cc266ecc80a725cfe11df63b42cb24d58f64"
+    },
+    {
+      "path": "convex/productSchema.ts",
+      "sha256": "ef6d07a36b47ff8a5965a2ca25c625f05972d2436e207c6b8101d1b9d5a56749"
+    },
+    {
+      "path": "convex/sourcePreview.ts",
+      "sha256": "86ac64e31de6b1185bd0618876e85642eaa9d76ad3199bca1decb8a3ffe7df5c"
+    },
+    {
+      "path": "convex/sourcePreviewState.ts",
+      "sha256": "f38aa30eebf837f999de793e098ffc072042a4f34e47b436f298975c22196feb"
+    },
+    {
+      "path": "convex/workCloudAnalysis.ts",
+      "sha256": "579f07d3dfdff8308eb6f2a4b1b83ab5095735696ab67b6636dba0428caaf453"
+    },
+    {
+      "path": "convex/workCloudEvidenceRepair.ts",
+      "sha256": "2f01a92718d0b87c45b1bece14ac933c1b0560166a5320355740ddca87ac3321"
+    },
+    {
+      "path": "convex/workCloudFrames.ts",
+      "sha256": "e55a3877f251b96f373e2ba8fcef007f19abeb68793e1a77b40b493ae69a6b41"
+    },
+    {
+      "path": "package.json",
+      "sha256": "fb83526a4ab851018df903a92f3def13086dcb295e1a0ac932e4ac2e3d56c487"
+    },
+    {
+      "path": "packages/browser/polling.ts",
+      "sha256": "85983e84d9696493f6f578f9115131e665a214f8e6cee463017f8c6a0a8990ea"
+    },
+    {
+      "path": "packages/contracts/work-cloud-text.ts",
+      "sha256": "c2c2a99b4520faff39bb1d441d62505cb73b591ff8351cb9857b7074c7ab94f7"
+    },
+    {
+      "path": "packages/mcp/server.ts",
+      "sha256": "e518d5e76d7bd6b2928e73b6fc59a1c4bb4ea157b971f72a5280b8a9955867a2"
+    },
+    {
+      "path": "packages/media/CLOUD.md",
+      "sha256": "03660ab1b859f7e9942ad12e047b3e41a6362fe0a7eca2492cfb2da3822fd632"
+    },
+    {
+      "path": "packages/media/acquisition-policy.mjs",
+      "sha256": "a33761743fda7bc68ac21d85c18f74b4474ed5f42e3ae605ab65dd22b9cb8f56"
+    },
+    {
+      "path": "packages/media/acquisition-runtime.ts",
+      "sha256": "44dacdc6f3d0205823b20bca07ba6ec2c3e22da90c6e00ec07f6336b1454eb16"
+    },
+    {
+      "path": "packages/media/asr_verification.py",
+      "sha256": "bd029b33c14401712298317012167486bb5a050e81e156376f477adb3effe28a"
+    },
+    {
+      "path": "packages/media/cloud-downloader.lock.json",
+      "sha256": "8a17925dfd2b80f4d935e922375bf039f2bd7a8cd97a38c9b004bd89b112637b"
+    },
+    {
+      "path": "packages/media/cloud-extractor.lock.json",
+      "sha256": "7e335eedb45059c494e95a252e67973df89e73f953ad373746e22c0ddec30f92"
+    },
+    {
+      "path": "packages/media/cloud-frames.ts",
+      "sha256": "488251fc0033aba5edbd92928b846af39fab6316d1ef47f70d3658123305d097"
+    },
+    {
+      "path": "packages/media/cloud_extraction.py",
+      "sha256": "91bbd4e1e7fee474c2e0d64db658ec4588a89978c5028d0907d0d3df29b2286a"
+    },
+    {
+      "path": "packages/media/cloud_job.py",
+      "sha256": "5b6ee341c60cdd948b0d9c5facbc30988f0c85ef311be38b11191eb2b14c4865"
+    },
+    {
+      "path": "packages/media/cloud_prepare.py",
+      "sha256": "73117d59506d6c382615b241167549ad9ad61e21ba568ed49b85e6e05be23483"
+    },
+    {
+      "path": "packages/media/cloud_ytdlp.py",
+      "sha256": "788ada9e95f7d49a9d23872780e37d1a6383b8d00814aab92d864c97f616ecfd"
+    },
+    {
+      "path": "packages/media/jpeg.ts",
+      "sha256": "3019cbe0cb0587124b10ae154e3a1dfd7965fa26d583880b5557eef2b5c46b40"
+    },
+    {
+      "path": "packages/media/local_whisper.py",
+      "sha256": "cc9e1259af391ec707cf860aa0b2ffd59a166337480dff4bef049d59bef44f84"
+    },
+    {
+      "path": "packages/media/prepare_cloud_dependencies.py",
+      "sha256": "76fce48e87dd54d9a52524c82a4ae4585470a7673be1af0c91d1639e1c238d0c"
+    },
+    {
+      "path": "packages/media/requirements-captions.lock",
+      "sha256": "1017557c89656f55f4b9cae8a24251c502aa4958834f707038fa5b45c064429b"
+    },
+    {
+      "path": "packages/media/restore_cloud_frames.py",
+      "sha256": "03acc9893759bd3b888c1e6269a8dee51c819001125256bef2cf573b483df7fb"
+    },
+    {
+      "path": "packages/policy/index.ts",
+      "sha256": "42f67b6013441ddf103dad472e381ebdbe962a79bd743db099044bfdb4fae624"
+    },
+    {
+      "path": "packages/providers/source-preview.ts",
+      "sha256": "b3908f7dc23917eb7aa7e0be525c261ea1e3d46d7d5b5406252d4aa7361afdb6"
+    },
+    {
+      "path": "packages/providers/storage.ts",
+      "sha256": "4c17fbad4fcd79ced547fb73d23670b1486a8cc10eea037a66329c17ceaa2902"
+    },
+    {
+      "path": "packages/social/contracts.ts",
+      "sha256": "a02d540821f78ed2ff77d1a9713c8f0600d7e9f2217735ecfcce879304e8bba7"
+    },
+    {
+      "path": "packages/sources/display.ts",
+      "sha256": "6f86026678975a01f38ad4ec5257d53ebcaefd263a20faf5d615281cb79e31a6"
+    },
+    {
+      "path": "scripts/build-cloud-media-package.py",
+      "sha256": "d878ed38a8f6fb009718d30df04a7e9cb362804045dccd9babf993732f44af98"
+    },
+    {
+      "path": "scripts/prepare-media-tests.sh",
+      "sha256": "29793b3c0e78f95b7abce25308379bb4403c874c9c90440370f6e2422c0f1fd2"
+    },
+    {
+      "path": "scripts/validate.mjs",
+      "sha256": "b395a103549512879c418e1bd6632399643c11588c23ced9404f0f3ac5e6d581"
+    },
+    {
+      "path": "tests/caption_extraction_test.py",
+      "sha256": "fff37ec0ba7241ce572e8c7819014ea894adc8699d98daec8f6642a86b064989"
+    },
+    {
+      "path": "tests/check_media_prerequisites.py",
+      "sha256": "607a718dc12fa91e2c229ab17ce2f619ea5559be27081df035c56e48f408a586"
+    },
+    {
+      "path": "tests/cloud-compat-schema.test.ts",
+      "sha256": "96dc2d1d582f352ce138047a51c6630b172c93c4fb653baa2e07966394e9763c"
+    },
+    {
+      "path": "tests/cloud-frame-fixture.ts",
+      "sha256": "9afc32e37023d63e335c7236ee83d14fbc8766ccc4be7217ae707da650b5ce85"
+    },
+    {
+      "path": "tests/cloud-frames.test.ts",
+      "sha256": "e665fe0f6c13f4392c054cd990237525a5da6e78cb74c03d88ba443c12513572"
+    },
+    {
+      "path": "tests/local_pcm_test.py",
+      "sha256": "a319ef296b6e2c5b1554e763a22e5822ab3bb8a1fe4008bd8a64ccd6a0ab13db"
+    },
+    {
+      "path": "tests/media-tools.lock.json",
+      "sha256": "1f4c0170c1398df8bbd7c058484d94d08a0ebc1d5e36c2464ac45b2fef7fe2f3"
+    },
+    {
+      "path": "tests/media_prerequisites_test.py",
+      "sha256": "1bc3f7ce52307e2938d96af3f21f4892bcbe6d5770c22fd75b0e86efcd6c4e0a"
+    },
+    {
+      "path": "tests/polling.test.ts",
+      "sha256": "88466f362c36c2e06196adc9f22d2cdd289afc6b922c6cfaa42ae9d8069646e0"
+    },
+    {
+      "path": "tests/requirements-media.lock",
+      "sha256": "ef5e5819ce85da6b4095bf413aa15e626e17e4a6f12a1d6e9b4adb41a31d36e4"
+    },
+    {
+      "path": "tests/work-cloud-mcp-request.test.ts",
+      "sha256": "6a6b2194b8be29ab5b1b767a4a6b2828aae6d31f06e8cae7bc9dad2a17cfeab1"
+    },
+    {
+      "path": "tests/work-cloud-media.test.ts",
+      "sha256": "32103abb69436a72b2426a563d6af64563e3bbf1304eeb6046cb963bee225a13"
+    },
+    {
+      "path": "tests/work-cloud-transport.test.ts",
+      "sha256": "fbf64879c14aa19f0396620b1198e205d3e2d75ca06697e45b71a3c6de1db905"
+    },
+    {
+      "path": "tests/workspace-slices.test.ts",
+      "sha256": "f004ce951a9d0973db67f2ed5603d3a1393dd296056b3c6dee1271bf54438499"
+    }
+  ],
+  "schema": {
+    "applicationTables": 89,
+    "deploymentTablesIncludingComponents": 131,
+    "indexes": 274,
+    "newIndexes": 0,
+    "newTables": 0,
+    "changedSchemaSources": [
+      "convex/productSchema.ts",
+      "convex/personalAnalysisSchema.ts"
+    ],
+    "optionalWidenings": [
+      "assets.sourceGeneration",
+      "sources.linkPreview title/author/duration/origin",
+      "Cloud v3 tag and optional evidenceRepair"
+    ],
+    "servingPairedJobValidatorUnchanged": true,
+    "freshPrediction": "pending"
+  },
+  "checks": {
+    "fullOffline": {
+      "log": "outputs/compatible-verified-full-check.log",
+      "exitCode": 0,
+      "vitestPassed": 1202,
+      "nodePassed": 19,
+      "pythonPassed": 37,
+      "hostedSkipped": 3,
+      "typesLintValidationBothBuilds": true
+    },
+    "native": {
+      "data": "synthetic v3 post",
+      "actualComponent": "SourceDetail",
+      "widths": [
+        320,
+        1280
+      ],
+      "olderInputExcluded": true,
+      "retainedTranscriptShown": true,
+      "frameCitationOpensDecodedJPEG": true,
+      "overflow": false,
+      "productionCalls": 0,
+      "ownTabClosedAndServerStopped": true,
+      "receipt": "outputs/launch-run/cloud-compatible-native-20261026/native-result.json"
+    },
+    "dependencyAudit": {
+      "passed": true,
+      "low": 2,
+      "moderate": 2,
+      "high": 0,
+      "critical": 0,
+      "unresolved": 0,
+      "log": "outputs/compatible-audit.json"
+    },
+    "canonicalRouteBuilds": {
+      "exitCode": 0,
+      "log": "outputs/compatible-canonical-builds.log"
+    },
+    "formattingAndStagedSecrets": "passed; gitleaks8.30.1, no findings",
+    "toolManifestFinal": {
+      "archiveSHA256": "f4033f3e47c9897061dd284ce591cae59443bd464938aad9cb75abe6416e1f2e",
+      "files": 11,
+      "difference": "Removed one trailing blank line in the newly included ASR verifier; no executable logic changed."
+    }
+  },
+  "retainedFailures": [
+    "Initial types caught compatibility-only imports and fields; port keeps only supported serving fields.",
+    "Shared node_modules junctions were refused by pnpm. They were preserved as links under ignored outputs and a normal offline install completed with zero downloads. Automatic manager refresh damaged dependency links in the integration checkout; offline restoration completed and its amended full check passed. No source data changed.",
+    "First schema test had the previous exact allowlist; explicit optional fields and v3 were added while retaining all old indexes/configuration.",
+    "One inherited five-second product test timed out during parallel checks, then passed in isolation and the unchanged full suite.",
+    "Renderer testing caught old ordered-citation logic processing mapped Cloud references; excluded Cloud records from that older branch and preserved the normal transcript/frame view.",
+    "An inherited PCM test expected an obsolete model error; current strict model-verification tests replace it and pass.",
+    "Initial metadata-guard copy needed resolved local helper paths, a current-user-only directory and a 274-index decoder limit. No hosted operation ran in those attempts."
+  ],
+  "production": {
+    "changed": false,
+    "lastVerifiedServing": "675dea24804d3ed730cdec2aa5f858ddbcd07594",
+    "actualReelRepaired": false,
+    "speechAccuracyVerified": false,
+    "captionPathInlineTest": false,
+    "automaticEventsWake": false,
+    "reservedTikTokUnanalyzed": true
+  },
+  "budget": {
+    "ownerCapEUR": 7,
+    "newLiveReserveUSD": 2.4,
+    "retainedMaximumUSD": 7.275014256044614,
+    "oldHoldsPreserved": true,
+    "readOnlySourceSelectionRPCs": 1,
+    "selectionResult": "other saved example already analyzed; source URL and caption metadata not exposed",
+    "additionalFreshCaptionLink": "requested from owner"
+  },
+  "deferredMainFeatures": [
+    "Recently added Home cards and created-date dashboard index",
+    "Region/globe retirement and navigation regrouping",
+    "Independent catalog ownership",
+    "Automatic Events wake"
+  ],
+  "remaining": [
+    "Fresh bounded schema preflight and release guard",
+    "Exact-head CI and controlled publication",
+    "Current authenticated owner repair approval",
+    "Exact source/JPEG reproduction and audio review",
+    "Fresh permitted caption-path Cloud example and private app verification"
+  ]
+}

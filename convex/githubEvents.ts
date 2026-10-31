@@ -27,6 +27,8 @@ export const webhook = internalAction({
     } catch {
       return { status: 400 };
     }
+    if (!payload || typeof payload !== "object" || Array.isArray(payload))
+      return { status: 400 };
     const installationId = payload.installation?.id,
       repositoryId = payload.repository?.id,
       prNumber = payload.pull_request?.number;
@@ -52,6 +54,30 @@ export const webhook = internalAction({
         )
       )
         return { status: 400 };
+      if (
+        ["opened", "edited", "closed", "reopened"].includes(payload.action) &&
+        Number.isSafeInteger(payload.issue.id) &&
+        payload.issue.id > 0 &&
+        typeof payload.repository.full_name === "string" &&
+        typeof payload.issue.html_url === "string" &&
+        typeof payload.issue.title === "string" &&
+        typeof payload.issue.body === "string" &&
+        typeof payload.issue.updated_at === "string" &&
+        Number.isSafeInteger(Date.parse(payload.issue.updated_at)) &&
+        ["open", "closed"].includes(payload.issue.state)
+      )
+        await ctx.runMutation(internal.assistantProposalWork.observeIssue, {
+          installationId,
+          providerId: repositoryId,
+          repository: payload.repository.full_name,
+          issueId: payload.issue.id,
+          number,
+          url: payload.issue.html_url,
+          title: payload.issue.title,
+          body: payload.issue.body,
+          state: payload.issue.state,
+          updatedAt: Date.parse(payload.issue.updated_at),
+        });
       await ctx.runMutation(internal.issues.enqueueWebhook, {
         installationId,
         providerId: repositoryId,

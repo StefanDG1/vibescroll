@@ -19,6 +19,8 @@ export type UsageOverview = {
   reserved: number;
   expiredReserved: number;
   activeAllowance: number;
+  activeSpent: number;
+  activeReserved: number;
   nextExpiry: number | null;
   trial: boolean;
   recent: { activity: string; credits: number; createdAt: number | null }[];
@@ -58,7 +60,7 @@ export function usageOverview(
   const active = usage.pools.filter(
     (pool) => pool.expiresAt === undefined || pool.expiresAt > now,
   );
-  const sum = (pools: Pool[], field: "reserved") =>
+  const sum = (pools: Pool[], field: "reserved" | "spent") =>
     pools.reduce((total, pool) => total + pool[field], 0);
   const reserved = sum(usage.pools, "reserved");
   const activeAllowance = active.reduce(
@@ -66,7 +68,18 @@ export function usageOverview(
     0,
   );
   const available = availableProcessingCredits(usage.pools, now);
-  if (![reserved, activeAllowance, available].every(Number.isSafeInteger))
+  const activeSpent = sum(active, "spent");
+  const activeReserved = sum(active, "reserved");
+  if (
+    ![
+      reserved,
+      activeAllowance,
+      available,
+      activeSpent,
+      activeReserved,
+      available + activeSpent + activeReserved,
+    ].every(Number.isSafeInteger)
+  )
     return null;
   const expiries = active
     .filter((pool) => availableProcessingCredits([pool], now) > 0)
@@ -76,6 +89,8 @@ export function usageOverview(
     reserved,
     expiredReserved: reserved - sum(active, "reserved"),
     activeAllowance,
+    activeSpent,
+    activeReserved,
     nextExpiry: expiries.length ? Math.min(...expiries) : null,
     trial: usage.wallet.tier === "trial",
     recent: (usage.entries ?? [])

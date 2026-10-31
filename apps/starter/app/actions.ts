@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createHash, randomBytes } from "node:crypto";
 import { signOut } from "@workos-inc/authkit-nextjs";
 import { ConvexError } from "convex/values";
@@ -9,6 +9,10 @@ import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../convex/_generated/dataModel";
 import type { FormState } from "@/components/action-form";
 import { publicContinuation } from "@/lib/public-knowledge-display";
+import {
+  authenticationReviewRequired,
+  authenticationSignInPath,
+} from "../../../packages/policy/reauthentication";
 function continuation(d: FormData) {
   const result = publicContinuation({
     draft: String(d.get("draft") ?? ""),
@@ -141,6 +145,18 @@ async function run(
   try {
     result = await work();
   } catch (e) {
+    if (authenticationReviewRequired(e)) {
+      const requestHeaders = await headers();
+      const referer = requestHeaders.get("referer");
+      let returnTo = "/app";
+      try {
+        const page = new URL(referer ?? "");
+        returnTo = page.pathname + page.search;
+      } catch {
+        /* Use the safe application fallback. */
+      }
+      redirect(authenticationSignInPath(returnTo));
+    }
     return {
       error:
         e instanceof ConvexError
@@ -155,7 +171,7 @@ async function run(
 export async function createOrganization(_: FormState, d: FormData) {
   return run(async () => {
     const c = await backend();
-    const id = await c.mutation(api.organizations.create, {
+    const id = await c.mutation(api.organizations.createTeam, {
       name: val(d, "name"),
     });
     return { path: `/app/${id}${continuation(d)}` };
@@ -169,6 +185,16 @@ export async function createPrivateLibrary(_: FormState, d: FormData) {
     return {
       path: `/app/${id}${continuation(d)}`,
     };
+  });
+}
+export async function setCatalogBrowsing(_: FormState, d: FormData) {
+  return run(async () => {
+    await (
+      await backend()
+    ).mutation(api.catalogAccess.setEnabled, {
+      enabled: d.get("enabled") === "on",
+    });
+    return { message: "Catalog browsing preference saved." };
   });
 }
 export async function saveProject(_: FormState, d: FormData) {

@@ -5,8 +5,31 @@ import { execFileSync } from "node:child_process";
 import { publicProxy, publicBridge } from "../packages/media/public-proxy.ts";
 import { publicPolicyDocuments } from "../packages/policy/public-documents.ts";
 import { policyRelease } from "../packages/policy/publication.ts";
+import { preparedDecoder } from "../packages/media/preparedDecoder.ts";
+import { preparedAcquirer } from "../packages/media/preparedAcquirer.ts";
+import { preparedExtraction } from "../packages/media/preparedExtraction.ts";
 const root = resolve(import.meta.dirname, "..");
 const errors = [];
+for (const [content, file] of [
+  [preparedDecoder, "decode-prepared.py"],
+  [preparedAcquirer, "acquire-prepared.py"],
+  [preparedExtraction, "cloud_extraction.py"],
+])
+  if (
+    content !==
+    readFileSync(join(root, "packages/media", file), "utf8").replaceAll(
+      "\r\n",
+      "\n",
+    )
+  )
+    errors.push(
+      `Prepared media bundle is stale: ${file}. Run node scripts/sync-decoder.mjs.`,
+    );
+execFileSync("python", ["scripts/build-cloud-media-package.py"], {
+  cwd: root,
+  stdio: "pipe",
+  timeout: 10000,
+});
 const release = JSON.parse(
   readFileSync(join(root, "legal/RELEASE-2026-10-03.json"), "utf8"),
 );

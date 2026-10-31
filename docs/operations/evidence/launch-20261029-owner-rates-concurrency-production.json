@@ -1,0 +1,17 @@
+{
+  "kind":"owner-rates-and-concurrent-publication-production-v1",
+  "commit":"647b089e8a0103f9a6ccac8a2c3ddd0b42d4eea2",
+  "exactCI":40795250342,
+  "backendPublished":true,
+  "releaseGuards":35,
+  "schemaScans":0,
+  "indexBackfills":0,
+  "newTablesOrIndexes":0,
+  "websiteBuilds":0,
+  "websiteCommit":"4c72afd356c05044cb345063116ba136f60d4894",
+  "ownerPolicy":{"maximumNewAnalysesPerUTCDay":100,"maximumPerHour":20,"expiresAt":null,"writeAcknowledged":true,"readbackMatched":true,"configuredAtUTC":"2026-10-29T00:45:49.808Z","initialAndRetainedAnalysisShareCounter":true,"cacheAndRequestReplaysFree":true,"paidApiFallback":false,"reauthenticationRequired":false},
+  "concurrency":{"isolatedTwoAccountProducerReservationPassed":true,"overlappingCompletionPassed":true,"twoPrivateVersionsOneSharedArtifactPassed":true,"noDuplicateScreenshotCopyPassed":true,"boundedUnknownCopyPreservesPrivateAnalysisPassed":true,"productionConcurrencyTestRun":false,"productionTestWaivedByOwner":true},
+  "nativeMonitor":{"state":"Monitoring","sameTask":true,"title":"VibeScroll Assistant","taskId":"6adfa8962c3481918375fd11f71ed107","grantVersion":12,"events":["video_link_saved","work_cloud_waiting"],"actionReadbackSHA256":"de7b6cbbcd647f4653046452cfc042413c6b4e5a10ff86763a7bac026637fb71","reusableReadinessSeconds":10.085,"setupStartedNoSourceWork":true},
+  "automaticCanary":{"sourceId":"px78shw53pn0n91esbz2y0stc58gwx66","ordinaryMCPSave":true,"analysisOptionOmitted":true,"profileOptionOmitted":true,"perPostAppApproval":false,"manualWorkerDispatch":false,"freshIntentConsumed":true,"generation":1,"lastObserved":"running/acquiring; completion pending"},
+  "oldHoldsAndReservedPostPreserved":true
+}

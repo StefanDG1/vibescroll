@@ -1,12 +1,37 @@
+import { proposalLoopInputs } from "../packages/contracts/proposal-loop";
+import {
+  prepareProjectIssueInput,
+  reportProjectOutcomeInput,
+} from "../packages/contracts/proposal-work";
 import { httpAction } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
+import {
+  preparedQuoteRequest,
+  preparedStartRequest,
+} from "../packages/contracts/prepared-service";
+import { cloudRetryRequest } from "../packages/contracts/cloud-retry";
+import { projectApplicationContextInput } from "../packages/contracts/project-application";
+import {
+  saveProjectProposalInput,
+  getProjectProposalInput,
+  listProjectProposalsInput,
+  chatProposalOperations,
+  chatProposalFailure,
+} from "../packages/contracts/chat-proposals";
+import { analysisVersionOperations } from "../packages/contracts/analysis-versions";
+import {
+  widgetBrowseInput,
+  widgetTopicInput,
+  widgetProposalInput,
+} from "../packages/widget/contracts";
 import { assistantIssuer } from "../packages/policy/assistant";
 import {
   cloudCompletionEnvelope,
   parseWorkCloudResult,
   workCloudTextOperations,
+  workCloudPreparationStage,
 } from "../packages/contracts/work-cloud-text";
 import {
   readAssistantBody,
@@ -14,7 +39,100 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z.strictObject({
+    operation: z.literal("reply_to_project_plan"),
+    args: proposalLoopInputs.reply_to_project_plan,
+  }),
+  z.strictObject({
+    operation: z.literal("get_proposal_discussion"),
+    args: proposalLoopInputs.get_proposal_discussion,
+  }),
+  z.strictObject({
+    operation: z.literal("add_proposal_message"),
+    args: proposalLoopInputs.add_proposal_message,
+  }),
+  z.strictObject({
+    operation: z.literal("quote_project_plan"),
+    args: proposalLoopInputs.quote_project_plan,
+  }),
+  z.strictObject({
+    operation: z.literal("start_project_plan"),
+    args: proposalLoopInputs.start_project_plan,
+  }),
+  z.strictObject({
+    operation: z.literal("preview_project_issue"),
+    args: proposalLoopInputs.preview_project_issue,
+  }),
+  z.strictObject({
+    operation: z.literal("approve_project_issue"),
+    args: proposalLoopInputs.approve_project_issue,
+  }),
+  z.strictObject({
+    operation: z.literal("retry_project_issue"),
+    args: proposalLoopInputs.retry_project_issue,
+  }),
+  z.strictObject({
+    operation: z.literal("prepare_project_issue"),
+    args: prepareProjectIssueInput,
+  }),
+  z.strictObject({
+    operation: z.literal("report_project_outcome"),
+    args: reportProjectOutcomeInput,
+  }),
+  z.strictObject({
+    operation: z.literal("save_project_proposal"),
+    args: saveProjectProposalInput,
+  }),
+  z.strictObject({
+    operation: z.literal("get_project_proposal"),
+    args: getProjectProposalInput,
+  }),
+  z.strictObject({
+    operation: z.literal("list_project_proposals"),
+    args: listProjectProposalsInput,
+  }),
+  z.strictObject({
+    operation: z.literal("quote_video_analysis"),
+    args: preparedQuoteRequest,
+  }),
+  z.strictObject({
+    operation: z.literal("start_video_analysis"),
+    args: preparedStartRequest,
+  }),
+  z.strictObject({
+    operation: z.literal("video_analysis_status"),
+    args: z.strictObject({ sourceId: z.string().min(1).max(100) }),
+  }),
+  z.strictObject({
+    operation: z.literal("get_project_application_context"),
+    args: projectApplicationContextInput,
+  }),
+  z
+    .object({
+      operation: z.literal("widget_profiles"),
+      args: z.object({}).strict(),
+    })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_state"),
+      args: z.object({ profileId }).strict(),
+    })
+    .strict(),
+  z
+    .object({ operation: z.literal("widget_browse"), args: widgetBrowseInput })
+    .strict(),
+  z
+    .object({ operation: z.literal("widget_topic"), args: widgetTopicInput })
+    .strict(),
+  z
+    .object({
+      operation: z.literal("widget_proposal"),
+      args: widgetProposalInput,
+    })
+    .strict(),
   ...workCloudTextOperations,
+  ...analysisVersionOperations,
   z
     .object({
       operation: z.literal("draft_project_suggestion"),
@@ -93,6 +211,11 @@ const operations = z.discriminatedUnion("operation", [
           generation: z.number().int().nonnegative().optional(),
           revision: z.number().int().nonnegative().optional(),
           grantVersion: z.number().int().positive().optional(),
+          savedIntentId: z
+            .string()
+            .regex(/^[a-f0-9]{64}$/)
+            .optional(),
+          retry: cloudRetryRequest.optional(),
           cloud: z
             .object({
               model: z.string().min(1).max(100),
@@ -142,6 +265,7 @@ const operations = z.discriminatedUnion("operation", [
     .strict(),
 ]);
 export const tools = httpAction(async (ctx, request) => {
+  let operation: string | undefined;
   const deny = (status = 403) =>
     Response.json(
       {
@@ -157,9 +281,17 @@ export const tools = httpAction(async (ctx, request) => {
     if (!bearer || process.env.MCP_ENABLED !== "true") return deny(401);
     const input = operations.parse(
       await readAssistantBody(request, 262144, (value) =>
-        cloudCompletionEnvelope(value) ? 262144 : 8192,
+        cloudCompletionEnvelope(value)
+          ? 262144
+          : value &&
+              typeof value === "object" &&
+              "operation" in value &&
+              value.operation === "save_project_proposal"
+            ? 32768
+            : 8192,
       ),
     );
+    operation = input.operation;
     const expected = await ctx.runMutation(internal.assistant.throttle, {});
     const issuer = assistantIssuer(process.env.MCP_AUTH_ISSUER);
     if (!issuer || issuer !== expected.issuer) return deny(401);
@@ -180,52 +312,223 @@ export const tools = httpAction(async (ctx, request) => {
       )
     )
       return deny(401);
+    if (
+      ["get_profile", "save_link", "search", "widget_profiles"].includes(
+        input.operation,
+      )
+    )
+      await ctx.runMutation(internal.assistantGrants.ensureDefaults, {});
     const selectedProfile =
       "profileId" in input.args
         ? (input.args.profileId as Id<"organizations"> | undefined)
         : undefined;
     let value: unknown;
     switch (input.operation) {
-      case "work_cloud_input":
-        value = await ctx.runQuery(internal.workCloudAnalysis.input, {
+      case "widget_profiles":
+        value = await ctx.runQuery(internal.assistantWidget.profiles, {});
+        break;
+      case "widget_state":
+        value = await ctx.runQuery(internal.assistantWidget.state, {
+          profileId: selectedProfile,
+        });
+        break;
+      case "widget_browse":
+        value = await ctx.runQuery(internal.assistantWidget.browse, {
+          ...input.args,
+          profileId: selectedProfile,
+        });
+        break;
+      case "widget_topic":
+        value = await ctx.runQuery(internal.assistantWidget.topic, {
+          ...input.args,
+          profileId: selectedProfile,
+          topicId: input.args.topicId as Id<"knowledgeTopics">,
+        });
+        break;
+      case "widget_proposal":
+        value = await ctx.runQuery(internal.assistantWidget.proposal, {
+          profileId: selectedProfile,
+          proposalId: input.args.proposalId as Id<"issueDrafts">,
+        });
+        break;
+      case "work_cloud_repair_claim":
+        value = await ctx.runMutation(internal.workCloudEvidenceRepair.claim, {
           ...input.args,
           sourceId: input.args.sourceId as Id<"sources">,
         });
+        break;
+      case "work_cloud_repair_input":
+        value = await ctx.runQuery(internal.workCloudEvidenceRepair.input, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "work_cloud_repair_complete":
+        value = await ctx.runMutation(
+          internal.workCloudEvidenceRepair.complete,
+          { ...input.args, sourceId: input.args.sourceId as Id<"sources"> },
+        );
+        break;
+      case "work_cloud_repair_heartbeat":
+        value = await ctx.runMutation(
+          internal.workCloudEvidenceRepair.heartbeat,
+          { ...input.args, sourceId: input.args.sourceId as Id<"sources"> },
+        );
+        break;
+      case "work_cloud_frame":
+        value = await ctx.runAction(internal.workCloudFrames.upload, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "work_cloud_retained_frame":
+        value = await ctx.runAction(internal.analysisVersionFrames.read, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+          attemptId: input.args.attemptId as Id<"analysisAttempts">,
+        });
+        break;
+      case "work_cloud_input":
+        value = input.args.attemptId
+          ? await ctx.runQuery(internal.analysisVersions.input, {
+              ...input.args,
+              sourceId: input.args.sourceId as Id<"sources">,
+              attemptId: input.args.attemptId as Id<"analysisAttempts">,
+            })
+          : await ctx.runQuery(internal.workCloudAnalysis.input, {
+              ...input.args,
+              sourceId: input.args.sourceId as Id<"sources">,
+            });
         break;
       case "work_cloud_claim":
       case "work_cloud_heartbeat":
       case "work_cloud_fail":
-        value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
-          ...input.args,
-          sourceId: input.args.sourceId as Id<"sources">,
-          operation:
-            input.operation === "work_cloud_claim"
-              ? "claim"
-              : input.operation === "work_cloud_heartbeat"
-                ? "heartbeat"
-                : "fail",
-        });
+        value = input.args.attemptId
+          ? await ctx.runMutation(internal.analysisVersions.dispatch, {
+              ...input.args,
+              sourceId: input.args.sourceId as Id<"sources">,
+              attemptId: input.args.attemptId as Id<"analysisAttempts">,
+              operation:
+                input.operation === "work_cloud_claim"
+                  ? "claim"
+                  : input.operation === "work_cloud_heartbeat"
+                    ? "heartbeat"
+                    : "fail",
+            })
+          : await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+              ...input.args,
+              sourceId: input.args.sourceId as Id<"sources">,
+              operation:
+                input.operation === "work_cloud_claim"
+                  ? "claim"
+                  : input.operation === "work_cloud_heartbeat"
+                    ? "heartbeat"
+                    : "fail",
+            });
         break;
       case "work_cloud_complete": {
         const { resultJson, ...args } = input.args;
+        value = args.attemptId
+          ? await ctx.runMutation(internal.analysisVersions.dispatch, {
+              ...args,
+              sourceId: args.sourceId as Id<"sources">,
+              attemptId: args.attemptId as Id<"analysisAttempts">,
+              operation: "complete",
+              output: parseWorkCloudResult(resultJson),
+            })
+          : await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+              ...args,
+              sourceId: args.sourceId as Id<"sources">,
+              operation: "complete",
+              output: parseWorkCloudResult(resultJson),
+            });
+        break;
+      }
+      case "work_cloud_metadata": {
         value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
-          ...args,
-          sourceId: args.sourceId as Id<"sources">,
-          operation: "complete",
-          output: parseWorkCloudResult(resultJson),
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+          operation: "metadata",
         });
         break;
       }
       case "work_cloud_prepare": {
         const { preparationJson, ...args } = input.args;
+        const preparation = parseWorkCloudResult(preparationJson);
+        if (
+          preparation &&
+          typeof preparation === "object" &&
+          "schemaVersion" in preparation &&
+          preparation.schemaVersion === "work-cloud-media-stage-v1"
+        ) {
+          const stage = workCloudPreparationStage.parse(preparation);
+          const lease = {
+            ...args,
+            sourceId: args.sourceId as Id<"sources">,
+          };
+          if (stage.stage === "metadata") {
+            value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
+              ...lease,
+              operation: "metadata",
+              metadata: stage.metadata,
+            });
+          } else {
+            const { schemaVersion: _version, stage: _stage, ...frame } = stage;
+            value = await ctx.runAction(internal.workCloudFrames.upload, {
+              ...lease,
+              ...frame,
+            });
+          }
+          break;
+        }
         value = await ctx.runMutation(internal.workCloudAnalysis.dispatch, {
           ...args,
           sourceId: args.sourceId as Id<"sources">,
           operation: "prepare",
-          preparation: parseWorkCloudResult(preparationJson),
+          preparation,
         });
         break;
       }
+      case "analysis_history":
+        value = await ctx.runQuery(api.analysisVersions.history, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "analysis_version":
+        value = await ctx.runQuery(api.analysisVersions.read, {
+          sourceId: input.args.sourceId as Id<"sources">,
+          versionId: input.args.versionId as Id<"analysisVersions"> | undefined,
+        });
+        break;
+      case "compare_analysis_versions":
+        value = await ctx.runQuery(api.analysisVersions.compare, {
+          sourceId: input.args.sourceId as Id<"sources">,
+          beforeId: input.args.beforeId as Id<"analysisVersions">,
+          afterId: input.args.afterId as Id<"analysisVersions">,
+        });
+        break;
+      case "select_analysis_version":
+        value = await ctx.runMutation(api.analysisVersions.select, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+          versionId: input.args.versionId as Id<"analysisVersions">,
+        });
+        break;
+      case "request_analysis_version":
+        value = await ctx.runMutation(api.analysisVersions.request, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+          basedOnVersionId: input.args.basedOnVersionId as
+            Id<"analysisVersions"> | undefined,
+        });
+        break;
+      case "cancel_waiting_analysis_version":
+        value = await ctx.runMutation(api.analysisVersions.cancelWaiting, {
+          sourceId: input.args.sourceId as Id<"sources">,
+          attemptId: input.args.attemptId as Id<"analysisAttempts">,
+        });
+        break;
       case "draft_project_suggestion":
         value = await ctx.runMutation(
           internal.assistant.draftProjectSuggestion,
@@ -249,6 +552,97 @@ export const tools = httpAction(async (ctx, request) => {
           profileId: selectedProfile,
         });
         break;
+      case "get_project_application_context":
+        value = await ctx.runQuery(
+          internal.assistant.projectApplicationContext,
+          {
+            ...input.args,
+            profileId: selectedProfile,
+            sourceId: input.args.sourceId as Id<"sources">,
+            projectId: input.args.projectId as Id<"repositories">,
+            analysisVersionId: input.args.analysisVersionId as
+              Id<"analysisVersions"> | undefined,
+          },
+        );
+        break;
+      case "get_proposal_discussion":
+      case "reply_to_project_plan":
+      case "add_proposal_message":
+      case "quote_project_plan":
+      case "start_project_plan":
+      case "preview_project_issue":
+      case "approve_project_issue":
+      case "retry_project_issue": {
+        const { profileId: _profile, ...args } = input.args;
+        // Recheck the selected workspace before invoking the same public core
+        // used by the signed-in website. Caller-supplied IDs grant no access.
+        await ctx.runQuery(internal.assistantProposals.read, {
+          proposalId: args.proposalId as Id<"proposals">,
+          profileId: selectedProfile,
+        });
+        if (input.operation === "get_proposal_discussion")
+          value = await ctx.runQuery(api.proposalLoop.read, args as any);
+        else if (input.operation === "reply_to_project_plan")
+          value = await ctx.runMutation(api.proposalLoop.reply, args as any);
+        else if (input.operation === "add_proposal_message")
+          value = await ctx.runMutation(api.proposalLoop.comment, args as any);
+        else if (input.operation === "quote_project_plan")
+          value = await ctx.runQuery(api.proposalLoop.quote, args as any);
+        else if (input.operation === "start_project_plan")
+          value = await ctx.runMutation(api.proposalLoop.start, args as any);
+        else if (input.operation === "preview_project_issue")
+          value = await ctx.runAction(
+            api.proposalIssueActions.preview,
+            args as any,
+          );
+        else if (input.operation === "approve_project_issue")
+          value = await ctx.runMutation(
+            api.proposalIssues.approve,
+            args as any,
+          );
+        else
+          value = await ctx.runMutation(api.proposalIssues.retry, args as any);
+        break;
+      }
+      case "prepare_project_issue":
+        value = await ctx.runMutation(internal.assistantProposalWork.prepare, {
+          ...input.args,
+          profileId: selectedProfile,
+          proposalId: input.args.proposalId as Id<"proposals">,
+        });
+        break;
+      case "report_project_outcome":
+        value = await ctx.runMutation(internal.assistantProposalWork.report, {
+          ...input.args,
+          profileId: selectedProfile,
+          proposalId: input.args.proposalId as Id<"proposals">,
+        });
+        break;
+      case "save_project_proposal":
+        value = await ctx.runMutation(internal.assistantProposals.save, {
+          ...input.args,
+          profileId: selectedProfile,
+          sourceId: input.args.sourceId as Id<"sources">,
+          projectId: input.args.projectId as Id<"repositories">,
+          analysisVersionId: input.args
+            .analysisVersionId as Id<"analysisVersions">,
+          proposalId: input.args.proposalId as Id<"proposals"> | undefined,
+        });
+        break;
+      case "get_project_proposal":
+        value = await ctx.runQuery(internal.assistantProposals.read, {
+          ...input.args,
+          profileId: selectedProfile,
+          proposalId: input.args.proposalId as Id<"proposals">,
+        });
+        break;
+      case "list_project_proposals":
+        value = await ctx.runQuery(internal.assistantProposals.list, {
+          ...input.args,
+          profileId: selectedProfile,
+          projectId: input.args.projectId as Id<"repositories"> | undefined,
+        });
+        break;
       case "search":
         value = await ctx.runQuery(internal.assistant.search, {
           ...input.args,
@@ -259,6 +653,23 @@ export const tools = httpAction(async (ctx, request) => {
         value = await ctx.runQuery(internal.assistant.fetch, {
           ...input.args,
           profileId: selectedProfile,
+        });
+        break;
+      case "quote_video_analysis":
+        value = await ctx.runQuery(internal.preparedService.assistantQuote, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "start_video_analysis":
+        value = await ctx.runMutation(internal.preparedService.assistantStart, {
+          ...input.args,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "video_analysis_status":
+        value = await ctx.runQuery(internal.preparedService.assistantStatus, {
+          sourceId: input.args.sourceId as Id<"sources">,
         });
         break;
       case "save_link":
@@ -282,7 +693,36 @@ export const tools = httpAction(async (ctx, request) => {
         break;
     }
     return Response.json(value, { headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    if (operation && chatProposalOperations.has(operation)) {
+      const code =
+        error instanceof Error
+          ? error.message.match(
+              /\b(APPROVAL_STALE|IDEMPOTENCY_CONFLICT|POLICY_BLOCKED|INVALID_INPUT|LIMIT_REACHED|SETUP_REQUIRED|PERSONAL_FUNDING_REQUIRED|QUOTE_CHANGED|SOURCE_BUSY|COST_RECONCILIATION_REQUIRED|INSUFFICIENT_CREDITS|BUDGET_EXCEEDED|ISSUES_PERMISSION_REQUIRED|GITHUB_UNAVAILABLE):/,
+            )?.[1]
+          : undefined;
+      const failure = chatProposalFailure(code);
+      if (failure)
+        return Response.json(failure, {
+          status:
+            code === "APPROVAL_STALE" || code === "IDEMPOTENCY_CONFLICT"
+              ? 409
+              : 400,
+          headers: { "Cache-Control": "no-store" },
+        });
+    }
+    if (
+      error instanceof Error &&
+      /\bPROFILE_SELECTION_REQUIRED:/.test(error.message)
+    )
+      return Response.json(
+        {
+          code: "PROFILE_SELECTION_REQUIRED",
+          error:
+            "Choose a current VibeScroll workspace with get_profile. Your existing OAuth connection can stay connected.",
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } },
+      );
     return deny();
   }
 });

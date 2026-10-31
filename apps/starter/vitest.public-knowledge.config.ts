@@ -11,6 +11,17 @@ export default defineConfig({
   },
   test: {
     include: [
+      "apps/starter/home-feed-ui.test.ts",
+      "apps/starter/project-fit-live-ui.test.ts",
+      "apps/starter/home-feed-loading.test.ts",
+      "apps/starter/assistant-elements-ui.test.ts",
+      "apps/starter/settings-panel-ui.test.ts",
+      "apps/starter/source-progress-ui.test.ts",
+      "apps/starter/recent-posts-ui.test.ts",
+      "apps/starter/shared-cloud-evidence.test.ts",
+      "apps/starter/task-runtime-picker.test.ts",
+      "apps/starter/cloud-save-capture-ui.test.ts",
+      "apps/starter/capture-runtime-ui.test.ts",
       "apps/starter/private-library-upgrade-ui.test.ts",
       "apps/starter/work-cloud-text-ui.test.ts",
       "apps/starter/assistant-connections-cloud-ui.test.ts",

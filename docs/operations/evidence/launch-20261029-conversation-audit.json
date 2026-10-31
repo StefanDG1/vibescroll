@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-29",
+  "timezone": "Europe/Berlin",
+  "kind": "owner-conversation-and-recovery-documentation-audit",
+  "reviewedProductBaseline": "fc2ef422aace635a122073ae59a396a62299d204",
+  "scope": "Visible owner messages, questions, screenshots and later corrections in this conversation, reconciled with current local plans, ADRs, handovers and production receipts",
+  "requirements": {
+    "file": "docs/strategy/OWNER-REQUEST-REGISTER.md",
+    "rows": 96,
+    "stableIds": "R001-R096",
+    "repeatedStatusRequestsConsolidated": true,
+    "supersededChoicesPreserved": true,
+    "verbatimConversationArchive": false
+  },
+  "failures": {
+    "file": "docs/operations/FAILURES-AND-RECOVERY.md",
+    "rows": 41,
+    "stableIds": "F01-F41",
+    "demonstratedCausesSeparatedFromUnknownCauses": true,
+    "existingCorrectionsSeparatedFromPreventionBacklog": true
+  },
+  "agentEntryPoints": ["AGENTS.md", "docs/START-HERE.md"],
+  "currentState": "docs/operations/CURRENT-STATE.md",
+  "continuationProcedure": "docs/operations/CONTINUE-VIBESCROLL.md",
+  "localWorkspacePointer": "C:/Code/VibeScroller/AGENTS.md",
+  "localWorkspacePointerVersionedInRepository": false,
+  "coverageGroups": [
+    "capture, yt-dlp, captions, source identity, metadata, frames and progress",
+    "post routes, recent posts, route selection, simplified setup and deferred UI",
+    "OAuth, MCP transport, native Events, monitor, runtime and worker capacity",
+    "shared catalog, personal associations, independent ownership and immutable versions",
+    "teams, own-member subscriptions, project matching, issue/PR and feedback",
+    "single Pro, duration credits, model bands, reasoning, pricing and growth economics",
+    "test authority, protected data, budget evolution, delegated releases and communication"
+  ],
+  "historicalOctober25HandoverReadInOtherCheckout": true,
+  "benchmarkChatRead": {
+    "title": "Compare video model options",
+    "threadId": "01a18481-b50d-7d93-94ad-e276b251576b",
+    "boundedRecentTurns": 3,
+    "completeHistoryClaimed": false,
+    "olderManagedMediaSuggestionSupersededByThisConversationsOwnerExclusion": true
+  },
+  "validation": {
+    "uniqueContiguousRequirementIds": true,
+    "uniqueFailureIds": true,
+    "bothAgentEntryPointsLinkAllFourDocuments": true,
+    "documentValidation": "356 Markdown documents and 12 skill snapshots passed",
+    "formatAndWhitespaceChecksPassed": true,
+    "stagedGitleaksFindings": 0,
+    "meaning": "Structural checks plus manual semantic review, not an automated proof that every possible implication was captured"
+  },
+  "noRuntimeOrBillingChange": true,
+  "noProductionDeployment": true,
+  "newSourceJobs": 0,
+  "newPaidInference": 0,
+  "secretsAndPrivateAccountIdentifiersCopied": false,
+  "remainingPreventionWorkIsNotClaimedImplemented": true
+}

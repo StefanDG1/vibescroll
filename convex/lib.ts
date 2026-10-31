@@ -1,13 +1,21 @@
+import type { HighRiskAuthenticationAction } from "../packages/policy/reauthentication";
 import { isAssistantIdentity } from "../packages/policy/assistant";
 import { ConvexError } from "convex/values";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { isPaid } from "../packages/company-config";
 import { workspaceReadable } from "./lib/workspacePrivacy";
+import { billingFor } from "./lib/billingAccess";
+import { requireTeamSubscription } from "./lib/accountSubscription";
+export { billingFor } from "./lib/billingAccess";
 export function fail(message: string): never {
   throw new ConvexError(message);
 }
-export async function recentAuthentication(ctx: QueryCtx, maxAgeSeconds = 300) {
+export async function recentAuthentication(
+  ctx: QueryCtx,
+  _action: HighRiskAuthenticationAction,
+) {
+  const maxAgeSeconds = 300;
   const identity = await ctx.auth.getUserIdentity();
   const authenticatedAt = identity?.auth_time;
   if (
@@ -16,7 +24,7 @@ export async function recentAuthentication(ctx: QueryCtx, maxAgeSeconds = 300) {
     authenticatedAt > Date.now() / 1000 ||
     Date.now() / 1000 - authenticatedAt > maxAgeSeconds
   )
-    fail("Sign in again before changing a sensitive connection.");
+    fail("REAUTH_REQUIRED: Sign in again to confirm this high-risk action.");
 }
 export async function user(ctx: QueryCtx) {
   if (process.env.RESTORE_LOCK === "true")
@@ -53,13 +61,9 @@ export async function access(
     return fail("Organization unavailable.");
   if (roles && !roles.includes(membership.role))
     return fail("You do not have permission for this action.");
+  await requireTeamSubscription(ctx, actor, organization);
   return { actor, membership, organization };
 }
-export const billingFor = (ctx: QueryCtx, id: Id<"organizations">) =>
-  ctx.db
-    .query("billing")
-    .withIndex("by_org", (q) => q.eq("organizationId", id))
-    .unique();
 export async function writeAccess(
   ctx: MutationCtx,
   organizationId: Id<"organizations">,

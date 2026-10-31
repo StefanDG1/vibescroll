@@ -1,0 +1,46 @@
+{
+  "dateUTC": "2026-10-26",
+  "status": "halted_before_backend_publication_and_frontend_build",
+  "candidateCommit": "2f154a6d7e6da2f3e4ae2b286433380c79a622b2",
+  "candidateCIRun": 40362175470,
+  "candidateCIConclusion": "success",
+  "servingCommit": "ff7d88f5601c5d717f3ac5cad6ff73489ba29a25",
+  "budget": {
+    "cumulativeCapEUR": 9,
+    "additionalAuthorizedMaximumEUR": 1,
+    "reservationUSD": 0.42,
+    "frontendBuildReservationUSD": 0.38,
+    "backendPublicationReservationUSD": 0.02,
+    "controlsAndVerificationReservationUSD": 0.02,
+    "priorHoldsReleased": false,
+    "invoiceCertified": false,
+    "includedCreditBalanceVerified": false,
+    "includedCreditBalanceLimitation": "The full-month billing query exceeded the connector response limit; the available short-window team report is not a remaining-credit balance.",
+    "ownerPolicy": "Use included Vercel credits for useful deployment and runtime work. Preserve fixed Basic machines and normal queuing. No paid build acceleration or extra concurrency."
+  },
+  "offline": {
+    "rootSchemaAndIndexesIdentical": true,
+    "componentLogicPackagingComparisonPassed": 7,
+    "guardTestsPassed": 10,
+    "comparisonLimitation": "Code equality after explicit package-path and generated-chunk normalization does not establish stable hosted component identity."
+  },
+  "hosted": {
+    "freshConfiguredLogSinks": 0,
+    "liveBaselineRootModulesMatched": 291,
+    "schemaPredictionRequests": 1,
+    "schemaPredictionHTTPStatus": 200,
+    "unexpectedComponentDefinitionPaths": 5,
+    "guardHalt": "INCOMPLETE_COMPONENT",
+    "startPushRequests": 0,
+    "finishPushRequests": 0,
+    "vercelBuilds": 0,
+    "vercelProjectOrEnvironmentChanges": 0,
+    "sourceSaves": 0,
+    "analysisJobs": 0,
+    "mediaDownloads": 0,
+    "automaticRetry": false
+  },
+  "finding": "The widget dependency graph adds the optional @standard-schema/spec peer to convex-helpers and propagates different pnpm peer paths through existing Convex components. The live predictor reports five new definitions and incomplete old-component validation. The guard correctly refused publication.",
+  "localAttempt": "A narrow dependency override did not restore the original peer identities. It was reverted and the exact committed lockfile reinstalled offline. No override or relaxed production validation was retained.",
+  "next": "Resolve dependency isolation while preserving the existing Convex component identities, then review a fresh exact candidate and its bounded release reservation. Actual ChatGPT/Codex widget acceptance remains pending."
+}

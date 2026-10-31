@@ -4,7 +4,21 @@ import { renderToStaticMarkup } from "react-dom/server";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 }));
-import { Console } from "./components/console";
+// Inspect settings contents for source/evidence authorization tests. The real
+// drawer's closed/open rendering is checked separately, plus browser acceptance.
+vi.mock("./components/settings-panel", async () => {
+  const { createElement } = await import("react");
+  return {
+    SettingsPanel: ({
+      children,
+      title,
+    }: {
+      children: import("react").ReactNode;
+      title: string;
+    }) => createElement("section", { "aria-label": title }, children),
+  };
+});
+import { Console, SourceDetail } from "./components/console";
 import Demo from "./app/demo/page";
 import { libraryDemoDrafts, libraryDemoSources } from "./lib/library-demo";
 const initial = {
@@ -64,16 +78,16 @@ it("opens the actual source evidence reached from a demo library link", async ()
   const source = libraryDemoSources[0];
   const html = await renderDemo({ view: "library", source: source._id });
   expect(html).toContain("Back to list");
-  expect(html).toContain("AI summary");
-  expect(html).toContain("Main points");
+  expect(html).toContain("Insights");
+  expect(html).toContain("post-insight-reader");
   expect(html).toContain(source.summary);
 });
 
 it("leaves an unknown source on the ordinary demo library", async () => {
   const html = await renderDemo({ view: "library", source: "unknown-source" });
-  expect(html).not.toContain("AI summary");
+  expect(html).not.toContain("post-insight-reader");
   expect(html).not.toContain("Back to list");
-  expect(html).toContain('<h1 class="sr-only">Library</h1>');
+  expect(html).toContain('<h1 class="sr-only">Explore</h1>');
 });
 
 it.each(["loading", "error", "empty"])(
@@ -84,7 +98,7 @@ it.each(["loading", "error", "empty"])(
       source: libraryDemoSources[0]._id,
       uiState,
     });
-    expect(html).not.toContain("AI summary");
+    expect(html).not.toContain("post-insight-reader");
     expect(html).not.toContain("Back to list");
     if (uiState === "loading") expect(html).toContain('aria-busy="true"');
     if (uiState === "error")
@@ -95,8 +109,9 @@ it.each(["loading", "error", "empty"])(
 
 it("opens the demo Connections view without granting assistant access", async () => {
   const html = await renderDemo({ view: "connections" });
-  expect(html).toContain("Use saved ideas in your assistant");
-  expect(html).toContain("Assistant access needs your own signed-in account.");
+  expect(html).toContain("Where tasks run");
+  expect(html).toContain("My own Cloud Work");
+  expect(html).toContain("Advanced settings");
 });
 
 it("opens the exact existing issue draft targeted by a project proposal link", async () => {
@@ -156,3 +171,165 @@ it.each([
     expect(html).not.toContain("user note · 0.0s");
   },
 );
+
+it.each([true, false])(
+  "shows the retained Cloud speech instead of older source text, speech present=%s",
+  (speechPresent) => {
+    const source = {
+      ...libraryDemoSources[0],
+      kind: "url",
+      originalText: "Older source text is not Cloud speech",
+      text: "A saved caption is not Cloud speech",
+      analysis: { insights: [] },
+      orderedMedia: {
+        post: {
+          schemaVersion: "work-cloud-observed-media-v1",
+          retainUntil: Date.now() + 60000,
+          segments: speechPresent
+            ? [
+                {
+                  id: "speech_000",
+                  startMs: 0,
+                  endMs: 1760,
+                  text: "Actual first <speech> segment.",
+                },
+                {
+                  id: "speech_001",
+                  startMs: 1760,
+                  endMs: 2640,
+                  text: "Actual second speech segment.",
+                },
+              ]
+            : [],
+        },
+        evidence: [],
+      },
+    };
+    const html = renderToStaticMarkup(
+      createElement(Console, {
+        initial,
+        organizationId: "demo",
+        demo: true,
+        readOnly: true,
+        initialView: "source",
+        initialSource: source,
+      }),
+    );
+    const panel = html
+      .split('id="source-transcript"')[1]
+      ?.split("</details>")[0];
+    expect(panel).toBeDefined();
+    expect(panel).not.toContain("Older source text");
+    expect(panel).not.toContain("A saved caption");
+    if (speechPresent) {
+      expect(panel).toContain("Actual first &lt;speech&gt; segment.");
+      expect(panel).toContain("Actual second speech segment.");
+      expect(panel).toContain("1.8");
+      expect(panel).toContain("2.6");
+    } else expect(panel).toContain("Original transcript is unavailable.");
+  },
+);
+it("renders retained Cloud screenshots and timestamps while excluding older local frames", () => {
+  const source = {
+    ...libraryDemoSources[0],
+    _id: "synthetic-cloud-source",
+    kind: "url",
+    state: "ready",
+    generation: 2,
+    rightsAttested: true,
+    originalMediaEvidence: [
+      { kind: "frame", id: "old-local-frame", startMs: 0, endMs: 0 },
+    ],
+    analysis: {
+      insights: [
+        {
+          id: "cited",
+          title: "Cited Cloud evidence",
+          claim: "Fixture claim",
+          evidence: [
+            {
+              kind: "video_observation",
+              id: "frame-1",
+              startMs: 12000,
+              endMs: 12001,
+            },
+            {
+              kind: "video_observation",
+              id: "speech",
+              startMs: 0,
+              endMs: 1000,
+            },
+          ],
+        },
+      ],
+    },
+    orderedMedia: {
+      post: {
+        schemaVersion: "work-cloud-observed-media-v1",
+        segments: [
+          { id: "speech", startMs: 0, endMs: 1000, text: "Retained speech" },
+        ],
+        frames: [
+          { id: "frame-1", sha256: "hash", bytes: 100, timestampMs: 12000 },
+        ],
+      },
+      evidence: [
+        {
+          kind: "video_observation",
+          id: "frame-1",
+          startMs: 12000,
+          endMs: 12001,
+          basis: "visible",
+        },
+        {
+          kind: "video_observation",
+          id: "speech",
+          startMs: 0,
+          endMs: 1000,
+          basis: "transcript",
+        },
+      ],
+    },
+    personalAnalysis: {
+      executor: "work_cloud",
+      generation: 2,
+      state: "completed",
+      cloud: {
+        media: { preparationHash: "prepared", retainUntil: Date.now() + 60000 },
+      },
+    },
+    personalMedia: {
+      cloudFrames: {
+        generation: 2,
+        preparationHash: "prepared",
+        frames: [
+          {
+            frameId: "frame-1",
+            assetId: "cloud-frame-asset",
+            sha256: "hash",
+            size: 100,
+            timestampMs: 12000,
+          },
+        ],
+      },
+    },
+  };
+  const html = renderToStaticMarkup(
+    createElement(SourceDetail, {
+      source,
+      authoritative: true,
+      demo: false,
+      readOnly: true,
+      org: { _id: "synthetic-org" },
+      repos: [],
+      devices: [],
+      call: vi.fn(),
+      strictCall: vi.fn(),
+    }),
+  );
+  expect(html).toContain("/api/evidence/cloud-frame-asset?inline=true");
+  expect(html).toContain("12.0");
+  expect(html).not.toContain("/api/evidence/old-local-frame");
+  expect(html).toContain('href="#source-transcript"');
+  expect(html).toContain("Frame · 12.0s");
+});

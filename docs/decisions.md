@@ -1,5 +1,41 @@
 # Product decisions
 
+## October31: medium-term completion and prepared euro prices
+
+Follow the [medium-term completion plan](launch-plan/2026-10-31/MEDIUM-TERM-COMPLETION.md). Prepare one Pro at EUR35/month, EUR350/year and EUR17/week, with300 monthly credits for monthly/annual. Weekly credits and live migration remain under review. The isolated pricing preview does not alter runtime contracts or customer terms. [ADR215](adr/215-targeted-repository-refresh.md) adds single-project snapshot recovery without refreshing unrelated projects or authorizing publication.
+
+## October31: finish the durable proposal loop
+
+[ADR214](adr/214-durable-proposal-work-loop.md) uses the existing proposal/source/project binding, the official Convex Agent message component, precise credit helpers and a small operation outbox. A generated plan is distinct from coding execution. Approval freezes one exact issue; a durable dispatch barrier makes ambiguous publication reconcile-only. Existing MCP and GitHub authorization stay required. The local candidate is not yet deployed; follow the [short-term acceptance ledger](launch-plan/2026-10-31/SHORT-TERM-PROPOSAL-LOOP.md).
+
+## October29: preserve owner requests and verified recovery knowledge
+
+Use the [owner request register](strategy/OWNER-REQUEST-REGISTER.md), [current state](operations/CURRENT-STATE.md), [continuation guide](operations/CONTINUE-VIBESCROLL.md) and [failure reference](operations/FAILURES-AND-RECOVERY.md). Later explicit owner corrections supersede older temporary setup/release instructions. This audit changes documentation, not runtime policy, billing, permissions, funding or production. Keep unknown causes unresolved and distinguish recommended prevention from implemented tests/code.
+
+## October29: source-bounded PCM
+
+[ADR195](adr/195-source-bounded-pcm-before-asr.md) trims decoded PCM to the actual source duration before ASR, preserving strict returned timing validation. Actual retained response and an owned AAC regression establish the failure. The owner approves four total fresh comparison passes within the existing allowance, retaining all earlier holds/results.
+
+## October29: returned ASR evidence and explicit preparation retry
+
+[ADR194](adr/194-returned-transcription-evidence-and-retry.md) retains bounded private ASR responses before timing validation and separates known returned preparation failure from unknown inference. Receipts/financial holds and selected results remain intact. A retry remains explicit and bounded; no timeout reset, automatic fallback or shared-publication authority follows.
+
+## October 29: requested-post cache, full-library add-on and individual Pro teams
+
+[ADR193](adr/193-requested-posts-catalog-addon-and-individual-pro-teams.md) records the latest direction: Pro cache reuse applies to requested posts, full-library browsing is a separate add-on/toggle with an owner admin concession, and each member has their own Pro and credits. Preserve precise preparation/analysis quote arithmetic and round the final settled total once. This supersedes older unrestricted-catalog packaging, not existing balances or contracts. Local implementation is not production acceptance.
+
+## October 29: one hosted Pro, model bands and pricing analysis
+
+Follow [ADR192](adr/192-single-hosted-pro-duration-credits.md) and the [standing pricing plan](strategy/PRO-PRICING-AND-CREDITS.md). One paid hosted Pro supersedes D17's two tiers and the hosted free preview. Weekly remains a premium interval alongside monthly/annual. Compare 300/500 credits, Muse 1×, higher-credit model groups, high reasoning and digital-root-8 prices. The working EUR 8/week50, EUR 35/month300, EUR 350/year300/month offer is a comparison, not a final price migration. Distinguish delivery gross margin, contribution before ads/fixed costs and operating profit; an 80% ambition is not an established net margin. Preserve old subscriptions, balances and commercial gates.
+
+## October 28: versioned Cloud analysis and paid shared reuse
+
+[ADR180](adr/180-versioned-cloud-analysis-and-shared-selection.md) prioritizes the link-to-insights release over widget and broader workflow work. Deliberate reanalysis creates immutable candidates, preserving current results and exact citations. Default readers receive the best approved eligible version; stronger/newer model labels alone do not justify promotion. Comparison, personal pinning and audited rollback reuse retained evidence. Extend the existing shared artifact family and private associations with honest own-subscription provenance and current entitlement/rights checks. These are approved implementation requirements, not live features, additional funding or shared-publication permission for existing private outputs.
+
+## Three task locations, October26
+
+[ADR161](adr/161-three-task-locations.md) implements the owner's shared three-choice picker: own ChatGPT Cloud Recommended, separately bought VibeScroll server credits, and local own-subscription processing. Keep unsupported routes visible but disabled, quick setup/reconfiguration and More info, and Save without analysis separate. This presentation change widens no grant or runtime availability and changes no saved data or funding approval. Production publication remains pending.
+
 ## Conservative Cloud result return, October 25
 
 [ADR 152](adr/152-conservative-cloud-result-return.md) records a real accepted preparation and rejected completion, followed by exact-payload offline verification. The adapter reduces overstated confidence and supports a recent-owner-reviewed, hash-bound return of the same retained attempt. It starts no processing and preserves saved posts/insights. Current Cloud status overrides old local-intake advice. Production completion remains pending; cumulative EUR5 and all prior holds remain.
@@ -215,3 +251,15 @@ Follow [ADR 058](adr/058-bounded-full-library-scans.md): full URL-link paginatio
 ## Explicit legacy private-library repair, October 24
 
 [ADR 147](adr/147-explicit-legacy-private-library-adoption.md) adds a reviewed opt-in for an older original-creator sole-owner workspace. It preserves IDs/content and refuses other members, active invitations and another private library. Existing Cloud privacy and funding gates remain; no automatic production migration follows.
+
+## October 29: shared preparation before both analyzers
+
+[ADR 200](adr/200-server-prepared-analysis-service-and-mcp-credits.md) connects the existing server-prepared evidence to exact MCP credit quotes, replay-safe settlement, native Events and truthful shared publication. It preserves old balances and does not activate the planned commerce migration. [MCP instructions](operations/PREPARED-ANALYSIS-MCP.md) describe the common quote/start/status contract. Production acceptance is recorded separately in current state.
+
+## October 26 native Events checkpoint
+
+[ADR 160](adr/160-native-events-and-saved-video-acknowledgement.md) records the accepted private ChatGPT connection renewal and actual app-save acknowledgement. The event is live in compatible6cdcb1c. Reuse the existing capture, scoped grants and signed delivery path; no new worker, queue or analysis authority follows from saving. Actual app-save acknowledgement precedes automatic media execution.
+
+## October30: observed status, credits and topic-fit scores
+
+[ADR211](adr/211-observed-status-credit-meter-and-topic-fit.md) records the deployed first subset and the separate history/outcome-scoring plan. Retain observed stages, exact integer credit balances and explicit topic arithmetic without an inflated baseline.

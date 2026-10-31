@@ -1,0 +1,53 @@
+{
+  "acceptedAtUTC": "2026-10-30T18:04:47.919959+00:00",
+  "websiteCommit": "c51f8f09b032e4a6535aa543b03018422f149d1c",
+  "backendCommit": "8974c3908c1e4a19f326188a9e889c8981fa5cc7",
+  "route": "normal website Save source, no executor selected",
+  "producerSourceId": "px7daqmpamn8s0ad5man74r1as8h72n5",
+  "requestingSourceId": "px7ezef9ahkt0k31hvnt9f37rd8h81q6",
+  "sharedVersionId": "xh7ah9nr1xrb6sqe9nqzjrkzf98h6eke",
+  "sharedArtifactId": "vx79zs78qrz541v2ff16ta50y58h65h8",
+  "separateAuthorizedBrowserAccount": true,
+  "newPersonalAssociations": 1,
+  "priorPersonalPostsPreserved": true,
+  "onlyRequestedPostsInPersonalLibrary": true,
+  "fullCatalogAddOnEntitled": false,
+  "fullCatalogBrowsingEnabled": false,
+  "analysisIdentical": true,
+  "transcriptIdentical": true,
+  "sameEvidenceHash": true,
+  "insightCount": 6,
+  "decodedAndByteMatchedJPEGs": 8,
+  "frameDimensions": [
+    540,
+    960
+  ],
+  "newPersonalAnalysisOrMediaRun": false,
+  "walletBeforeAndAfterIdentical": true,
+  "availableCredits": 0,
+  "reservedCredits": 0,
+  "newCreditCharges": 0,
+  "newJobsOrInference": 0,
+  "producerSourceUnchanged": true,
+  "privateNotesEmpty": true,
+  "requestingProposalsEmpty": true,
+  "ownerPrivateSourceAndFrameDenied": true,
+  "requesterPrivateSourceDeniedToOwner": true,
+  "fullCatalogBrowseDenied": {
+    "http": 400,
+    "code": "FORBIDDEN"
+  },
+  "retention": "until_deleted",
+  "liveThumbnailDecoded": true,
+  "isolatedCasesPassed": 48,
+  "limitations": [
+    "Finite operator catalog access is distinct from paid Pro commerce.",
+    "Canonical takedown, deletion and concurrent producer/waiter boundaries passed isolated tests; no destructive live takedown or production race was run.",
+    "Save was observed ready at first subsequent read; no precise latency benchmark was captured."
+  ],
+  "newBuilds": 0,
+  "newBackendPublications": 0,
+  "newAnalysisRuns": 0,
+  "goodResultKept": true,
+  "secondAccountSessionPreserved": true
+}

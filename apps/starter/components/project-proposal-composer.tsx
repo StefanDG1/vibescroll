@@ -72,6 +72,28 @@ export function ProjectProposalComposer({
   const pending = useRef<SaveInput | null>(null);
   const flight = useRef(false);
   const locked = submitting || uncertain || !!savedId;
+  const visibleSuggestions = suggestions
+    .filter(
+      (p) =>
+        (p.fit?.matched ?? p.topics.length) > 0 ||
+        p.history?.samePost.some(
+          (plan) => plan.current && plan.review !== "rejected",
+        ),
+    )
+    .sort(
+      (a, b) =>
+        Number(
+          b.history?.samePost.some(
+            (plan) => plan.current && plan.review !== "rejected",
+          ) ?? false,
+        ) -
+        Number(
+          a.history?.samePost.some(
+            (plan) => plan.current && plan.review !== "rejected",
+          ) ?? false,
+        ),
+    )
+    .slice(0, 3);
   function choose(id: string) {
     if (!locked) setProjectId(id);
     setOpen(true);
@@ -164,10 +186,10 @@ export function ProjectProposalComposer({
   }
   return (
     <div className="insight-project-suggestions">
-      {suggestions.length > 0 && (
+      {visibleSuggestions.length > 0 && (
         <>
           <h4>Suggested projects</h4>
-          {suggestions.map((p) => {
+          {visibleSuggestions.map((p) => {
             const existing = p.history?.samePost.find(
               (plan) => plan.current && plan.review !== "rejected",
             );
@@ -212,17 +234,19 @@ export function ProjectProposalComposer({
                     projectName={p.name}
                     history={p.history}
                     priority={p.priority}
+                    priorityRevision={p.priorityRevision}
                     proposalBase={`/app/${organizationId}/proposals`}
                     onPriorityChange={
                       !disabled && p.history
-                        ? async (priority) => {
-                            await call("setProjectPriority", {
+                        ? async (priority, expectedRevision) => {
+                            const result = await call("setProjectPriority", {
                               organizationId,
                               repositoryId: p.id,
                               priority,
-                              expectedRevision: p.priorityRevision ?? 0,
+                              expectedRevision,
                             });
                             onPreferencesChange?.();
+                            return result;
                           }
                         : undefined
                     }
@@ -240,7 +264,9 @@ export function ProjectProposalComposer({
           disabled={disabled}
           onClick={() => choose(projectId)}
         >
-          {suggestions.length ? "Choose another project" : "Use in a project"}
+          {visibleSuggestions.length
+            ? "Choose another project"
+            : "Use in a project"}
         </button>
       ) : (
         <a

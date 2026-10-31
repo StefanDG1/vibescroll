@@ -1,6 +1,6 @@
 # ADR217: bounded recommendations and observed Trends
 
-Date: October31,2026. Status: implementation candidate.
+Date: October31,2026. Status: production checkpoint at6d1ff38; M2 correction acceptance pending.
 
 Keep topic coverage as an honest category fraction. Add recent workspace proposal history, a person's explicit project priority, and actual proposal activity as separate explanation fields. Never interpret repository synchronization as user activity or a completion report as a verified outcome. Same-post plans open their existing review page; related-topic plans remain distinct. Use a versioned deterministic rubric and a fingerprint of current analysis/project/history/preference inputs. Convex query caching supplies invalidation; no second cache service or inference call is needed.
 
@@ -9,3 +9,5 @@ Read at most20 connected repositories and40 recent lightweight proposal cards. I
 Trends starts with up to12 recent requested ready posts in the current workspace. Reuse the accepted engagement component and current source/catalogue authority. Show exact all-time counts and bounded7/30 UTC calendar-day reaction/intake windows including today, with100+ caps where needed. The explicit day argument controls the indexed window; a lightweight client clock changes that argument at UTC rollover. Do not depend on cached query wall-clock reevaluation. Retention/permissions still use actual current server authority. Group only that same authorized sample by reported creator-name/platform labels and categories. These are tracked Likes, first recorded distinct-user Saves and existing proposal reviews, not source-platform popularity, verified creator identity, revenue lift, causal outcomes or a global model ranking. Empty and insufficient-data states are real states. Browsing Trends does not associate every catalogue post with the user or run a model.
 
 Preserve the five navigation destinations and Library Tree/Folders. Put Trends behind Explore. Reuse the existing fit disclosure and project cards; advanced priority controls belong inside that disclosure. Verify isolation, bounded reads, stale context, deleted/expired/withdrawn sources, no credit/model side effects, truthful arithmetic and the accepted desktop/mobile geometry before publication.
+
+Correction follow-up: retain acknowledged priority revisions across edits without parent refresh. Return all currently authorized project fits, including zero, so existing plans keep honest scores; recommend only positive-overlap new plans and prioritize opening current plans. Initial Trends fallback reads must yield to newer live snapshots and live denial. No schema or provider change is required.

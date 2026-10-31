@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { ArrowUpRight, Heart, Share2, Video } from "lucide-react";
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "../../../convex/_generated/api";
@@ -23,6 +23,7 @@ export function TrendsDashboard({
   );
   const [revision, setRevision] = useState(0);
   const scope = `${organizationId}:${days}:${dayUTC}:${revision}`;
+  const liveScope = useRef<string | null>(null);
   useEffect(() => {
     if (demo) return;
     const update = () =>
@@ -69,7 +70,11 @@ export function TrendsDashboard({
   const receive = (value: Trends | null) => {
     setSnapshot({ scope, data: value ?? null, failed: !value });
   };
-  useTrendsLive(organizationId, days, dayUTC, !demo, receive);
+  useTrendsLive(organizationId, days, dayUTC, !demo, (value) => {
+    // A live denial is authoritative too. An older HTTP read must not restore it.
+    liveScope.current = scope;
+    receive(value);
+  });
   const load = useEffectEvent(async (active: () => boolean) => {
     if (demo) return;
     try {
@@ -78,9 +83,9 @@ export function TrendsDashboard({
         windowDays: days,
         dayUTC,
       });
-      if (active()) receive(value);
+      if (active() && liveScope.current !== scope) receive(value);
     } catch {
-      if (active()) receive(null);
+      if (active() && liveScope.current !== scope) receive(null);
     }
   });
   useEffect(() => {

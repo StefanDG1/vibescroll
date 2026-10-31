@@ -10,6 +10,7 @@ export type ProjectSuggestions = {
     name: string;
     topics: string[];
     fit: TopicFit;
+    recommended?: boolean;
     priority?: ProjectPriority;
     priorityRevision?: number;
     history?: ProjectHistory;

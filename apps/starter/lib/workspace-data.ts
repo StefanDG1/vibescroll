@@ -172,17 +172,29 @@ async function workspaceViewData({
   }
   if (view === "source") {
     if (!sourceId) throw Error("Source unavailable.");
-    const [organization, selectedSource, repositories, devices, aiPreference] =
-      await Promise.all([
-        c.query(api.organizations.details, { organizationId }),
-        c.query(api.product.detail, {
-          id: sourceId as Id<"sources">,
+    const [
+      organization,
+      selectedSource,
+      repositories,
+      devices,
+      aiPreference,
+      recommendations,
+    ] = await Promise.all([
+      c.query(api.organizations.details, { organizationId }),
+      c.query(api.product.detail, {
+        id: sourceId as Id<"sources">,
+        organizationId,
+      }),
+      c.query(api.product.repositories, { organizationId }),
+      c.query(api.devices.list, { organizationId }),
+      c.query(api.aiPreferences.read, { organizationId }),
+      c
+        .query(api.projectRecommendations.read, {
           organizationId,
-        }),
-        c.query(api.product.repositories, { organizationId }),
-        c.query(api.devices.list, { organizationId }),
-        c.query(api.aiPreferences.read, { organizationId }),
-      ]);
+          sourceId: sourceId as Id<"sources">,
+        })
+        .catch(() => null),
+    ]);
     return {
       workspaceSlice: "source" as const,
       compact: false,
@@ -190,12 +202,8 @@ async function workspaceViewData({
       privateLibrary: organization.private,
       role: organization.role,
       selectedSource,
-      projectSuggestions: await c
-        .query(api.projectRecommendations.read, {
-          organizationId,
-          sourceId: sourceId as Id<"sources">,
-        })
-        .catch(() => suggestProjects(selectedSource, repositories)),
+      projectSuggestions:
+        recommendations ?? suggestProjects(selectedSource, repositories),
       repositories: repositories.map(
         ({ _id, fullName, enabled, confirmed, status }) => ({
           _id,

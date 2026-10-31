@@ -239,3 +239,26 @@ it("shows authenticated agent reports separately from GitHub observations and me
     measuredBenefit: null,
   });
 });
+
+it("retains a current zero-overlap plan with its honest score without recommending an unrelated new plan", async () => {
+  const f = await prepared();
+  await f.t.run((ctx) =>
+    ctx.db.patch(f.projectId, {
+      profile:
+        "Purpose: Sell seasonal food.\n\nNon-goals: coding software or AI",
+    }),
+  );
+  const context = await f.read();
+  const saved = await f.save({ ...f.input, contextHash: context.contextHash });
+  const result = await f.owner.query(api.projectRecommendations.read, {
+    organizationId: f.org,
+    sourceId: f.sourceId,
+  });
+  expect(result.items).toHaveLength(1);
+  expect(result.items[0]).toMatchObject({
+    recommended: false,
+    fit: { matched: 0 },
+    history: { samePost: [{ id: saved.proposalId, current: true }] },
+  });
+  expect(result.items[0].fit.total).toBeGreaterThan(0);
+});

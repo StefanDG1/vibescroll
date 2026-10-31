@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Minus } from "lucide-react";
 import type {
   TopicFit,
@@ -14,6 +14,7 @@ export function ProjectFitBreakdown({
   projectName,
   history,
   priority = "normal",
+  priorityRevision = 0,
   onPriorityChange,
   proposalBase,
 }: {
@@ -21,11 +22,24 @@ export function ProjectFitBreakdown({
   projectName: string;
   history?: ProjectHistory;
   priority?: ProjectPriority;
-  onPriorityChange?: (priority: ProjectPriority) => Promise<void>;
+  priorityRevision?: number;
+  onPriorityChange?: (
+    priority: ProjectPriority,
+    expectedRevision: number,
+  ) => Promise<{ priority: ProjectPriority; revision: number }>;
   proposalBase?: string;
 }) {
-  const [selection, setSelection] = useState(priority);
-  const [busy, setBusy] = useState(false);
+  const [acknowledged, setAcknowledged] = useState({
+    priority,
+    revision: priorityRevision,
+  });
+  const current =
+    priorityRevision > acknowledged.revision
+      ? { priority, revision: priorityRevision }
+      : acknowledged;
+  const [pending, setPending] = useState<ProjectPriority | null>(null);
+  const flight = useRef(false);
+  const busy = pending !== null;
   const [error, setError] = useState("");
   if (
     !Number.isSafeInteger(fit.total) ||
@@ -105,23 +119,25 @@ export function ProjectFitBreakdown({
                 Your project priority
                 <select
                   aria-label={`Your priority for ${projectName}`}
-                  value={selection}
+                  value={pending ?? current.priority}
                   disabled={busy}
                   onChange={async (event) => {
+                    if (flight.current) return;
+                    flight.current = true;
                     const next = event.target.value as ProjectPriority;
-                    const before = selection;
-                    setSelection(next);
-                    setBusy(true);
+                    setPending(next);
                     setError("");
                     try {
-                      await onPriorityChange(next);
+                      setAcknowledged(
+                        await onPriorityChange(next, current.revision),
+                      );
                     } catch {
-                      setSelection(before);
                       setError(
                         "Priority was not confirmed. Refresh before trying again.",
                       );
                     } finally {
-                      setBusy(false);
+                      flight.current = false;
+                      setPending(null);
                     }
                   }}
                 >

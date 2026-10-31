@@ -88,7 +88,9 @@ export function FeedPostCard({
   const recommendations =
     detail?.suggestions.items
       .filter(
-        (project) => !proposals.some((plan) => plan.projectId === project.id),
+        (project) =>
+          project.fit.matched > 0 &&
+          !proposals.some((plan) => plan.projectId === project.id),
       )
       .slice(0, Math.max(0, 3 - proposals.length)) ?? [];
   const engagement = demo ? detail?.engagement : observedEngagement;

@@ -39,7 +39,7 @@ October31 checkpoint: targeted snapshot refresh, BASE_CHANGED preservation and c
 - [ ] M0 proposal/MCP/GitHub acceptance.
 - [x] M1 feed continuity/engagement; implemented and production checked. Independent shared-account/arrival acceptance is separately unclaimed in the receipt.
 - [ ] M2 project fit/outcomes.
-- [ ] M3 honest bounded Trends.
+- [x] M3 bounded Trends implemented and checked in production; initial-read/live ordering hardening remains tracked with M2.
 - [ ] M4 OpenAI funding/curated model routes.
 - [ ] M5 paid-workspace/catalogue readiness and reviewed migration package.
 
@@ -58,3 +58,7 @@ Acceptance update: website/backend3f18974 are live with the flag enabled. Exact 
 ADR217 adds one empty personal-priority table, current-context duplicate opening, bounded authorized proposal/topic history and a versioned deterministic recommendation fingerprint. Topic coverage remains unchanged; explicit priority, actual accepted plans and proposal activity break ties. The existing MCP context tool returns same-post plan hints and separates signed GitHub observations from authenticated model reports; advisory history does not alter its approval hash. Measured benefit remains unknown.
 
 A separate Trends route under Explore uses at most12 recent requested ready posts. Current likes and first observed distinct-person Saves have7/30-day indexed windows with explicit100+ limits. Creator-name/platform labels and topic groups cover that sample only. Unknown identity, empty activity and missing outcomes are not filled with invented numbers. No whole-catalogue association, AI call or credit charge follows. The accepted feed and Tree/Folders layout remain the baseline. Local focused tests pass; full checks, exact CI, schema admission, native UI and production acceptance remain pending. Production remains3f18974.
+
+### M2/M3 production checkpoint
+
+Website/backend6d1ff38 passed exact CI, actual compatibility admission and staged/canonical Trends4/feed4/Library8. Native Like changed the live metric and original Unlike was restored;7/30-day selection and mobile fit passed. Existing MCP context hints work without reconnecting. See [the receipt](../../operations/evidence/launch-20261031-history-trends-production.json). M2 remains open until repeated priority edits retain the returned revision, current plans get honest scores even with zero topic overlap, and Trends fallback reads cannot replace newer live data or access denial. These are the next small correction checkpoint before M4. No model/media run is needed.

@@ -99,7 +99,6 @@ export const read = query({
         throw error;
       }
       const fit = projectTopicFit(topics, repository.profile);
-      if (!fit.matched) continue;
       const preference = await ctx.db
         .query("projectRecommendationPreferences")
         .withIndex("by_pair", (q) =>
@@ -127,6 +126,7 @@ export const read = query({
         name: repository.fullName,
         topics: fit.criteria.filter((c) => c.matched).map((c) => c.category),
         fit,
+        recommended: fit.matched > 0,
         priority: preference?.priority ?? ("normal" as const),
         priorityRevision: preference?.revision ?? 0,
         projectRevision: {

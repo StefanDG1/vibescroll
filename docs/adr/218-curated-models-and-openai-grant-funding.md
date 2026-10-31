@@ -1,8 +1,8 @@
 # ADR218: curated API models and promotional OpenAI funding
 
-Date: October31,2026. Status: live owner model canary and corrected shared-result read accepted; further capacity pending.
+Date: October31,2026. Status: live owner model canary and corrected shared-result read accepted; ten-total-run owner allowance enabled within USD0.20 and existing service limits.
 
-Production update: website7faa7f2 and backend2510081 passed their exact CI and compatible publication checks. A native retained-evidence Luna/max version completed with7insights in81.563s,3credits and an estimated USD0.006545375 upper cost; it preserved the incumbent. The original MCP reads the same candidate and corrected shared version. The initial Gateway-only shared-reader check was reproduced and corrected, and the existing copy was reconciled without another generation, media pass or website build. All eight shared JPEGs decode and match the retained original bytes. The one-job grant allowance is consumed; broader capacity and new optional model-field host invocation remain open. [Receipt](../operations/evidence/launch-20261031-openai-model-production.json).
+Production update: website7faa7f2 and backend2510081 passed their exact CI and compatible publication checks. A native retained-evidence Luna/max version completed with7insights in81.563s,3credits and an estimated USD0.006545375 upper cost; it preserved the incumbent. The original MCP reads the same candidate and corrected shared version. The initial Gateway-only shared-reader check was reproduced and corrected, and the existing copy was reconciled without another generation, media pass or website build. All eight shared JPEGs decode and match the retained original bytes. The original test consumed one slot. The owner-approved extension now permits ten total slots/USD0.20, preserving that counter, key and processing reference. New optional model-field host invocation and broader customer rollout remain open. [Receipt](../operations/evidence/launch-20261031-openai-model-production.json).
 
 ## Use the existing preparation and version store
 

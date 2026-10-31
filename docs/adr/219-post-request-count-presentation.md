@@ -1,6 +1,6 @@
 # ADR219: show distinct post requesters
 
-Date: October31,2026. Status: implemented locally; production acceptance pending.
+Date: October31,2026. Status: live atcbe062d; twenty staged and twenty canonical layout/native cases, plus owner-session count/help read accepted. Backend2510081 unchanged. [Receipt](../operations/evidence/launch-20261031-post-requests-production.json).
 
 The owner clarifies R129: the share-style feed count represents people requesting a link inside VibeScroll, including cached results. It is not outbound sharing or an external platform metric.
 

@@ -1,0 +1,55 @@
+{
+  "observedAtUTC": "2026-10-31T22:37:51.069737+00:00",
+  "websiteCommit": "cbe062de63bf565eaf7a91bc69bbeb0021980392",
+  "backendCommit": "2510081684fac4991bc8fac5449b65c295a01c8f",
+  "exactCI": 41247586150,
+  "deploymentId": "dpl_63FUmafFpqJuuDhaMFhhbnv3Umta",
+  "fixedBasicNormalBuildMs": 48619,
+  "staged": {
+    "feed": 4,
+    "library": 8,
+    "trends": 4,
+    "nativeRequestHelp": 4
+  },
+  "canonical": {
+    "feed": 4,
+    "library": 8,
+    "trends": 4,
+    "nativeRequestHelp": 4,
+    "exactHealthAndAlias": true,
+    "signedInOwnerCountAndHelp": true
+  },
+  "sameBuildPromotion": true,
+  "automaticDomainAssignmentRestoreAcknowledged": true,
+  "separateNativeDomainSettingRead": false,
+  "metric": "distinct people submitting/requesting a post link, including cached results, since tracking began",
+  "repeatedPersonRequestsOrOutboundSharesIncrement": false,
+  "unknownCountsRemainUnknown": true,
+  "existingStoredCountersAndCompatibilityFieldsPreserved": true,
+  "newBackendPublicationOrSchemaMigration": false,
+  "newInference": 0,
+  "browserRecovery": "Harness lost connection and required native Chrome permission. The native checker also needed explicit activation of its owned tab before interaction; no application change or second build.",
+  "openaiAllowance": {
+    "ownerApproved": true,
+    "maximumTotalJobs": 10,
+    "includesCompletedCanary": true,
+    "maximumNominalUSD": 0.2,
+    "cashEngineeringBudgetSeparate": true,
+    "existingPreparedServiceLimitsPreserved": true,
+    "policyCounterKeyModelAndProcessingReferencePreserved": true,
+    "exactEnvironmentReadback": true,
+    "lunaOptionAvailable": true,
+    "existingSharedVersionReadThroughMCP": true,
+    "existingSharedInsights": 7,
+    "newInference": 0,
+    "expiresAtUTC": "2026-11-05T23:00:00Z",
+    "purchaseTopupOrPaidFallback": false
+  },
+  "limitations": [
+    "Historical request totals are not backfilled.",
+    "Requests measure observed interest, not completed analyses, quality or outcomes.",
+    "Unavailable source counts stay unknown; the owner-session accepted count is for a currently readable shared post.",
+    "This allowance does not increase global prepared-service/media funding, enable Sol or establish broad model reliability.",
+    "Actual Stripe sandbox and live billing migration remain open."
+  ]
+}

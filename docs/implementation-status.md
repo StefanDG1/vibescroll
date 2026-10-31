@@ -2,6 +2,14 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## October31: distinct post requests and bounded OpenAI extension accepted
+
+Websitecbe062d passed full local checks, two additional UI regressions, exact CI41247586150 and dependency audit. One48.619s fixed Basic/normal build passed twenty staged and twenty canonical feed/Library/Trends/native cases before/after same-build promotion. Exact canonical health/alias and normal domain-assignment restoration were acknowledged. A currently readable owner Home post shows its actual request count and cached-result explanation; no outbound Share button remains. Unavailable source counts stay unknown. Existing distinct-person rows, timestamps/counters, backend2510081, schemas, credits and valid analyses are unchanged. No backend publication, data backfill or inference occurred.
+
+The first staging readiness attempt lost its browser connection and required native Chrome consent. The checker then needed to activate its exact owned tab before native interaction; waiting for tooltip presence alone did not fix that driver defect. Explicit activation passed without another application change/build. These failures remain separate from the accepted production cases.
+
+The owner approved ten OpenAI analyses within the proposed USD0.20 free-grant allowance. The same linked organization still showed available grant credit and no started paid billing plan. The production policy now permits ten total slots, including the existing completed canary, with its durable counter, key, model scope and processing-review reference preserved. Its conservative expiry precedes the displayed November6 grant expiry. Exact environment read-back, restored Luna model option and original MCP read of the existing shared seven-insight result passed. Existing prepared-service limits remain, and no new analysis, purchase, top-up or paid fallback occurred. [Production receipt](operations/evidence/launch-20261031-post-requests-production.json).
+
 ## October31: post-request count presentation candidate
 
 ADR219/R129 reuses the existing distinct-person link-submission counter, including shared-cache hits, and replaces the ambiguous outbound Share action with a people icon and request help on tap/focus/hover. Home settings and sampled Trends use the same definition; unknown totals remain unknown. No backend/schema/index/credit change, data backfill or inference is needed. Full offline checks, both production builds and dependency audit passed. Two additional UI regressions preserve request semantics and unavailable totals. Native desktop/mobile and exact CI/release acceptance remain pending; production is unchanged by this candidate record.

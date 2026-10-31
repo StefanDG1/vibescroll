@@ -1,4 +1,6 @@
 import { preparedServiceConfiguration } from "./preparedServicePolicy";
+import { openAiPreparedProcessingReviewHash } from "./openAiGrant";
+import { apiModels } from "../../packages/contracts/api-models";
 import { resultRetained } from "../../packages/contracts/result-retention";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx, MutationCtx } from "../_generated/server";
@@ -648,10 +650,21 @@ async function currentCloudArtifactHeaderUncached(
   const authority = cloudCatalogAuthority.parse(artifact.authority);
   if (authority.version === "prepared-catalog-authority-v2") {
     const config = preparedServiceConfiguration(undefined, true);
+    const openAi =
+      Object.hasOwn(apiModels, authority.requestedModel) &&
+      apiModels[authority.requestedModel as keyof typeof apiModels].provider ===
+        "openai_responses";
+    const processingReviewHash = config
+      ? openAi
+        ? await openAiPreparedProcessingReviewHash(
+            config.providerPermissionReference,
+          )
+        : await socialHash(config.providerPermissionReference)
+      : null;
     ensure(
       config?.catalogPublicationAllowed &&
-        authority.processingReviewHash ===
-          (await socialHash(config.providerPermissionReference)),
+        processingReviewHash &&
+        authority.processingReviewHash === processingReviewHash,
       "SOURCE_UNAVAILABLE",
       "Prepared processing publication authority changed.",
     );

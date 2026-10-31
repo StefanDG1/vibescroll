@@ -4,7 +4,7 @@ type Settings = {
   reportedModel: string | null;
   reportedEffort: string | null;
 };
-const effortRank = ["low", "medium", "high", "xhigh"];
+const effortRank = ["none", "low", "medium", "high", "xhigh", "max"];
 // This is the operator's preference, not a measured model-quality score. A
 // reported mismatch never gets promoted using the stronger requested setting.
 export function preferredCatalogCandidate(

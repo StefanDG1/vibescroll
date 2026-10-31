@@ -2,6 +2,16 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## October31: OpenAI canary and catalogue reader correction
+
+Website/backend7faa7f2 are live after exact CI41238274722, full local checks, two deterministic preparations,17 actual compatibility guards and one46.064s Basic build. Staged/canonical Trends4/feed4/Library8, exact health/alias and same-build promotion passed. The real standalone proposal route displays issue197 and Copy work prompt on desktop/390px without the old unavailable message or horizontal overflow. Clipboard execution remains untested.
+
+A normal-session native Post settings action selected Luna/max, reused retained evidence and stored version2/seven insights in81.563s. It settled3credits, preserved the selected Muse version and returned through the original MCP. The ordinary Responses receipt reports7891input/11118output tokens, including8889reasoning; base-rate/conservative estimates are USD0.0063481/0.006545375. No new media, ASR, purchase, paid fallback or billing change occurred. See [the production receipt](operations/evidence/launch-20261031-openai-model-production.json).
+
+Automatic copy reached published state, but its reader still compared the new OpenAI processing hash against the Gateway-only hash. The new regression reproduced that exact rejection; the correction now checks the actual provider processing permission and preserves completed-result access after grant expiry/disable/exhaustion. Permission revocation still blocks access. It also corrects managed preview provenance and ranks none/max only inside the operator's explicit model preference. Full offline local checks and both builds pass;30 focused corrected catalogue/price tests and final root types pass. The dependency audit passes with the same reviewed moderate advisory. Exact CI, compatible backend-only publication and reconciliation of the existing shared copy remain required; no second model run is planned.
+
+The single-Pro migration package now includes four offline tests for75weekly/300monthly grants, original UTC month-end anniversaries, sandbox-only exact price mapping and untouched purchased/held units. The canonical candidate JSON supplies its terms. [Review package](launch-plan/2026-10-31/PRO-MIGRATION-REVIEW.md). No actual Stripe sandbox objects, live prices, customer migration or wallet update are claimed.
+
 ## October31: retained OpenAI candidate and canonical plan reader
 
 ADR218 now has a direct ordinary Responses adapter, curated API model/effort tariff, exact multimodal input counting and once-only finite grant admission. It reuses the existing preparation, reservation, immutable version and catalogue stores without a schema/index/component/auth/cron change. Post settings add managed model/effort quotes and deliberate reanalysis. Ready-cache quotes identify the actual cached model separately. The standalone chat-created proposal page reuses the working feed artifact; initial HTTP reads cannot replace newer live data or denial.

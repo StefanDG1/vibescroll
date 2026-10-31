@@ -1,6 +1,8 @@
 # ADR218: curated API models and promotional OpenAI funding
 
-Date: October31,2026. Status: implementation plan, not live inference.
+Date: October31,2026. Status: live owner model canary; catalogue read correction pending.
+
+Production update: website/backend7faa7f2 passed exact CI and compatible publication. A native retained-evidence Luna/max version completed with7insights in81.563s,3credits and an estimated USD0.006545375 upper cost; it preserved the incumbent. The original MCP reads it. Automatic catalogue read-back exposed the old Gateway-only processing-review check; its correction/reconciliation remains required before full acceptance. [Receipt](../operations/evidence/launch-20261031-openai-model-production.json).
 
 ## Use the existing preparation and version store
 

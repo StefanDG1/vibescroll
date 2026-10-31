@@ -8,6 +8,7 @@ import { cloudCatalogFixture } from "./cloud-catalog-fixture";
 import { tools as assistantHttpTools } from "../convex/assistantHttp";
 import { createKnowledgeHandler } from "../packages/mcp/server";
 import { workCloudMonitorMessage } from "../packages/onboarding/work-cloud-monitor";
+import { currentCloudArtifact } from "../convex/lib/cloudCatalog";
 const preparationMock = vi.hoisted(() => ({ run: vi.fn() }));
 vi.mock("../packages/providers/prepared-media", () => ({
   prepareHostedEvidence: preparationMock.run,
@@ -789,8 +790,29 @@ it("does not reserve or dispatch for ready-cache reads", async () => {
   expect(x).toMatchObject({ cacheHit: true, chargedCredits: 0, runId: null });
 });
 it("reuses prepared JPEGs for a once-funded OpenAI version and publishes truthful max-effort provenance", async () => {
-  const s = await fixture(true),
-    a = await openAiRetained(s);
+  const s = await fixture(true);
+  const catalog = JSON.parse(process.env.CLOUD_CATALOG_CONFIGURATION_JSON!);
+  vi.stubEnv(
+    "CLOUD_CATALOG_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...catalog,
+      version: "cloud-catalog-config-v2",
+      defaultPolicy: {
+        version: "automatic-neutral-catalog-v1",
+        id: "prepared-service-standing",
+        disclosureVersion: "synthetic-notice",
+        rightsBasis: "user_attested",
+        platforms: ["instagram", "tiktok"],
+        providerPermissionReference: "synthetic source route",
+        contentPermissionReference: "synthetic user attestation",
+        privacyReviewReference: "synthetic neutral-only projection",
+        reviewedAt: Date.now() - 5000,
+        expiresAt: Date.now() + 86400000,
+        maximumRetentionMs: 86400000,
+      },
+    }),
+  );
+  const a = await openAiRetained(s);
   expect(a.quote).toMatchObject({
     preparationCredits: 0,
     analysisCredits: 6,
@@ -867,6 +889,7 @@ it("reuses prepared JPEGs for a once-funded OpenAI version and publishes truthfu
     sourceId: s.sourceId,
     versionId: row.versionId!,
   });
+  expect(preview.provenance).toBe("managed_api_reported");
   const contribution = await s.owner.action(
     api.cloudCatalogActions.contribute,
     {
@@ -887,6 +910,43 @@ it("reuses prepared JPEGs for a once-funded OpenAI version and publishes truthfu
       provenance: "managed_api_reported",
     },
   });
+  await s.t.run((ctx) => currentCloudArtifact(ctx, shared.artifactId));
+  const automatic = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    {
+      sourceId: s.sourceId,
+      actorId: s.actor._id,
+      generation: s.source.generation,
+      versionId: row.versionId!,
+    },
+  );
+  expect(automatic.state).toBe("published");
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.catalogStatus?.state,
+  ).toBe("published");
+  vi.stubEnv(
+    "OPENAI_PROMOTIONAL_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...a.policy,
+      enabled: false,
+      expiresAt: Date.now() - 1,
+      verifiedAt: Date.now() - 10000,
+    }),
+  );
+  await s.t.run((ctx) => currentCloudArtifact(ctx, shared.artifactId));
+  await expect(
+    s.owner.query(api.preparedService.quote, a.request),
+  ).rejects.toThrow(/MODEL_UNAVAILABLE/);
+  vi.stubEnv(
+    "OPENAI_PROMOTIONAL_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...a.policy,
+      providerPermissionReference: "Different processing permission",
+    }),
+  );
+  await expect(
+    s.t.run((ctx) => currentCloudArtifact(ctx, shared.artifactId)),
+  ).rejects.toThrow(/publication authority changed/);
 });
 it("returns retained OpenAI credits after a failed count without consuming a generation slot", async () => {
   const s = await fixture(),

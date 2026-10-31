@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F092: confirmed weekly allowance, October31
+
+The owner confirmed75credits every seven days for the prepared EUR17weekly plan. The four briefs now reflect that choice. EUR35monthly and EUR350annual retain300monthly grants. The migration review preserves current customer terms, old purchased units and unknown holds. No live price, customer migration, new profit claim or marketing campaign follows.
+
 ## F091: prepared single-Pro euro prices, October31
 
 The owner selected preparation of EUR35/month, EUR350/year and EUR17/week. Monthly/annual target300 credits granted monthly; the weekly grant remains under review. This supersedes F087's EUR8/week candidate, not historical receipts or current runtime/Stripe terms. The isolated [pricing preview](../../contracts/pro-pricing-candidate.json) and [standing plan](../strategy/PRO-PRICING-AND-CREDITS.md) preserve existing customers/purchases, one personal pool across teams and requested-post cache access. No live price, checkout, customer migration, profit claim or campaign follows. Audience, evidence requirements and six beliefs remain unchanged.

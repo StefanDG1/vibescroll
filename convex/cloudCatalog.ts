@@ -309,7 +309,7 @@ export const preview = query({
       insightCount: s.analysis.insights.length,
       transcriptSegments: s.neutralEvidence.segments.length,
       frameCount: s.evidence.frames.length,
-      provenance: "authenticated_host_reported",
+      provenance: s.version.provenance,
       settingsProviderAttested: false,
       contributions: contributions
         .filter(

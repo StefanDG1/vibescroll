@@ -1,5 +1,34 @@
 import { expect, it } from "vitest";
 import { preferredCatalogCandidate } from "../packages/contracts/catalog-recommendation";
+
+it("orders supported maximum and no-reasoning levels only within the operator's chosen model list", () => {
+  const base = {
+    requestedModel: "gpt-6-luna",
+    requestedEffort: "high",
+    reportedModel: "gpt-6-luna",
+    reportedEffort: "high",
+  };
+  expect(
+    preferredCatalogCandidate(
+      { ...base, requestedEffort: "max", reportedEffort: "max" },
+      base,
+      ["gpt-6-luna"],
+    ),
+  ).toBe(true);
+  expect(
+    preferredCatalogCandidate(
+      { ...base, requestedEffort: "max", reportedEffort: "none" },
+      base,
+      ["gpt-6-luna"],
+    ),
+  ).toBe(false);
+  expect(
+    preferredCatalogCandidate(
+      { ...base, requestedEffort: "max", reportedEffort: "max" },
+      base,
+    ),
+  ).toBe(false);
+});
 const incumbent = {
   requestedModel: "model-a",
   requestedEffort: "high",

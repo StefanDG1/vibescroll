@@ -1,6 +1,6 @@
 # Use promotional OpenAI API funding first
 
-Owner request R127, October31,2026. Status: official benefit, account linkage and grant verified; runtime routing not implemented. This supplements the single-Pro pricing/model plan and follows the short-term proposal loop. It does not replace Muse Contributor for public-video analysis or activate a new paid provider.
+Owner request R127, October31,2026. Status: verified benefit/key and live owner Luna canary; shared-reader correction and further capacity pending. This supplements the single-Pro pricing/model plan and follows the short-term proposal loop. It does not replace Muse Contributor for public-video analysis or activate a new paid provider. [Live evidence](../operations/evidence/launch-20261031-openai-model-production.json).
 
 ## Verified external contract
 

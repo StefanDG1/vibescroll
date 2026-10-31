@@ -42,7 +42,7 @@ const grantPolicy = z
   );
 export type OpenAiGrantPolicy = z.infer<typeof grantPolicy>;
 
-export function openAiGrantConfiguration(subject: string) {
+function reviewedOpenAiPolicy() {
   const parsed = grantPolicy.safeParse(
     (() => {
       try {
@@ -54,8 +54,24 @@ export function openAiGrantConfiguration(subject: string) {
       }
     })(),
   );
-  if (!parsed.success) return null;
-  const p = parsed.data;
+  return parsed.success && process.env.RESTORE_LOCK !== "true"
+    ? parsed.data
+    : null;
+}
+
+// Completed evidence depends on processing permission, not future funding.
+export async function openAiPreparedProcessingReviewHash(preparation: string) {
+  const p = reviewedOpenAiPolicy();
+  return p
+    ? socialHash(
+        canonicalJson({ preparation, analysis: p.providerPermissionReference }),
+      )
+    : null;
+}
+
+export function openAiGrantConfiguration(subject: string) {
+  const p = reviewedOpenAiPolicy();
+  if (!p) return null;
   return p.enabled &&
     process.env.RESTORE_LOCK !== "true" &&
     p.subjects.includes(subject) &&

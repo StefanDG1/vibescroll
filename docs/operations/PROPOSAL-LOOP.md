@@ -1,6 +1,6 @@
 # Review a post and create useful project work
 
-Mode: how-to. ADR214 candidate, October31. This guide describes the prepared workflow; check CURRENT-STATE for actual live acceptance. It uses an already analyzed post, with no new video download or transcription.
+Mode: how-to. ADR214, October31. Quoted planning and retained discussion/refinement are live at487d184 with owner-alpha capacity; check CURRENT-STATE for the remaining combined issue/MCP acceptance. It uses an already analyzed post, with no new video download or transcription.
 
 ## Website
 

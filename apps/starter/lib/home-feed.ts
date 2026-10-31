@@ -34,6 +34,7 @@ export type FeedProposal = {
 export type FeedEngagement = {
   scopeKey: string;
   likes: number;
+  /** Compatibility field for distinct link requesters, never outbound shares. */
   shares: number;
   liked: boolean;
   revision: number;

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { ArrowUpRight, Heart, Share2, Video } from "lucide-react";
+import { ArrowUpRight, Heart, Users, Video } from "lucide-react";
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "../../../convex/_generated/api";
 import { ErrorState } from "./assistant-elements/error-state";
@@ -168,16 +168,16 @@ export function TrendsDashboard({
               <span>Current likes in window</span>
             </div>
             <div>
-              <Share2 size={18} aria-hidden="true" />
+              <Users size={18} aria-hidden="true" />
               <strong>
                 {count(data.totals.windowSaves, data.totals.limited)}
               </strong>
-              <span>Recorded saves in window</span>
+              <span>First requests in window</span>
             </div>
           </div>
           {data.totals.windowLikes + data.totals.windowSaves === 0 && (
             <p className={styles.empty}>
-              No recorded activity in this sample yet. Likes and Saves begin
+              No recorded activity in this sample yet. Likes and requests begin
               counting from tracking.
             </p>
           )}
@@ -200,8 +200,12 @@ export function TrendsDashboard({
                   <span>
                     <Heart size={14} aria-hidden="true" />
                     {count(post.windowLikes, post.limited)}
-                    <Share2 size={14} aria-hidden="true" />
-                    {count(post.windowSaves, post.limited)}
+                    <span
+                      aria-label={`${count(post.windowSaves, post.limited)} people first requested this post in the window`}
+                    >
+                      <Users size={14} aria-hidden="true" />
+                      {count(post.windowSaves, post.limited)}
+                    </span>
                     <ArrowUpRight size={16} aria-hidden="true" />
                   </span>
                 </a>
@@ -215,6 +219,12 @@ export function TrendsDashboard({
           <details className={styles.method}>
             <summary>About these numbers</summary>
             <p>{data.interpretation}</p>
+            <p>
+              Requests count people who sent a link to VibeScroll, including
+              cached results. Each person counts once per post. The window uses
+              their first recorded request, not repeat attempts or outbound
+              shares.
+            </p>
             <p>
               Up to {data.sample.maximumPosts} recent requested posts;{" "}
               {data.sample.posts} readable now

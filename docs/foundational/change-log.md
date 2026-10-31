@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F093: clarify post-request interest, October31
+
+R129 clarifies the feed's share-style count as unique people submitting/requesting a link inside VibeScroll, including cache hits. The existing distinct-person counter supports this; outbound shares, retries and ordinary result views do not increase it. Replace the share icon/action with a people icon and a short explanation, and align Trends. This corrects an ambiguous presentation without changing audience, offer, prices, six beliefs or claiming popularity proves useful outcomes. The four briefs already describe VibeScroll intake signals and need no new marketing claim. [Decision](../adr/219-post-request-count-presentation.md).
+
 ## F092: confirmed weekly allowance, October31
 
 The owner confirmed75credits every seven days for the prepared EUR17weekly plan. The four briefs now reflect that choice. EUR35monthly and EUR350annual retain300monthly grants. The migration review preserves current customer terms, old purchased units and unknown holds. No live price, customer migration, new profit claim or marketing campaign follows.

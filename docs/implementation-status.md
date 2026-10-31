@@ -2,6 +2,10 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## October31: post-request count presentation candidate
+
+ADR219/R129 reuses the existing distinct-person link-submission counter, including shared-cache hits, and replaces the ambiguous outbound Share action with a people icon and request help on tap/focus/hover. Home settings and sampled Trends use the same definition; unknown totals remain unknown. No backend/schema/index/credit change, data backfill or inference is needed. Full offline checks, both production builds and dependency audit passed. Two additional UI regressions preserve request semantics and unavailable totals. Native desktop/mobile and exact CI/release acceptance remain pending; production is unchanged by this candidate record.
+
 ## October31: OpenAI canary and catalogue reader correction
 
 Website/backend7faa7f2 are live after exact CI41238274722, full local checks, two deterministic preparations,17 actual compatibility guards and one46.064s Basic build. Staged/canonical Trends4/feed4/Library8, exact health/alias and same-build promotion passed. The real standalone proposal route displays issue197 and Copy work prompt on desktop/390px without the old unavailable message or horizontal overflow. Clipboard execution remains untested.

@@ -128,6 +128,11 @@
   font-size: 0.75rem;
   white-space: nowrap;
 }
+.posts > a > span > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .loading {
   display: block;
   min-height: 240px;

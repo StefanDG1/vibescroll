@@ -1,49 +1,28 @@
 "use client";
 import { useState } from "react";
-import { Check, Heart, MoreVertical, Share2 } from "lucide-react";
+import { Heart, MoreVertical, Users } from "lucide-react";
+import { Tooltip } from "@companynerve/ui";
 import styles from "./post-engagement.module.css";
 
-/** Unknown totals stay unknown; outbound sharing never increments inbound Saves. */
+/** Distinct people submitting a link, including cache hits, not outbound shares. */
 export function PostEngagement({
-  title,
-  url,
   likes,
-  shares,
+  requests,
   liked = false,
   onLike,
   onSettings,
   busy = false,
   notice = "",
 }: {
-  title: string;
-  url: string;
   likes?: number;
-  shares?: number;
+  requests?: number;
   liked?: boolean;
   onLike?: () => void;
   onSettings: () => void;
   busy?: boolean;
   notice?: string;
 }) {
-  const [copied, setCopied] = useState(false);
-  const [announcement, setAnnouncement] = useState("");
-  async function share() {
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, url });
-        setAnnouncement("Shared.");
-      } else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setAnnouncement("Post link copied.");
-      }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError"))
-        setAnnouncement(
-          "Could not share. Open post settings to copy its link.",
-        );
-    }
-  }
+  const [requestHelpOpen, setRequestHelpOpen] = useState(false);
   return (
     <>
       <div className={styles.row} data-slot="post-engagement">
@@ -77,30 +56,39 @@ export function PostEngagement({
           </button>
         </span>
         <span className={styles.separator} aria-hidden="true" />
-        <button
-          type="button"
-          onClick={() => {
-            void share();
-          }}
-          aria-label="Share post"
-          title="Share this post"
-        >
-          {copied ? (
-            <Check size={24} aria-hidden="true" />
-          ) : (
-            <Share2 size={24} aria-hidden="true" />
-          )}
-          <span
-            title="Recorded saves to VibeScroll since tracking began. Each person counts once."
-            aria-label={
-              shares === undefined
-                ? "Share total unavailable"
-                : `${shares} recorded saves to VibeScroll`
-            }
+        <Tooltip.Provider delayDuration={200}>
+          <Tooltip.Root
+            open={requestHelpOpen}
+            onOpenChange={setRequestHelpOpen}
           >
-            {shares ?? "—"}
-          </span>
-        </button>
+            <Tooltip.Trigger asChild>
+              <button
+                type="button"
+                onClick={() => setRequestHelpOpen(true)}
+                aria-label={
+                  requests === undefined
+                    ? "Post request count unavailable"
+                    : `${requests} ${requests === 1 ? "person has" : "people have"} requested this post`
+                }
+              >
+                <Users size={24} aria-hidden="true" />
+                <span>{requests ?? "—"}</span>
+              </button>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content
+                className={styles.tooltip}
+                side="top"
+                sideOffset={8}
+                collisionPadding={16}
+              >
+                People who sent this link to VibeScroll, including cached
+                results. Each person counts once, since tracking began.
+                <Tooltip.Arrow className={styles.tooltipArrow} />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        </Tooltip.Provider>
         <button
           type="button"
           onClick={onSettings}
@@ -109,9 +97,6 @@ export function PostEngagement({
         >
           <MoreVertical size={22} aria-hidden="true" />
         </button>
-        <output className="sr-only" aria-live="polite">
-          {announcement}
-        </output>
       </div>
       {notice && (
         <p role="alert" className={styles.notice}>

@@ -56,11 +56,11 @@ Persist approval plus a once-only publication request. The external issue write 
 
 After success show Open issue and Copy work prompt. Reuse the exact frozen handoff, issue URL, repository/base and completion-report instructions. Research the actual supported coding-client interface before offering a command. A clear copyable work prompt is valid V1; do not invent a `codex --issue` command or claim delivery to the desktop app. Issue creation does not start coding or authorize an unrestricted execution job. Retain signed GitHub observations separately from model reports and measured benefit.
 
-## Likes, share counts and analytics
+## Likes, post requests and analytics
 
 Store a durable per-user like on the canonical post, with source/version attribution where useful. Optimistic UI may update immediately, but rejected writes roll back clearly. A second tap removes that user's like; request replay/concurrent taps cannot inflate counts. Do not store a new like each time the feed loops.
 
-Track successful user-initiated shares into VibeScroll separately from retry/delivery attempts. Distinguish total intake occurrences, unique users saving and personal save state. Deduplicate aliases/redirects through existing canonical source identity. Label these as VibeScroll saves/shares, never Instagram/TikTok's external like/share counts unless that provider actually supplies them.
+R129 supersedes the share presentation: show people who requested the post by submitting its link to VibeScroll, including an existing cached result and a later failed analysis. Count each person once per canonical post, across shared versions/workspaces. Repeated submissions, retries, feed views, generic keyword searches and outbound shares do not inflate it. Search counts only when the user actually requests the link, not when a result is merely displayed. Preserve current distinct-user counters and their tracking start; do not fabricate historical totals. Use a people icon and a short tap/hover/focus explanation. The existing serialized `shares`/`saves` fields remain compatibility names, not outbound-share metrics. Trends windows use the first observed request for each person/post. A request indicates interest, not completed analysis or measured benefit.
 
 These signals can inform future recommendations for posts, creators and categories/subcategories. Likes/popularity are not proof of quality, useful proposals, implemented changes or model strength. Keep personal preference, aggregate popularity and downstream proposal outcomes distinct. Do not rescore the entire catalogue or call a model on every tap/scroll. Version the scoring policy and allow correction of taxonomy/creator identity.
 

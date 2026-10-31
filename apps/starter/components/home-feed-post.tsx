@@ -145,14 +145,12 @@ export function FeedPostCard({
   }
   const reactions = (
     <PostEngagement
-      title={title}
-      url={`https://scroll.companynerve.com/app/${organizationId}/posts/${post.id}`}
       likes={
         demo && engagement
           ? engagement.likes + (demoLiked ? 0 : -1)
           : engagement?.likes
       }
-      shares={engagement?.shares}
+      requests={engagement?.shares}
       liked={demo ? demoLiked : engagement?.liked}
       onLike={
         demo
@@ -519,12 +517,10 @@ export function FeedPostCard({
           Version history, transcript, screenshots and advanced analysis options
           are on the complete post.
         </p>
-        {!demo && (
-          <p className="fine">
-            Likes and share totals are not connected yet. Share copies a link or
-            opens your device’s share menu.
-          </p>
-        )}
+        <p className="fine">
+          Post requests count people who sent this link to VibeScroll, including
+          cached results. Each person counts once, since tracking began.
+        </p>
       </SettingsPanel>
     </article>
   );

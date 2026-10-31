@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ProposalArtifact } from "./components/assistant-elements/proposal-artifact";
+import { PostEngagement } from "./components/post-engagement";
 import { feedDemoDetails } from "./lib/home-feed-demo";
 
 const backendMock = vi.hoisted(() => ({ query: vi.fn(), backend: vi.fn() }));
@@ -15,6 +16,30 @@ vi.mock("./lib/backend", () => ({
 import { GET } from "./app/api/feed/[id]/route";
 beforeEach(() => backendMock.query.mockResolvedValue(null));
 afterEach(() => vi.resetAllMocks());
+
+it("shows distinct link requesters as a count, rather than an outbound Share action", () => {
+  const html = renderToStaticMarkup(
+    createElement(PostEngagement, {
+      likes: 1,
+      requests: 2,
+      onLike: () => {},
+      onSettings: () => {},
+    }),
+  );
+  expect(html).toContain('aria-label="2 people have requested this post"');
+  expect(html).toContain("lucide-users");
+  expect(html).not.toMatch(/Share post|Share this post|lucide-share/);
+  expect(html).toContain('aria-label="Like post"');
+  expect(html).toContain('aria-label="Post settings"');
+});
+
+it("does not invent a zero when request tracking is unavailable", () => {
+  const html = renderToStaticMarkup(
+    createElement(PostEngagement, { onSettings: () => {} }),
+  );
+  expect(html).toContain('aria-label="Post request count unavailable"');
+  expect(html).not.toContain("0 people");
+});
 
 it("keeps a real topic-fit disclosure on a collapsed saved plan with clearly disabled preview actions", () => {
   const detail = feedDemoDetails["feed-demo-0"];

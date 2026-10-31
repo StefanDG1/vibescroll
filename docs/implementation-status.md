@@ -2,6 +2,14 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## October31: targeted snapshot recovery and euro pricing preparation
+
+R128 follows the [medium-term plan](launch-plan/2026-10-31/MEDIUM-TERM-COMPLETION.md). ADR215 implements a fenced owner/admin refresh for one repository without changing other selected projects, confirmed profiles, discussion or credits. BASE_CHANGED remains a specific asynchronous issue failure and avoids an ineffective blind retry. Model prompts request concise unnumbered steps; the existing ordered-list renderer also removes redundant prefixes. No schema/index/component/auth/cron changes are involved.
+
+Windows `node scripts/run-offline.mjs pnpm check` passed validation, lint, all three typechecks/test suites and both production builds. Vitest totals were1644passed/5skipped. A separately added mocked-provider regression also passed the real asynchronous stale-base boundary before any issue access/POST. Final exact CI remains required. The isolated `node scripts/prepare-pro-pricing.mjs` validates the selected EUR35/month, EUR350/year and EUR17/week candidate with exact rational comparisons. Weekly credits remain unconfirmed. Live pricing, subscriptions and balances are unchanged.
+
+Production remains487d184. The normal-session preflight of the retained generated proposal returned BASE_CHANGED; remote main was independently read atcf19602 versus stored95f4265. No issue or new model request was made. The original MCP connection still works, but current host discovery exposes the older tool snapshot. The prepared synthetic-demo preview issue is pending owner review. Do not claim this local recovery candidate, its useful issue canary or the rest of M1–M5 is deployed.
+
 ## October31: proposal loop local candidate
 
 R125/ADR214 implements persistent Convex Agent discussion, replay-safe comments and atomic paid replies, quoted bounded plan generation with precise reservation/settlement, stale-result protection and one exact-version issue dispatch/reconciliation. Website plan cards and MCP operations use the same records. GLM5.3 Flash on DeepInfra is the private-plan candidate; Muse Contributor remains the public-video baseline. The owner approved one bounded USD0.02 GLM canary, not yet dispatched.

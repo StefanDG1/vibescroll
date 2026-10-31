@@ -1,0 +1,41 @@
+{
+  "version": "pro-eur-20261031-preview",
+  "status": "review_required",
+  "currency": "EUR",
+  "priceMode": "tax_inclusive_where_applicable",
+  "tier": "pro",
+  "hostedFreeTier": false,
+  "poolScope": "one_person_across_workspaces",
+  "plans": [
+    {
+      "interval": "week",
+      "amountCents": 1700,
+      "credits": null,
+      "grantInterval": "week"
+    },
+    {
+      "interval": "month",
+      "amountCents": 3500,
+      "credits": 300,
+      "grantInterval": "month"
+    },
+    {
+      "interval": "year",
+      "amountCents": 35000,
+      "credits": 300,
+      "grantInterval": "month"
+    }
+  ],
+  "weeklyCreditProposal": 75,
+  "sharedCache": "requested_posts",
+  "fullCatalogue": "separate_addon",
+  "automaticTopups": false,
+  "legacyPolicy": "preserve_existing_terms_and_purchased_units",
+  "activationBlocks": [
+    "Confirm weekly allowance and grant schedule",
+    "Review whole-pipeline costs, tax and payment fees",
+    "Review storage limits, topups and full-catalogue addon",
+    "Accept sandbox migration and exact legacy price mapping",
+    "Review live prices and customer migration before activation"
+  ]
+}

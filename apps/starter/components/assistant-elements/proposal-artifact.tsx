@@ -187,7 +187,9 @@ export function ProposalArtifact({
             {proposal.steps?.length ? (
               <ol>
                 {proposal.steps.map((step, index) => (
-                  <li key={index}>{step}</li>
+                  <li key={index}>
+                    {step.replace(/^\s*(?:\d+[.)]|[-*])\s+/, "")}
+                  </li>
                 ))}
               </ol>
             ) : (
@@ -373,9 +375,16 @@ export function ProposalArtifact({
                   ? "Issue queued"
                   : live.issueOperation?.state === "running"
                     ? "Creating issue…"
-                    : "Publication needs confirmation or GitHub setup."}
+                    : live.issueOperation?.state === "failed" &&
+                        live.issueOperation.errorCode === "BASE_CHANGED"
+                      ? "Repository changed. Refresh its snapshot and review a new plan."
+                      : "Publication needs confirmation or GitHub setup."}
             </output>
             {live.issueOperation &&
+              !(
+                live.issueOperation.state === "failed" &&
+                live.issueOperation.errorCode === "BASE_CHANGED"
+              ) &&
               ["failed", "unknown"].includes(live.issueOperation.state) && (
                 <button
                   className={styles.secondary}

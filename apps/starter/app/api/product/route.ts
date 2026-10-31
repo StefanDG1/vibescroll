@@ -145,6 +145,7 @@ const operations = {
   issuePublish: ["action", api.issueActions.publish],
   issueRefresh: ["action", api.issueActions.refresh],
   selectRepositories: ["action", api.integrations.selectRepositories],
+  refreshRepository: ["action", api.integrations.refreshRepository],
   refreshGithubChoices: ["action", api.githubOAuth.refreshChoices],
   confirmProfile: ["mutation", api.profiles.confirmDraft],
   saveProfileDraft: ["mutation", api.profiles.saveDraft],

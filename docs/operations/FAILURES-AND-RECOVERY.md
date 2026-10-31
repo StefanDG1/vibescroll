@@ -8,6 +8,8 @@ This record separates demonstrated causes, successful corrections, temporary rec
 
 ## Use the shorter diagnostic first
 
+October31 proposal issue preflight: the actual normal-session response was BASE_CHANGED before issue creation. Remote main had advanced from the stored repository snapshot. The credential was not shown invalid by this response. The recovery candidate adds a single-project snapshot refresh, preserves confirmed context/discussion and keeps unrelated selections untouched. It also retains BASE_CHANGED in asynchronous issue receipts rather than collapsing it into GITHUB_UNAVAILABLE. Focused isolation/concurrency/fencing and mocked-provider boundary tests pass. See ADR215 and current state for publication; local tests alone do not establish live GitHub write permission.
+
 Before recreating credentials, compare a read and explicit-profile Save with implicit Save. Before repairing a cache, compare defined payload counts and RECORD self-entries. Before rerunning ASR, inspect stored segments, their API projection and actual image bytes. Check the actual host and Gateway adapter contracts instead of inventing prerequisites or borrowing another provider's behavior.
 
 Retained evidence needs reasoning, not another downloader/runtime installation. Keep setup restrictions separate from authorized job capabilities. Retain provider responses before validation. Test the complete MCP relay and authenticated second page, not only direct mutations and first-page rendering. Use standing release authority, one spending-batch check and one current-state record. Keep exact-original reconstruction, local execution and embedded UI off the critical path.

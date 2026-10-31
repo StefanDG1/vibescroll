@@ -13,6 +13,62 @@ const choice = v.object({
   fullName: v.string(),
   snapshotPaths: v.optional(v.array(v.string())),
 });
+// Refreshing one project must not reselect or prepare the rest of a workspace.
+export const startRefresh = mutation({
+  args: {
+    id: v.id("repositories"),
+    expectedSha: v.string(),
+    expectedSelectionVersion: v.number(),
+  },
+  returns: v.object({
+    id: v.id("repositories"),
+    organizationId: v.id("organizations"),
+    actor: v.id("users"),
+    installationId: v.number(),
+    providerId: v.number(),
+    fullName: v.string(),
+    snapshotPaths: v.array(v.string()),
+    selectionVersion: v.number(),
+  }),
+  handler: async (ctx, a) => {
+    const repo = await ctx.db.get(a.id);
+    ensure(repo?.enabled, "FORBIDDEN", "Project unavailable.");
+    const { actor } = await writeAccess(ctx, repo.organizationId, [
+      "owner",
+      "admin",
+    ]);
+    ensure(
+      repo.sha === a.expectedSha &&
+        (repo.selectionVersion ?? 0) === a.expectedSelectionVersion,
+      "APPROVAL_STALE",
+      "Read the current project before refreshing its snapshot.",
+    );
+    ensure(
+      !["preparing", "drafting_context"].includes(repo.status) &&
+        !repo.profileDraftKey,
+      "SOURCE_BUSY",
+      "This project is already preparing. Check its status before refreshing.",
+    );
+    await limit(ctx, `repo-refresh:${repo._id}`, 10);
+    const selectionVersion = (repo.selectionVersion ?? 0) + 1;
+    await ctx.db.patch(repo._id, {
+      selectionVersion,
+      status: "preparing",
+      preparationError: undefined,
+      updatedAt: Date.now(),
+    });
+    return {
+      id: repo._id,
+      organizationId: repo.organizationId,
+      actor: actor._id,
+      installationId: repo.installationId,
+      providerId: repo.providerId,
+      fullName: repo.fullName,
+      snapshotPaths: repo.snapshotPaths ?? [],
+      selectionVersion,
+    };
+  },
+});
 export const save = mutation({
   args: {
     organizationId: v.id("organizations"),

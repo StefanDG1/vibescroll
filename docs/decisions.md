@@ -1,5 +1,9 @@
 # Product decisions
 
+## October31: medium-term completion and prepared euro prices
+
+Follow the [medium-term completion plan](launch-plan/2026-10-31/MEDIUM-TERM-COMPLETION.md). Prepare one Pro at EUR35/month, EUR350/year and EUR17/week, with300 monthly credits for monthly/annual. Weekly credits and live migration remain under review. The isolated pricing preview does not alter runtime contracts or customer terms. [ADR215](adr/215-targeted-repository-refresh.md) adds single-project snapshot recovery without refreshing unrelated projects or authorizing publication.
+
 ## October31: finish the durable proposal loop
 
 [ADR214](adr/214-durable-proposal-work-loop.md) uses the existing proposal/source/project binding, the official Convex Agent message component, precise credit helpers and a small operation outbox. A generated plan is distinct from coding execution. Approval freezes one exact issue; a durable dispatch barrier makes ambiguous publication reconcile-only. Existing MCP and GitHub authorization stay required. The local candidate is not yet deployed; follow the [short-term acceptance ledger](launch-plan/2026-10-31/SHORT-TERM-PROPOSAL-LOOP.md).

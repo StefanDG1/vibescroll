@@ -84,7 +84,7 @@ export const publish = internalAction({
     } catch (error) {
       const code =
         (error instanceof Error &&
-          /ISSUES_PERMISSION_REQUIRED|RECONNECT_REQUIRED|APPROVAL_STALE/.exec(
+          /ISSUES_PERMISSION_REQUIRED|RECONNECT_REQUIRED|APPROVAL_STALE|BASE_CHANGED/.exec(
             error.message,
           )?.[0]) ||
         "GITHUB_UNAVAILABLE";

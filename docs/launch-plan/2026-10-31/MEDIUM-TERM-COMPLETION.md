@@ -1,0 +1,46 @@
+# Complete the medium-term VibeScroll workflow
+
+Owner direction, October31,2026: continue through the whole medium-term plan. Ask for opinions when a material design, technology or recurring-cost decision needs them. Keep routine implementation/release decisions delegated. This plan reconciles the previously scattered medium-term work; it does not declare unverified features live.
+
+## Baseline and outcome
+
+Start from website/backend487d184, the accepted three-column/feed design, existing Library Tree/Folders, requested-post associations, shared evidence/versions and the original MCP connection. The owner-alpha proposal service has9remaining jobs under its existing policy/counter. Read CURRENT-STATE and private operational funding before a meaningful hosted batch. Preserve saved results, reserved/deleted protected sources and all unknown holds. Do not replay consumed release scripts or change balances to satisfy a canary.
+
+A user can save or reuse a post, receive usable insights, find relevant projects without duplicate work, discuss a concrete plan, create one exact linked issue and see subsequent work feedback. The feed updates without disrupting reading. Real likes/intake activity can support bounded recommendations and a small honest Trends view. Supported OpenAI API choices can use the operator's linked promotional organization funding before another paid route, with unchanged sustainable user credit tariffs. Shared workspaces retain each member's own Pro/credits. Commerce changes preserve old subscriptions and purchases.
+
+## Ordered work
+
+| Milestone | Deliverable                                                                                                                                                                                                                     | Acceptance                                                                                                                                                                                                                                          |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M0        | Close proposal/MCP/GitHub acceptance. Inspect confirmed repository context; prepare a useful exact issue, test combined publication/reconciliation and signed feedback. Improve overlong plan copy and repeated step numbering. | Same version/discussion via app/MCP; no duplicate issue or charge; exact issue receipt and signed observation distinct from model report. Do not duplicate issue196.                                                                                |
+| M1        | Complete feed continuity and engagement. New-ready discovery, stable reading position and draft recovery; persistent per-user likes and correctly deduplicated successful save/intake counts.                                   | Current access enforced; concurrent/replayed toggles/intakes do not inflate counts; no model call or analysis charge on scroll/like; desktop/mobile/reference geometry preserved.                                                                   |
+| M2        | Explainable project fit and outcomes. Bounded prior-proposal/history signals, duplicate opening, confirmed user priority/activity and versioned scoring cache.                                                                  | Same-post and similar-post signals are distinct; no favorable constant or invented activity; private project data remains workspace-scoped; current context invalidates stale recommendations.                                                      |
+| M3        | Small Trends view from actual authorized rollups. Posts/creators/categories with explicit windows, sample size and empty/insufficient-data states.                                                                              | No fake data/growth, no global private-project metrics, no corpus scan on page load, like or scroll. Full model A/B ranking remains later.                                                                                                          |
+| M4        | Curated model/effort quotes and ordinary OpenAI API grant funding. Verify actual organization/project key, exact model/rate/Responses contracts and prepared-evidence adapters; reuse suitable assistant-ui controls.           | Scoped server-only key; current model/effort tariff and once-only settlement; grant exhaustion/expiry does not silently use purchased funding; no ChatGPT login pooling or API-key Codex usage. Test retained evidence, not another media download. |
+| M5        | Paid-workspace and catalogue readiness. Prepare one hosted Pro migration, single personal allowance across teams, requested-post cache access, full-catalog add-on and clear setup.                                             | Each member uses their own Pro/credits; no new workspace allowance; preserve legacy purchases/terms; sandbox migration and independent account checks. Actual live products/charges/customer migration need review of the concrete package.         |
+
+Finish M0 before building engagement/trends. Implement each slice against the current data model, not a parallel application. Work that does not require a pending decision can continue while the owner responds. Ship coherent accepted checkpoints; source code/local tests, staging, production and independent customer acceptance remain separate.
+
+## Confirmed business direction and open choices
+
+The owner selected preparation of EUR35/month, EUR350/year and EUR17/week. Monthly and annual target300credits per month. The exact weekly grant clock/amount, top-up units, legacy migration and full-catalog add-on price need the cost/migration review; do not silently treat300monthly as300every week. The older EUR8/week/50-credit recommendation is superseded as the price candidate, not rewritten historical acceptance. No live Stripe product, price, purchase or customer migration is authorized by preparing these euro prices.
+
+Keep Muse Contributor as the compatible public-video1× baseline. GLM Flash is the current private-plan pilot. The verified founder OpenAI grant is ordinary API funding, not a shared signed-in ChatGPT account. Preserve full model/effort provenance, whole-pipeline costs and final-only rounding.
+
+## Longer-term work
+
+Full communities/moderation, blind A/B assignments, statistically meaningful model/recipe rankings, autonomous optimization, local execution and general hosted ChatGPT-login inference remain separate. Build compatible version/outcome identifiers now; do not claim those products are complete from a basic Trends screen.
+
+## Progress
+
+October31 candidate: targeted snapshot refresh, BASE_CHANGED preservation, concise step rendering and an isolated euro pricing preview are implemented locally. The useful synthetic-demo issue text is prepared in [the canary review](PROPOSAL-ISSUE-CANARY.md). Its live publication awaits the owner's exact review. Native new-tool discovery and independent publication remain open. While external acceptance is pending, prepare independent feed/history work locally; publish it only after its own checks. The current production baseline remains487d184.
+
+- [x] Reconcile scope, actual baseline, latest euro price-preparation choice and acceptance boundaries.
+- [ ] M0 proposal/MCP/GitHub acceptance.
+- [ ] M1 feed continuity/engagement.
+- [ ] M2 project fit/outcomes.
+- [ ] M3 honest bounded Trends.
+- [ ] M4 OpenAI funding/curated model routes.
+- [ ] M5 paid-workspace/catalogue readiness and reviewed migration package.
+
+Update this checklist and the linked subsystem acceptance ledgers as evidence arrives. Do not mark a milestone complete merely because an external gate is disabled or a synthetic demo passes.

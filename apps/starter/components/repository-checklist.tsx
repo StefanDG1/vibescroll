@@ -371,6 +371,32 @@ export function BusinessContext({
         Inspected commit {r.sha || "Snapshot pending"}. Context version{" "}
         {r.profileVersion}.
       </p>
+      <button
+        type="button"
+        disabled={
+          readOnly ||
+          busy ||
+          !r.enabled ||
+          !!r.profileDraftKey ||
+          ["preparing", "drafting_context"].includes(r.status)
+        }
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await call("refreshRepository", {
+              id: r._id,
+              expectedSha: r.sha,
+              expectedSelectionVersion: r.selectionVersion ?? 0,
+            });
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy || r.status === "preparing"
+          ? "Refreshing project…"
+          : "Refresh repository snapshot"}
+      </button>
       {!!r.snapshotPaths?.length && (
         <p>
           Selected snapshot paths: {r.snapshotPaths.join(", ")}. Evaluations

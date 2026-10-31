@@ -37,7 +37,7 @@ October31 checkpoint: targeted snapshot refresh, BASE_CHANGED preservation and c
 
 - [x] Reconcile scope, actual baseline, latest euro price-preparation choice and acceptance boundaries.
 - [ ] M0 proposal/MCP/GitHub acceptance.
-- [ ] M1 feed continuity/engagement.
+- [x] M1 feed continuity/engagement; implemented and production checked. Independent shared-account/arrival acceptance is separately unclaimed in the receipt.
 - [ ] M2 project fit/outcomes.
 - [ ] M3 honest bounded Trends.
 - [ ] M4 OpenAI funding/curated model routes.
@@ -50,3 +50,5 @@ Update this checklist and the linked subsystem acceptance ledgers as evidence ar
 ADR216 implements current-user likes, distinct successful Saves and private-to-shared preference merging using the official sharded-counter component. It adds one empty root table and one empty component namespace; every existing table/index must remain unchanged. A separate feedLive query preserves the old metadata protocol, discovers newly ready cards without moving the reader, and restores an account/workspace session bookmark. An expired cursor falls back to the current authenticated page. The existing plan column now exposes every returned proposal. Older MCP edits preserve omitted implementation steps and refuse to carry them across a changed source/repository binding.
 
 Full offline local checks, the focused concurrency/authorization/shared-reuse tests and twelve desktop/mobile/light/dark feed/Library geometry cases passed. Exact CI, actual empty-table publication guards, native production reactions/bookmark acceptance and canonical verification remain pending. The production baseline remains b9417e0; the engagement flag remains off.
+
+Acceptance update: website/backend3f18974 are live with the flag enabled. Exact CI,17 guards, actual empty-table prediction/finish, staged/canonical feed4/Library8 and native Like/reload/Unlike/bookmark/phone checks passed. One acknowledged start was completed without restart after reconciling temporary namespace IDs. No model, analysis or credit charge occurred. See [the receipt](../../operations/evidence/launch-20261031-engagement-production.json) for limits. Continue M2/M3 without changing the selected visual layout.

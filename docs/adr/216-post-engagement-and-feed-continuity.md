@@ -1,6 +1,6 @@
 # ADR216: durable post engagement and feed continuity
 
-Date: October31,2026. Status: local candidate, not deployed or enabled.
+Date: October31,2026. Status: live at3f18974; engagement enabled. [Production acceptance](../operations/evidence/launch-20261031-engagement-production.json).
 
 ## Data and boundaries
 

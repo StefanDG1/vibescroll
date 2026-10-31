@@ -1,6 +1,6 @@
 # ADR 213: viewport feed and whole-post proposals
 
-Status: backend accepted in production; website staged pending final browser acceptance. October 31, 2026. Owner requirements R123/R124.
+Status: backend and website accepted in production. October 31, 2026. Owner requirements R123/R124.
 
 ## Decision
 
@@ -20,4 +20,4 @@ Likes and share totals have no durable backend yet. Production shows unavailable
 
 Require whole-post context/save/replay tests beyond eight insights, exact version/auth isolation tests, full local checks and exact CI. Verify four theme/viewport geometries, actual native snapping, in-place settings, mobile nested scrolling and unchanged eight-case Library regression against the production build. The shared composer also requires the official MCP Apps bridge regression. A compatible backend publication must preserve actual no-scan/no-backfill/schema/index/component guards before releasing its website client. No fresh analysis, model API call, OAuth scope or billing migration is needed.
 
-[Backend/staging acceptance receipt](../operations/evidence/launch-20261031-feed-fidelity-staged.json). The main website remains the prior accepted commit until same-build promotion and canonical verification.
+[Backend/staging acceptance receipt](../operations/evidence/launch-20261031-feed-fidelity-staged.json). Website8b6a754 and backend72cf60c are accepted; [canonical verification](../operations/evidence/launch-20261031-feed-fidelity-production.json) passed after same-build promotion.

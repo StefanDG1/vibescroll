@@ -1,0 +1,69 @@
+{
+  "checkpoint": "ADR213 / R123-R124",
+  "reviewedAtUTC": "2026-10-31T00:08:15.496724+00:00",
+  "backend": {
+    "commit": "72cf60c591f26627d80490c205e012ad813dc73d",
+    "published": true,
+    "exactCI": 41147117075,
+    "deterministicOfflinePreparations": 2,
+    "compatibilityGuardTests": 22,
+    "actualNoScanNoBackfillVerified": true,
+    "schemaIndexComponentChanges": false,
+    "originalMCPProposalRead": true,
+    "originalMCPWholePostContext": {
+      "insights": 6,
+      "omittedInsights": 0,
+      "analysisStarted": false,
+      "creditsSpent": 0
+    },
+    "twentyInsightSaveReplay": "isolated tests passed; no production twenty-insight save claimed"
+  },
+  "website": {
+    "canonicalCommit": "cd78c9bc8cffe4bab959c3f0ac6fbfd5be938898",
+    "candidate": "8b6a754f77b427a7a47708716169255e5f1446c5",
+    "exactCI": 41147666391,
+    "exactCIPassed": true,
+    "vitestPassed": 1613,
+    "vitestSkipped": 5,
+    "deploymentId": "dpl_DjTFGQXCWtCTQM2nqSoGTwZSqYaK",
+    "stagedURL": "https://vibe-scroller-b99lhdf18-stefandg1s-projects.vercel.app",
+    "stagedReady": true,
+    "stagedExactHealth": true,
+    "stagedDemoSSR": true,
+    "fixedBasicBuildSeconds": 52.297,
+    "promoted": false,
+    "reason": "Final browser verification awaits Chrome remote-debugging approval. Original tabs and sign-ins preserved; no MCP reconnect."
+  },
+  "local": {
+    "fullCheckPassed": true,
+    "vitestPassed": 1615,
+    "vitestSkipped": 3,
+    "dependencyAudit": "No known vulnerabilities",
+    "feedThemeViewportCases": 4,
+    "libraryTreeFolderCases": 8,
+    "nativeDesktopWheelSnap": true,
+    "nativeMobileInsightStageSnap": true,
+    "postSettingsPanelWithoutNavigation": true,
+    "officialMCPAppsBridgeCases": 10,
+    "finalMobileLayout": "Exact CSS prototype visually checked; final rebuilt/canonical browser acceptance pending after connection stalled."
+  },
+  "changes": [
+    "viewport-height desktop panes and mobile source/insights/plan stages",
+    "native smooth snapping with next-post/stage peek",
+    "source categories and engagement controls",
+    "in-place settings and compact plan headers/fit",
+    "full-post proposal context resolved server-side up to twenty insights",
+    "no insight-selection scope control in feed"
+  ],
+  "notClaimed": [
+    "persistent likes or intake totals",
+    "durable inline proposal chat",
+    "quoted automatic plan generation",
+    "combined approve and issue publication from this feed",
+    "final website production acceptance"
+  ],
+  "newAnalysisRuns": 0,
+  "newPaidAIRequests": 0,
+  "savedDataPreserved": true,
+  "allOldFinancialHoldsRetained": true
+}

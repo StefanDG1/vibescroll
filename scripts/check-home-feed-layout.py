@@ -2,6 +2,7 @@
 import argparse
 import json
 import subprocess
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -25,6 +26,7 @@ def run(code):
 
 target = run(f"import json\nt=new_tab({args.url!r})\nprint('FEED:'+json.dumps(t))")
 cases = []
+primary_failure = None
 try:
     run(f"switch_tab({target!r},activate=True)\ncdp('Emulation.setFocusEmulationEnabled',enabled=True)")
     run("""
@@ -47,18 +49,30 @@ assert m['peek']>=20 and m['peek']<=65,m
 assert m['snap'].startswith('y') and m['engagement'],m
 assert m['composerHeight']<=48,m
 assert m['headerHidden'] and m['destinations']==5,m
-if m['width']<721:assert m['cueBottom']<=m['navTop'],m
+if m['width']<721:
+    assert m['cueBottom']<=m['navTop'],m
+    plan=js("(()=>{const a=document.querySelector('[data-feed-column=plans]');return {lane:a.clientHeight,card:a.querySelector('[data-expanded=true]').getBoundingClientRect().height};})()")
+    assert plan['card']>=plan['lane']*.65,plan
+    m['mobilePlan']=plan
 print('FEED:'+json.dumps(m))
 """)
             assert case["width"] == width, case
             case["theme"] = theme
             cases.append(case)
+except BaseException as failure:
+    primary_failure = failure
+    raise
 finally:
-    run(f"""
+    try:
+        run(f"""
 if current_tab().get('targetId')!={target!r}:switch_tab({target!r},activate=False)
 cdp('Emulation.clearDeviceMetricsOverride')
 cdp('Emulation.setFocusEmulationEnabled',enabled=False)
 close_tab({target!r})
 """)
+    except Exception as cleanup_failure:
+        if primary_failure is None:
+            raise
+        print(f"Owned-tab cleanup also failed: {cleanup_failure}", file=sys.stderr)
 Path(args.output).write_text(json.dumps({"passed": True, "cases": cases}, indent=2), encoding="utf-8")
 print(json.dumps({"passed": True, "cases": len(cases)}))

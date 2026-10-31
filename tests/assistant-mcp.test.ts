@@ -662,3 +662,60 @@ it("exposes compact resources and shared proposal tools to the app without chang
     resources.result.resources.some((r: any) => r.uri.includes("/card/")),
   ).toBe(true);
 });
+
+it("exposes the durable proposal loop with explicit paid-start and external-publication boundaries", async () => {
+  const scopes = [
+    "knowledge:read",
+    "context:read",
+    "suggestions:draft",
+    "analysis:request",
+    "analysis:execute",
+  ];
+  const response = await packet(
+    await call("tools/list", {}, scopes, invoke, "2026-07-28"),
+  );
+  const tools = response.result.tools;
+  for (const name of [
+    "get_proposal_discussion",
+    "add_proposal_message",
+    "quote_project_plan",
+    "start_project_plan",
+    "preview_project_issue",
+    "approve_project_issue",
+    "retry_project_issue",
+  ])
+    expect(tools.some((t: any) => t.name === name)).toBe(true);
+  expect(
+    tools.find((t: any) => t.name === "start_project_plan")._meta
+      .securitySchemes[0].scopes,
+  ).toContain("analysis:execute");
+  expect(
+    tools.find((t: any) => t.name === "approve_project_issue").annotations,
+  ).toMatchObject({
+    readOnlyHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  });
+  const result = await packet(
+    await call(
+      "tools/call",
+      {
+        name: "add_proposal_message",
+        arguments: {
+          proposalId: "proposal-one",
+          expectedVersion: 1,
+          key: "discussion-key-one",
+          text: "Keep it concise.",
+        },
+      },
+      scopes,
+      invoke,
+      "2026-07-28",
+    ),
+  );
+  expect(result.result.isError).not.toBe(true);
+  expect(invoke).toHaveBeenCalledWith(
+    "add_proposal_message",
+    expect.objectContaining({ text: "Keep it concise." }),
+  );
+});

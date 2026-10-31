@@ -6,6 +6,7 @@ import { librarySpacesTables } from "./librarySpacesSchema";
 import { productTables } from "./productSchema";
 import { knowledgeTables } from "./knowledgeSchema";
 import { improvementTables } from "./improvementSchema";
+import { proposalLoopTables } from "./proposalLoopSchema";
 import { libraryScanTables } from "./libraryScanSchema";
 import { dashboardTables } from "./dashboardSchema";
 import { localLibraryTables } from "./localLibrarySchema";
@@ -29,6 +30,7 @@ export default defineSchema({
   ...productTables,
   ...knowledgeTables,
   ...improvementTables,
+  ...proposalLoopTables,
   ...libraryScanTables,
   ...dashboardTables,
   ...localLibraryTables,

@@ -870,6 +870,7 @@ export function Console({
       readOnly &&
       !demo &&
       ![
+        "proposalDiscussion",
         "setupJourney",
         "acquisitionStatus",
         "publicOwn",
@@ -926,6 +927,14 @@ export function Console({
       }
       if (
         [
+          "proposalDiscussion",
+          "proposalComment",
+          "proposalReply",
+          "proposalPlanQuote",
+          "proposalPlanStart",
+          "proposalIssuePreview",
+          "proposalIssueApprove",
+          "proposalIssueRetry",
           "projectPlanningContext",
           "projectProposalSave",
           "workCloudTextPreview",

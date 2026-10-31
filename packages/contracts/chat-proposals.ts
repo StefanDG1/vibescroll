@@ -25,6 +25,14 @@ export const chatProposalBody = z.strictObject({
   nonGoals: lines(10, 500),
   acceptanceCriteria: lines(15, 500),
   verificationNeeds: lines(10, 500),
+  steps: lines(12, 1000).optional(),
+});
+export const proposalWorkState = z.strictObject({
+  threadId: z.string().min(1).max(200).optional(),
+  revision: z.number().int().nonnegative(),
+  pendingOperationId: id.optional(),
+  issueOperationId: id.optional(),
+  generatedVersion: z.number().int().positive().optional(),
 });
 export const chatProposalBinding = z.strictObject({
   analysisVersionId: id,
@@ -39,6 +47,7 @@ export const chatProposalBinding = z.strictObject({
 export const chatProposalDetail = chatProposalBody.extend({
   schemaVersion: z.literal("chat-project-proposal-v1"),
   handoff: proposalIssueHandoff.optional(),
+  work: proposalWorkState.optional(),
   repositoryId: id,
   baseSha: z.string().regex(/^[a-f0-9]{40}$/),
   profileVersion: z.number().int().positive(),
@@ -109,6 +118,14 @@ export const listProjectProposalsInput = z.strictObject({
 });
 
 export const chatProposalOperations = new Set([
+  "get_proposal_discussion",
+  "add_proposal_message",
+  "reply_to_project_plan",
+  "quote_project_plan",
+  "start_project_plan",
+  "preview_project_issue",
+  "approve_project_issue",
+  "retry_project_issue",
   "prepare_project_issue",
   "report_project_outcome",
   "save_project_proposal",
@@ -129,6 +146,40 @@ export function chatProposalFailure(code: unknown) {
         code,
         error:
           "This operation key already identifies different content. Read the saved proposal before choosing a new key for an intentional edit. Keep your existing connection.",
+      };
+    case "SETUP_REQUIRED":
+    case "PERSONAL_FUNDING_REQUIRED":
+      return {
+        code,
+        error:
+          "Credit plan generation is not enabled for this account. You can still use this chat to refine and save the proposal with your own subscription. Keep your current connection.",
+      };
+    case "QUOTE_CHANGED":
+      return {
+        code,
+        error:
+          "Read the current discussion and request a new quote before starting paid plan generation.",
+      };
+    case "SOURCE_BUSY":
+    case "COST_RECONCILIATION_REQUIRED":
+      return {
+        code,
+        error:
+          "Read get_proposal_discussion for the existing operation. Do not start replacement paid work or create another issue.",
+      };
+    case "INSUFFICIENT_CREDITS":
+    case "BUDGET_EXCEEDED":
+      return {
+        code,
+        error:
+          "The current credit allowance cannot cover this plan. No alternative funding route was started.",
+      };
+    case "ISSUES_PERMISSION_REQUIRED":
+    case "GITHUB_UNAVAILABLE":
+      return {
+        code,
+        error:
+          "Check the selected project’s GitHub connection and Issues permission. Preserve the frozen publication and retry its existing operation after setup.",
       };
     case "POLICY_BLOCKED":
     case "INVALID_INPUT":

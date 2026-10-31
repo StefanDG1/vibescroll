@@ -3,6 +3,14 @@ import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
+  proposalDiscussion: ["query", api.proposalLoop.read],
+  proposalReply: ["mutation", api.proposalLoop.reply],
+  proposalComment: ["mutation", api.proposalLoop.comment],
+  proposalPlanQuote: ["query", api.proposalLoop.quote],
+  proposalPlanStart: ["mutation", api.proposalLoop.start],
+  proposalIssuePreview: ["action", api.proposalIssueActions.preview],
+  proposalIssueApprove: ["mutation", api.proposalIssues.approve],
+  proposalIssueRetry: ["mutation", api.proposalIssues.retry],
   projectPlanningContext: ["query", api.projectPlanning.context],
   projectProposalSave: ["mutation", api.projectPlanning.save],
   preparedAnalysisQuote: ["query", api.preparedService.quote],
@@ -237,6 +245,8 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     const messages: Record<string, string> = {
+      PERSONAL_FUNDING_REQUIRED:
+        "Use your personal credit account for this plan.",
       ACCESS_LOST:
         "Your session or workspace access changed. Sign in again to continue.",
       EVIDENCE_REQUIRED:
@@ -354,9 +364,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: category
-          ? category === "CONTEXT_REQUIRED" && operationName.startsWith("scan")
-            ? "Confirm the selected projects’ proposed context in Projects before starting this scan."
-            : messages[category]
+          ? category === "SETUP_REQUIRED" &&
+            operationName.startsWith("proposalPlan")
+            ? "Credit plan generation is not enabled for this account yet. You can still refine this saved proposal through your existing ChatGPT connection."
+            : category === "CONTEXT_REQUIRED" &&
+                operationName.startsWith("scan")
+              ? "Confirm the selected projects’ proposed context in Projects before starting this scan."
+              : messages[category]
           : "This action could not be completed. Check its latest status before trying again.",
         code: category ?? "UNCLASSIFIED",
       },

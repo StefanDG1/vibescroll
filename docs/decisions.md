@@ -1,5 +1,9 @@
 # Product decisions
 
+## October31: finish the durable proposal loop
+
+[ADR214](adr/214-durable-proposal-work-loop.md) uses the existing proposal/source/project binding, the official Convex Agent message component, precise credit helpers and a small operation outbox. A generated plan is distinct from coding execution. Approval freezes one exact issue; a durable dispatch barrier makes ambiguous publication reconcile-only. Existing MCP and GitHub authorization stay required. The local candidate is not yet deployed; follow the [short-term acceptance ledger](launch-plan/2026-10-31/SHORT-TERM-PROPOSAL-LOOP.md).
+
 ## October29: preserve owner requests and verified recovery knowledge
 
 Use the [owner request register](strategy/OWNER-REQUEST-REGISTER.md), [current state](operations/CURRENT-STATE.md), [continuation guide](operations/CONTINUE-VIBESCROLL.md) and [failure reference](operations/FAILURES-AND-RECOVERY.md). Later explicit owner corrections supersede older temporary setup/release instructions. This audit changes documentation, not runtime policy, billing, permissions, funding or production. Keep unknown causes unresolved and distinguish recommended prevention from implemented tests/code.

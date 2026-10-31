@@ -35,6 +35,9 @@
     "lint": "oxlint apps/starter apps/widget/src apps/widget/designs apps/widget/harness convex packages tests scripts --react-plugin --jsx-a11y-plugin --nextjs-plugin --ignore-pattern 'packages/runner/protocol/**' --ignore-pattern 'packages/widget/resources.generated.ts' --ignore-pattern 'convex/_generated/**' --ignore-pattern '**/node_modules/**' --max-warnings 0"
   },
   "dependencies": {
+    "@ai-sdk/provider": "4.0.35",
+    "@ai-sdk/provider-utils": "5.0.72",
+    "@convex-dev/agent": "0.7.9",
     "@convex-dev/rate-limiter": "0.4.0",
     "@convex-dev/resend": "0.2.8",
     "@convex-dev/workflow": "0.4.8",
@@ -42,8 +45,9 @@
     "@modelcontextprotocol/server": "2.3.1",
     "@vercel/sandbox": "3.5.1",
     "@workos-inc/node": "10.13.0",
+    "ai": "7.0.159",
     "convex": "1.46.0",
-    "convex-helpers": "0.1.124",
+    "convex-helpers": "0.1.127",
     "diff": "9.0.0",
     "fflate": "0.8.3",
     "hono": "4.13.11",

@@ -20,6 +20,8 @@ For Home/feed, proposal-review or engagement/analytics work, read the [Home feed
 
 ## Build the specified product
 
+Until accepted, read the [short-term proposal loop](docs/launch-plan/2026-10-31/SHORT-TERM-PROPOSAL-LOOP.md). The October31 owner requests completion of generated plans, durable discussion/refinement and single-action issue publication. Preserve the live feed and shared source/version context; finish these backend workflows before adding social analytics or revisiting the visual design.
+
 For new or substantially rebuilt assistant-related UI, prefer suitable assistant-ui components. The owner confirmed this preference on October 29, 2026. Start with the model selector and reasoning controls; reuse existing VibeScroll components where they already fit. Inspect the selected component's current dependencies and licence. This preference does not require a frontend rewrite or delay backend acceptance. See [the component plan](docs/strategy/MODEL-CATALOGUE-AND-CREDIT-BANDS.md).
 
 For analysis status, credit meters and project recommendations, read the [assistant-elements and fit plan](docs/design/ASSISTANT-ELEMENTS-AND-PROJECT-FIT.md) until accepted. Topic coverage is the current first subset; similarity/history/outcome scoring, meaningful priority/activity, duplicate-proposal opening, tooltips and provider logos remain tracked work. Preserve exact balances, observed states and honest score arithmetic.

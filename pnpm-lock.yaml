@@ -143,18 +143,27 @@ importers:
 
   .:
     dependencies:
+      '@ai-sdk/provider':
+        specifier: 4.0.35
+        version: 4.0.35
+      '@ai-sdk/provider-utils':
+        specifier: 5.0.72
+        version: 5.0.72(zod@4.6.6)
+      '@convex-dev/agent':
+        specifier: 0.7.9
+        version: 0.7.9(@ai-sdk/provider-utils@5.0.72(zod@4.6.6))(@ai-sdk/provider@4.0.35)(ai@7.0.159(zod@4.6.6))(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
       '@convex-dev/rate-limiter':
         specifier: 0.4.0
         version: 0.4.0(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
       '@convex-dev/resend':
         specifier: 0.2.8
-        version: 0.2.8(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
+        version: 0.2.8(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
       '@convex-dev/workflow':
         specifier: 0.4.8
-        version: 0.4.8(@convex-dev/workpool@0.4.12(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0))(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))
+        version: 0.4.8(@convex-dev/workpool@0.4.12(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0))(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))
       '@convex-dev/workpool':
         specifier: 0.4.12
-        version: 0.4.12(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
+        version: 0.4.12(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
       '@modelcontextprotocol/server':
         specifier: 2.3.1
         version: 2.3.1
@@ -164,12 +173,15 @@ importers:
       '@workos-inc/node':
         specifier: 10.13.0
         version: 10.13.0
+      ai:
+        specifier: 7.0.159
+        version: 7.0.159(zod@4.6.6)
       convex:
         specifier: 1.46.0
         version: 1.46.0(react@19.3.0)
       convex-helpers:
-        specifier: 0.1.124
-        version: 0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
+        specifier: 0.1.127
+        version: 0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
       diff:
         specifier: 9.0.0
         version: 9.0.0
@@ -455,6 +467,22 @@ importers:
         version: 19.3.0
 
 packages:
+
+  '@ai-sdk/gateway@4.0.132':
+    resolution: {integrity: sha512-ppStDEz96g+JEuxGiVTP29OKBjPyYZXRxs38wnq3427U2QbZtxe6TukrgSAAq0n4yaHvSvVAWJY9kBlW8XudYg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: 4.6.6
+
+  '@ai-sdk/provider-utils@5.0.72':
+    resolution: {integrity: sha512-M6QAztI84jWumQSvKcGOL91DxhChsWxn3D3gYtV0/7E1TPQg9BmLdIerOolUC/jghQbMlQrHyzp0hqdIhUZ2Rw==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: 4.6.6
+
+  '@ai-sdk/provider@4.0.35':
+    resolution: {integrity: sha512-yBz6fmLS8MSCIzy7NiHEUAq56ZLD4ZA1GR6bpXBxgbwUacP1La7LuwAr/xy9jSzthem4F8Xu2OrhvU/JrE9fYA==}
+    engines: {node: '>=22'}
 
   '@alloc/quick-lru@5.3.0':
     resolution: {integrity: sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA==}
@@ -756,6 +784,20 @@ packages:
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
+
+  '@convex-dev/agent@0.7.9':
+    resolution: {integrity: sha512-/P7IU6CyzopR3olJmqQsLmy0sb9bTvubeuLTInsgqqQBgr7S7Z/N6L22AIer9dGcYTnW1sb7Lzacw61H2ptqbw==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      '@ai-sdk/provider': ^4.0.0
+      '@ai-sdk/provider-utils': ^5.0.0
+      ai: ^7.0.129
+      convex: ^1.46.0
+      convex-helpers: ^0.1.127
+      react: ^18.3.1 || ^19.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@convex-dev/batch-worker@0.2.2':
     resolution: {integrity: sha512-3knigElzTVhWw1sN28EYkGBTdrJZ03vMj2PJPuFq3V0Tg41i7tcv/EWDBFQWcUaKzBWWVw693hcJtxCF3CRtEw==}
@@ -3116,6 +3158,9 @@ packages:
   '@vitest/spy@5.0.0':
     resolution: {integrity: sha512-uy+luWBAPw9XfthoHi5AkfHUnuPYEESjl0p/r+meoBnU8bxg5GDQ3Ey8MjcJ6sqahkL4PFyrvfMJJBw7LbU06g==}
 
+  '@workflow/serde@4.1.0':
+    resolution: {integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==}
+
   '@workflow/serde@4.1.0-beta.2':
     resolution: {integrity: sha512-8kkeoQKLDaKXefjV5dbhBj2aErfKp1Mc4pb6tj8144cF+Em5SPbyMbyLCHp+BVrFfFVCBluCtMx+jjvaFVZGww==}
 
@@ -3152,6 +3197,12 @@ packages:
   agentkeepalive@4.6.0:
     resolution: {integrity: sha512-kja8j7PjmncONqaTsB8fQ+wE2mSU2DJ9D4XKoJ5PFWIdRMa6SLSN1ff4mOr4jCbfRSsxR4keIiySJU0N9T5hIQ==}
     engines: {node: '>= 8.0.0'}
+
+  ai@7.0.159:
+    resolution: {integrity: sha512-4e/BwDoKJlMNYZaqERcTbGte+4TwroN9qKnCprog/XVfD9InzVPlhCviDhN452JIRrRsYg9BT0WsQ2C3Ds2mVQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: 4.6.6
 
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
@@ -3371,6 +3422,28 @@ packages:
     peerDependencies:
       '@standard-schema/spec': ^1.0.0
       convex: ^1.43.0
+      hono: ^4.0.5
+      react: ^17.0.2 || ^18.0.0 || ^19.0.0
+      typescript: ^5.5 || ^6.0.0 || ^7.0.0
+      zod: 4.6.6
+    peerDependenciesMeta:
+      '@standard-schema/spec':
+        optional: true
+      hono:
+        optional: true
+      react:
+        optional: true
+      typescript:
+        optional: true
+      zod:
+        optional: true
+
+  convex-helpers@0.1.127:
+    resolution: {integrity: sha512-WG8QVcpFeyRhACjif0kvqXRp8Xhp9N+NL1PLffx9pkSUJfXE3MEve13npznjNkNnJE9GhqwPnBCSs2fhO9/3Sw==}
+    hasBin: true
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      convex: ^1.46.0
       hono: ^4.0.5
       react: ^17.0.2 || ^18.0.0 || ^19.0.0
       typescript: ^5.5 || ^6.0.0 || ^7.0.0
@@ -3960,6 +4033,9 @@ packages:
 
   json-schema-typed@8.0.2:
     resolution: {integrity: sha512-fQhoXdcvc3V28x7C7BMs4P5+kNlgUURe2jmUT1T//oBRMDrqy1QPelJimwZGo7Hg9VPV3EQV5Bnq4hbFy2vetA==}
+
+  json-schema@0.4.0:
+    resolution: {integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==}
 
   json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
@@ -5370,6 +5446,26 @@ packages:
 
 snapshots:
 
+  '@ai-sdk/gateway@4.0.132(zod@4.6.6)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.35
+      '@ai-sdk/provider-utils': 5.0.72(zod@4.6.6)
+      '@vercel/oidc': 3.2.0
+      zod: 4.6.6
+
+  '@ai-sdk/provider-utils@5.0.72(zod@4.6.6)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.35
+      '@standard-schema/spec': 1.1.0
+      '@workflow/serde': 4.1.0
+      eventsource-parser: 3.1.1
+      undici: 7.30.1
+      zod: 4.6.6
+
+  '@ai-sdk/provider@4.0.35':
+    dependencies:
+      json-schema: 0.4.0
+
   '@alloc/quick-lru@5.3.0': {}
 
   '@ast-grep/napi-darwin-arm64@0.40.5':
@@ -5981,6 +6077,17 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260820.1':
     optional: true
 
+  '@convex-dev/agent@0.7.9(@ai-sdk/provider-utils@5.0.72(zod@4.6.6))(@ai-sdk/provider@4.0.35)(ai@7.0.159(zod@4.6.6))(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.35
+      '@ai-sdk/provider-utils': 5.0.72(zod@4.6.6)
+      ai: 7.0.159(zod@4.6.6)
+      convex: 1.46.0(react@19.3.0)
+      convex-helpers: 0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
+    optionalDependencies:
+      '@ungap/structured-clone': 1.4.0
+      react: 19.3.0
+
   '@convex-dev/batch-worker@0.2.2(convex@1.46.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       convex: 1.46.0(react@19.3.0)
@@ -6015,12 +6122,12 @@ snapshots:
       - typescript
       - zod
 
-  '@convex-dev/resend@0.2.8(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)':
+  '@convex-dev/resend@0.2.8(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@convex-dev/rate-limiter': 0.3.2(convex@1.46.0(react@19.3.0))(react@19.3.0)
-      '@convex-dev/workpool': 0.4.12(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
+      '@convex-dev/workpool': 0.4.12(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
       convex: 1.46.0(react@19.3.0)
-      convex-helpers: 0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
+      convex-helpers: 0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
       remeda: 2.50.0
       resend: 6.30.0
       svix: 1.99.1
@@ -6028,18 +6135,18 @@ snapshots:
       - '@react-email/render'
       - react
 
-  '@convex-dev/workflow@0.4.8(@convex-dev/workpool@0.4.12(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0))(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))':
+  '@convex-dev/workflow@0.4.8(@convex-dev/workpool@0.4.12(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0))(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))':
     dependencies:
-      '@convex-dev/workpool': 0.4.12(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
+      '@convex-dev/workpool': 0.4.12(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)
       async-channel: 0.2.0
       convex: 1.46.0(react@19.3.0)
-      convex-helpers: 0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
+      convex-helpers: 0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
 
-  '@convex-dev/workpool@0.4.12(convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)':
+  '@convex-dev/workpool@0.4.12(convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6))(convex@1.46.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@convex-dev/batch-worker': 0.2.2(convex@1.46.0(react@19.3.0))(react@19.3.0)
       convex: 1.46.0(react@19.3.0)
-      convex-helpers: 0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
+      convex-helpers: 0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6)
     transitivePeerDependencies:
       - react
 
@@ -8566,6 +8673,8 @@ snapshots:
 
   '@vitest/spy@5.0.0': {}
 
+  '@workflow/serde@4.1.0': {}
+
   '@workflow/serde@4.1.0-beta.2': {}
 
   '@workos-inc/authkit-nextjs@4.3.1(@workos-inc/node@10.13.0)(next@16.4.2(@types/node@24.13.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2)':
@@ -8601,6 +8710,13 @@ snapshots:
   agentkeepalive@4.6.0:
     dependencies:
       humanize-ms: 1.2.1
+
+  ai@7.0.159(zod@4.6.6):
+    dependencies:
+      '@ai-sdk/gateway': 4.0.132(zod@4.6.6)
+      '@ai-sdk/provider': 4.0.35
+      '@ai-sdk/provider-utils': 5.0.72(zod@4.6.6)
+      zod: 4.6.6
 
   ajv-formats@3.0.1:
     dependencies:
@@ -8775,6 +8891,15 @@ snapshots:
   content-type@2.1.0: {}
 
   convex-helpers@0.1.124(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6):
+    dependencies:
+      convex: 1.46.0(react@19.3.0)
+    optionalDependencies:
+      hono: 4.13.11
+      react: 19.3.0
+      typescript: 7.0.2
+      zod: 4.6.6
+
+  convex-helpers@0.1.127(convex@1.46.0(react@19.3.0))(hono@4.13.11)(react@19.3.0)(typescript@7.0.2)(zod@4.6.6):
     dependencies:
       convex: 1.46.0(react@19.3.0)
     optionalDependencies:
@@ -9441,6 +9566,8 @@ snapshots:
   json-schema-traverse@1.0.0: {}
 
   json-schema-typed@8.0.2: {}
+
+  json-schema@0.4.0: {}
 
   json5@2.2.3: {}
 

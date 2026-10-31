@@ -225,6 +225,17 @@ export async function saveProjectProposalCore(
       "APPROVAL_STALE",
       "The proposal changed. Read it before updating your draft.",
     );
+    if (read.detail.work?.issueOperationId) {
+      const publication = await ctx.db.get(
+        read.detail.work.issueOperationId as Id<"proposalOperations">,
+      );
+      ensure(
+        !publication ||
+          ["complete", "failed", "stale"].includes(publication.state),
+        "SOURCE_BUSY",
+        "Reconcile the frozen issue publication before editing its plan.",
+      );
+    }
     ensure(
       !proposal.plan && !proposal.planDraft,
       "APPROVAL_STALE",
@@ -272,6 +283,7 @@ export async function saveProjectProposalCore(
   const detail = chatProposalDetail.parse({
     ...input.body,
     ...(proposal?.detail.handoff ? { handoff: proposal.detail.handoff } : {}),
+    ...(proposal?.detail.work ? { work: proposal.detail.work } : {}),
     schemaVersion: "chat-project-proposal-v1",
     repositoryId: context.project.id,
     baseSha: context.project.baseSha,

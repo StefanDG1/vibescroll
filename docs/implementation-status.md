@@ -2,6 +2,12 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## October31: proposal loop local candidate
+
+R125/ADR214 implements persistent Convex Agent discussion, replay-safe comments and atomic paid replies, quoted bounded plan generation with precise reservation/settlement, stale-result protection and one exact-version issue dispatch/reconciliation. Website plan cards and MCP operations use the same records. GLM5.3 Flash on DeepInfra is the private-plan candidate; Muse Contributor remains the public-video baseline. The owner approved one bounded USD0.02 GLM canary, not yet dispatched.
+
+`node scripts/run-offline.mjs pnpm check` passed locally on Windows/Node24.22.1: lint/types, backend/UI tests, Node/Python checks and both builds. The first broad run exposed the historical table-count guard; the explicit additive update preserves all historical schemas/config and admits only the two new proposal tables plus Agent. Lost-reply browser-state, concurrent replay, revoked access, deletion, stale output, known/unknown charges, atomic reply rollback and GitHub dispatch/lease/lookup cases pass. Two actual official-CLI offline preparations are byte-identical with490 modules/eight definitions. This is not a live deployment or paid-provider/issue acceptance. Exact committed Linux CI, actual schema/impact guards and native/canonical acceptance remain pending. Detailed local logs stay in ignored operator outputs.
+
 ## October30: shared reader layout live
 
 Website6b2df2f passed exact CI41043791562, staged/canonical exact health and same-build promotion after a50.234s fixed Basic build. Backendc862450 is unchanged. Local full checks, final types/build, desktop/phone dark and desktop light checks passed. The project shortcut is47.59px tall and reached the existing project controls without starting work. Production loaded the real retained540×960 thumbnail and six insights; citations expanded and the390px phone layout had no horizontal overflow. See [the receipt](operations/evidence/launch-20261030-shared-reader-production.json).

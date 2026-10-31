@@ -227,7 +227,7 @@
   min-height: 42px;
   flex-shrink: 0;
 }
-.composer textarea:disabled {
+.composer textarea {
   resize: none;
   flex: 1;
   width: 100%;
@@ -271,7 +271,7 @@
   background: #006152;
   font-size: 12px;
   font-weight: 550;
-  cursor: not-allowed;
+  cursor: pointer;
   opacity: 1;
   flex-shrink: 0;
 }
@@ -328,5 +328,58 @@
   .artifact[data-expanded="true"] {
     flex: 0 0 100%;
     min-height: 0;
+  }
+}
+
+.secondary {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 7px;
+  min-height: 38px;
+  padding: 7px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.approve:disabled,
+.secondary:disabled,
+.composer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.composer button:not(:disabled) {
+  cursor: pointer;
+  color: var(--teal);
+  opacity: 1;
+}
+.progress,
+.target {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--subtle);
+  margin: 0;
+  flex-shrink: 0;
+}
+.issueActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.issueActions .approve {
+  width: auto;
+  flex: 1;
+  text-decoration: none;
+}
+.body button:focus-visible,
+.body textarea:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+@media (max-width: 720px) {
+  .secondary,
+  .approve,
+  .composer button {
+    min-height: 44px;
   }
 }

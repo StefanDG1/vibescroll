@@ -1,6 +1,6 @@
 # Continue a saved proposal as a GitHub issue
 
-Mode: how-to. ADR209 is live at8974c39 for frozen private handoffs and authenticated reports. Actual GitHub publication/lifecycle acceptance is still open. Check CURRENT-STATE for the current deployment.
+Mode: how-to. The legacy private handoff and signed issue observation are live; issue196 has real opened-event acceptance. ADR214 prepares the combined plan/discussion/publication workflow in the [new guide](PROPOSAL-LOOP.md). Check CURRENT-STATE for actual deployment and remaining lifecycle acceptance.
 
 1. Open the saved proposal in ChatGPT or Codex using VibeScroll. Ask the assistant to read `get_project_proposal`, check the selected project and clarify missing implementation context.
 2. Ask it to prepare an issue. It calls `prepare_project_issue` with the current proposal version, review and context hash, plus a stable request key. Preparation saves a private frozen package and does not publish or spend credits.

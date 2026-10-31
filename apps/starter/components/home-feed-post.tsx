@@ -358,6 +358,9 @@ export function FeedPostCard({
                   <ProposalArtifact
                     key={proposal.id}
                     proposal={proposal}
+                    call={call}
+                    enabled={!demo}
+                    readOnly={readOnly}
                     open={openPlan === proposal.id}
                     onOpenChange={(open) =>
                       setExpandedPlan(open ? proposal.id : null)
@@ -409,6 +412,7 @@ export function FeedPostCard({
                         ]}
                         disabled={readOnly || demo}
                         call={call}
+                        onSaved={onRetry}
                       />
                       <ChevronRight
                         size={18}

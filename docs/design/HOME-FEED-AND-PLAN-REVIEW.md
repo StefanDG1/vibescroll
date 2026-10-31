@@ -122,3 +122,7 @@ Expanding an insight is reading state only. Remove Use another insight/Choose an
 Native vertical scroll snapping and smooth programmatic next navigation expose the next post/stage, with reduced-motion support and no global wheel/key interception. Verify viewport bounds, nested-scroll escape, next-card peek, native controls, all-insight bindings/retries and unchanged Library Tree/Folders in light/dark desktop/mobile before publication.
 
 Implementation decision: [ADR213](../adr/213-viewport-feed-and-whole-post-proposals.md) supersedes the incompatible ADR212 height rules.
+
+## Active short-term completion, October 31
+
+R125 authorizes completing delivery steps3/4 through [the bounded proposal-loop plan](../launch-plan/2026-10-31/SHORT-TERM-PROPOSAL-LOOP.md). Implement real generation, durable conversation and combined issue publication before engagement/trends. The accepted viewport feed remains the presentation baseline.

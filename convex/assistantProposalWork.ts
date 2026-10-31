@@ -3,7 +3,9 @@ import { internalMutation } from "./lib/projectedMutations";
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { readAuthorized } from "./assistantProposals";
 import { sourceFor } from "./assistant";
-import { audit, limit } from "./lib";
+import { audit, limit, access } from "./lib";
+import type { MutationCtx } from "./_generated/server";
+import { isAssistantIdentity } from "../packages/policy/assistant";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { ensure, containsSecret } from "../packages/policy";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
@@ -27,6 +29,138 @@ const safeText = (text: string) =>
     text,
   );
 
+export async function prepareIssueCore(
+  ctx: MutationCtx,
+  args: {
+    profileId?: import("./_generated/dataModel").Id<"organizations">;
+    proposalId: import("./_generated/dataModel").Id<"proposals">;
+    expectedVersion: number;
+    expectedReview: string;
+    contextHash: string;
+    key: string;
+  },
+) {
+  const input = prepareProjectIssueInput.parse(args);
+  const proposal = await ctx.db.get(args.proposalId);
+  ensure(
+    proposal && (!args.profileId || proposal.organizationId === args.profileId),
+    "FORBIDDEN",
+    "Proposal unavailable in this workspace.",
+  );
+  const writer = isAssistantIdentity(await ctx.auth.getUserIdentity())
+    ? await assistantGrant(ctx, proposal.organizationId, "suggestions:draft")
+    : {
+        ...(await access(ctx, proposal.organizationId, ["owner", "admin"])),
+        client: { id: "vibescroll_web" },
+      };
+  ensure(
+    ["owner", "admin"].includes(writer.membership.role),
+    "FORBIDDEN",
+    "This workspace role cannot prepare a handoff.",
+  );
+  const { detail, context } = await readAuthorized(ctx, proposal);
+  const requestHash = await socialHash(
+    canonicalJson({
+      input: { ...input, profileId: proposal.organizationId },
+      actor: writer.actor._id,
+      client: writer.client.id,
+    }),
+  );
+  if (detail.handoff) {
+    ensure(
+      detail.handoff.key === input.key &&
+        detail.handoff.requestHash === requestHash,
+      "IDEMPOTENCY_CONFLICT",
+      "This proposal already has a frozen handoff. Read the saved handoff instead of publishing another issue.",
+    );
+    return {
+      handoff: detail.handoff,
+      replayed: true,
+      publicationStarted: false,
+      codingAuthorized: false,
+      creditsSpent: 0,
+    };
+  }
+  ensure(
+    proposal.version === input.expectedVersion &&
+      proposal.review === input.expectedReview &&
+      context.contextHash === input.contextHash &&
+      proposal.baseSha === context.project.baseSha &&
+      proposal.profileVersion === context.project.profileVersion &&
+      detail._chat.binding.selectionVersion ===
+        context.project.selectionVersion &&
+      detail._chat.binding.sourceGeneration === context.source.generation &&
+      detail._chat.binding.sourceRevision === context.source.sourceRevision,
+    "APPROVAL_STALE",
+    "Read the current proposal and project before preparing an issue.",
+  );
+  ensure(
+    proposal.review !== "rejected",
+    "APPROVAL_STALE",
+    "A rejected proposal cannot be handed off.",
+  );
+  await limit(ctx, `proposal-handoff:${writer.actor._id}`, 20);
+  const repository = (await ctx.db.get(proposal.repositoryId))!;
+  const now = Date.now(),
+    expiresAt = now + 30 * 86400000;
+  const handoffId = `work_${crypto.randomUUID().replaceAll("-", "")}`;
+  const body = proposalIssueBody({
+    ...detail,
+    proposalId: proposal._id,
+    profileId: proposal.organizationId,
+    proposalVersion: proposal.version,
+    repository: repository.fullName,
+    baseSha: proposal.baseSha,
+    handoffId,
+    expiresAt,
+  });
+  ensure(
+    safeText(body) && safeText(detail.title),
+    "POLICY_BLOCKED",
+    "Remove credentials and protected asset URLs from the handoff.",
+  );
+  const handoff = proposalIssueHandoff.parse({
+    schemaVersion: "proposal-issue-handoff-v1",
+    id: handoffId,
+    key: input.key,
+    requestHash,
+    proposalVersion: proposal.version,
+    repositoryId: repository._id,
+    repository: repository.fullName,
+    baseSha: proposal.baseSha,
+    analysisVersionId: detail._chat.binding.analysisVersionId,
+    insightIds: detail.insightIds,
+    title: detail.title,
+    body,
+    bodyHash: await socialHash(body),
+    createdBy: writer.actor._id,
+    createdAt: now,
+    expiresAt,
+    reports: [],
+  });
+  const next = chatProposalDetail.parse({ ...detail, handoff });
+  ensure(
+    new TextEncoder().encode(canonicalJson(next)).length <= 100000,
+    "LIMIT_REACHED",
+    "This handoff exceeds the retained proposal limit.",
+  );
+  await ctx.db.patch(proposal._id, { detail: next, updatedAt: now });
+  await audit(
+    ctx,
+    proposal.organizationId,
+    writer.actor._id,
+    "assistant.proposal_handoff_prepared",
+    proposal._id,
+  );
+  return {
+    handoff,
+    replayed: false,
+    publicationStarted: false,
+    codingAuthorized: false,
+    creditsSpent: 0,
+  };
+}
+
 export const prepare = internalMutation({
   args: {
     ...profile,
@@ -36,127 +170,7 @@ export const prepare = internalMutation({
     key: v.string(),
   },
   returns: v.any(),
-  handler: async (ctx, args) => {
-    const input = prepareProjectIssueInput.parse(args);
-    const proposal = await ctx.db.get(args.proposalId);
-    ensure(
-      proposal &&
-        (!args.profileId || proposal.organizationId === args.profileId),
-      "FORBIDDEN",
-      "Proposal unavailable in this workspace.",
-    );
-    const writer = await assistantGrant(
-      ctx,
-      proposal.organizationId,
-      "suggestions:draft",
-    );
-    ensure(
-      ["owner", "admin"].includes(writer.membership.role),
-      "FORBIDDEN",
-      "This workspace role cannot prepare a handoff.",
-    );
-    const { detail, context } = await readAuthorized(ctx, proposal);
-    const requestHash = await socialHash(
-      canonicalJson({
-        input: { ...input, profileId: proposal.organizationId },
-        actor: writer.actor._id,
-        client: writer.client.id,
-      }),
-    );
-    if (detail.handoff) {
-      ensure(
-        detail.handoff.key === input.key &&
-          detail.handoff.requestHash === requestHash,
-        "IDEMPOTENCY_CONFLICT",
-        "This proposal already has a frozen handoff. Read the saved handoff instead of publishing another issue.",
-      );
-      return {
-        handoff: detail.handoff,
-        replayed: true,
-        publicationStarted: false,
-        codingAuthorized: false,
-        creditsSpent: 0,
-      };
-    }
-    ensure(
-      proposal.version === input.expectedVersion &&
-        proposal.review === input.expectedReview &&
-        context.contextHash === input.contextHash &&
-        proposal.baseSha === context.project.baseSha &&
-        proposal.profileVersion === context.project.profileVersion &&
-        detail._chat.binding.selectionVersion ===
-          context.project.selectionVersion &&
-        detail._chat.binding.sourceGeneration === context.source.generation &&
-        detail._chat.binding.sourceRevision === context.source.sourceRevision,
-      "APPROVAL_STALE",
-      "Read the current proposal and project before preparing an issue.",
-    );
-    ensure(
-      proposal.review !== "rejected",
-      "APPROVAL_STALE",
-      "A rejected proposal cannot be handed off.",
-    );
-    await limit(ctx, `proposal-handoff:${writer.actor._id}`, 20);
-    const repository = (await ctx.db.get(proposal.repositoryId))!;
-    const now = Date.now(),
-      expiresAt = now + 30 * 86400000;
-    const handoffId = `work_${crypto.randomUUID().replaceAll("-", "")}`;
-    const body = proposalIssueBody({
-      ...detail,
-      proposalId: proposal._id,
-      profileId: proposal.organizationId,
-      proposalVersion: proposal.version,
-      repository: repository.fullName,
-      baseSha: proposal.baseSha,
-      handoffId,
-      expiresAt,
-    });
-    ensure(
-      safeText(body) && safeText(detail.title),
-      "POLICY_BLOCKED",
-      "Remove credentials and protected asset URLs from the handoff.",
-    );
-    const handoff = proposalIssueHandoff.parse({
-      schemaVersion: "proposal-issue-handoff-v1",
-      id: handoffId,
-      key: input.key,
-      requestHash,
-      proposalVersion: proposal.version,
-      repositoryId: repository._id,
-      repository: repository.fullName,
-      baseSha: proposal.baseSha,
-      analysisVersionId: detail._chat.binding.analysisVersionId,
-      insightIds: detail.insightIds,
-      title: detail.title,
-      body,
-      bodyHash: await socialHash(body),
-      createdBy: writer.actor._id,
-      createdAt: now,
-      expiresAt,
-      reports: [],
-    });
-    const next = chatProposalDetail.parse({ ...detail, handoff });
-    ensure(
-      new TextEncoder().encode(canonicalJson(next)).length <= 100000,
-      "LIMIT_REACHED",
-      "This handoff exceeds the retained proposal limit.",
-    );
-    await ctx.db.patch(proposal._id, { detail: next, updatedAt: now });
-    await audit(
-      ctx,
-      proposal.organizationId,
-      writer.actor._id,
-      "assistant.proposal_handoff_prepared",
-      proposal._id,
-    );
-    return {
-      handoff,
-      replayed: false,
-      publicationStarted: false,
-      codingAuthorized: false,
-      creditsSpent: 0,
-    };
-  },
+  handler: prepareIssueCore,
 });
 
 export const report = internalMutation({

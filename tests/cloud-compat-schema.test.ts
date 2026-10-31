@@ -8,6 +8,7 @@ import { publicTables } from "../convex/publicSchema";
 import { cloudCatalogTables } from "../convex/cloudCatalogSchema";
 import { preparedAnalysisTables } from "../convex/preparedAnalysisSchema";
 import schema from "../convex/schema";
+import { proposalLoopTables } from "../convex/proposalLoopSchema";
 import { librarySpacesTables } from "../convex/librarySpacesSchema";
 import {
   cloudSaveDefaults,
@@ -20,10 +21,28 @@ import {
 } from "../convex/lib/prObservation";
 import { readFileSync } from "node:fs";
 const base = "346b718baf91ba9847fbb707be7bbe069df57257";
-it("preserves all tables/config and permits only the exact Cloud validators and one C2 delivery index", () => {
+it("preserves historical schemas/config while admitting reviewed empty proposal tables and the Agent component", () => {
   // Include the explicitly new, initially empty preparation table. Component
   // configuration and every historical table/index remain checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(96);
+  expect(Object.keys(schema.tables)).toHaveLength(98);
+  expect(Object.keys(proposalLoopTables)).toEqual([
+    "proposalOperations",
+    "proposalServiceCounters",
+  ]);
+  expect(
+    (proposalLoopTables.proposalOperations as any).export().indexes,
+  ).toEqual([
+    {
+      indexDescriptor: "by_proposal_key",
+      fields: ["proposalId", "kind", "key"],
+    },
+    { indexDescriptor: "by_proposal", fields: ["proposalId"] },
+    { indexDescriptor: "by_org", fields: ["organizationId"] },
+    { indexDescriptor: "by_policy", fields: ["policyId", "kind"] },
+  ]);
+  expect(
+    (proposalLoopTables.proposalServiceCounters as any).export().indexes,
+  ).toEqual([{ indexDescriptor: "by_policy", fields: ["policyId"] }]);
   expect(Object.keys(preparedAnalysisTables)).toEqual(["mediaPreparations"]);
   expect(
     (preparedAnalysisTables.mediaPreparations as any)
@@ -53,7 +72,7 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
         row.vectorIndexes.length
       );
     }, 0),
-  ).toBe(267);
+  ).toBe(272);
   expect(Object.keys(cloudCatalogTables).sort()).toEqual([
     "catalogAliases",
     "catalogContributions",
@@ -200,6 +219,11 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
       file === "schema.ts"
         ? content
             .replace(
+              'import { proposalLoopTables } from "./proposalLoopSchema";\n',
+              "",
+            )
+            .replace("  ...proposalLoopTables,\n", "")
+            .replace(
               'import { analysisHistoryTables } from "./analysisHistorySchema";\n',
               "",
             )
@@ -233,7 +257,14 @@ it("preserves all tables/config and permits only the exact Cloud validators and 
               '    memberSubscriptionPolicy: v.optional(v.literal("individual_pro_v1")),\n',
               "",
             )
-        : content,
+        : file === "convex.config.ts"
+          ? content
+              .replace(
+                'import agent from "@convex-dev/agent/convex.config.js";\n',
+                "",
+              )
+              .replace("app.use(agent);\n", "")
+          : content,
     ).toBe(
       execFileSync("git", ["show", `${base}:convex/${file}`], {
         encoding: "utf8",

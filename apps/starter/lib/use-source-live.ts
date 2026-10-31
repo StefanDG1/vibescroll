@@ -28,8 +28,16 @@ export function usePostsLive(
   );
 }
 
+export function useProposalLive(
+  proposalId: string,
+  enabled: boolean,
+  update: (value: any) => void,
+) {
+  useMetadataLive("proposal", JSON.stringify({ proposalId }), enabled, update);
+}
+
 function useMetadataLive(
-  mode: "one" | "many",
+  mode: "one" | "many" | "proposal",
   scope: string,
   enabled: boolean,
   update: (value: any) => void,
@@ -68,9 +76,11 @@ function useMetadataLive(
           }
         });
         client.onUpdate(
-          mode === "one"
-            ? api.preparedAnalysis.live
-            : api.preparedAnalysis.liveMany,
+          mode === "proposal"
+            ? api.proposalLoop.read
+            : mode === "one"
+              ? api.preparedAnalysis.live
+              : api.preparedAnalysis.liveMany,
           JSON.parse(scope),
           (value) => {
             if (!controller.signal.aborted) receive(value);

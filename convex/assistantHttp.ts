@@ -1,3 +1,4 @@
+import { proposalLoopInputs } from "../packages/contracts/proposal-loop";
 import {
   prepareProjectIssueInput,
   reportProjectOutcomeInput,
@@ -38,6 +39,38 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z.strictObject({
+    operation: z.literal("reply_to_project_plan"),
+    args: proposalLoopInputs.reply_to_project_plan,
+  }),
+  z.strictObject({
+    operation: z.literal("get_proposal_discussion"),
+    args: proposalLoopInputs.get_proposal_discussion,
+  }),
+  z.strictObject({
+    operation: z.literal("add_proposal_message"),
+    args: proposalLoopInputs.add_proposal_message,
+  }),
+  z.strictObject({
+    operation: z.literal("quote_project_plan"),
+    args: proposalLoopInputs.quote_project_plan,
+  }),
+  z.strictObject({
+    operation: z.literal("start_project_plan"),
+    args: proposalLoopInputs.start_project_plan,
+  }),
+  z.strictObject({
+    operation: z.literal("preview_project_issue"),
+    args: proposalLoopInputs.preview_project_issue,
+  }),
+  z.strictObject({
+    operation: z.literal("approve_project_issue"),
+    args: proposalLoopInputs.approve_project_issue,
+  }),
+  z.strictObject({
+    operation: z.literal("retry_project_issue"),
+    args: proposalLoopInputs.retry_project_issue,
+  }),
   z.strictObject({
     operation: z.literal("prepare_project_issue"),
     args: prepareProjectIssueInput,
@@ -532,6 +565,45 @@ export const tools = httpAction(async (ctx, request) => {
           },
         );
         break;
+      case "get_proposal_discussion":
+      case "reply_to_project_plan":
+      case "add_proposal_message":
+      case "quote_project_plan":
+      case "start_project_plan":
+      case "preview_project_issue":
+      case "approve_project_issue":
+      case "retry_project_issue": {
+        const { profileId: _profile, ...args } = input.args;
+        // Recheck the selected workspace before invoking the same public core
+        // used by the signed-in website. Caller-supplied IDs grant no access.
+        await ctx.runQuery(internal.assistantProposals.read, {
+          proposalId: args.proposalId as Id<"proposals">,
+          profileId: selectedProfile,
+        });
+        if (input.operation === "get_proposal_discussion")
+          value = await ctx.runQuery(api.proposalLoop.read, args as any);
+        else if (input.operation === "reply_to_project_plan")
+          value = await ctx.runMutation(api.proposalLoop.reply, args as any);
+        else if (input.operation === "add_proposal_message")
+          value = await ctx.runMutation(api.proposalLoop.comment, args as any);
+        else if (input.operation === "quote_project_plan")
+          value = await ctx.runQuery(api.proposalLoop.quote, args as any);
+        else if (input.operation === "start_project_plan")
+          value = await ctx.runMutation(api.proposalLoop.start, args as any);
+        else if (input.operation === "preview_project_issue")
+          value = await ctx.runAction(
+            api.proposalIssueActions.preview,
+            args as any,
+          );
+        else if (input.operation === "approve_project_issue")
+          value = await ctx.runMutation(
+            api.proposalIssues.approve,
+            args as any,
+          );
+        else
+          value = await ctx.runMutation(api.proposalIssues.retry, args as any);
+        break;
+      }
       case "prepare_project_issue":
         value = await ctx.runMutation(internal.assistantProposalWork.prepare, {
           ...input.args,
@@ -626,7 +698,7 @@ export const tools = httpAction(async (ctx, request) => {
       const code =
         error instanceof Error
           ? error.message.match(
-              /\b(APPROVAL_STALE|IDEMPOTENCY_CONFLICT|POLICY_BLOCKED|INVALID_INPUT|LIMIT_REACHED):/,
+              /\b(APPROVAL_STALE|IDEMPOTENCY_CONFLICT|POLICY_BLOCKED|INVALID_INPUT|LIMIT_REACHED|SETUP_REQUIRED|PERSONAL_FUNDING_REQUIRED|QUOTE_CHANGED|SOURCE_BUSY|COST_RECONCILIATION_REQUIRED|INSUFFICIENT_CREDITS|BUDGET_EXCEEDED|ISSUES_PERMISSION_REQUIRED|GITHUB_UNAVAILABLE):/,
             )?.[1]
           : undefined;
       const failure = chatProposalFailure(code);

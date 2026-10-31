@@ -54,7 +54,7 @@ export const proposalIssueHandoff = z.strictObject({
   repository: z.string().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/),
   baseSha: sha,
   analysisVersionId: id,
-  insightIds: z.array(id).min(1).max(8),
+  insightIds: z.array(id).min(1).max(20),
   title: z.string().min(1).max(160),
   body: z.string().min(1).max(24000),
   bodyHash: hash,
@@ -63,6 +63,15 @@ export const proposalIssueHandoff = z.strictObject({
   expiresAt: z.number().int().nonnegative(),
   reports: z.array(proposalWorkReport).max(8),
   githubIssue: proposalGithubIssueObservation.optional(),
+  publication: z
+    .strictObject({
+      provenance: z.literal("github_api_receipt"),
+      number: z.number().int().positive(),
+      url: z.string().url().max(300),
+      confirmedAt: z.number().int().nonnegative(),
+      bodyMatchesFrozen: z.literal(true),
+    })
+    .optional(),
 });
 
 // This untrusted locator is usable only after signature and repository checks.
@@ -95,6 +104,7 @@ export function proposalIssueBody(input: {
   nonGoals: string[];
   acceptanceCriteria: string[];
   verificationNeeds: string[];
+  steps?: string[];
   proposalId: string;
   profileId: string;
   proposalVersion: number;
@@ -107,5 +117,5 @@ export function proposalIssueBody(input: {
     items.length
       ? items.map((item) => `- ${item}`).join("\n")
       : "Not established.";
-  return `## Problem\n\n${input.currentProblem}\n\n## Proposed approach\n\n${input.proposedChange ?? "Inspect the project and clarify the approach first."}\n\n## Expected benefit (unverified)\n\n${input.benefitHypothesis ?? "No benefit claim."}\n\n## Acceptance criteria\n\n${bullets(input.acceptanceCriteria)}\n\n## Verification needed\n\n${bullets(input.verificationNeeds)}\n\n## Risks\n\n${bullets(input.risks)}\n\n## Non-goals\n\n${bullets(input.nonGoals)}\n\n## VibeScroll handoff\n\nProposal: https://scroll.companynerve.com/app/${input.profileId}/proposals/${input.proposalId}\nProposal version: ${input.proposalVersion}. Project: ${input.repository}. Context commit: ${input.baseSha}.\n\nInspect the current repository before implementing. The proposal uses retained insights and a project profile; it does not establish that repository code was inspected. This issue does not authorize coding, spending, merging or publication. Use the user's actual implementation instructions.\n\nAfter the requested work, use your authenticated VibeScroll MCP connection and call report_project_outcome with profileId=${input.profileId}, proposalId=${input.proposalId}, handoffId=${input.handoffId}, a stable new key, status=completed/blocked/failed, a concise summary, workUrls containing only issue/PR links in ${input.repository}, and commitSha as the actual commit or null. Report tests and limitations honestly. Reuse the same key and content if the reply is unknown. Reporting expires ${new Date(input.expiresAt).toISOString()}; the saved proposal remains available. If no authorized VibeScroll connection is available, report that limitation in the issue instead; do not request or embed credentials. A model report is separate from verified CI, merge and user benefit.\n\n<!-- vibescroll-handoff:${input.handoffId} -->`;
+  return `## Problem\n\n${input.currentProblem}\n\n## Proposed approach\n\n${input.proposedChange ?? "Inspect the project and clarify the approach first."}\n\n## Expected benefit (unverified)\n\n${input.benefitHypothesis ?? "No benefit claim."}\n\n${input.steps?.length ? `## Implementation plan\n\n${bullets(input.steps)}\n\n` : ""}## Acceptance criteria\n\n${bullets(input.acceptanceCriteria)}\n\n## Verification needed\n\n${bullets(input.verificationNeeds)}\n\n## Risks\n\n${bullets(input.risks)}\n\n## Non-goals\n\n${bullets(input.nonGoals)}\n\n## VibeScroll handoff\n\nProposal: https://scroll.companynerve.com/app/${input.profileId}/proposals/${input.proposalId}\nProposal version: ${input.proposalVersion}. Project: ${input.repository}. Context commit: ${input.baseSha}.\n\nInspect the current repository before implementing. The proposal uses retained insights and a project profile; it does not establish that repository code was inspected. This issue does not authorize coding, spending, merging or publication. Use the user's actual implementation instructions.\n\nAfter the requested work, use your authenticated VibeScroll MCP connection and call report_project_outcome with profileId=${input.profileId}, proposalId=${input.proposalId}, handoffId=${input.handoffId}, a stable new key, status=completed/blocked/failed, a concise summary, workUrls containing only issue/PR links in ${input.repository}, and commitSha as the actual commit or null. Report tests and limitations honestly. Reuse the same key and content if the reply is unknown. Reporting expires ${new Date(input.expiresAt).toISOString()}; the saved proposal remains available. If no authorized VibeScroll connection is available, report that limitation in the issue instead; do not request or embed credentials. A model report is separate from verified CI, merge and user benefit.\n\n<!-- vibescroll-handoff:${input.handoffId} -->`;
 }

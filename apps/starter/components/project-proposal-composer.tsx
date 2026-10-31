@@ -24,6 +24,7 @@ export function ProjectProposalComposer({
   call,
   onNavigate,
   onContinue,
+  onSaved,
 }: {
   organizationId: string;
   sourceId: string;
@@ -37,6 +38,7 @@ export function ProjectProposalComposer({
   call: (operation: string, args: unknown) => Promise<any>;
   onNavigate?: (url: string) => void | Promise<void>;
   onContinue?: (proposalId: string) => Promise<void>;
+  onSaved?: (proposalId: string) => void;
 }) {
   const uid = useId();
   const [open, setOpen] = useState(false);
@@ -98,6 +100,7 @@ export function ProjectProposalComposer({
       const result = await call("projectProposalSave", pending.current);
       if (!result?.proposalId) throw Error("Save was not confirmed.");
       setSavedId(result.proposalId);
+      onSaved?.(result.proposalId);
       setUncertain(false);
     } catch (failure) {
       const rejected =

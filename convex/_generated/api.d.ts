@@ -20,6 +20,10 @@ import type * as assistant from "../assistant.js";
 import type * as assistantProposalWork from "../assistantProposalWork.js";
 import type * as assistantProposals from "../assistantProposals.js";
 import type * as projectPlanning from "../projectPlanning.js";
+import type * as proposalIssues from "../proposalIssues.js";
+import type * as proposalIssueActions from "../proposalIssueActions.js";
+import type * as proposalLoop from "../proposalLoop.js";
+import type * as proposalLoopActions from "../proposalLoopActions.js";
 import type * as assistantWidget from "../assistantWidget.js";
 import type * as assistantEventRuntime from "../assistantEventRuntime.js";
 import type * as assistantEvents from "../assistantEvents.js";
@@ -173,6 +177,10 @@ declare const fullApi: ApiFromModules<{
   assistantProposals: typeof assistantProposals;
   assistantProposalWork: typeof assistantProposalWork;
   projectPlanning: typeof projectPlanning;
+  proposalIssues: typeof proposalIssues;
+  proposalIssueActions: typeof proposalIssueActions;
+  proposalLoop: typeof proposalLoop;
+  proposalLoopActions: typeof proposalLoopActions;
   assistantWidget: typeof assistantWidget;
   assistantEventRuntime: typeof assistantEventRuntime;
   assistantEvents: typeof assistantEvents;
@@ -331,6 +339,7 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
   rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
   resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
   workflow: import("@convex-dev/workflow/_generated/component.js").ComponentApi<"workflow">;

@@ -28,7 +28,9 @@ it("keeps a real topic-fit disclosure on a collapsed saved plan with clearly dis
   expect(html).toContain("100");
   expect(html).toContain("Plan options for VibeScroll");
   expect(html).toContain("Approve &amp; create issue");
-  expect(html).toMatch(/<button[^>]+disabled[^>]*title="Issue creation/);
+  expect(html).toMatch(
+    /<button(?=[^>]*disabled)(?=[^>]*title="Issue creation)[^>]*>/,
+  );
   expect(html).toContain("Proposal discussion, not connected yet");
   expect(html).not.toMatch(/Needs changes|Assistant replied/);
 });

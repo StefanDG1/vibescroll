@@ -10,13 +10,25 @@ import {
   customMutation,
 } from "convex-helpers/server/customFunctions";
 import { queueSourceCompletion, eventsEnabled } from "./assistantEvents";
-import { internal } from "../_generated/api";
+import { internal, components } from "../_generated/api";
 import { ensure } from "../../packages/policy";
 import { syncDashboardCard } from "./dashboardProjection";
 
 // Use the existing helper's atomic write triggers. Failed projection writes
 // abort the underlying mutation; no eventually consistent private cache.
 const triggers = new Triggers<DataModel>();
+triggers.register("proposals", async (ctx, change) => {
+  if (change.newDoc || !change.oldDoc?.detail.work) return;
+  const threadId = change.oldDoc.detail.work.threadId;
+  if (typeof threadId === "string")
+    await ctx.runMutation(components.agent.threads.deleteAllForThreadIdAsync, {
+      threadId,
+      limit: 50,
+    });
+  await ctx.scheduler.runAfter(0, internal.proposalLoop.retire, {
+    proposalId: change.id,
+  });
+});
 triggers.register("sources", async (ctx, change) => {
   const before = change.oldDoc,
     next = change.newDoc;

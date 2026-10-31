@@ -14,6 +14,7 @@ export default defineConfig({
     server: { deps: { inline: ["@workos-inc/authkit-nextjs"] } },
     include: [
       "apps/starter/proposal-page-data.test.ts",
+      "apps/starter/proposal-work-ui.test.ts",
       "apps/starter/realtime-session.test.ts",
       "apps/starter/source-live.test.ts",
       "apps/starter/auth-redirect.test.ts",

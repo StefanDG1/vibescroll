@@ -72,6 +72,7 @@ export async function GET(
           review: proposal.review,
           disposition: proposal.disposition,
           currentProblem: proposal.detail?.currentProblem,
+          steps: proposal.detail?.steps,
           proposedChange: proposal.detail?.proposedChange,
           acceptanceCriteria: proposal.detail?.acceptanceCriteria ?? [],
         })),

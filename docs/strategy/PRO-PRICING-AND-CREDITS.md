@@ -71,3 +71,7 @@ Replace assumptions with invoice/meter receipts, country/card mix, supplier-tax 
 - [ ] Verify sandbox and production migration without a real purchase unless separately authorized.
 
 This target does not mean checkout, all-feature entitlements or supported self-hosting has shipped.
+
+## Promotional OpenAI API funding
+
+R127 requests using the owner's verified Pro-granted API credits for OpenAI-model website tasks before other API funding. Follow [the funding plan](OPENAI-PROMOTIONAL-API-FUNDING.md). Keep sustainable user tariffs unchanged; distinguish nominal API cost, promotional credit use, actual cash expense and the founder's Pro subscription cost. Official benefit availability is verified, but this account's linked organization, grant and live routing remain unverified. No price, balance or billing product changes follow from this note.

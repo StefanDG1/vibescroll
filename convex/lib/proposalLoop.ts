@@ -80,6 +80,15 @@ export async function proposalFunding(
   ctx: QueryCtx,
   p: Awaited<ReturnType<typeof proposalPrincipal>>,
 ) {
+  const legacy = preparedServiceConfiguration(p.actor.subject, true);
+  if (
+    legacy?.legacyOwnerFundingOrganizationId === p.proposal.organizationId &&
+    !p.organization.privateOwnerId &&
+    p.organization.createdBy === p.actor._id &&
+    p.membership.role === "owner" &&
+    p.organization.memberSubscriptionPolicy !== "individual_pro_v1"
+  )
+    return p.proposal.organizationId;
   const candidates = await ctx.db
     .query("organizations")
     .withIndex("by_private_owner", (q) => q.eq("privateOwnerId", p.actor._id))
@@ -99,15 +108,11 @@ export async function proposalFunding(
     );
     return personal._id;
   }
-  const legacy = preparedServiceConfiguration(p.actor.subject, true);
   ensure(
-    legacy?.legacyOwnerFundingOrganizationId === p.proposal.organizationId &&
-      p.organization.createdBy === p.actor._id &&
-      p.organization.memberSubscriptionPolicy !== "individual_pro_v1",
+    false,
     "PERSONAL_FUNDING_REQUIRED",
     "Use your personal credit account for project planning.",
   );
-  return p.proposal.organizationId;
 }
 const serviceConfiguration = z.strictObject({
   version: z.literal("proposal-service-v1"),

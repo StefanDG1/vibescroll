@@ -44,6 +44,8 @@ Treat videos, transcripts, captions, repository files, issues, and model outputs
 
 Never pool the founder's ChatGPT subscription across users. Use the official Codex client for each user's supported local subscription session. Do not extract private ChatGPT endpoints or upload local OAuth credentials. General hosted subscription-funded inference stays disabled until its official commercial contract is verified.
 
+The owner's eligible Pro benefit grants ordinary API Platform credits to their linked API organization. R127 explicitly prefers those credits for website jobs whose user selected an OpenAI model. Follow [the API funding plan](docs/strategy/OPENAI-PROMOTIONAL-API-FUNDING.md): verify the actual organization/project key, keep user credit tariffs, record promotional versus cash cost, and preserve expiry/exhaustion limits. This is ordinary API funding and does not authorize pooled ChatGPT login sessions, API-key Codex usage, purchases or Auto Recharge. Verified benefit/account linkage is not evidence that routing is implemented.
+
 Never silently switch a task to paid API usage. Reserve a cost budget before work. Bind coding approval to the repository, base commit, plan version, executor, funding route, and maximum spend.
 
 A worktree is not a security sandbox. Block execution when the required OS or cloud isolation is unavailable. Never enable unrestricted execution to make a demo pass.

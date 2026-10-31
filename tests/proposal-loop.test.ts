@@ -48,6 +48,52 @@ async function fixture() {
   );
   return { ...f, proposalId: proposal.proposalId };
 }
+it("preserves the configured legacy owner's existing credits after a personal workspace is created", async () => {
+  const f = await fixture();
+  const personalId = await f.t.run(async (ctx) => {
+    const organization = await ctx.db.get(f.org);
+    const { _id: _oldId, _creationTime: _oldTime, ...fields } = organization!;
+    return ctx.db.insert("organizations", {
+      ...fields,
+      privateOwnerId: fields.createdBy,
+    });
+  });
+  const q = await f.owner.query(api.proposalLoop.quote, {
+    proposalId: f.proposalId,
+  });
+  expect(q.fundingOrganizationId).toBe(f.org);
+  const started = await f.owner.mutation(api.proposalLoop.start, {
+    proposalId: f.proposalId,
+    expectedVersion: 1,
+    key: "legacy-owner-existing-wallet",
+    quoteId: q.quoteId,
+    maximumCredits: q.maximumCredits,
+  });
+  expect(started.operation.state).toBe("queued");
+  expect(
+    await f.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toMatchObject([{ organizationId: f.org, state: "active" }]);
+  expect(
+    await f.t.run((ctx) =>
+      ctx.db
+        .query("wallets")
+        .withIndex("by_org", (q) => q.eq("organizationId", personalId))
+        .unique(),
+    ),
+  ).toBeNull();
+});
+it("does not use the legacy workspace allowance for an individual-Pro team", async () => {
+  const f = await fixture();
+  await f.t.run((ctx) =>
+    ctx.db.patch(f.org, { memberSubscriptionPolicy: "individual_pro_v1" }),
+  );
+  await expect(
+    f.owner.query(api.proposalLoop.quote, { proposalId: f.proposalId }),
+  ).rejects.toThrow();
+  expect(
+    await f.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual([]);
+});
 it("persists one message for duplicate/concurrent requests, survives reads and keeps author/version server-owned", async () => {
   const f = await fixture();
   const input = {

@@ -1,6 +1,6 @@
 # Use promotional OpenAI API funding first
 
-Owner request R127, October31,2026. Status: official benefit verified; account grant and runtime routing not yet verified. This supplements the single-Pro pricing/model plan and follows the short-term proposal loop. It does not replace Muse Contributor for public-video analysis or activate a new paid provider.
+Owner request R127, October31,2026. Status: official benefit, account linkage and grant verified; runtime routing not implemented. This supplements the single-Pro pricing/model plan and follows the short-term proposal loop. It does not replace Muse Contributor for public-video analysis or activate a new paid provider.
 
 ## Verified external contract
 
@@ -29,4 +29,4 @@ The linked organization consumes free API credits before purchased credits. With
 
 Keep model credit bands based on sustainable nominal delivery cost, including preparation, storage, failures and support. Promotional funding reduces current cash expense; it is not new revenue or a permanent reduction in model list prices. Track nominal API cost, promotional credit consumed, paid API cash expense and other infrastructure separately. Count the founder's existing monthly Pro subscription once in operating cost. Model both subsidized launch months and the case where the credit expires or is fully used. Do not promise an80% net margin from a temporary grant.
 
-Authenticated API Platform billing now shows the selected Personal organization linked to a ChatGPT subscription and USD24.00 available API balance. The exact grant/expiry, recurring account-specific allowance, organization ID and payment/Auto Recharge state remain to be verified. No claim flow, new key, OpenAI inference, purchase, top-up or routing change has occurred for R127.
+Authenticated API Platform billing confirms an existing linked ChatGPT subscription and an unused available grant. The grant page confirms its issue and expiry dates. Payment methods shows that a paid API billing plan has not started. Account-specific amounts/dates and the browser receipt belong in ignored operator records. The exact organization/project ID and separately displayed Auto Recharge control remain unverified. No claim flow, new key, OpenAI inference, purchase, top-up or routing change has occurred for R127. No owner action is needed to activate the already linked benefit.

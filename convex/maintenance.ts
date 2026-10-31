@@ -58,6 +58,7 @@ export const purgeOrganization = internalMutation({
       "librarySetup",
       "sourceSpaces",
       "dashboardCards",
+      "projectRecommendationPreferences",
       "improvements",
       "improvementOutcomes",
       "improvementPolicies",

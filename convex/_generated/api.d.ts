@@ -127,6 +127,8 @@ import type * as privacy from "../privacy.js";
 import type * as product from "../product.js";
 import type * as posts from "../posts.js";
 import type * as postEngagement from "../postEngagement.js";
+import type * as postTrends from "../postTrends.js";
+import type * as projectRecommendations from "../projectRecommendations.js";
 import type * as publicKnowledge from "../publicKnowledge.js";
 import type * as sourceAcquisition from "../sourceAcquisition.js";
 import type * as sourceAcquisitionActions from "../sourceAcquisitionActions.js";
@@ -283,6 +285,8 @@ declare const fullApi: ApiFromModules<{
   product: typeof product;
   posts: typeof posts;
   postEngagement: typeof postEngagement;
+  postTrends: typeof postTrends;
+  projectRecommendations: typeof projectRecommendations;
   publicKnowledge: typeof publicKnowledge;
   sourceAcquisition: typeof sourceAcquisition;
   sourceAcquisitionActions: typeof sourceAcquisitionActions;

@@ -460,6 +460,7 @@ export function FeedPostCard({
                         disabled={readOnly || demo}
                         call={call}
                         onSaved={onRetry}
+                        onPreferencesChange={onRetry}
                       />
                       <ChevronRight
                         size={18}

@@ -21,14 +21,21 @@ export async function GET(
     );
     if (!organizationId) throw Error("Workspace required");
     const client = await backend();
-    const [source, projects] = await Promise.all([
+    const id = (await params).id as Id<"sources">;
+    const [source, projects, recommendations] = await Promise.all([
       client.query(api.product.detail, {
-        id: (await params).id as Id<"sources">,
+        id,
         organizationId: organizationId as Id<"organizations">,
       }),
       client.query(api.product.repositories, {
         organizationId: organizationId as Id<"organizations">,
       }),
+      client
+        .query(api.projectRecommendations.read, {
+          organizationId: organizationId as Id<"organizations">,
+          sourceId: id,
+        })
+        .catch(() => null),
     ]);
     if (!source || source.state !== "ready") throw Error("Post unavailable");
     const detail: FeedDetail = {
@@ -76,7 +83,7 @@ export async function GET(
           proposedChange: proposal.detail?.proposedChange,
           acceptanceCriteria: proposal.detail?.acceptanceCriteria ?? [],
         })),
-      suggestions: suggestProjects(source, projects),
+      suggestions: recommendations ?? suggestProjects(source, projects),
       projects: projects
         .filter((project) => project.enabled && project.confirmed)
         .map((project) => ({ id: project._id, name: project.fullName })),

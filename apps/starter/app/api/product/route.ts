@@ -4,6 +4,9 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
   setPostLike: ["mutation", api.postEngagement.setLike],
+  postTrends: ["query", api.postTrends.read],
+  projectRecommendations: ["query", api.projectRecommendations.read],
+  setProjectPriority: ["mutation", api.projectRecommendations.setPriority],
   postEngagementRead: ["query", api.postEngagement.read],
   proposalDiscussion: ["query", api.proposalLoop.read],
   proposalReply: ["mutation", api.proposalLoop.reply],

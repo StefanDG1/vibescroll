@@ -32,6 +32,7 @@ import { createIssueCore } from "./issues";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
+import { samePostPlans } from "./lib/projectRecommendationHistory";
 import {
   historySource,
   selectedAnalysis,
@@ -1163,6 +1164,35 @@ export const projectApplicationContext = internalQuery({
     potentialMatches: v.array(
       v.object({ category: v.string(), matchedTerms: v.array(v.string()) }),
     ),
+    priorProposals: v.object({
+      limited: v.boolean(),
+      items: v.array(
+        v.object({
+          id: v.id("proposals"),
+          title: v.string(),
+          version: v.number(),
+          review: v.string(),
+          current: v.boolean(),
+          outcome: v.object({
+            githubIssueState: v.union(
+              v.literal("open"),
+              v.literal("closed"),
+              v.literal("unknown"),
+              v.null(),
+            ),
+            githubObservedAt: v.union(v.number(), v.null()),
+            issuePublicationConfirmed: v.boolean(),
+            modelReportedStatus: v.union(
+              v.literal("completed"),
+              v.literal("blocked"),
+              v.literal("failed"),
+              v.null(),
+            ),
+            measuredBenefit: v.null(),
+          }),
+        }),
+      ),
+    }),
     analysisStarted: v.literal(false),
     creditsSpent: v.literal(0),
     codingAuthorized: v.literal(false),
@@ -1291,7 +1321,8 @@ export async function projectApplicationContextCore(
     codingAuthorized: false as const,
     publicationAuthorized: false as const,
   };
-  const serialized = canonicalJson(data);
+  const priorProposals = await samePostPlans(ctx, source, project, version._id);
+  const serialized = canonicalJson({ ...data, priorProposals });
   ensure(
     new TextEncoder().encode(serialized).byteLength <= 120000 &&
       !containsSecret(serialized),
@@ -1300,6 +1331,7 @@ export async function projectApplicationContextCore(
   );
   return {
     ...data,
+    priorProposals,
     contextHash: await digest(
       canonicalJson({
         actor: reader.actor._id,

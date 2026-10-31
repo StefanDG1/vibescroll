@@ -214,10 +214,17 @@ export const finishDelete = internalMutation({
       .withIndex("by_user", (q) => q.eq("userId", job.userId))
       .take(50);
     for (const reaction of reactions) await removeEngagement(ctx, reaction);
+    const projectPreferences = await ctx.db
+      .query("projectRecommendationPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", job.userId))
+      .take(50);
+    for (const preference of projectPreferences)
+      await ctx.db.delete(preference._id);
     if (
       subscriptions.length > 0 ||
       grants.length === 100 ||
       reactions.length === 50 ||
+      projectPreferences.length === 50 ||
       intakes.length === 100
     ) {
       await ctx.scheduler.runAfter(0, internal.accounts.finishDelete, {

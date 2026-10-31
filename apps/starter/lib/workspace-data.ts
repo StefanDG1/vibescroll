@@ -51,7 +51,7 @@ async function workspaceViewData({
 }) {
   const c = await backend(),
     organizationId = org as Id<"organizations">;
-  if (view === "account" || view === "menu") {
+  if (view === "account" || view === "menu" || view === "trends") {
     const organization = await c.query(api.organizations.details, {
       organizationId,
     });
@@ -190,7 +190,12 @@ async function workspaceViewData({
       privateLibrary: organization.private,
       role: organization.role,
       selectedSource,
-      projectSuggestions: suggestProjects(selectedSource, repositories),
+      projectSuggestions: await c
+        .query(api.projectRecommendations.read, {
+          organizationId,
+          sourceId: sourceId as Id<"sources">,
+        })
+        .catch(() => suggestProjects(selectedSource, repositories)),
       repositories: repositories.map(
         ({ _id, fullName, enabled, confirmed, status }) => ({
           _id,

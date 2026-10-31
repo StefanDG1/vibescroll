@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ProposalArtifact } from "./components/assistant-elements/proposal-artifact";
@@ -7,12 +7,14 @@ import { feedDemoDetails } from "./lib/home-feed-demo";
 const backendMock = vi.hoisted(() => ({ query: vi.fn(), backend: vi.fn() }));
 vi.mock("./lib/backend", () => ({
   backend: backendMock.backend,
-  api: { product: { detail: "detail", repositories: "repositories" } },
+  api: {
+    product: { detail: "detail", repositories: "repositories" },
+    projectRecommendations: { read: "recommendations" },
+  },
 }));
 import { GET } from "./app/api/feed/[id]/route";
-afterEach(() => {
-  vi.clearAllMocks();
-});
+beforeEach(() => backendMock.query.mockResolvedValue(null));
+afterEach(() => vi.resetAllMocks());
 
 it("keeps a real topic-fit disclosure on a collapsed saved plan with clearly disabled preview actions", () => {
   const detail = feedDemoDetails["feed-demo-0"];
@@ -72,7 +74,7 @@ it("returns no source or project text after an authorization failure", async () 
   expect(response.headers.get("Cache-Control")).toBe("no-store");
 });
 
-it("projects only authorized feed content and binds both reads to the requested workspace", async () => {
+it("projects only authorized feed content and binds source, project and recommendation reads to the workspace", async () => {
   backendMock.backend.mockResolvedValue({ query: backendMock.query });
   backendMock.query.mockResolvedValueOnce({
     _id: "source",
@@ -121,8 +123,9 @@ it("projects only authorized feed content and binds both reads to the requested 
   );
   expect(
     backendMock.query.mock.calls.map((call) => call[1].organizationId),
-  ).toEqual(["workspace", "workspace"]);
+  ).toEqual(["workspace", "workspace", "workspace"]);
   expect(backendMock.query.mock.calls[0][1].id).toBe("source");
+  expect(backendMock.query.mock.calls[2][1].sourceId).toBe("source");
 });
 
 it("keeps failed or in-progress sources out of the analyzed feed", async () => {

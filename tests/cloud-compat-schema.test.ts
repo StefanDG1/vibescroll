@@ -10,6 +10,7 @@ import { preparedAnalysisTables } from "../convex/preparedAnalysisSchema";
 import schema from "../convex/schema";
 import { proposalLoopTables } from "../convex/proposalLoopSchema";
 import { postEngagementTables } from "../convex/postEngagementSchema";
+import { projectRecommendationTables } from "../convex/projectRecommendationSchema";
 import { librarySpacesTables } from "../convex/librarySpacesSchema";
 import {
   cloudSaveDefaults,
@@ -25,7 +26,22 @@ const base = "346b718baf91ba9847fbb707be7bbe069df57257";
 it("preserves historical schemas/config while admitting reviewed empty proposal/engagement tables and components", () => {
   // Include the explicitly new, initially empty preparation table. Component
   // configuration and every historical table/index remain checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(99);
+  expect(Object.keys(schema.tables)).toHaveLength(100);
+  expect(Object.keys(projectRecommendationTables)).toEqual([
+    "projectRecommendationPreferences",
+  ]);
+  expect(
+    (
+      projectRecommendationTables.projectRecommendationPreferences as any
+    ).export().indexes,
+  ).toEqual([
+    {
+      indexDescriptor: "by_pair",
+      fields: ["organizationId", "userId", "repositoryId"],
+    },
+    { indexDescriptor: "by_user", fields: ["userId"] },
+    { indexDescriptor: "by_org", fields: ["organizationId"] },
+  ]);
   expect(Object.keys(postEngagementTables)).toEqual(["postEngagement"]);
   expect((postEngagementTables.postEngagement as any).export().indexes).toEqual(
     [
@@ -86,7 +102,7 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
         row.vectorIndexes.length
       );
     }, 0),
-  ).toBe(277);
+  ).toBe(280);
   expect(Object.keys(cloudCatalogTables).sort()).toEqual([
     "catalogAliases",
     "catalogContributions",
@@ -232,6 +248,11 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
     expect(
       file === "schema.ts"
         ? content
+            .replace(
+              'import { projectRecommendationTables } from "./projectRecommendationSchema";\n',
+              "",
+            )
+            .replace("  ...projectRecommendationTables,\n", "")
             .replace(
               'import { postEngagementTables } from "./postEngagementSchema";\n',
               "",

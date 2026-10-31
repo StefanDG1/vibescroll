@@ -1,5 +1,6 @@
 import { assistantTables } from "./assistantSchema";
 import { postEngagementTables } from "./postEngagementSchema";
+import { projectRecommendationTables } from "./projectRecommendationSchema";
 import { preparedAnalysisTables } from "./preparedAnalysisSchema";
 import { analysisHistoryTables } from "./analysisHistorySchema";
 import { cloudCatalogTables } from "./cloudCatalogSchema";
@@ -24,6 +25,7 @@ export const role = v.union(
 );
 export default defineSchema({
   ...postEngagementTables,
+  ...projectRecommendationTables,
   ...preparedAnalysisTables,
   ...cloudCatalogTables,
   ...analysisHistoryTables,

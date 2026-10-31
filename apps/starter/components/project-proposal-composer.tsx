@@ -4,7 +4,11 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@companynerve/ui";
 import { SettingsPanel } from "./settings-panel";
 import { ProjectFitBreakdown } from "./assistant-elements/project-fit-breakdown";
-import type { TopicFit } from "../lib/project-suggestions";
+import type {
+  TopicFit,
+  ProjectHistory,
+  ProjectPriority,
+} from "../lib/project-suggestions";
 import { projectProposalDraft } from "../../../packages/contracts/project-proposal-draft";
 import type { z } from "zod";
 import type { saveProjectProposalInput } from "../../../packages/contracts/chat-proposals";
@@ -25,6 +29,7 @@ export function ProjectProposalComposer({
   onNavigate,
   onContinue,
   onSaved,
+  onPreferencesChange,
 }: {
   organizationId: string;
   sourceId: string;
@@ -33,12 +38,19 @@ export function ProjectProposalComposer({
   insights?: { id: string; title?: string; claim: string }[];
   sourceTitle?: string;
   projects: Project[];
-  suggestions: (Project & { topics: string[]; fit?: TopicFit })[];
+  suggestions: (Project & {
+    topics: string[];
+    fit?: TopicFit;
+    history?: ProjectHistory;
+    priority?: ProjectPriority;
+    priorityRevision?: number;
+  })[];
   disabled: boolean;
   call: (operation: string, args: unknown) => Promise<any>;
   onNavigate?: (url: string) => void | Promise<void>;
   onContinue?: (proposalId: string) => Promise<void>;
   onSaved?: (proposalId: string) => void;
+  onPreferencesChange?: () => void;
 }) {
   const uid = useId();
   const [open, setOpen] = useState(false);
@@ -155,30 +167,70 @@ export function ProjectProposalComposer({
       {suggestions.length > 0 && (
         <>
           <h4>Suggested projects</h4>
-          {suggestions.map((p) => (
-            <div key={p.id}>
-              <button
-                type="button"
-                className="project-choice-row"
-                disabled={disabled}
-                onClick={() => choose(p.id)}
-              >
-                <span>
-                  {p.name}
-                  <small>
-                    Topic overlap:{" "}
-                    {p.topics.map((t) => t.replaceAll("_", " ")).join(", ")}
-                  </small>
-                </span>
-                <span>
-                  Draft proposal <ArrowRight size={16} aria-hidden="true" />
-                </span>
-              </button>
-              {p.fit && (
-                <ProjectFitBreakdown fit={p.fit} projectName={p.name} />
-              )}
-            </div>
-          ))}
+          {suggestions.map((p) => {
+            const existing = p.history?.samePost.find(
+              (plan) => plan.current && plan.review !== "rejected",
+            );
+            return (
+              <div key={p.id}>
+                {existing ? (
+                  <a
+                    className="project-choice-row"
+                    href={`/app/${organizationId}/proposals/${existing.id}`}
+                    onClick={onNavigate ? navigate : undefined}
+                  >
+                    <span>
+                      {p.name}
+                      <small>{existing.title}</small>
+                    </span>
+                    <span>
+                      Open plan <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    className="project-choice-row"
+                    disabled={disabled}
+                    onClick={() => choose(p.id)}
+                  >
+                    <span>
+                      {p.name}
+                      <small>
+                        Topic overlap:{" "}
+                        {p.topics.map((t) => t.replaceAll("_", " ")).join(", ")}
+                      </small>
+                    </span>
+                    <span>
+                      Draft proposal <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                )}
+                {p.fit && (
+                  <ProjectFitBreakdown
+                    fit={p.fit}
+                    projectName={p.name}
+                    history={p.history}
+                    priority={p.priority}
+                    proposalBase={`/app/${organizationId}/proposals`}
+                    onPriorityChange={
+                      !disabled && p.history
+                        ? async (priority) => {
+                            await call("setProjectPriority", {
+                              organizationId,
+                              repositoryId: p.id,
+                              priority,
+                              expectedRevision: p.priorityRevision ?? 0,
+                            });
+                            onPreferencesChange?.();
+                          }
+                        : undefined
+                    }
+                  />
+                )}
+              </div>
+            );
+          })}
         </>
       )}
       {projects.length > 0 ? (

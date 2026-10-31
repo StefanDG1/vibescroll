@@ -38,9 +38,23 @@ export function useProposalLive(
 ) {
   useMetadataLive("proposal", JSON.stringify({ proposalId }), enabled, update);
 }
+export function useTrendsLive(
+  organizationId: string,
+  windowDays: 7 | 30,
+  dayUTC: number,
+  enabled: boolean,
+  update: (value: any) => void,
+) {
+  useMetadataLive(
+    "trends",
+    JSON.stringify({ organizationId, windowDays, dayUTC }),
+    enabled,
+    update,
+  );
+}
 
 function useMetadataLive(
-  mode: "one" | "many" | "proposal" | "feed",
+  mode: "one" | "many" | "proposal" | "feed" | "trends",
   scope: string,
   enabled: boolean,
   update: (value: any) => void,
@@ -79,13 +93,15 @@ function useMetadataLive(
           }
         });
         client.onUpdate(
-          mode === "feed"
-            ? api.preparedAnalysis.feedLive
-            : mode === "proposal"
-              ? api.proposalLoop.read
-              : mode === "one"
-                ? api.preparedAnalysis.live
-                : api.preparedAnalysis.liveMany,
+          mode === "trends"
+            ? api.postTrends.read
+            : mode === "feed"
+              ? api.preparedAnalysis.feedLive
+              : mode === "proposal"
+                ? api.proposalLoop.read
+                : mode === "one"
+                  ? api.preparedAnalysis.live
+                  : api.preparedAnalysis.liveMany,
           JSON.parse(scope),
           (value) => {
             if (!controller.signal.aborted) receive(value);

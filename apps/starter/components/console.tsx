@@ -26,6 +26,7 @@ import {
 import { AssistantConnections } from "./assistant-connections";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
 import { UsageSummary } from "./usage-summary";
+import { TrendsDashboard } from "./trends-dashboard";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 import {
   sourceEvidenceFrames,
@@ -876,6 +877,9 @@ export function Console({
         "publicOwn",
         "savedPublicDetail",
         "sourceRelationships",
+        "postTrends",
+        "postEngagementRead",
+        "projectRecommendations",
       ].includes(operation)
     ) {
       setNotice(
@@ -947,6 +951,11 @@ export function Console({
           "publicOwn",
           "savedPublicDetail",
           "sourceRelationships",
+          "setPostLike",
+          "postEngagementRead",
+          "postTrends",
+          "projectRecommendations",
+          "setProjectPriority",
         ].includes(operation)
       )
         return body.result;
@@ -1080,6 +1089,7 @@ export function Console({
         [
           "home",
           "library",
+          "trends",
           "posts",
           "projects",
           "improvements",
@@ -1148,6 +1158,7 @@ export function Console({
   const nav = [
     ["home", "Home", Home],
     ["library", "Explore", Library],
+    ["trends", "Trends", Gauge],
     ["save", "Save", Plus],
     ["posts", "Posts", Video],
     ["projects", "Work", GitBranch],
@@ -1410,6 +1421,13 @@ export function Console({
                   }
                 />
               )}
+              {view === "trends" && (
+                <TrendsDashboard
+                  organizationId={organizationId}
+                  call={strictCall}
+                  demo={demo}
+                />
+              )}
               {view === "library" && (
                 <>
                   <details
@@ -1417,6 +1435,14 @@ export function Console({
                     open={librarySection !== "topics"}
                   >
                     <summary>Posts, insights and sharing</summary>
+                    {!demo && (
+                      <a
+                        className="button secondary"
+                        href={`/app/${organizationId}/trends`}
+                      >
+                        View Trends
+                      </a>
+                    )}
                     <a
                       href="/help/organize-your-library"
                       target="_blank"

@@ -1,8 +1,42 @@
 import { projectCategoryMatches } from "../../../packages/contracts/project-application";
+import { projectTopicFit } from "../../../packages/contracts/project-fit";
 
 export type ProjectSuggestions = {
   versionId: string | null;
-  items: { id: string; name: string; topics: string[]; fit: TopicFit }[];
+  rubric?: string;
+  fingerprint?: string;
+  items: {
+    id: string;
+    name: string;
+    topics: string[];
+    fit: TopicFit;
+    priority?: ProjectPriority;
+    priorityRevision?: number;
+    history?: ProjectHistory;
+  }[];
+};
+export type ProjectPriority = "low" | "normal" | "high";
+export type ProjectHistory = {
+  samePost: {
+    id: string;
+    title: string;
+    version: number;
+    review: string;
+    current: boolean;
+    outcome?: {
+      githubIssueState: "open" | "closed" | "unknown" | null;
+      githubObservedAt: number | null;
+      issuePublicationConfirmed: boolean;
+      modelReportedStatus: "completed" | "blocked" | "failed" | null;
+      measuredBenefit: null;
+    };
+  }[];
+  samePostLimited: boolean;
+  relatedPosts: number;
+  relatedAccepted: number;
+  relatedRejected: number;
+  lastPlanActivityAt: number | null;
+  measuredOutcomes: null;
 };
 export type TopicFit = {
   rubric: "topic-coverage-v1";
@@ -64,34 +98,13 @@ export function suggestProjects(
   const items = projects
     .filter((p) => p.enabled && p.confirmed && p.status === "connected")
     .map((p) => {
-      const paragraphs = (p.profile ?? "").slice(0, 20000).split(/\n\s*\n/);
-      const sections = paragraphs.filter((text) =>
-        /^(purpose|audience|goals|features):/i.test(text.trim()),
-      );
-      const positiveContext = (
-        sections.length ? sections : paragraphs.slice(0, 2)
-      )
-        .filter(
-          (text) => !/^(non.?goals|constraints|evidence):/i.test(text.trim()),
-        )
-        .join(" ");
-      const matched = projectCategoryMatches(topics, positiveContext);
+      const fit = projectTopicFit(topics, p.profile ?? "");
       return {
         id: p._id,
         name: p.fullName,
-        topics: matched.map((m) => m.category),
-        fit: {
-          rubric: "topic-coverage-v1" as const,
-          matched: matched.length,
-          total: topics.length,
-          criteria: topics.map((category) => ({
-            category,
-            matched: matched.some((m) => m.category === category),
-            terms:
-              matched.find((m) => m.category === category)?.matchedTerms ?? [],
-          })),
-        },
-        score: matched.length,
+        topics: fit.criteria.filter((c) => c.matched).map((c) => c.category),
+        fit,
+        score: fit.matched,
       };
     })
     .filter((p) => p.score > 0)

@@ -45,6 +45,13 @@ function fixture(denied = false) {
       };
     if (name === "aiPreferences:read")
       return { personalAlphaEnabled: true, cloudAnalysisEnabled: true };
+    if (name === "projectRecommendations:read")
+      return {
+        versionId: "version",
+        rubric: "topic-history-priority-v2",
+        items: [],
+        creditsSpent: 0,
+      };
     if (name === "product:proposals")
       return [
         { _id: "proposal", repositoryId: "repo", title: "Synthetic plan" },
@@ -79,7 +86,7 @@ it("loads project review, context and scan prerequisites in six scoped reads inc
     devices: [{ _id: "device" }],
   });
 });
-it("loads one source and its action prerequisites in exactly five reads without library, unrelated runs or usage", async () => {
+it("loads one source, its bounded recommendation signals and action prerequisites in six reads without library, unrelated runs or usage", async () => {
   const calls = fixture();
   const result = await workspaceData({
     org: organizationId,
@@ -92,8 +99,10 @@ it("loads one source and its action prerequisites in exactly five reads without 
     "product:repositories",
     "devices:list",
     "aiPreferences:read",
+    "projectRecommendations:read",
   ]);
   expect(calls[1].args).toEqual({ id: "selected-post", organizationId });
+  expect(calls[5].args).toEqual({ sourceId: "selected-post", organizationId });
   expect(result).toMatchObject({
     workspaceSlice: "source",
     sources: [],

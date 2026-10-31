@@ -1,5 +1,5 @@
 {
-  "version": "pro-eur-20261031-preview",
+  "version": "pro-eur-20261031-preview-v2",
   "status": "review_required",
   "currency": "EUR",
   "priceMode": "tax_inclusive_where_applicable",
@@ -10,7 +10,7 @@
     {
       "interval": "week",
       "amountCents": 1700,
-      "credits": null,
+      "credits": 75,
       "grantInterval": "week"
     },
     {
@@ -26,16 +26,20 @@
       "grantInterval": "month"
     }
   ],
-  "weeklyCreditProposal": 75,
   "sharedCache": "requested_posts",
   "fullCatalogue": "separate_addon",
   "automaticTopups": false,
   "legacyPolicy": "preserve_existing_terms_and_purchased_units",
   "activationBlocks": [
-    "Confirm weekly allowance and grant schedule",
     "Review whole-pipeline costs, tax and payment fees",
     "Review storage limits, topups and full-catalogue addon",
     "Accept sandbox migration and exact legacy price mapping",
     "Review live prices and customer migration before activation"
-  ]
+  ],
+  "weeklyCreditDecision": {
+    "credits": 75,
+    "grantEveryDays": 7,
+    "status": "owner_confirmed",
+    "date": "2026-10-31"
+  }
 }

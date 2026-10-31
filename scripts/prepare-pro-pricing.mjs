@@ -28,7 +28,7 @@ const plans = candidate.plans.map((plan) => {
   intervals.add(plan.interval);
   if (
     plan.interval === "week"
-      ? plan.credits !== null || plan.grantInterval !== "week"
+      ? plan.credits !== 75 || plan.grantInterval !== "week"
       : plan.credits !== 300 || plan.grantInterval !== "month"
   )
     throw Error("Allowance needs a separately reviewed candidate revision.");

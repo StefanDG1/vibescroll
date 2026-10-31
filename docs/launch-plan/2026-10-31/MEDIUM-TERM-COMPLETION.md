@@ -23,7 +23,7 @@ Finish M0 before building engagement/trends. Implement each slice against the cu
 
 ## Confirmed business direction and open choices
 
-The owner selected preparation of EUR35/month, EUR350/year and EUR17/week. Monthly and annual target300credits per month. The exact weekly grant clock/amount, top-up units, legacy migration and full-catalog add-on price need the cost/migration review; do not silently treat300monthly as300every week. The older EUR8/week/50-credit recommendation is superseded as the price candidate, not rewritten historical acceptance. No live Stripe product, price, purchase or customer migration is authorized by preparing these euro prices.
+The owner selected preparation of EUR35/month, EUR350/year and EUR17/week. Monthly and annual target300credits per month. The owner confirmed75credits every seven days for weekly. Top-up units, legacy migration and the full-catalog add-on price still need the cost/migration review. The older EUR8/week/50-credit recommendation is superseded as the price candidate, not rewritten historical acceptance. No live Stripe product, price, purchase or customer migration is authorized by preparing these euro prices.
 
 Keep Muse Contributor as the compatible public-video1× baseline. GLM Flash is the current private-plan pilot. The verified founder OpenAI grant is ordinary API funding, not a shared signed-in ChatGPT account. Preserve full model/effort provenance, whole-pipeline costs and final-only rounding.
 
@@ -66,3 +66,7 @@ Website/backend6d1ff38 passed exact CI, actual compatibility admission and stage
 ### M2 correction accepted
 
 Website/backendbed2094 passed full local checks, exact CI41232157316, two preparations,17 actual compatibility guards and staged/canonical Trends4/feed4/Library8. Native current-plan opening with honest0/100 fit and three suggestions passed. Two consecutive priority changes without refresh acknowledged revisions1/2 and restored the original Normal preference. Controlled tests cover the live/fallback race and denial. No analysis, model or credit use occurred. [Receipt](../../operations/evidence/launch-20261031-fit-correction-production.json). Continue M4, then M5; M0 external issue/discovery acceptance remains separate.
+
+M4 setup checkpoint: exact organization/project, Build tier, active grant/no-paid-plan state and restricted key are verified. Actual model listing and max-effort structured token counting passed without inference/source data. Follow [ADR218](../../adr/218-curated-models-and-openai-grant-funding.md) before adapter/quote integration. M4 is not complete from metadata acceptance.
+
+M0 combined-issue acceptance: the owner approved the exact reviewed canary. The native Home plan action created issue197 once, accepted version4 and returned Open issue/Copy work prompt. The GitHub API receipt and actual signed opened webhook both match the frozen body. Original MCP reads the same accepted proposal/receipts; new discussion/publication tool discovery remains separately open. No coding, model or credit use. The standalone proposal route still shows the older handoff-unavailable panel; reuse the working plan artifact there in the next website checkpoint.

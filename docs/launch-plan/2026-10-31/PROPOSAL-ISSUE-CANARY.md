@@ -1,6 +1,6 @@
 # Proposal issue canary for review
 
-Target: StefanDG1/vibescroll. This is prepared text, not a published issue. The final frozen handoff also appends its exact proposal/source-version references and authenticated completion instructions. It does not authorize coding, merging or paid advertising.
+Target: StefanDG1/vibescroll. The owner approved this exact task on October31. It is published as [issue197](https://github.com/StefanDG1/vibescroll/issues/197) from reviewed proposal version4. The native combined action and matching signed opened webhook passed. The final frozen handoff also appends its exact proposal/source-version references and authenticated completion instructions. It does not authorize coding, merging or paid advertising.
 
 ## Title
 

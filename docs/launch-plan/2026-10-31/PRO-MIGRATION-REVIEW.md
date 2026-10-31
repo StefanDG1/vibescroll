@@ -26,6 +26,15 @@ For baseline new work, current preparation costs1credit when needed and Muse ana
 
 ## Preserve existing customers
 
+November1 read-only production inspection verified the configured merchant and all six exact live price IDs against their product/tier/interval metadata. All are active, EUR and tax-inclusive. Provider charges/payouts are enabled; this does not establish tax registrations or authorize checkout. Exact account/product/price IDs remain in the private review packet.
+
+| Existing tier | Weekly price / allowance | Monthly price / allowance | Annual price / monthly allowance |
+| --- | --- | --- | --- |
+| Starter | EUR5.99 /65 | EUR19 /250 | EUR190 /250 |
+| Pro | EUR11.99 /150 | EUR39 /600 | EUR390 /600 |
+
+These rows describe verified legacy price bindings and current runtime allowance policy. They are not a claim that any customer purchased each offer. No customer records or live writes were needed. Keep these bindings when introducing the candidate300/75-credit policy.
+
 1. Keep the existing product metadata tag `vibescroller` and real provider product identity. Add reviewed replacement prices; do not create a parallel product merely to rename the brand.
 2. Maintain the exact old price→tier/interval/credit-policy mapping for existing customers. Preserve Starter and old Pro terms until each customer accepts a concrete replacement at renewal. No silent downgrade from old600credits to300, change of price or forced proration.
 3. Preserve purchased units, open invoices, refunds, disputed payments, cancellations and unknown reservations. Do not convert trial/operator grants into fabricated paid subscriptions.
@@ -59,7 +68,7 @@ M5 is prepared, not commercially activated. Do not call the whole medium-term pl
 
 November1 next implementation checkpoint: extend the offline candidate calendar to accept verified provider period ends. Test the actual initial and renewal receipts through that helper, preserving weekly exact duration, annual twelve-window limits and deterministic grant keys. Validate payment failure/recovery/cancellation through the isolated sandbox. These tests must remain separate from signed webhook delivery and application wallet writes; do not enable the new policy in production or reinterpret legacy allowances during preparation.
 
-That checkpoint passed eight focused tests and the full offline repository check, including both production builds. The scoped temporary key was expired after reconciliation, and a final read-only API attempt returned `api_key_expired`/401. Preserve the sandbox catalogue and payment fixtures for review. The next implementation boundary is the versioned price-policy adapter and signed webhook/application-wallet acceptance; production continues to use legacy terms. [Sandbox receipt](../../operations/evidence/launch-20261101-pro-sandbox-preparation.json).
+That checkpoint passed eight focused tests and the full offline repository check, including both production builds. Exact Linux CI41253310064 passed code85af4f2. The scoped temporary key was expired after reconciliation, and a final read-only API attempt returned `api_key_expired`/401. Preserve the sandbox catalogue and payment fixtures for review. The next implementation boundary is the versioned price-policy adapter and signed webhook/application-wallet acceptance; production continues to use legacy terms. [Sandbox receipt](../../operations/evidence/launch-20261101-pro-sandbox-preparation.json).
 
 November1 continuation: the owner completed browser login and ChatGPT Stripe connection, but this Codex tool session still returns `UNAUTHORIZED`. Do not repeat that reconnect loop. The signed-in dashboard matches the configured VibeScroller merchant; its existing isolated VibeScroller sandbox is verified through a scoped test-only key. Production uses a live key and is unchanged. Three candidate prices were created under the existing sandbox Pro product, and all eight older prices remain unchanged. The actual price receipt passes the canonical verifier through an opt-in provider test.
 

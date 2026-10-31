@@ -4,6 +4,18 @@
   "websiteCommitUnchanged": "cbe062de63bf565eaf7a91bc69bbeb0021980392",
   "backendCommitUnchanged": "2510081684fac4991bc8fac5449b65c295a01c8f",
   "candidatePolicy": "pro-eur-20261031-preview-v2",
+  "testedCodeCommit": "85af4f23d9e97ec3a29a3988ad345ed6c573fdcf",
+  "exactCI": 41253310064,
+  "exactCIConclusion": "success",
+  "readOnlyLiveReview": {
+    "configuredMerchantVerified": true,
+    "exactLegacyPriceBindingsVerified": 6,
+    "customerRecordsRead": 0,
+    "providerWrites": 0,
+    "chargesEnabled": true,
+    "payoutsEnabled": true,
+    "taxRegistrationsVerified": false
+  },
   "candidateSandboxPricesVerified": 3,
   "legacySandboxPricesUnchanged": 8,
   "createdProducts": 0,

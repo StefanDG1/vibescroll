@@ -477,11 +477,7 @@ export function Onboarding({
               launch collection.
             </p>
           )}
-          {notice && (
-            <output className={styles.notice}>
-              {notice}
-            </output>
-          )}
+          {notice && <output className={styles.notice}>{notice}</output>}
           {commonError}
           {loadingFeed && (
             <output className={styles.notice}>Finding ready posts…</output>
@@ -501,7 +497,7 @@ export function Onboarding({
                 )}
                 <div className={styles.postCopy}>
                   <span className={styles.ready}>
-                    <Check size={14} /> Already analyzed Â· {post.insightCount}{" "}
+                    <Check size={14} /> Already analyzed · {post.insightCount}{" "}
                     insights
                   </span>
                   <h2>{post.title}</h2>

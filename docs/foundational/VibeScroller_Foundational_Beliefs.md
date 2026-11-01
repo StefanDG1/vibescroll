@@ -1,5 +1,9 @@
 # VibeScroll foundational beliefs
 
+## F097: public MCP explanation, November1
+
+R135 requests public technical documentation with useful request/authentication, funding and shared-cache diagrams. Explain actual tools, packaged versus installed skills, exact data limits and the distinction between host subscription reasoning and VibeScroll API credits. Keep unmeasured Convex costs and host discovery explicit. This changes no audience, price, permission or verified customer outcome. [Documentation decision](../adr/225-public-mcp-reference-and-authentication-boundaries.md).
+
 ## F096: paid-credit production launch, November1
 
 R133 enables the approved Pro offer and EUR17/200credits or EUR35/500credits top-ups in production after zero live charges/invoices/subscriptions were verified. Eight unused old prices are archived. One exact live EUR35checkout was opened and expired unpaid; no card, charge, customer revenue or willingness to pay is established. Paid processing uses each member's own Pro/credits and finite existing provider funding, with no Auto Reload or operator purchase. Preserve requested-post cache access, private project isolation and honest measured claims. Public offer availability is distinct from independent paid-customer acceptance or demonstrated profitability. [Decision](../adr/224-paid-credit-launch-without-operator-purchases.md).

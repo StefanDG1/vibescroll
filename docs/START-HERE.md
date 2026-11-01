@@ -1,5 +1,7 @@
 # Start the implementation
 
+For the public MCP contract, start with [developer documentation](developers/index.md) and [the authentication/subscription explanation](developers/subscription.md). [R135's documentation plan](strategy/MCP-DOCUMENTATION-AND-EFFICIENCY.md) records the audit and the five subsequent priorities that wait for owner alignment.
+
 Mode: how-to. Version: 1.0.0.
 
 ## Mandatory current product direction

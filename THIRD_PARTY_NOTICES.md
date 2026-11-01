@@ -1,5 +1,9 @@
 # Third-party material
 
+## Fumadocs
+
+The public developer documentation uses `fumadocs-core` and `fumadocs-ui`16.17.9, MIT licensed. Source and copyright notices: [fuma-nama/fumadocs](https://github.com/fuma-nama/fumadocs). These installed dependencies retain their distributed license files. Documentation pages are authored in this repository; upstream theme source was not copied into the application.
+
 ## Assistant protocol runtime
 
 The exact `@modelcontextprotocol/server` 2.3.1 dependency implements the official MCP protocol. Its complete mixed license notice is preserved in [the runtime notice](licenses/modelcontextprotocol-server-2.3.1.txt): Apache-2.0 for new and consented code, MIT for unrelicensed contributions, and CC-BY-4.0 for documentation excluding specifications. Upstream source is [modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk). The dependency's SDK version does not change VibeScroll's product V1 scope. Protocol support alone does not establish a working account connection, persistent Events delivery, or provider approval.

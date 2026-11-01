@@ -1,0 +1,63 @@
+{
+  "pages": [
+    {
+      "slug": "",
+      "file": "index.md",
+      "title": "Developer documentation",
+      "description": "How VibeScroll connects saved posts, your assistant and your projects.",
+      "group": "Start here"
+    },
+    {
+      "slug": "mcp",
+      "file": "mcp.md",
+      "title": "How the MCP works",
+      "description": "Tool discovery, execution, authentication and the shared database.",
+      "group": "Start here",
+      "diagram": "architecture"
+    },
+    {
+      "slug": "mcp/subscription",
+      "file": "subscription.md",
+      "title": "Subscriptions and authentication",
+      "description": "Which work uses your ChatGPT plan, which work uses VibeScroll credits, and why the sign-ins are separate.",
+      "group": "Start here",
+      "diagram": "funding"
+    },
+    {
+      "slug": "mcp/first-workflow",
+      "file": "first-workflow.md",
+      "title": "Use saved insights in a chat",
+      "description": "Read a post, discuss a project plan and save it from your existing assistant.",
+      "group": "Start here"
+    },
+    {
+      "slug": "mcp/tools",
+      "file": "tools.md",
+      "title": "Tool reference",
+      "description": "Generated input schemas, scopes and effects for the actual MCP registry.",
+      "group": "Reference"
+    },
+    {
+      "slug": "mcp/results",
+      "file": "results.md",
+      "title": "Results, limits and errors",
+      "description": "What receipts, analysis versions, coverage and credit fields mean.",
+      "group": "Reference"
+    },
+    {
+      "slug": "mcp/skills",
+      "file": "skills.md",
+      "title": "Skills and Events",
+      "description": "Packaged workflows, tool descriptions and configured background tasks.",
+      "group": "Reference"
+    },
+    {
+      "slug": "mcp/efficiency",
+      "file": "efficiency.md",
+      "title": "Shared data and Convex usage",
+      "description": "What each call reads, what cache reuse saves and what remains unmeasured.",
+      "group": "Architecture",
+      "diagram": "cache"
+    }
+  ]
+}

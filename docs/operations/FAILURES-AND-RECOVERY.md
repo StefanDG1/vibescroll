@@ -2,6 +2,14 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November1 public documentation integration
+
+A separate Fumadocs stylesheet needs its own Tailwind theme import. Importing only the Fumadocs presets failed production compilation at `sm:ms-4`; adding the documented `@import "tailwindcss"` corrected it without weakening the build. Test the actual production build, not only types or the presence of CSS files. Generate reference data through the existing tested MCP discovery path; an ad hoc Vite SSR server stalled in this checkout and was replaced by a bounded standalone Vitest generator. The generator uses no provider or database credentials and rejects accidental tool execution.
+
+Read nullable billing fields with their state. `chargedCredits: null` includes no-admission/not-applicable as well as unsettled work. The120,000-byte project-context bound applies before adding the hash and MCP envelope; it does not measure database bandwidth or complete response size. Packaged skill files do not establish that an existing custom connection loaded them. Keep those distinctions in public docs and future host acceptance.
+
+The first corrected docs build also warned that a conditional runtime Markdown path caused whole-project filesystem tracing. Compile only manifest-selected public Markdown into a checked JSON artifact instead. Reuse a URL-only helper without importing Help's filesystem loader into the docs search route. This removes the broad trace rather than suppressing its warning; public docs/search perform no runtime filesystem or database read.
+
 ## November1 Stripe sandbox lessons
 
 Dashboard login, completed ChatGPT plugin consent and Codex connector credentials are distinct. The connector still returned `UNAUTHORIZED` after the owner completed consent. Use the verified isolated sandbox/scoped SDK fallback for authorized tests; do not repeat consent or switch production's live key to test mode.

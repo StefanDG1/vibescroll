@@ -43,6 +43,7 @@ export function SiteFooter() {
           "status",
           "faq",
           "help",
+          "docs",
           "open-source",
           "privacy",
           "terms",

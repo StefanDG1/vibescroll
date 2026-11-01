@@ -21,3 +21,7 @@ Publishing the new policy while the old `POLICY_RELEASE_VERSION` remains configu
 ## Acceptance
 
 Verify all three live price amounts/intervals/metadata, the safe portal and unchanged old records. Test that a stale published-policy binding refuses a new charge. Full checks, exact CI, actual no-scan/no-backfill admission and staged/canonical policy/pricing/Library checks precede publication. Verify the real owner Usage page is unchanged. Actual paid-customer processing and live charges remain unclaimed until their own acceptance and funding gates pass.
+
+## Currency research
+
+Stripe's current [Adaptive Pricing reporting](https://docs.stripe.com/payments/currencies/localize-prices/adaptive-pricing?payment-ui=stripe-hosted) and [tax/invoicing guidance](https://docs.stripe.com/tax/calculating/adaptive-pricing) retain the integration currency for reporting/invoicing while exposing local presentment separately. Managed Payments supplies this localization automatically. Keep the exact canonical EUR price/invoice checks; do not weaken grant validation based on a guessed local-currency conversion. A real cross-currency purchase remains untested and no test charge is authorized.

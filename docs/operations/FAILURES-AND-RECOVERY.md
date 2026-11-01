@@ -10,6 +10,8 @@ Read nullable billing fields with their state. `chargedCredits: null` includes n
 
 The first corrected docs build also warned that a conditional runtime Markdown path caused whole-project filesystem tracing. Compile only manifest-selected public Markdown into a checked JSON artifact instead. Reuse a URL-only helper without importing Help's filesystem loader into the docs search route. This removes the broad trace rather than suppressing its warning; public docs/search perform no runtime filesystem or database read.
 
+The first two Library verification commands mistakenly overrode the checker's default with `/demo` rather than `/demo?view=library`. They failed before finding Library controls. The unchanged eight-case check passes on the correct route. Preserve the failing receipts and inspect a reusable checker's complete entry contract before overriding its URL. Do not overlap browser scripts: local Chrome shares focus even when backend or shell work can run in parallel. Native search was ultimately verified with a current accessibility target, pointer movement and observed final URL; an earlier unstable-frame click was not enough to diagnose an application defect.
+
 ## November1 Stripe sandbox lessons
 
 Dashboard login, completed ChatGPT plugin consent and Codex connector credentials are distinct. The connector still returned `UNAUTHORIZED` after the owner completed consent. Use the verified isolated sandbox/scoped SDK fallback for authorized tests; do not repeat consent or switch production's live key to test mode.

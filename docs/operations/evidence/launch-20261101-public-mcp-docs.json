@@ -1,0 +1,83 @@
+{
+  "date": "2026-11-01",
+  "status": "public MCP documentation live; runtime and funding policies unchanged",
+  "websiteCommit": "68ae31227caa55806456bf8d6e1e5090a7240377",
+  "backendCommit": "1f96e6d0098d27b0c72928885f84941d434d447c",
+  "url": "https://scroll.companynerve.com/docs/mcp",
+  "ci": {
+    "run": 41314634044,
+    "exactCommit": true,
+    "conclusion": "success",
+    "mainPassed": 1515,
+    "mainSkipped": 11,
+    "authPassed": 54,
+    "knowledgePassed": 176,
+    "nodeAndPythonChecks": true,
+    "bothProductionBuilds": true,
+    "dependencyAuditUnresolved": 0
+  },
+  "local": {
+    "initialMainPassed": 1516,
+    "initialMainSkipped": 9,
+    "laterFocusedDocsAndHelpPassed": 10,
+    "lintAndTypes": true,
+    "correctedProductionBuild": true,
+    "initialStylesheetCompilationFailurePreserved": true,
+    "newDocsBroadFilesystemTraceRemoved": true,
+    "existingHelpTracingWarningsRemain": true
+  },
+  "publication": {
+    "deploymentId": "dpl_qcCfQN6CbiY1HnrNYGKK9UNMrSK8",
+    "websiteBuilds": 1,
+    "actualCores": 2,
+    "actualMemoryGB": 8,
+    "normalQueueVerified": true,
+    "readyAfterBuildStartMs": 71760,
+    "sameBuildPromoted": true,
+    "canonicalExactHealth": true,
+    "canonicalAliasesCompleted": 2,
+    "normalDomainAssignmentRestorationAcknowledged": true
+  },
+  "documentation": {
+    "framework": "Fumadocs 16.17.9, MIT",
+    "publicPages": 8,
+    "responsiveDiagrams": 3,
+    "fullFeatureGeneratedDescriptors": 53,
+    "packagedEndUserSkills": 9,
+    "toolAvailabilityDependsOnHostAndFlags": true,
+    "registryAndPublicContentDriftChecks": true,
+    "publicContentManifestAllowlist": true,
+    "runtimeDatabaseOrFilesystemReads": 0
+  },
+  "browser": {
+    "stagedDocumentCases": 16,
+    "canonicalDocumentCases": 16,
+    "widths": [1440, 390],
+    "diagramVisualReview": true,
+    "canonicalNativeSearchMouseSelection": true,
+    "stageNativeSearchKeyboardSelection": true,
+    "localNativeSchemaExpansion": true,
+    "canonicalHomeCases": 4,
+    "canonicalLibraryTreeFoldersCases": 8,
+    "libraryThemes": ["light", "dark"],
+    "initialLibraryChecksUsedWrongDemoQuery": true,
+    "correctedLibraryEntryPassed": true
+  },
+  "boundaries": {
+    "backendPublications": 0,
+    "newAnalysisOrAiCalls": 0,
+    "newLivePayments": 0,
+    "newWalletGrants": 0,
+    "newProviderPurchases": 0,
+    "mcpRuntimeContractChanges": 0,
+    "originalConnectionRecreated": false,
+    "oldHoldsAndSavedResultsPreserved": true
+  },
+  "remaining": [
+    "Exact per-tool billed Convex reads and bytes remain unmeasured.",
+    "Packaged skills do not prove installation in the existing custom ChatGPT connection.",
+    "Metadata-first discovery, indexed knowledge search and compact output contracts remain proposed improvements.",
+    "The five agreed follow-on product priorities wait for owner alignment after this MCP discussion.",
+    "Independent beginner and foreground-human acceptance are separate from automated browser checks."
+  ]
+}

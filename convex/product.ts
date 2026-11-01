@@ -1,4 +1,5 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
+import { billingRiskHeld } from "./lib/billingRisk";
 import { cloudRetryEligible } from "../packages/contracts/cloud-retry";
 import {
   selectedAnalysis,
@@ -76,7 +77,11 @@ import {
   acquisitionPolicy,
 } from "../packages/media/acquisition";
 const org = { organizationId: v.id("organizations") };
-export async function wallet(ctx: MutationCtx, id: Id<"organizations">) {
+export async function wallet(
+  ctx: MutationCtx,
+  id: Id<"organizations">,
+  initialAllowance: "legacy_trial" | "none" = "legacy_trial",
+) {
   const organization = await ctx.db.get(id);
   ensure(
     organization?.memberSubscriptionPolicy !== "individual_pro_v1",
@@ -104,7 +109,7 @@ export async function wallet(ctx: MutationCtx, id: Id<"organizations">) {
       .query("trialClaims")
       .withIndex("by_identity", (q) => q.eq("identityHash", identityHash))
       .unique();
-    const granted = claim ? 0 : 30;
+    const granted = claim || initialAllowance === "none" ? 0 : 30;
     if (!claim)
       await ctx.db.insert("trialClaims", {
         identityHash,
@@ -150,6 +155,11 @@ export async function reserve(
     );
     return old._id;
   }
+  ensure(
+    !(await billingRiskHeld(ctx, id)),
+    "PAYMENT_REVIEW_REQUIRED",
+    "New funded work is paused for payment review. Existing results and reservations are preserved.",
+  );
   const w = await wallet(ctx, id);
   const billing = await ctx.db
     .query("billing")

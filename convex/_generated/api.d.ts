@@ -36,6 +36,7 @@ import type * as assistantLocalActions from "../assistantLocalActions.js";
 import type * as assistantLocalHttp from "../assistantLocalHttp.js";
 import type * as assistantSchema from "../assistantSchema.js";
 import type * as billing from "../billing.js";
+import type * as billingRisk from "../billingRisk.js";
 import type * as billingChanges from "../billingChanges.js";
 import type * as billingV1 from "../billingV1.js";
 import type * as categories from "../categories.js";
@@ -196,6 +197,7 @@ declare const fullApi: ApiFromModules<{
   assistantLocalHttp: typeof assistantLocalHttp;
   assistantSchema: typeof assistantSchema;
   billing: typeof billing;
+  billingRisk: typeof billingRisk;
   billingChanges: typeof billingChanges;
   billingV1: typeof billingV1;
   categories: typeof categories;

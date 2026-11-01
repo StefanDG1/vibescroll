@@ -6,6 +6,8 @@ import { requireInvoiceOperator } from "./lib/invoiceOperator";
 import { wallet } from "./product";
 import { pricing, ensure } from "../packages/policy";
 import { billingReadiness } from "../packages/providers/billing-readiness";
+import { candidateCreditPolicy } from "../packages/billing/credit-policy";
+import { billingRiskHeld } from "./lib/billingRisk";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import {
@@ -128,8 +130,11 @@ export const grantPeriod = internalMutation({
     invoiceId: v.optional(v.string()),
     billingRevision: v.optional(v.number()),
     pilotEvent: v.optional(pilotProviderEvent),
+    creditPolicyVersion: v.optional(v.string()),
+    policyPriceId: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
+    if (await billingRiskHeld(ctx, a.organizationId)) return;
     if (a.billingRevision !== undefined) {
       const current = await ctx.db
         .query("billing")
@@ -149,16 +154,64 @@ export const grantPeriod = internalMutation({
       "PAYMENT_REQUIRED",
       "Verified payment is required.",
     );
+    let policyCredits: number | undefined;
+    if (a.creditPolicyVersion !== undefined || a.policyPriceId !== undefined) {
+      const policy = candidateCreditPolicy(process.env, a.policyPriceId ?? "");
+      ensure(
+        policy &&
+          policy.version === a.creditPolicyVersion &&
+          a.tier === "pro" &&
+          a.interval ===
+            (policy.interval === "weekly" ? "weekly" : "monthly") &&
+          a.billingRevision !== undefined &&
+          Boolean(a.invoiceId),
+        "BILLING_POLICY_INVALID",
+        "The verified credit policy is unavailable.",
+      );
+      const organization = await ctx.db.get(a.organizationId);
+      const person = organization?.privateOwnerId;
+      const owned = person
+        ? await ctx.db
+            .query("organizations")
+            .withIndex("by_private_owner", (q) =>
+              q.eq("privateOwnerId", person),
+            )
+            .take(2)
+        : [];
+      const membership = person
+        ? await ctx.db
+            .query("memberships")
+            .withIndex("by_pair", (q) =>
+              q.eq("organizationId", a.organizationId).eq("userId", person),
+            )
+            .unique()
+        : null;
+      ensure(
+        organization?.status === "active" &&
+          person &&
+          membership?.role === "owner" &&
+          owned.filter((o) => o.status === "active").length === 1 &&
+          owned.some((o) => o._id === a.organizationId),
+        "PERSONAL_FUNDING_REQUIRED",
+        "Subscription credits belong to your personal account.",
+      );
+      policyCredits = policy.credits;
+    }
     const key = `${a.subscription}:${a.start}`;
     const existing = await ctx.db
       .query("billingPeriods")
       .withIndex("by_key", (q) => q.eq("key", key))
       .unique();
-    const w = await wallet(ctx, a.organizationId);
+    const w = await wallet(
+      ctx,
+      a.organizationId,
+      policyCredits === undefined ? "legacy_trial" : "none",
+    );
     const credits =
-      a.interval === "weekly"
+      policyCredits ??
+      (a.interval === "weekly"
         ? pricing.tiers[a.tier].weekly_credits
-        : pricing.tiers[a.tier].monthly_credits;
+        : pricing.tiers[a.tier].monthly_credits);
     if (existing) {
       ensure(
         existing.organizationId === a.organizationId && existing.end === a.end,

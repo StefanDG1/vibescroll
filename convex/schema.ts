@@ -15,6 +15,7 @@ import { localLibraryTables } from "./localLibrarySchema";
 import { publicTables } from "./publicSchema";
 import { sourceTables } from "./sourceSchema";
 import { pilotPaymentTables } from "./pilotPaymentSchema";
+import { billingRiskTables } from "./billingRiskSchema";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 export const role = v.union(
@@ -24,6 +25,7 @@ export const role = v.union(
   v.literal("viewer"),
 );
 export default defineSchema({
+  ...billingRiskTables,
   ...postEngagementTables,
   ...projectRecommendationTables,
   ...preparedAnalysisTables,

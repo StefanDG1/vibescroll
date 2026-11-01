@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import { access, billingFor, fail, limit } from "./lib";
 import { billingReadiness } from "../packages/providers/billing-readiness";
 import { ensure } from "../packages/policy";
+import { billingRiskHeld } from "./lib/billingRisk";
 export const authorize = query({
   args: { organizationId: v.id("organizations") },
   handler: async (ctx, { organizationId }) => {
@@ -92,6 +93,11 @@ export const reserveCheckout = internalMutation({
       );
       return { key: row.checkoutKey, expires: row.checkoutExpires };
     }
+    ensure(
+      !(await billingRiskHeld(ctx, organizationId)),
+      "PAYMENT_REVIEW_REQUIRED",
+      "New purchases are paused for payment review. Existing invoices and results are preserved.",
+    );
     const expires = Date.now() + 31 * 60000;
     const key = `checkout:${organizationId}:${crypto.randomUUID()}`;
     await ctx.db.patch(row._id, {

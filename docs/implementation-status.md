@@ -2,6 +2,12 @@
 
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
+## November1: credit-policy and signed webhook/wallet integration candidate
+
+ADR221 adds a separate exact-price75/300-credit policy while retaining the configured legacy65/250 and150/600 mappings. New paid wallets do not receive a newly minted trial; existing balances remain. The same period-key ledger handles replay/concurrency, annual monthly grants and reviewed renewal migration. Historical unconfigured legacy prices preserve their status behavior, and a missing activated policy does not downgrade the current stored entitlement.
+
+Focused checks pass67 policy/legacy-wallet/schema cases, including actual retained provider shapes through controlled signed delivery. SDK-signed requests use the real verifier and HTTP handler. Retained actual sandbox objects fund only isolated synthetic test wallets. Risk holds pause new spending/purchases/included grants while existing reservations can settle. A provider outage cannot discard a confirmed risk; one won dispute cannot clear another warning. Restricted invoice-operator review is tested. One new initially empty table and three indexes are the only intended schema additions. The first broad check correctly rejected the new table before the explicit allowlist was updated; historical comparisons remain intact. Final full local checks passed1488/52/174 Vitest groups, Node/Python checks and both production builds; dependency audit has no unresolved findings. Exact CI and actual publication guards remain pending. Production is still websitecbe062d/backend2510081. No real balances, subscriptions, prices or analysis capacity changed.
+
 ## November1: Pro sandbox provider acceptance and credit-period correction
 
 Exact Linux CI41253310064 passed code85af4f2. A later read-only live inspection verified the configured merchant and six exact legacy price bindings, with active EUR/tax-inclusive prices and current65/250 Starter and150/600 Pro allowances preserved. No customer records or live writes. The test key was expired; both owner-approved replacement sandbox keys were encrypted and read-verified, with old keys absent from the active table. Documentation reconciliation does not require another hosted build or backend publication.

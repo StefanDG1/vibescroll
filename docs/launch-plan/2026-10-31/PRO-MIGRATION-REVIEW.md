@@ -18,6 +18,8 @@ Weekly price/allowance normalized using365.25days/year is approximately EUR73.92
 
 One person owns one allowance pool across all workspaces. Every member needs their own active Pro and spends their own credits. Creating or joining a workspace grants no extra allowance and cannot borrow the owner's wallet. Retain the narrowly configured existing owner legacy-wallet exception; do not extend it to a team or a different person.
 
+R131, November1: the owner reports no real customers. Do not advertise storage quotas or impose a Pro repository-count quota in the new offer. Prepare concise fair-use terms; retain operational resource, credit and concurrent-work bounds without promising unlimited storage. Existing admin/test balances, valid results and provider history remain protected. No customer-migration campaign is needed for today's reported account state; retain the tested backward-compatible settlement path. Existing top-up terms are unchanged until the concrete offer review.
+
 The candidate grants75credits over seven exact UTC days or300over each original monthly anniversary. Monthly subscriptions use Stripe's verified current period start/end. Never recalculate an end from a clamped renewal start: the actual October31 sandbox subscription renewed November30 through December31. Annual payments produce twelve monthly grants, clamped independently from the original annual anchor: January31→February28/29→March31. A duplicated invoice/webhook/scheduler delivery must use the same person/subscription/window key. Paying annually does not grant3600credits immediately. Unused allowance expires under the reviewed policy, while unknown reservations remain held; purchased units retain their existing denomination and expiry terms.
 
 The offline implementation is [pro-migration-preview.ts](../../../packages/billing/pro-migration-preview.ts). It performs no provider call or database write. Its tests cover leap years/month-end drift, seven-day/DST boundaries, deterministic keys, live-versus-sandbox price refusal and preservation of purchased/held units. Separate opt-in tests now pass actual sandbox receipts through this helper. It is not a deployed grant scheduler or application-wallet integration.
@@ -52,6 +54,8 @@ Before live activation, present the exact account/product/price IDs, old-price m
 
 ## Acceptance
 
+November1 owner continuation authorizes the policy integration and webhook/wallet work while explicitly preserving old subscriptions and balances. Follow [ADR221](../../adr/221-versioned-pro-credit-policy.md): separate exact candidate price mapping, paid object-graph validation, personal pooling and replay-safe existing ledger settlement. Deploying this compatibility layer does not activate live prices or migrate customers.
+
 - [x] Owner selected EUR35/month, EUR350/year and EUR17/week with300monthly/75weekly credits.
 - [x] Offline price comparison and calendar/preservation verifier pass.
 - [x] Requested-post cache and independent second-account no-job/no-credit reuse already have separate production evidence.
@@ -61,6 +65,11 @@ Before live activation, present the exact account/product/price IDs, old-price m
 - [x] Actual failed renewal, same-invoice recovery/payment replay and period-end cancellation.
 - [x] Six actual paid invoice graphs through the candidate credit-period calendar, including the clamped monthly renewal.
 - [ ] Signed webhook delivery, application wallet grants/replay and voluntary customer-migration acceptance.
+- [x] Controlled SDK-signed HTTP webhook→wallet tests for new/legacy grants, concurrency/replay, annual windows, failures, renewal migration and preserved purchased/held units.
+- [x] Actual retained sandbox object shapes through controlled signed HTTP delivery into isolated synthetic wallets; no real app balances modified.
+- [x] Implement exact per-price policy and independent payment-risk holds; local tests cover restricted review and existing-job completion.
+- [ ] Actual provider webhook endpoint delivery, voluntary provider migration and production integration acceptance.
+- [ ] Wire the activated single-Pro checkout/portal/public offer together after concrete review; leave current legacy offer unchanged until then.
 - [ ] Exact current operator tax/customer terms and legacy mapping reviewed.
 - [ ] Live publication/customer migration approved and verified.
 

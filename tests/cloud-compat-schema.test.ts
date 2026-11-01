@@ -11,6 +11,7 @@ import schema from "../convex/schema";
 import { proposalLoopTables } from "../convex/proposalLoopSchema";
 import { postEngagementTables } from "../convex/postEngagementSchema";
 import { projectRecommendationTables } from "../convex/projectRecommendationSchema";
+import { billingRiskTables } from "../convex/billingRiskSchema";
 import { librarySpacesTables } from "../convex/librarySpacesSchema";
 import {
   cloudSaveDefaults,
@@ -26,7 +27,13 @@ const base = "346b718baf91ba9847fbb707be7bbe069df57257";
 it("preserves historical schemas/config while admitting reviewed empty proposal/engagement tables and components", () => {
   // Include the explicitly new, initially empty preparation table. Component
   // configuration and every historical table/index remain checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(100);
+  expect(Object.keys(schema.tables)).toHaveLength(101);
+  expect(Object.keys(billingRiskTables)).toEqual(["billingRiskHolds"]);
+  expect((billingRiskTables.billingRiskHolds as any).export().indexes).toEqual([
+    { indexDescriptor: "by_key", fields: ["key"] },
+    { indexDescriptor: "by_org_state", fields: ["organizationId", "state"] },
+    { indexDescriptor: "by_state", fields: ["state"] },
+  ]);
   expect(Object.keys(projectRecommendationTables)).toEqual([
     "projectRecommendationPreferences",
   ]);
@@ -102,7 +109,7 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
         row.vectorIndexes.length
       );
     }, 0),
-  ).toBe(280);
+  ).toBe(283);
   expect(Object.keys(cloudCatalogTables).sort()).toEqual([
     "catalogAliases",
     "catalogContributions",
@@ -248,6 +255,11 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
     expect(
       file === "schema.ts"
         ? content
+            .replace(
+              'import { billingRiskTables } from "./billingRiskSchema";\n',
+              "",
+            )
+            .replace("  ...billingRiskTables,\n", "")
             .replace(
               'import { projectRecommendationTables } from "./projectRecommendationSchema";\n',
               "",

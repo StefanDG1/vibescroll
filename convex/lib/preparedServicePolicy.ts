@@ -1,7 +1,38 @@
 import { z } from "zod";
-import type { Doc } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import { ensure } from "../../packages/policy";
 import { paidProcessingConfiguration } from "../../packages/contracts/paid-processing";
+import type { QueryCtx } from "../_generated/server";
+import {
+  paidProcessingCapacity,
+  requirePaidProcessing,
+} from "./paidProcessing";
+import { PolicyError } from "../../packages/policy";
+
+export async function preparedServiceAvailable(
+  ctx: QueryCtx,
+  actor: Doc<"users">,
+  organizationId?: Id<"organizations">,
+) {
+  const config = preparedServiceConfiguration(actor.subject);
+  if (!config || !process.env.VERCEL_AI_GATEWAY_API_KEY) return false;
+  if (organizationId) {
+    const organization = await ctx.db.get(organizationId);
+    if (
+      organization?.privateOwnerId !== actor._id &&
+      config.legacyOwnerFundingOrganizationId !== organizationId
+    )
+      return false;
+  }
+  if (!config.paidCustomer) return true;
+  try {
+    await requirePaidProcessing(ctx, actor, organizationId);
+    return !!(await paidProcessingCapacity(ctx))?.available;
+  } catch (error) {
+    if (error instanceof PolicyError) return false;
+    throw error;
+  }
+}
 
 const configuration = z.strictObject({
   version: z.literal("prepared-service-v1"),

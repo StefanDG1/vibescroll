@@ -8,6 +8,7 @@ import { hostedMediaAllowed } from "./lib/hostedMediaAccess";
 import { privateLibrary } from "./librarySpaces";
 import { parsePreflightReport } from "../packages/onboarding/preflight-report";
 import { savedCloudRoute } from "./lib/workCloudSave";
+import { preparedServiceAvailable } from "./lib/preparedServicePolicy";
 
 export const status = query({
   args: { organizationId: v.id("organizations") },
@@ -59,7 +60,9 @@ export const status = query({
         purposeSaved: setup?.confirmed === true,
         sourceSaved: sources.some((s) => s.state !== "deleted"),
         route: setup?.processingRoute,
-        cloudAvailable: hostedMediaAllowed(actor.subject),
+        cloudAvailable:
+          hostedMediaAllowed(actor.subject) ||
+          (await preparedServiceAvailable(ctx, actor, a.organizationId)),
         localEligible: personalAllowed(actor.subject),
         // The web has no trusted local prerequisite/startup bridge. A heartbeat
         // proves availability only; it never certifies a local installation.

@@ -145,6 +145,7 @@ type Initial = {
     personalAlphaEnabled?: boolean;
     linkAnalysisEnabled?: boolean;
     cloudAnalysisEnabled?: boolean;
+    preparedAnalysisEnabled?: boolean;
     processingRoute?: "local" | "cloud" | "save_only" | "work_cloud" | null;
     workCloud?: {
       available: boolean;
@@ -1892,6 +1893,7 @@ export function Console({
                   }
                   linkAnalysisEnabled={data.aiPreference?.linkAnalysisEnabled}
                   cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
+                  preparedEnabled={data.aiPreference?.preparedAnalysisEnabled}
                   call={call}
                   strictCall={strictCall}
                   journey={journey}
@@ -2914,6 +2916,7 @@ export function Console({
               personalEnabled={data.aiPreference?.personalAlphaEnabled}
               linkAnalysisEnabled={data.aiPreference?.linkAnalysisEnabled}
               cloudEnabled={data.aiPreference?.cloudAnalysisEnabled}
+              preparedEnabled={data.aiPreference?.preparedAnalysisEnabled}
               preferredRoute={data.aiPreference?.processingRoute}
               workCloud={data.aiPreference?.workCloud}
               onSetupNavigate={() => setCaptureOpen(false)}
@@ -2950,6 +2953,7 @@ export function CaptureForm({
   personalEnabled = false,
   linkAnalysisEnabled = false,
   cloudEnabled = false,
+  preparedEnabled = false,
   preferredRoute,
   workCloud = null,
   onSetupNavigate,
@@ -2973,7 +2977,7 @@ export function CaptureForm({
               ? "work_cloud"
               : personalEnabled
                 ? "personal"
-                : cloudEnabled
+                : cloudEnabled || preparedEnabled
                   ? "cloud"
                   : "",
   );
@@ -3003,11 +3007,12 @@ export function CaptureForm({
       (linkAnalysisEnabled && ["url", "import"].includes(kind)));
   const cloudAutomatic =
     analysisRoute === "cloud" &&
-    cloudEnabled &&
+    (cloudEnabled || (preparedEnabled && kind === "url")) &&
     autoAnalyze &&
     (kind === "upload" ||
       kind === "text" ||
-      (linkAnalysisEnabled && ["url", "import"].includes(kind)));
+      ((linkAnalysisEnabled || (preparedEnabled && kind === "url")) &&
+        ["url", "import"].includes(kind)));
   const workCloudAutomatic =
     analysisRoute === "work_cloud" &&
     kind === "url" &&
@@ -3289,7 +3294,25 @@ export function CaptureForm({
                     },
                   ],
                 })
-              : await call("process", { id: sourceId, maxCredits: 10 });
+              : preparedEnabled && kind === "url"
+                ? await (async () => {
+                    const quote = await call("preparedAnalysisQuote", {
+                      sourceId,
+                      executor: "gateway",
+                    });
+                    if (!quote || quote.maximumCredits > 11)
+                      throw new Error(
+                        "Review the current processing credit maximum.",
+                      );
+                    return call("preparedAnalysisStart", {
+                      sourceId,
+                      executor: "gateway",
+                      key: `app-save-${sourceId}-${quote.generation}`,
+                      quoteHash: quote.quoteHash,
+                      maximumCredits: quote.maximumCredits,
+                    });
+                  })()
+                : await call("process", { id: sourceId, maxCredits: 10 });
             if (queued === undefined) {
               onDone(sourceId);
               return;
@@ -3492,7 +3515,7 @@ export function CaptureForm({
           if (value === "cloud") setAnalysisRoute("cloud");
           if (value === "work_cloud") setAnalysisRoute("work_cloud");
         }}
-        serverAvailable={cloudEnabled}
+        serverAvailable={cloudEnabled || (preparedEnabled && kind === "url")}
         workCloudAvailable={
           !!workCloud?.available && kind === "url" && !existingSourceId
         }
@@ -3514,7 +3537,8 @@ export function CaptureForm({
       {personalEnabled &&
         analysisRoute === "personal" &&
         (kind === "upload" ||
-          (linkAnalysisEnabled && ["url", "import"].includes(kind))) && (
+          ((linkAnalysisEnabled || (preparedEnabled && kind === "url")) &&
+            ["url", "import"].includes(kind))) && (
           <section
             className="upload-analysis form-grid"
             aria-label="Automatic analysis"
@@ -3578,10 +3602,11 @@ export function CaptureForm({
           </section>
         )}
       {analysisRoute === "cloud" &&
-        cloudEnabled &&
+        (cloudEnabled || (preparedEnabled && kind === "url")) &&
         (kind === "upload" ||
           kind === "text" ||
-          (linkAnalysisEnabled && ["url", "import"].includes(kind))) && (
+          ((linkAnalysisEnabled || (preparedEnabled && kind === "url")) &&
+            ["url", "import"].includes(kind))) && (
           <section
             className="upload-analysis form-grid"
             aria-label="Automatic cloud analysis"
@@ -3597,7 +3622,8 @@ export function CaptureForm({
             {autoAnalyze && (
               <label className="check">
                 <input name="cloudCredits" type="checkbox" required />
-                Use cloud processing, up to 10 credits per source
+                Use cloud processing, up to{" "}
+                {preparedEnabled && kind === "url" ? 11 : 10} credits per source
                 {kind === "import" ? ", up to five sources per batch" : ""}. No
                 personal-plan or paid AI fallback.
               </label>

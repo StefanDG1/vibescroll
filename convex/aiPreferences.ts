@@ -7,6 +7,7 @@ import { freeWorkersConfigured } from "../packages/providers/workers-plan";
 import { hostedMediaAllowed } from "./lib/hostedMediaAccess";
 import { googleConfigured } from "../packages/providers/google-inference";
 import { savedCloudRoute } from "./lib/workCloudSave";
+import { preparedServiceAvailable } from "./lib/preparedServicePolicy";
 export const read = query({
   args: { organizationId: v.id("organizations") },
   returns: v.object({
@@ -15,6 +16,7 @@ export const read = query({
     active: v.literal(false),
     personalAlphaEnabled: v.boolean(),
     cloudAnalysisEnabled: v.boolean(),
+    preparedAnalysisEnabled: v.boolean(),
     linkAnalysisEnabled: v.boolean(),
     workCloud: v.union(
       v.object({
@@ -49,6 +51,11 @@ export const read = query({
       processingRoute:
         setup?.actor === actor._id ? (setup.processingRoute ?? null) : null,
       preferChatGPTPlan: actor.preferChatGPTPlan ?? false,
+      preparedAnalysisEnabled: await preparedServiceAvailable(
+        ctx,
+        actor,
+        args.organizationId,
+      ),
       hostedStatus: "awaiting_commercial_access" as const,
       active: false as const,
       personalAlphaEnabled: personalAllowed(actor.subject),

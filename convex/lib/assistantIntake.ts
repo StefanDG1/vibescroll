@@ -10,6 +10,7 @@ import { personalAllowed } from "./personalAccess";
 import { snapshotScopeCurrent } from "../../packages/repositories/scope";
 import { sourceWithinAssistantScope } from "./assistantSourceScope";
 import { hostedMediaAllowed } from "./hostedMediaAccess";
+import { preparedServiceAvailable } from "./preparedServicePolicy";
 import { googleConfigured } from "../../packages/providers/google-inference";
 
 export function intakeNeedsSourceReview(source: Doc<"sources">) {
@@ -357,14 +358,23 @@ export async function intakeReceipt(
     (!local || local.expiresAt <= Date.now() || local.state !== "active") &&
     !localComplete;
   const actor = await ctx.db.get(intake.actor);
-  const creditRouteAvailable =
+  const preparedCreditRoute =
     actor &&
-    hostedMediaAllowed(actor.subject) &&
-    process.env.ACQUISITION_VERIFIED === "true" &&
-    process.env.MEDIA_VERIFIED === "true" &&
-    (process.env.MANAGED_INFERENCE_ROUTE === "cloudflare_free" ||
-      (process.env.MANAGED_INFERENCE_ROUTE === "google_metered" &&
-        googleConfigured()));
+    source.kind === "url" &&
+    /(?:instagram|tiktok)\.com/i.test(source.canonical) &&
+    (await preparedServiceAvailable(ctx, actor, source.organizationId));
+  const creditRouteAvailable =
+    !!preparedCreditRoute ||
+    !!(
+      actor &&
+      hostedMediaAllowed(actor.subject) &&
+      process.env.ACQUISITION_VERIFIED === "true" &&
+      process.env.MEDIA_VERIFIED === "true" &&
+      (process.env.MANAGED_INFERENCE_ROUTE === "cloudflare_free" ||
+        (process.env.MANAGED_INFERENCE_ROUTE === "google_metered" &&
+          googleConfigured()))
+    );
+
   return {
     source_id: source._id,
     generation: source.generation,

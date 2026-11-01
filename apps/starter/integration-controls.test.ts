@@ -11,6 +11,7 @@ const hooks = vi.hoisted(() => ({
 // State is retained between explicit renders; effects run only when requested.
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
+  useRef: (value: unknown) => ({ current: value }),
   useState: (initial: unknown) => {
     const index = hooks.index++;
     if (!(index in hooks.cells))
@@ -38,6 +39,7 @@ import { PublicKnowledgePanel } from "./components/public-knowledge-panel";
 import { PublicSaveContinuation } from "./components/public-save-continuation";
 import { SetupJourney } from "./components/setup-journey";
 import { TaskRuntimePicker } from "./components/task-runtime-picker";
+import { CaptureForm } from "./components/console";
 type Node = ReactElement<Record<string, any>>;
 function render<T>(component: (props: T) => unknown, props: T) {
   hooks.index = 0;
@@ -68,12 +70,72 @@ async function flush() {
   for (let i = 0; i < 10; i++) await Promise.resolve();
 }
 afterEach(() => {
+  vi.unstubAllGlobals();
   hooks.cells = [];
   hooks.index = 0;
   hooks.effects = [];
   hooks.effectSlots = [];
   hooks.effectIndex = 0;
 });
+
+it.each([11, 12])(
+  "routes paid Save through the prepared quote and respects its %s-credit ceiling",
+  async (maximumCredits) => {
+    const fields: Record<string, string> = {
+      url: "https://www.instagram.com/reel/Abcdef12345/",
+      rights: "on",
+      cloudCredits: "on",
+    };
+    vi.stubGlobal(
+      "FormData",
+      class {
+        get(name: string) {
+          return fields[name] ?? null;
+        }
+      },
+    );
+    const call = vi.fn(async (op: string) =>
+      op === "capture"
+        ? "source-paid-one"
+        : op === "preparedAnalysisQuote"
+          ? { maximumCredits, quoteHash: "reviewed-quote", generation: 0 }
+          : { state: "queued" },
+    );
+    const props = {
+      organizationId: "paid-personal",
+      call,
+      onDone: vi.fn(),
+      preparedEnabled: true,
+      preferredRoute: "cloud",
+    };
+    const tree = render(CaptureForm, props);
+    const picker = elements(tree).find((n) => n.type === TaskRuntimePicker)!;
+    expect(picker.props.serverAvailable).toBe(true);
+    await elements(tree)
+      .find((n) => n.type === "form")!
+      .props.onSubmit({
+        preventDefault() {},
+        currentTarget: {},
+        nativeEvent: { submitter: null },
+      });
+    expect(call.mock.calls.map((c) => c[0])).not.toContain("process");
+    if (maximumCredits === 11) {
+      expect(call).toHaveBeenLastCalledWith("preparedAnalysisStart", {
+        sourceId: "source-paid-one",
+        executor: "gateway",
+        key: "app-save-source-paid-one-0",
+        quoteHash: "reviewed-quote",
+        maximumCredits: 11,
+      });
+      expect(props.onDone).toHaveBeenCalledWith("source-paid-one");
+    } else {
+      expect(call.mock.calls.map((c) => c[0])).not.toContain(
+        "preparedAnalysisStart",
+      );
+      expect(props.onDone).not.toHaveBeenCalled();
+    }
+  },
+);
 it("keeps authenticated withdrawal usable with a closed publication gate and disables new publication/region opt-in", async () => {
   const own = {
     enabled: false,

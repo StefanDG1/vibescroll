@@ -1,6 +1,6 @@
 # ADR221: integrate Pro credits without rewriting legacy balances
 
-Date: November1,2026. Status: local integration accepted; exact CI and production publication pending.
+Date: November1,2026. Status: compatible backend live atfc6208c; candidate commercial policy remains unset. [Receipt](../operations/evidence/launch-20261101-credit-policy-backend.json).
 
 The owner requests finishing the medium-term plan, starting with credit policy and webhook/wallet integration. Preserve existing subscriptions, purchased balances, valid results and unknown reservations. ADR220's provider receipts establish billing dates, not application settlement.
 
@@ -31,3 +31,5 @@ Finish the concrete migration and tax/storage/top-up/customer review before live
 The candidate policy, HTTP webhook, wallet and risk holds are implemented. Focused tests pass the actual Stripe SDK signature verifier and application handler with synthetic events, retained actual sandbox subscription/invoice shapes, concurrency, stale delivery, annual windows, failed payments, renewal migration and preserved purchased/reserved units. Historical unconfigured legacy prices retain status reconciliation without creating new credits. Missing new-policy configuration cannot downgrade the existing stored entitlement.
 
 Risk tests cover independent dispute/warning holds, won-dispute release, restricted operator review, provider-enrichment outage, blocked new purchases/work and completion of already-reserved work. The schema regression permits only the new initially empty risk table and three indexes, retaining historical comparisons. These are controlled signed delivery and isolated wallet tests. They do not establish an actual Stripe provider endpoint delivery, a real customer migration, live offer activation or commercial approval.
+
+Actual provider follow-up passed in13.07seconds using the existing official Stripe CLI1.35.0 listener and verified sandbox key, with no new tunnel/service. A genuine sandbox event was read back through Stripe, accepted by the application's real signature verifier/HTTP handler and settled300credits once into an isolated synthetic wallet. Replaying that same signed delivery changed nothing. The owned synthetic subscription was cancelled and the listener stopped. This closes actual sandbox delivery-to-wallet acceptance, not live managed Checkout/tax or real-customer purchase acceptance. Production's owner allowance and expired hold are unchanged; original MCP reads still work. Exact CI41260073813 and actual zero-scan/no-backfill publication passed.

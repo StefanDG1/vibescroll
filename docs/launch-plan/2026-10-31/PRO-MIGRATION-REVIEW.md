@@ -68,7 +68,9 @@ November1 owner continuation authorizes the policy integration and webhook/walle
 - [x] Controlled SDK-signed HTTP webhook→wallet tests for new/legacy grants, concurrency/replay, annual windows, failures, renewal migration and preserved purchased/held units.
 - [x] Actual retained sandbox object shapes through controlled signed HTTP delivery into isolated synthetic wallets; no real app balances modified.
 - [x] Implement exact per-price policy and independent payment-risk holds; local tests cover restricted review and existing-job completion.
-- [ ] Actual provider webhook endpoint delivery, voluntary provider migration and production integration acceptance.
+- [x] Actual sandbox provider delivery through the application's signature verifier/HTTP handler, isolated300-credit grant and signed replay, with owned cleanup.
+- [x] Compatible production backend integration, with policy unset, old allowance read-back unchanged and no real wallet grant.
+- [ ] Actual managed Checkout/live-offer acceptance. The owner reports no real customers, so a customer-migration campaign is not a launch requirement; historical balances remain protected.
 - [ ] Wire the activated single-Pro checkout/portal/public offer together after concrete review; leave current legacy offer unchanged until then.
 - [ ] Exact current operator tax/customer terms and legacy mapping reviewed.
 - [ ] Live publication/customer migration approved and verified.

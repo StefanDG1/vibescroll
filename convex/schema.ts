@@ -1,5 +1,6 @@
 import { assistantTables } from "./assistantSchema";
 import { providerFundingTables } from "./providerFundingSchema";
+import { workspaceSearchTables } from "./workspaceSearchSchema";
 import { postEngagementTables } from "./postEngagementSchema";
 import { projectRecommendationTables } from "./projectRecommendationSchema";
 import { preparedAnalysisTables } from "./preparedAnalysisSchema";
@@ -26,6 +27,7 @@ export const role = v.union(
   v.literal("viewer"),
 );
 export default defineSchema({
+  ...workspaceSearchTables,
   ...providerFundingTables,
   ...billingRiskTables,
   ...postEngagementTables,

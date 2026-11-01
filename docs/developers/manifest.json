@@ -109,7 +109,7 @@
       "slug": "mcp/efficiency",
       "description": "What each call reads, what cache reuse saves and what remains unmeasured.",
       "title": "Shared data and Convex usage",
-      "diagram": "cache",
+      "diagram": "workspace",
       "group": "Architecture"
     },
     {

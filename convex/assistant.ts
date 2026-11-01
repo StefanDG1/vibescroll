@@ -1,4 +1,5 @@
 import { internalQuery } from "./_generated/server";
+import { postContextPage } from "./lib/postContext";
 import { internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
@@ -35,6 +36,7 @@ import {
 import { evaluationCurrent } from "./knowledge";
 import { createIssueCore } from "./issues";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
+import { exactGrantedSource } from "./knowledgeGrants";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { samePostPlans } from "./lib/projectRecommendationHistory";
@@ -1990,15 +1992,25 @@ export const fetch = internalQuery({
   args: {
     ...profile,
     id: v.string(),
+    cursor: v.optional(v.string()),
+    sharedGrantId: v.optional(v.id("teamKnowledgeGrants")),
+    sharedGrantVersion: v.optional(v.number()),
     format: v.optional(
-      v.union(v.literal("legacy"), v.literal("structured_v1")),
+      v.union(
+        v.literal("legacy"),
+        v.literal("structured_v1"),
+        v.literal("post_context_v1"),
+      ),
     ),
   },
   returns: v.object({
     id: v.string(),
     title: v.string(),
     text: v.string(),
-    format: v.optional(v.literal("structured_v1")),
+    format: v.optional(
+      v.union(v.literal("structured_v1"), v.literal("post_context_v1")),
+    ),
+    context: v.optional(v.any()),
     analysis: v.optional(knowledgeReadAnalysisValue),
     url: v.string(),
     profile_id: v.id("organizations"),
@@ -2007,6 +2019,12 @@ export const fetch = internalQuery({
     scope_notice: v.string(),
   }),
   handler: async (ctx, args) => {
+    if (args.format === "post_context_v1") return postContextPage(ctx, args);
+    ensure(
+      args.cursor === undefined,
+      "INVALID_INPUT",
+      "Use post_context_v1 for retained context continuation.",
+    );
     ctx = knowledgeReadContext(ctx);
     ensure(
       args.id.length <= 300,
@@ -2034,18 +2052,52 @@ export const fetch = internalQuery({
       "Invalid source identifier.",
     );
     const a = await assistantGrant(
+      ctx,
+      await selectedProfile(ctx, args.profileId),
+      "knowledge:read",
+    );
+    let source: Doc<"sources"> | null;
+    let effectiveVersionId = versionId;
+    let legacyShared = false;
+    if (args.sharedGrantId) {
+      ensure(
+        a.grant.libraryScope === "all" && args.sharedGrantVersion !== undefined,
+        "FORBIDDEN",
+        "Use workspace-wide access and the current sharing grant version.",
+      );
+      const shared = await exactGrantedSource(
         ctx,
-        await selectedProfile(ctx, args.profileId),
-        "knowledge:read",
-      ),
+        a.organization._id,
+        args.sharedGrantId,
+        sourceId,
+        args.sharedGrantVersion,
+      );
+      ensure(
+        versionId === undefined ||
+          versionId === shared.reference.analysisVersionId,
+        "FORBIDDEN",
+        "Only the exact shared analysis version is available.",
+      );
+      source = shared.source;
+      effectiveVersionId = shared.reference.analysisVersionId;
+      legacyShared = effectiveVersionId === undefined;
+    } else {
+      ensure(
+        args.sharedGrantVersion === undefined,
+        "INVALID_INPUT",
+        "A shared version requires its grant.",
+      );
       source = await sourceFor(ctx, a, sourceId);
+    }
     ensure(source, "FORBIDDEN", "This post changed or is no longer granted.");
-    const selected = versionId
-      ? await retainedVersion(ctx, source, versionId).then(({ version }) => ({
-          output: version.output,
-          metadata: { id: version._id },
-        }))
-      : index === undefined
+    const selected = effectiveVersionId
+      ? await retainedVersion(ctx, source, effectiveVersionId).then(
+          ({ version }) => ({
+            output: version.output,
+            metadata: { id: version._id },
+          }),
+        )
+      : index === undefined && !legacyShared
         ? await selectedAnalysis(ctx, source)
         : null;
     const all =
@@ -2057,8 +2109,10 @@ export const fetch = internalQuery({
     const ideas = index === undefined ? all.slice(0, 20) : [all[index]];
     const typed = await sharedTypedCitations(
       ctx,
-      source,
-      versionId ?? undefined,
+      legacyShared
+        ? { ...source, selectedAnalysisVersionId: undefined }
+        : source,
+      effectiveVersionId ?? undefined,
     );
     const insights = ideas.map((i: any) => ({
       id: String(i.id ?? "").slice(0, 200),
@@ -2107,7 +2161,9 @@ export const fetch = internalQuery({
       ...(args.format === "structured_v1"
         ? { format: "structured_v1" as const, analysis }
         : {}),
-      url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
+      url: args.sharedGrantId
+        ? `https://scroll.companynerve.com/app/${a.organization._id}/shared?grant=${args.sharedGrantId}&source=${source._id}`
+        : `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
       profile_id: a.organization._id,
       grant_version: a.grant.version,
       more_ideas: index === undefined && all.length > 20,

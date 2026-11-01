@@ -83,6 +83,7 @@ async function admissions(f: Awaited<ReturnType<typeof prepared>>) {
 it("keeps the nine packaged workflows' concrete tool references discoverable", () => {
   const names = new Set(registry.tools.map((tool) => tool.name));
   const resultTerms = new Set([
+    "fetch_id",
     "retained_evidence",
     "next_action",
     "next_cursor",
@@ -121,6 +122,8 @@ it("keeps a read-only cited-result transcript as data and blocks an injected wri
     id: f.sourceId,
     format: "structured_v1",
   });
+  if (serialized.format === "post_context_v1")
+    throw Error("Expected structured_v1");
   const backend = vi.fn(async () => ({
     ok: true,
     status: 200,
@@ -237,6 +240,8 @@ it("resumes a ready result through compact discovery and structured fetch withou
     format: "structured_v1",
   });
   expect(result.format).toBe("structured_v1");
+  if (result.format === "post_context_v1")
+    throw Error("Expected structured_v1");
   expect(result.analysis!.insights.length).toBeGreaterThan(0);
   expect(await admissions(f)).toEqual(before);
 });

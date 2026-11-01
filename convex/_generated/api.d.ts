@@ -11,6 +11,9 @@
 import type * as preparedService from "../preparedService.js";
 import type * as preparedAnalysis from "../preparedAnalysis.js";
 import type * as preparedMedia from "../preparedMedia.js";
+import type * as postContext from "../postContext.js";
+import type * as postContextFrames from "../postContextFrames.js";
+import type * as workspaceSearch from "../workspaceSearch.js";
 import type * as accounts from "../accounts.js";
 import type * as analysisVersions from "../analysisVersions.js";
 import type * as analysisVersionFrames from "../analysisVersionFrames.js";
@@ -172,6 +175,9 @@ declare const fullApi: ApiFromModules<{
   preparedMedia: typeof preparedMedia;
   preparedAnalysis: typeof preparedAnalysis;
   preparedService: typeof preparedService;
+  postContext: typeof postContext;
+  postContextFrames: typeof postContextFrames;
+  workspaceSearch: typeof workspaceSearch;
   accounts: typeof accounts;
   analysisVersions: typeof analysisVersions;
   analysisVersionFrames: typeof analysisVersionFrames;

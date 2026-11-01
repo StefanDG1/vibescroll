@@ -16,7 +16,10 @@ const binding = v.object({
   generation: v.number(),
   revision: v.number(),
 });
-async function grantCurrent(ctx: QueryCtx, grant: Doc<"teamKnowledgeGrants">) {
+export async function grantCurrent(
+  ctx: QueryCtx,
+  grant: Doc<"teamKnowledgeGrants">,
+) {
   if (
     process.env.RESTORE_LOCK === "true" ||
     grant.state !== "active" ||
@@ -53,6 +56,64 @@ async function grantCurrent(ctx: QueryCtx, grant: Doc<"teamKnowledgeGrants">) {
     !!targetMember &&
     ["owner", "admin", "member"].includes(targetMember.role)
   );
+}
+
+/** Caller must first authorize the recipient workspace and its read scope. */
+export async function exactGrantedSource(
+  ctx: QueryCtx,
+  recipientOrganizationId: Doc<"organizations">["_id"],
+  grantId: Doc<"teamKnowledgeGrants">["_id"],
+  sourceId: Doc<"sources">["_id"],
+  expectedVersion?: number,
+) {
+  const grant = await ctx.db.get(grantId);
+  ensure(
+    grant &&
+      grant.recipientOrganizationId === recipientOrganizationId &&
+      grant.sources.length <= 50 &&
+      (await grantCurrent(ctx, grant)),
+    "FORBIDDEN",
+    "This shared post is no longer available.",
+  );
+  ensure(
+    expectedVersion === undefined || expectedVersion === grant.version,
+    "APPROVAL_STALE",
+    "The sharing grant changed.",
+  );
+  const reference = grant.sources.find((entry) => entry.sourceId === sourceId);
+  ensure(
+    reference,
+    "FORBIDDEN",
+    "This post is not shared into this workspace.",
+  );
+  const card = await ctx.db
+    .query("dashboardCards")
+    .withIndex("by_entity", (q) => q.eq("entityId", sourceId))
+    .unique();
+  ensure(
+    card?.kind === "source" &&
+      card.organizationId === grant.organizationId &&
+      card.rightsAttested &&
+      (await cardSourceRetained(ctx, card)) &&
+      card.generation === reference.generation &&
+      card.updatedAt === reference.revision,
+    "FORBIDDEN",
+    "This shared source changed.",
+  );
+  const source = await ctx.db.get(sourceId);
+  ensure(
+    source &&
+      source.organizationId === grant.organizationId &&
+      source.state !== "deleted" &&
+      source.rightsAttested &&
+      sourceRetained(source.sourceRetentionUntil) &&
+      source.generation === reference.generation &&
+      source.updatedAt === reference.revision,
+    "FORBIDDEN",
+    "This shared source is unavailable.",
+  );
+  await sharedTypedCitations(ctx, source, reference.analysisVersionId);
+  return { grant, reference, source };
 }
 export async function grantedSources(
   ctx: QueryCtx,

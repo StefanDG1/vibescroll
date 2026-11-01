@@ -15,7 +15,7 @@ Verification date: November 1, 2026. Code support, an observed owner workflow an
 | Text-only MCP client              | Ordinary results include text content                                                      | Local protocol fixtures cover the server contract                                                                    | Independent text-only client acceptance and compact-output changes require separate tests   |
 | Local analysis execution          | Product direction retains a local option                                                   | Deferred                                                                                                             | No current general local-executor availability claim                                        |
 
-The full reference lists 53 feature-enabled descriptors, including worker and embedded adapters. It is not a promise that all 53 appear in an ordinary chat. Events subscription methods are separate protocol operations.
+The full reference lists 54 feature-enabled descriptors, including worker and embedded adapters. It is not a promise that all 54 appear in an ordinary chat. Events subscription methods are separate protocol operations.
 
 ## Authentication and task readiness
 

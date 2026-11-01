@@ -28,6 +28,32 @@ function Connector({ label }: { label: string }) {
 }
 
 export function McpDiagram({ kind }: { kind: string }) {
+  if (kind === "workspace")
+    return (
+      <figure
+        className="mcp-diagram"
+        aria-label="Search a permitted workspace and open retained post evidence"
+      >
+        <div className="flow-linear">
+          <Node title="Active workspace" badge="Current membership + grant">
+            Your saved posts or the team's shared collection.
+          </Node>
+          <Connector label="Scoped search" />
+          <Node title="Compact matches" badge="Bounded ranked candidates">
+            Insight matches refer to one post record each.
+          </Node>
+          <Connector label="Choose a post" />
+          <Node title="Retained context" badge="Exact analysis version">
+            Load transcript and insights. Read each screenshot once.
+          </Node>
+        </div>
+        <figcaption>
+          Workspaces reference shared canonical evidence. Joining a team does
+          not share your personal library. Every detail and image read checks
+          current access.
+        </figcaption>
+      </figure>
+    );
   if (kind === "journey") {
     const steps = [
       ["Save or find", "A link or an existing post", "Metadata first"],

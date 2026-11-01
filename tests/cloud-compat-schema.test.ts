@@ -13,6 +13,7 @@ import { postEngagementTables } from "../convex/postEngagementSchema";
 import { projectRecommendationTables } from "../convex/projectRecommendationSchema";
 import { billingRiskTables } from "../convex/billingRiskSchema";
 import { providerFundingTables } from "../convex/providerFundingSchema";
+import { workspaceSearchTables } from "../convex/workspaceSearchSchema";
 import { librarySpacesTables } from "../convex/librarySpacesSchema";
 import {
   cloudSaveDefaults,
@@ -28,7 +29,22 @@ const base = "346b718baf91ba9847fbb707be7bbe069df57257";
 it("preserves historical schemas/config while admitting reviewed empty proposal/engagement tables and components", () => {
   // Include the explicitly new, initially empty preparation table. Component
   // configuration and every historical table/index remain checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(103);
+  expect(Object.keys(schema.tables)).toHaveLength(106);
+  expect(Object.keys(workspaceSearchTables).sort()).toEqual([
+    "workspaceSearchDocuments",
+    "workspaceSearchOrigins",
+    "workspaceSearchState",
+  ]);
+  expect(
+    (workspaceSearchTables.workspaceSearchDocuments as any).export()
+      .searchIndexes,
+  ).toEqual([
+    {
+      indexDescriptor: "search_text",
+      searchField: "searchText",
+      filterFields: ["organizationId", "kind"],
+    },
+  ]);
   expect(Object.keys(providerFundingTables).sort()).toEqual([
     "providerFundingPools",
     "providerFundingReservations",
@@ -122,7 +138,7 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
         row.vectorIndexes.length
       );
     }, 0),
-  ).toBe(285);
+  ).toBe(292);
   expect(Object.keys(cloudCatalogTables).sort()).toEqual([
     "catalogAliases",
     "catalogContributions",
@@ -268,6 +284,11 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
     expect(
       file === "schema.ts"
         ? content
+            .replace(
+              'import { workspaceSearchTables } from "./workspaceSearchSchema";\n',
+              "",
+            )
+            .replace("  ...workspaceSearchTables,\n", "")
             .replace(
               'import { providerFundingTables } from "./providerFundingSchema";\n',
               "",

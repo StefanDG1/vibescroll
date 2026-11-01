@@ -110,9 +110,9 @@ export const toolGuide: Record<string, ToolGuideEntry> = {
     skills: ["vibescroll-find"],
     funding: "no_ai",
     purpose:
-      "Find matching insights in the current approved library or source grant.",
+      "Find ranked posts/insights in the active authorized workspace, or use compatible legacy search.",
     result:
-      "Cited result IDs and bounded coverage with a continuation cursor or legacy offset.",
+      "Compact post records with fetch_id, exact own/shared references and referring matches; signed ranked continuation and index coverage. Legacy results retain their cursor/offset.",
     flow: find,
   },
   fetch: {
@@ -122,7 +122,17 @@ export const toolGuide: Record<string, ToolGuideEntry> = {
     purpose:
       "Read an exact current granted result and its protected citations.",
     result:
-      "Clipped insight content and typed evidence references, without raw transcripts or signed assets.",
+      "Cited insight summaries, or explicit retained post context with paginated transcript/observations, insights and one screenshot manifest.",
+    flow: find,
+  },
+  read_post_frame: {
+    group: "knowledge",
+    skills: ["vibescroll-find", "vibescroll-compare"],
+    funding: "no_ai",
+    purpose:
+      "Inspect an actual retained screenshot for an explicitly referenced post.",
+    result:
+      "One verified native JPEG and exact frame/version metadata, with current access checks and no worker job or acknowledgment.",
     flow: find,
   },
   search_mentions: {

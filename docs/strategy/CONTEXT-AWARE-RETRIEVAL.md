@@ -1,6 +1,6 @@
 # Context-aware post and insight retrieval
 
-Status: next-milestone recommendation under R138/R139, November 1, 2026. The owner asks how retrieval works, how it could improve and when to implement it while completing R137. R139 adds explicit whole-post reference retrieval and shared screenshot/citation identity. This document records that design discussion; it does not activate a new search index, paid retrieval model or the eight deferred suggestions.
+Status: implementation authorized under R141, November 1, 2026. R138/R139 specify question-aware retrieval and complete retained post references; R140 adds bounded workspace/team search. R141 approves continuing all these recommendations. Follow the [execution ledger](CONTEXT-RETRIEVAL-IMPLEMENTATION.md). No new semantic provider or paid embedding route is active merely because implementation is authorized. The eight separate R137 later suggestions remain deferred.
 
 ## Current behavior
 

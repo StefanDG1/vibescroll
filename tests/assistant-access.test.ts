@@ -722,6 +722,8 @@ it("offers structured fetch with identical saved insight/citation disclosure and
     ...input,
     format: "structured_v1",
   });
+  if (structured.format === "post_context_v1")
+    throw Error("Expected structured_v1");
   expect(structured.analysis).toEqual(JSON.parse(legacy.text));
   expect(structured).toMatchObject({
     format: "structured_v1",
@@ -756,6 +758,8 @@ it("offers structured fetch with identical saved insight/citation disclosure and
     ...input,
     format: "structured_v1",
   });
+  if (structuredLarge.format === "post_context_v1")
+    throw Error("Expected structured_v1");
   expect(structuredLarge.analysis).toEqual(JSON.parse(legacyLarge.text));
   expect(
     new TextEncoder().encode(JSON.stringify(structuredLarge)).byteLength,

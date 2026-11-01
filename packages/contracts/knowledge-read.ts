@@ -1,10 +1,15 @@
 import { z } from "zod";
+import { postContextPageOutput, postContextDataOutput } from "./post-context";
 import type { socialCitation } from "../social/analysis";
 import type { typedCitationSummary } from "../sources/citations";
 import type { SourceRevision } from "../sources/types";
 
 export const profileReadDetail = z.enum(["summary", "full"]);
-export const knowledgeFetchFormat = z.enum(["legacy", "structured_v1"]);
+export const knowledgeFetchFormat = z.enum([
+  "legacy",
+  "structured_v1",
+  "post_context_v1",
+]);
 
 const id = z.string().min(1).max(100);
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
@@ -151,6 +156,7 @@ export const knowledgeFetchStructuredOutput = z.strictObject({
 export const knowledgeFetchOutput = z.union([
   knowledgeFetchLegacyOutput,
   knowledgeFetchStructuredOutput,
+  postContextPageOutput,
 ]);
 
 // MCP output schemas require an object root. Keep both existing response
@@ -158,8 +164,9 @@ export const knowledgeFetchOutput = z.union([
 export const knowledgeFetchMcpOutput = z
   .strictObject({
     ...fetchFields,
-    format: z.literal("structured_v1").optional(),
+    format: z.enum(["structured_v1", "post_context_v1"]).optional(),
     analysis: knowledgeReadAnalysisOutput.optional(),
+    context: postContextDataOutput.optional(),
   })
   .refine((value) => knowledgeFetchOutput.safeParse(value).success, {
     message: "Use the complete legacy or structured_v1 response shape.",

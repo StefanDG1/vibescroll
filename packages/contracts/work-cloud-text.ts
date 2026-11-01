@@ -222,6 +222,7 @@ export function assistantResponseLimit(operation: string) {
   return [
     "work_cloud_input",
     "work_cloud_retained_frame",
+    "read_post_frame",
     "analysis_version",
   ].includes(operation)
     ? 262144

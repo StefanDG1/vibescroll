@@ -80,7 +80,7 @@ it("returns a large retained JPEG as actual MCP 2 image content, with no base64 
   ]);
   expect(value.result.structuredContent).toBeUndefined();
 });
-it.each(["work_cloud_retained_frame", "analysis_version"])(
+it.each(["work_cloud_retained_frame", "read_post_frame", "analysis_version"])(
   "transports bounded large %s responses while rejecting over-bound bodies",
   async (operation) => {
     const value = { data: "x".repeat(200000) };

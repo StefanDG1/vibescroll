@@ -25,7 +25,19 @@ Sending fewer JSON fields can reduce response/context size while still reading t
 - Search matches text in application code after examining five permitted posts. An authorized full-text projection/index could reduce repeated calls for larger libraries. Today callers must respect coverage and follow cursors.
 - Ordinary results contain the same JSON in both text and structured content. `fetch(format="structured_v1")` supplies an `analysis` object and short readable text; the default legacy response keeps serialized analysis in `text`. Do not assume a host deduplicates text and structured data for token accounting.
 - `list_project_proposals(detail="summary")` omits plan bodies and handoff snapshots. It preserves current project/source authorization and context checks. Full detail remains the default for older clients.
-- A retained JPEG read includes two authorization queries, one read acknowledgment mutation and one storage GET, in addition to ordinary HTTP authentication. Those integrity/access checks are not just a plain string lookup.
+- An ordinary `read_post_frame` includes authority checks before and after a bounded storage GET with byte/hash/dimension verification, without a mutation. The worker-specific retained JPEG tool additionally acknowledges the read for completion eligibility. Neither path is just a string lookup.
+
+## Workspace search and complete post references
+
+The active workspace determines the searchable collection. Personal requested posts and team-shared posts reference shared canonical versions and evidence. Team members share their workspace's search entries; joining a team does not import personal posts. Current membership, assistant grant and any exact sharing grant remain authoritative.
+
+`search(mode="ranked_v1")` reads compact indexed candidates and returns post metadata once with referring insight matches. It reports index readiness, examined candidates, session budget and continuation. The compatible legacy search still scans at most five authorized posts per page. A small page is not proof that the entire workspace lacks a relevant result. Initial index population is a separate bounded operation, not an implicit global database scan in search.
+
+Ranked search examines at most50 compact candidates per call, hydrates at most8 sources and returns at most20 matches under its response-byte limit. It stops before further source loading after its8MB serialized `db.get` budget; `loaded_bytes` measures those payloads, not actual Convex billing. Continuation is authenticated and stops at200 examined candidates. This does not prevent a fresh query; ordinary account/client throttling remains separate. `index_ready` means initial population finished, while `exhausted` describes the current index, which may lag scheduled updates. Current authorization is rechecked even when indexed entries are stale.
+
+Use `fetch(format="post_context_v1")` only when a specific post needs full context. Its pages contain retained transcript segments, observations and insights, plus one screenshot manifest. Original citation IDs resolve through these collections. Actual screenshots are individually demand-loaded, so a search does not attach all images or transcripts. These reads reuse retained data; they do not repeat preparation or analysis. Host text/vision usage and storage delivery still apply.
+
+Workspace filters restrict disclosure, but Convex meters the full searched index size for full-text and vector search even when filters return few results. [Vector-search costs](https://docs.convex.dev/search/vector-search#costs), [full-text costs](https://docs.convex.dev/search/text-search#costs). Physical cost isolation and semantic search require measured workload decisions; no separate search provider or embedding route is implied by workspace filtering.
 
 ## Shared cache structure
 

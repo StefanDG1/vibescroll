@@ -83,6 +83,8 @@ it("checks list, detail, discovery, search, write and status fixtures against th
     id: f.sourceId,
     format: "structured_v1",
   });
+  if (structured.format === "post_context_v1")
+    throw Error("Expected structured_v1");
   expect(knowledgeFetchLegacyOutput.parse(legacy)).toEqual(legacy);
   expect(knowledgeFetchStructuredOutput.parse(structured)).toEqual(structured);
   expect(knowledgeFetchOutput.parse(legacy)).toEqual(legacy);

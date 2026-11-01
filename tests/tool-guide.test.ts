@@ -9,7 +9,7 @@ import {
 
 it("assigns every real discovered tool exactly one primary reference group", () => {
   const names = registry.tools.map((tool) => tool.name);
-  expect(names).toHaveLength(53);
+  expect(names).toHaveLength(54);
   expect(new Set(names).size).toBe(names.length);
   expect(Object.keys(toolGuide).sort()).toEqual([...names].sort());
   expect(new Set(toolGroups.map((group) => group.id)).size).toBe(

@@ -2,10 +2,8 @@
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
-import { createHash } from "node:crypto";
-import { signedObject } from "../packages/providers/storage";
 import { ensure } from "../packages/policy";
-import { jpegDimensions } from "../packages/media/jpeg";
+import { readRetainedJpeg } from "./lib/retainedJpeg";
 
 export const read = internalAction({
   args: {
@@ -37,45 +35,7 @@ export const read = internalAction({
       internal.analysisVersions.frameContext,
       args,
     );
-    const response = await fetch(signedObject(before.key, "GET", 30), {
-      redirect: "error",
-      signal: AbortSignal.timeout(6000),
-    });
-    ensure(
-      response.ok &&
-        response.headers.get("content-type")?.split(";")[0] === "image/jpeg",
-      "STORAGE_UNAVAILABLE",
-      "The retained JPEG is unavailable.",
-    );
-    const chunks: Uint8Array[] = [];
-    const reader = response.body?.getReader();
-    ensure(reader, "STORAGE_UNAVAILABLE", "The retained JPEG has no body.");
-    let total = 0;
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        total += value.byteLength;
-        ensure(
-          total <= Math.min(before.size, 150000),
-          "INVALID_EVIDENCE",
-          "Retained image exceeds its bound.",
-        );
-        chunks.push(value);
-      }
-    } finally {
-      await reader.cancel().catch(() => {});
-    }
-    const bytes = Buffer.concat(chunks);
-    const dimensions = jpegDimensions(bytes);
-    ensure(
-      bytes.length === before.size &&
-        dimensions.width === before.width &&
-        dimensions.height === before.height &&
-        createHash("sha256").update(bytes).digest("hex") === before.sha256,
-      "INVALID_EVIDENCE",
-      "Retained image bytes changed.",
-    );
+    const bytes = await readRetainedJpeg(before);
     // Recheck authority after storage I/O, before disclosing bytes or acknowledging a read.
     const after = await ctx.runQuery(
       internal.analysisVersions.frameContext,

@@ -12,6 +12,8 @@ import { httpAction } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
+import { postContextFrameInput } from "../packages/contracts/post-context";
+import { workspaceSearchInput } from "../packages/contracts/workspace-search";
 import {
   knowledgeFetchFormat,
   profileReadDetail,
@@ -47,6 +49,10 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z.strictObject({
+    operation: z.literal("read_post_frame"),
+    args: postContextFrameInput,
+  }),
   z.strictObject({
     operation: z.literal("reply_to_project_plan"),
     args: proposalLoopInputs.reply_to_project_plan,
@@ -251,7 +257,8 @@ const operations = z.discriminatedUnion("operation", [
           cursor: z.string().max(4096).optional(),
           profileId,
         })
-        .strict(),
+        .strict()
+        .or(workspaceSearchInput),
     })
     .strict(),
   z
@@ -262,6 +269,9 @@ const operations = z.discriminatedUnion("operation", [
           id: z.string().min(1).max(300),
           profileId,
           format: knowledgeFetchFormat.optional(),
+          cursor: z.string().max(4096).optional(),
+          sharedGrantId: z.string().max(100).optional(),
+          sharedGrantVersion: z.number().int().positive().optional(),
         })
         .strict(),
     })
@@ -566,6 +576,17 @@ export const tools = httpAction(async (ctx, request) => {
           },
         );
         break;
+      case "read_post_frame":
+        value = await ctx.runAction(internal.postContextFrames.read, {
+          ...input.args,
+          profileId: selectedProfile,
+          sourceId: input.args.sourceId as Id<"sources">,
+          analysisVersionId: input.args
+            .analysisVersionId as Id<"analysisVersions">,
+          sharedGrantId: input.args.sharedGrantId as
+            Id<"teamKnowledgeGrants"> | undefined,
+        });
+        break;
       case "record_feedback":
         value = await ctx.runMutation(internal.assistant.recordFeedback, {
           ...input.args,
@@ -671,15 +692,23 @@ export const tools = httpAction(async (ctx, request) => {
         });
         break;
       case "search":
-        value = await ctx.runQuery(internal.assistant.search, {
-          ...input.args,
-          profileId: selectedProfile,
-        });
+        value =
+          "mode" in input.args && input.args.mode === "ranked_v1"
+            ? await ctx.runQuery(internal.workspaceSearch.search, {
+                ...input.args,
+                profileId: selectedProfile,
+              })
+            : await ctx.runQuery(internal.assistant.search, {
+                ...input.args,
+                profileId: selectedProfile,
+              });
         break;
       case "fetch":
         value = await ctx.runQuery(internal.assistant.fetch, {
           ...input.args,
           profileId: selectedProfile,
+          sharedGrantId: input.args.sharedGrantId as
+            Id<"teamKnowledgeGrants"> | undefined,
         });
         break;
       case "quote_video_analysis":

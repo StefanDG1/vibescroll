@@ -20,6 +20,60 @@ const invoke = vi.fn(async () => ({
   status: 200,
   value: emptySearch,
 }));
+it("delivers an ordinary post screenshot as a native image without worker features or duplicated base64 text", async () => {
+  const bytes = "c3ludGhldGljLWltYWdlLXRyYW5zcG9ydA==";
+  const backend = vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    value: {
+      data: bytes,
+      mimeType: "image/jpeg",
+      frameId: "frame-one",
+      timestampMs: 1000,
+      sha256: "a".repeat(64),
+    },
+  }));
+  const args = {
+    sourceId: "source-one",
+    analysisVersionId: "version-one",
+    frameId: "frame-one",
+    expectedEvidenceHash: "b".repeat(64),
+  };
+  const reply = await packet(
+    await call(
+      "tools/call",
+      { name: "read_post_frame", arguments: args },
+      ["knowledge:read"],
+      backend,
+      "2026-07-28",
+    ),
+  );
+  expect(reply.result.isError).not.toBe(true);
+  expect(reply.result.content).toEqual([
+    {
+      type: "text",
+      text: JSON.stringify({
+        mimeType: "image/jpeg",
+        frameId: "frame-one",
+        timestampMs: 1000,
+        sha256: "a".repeat(64),
+      }),
+    },
+    { type: "image", mimeType: "image/jpeg", data: bytes },
+  ]);
+  expect(reply.result.structuredContent).toBeUndefined();
+  expect(reply.result.content[0].text).not.toContain(bytes);
+  expect(backend).toHaveBeenCalledExactlyOnceWith("read_post_frame", args);
+  backend.mockClear();
+  await call(
+    "tools/call",
+    { name: "read_post_frame", arguments: args },
+    [],
+    backend,
+    "2026-07-28",
+  );
+  expect(backend).not.toHaveBeenCalled();
+});
 async function packet(response: Response) {
   if (response.headers.get("content-type")?.includes("text/event-stream")) {
     const data = (await response.text())

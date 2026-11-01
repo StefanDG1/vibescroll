@@ -18,6 +18,75 @@ import { privatePostKey } from "./postEngagement";
 // Use the existing helper's atomic write triggers. Failed projection writes
 // abort the underlying mutation; no eventually consistent private cache.
 const triggers = new Triggers<DataModel>();
+triggers.register("organizations", async (ctx, change) => {
+  if (
+    change.oldDoc ||
+    !change.newDoc ||
+    process.env.WORKSPACE_SEARCH_ENABLED !== "true" ||
+    process.env.RESTORE_LOCK === "true"
+  )
+    return;
+  await ctx.scheduler.runAfter(
+    0,
+    internal.workspaceSearch.initializeNewWorkspace,
+    { organizationId: change.id },
+  );
+});
+
+triggers.register("catalogFamilies", async (ctx, change) => {
+  if (
+    process.env.WORKSPACE_SEARCH_ENABLED !== "true" ||
+    process.env.RESTORE_LOCK === "true"
+  )
+    return;
+  if (
+    change.oldDoc?.selectedArtifactId === change.newDoc?.selectedArtifactId &&
+    change.oldDoc?.selectionRevision === change.newDoc?.selectionRevision &&
+    change.oldDoc?.state === change.newDoc?.state
+  )
+    return;
+  await ctx.scheduler.runAfter(0, internal.workspaceSearch.refreshFamily, {
+    familyId: change.id,
+  });
+});
+triggers.register("sources", async (ctx, change) => {
+  if (
+    process.env.WORKSPACE_SEARCH_ENABLED !== "true" ||
+    process.env.RESTORE_LOCK === "true"
+  )
+    return;
+  const source = change.newDoc ?? change.oldDoc;
+  if (source)
+    await ctx.scheduler.runAfter(0, internal.workspaceSearch.refreshSource, {
+      organizationId: source.organizationId,
+      sourceId: change.id,
+    });
+});
+triggers.register("teamKnowledgeGrants", async (ctx, change) => {
+  if (
+    process.env.WORKSPACE_SEARCH_ENABLED !== "true" ||
+    process.env.RESTORE_LOCK === "true"
+  )
+    return;
+  const grant = change.newDoc ?? change.oldDoc;
+  if (!grant) return;
+  const sources = new Set(
+    [...(change.oldDoc?.sources ?? []), ...(change.newDoc?.sources ?? [])].map(
+      (ref) => ref.sourceId,
+    ),
+  );
+  ensure(
+    sources.size <= 100,
+    "POLICY_BLOCKED",
+    "Workspace sharing requires bounded operator review.",
+  );
+  for (const sourceId of sources)
+    await ctx.scheduler.runAfter(0, internal.workspaceSearch.refreshShared, {
+      organizationId: grant.recipientOrganizationId,
+      grantId: change.id,
+      sourceId,
+    });
+});
 triggers.register("sources", async (ctx, change) => {
   if (
     change.oldDoc &&

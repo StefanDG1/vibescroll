@@ -25,3 +25,7 @@ Before activating live new sales, review the exact existing live Pro product and
 The owner reports no real customers. Do not create a migration campaign. Preserve admin/test wallets, purchases, provider fixtures and old billing history. If a real old subscription is later discovered, keep its original terms and request a concrete renewal change rather than silently reducing its allowance.
 
 Live price creation and activation require the owner's approval of this exact package under repository AGENTS.md. Routine code releases remain delegated. No new price or policy is activated by shipping the compatible code or showing the prepared offer with checkout unavailable.
+
+## Funded customer admission remains a launch gate
+
+The compatible code and sandbox billing acceptance do not expand the finite owner analysis pilot. Preserve its policy IDs, consumed counters, provider-key budgets and all unknown holds. Customer processing needs an explicitly funded operating allowance and matching per-user paid entitlement before new sales open. A financial approval for the three price records does not authorize top-ups, Auto Recharge, purchased API funding, resetting the pilot or removing provider/data gates. Keep public checkout unavailable until the offer, processing capacity and published terms agree. The engineering cap and Vercel ceiling remain in force.

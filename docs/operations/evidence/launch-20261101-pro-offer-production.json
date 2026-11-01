@@ -1,0 +1,94 @@
+{
+  "date": "2026-11-01",
+  "status": "compatible website/backend production accepted; new paid offer not activated",
+  "commit": "c10d14bdb106166b95fe8a92fed7a58e9ac4b750",
+  "ci": {
+    "run": 41264806035,
+    "url": "https://github.com/StefanDG1/vibescroll/actions/runs/41264806035",
+    "conclusion": "success",
+    "exactCommit": true
+  },
+  "local": {
+    "mainPassed": 1500,
+    "mainSkipped": 9,
+    "authPassed": 52,
+    "knowledgePassed": 174,
+    "pythonAndNodeChecks": true,
+    "bothProductionBuilds": true,
+    "dependencyAuditUnresolved": 0
+  },
+  "backend": {
+    "deterministicPreparations": 2,
+    "publicationGuardsPassed": 17,
+    "actualFinishAcknowledged": true,
+    "components": 14,
+    "tables": 162,
+    "indexes": 353,
+    "schemaChanges": 0,
+    "indexChanges": 0,
+    "authChanges": 0,
+    "cronChanges": 0,
+    "populatedScansOrBackfills": 0
+  },
+  "website": {
+    "newBuilds": 1,
+    "machine": "fixed Basic",
+    "actualCores": 2,
+    "actualMemoryGB": 8,
+    "queue": "normal",
+    "buildDurationMs": 40665,
+    "stageCases": 16,
+    "canonicalCases": 16,
+    "sameBuildPromotion": true,
+    "canonicalExactHealth": true,
+    "domainPromotionCompleted": true,
+    "normalDomainAssignmentRestoreAcknowledged": true,
+    "ownerBillingDesktopAndPhone": true
+  },
+  "changes": [
+    "single shared Pro offer presentation",
+    "exact new-price checkout and separate safe portal available for reviewed activation",
+    "Pro repository-count quota removed",
+    "bounded bulk operations preserve existing data on refusal",
+    "shared panel light/dark contrast corrected"
+  ],
+  "financialPreservation": {
+    "ownerUsageWholePageIdentical": true,
+    "expiredUnknownHoldPreserved": true,
+    "legacyPriceMappingsPreserved": true,
+    "realAppWalletGrants": 0,
+    "existingTopUpsChanged": false,
+    "newLivePricesCreated": 0,
+    "candidateMappingConfigured": false,
+    "legacyLiveCheckoutGateStillEnabled": true
+  },
+  "providerAcceptance": {
+    "actualSandboxApplicationCheckoutAndPortal": true,
+    "monthlyEURCents": 3500,
+    "managedPayments": true,
+    "payments": 0,
+    "ownedUnpaidCheckoutExpired": true,
+    "temporaryPortalArchived": true,
+    "actualSignedProviderWebhookAcceptance": "previously accepted at fc6208c into isolated wallet; not replayed"
+  },
+  "mcp": {
+    "originalConnectionReadPassed": true,
+    "automaticAnalysisEnabled": true,
+    "setupRequired": false,
+    "ownerReportedFreshDiscussionReadAccepted": true,
+    "newWritePublicationHostInvocationVerified": false
+  },
+  "capacity": {
+    "analysisFunding": "existing finite owner pilot unchanged",
+    "newSourceAnalysisJobs": 0,
+    "newAiCalls": 0,
+    "generalPaidCustomerRollout": false
+  },
+  "open": [
+    "live-offer and terms authorization requested",
+    "funded customer-processing admission before paid rollout",
+    "fresh-host MCP write/publication acceptance",
+    "independent paid-customer acceptance"
+  ],
+  "review": "docs/launch-plan/2026-10-31/PRO-LAUNCH-TERMS-REVIEW.md"
+}

@@ -34,7 +34,11 @@ export default async function proxy(
   const response =
     (await auth(request, event)) ?? NextResponse.next({ request: { headers } });
   const invitation = /^\/join\/([a-f0-9]{64})$/.exec(request.nextUrl.pathname);
-  if (invitation && process.env.ONBOARDING_ENABLED === "true")
+  if (
+    request.method === "GET" &&
+    invitation &&
+    process.env.ONBOARDING_ENABLED === "true"
+  )
     response.headers.append(
       "Set-Cookie",
       `${onboardingInviteCookie}=${invitation[1]}; Path=/; Max-Age=604800; HttpOnly; SameSite=Lax${request.nextUrl.protocol === "https:" ? "; Secure" : ""}`,

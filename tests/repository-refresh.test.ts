@@ -4,6 +4,56 @@ import { api, internal } from "../convex/_generated/api";
 
 afterEach(() => vi.unstubAllEnvs());
 
+it("connects a sixteenth Pro repository without spending credits or changing existing project data", async () => {
+  const f = await fixture();
+  await f.t.mutation(internal.commerce.grantPeriod, {
+    organizationId: f.org,
+    subscription: "sub_pro_capacity",
+    tier: "pro",
+    interval: "monthly",
+    start: Date.now(),
+    end: Date.now() + 31 * 86400000,
+    verifiedPayment: true,
+  });
+  const old = await f.t.run((ctx) => ctx.db.get(f.projectId));
+  await f.t.run(async (ctx) => {
+    const { _id, _creationTime, ...copy } = old!;
+    for (let n = 0; n < 14; n++)
+      await ctx.db.insert("repositories", {
+        ...copy,
+        providerId: 100 + n,
+        fullName: `owned/project-${n}`,
+      });
+  });
+  const before = await f.t.run(async (ctx) => ({
+    repositories: await ctx.db.query("repositories").collect(),
+    wallets: await ctx.db.query("wallets").collect(),
+  }));
+  const id = await f.t.mutation(internal.jobs.saveRepository, {
+    organizationId: f.org,
+    installationId: 42,
+    providerId: 5000,
+    fullName: "owned/sixteenth",
+    sha: "a".repeat(40),
+    branch: "main",
+    manifest: [],
+    context: "",
+  });
+  expect(await f.t.run((ctx) => ctx.db.get(id))).toMatchObject({
+    fullName: "owned/sixteenth",
+    enabled: true,
+  });
+  const after = await f.t.run(async (ctx) => ({
+    repositories: await ctx.db.query("repositories").collect(),
+    wallets: await ctx.db.query("wallets").collect(),
+  }));
+  expect(after.repositories).toHaveLength(16);
+  expect(after.repositories.filter((r) => r._id !== id)).toEqual(
+    before.repositories,
+  );
+  expect(after.wallets).toEqual(before.wallets);
+});
+
 async function preparedRefresh() {
   const f = await fixture();
   const before = await f.t.run((ctx) => ctx.db.get(f.projectId));

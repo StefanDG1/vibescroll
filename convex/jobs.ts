@@ -214,20 +214,26 @@ export const saveRepository = internalMutation({
       return old._id;
     }
     const entitlement = await wallet(ctx, a.organizationId);
-    const connected = await ctx.db
-      .query("repositories")
-      .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
-      .collect();
     const organization = await ctx.db.get(a.organizationId);
     const owner = organization
       ? await ctx.db.get(organization.createdBy)
       : null;
-    ensure(
-      connected.filter((repo) => repo.enabled).length <
-        repositoryAllowance(entitlement.tier, owner?.subject ?? ""),
-      "REPOSITORY_LIMIT",
-      "Your repository allowance is full. Disconnect a repository before adding another.",
+    const repositoryLimit = repositoryAllowance(
+      entitlement.tier,
+      owner?.subject ?? "",
     );
+    if (repositoryLimit !== null) {
+      const connected = await ctx.db
+        .query("repositories")
+        .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
+        .take(1001);
+      ensure(
+        connected.length < 1001 &&
+          connected.filter((repo) => repo.enabled).length < repositoryLimit,
+        "REPOSITORY_LIMIT",
+        "Your repository allowance is full. Disconnect a repository before adding another.",
+      );
+    }
     const id = await ctx.db.insert("repositories", {
       ...(Object.fromEntries(
         Object.entries(a).filter(

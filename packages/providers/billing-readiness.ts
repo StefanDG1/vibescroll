@@ -1,5 +1,6 @@
 import { managedMarketVerified } from "./managed-markets";
 import { policyRelease } from "../policy/publication";
+import { singleProConfigured } from "../billing/credit-policy";
 
 type Environment = Record<string, string | undefined>;
 const tiers = ["STARTER", "PRO"],
@@ -35,12 +36,15 @@ export function billingReadiness(env: Environment) {
     new RegExp(`^[sr]k_${mode}_`).test(env.STRIPE_SECRET_KEY ?? "") &&
     !!env.STRIPE_ACCOUNT_ID &&
     !!env.STRIPE_V1_WEBHOOK_SECRET &&
-    !!env.STRIPE_PORTAL_CONFIG_ID &&
-    tiers.every((tier) =>
-      intervals.every(
-        (interval) => !!env[`STRIPE_${tier}_${interval}_PRICE_ID`],
-      ),
-    );
+    (singleProConfigured(env)
+      ? !!env.STRIPE_PRO_PORTAL_CONFIG_ID
+      : !!env.STRIPE_PORTAL_CONFIG_ID) &&
+    (singleProConfigured(env) ||
+      tiers.every((tier) =>
+        intervals.every(
+          (interval) => !!env[`STRIPE_${tier}_${interval}_PRICE_ID`],
+        ),
+      ));
   const liveEnabled =
     catalogueConfigured &&
     mode === "live" &&

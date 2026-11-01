@@ -94,6 +94,18 @@ export function candidateCreditPolicy(
   };
 }
 
+export function candidateCheckoutPolicy(
+  env: Environment,
+  interval: BillingInterval,
+) {
+  const config = candidateConfiguration(env);
+  return config ? candidateCreditPolicy(env, config.prices[interval]) : null;
+}
+
+export function singleProConfigured(env: Environment) {
+  return candidateConfiguration(env) !== null;
+}
+
 export function resolveCreditPolicy(
   env: Environment,
   price: Price,

@@ -79,6 +79,10 @@ export async function startV1Checkout(_: FormState, d: FormData) {
       SUBSCRIPTION_EXISTS:
         "You already have a subscription. Use the billing portal to manage it.",
       TERMS_REQUIRED: "Accept the service terms before opening checkout.",
+      PERSONAL_FUNDING_REQUIRED:
+        "Subscribe from your personal account. Each workspace member uses their own Pro and credits.",
+      BILLING_RECONCILIATION_REQUIRED:
+        "Contact support to review your existing subscriptions before opening another checkout.",
     };
     const code =
       typeof data === "string"

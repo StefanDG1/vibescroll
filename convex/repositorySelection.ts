@@ -83,9 +83,12 @@ export const save = mutation({
     ]);
     await limit(ctx, `repo-selection:${a.organizationId}`, 10);
     const entitlement = await wallet(ctx, a.organizationId);
+    const repositoryLimit = repositoryAllowance(
+      entitlement.tier,
+      actor.subject,
+    );
     ensure(
-      a.choices.length <=
-        repositoryAllowance(entitlement.tier, actor.subject) &&
+      (repositoryLimit === null || a.choices.length <= repositoryLimit) &&
         new Set(a.choices.map((r) => r.providerId)).size === a.choices.length,
       "REPOSITORY_LIMIT",
       "Choose repositories within the existing allowance.",
@@ -121,7 +124,12 @@ export const save = mutation({
     const old = await ctx.db
       .query("repositories")
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
-      .collect();
+      .take(1001);
+    ensure(
+      old.length < 1001,
+      "BATCH_LIMIT",
+      "This bulk selection needs a project batch review. Existing connections are preserved.",
+    );
     // Validate every requested scope before changing selection or starting provider work.
     const choices = a.choices.map((c) => ({
       ...c,

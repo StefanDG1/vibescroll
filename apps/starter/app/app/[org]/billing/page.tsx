@@ -3,6 +3,7 @@ import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { ActionForm } from "@/components/action-form";
 import { ChoiceSelect } from "@/components/choice-select";
+import { ProOfferSummary } from "@/components/pro-offer-summary";
 import {
   startV1Checkout,
   cancelV1Subscription,
@@ -10,14 +11,11 @@ import {
   requestV1Refund,
   billingPortal,
   refreshBilling,
-  quoteV1Change,
 } from "@/app/actions";
 export default async function Page({
   params,
-  searchParams,
 }: {
   params: Promise<{ org: string }>;
-  searchParams: Promise<{ tier?: string }>;
 }) {
   const { org } = await params,
     c = await backend(),
@@ -27,7 +25,13 @@ export default async function Page({
     c.query(api.commerce.catalogue, {}),
     c.query(api.product.usage, { organizationId }),
   ]);
-  const selectedTier = (await searchParams).tier === "pro" ? "pro" : "starter";
+  const offerReady =
+    catalogue.proOffer.configured &&
+    (catalogue.sandboxEnabled || catalogue.liveEnabled);
+  const hasSubscription = Boolean(
+    auth.billing?.subscriptionId &&
+    !["free", "canceled", "incomplete_expired"].includes(auth.billing.status),
+  );
   return (
     <main id="main" className="doc">
       <Link prefetch={false} href={`/app/${org}`}>
@@ -35,14 +39,13 @@ export default async function Page({
       </Link>
       <h1>Billing and allowances</h1>
       <p>
-        {catalogue.liveEnabled
-          ? "Manage your subscription and processing allowance. Preview access never converts automatically."
-          : "Live checkout is disabled while the applicable billing and publication checks are completed. Preview access never converts automatically."}
+        Manage your credits and subscription. Existing balances and
+        subscriptions keep their recorded terms.
       </p>
       <section className="panel">
         <h2>Current allowance</h2>
         <p>
-          {usage.wallet?.tier ?? "Trial not started"}. Provider status:{" "}
+          {usage.wallet?.tier ?? "No wallet yet"}. Provider status:{" "}
           {auth.billing?.status ?? "No subscription"}.
         </p>
         <p>
@@ -52,41 +55,12 @@ export default async function Page({
         </p>
       </section>
       <section className="panel">
-        <h2>Catalogue</h2>
-        <div className="billing-plans">
-          <section aria-label="Starter pricing">
-            <h3>Starter</h3>
-            <dl>
-              <dt>Weekly</dt>
-              <dd>EUR 5.99 · 65 credits</dd>
-              <dt>Monthly</dt>
-              <dd>EUR 19 · 250 credits</dd>
-              <dt>Annual</dt>
-              <dd>EUR 190 · 250 credits each month</dd>
-            </dl>
-          </section>
-          <section aria-label="Pro pricing">
-            <h3>Pro</h3>
-            <dl>
-              <dt>Weekly</dt>
-              <dd>EUR 11.99 · 150 credits</dd>
-              <dt>Monthly</dt>
-              <dd>EUR 39 · 600 credits</dd>
-              <dt>Annual</dt>
-              <dd>EUR 390 · 600 credits each month</dd>
-            </dl>
-          </section>
-        </div>
+        <ProOfferSummary />
         <p>
-          Starter: three repositories, 1 GB retained library storage and 1,000
-          sources. Pro: fifteen repositories, 5 GB and 10,000 sources. Both
-          include proposal, plan and authorized PR workflows.
+          Credits cover quoted work. Cached results for posts you request are
+          included; full-catalog browsing is separate.
         </p>
-        <p>
-          Consumer totals include applicable tax. An exemption is a separate tax
-          treatment and requires official evidence.
-        </p>
-        {catalogue.sandboxEnabled || catalogue.liveEnabled ? (
+        {offerReady && auth.personal && !hasSubscription ? (
           <ActionForm
             action={startV1Checkout}
             label={
@@ -96,18 +70,7 @@ export default async function Page({
             }
           >
             <input type="hidden" name="organizationId" value={org} />
-            <label htmlFor="checkout-tier">
-              Plan
-              <ChoiceSelect
-                id="checkout-tier"
-                name="tier"
-                aria-label="Plan"
-                defaultValue={selectedTier}
-              >
-                <option value="starter">Starter</option>
-                <option value="pro">Pro</option>
-              </ChoiceSelect>
-            </label>
+            <input type="hidden" name="tier" value="pro" />
             <label htmlFor="checkout-renewal">
               Renewal
               <ChoiceSelect
@@ -157,8 +120,11 @@ export default async function Page({
           </ActionForm>
         ) : (
           <p>
-            Checkout is awaiting verified provider configuration and release
-            approval.
+            {hasSubscription
+              ? "Your subscription controls are below."
+              : !auth.personal
+                ? "Subscribe from your personal account. Each workspace member uses their own Pro and credits."
+                : "The new Pro offer is not open for checkout yet. Your existing balance remains available."}
           </p>
         )}
       </section>
@@ -180,25 +146,6 @@ export default async function Page({
           </ActionForm>
           <ActionForm action={refreshBilling} label="Reconcile provider status">
             <input type="hidden" name="organizationId" value={org} />
-          </ActionForm>
-          <ActionForm action={quoteV1Change} label="Review plan-change quote">
-            <input type="hidden" name="organizationId" value={org} />
-            <label htmlFor="change-tier">
-              Target tier
-              <ChoiceSelect
-                id="change-tier"
-                name="tier"
-                aria-label="Target tier"
-              >
-                <option value="starter">Starter at next renewal</option>
-                <option value="pro">Pro with exact proration</option>
-              </ChoiceSelect>
-            </label>
-            <p>
-              Your renewal interval stays the same. You approve the provider
-              total on the next screen. Resolve cancellation before changing
-              plan.
-            </p>
           </ActionForm>
           {(catalogue.sandboxEnabled || catalogue.liveEnabled) && (
             <ActionForm

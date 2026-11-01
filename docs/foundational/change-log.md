@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## F094: one Pro offer without advertised resource quotas, November1
+
+R131 reports no real customers and removes advertised storage and the Pro repository-count quota. Prepare one Pro offer at EUR35/month or EUR350/year with300credits granted monthly, or EUR17every seven days with75credits. Include requested-post cache reuse and individual-Pro workspaces; full-catalog browsing stays separate. Keep expensive work bounded by credits, concurrency and restrained fair use. Do not promise unlimited storage or compute. Preserve admin/test balances, valid results and old billing history. The owner decision is not evidence of willingness to pay, performance or general availability. Live new prices and terms still need the concrete review. [Implementation decision](../adr/222-single-pro-offer-and-project-capacity.md).
+
 ## F093: clarify post-request interest, October31
 
 R129 clarifies the feed's share-style count as unique people submitting/requesting a link inside VibeScroll, including cache hits. The existing distinct-person counter supports this; outbound shares, retries and ordinary result views do not increase it. Replace the share icon/action with a people icon and a short explanation, and align Trends. This corrects an ambiguous presentation without changing audience, offer, prices, six beliefs or claiming popularity proves useful outcomes. The four briefs already describe VibeScroll intake signals and need no new marketing claim. [Decision](../adr/219-post-request-count-presentation.md).

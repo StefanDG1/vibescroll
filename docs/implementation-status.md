@@ -1,5 +1,9 @@
 # Implementation status
 
+## November1: single-Pro offer and repository capacity candidate
+
+ADR222 prepares one shared public/account Pro summary, exact three-interval checkout, personal funding, separate safe billing portal and no new hosted trial after activation. Pro skips the old repository-count scan; per-operation bounds and all legacy settlement/wallet state remain. Full local checks passed1498main cases/9skips,52auth,174knowledge and both production builds. Dependency audit has no unresolved findings. One actual sandbox application checkout/portal passed in7.05seconds atEUR35with Managed Payments, no payment or real app grant, followed by owned expiry/archive. The landing-page offer sentence was aligned afterward; its build and exact CI are separate final checks. Production remains websitecbe062d/backendfc6208c. [Evidence](operations/evidence/launch-20261101-pro-offer-preparation.json), [launch review](launch-plan/2026-10-31/PRO-LAUNCH-TERMS-REVIEW.md).
+
 Current production and next work are summarized in [current accepted state](operations/CURRENT-STATE.md). Entries below are dated evidence, newest first; an older entry saying live or pending is not a current-state instruction. The [owner register](strategy/OWNER-REQUEST-REGISTER.md) preserves later corrections.
 
 ## November1: credit-policy and signed webhook/wallet integration candidate

@@ -1,5 +1,6 @@
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
 import { billingRiskHeld } from "./lib/billingRisk";
+import { singleProConfigured } from "../packages/billing/credit-policy";
 import { cloudRetryEligible } from "../packages/contracts/cloud-retry";
 import {
   selectedAnalysis,
@@ -109,7 +110,10 @@ export async function wallet(
       .query("trialClaims")
       .withIndex("by_identity", (q) => q.eq("identityHash", identityHash))
       .unique();
-    const granted = claim || initialAllowance === "none" ? 0 : 30;
+    const granted =
+      claim || initialAllowance === "none" || singleProConfigured(process.env)
+        ? 0
+        : 30;
     if (!claim)
       await ctx.db.insert("trialClaims", {
         identityHash,

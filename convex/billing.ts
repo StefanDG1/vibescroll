@@ -12,6 +12,7 @@ export const authorize = query({
     return {
       name: a.organization.name,
       email: a.actor.email,
+      personal: a.organization.privateOwnerId === a.actor._id,
       mode: process.env.STRIPE_MODE === "live" ? "live" : "test",
       configured: Boolean(
         billingReadiness(process.env).catalogueConfigured ||

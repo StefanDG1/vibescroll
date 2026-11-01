@@ -253,15 +253,14 @@ export default function Home() {
           aria-labelledby="pricing-title"
         >
           <div>
-            <h2 id="pricing-title">Choose an allowance that fits your work.</h2>
+            <h2 id="pricing-title">One Pro plan for your saved ideas.</h2>
             <p>
-              Compare the current Starter and Pro plans, billing intervals and
-              processing limits. Checkout confirms the total and applicable tax
-              before payment.
+              Choose monthly, yearly or weekly renewal. Check the prepared offer
+              and availability before subscribing.
             </p>
           </div>
           <Link className="primary" href="/pricing">
-            Compare current plans
+            View Pro
           </Link>
         </section>
         <section className="ss-section ss-faq" aria-labelledby="faq-title">

@@ -6,7 +6,11 @@ import { requireInvoiceOperator } from "./lib/invoiceOperator";
 import { wallet } from "./product";
 import { pricing, ensure } from "../packages/policy";
 import { billingReadiness } from "../packages/providers/billing-readiness";
-import { candidateCreditPolicy } from "../packages/billing/credit-policy";
+import {
+  candidateCreditPolicy,
+  singleProConfigured,
+} from "../packages/billing/credit-policy";
+import { proOffer } from "../packages/billing/pro-offer";
 import { billingRiskHeld } from "./lib/billingRisk";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
@@ -106,6 +110,7 @@ export const catalogue = query({
     const tax = await ctx.db.query("taxConfigurations").first();
     return {
       pricing,
+      proOffer: { ...proOffer, configured: singleProConfigured(process.env) },
       taxMode: tax?.domestic ?? "pending_evidence",
       countries: tax?.countries ?? ["RO"],
       billingCountryRequired:

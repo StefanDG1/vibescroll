@@ -45,3 +45,11 @@ Each risk has its own key. A canonical won dispute releases only that risk. Frau
 Disable new checkout through the existing release gate; keep the price-policy mapping needed by already-paid customers. If a mapping is accidentally absent, reconciliation returns a retryable error without downgrading the current stored entitlement or modifying pools. Restore the reviewed mapping and reconcile again. Do not release unknown reservations, remove paid windows, delete the risk table or reset funding counters.
 
 The candidate terms file remains an immutable policy definition; business approval is recorded separately. Changing allowance/term values needs a new policy version and migration review.
+
+## Single-Pro checkout and portal
+
+ADR222 adds one new-sale offer without replacing legacy settlement. Public/account pages share the canonical candidate amounts. The new-sale form is disabled unless the exact candidate mapping and normal provider/release gates pass. Candidate checkout requires the personal billing workspace, refuses Starter and partial subscription snapshots, verifies the actual price and uses replay-safe checkout intents. An old subscription remains manageable without a forced migration.
+
+Set the separate backend-only `STRIPE_PRO_PORTAL_CONFIG_ID` for new-offer mode. The configuration must be active in the same Stripe mode and enable cancellation, payment-method updates and invoice history, with subscription updates disabled. Both candidate checkout and portal access verify this contract. Keep the old `STRIPE_PORTAL_CONFIG_ID` and old six price bindings for historical records; do not reuse a portal that can sell obsolete prices. Without the candidate mapping, legacy behavior remains unchanged.
+
+Once the new mapping is active, new wallets receive no hosted trial allowance; existing wallet rows are returned unchanged. Pro has no subscription repository-count quota. Per-operation batching, permissions, concurrency and credit admission still apply. Review [the launch terms](../launch-plan/2026-10-31/PRO-LAUNCH-TERMS-REVIEW.md) before live offer activation.

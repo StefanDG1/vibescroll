@@ -1,5 +1,9 @@
 # VibeScroll foundational beliefs
 
+## F094: one Pro offer without advertised resource quotas, November1
+
+R131 reports no real customers and removes advertised storage and the Pro repository-count quota. Prepare one Pro offer at EUR35/month or EUR350/year with300credits granted monthly, or EUR17every seven days with75credits. Include requested-post cache reuse and individual-Pro workspaces; full-catalog browsing stays separate. Keep expensive work bounded by credits, concurrency and restrained fair use. Do not promise unlimited storage or compute. Preserve admin/test balances, valid results and old billing history. The owner decision is not evidence of willingness to pay, performance or general availability. Live new prices and terms still need the concrete review. [Implementation decision](../adr/222-single-pro-offer-and-project-capacity.md).
+
 ## F091: prepared single-Pro euro prices, October31
 
 The owner selected preparation of EUR35/month, EUR350/year and EUR17/week. Monthly/annual target300 credits granted monthly; the owner confirmed75credits every seven days. This supersedes F087's EUR8/week candidate, not historical receipts or current runtime/Stripe terms. The isolated [pricing preview](../../contracts/pro-pricing-candidate.json) and [standing plan](../strategy/PRO-PRICING-AND-CREDITS.md) preserve existing customers/purchases, one personal pool across teams and requested-post cache access. No live price, checkout, customer migration, profit claim or campaign follows. Audience, evidence requirements and six beliefs remain unchanged.

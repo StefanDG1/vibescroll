@@ -462,7 +462,7 @@ async function selectedWork(
 ) {
   const a = await assistantGrant(
     ctx,
-    await selectedProfile(ctx, profileId),
+    await selectedProfile(ctx, profileId, scope),
     scope,
   );
   const source = await ctx.db.get(sourceId);
@@ -1461,7 +1461,7 @@ export const draftProjectSuggestion = internalMutation({
   handler: async (ctx, args) => {
     const a = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "suggestions:draft"),
       "suggestions:draft",
     );
     await assistantGrant(ctx, a.organization._id, "context:read");
@@ -1576,7 +1576,7 @@ export const recordFeedback = internalMutation({
   handler: async (ctx, args) => {
     const a = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "feedback:write"),
       "feedback:write",
     );
     const source = await sourceFor(ctx, a, args.sourceId);
@@ -1722,7 +1722,7 @@ export const search = internalQuery({
     );
     const a = await assistantGrant(
         ctx,
-        await selectedProfile(ctx, args.profileId),
+        await selectedProfile(ctx, args.profileId, "knowledge:read"),
         "knowledge:read",
       ),
       words = args.query.toLocaleLowerCase().trim().split(/\s+/).slice(0, 12);
@@ -2053,7 +2053,7 @@ export const fetch = internalQuery({
     );
     const a = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "knowledge:read"),
       "knowledge:read",
     );
     let source: Doc<"sources"> | null;

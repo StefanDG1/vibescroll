@@ -4,19 +4,21 @@ Status: implementation authorized under R141, November 1, 2026. R138/R139 specif
 
 ## Current behavior
 
-MCP reads are scoped queries over current grants and requested-post associations, not access to the whole shared database. `search` matches words in permitted post titles and insight titles/claims. Each page examines at most five posts and 128 insights per post, returning at most twenty results. Its cursor resumes overflow before advancing and checks current source/version state. Missing or retired evidence keeps coverage incomplete.
+Website/backend00e249c deploy the first R141 checkpoint. [The dated receipt](../operations/evidence/launch-20261101-context-retrieval.json) distinguishes local, host and production evidence. Compatible legacy search still examines five permitted posts. Opt-in `ranked_v1` uses a compact workspace full-text projection, at most50 candidates/8 hydrated sources/20matches per call and200 candidates per signed continuation session. Owner initial coverage is210 saved sources. Current access is rechecked before disclosure, including exact team shares.
 
-Insight hits carry their post link and exact source/version/insight references. A title match can return post metadata/state instead. `fetch` expands a chosen result into the saved analysis and citation summaries; its structured representation avoids nested JSON text. Raw video, complete transcripts and JPEG bytes are not bundled into ordinary search. Profile discovery and exact project-application context are separate reads. The Library's categories and connections are not automatically sent as a full graph.
+`fetch(format="post_context_v1")` expands an explicit immutable post reference into bounded pages of complete retained transcript, observations and insights plus one frame manifest. `read_post_frame` returns verified native JPEG bytes without a worker lease or new analysis. The actual ChatGPT test retrieved complete context/search results and all8 frames across initial/sequential reads. Three initial host errors remain unexplained; one-at-a-time image reads passed. Legacy/structured summaries remain compatible.
 
-Canonical posts, immutable analysis versions and prepared evidence can be shared. Each user keeps their own requested-post association, private notes, selected version and project work. Base Pro cache reuse does not grant full-library browsing. Any future index must preserve those boundaries.
+The second checkpoint implements optional filters, selected-project topic fit and explicit bounded multi-workspace search. R142 approves automatic personal/joined-team MCP defaults, preserving explicit per-client off/custom access, current membership/role/own Pro and personal-post isolation. These source changes require their own acceptance before being called live.
+
+The source-free [quality investigation](../operations/RETRIEVAL-QUALITY-20261101.md) records exact/category hits, a paraphrase miss and bounded host query expansion as the next economical route. Embeddings and another search provider remain deferred pending real expected-hit and index-cost evidence.
 
 ## Bound search to a workspace
 
-R140 extends the next milestone to efficient personal and multi-member workspace retrieval. Preserve all R138/R139 capabilities. Authorization scoping exists today; a unified workspace search projection is proposed, not deployed.
+R140 extends the next milestone to efficient personal and multi-member workspace retrieval. Preserve all R138/R139 capabilities. Authorization scoping exists today; the compact workspace projection is deployed at the first checkpoint; additional routing/filter/federation work is in progress.
 
 Current `assistant.search` first resolves the selected organization and current actor/client grant. `assistantGrant` checks indexed membership, active scopes and the member's team subscription. Candidate enumeration uses organization-prefixed `dashboardCards` or `sourceSpaces` indexes, or the older explicit-source grant. `sourceWithinAssistantScope` rechecks organization, allowed sources/space, retention and underlying evidence authority. It does not search the service-owned canonical catalog. The grant value `libraryScope: all` means all permitted source cards in that organization, not all VibeScroll content. Each request examines at most five source candidates and128 insights per source, returning at most twenty results. These are logical scan limits, not a measurement of total database bytes or a guarantee of library-wide relevance.
 
-Team knowledge currently has separate recipient-indexed grant listing and exact shared fetch in `knowledgeGrants.ts`. Ordinary MCP search does not automatically merge that path into one team-wide ranked result set. Do not claim that unified team discovery is accepted because membership and sharing already exist.
+Team knowledge currently has separate recipient-indexed grant listing and exact shared fetch in `knowledgeGrants.ts`. Opt-in ranked search merges exact currently granted team origins into the workspace collection. Default legacy search retains its own-source scan. Keep those modes explicit.
 
 Use this target ownership model:
 

@@ -29,6 +29,9 @@ export const workspaceSearchTables = {
     excerpt: v.string(),
     searchText: v.string(),
     truncated: v.boolean(),
+    metadataVersion: v.optional(v.literal(2)),
+    platform: v.optional(v.string()),
+    categoryKeys: v.optional(v.array(v.string())),
     updatedAt: v.number(),
   })
     .index("by_item", [

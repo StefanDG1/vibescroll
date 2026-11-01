@@ -6,6 +6,8 @@ This walkthrough reads an existing analyzed post and saves a project plan writte
 2. Connect the existing VibeScroll plugin/MCP endpoint and complete VibeScroll OAuth. Follow [the connection guide](/connect) for the supported host setup.
 3. Ask: “Use VibeScroll to list my available workspaces and saved insights. Do not start analysis or spend credits.” The assistant can use `get_profile` and `search`.
 
+The same connection includes current joined team workspaces by default. Personal posts stay in the personal workspace until shared. Any workspace access explicitly turned off for that OAuth client stays off; joining a team does not override it. Team roles and each member's own Pro remain authoritative. No second setup is required for each team.
+
 If the result requires a workspace selection, choose one of the returned workspaces. If it requires authentication, use the host's connection flow. A profile-selection error is not a reason to create another plugin.
 
 ## Read a post and a project

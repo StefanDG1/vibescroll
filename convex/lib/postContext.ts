@@ -35,7 +35,7 @@ export async function resolvePostContext(ctx: QueryCtx, args: PostRead) {
   ctx = knowledgeReadContext(ctx);
   const a = await assistantGrant(
     ctx,
-    await selectedProfile(ctx, args.profileId),
+    await selectedProfile(ctx, args.profileId, "knowledge:read"),
     "knowledge:read",
   );
   let source: Doc<"sources">;

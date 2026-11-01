@@ -307,6 +307,7 @@ export const tools = httpAction(async (ctx, request) => {
       ),
       { status, headers: { "Cache-Control": "no-store" } },
     );
+  let inputValidated = false;
   try {
     const bearer = request.headers
       .get("authorization")
@@ -320,11 +321,18 @@ export const tools = httpAction(async (ctx, request) => {
           : value &&
               typeof value === "object" &&
               "operation" in value &&
-              value.operation === "save_project_proposal"
+              (value.operation === "save_project_proposal" ||
+                (value.operation === "search" &&
+                  "args" in value &&
+                  !!value.args &&
+                  typeof value.args === "object" &&
+                  "mode" in value.args &&
+                  value.args.mode === "ranked_v1"))
             ? 32768
             : 8192,
       ),
     );
+    inputValidated = true;
     operation = input.operation;
     const expected = await ctx.runMutation(internal.assistant.throttle, {});
     const issuer = assistantIssuer(process.env.MCP_AUTH_ISSUER);
@@ -350,11 +358,24 @@ export const tools = httpAction(async (ctx, request) => {
     )
       return deny(401);
     if (
-      ["get_profile", "save_link", "search", "widget_profiles"].includes(
-        input.operation,
-      )
+      [
+        "get_profile",
+        "save_link",
+        "search",
+        "fetch",
+        "read_post_frame",
+        "get_project_application_context",
+        "widget_profiles",
+      ].includes(input.operation)
     )
-      await ctx.runMutation(internal.assistantGrants.ensureDefaults, {});
+      await ctx.runMutation(internal.assistantGrants.ensureDefaults, {
+        organizationIds:
+          "workspaceIds" in input.args && input.args.workspaceIds
+            ? (input.args.workspaceIds as Id<"organizations">[])
+            : "profileId" in input.args && input.args.profileId
+              ? [input.args.profileId as Id<"organizations">]
+              : undefined,
+      });
     const selectedProfile =
       "profileId" in input.args
         ? (input.args.profileId as Id<"organizations"> | undefined)
@@ -697,6 +718,10 @@ export const tools = httpAction(async (ctx, request) => {
             ? await ctx.runQuery(internal.workspaceSearch.search, {
                 ...input.args,
                 profileId: selectedProfile,
+                workspaceIds: input.args.workspaceIds as
+                  Id<"organizations">[] | undefined,
+                projectId: input.args.projectId as
+                  Id<"repositories"> | undefined,
               })
             : await ctx.runQuery(internal.assistant.search, {
                 ...input.args,
@@ -751,7 +776,7 @@ export const tools = httpAction(async (ctx, request) => {
     return Response.json(value, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const failure = safeAssistantFailure(
-      error instanceof z.ZodError
+      !inputValidated || error instanceof z.ZodError
         ? "INVALID_INPUT"
         : assistantExceptionCode(error),
       {

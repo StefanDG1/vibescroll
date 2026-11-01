@@ -9,6 +9,7 @@ import {
 } from "../convex/lib/cloudCatalog";
 import { removeSearchOrigin } from "../convex/lib/workspaceSearchProjection";
 import { syncDashboardCard } from "../convex/lib/dashboardProjection";
+import { searchWorkspaceCore } from "../convex/workspaceSearch";
 import {
   workspaceSearchOutput,
   workspaceSearchMcpOutput,
@@ -180,9 +181,13 @@ it("rechecks explicit source scope and excludes another workspace's index", asyn
     expiresAt: null,
     acknowledged: true,
   });
-  expect(
-    (await f.search()).posts.map((post) => post.reference.sourceId),
-  ).toEqual([f.ids[0]]);
+  await expect(f.search()).rejects.toThrow(/INVALID_INPUT/);
+  const legacy = await f.assistant.query(internal.assistant.search, {
+    profileId: f.org,
+    query: "needle",
+  });
+  expect(legacy.results).toHaveLength(1);
+  expect(legacy.results[0].reference?.sourceId).toBe(f.ids[0]);
   const foreign = await f.t.run(async (ctx) => {
     const { _id, _creationTime, ...original } = (await ctx.db.get(f.org))!;
     const org = await ctx.db.insert("organizations", {
@@ -203,7 +208,7 @@ it("rechecks explicit source scope and excludes another workspace's index", asyn
     });
     return org;
   });
-  expect((await f.search()).matches).toHaveLength(1);
+  await expect(f.search()).rejects.toThrow(/INVALID_INPUT/);
   await expect(
     f.assistant.query(internal.workspaceSearch.search, {
       profileId: foreign,
@@ -673,6 +678,28 @@ it("shares one canonical collection between two members and preserves an indepen
     )
       break;
   }
+  const federated = await f.assistant.query(internal.workspaceSearch.search, {
+    workspaceIds: [f.org, team],
+    mode: "ranked_v1",
+    query: "evidence",
+    target: "insights",
+  });
+  expect(federated.matches).toHaveLength(1);
+  expect(federated.posts[0].access_paths).toHaveLength(2);
+  expect(
+    new Set(federated.posts[0].access_paths!.map((path) => path.profile_id)),
+  ).toEqual(new Set([f.org, team]));
+  const dated = await f.assistant.query(internal.workspaceSearch.search, {
+    workspaceIds: [f.org, team],
+    mode: "ranked_v1",
+    query: "evidence",
+    target: "insights",
+    filters: { addedAfter: 0 },
+  });
+  expect(dated.matches).toHaveLength(1);
+  expect(dated.posts[0].access_paths).toHaveLength(1);
+  expect(dated.truncated).toBe(true);
+  expect(dated.coverage).toContain("shared workspace-added dates are unknown");
   const assetsBefore = await f.t.run((ctx) =>
     ctx.db
       .query("assets")
@@ -863,4 +890,51 @@ it("keeps eight near-maximum legacy source documents below the conservative read
   expect(new TextEncoder().encode(JSON.stringify(result)).length).toBeLessThan(
     64000,
   );
+});
+
+it("rejects narrow ranked scope before touching the compact candidate table", async () => {
+  const f = await fixture(1);
+  await f.bootstrap();
+  const source = (await f.t.run((ctx) => ctx.db.get(f.ids[0])))!;
+  await f.owner.mutation(api.assistantGrants.save, {
+    organizationId: f.org,
+    clientId: "client_01234567890123456789012345",
+    sources: [
+      {
+        sourceId: source._id,
+        generation: source.generation,
+        revision: source.updatedAt,
+      },
+    ],
+    scopes: ["knowledge:read"],
+    expectedVersion: f.grant.version,
+    expiresAt: null,
+    acknowledged: true,
+  });
+  let enumerations = 0;
+  await expect(
+    f.assistant.run((ctx) =>
+      searchWorkspaceCore(
+        {
+          ...ctx,
+          db: new Proxy(ctx.db, {
+            get(target, property) {
+              if (property === "query")
+                return (table: string) => {
+                  if (table === "workspaceSearchDocuments") {
+                    enumerations++;
+                    throw new Error("Unexpected candidate enumeration");
+                  }
+                  return Reflect.apply(target.query, target, [table]);
+                };
+              const value = Reflect.get(target, property, target);
+              return typeof value === "function" ? value.bind(target) : value;
+            },
+          }),
+        },
+        { profileId: f.org, query: "needle", mode: "ranked_v1" },
+      ),
+    ),
+  ).rejects.toThrow(/INVALID_INPUT/);
+  expect(enumerations).toBe(0);
 });

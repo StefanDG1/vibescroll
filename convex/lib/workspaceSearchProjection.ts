@@ -3,6 +3,11 @@ import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { PolicyError, ensure } from "../../packages/policy";
 import { cloudImport, cloudArtifact } from "./cloudCatalog";
 import { postDisplayTitle } from "../../packages/sources/display";
+import {
+  insightSearchTopics,
+  outputSearchTopics,
+  sourcePlatform,
+} from "./workspaceSearchFilters";
 import { selectedAnalysis, retainedVersion } from "./analysisHistory";
 import { sourceRetained } from "./sourceAuthority";
 import { exactGrantedSource } from "../knowledgeGrants";
@@ -109,6 +114,7 @@ type ProjectedItem = {
   excerpt: string;
   searchText: string;
   truncated: boolean;
+  categoryKeys: string[];
 };
 function projectionItems(
   source: Doc<"sources">,
@@ -126,6 +132,7 @@ function projectionItems(
   const result: ProjectedItem[] = [
     {
       itemKey: "post",
+      categoryKeys: outputSearchTopics(output, false),
       kind: "post",
       title,
       excerpt: summary.slice(0, 700),
@@ -158,6 +165,7 @@ function projectionItems(
     seen.add(insightId);
     result.push({
       itemKey: `insight:${insightId}`,
+      categoryKeys: insightSearchTopics(insight, false),
       kind: "insight",
       insightId,
       title: insight.title.slice(0, 200),
@@ -191,7 +199,9 @@ function projectionItems(
 function sameFields(row: object, fields: object) {
   const values = row as Record<string, unknown>;
   return Object.entries(fields).every(
-    ([key, value]) => key === "updatedAt" || values[key] === value,
+    ([key, value]) =>
+      key === "updatedAt" ||
+      JSON.stringify(values[key]) === JSON.stringify(value),
   );
 }
 
@@ -275,6 +285,8 @@ async function writeSearchProjection(
       canonicalKey: origin.canonicalKey,
       analysisKey: origin.analysisKey,
       ...item,
+      metadataVersion: 2 as const,
+      platform: sourcePlatform(publicUrl, source.kind),
       updatedAt: Date.now(),
     };
     const doc = existing.get(item.itemKey);

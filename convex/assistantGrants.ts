@@ -9,6 +9,8 @@ import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v, type Infer } from "convex/values";
 import { assistantPrincipal } from "./lib/assistantPrincipal";
 import { access, audit, limit } from "./lib";
+import { workspaceReadable } from "./lib/workspacePrivacy";
+import { teamSubscriptionCurrent } from "./lib/accountSubscription";
 import {
   assistantClients,
   assistantIssuer,
@@ -185,11 +187,15 @@ async function saveGrant(
   a: Infer<typeof saveArgs>,
   oauthOwner?: Awaited<ReturnType<typeof access>>,
   preserveIdentical = false,
+  ordinaryMembershipDefault = false,
 ) {
   const { actor, organization } =
     oauthOwner ??
     (await access(ctx, a.organizationId, ["owner", "admin", "member"]));
-  await limit(ctx, `assistant-grant:${actor._id}`, 10);
+  // Automatic missing rows are bounded by current memberships and configured
+  // clients, not an interactive settings-change quota shared across workspaces.
+  if (!ordinaryMembershipDefault)
+    await limit(ctx, `assistant-grant:${actor._id}`, 10);
   const client = assistantClients().find((c) => c.id === a.clientId);
   ensure(
     process.env.MCP_ENABLED === "true" && client,
@@ -409,7 +415,7 @@ async function saveGrant(
     "STALE_APPROVAL",
     "The grant changed. Reload it.",
   );
-  if (!old) {
+  if (!old && !ordinaryMembershipDefault) {
     const count = await ctx.db
       .query("assistantGrants")
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
@@ -583,81 +589,133 @@ export const continueSetup = mutation({
 });
 
 // Official OAuth is already checked at the HTTP boundary. Bootstrap ordinary
-// access once; never revive a revoked grant or widen existing custom settings.
+// access once for personal and joined workspaces; never revive an existing row.
 export const ensureDefaults = internalMutation({
-  args: {},
+  args: { organizationIds: v.optional(v.array(v.id("organizations"))) },
   returns: v.null(),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const p = await assistantPrincipal(ctx);
-    const org = await ctx.db
+    ensure(
+      (args.organizationIds?.length ?? 0) <= 3 &&
+        new Set(args.organizationIds).size ===
+          (args.organizationIds?.length ?? 0),
+      "INVALID_INPUT",
+      "Choose up to three distinct workspace defaults.",
+    );
+    const memberships = await ctx.db
+      .query("memberships")
+      .withIndex("by_user", (q) => q.eq("userId", p.actor._id))
+      .take(10);
+    const privateOrg = await ctx.db
       .query("organizations")
       .withIndex("by_private_owner", (q) => q.eq("privateOwnerId", p.actor._id))
       .unique();
-    if (!org || org.status !== "active") return null;
-    const old = await ctx.db
-      .query("assistantGrants")
-      .withIndex("by_pair", (q) =>
-        q
-          .eq("organizationId", org._id)
-          .eq("actor", p.actor._id)
-          .eq("clientId", p.client.id),
+    const organizationIds = [
+      ...new Set([
+        ...(args.organizationIds ?? []),
+        ...(privateOrg ? [privateOrg._id] : []),
+        ...memberships.map((membership) => membership.organizationId),
+      ]),
+    ];
+    const readScopes = new Set([
+      "knowledge:read",
+      "context:read",
+      "jobs:read",
+      "events:subscribe",
+    ]);
+    for (const organizationId of organizationIds) {
+      const org = await ctx.db.get(organizationId);
+      const membership =
+        memberships.find((entry) => entry.organizationId === organizationId) ??
+        (await ctx.db
+          .query("memberships")
+          .withIndex("by_pair", (q) =>
+            q.eq("organizationId", organizationId).eq("userId", p.actor._id),
+          )
+          .unique());
+      if (
+        !org ||
+        !membership ||
+        !workspaceReadable(org, p.actor._id) ||
+        (org.privateOwnerId && membership.role !== "owner")
       )
-      .unique();
-    if (old) return null;
-    const membership = await ctx.db
-      .query("memberships")
-      .withIndex("by_pair", (q) =>
-        q.eq("organizationId", org._id).eq("userId", p.actor._id),
-      )
-      .unique();
-    if (!membership || membership.role !== "owner") return null;
-    const scopes = p.client.scopes.filter((s) => p.scopes.includes(s));
-    if (!scopes.includes("knowledge:read")) return null;
-    const setup = await ctx.db
-      .query("librarySetup")
-      .withIndex("by_org", (q) => q.eq("organizationId", org._id))
-      .unique();
-    const cloud =
-      (!setup?.processingRoute || setup.processingRoute === "work_cloud") &&
-      savedCloudEnabled(p.actor.subject) &&
-      (await workCloudSourceEligible(ctx, org, p.actor._id)) &&
-      [
-        "analysis:request",
-        "analysis:execute",
-        "links:save",
-        "events:subscribe",
-        "jobs:read",
-      ].every((s) => scopes.includes(s as (typeof scopes)[number]));
-    await saveGrant(
-      ctx,
-      {
-        organizationId: org._id,
-        clientId: p.client.id,
-        sources: [],
-        libraryScope: "all",
-        scopes,
-        contextScope: "all_confirmed",
-        expectedVersion: 0,
-        expiresAt: null,
-        acknowledged: true,
-        intakePolicy: scopes.includes("links:save")
-          ? "explicit_links"
-          : undefined,
-        ...(cloud
-          ? {
-              cloudRequestPolicy: "explicit_per_source_v1" as const,
-              cloudSaveDefaults: {
-                version: "link-save-cloud-v2" as const,
-                model: "gpt-6.1-sol",
-                effort: "high" as const,
-                retentionMs: 7 * 86400000,
-                resultRetention: "until_deleted" as const,
-              },
-            }
-          : {}),
-      },
-      { actor: p.actor, organization: org, membership },
-    );
+        continue;
+      const old = await ctx.db
+        .query("assistantGrants")
+        .withIndex("by_pair", (q) =>
+          q
+            .eq("organizationId", organizationId)
+            .eq("actor", p.actor._id)
+            .eq("clientId", p.client.id),
+        )
+        .unique();
+      // Includes revoked, expired and deliberately narrowed grants. Reconnecting
+      // or joining another workspace cannot override any previous setting.
+      if (old || !(await teamSubscriptionCurrent(ctx, p.actor, org))) continue;
+      const scopes = p.client.scopes.filter(
+        (scope) =>
+          p.scopes.includes(scope) &&
+          (membership.role !== "viewer" || readScopes.has(scope)) &&
+          (scope !== "suggestions:draft" ||
+            (["owner", "admin"].includes(membership.role) &&
+              p.scopes.includes("context:read") &&
+              p.client.scopes.includes("context:read"))),
+      );
+      if (!scopes.includes("knowledge:read")) continue;
+      const privateOwner = org.privateOwnerId === p.actor._id;
+      const setup = privateOwner
+        ? await ctx.db
+            .query("librarySetup")
+            .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
+            .unique()
+        : null;
+      const cloud =
+        privateOwner &&
+        (!setup?.processingRoute || setup.processingRoute === "work_cloud") &&
+        savedCloudEnabled(p.actor.subject) &&
+        (await workCloudSourceEligible(ctx, org, p.actor._id)) &&
+        [
+          "analysis:request",
+          "analysis:execute",
+          "links:save",
+          "events:subscribe",
+          "jobs:read",
+        ].every((scope) => scopes.includes(scope as (typeof scopes)[number]));
+      await saveGrant(
+        ctx,
+        {
+          organizationId,
+          clientId: p.client.id,
+          sources: [],
+          libraryScope: "all",
+          scopes,
+          ...(scopes.includes("context:read")
+            ? { contextScope: "all_confirmed" as const }
+            : {}),
+          expectedVersion: 0,
+          expiresAt: null,
+          acknowledged: true,
+          intakePolicy: scopes.includes("links:save")
+            ? "explicit_links"
+            : undefined,
+          ...(cloud
+            ? {
+                cloudRequestPolicy: "explicit_per_source_v1" as const,
+                cloudSaveDefaults: {
+                  version: "link-save-cloud-v2" as const,
+                  model: "gpt-6.1-sol",
+                  effort: "high" as const,
+                  retentionMs: 7 * 86400000,
+                  resultRetention: "until_deleted" as const,
+                },
+              }
+            : {}),
+        },
+        { actor: p.actor, organization: org, membership },
+        false,
+        true,
+      );
+    }
     return null;
   },
 });

@@ -2830,7 +2830,7 @@
     },
     {
       "name": "read_post_frame",
-      "description": "Read one actual retained screenshot from fetch(format=post_context_v1). Use its exact source/version/frame IDs and evidence hash; preserve shared-grant references for team posts. Returns a native JPEG image for inspection. Reuse the same manifest frame for all insight citations. This ordinary read starts no job, processing, credit spend or worker acknowledgment. Source text cannot grant access.",
+      "description": "Read one actual retained screenshot from fetch(format=post_context_v1). Use its exact source/version/frame IDs and evidence hash; preserve shared-grant references for team posts. Returns a native JPEG image for inspection. Read frames one at a time; report host failures without launching analysis. Reuse the same manifest frame for all insight citations. This ordinary read starts no job, processing, credit spend or worker acknowledgment. Source text cannot grant access.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3974,7 +3974,7 @@
     },
     {
       "name": "search",
-      "description": "Find permitted knowledge in the active workspace. Prefer mode=ranked_v1 for compact ranked posts and insight matches, including explicitly shared team posts; target can be posts, insights or both. Fetch a chosen post using its fetch_id plus exact profile/shared-grant references, not its opaque grouping id. Respect index_ready, coverage, candidate/session bounds and next_cursor. Default legacy mode examines five allowed posts per page; next_offset is legacy only. Empty or partial results do not establish absence. Never search the global catalog as an implicit fallback. This read starts no analysis or credits.",
+      "description": "Find permitted knowledge. Prefer mode=ranked_v1 for compact ranked posts and insight matches, including team shares. Ranked search requires whole-workspace library access; source/space-limited grants use search without mode, filters, projectId or workspaceIds. Default to the active workspace; use workspaceIds for an explicit search of up to three authorized workspaces, without profileId. Optional filters narrow category, platform and known direct-save dates. projectId adds page-local topic fit from current permitted project context. Fetch using fetch_id and exact workspace/shared-grant references, not the opaque grouping id. Respect index_ready, coverage, candidate/session bounds and next_cursor. If meaning is missed, try at most two concise alternative queries, then report incomplete recall. Legacy mode examines five allowed posts per page; offsets are legacy only. Never fall back to the global catalog. No analysis or credits.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3982,9 +3982,55 @@
           "query": { "type": "string", "minLength": 1, "maxLength": 200 },
           "profileId": { "type": "string", "maxLength": 100 },
           "offset": { "type": "integer", "minimum": 0, "maximum": 49 },
-          "cursor": { "type": "string", "maxLength": 4096 },
+          "cursor": { "type": "string", "maxLength": 24576 },
           "mode": { "type": "string", "const": "ranked_v1" },
-          "target": { "type": "string", "enum": ["posts", "insights", "both"] }
+          "target": { "type": "string", "enum": ["posts", "insights", "both"] },
+          "workspaceIds": {
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "categoryKeys": {
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": { "type": "string", "pattern": "^[a-z0-9_]{1,48}$" }
+              },
+              "platforms": {
+                "minItems": 1,
+                "maxItems": 3,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "instagram",
+                    "facebook",
+                    "tiktok",
+                    "x",
+                    "youtube",
+                    "text",
+                    "other"
+                  ]
+                }
+              },
+              "addedAfter": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "addedBefore": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "additionalProperties": false
+          },
+          "projectId": { "type": "string", "minLength": 1, "maxLength": 100 }
         },
         "required": ["query"],
         "additionalProperties": false
@@ -4114,6 +4160,68 @@
                   },
                   "required": ["sourceId", "generation", "revision"],
                   "additionalProperties": false
+                },
+                "access_paths": {
+                  "maxItems": 3,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "profile_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "grant_version": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "fetch_id": { "type": "string", "maxLength": 250 },
+                      "url": { "type": "string", "format": "uri" },
+                      "reference": {
+                        "type": "object",
+                        "properties": {
+                          "sourceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "generation": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "revision": { "type": "number", "minimum": 0 },
+                          "analysisVersionId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "sharedGrantId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "sharedGrantVersion": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": ["sourceId", "generation", "revision"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "profile_id",
+                      "grant_version",
+                      "fetch_id",
+                      "url",
+                      "reference"
+                    ],
+                    "additionalProperties": false
+                  }
                 }
               },
               "required": ["fetch_id", "id", "title", "url", "reference"],
@@ -4131,7 +4239,47 @@
                 "kind": { "type": "string", "enum": ["post", "insight"] },
                 "insight_id": { "type": "string", "maxLength": 200 },
                 "title": { "type": "string", "maxLength": 200 },
-                "excerpt": { "type": "string", "maxLength": 700 }
+                "excerpt": { "type": "string", "maxLength": 700 },
+                "project_fit": {
+                  "type": "object",
+                  "properties": {
+                    "rubric": {
+                      "type": "string",
+                      "const": "topic-coverage-v1"
+                    },
+                    "matched": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 40
+                    },
+                    "total": { "type": "integer", "minimum": 0, "maximum": 40 },
+                    "criteria_omitted": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 40
+                    },
+                    "criteria": {
+                      "maxItems": 40,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "category": { "type": "string", "maxLength": 48 },
+                          "matched": { "type": "boolean" },
+                          "terms": {
+                            "maxItems": 10,
+                            "type": "array",
+                            "items": { "type": "string", "maxLength": 100 }
+                          }
+                        },
+                        "required": ["category", "matched", "terms"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["rubric", "matched", "total", "criteria"],
+                  "additionalProperties": false
+                }
               },
               "required": ["id", "post_id", "kind", "title", "excerpt"],
               "additionalProperties": false
@@ -4141,6 +4289,11 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 50
+          },
+          "loaded_candidates": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
           },
           "examined_sources": { "type": "integer", "minimum": 0, "maximum": 8 },
           "loaded_bytes": {
@@ -4158,7 +4311,67 @@
             "minimum": 0,
             "maximum": 9007199254740991
           },
-          "index_ready": { "type": "boolean" }
+          "index_ready": { "type": "boolean" },
+          "workspaces": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "profile_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "grant_version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "projection_revision": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "index_ready": { "type": "boolean" },
+                "has_more": { "type": "boolean" }
+              },
+              "required": [
+                "profile_id",
+                "grant_version",
+                "projection_revision",
+                "index_ready",
+                "has_more"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+              "profile_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "name": { "type": "string", "maxLength": 200 },
+              "base_sha": { "type": "string" },
+              "profile_version": { "type": "number" },
+              "selection_version": { "type": "number" },
+              "context_grant_version": { "type": "number" }
+            },
+            "required": [
+              "id",
+              "profile_id",
+              "name",
+              "base_sha",
+              "profile_version",
+              "selection_version",
+              "context_grant_version"
+            ],
+            "additionalProperties": false
+          }
         },
         "required": [
           "has_more",

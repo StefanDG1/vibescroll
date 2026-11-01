@@ -179,7 +179,7 @@ export const state = internalQuery({
   handler: async (ctx, args) => {
     const a = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "knowledge:read"),
       "knowledge:read",
     );
     const allowed = (scope: string) =>
@@ -261,7 +261,7 @@ export const browse = internalQuery({
     ctx = knowledgeReadContext(ctx);
     const a = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "knowledge:read"),
       "knowledge:read",
     );
     const base = {
@@ -481,7 +481,7 @@ export const topic = internalQuery({
     ctx = knowledgeReadContext(ctx);
     const a = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "knowledge:read"),
       "knowledge:read",
     );
     ensure(
@@ -545,7 +545,7 @@ export const proposal = internalQuery({
   handler: async (ctx, args) => {
     const a = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "knowledge:read"),
       "knowledge:read",
     );
     const draft = await authorizedDraft(ctx, a, args.proposalId);

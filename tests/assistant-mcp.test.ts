@@ -785,3 +785,58 @@ it("exposes the durable proposal loop with explicit paid-start and external-publ
     expect.objectContaining({ text: "Keep it concise." }),
   );
 });
+
+it("keeps federated search inputs through the native MCP schema and rejects ranked-only fields in legacy calls", async () => {
+  const value = {
+    mode: "ranked_v1",
+    posts: [],
+    matches: [],
+    next_cursor: null,
+    has_more: false,
+    exhausted: true,
+    truncated: false,
+    coverage: "synthetic",
+    profile_id: "one",
+    grant_version: 1,
+    scanned_candidates: 0,
+    examined_sources: 0,
+    loaded_bytes: 0,
+    session_candidates: 0,
+    projection_revision: 1,
+    index_ready: true,
+  };
+  const backend = vi.fn(async () => ({ ok: true, status: 200, value }));
+  const args = {
+    query: "onboarding",
+    mode: "ranked_v1",
+    workspaceIds: ["one", "two"],
+    projectId: "project-one",
+    filters: {
+      categoryKeys: ["product_design"],
+      platforms: ["tiktok"],
+      addedAfter: 1,
+    },
+    cursor: "c".repeat(18_000),
+  };
+  const response = await packet(
+    await call(
+      "tools/call",
+      { name: "search", arguments: args },
+      ["knowledge:read"],
+      backend,
+      "2026-07-28",
+    ),
+  );
+  expect(response.result.isError).not.toBe(true);
+  expect(backend).toHaveBeenCalledExactlyOnceWith("search", args);
+  backend.mockClear();
+  const { mode: _mode, ...withoutMode } = args;
+  await call(
+    "tools/call",
+    { name: "search", arguments: withoutMode },
+    ["knowledge:read"],
+    backend,
+    "2026-07-28",
+  );
+  expect(backend).not.toHaveBeenCalled();
+});

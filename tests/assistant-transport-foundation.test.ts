@@ -457,3 +457,31 @@ it("distinguishes a provider outage from an expired token and rejects malformed 
   expect(runQuery).not.toHaveBeenCalled();
   expect(runMutation).not.toHaveBeenCalled();
 });
+
+it("forwards bounded federated search cursors above the ordinary body cap, without widening legacy search", async () => {
+  const args = {
+    query: "onboarding",
+    mode: "ranked_v1",
+    workspaceIds: ["workspace-one", "workspace-two"],
+    filters: { platforms: ["instagram"] },
+    projectId: "project-one",
+    cursor: "c".repeat(18_000),
+  };
+  const ranked = await httpFixture(undefined, 200, args);
+  expect(ranked.response.status).toBe(200);
+  expect(ranked.runQuery).toHaveBeenCalledExactlyOnceWith(
+    expect.anything(),
+    expect.objectContaining(args),
+  );
+  for (const invalid of [
+    { query: "onboarding", cursor: args.cursor },
+    { ...args, profileId: "workspace-one" },
+    { ...args, workspaceIds: ["one", "two", "three", "four"] },
+    { ...args, cursor: "c".repeat(24_577) },
+  ]) {
+    const denied = await httpFixture(undefined, 200, invalid);
+    expect(denied.response.status).toBe(400);
+    expect(denied.runQuery).not.toHaveBeenCalled();
+    expect(denied.runMutation).not.toHaveBeenCalled();
+  }
+});

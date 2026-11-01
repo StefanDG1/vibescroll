@@ -1,6 +1,6 @@
 # Workspace search and retained post context
 
-Date: November1,2026. Status: implementation candidate under R141; production acceptance requires a dated receipt.
+Date: November1,2026. Status: first checkpoint deployed under R141. [Dated production receipt](../operations/evidence/launch-20261101-context-retrieval.json) records partial host image acceptance and the remaining second checkpoint.
 
 ## Decision
 
@@ -21,3 +21,9 @@ Semantic vectors, another search provider, automatic all-workspace traversal and
 ## Verification
 
 Check complete UTF-8 pagination, native frame bytes/integrity and zero mutations; private/server-prepared/service-owned evidence and exact shared pins; disjoint personal workspaces and multiple team members; competing origins, revocation and canonical upgrades; response overflow, cursor tampering, hydration bounds and index lag. Publication must prove only empty-table/index admission and unchanged historical schemas/components/auth/crons. Actual host discovery and production reads remain separate from isolated tests.
+
+## Extended routing and one-time team defaults
+
+R142 approves missing assistant grants for personal and currently joined teams without another setup form. Never overwrite existing per-client off/custom/expired grants. Bound discovery to indexed memberships plus explicit requested scopes, intersect current token/client/role authority and check each member's own Pro. This does not copy personal posts, turn on team execution or broaden another OAuth client's consent.
+
+Extended search accepts up to three explicit workspace IDs, metadata filters and a currently permitted project profile. Topic fit reorders the emitted page only. To avoid Convex's one-pagination-per-function restriction, use bounded native-search prefixes with signed offsets/consumed-prefix fingerprints and fixed workspace quotas. Separate newly examined candidate counts from physically reloaded compact rows, and keep current-scope authorization, global hydration/bytes, response and session bounds. Reordered prefixes reject continuation. An incomplete search never silently falls back to the global catalog.

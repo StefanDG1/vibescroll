@@ -481,7 +481,7 @@ export const list = internalQuery({
     );
     const principal = await assistantGrant(
       ctx,
-      await selectedProfile(ctx, args.profileId),
+      await selectedProfile(ctx, args.profileId, "knowledge:read"),
       "knowledge:read",
     );
     await assistantGrant(ctx, principal.organization._id, "context:read");

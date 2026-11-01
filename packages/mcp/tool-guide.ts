@@ -110,9 +110,9 @@ export const toolGuide: Record<string, ToolGuideEntry> = {
     skills: ["vibescroll-find"],
     funding: "no_ai",
     purpose:
-      "Find ranked posts/insights in the active authorized workspace, or use compatible legacy search.",
+      "Find ranked posts/insights in the active workspace or up to three explicit authorized workspaces, with optional filters and project fit.",
     result:
-      "Compact post records with fetch_id, exact own/shared references and referring matches; signed ranked continuation and index coverage. Legacy results retain their cursor/offset.",
+      "Compact post records with fetch_id, workspace access paths, exact own/shared references and referring matches; optional page-local project fit, signed continuation and index coverage. Legacy results retain their cursor/offset.",
     flow: find,
   },
   fetch: {

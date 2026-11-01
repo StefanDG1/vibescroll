@@ -61,3 +61,11 @@ MCP transport/authentication errors, strict-input errors and returned business e
 Returned business failures include an allowlisted `code`, `stage`, `retryability`, opaque `correlation_id` and safe `next_action`. A correlation ID helps identify a response; it does not grant access or establish that a job failed before dispatch. `reconcile_first` means preserve the existing operation and read its status. Only an actual authentication failure carries the OAuth challenge. Provider availability errors must not send users through reconnection.
 
 Some generic failures currently collapse to “Current authorization or evidence is unavailable.” This message alone does not identify an expired login, missing grant or unavailable evidence. The implementation needs more precise safe errors; repeatedly reconnecting is not a verified fix. Preserve queued/running/unknown jobs and their holds until their exact state is known.
+
+## Read ranked context fields
+
+`posts` holds one compact record per returned canonical post/version. Use `fetch_id` and the exact workspace/share references to read it. `matches` refers to those records with `post_id`. `access_paths`, when present, lists access observed on the emitted page rather than every possible share.
+
+`scanned_candidates` counts newly examined candidates in this call. `session_candidates` counts them across signed continuation. Extended requests also report `loaded_candidates`, the compact prefix rows actually loaded, which can exceed newly examined candidates. `loaded_bytes` measures serialized instrumented document reads, not billed database bytes. Read these with `coverage`, `has_more`, `exhausted`, `truncated` and `next_cursor`; an empty partial page is not proof of absence.
+
+Optional `project_fit` reports matched/total topic criteria for the current authorized project profile. A compact criteria list can omit detail with `criteria_omitted` while retaining the full counts. It ranks the emitted page, not the whole library or measured business outcomes. Retrieve exact project-application context when prior proposal/history details are needed.

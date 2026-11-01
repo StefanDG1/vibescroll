@@ -1991,8 +1991,8 @@ button:disabled {
 }
 .panel {
   border-radius: 14px;
-  background: #191919;
-  border-color: #303030;
+  background: var(--panel);
+  border-color: var(--line);
   padding: 24px;
   margin-bottom: 20px;
 }

@@ -42,5 +42,16 @@
     "unchanged-schema preparation and actual admission",
     "staged/canonical desktop and phone billing/pricing checks",
     "concrete live-offer review"
-  ]
+  ],
+  "visualRegression": {
+    "symptom": "Light Pro card had dark background despite correct text and geometry",
+    "cause": "Later global panel hard-coded background and border",
+    "fix": "Existing panel/line theme tokens",
+    "newReadOnlyChecker": "scripts/check-pro-pricing.py",
+    "pricingCases": 4,
+    "feedCases": 4,
+    "libraryCases": 8,
+    "hostedBuildsBeforeCorrection": 0
+  },
+  "finalLandingCopyBuildPassed": true
 }

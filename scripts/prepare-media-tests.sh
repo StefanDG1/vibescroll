@@ -23,19 +23,18 @@ import json
 from pathlib import Path
 import sys
 import tarfile
-import urllib.request
 
 lock = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 root = Path(sys.argv[2]).resolve(strict=True)
 if lock["url"] != "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz" or lock["version"] != "9.0.2":
     raise RuntimeError("Unreviewed media source URL/version")
 
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, *args, **kwargs):
-        raise RuntimeError("Unexpected media source redirect")
-
-with urllib.request.build_opener(NoRedirect).open(lock["url"], timeout=60) as response:
-    payload = response.read(lock["bytes"] + 1)
+# Exact reviewed upstream source is retained in Git; CI needs no download host.
+source_path = Path(sys.argv[1]).parent / "vendor" / "ffmpeg-9.0.2.tar.xz"
+if source_path.is_symlink():
+    raise RuntimeError("Unexpected media archive symlink")
+with source_path.open("rb") as source_file:
+    payload = source_file.read(lock["bytes"] + 1)
 if len(payload) != lock["bytes"] or hashlib.sha256(payload).hexdigest() != lock["sha256"]:
     raise RuntimeError("Media source size/hash mismatch; no extraction/build performed")
 archive = root / "source.tar.xz"

@@ -16,18 +16,17 @@ export default async function Page({
 }) {
   const query = await searchParams;
   const continuation = publicContinuation(query);
-  const id = await (
-    await backend()
-  ).mutation(
+  const client = await backend();
+  if (query.view === "billing") {
+    const personal = await client.mutation(api.organizations.createPrivate, {});
+    redirect(`/app/${personal}/billing?tier=pro`);
+  }
+  const id = await client.mutation(
     api.organizations.ensureDefault,
     query.workspace
       ? { preferredId: query.workspace as Id<"organizations"> }
       : {},
   );
   if (!id) redirect(`/app/workspaces${continuation ? `?${continuation}` : ""}`);
-  if (query.view === "billing")
-    redirect(
-      `/app/${id}/billing${query.tier === "pro" ? "?tier=pro" : "?tier=starter"}`,
-    );
   redirect(`/app/${id}${continuation ? `?${continuation}` : ""}`);
 }

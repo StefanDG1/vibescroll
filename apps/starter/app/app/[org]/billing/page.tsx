@@ -128,6 +128,13 @@ export default async function Page({
           </p>
         )}
       </section>
+      {!auth.personal && (
+        <p>
+          <Link prefetch={false} href="/app?view=billing&tier=pro">
+            Open personal billing
+          </Link>
+        </p>
+      )}
       {auth.billing?.subscriptionId && (
         <section className="panel">
           <h2>Subscription controls</h2>

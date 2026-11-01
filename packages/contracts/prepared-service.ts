@@ -18,6 +18,38 @@ export const preparedStartRequest = preparedQuoteRequest.extend({
 });
 export const preparedTariff = "prepared-service-credits-v1" as const;
 
+// Public status projection only. A nullable charge must be read with billingState.
+export const preparedStatusOutput = z.strictObject({
+  sourceId: z.string().min(1).max(100),
+  state: z.string().min(1).max(100),
+  runId: z.string().max(100).nullable(),
+  versionId: z.string().max(100).nullable(),
+  stages: z
+    .array(
+      z.strictObject({
+        stage: z.string().max(100),
+        at: z.number().nonnegative(),
+      }),
+    )
+    .max(20),
+  executor: preparedExecutor.nullable(),
+  maximumCredits: z.number().int().min(0).max(501),
+  chargedCredits: z.number().int().min(0).max(501).nullable(),
+  billingState: z.string().min(1).max(100),
+  failure: z.string().max(100).nullable(),
+  catalogStatus: z.string().max(100).nullable(),
+  url: z.url().startsWith("https://scroll.companynerve.com/app/"),
+  next_action: z
+    .strictObject({
+      tool: z.literal("analysis_version"),
+      args: z.strictObject({
+        sourceId: z.string().min(1).max(100),
+        versionId: z.string().min(1).max(100),
+      }),
+    })
+    .optional(),
+});
+
 // Existing service-credit balances keep their denomination. This tariff changes
 // the quoted job quantity, never historical purchases, allocations or invoices.
 export function preparedCreditQuote(

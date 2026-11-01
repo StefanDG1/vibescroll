@@ -49,8 +49,12 @@ The following is a schematic explanation, not a byte-for-byte API response. Use 
 
 ## Errors and recovery
 
+Common read/list/status tools advertise output schemas in discovery. The reference expands those schemas alongside exact inputs. Checked [synthetic examples](https://github.com/StefanDG1/vibescroll/blob/codex/launch-20261022-link-cloud-compatible-20261025/docs/developers/examples.json) use placeholder identifiers, never operator data. Older clients can keep the existing full/legacy formats.
+
 MCP transport/authentication errors, strict-input errors and returned business errors are different boundaries. A tool can return `isError: true` even when its HTTP transport succeeded. An `mcp/www_authenticate` challenge indicates an authentication flow; a workspace-choice response does not.
 
 `PROFILE_SELECTION_REQUIRED` supplies a `get_profile` next action. Keep the existing connection and choose the returned workspace. Version conflicts require a fresh read and reconciliation. Insufficient funding or credits requires that route's action; it cannot silently switch to a paid API or another executor.
+
+Returned business failures include an allowlisted `code`, `stage`, `retryability`, opaque `correlation_id` and safe `next_action`. A correlation ID helps identify a response; it does not grant access or establish that a job failed before dispatch. `reconcile_first` means preserve the existing operation and read its status. Only an actual authentication failure carries the OAuth challenge. Provider availability errors must not send users through reconnection.
 
 Some generic failures currently collapse to “Current authorization or evidence is unavailable.” This message alone does not identify an expired login, missing grant or unavailable evidence. The implementation needs more precise safe errors; repeatedly reconnecting is not a verified fix. Preserve queued/running/unknown jobs and their holds until their exact state is known.

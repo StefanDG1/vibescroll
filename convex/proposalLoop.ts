@@ -19,6 +19,7 @@ import {
   proposalOperationKey,
   proposalPlanTariff,
   proposalPlanSettlement,
+  proposalProviderNanoUsd,
 } from "../packages/contracts/proposal-loop";
 import {
   proposalPrincipal,
@@ -33,6 +34,10 @@ import {
 import { reserve, settle } from "./product";
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { limit } from "./lib";
+import {
+  markProviderDispatch,
+  settleProviderExposure,
+} from "./lib/providerFunding";
 
 const proposalArg = { proposalId: v.id("proposals") };
 const operationArg = { operationId: v.id("proposalOperations") };
@@ -386,7 +391,13 @@ export async function startCore(
     ),
   );
   const reservationKey = `proposal-plan:${p.proposal._id}:${args.key}`;
-  if (config.paidCustomer) await reservePaidProcessing(ctx);
+  const providerReservationId = config.paidCustomer
+    ? await reservePaidProcessing(ctx, {
+        operationKey: reservationKey,
+        requestHash: hash,
+        maximumNanoUsd: 20000000,
+      })
+    : null;
   await reserve(
     ctx,
     quote.fundingOrganizationId,
@@ -416,6 +427,7 @@ export async function startCore(
     delegation,
     fundingOrganizationId: quote.fundingOrganizationId,
     reservationKey,
+    ...(providerReservationId ? { receipt: { providerReservationId } } : {}),
     deadline: now + 180000,
     createdAt: now,
     updatedAt: now,
@@ -486,7 +498,53 @@ export const claim = internalMutation({
           typeof m.message?.content === "string" ? m.message.content : "",
         ),
       deadline: op.deadline,
+      providerReservationId: op.receipt?.providerReservationId ?? null,
     };
+  },
+});
+
+export const providerDispatch = internalMutation({
+  args: operationArg,
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const op = await ctx.db.get(args.operationId);
+    ensure(
+      op?.kind === "generation" &&
+        op.state === "running" &&
+        (op.deadline ?? 0) > Date.now(),
+      "APPROVAL_STALE",
+      "Planning authority expired before provider dispatch.",
+    );
+    const p = await workerPrincipal(ctx, op);
+    ensure(
+      currentProposal(p) &&
+        p.proposal.version === op.proposalVersion &&
+        p.proposal.review === op.expectedReview &&
+        p.context.contextHash === op.contextHash &&
+        (p.detail.work?.revision ?? 0) === op.discussionRevision,
+      "APPROVAL_STALE",
+      "Planning context changed before provider dispatch.",
+    );
+    if (op.receipt?.providerReservationId) {
+      const reservation = await ctx.db.get(
+        op.receipt.providerReservationId as Id<"providerFundingReservations">,
+      );
+      ensure(
+        reservation &&
+          reservation.operationKey === op.reservationKey &&
+          reservation.requestHash === op.requestHash &&
+          proposalServiceAllowed(p.actor.subject).id === op.policyId,
+        "APPROVAL_STALE",
+        "The Gateway dispatch differs from its funded proposal operation.",
+      );
+      await requirePaidProcessing(ctx, p.actor, op.fundingOrganizationId);
+      await markProviderDispatch(
+        ctx,
+        op.receipt.providerReservationId,
+        "proposal",
+      );
+    }
+    return null;
   },
 });
 
@@ -518,6 +576,59 @@ export const finish = internalMutation({
   handler: async (ctx, args) => {
     const op = await ctx.db.get(args.operationId);
     if (!op || ["complete", "failed", "stale"].includes(op.state)) return null;
+    if (op.receipt?.providerReservationId) {
+      const reservation = await ctx.db.get(
+        op.receipt.providerReservationId as Id<"providerFundingReservations">,
+      );
+      ensure(
+        reservation &&
+          reservation.operationKey === op.reservationKey &&
+          reservation.requestHash === op.requestHash,
+        "COST_RECONCILIATION_REQUIRED",
+        "The provider settlement differs from its admitted proposal operation.",
+      );
+      let providerNanoUsd: number | null = null;
+      let usageOverflow = false;
+      try {
+        if (
+          op.receipt.model === proposalPlanTariff.model &&
+          /^[a-f0-9]{64}$/.test(op.receipt.responseSha256 ?? "")
+        )
+          providerNanoUsd = proposalProviderNanoUsd(
+            op.receipt.inputTokens,
+            op.receipt.outputTokens,
+          );
+      } catch (error) {
+        usageOverflow =
+          error instanceof Error && error.message === "PROPOSAL_USAGE_OVERFLOW";
+        /* Missing usage retains the complete reserve. */
+      }
+      await settleProviderExposure(
+        ctx,
+        op.receipt.providerReservationId,
+        providerNanoUsd !== null
+          ? {
+              state: "known",
+              actualNanoUsd: providerNanoUsd,
+              receiptHash: await proposalHash({
+                model: op.receipt.model,
+                inputTokens: op.receipt.inputTokens,
+                outputTokens: op.receipt.outputTokens,
+                responseSha256: op.receipt.responseSha256,
+              }),
+              basis: "reported_tariff_usage",
+            }
+          : !args.requestStarted
+            ? {
+                state: "unused",
+                receiptHash: await proposalHash({
+                  operationId: op._id,
+                  proof: "finished_before_dispatch",
+                }),
+              }
+            : { state: "unknown", block: usageOverflow },
+      );
+    }
     let credits: number | null = null;
     if (op.receipt?.inputTokens !== undefined) {
       try {

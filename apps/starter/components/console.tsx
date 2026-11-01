@@ -84,6 +84,7 @@ import {
   sourceCoverageLabel,
 } from "@/lib/library-sources";
 import { ProposalTrail } from "./proposal-trail";
+import { ProposalWorkObservations } from "./proposal-work-observations";
 import { AppTheme } from "./app-theme";
 import { MotionPreference } from "./motion-preference";
 import { downloadText } from "@/lib/download";
@@ -2396,6 +2397,11 @@ export function Console({
                           data.proposals.find(
                             (proposal) => id(proposal) === r.proposalId,
                           )?.title
+                        }
+                        handoff={
+                          data.proposals.find(
+                            (proposal) => id(proposal) === r.proposalId,
+                          )?.detail?.handoff
                         }
                         call={call}
                         busy={busy}
@@ -5718,7 +5724,7 @@ function ExecutionApproval({ proposal, call, routes, usage, busy }: any) {
     </section>
   );
 }
-function RunCard({ run, title, call, busy, readOnly }: any) {
+function RunCard({ run, title, handoff, call, busy, readOnly }: any) {
   return (
     <article className="panel">
       <span className="status">{label(run.state)}</span>
@@ -5739,6 +5745,7 @@ function RunCard({ run, title, call, busy, readOnly }: any) {
         </p>
       )}
       <p>Benefit: not measured</p>
+      <ProposalWorkObservations handoff={handoff} />
       <ul>
         {run.events?.map((e: string, i: number) => (
           <li key={i}>{e}</li>

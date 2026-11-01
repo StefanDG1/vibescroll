@@ -1,5 +1,6 @@
 import { Check, Circle } from "lucide-react";
 import { proposalTrail } from "@/lib/proposal-trail";
+import { ProposalWorkObservations } from "./proposal-work-observations";
 export function ProposalTrail({
   proposal,
   runs,
@@ -30,6 +31,7 @@ export function ProposalTrail({
           </li>
         ))}
       </ol>
+      <ProposalWorkObservations handoff={proposal.detail?.handoff} />
     </section>
   );
 }

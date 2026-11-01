@@ -1,3 +1,8 @@
+import {
+  assistantExceptionCode,
+  assistantFailureStatus,
+  safeAssistantFailure,
+} from "../packages/contracts/assistant-errors";
 import { proposalLoopInputs } from "../packages/contracts/proposal-loop";
 import {
   prepareProjectIssueInput,
@@ -7,6 +12,10 @@ import { httpAction } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { z } from "zod";
+import {
+  knowledgeFetchFormat,
+  profileReadDetail,
+} from "../packages/contracts/knowledge-read";
 import {
   preparedQuoteRequest,
   preparedStartRequest,
@@ -18,7 +27,6 @@ import {
   getProjectProposalInput,
   listProjectProposalsInput,
   chatProposalOperations,
-  chatProposalFailure,
 } from "../packages/contracts/chat-proposals";
 import { analysisVersionOperations } from "../packages/contracts/analysis-versions";
 import {
@@ -249,7 +257,13 @@ const operations = z.discriminatedUnion("operation", [
   z
     .object({
       operation: z.literal("fetch"),
-      args: z.object({ id: z.string().min(1).max(300), profileId }).strict(),
+      args: z
+        .object({
+          id: z.string().min(1).max(300),
+          profileId,
+          format: knowledgeFetchFormat.optional(),
+        })
+        .strict(),
     })
     .strict(),
   z
@@ -259,6 +273,7 @@ const operations = z.discriminatedUnion("operation", [
         .object({
           profileId,
           cursor: z.string().max(4096).nullable().optional(),
+          detail: profileReadDetail.optional(),
         })
         .strict(),
     })
@@ -266,19 +281,28 @@ const operations = z.discriminatedUnion("operation", [
 ]);
 export const tools = httpAction(async (ctx, request) => {
   let operation: string | undefined;
+  const correlationId = crypto.randomUUID();
   const deny = (status = 403) =>
     Response.json(
-      {
-        error:
-          "Assistant access is unavailable. Review the current app grant or reconnect through official OAuth.",
-      },
+      safeAssistantFailure(
+        status === 401
+          ? "AUTH_REQUIRED"
+          : status === 403
+            ? "FORBIDDEN"
+            : "UNAVAILABLE",
+        {
+          status,
+          correlationId,
+        },
+      ),
       { status, headers: { "Cache-Control": "no-store" } },
     );
   try {
     const bearer = request.headers
       .get("authorization")
       ?.match(/^Bearer ([A-Za-z0-9._~-]{20,16384})$/)?.[1];
-    if (!bearer || process.env.MCP_ENABLED !== "true") return deny(401);
+    if (process.env.MCP_ENABLED !== "true") return deny(503);
+    if (!bearer) return deny(401);
     const input = operations.parse(
       await readAssistantBody(request, 262144, (value) =>
         cloudCompletionEnvelope(value)
@@ -304,7 +328,10 @@ export const tools = httpAction(async (ctx, request) => {
       signal: AbortSignal.timeout(10000),
       headers: { Authorization: `Bearer ${bearer}` },
     });
-    if (!result.ok) return deny(401);
+    if (!result.ok)
+      return deny(
+        result.status === 401 ? 401 : result.status === 403 ? 403 : 503,
+      );
     if (
       !validateAssistantUserinfo(
         await readAssistantBody(result, 16384),
@@ -694,35 +721,18 @@ export const tools = httpAction(async (ctx, request) => {
     }
     return Response.json(value, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    if (operation && chatProposalOperations.has(operation)) {
-      const code =
-        error instanceof Error
-          ? error.message.match(
-              /\b(APPROVAL_STALE|IDEMPOTENCY_CONFLICT|POLICY_BLOCKED|INVALID_INPUT|LIMIT_REACHED|SETUP_REQUIRED|PERSONAL_FUNDING_REQUIRED|QUOTE_CHANGED|SOURCE_BUSY|COST_RECONCILIATION_REQUIRED|INSUFFICIENT_CREDITS|BUDGET_EXCEEDED|ISSUES_PERMISSION_REQUIRED|GITHUB_UNAVAILABLE):/,
-            )?.[1]
-          : undefined;
-      const failure = chatProposalFailure(code);
-      if (failure)
-        return Response.json(failure, {
-          status:
-            code === "APPROVAL_STALE" || code === "IDEMPOTENCY_CONFLICT"
-              ? 409
-              : 400,
-          headers: { "Cache-Control": "no-store" },
-        });
-    }
-    if (
-      error instanceof Error &&
-      /\bPROFILE_SELECTION_REQUIRED:/.test(error.message)
-    )
-      return Response.json(
-        {
-          code: "PROFILE_SELECTION_REQUIRED",
-          error:
-            "Choose a current VibeScroll workspace with get_profile. Your existing OAuth connection can stay connected.",
-        },
-        { status: 409, headers: { "Cache-Control": "no-store" } },
-      );
-    return deny();
+    const failure = safeAssistantFailure(
+      error instanceof z.ZodError
+        ? "INVALID_INPUT"
+        : assistantExceptionCode(error),
+      {
+        proposal: !!operation && chatProposalOperations.has(operation),
+        correlationId,
+      },
+    );
+    return Response.json(failure, {
+      status: assistantFailureStatus(failure.code),
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 });

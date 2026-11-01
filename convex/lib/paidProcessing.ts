@@ -3,6 +3,11 @@ import type { Doc, Id } from "../_generated/dataModel";
 import { paidProcessingConfiguration } from "../../packages/contracts/paid-processing";
 import { ensure } from "../../packages/policy";
 import { requireAccountPro } from "./accountSubscription";
+import {
+  providerFundingCapacity,
+  providerFundingInitialized,
+  reserveProviderExposure,
+} from "./providerFunding";
 
 export async function requirePaidProcessing(
   ctx: QueryCtx,
@@ -18,7 +23,10 @@ export async function requirePaidProcessing(
   return personal;
 }
 
-export async function paidProcessingCapacity(ctx: QueryCtx) {
+export async function paidProcessingCapacity(
+  ctx: QueryCtx,
+  requiredNanoUsd?: number,
+) {
   const p = paidProcessingConfiguration();
   if (!p || !process.env.VERCEL_AI_GATEWAY_API_KEY) return null;
   try {
@@ -42,6 +50,10 @@ export async function paidProcessingCapacity(ctx: QueryCtx) {
   } catch {
     return null;
   }
+  if (p.version === "paid-processing-monetary-v2") {
+    const monetary = await providerFundingCapacity(ctx, p, requiredNanoUsd);
+    return { policy: p, counter: null, ...monetary };
+  }
   const counter = await ctx.db
     .query("proposalServiceCounters")
     .withIndex("by_policy", (q) => q.eq("policyId", `paid-funding:${p.id}`))
@@ -49,12 +61,37 @@ export async function paidProcessingCapacity(ctx: QueryCtx) {
   return {
     policy: p,
     counter,
-    available: (counter?.jobs ?? 0) < p.maximumJobs,
+    // Once monetary accounting is live, downgrade cannot forget its exposure.
+    available:
+      !(await providerFundingInitialized(ctx)) &&
+      (counter?.jobs ?? 0) < p.maximumJobs,
   };
 }
 
-export async function reservePaidProcessing(ctx: MutationCtx) {
+export async function reservePaidProcessing(
+  ctx: MutationCtx,
+  binding?: {
+    operationKey: string;
+    requestHash: string;
+    maximumNanoUsd: number;
+  },
+) {
+  // Retained OpenAI/host routes can need no Gateway work. Their own authority
+  // remains checked by that route and never draws from this Gateway pool.
+  if (
+    binding?.maximumNanoUsd === 0 &&
+    paidProcessingConfiguration()?.version === "paid-processing-monetary-v2"
+  )
+    return null;
   const capacity = await paidProcessingCapacity(ctx);
+  if (capacity?.policy.version === "paid-processing-monetary-v2") {
+    ensure(
+      binding,
+      "INVALID_INPUT",
+      "Monetary provider admission needs its existing operation binding.",
+    );
+    return reserveProviderExposure(ctx, capacity.policy, binding);
+  }
   ensure(
     capacity?.available,
     "BUDGET_EXCEEDED",
@@ -69,4 +106,5 @@ export async function reservePaidProcessing(ctx: MutationCtx) {
       policyId: `paid-funding:${capacity.policy.id}`,
       jobs: 1,
     });
+  return null;
 }

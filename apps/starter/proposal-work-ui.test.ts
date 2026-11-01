@@ -172,3 +172,88 @@ it("sends a paid plan reply through one atomic operation using the current visib
     ),
   ).toBe(false);
 });
+
+it("keeps an unclassified rejected HTTP response uncertain and recovers with the original key", async () => {
+  const data = storage();
+  let unknown = true;
+  const call = vi.fn(async (op: string) => {
+    if (op === "proposalDiscussion") return snapshot;
+    if (unknown)
+      throw Object.assign(new Error("Unclassified response"), {
+        code: "UNCLASSIFIED",
+        outcome: "rejected",
+      });
+    return { messageId: "confirmed-message" };
+  });
+  render(call);
+  await flush();
+  let value = render(call);
+  value.updateDraft("Preserve this requested comment.");
+  value = render(call);
+  await value.send();
+  value = render(call);
+  expect(value.uncertain).toBe(true);
+  expect(value.recovery?.action).toBe("refresh_status");
+  expect(data.has("vibescroll:proposal-draft:owner-a:plan-one:request")).toBe(
+    true,
+  );
+  const original = call.mock.calls.find(([op]) => op === "proposalComment");
+  unknown = false;
+  await value.retryPending();
+  const writes = call.mock.calls.filter(([op]) => op === "proposalComment");
+  expect(writes).toEqual([original, original]);
+});
+
+it("surfaces automatic quote capacity errors and never dispatches a paid reply without its quote", async () => {
+  storage();
+  const paid = {
+    ...snapshot,
+    generatedVersion: 2,
+    version: 2,
+    discussionRevision: 1,
+  };
+  const call = vi.fn(async (op: string) => {
+    if (op === "proposalPlanQuote")
+      throw Object.assign(new Error("Capacity unavailable"), {
+        code: "BUDGET_EXCEEDED",
+        outcome: "rejected",
+      });
+    return paid;
+  });
+  render(call);
+  await flush();
+  render(call);
+  await flush();
+  let value = render(call);
+  expect(value.recovery?.title).toBe("Processing budget unavailable");
+  expect(value.error).not.toBe("");
+  expect(value.quote).toBeUndefined();
+  value.updateDraft("Keep this feedback until a quote is available.");
+  value = render(call);
+  await value.send();
+  expect(call.mock.calls.some(([op]) => op === "proposalReply")).toBe(false);
+});
+
+it("clears a proven funding rejection's pending mutation while keeping the unsent draft", async () => {
+  const data = storage();
+  const call = vi.fn(async (op: string) => {
+    if (op === "proposalDiscussion") return snapshot;
+    throw Object.assign(new Error("Insufficient credits"), {
+      code: "INSUFFICIENT_CREDITS",
+      outcome: "rejected",
+    });
+  });
+  render(call);
+  await flush();
+  let value = render(call);
+  value.updateDraft("Preserved requested reply.");
+  value = render(call);
+  await value.send();
+  value = render(call);
+  expect(value.uncertain).toBe(false);
+  expect(value.recovery?.action).toBe("billing");
+  expect(value.draft).toBe("Preserved requested reply.");
+  expect(data.has("vibescroll:proposal-draft:owner-a:plan-one:request")).toBe(
+    false,
+  );
+});

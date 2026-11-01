@@ -3,6 +3,7 @@
 // Copyright (c) 2026 AgentbaseAI Inc. MIT; see licenses/assistant-ui-elements-3fa379f.txt.
 import { useEffect, useEffectEvent, useId, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Check,
   ChevronDown,
@@ -17,6 +18,7 @@ import { ProjectFitBreakdown } from "./project-fit-breakdown";
 import { SettingsPanel } from "../settings-panel";
 import { useProposalWork } from "@/lib/use-proposal-work";
 import { ErrorState } from "./error-state";
+import { ProposalWorkObservations } from "../proposal-work-observations";
 import styles from "./proposal-artifact.module.css";
 
 export function ProposalArtifact({
@@ -215,6 +217,7 @@ export function ProposalArtifact({
               <p className={styles.placeholder}>—</p>
             )}
           </section>
+          <ProposalWorkObservations handoff={live?.handoff} />
           <div className={styles.discussion} aria-label="Plan discussion">
             {(enabled ? work.messages : proposal.discussion)?.map((message) => (
               <div className={styles.message} key={message.id}>
@@ -238,16 +241,67 @@ export function ProposalArtifact({
             {work.uncertain && !work.error && (
               <ErrorState
                 title="Confirm the previous action"
-                detail="Your request key is saved. Retry it to recover the result safely."
-                onRetry={() => void work.retryPending()}
+                detail="The exact request key is saved. Refresh this plan's status or recover that same request before starting another action."
+                action={
+                  <>
+                    <button type="button" onClick={() => void work.refresh()}>
+                      Refresh plan status
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void work.retryPending()}
+                    >
+                      Recover same request
+                    </button>
+                  </>
+                }
               />
             )}
             {work.error && (
               <ErrorState
-                title="Plan action needs attention"
+                title={work.recovery?.title ?? "Plan action needs attention"}
                 detail={work.error}
-                onRetry={() =>
-                  void (work.uncertain ? work.retryPending() : work.refresh())
+                action={
+                  work.uncertain ? (
+                    <>
+                      <button type="button" onClick={() => void work.refresh()}>
+                        Refresh plan status
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void work.retryPending()}
+                      >
+                        Recover same request
+                      </button>
+                    </>
+                  ) : work.recovery?.action === "billing" ? (
+                    <Link prefetch={false} href="/app?view=billing&tier=pro">
+                      Review personal billing
+                    </Link>
+                  ) : work.recovery?.action === "review_access" ? (
+                    <Link
+                      prefetch={false}
+                      href={href.replace(
+                        /\/proposals\/[^/?#]+(?:[?#].*)?$/,
+                        "/connections",
+                      )}
+                    >
+                      Review Connections
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void (work.recovery?.action === "refresh_quote"
+                          ? work.getQuote()
+                          : work.refresh())
+                      }
+                    >
+                      {work.recovery?.action === "refresh_quote"
+                        ? "Refresh plan and quote"
+                        : "Refresh plan status"}
+                    </button>
+                  )
                 }
               />
             )}

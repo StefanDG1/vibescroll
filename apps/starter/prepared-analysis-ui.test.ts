@@ -63,7 +63,7 @@ const quote = {
 const flush = async () => {
   for (let i = 0; i < 8; i++) await Promise.resolve();
 };
-function render(call = vi.fn()) {
+function render(call = vi.fn(), onChange = vi.fn()) {
   hooks.index = 0;
   hooks.effects = [];
   return nodes(
@@ -73,7 +73,7 @@ function render(call = vi.fn()) {
       disabled: false,
       revision: "1",
       call,
-      onChange: vi.fn(),
+      onChange,
     }),
   );
 }
@@ -120,6 +120,104 @@ it("uses the server model catalogue, maximum reasoning and exact quote, with a d
       reanalyze: true,
     },
   ]);
+});
+
+async function readyControl(call = vi.fn(), onChange = vi.fn()) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_url: unknown, init: RequestInit) => {
+      const request = JSON.parse(init.body as string);
+      return Response.json({
+        result:
+          request.operation === "preparedAnalysisOptions" ? { models } : quote,
+      });
+    }),
+  );
+  render(call, onChange);
+  hooks.effects[0]();
+  await flush();
+  render(call, onChange);
+  hooks.effects[1]();
+  await flush();
+  return render(call, onChange);
+}
+
+it("permits a fresh quote after proven pre-admission rejection without automatically starting another job", async () => {
+  const call = vi.fn(async () => {
+    throw Object.assign(new Error("Quote changed"), {
+      code: "QUOTE_CHANGED",
+      outcome: "rejected",
+    });
+  });
+  let tree = await readyControl(call);
+  const start = tree.find(
+    (n) => n.type === "button" && n.props.className === "primary",
+  )!;
+  await start.props.onClick();
+  tree = render(call);
+  expect(tree.some((n) => n.props.className === "primary")).toBe(false);
+  const error = tree.find((n) => n.props.title === "Review the current quote")!;
+  nodes(error.props.action)
+    .find((n) => n.type === "button")!
+    .props.onClick();
+  tree = render(call);
+  hooks.effects[1]();
+  await flush();
+  tree = render(call);
+  expect(tree.some((n) => n.props.className === "primary")).toBe(true);
+  expect(call).toHaveBeenCalledTimes(1);
+});
+
+it("keeps an unconfirmed start locked while its direct recovery action only refreshes status", async () => {
+  const call = vi.fn(async () => {
+    throw Object.assign(new Error("Request not confirmed"), {
+      code: "UNCLASSIFIED",
+      outcome: "rejected",
+    });
+  });
+  const onChange = vi.fn();
+  let tree = await readyControl(call, onChange);
+  const start = tree.find(
+    (n) => n.type === "button" && n.props.className === "primary",
+  )!;
+  await start.props.onClick();
+  tree = render(call, onChange);
+  const error = tree.find((n) => n.props.title === "Check the existing work")!;
+  nodes(error.props.action)
+    .find((n) => n.type === "button")!
+    .props.onClick();
+  await start.props.onClick();
+  expect(onChange).toHaveBeenCalledTimes(1);
+  expect(call).toHaveBeenCalledTimes(1);
+  expect(
+    render(call, onChange).some((n) => n.props.className === "primary"),
+  ).toBe(false);
+});
+
+it("shows a direct personal-billing recovery for a rejected quote without starting analysis", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_url: unknown, init: RequestInit) => {
+      const request = JSON.parse(init.body as string);
+      return request.operation === "preparedAnalysisOptions"
+        ? Response.json({ result: { models } })
+        : Response.json({ code: "INSUFFICIENT_CREDITS" }, { status: 400 });
+    }),
+  );
+  const call = vi.fn();
+  render(call);
+  hooks.effects[0]();
+  await flush();
+  render(call);
+  hooks.effects[1]();
+  await flush();
+  const error = render(call).find(
+    (n) => n.props.title === "Review your personal credits",
+  )!;
+  expect(nodes(error.props.action).find((n) => n.props.href)!.props.href).toBe(
+    "/app?view=billing&tier=pro",
+  );
+  expect(call).not.toHaveBeenCalled();
 });
 it("does not replace a newer model quote with a delayed earlier response", async () => {
   let resolveOld!: (response: Response) => void;

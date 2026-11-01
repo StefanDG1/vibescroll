@@ -8,6 +8,7 @@ export function proposalTrail(
     sourceId?: string;
     review?: string;
     planHash?: string;
+    detail?: { handoff?: ProposalWorkHandoff | null };
   },
   runs: {
     proposalId?: string;
@@ -16,6 +17,7 @@ export function proposalTrail(
     state?: string;
   }[],
 ): TrailStage[] {
+  const { pullRequests } = proposalWorkView(proposal.detail?.handoff);
   return [
     {
       label: "Saved post",
@@ -48,12 +50,23 @@ export function proposalTrail(
     },
     {
       label: "Pull request",
-      state: runs.some((run) => run.prUrl) ? "recorded" : "pending",
-      detail: runs.some((run) => run.mergedAt)
-        ? "Merge recorded; benefit needs separate evidence"
-        : runs.some((run) => run.prUrl)
-          ? "PR recorded"
-          : "No PR loaded",
+      state:
+        pullRequests.length || runs.some((run) => run.prUrl)
+          ? "recorded"
+          : "pending",
+      detail: pullRequests.some((pr) => pr.state === "merged")
+        ? "GitHub merge observed; benefit needs separate evidence"
+        : pullRequests.length
+          ? "GitHub PR observed; inspect its recorded state and checks"
+          : runs.some((run) => run.mergedAt)
+            ? "Merge recorded; benefit needs separate evidence"
+            : runs.some((run) => run.prUrl)
+              ? "PR recorded"
+              : "No PR loaded",
     },
   ];
 }
+import {
+  proposalWorkView,
+  type ProposalWorkHandoff,
+} from "./proposal-work-observations";

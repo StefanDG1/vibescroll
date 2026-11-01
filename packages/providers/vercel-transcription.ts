@@ -45,6 +45,7 @@ export async function transcribePreparedAudio(
   options: {
     apiKey: string;
     fetch?: typeof fetch;
+    onDispatch?: () => void | Promise<void>;
     onReceipt?: (receipt: Record<string, unknown>) => Promise<void>;
     onTranscript?: (response: unknown) => Promise<void>;
   },
@@ -84,6 +85,7 @@ export async function transcribePreparedAudio(
   );
   const startedAt = Date.now();
   // One dispatch only. A timeout retains the reservation; it never selects a paid fallback.
+  await options.onDispatch?.();
   const response = await transport(
     "https://ai-gateway.vercel.sh/v4/ai/transcription-model",
     {

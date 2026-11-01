@@ -25,7 +25,7 @@ export const proposalPlanTariff = {
 } as const;
 
 /** Legacy internal units: accumulate exact microdollars and round only once. */
-export function proposalPlanSettlement(
+export function proposalProviderNanoUsd(
   inputTokens: number,
   outputTokens: number,
 ) {
@@ -36,12 +36,21 @@ export function proposalPlanSettlement(
   // GLM 5.3 Flash on DeepInfra: USD0.075/M input, USD0.25/M output.
   // Nanodollars represent both exactly; infrastructure adds USD0.001.
   const providerNanoUsd = inputTokens * 75 + outputTokens * 250;
+  if (!Number.isSafeInteger(providerNanoUsd))
+    throw Error("PROPOSAL_USAGE_OVERFLOW");
+  return providerNanoUsd;
+}
+export function proposalPlanSettlement(
+  inputTokens: number,
+  outputTokens: number,
+) {
+  const providerNanoUsd = proposalProviderNanoUsd(inputTokens, outputTokens);
   const nanoUsd = providerNanoUsd + 1000000;
   if (!Number.isSafeInteger(nanoUsd)) throw Error("PROPOSAL_USAGE_OVERFLOW");
   const credits = Math.ceil(nanoUsd / 10000000);
   if (providerNanoUsd > 20000000 || credits > proposalPlanTariff.maximumCredits)
     throw Error("PROPOSAL_QUOTE_EXCEEDED");
-  return { credits, estimatedUsd: nanoUsd / 1000000000 };
+  return { credits, estimatedUsd: nanoUsd / 1000000000, providerNanoUsd };
 }
 
 const proposal = {

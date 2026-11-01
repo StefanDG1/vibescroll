@@ -95,3 +95,28 @@ it("does not apply another model's rates, and bounds input before dispatch", asy
   expect(dispatch).not.toHaveBeenCalled();
   expect(g.fetchMock).not.toHaveBeenCalled();
 });
+
+it("awaits a durable dispatch barrier before the paid HTTP request and aborts on a rejected barrier", async () => {
+  const f = call();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const onDispatch = vi.fn(async () => gate);
+  const work = generateProposalPlan({ ...f.args, onDispatch });
+  await vi.waitFor(() => expect(onDispatch).toHaveBeenCalledOnce());
+  expect(f.fetchMock).not.toHaveBeenCalled();
+  release();
+  await work;
+  expect(f.fetchMock).toHaveBeenCalledOnce();
+  const denied = call();
+  await expect(
+    generateProposalPlan({
+      ...denied.args,
+      onDispatch: async () => {
+        throw Error("FUNDING_BARRIER_DENIED");
+      },
+    }),
+  ).rejects.toThrow("FUNDING_BARRIER_DENIED");
+  expect(denied.fetchMock).not.toHaveBeenCalled();
+});

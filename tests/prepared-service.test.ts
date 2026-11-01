@@ -2,13 +2,18 @@ import { afterEach, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { api, internal } from "../convex/_generated/api";
 import { analysisVersionFixture } from "./analysis-version-fixture";
-import { makePreparedEvidence } from "../packages/contracts/prepared-evidence";
+import {
+  makePreparedEvidence,
+  validatePreparedEvidence,
+} from "../packages/contracts/prepared-evidence";
 import { preparedCreditQuote } from "../packages/contracts/prepared-service";
 import { cloudCatalogFixture } from "./cloud-catalog-fixture";
 import { tools as assistantHttpTools } from "../convex/assistantHttp";
 import { createKnowledgeHandler } from "../packages/mcp/server";
 import { workCloudMonitorMessage } from "../packages/onboarding/work-cloud-monitor";
 import { currentCloudArtifact } from "../convex/lib/cloudCatalog";
+import * as analysisHistory from "../convex/lib/analysisHistory";
+import { preparedStatusOutput } from "../packages/contracts/prepared-service";
 const preparationMock = vi.hoisted(() => ({ run: vi.fn() }));
 vi.mock("../packages/providers/prepared-media", () => ({
   prepareHostedEvidence: preparationMock.run,
@@ -708,7 +713,12 @@ it("settles actual duration once, preserves old balance/incumbent, and exposes o
     chargedCredits: 3,
     billingState: "settled",
     versionId: f.versionId,
+    next_action: {
+      tool: "analysis_version",
+      args: { sourceId: s.sourceId, versionId: f.versionId },
+    },
   });
+  expect(preparedStatusOutput.safeParse(status).success).toBe(true);
   expect(JSON.stringify(status)).not.toContain("requestId");
   const history = await s.owner.query(api.analysisVersions.history, {
     sourceId: s.sourceId,
@@ -736,7 +746,115 @@ it("leaves uncertain provider work reserved and refuses another paid dispatch", 
     (await s.owner.query(api.preparedService.status, { sourceId: s.sourceId }))
       .billingState,
   ).toBe("reserved");
+  expect(
+    (await s.owner.query(api.preparedService.status, { sourceId: s.sourceId }))
+      .next_action,
+  ).toBeUndefined();
   await expect(s.start("another-attempt")).rejects.toThrow(/SOURCE_BUSY/);
+});
+
+it("quotes another compatible model from an older supported recipe after processing-policy revision without preparing again", async () => {
+  const s = await fixture();
+  const started = await s.start();
+  const retained = await finish(s, started.runId!);
+  expect(await validatePreparedEvidence(retained.prepared)).toEqual(
+    retained.prepared,
+  );
+  enableOpenAi(s);
+  vi.stubEnv(
+    "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+    JSON.stringify({ ...s.config, id: "prepared-policy-revision-two" }),
+  );
+  const network = vi.fn(() => {
+    throw Error(
+      "Compatibility quotes must not dispatch preparation or a model.",
+    );
+  });
+  vi.stubGlobal("fetch", network);
+  const before = await s.t.run(async (ctx) => ({
+    preparations: await ctx.db.query("mediaPreparations").take(5),
+    reservations: await ctx.db.query("reservations").take(5),
+    evidence: await ctx.db.get(retained.evidenceId),
+  }));
+  const quote = await s.owner.query(api.preparedService.quote, {
+    ...s.request,
+    model: "gpt-6-luna",
+    effort: "max",
+  });
+  expect(quote).toMatchObject({
+    reusedEvidenceId: retained.evidenceId,
+    preparationCredits: 0,
+    analysisCredits: 6,
+    maximumCredits: 6,
+  });
+  expect(
+    await s.t.run(async (ctx) => ({
+      preparations: await ctx.db.query("mediaPreparations").take(5),
+      reservations: await ctx.db.query("reservations").take(5),
+      evidence: await ctx.db.get(retained.evidenceId),
+    })),
+  ).toEqual(before);
+  expect(network).not.toHaveBeenCalled();
+});
+
+it("omits a ready-status read action for stale evidence or missing current knowledge scope without breaking status", async () => {
+  const s = await fixture();
+  const started = await s.start();
+  const done = await finish(s, started.runId!);
+  expect(
+    (
+      await s.assistant.query(internal.preparedService.assistantStatus, {
+        sourceId: s.sourceId,
+      })
+    ).next_action,
+  ).toEqual({
+    tool: "analysis_version",
+    args: { sourceId: s.sourceId, versionId: done.versionId },
+  });
+  await s.t.run((ctx) => ctx.db.patch(done.versionId, { state: "removed" }));
+  expect(
+    await s.assistant.query(internal.preparedService.assistantStatus, {
+      sourceId: s.sourceId,
+    }),
+  ).toMatchObject({ state: "ready", versionId: done.versionId });
+  expect(
+    (
+      await s.assistant.query(internal.preparedService.assistantStatus, {
+        sourceId: s.sourceId,
+      })
+    ).next_action,
+  ).toBeUndefined();
+  await s.t.run(async (ctx) => {
+    await ctx.db.patch(done.versionId, { state: "ready" });
+    const grant = (await ctx.db.get(s.grant.id))!;
+    await ctx.db.patch(grant._id, {
+      scopes: grant.scopes.filter((scope) => scope !== "knowledge:read"),
+    });
+  });
+  expect(
+    (
+      await s.assistant.query(internal.preparedService.assistantStatus, {
+        sourceId: s.sourceId,
+      })
+    ).next_action,
+  ).toBeUndefined();
+});
+
+it("does not hide infrastructure failures while checking a ready-status exact read action", async () => {
+  const s = await fixture();
+  const started = await s.start();
+  await finish(s, started.runId!);
+  const failure = Error("Synthetic retained-version storage outage");
+  const read = vi
+    .spyOn(analysisHistory, "retainedVersion")
+    .mockRejectedValueOnce(failure);
+  try {
+    await expect(
+      s.owner.query(api.preparedService.status, { sourceId: s.sourceId }),
+    ).rejects.toThrow(failure.message);
+  } finally {
+    read.mockRestore();
+  }
 });
 it("releases a confirmed stopped download's reservation without treating an unknown stop as safe", async () => {
   const s = await fixture(),
@@ -1501,108 +1619,224 @@ it("refunds unused analysis credits after a confirmed rejected answer and refund
   ).toMatchObject({ state: "failed", chargedCredits: 0 });
 });
 
-it("admits paid non-pilot users, reserves once and rejects refund risk before a second job", async () => {
-  const f = await fixture();
-  vi.stubEnv(
-    "PREPARED_ANALYSIS_CONFIGURATION_JSON",
-    JSON.stringify({
-      ...f.config,
-      subjects: ["user_99999999999999999999999999"],
-    }),
-  );
-  vi.stubEnv(
-    "PAID_PROCESSING_CONFIGURATION_JSON",
-    JSON.stringify({
-      version: "paid-processing-prefunded-v1",
-      id: "paid-fixture-funding",
-      enabled: true,
-      verifiedAt: Date.now() - 1000,
-      expiresAt: Date.now() + 86400000,
-      maximumJobs: 10,
-      maximumJobNanoUsd: 50000000,
-      verifiedProviderCreditNanoUsd: 1000000000,
-      providerKeyBudgetNanoUsd: 1000000000,
-      priorExposureNanoUsd: 100000000,
-    }),
-  );
-  vi.stubEnv(
-    "PROPOSAL_SERVICE_CONFIGURATION_JSON",
-    JSON.stringify({
-      version: "proposal-service-v1",
-      enabled: true,
-      privateProjectContextAllowed: true,
-      permissionReference: "test plan provider permission",
-    }),
-  );
-  // An operator's catalogue concession is insufficient for paid processing.
-  await expect(f.quote()).rejects.toThrow("active Pro");
-  await f.t.mutation(internal.billing.attach, {
-    organizationId: f.org,
-    customerId: "cus_paid_fixture",
-  });
-  await f.t.mutation(internal.billing.apply, {
-    customerId: "cus_paid_fixture",
-    subscriptionId: "sub_paid_fixture",
-    status: "active",
-    periodEnd: Date.now() + 86400000,
-    revision: 1,
-  });
-  await f.t.mutation(internal.commerce.grantPeriod, {
-    organizationId: f.org,
-    subscription: "sub_paid_fixture",
-    tier: "pro",
-    interval: "monthly",
-    start: Date.now() - 1000,
-    end: Date.now() + 86400000,
-    verifiedPayment: true,
-  });
-  expect(
-    (await f.owner.query(api.aiPreferences.read, { organizationId: f.org }))
-      .preparedAnalysisEnabled,
-  ).toBe(true);
-  const q = await f.quote();
-  const args = {
-    ...f.request,
-    key: "paid-first-operation",
-    quoteHash: q.quoteHash,
-    maximumCredits: q.maximumCredits,
-  };
-  const a = await f.owner.mutation(api.preparedService.start, args);
-  const b = await f.owner.mutation(api.preparedService.start, args);
-  expect(a.runId).toBe(b.runId);
-  const counter = await f.t.run((c) =>
-    c.db
-      .query("proposalServiceCounters")
-      .withIndex("by_policy", (x) =>
-        x.eq("policyId", "paid-funding:paid-fixture-funding"),
-      )
-      .unique(),
-  );
-  expect(counter?.jobs).toBe(1);
-  expect((await f.t.run((c) => c.db.get(a.runId!)))?.policyId).toBe(
-    "paid-prepared-paid-fixture-funding",
-  );
-  await f.t.run((c) => c.db.patch(counter!._id, { jobs: 10 }));
-  const cached = await f.owner.query(api.preparedService.quote, {
-    sourceId: f.sourceId,
-    executor: "gateway",
-  });
-  expect(cached.cacheHit).toBe(true);
-  expect(cached.maximumCredits).toBe(0);
-  await f.t.run((c) =>
-    c.db.insert("billingRiskHolds", {
+it.each(["paid-processing-prefunded-v1", "paid-processing-monetary-v2"])(
+  "admits paid non-pilot users under %s, reserves once and rejects refund risk before a second job",
+  async (fundingVersion) => {
+    const f = await fixture();
+    vi.stubEnv(
+      "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+      JSON.stringify({
+        ...f.config,
+        subjects: ["user_99999999999999999999999999"],
+      }),
+    );
+    vi.stubEnv(
+      "PAID_PROCESSING_CONFIGURATION_JSON",
+      JSON.stringify({
+        version: fundingVersion,
+        id: "paid-fixture-funding",
+        enabled: true,
+        verifiedAt: Date.now() - 1000,
+        expiresAt: Date.now() + 86400000,
+        ...(fundingVersion === "paid-processing-prefunded-v1"
+          ? { maximumJobs: 10 }
+          : { operatingPoolNanoUsd: 900000000 }),
+        maximumJobNanoUsd: 50000000,
+        verifiedProviderCreditNanoUsd: 1000000000,
+        providerKeyBudgetNanoUsd: 1000000000,
+        priorExposureNanoUsd: 100000000,
+      }),
+    );
+    vi.stubEnv(
+      "PROPOSAL_SERVICE_CONFIGURATION_JSON",
+      JSON.stringify({
+        version: "proposal-service-v1",
+        enabled: true,
+        privateProjectContextAllowed: true,
+        permissionReference: "test plan provider permission",
+      }),
+    );
+    // An operator's catalogue concession is insufficient for paid processing.
+    await expect(f.quote()).rejects.toThrow("active Pro");
+    await f.t.mutation(internal.billing.attach, {
       organizationId: f.org,
-      key: "risk-fixture",
-      accountId: "acct_fixture",
-      mode: "test",
-      chargeId: "ch_fixture",
-      eventId: "evt_fixture",
-      kind: "dispute",
-      providerId: "dp_fixture",
-      state: "held",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    }),
-  );
-  await expect(f.quote()).rejects.toThrow();
-});
+      customerId: "cus_paid_fixture",
+    });
+    await f.t.mutation(internal.billing.apply, {
+      customerId: "cus_paid_fixture",
+      subscriptionId: "sub_paid_fixture",
+      status: "active",
+      periodEnd: Date.now() + 86400000,
+      revision: 1,
+    });
+    await f.t.mutation(internal.commerce.grantPeriod, {
+      organizationId: f.org,
+      subscription: "sub_paid_fixture",
+      tier: "pro",
+      interval: "monthly",
+      start: Date.now() - 1000,
+      end: Date.now() + 86400000,
+      verifiedPayment: true,
+    });
+    expect(
+      (await f.owner.query(api.aiPreferences.read, { organizationId: f.org }))
+        .preparedAnalysisEnabled,
+    ).toBe(true);
+    const q = await f.quote();
+    const args = {
+      ...f.request,
+      key: "paid-first-operation",
+      quoteHash: q.quoteHash,
+      maximumCredits: q.maximumCredits,
+    };
+    const a = await f.owner.mutation(api.preparedService.start, args);
+    const b = await f.owner.mutation(api.preparedService.start, args);
+    expect(a.runId).toBe(b.runId);
+    const counter = await f.t.run((c) =>
+      c.db
+        .query("proposalServiceCounters")
+        .withIndex("by_policy", (x) =>
+          x.eq("policyId", "paid-funding:paid-fixture-funding"),
+        )
+        .unique(),
+    );
+    if (fundingVersion === "paid-processing-prefunded-v1")
+      expect(counter?.jobs).toBe(1);
+    else {
+      expect(counter).toBeNull();
+      const run = (await f.t.run((c) => c.db.get(a.runId!)))!;
+      expect(
+        await f.t.run((c) =>
+          c.db.get(run.receipt.admission.providerReservationId),
+        ),
+      ).toMatchObject({
+        state: "reserved",
+        maximumNanoUsd: 50000000,
+        requestHash: q.quoteHash,
+        operationKey: run.receipt.admission.reservationKey,
+      });
+      await retained(f, a.runId!, 74302);
+      await f.t.mutation(internal.preparedAnalysis.providerDispatch, {
+        runId: a.runId!,
+        component: "analysis",
+      });
+      await expect(
+        f.t.mutation(internal.preparedAnalysis.providerDispatch, {
+          runId: a.runId!,
+          component: "analysis",
+        }),
+      ).rejects.toThrow("SOURCE_BUSY");
+    }
+    expect((await f.t.run((c) => c.db.get(a.runId!)))?.policyId).toBe(
+      "paid-prepared-paid-fixture-funding",
+    );
+    if (counter) await f.t.run((c) => c.db.patch(counter._id, { jobs: 10 }));
+    else
+      await f.t.run(async (c) => {
+        const pool = (await c.db.query("providerFundingPools").unique())!;
+        await c.db.patch(pool._id, { blocked: true });
+      });
+    const cached = await f.owner.query(api.preparedService.quote, {
+      sourceId: f.sourceId,
+      executor: "gateway",
+    });
+    expect(cached.cacheHit).toBe(true);
+    expect(cached.maximumCredits).toBe(0);
+    if (fundingVersion === "paid-processing-monetary-v2") {
+      const funding = JSON.parse(
+        process.env.PAID_PROCESSING_CONFIGURATION_JSON!,
+      );
+      const service = JSON.parse(
+        process.env.PREPARED_ANALYSIS_CONFIGURATION_JSON!,
+      );
+      const snapshot = () =>
+        f.t.run(async (c) => ({
+          wallet: await c.db
+            .query("wallets")
+            .withIndex("by_org", (q) => q.eq("organizationId", f.org))
+            .unique(),
+          funding: await c.db.query("providerFundingPools").unique(),
+          run: await c.db.get(a.runId!),
+        }));
+      const preserved = await snapshot();
+      const uncachedId = await f.owner.mutation(api.product.capture, {
+        organizationId: f.org,
+        key: "uncached-unfunded-fixture",
+        kind: "url",
+        url: "https://www.instagram.com/reel/UNCACHED_FUNDING_FIXTURE/",
+        title: "Uncached fixture",
+        rightsAttested: true,
+      });
+      for (const state of ["expired_funding", "disabled_service"] as const) {
+        vi.stubEnv(
+          "PAID_PROCESSING_CONFIGURATION_JSON",
+          JSON.stringify({
+            ...funding,
+            ...(state === "expired_funding"
+              ? { expiresAt: Date.now() - 1 }
+              : {}),
+          }),
+        );
+        vi.stubEnv(
+          "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+          JSON.stringify({
+            ...service,
+            ...(state === "disabled_service" ? { enabled: false } : {}),
+          }),
+        );
+        const request = { sourceId: f.sourceId, executor: "gateway" as const };
+        const quote = await f.owner.query(api.preparedService.quote, request);
+        expect(quote).toMatchObject({
+          cacheHit: true,
+          maximumCredits: 0,
+          maximumApiUsd: 0,
+          configurationId: "retained-ready-cache-v1",
+        });
+        expect(
+          await f.owner.mutation(api.preparedService.start, {
+            ...request,
+            key: `cached-${state}-fixture`,
+            quoteHash: quote.quoteHash,
+            maximumCredits: 0,
+          }),
+        ).toMatchObject({ cacheHit: true, chargedCredits: 0, runId: null });
+        await expect(
+          f.owner.query(api.preparedService.quote, {
+            ...request,
+            reanalyze: true,
+            model: "gpt-6-luna",
+            effort: "max",
+          }),
+        ).rejects.toThrow("SETUP_REQUIRED");
+        await expect(
+          f.owner.query(api.preparedService.quote, {
+            ...request,
+            sourceId: uncachedId,
+          }),
+        ).rejects.toThrow("SETUP_REQUIRED");
+        expect(await snapshot()).toEqual(preserved);
+      }
+      vi.stubEnv("PAID_PROCESSING_CONFIGURATION_JSON", JSON.stringify(funding));
+      vi.stubEnv(
+        "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+        JSON.stringify(service),
+      );
+    }
+    await f.t.run((c) =>
+      c.db.insert("billingRiskHolds", {
+        organizationId: f.org,
+        key: "risk-fixture",
+        accountId: "acct_fixture",
+        mode: "test",
+        chargeId: "ch_fixture",
+        eventId: "evt_fixture",
+        kind: "dispute",
+        providerId: "dp_fixture",
+        state: "held",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }),
+    );
+    await expect(f.quote()).rejects.toThrow();
+  },
+);

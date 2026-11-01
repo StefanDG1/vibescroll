@@ -1,10 +1,24 @@
 import { expect, it, vi } from "vitest";
 import { createKnowledgeHandler } from "../packages/mcp/server";
 import { embeddedUiEnabled } from "../packages/widget/setup";
+const emptySearch = {
+  results: [],
+  next_offset: null,
+  next_cursor: null,
+  profile_id: "synthetic-profile",
+  grant_version: 1,
+  coverage: "synthetic",
+  scanned_posts: 0,
+  matched_items: 0,
+  has_more: false,
+  exhausted: true,
+  truncated: false,
+  match_limit_reached: false,
+};
 const invoke = vi.fn(async () => ({
   ok: true,
   status: 200,
-  value: { results: [] },
+  value: emptySearch,
 }));
 async function packet(response: Response) {
   if (response.headers.get("content-type")?.includes("text/event-stream")) {
@@ -209,9 +223,7 @@ it("challenges absent tool scopes before invoking the backend and rejects unknow
     { name: "search", arguments: { query: "synthetic" } },
     ["knowledge:read"],
   );
-  expect((await packet(good)).result.structuredContent).toEqual({
-    results: [],
-  });
+  expect((await packet(good)).result.structuredContent).toEqual(emptySearch);
   expect(invoke).toHaveBeenCalledOnce();
 });
 it("rejects broad and deep tool arguments before invoking the backend", async () => {

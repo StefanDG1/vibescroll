@@ -8,7 +8,8 @@ import { access } from "./lib";
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { isAssistantIdentity } from "../packages/policy/assistant";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
-import { ensure } from "../packages/policy";
+import { ensure, PolicyError } from "../packages/policy";
+import { paidProcessingConfiguration } from "../packages/contracts/paid-processing";
 import { reserve, digest } from "./product";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import {
@@ -30,6 +31,8 @@ import { preparedEvidenceIsCurrent } from "./lib/preparedEvidenceAccess";
 import {
   freezeAnalysisBaseline,
   verifyRetainedAssets,
+  selectedAnalysis,
+  retainedVersion,
 } from "./lib/analysisHistory";
 import { recordAutomaticCatalogIntent } from "./lib/catalogPolicy";
 import { reserveCatalogProducer } from "./lib/cloudCatalog";
@@ -147,13 +150,21 @@ async function quoteFor(
   a: Awaited<ReturnType<typeof owner>>,
   request: Request,
 ) {
+  const cacheHit =
+    !request.reanalyze &&
+    a.source.state === "ready" &&
+    !!(
+      a.source.selectedAnalysisVersionId ||
+      a.source.analysis ||
+      a.source.publicImportId
+    );
   const config = preparedServiceConfiguration(a.actor.subject);
   ensure(
-    config,
+    config || cacheHit,
     "SETUP_REQUIRED",
     "Server preparation is not available for this account yet.",
   );
-  if (config.paidCustomer) {
+  if (config?.paidCustomer) {
     await requirePaidProcessing(ctx, a.actor, a.organization._id);
   }
   ensure(
@@ -163,13 +174,13 @@ async function quoteFor(
     "UNSUPPORTED_SOURCE",
     "Server preparation currently supports individual Reels and TikToks.",
   );
-  const ready =
-    a.source.state === "ready" &&
-    !!(
-      a.source.selectedAnalysisVersionId ||
-      a.source.analysis ||
-      a.source.publicImportId
-    );
+  // A ready selection still needs current source/evidence/retention authority.
+  // Processing setup is required only when this request would create work.
+  if (
+    cacheHit &&
+    (a.source.selectedAnalysisVersionId || a.source.publicImportId)
+  )
+    await selectedAnalysis(ctx, a.source);
   let evidence: Doc<"analysisEvidence"> | null = null;
   const runs = await ctx.db
     .query("mediaPreparations")
@@ -193,13 +204,6 @@ async function quoteFor(
       break;
     }
   }
-  const cacheHit = ready && !request.reanalyze;
-  if (config.paidCustomer && !cacheHit)
-    ensure(
-      (await paidProcessingCapacity(ctx))?.available,
-      "BUDGET_EXCEEDED",
-      "Processing capacity is temporarily unavailable.",
-    );
   const cachedVersion =
     cacheHit && a.source.selectedAnalysisVersionId
       ? await ctx.db.get(a.source.selectedAnalysisVersionId)
@@ -222,7 +226,25 @@ async function quoteFor(
       : null;
   const durationMaximumMs = evidence
     ? evidence.prepared.evidence.durationMs
-    : config.maximumDurationMs;
+    : (config?.maximumDurationMs ?? 0);
+  const gatewayMaximumNanoUsd = cacheHit
+    ? 0
+    : request.executor === "gateway" && !openAi
+      ? Math.ceil(config!.maximumApiUsd * 1e9)
+      : evidence
+        ? 0
+        : Math.ceil(durationMaximumMs * 27.78);
+  if (
+    config?.paidCustomer &&
+    !cacheHit &&
+    (gatewayMaximumNanoUsd > 0 ||
+      paidProcessingConfiguration()?.version === "paid-processing-prefunded-v1")
+  )
+    ensure(
+      (await paidProcessingCapacity(ctx, gatewayMaximumNanoUsd))?.available,
+      "BUDGET_EXCEEDED",
+      "Processing capacity is temporarily unavailable.",
+    );
   const cost = cacheHit
     ? { preparation: 0, analysis: 0, maximum: 0 }
     : preparedCreditQuote(
@@ -233,7 +255,7 @@ async function quoteFor(
       );
   if (!cacheHit && request.executor === "gateway")
     ensure(
-      config.maximumApiUsd >=
+      config!.maximumApiUsd >=
         (openAi ? openAi.policy.maximumRequestNanoUsd / 1e9 : 0.02) +
           (evidence ? 0 : (durationMaximumMs / 1000) * 0.00002778),
       "SETUP_REQUIRED",
@@ -259,7 +281,7 @@ async function quoteFor(
   }
   const quote = {
     tariff: preparedTariff,
-    configurationId: config.id,
+    configurationId: config?.id ?? "retained-ready-cache-v1",
     sourceId: a.source._id,
     generation: a.source.generation,
     selectionRevision: a.source.analysisSelectionRevision ?? 0,
@@ -296,7 +318,7 @@ async function quoteFor(
     maximumCredits: cost.maximum,
     grantId: grant?._id ?? null,
     grantVersion: grant?.version ?? null,
-    maximumApiUsd: config.maximumApiUsd,
+    maximumApiUsd: config?.maximumApiUsd ?? 0,
     ...(openAi
       ? {
           apiTariff: apiModelTariff,
@@ -304,7 +326,7 @@ async function quoteFor(
             ...openAi.quote,
             processingReviewHash: await digest(
               canonicalJson({
-                preparation: config.providerPermissionReference,
+                preparation: config!.providerPermissionReference,
                 analysis: openAi.policy.providerPermissionReference,
               }),
             ),
@@ -316,6 +338,7 @@ async function quoteFor(
     quote,
     quoteHash: await digest(canonicalJson(quote)),
     config,
+    gatewayMaximumNanoUsd,
     evidence,
     grant,
   };
@@ -435,6 +458,12 @@ async function startHandler(
       chargedCredits: 0,
       runId: null,
     };
+  const processingConfig = q.config;
+  ensure(
+    processingConfig,
+    "SETUP_REQUIRED",
+    "Current processing configuration is required for new work.",
+  );
   ensure(
     !a.source.pendingAnalysisAttemptId &&
       !["queued", "running", "recovering", "unknown"].includes(
@@ -461,16 +490,16 @@ async function startHandler(
   const daily = await ctx.db
     .query("mediaPreparations")
     .withIndex("by_actor_policy", (x) =>
-      x.eq("actor", a.actor._id).eq("policyId", q.config.id),
+      x.eq("actor", a.actor._id).eq("policyId", processingConfig.id),
     )
     .order("desc")
-    .take(Math.max(101, q.config.maximumTotalJobs + 1));
+    .take(Math.max(101, processingConfig.maximumTotalJobs + 1));
   ensure(
-    daily.length < q.config.maximumTotalJobs &&
+    daily.length < processingConfig.maximumTotalJobs &&
       daily.filter((r) => r.createdAt > Date.now() - 86400000).length <
-        q.config.maximumDailyJobs &&
+        processingConfig.maximumDailyJobs &&
       daily.filter((r) => r.createdAt > Date.now() - 3600000).length <
-        q.config.maximumHourlyJobs,
+        processingConfig.maximumHourlyJobs,
     "QUOTA_EXCEEDED",
     "The server processing rate limit is reached.",
   );
@@ -509,13 +538,19 @@ async function startHandler(
     reservationKey,
     q.quote.maximumCredits,
   );
-  if (q.config.paidCustomer) await reservePaidProcessing(ctx);
+  const providerReservationId = processingConfig.paidCustomer
+    ? await reservePaidProcessing(ctx, {
+        operationKey: reservationKey,
+        requestHash: q.quoteHash,
+        maximumNanoUsd: q.gatewayMaximumNanoUsd,
+      })
+    : null;
   const runId = await ctx.db.insert("mediaPreparations", {
     organizationId: a.source.organizationId,
     sourceId: a.source._id,
     actor: a.actor._id,
     key: args.key,
-    policyId: q.config.id,
+    policyId: processingConfig.id,
     generation: a.source.generation,
     canonical: privateCloudMediaIdentity(a.source.canonical).url,
     executor: args.executor,
@@ -523,16 +558,17 @@ async function startHandler(
     createdAt: now,
     updatedAt: now,
     deadline: now + 900000,
-    maximumApiUsd: q.config.maximumApiUsd,
+    maximumApiUsd: processingConfig.maximumApiUsd,
     ...(q.grant ? { grantId: q.grant._id, grantVersion: q.grant.version } : {}),
     ...(q.evidence ? { evidenceId: q.evidence._id } : {}),
     receipt: {
       admission: {
         version: "prepared-service-admission-v1",
-        configurationId: q.config.id,
+        configurationId: processingConfig.id,
         quote: q.quote,
         quoteHash: q.quoteHash,
         reservationKey,
+        ...(providerReservationId ? { providerReservationId } : {}),
         at: now,
       },
       ...(q.evidence
@@ -763,15 +799,39 @@ async function statusHandler(
     )
     .order("desc")
     .first();
+  const state =
+    run?.state ??
+    (a.source.catalogWait && a.source.catalogWait.expiresAt > Date.now()
+      ? "waiting_for_shared_analysis"
+      : a.source.state);
+  const versionId =
+    run?.versionId ?? a.source.selectedAnalysisVersionId ?? null;
+  let nextAction: {
+    tool: "analysis_version";
+    args: { sourceId: Id<"sources">; versionId: Id<"analysisVersions"> };
+  } | null = null;
+  if (state === "ready" && versionId) {
+    try {
+      const readable = await owner(
+        ctx,
+        sourceId,
+        false,
+        true,
+        "knowledge:read",
+      );
+      await retainedVersion(ctx, readable.source, versionId);
+      nextAction = { tool: "analysis_version", args: { sourceId, versionId } };
+    } catch (error) {
+      // Stale evidence or missing current read authority must not break status.
+      // Unexpected storage/infrastructure failures remain visible to diagnostics.
+      if (!(error instanceof PolicyError)) throw error;
+    }
+  }
   return {
     sourceId,
-    state:
-      run?.state ??
-      (a.source.catalogWait && a.source.catalogWait.expiresAt > Date.now()
-        ? "waiting_for_shared_analysis"
-        : a.source.state),
+    state,
     runId: run?._id ?? null,
-    versionId: run?.versionId ?? a.source.selectedAnalysisVersionId ?? null,
+    versionId,
     stages: run?.stages.slice(-20) ?? [],
     executor: run?.executor ?? null,
     maximumCredits: run?.receipt?.admission?.quote.maximumCredits ?? 0,
@@ -782,6 +842,7 @@ async function statusHandler(
     failure: run?.receipt?.failure?.code ?? null,
     catalogStatus: a.source.catalogStatus?.state ?? null,
     url: `https://scroll.companynerve.com/app/${a.source.organizationId}/posts/${sourceId}`,
+    ...(nextAction ? { next_action: nextAction } : {}),
   };
 }
 export const status = query({

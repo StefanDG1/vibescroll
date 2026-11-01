@@ -337,7 +337,7 @@ it.each(["2025-11-25", "2026-07-28"])(
       false,
     );
     expect(request.description).toContain(
-      "does not automatically launch a host task",
+      "Do not infer that any chat can claim a configured monitor's work",
     );
     const response = await host.call("tools/call", {
       name: "request_analysis",
@@ -404,34 +404,34 @@ it.each(["2025-11-25", "2026-07-28"])(
         (tool: { name: string }) => tool.name === name,
       );
       expect(description).toContain(
-        "save with analyze omitted or true by default",
+        "save_link defaults to analysis; pass analyze=false for save-only",
       );
-      expect(description).toContain("link-save-cloud-v2");
-      expect(description).toContain("through native Events");
       expect(description).toContain(
-        "sending chat does not need a video runtime",
+        "Current reviewed defaults and native Events",
       );
-      expect(description).toContain("Do not ask for per-post app approval");
+      expect(description).toContain("sending chat needs no runtime");
       expect(description).toContain(
-        "No paid API or alternate executor fallback",
+        "never start a second foreground job, ask for per-post review",
       );
-      expect(description).toContain("do not promise an unsolicited reply");
+      expect(description).toContain("recreate OAuth or switch to paid API");
+      expect(description).toContain("not an unrelated originating chat");
       if (name === "request_analysis") {
         expect(description).toContain(
           "explicitly chosen foreground Work Cloud diagnostic",
         );
         expect(description).toContain(
-          "Before request_analysis or work_cloud_claim",
+          "Source-acquisition jobs require the reviewed isolated runtime/network/tools before claim",
         );
         expect(description).toContain("maxApiUsd=0");
-        expect(description).toContain("saving alone grants no Cloud execution");
+        expect(description).toContain(
+          "Save-only does not grant future execution",
+        );
+        expect(description).toContain("not downloader/ASR bootstrap");
       } else {
         expect(description).not.toContain(
-          "Before request_analysis or work_cloud_claim",
+          "Source-acquisition jobs require the reviewed isolated runtime/network/tools before claim",
         );
-        expect(description).toContain(
-          "analyze=false only when the user wants save only",
-        );
+        expect(description).toContain("pass analyze=false for save-only");
       }
     }
     const args = {
@@ -544,7 +544,12 @@ it("validates exact Cloud request fields through the authenticated HTTP adapter"
   ]) {
     runMutation.mockClear();
     provider.mockClear();
-    expect((await run({ ...cloudRequest, ...patch })).status).toBe(403);
+    const invalid = await run({ ...cloudRequest, ...patch });
+    expect(invalid.status).toBe(400);
+    expect(await invalid.json()).toMatchObject({
+      code: "INVALID_INPUT",
+      stage: "validation",
+    });
     expect(runMutation).not.toHaveBeenCalled();
     expect(provider).not.toHaveBeenCalled();
   }

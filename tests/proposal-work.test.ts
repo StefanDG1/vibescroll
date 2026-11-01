@@ -2,7 +2,10 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { prepared } from "./chat-proposal-fixture";
 import { createHmac } from "node:crypto";
-import { proposalIssueLocator } from "../packages/contracts/proposal-work";
+import {
+  proposalIssueLocator,
+  proposalClosingIssueReferences,
+} from "../packages/contracts/proposal-work";
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => {
@@ -53,6 +56,7 @@ it("freezes a secret-free handoff with authenticated callback instructions and n
     `<!-- vibescroll-handoff:${f.handoff.id} -->`,
   );
   expect(f.handoff.body).toContain("report_project_outcome");
+  expect(f.handoff.body).toContain("When opening a PR for this issue");
   expect(f.handoff.body).toContain("does not authorize coding");
   expect(f.handoff.body).not.toContain("PRIVATE REPOSITORY CODE MUST STAY OUT");
   expect(f.handoff.body).not.toContain("/api/evidence/");
@@ -441,4 +445,399 @@ it("authenticates the actual GitHub webhook before observing a proposal issue an
   expect(await f.t.action(internal.githubEvents.webhook, input)).toMatchObject({
     status: 503,
   });
+});
+
+async function pullRequestFixture() {
+  const f = await issueEventFixture();
+  await f.observe();
+  const pr = {
+    installationId: 42,
+    providerId: 55,
+    repository: "owned/synthetic",
+    pullRequestId: 2345,
+    number: 43,
+    url: "https://github.com/owned/synthetic/pull/43",
+    body: f.handoff.body + "\n\nFixes #42",
+    headSha: "b".repeat(40),
+    mergeCommitSha: null as string | null,
+    state: "open" as "open" | "closed" | "merged",
+    updatedAt: f.event.updatedAt,
+    delivery: "pr-delivery-01234567",
+  };
+  const check = {
+    installationId: 42,
+    providerId: 55,
+    repository: "owned/synthetic",
+    pullRequestId: 2345,
+    number: 43,
+    checkRunId: 3456,
+    appId: 4567,
+    headSha: pr.headSha,
+    conclusion: "success",
+    completedAt: pr.updatedAt,
+    delivery: "check-delivery-01234567",
+  };
+  return {
+    ...f,
+    pr,
+    check,
+    observePr: (args = pr) =>
+      f.t.mutation(internal.assistantProposalWork.observePullRequest, args),
+    observeCheck: (args = check) =>
+      f.t.mutation(internal.assistantProposalWork.observeCheck, args),
+  };
+}
+
+it("binds signed PR/commit/check facts to one frozen handoff without changing reports, review or benefit", async () => {
+  const f = await pullRequestFixture();
+  await f.report();
+  const before = await f.stored();
+  expect(await f.observePr()).toBe(true);
+  expect(await f.observePr({ ...f.pr, delivery: "redelivery-01234567" })).toBe(
+    false,
+  );
+  expect(await f.observeCheck()).toBe(true);
+  expect(
+    await f.observeCheck({ ...f.check, delivery: "check-redelivery-01234567" }),
+  ).toBe(false);
+  vi.advanceTimersByTime(2000);
+  expect(
+    await f.observePr({
+      ...f.pr,
+      state: "merged",
+      mergeCommitSha: "c".repeat(40),
+      updatedAt: f.pr.updatedAt + 2000,
+    }),
+  ).toBe(true);
+  const after = await f.stored();
+  expect(after.version).toBe(before.version);
+  expect(after.review).toBe(before.review);
+  expect(after.detail.handoff.reports).toEqual(before.detail.handoff.reports);
+  expect(after.detail.handoff.githubPullRequests).toHaveLength(1);
+  expect(after.detail.handoff.githubPullRequests[0]).toMatchObject({
+    provenance: "signed_github_webhook",
+    issueNumber: 42,
+    number: 43,
+    state: "merged",
+    headSha: "b".repeat(40),
+    mergeCommitSha: "c".repeat(40),
+    checks: [
+      {
+        provenance: "signed_github_webhook",
+        checkRunId: 3456,
+        appId: 4567,
+        conclusion: "success",
+      },
+    ],
+  });
+  expect(after.detail.handoff.githubPullRequests[0]).not.toHaveProperty(
+    "verifiedBenefit",
+  );
+  const read = await f.assistant.query(internal.assistantProposals.read, {
+    proposalId: f.proposal.proposalId,
+  });
+  expect(read.handoff?.githubPullRequests?.[0].state).toBe("merged");
+  expect(await f.t.run((ctx) => ctx.db.query("runs").take(1))).toEqual([]);
+});
+
+it("requires a confirmed issue reference, exact installed repo and public locator before binding a PR", async () => {
+  const f = await pullRequestFixture();
+  for (const patch of [
+    { body: f.handoff.body },
+    { body: f.handoff.body + "\nFixes foreign/synthetic#42" },
+    { body: f.handoff.body + "\nFixes #41" },
+    {
+      body: f.pr.body.replace(
+        `<!-- vibescroll-handoff:${f.handoff.id} -->`,
+        "<!-- vibescroll-handoff:work_copied_marker -->",
+      ),
+    },
+    { installationId: 99 },
+    { providerId: 99 },
+    { repository: "foreign/synthetic" },
+    { url: "https://github.com/owned/synthetic/pull/43?token=secret" },
+    { headSha: "bad-sha" },
+    { updatedAt: Date.now() + 86400000 },
+  ])
+    expect(await f.observePr({ ...f.pr, ...patch })).toBe(false);
+  await f.t.run(async (ctx) => {
+    const p = (await ctx.db.get(f.proposal.proposalId))!;
+    const { githubIssue: _issue, ...handoff } = p.detail.handoff;
+    await ctx.db.patch(p._id, { detail: { ...p.detail, handoff } });
+  });
+  expect(await f.observePr()).toBe(false);
+  expect(
+    await f.t.run((ctx) =>
+      ctx.db
+        .query("webhookReceipts")
+        .withIndex("by_key", (q) => q.eq("provider", "github-proposal-pr"))
+        .take(1),
+    ),
+  ).toEqual([]);
+});
+
+it("preserves unknown correlation receipts and rejects PR identity rebinds", async () => {
+  const f = await pullRequestFixture();
+  const id = await f.t.run((ctx) =>
+    ctx.db.insert("webhookReceipts", {
+      provider: "github-proposal-pr",
+      key: "42:55:43",
+      at: Date.now(),
+      state: "unknown historical receipt",
+    }),
+  );
+  expect(await f.observePr()).toBe(false);
+  expect((await f.t.run((ctx) => ctx.db.get(id)))?.state).toBe(
+    "unknown historical receipt",
+  );
+  await f.t.run((ctx) => ctx.db.delete(id));
+  expect(await f.observePr()).toBe(true);
+  expect(await f.observePr({ ...f.pr, pullRequestId: 999 })).toBe(false);
+  expect(await f.observeCheck({ ...f.check, pullRequestId: 999 })).toBe(false);
+});
+
+it("retains bounded signed checks before PR arrival and attaches only the later exact handoff and current head", async () => {
+  const f = await pullRequestFixture();
+  expect(await f.observeCheck()).toBe(true);
+  expect(
+    await f.observeCheck({
+      ...f.check,
+      delivery: "pending-redelivery-12345678",
+    }),
+  ).toBe(false);
+  expect((await f.stored()).detail.handoff.githubPullRequests).toBeUndefined();
+  expect(
+    await f.observeCheck({
+      ...f.check,
+      checkRunId: 3457,
+      headSha: "e".repeat(40),
+    }),
+  ).toBe(true);
+  expect(await f.observePr({ ...f.pr, body: f.handoff.body })).toBe(false);
+  const pending = await f.t.run((ctx) =>
+    ctx.db
+      .query("webhookReceipts")
+      .withIndex("by_key", (q) =>
+        q.eq("provider", "github-proposal-pr").eq("key", "42:55:43"),
+      )
+      .unique(),
+  );
+  expect(JSON.parse(pending!.state).schemaVersion).toBe(
+    "proposal-pr-pending-checks-v1",
+  );
+  expect(await f.observePr()).toBe(true);
+  const pr = (await f.stored()).detail.handoff.githubPullRequests[0];
+  expect(pr.checks).toHaveLength(1);
+  expect(pr.checks[0]).toMatchObject({
+    checkRunId: 3456,
+    headSha: f.pr.headSha,
+    conclusion: "success",
+  });
+  const bound = await f.t.run((ctx) => ctx.db.get(pending!._id));
+  expect(JSON.parse(bound!.state)).toMatchObject({
+    schemaVersion: "proposal-pr-binding-v1",
+    proposalId: f.proposal.proposalId,
+    handoffId: f.handoff.id,
+  });
+});
+
+it("bounds pending check facts, preserves same-time ambiguity and does not queue facts for an unconfigured repository", async () => {
+  const f = await pullRequestFixture();
+  expect(await f.observeCheck({ ...f.check, providerId: 99 })).toBe(false);
+  expect(await f.observeCheck()).toBe(true);
+  expect(await f.observeCheck({ ...f.check, conclusion: "failure" })).toBe(
+    true,
+  );
+  for (let i = 1; i < 12; i++)
+    expect(await f.observeCheck({ ...f.check, checkRunId: 3456 + i })).toBe(
+      true,
+    );
+  expect(await f.observeCheck({ ...f.check, checkRunId: 4000 })).toBe(false);
+  expect(await f.observePr()).toBe(true);
+  const checks = (await f.stored()).detail.handoff.githubPullRequests[0].checks;
+  expect(checks).toHaveLength(12);
+  expect(
+    checks.find((check: { checkRunId: number }) => check.checkRunId === 3456)
+      .conclusion,
+  ).toBe("unknown");
+});
+
+it("keeps ambiguous same-time PR/check observations unknown and invalidates checks when HEAD changes", async () => {
+  const f = await pullRequestFixture();
+  expect(await f.observePr()).toBe(true);
+  expect(await f.observeCheck()).toBe(true);
+  expect(await f.observeCheck({ ...f.check, conclusion: "failure" })).toBe(
+    true,
+  );
+  expect(
+    (await f.stored()).detail.handoff.githubPullRequests[0].checks[0]
+      .conclusion,
+  ).toBe("unknown");
+  expect(await f.observeCheck()).toBe(false);
+  expect(await f.observePr({ ...f.pr, state: "closed" })).toBe(true);
+  expect((await f.stored()).detail.handoff.githubPullRequests[0].state).toBe(
+    "unknown",
+  );
+  expect(await f.observePr()).toBe(false);
+  vi.advanceTimersByTime(3000);
+  expect(await f.observePr({ ...f.pr, updatedAt: f.pr.updatedAt + 2000 })).toBe(
+    true,
+  );
+  expect(
+    await f.observeCheck({
+      ...f.check,
+      completedAt: f.check.completedAt + 2000,
+    }),
+  ).toBe(true);
+  expect(
+    await f.observePr({
+      ...f.pr,
+      headSha: "d".repeat(40),
+      updatedAt: f.pr.updatedAt + 3000,
+    }),
+  ).toBe(true);
+  expect(
+    (await f.stored()).detail.handoff.githubPullRequests[0].checks,
+  ).toEqual([]);
+  expect(
+    await f.observeCheck({
+      ...f.check,
+      completedAt: f.check.completedAt + 3000,
+    }),
+  ).toBe(false);
+  expect(await f.observePr({ ...f.pr, updatedAt: f.pr.updatedAt + 1000 })).toBe(
+    false,
+  );
+  expect(await f.observeCheck({ ...f.check, providerId: 99 })).toBe(false);
+  expect(
+    await f.observeCheck({ ...f.check, headSha: "d".repeat(40), appId: 0 }),
+  ).toBe(false);
+});
+
+it("retains signed work facts across concurrent edits and denies future updates after source/repository removal", async () => {
+  const f = await pullRequestFixture();
+  await Promise.all([
+    f.observePr(),
+    f.report(),
+    f.assistant.mutation(internal.assistantProposals.save, {
+      ...f.saveInput,
+      proposalId: f.proposal.proposalId,
+      expectedVersion: 1,
+      expectedReview: "unreviewed",
+      key: "edit-while-pr-arrives",
+      body: { ...f.saveInput.body, title: "Revised while PR opens" },
+    }),
+  ]);
+  expect((await f.stored()).detail.handoff.githubPullRequests).toHaveLength(1);
+  expect((await f.stored()).detail.handoff.reports).toHaveLength(1);
+  await f.t.run((ctx) => ctx.db.patch(f.projectId, { enabled: false }));
+  expect(await f.observeCheck()).toBe(false);
+  await f.t.run((ctx) => ctx.db.patch(f.projectId, { enabled: true }));
+  await f.t.run((ctx) => ctx.db.patch(f.sourceId, { state: "deleted" }));
+  expect(await f.observeCheck()).toBe(false);
+  await expect(
+    f.assistant.query(internal.assistantProposals.read, {
+      proposalId: f.proposal.proposalId,
+    }),
+  ).rejects.toThrow(/FORBIDDEN|SOURCE_UNAVAILABLE/);
+});
+
+it("parses only explicit same-repository closing references and requires an unambiguous handoff marker", () => {
+  expect(
+    proposalClosingIssueReferences(
+      "Fixes #42\nCloses owned/synthetic#43\nResolves https://github.com/owned/synthetic/issues/44",
+      "owned/synthetic",
+    ),
+  ).toEqual([42, 43, 44]);
+  expect(
+    proposalClosingIssueReferences(
+      "Fixes 42\nRelated #42\nFixes foreign/synthetic#42",
+      "owned/synthetic",
+    ),
+  ).toEqual([]);
+});
+
+it("verifies signatures before dispatching PR and completed-check observations without provider calls", async () => {
+  const f = await pullRequestFixture();
+  const secret = "synthetic-pr-check-webhook-only";
+  vi.stubEnv("GITHUB_WEBHOOK_SECRET", secret);
+  const network = vi.fn(() => {
+    throw Error("No provider call");
+  });
+  vi.stubGlobal("fetch", network);
+  const send = async (payload: object, valid = true) => {
+    const body = JSON.stringify(payload);
+    return f.t.action(internal.githubEvents.webhook, {
+      body,
+      delivery: "signed-pr-check-0123456789",
+      signature:
+        "sha256=" +
+        (valid
+          ? createHmac("sha256", secret).update(body).digest("hex")
+          : "0".repeat(64)),
+    });
+  };
+  const repository = { id: 55, full_name: "owned/synthetic" };
+  const prPayload = {
+    action: "opened",
+    installation: { id: 42 },
+    repository,
+    pull_request: {
+      id: 2345,
+      number: 43,
+      html_url: f.pr.url,
+      body: f.pr.body,
+      state: "open",
+      merged: false,
+      merge_commit_sha: null,
+      updated_at: new Date(f.pr.updatedAt).toISOString(),
+      head: { sha: f.pr.headSha },
+      base: { repo: repository },
+    },
+  };
+  expect(await send(prPayload, false)).toMatchObject({
+    status: 400,
+    category: "SIGNATURE_INVALID",
+  });
+  expect((await f.stored()).detail.handoff.githubPullRequests).toBeUndefined();
+  const checkPayload = {
+    action: "completed",
+    installation: { id: 42 },
+    repository,
+    check_run: {
+      id: 3456,
+      app: { id: 4567 },
+      status: "completed",
+      conclusion: "success",
+      head_sha: f.pr.headSha,
+      completed_at: new Date(f.check.completedAt).toISOString(),
+      pull_requests: [
+        {
+          id: 2345,
+          number: 43,
+          head: { sha: f.pr.headSha },
+          base: { repo: repository },
+        },
+      ],
+    },
+  };
+  expect(await send(checkPayload)).toEqual({ status: 200 });
+  expect((await f.stored()).detail.handoff.githubPullRequests).toBeUndefined();
+  expect(await send(prPayload)).toEqual({ status: 200 });
+  expect(
+    (await f.stored()).detail.handoff.githubPullRequests[0].checks[0]
+      .conclusion,
+  ).toBe("success");
+  expect(
+    await send({
+      ...checkPayload,
+      check_run: { ...checkPayload.check_run, pull_requests: [] },
+    }),
+  ).toMatchObject({ status: 200, category: "CHECK_PR_CONTEXT_UNAVAILABLE" });
+  vi.stubEnv("RESTORE_LOCK", "true");
+  expect(await send(checkPayload)).toMatchObject({
+    status: 503,
+    category: "RECOVERY_LOCKED",
+  });
+  expect(network).not.toHaveBeenCalled();
 });

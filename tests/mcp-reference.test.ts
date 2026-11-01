@@ -67,6 +67,7 @@ it("keeps the public input reference equal to real discovery without executing t
     name: string;
     description: string;
     inputSchema: object;
+    outputSchema?: object;
     annotations: object;
     _meta?: { securitySchemes?: object[] };
   };
@@ -75,6 +76,7 @@ it("keeps the public input reference equal to real discovery without executing t
       name: tool.name,
       description: tool.description,
       inputSchema: tool.inputSchema,
+      ...(tool.outputSchema ? { outputSchema: tool.outputSchema } : {}),
       annotations: tool.annotations,
       securitySchemes: tool._meta?.securitySchemes ?? [],
     }))

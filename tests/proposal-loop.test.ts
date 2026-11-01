@@ -222,6 +222,7 @@ it("rounds only the accumulated provider and infrastructure cost", () => {
   expect(proposalPlanSettlement(100, 100)).toEqual({
     credits: 1,
     estimatedUsd: 0.0010325,
+    providerNanoUsd: 32500,
   });
   expect(proposalPlanSettlement(120000, 0).credits).toBe(1);
   expect(proposalPlanSettlement(120001, 0).credits).toBe(2);
@@ -580,4 +581,112 @@ it("uses the paid member's wallet and separate shared funding, then revokes infe
       operationId: started.operation!.id as Id<"proposalOperations">,
     }),
   ).rejects.toThrow("active Pro");
+});
+
+it("binds v2 plan funding to admission and its awaited dispatch, then settles reported tariff usage separately from credits", async () => {
+  const f = await fixture();
+  const config = JSON.parse(process.env.PROPOSAL_SERVICE_CONFIGURATION_JSON!);
+  vi.stubEnv(
+    "PROPOSAL_SERVICE_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...config,
+      subjects: ["user_99999999999999999999999999"],
+    }),
+  );
+  vi.stubEnv(
+    "PAID_PROCESSING_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "paid-processing-monetary-v2",
+      id: "plan-monetary-test",
+      enabled: true,
+      verifiedAt: Date.now() - 1000,
+      expiresAt: Date.now() + 86400000,
+      maximumJobNanoUsd: 50000000,
+      operatingPoolNanoUsd: 900000000,
+      verifiedProviderCreditNanoUsd: 1000000000,
+      providerKeyBudgetNanoUsd: 1000000000,
+      priorExposureNanoUsd: 100000000,
+    }),
+  );
+  vi.stubEnv("VERCEL_AI_GATEWAY_API_KEY", "synthetic-provider-key");
+  await f.t.mutation(internal.billing.attach, {
+    organizationId: f.org,
+    customerId: "cus_monetary_fixture",
+  });
+  await f.t.mutation(internal.billing.apply, {
+    customerId: "cus_monetary_fixture",
+    subscriptionId: "sub_monetary_fixture",
+    status: "active",
+    periodEnd: Date.now() + 86400000,
+    revision: 1,
+  });
+  await f.t.mutation(internal.commerce.grantPeriod, {
+    organizationId: f.org,
+    subscription: "sub_monetary_fixture",
+    tier: "pro",
+    interval: "monthly",
+    start: Date.now() - 1000,
+    end: Date.now() + 86400000,
+    verifiedPayment: true,
+  });
+  const q = await f.owner.query(api.proposalLoop.quote, {
+    proposalId: f.proposalId,
+  });
+  const args = {
+    proposalId: f.proposalId,
+    expectedVersion: 1,
+    key: "monetary-plan-operation",
+    quoteId: q.quoteId,
+    maximumCredits: q.maximumCredits,
+  };
+  const started = await f.owner.mutation(api.proposalLoop.start, args);
+  await f.owner.mutation(api.proposalLoop.start, args);
+  const operationId = started.operation!.id as Id<"proposalOperations">;
+  const op = (await f.t.run((ctx) => ctx.db.get(operationId)))!;
+  const providerId = op.receipt
+    .providerReservationId as Id<"providerFundingReservations">;
+  expect(await f.t.run((ctx) => ctx.db.get(providerId))).toMatchObject({
+    maximumNanoUsd: 20000000,
+    state: "reserved",
+    operationKey: op.reservationKey,
+    requestHash: op.requestHash,
+  });
+  const claim = await f.t.mutation(internal.proposalLoop.claim, {
+    operationId,
+  });
+  expect(claim?.providerReservationId).toBe(providerId);
+  await f.t.mutation(internal.proposalLoop.providerDispatch, { operationId });
+  await expect(
+    f.t.mutation(internal.proposalLoop.providerDispatch, { operationId }),
+  ).rejects.toThrow("SOURCE_BUSY");
+  await f.t.mutation(internal.proposalLoop.recordReceipt, {
+    operationId,
+    receipt: {
+      model: "zai/glm-5.3-flash",
+      inputTokens: 3,
+      outputTokens: 7,
+      responseSha256: "a".repeat(64),
+    },
+  });
+  await f.t.mutation(internal.proposalLoop.finish, {
+    operationId,
+    requestStarted: true,
+    errorCode: "INVALID_OUTPUT",
+  });
+  await f.t.mutation(internal.proposalLoop.finish, {
+    operationId,
+    requestStarted: true,
+    errorCode: "INVALID_OUTPUT",
+  });
+  expect(await f.t.run((ctx) => ctx.db.get(providerId))).toMatchObject({
+    state: "settled",
+    actualNanoUsd: 1975,
+    basis: "reported_tariff_usage",
+  });
+  expect(
+    await f.t.run((ctx) => ctx.db.query("providerFundingPools").unique()),
+  ).toMatchObject({ spentNanoUsd: 1975, heldNanoUsd: 0 });
+  expect(
+    (await f.t.run((ctx) => ctx.db.get(operationId)))?.receipt.credits,
+  ).toBe(1);
 });

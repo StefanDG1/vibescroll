@@ -108,6 +108,13 @@ async function analyzeServicePreparedEvidence(
     maximumUsd,
     contributorAllowed: input.contributorAllowed,
     ...callbacks,
+    onDispatch: async () => {
+      if (input.receipt?.admission?.providerReservationId)
+        await ctx.runMutation(internal.preparedAnalysis.providerDispatch, {
+          runId,
+          component: "analysis",
+        });
+    },
     onRejection: async (receipt) => {
       await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
         runId,
@@ -296,6 +303,13 @@ export const run = internalAction({
               Math.min(input.maximumApiUsd, 0.02),
               {
                 apiKey,
+                onDispatch: async () => {
+                  if (input.receipt?.admission?.providerReservationId)
+                    await ctx.runMutation(
+                      internal.preparedAnalysis.providerDispatch,
+                      { runId, component: "transcription" },
+                    );
+                },
                 onReceipt: async (receipt) => {
                   await ctx.runMutation(
                     internal.preparedAnalysis.recordReceipt,
@@ -576,6 +590,13 @@ export const retryRejectedGateway = internalAction({
         apiKey,
         maximumUsd: input.maximumApiUsd,
         contributorAllowed: input.contributorAllowed,
+        onDispatch: async () => {
+          if (input.providerReservationId)
+            await ctx.runMutation(internal.preparedAnalysis.providerDispatch, {
+              runId: a.runId,
+              component: "analysis",
+            });
+        },
         onReceipt: async (receipt) => {
           await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
             runId: a.runId,

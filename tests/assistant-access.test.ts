@@ -6,6 +6,8 @@ import { api, internal } from "../convex/_generated/api";
 import { syncDashboardCard } from "../convex/lib/dashboardProjection";
 import { setup as setupQuery } from "../convex/assistantGrants";
 import { widgetOutputs } from "../packages/widget/outputs";
+import { getProfile as getProfileQuery } from "../convex/assistant";
+import { knowledgeSearchCoverage } from "../packages/contracts/knowledge-read";
 const modules = import.meta.glob("../convex/**/*.ts");
 const issuer = "https://synthetic-test.authkit.app";
 const clientId = "client_01234567890123456789012345";
@@ -543,6 +545,18 @@ it("pages live all-library search five posts at a time, binds cursors and reject
   });
   expect(first.results.length).toBeLessThanOrEqual(5);
   expect(first.next_cursor).toBeTruthy();
+  const empty = await s.assistant.query(internal.assistant.search, {
+    profileId: s.organizationId,
+    query: "no-matching-text-in-these-posts",
+  });
+  expect(empty).toMatchObject({
+    results: [],
+    scanned_posts: 5,
+    matched_items: 0,
+    has_more: true,
+    exhausted: false,
+    truncated: false,
+  });
   const second = await s.assistant.query(internal.assistant.search, {
     profileId: s.organizationId,
     query: "Future",
@@ -596,6 +610,279 @@ it("pages live all-library search five posts at a time, binds cursors and reject
     }),
   ).rejects.toThrow("STALE_APPROVAL");
   expect((await s.t.run((ctx) => ctx.db.get(grant.id)))?.sources).toEqual([]);
+});
+
+it("keeps full profile defaults and returns only authorized project metadata in summary mode without evaluation reads", async () => {
+  const s = await projectSuggestion();
+  const full = await s.assistant.query(internal.assistant.getProfile, {
+    profileId: s.organizationId,
+    detail: "full",
+  });
+  expect(full).toEqual(s.profile);
+  const tables: string[] = [];
+  const summary = await s.assistant.run(async (ctx) => {
+    const db = new Proxy(ctx.db, {
+      get(target, property) {
+        if (property === "query")
+          return (table: string) => {
+            tables.push(table);
+            return target.query(table as never);
+          };
+        const value = Reflect.get(target, property);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    return (
+      getProfileQuery as unknown as {
+        _handler: (ctx: unknown, args: unknown) => Promise<typeof full>;
+      }
+    )._handler(
+      { ...ctx, db },
+      { profileId: s.organizationId, detail: "summary" },
+    );
+  });
+  expect(summary.profiles[0].projects).toEqual([
+    {
+      project_id: s.repositoryId,
+      name: "owned/synthetic",
+      base_sha: "a".repeat(40),
+      profile_version: 1,
+      selection_version: 0,
+      context_changed: false,
+    },
+  ]);
+  expect(summary.profiles[0].context).toBeUndefined();
+  expect(tables).not.toContain("knowledgeEvaluations");
+  expect(JSON.stringify(summary)).not.toContain("purpose: review");
+  expect(JSON.stringify(summary)).not.toContain("PRIVATE CODE");
+  expect(
+    new TextEncoder().encode(JSON.stringify(summary)).byteLength,
+  ).toBeLessThan(new TextEncoder().encode(JSON.stringify(full)).byteLength);
+  await s.t.run((ctx) => ctx.db.patch(s.repositoryId, { profileVersion: 2 }));
+  for (const detail of ["summary", "full"] as const) {
+    const stale = await s.assistant.query(internal.assistant.getProfile, {
+      profileId: s.organizationId,
+      detail,
+    });
+    expect(stale.profiles[0].projects).toEqual([
+      {
+        project_id: s.repositoryId,
+        context_changed: true,
+      },
+    ]);
+  }
+  await s.owner.mutation(api.assistantGrants.revoke, {
+    id: s.grant.id,
+    expectedVersion: 1,
+  });
+  for (const detail of ["summary", "full"] as const)
+    await expect(
+      s.assistant.query(internal.assistant.getProfile, {
+        profileId: s.organizationId,
+        detail,
+      }),
+    ).rejects.toThrow("FORBIDDEN");
+});
+
+it("offers structured fetch with identical saved insight/citation disclosure and current authorization", async () => {
+  const s = await setup();
+  const grant = await s.owner.mutation(api.assistantGrants.save, s.args);
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      state: "ready",
+      analysis: {
+        insights: [
+          {
+            id: "quoted",
+            title: 'A "quoted" idea',
+            claim: 'Line one\nLine "two"',
+            evidence: [
+              {
+                kind: "video_frame",
+                startMs: 10,
+                endMs: 20,
+                text: "PRIVATE RAW MEDIA",
+                objectKey: "PRIVATE OBJECT KEY",
+              },
+            ],
+          },
+        ],
+      },
+    }),
+  );
+  const input = { profileId: s.organizationId, id: s.sourceId };
+  const legacy = await s.assistant.query(internal.assistant.fetch, input);
+  expect(
+    await s.assistant.query(internal.assistant.fetch, {
+      ...input,
+      format: "legacy",
+    }),
+  ).toEqual(legacy);
+  const structured = await s.assistant.query(internal.assistant.fetch, {
+    ...input,
+    format: "structured_v1",
+  });
+  expect(structured.analysis).toEqual(JSON.parse(legacy.text));
+  expect(structured).toMatchObject({
+    format: "structured_v1",
+    id: legacy.id,
+    title: legacy.title,
+    url: legacy.url,
+    profile_id: legacy.profile_id,
+    grant_version: legacy.grant_version,
+    more_ideas: legacy.more_ideas,
+  });
+  expect(structured.text).toBe("Saved analysis is ready; 1 insights returned.");
+  for (const result of [legacy, structured]) {
+    expect(JSON.stringify(result)).not.toContain("PRIVATE");
+    expect(JSON.stringify(result)).not.toContain("objectKey");
+  }
+  // Measure the complete serialized responses, including structured mode's
+  // short text fallback, on a representative twenty-insight saved analysis.
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      analysis: {
+        insights: Array.from({ length: 20 }, (_, index) => ({
+          id: `quoted-${index}`,
+          title: `A "quoted" idea ${index}`,
+          claim: 'Saved "quoted" evidence\n'.repeat(40),
+          evidence: [],
+        })),
+      },
+    }),
+  );
+  const legacyLarge = await s.assistant.query(internal.assistant.fetch, input);
+  const structuredLarge = await s.assistant.query(internal.assistant.fetch, {
+    ...input,
+    format: "structured_v1",
+  });
+  expect(structuredLarge.analysis).toEqual(JSON.parse(legacyLarge.text));
+  expect(
+    new TextEncoder().encode(JSON.stringify(structuredLarge)).byteLength,
+  ).toBeLessThan(
+    new TextEncoder().encode(JSON.stringify(legacyLarge)).byteLength,
+  );
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      updatedAt: s.args.sources[0].revision + 1,
+    }),
+  );
+  for (const format of ["legacy", "structured_v1"] as const)
+    await expect(
+      s.assistant.query(internal.assistant.fetch, {
+        ...input,
+        format,
+      }),
+    ).rejects.toThrow("FORBIDDEN");
+  await s.owner.mutation(api.assistantGrants.revoke, {
+    id: grant.id,
+    expectedVersion: 1,
+  });
+  for (const format of ["legacy", "structured_v1"] as const)
+    await expect(
+      s.assistant.query(internal.assistant.fetch, {
+        ...input,
+        format,
+      }),
+    ).rejects.toThrow("FORBIDDEN");
+});
+
+it("continues a twenty-first search match within the same source without losing or repeating results", async () => {
+  const s = await setup();
+  await s.owner.mutation(api.assistantGrants.save, s.args);
+  const insights = Array.from({ length: 21 }, (_, index) => ({
+    id: `idea-${index}`,
+    title: `Idea ${index}`,
+    claim: "needle",
+    evidence: [],
+  }));
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      state: "ready",
+      analysis: { insights },
+    }),
+  );
+  const truncated = await s.assistant.query(internal.assistant.search, {
+    profileId: s.organizationId,
+    query: "needle",
+  });
+  expect(truncated.results).toHaveLength(20);
+  expect(truncated.results.some((result) => result.id.endsWith("~20"))).toBe(
+    false,
+  );
+  expect(truncated).toMatchObject({
+    next_offset: null,
+    scanned_posts: 1,
+    matched_items: 20,
+    has_more: true,
+    exhausted: false,
+    truncated: true,
+    match_limit_reached: true,
+  });
+  expect(truncated.next_cursor).toBeTruthy();
+  const final = await s.assistant.query(internal.assistant.search, {
+    profileId: s.organizationId,
+    query: "needle",
+    cursor: truncated.next_cursor!,
+  });
+  expect(final.results).toHaveLength(1);
+  expect(final.results[0].id.endsWith("~20")).toBe(true);
+  expect(final).toMatchObject({
+    has_more: false,
+    exhausted: true,
+    truncated: false,
+    next_cursor: null,
+  });
+  expect(
+    new Set([...truncated.results, ...final.results].map((result) => result.id))
+      .size,
+  ).toBe(21);
+  const {
+    results: _results,
+    next_cursor: _cursor,
+    next_offset: _offset,
+    profile_id: _profile,
+    grant_version: _grant,
+    coverage: _coverage,
+    ...machineCoverage
+  } = truncated;
+  expect(knowledgeSearchCoverage.parse(machineCoverage)).toEqual(
+    machineCoverage,
+  );
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      analysis: { insights: insights.slice(0, 20) },
+    }),
+  );
+  await expect(
+    s.assistant.query(internal.assistant.search, {
+      profileId: s.organizationId,
+      query: "needle",
+      cursor: truncated.next_cursor!,
+    }),
+  ).rejects.toThrow("STALE_APPROVAL");
+  expect(
+    await s.assistant.query(internal.assistant.search, {
+      profileId: s.organizationId,
+      query: "needle",
+    }),
+  ).toMatchObject({
+    matched_items: 20,
+    match_limit_reached: true,
+    truncated: false,
+    exhausted: true,
+  });
+  expect(
+    await s.assistant.query(internal.assistant.search, {
+      profileId: s.organizationId,
+      query: "absent",
+    }),
+  ).toMatchObject({
+    results: [],
+    matched_items: 0,
+    truncated: false,
+    exhausted: true,
+  });
 });
 it("passes live search cursors through the authenticated HTTP boundary without widening accepted input", async () => {
   const s = await setup();
@@ -654,12 +941,20 @@ it("passes live search cursors through the authenticated HTTP boundary without w
   ).toBe(false);
   expect(provider).toHaveBeenCalledTimes(2);
   for (const args of [{ cursor: "x".repeat(4097) }, { actor: "foreign" }]) {
-    expect((await search(args)).status).toBe(403);
+    const invalid = await search(args);
+    expect(invalid.status).toBe(400);
+    expect(await invalid.json()).toMatchObject({
+      code: "INVALID_INPUT",
+      stage: "validation",
+    });
   }
   expect(provider).toHaveBeenCalledTimes(2);
-  expect(
-    (await search({ cursor: page.next_cursor, query: "Changed" })).status,
-  ).toBe(403);
+  const changed = await search({ cursor: page.next_cursor, query: "Changed" });
+  expect(changed.status).toBe(409);
+  expect(await changed.json()).toMatchObject({
+    code: "STALE_APPROVAL",
+    stage: "state",
+  });
   expect(
     await s.t.run((ctx) => ctx.db.query("reservations").collect()),
   ).toEqual([]);

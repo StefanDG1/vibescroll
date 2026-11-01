@@ -1,0 +1,50 @@
+.observations {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.observations summary {
+  min-height: 44px;
+  padding-block: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.observations summary:focus-visible,
+.observations a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+.content {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+.item {
+  display: grid;
+  gap: 3px;
+}
+.item strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.item p,
+.notice {
+  margin: 0;
+}
+.item small,
+.notice,
+.checks {
+  color: var(--subtle);
+}
+.checks {
+  margin: 3px 0 0;
+  padding-left: 18px;
+  list-style: disc;
+}
+.item a {
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

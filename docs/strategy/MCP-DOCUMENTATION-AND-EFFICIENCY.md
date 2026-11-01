@@ -2,6 +2,8 @@
 
 Mode: explanation. Owner requirement R135, November 1, 2026.
 
+R137 approves the core [flow-based improvement plan](MCP-FLOWS-AND-IMPROVEMENTS-REVIEW.md) for implementation. Follow its [execution ledger](MCP-FLOWS-IMPLEMENTATION.md) for grouped reference pages, skills, output contracts, measured reads, funding, host workflows and feedback. The eight [additional suggestions](MCP-LATER-SUGGESTIONS.md) remain saved for later.
+
 The public reference must explain the current implementation, not an idealized MCP integration. Separate conceptual architecture, a first-use tutorial, tool/schema reference, output/error reference and an efficiency audit. Generate tool descriptors from the actual registry without connecting to production or executing a tool. Use synthetic examples. Keep private profiles, tokens, transcripts and operational funding records out of public assets.
 
 ## Technology decision

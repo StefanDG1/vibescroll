@@ -1,63 +1,130 @@
 {
   "pages": [
     {
-      "slug": "",
       "file": "index.md",
-      "title": "Developer documentation",
-      "description": "How VibeScroll connects saved posts, your assistant and your projects.",
+      "slug": "",
+      "description": "Follow saved posts through insights, project plans and reviewed work.",
+      "title": "VibeScroll documentation",
+      "diagram": "journey",
       "group": "Start here"
     },
     {
-      "slug": "mcp",
-      "file": "mcp.md",
-      "title": "How the MCP works",
-      "description": "Tool discovery, execution, authentication and the shared database.",
-      "group": "Start here",
-      "diagram": "architecture"
-    },
-    {
-      "slug": "mcp/subscription",
-      "file": "subscription.md",
-      "title": "Subscriptions and authentication",
-      "description": "Which work uses your ChatGPT plan, which work uses VibeScroll credits, and why the sign-ins are separate.",
-      "group": "Start here",
-      "diagram": "funding"
-    },
-    {
-      "slug": "mcp/first-workflow",
       "file": "first-workflow.md",
+      "group": "Start here",
+      "slug": "mcp/first-workflow",
       "title": "Use saved insights in a chat",
-      "description": "Read a post, discuss a project plan and save it from your existing assistant.",
-      "group": "Start here"
+      "description": "Read a post, discuss a project plan and save it from your existing assistant."
     },
     {
-      "slug": "mcp/tools",
+      "file": "find-save.md",
+      "group": "Workflows",
+      "slug": "workflows/find-save",
+      "title": "Find and save a post",
+      "description": "Search cited knowledge, save one supplied link and continue from its actual state."
+    },
+    {
+      "file": "analyze.md",
+      "slug": "workflows/analyze",
+      "description": "Reuse a ready result or choose a supported route with explicit funding and recovery.",
+      "title": "Get insights and track progress",
+      "diagram": "cache",
+      "group": "Workflows"
+    },
+    {
+      "file": "reanalyze.md",
+      "slug": "workflows/reanalyze",
+      "description": "Preserve the incumbent while reviewing or requesting another retained version.",
+      "title": "Compare and select analysis versions",
+      "diagram": "versions",
+      "group": "Workflows"
+    },
+    {
+      "file": "proposals.md",
+      "group": "Workflows",
+      "slug": "workflows/proposals",
+      "title": "Apply insights to a project",
+      "description": "Use the full post context and save a private chat-written proposal."
+    },
+    {
+      "file": "discussion.md",
+      "group": "Workflows",
+      "slug": "workflows/discussion",
+      "title": "Discuss and revise a plan",
+      "description": "Keep discussion across chats and choose hosted generation only with its quote."
+    },
+    {
+      "file": "handoff.md",
+      "slug": "workflows/handoff",
+      "description": "Approve one exact issue and distinguish reported completion from observed outcomes.",
+      "title": "Approve an issue and follow the work",
+      "diagram": "feedback",
+      "group": "Workflows"
+    },
+    {
       "file": "tools.md",
+      "group": "Reference",
+      "slug": "mcp/tools",
       "title": "Tool reference",
-      "description": "Generated input schemas, scopes and effects for the actual MCP registry.",
-      "group": "Reference"
+      "description": "Grouped tools, workflow and skill links, actual schemas, scopes and effects."
     },
     {
-      "slug": "mcp/results",
       "file": "results.md",
+      "group": "Reference",
+      "slug": "mcp/results",
       "title": "Results, limits and errors",
-      "description": "What receipts, analysis versions, coverage and credit fields mean.",
-      "group": "Reference"
+      "description": "What receipts, analysis versions, coverage and credit fields mean."
     },
     {
-      "slug": "mcp/skills",
       "file": "skills.md",
+      "group": "Reference",
+      "slug": "mcp/skills",
       "title": "Skills and Events",
-      "description": "Packaged workflows, tool descriptions and configured background tasks.",
+      "description": "Nine packaged workflows, their tools and the separate configured monitor."
+    },
+    {
+      "file": "host-support.md",
+      "group": "Reference",
+      "slug": "mcp/host-support",
+      "title": "Host support",
+      "description": "Code-supported routes, observed owner workflows and remaining host acceptance."
+    },
+    {
+      "file": "subscription.md",
+      "slug": "mcp/subscription",
+      "description": "Host allowance, VibeScroll credits, provider funding and the separate sign-ins.",
+      "title": "Subscriptions and authentication",
+      "diagram": "funding",
       "group": "Reference"
     },
     {
-      "slug": "mcp/efficiency",
+      "file": "mcp.md",
+      "slug": "mcp",
+      "description": "Tool discovery, execution, authentication and the shared database.",
+      "title": "How the MCP works",
+      "diagram": "architecture",
+      "group": "Architecture"
+    },
+    {
       "file": "efficiency.md",
-      "title": "Shared data and Convex usage",
+      "slug": "mcp/efficiency",
       "description": "What each call reads, what cache reuse saves and what remains unmeasured.",
+      "title": "Shared data and Convex usage",
+      "diagram": "cache",
+      "group": "Architecture"
+    },
+    {
+      "file": "contributing.md",
       "group": "Architecture",
-      "diagram": "cache"
+      "slug": "contributing",
+      "title": "Contribute to the docs",
+      "description": "Edit allowlisted public sources, generate the real reference and check synthetic examples."
+    },
+    {
+      "file": "changelog.md",
+      "group": "Architecture",
+      "slug": "changelog",
+      "title": "Documentation changelog",
+      "description": "Published checkpoints and local candidate work, with verification dates."
     }
   ]
 }

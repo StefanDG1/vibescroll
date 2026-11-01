@@ -1,4 +1,13 @@
-VibeScroll's MCP server gives an assistant structured access to your saved posts, cited insights and selected project context. You can discuss a plan in ChatGPT or Codex and save it back to VibeScroll. A tool can also start a separately funded processing job when you choose that route.
+VibeScroll connects saved posts, cited insights and private project plans across the website and your assistant. Start with the result you want. Each workflow identifies its tools, waiting points and funding boundary.
+
+## Choose a workflow
+
+- [Find and save a post](/docs/workflows/find-save): search existing knowledge or save one supplied link.
+- [Get insights and track progress](/docs/workflows/analyze): reuse ready results or choose a supported analysis route.
+- [Compare and select analysis versions](/docs/workflows/reanalyze): preserve an existing result while requesting or reviewing another version.
+- [Apply insights to a project](/docs/workflows/proposals): use the full post context and save a chat-written proposal.
+- [Discuss and revise a plan](/docs/workflows/discussion): resume discussion across chats or choose quoted API generation.
+- [Approve an issue and follow the work](/docs/workflows/handoff): publish one reviewed issue and distinguish reports from observed outcomes.
 
 ## Understand the connection
 
@@ -12,6 +21,9 @@ VibeScroll's MCP server gives an assistant structured access to your saved posts
 - [Results, limits and errors](/docs/mcp/results): output families, pagination, version binding, evidence and billing states.
 - [Skills and Events](/docs/mcp/skills): the nine packaged skills and the separate background monitor.
 - [Shared data and Convex usage](/docs/mcp/efficiency): current read shapes, known limits and proposed improvements.
+- [Host support](/docs/mcp/host-support): website, custom MCP, skills, images and Events, with verification limits.
+- [Contribute to the docs](/docs/contributing): source, generation and synthetic example checks.
+- [Changelog](/docs/changelog): published checkpoints and the current local candidate.
 
 ## Verification and source
 

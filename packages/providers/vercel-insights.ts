@@ -78,6 +78,7 @@ export async function analyzePreparedEvidence(args: {
   maximumUsd: number;
   contributorAllowed: boolean;
   fetch?: typeof fetch;
+  onDispatch?: () => void | Promise<void>;
   onReceipt?: (receipt: Record<string, unknown>) => Promise<void>;
   onRejection?: (receipt: Record<string, unknown>) => Promise<void>;
   onOutput?: (receipt: Record<string, unknown>) => Promise<void>;
@@ -166,6 +167,7 @@ export async function analyzePreparedEvidence(args: {
   }
   const startedAt = Date.now();
   // No automatic retry. Client cancellation does not establish provider cancellation.
+  await args.onDispatch?.();
   const response = await transport(
     "https://ai-gateway.vercel.sh/v1/chat/completions",
     {

@@ -111,10 +111,63 @@ export const getProjectProposalInput = z.strictObject({
   profileId: id.optional(),
   proposalId: id,
 });
+export const proposalListDetail = z.enum(["summary", "full"]);
 export const listProjectProposalsInput = z.strictObject({
   profileId: id.optional(),
   projectId: id.optional(),
   cursor: z.string().max(4096).optional(),
+  detail: proposalListDetail.optional(),
+});
+export const chatProposalListSummary = z.strictObject({
+  proposalId: id,
+  profileId: id,
+  sourceId: id,
+  projectId: id,
+  analysisVersionId: id,
+  insightIds: z.array(id).min(1).max(20),
+  version: z.number().int().positive(),
+  review: z.string(),
+  title: chatProposalBody.shape.title,
+  disposition: chatProposalBody.shape.disposition,
+  current: z.boolean(),
+  origin: z.enum(["web_planning", "chat_planning"]),
+  repositoryCodeIncluded: z.literal(false),
+  creditsSpent: z.literal(0),
+  analysisStarted: z.literal(false),
+  codingAuthorized: z.literal(false),
+  publicationAuthorized: z.literal(false),
+  reviewUrl: z.string().url(),
+});
+export type ChatProposalListSummary = z.infer<typeof chatProposalListSummary>;
+export const chatProposalListFullItem = chatProposalListSummary.extend({
+  contextHash: hash,
+  handoff: proposalIssueHandoff.nullable(),
+});
+export const chatProposalListOutput = z.strictObject({
+  items: z
+    .array(z.union([chatProposalListSummary, chatProposalListFullItem]))
+    .max(10),
+  next_cursor: z.string().nullable(),
+  examined: z.number().int().min(0).max(10),
+  has_more: z.boolean(),
+  exhausted: z.boolean(),
+  coverage: z.string(),
+});
+export const chatProposalReadOutput = chatProposalListFullItem
+  .omit({
+    title: true,
+    disposition: true,
+  })
+  .extend({ body: chatProposalBody });
+export const chatProposalDiscussionAction = z.strictObject({
+  tool: z.literal("get_proposal_discussion"),
+  args: z.strictObject({ profileId: id, proposalId: id }),
+});
+export const chatProposalSaveOutput = chatProposalReadOutput.extend({
+  replayed: z.boolean(),
+  appliedVersion: z.number().int().positive(),
+  // Optional for older receipts; current saves and exact replays always emit it.
+  next_action: chatProposalDiscussionAction.optional(),
 });
 
 export const chatProposalOperations = new Set([

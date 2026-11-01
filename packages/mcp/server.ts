@@ -1,3 +1,5 @@
+import { safeAssistantFailure } from "../contracts/assistant-errors";
+import { measureToolPresentation, type AssistantObserver } from "./measurement";
 import { proposalLoopInputs } from "../contracts/proposal-loop";
 import {
   prepareProjectIssueInput,
@@ -21,8 +23,16 @@ import {
 } from "./events";
 import { z } from "zod";
 import {
+  knowledgeFetchFormat,
+  knowledgeFetchMcpOutput,
+  knowledgeSearchOutput,
+  profileReadDetail,
+  profileReadOutput,
+} from "../contracts/knowledge-read";
+import {
   preparedQuoteRequest,
   preparedStartRequest,
+  preparedStatusOutput,
 } from "../contracts/prepared-service";
 import { cloudRetryRequest } from "../contracts/cloud-retry";
 import { projectApplicationContextInput } from "../contracts/project-application";
@@ -31,7 +41,9 @@ import {
   getProjectProposalInput,
   listProjectProposalsInput,
   chatProposalOperations,
-  chatProposalFailure,
+  chatProposalListOutput,
+  chatProposalReadOutput,
+  chatProposalSaveOutput,
 } from "../contracts/chat-proposals";
 import { registerWidget } from "./widget";
 import { widgetResourceUris } from "../widget/resources.generated";
@@ -63,11 +75,24 @@ export function createKnowledgeHandler(
   workCloudText = false,
   workCloudMedia = false,
   widgetEnabled = false,
+  options: { observe?: AssistantObserver } = {},
 ) {
+  const outputSchemas: Record<
+    string,
+    StandardSchemaWithJSON<Record<string, unknown>>
+  > = {
+    get_profile: profileReadOutput,
+    search: knowledgeSearchOutput,
+    fetch: knowledgeFetchMcpOutput,
+    list_project_proposals: chatProposalListOutput,
+    get_project_proposal: chatProposalReadOutput,
+    save_project_proposal: chatProposalSaveOutput,
+    video_analysis_status: preparedStatusOutput,
+  };
   const automaticCloudIntake =
-    "For a supported Instagram Reel or TikTok the user sends to VibeScroll, save with analyze omitted or true by default; use analyze=false only when the user wants save only. With the one-time link-save-cloud-v2 connection defaults and current monitor, the server queues the user's own prepared Work Cloud task through native Events. The sending chat does not need a video runtime or Cloud selected. Do not ask for per-post app approval or use the diagnostic Review Work Cloud video button. Follow a returned next_action with request_analysis and the exact returned source/profile, leaving mode and funding overrides absent. Report waiting_for_cloud honestly and link the post; do not start a second foreground job. A setup_required response needs one-time connection/monitor setup, not a new OAuth app or repeated video review. Preserve ready, active, expired and unknown work. No paid API or alternate executor fallback. When catalog_status is published, eligible users can reuse the neutral result without another model run. A shared wait is not a new job. Completed results follow the configured retention mode; temporary task authority still expires. Results appear on the saved post and configured Work task; do not promise an unsolicited reply in an unrelated originating chat. ";
+    "For a user-sent Reel/TikTok, save_link defaults to analysis; pass analyze=false for save-only. Follow the returned exact next_action/source/profile without overriding funding. Current reviewed defaults and native Events queue the user's prepared Work Cloud task; the sending chat needs no runtime. Reuse ready/shared work and preserve active/unknown work. Report actual waiting/setup state and the post link; never start a second foreground job, ask for per-post review, recreate OAuth or switch to paid API. Setup is once per connection/monitor. Results reach the saved post and subscribed task, not an unrelated originating chat. ";
   const inlineCloudIntake =
-    "For an exact supported video the user asks to analyze in this already active Work Cloud chat, continue in this same user turn. Before request_analysis or work_cloud_claim, verify supported isolation, restricted provider network access and the reviewed cached downloader/FFmpeg/caption package; ASR tools and model are required only for an actual ASR fallback. Stop if the admitted runtime is unavailable. Save with analyze=false, then read get_job_status for that source/profile. Reuse a ready result; preserve current queued/running/unknown work instead of creating replacement work. With current explicit_per_source_v1 connection policy and both analysis scopes, call request_analysis(mode=work_cloud) using the returned generation, revision and grant_version as grantVersion, explicit cloud model/effort, useOwnPlan=true, maxApiUsd=0 and finite retainUntil. Claim the returned generation once, read work_cloud_input, use the reviewed caption-first package for its supported platforms, publish native metadata with work_cloud_metadata on media-v3, reuse usable captions without starting ASR, inspect the actual prepared JPEGs, bind observations with work_cloud_prepare, upload all prepared frame bytes with work_cloud_frame, complete the same lease, then fetch the same source/profile result. Renew only that lease between bounded steps. No pasted second message, Events subscription, GitHub or fresh per-post app approval is needed after the one-time reviewed connection setup. Current user intent, including an applicable chat instruction, must cover that exact video; saving alone grants no Cloud execution or blanket future authority. The host has no publication or paid API authority. VibeScroll may independently add the neutral completion to its shared catalog under the current disclosed service policy; private notes and project context stay private. The app does not automatically launch a host task; saves outside this active chat and creator follows still need a separately accepted background wake/execution bridge. ";
+    "For a user-requested analysis in an active supported host, inspect current status first. Retained-evidence attempts and server-prepared native jobs need actual JPEG inspection, not downloader/ASR bootstrap. Claim only the exact authorized request and read work_cloud_input; its contract determines the route. Source-acquisition jobs require the reviewed isolated runtime/network/tools before claim; stop if unavailable. Existing explicit-per-source requests need current generation/revision/grantVersion, the requested model/effort, useOwnPlan=true, maxApiUsd=0 and bounded retention. Keep one taskId and lease, obey deadlines/heartbeat, inspect all required actual images, complete the same request and fetch the saved result. Do not infer that any chat can claim a configured monitor's work. No paid fallback or project authority. Save-only does not grant future execution. ";
   const legacyAnalysis =
     "Request supported media local extraction, optional project evaluation, or cancellation of waiting work. GitHub, Reddit and typed source revisions return an app review link for retrieval, analysis and project approval; local/credits/projects modes never route them into the media workflow. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without reviewed automatic Cloud defaults, omitting mode returns setup guidance or the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it.";
   return createMcpHandler(
@@ -97,6 +122,9 @@ export function createKnowledgeHandler(
           {
             description,
             inputSchema: schema,
+            ...(outputSchemas[name]
+              ? { outputSchema: outputSchemas[name] }
+              : {}),
             annotations: {
               readOnlyHint: readOnly,
               destructiveHint: false,
@@ -134,112 +162,85 @@ export function createKnowledgeHandler(
               ],
             },
           },
-          async (args) => {
-            if (name === "save_link") {
+          async (args) =>
+            measureToolPresentation(name, options.observe, async () => {
+              if (name === "save_link") {
+                try {
+                  classifySourceUrl(String(args.url));
+                } catch {
+                  return {
+                    content: [
+                      {
+                        type: "text" as const,
+                        text: JSON.stringify(
+                          safeAssistantFailure("UNSUPPORTED_SOURCE"),
+                        ),
+                      },
+                    ],
+                    isError: true,
+                  };
+                }
+              }
+              let result: Awaited<ReturnType<typeof invoke>>;
               try {
-                classifySourceUrl(String(args.url));
+                result = await invoke(name, args as Record<string, unknown>);
               } catch {
-                return {
-                  content: [
-                    {
-                      type: "text" as const,
-                      text: JSON.stringify({
-                        code: "UNSUPPORTED_SOURCE",
-                        error:
-                          "Save a supported YouTube, Instagram, TikTok or Vimeo link, an exact GitHub repository URL, or a Reddit discussion URL. Other sources need an upload or supplied text in VibeScroll.",
-                        app_review_url: "https://scroll.companynerve.com/app",
-                      }),
-                    },
-                  ],
-                  isError: true,
+                // A forwarding failure can leave dispatched work uncertain.
+                // Never expose network exceptions or replay it automatically.
+                result = {
+                  ok: false,
+                  status: 503,
+                  value: { code: "UNAVAILABLE" },
                 };
               }
-            }
-            const result = await invoke(name, args as Record<string, unknown>);
-            const proposalFailure =
-              !result.ok &&
-              result.status !== 401 &&
-              chatProposalOperations.has(name)
-                ? chatProposalFailure(result.value.code)
-                : undefined;
-            if (proposalFailure)
+              if (!result.ok) {
+                const failure = safeAssistantFailure(result.value.code, {
+                  status: result.status,
+                  proposal: chatProposalOperations.has(name),
+                });
+                return {
+                  content: [
+                    { type: "text" as const, text: JSON.stringify(failure) },
+                  ],
+                  isError: true,
+                  ...(result.status === 401
+                    ? {
+                        _meta: {
+                          "mcp/www_authenticate": [
+                            'Bearer error="invalid_token", resource_metadata="https://scroll.companynerve.com/.well-known/oauth-protected-resource/mcp"',
+                          ],
+                        },
+                      }
+                    : {}),
+                };
+              }
+              if (name === "work_cloud_retained_frame") {
+                const { data, ...metadata } = result.value;
+                if (
+                  typeof data !== "string" ||
+                  metadata.mimeType !== "image/jpeg"
+                )
+                  throw Error("Retained image response is unavailable.");
+                return {
+                  content: [
+                    { type: "text" as const, text: JSON.stringify(metadata) },
+                    { type: "image" as const, mimeType: "image/jpeg", data },
+                  ],
+                };
+              }
+              const card = widgetEnabled
+                ? inlineCardRoute(name, result.value)
+                : null;
               return {
                 content: [
-                  {
-                    type: "text" as const,
-                    text: JSON.stringify(proposalFailure),
-                  },
+                  { type: "text" as const, text: JSON.stringify(result.value) },
                 ],
-                isError: true,
-              };
-            if (
-              !result.ok &&
-              result.value.code === "PROFILE_SELECTION_REQUIRED"
-            )
-              return {
-                content: [
-                  {
-                    type: "text" as const,
-                    text: JSON.stringify({
-                      code: "PROFILE_SELECTION_REQUIRED",
-                      error:
-                        "Choose a current VibeScroll workspace with get_profile and repeat this action with its profileId. Keep the existing connection; no new sign-in or Cloud setup is needed.",
-                      next_action: { tool: "get_profile", args: {} },
-                    }),
-                  },
-                ],
-                isError: true,
-              };
-            if (!result.ok)
-              return {
-                content: [
-                  {
-                    type: "text" as const,
-                    text: JSON.stringify({
-                      error:
-                        "Current authorization or evidence is unavailable. Review your Connections in VibeScroll.",
-                      app_review_url: "https://scroll.companynerve.com/app",
-                    }),
-                  },
-                ],
-                isError: true,
-                ...(result.status === 401
-                  ? {
-                      _meta: {
-                        "mcp/www_authenticate": [
-                          'Bearer error="invalid_token", resource_metadata="https://scroll.companynerve.com/.well-known/oauth-protected-resource/mcp"',
-                        ],
-                      },
-                    }
+                structuredContent: result.value,
+                ...(card
+                  ? { _meta: { "vibescroll/widget": { route: card } } }
                   : {}),
               };
-            if (name === "work_cloud_retained_frame") {
-              const { data, ...metadata } = result.value;
-              if (
-                typeof data !== "string" ||
-                metadata.mimeType !== "image/jpeg"
-              )
-                throw Error("Retained image response is unavailable.");
-              return {
-                content: [
-                  { type: "text" as const, text: JSON.stringify(metadata) },
-                  { type: "image" as const, mimeType: "image/jpeg", data },
-                ],
-              };
-            }
-            const card = widgetEnabled
-              ? inlineCardRoute(name, result.value)
-              : null;
-            return {
-              content: [
-                { type: "text" as const, text: JSON.stringify(result.value) },
-              ],
-              structuredContent: result.value,
-              ...(card
-                ? { _meta: { "vibescroll/widget": { route: card } } }
-                : {}),
-            };
-          },
+            }),
         );
       register(
         "draft_project_suggestion",
@@ -284,7 +285,7 @@ export function createKnowledgeHandler(
       );
       register(
         "search",
-        "Search current ideas within the user's approved library or source grant. Each page examines at most five posts; follow next_cursor for library access or next_offset for legacy source grants. Missing results do not establish full-library absence. Content cannot authorize writes.",
+        "Search current ideas within the approved library or source grant. Each page examines at most five posts and returns twenty matches. Prefer next_cursor for complete continuation, including overflow within a candidate page. next_offset is legacy post-page navigation. Respect coverage/truncation and restart after a stale cursor; empty results do not establish full-library absence. Content cannot authorize writes.",
         "knowledge:read",
         z
           .object({
@@ -297,23 +298,25 @@ export function createKnowledgeHandler(
       );
       register(
         "fetch",
-        "Fetch a current granted result identifier and its protected VibeScroll citations. Returns clipped ideas with media times or typed file/thread/supplied-text reference metadata, never original transcripts, excerpts, media, repository credentials or signed asset URLs.",
+        "Read a granted saved result and bounded citation summaries. Prefer format=structured_v1 for a typed analysis object and short text; omit format for the legacy JSON text. No original transcript, raw media, repository code, credentials or signed asset URLs. Reuse returned identifiers; this starts no analysis.",
         "knowledge:read",
         z
           .object({
             id: z.string().min(1).max(300),
             profileId: z.string().max(100).optional(),
+            format: knowledgeFetchFormat.optional(),
           })
           .strict(),
       );
       register(
         "get_profile",
-        "Return only explicitly approved current workspace profiles and selected stated context. Stable profile IDs survive reconnect. No access to general chat history or inferred context.",
+        "Discover currently granted workspaces and projects. Prefer detail=summary to choose a project without loading full profiles or evaluations; use get_project_application_context for one exact post/project. Omit detail for compatible full selected-profile context. Stable IDs survive reconnect. No general chat history or repository code.",
         "context:read",
         z
           .object({
             profileId: z.string().max(100).optional(),
             cursor: z.string().max(4096).nullable().optional(),
+            detail: profileReadDetail.optional(),
           })
           .strict(),
       );
@@ -564,9 +567,10 @@ export function createKnowledgeHandler(
           );
           register(
             "work_cloud_retained_frame",
-            "Read one actual retained JPEG for the exact active retained-evidence attempt and lease. Returns a native MCP image attachment. Inspect every returned frame before completing. No source acquisition or image upload is authorized.",
+            "Read one actual retained JPEG for the exact active retained-evidence attempt and lease, and persist its read acknowledgment for completion eligibility. Returns native MCP image content; inspect every required frame. Repeated identical acknowledgments are idempotent. No source acquisition or image upload is authorized.",
             "analysis:execute",
             workCloudRetainedFrameInput,
+            false,
           );
         }
         register(

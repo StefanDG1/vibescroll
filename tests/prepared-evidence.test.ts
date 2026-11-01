@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import {
   makePreparedEvidence,
   validatePreparedEvidence,
@@ -76,6 +77,42 @@ it("keeps evidence identity independent of observation time and binds actual sou
   await expect(validatePreparedEvidence(changedAsr)).rejects.toThrow(
     /HASH_INVALID/,
   );
+});
+
+it("keeps supported recipe revisions immutable and rejects an unknown schema or a recipe changed without rebinding evidence", async () => {
+  // The controller hashes preparation identity and transcription provenance.
+  // These are two synthetic, valid preparation-policy hashes, not live recipes.
+  const recipe = (preparation: string) =>
+    createHash("sha256")
+      .update(JSON.stringify({ preparation, transcription: base.transcript }))
+      .digest("hex");
+  const original = await makePreparedEvidence({
+    ...base,
+    recipeHash: recipe("1".repeat(64)),
+  });
+  const revised = await makePreparedEvidence({
+    ...base,
+    recipeHash: recipe("2".repeat(64)),
+  });
+  expect(original.version).toBe("service-prepared-evidence-v1");
+  expect(revised.version).toBe(original.version);
+  expect(original.evidence.sourceRevisionHash).toBe(
+    revised.evidence.sourceRevisionHash,
+  );
+  expect(original.evidence.evidenceHash).not.toBe(
+    revised.evidence.evidenceHash,
+  );
+  expect(await validatePreparedEvidence(original)).toEqual(original);
+  expect(await validatePreparedEvidence(revised)).toEqual(revised);
+  await expect(
+    validatePreparedEvidence({ ...original, recipeHash: revised.recipeHash }),
+  ).rejects.toThrow("PREPARED_EVIDENCE_HASH_INVALID");
+  await expect(
+    validatePreparedEvidence({
+      ...original,
+      version: "service-prepared-evidence-v999",
+    }),
+  ).rejects.toThrow();
 });
 
 it("rejects out-of-source frames and fake visual observations before model dispatch", async () => {

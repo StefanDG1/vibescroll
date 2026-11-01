@@ -175,7 +175,7 @@ export async function proposalQuote(
   if (config.paidCustomer) {
     await requirePaidProcessing(ctx, p.actor, fundingOrganizationId);
     ensure(
-      (await paidProcessingCapacity(ctx))?.available,
+      (await paidProcessingCapacity(ctx, 20000000))?.available,
       "BUDGET_EXCEEDED",
       "Processing capacity is temporarily unavailable.",
     );

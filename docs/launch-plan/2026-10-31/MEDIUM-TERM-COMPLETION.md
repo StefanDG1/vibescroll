@@ -10,6 +10,8 @@ A user can save or reuse a post, receive usable insights, find relevant projects
 
 ## Ordered work
 
+R137 supersedes the R136 review hold and approves the core [MCP flows and improvement plan](../../strategy/MCP-FLOWS-AND-IMPROVEMENTS-REVIEW.md). Follow the [execution ledger](../../strategy/MCP-FLOWS-IMPLEMENTATION.md) through implementation and verification. Keep its eight additional suggestions in the separate later backlog.
+
 November1 owner sequencing: first complete the [MCP explanation and public documentation](../../strategy/MCP-DOCUMENTATION-AND-EFFICIENCY.md), then discuss the next five priorities: fresh-user sandbox acceptance, actual monetary provider reserve/settlement, payment/progress/failure UX, fresh-chat MCP acceptance and issue/PR outcome feedback. Do not treat documentation work as authorization to start a paid analysis or change these funding/authentication policies.
 
 | Milestone | Deliverable                                                                                                                                                                                                                     | Acceptance                                                                                                                                                                                                                                          |

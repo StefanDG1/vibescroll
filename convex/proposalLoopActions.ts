@@ -33,7 +33,9 @@ export const generate = internalAction({
         },
         apiKey,
         deadline: c.deadline ?? 0,
-        onDispatch: () => {
+        onDispatch: async () => {
+          if (c.providerReservationId)
+            await ctx.runMutation(internal.proposalLoop.providerDispatch, args);
           requestStarted = true;
         },
         onReceipt: async (receipt) => {

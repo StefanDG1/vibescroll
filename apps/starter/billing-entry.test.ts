@@ -1,9 +1,13 @@
 import { afterEach, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ mutation: vi.fn() }));
+import { isValidElement, type ReactElement } from "react";
+const mock = vi.hoisted(() => ({ mutation: vi.fn(), query: vi.fn() }));
 vi.mock("@/lib/backend", () => ({
   backend: async () => mock,
   api: {
     organizations: { createPrivate: "personal", ensureDefault: "default" },
+    billing: { authorize: "authorize" },
+    commerce: { catalogue: "catalogue" },
+    product: { usage: "usage" },
   },
 }));
 vi.mock("next/navigation", () => ({
@@ -11,7 +15,17 @@ vi.mock("next/navigation", () => ({
     throw new Error(`redirect:${url}`);
   },
 }));
+vi.mock("./app/actions", () => ({
+  startV1Checkout: vi.fn(),
+  cancelV1Subscription: vi.fn(),
+  buyV1Credits: vi.fn(),
+  requestV1Refund: vi.fn(),
+  billingPortal: vi.fn(),
+  refreshBilling: vi.fn(),
+}));
 import Page from "./app/app/page";
+import BillingPage from "./app/app/[org]/billing/page";
+import { startV1Checkout, buyV1Credits, refreshBilling } from "./app/actions";
 afterEach(() => vi.resetAllMocks());
 it("opens personal Pro billing even when the selected workspace is a team", async () => {
   mock.mutation.mockResolvedValue("my-personal-account");
@@ -24,6 +38,80 @@ it("opens personal Pro billing even when the selected workspace is a team", asyn
     }),
   ).rejects.toThrow("redirect:/app/my-personal-account/billing?tier=pro");
   expect(mock.mutation).toHaveBeenCalledExactlyOnceWith("personal", {});
+});
+
+type Node = ReactElement<Record<string, any>>;
+function nodes(value: any): Node[] {
+  if (Array.isArray(value)) return value.flatMap(nodes);
+  if (!isValidElement(value)) return [];
+  return [
+    value as Node,
+    ...nodes((value.props as any).children),
+    ...nodes((value.props as any).action),
+  ];
+}
+function billingData(
+  billing: object | null,
+  wallet: object | null = null,
+  pools: object[] = [],
+) {
+  mock.query.mockImplementation(async (endpoint) =>
+    endpoint === "authorize"
+      ? { personal: true, billing }
+      : endpoint === "catalogue"
+        ? {
+            proOffer: { configured: true },
+            liveEnabled: true,
+            sandboxEnabled: false,
+            billingCountryRequired: false,
+            countries: [],
+          }
+        : { wallet, pools, entries: [], reservations: [] },
+  );
+}
+it("offers read-only reconciliation rather than a second checkout after an unverified checkout return", async () => {
+  billingData(null);
+  const tree = nodes(
+    await BillingPage({
+      params: Promise.resolve({ org: "personal" }),
+      searchParams: Promise.resolve({ checkout: "complete" }),
+    }),
+  );
+  expect(tree.some((node) => node.props.action === startV1Checkout)).toBe(
+    false,
+  );
+  expect(tree.some((node) => node.props.action === refreshBilling)).toBe(true);
+  expect(
+    tree.some(
+      (node) => node.props.title === "Check payment and credit delivery",
+    ),
+  ).toBe(true);
+  expect(mock.mutation).not.toHaveBeenCalled();
+});
+it("waits for the current subscription's allowance instead of offering another top-up against an old wallet", async () => {
+  const end = Date.now() + 86400000;
+  billingData(
+    { subscriptionId: "sub_current", status: "active", periodEnd: end },
+    { tier: "pro", granted: 300, spent: 0, reserved: 0, periodEnd: end },
+    [
+      {
+        kind: "included",
+        key: "sub_old:1",
+        granted: 300,
+        spent: 0,
+        reserved: 0,
+        expiresAt: end,
+      },
+    ],
+  );
+  const tree = nodes(
+    await BillingPage({ params: Promise.resolve({ org: "personal" }) }),
+  );
+  expect(
+    tree.some((node) => node.props.title === "Waiting for verified credits"),
+  ).toBe(true);
+  expect(tree.some((node) => node.props.action === buyV1Credits)).toBe(false);
+  expect(tree.some((node) => node.props.action === refreshBilling)).toBe(true);
 });
 it("keeps ordinary app entry on its selected workspace", async () => {
   mock.mutation.mockResolvedValue("team-account");

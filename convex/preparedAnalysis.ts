@@ -42,6 +42,7 @@ import { apiTranscriptResponse } from "../packages/contracts/transcription";
 import { preparedServiceRunPolicy } from "./lib/preparedServicePolicy";
 import { requirePaidProcessing } from "./lib/paidProcessing";
 import { settlePreparedCredits } from "./lib/preparedCredits";
+import { markProviderDispatch } from "./lib/providerFunding";
 import { requireProCatalogAccess } from "./lib/catalogEntitlement";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { openAiRunAuthority, reserveOpenAiGeneration } from "./lib/openAiGrant";
@@ -581,6 +582,44 @@ export const claim = internalMutation({
       },
     });
     return true;
+  },
+});
+
+export const providerDispatch = internalMutation({
+  args: {
+    runId: v.id("mediaPreparations"),
+    component: v.union(v.literal("analysis"), v.literal("transcription")),
+  },
+  returns: v.null(),
+  handler: async (ctx, { runId, component }) => {
+    const c = await active(ctx, runId);
+    ensure(
+      c.run.deadline > Date.now() &&
+        !["ready", "failed", "unknown"].includes(c.run.state),
+      "APPROVAL_STALE",
+      "Media authority expired before provider dispatch.",
+    );
+    const reservationId = c.run.receipt?.admission?.providerReservationId;
+    if (reservationId) {
+      const reservation = await ctx.db.get(
+        reservationId as Id<"providerFundingReservations">,
+      );
+      ensure(
+        reservation &&
+          reservation.operationKey === c.run.receipt.admission.reservationKey &&
+          reservation.requestHash === c.run.receipt.admission.quoteHash &&
+          (component === "analysis"
+            ? c.run.executor === "gateway" &&
+              !!c.run.evidenceId &&
+              !c.run.receipt.admission.quote.openAi
+            : !c.run.receipt.reusedPreparation),
+        "APPROVAL_STALE",
+        "The Gateway dispatch differs from its funded media operation.",
+      );
+      await requirePaidProcessing(ctx, c.actor);
+      await markProviderDispatch(ctx, reservationId, component);
+    }
+    return null;
   },
 });
 
@@ -1321,6 +1360,8 @@ export const gatewayRetryInput = internalQuery({
           maximumApiUsd: c.run.receipt?.gatewayRetry?.maximumApiUsd ?? 0.03,
           retryOrdinal: c.run.receipt?.gatewayRetry?.ordinal ?? 1,
           contributorAllowed: c.policy.contributorAllowed,
+          providerReservationId:
+            c.run.receipt?.admission?.providerReservationId ?? null,
         };
   },
 });

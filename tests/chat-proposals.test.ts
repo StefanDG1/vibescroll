@@ -5,6 +5,11 @@ import { api, internal } from "../convex/_generated/api";
 import { createKnowledgeHandler } from "../packages/mcp/server";
 import { tools as assistantHttpTools } from "../convex/assistantHttp";
 import {
+  chatProposalSaveOutput,
+  chatProposalReadOutput,
+} from "../packages/contracts/chat-proposals";
+import { proposalLoopInputs } from "../packages/contracts/proposal-loop";
+import {
   body,
   clientId,
   prepared,
@@ -35,7 +40,12 @@ it("saves a profile-level proposal in existing records and reopens it without mo
     creditsSpent: 0,
     analysisStarted: false,
     repositoryCodeIncluded: false,
+    next_action: {
+      tool: "get_proposal_discussion",
+      args: { profileId: f.org, proposalId: saved.proposalId },
+    },
   });
+  expect(chatProposalSaveOutput.parse(saved)).toEqual(saved);
   expect(
     await f.assistant.query(internal.assistantProposals.read, {
       proposalId: saved.proposalId,
@@ -55,6 +65,42 @@ it("saves a profile-level proposal in existing records and reopens it without mo
   );
   expect(await f.t.run((ctx) => ctx.db.get(f.sourceId))).toEqual(original);
   expect(network).not.toHaveBeenCalled();
+});
+
+it("returns an exact read-only discussion continuation on save and replay without expanding ordinary read/list packets", async () => {
+  const f = await prepared();
+  const saved = await f.save();
+  const replay = await f.save();
+  expect(replay.next_action).toEqual(saved.next_action);
+  expect(chatProposalSaveOutput.parse(replay).next_action).toEqual(
+    saved.next_action,
+  );
+  const args = proposalLoopInputs.get_proposal_discussion.parse(
+    saved.next_action.args,
+  );
+  expect(args).toEqual({
+    profileId: saved.profileId,
+    proposalId: saved.proposalId,
+  });
+  const discussion = await f.assistant.query(api.proposalLoop.read, {
+    proposalId: saved.next_action.args.proposalId,
+  });
+  expect(discussion?.proposalId).toBe(saved.proposalId);
+  const read = await f.assistant.query(internal.assistantProposals.read, {
+    proposalId: saved.proposalId,
+  });
+  expect(chatProposalReadOutput.parse(read)).not.toHaveProperty("next_action");
+  const list = await f.assistant.query(internal.assistantProposals.list, {
+    profileId: f.org,
+    detail: "summary",
+  });
+  expect(list.items[0]).not.toHaveProperty("next_action");
+  expect(
+    await f.t.run((ctx) => ctx.db.query("proposalOperations").take(1)),
+  ).toEqual([]);
+  expect(
+    await f.t.run((ctx) => ctx.db.query("mediaPreparations").take(1)),
+  ).toEqual([]);
 });
 
 it("coalesces duplicate create requests and rejects a reused key with different content", async () => {

@@ -187,6 +187,9 @@ it("renders ordinary fetched results as inline cards without changing headless c
   const value = {
     id: "source-id~2",
     profile_id: "profile",
+    grant_version: 1,
+    more_ideas: false,
+    scope_notice: "Synthetic granted result.",
     title: "Current result",
     text: '{"insights":[]}',
     url: "https://scroll.companynerve.com/app/profile/library/source-id",

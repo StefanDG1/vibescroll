@@ -4,6 +4,10 @@ import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { ActionForm } from "@/components/action-form";
 import { ChoiceSelect } from "@/components/choice-select";
 import { ProOfferSummary } from "@/components/pro-offer-summary";
+import { CreditMeter } from "@/components/assistant-elements/credit-meter";
+import { ErrorState } from "@/components/assistant-elements/error-state";
+import { usageOverview } from "../../../../../../packages/billing/usage-overview";
+import { billingRecovery } from "@/lib/processing-recovery";
 import {
   startV1Checkout,
   cancelV1Subscription,
@@ -14,8 +18,10 @@ import {
 } from "@/app/actions";
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ org: string }>;
+  searchParams?: Promise<{ checkout?: string }>;
 }) {
   const { org } = await params,
     c = await backend(),
@@ -32,6 +38,14 @@ export default async function Page({
     auth.billing?.subscriptionId &&
     !["free", "canceled", "incomplete_expired"].includes(auth.billing.status),
   );
+  const returned = (await searchParams)?.checkout === "complete";
+  const recovery = billingRecovery({
+    billing: auth.billing,
+    wallet: usage.wallet,
+    pools: usage.pools,
+    checkoutReturned: returned,
+  });
+  const overview = usageOverview(usage);
   return (
     <main id="main" className="doc">
       <Link prefetch={false} href={`/app/${org}`}>
@@ -48,6 +62,32 @@ export default async function Page({
           {usage.wallet?.tier ?? "No wallet yet"}. Provider status:{" "}
           {auth.billing?.status ?? "No subscription"}.
         </p>
+        {overview && (
+          <CreditMeter
+            used={overview.activeSpent}
+            reserved={overview.activeReserved}
+            available={overview.available}
+          />
+        )}
+        {recovery && (
+          <ErrorState
+            title={recovery.title}
+            detail={recovery.detail}
+            tone="attention"
+            action={
+              <ActionForm
+                action={refreshBilling}
+                label="Reconcile payment and credits"
+              >
+                <input type="hidden" name="organizationId" value={org} />
+              </ActionForm>
+            }
+          />
+        )}
+        <p className="fine">
+          Reserved credits are holds, not final charges. Provider capacity is
+          separate from your personal balance.
+        </p>
         <p>
           Included credits expire at their entitlement period end. Purchased
           credits are tracked separately and are not confiscated when renewal
@@ -60,7 +100,7 @@ export default async function Page({
           Credits cover quoted work. Cached results for posts you request are
           included; full-catalog browsing is separate.
         </p>
-        {offerReady && auth.personal && !hasSubscription ? (
+        {offerReady && auth.personal && !hasSubscription && !recovery ? (
           <ActionForm
             action={startV1Checkout}
             label={
@@ -120,11 +160,13 @@ export default async function Page({
           </ActionForm>
         ) : (
           <p>
-            {hasSubscription
-              ? "Your subscription controls are below."
-              : !auth.personal
-                ? "Subscribe from your personal account. Each workspace member uses their own Pro and credits."
-                : "The new Pro offer is not open for checkout yet. Your existing balance remains available."}
+            {recovery
+              ? "Resolve the existing payment or allowance state above before opening another checkout."
+              : hasSubscription
+                ? "Your subscription controls are below."
+                : !auth.personal
+                  ? "Subscribe from your personal account. Each workspace member uses their own Pro and credits."
+                  : "The new Pro offer is not open for checkout yet. Your existing balance remains available."}
           </p>
         )}
       </section>
@@ -151,10 +193,15 @@ export default async function Page({
           <ActionForm action={billingPortal} label="Open billing portal">
             <input type="hidden" name="organizationId" value={org} />
           </ActionForm>
-          <ActionForm action={refreshBilling} label="Reconcile provider status">
-            <input type="hidden" name="organizationId" value={org} />
-          </ActionForm>
-          {(catalogue.sandboxEnabled || catalogue.liveEnabled) && (
+          {!recovery && (
+            <ActionForm
+              action={refreshBilling}
+              label="Reconcile provider status"
+            >
+              <input type="hidden" name="organizationId" value={org} />
+            </ActionForm>
+          )}
+          {!recovery && (catalogue.sandboxEnabled || catalogue.liveEnabled) && (
             <ActionForm
               action={buyV1Credits}
               label={

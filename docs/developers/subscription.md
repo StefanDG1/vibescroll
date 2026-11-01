@@ -13,6 +13,8 @@ Yes, you can use the model allowance of your signed-in ChatGPT or Codex host for
 
 Calling an API-start tool from a subscribed chat does not change its funding route. Conversely, saving a plan written by the chat does not require another API model to rewrite it. Source retrieval, transcription, storage and database delivery can still have infrastructure cost even when reasoning uses the host's allowance.
 
+Personal credits and provider funding are separate. A quote maximum is a temporary upper bound; the final charge settles once under the quoted tariff. Cached ready reuse starts no new analysis charge. VibeScroll reserves finite provider capacity before dispatch, keeps ambiguous usage held and stops new work when that capacity is unavailable. Buying personal credits cannot repair unavailable provider capacity, and the service does not purchase funding automatically.
+
 ## Two authentications, with different purposes
 
 You sign in to ChatGPT/Codex to use its model and product features. That session remains with OpenAI. Codex's supported ChatGPT sign-in provides subscription access; API-key sign-in uses API billing instead. See [OpenAI authentication](https://learn.chatgpt.com/docs/auth).

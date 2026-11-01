@@ -1,4 +1,5 @@
 import { assistantTables } from "./assistantSchema";
+import { providerFundingTables } from "./providerFundingSchema";
 import { postEngagementTables } from "./postEngagementSchema";
 import { projectRecommendationTables } from "./projectRecommendationSchema";
 import { preparedAnalysisTables } from "./preparedAnalysisSchema";
@@ -25,6 +26,7 @@ export const role = v.union(
   v.literal("viewer"),
 );
 export default defineSchema({
+  ...providerFundingTables,
   ...billingRiskTables,
   ...postEngagementTables,
   ...projectRecommendationTables,

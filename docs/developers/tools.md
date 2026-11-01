@@ -1,4 +1,6 @@
-The registry below is generated from `packages/mcp/server.ts` by a synthetic `tools/list` request. It executes no tool and uses no real account. Expand a tool to inspect its complete description, input schema, OAuth scopes and side-effect hints.
+The reference groups tools by the action you want to perform. Filters connect workflows, packaged skills, effects and funding. Search and the alphabetical index preserve direct lookup. Existing tool names and permanent anchors remain unchanged.
+
+The descriptors come from `packages/mcp/server.ts` through a synthetic `tools/list` request. That request executes no tool and uses no real account. Group, skill and workflow labels come from `packages/mcp/tool-guide.ts`. The runtime remains the authority for schemas, scopes and annotations.
 
 ## Availability and versioning
 
@@ -23,3 +25,5 @@ The server validates inputs with strict schemas. Most outputs currently have no 
 ## Generated descriptors
 
 Each tool below has a permanent anchor. `readOnlyHint` describes the requested operation, not all transport overhead: even a library read currently performs authenticated throttling. `idempotentHint` is a client hint; writes still require their exact version/idempotency bindings. OAuth scopes are necessary but current membership, grants and funding checks remain authoritative.
+
+The funding label **No AI generation** describes the tool's model behavior. It does not mean that authentication, database reads, storage or external services have no infrastructure cost. **Quote** reserves nothing. A start tool still requires the exact returned quote and current authority. See [funding routes](/docs/mcp/subscription) before choosing one.

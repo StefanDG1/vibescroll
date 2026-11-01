@@ -13,6 +13,14 @@ const prefunded = z.strictObject({
   priorExposureNanoUsd: z.number().int().nonnegative().max(1000000000000),
 });
 
+const monetary = prefunded.omit({ version: true, maximumJobs: true }).extend({
+  version: z.literal("paid-processing-monetary-v2"),
+  maximumJobs: z.never().optional(),
+  maximumJobNanoUsd: z.number().int().positive().max(100000000),
+  operatingPoolNanoUsd: z.number().int().positive().max(1000000000000),
+});
+export type MonetaryProcessingPolicy = z.infer<typeof monetary>;
+
 // One slot conservatively retains a full USD0.05 envelope, even for cheaper
 // plans/returned failures. Unknown requests cannot replenish this funding.
 export function paidProcessingConfiguration(
@@ -20,18 +28,26 @@ export function paidProcessingConfiguration(
   now = Date.now(),
 ) {
   try {
-    const p = prefunded.parse(
-      JSON.parse(env.PAID_PROCESSING_CONFIGURATION_JSON ?? "null"),
-    );
+    const p = z
+      .discriminatedUnion("version", [prefunded, monetary])
+      .parse(JSON.parse(env.PAID_PROCESSING_CONFIGURATION_JSON ?? "null"));
     const exposure =
-      p.maximumJobs * p.maximumJobNanoUsd + p.priorExposureNanoUsd;
+      (p.version === "paid-processing-prefunded-v1"
+        ? p.maximumJobs * p.maximumJobNanoUsd
+        : p.maximumJobNanoUsd) + p.priorExposureNanoUsd;
     return env.RESTORE_LOCK !== "true" &&
       env.DISABLE_INFERENCE !== "true" &&
       p.verifiedAt <= now &&
       p.expiresAt > now &&
       p.expiresAt - p.verifiedAt <= 30 * 86400000 &&
       exposure <=
-        Math.min(p.verifiedProviderCreditNanoUsd, p.providerKeyBudgetNanoUsd)
+        Math.min(
+          p.verifiedProviderCreditNanoUsd,
+          p.providerKeyBudgetNanoUsd,
+          p.version === "paid-processing-monetary-v2"
+            ? p.priorExposureNanoUsd + p.operatingPoolNanoUsd
+            : Number.MAX_SAFE_INTEGER,
+        )
       ? p
       : null;
   } catch {

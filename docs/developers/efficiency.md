@@ -21,10 +21,10 @@ Sending fewer JSON fields can reduce response/context size while still reading t
 
 ## Current trade-offs
 
-- Selected-profile discovery returns up to five full project profiles. Listing small metadata first and fetching one selected project's context would reduce unnecessary context transfer.
+- `get_profile(detail="summary")` returns project identifiers and version metadata without profile bodies or evaluations. Omit `detail` for the compatible full response. Fetch the selected project's actual context only when needed.
 - Search matches text in application code after examining five permitted posts. An authorized full-text projection/index could reduce repeated calls for larger libraries. Today callers must respect coverage and follow cursors.
-- Ordinary results contain the same JSON in both text and structured content. `fetch` also serializes its analysis inside a nested `text` field. Do not assume a host deduplicates these for token accounting.
-- Proposal listing validates authorized snapshots before returning metadata. A small authorization-preserving summary path could avoid detail work on a listing.
+- Ordinary results contain the same JSON in both text and structured content. `fetch(format="structured_v1")` supplies an `analysis` object and short readable text; the default legacy response keeps serialized analysis in `text`. Do not assume a host deduplicates text and structured data for token accounting.
+- `list_project_proposals(detail="summary")` omits plan bodies and handoff snapshots. It preserves current project/source authorization and context checks. Full detail remains the default for older clients.
 - A retained JPEG read includes two authorization queries, one read acknowledgment mutation and one storage GET, in addition to ordinary HTTP authentication. Those integrity/access checks are not just a plain string lookup.
 
 ## Shared cache structure
@@ -33,12 +33,21 @@ Keep immutable neutral analysis and evidence under exact canonical post/version 
 
 Permission changes must take effect on later reads. Do not put authenticated MCP results or private project context in a public CDN cache to improve hit rates. Use small metadata views and exact authorized detail reads instead.
 
-## Proposed improvements, not yet implemented
+## Measurement and compatibility
 
-1. Measure sanitized per-operation duration and response/image bytes; compare them with actual Convex reads and function metrics. Never log tokens, transcripts or private project bodies.
-2. Add metadata-first project discovery with a compatibility path for existing clients.
-3. Introduce indexed, tenant-authorized knowledge search when measurements justify the change.
-4. Test a versioned compact output format in ChatGPT and Codex before removing duplicate/nested JSON.
-5. Use meaningful Events and bounded status reconciliation rather than rapid repeated polling.
+The optional `MCP_MEASUREMENT_SAMPLE_RATE` setting accepts a sample rate from 0 to 1 and defaults to 0. Its scalar observations contain operation, boundary, elapsed time, serialized response bytes, decoded image bytes and outcome. They contain no arguments, source text, tokens, account IDs or new database writes. Backend forwarding and tool-presentation spans overlap; do not add their durations. Tool-presentation bytes precede SDK framing and metadata.
 
-These changes require acceptance tests against current grants, shared selections and old clients. They are recommendations from source inspection, not deployed savings or measured performance claims.
+Synthetic authorized fixtures produced these UTF-8 measurements. These are not production billing or host-token estimates.
+
+| Fixture          | Backend response bytes | Application MCP result bytes | Instrumented db.get / query calls |
+| ---------------- | ---------------------: | ---------------------------: | --------------------------------: |
+| Profile full     |                   6248 |                        12737 |                              2 /6 |
+| Profile summary  |                    831 |                         1897 |                              2 /5 |
+| Fetch legacy     |                   1519 |                         3435 |                              4 /3 |
+| Fetch structured |                   1505 |                         3317 |                              4 /3 |
+
+The summary removes one evaluation query. Query-local memoization also avoids duplicate document reads during discovery and proposal listing without carrying access across requests. These operations can still read the same whole repository document, so smaller JSON does not prove less database bandwidth. The structured fetch primarily improves field access; this fixture shows only a small byte reduction. Keep text-only compatibility until actual host acceptance justifies further changes.
+
+Search reports `scanned_posts`, `matched_items`, `has_more`, `exhausted` and `truncated`. Prefer `next_cursor` for both library and older source grants: it resumes overflow within the same candidate page before moving to later posts. It binds the query, current access and source/version fingerprint; changed evidence requires a fresh search. `next_offset` remains compatible legacy post-page navigation and cannot recover within-page overflow by itself. The 128-idea scan cap remains explicit. This bounded scan is not an exhaustive full-text index. The reproduced omission was a continuation defect, not evidence that a populated search-index migration would improve latency; that migration requires a measured need.
+
+Use meaningful Events and bounded reconciliation rather than rapid polling. Live AuthKit, membership, grant and source checks remain in place. Authorization metadata is not cached across callers to claim faster access.

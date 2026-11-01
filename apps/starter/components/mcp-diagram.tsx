@@ -28,6 +28,126 @@ function Connector({ label }: { label: string }) {
 }
 
 export function McpDiagram({ kind }: { kind: string }) {
+  if (kind === "journey") {
+    const steps = [
+      ["Save or find", "A link or an existing post", "Metadata first"],
+      ["Get insights", "Reuse a result or analyze", "Explicit funding route"],
+      ["Discuss a plan", "Use the post with a project", "One durable proposal"],
+      ["Create the issue", "Approve its exact version", "No automatic coding"],
+      [
+        "Follow the work",
+        "Read observations and reports",
+        "Evidence has provenance",
+      ],
+    ];
+    return (
+      <figure
+        className="mcp-diagram"
+        aria-label="From a saved post to project work and feedback"
+      >
+        <ol className="flow-journey">
+          {steps.map(([title, text, badge], index) => (
+            <li key={title}>
+              <span className="flow-step-number">{index + 1}</span>
+              <Node title={title} badge={badge}>
+                {text}
+              </Node>
+              {index < steps.length - 1 && (
+                <ArrowRight aria-hidden="true" size={16} />
+              )}
+            </li>
+          ))}
+        </ol>
+        <figcaption>
+          Reopen the same saved records from the app or another authorized chat.
+          A queued step is not a finished result.
+        </figcaption>
+      </figure>
+    );
+  }
+  if (kind === "versions" || kind === "feedback") {
+    const versions = kind === "versions";
+    return (
+      <figure
+        className="mcp-diagram"
+        aria-label={
+          versions
+            ? "Keep the selected analysis while reviewing a candidate"
+            : "Two evidence paths return to the same saved work"
+        }
+      >
+        <div className="flow-start">
+          <Node
+            title={
+              versions ? "Request reanalysis" : "One approved GitHub issue"
+            }
+          >
+            {versions
+              ? "Reuse compatible preparation and keep the current result."
+              : "The saved proposal binds its repository, issue and approved version."}
+          </Node>
+        </div>
+        <div className="flow-fork" aria-hidden="true">
+          <span />
+          <ArrowDown size={20} />
+          <ArrowDown size={20} />
+        </div>
+        <div className="flow-branches">
+          <section>
+            <p className="flow-path">
+              {versions ? "Already selected" : "Provider observations"}
+            </p>
+            <Node
+              title={versions ? "Incumbent result" : "Signed GitHub events"}
+              badge={
+                versions ? "Still usable" : "Verified source, bounded facts"
+              }
+            >
+              {versions
+                ? "Its insights, evidence and project references stay intact."
+                : "Issue, PR or check state. An event does not prove business benefit."}
+            </Node>
+          </section>
+          <section>
+            <p className="flow-path">
+              {versions ? "New attempt" : "Explicit reports"}
+            </p>
+            <Node
+              title={
+                versions ? "Candidate version" : "Assistant or user feedback"
+              }
+              badge={
+                versions
+                  ? "Quoted work; separate provenance"
+                  : "Attributed report"
+              }
+            >
+              {versions
+                ? "Review its output, coverage and model provenance when ready."
+                : "Completion, test claims or review notes remain separate from provider facts."}
+            </Node>
+          </section>
+        </div>
+        <div className="flow-join" aria-hidden="true">
+          <span />
+          <ArrowDown size={20} />
+        </div>
+        <div className="flow-start">
+          <Node title={versions ? "Compare and select" : "One work record"}>
+            {versions
+              ? "Select the version you want, retaining history and rollback."
+              : "Resume the proposal and see what was observed, reported or still unknown."}
+          </Node>
+        </div>
+        <figcaption>
+          {versions
+            ? "A model name or higher reasoning setting alone does not prove better output."
+            : "The current provider permissions and exact saved binding remain required."}
+        </figcaption>
+      </figure>
+    );
+  }
+  if (!["architecture", "cache", "funding"].includes(kind)) return null;
   if (kind === "architecture")
     return (
       <figure

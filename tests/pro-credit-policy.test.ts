@@ -11,6 +11,8 @@ import {
 } from "../packages/billing/credit-policy";
 import { proCandidateVersion } from "../packages/billing/pro-migration-preview";
 import { reserve, settle } from "../convex/product";
+import rateLimiterTest from "@convex-dev/rate-limiter/test";
+import { requirePaidProcessing } from "../convex/lib/paidProcessing";
 
 const mocks = vi.hoisted(() => ({
   account: vi.fn(),
@@ -21,6 +23,10 @@ const mocks = vi.hoisted(() => ({
   charge: vi.fn(),
   invoicePayments: vi.fn(),
   invoice: vi.fn(),
+  price: vi.fn(),
+  checkout: vi.fn(),
+  checkoutRetrieve: vi.fn(),
+  portalConfig: vi.fn(),
 }));
 vi.mock("stripe", async (original) => {
   const actual = await original<typeof import("stripe")>();
@@ -38,6 +44,14 @@ vi.mock("stripe", async (original) => {
           charges: { retrieve: mocks.charge },
           invoicePayments: { list: mocks.invoicePayments },
           invoices: { retrieve: mocks.invoice },
+          prices: { retrieve: mocks.price },
+          checkout: {
+            sessions: {
+              create: mocks.checkout,
+              retrieve: mocks.checkoutRetrieve,
+            },
+          },
+          billingPortal: { configurations: { retrieve: mocks.portalConfig } },
         });
         return stripe;
       }
@@ -139,6 +153,8 @@ function subscription(interval: keyof typeof intervalInfo = "monthly") {
   };
 }
 afterEach(() => {
+  vi.clearAllTimers();
+  vi.useRealTimers();
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
   vi.resetAllMocks();
@@ -791,3 +807,356 @@ it.skipIf(!providerReceipt)(
     }
   },
 );
+
+it("joins fresh personal checkout, signed payment and top-up delivery, paid admission, renewal recovery and personal team funding without losing unknown holds", async () => {
+  vi.useFakeTimers();
+  const s = await setup();
+  rateLimiterTest.register(s.t);
+  for (const [key, value] of Object.entries({
+    APP_URL: "https://example.test",
+    STRIPE_BILLING_ROUTE: "managed_payments",
+    STRIPE_PRO_PORTAL_CONFIG_ID: "bpc_cross_flow",
+    STRIPE_TOPUP_200_PRICE_ID: "price_cross_topup",
+    VERCEL_AI_GATEWAY_API_KEY: "synthetic-no-provider-calls",
+    PREPARED_ANALYSIS_CONFIGURATION_JSON: JSON.stringify({
+      version: "prepared-service-v1",
+      id: "cross-flow-media",
+      enabled: true,
+      subjects: ["user_99999999999999999999999999"],
+      maximumDurationMs: 600000,
+      maximumApiUsd: 0.05,
+      maximumDailyJobs: 10,
+      maximumHourlyJobs: 5,
+      maximumTotalJobs: 100,
+      contributorAllowed: true,
+      providerPermissionReference: "Synthetic isolated flow permission",
+      catalogPublicationAllowed: true,
+    }),
+    PROPOSAL_SERVICE_CONFIGURATION_JSON: JSON.stringify({
+      version: "proposal-service-v1",
+      enabled: true,
+      privateProjectContextAllowed: true,
+      permissionReference: "Synthetic isolated plan permission",
+    }),
+    PAID_PROCESSING_CONFIGURATION_JSON: JSON.stringify({
+      version: "paid-processing-monetary-v2",
+      id: "cross-flow-funding",
+      enabled: true,
+      operatingPoolNanoUsd: 900000000,
+      verifiedAt: now - 1000,
+      expiresAt: now + 29 * 86400000,
+      maximumJobNanoUsd: 50000000,
+      verifiedProviderCreditNanoUsd: 1000000000,
+      providerKeyBudgetNanoUsd: 1000000000,
+      priorExposureNanoUsd: 100000000,
+    }),
+  }))
+    vi.stubEnv(key, value);
+  mocks.portalConfig.mockResolvedValue({
+    active: true,
+    livemode: false,
+    features: {
+      subscription_update: { enabled: false },
+      subscription_cancel: { enabled: true },
+      payment_method_update: { enabled: true },
+      invoice_history: { enabled: true },
+    },
+  });
+  mocks.price.mockImplementation(async (id: string) =>
+    id === "price_cross_topup"
+      ? {
+          id,
+          active: true,
+          livemode: false,
+          recurring: null,
+          unit_amount: 1700,
+          currency: "eur",
+          tax_behavior: "inclusive",
+          metadata: { product: "vibescroller" },
+        }
+      : structuredClone(s.sub.items.data[0].price),
+  );
+  mocks.checkout.mockResolvedValue({
+    url: "https://checkout.stripe.com/cross-flow-synthetic",
+  });
+  mocks.subscriptions.mockResolvedValue({ data: [], has_more: false });
+  const fresh = await s.ledger();
+  expect(fresh.periods).toHaveLength(0);
+  expect(fresh.wallets.every((w) => w.granted === 0 && w.purchased === 0)).toBe(
+    true,
+  );
+  const checkoutArgs = {
+    organizationId: s.org,
+    tier: "pro" as const,
+    interval: "monthly" as const,
+    country: "RO",
+    termsAccepted: true,
+    immediateService: false,
+  };
+  await s.user.action(api.billingV1.checkout, checkoutArgs);
+  await s.user.action(api.billingV1.checkout, checkoutArgs);
+  const checkoutRequest = mocks.checkout.mock.calls[0][0];
+  expect(checkoutRequest).toMatchObject({
+    mode: "subscription",
+    line_items: [{ price: config.prices.monthly, quantity: 1 }],
+    managed_payments: { enabled: true },
+  });
+  expect(mocks.checkout.mock.calls[0][1].idempotencyKey).toBe(
+    mocks.checkout.mock.calls[1][1].idempotencyKey,
+  );
+  expect((await s.ledger()).periods).toHaveLength(0);
+  mocks.subscriptions.mockImplementation(async () => ({
+    data: [structuredClone(s.sub)],
+    has_more: false,
+  }));
+  expect(
+    (await s.deliver("evt_cross_bad", "invoice.paid", "t=1,v1=invalid")).status,
+  ).toBe(400);
+  expect((await s.deliver("evt_cross_initial")).status).toBe(200);
+  expect((await s.deliver("evt_cross_initial")).status).toBe(200);
+  expect((await s.ledger()).wallets[0]).toMatchObject({
+    granted: 300,
+    purchased: 0,
+    reserved: 0,
+  });
+  expect(
+    (
+      await s.deliver(
+        "evt_cross_checkout_complete",
+        "checkout.session.completed",
+        undefined,
+        undefined,
+        {
+          id: "cs_cross_subscription",
+          mode: "subscription",
+          payment_status: "paid",
+          customer: "cus_synthetic",
+          metadata: checkoutRequest.metadata,
+        },
+      )
+    ).status,
+  ).toBe(200);
+  await s.user.action(api.billingV1.topup, {
+    organizationId: s.org,
+    pack: "200",
+    country: "RO",
+    termsAccepted: true,
+    immediateService: false,
+  });
+  const topupRequest = mocks.checkout.mock.calls.at(-1)![0];
+  const paidTopup = {
+    id: "cs_cross_topup",
+    mode: "payment",
+    payment_status: "paid",
+    livemode: false,
+    customer: "cus_synthetic",
+    payment_intent: "pi_cross_topup",
+    amount_total: 1700,
+    metadata: topupRequest.metadata,
+    line_items: {
+      has_more: false,
+      data: [{ quantity: 1, price: { id: "price_cross_topup" } }],
+    },
+  };
+  mocks.checkoutRetrieve.mockResolvedValue(paidTopup);
+  expect(
+    (
+      await s.deliver(
+        "evt_cross_topup",
+        "checkout.session.completed",
+        undefined,
+        undefined,
+        paidTopup,
+      )
+    ).status,
+  ).toBe(200);
+  expect(
+    (
+      await s.deliver(
+        "evt_cross_topup",
+        "checkout.session.completed",
+        undefined,
+        undefined,
+        paidTopup,
+      )
+    ).status,
+  ).toBe(200);
+  expect((await s.ledger()).wallets[0]).toMatchObject({
+    granted: 300,
+    purchased: 200,
+    reserved: 0,
+  });
+  const sourceId = await s.user.mutation(api.product.capture, {
+    organizationId: s.org,
+    key: "cross-flow-saved-post",
+    kind: "url",
+    url: "https://www.instagram.com/reel/CROSS_FLOW_SYNTHETIC/",
+    title: "Synthetic paid-user source",
+    rightsAttested: true,
+  });
+  const quote = await s.user.query(api.preparedService.quote, {
+    sourceId,
+    executor: "gateway",
+  });
+  const startArgs = {
+    sourceId,
+    executor: "gateway" as const,
+    key: "cross-flow-paid-operation",
+    quoteHash: quote.quoteHash,
+    maximumCredits: quote.maximumCredits,
+  };
+  const started = await s.user.mutation(api.preparedService.start, startArgs);
+  const replay = await s.user.mutation(api.preparedService.start, startArgs);
+  expect(replay.runId).toBe(started.runId);
+  await s.t.mutation(internal.preparedAnalysis.claim, {
+    runId: started.runId!,
+  });
+  await s.t.mutation(internal.preparedAnalysis.progress, {
+    runId: started.runId!,
+    stage: "transcribing",
+  });
+  await s.t.mutation(internal.preparedAnalysis.providerDispatch, {
+    runId: started.runId!,
+    component: "transcription",
+  });
+  await s.t.mutation(internal.preparedAnalysis.fail, {
+    runId: started.runId!,
+    code: "PROVIDER_TIMEOUT",
+  });
+  const reserved = (await s.ledger()).wallets[0].reserved;
+  expect(reserved).toBe(quote.maximumCredits);
+  const providerBefore = await s.t.run((ctx) =>
+    ctx.db.query("providerFundingReservations").unique(),
+  );
+  expect(providerBefore).toMatchObject({
+    maximumNanoUsd: 50000000,
+    dispatches: ["transcription"],
+  });
+  expect((await s.t.run((ctx) => ctx.db.get(started.runId!)))?.state).toBe(
+    "unknown",
+  );
+  const team = await s.user.mutation(api.organizations.createTeam, {
+    name: "Synthetic personal-funded team",
+  });
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("wallets")
+        .withIndex("by_org", (q) => q.eq("organizationId", team))
+        .unique(),
+    ),
+  ).toBeNull();
+  await s.t.mutation(internal.accounts.syncUser, {
+    subject: "cross-flow-unpaid-member",
+    email: "member@example.test",
+    name: "Synthetic member",
+  });
+  const member = s.t.withIdentity({ subject: "cross-flow-unpaid-member" });
+  const memberPersonal = await member.mutation(
+    api.organizations.createPrivate,
+    {},
+  );
+  const memberDoc = await s.t.run(async (ctx) => {
+    const actor = (await ctx.db
+      .query("users")
+      .withIndex("by_subject", (q) =>
+        q.eq("subject", "cross-flow-unpaid-member"),
+      )
+      .unique())!;
+    await ctx.db.insert("memberships", {
+      organizationId: team,
+      userId: actor._id,
+      role: "member",
+    });
+    return actor;
+  });
+  await expect(
+    s.t.run((ctx) => requirePaidProcessing(ctx, memberDoc)),
+  ).rejects.toThrow("active Pro");
+  expect(
+    (
+      await s.t.run((ctx) =>
+        ctx.db
+          .query("wallets")
+          .withIndex("by_org", (q) => q.eq("organizationId", memberPersonal))
+          .unique(),
+      )
+    )?.granted ?? 0,
+  ).toBe(0);
+  const beforeRenewal = await s.ledger();
+  const renewalStart = intervalInfo.monthly.end;
+  vi.mocked(Date.now).mockReturnValue(renewalStart + 2000);
+  // Reverification in this synthetic clock changes no money or policy identity.
+  const funding = JSON.parse(process.env.PAID_PROCESSING_CONFIGURATION_JSON!);
+  vi.stubEnv(
+    "PAID_PROCESSING_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...funding,
+      verifiedAt: Date.now() - 1000,
+      expiresAt: Date.now() + 86400000,
+    }),
+  );
+  movePeriod(s.sub, renewalStart, Date.UTC(2027, 0, 31, 12));
+  s.sub.status = "past_due";
+  s.sub.latest_invoice.status = "open";
+  s.sub.latest_invoice.amount_paid = 0;
+  s.sub.latest_invoice.amount_remaining = 3500;
+  expect(
+    (await s.deliver("evt_cross_failed_renewal", "invoice.payment_failed"))
+      .status,
+  ).toBe(200);
+  await expect(
+    s.user.query(api.preparedService.quote, { sourceId, executor: "gateway" }),
+  ).rejects.toThrow();
+  expect((await s.ledger()).wallets[0]).toMatchObject({
+    purchased: 200,
+    reserved,
+  });
+  s.sub.status = "active";
+  s.sub.latest_invoice.status = "paid";
+  s.sub.latest_invoice.amount_paid = 3500;
+  s.sub.latest_invoice.amount_remaining = 0;
+  expect((await s.deliver("evt_cross_recovered")).status).toBe(200);
+  expect((await s.deliver("evt_cross_recovered")).status).toBe(200);
+  // A delayed old event triggers a current provider snapshot, not a stale credit grant.
+  expect((await s.deliver("evt_cross_initial")).status).toBe(200);
+  const recoveredQuote = await s.user.query(api.preparedService.quote, {
+    sourceId,
+    executor: "gateway",
+  });
+  await expect(
+    s.user.mutation(api.preparedService.start, {
+      ...startArgs,
+      key: "cross-flow-preserve-unknown",
+      quoteHash: recoveredQuote.quoteHash,
+      maximumCredits: recoveredQuote.maximumCredits,
+    }),
+  ).rejects.toThrow("SOURCE_BUSY");
+  const afterRenewal = await s.ledger();
+  expect(afterRenewal.periods).toHaveLength(2);
+  expect(afterRenewal.wallets[0]).toMatchObject({ purchased: 200, reserved });
+  expect(afterRenewal.pools.find((p) => p.kind === "purchased")).toEqual(
+    beforeRenewal.pools.find((p) => p.kind === "purchased"),
+  );
+  expect(await s.t.run((ctx) => ctx.db.get(providerBefore!._id))).toEqual(
+    providerBefore,
+  );
+  s.sub.status = "canceled";
+  expect(
+    (await s.deliver("evt_cross_canceled", "customer.subscription.deleted"))
+      .status,
+  ).toBe(200);
+  await expect(
+    s.user.query(api.preparedService.quote, { sourceId, executor: "gateway" }),
+  ).rejects.toThrow();
+  expect((await s.ledger()).wallets[0]).toMatchObject({
+    purchased: 200,
+    reserved,
+  });
+  expect(await s.t.run((ctx) => ctx.db.get(providerBefore!._id))).toEqual(
+    providerBefore,
+  );
+  expect(
+    await s.t.run((ctx) => ctx.db.query("providerFundingPools").unique()),
+  ).toMatchObject({ heldNanoUsd: 50000000, spentNanoUsd: 0 });
+});

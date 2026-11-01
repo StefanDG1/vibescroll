@@ -3,6 +3,11 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "../../../convex/_generated/api";
 import { useProposalLive } from "./use-source-live";
+import {
+  confirmedProcessingRejection,
+  processingRecovery,
+  type ProcessingRecovery,
+} from "./processing-recovery";
 
 type Snapshot = FunctionReturnType<typeof api.proposalLoop.read>;
 type Call = (operation: string, args: unknown) => Promise<any>;
@@ -13,6 +18,7 @@ export function useProposalWork(
 ) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>();
   const [error, setError] = useState("");
+  const [recovery, setRecovery] = useState<ProcessingRecovery>();
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState("");
   const [uncertain, setUncertain] = useState(false);
@@ -120,8 +126,13 @@ export function useProposalWork(
       .then((value) => {
         if (current) setQuote(value);
       })
-      .catch(() => {
-        if (current) setQuote(undefined);
+      .catch((error) => {
+        if (current) {
+          const reason = processingRecovery(error, "quote");
+          setQuote(undefined);
+          setRecovery(reason);
+          setError(reason.detail);
+        }
       });
     return () => {
       current = false;
@@ -146,14 +157,13 @@ export function useProposalWork(
     flight.current = true;
     setBusy(true);
     setError("");
+    setRecovery(undefined);
     try {
       await fn();
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Could not confirm this action. Check its status before retrying.",
-      );
+      const reason = processingRecovery(e, pending.current ? "start" : "quote");
+      setRecovery(reason);
+      setError(reason.detail);
     } finally {
       flight.current = false;
       setBusy(false);
@@ -189,14 +199,10 @@ export function useProposalWork(
       }
       return result;
     } catch (e) {
-      if (
-        e &&
-        typeof e === "object" &&
-        "outcome" in e &&
-        e.outcome === "rejected"
-      ) {
+      if (confirmedProcessingRejection(e)) {
         pending.current = null;
         setUncertain(false);
+        setQuote(undefined);
         try {
           if (draftKey) localStorage.removeItem(`${draftKey}:request`);
         } catch {
@@ -209,6 +215,7 @@ export function useProposalWork(
   return {
     snapshot,
     error,
+    recovery,
     busy,
     draft,
     updateDraft,
@@ -277,6 +284,8 @@ export function useProposalWork(
       }),
     getQuote: () =>
       run(async () => {
+        setQuote(undefined);
+        await refresh();
         if (call) setQuote(await call("proposalPlanQuote", { proposalId }));
       }),
     generate: () =>

@@ -12,6 +12,11 @@ import { cloudRetryEligible } from "../packages/contracts/cloud-retry";
 import { projectCategoryMatches } from "../packages/contracts/project-application";
 import { socialAnalysisOutput } from "../packages/social/analysis";
 import { neutralCloudAnalysis } from "../packages/contracts/cloud-catalog";
+import {
+  knowledgeSearchCursor,
+  type KnowledgeReadAnalysis,
+  type KnowledgeSearchCoverage,
+} from "../packages/contracts/knowledge-read";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { captureAuthorized, digest, startSource } from "./product";
 import {
@@ -66,6 +71,38 @@ import {
   assertReferences,
 } from "../packages/knowledge/contracts";
 const profile = { profileId: v.optional(v.id("organizations")) };
+const knowledgeReadReferenceValue = v.object({
+  sourceId: v.id("sources"),
+  generation: v.number(),
+  revision: v.number(),
+  analysisVersionId: v.optional(v.id("analysisVersions")),
+  insightId: v.optional(v.string()),
+});
+const knowledgeReadAnalysisValue = v.object({
+  state: v.string(),
+  coverage: v.string(),
+  insights: v.array(
+    v.object({
+      id: v.string(),
+      title: v.string(),
+      claim: v.string(),
+      reference: knowledgeReadReferenceValue,
+      // Existing citation serializers own the legacy, typed-source and media
+      // metadata variants. No underlying excerpt, frame or object URL is added.
+      evidence: v.array(v.any()),
+    }),
+  ),
+  sourceRevisionId: v.optional(v.union(v.id("sourceRevisions"), v.null())),
+  sourceContentHash: v.optional(v.string()),
+  sourceCoverage: v.optional(
+    v.object({
+      method: v.string(),
+      retrieved: v.number(),
+      omitted: v.number(),
+      omissions: v.array(v.string()),
+    }),
+  ),
+});
 
 async function automaticCloudReceipt(
   ctx: MutationCtx,
@@ -954,8 +991,63 @@ export const throttle = internalMutation({
   },
 });
 export const getProfile = internalQuery({
-  args: { ...profile, cursor: v.optional(v.union(v.string(), v.null())) },
+  args: {
+    ...profile,
+    cursor: v.optional(v.union(v.string(), v.null())),
+    detail: v.optional(v.union(v.literal("summary"), v.literal("full"))),
+  },
+  returns: v.object({
+    profiles: v.array(
+      v.object({
+        profile_id: v.id("organizations"),
+        name: v.string(),
+        grant_version: v.number(),
+        expires_at: v.union(v.number(), v.null()),
+        automatic_analysis: v.boolean(),
+        cloud_request_policy: v.union(
+          v.literal("explicit_per_source_v1"),
+          v.null(),
+        ),
+        intake_setup_required: v.boolean(),
+        default_output: v.string(),
+        selected_project_count: v.number(),
+        project_scope: v.string(),
+        projects: v.array(
+          v.object({
+            project_id: v.id("repositories"),
+            name: v.optional(v.string()),
+            base_sha: v.optional(v.string()),
+            profile_version: v.optional(v.number()),
+            selection_version: v.optional(v.number()),
+            context: v.optional(v.string()),
+            evaluations: v.optional(
+              v.array(
+                v.object({
+                  evaluation_id: v.id("knowledgeEvaluations"),
+                  evaluation_hash: v.string(),
+                  title: v.string(),
+                  disposition: v.string(),
+                }),
+              ),
+            ),
+            context_changed: v.boolean(),
+          }),
+        ),
+        context: v.optional(
+          v.object({
+            goal: v.string(),
+            interests: v.array(v.string()),
+            role: v.string(),
+          }),
+        ),
+        context_changed: v.boolean(),
+      }),
+    ),
+    next_cursor: v.union(v.string(), v.null()),
+    coverage: v.string(),
+  }),
   handler: async (ctx, args) => {
+    ctx = knowledgeReadContext(ctx);
     const p = await assistantPrincipal(ctx, "context:read");
     const page = args.profileId
       ? null
@@ -1024,6 +1116,17 @@ export const getProfile = internalQuery({
             projects.push({
               project_id: ref.repositoryId,
               context_changed: true,
+            });
+            continue;
+          }
+          if (args.detail === "summary") {
+            projects.push({
+              project_id: repository._id,
+              name: repository.fullName.slice(0, 200),
+              base_sha: repository.sha,
+              profile_version: repository.profileVersion,
+              selection_version: repository.selectionVersion ?? 0,
+              context_changed: false,
             });
             continue;
           }
@@ -1102,6 +1205,7 @@ export const getProfile = internalQuery({
         project_scope: grant.contextScope ?? "selected",
         projects,
         context:
+          args.detail !== "summary" &&
           context?.confirmed &&
           (grant.contextScope === "all_confirmed" ||
             context.version === grant.contextVersion)
@@ -1123,7 +1227,9 @@ export const getProfile = internalQuery({
       profiles,
       next_cursor: page && !page.isDone ? page.continueCursor : null,
       coverage:
-        "Ten approved profile records per page. Select profileId for at most five explicitly granted project contexts and five current evaluations per project; other evaluations are omitted. No repository code, account email or conversation history.",
+        args.detail === "summary"
+          ? "Ten approved profile records per page. Select profileId for at most five authorized project identities and revision markers; project profiles, evaluations and workspace context text are omitted. No repository code, account email or conversation history."
+          : "Ten approved profile records per page. Select profileId for at most five explicitly granted project contexts and five current evaluations per project; other evaluations are omitted. No repository code, account email or conversation history.",
     };
   },
 });
@@ -1576,6 +1682,29 @@ export const search = internalQuery({
     offset: v.optional(v.number()),
     cursor: v.optional(v.string()),
   },
+  returns: v.object({
+    results: v.array(
+      v.object({
+        id: v.string(),
+        title: v.string(),
+        url: v.string(),
+        excerpt: v.optional(v.string()),
+        reference: v.optional(knowledgeReadReferenceValue),
+        state: v.optional(v.string()),
+      }),
+    ),
+    next_offset: v.union(v.number(), v.null()),
+    next_cursor: v.union(v.string(), v.null()),
+    profile_id: v.id("organizations"),
+    grant_version: v.number(),
+    scanned_posts: v.number(),
+    matched_items: v.number(),
+    has_more: v.boolean(),
+    exhausted: v.boolean(),
+    truncated: v.boolean(),
+    match_limit_reached: v.boolean(),
+    coverage: v.string(),
+  }),
   handler: async (ctx, args) => {
     ctx = knowledgeReadContext(ctx);
     ensure(
@@ -1596,39 +1725,61 @@ export const search = internalQuery({
       ),
       words = args.query.toLocaleLowerCase().trim().split(/\s+/).slice(0, 12);
     const results = [];
-    let nextCursor: string | null = null;
-    let candidates = a.grant.sources.slice(offset, offset + 5);
+    let scannedPosts = 0;
+    let sourceOffset = offset;
+    let resultOffset = 0;
+    let scanLimited = false;
+    let expectedSnapshot: string | undefined;
+    let pageStart: string | null = null;
+    const scope = a.grant.libraryScope ?? "selected_sources";
+    if (args.cursor) {
+      ensure(
+        args.cursor.length <= 4096,
+        "INVALID_INPUT",
+        "Invalid search cursor.",
+      );
+      let parsed;
+      try {
+        parsed = knowledgeSearchCursor.parse(JSON.parse(args.cursor));
+      } catch {
+        ensure(false, "INVALID_INPUT", "Invalid search cursor.");
+      }
+      ensure(
+        parsed.grant === a.grant._id &&
+          parsed.version === a.grant.version &&
+          parsed.scope === scope &&
+          parsed.query === args.query.trim(),
+        "STALE_APPROVAL",
+        "Search access or query changed. Start a new search.",
+      );
+      resultOffset = parsed.resultOffset ?? 0;
+      expectedSnapshot = parsed.snapshotHash;
+      ensure(
+        resultOffset === 0 || !!expectedSnapshot,
+        "INVALID_INPUT",
+        "A matching-result cursor requires its page snapshot.",
+      );
+      scanLimited = parsed.scanLimited ?? false;
+      pageStart = parsed.cursor;
+      if (!a.grant.libraryScope) {
+        ensure(
+          parsed.offset !== undefined &&
+            parsed.cursor === null &&
+            (args.offset === undefined || args.offset === parsed.offset),
+          "INVALID_INPUT",
+          "Use one consistent source search page.",
+        );
+        sourceOffset = parsed.offset;
+      }
+    }
+    let nextPageCursor: string | null = null;
+    let candidates = a.grant.sources.slice(sourceOffset, sourceOffset + 5);
     if (a.grant.libraryScope) {
       ensure(
         offset === 0,
         "INVALID_INPUT",
         "Use the returned cursor for library search.",
       );
-      let cursor: string | null = null;
-      if (args.cursor) {
-        ensure(
-          args.cursor.length <= 4096,
-          "INVALID_INPUT",
-          "Invalid search cursor.",
-        );
-        let parsed;
-        try {
-          parsed = JSON.parse(args.cursor);
-        } catch {
-          ensure(false, "INVALID_INPUT", "Invalid search cursor.");
-        }
-        ensure(
-          parsed &&
-            parsed.grant === a.grant._id &&
-            parsed.version === a.grant.version &&
-            parsed.scope === a.grant.libraryScope &&
-            parsed.query === args.query.trim() &&
-            typeof parsed.cursor === "string",
-          "STALE_APPROVAL",
-          "Search access changed. Start a new search.",
-        );
-        cursor = parsed.cursor;
-      }
       if (a.grant.libraryScope === "all") {
         const page = await ctx.db
           .query("dashboardCards")
@@ -1636,7 +1787,7 @@ export const search = internalQuery({
             q.eq("organizationId", a.organization._id).eq("kind", "source"),
           )
           .order("desc")
-          .paginate({ cursor, numItems: 5 });
+          .paginate({ cursor: pageStart, numItems: 5 });
         candidates = page.page.flatMap((card) => {
           const sourceId = ctx.db.normalizeId("sources", card.entityId);
           return sourceId
@@ -1649,7 +1800,7 @@ export const search = internalQuery({
               ]
             : [];
         });
-        nextCursor = page.isDone ? null : page.continueCursor;
+        nextPageCursor = page.isDone ? null : page.continueCursor;
       } else {
         const page = await ctx.db
           .query("sourceSpaces")
@@ -1659,28 +1810,17 @@ export const search = internalQuery({
               .eq("space", a.grant.libraryScope as "personal" | "business"),
           )
           .order("desc")
-          .paginate({ cursor, numItems: 5 });
+          .paginate({ cursor: pageStart, numItems: 5 });
         candidates = page.page.map((row) => ({
           sourceId: row.sourceId,
           generation: 0,
           revision: 0,
         }));
-        nextCursor = page.isDone ? null : page.continueCursor;
+        nextPageCursor = page.isDone ? null : page.continueCursor;
       }
-      if (nextCursor)
-        nextCursor = JSON.stringify({
-          grant: a.grant._id,
-          version: a.grant.version,
-          scope: a.grant.libraryScope,
-          query: args.query.trim(),
-          cursor: nextCursor,
-        });
-    } else
-      ensure(
-        !args.cursor,
-        "INVALID_INPUT",
-        "Use source offsets for this legacy grant.",
-      );
+    }
+    const snapshots: unknown[] = [];
+    let totalMatches = 0;
     for (const ref of candidates) {
       if (!a.grant.libraryScope) {
         const card = await ctx.db
@@ -1693,34 +1833,49 @@ export const search = internalQuery({
           card.generation !== ref.generation ||
           card.updatedAt !== ref.revision ||
           card.state === "deleted"
-        )
+        ) {
+          snapshots.push({ sourceId: ref.sourceId, available: false });
           continue;
+        }
       }
       const source = await sourceFor(
         ctx,
         a,
         ctx.db.normalizeId("sources", ref.sourceId),
       );
-      if (!source) continue;
+      if (!source) {
+        snapshots.push({ sourceId: ref.sourceId, available: false });
+        continue;
+      }
+      scannedPosts++;
       const selected = await selectedAnalysis(ctx, source);
       const url = `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`;
-      const insights =
+      const availableInsights =
         source.state === "ready"
-          ? ((selected?.output ?? source.analysis)?.insights ?? []).slice(
-              0,
-              128,
-            )
+          ? ((selected?.output ?? source.analysis)?.insights ?? [])
           : [];
+      const insights = availableInsights.slice(0, 128);
+      if (availableInsights.length > insights.length) scanLimited = true;
+      const matchingIdeas: string[] = [];
+      snapshots.push({
+        sourceId: source._id,
+        generation: source.generation,
+        revision: source.updatedAt,
+        state: source.state,
+        selectionRevision: source.analysisSelectionRevision ?? 0,
+        analysisVersionId: selected?.metadata.id ?? null,
+        matchingIdeas,
+      });
       let matched = false;
-      for (
-        let index = 0;
-        index < insights.length && results.length < 20;
-        index++
-      ) {
+      for (let index = 0; index < insights.length; index++) {
         const idea = insights[index];
         const text =
           `${source.title} ${idea.title} ${idea.claim}`.toLocaleLowerCase();
         if (words.every((w) => text.includes(w))) {
+          matched = true;
+          matchingIdeas.push(`${index}:${String(idea.id ?? "").slice(0, 200)}`);
+          const matchIndex = totalMatches++;
+          if (matchIndex < resultOffset || results.length >= 20) continue;
           results.push({
             id: `${source._id}${selected ? `@${selected.metadata.id}` : ""}~${index}`,
             title: String(idea.title ?? source.title).slice(0, 200),
@@ -1734,37 +1889,103 @@ export const search = internalQuery({
               ...(selected ? { analysisVersionId: selected.metadata.id } : {}),
             },
           });
-          matched = true;
         }
       }
       if (
         !matched &&
-        results.length < 20 &&
         words.every((w) => source.title.toLocaleLowerCase().includes(w))
-      )
-        results.push({
-          id: source._id,
-          title: postDisplayTitle(source),
-          url,
-          state: source.state,
-        });
+      ) {
+        matchingIdeas.push("source_title");
+        const matchIndex = totalMatches++;
+        if (matchIndex >= resultOffset && results.length < 20)
+          results.push({
+            id: source._id,
+            title: postDisplayTitle(source),
+            url,
+            state: source.state,
+          });
+      }
     }
+    const snapshotHash = await digest(canonicalJson(snapshots));
+    ensure(
+      !expectedSnapshot || expectedSnapshot === snapshotHash,
+      "STALE_APPROVAL",
+      "The searched posts or selected versions changed. Start a new search.",
+    );
+    ensure(
+      resultOffset === 0 || resultOffset < totalMatches,
+      "STALE_APPROVAL",
+      "The matching-result page changed. Start a new search.",
+    );
+    const nextOffset =
+      !a.grant.libraryScope && sourceOffset + 5 < a.grant.sources.length
+        ? sourceOffset + 5
+        : null;
+    const remainingMatches = resultOffset + results.length < totalMatches;
+    const binding = {
+      grant: a.grant._id,
+      version: a.grant.version,
+      scope,
+      query: args.query.trim(),
+      scanLimited,
+    };
+    const nextCursor = remainingMatches
+      ? JSON.stringify({
+          ...binding,
+          cursor: pageStart,
+          offset: sourceOffset,
+          resultOffset: resultOffset + results.length,
+          snapshotHash,
+        })
+      : nextPageCursor !== null || nextOffset !== null
+        ? JSON.stringify({
+            ...binding,
+            cursor: nextPageCursor,
+            offset: nextOffset ?? 0,
+            resultOffset: 0,
+          })
+        : null;
+    const hasMore = nextCursor !== null;
+    const coverage: KnowledgeSearchCoverage = {
+      scanned_posts: scannedPosts,
+      matched_items: results.length,
+      has_more: hasMore,
+      exhausted: !hasMore && !scanLimited,
+      truncated: remainingMatches || scanLimited,
+      match_limit_reached: results.length === 20,
+    };
     return {
       results,
-      next_offset:
-        !a.grant.libraryScope && offset + 5 < a.grant.sources.length
-          ? offset + 5
-          : null,
+      next_offset: nextOffset,
       next_cursor: nextCursor,
       profile_id: a.organization._id,
       grant_version: a.grant.version,
+      ...coverage,
       coverage:
-        "Up to five permitted posts and 20 matching ideas per page. Follow next_cursor or next_offset for more; an incomplete page does not establish absence or no fit.",
+        "Up to five authorized posts, 128 ideas per post and 20 results. Prefer next_cursor: it resumes remaining matches before advancing posts. next_offset preserves legacy post-page navigation only. A cursor rejects changed access, query or resumed source/version snapshots. truncated with no continuation means a per-post scan bound applied. Empty results do not establish absence or no fit.",
     };
   },
 });
 export const fetch = internalQuery({
-  args: { ...profile, id: v.string() },
+  args: {
+    ...profile,
+    id: v.string(),
+    format: v.optional(
+      v.union(v.literal("legacy"), v.literal("structured_v1")),
+    ),
+  },
+  returns: v.object({
+    id: v.string(),
+    title: v.string(),
+    text: v.string(),
+    format: v.optional(v.literal("structured_v1")),
+    analysis: v.optional(knowledgeReadAnalysisValue),
+    url: v.string(),
+    profile_id: v.id("organizations"),
+    grant_version: v.number(),
+    more_ideas: v.boolean(),
+    scope_notice: v.string(),
+  }),
   handler: async (ctx, args) => {
     ctx = knowledgeReadContext(ctx);
     ensure(
@@ -1844,21 +2065,28 @@ export const fetch = internalQuery({
                 : undefined,
           })),
     }));
+    const analysis = {
+      state: source.state,
+      coverage: source.coverage,
+      insights,
+      ...(typed
+        ? {
+            sourceRevisionId: typed.sourceRevisionId,
+            sourceContentHash: typed.sourceContentHash,
+            sourceCoverage: typed.coverage,
+          }
+        : {}),
+    } satisfies KnowledgeReadAnalysis;
     return {
       id: args.id,
       title: postDisplayTitle(source),
-      text: JSON.stringify({
-        state: source.state,
-        coverage: source.coverage,
-        insights,
-        ...(typed
-          ? {
-              sourceRevisionId: typed.sourceRevisionId,
-              sourceContentHash: typed.sourceContentHash,
-              sourceCoverage: typed.coverage,
-            }
-          : {}),
-      }),
+      text:
+        args.format === "structured_v1"
+          ? `Saved analysis is ${source.state}; ${insights.length} insights returned.`
+          : JSON.stringify(analysis),
+      ...(args.format === "structured_v1"
+        ? { format: "structured_v1" as const, analysis }
+        : {}),
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,
       profile_id: a.organization._id,
       grant_version: a.grant.version,

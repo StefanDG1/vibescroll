@@ -8,6 +8,7 @@ import {
 import { internalMutation } from "./lib/projectedMutations";
 import type { Doc, Id } from "./_generated/dataModel";
 import { assistantGrant } from "./lib/assistantPrincipal";
+import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { projectApplicationContextCore, selectedProfile } from "./assistant";
 import { access, audit, limit } from "./lib";
 import { isAssistantIdentity } from "../packages/policy/assistant";
@@ -19,9 +20,21 @@ import {
   chatProposalDetail,
   isChatProposalDetail,
   saveProjectProposalInput,
+  type ChatProposalListSummary,
 } from "../packages/contracts/chat-proposals";
 
 const profile = { profileId: v.optional(v.id("organizations")) };
+const summaryCursorPrefix = "chat-proposal-list-v1:";
+const summaryCursor = z.strictObject({
+  organizationId: z.string(),
+  actorId: z.string(),
+  clientId: z.string(),
+  grantId: z.string(),
+  grantVersion: z.number().int().positive(),
+  projectId: z.string().nullable(),
+  detail: z.literal("summary"),
+  cursor: z.string(),
+});
 
 export async function readAuthorized(
   ctx: QueryCtx,
@@ -67,13 +80,7 @@ function snapshot(
     review: proposal.review,
     body: bodyOf(detail),
     contextHash: context.contextHash,
-    current:
-      proposal.baseSha === context.project.baseSha &&
-      proposal.profileVersion === context.project.profileVersion &&
-      detail._chat.binding.selectionVersion ===
-        context.project.selectionVersion &&
-      detail._chat.binding.sourceGeneration === context.source.generation &&
-      detail._chat.binding.sourceRevision === context.source.sourceRevision,
+    current: currentBinding(proposal, read),
     origin:
       detail._chat.clientId === "vibescroll_web"
         ? ("web_planning" as const)
@@ -84,6 +91,52 @@ function snapshot(
     analysisStarted: false as const,
     codingAuthorized: false as const,
     publicationAuthorized: false as const,
+    reviewUrl: `https://scroll.companynerve.com/app/${proposal.organizationId}/proposals/${proposal._id}`,
+  };
+}
+
+function currentBinding(
+  proposal: Doc<"proposals">,
+  { detail, context }: Awaited<ReturnType<typeof readAuthorized>>,
+) {
+  return (
+    proposal.baseSha === context.project.baseSha &&
+    proposal.profileVersion === context.project.profileVersion &&
+    detail._chat.binding.selectionVersion ===
+      context.project.selectionVersion &&
+    detail._chat.binding.sourceGeneration === context.source.generation &&
+    detail._chat.binding.sourceRevision === context.source.sourceRevision
+  );
+}
+
+// Call only with the same full authorization/evidence read as the detail path.
+// This saves body projection and packet bytes, not whole-document database reads.
+function listSummary(
+  proposal: Doc<"proposals">,
+  read: Awaited<ReturnType<typeof readAuthorized>>,
+): ChatProposalListSummary {
+  const { detail } = read;
+  return {
+    proposalId: proposal._id,
+    profileId: proposal.organizationId,
+    sourceId: proposal.sourceId,
+    projectId: proposal.repositoryId,
+    analysisVersionId: detail._chat.binding.analysisVersionId,
+    insightIds: detail.insightIds,
+    version: proposal.version,
+    review: proposal.review,
+    title: detail.title,
+    disposition: detail.disposition,
+    current: currentBinding(proposal, read),
+    origin:
+      detail._chat.clientId === "vibescroll_web"
+        ? "web_planning"
+        : "chat_planning",
+    repositoryCodeIncluded: false,
+    creditsSpent: 0,
+    analysisStarted: false,
+    codingAuthorized: false,
+    publicationAuthorized: false,
     reviewUrl: `https://scroll.companynerve.com/app/${proposal.organizationId}/proposals/${proposal._id}`,
   };
 }
@@ -216,6 +269,13 @@ export async function saveProjectProposalCore(
         body: bodyOf(read.detail),
         replayed: true,
         appliedVersion: createReplay ? 1 : operation!.version,
+        next_action: {
+          tool: "get_proposal_discussion" as const,
+          args: {
+            profileId: proposal.organizationId,
+            proposalId: proposal._id,
+          },
+        },
       };
     }
     ensure(
@@ -377,6 +437,10 @@ export async function saveProjectProposalCore(
     body: bodyOf(detail),
     replayed: false,
     appliedVersion: version,
+    next_action: {
+      tool: "get_proposal_discussion" as const,
+      args: { profileId: saved.organizationId, proposalId: saved._id },
+    },
   };
 }
 
@@ -384,6 +448,7 @@ export const read = internalQuery({
   args: { ...profile, proposalId: v.id("proposals") },
   returns: v.any(),
   handler: async (ctx, args) => {
+    ctx = knowledgeReadContext(ctx);
     const proposal = await ctx.db.get(args.proposalId);
     ensure(
       proposal &&
@@ -404,9 +469,11 @@ export const list = internalQuery({
     ...profile,
     projectId: v.optional(v.id("repositories")),
     cursor: v.optional(v.string()),
+    detail: v.optional(v.union(v.literal("summary"), v.literal("full"))),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
+    ctx = knowledgeReadContext(ctx);
     ensure(
       !args.cursor || args.cursor.length <= 4096,
       "INVALID_INPUT",
@@ -418,14 +485,55 @@ export const list = internalQuery({
       "knowledge:read",
     );
     await assistantGrant(ctx, principal.organization._id, "context:read");
+    const binding = {
+      organizationId: principal.organization._id,
+      actorId: principal.actor._id,
+      clientId: principal.client.id,
+      grantId: principal.grant._id,
+      grantVersion: principal.grant.version,
+      projectId: args.projectId ?? null,
+      detail: "summary" as const,
+    };
+    let cursor = args.cursor ?? null;
+    if (args.cursor?.startsWith(summaryCursorPrefix)) {
+      let parsed: z.infer<typeof summaryCursor> | undefined;
+      try {
+        parsed = summaryCursor.parse(
+          JSON.parse(args.cursor.slice(summaryCursorPrefix.length)),
+        );
+      } catch {
+        ensure(false, "INVALID_INPUT", "Invalid proposal cursor.");
+      }
+      ensure(
+        args.detail === "summary" &&
+          parsed.organizationId === binding.organizationId &&
+          parsed.actorId === binding.actorId &&
+          parsed.clientId === binding.clientId &&
+          parsed.grantId === binding.grantId &&
+          parsed.grantVersion === binding.grantVersion &&
+          parsed.projectId === binding.projectId &&
+          parsed.detail === binding.detail,
+        "STALE_APPROVAL",
+        "Proposal search access or filters changed. Start a new list.",
+      );
+      cursor = parsed.cursor;
+    } else
+      ensure(
+        !args.cursor || args.detail !== "summary",
+        "INVALID_INPUT",
+        "Start a new summary list; raw cursors belong to legacy full lists.",
+      );
     const page = await ctx.db
       .query("proposals")
       .withIndex("by_org", (q) =>
         q.eq("organizationId", principal.organization._id),
       )
       .order("desc")
-      .paginate({ numItems: 10, cursor: args.cursor ?? null });
-    const items = [];
+      .paginate({ numItems: 10, cursor });
+    const items: Array<
+      ChatProposalListSummary &
+        Partial<Pick<ReturnType<typeof snapshot>, "contextHash" | "handoff">>
+    > = [];
     for (const proposal of page.page) {
       if (
         !isChatProposalDetail(proposal.detail) ||
@@ -433,7 +541,12 @@ export const list = internalQuery({
       )
         continue;
       try {
-        const data = snapshot(proposal, await readAuthorized(ctx, proposal));
+        const authorized = await readAuthorized(ctx, proposal);
+        if (args.detail === "summary") {
+          items.push(listSummary(proposal, authorized));
+          continue;
+        }
+        const data = snapshot(proposal, authorized);
         const { body, ...metadata } = data;
         items.push({
           ...metadata,
@@ -446,12 +559,22 @@ export const list = internalQuery({
           throw error;
       }
     }
+    const nextCursor = page.isDone
+      ? null
+      : args.detail === "summary"
+        ? summaryCursorPrefix +
+          JSON.stringify({ ...binding, cursor: page.continueCursor })
+        : page.continueCursor;
     return {
       items,
-      next_cursor: page.isDone ? null : page.continueCursor,
+      next_cursor: nextCursor,
       examined: page.page.length,
+      has_more: !page.isDone,
+      exhausted: page.isDone,
       coverage:
-        "Up to ten current-workspace proposals per page. Follow next_cursor; an empty page is not whole-library absence.",
+        args.detail === "summary"
+          ? "Up to ten current-workspace proposals examined per page with full current source/project checks. Summary omits bodies, handoffs and context hashes. Follow next_cursor while has_more; an empty filtered page is not whole-library absence."
+          : "Up to ten current-workspace proposals per page. Follow next_cursor; an empty page is not whole-library absence.",
     };
   },
 });

@@ -19,6 +19,8 @@ import {
   mcpTools,
 } from "@/lib/developer-docs";
 import { McpDiagram } from "@/components/mcp-diagram";
+import { McpToolReference } from "@/components/mcp-tool-reference";
+import checkedExamples from "../../../../../docs/developers/examples.json";
 
 export const dynamicParams = false;
 export function generateStaticParams() {
@@ -53,7 +55,20 @@ export default async function DocumentationPage({
   if (!result) notFound();
   const { page, text } = result;
   return (
-    <DocsPage toc={docsToc(text)}>
+    <DocsPage
+      toc={[
+        ...docsToc(text),
+        ...(page.slug === "mcp/results"
+          ? [
+              {
+                title: "Checked output examples",
+                url: "#checked-output-examples",
+                depth: 2,
+              },
+            ]
+          : []),
+      ]}
+    >
       <span id="main" tabIndex={-1} className="sr-only">
         Documentation content
       </span>
@@ -82,46 +97,30 @@ export default async function DocumentationPage({
         >
           {text}
         </Markdown>
-        {page.slug === "mcp/tools" && (
+        {page.slug === "mcp/tools" && <McpToolReference tools={mcpTools} />}
+        {page.slug === "mcp/results" && (
           <section
-            aria-label="Generated MCP tool descriptors"
+            aria-label="Checked synthetic output examples"
             className="mcp-reference"
           >
-            <p>
-              {mcpTools.length} descriptors from the full feature-enabled
-              registry. Expand a tool for its exact contract.
-            </p>
-            {mcpTools.map((tool) => (
-              <details key={tool.name} id={tool.name}>
-                <summary>
-                  <code>{tool.name}</code>
-                  <span>
-                    {tool.annotations.readOnlyHint ? "Read" : "Action"}
-                  </span>
-                </summary>
+            <h2 id="checked-output-examples">Checked output examples</h2>
+            <p>{checkedExamples.notice}</p>
+            {(
+              [
+                ["profile_summary", "Workspace discovery"],
+                ["fetchStructured", "Structured insights"],
+                ["proposalSave", "Saved proposal and continuation"],
+                ["preparedStatus", "Processing and credit state"],
+              ] as const
+            ).map(([key, title]) => (
+              <details key={key}>
+                <summary>{title}</summary>
                 <div>
-                  <p>{tool.description}</p>
-                  <h3>OAuth scopes</h3>
-                  <p>
-                    {tool.securitySchemes
-                      .flatMap((scheme) => scheme.scopes)
-                      .map((scope) => (
-                        <code key={scope}>{scope} </code>
-                      ))}
-                  </p>
-                  <h3>Input schema</h3>
                   <pre>
-                    <code>{JSON.stringify(tool.inputSchema, null, 2)}</code>
+                    <code>
+                      {JSON.stringify(checkedExamples.examples[key], null, 2)}
+                    </code>
                   </pre>
-                  <h3>Annotations</h3>
-                  <pre>
-                    <code>{JSON.stringify(tool.annotations, null, 2)}</code>
-                  </pre>
-                  <p>
-                    <Link href="/docs/mcp/results">
-                      Read result meanings and limits
-                    </Link>
-                  </p>
                 </div>
               </details>
             ))}

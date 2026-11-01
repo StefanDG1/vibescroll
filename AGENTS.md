@@ -20,6 +20,8 @@ For Home/feed, proposal-review or engagement/analytics work, read the [Home feed
 
 ## Build the specified product
 
+R137 approves all38core items in the [MCP flows plan](docs/strategy/MCP-FLOWS-AND-IMPROVEMENTS-REVIEW.md). Read the [execution ledger](docs/strategy/MCP-FLOWS-IMPLEMENTATION.md) before related work until accepted. The eight [later suggestions](docs/strategy/MCP-LATER-SUGGESTIONS.md) are saved and excluded from this implementation. Record source, tests, host acceptance and production separately.
+
 The owner now requests completing the [medium-term workflow](docs/launch-plan/2026-10-31/MEDIUM-TERM-COMPLETION.md). Close its remaining short-term acceptance first, then work through feed/engagement, explainable fit, real Trends, OpenAI API funding/model quotes and paid-workspace readiness. Preserve the accepted visual design and ask about material design, architecture or recurring-cost choices. R132 explicitly approves the reviewed live EUR35/month, EUR350/year and EUR17/week offer and terms, with300monthly/75weekly credits. Follow [ADR223](docs/adr/223-approved-pro-offer-and-published-terms.md); do not ask for the same approval again. Existing provider/funding gates remain, and no payment, automatic customer migration or provider purchase is authorized by that approval.
 
 Until accepted, read the [short-term proposal loop](docs/launch-plan/2026-10-31/SHORT-TERM-PROPOSAL-LOOP.md). The October31 owner requests completion of generated plans, durable discussion/refinement and single-action issue publication. Preserve the live feed and shared source/version context; finish these backend workflows before adding social analytics or revisiting the visual design.

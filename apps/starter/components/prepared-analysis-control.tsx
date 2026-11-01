@@ -1,7 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ChoiceSelect } from "./choice-select";
 import { ErrorState } from "./assistant-elements/error-state";
+import {
+  processingRecovery,
+  productReadError,
+  type ProcessingRecovery,
+} from "../lib/processing-recovery";
 import styles from "./prepared-analysis-control.module.css";
 
 type Model = {
@@ -26,8 +32,9 @@ async function read(operation: string, args: unknown) {
     cache: "no-store",
     body: JSON.stringify({ operation, args }),
   });
-  if (!response.ok) throw Error("Analysis settings are unavailable.");
-  return (await response.json()).result;
+  const body = await response.json();
+  if (!response.ok) throw productReadError(body, response.status);
+  return body.result;
 }
 
 // Keep the existing accessible Radix selector for this short catalogue. The
@@ -53,9 +60,11 @@ export function PreparedAnalysisControl({
   const [quoted, setQuoted] = useState<{
     key: string;
     value?: Quote;
-    error?: string;
+    error?: ProcessingRecovery;
   }>();
-  const [startError, setStartError] = useState("");
+  const [startError, setStartError] = useState<ProcessingRecovery>();
+  const [refresh, setRefresh] = useState(0);
+  const [optionsError, setOptionsError] = useState<ProcessingRecovery>();
   const [state, setState] = useState<
     "idle" | "starting" | "accepted" | "unknown"
   >("idle");
@@ -64,15 +73,18 @@ export function PreparedAnalysisControl({
     let current = true;
     void read("preparedAnalysisOptions", { sourceId })
       .then((result) => {
-        if (current) setModels(result.models);
+        if (current) {
+          setModels(result.models);
+          setOptionsError(undefined);
+        }
       })
-      .catch(() => {
-        if (current) setModels([]);
+      .catch((error) => {
+        if (current) setOptionsError(processingRecovery(error, "quote"));
       });
     return () => {
       current = false;
     };
-  }, [sourceId, revision]);
+  }, [sourceId, revision, refresh]);
   const selected = models?.find((m) => m.id === model) ?? models?.[0];
   const selectedEffort = selected?.efforts.includes(effort)
     ? effort
@@ -98,18 +110,35 @@ export function PreparedAnalysisControl({
         .then((result) => {
           if (current) setQuoted({ key: quoteKey, value: result });
         })
-        .catch(() => {
+        .catch((error) => {
           if (current)
             setQuoted({
               key: quoteKey,
-              error:
-                "A current credit quote is unavailable. Check the post’s processing status before trying again.",
+              error: processingRecovery(error, "quote"),
             });
         });
     return () => {
       current = false;
     };
-  }, [quoteKey, state]);
+  }, [quoteKey, state, refresh]);
+  function refreshQuote() {
+    setStartError(undefined);
+    setQuoted(undefined);
+    setOptionsError(undefined);
+    setRefresh(refresh + 1);
+  }
+  if (optionsError && state === "idle")
+    return (
+      <ErrorState
+        title="Analysis settings unavailable"
+        detail={optionsError.detail}
+        action={
+          <button type="button" onClick={refreshQuote}>
+            Refresh analysis settings
+          </button>
+        }
+      />
+    );
   if (!models?.length || !selected) return null;
   const locked = disabled || state !== "idle";
   return (
@@ -159,7 +188,7 @@ export function PreparedAnalysisControl({
           </label>
         )}
       </div>
-      {state === "idle" && quote && (
+      {state === "idle" && quote && !startError && (
         <>
           <p className="fine">
             {quote.reusedEvidenceId
@@ -176,7 +205,7 @@ export function PreparedAnalysisControl({
               if (state !== "idle" || flight.current) return;
               flight.current = true;
               setState("starting");
-              setStartError("");
+              setStartError(undefined);
               const request = {
                 sourceId,
                 executor: "gateway",
@@ -191,11 +220,13 @@ export function PreparedAnalysisControl({
                 await call("preparedAnalysisStart", request);
                 setState("accepted");
                 onChange();
-              } catch {
-                setState("unknown");
-                setStartError(
-                  "The request was not confirmed. Check processing status before starting another analysis.",
-                );
+              } catch (error) {
+                const recovery = processingRecovery(error, "start");
+                setStartError(recovery);
+                if (recovery.confirmedRejection) {
+                  flight.current = false;
+                  setState("idle");
+                } else setState("unknown");
               }
             }}
           >
@@ -213,18 +244,26 @@ export function PreparedAnalysisControl({
       )}
       {error && (
         <ErrorState
-          title={
-            state === "unknown"
-              ? "Check processing status"
-              : "Quote unavailable"
-          }
-          detail={error}
+          title={error.title}
+          detail={error.detail}
           action={
-            state === "unknown" ? (
+            state === "unknown" || error.action === "refresh_status" ? (
               <button type="button" onClick={() => onChange()}>
                 Refresh post status
               </button>
-            ) : undefined
+            ) : error.action === "billing" ? (
+              <Link prefetch={false} href="/app?view=billing&tier=pro">
+                Review personal billing
+              </Link>
+            ) : error.action === "review_access" ? (
+              <Link prefetch={false} href="/connect/agent">
+                Review route setup
+              </Link>
+            ) : (
+              <button type="button" onClick={refreshQuote}>
+                Refresh quote
+              </button>
+            )
           }
         />
       )}

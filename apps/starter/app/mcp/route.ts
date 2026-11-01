@@ -1,3 +1,8 @@
+import { safeAssistantFailure } from "../../../../packages/contracts/assistant-errors";
+import {
+  measureBackendForward,
+  sampledAssistantObserver,
+} from "../../../../packages/mcp/measurement";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import {
   assistantClients,
@@ -26,29 +31,26 @@ const metadata =
   "https://scroll.companynerve.com/.well-known/oauth-protected-resource/mcp";
 const keySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 function challenge() {
-  return Response.json(
-    { error: "Official OAuth authorization is required." },
-    {
-      status: 401,
-      headers: {
-        "Cache-Control": "no-store",
-        "WWW-Authenticate": `Bearer resource_metadata="${metadata}", scope="knowledge:read"`,
-      },
+  return Response.json(safeAssistantFailure("AUTH_REQUIRED", { status: 401 }), {
+    status: 401,
+    headers: {
+      "Cache-Control": "no-store",
+      "WWW-Authenticate": `Bearer resource_metadata="${metadata}", scope="knowledge:read"`,
     },
-  );
+  });
 }
 export async function POST(request: Request) {
   if (!assistantRequestAllowed(request))
-    return Response.json(
-      { error: "Untrusted MCP request origin or host." },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
-    );
+    return Response.json(safeAssistantFailure("FORBIDDEN"), {
+      status: 403,
+      headers: { "Cache-Control": "no-store" },
+    });
   const issuer = assistantIssuer(process.env.MCP_AUTH_ISSUER);
   if (process.env.MCP_ENABLED !== "true" || !issuer)
-    return Response.json(
-      { error: "VibeScroll assistant access is being prepared." },
-      { status: 503, headers: { "Cache-Control": "no-store" } },
-    );
+    return Response.json(safeAssistantFailure("UNAVAILABLE"), {
+      status: 503,
+      headers: { "Cache-Control": "no-store" },
+    });
   let phase: "authentication" | "request" | "configuration" | "dispatch" =
     "authentication";
   try {
@@ -118,6 +120,7 @@ export async function POST(request: Request) {
       throw Error();
     const site = `https://${backend.hostname.replace(/\.cloud$/, ".site")}/assistant-tools`;
     phase = "dispatch";
+    const observe = sampledAssistantObserver();
     const handler = createKnowledgeHandler(
       async (operation, args) => {
         let target = site;
@@ -156,16 +159,22 @@ export async function POST(request: Request) {
             };
           }
         }
-        const response = await fetch(target, {
-          method: "POST",
-          redirect: "error",
-          signal: AbortSignal.timeout(20000),
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ operation, args: input }),
-        });
+        const response = await measureBackendForward(
+          operation,
+          observe,
+          () =>
+            fetch(target, {
+              method: "POST",
+              redirect: "error",
+              signal: AbortSignal.timeout(20000),
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ operation, args: input }),
+            }),
+          assistantResponseLimit(operation),
+        );
         const value = await readAssistantBody(
           response,
           assistantResponseLimit(operation),
@@ -178,6 +187,7 @@ export async function POST(request: Request) {
       process.env.WORK_CLOUD_MEDIA_ENABLED === "true" &&
         process.env.WORK_CLOUD_MEDIA_VERIFIED === "true",
       embeddedUiEnabled,
+      { observe },
     );
     const input = new Request(request.url, {
       method: "POST",
@@ -201,12 +211,9 @@ export async function POST(request: Request) {
   } catch {
     if (phase === "authentication") return challenge();
     return Response.json(
-      {
-        error:
-          phase === "request"
-            ? "Use a bounded JSON MCP request."
-            : "Assistant access is temporarily unavailable. Retry later or review Connections in VibeScroll.",
-      },
+      safeAssistantFailure(
+        phase === "request" ? "INVALID_INPUT" : "UNAVAILABLE",
+      ),
       {
         status: phase === "request" ? 400 : 503,
         headers: { "Cache-Control": "no-store" },

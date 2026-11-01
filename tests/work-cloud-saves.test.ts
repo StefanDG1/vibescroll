@@ -963,7 +963,11 @@ it.each([
           }),
         }),
       );
-      expect(rejected.status).toBe(403);
+      expect(rejected.status).toBe(400);
+      expect(await rejected.json()).toMatchObject({
+        code: "INVALID_INPUT",
+        stage: "validation",
+      });
       expect(runMutation).not.toHaveBeenCalled();
       expect(provider).not.toHaveBeenCalled();
     }

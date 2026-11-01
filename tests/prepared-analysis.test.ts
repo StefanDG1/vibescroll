@@ -863,6 +863,16 @@ it("uses Gateway's strict required-property subset, preserving local citation va
   expect(
     (await analyzePreparedEvidence({ ...args, fetch: transport })).output,
   ).toEqual(expected);
+  await expect(
+    analyzePreparedEvidence({
+      ...args,
+      fetch: transport,
+      onDispatch: async () => {
+        throw Error("FUNDING_BARRIER_DENIED");
+      },
+    }),
+  ).rejects.toThrow("FUNDING_BARRIER_DENIED");
+  expect(requests).toHaveLength(1);
   expect(requests[0].response_format.json_schema.strict).toBe(true);
   expect(
     requests[0].response_format.json_schema.schema.properties.insights.items

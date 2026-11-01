@@ -1,0 +1,152 @@
+{
+  "date": "2026-11-01",
+  "status": "approved live Stripe offer configured and matching policies published; new sales explicitly closed pending customer processing funding",
+  "commit": "480e9fcc5386ce53ce59ed221acb872d73d253a3",
+  "ci": {
+    "run": 41291279045,
+    "conclusion": "success",
+    "exactCommit": true
+  },
+  "local": {
+    "mainPassed": 1503,
+    "mainSkipped": 9,
+    "authPassed": 52,
+    "knowledgePassed": 174,
+    "pythonAndNodeChecks": true,
+    "bothProductionBuilds": true,
+    "dependencyAuditUnresolved": 0
+  },
+  "backend": {
+    "deterministicPreparations": 2,
+    "publicationGuardsPassed": 17,
+    "finishAcknowledged": true,
+    "components": 14,
+    "tables": 162,
+    "indexes": 353,
+    "schemaChanges": 0,
+    "indexChanges": 0,
+    "authChanges": 0,
+    "cronChanges": 0,
+    "populatedScansOrBackfills": 0
+  },
+  "website": {
+    "newBuilds": 1,
+    "actualCores": 2,
+    "actualMemoryGB": 8,
+    "machine": "fixed Basic",
+    "queue": "normal",
+    "buildDurationMs": 42911,
+    "stageCases": 24,
+    "canonicalCases": 24,
+    "coverage": {
+      "policies": 8,
+      "pricing": 4,
+      "feed": 4,
+      "library": 8
+    },
+    "sameBuildPromotion": true,
+    "canonicalExactHealth": true,
+    "canonicalAliasesCompleted": true,
+    "normalDomainAssignmentRestoreAcknowledged": true,
+    "ownerBillingDesktopAndPhoneDomChecks": 2,
+    "ownerBillingScreenshot": "timed out; not claimed"
+  },
+  "stripe": {
+    "mode": "live",
+    "existingProductPreserved": true,
+    "replacementPricesCreated": 3,
+    "offers": [
+      {
+        "interval": "month",
+        "amountCents": 3500,
+        "credits": 300,
+        "grantInterval": "month"
+      },
+      {
+        "interval": "year",
+        "amountCents": 35000,
+        "credits": 300,
+        "grantInterval": "month"
+      },
+      {
+        "interval": "week",
+        "amountCents": 1700,
+        "credits": 75,
+        "grantInterval": "week"
+      }
+    ],
+    "currency": "eur",
+    "taxBehavior": "inclusive",
+    "oldProPricesUnchanged": true,
+    "oldDefaultPortalUnchanged": true,
+    "safePortalCreated": true,
+    "safePortal": {
+      "nonDefault": true,
+      "cancelAtPeriodEnd": true,
+      "paymentMethodUpdates": true,
+      "invoiceHistory": true,
+      "subscriptionUpdates": false,
+      "standaloneLogin": false
+    },
+    "providerCreatedCustomers": 0,
+    "providerCreatedSubscriptions": 0,
+    "newCharges": 0
+  },
+  "configuration": {
+    "newPriceMappingReadBack": true,
+    "safePortalBindingReadBack": true,
+    "publishedPolicyBinding": "v1-2026-11-01.1",
+    "legacyPriceAndPortalBindingsUnchanged": 7,
+    "liveCheckoutEnabled": false,
+    "catalogueConfigured": true,
+    "proOfferConfigured": true
+  },
+  "policies": {
+    "release": "v1-2026-11-01.1",
+    "terms": "1.1.0",
+    "refunds": "1.1.0",
+    "acceptableUse": "1.1.0",
+    "previousCompleteBundleArchived": true,
+    "oldManifestPreserved": true,
+    "first14DayRefundSectionPreserved": true,
+    "unchangedDocumentsKeepOriginalDates": true,
+    "ownerApproved": true,
+    "professionalLegalReviewClaimed": false
+  },
+  "preservation": {
+    "wholeOwnerUsageTextUnchanged": true,
+    "expiredUnknownCreditHoldPreserved": true,
+    "oldWalletsAndTopupsUnchanged": true,
+    "pilotPolicyIdsAndCountersUnchanged": true,
+    "newSources": 0,
+    "newAiCalls": 0,
+    "newWalletGrants": 0,
+    "customerMigrations": 0,
+    "providerPurchases": 0
+  },
+  "mcp": {
+    "originalReadPassed": true,
+    "automaticAnalysisEnabled": true,
+    "intakeSetupRequired": false,
+    "newConnectionOrScopes": false
+  },
+  "funding": {
+    "ownerCapEUR": 15.5,
+    "batchReservedUSD": 0.095,
+    "allOldHoldsPreserved": true,
+    "vercelObservedCycleUsageUSD": 0.03,
+    "vercelConservativePreflightUpperUSD": 0.84,
+    "vercelCeilingUSD": 20,
+    "providerUsageSettled": false,
+    "paidCustomerOperatingAllowance": "proposed USD10/month; pending owner answer; not enabled",
+    "gatewayExistingBalanceObservedUSD": 12.72,
+    "autoRecharge": false
+  },
+  "open": [
+    "funded non-owner customer processing admission",
+    "independent paid-customer acceptance; no live test charge authorized",
+    "fresh-host MCP write/publication acceptance",
+    "full-catalog add-on price and purchase; separate from requested-post cache"
+  ],
+  "next": "Add separately funded paid-customer admission without resetting owner counters, verify paid-member wallet/isolation/refund/exhaustion paths, then open new sales only when all gates agree."
+}

@@ -1,6 +1,6 @@
 # ADR223: publish the approved Pro offer without bypassing funding
 
-Date: November1,2026. Status: owner approved exact live prices and terms; implementation and gated activation in progress.
+Date: November1,2026. Status: approved live price/portal configuration and matching policy publication accepted; public sales await funded customer admission.
 
 The owner explicitly approves the reviewed EUR35/month with300monthly credits, EUR350/year with300credits granted monthly, and EUR17every seven days with75credits. The approval authorizes three replacement live prices under the existing Pro product, a separate safe billing portal, the reviewed fair-use terms and new-sale activation subject to the existing provider/funding gates. Do not ask for the same price/terms approval again. No payment, new subscription, automatic customer migration, top-up or provider purchase is authorized by this step.
 
@@ -16,7 +16,7 @@ Publish release `v1-2026-11-01.1` with terms/refunds/acceptable-use version1.1.0
 
 The actual live preparation and proposal configurations remain explicit owner-only pilots, with ten video jobs and eleven plan jobs respectively. OpenAI funding is also an owner-only ten-job policy. Do not erase or reset their counters to launch paid sales. The price/terms approval retains the funding gates.
 
-Publishing the new policy while the old `POLICY_RELEASE_VERSION` remains configured safely closes new purchase admission. Install the approved new portal/price mapping only after the compatible backend and matching website are verified. Leave sales closed until paid-customer processing is funded and its admission tests pass. Preserve old balances, retained results and valid subscription controls throughout. Ordinary MCP use requires no reconnect or new permission review.
+The cutover temporarily failed closed while the published policy and old configured version differed. After canonical verification, the exact new policy/price/portal bindings were installed and read back, with `LIVE_CHECKOUT_ENABLED=false` explicitly retained as the sales gate. Leave sales closed until paid-customer processing is funded and its admission tests pass. Preserve old balances, retained results and valid subscription controls throughout. Ordinary MCP use requires no reconnect or new permission review.
 
 ## Acceptance
 
@@ -25,3 +25,7 @@ Verify all three live price amounts/intervals/metadata, the safe portal and unch
 ## Currency research
 
 Stripe's current [Adaptive Pricing reporting](https://docs.stripe.com/payments/currencies/localize-prices/adaptive-pricing?payment-ui=stripe-hosted) and [tax/invoicing guidance](https://docs.stripe.com/tax/calculating/adaptive-pricing) retain the integration currency for reporting/invoicing while exposing local presentment separately. Managed Payments supplies this localization automatically. Keep the exact canonical EUR price/invoice checks; do not weaken grant validation based on a guessed local-currency conversion. A real cross-currency purchase remains untested and no test charge is authorized.
+
+## Production acceptance, November1
+
+Website/backend480e9fc are live with exact CI41291279045, full local1503main/52auth/174knowledge cases, two deterministic preparations and17 actual zero-change publication guards. One42.911s fixed Basic/normal build passed24staged and24canonical policy/pricing/feed/Library cases and same-build promotion. Both canonical aliases completed and normal domain assignment was restored. The approved three live Pro prices and safe portal are configured and read back. Published policyv1-2026-11-01.1 preserves the complete previous bundle and first14-day refund section. All seven legacy price/portal bindings, the complete owner Usage text and its expired unknown hold are unchanged. Original MCP reads show automatic analysis enabled and no setup required. No customer, subscription, charge, source job, model call, wallet grant, migration or provider purchase occurred. New sales are explicitly closed with LIVE_CHECKOUT_ENABLED=false. The matching policy binding and approved price/portal mapping are installed; no stale policy identifier is used as an accidental gate. Existing processing remains the finite owner pilot. The separate proposed USD10/month paid-customer operating allowance is pending. Do not infer approval from existing Gateway credit, the price/terms approval or elapsed time. Paid-customer admission and independent acceptance remain open. Do not reconnect the original MCP or reset pilot counters. [Receipt](../operations/evidence/launch-20261101-approved-pro-offer-production.json).

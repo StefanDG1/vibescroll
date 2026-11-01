@@ -1,6 +1,6 @@
 # Review the single-Pro migration
 
-Mode: review package. Owner choices confirmed October31,2026. Preparation only; no live Stripe price, charge or customer migration is authorized by this document.
+Mode: review package. Owner choices confirmed October31,2026. The later R132 approval authorizes the exact new live prices and reviewed terms, now configured at480e9fc. Charges and customer migration are not authorized by this review document; public sales still await funded customer admission. See ADR223 and CURRENT-STATE.
 
 ## Exact offer
 
@@ -31,9 +31,9 @@ For baseline new work, current preparation costs1credit when needed and Muse ana
 November1 read-only production inspection verified the configured merchant and all six exact live price IDs against their product/tier/interval metadata. All are active, EUR and tax-inclusive. Provider charges/payouts are enabled; this does not establish tax registrations or authorize checkout. Exact account/product/price IDs remain in the private review packet.
 
 | Existing tier | Weekly price / allowance | Monthly price / allowance | Annual price / monthly allowance |
-| --- | --- | --- | --- |
-| Starter | EUR5.99 /65 | EUR19 /250 | EUR190 /250 |
-| Pro | EUR11.99 /150 | EUR39 /600 | EUR390 /600 |
+| ------------- | ------------------------ | ------------------------- | -------------------------------- |
+| Starter       | EUR5.99 /65              | EUR19 /250                | EUR190 /250                      |
+| Pro           | EUR11.99 /150            | EUR39 /600                | EUR390 /600                      |
 
 These rows describe verified legacy price bindings and current runtime allowance policy. They are not a claim that any customer purchased each offer. No customer records or live writes were needed. Keep these bindings when introducing the candidate300/75-credit policy.
 

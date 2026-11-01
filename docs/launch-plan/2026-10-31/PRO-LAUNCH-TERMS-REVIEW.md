@@ -4,17 +4,17 @@ Mode: approved review package, November1,2026. The owner approved this exact off
 
 ## Offer
 
-One hosted Pro subscription: EUR35/month with300monthly credits; EUR350/year with300credits granted monthly; or EUR17every seven days with75credits. Annual grants never pay3600credits up front. One person uses their allowance across workspaces. Each member has their own Pro and credits. There are no seat charges in this proposed offer.
+One hosted Pro subscription: EUR35/month with300monthly credits; EUR350/year with300credits granted monthly; or EUR17every seven days with75credits. Annual grants never pay3600credits up front. One person uses their allowance across workspaces. Each member has their own Pro and credits. There are no seat charges in this approved offer.
 
 Requested-post cache reuse is included and does not charge fresh preparation or analysis. Full-catalog browsing is a separate entitlement with no new sale until its price is reviewed. Existing owner access is an admin concession. The open-source edition is self-hosted without the hosted dataset. Do not advertise storage or repository-count allowances.
 
 Keep the existing top-ups at EUR10/200credits and EUR25/550credits until a separate change is reviewed. Included credits expire at their period boundary. Purchased credits, existing reservations and valid results remain recorded. A checkout return is not proof of payment; verified paid invoices grant credits once.
 
-## Proposed fair-use clause
+## Approved fair-use clause
 
 Pro includes the product's available workspace and project features. Paid processing consumes the credits quoted before work. Credits do not promise unlimited processing or storage. Do not share individual access credentials, bypass credit or concurrency controls, or use abusive automation that disrupts other users. If usage creates unusual resource demand, we may limit new requests or discuss an appropriate arrangement. Such limits do not erase purchased credits or valid retained results. Deletion, account closure and valid takedown requests still apply.
 
-This is a proposed service clause. Keep operational batch sizes, payload limits, rate limits and concurrent-job admission in technical documentation rather than advertising numerical repository or storage quotas. No automatic result deletion at a marketing threshold is introduced.
+The owner approved this service clause. Keep operational batch sizes, payload limits, rate limits and concurrent-job admission in technical documentation rather than advertising numerical repository or storage quotas. No automatic result deletion at a marketing threshold is introduced.
 
 ## Activation package
 
@@ -32,4 +32,6 @@ The compatible code and sandbox billing acceptance do not expand the finite owne
 
 ## Owner approval and execution
 
-The owner answered "Approve live Pro offer and terms" on November1. Three matching live prices and the separate safe portal are created; old Pro prices and the existing default portal are unchanged. No payment, new customer/subscription or balance migration occurred. The new published policy release and compatible application cutover are in progress under ADR223. Customer processing is still an owner-only finite pilot, so the separate funded operating allowance remains a gate before new sales open. Do not re-request the same price/terms approval.
+The owner answered "Approve live Pro offer and terms" on November1. Three matching live prices and the separate safe portal are created; old Pro prices and the existing default portal are unchanged. No payment, new customer/subscription or balance migration occurred. The matching policy release and compatible application cutover are accepted at480e9fc under ADR223. The approved price/portal mapping is installed and new sales are explicitly closed pending funded customer admission. Customer processing is still an owner-only finite pilot, so the separate funded operating allowance remains a gate before new sales open. Do not re-request the same price/terms approval.
+
+Publication acceptance: Website/backend480e9fc are live with exact CI41291279045, full local1503main/52auth/174knowledge cases, two deterministic preparations and17 actual zero-change publication guards. One42.911s fixed Basic/normal build passed24staged and24canonical policy/pricing/feed/Library cases and same-build promotion. Both canonical aliases completed and normal domain assignment was restored. The approved three live Pro prices and safe portal are configured and read back. Published policyv1-2026-11-01.1 preserves the complete previous bundle and first14-day refund section. All seven legacy price/portal bindings, the complete owner Usage text and its expired unknown hold are unchanged. Original MCP reads show automatic analysis enabled and no setup required. No customer, subscription, charge, source job, model call, wallet grant, migration or provider purchase occurred. [Receipt](../../operations/evidence/launch-20261101-approved-pro-offer-production.json).

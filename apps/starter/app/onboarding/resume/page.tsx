@@ -33,7 +33,24 @@ export default async function Page({
   if (status.progress?.stage === "quiz") {
     const draft = await signedOnboardingDraft();
     if (!draft) return <Onboarding authenticated />;
-    await client.mutation(api.onboarding.save, { draft });
+    try {
+      await client.mutation(api.onboarding.save, { draft });
+    } catch (error) {
+      const value =
+        error && typeof error === "object" && "data" in error
+          ? String(error.data)
+          : error instanceof Error
+            ? error.message
+            : "";
+      if (!value.includes("SOURCE_UNAVAILABLE")) throw error;
+      return (
+        <Onboarding
+          authenticated
+          initialDraft={{ ...draft, selectedFamilyId: undefined }}
+          notice="Your selected post is no longer available. Choose another ready post or continue with your own link. Your interests are kept."
+        />
+      );
+    }
     status = await client.query(api.onboarding.status, {});
   }
   const organizationId = await client.mutation(

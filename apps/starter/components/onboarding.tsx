@@ -55,6 +55,7 @@ function readDraftStorage() {
     return "";
   }
 }
+const unhydratedDraft = "__vibescroll_unhydrated__";
 const emptyDraft: Partial<OnboardingDraft> = {
   version: 1 as const,
   interests: [] as OnboardingDraft["interests"],
@@ -157,14 +158,16 @@ function poster(familyId: string, frameId: string, thumbnail = false) {
 export function Onboarding({
   authenticated = false,
   initialDraft,
+  notice,
 }: {
   authenticated?: boolean;
   initialDraft?: OnboardingDraft;
+  notice?: string;
 }) {
   const stored = useSyncExternalStore(
     subscribeDraft,
     readDraftStorage,
-    () => "",
+    () => unhydratedDraft,
   );
   const restored = useMemo(() => {
     try {
@@ -189,7 +192,8 @@ export function Onboarding({
   const [chosenStep, setStep] = useState<
     "interests" | "goal" | "feed" | "reader" | "import"
   >();
-  const step = chosenStep ?? restored?.step ?? "interests";
+  const step =
+    chosenStep ?? (initialDraft ? "feed" : (restored?.step ?? "interests"));
   const [loadedInterests, setLoadedInterests] = useState<string>();
   const interestsKey = (draft.interests ?? []).join(",");
   const loadingFeed = step === "feed" && loadedInterests !== interestsKey;
@@ -205,6 +209,9 @@ export function Onboarding({
   const importController = useRef<AbortController | null>(null);
   useEffect(() => () => importController.current?.abort(), []);
   useEffect(() => {
+    // The server snapshot has no browser storage. Never overwrite an existing
+    // draft until useSyncExternalStore has read the actual client snapshot.
+    if (stored === unhydratedDraft) return;
     const parsed = onboardingLocalState.safeParse({
       draft,
       step: step === "reader" ? "feed" : step,
@@ -217,7 +224,7 @@ export function Onboarding({
         /* Storage is optional. */
       }
     }
-  }, [draft, step]);
+  }, [draft, step, stored]);
   useEffect(() => {
     heading.current?.focus();
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -469,6 +476,11 @@ export function Onboarding({
               Your topic: {draft.customTopic}. These are ready ideas from our
               launch collection.
             </p>
+          )}
+          {notice && (
+            <output className={styles.notice}>
+              {notice}
+            </output>
           )}
           {commonError}
           {loadingFeed && (

@@ -393,8 +393,7 @@
     margin: 24px 0;
   }
   .actions {
-    position: sticky;
-    bottom: 0;
+    position: static;
     background: var(--canvas);
     padding: 14px 0 max(14px, env(safe-area-inset-bottom));
   }

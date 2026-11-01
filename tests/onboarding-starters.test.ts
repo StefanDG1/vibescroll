@@ -258,3 +258,33 @@ it("binds only the selected starter after verified payment, with idempotent zero
   expect(result.wallet).toMatchObject({ granted: 300, spent: 0, reserved: 0 });
   expect(result.attempts).toHaveLength(attemptsBefore.length);
 });
+
+it("keeps signup progress recoverable when a previously selected starter is withdrawn", async () => {
+  const f = await ready();
+  const subject = "user_04434567890123456789012345";
+  await f.t.mutation(internal.accounts.syncUser, {
+    subject,
+    email: "withdrawn-starter@example.test",
+    name: "New account",
+    verified: true,
+  });
+  const actor = f.t.withIdentity({ subject });
+  await f.t.run((ctx) => ctx.db.patch(f.familyId, { state: "blocked" }));
+  const preferences = {
+    version: 1,
+    interests: ["coding"],
+    goal: "build_faster",
+  };
+  await expect(
+    actor.mutation(api.onboarding.save, {
+      draft: { ...preferences, selectedFamilyId: f.familyId },
+    }),
+  ).rejects.toThrow(/SOURCE_UNAVAILABLE/);
+  expect((await actor.query(api.onboarding.status, {})).progress?.stage).toBe(
+    "quiz",
+  );
+  await actor.mutation(api.onboarding.save, { draft: preferences });
+  expect((await actor.query(api.onboarding.status, {})).progress).toMatchObject(
+    { stage: "github", interests: ["coding"], goal: "build_faster" },
+  );
+});

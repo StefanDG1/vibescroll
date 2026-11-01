@@ -1,6 +1,6 @@
 # Monetary provider funding without resetting exposure
 
-Date: November 1, 2026. Status: implementation candidate under R137; production activation needs a dated receipt.
+Date: November 1, 2026. Status: live under R137, website593984c/backend02860d6. Monetary v2 activation and isolated acceptance are recorded in [the dated receipt](../operations/evidence/launch-20261101-mcp-core-flows.json).
 
 The temporary paid-processing counter reserves a fixed USD0.05 for each admitted job. That prevents overspending but never releases a proven-unused portion. Replace it with integer nanoUSD reservations while retaining the existing personal credit wallet as a separate accounting system.
 

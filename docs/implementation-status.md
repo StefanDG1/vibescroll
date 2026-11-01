@@ -1,5 +1,9 @@
 # Implementation status
 
+## November1: core MCP flows production acceptance
+
+Website593984c/backend02860d6 are live. Exact CI41326256285/41328785963 and full local checks pass; final Linux groups1616main/11skips,59auth,179knowledge. Two guarded compatible backend publications and one normal Basic build passed actual admission, same-build promotion and restored domain assignment.34staged/34canonical docs cases, native search/filters, Home4/Library8 and original MCP profile/proposals/cache quote/fetch/search continuation pass. Monetary v2 is active with prior exposure and owner settings preserved. Actual GitHub check delivery200 and fresh ChatGPT read-only selection pass. No new AI/payment/purchase. Extra host plan-writing was blocked before send; correlated proposal PR, real paid purchase and generic no-monitor subscription usage remain unclaimed. R138/R139 retrieval expansion is documented only. [Receipt](operations/evidence/launch-20261101-mcp-core-flows.json).
+
 ## November1: public MCP documentation candidate
 
 Production acceptance: website68ae312 is live with unchanged backend1f96e6d. Exact CI41314634044 passes1515main/11skips,54auth,176knowledge and Node/Python/both builds. One normal Basic2core/8GB build was staged and the same build promoted after16document cases and exact health. Canonical16document cases, native search selection, Home4 and Library Tree/Folders8 pass at desktop/mobile widths; canonical aliases completed and normal domain assignment was restored. Initial Library invocations omitted `?view=library`; the corrected entry passes, without a product change. Public docs and search use checked authored JSON, no database/runtime filesystem reads. Exact per-tool Convex usage and installed-host skill acceptance remain open. No analysis, payment, provider purchase, backend publication or original-connection recreation. [Receipt](operations/evidence/launch-20261101-public-mcp-docs.json).

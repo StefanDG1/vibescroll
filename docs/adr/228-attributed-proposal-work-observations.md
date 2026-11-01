@@ -1,6 +1,6 @@
 # Attributed proposal work observations
 
-Date: November 1, 2026. Status: implementation candidate under R137; live delivery acceptance is separate.
+Date: November 1, 2026. Status: live under R137. An actual check_run.created delivery returned200. Proposal-correlated PR/check acceptance remains separate and unclaimed. See [the dated receipt](../operations/evidence/launch-20261101-mcp-core-flows.json).
 
 Keep signed GitHub observations and authenticated model completion reports on the existing frozen proposal handoff. Public issue text may include a proposal locator, handoff marker and same-repository closing reference. These identifiers grant no access or execution authority. No callback secret belongs in an issue.
 

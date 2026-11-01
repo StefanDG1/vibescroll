@@ -2,6 +2,16 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November1 core MCP integration and search recovery
+
+A ready source with retired or unavailable selected evidence aborted an entire search page. Catch only the expected per-candidate SOURCE_UNAVAILABLE/APPROVAL_STALE boundary, retain incomplete coverage in the continuation and revalidate current access. Do not catch global authorization errors or unexpected defects, fabricate an empty complete result or weaken direct fetch. Reproduce with a mixed valid/retired page and verify the next page has no duplicate IDs.
+
+Mobile clipping can exist while document.scrollWidth fits the viewport. Check prose, filter-label and select bounds, visible text and screenshots. The Fumadocs flex child and its controls needed min-width:0. Pin the exact owned browser target before every navigation; overlapping scripts or an unexpected selected target do not prove an app redirect bug. Preserve the failed receipt and verify the intended URL.
+
+Strict output-schema fixtures must include the actual serializer's required fields. Explicitly admit only intended new empty tables in historical schema guards. A key budget is not an independent operating authorization: monetary admission needs its own ceiling, carried prior exposure and an awaited dispatch barrier. Unknown settlement retains its full hold.
+
+Separate scripted action fixtures from actual host selection, signed delivery plumbing from proposal-correlated PR acceptance, and token tariff estimates from provider invoices. The optional browser ChatGPT plan-writing send was rejected before execution by automatic approval review with blocked by policy. It was not retried through another method and remains unrun.
+
 ## November1 public documentation integration
 
 A separate Fumadocs stylesheet needs its own Tailwind theme import. Importing only the Fumadocs presets failed production compilation at `sm:ms-4`; adding the documented `@import "tailwindcss"` corrected it without weakening the build. Test the actual production build, not only types or the presence of CSS files. Generate reference data through the existing tested MCP discovery path; an ad hoc Vite SSR server stalled in this checkout and was replaced by a bounded standalone Vitest generator. The generator uses no provider or database credentials and rejects accidental tool execution.

@@ -69,6 +69,16 @@ it("requires the complete V1 catalogue, matching key mode and all live release s
       .liveEnabled,
   ).toBe(false);
 });
+it("closes new sales during the approved policy cutover until the exact new release is bound", () => {
+  expect(
+    billingReadiness({ ...env, POLICY_RELEASE_VERSION: "v1-2026-10-03.1" })
+      .liveEnabled,
+  ).toBe(false);
+  expect(
+    billingReadiness({ ...env, POLICY_RELEASE_VERSION: policyRelease.id })
+      .liveEnabled,
+  ).toBe(true);
+});
 it("exposes sandbox checkout independently of live activation and never treats legacy prices as a V1 catalogue", () => {
   expect(
     billingReadiness({

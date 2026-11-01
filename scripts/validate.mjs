@@ -31,7 +31,7 @@ execFileSync("python", ["scripts/build-cloud-media-package.py"], {
   timeout: 10000,
 });
 const release = JSON.parse(
-  readFileSync(join(root, "legal/RELEASE-2026-10-03.json"), "utf8"),
+  readFileSync(join(root, "legal", policyRelease.manifest), "utf8"),
 );
 if (
   release.id !== policyRelease.id ||

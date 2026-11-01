@@ -5,6 +5,7 @@ import { api, internal } from "../convex/_generated/api";
 import { wallet } from "../convex/product";
 import { proOffer } from "../packages/billing/pro-offer";
 import { billingReadiness } from "../packages/providers/billing-readiness";
+import { policyRelease } from "../packages/policy/publication";
 
 const mocks = vi.hoisted(() => ({
   account: vi.fn(),
@@ -145,6 +146,7 @@ it.each(["weekly", "monthly", "annual"] as const)(
     ]);
     expect(request.managed_payments).toEqual({ enabled: true });
     expect(request.metadata.creditPolicy).toBe(proOffer.version);
+    expect(request.metadata.termsVersion).toBe(policyRelease.id);
     expect(request.subscription_data.metadata.creditPolicy).toBe(
       proOffer.version,
     );

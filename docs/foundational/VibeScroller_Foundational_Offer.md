@@ -1,5 +1,9 @@
 # VibeScroll foundational offer
 
+## F095: approved live Pro offer and terms, November1
+
+The owner explicitly approves EUR35/month with300monthly credits, EUR350/year with300credits granted monthly, and EUR17every seven days with75credits, plus the reviewed fair-use terms. Three prices and a safe portal are created under the existing live product; old price records remain unchanged. Keep the prior policy bundle, admin/test balances and valid results. [ADR223](../adr/223-approved-pro-offer-and-published-terms.md) separates publication from funded customer admission. The actual processing configuration is still an owner-only finite pilot. Do not claim general paid availability, independent customer acceptance, unlimited resources or proven margins. This approval is not a provider purchase, automatic top-up or reset of existing pilot counters.
+
 ## F094: one Pro offer without advertised resource quotas, November1
 
 R131 reports no real customers and removes advertised storage and the Pro repository-count quota. Prepare one Pro offer at EUR35/month or EUR350/year with300credits granted monthly, or EUR17every seven days with75credits. Include requested-post cache reuse and individual-Pro workspaces; full-catalog browsing stays separate. Keep expensive work bounded by credits, concurrency and restrained fair use. Do not promise unlimited storage or compute. Preserve admin/test balances, valid results and old billing history. The owner decision is not evidence of willingness to pay, performance or general availability. Live new prices and terms still need the concrete review. [Implementation decision](../adr/222-single-pro-offer-and-project-capacity.md).

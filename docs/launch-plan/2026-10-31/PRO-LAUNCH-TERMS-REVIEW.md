@@ -1,6 +1,6 @@
 # Review the Pro launch terms
 
-Mode: review draft, November1,2026. This does not replace the published terms or activate live prices.
+Mode: approved review package, November1,2026. The owner approved this exact offer and terms. Publication/application activation is recorded separately; this file alone does not establish that rollout is complete.
 
 ## Offer
 
@@ -29,3 +29,7 @@ Live price creation and activation require the owner's approval of this exact pa
 ## Funded customer admission remains a launch gate
 
 The compatible code and sandbox billing acceptance do not expand the finite owner analysis pilot. Preserve its policy IDs, consumed counters, provider-key budgets and all unknown holds. Customer processing needs an explicitly funded operating allowance and matching per-user paid entitlement before new sales open. A financial approval for the three price records does not authorize top-ups, Auto Recharge, purchased API funding, resetting the pilot or removing provider/data gates. Keep public checkout unavailable until the offer, processing capacity and published terms agree. The engineering cap and Vercel ceiling remain in force.
+
+## Owner approval and execution
+
+The owner answered "Approve live Pro offer and terms" on November1. Three matching live prices and the separate safe portal are created; old Pro prices and the existing default portal are unchanged. No payment, new customer/subscription or balance migration occurred. The new published policy release and compatible application cutover are in progress under ADR223. Customer processing is still an owner-only finite pilot, so the separate funded operating allowance remains a gate before new sales open. Do not re-request the same price/terms approval.

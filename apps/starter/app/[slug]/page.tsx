@@ -6,7 +6,6 @@ import Link from "next/link";
 import { PolicyDocument } from "@/components/policy-document";
 import { publicPolicyDocuments as legal } from "../../../../packages/policy/public-documents";
 import { ProOfferSummary } from "@/components/pro-offer-summary";
-import { policyRelease } from "../../../../packages/policy/publication";
 const pages: Record<string, { title: string; body: string[] }> = {
   "how-it-works": {
     title: "From saved idea to reviewed change",
@@ -129,15 +128,6 @@ export default async function Page({
     );
     return (
       <PublicPage>
-        {slug !== "publication-checklist" && (
-          <p className="notice">
-            Effective {policyRelease.effectiveDate} · {policyRelease.id}
-          </p>
-        )}
-        <p>
-          VibeScroll was previously called VibeScroller. This published policy
-          retains its original name and version.
-        </p>
         <PolicyDocument text={text} />
       </PublicPage>
     );

@@ -1,0 +1,22 @@
+{
+  "sourceCommit": "1aaf33f9027b33b49a0a2b52bc5fc61a6c20a894",
+  "release": "v1-2026-10-03.1",
+  "effectiveDate": "2026-10-03",
+  "terms": "1.0.0",
+  "refunds": "1.0.0",
+  "privacy": "1.0.0",
+  "cookies": "1.1.0",
+  "dpa": "1.0.0",
+  "files": {
+    "ACCEPTABLE-USE.md": "89e32fb5508fdad612f51b1720f3acdac34df46e07754f835aa14b6e61f79e22",
+    "COOKIES.md": "39040946c125c4fcfb933f6fb27ee412a79782fe3f880e752757b9712c260a93",
+    "COPYRIGHT.md": "f4c0bdaeb727aa50682c41c703d9e8b72c37216b046f31337295a76c71405446",
+    "DPA.md": "0c2062c5018f49c6c5de5118d91a3514345cae643b6c420e50b8348bfc334e1d",
+    "LEGAL-NOTICE.md": "f340898549d1e7b2b6606eece7a1fe5d72e266cf1a4ca62543a53cc7b218f531",
+    "POLICY-IMPLEMENTATION.md": "f00b27692e256cd5fc9ed4d50eb242c71fbf4662eaa2aa6d88cabb45c302a0bc",
+    "PRIVACY.md": "bb30c6c09bf1abb55566434b06fdc9cda4769afdb4fa1757cf0cf9213cd367ca",
+    "REFUNDS.md": "2264ed8db3b1827da9926b8d939f47e07152dc5686908f59ebd9bd55ce222afd",
+    "SUBPROCESSORS.md": "70a0287ee5631db6d8c75f82edb59b12d942d5f4de40fc3d3cdd250817ca6149",
+    "TERMS.md": "535a6dccad08e0ce84ac777c457e5b2047df49e4bd64fdf69e3272143aaaf1c6"
+  }
+}

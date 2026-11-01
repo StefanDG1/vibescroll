@@ -10,6 +10,11 @@ import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { socialHash } from "../../packages/social/contracts";
 import { proposalPlanTariff } from "../../packages/contracts/proposal-loop";
 import { preparedServiceConfiguration } from "./preparedServicePolicy";
+import { paidProcessingConfiguration } from "../../packages/contracts/paid-processing";
+import {
+  requirePaidProcessing,
+  paidProcessingCapacity,
+} from "./paidProcessing";
 
 export async function proposalPrincipal(
   ctx: QueryCtx,
@@ -137,6 +142,16 @@ export function proposalServiceAllowed(subject: string) {
   } catch {
     parsed = null;
   }
+  if (parsed?.success && !parsed.data.subjects.includes(subject)) {
+    const paid = paidProcessingConfiguration();
+    if (paid)
+      return {
+        ...parsed.data,
+        id: `paid-plans-${paid.id}`,
+        maximumTotalJobs: 10000,
+        paidCustomer: true,
+      };
+  }
   ensure(
     parsed?.success &&
       parsed.data.subjects.includes(subject) &&
@@ -144,7 +159,7 @@ export function proposalServiceAllowed(subject: string) {
     "SETUP_REQUIRED",
     "Credit-funded plan generation is not enabled for this account yet.",
   );
-  return parsed.data;
+  return { ...parsed.data, paidCustomer: false };
 }
 export async function proposalQuote(
   ctx: QueryCtx,
@@ -155,8 +170,16 @@ export async function proposalQuote(
     "APPROVAL_STALE",
     "Refresh the project and source context before planning.",
   );
-  proposalServiceAllowed(p.actor.subject);
+  const config = proposalServiceAllowed(p.actor.subject);
   const fundingOrganizationId = await proposalFunding(ctx, p);
+  if (config.paidCustomer) {
+    await requirePaidProcessing(ctx, p.actor, fundingOrganizationId);
+    ensure(
+      (await paidProcessingCapacity(ctx))?.available,
+      "BUDGET_EXCEEDED",
+      "Processing capacity is temporarily unavailable.",
+    );
+  }
   const binding = {
     proposalId: p.proposal._id,
     version: p.proposal.version,

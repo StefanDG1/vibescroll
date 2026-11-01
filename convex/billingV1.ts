@@ -285,6 +285,15 @@ export const checkout = action({
       "RELEASE_GATE",
       "Live checkout is disabled.",
     );
+    if (live && singleProConfigured(process.env))
+      ensure(
+        await ctx.runQuery(internal.billing.processingAvailable, {
+          organizationId: a.organizationId,
+          requirePro: false,
+        }),
+        "RELEASE_GATE",
+        "Processing capacity is temporarily unavailable.",
+      );
     const route = checkoutPaymentRoute({
       tax,
       country: a.country,
@@ -462,7 +471,7 @@ export const cancel = action({
 export const topup = action({
   args: {
     organizationId: v.id("organizations"),
-    pack: v.union(v.literal("200"), v.literal("550")),
+    pack: v.union(v.literal("200"), v.literal("500")),
     country: v.optional(v.string()),
     termsAccepted: v.boolean(),
     immediateService: v.boolean(),
@@ -482,6 +491,18 @@ export const topup = action({
       "BILLING_REQUIRED",
       "Create a billing account first.",
     );
+    if (singleProConfigured(process.env)) {
+      const available = await ctx.runQuery(
+        internal.billing.processingAvailable,
+        { organizationId: a.organizationId, requirePro: true },
+      );
+      if (process.env.STRIPE_MODE === "live")
+        ensure(
+          available,
+          "RELEASE_GATE",
+          "Processing capacity is temporarily unavailable.",
+        );
+    }
     ensure(
       a.termsAccepted,
       "TERMS_REQUIRED",
@@ -508,7 +529,7 @@ export const topup = action({
     ensure(price, "BILLING_UNAVAILABLE", "Top-up price unavailable.");
     const client = await verifiedStripe();
     const p = await client.prices.retrieve(price),
-      expected = a.pack === "200" ? 1000 : 2500;
+      expected = a.pack === "200" ? 1700 : 3500;
     ensure(
       p.active &&
         !p.recurring &&

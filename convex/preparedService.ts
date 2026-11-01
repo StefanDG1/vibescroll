@@ -18,6 +18,11 @@ import {
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import { requireProCatalogAccess } from "./lib/catalogEntitlement";
+import {
+  requirePaidProcessing,
+  paidProcessingCapacity,
+  reservePaidProcessing,
+} from "./lib/paidProcessing";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { savedCloudRoute, savedCloudGrantCurrent } from "./lib/workCloudSave";
@@ -148,6 +153,14 @@ async function quoteFor(
     "SETUP_REQUIRED",
     "Server preparation is not available for this account yet.",
   );
+  if (config.paidCustomer) {
+    await requirePaidProcessing(ctx, a.actor, a.organization._id);
+    ensure(
+      (await paidProcessingCapacity(ctx))?.available,
+      "BUDGET_EXCEEDED",
+      "Processing capacity is temporarily unavailable.",
+    );
+  }
   ensure(
     ["instagram", "tiktok"].includes(
       privateCloudMediaIdentity(a.source.url ?? a.source.canonical).platform,
@@ -495,6 +508,7 @@ async function startHandler(
     reservationKey,
     q.quote.maximumCredits,
   );
+  if (q.config.paidCustomer) await reservePaidProcessing(ctx);
   const runId = await ctx.db.insert("mediaPreparations", {
     organizationId: a.source.organizationId,
     sourceId: a.source._id,

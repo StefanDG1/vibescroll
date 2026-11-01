@@ -251,7 +251,7 @@ export const stripeEvent = internalAction({
         if (
           linked?.organizationId === session.metadata.organizationId &&
           session.livemode === (process.env.STRIPE_MODE === "live") &&
-          [200, 550].includes(credits) &&
+          [200, 500].includes(credits) &&
           session.line_items?.data.length === 1 &&
           !session.line_items.has_more &&
           line?.quantity === 1 &&

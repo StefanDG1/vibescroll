@@ -1500,3 +1500,98 @@ it("refunds unused analysis credits after a confirmed rejected answer and refund
     await s.owner.query(api.preparedService.status, { sourceId: s.sourceId }),
   ).toMatchObject({ state: "failed", chargedCredits: 0 });
 });
+
+it("admits paid non-pilot users, reserves once and rejects refund risk before a second job", async () => {
+  const f = await fixture();
+  vi.stubEnv(
+    "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...f.config,
+      subjects: ["user_99999999999999999999999999"],
+    }),
+  );
+  vi.stubEnv(
+    "PAID_PROCESSING_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "paid-processing-prefunded-v1",
+      id: "paid-fixture-funding",
+      enabled: true,
+      verifiedAt: Date.now() - 1000,
+      expiresAt: Date.now() + 86400000,
+      maximumJobs: 10,
+      maximumJobNanoUsd: 50000000,
+      verifiedProviderCreditNanoUsd: 1000000000,
+      providerKeyBudgetNanoUsd: 1000000000,
+      priorExposureNanoUsd: 100000000,
+    }),
+  );
+  vi.stubEnv(
+    "PROPOSAL_SERVICE_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "proposal-service-v1",
+      enabled: true,
+      privateProjectContextAllowed: true,
+      permissionReference: "test plan provider permission",
+    }),
+  );
+  // An operator's catalogue concession is insufficient for paid processing.
+  await expect(f.quote()).rejects.toThrow("active Pro");
+  await f.t.mutation(internal.billing.attach, {
+    organizationId: f.org,
+    customerId: "cus_paid_fixture",
+  });
+  await f.t.mutation(internal.billing.apply, {
+    customerId: "cus_paid_fixture",
+    subscriptionId: "sub_paid_fixture",
+    status: "active",
+    periodEnd: Date.now() + 86400000,
+    revision: 1,
+  });
+  await f.t.mutation(internal.commerce.grantPeriod, {
+    organizationId: f.org,
+    subscription: "sub_paid_fixture",
+    tier: "pro",
+    interval: "monthly",
+    start: Date.now() - 1000,
+    end: Date.now() + 86400000,
+    verifiedPayment: true,
+  });
+  const q = await f.quote();
+  const args = {
+    ...f.request,
+    key: "paid-first-operation",
+    quoteHash: q.quoteHash,
+    maximumCredits: q.maximumCredits,
+  };
+  const a = await f.owner.mutation(api.preparedService.start, args);
+  const b = await f.owner.mutation(api.preparedService.start, args);
+  expect(a.runId).toBe(b.runId);
+  const counter = await f.t.run((c) =>
+    c.db
+      .query("proposalServiceCounters")
+      .withIndex("by_policy", (x) =>
+        x.eq("policyId", "paid-funding:paid-fixture-funding"),
+      )
+      .unique(),
+  );
+  expect(counter?.jobs).toBe(1);
+  expect((await f.t.run((c) => c.db.get(a.runId!)))?.policyId).toBe(
+    "paid-prepared-paid-fixture-funding",
+  );
+  await f.t.run((c) =>
+    c.db.insert("billingRiskHolds", {
+      organizationId: f.org,
+      key: "risk-fixture",
+      accountId: "acct_fixture",
+      mode: "test",
+      chargeId: "ch_fixture",
+      eventId: "evt_fixture",
+      kind: "dispute",
+      providerId: "dp_fixture",
+      state: "held",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }),
+  );
+  await expect(f.quote()).rejects.toThrow();
+});

@@ -1,4 +1,8 @@
 import { v } from "convex/values";
+import {
+  requirePaidProcessing,
+  reservePaidProcessing,
+} from "./lib/paidProcessing";
 import { createThread, listMessages, saveMessage } from "@convex-dev/agent";
 import { query, type QueryCtx, type MutationCtx } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
@@ -382,6 +386,7 @@ export async function startCore(
     ),
   );
   const reservationKey = `proposal-plan:${p.proposal._id}:${args.key}`;
+  if (config.paidCustomer) await reservePaidProcessing(ctx);
   await reserve(
     ctx,
     quote.fundingOrganizationId,
@@ -447,6 +452,8 @@ export const claim = internalMutation({
       "Queued planning authority expired before inference.",
     );
     const p = await workerPrincipal(ctx, op);
+    if (proposalServiceAllowed(p.actor.subject).paidCustomer)
+      await requirePaidProcessing(ctx, p.actor, op.fundingOrganizationId);
     ensure(
       proposalServiceAllowed(p.actor.subject).id === op.policyId,
       "APPROVAL_STALE",

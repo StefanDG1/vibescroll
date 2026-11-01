@@ -40,6 +40,7 @@ import { postDisplayTitle } from "../packages/sources/display";
 import { postThumbnailCandidates } from "../packages/sources/thumbnail";
 import { apiTranscriptResponse } from "../packages/contracts/transcription";
 import { preparedServiceRunPolicy } from "./lib/preparedServicePolicy";
+import { requirePaidProcessing } from "./lib/paidProcessing";
 import { settlePreparedCredits } from "./lib/preparedCredits";
 import { requireProCatalogAccess } from "./lib/catalogEntitlement";
 import { sourceRetained } from "./lib/sourceAuthority";
@@ -146,6 +147,8 @@ async function active(ctx: QueryCtx, id: Id<"mediaPreparations">) {
     );
     await requireProCatalogAccess(ctx, c.org._id);
     const policy = preparedServiceRunPolicy(c.run, c.actor);
+    if (policy.paidCustomer)
+      await requirePaidProcessing(ctx, c.actor, c.org._id);
     if (c.run.receipt?.admission?.quote?.openAi)
       await openAiRunAuthority(c.run, c.actor.subject);
     return { ...c, policy };

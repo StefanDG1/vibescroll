@@ -4,7 +4,11 @@ import { ensure, PolicyError } from "../../packages/policy";
 import { requireProCatalogAccess } from "./catalogEntitlement";
 
 // Membership never lends a team owner's subscription or allowance to a member.
-export async function requireAccountPro(ctx: QueryCtx, actor: Doc<"users">) {
+export async function requireAccountPro(
+  ctx: QueryCtx,
+  actor: Doc<"users">,
+  paidOnly = false,
+) {
   const owned = await ctx.db
     .query("organizations")
     .withIndex("by_private_owner", (q) => q.eq("privateOwnerId", actor._id))
@@ -19,7 +23,7 @@ export async function requireAccountPro(ctx: QueryCtx, actor: Doc<"users">) {
       .unique();
     if (membership?.role !== "owner") continue;
     try {
-      await requireProCatalogAccess(ctx, organization._id);
+      await requireProCatalogAccess(ctx, organization._id, paidOnly);
       return organization;
     } catch (error) {
       if (!(error instanceof PolicyError) || error.code !== "FORBIDDEN")

@@ -12,6 +12,7 @@ import {
 } from "../packages/billing/credit-policy";
 import { proOffer } from "../packages/billing/pro-offer";
 import { billingRiskHeld } from "./lib/billingRisk";
+import { paidProcessingCapacity } from "./lib/paidProcessing";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import {
@@ -108,6 +109,11 @@ export const catalogue = query({
   args: {},
   handler: async (ctx) => {
     const tax = await ctx.db.query("taxConfigurations").first();
+    const readiness = billingReadiness(process.env);
+    const capacity =
+      readiness.liveEnabled && singleProConfigured(process.env)
+        ? await paidProcessingCapacity(ctx)
+        : null;
     return {
       pricing,
       proOffer: { ...proOffer, configured: singleProConfigured(process.env) },
@@ -118,7 +124,10 @@ export const catalogue = query({
         !["provider_supported", "tax_covered"].includes(
           process.env.STRIPE_MANAGED_MARKET ?? "",
         ),
-      ...billingReadiness(process.env),
+      ...readiness,
+      liveEnabled:
+        readiness.liveEnabled &&
+        (!singleProConfigured(process.env) || !!capacity?.available),
     };
   },
 });
@@ -463,7 +472,7 @@ export const grantTopup = internalMutation({
   },
   handler: async (ctx, a) => {
     ensure(
-      [200, 550].includes(a.credits),
+      [200, 500].includes(a.credits),
       "CATALOGUE_MISMATCH",
       "Invalid top-up credits.",
     );

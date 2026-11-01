@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Doc } from "../_generated/dataModel";
 import { ensure } from "../../packages/policy";
+import { paidProcessingConfiguration } from "../../packages/contracts/paid-processing";
 
 const configuration = z.strictObject({
   version: z.literal("prepared-service-v1"),
@@ -29,13 +30,30 @@ export function preparedServiceConfiguration(
     const c = configuration.parse(
       JSON.parse(process.env.PREPARED_ANALYSIS_CONFIGURATION_JSON ?? "null"),
     );
+    if (subject && c.subjects && !c.subjects.includes(subject)) {
+      const paid = paidProcessingConfiguration();
+      if (!paid || !c.enabled) return null;
+      return {
+        ...c,
+        id: `paid-prepared-${paid.id}`,
+        subjects: undefined,
+        legacyOwnerFundingOrganizationId: undefined,
+        maximumApiUsd: 0.05,
+        maximumDurationMs: 600000,
+        maximumDailyJobs: 100,
+        maximumHourlyJobs: 20,
+        maximumTotalJobs: 1000,
+        automaticOwnSubscriptionPreparation: false,
+        paidCustomer: true,
+      };
+    }
     if (
       (!allowDisabled && !c.enabled) ||
       process.env.RESTORE_LOCK === "true" ||
       (subject && c.subjects && !c.subjects.includes(subject))
     )
       return null;
-    return c;
+    return { ...c, paidCustomer: false };
   } catch {
     return null;
   }

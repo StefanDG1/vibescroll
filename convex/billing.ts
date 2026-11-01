@@ -5,6 +5,20 @@ import { access, billingFor, fail, limit } from "./lib";
 import { billingReadiness } from "../packages/providers/billing-readiness";
 import { ensure } from "../packages/policy";
 import { billingRiskHeld } from "./lib/billingRisk";
+import {
+  paidProcessingCapacity,
+  requirePaidProcessing,
+} from "./lib/paidProcessing";
+export const processingAvailable = internalQuery({
+  args: { organizationId: v.id("organizations"), requirePro: v.boolean() },
+  returns: v.boolean(),
+  handler: async (ctx, a) => {
+    const principal = await access(ctx, a.organizationId, ["owner"]);
+    if (a.requirePro)
+      await requirePaidProcessing(ctx, principal.actor, a.organizationId);
+    return !!(await paidProcessingCapacity(ctx))?.available;
+  },
+});
 export const authorize = query({
   args: { organizationId: v.id("organizations") },
   handler: async (ctx, { organizationId }) => {

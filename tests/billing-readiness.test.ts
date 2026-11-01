@@ -4,6 +4,7 @@ import {
   billingReturnOrigin,
 } from "../packages/providers/billing-readiness";
 import { policyRelease } from "../packages/policy/publication";
+import { proOffer } from "../packages/billing/pro-offer";
 import {
   managedMarketPolicy,
   managedRadarCondition,
@@ -33,6 +34,44 @@ const env: Record<string, string> = {
     verifiedAt: new Date().toISOString(),
   }),
 };
+
+it("requires backed customer processing before opening the new Pro offer", () => {
+  const configured = {
+    ...env,
+    STRIPE_PRO_PORTAL_CONFIG_ID: "bpc_new",
+    STRIPE_PRO_CREDIT_POLICY_V2_JSON: JSON.stringify({
+      version: proOffer.version,
+      mode: "live",
+      accountId: env.STRIPE_ACCOUNT_ID,
+      activation: "reviewed_live",
+      prices: {
+        weekly: "price_new_w",
+        monthly: "price_new_m",
+        annual: "price_new_y",
+      },
+    }),
+  };
+  expect(billingReadiness(configured).liveEnabled).toBe(false);
+  const funded = {
+    ...configured,
+    PAID_PROCESSING_CONFIGURATION_JSON: JSON.stringify({
+      version: "paid-processing-prefunded-v1",
+      id: "paid-readiness-fixture",
+      enabled: true,
+      verifiedAt: Date.now() - 1000,
+      expiresAt: Date.now() + 86400000,
+      maximumJobs: 10,
+      maximumJobNanoUsd: 50000000,
+      verifiedProviderCreditNanoUsd: 1000000000,
+      providerKeyBudgetNanoUsd: 1000000000,
+      priorExposureNanoUsd: 500000000,
+    }),
+  };
+  expect(billingReadiness(funded).liveEnabled).toBe(true);
+  expect(
+    billingReadiness({ ...funded, DISABLE_INFERENCE: "true" }).liveEnabled,
+  ).toBe(false);
+});
 for (const tier of ["STARTER", "PRO"])
   for (const interval of ["WEEKLY", "MONTHLY", "ANNUAL"])
     env[`STRIPE_${tier}_${interval}_PRICE_ID`] = `price_${tier}_${interval}`;

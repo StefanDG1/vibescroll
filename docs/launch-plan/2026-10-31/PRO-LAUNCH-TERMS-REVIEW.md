@@ -8,7 +8,7 @@ One hosted Pro subscription: EUR35/month with300monthly credits; EUR350/year wit
 
 Requested-post cache reuse is included and does not charge fresh preparation or analysis. Full-catalog browsing is a separate entitlement with no new sale until its price is reviewed. Existing owner access is an admin concession. The open-source edition is self-hosted without the hosted dataset. Do not advertise storage or repository-count allowances.
 
-Keep the existing top-ups at EUR10/200credits and EUR25/550credits until a separate change is reviewed. Included credits expire at their period boundary. Purchased credits, existing reservations and valid results remain recorded. A checkout return is not proof of payment; verified paid invoices grant credits once.
+R133 approves replacement top-ups at EUR17/200credits and EUR35/500credits after live Stripe confirmed zero charges, invoices and subscriptions. Retire unused old offers without a customer migration. Included credits expire at their period boundary. Purchased credits, existing reservations and valid results remain recorded. A checkout return is not proof of payment; verified paid invoices grant credits once.
 
 ## Approved fair-use clause
 

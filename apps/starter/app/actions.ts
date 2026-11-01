@@ -116,7 +116,7 @@ export async function buyV1Credits(_: FormState, d: FormData) {
       await backend()
     ).action(api.billingV1.topup, {
       organizationId: org(d),
-      pack: val(d, "pack") as "200" | "550",
+      pack: val(d, "pack") as "200" | "500",
       country: val(d, "country") || undefined,
       termsAccepted: d.get("terms") === "on",
       immediateService: d.get("immediate") === "on",

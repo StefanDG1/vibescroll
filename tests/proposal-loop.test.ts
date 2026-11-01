@@ -493,3 +493,91 @@ it("does not leave an orphan discussion message when a paid reply cannot reserve
     await f.t.run((ctx) => ctx.db.query("proposalOperations").collect()),
   ).toEqual([]);
 });
+
+it("uses the paid member's wallet and separate shared funding, then revokes inference on payment failure", async () => {
+  const f = await fixture();
+  const actor = (await f.t.run((c) => c.db.query("users").first()))!;
+  await f.t.run((c) => c.db.patch(f.org, { privateOwnerId: actor._id }));
+  const config = JSON.parse(process.env.PROPOSAL_SERVICE_CONFIGURATION_JSON!);
+  vi.stubEnv(
+    "PROPOSAL_SERVICE_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...config,
+      subjects: ["user_99999999999999999999999999"],
+    }),
+  );
+  vi.stubEnv(
+    "PAID_PROCESSING_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "paid-processing-prefunded-v1",
+      id: "paid-plan-fixture",
+      enabled: true,
+      verifiedAt: Date.now() - 1000,
+      expiresAt: Date.now() + 86400000,
+      maximumJobs: 10,
+      maximumJobNanoUsd: 50000000,
+      verifiedProviderCreditNanoUsd: 1000000000,
+      providerKeyBudgetNanoUsd: 1000000000,
+      priorExposureNanoUsd: 100000000,
+    }),
+  );
+  vi.stubEnv("VERCEL_AI_GATEWAY_API_KEY", "synthetic-provider-key");
+  await expect(
+    f.owner.query(api.proposalLoop.quote, { proposalId: f.proposalId }),
+  ).rejects.toThrow("active Pro");
+  await f.t.mutation(internal.billing.attach, {
+    organizationId: f.org,
+    customerId: "cus_paid_plan_fixture",
+  });
+  await f.t.mutation(internal.billing.apply, {
+    customerId: "cus_paid_plan_fixture",
+    subscriptionId: "sub_paid_plan_fixture",
+    status: "active",
+    periodEnd: Date.now() + 86400000,
+    revision: 1,
+  });
+  await f.t.mutation(internal.commerce.grantPeriod, {
+    organizationId: f.org,
+    subscription: "sub_paid_plan_fixture",
+    tier: "pro",
+    interval: "monthly",
+    start: Date.now() - 1000,
+    end: Date.now() + 86400000,
+    verifiedPayment: true,
+  });
+  const q = await f.owner.query(api.proposalLoop.quote, {
+    proposalId: f.proposalId,
+  });
+  expect(q.fundingOrganizationId).toBe(f.org);
+  const args = {
+    proposalId: f.proposalId,
+    expectedVersion: 1,
+    key: "paid-plan-operation",
+    quoteId: q.quoteId,
+    maximumCredits: q.maximumCredits,
+  };
+  const started = await f.owner.mutation(api.proposalLoop.start, args);
+  await f.owner.mutation(api.proposalLoop.start, args);
+  expect(
+    await f.t.run((c) =>
+      c.db
+        .query("proposalServiceCounters")
+        .withIndex("by_policy", (x) =>
+          x.eq("policyId", "paid-funding:paid-plan-fixture"),
+        )
+        .unique(),
+    ),
+  ).toMatchObject({ jobs: 1 });
+  await f.t.run(async (c) => {
+    const b = await c.db
+      .query("billing")
+      .withIndex("by_org", (x) => x.eq("organizationId", f.org))
+      .unique();
+    await c.db.patch(b!._id, { status: "past_due" });
+  });
+  await expect(
+    f.t.mutation(internal.proposalLoop.claim, {
+      operationId: started.operation!.id as Id<"proposalOperations">,
+    }),
+  ).rejects.toThrow("active Pro");
+});

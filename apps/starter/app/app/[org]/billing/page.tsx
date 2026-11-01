@@ -165,8 +165,8 @@ export default async function Page({
                   aria-label="One-time pack"
                   defaultValue="200"
                 >
-                  <option value="200">EUR 10 / 200 credits</option>
-                  <option value="550">EUR 25 / 550 credits</option>
+                  <option value="200">EUR 17 / 200 credits</option>
+                  <option value="500">EUR 35 / 500 credits</option>
                 </ChoiceSelect>
               </label>
               {catalogue.billingCountryRequired && (

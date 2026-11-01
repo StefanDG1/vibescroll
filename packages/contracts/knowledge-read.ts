@@ -201,7 +201,7 @@ export const knowledgeSearchCoverage = z.strictObject({
   // No remaining cursor and no per-post scan limit anywhere in this cursor chain.
   // This is not a semantic no-fit claim or a snapshot of future library changes.
   exhausted: z.boolean(),
-  // The result cap left matches for next_cursor, or a per-post scan bound applied.
+  // Coverage is incomplete: overflow, a scan bound or unavailable evidence.
   truncated: z.boolean(),
   match_limit_reached: z.boolean(),
 });

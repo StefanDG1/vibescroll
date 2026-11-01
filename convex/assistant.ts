@@ -5,7 +5,7 @@ import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Id, Doc } from "./_generated/dataModel";
 import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
 import { access, audit, limit } from "./lib";
-import { ensure, containsSecret } from "../packages/policy";
+import { ensure, containsSecret, PolicyError } from "../packages/policy";
 import { classifySourceUrl } from "../packages/sources/classify";
 import { postDisplayTitle } from "../packages/sources/display";
 import { cloudRetryEligible } from "../packages/contracts/cloud-retry";
@@ -1838,17 +1838,37 @@ export const search = internalQuery({
           continue;
         }
       }
-      const source = await sourceFor(
-        ctx,
-        a,
-        ctx.db.normalizeId("sources", ref.sourceId),
-      );
-      if (!source) {
-        snapshots.push({ sourceId: ref.sourceId, available: false });
+      let source: Awaited<ReturnType<typeof sourceFor>>;
+      let selected: Awaited<ReturnType<typeof selectedAnalysis>>;
+      try {
+        source = await sourceFor(
+          ctx,
+          a,
+          ctx.db.normalizeId("sources", ref.sourceId),
+        );
+        if (!source) {
+          scanLimited = true;
+          snapshots.push({ sourceId: ref.sourceId, available: false });
+          continue;
+        }
+        selected = await selectedAnalysis(ctx, source);
+      } catch (error) {
+        if (
+          !(error instanceof PolicyError) ||
+          !["SOURCE_UNAVAILABLE", "APPROVAL_STALE"].includes(error.code)
+        )
+          throw error;
+        // A retired candidate does not invalidate other current authorized posts.
+        // Preserve incomplete coverage and reject a changed resumed-page snapshot.
+        scanLimited = true;
+        snapshots.push({
+          sourceId: ref.sourceId,
+          available: false,
+          evidenceUnavailable: true,
+        });
         continue;
       }
       scannedPosts++;
-      const selected = await selectedAnalysis(ctx, source);
       const url = `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`;
       const availableInsights =
         source.state === "ready"
@@ -1962,7 +1982,7 @@ export const search = internalQuery({
       grant_version: a.grant.version,
       ...coverage,
       coverage:
-        "Up to five authorized posts, 128 ideas per post and 20 results. Prefer next_cursor: it resumes remaining matches before advancing posts. next_offset preserves legacy post-page navigation only. A cursor rejects changed access, query or resumed source/version snapshots. truncated with no continuation means a per-post scan bound applied. Empty results do not establish absence or no fit.",
+        "Up to five authorized posts, 128 ideas per post and 20 results. Prefer next_cursor: it resumes remaining matches before advancing posts. next_offset preserves legacy post-page navigation only. A cursor rejects changed access, query or resumed source/version snapshots. truncated with no continuation means unavailable evidence or a per-post scan bound left coverage incomplete. Empty results do not establish absence or no fit.",
     };
   },
 });

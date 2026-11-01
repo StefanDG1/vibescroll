@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { syncDashboardCard } from "../convex/lib/dashboardProjection";
+import { search as searchQuery } from "../convex/assistant";
+import { PolicyError } from "../packages/policy";
 import { analysisVersionFixture } from "./analysis-version-fixture";
 import {
   knowledgeSearchCursor,
@@ -148,6 +150,12 @@ it("rejects query, source-access and grant changes while a result page is in pro
   await expect(f.search({ cursor: first.next_cursor! })).rejects.toThrow(
     "STALE_APPROVAL",
   );
+  expect(await f.search()).toMatchObject({
+    matched_items: 11,
+    has_more: false,
+    truncated: true,
+    exhausted: false,
+  });
   await f.t.run((ctx) =>
     ctx.db.patch(f.refs[0].sourceId, { rightsAttested: true }),
   );
@@ -240,4 +248,119 @@ it("carries an explicit per-post scan limit through the whole cursor chain", asy
   }
   expect(complete).toBe(true);
   expect(count).toBe(128);
+});
+
+it("skips a retired selected-evidence candidate and carries incomplete coverage past later valid pages", async () => {
+  const f = await fixture("all", 6, 1, "the");
+  const enrolled = await f.owner.mutation(api.analysisVersions.enroll, {
+    sourceId: f.sourceId,
+  });
+  await f.t.run(async (ctx) => {
+    const version = (await ctx.db.get(enrolled.versionId))!;
+    await ctx.db.patch(version.evidenceId, { state: "removed" });
+    await ctx.db.patch(f.sourceId, { updatedAt: Date.now() + 1 });
+    await syncDashboardCard(
+      ctx,
+      "sources",
+      f.sourceId,
+      await ctx.db.get(f.sourceId),
+    );
+  });
+  const page = await f.search();
+  expect(page.results).toHaveLength(4);
+  expect(
+    page.results.every((result) => result.reference?.sourceId !== f.sourceId),
+  ).toBe(true);
+  expect(page).toMatchObject({
+    matched_items: 4,
+    has_more: true,
+    exhausted: false,
+    truncated: true,
+  });
+  expect(knowledgeSearchOutput.parse(page)).toEqual(page);
+  const last = await f.search({ cursor: page.next_cursor! });
+  expect(last).toMatchObject({
+    matched_items: 2,
+    has_more: false,
+    exhausted: false,
+    truncated: true,
+  });
+  expect(
+    new Set(
+      [...page.results, ...last.results].map(
+        (result) => result.reference?.sourceId,
+      ),
+    ),
+  ).toEqual(new Set(f.refs.map((ref) => ref.sourceId)));
+  await expect(
+    f.assistant.query(internal.assistant.fetch, {
+      profileId: f.org,
+      id: f.sourceId,
+    }),
+  ).rejects.toThrow("SOURCE_UNAVAILABLE");
+});
+
+it.each([
+  [new PolicyError("APPROVAL_STALE", "Synthetic source changed."), true],
+  [new PolicyError("FORBIDDEN", "Synthetic current access denial."), false],
+  [Error("UNEXPECTED_DB_FAILURE"), false],
+] as const)(
+  "limits per-source recovery for %s to the expected availability codes",
+  async (failure, recover) => {
+    const f = await fixture("all", 2, 1);
+    const invoke = () =>
+      f.assistant.run(async (ctx) => {
+        const db = new Proxy(ctx.db, {
+          get(target, property) {
+            if (property === "get")
+              return (...args: unknown[]) => {
+                if (args[0] === f.refs[0].sourceId) throw failure;
+                return Reflect.apply(target.get, target, args);
+              };
+            const value = Reflect.get(target, property);
+            return typeof value === "function" ? value.bind(target) : value;
+          },
+        });
+        return (
+          searchQuery as unknown as {
+            _handler: (
+              ctx: unknown,
+              args: unknown,
+            ) => Promise<{
+              results: { reference?: { sourceId: string } }[];
+              truncated: boolean;
+              exhausted: boolean;
+            }>;
+          }
+        )._handler({ ...ctx, db }, { profileId: f.org, query: "needle" });
+      });
+    if (recover) {
+      const page = await invoke();
+      expect(page.results.map((result) => result.reference?.sourceId)).toEqual([
+        f.refs[1].sourceId,
+      ]);
+      expect(page).toMatchObject({ truncated: true, exhausted: false });
+    } else await expect(invoke()).rejects.toThrow(failure.message);
+  },
+);
+
+it("rejects an overflow cursor when its selected evidence retires after the first page", async () => {
+  const f = await fixture("all", 2, 11, "evidence");
+  const enrolled = await f.owner.mutation(api.analysisVersions.enroll, {
+    sourceId: f.sourceId,
+  });
+  const first = await f.search();
+  expect(first.next_cursor).toBeTruthy();
+  await f.t.run(async (ctx) => {
+    const version = (await ctx.db.get(enrolled.versionId))!;
+    await ctx.db.patch(version.evidenceId, { state: "removed" });
+  });
+  await expect(f.search({ cursor: first.next_cursor! })).rejects.toThrow(
+    "STALE_APPROVAL",
+  );
+  expect(await f.search()).toMatchObject({
+    matched_items: 20,
+    truncated: true,
+    exhausted: false,
+  });
 });

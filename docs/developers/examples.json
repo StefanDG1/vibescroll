@@ -261,7 +261,7 @@
       "url": "https://scroll.companynerve.com/app/synthetic_profile/library/synthetic_source"
     },
     "searchMatch": {
-      "coverage": "Up to five authorized posts, 128 ideas per post and 20 results. Prefer next_cursor: it resumes remaining matches before advancing posts. next_offset preserves legacy post-page navigation only. A cursor rejects changed access, query or resumed source/version snapshots. truncated with no continuation means a per-post scan bound applied. Empty results do not establish absence or no fit.",
+      "coverage": "Up to five authorized posts, 128 ideas per post and 20 results. Prefer next_cursor: it resumes remaining matches before advancing posts. next_offset preserves legacy post-page navigation only. A cursor rejects changed access, query or resumed source/version snapshots. truncated with no continuation means unavailable evidence or a per-post scan bound left coverage incomplete. Empty results do not establish absence or no fit.",
       "exhausted": true,
       "grant_version": 2,
       "has_more": false,
@@ -289,7 +289,7 @@
       "truncated": false
     },
     "searchEmpty": {
-      "coverage": "Up to five authorized posts, 128 ideas per post and 20 results. Prefer next_cursor: it resumes remaining matches before advancing posts. next_offset preserves legacy post-page navigation only. A cursor rejects changed access, query or resumed source/version snapshots. truncated with no continuation means a per-post scan bound applied. Empty results do not establish absence or no fit.",
+      "coverage": "Up to five authorized posts, 128 ideas per post and 20 results. Prefer next_cursor: it resumes remaining matches before advancing posts. next_offset preserves legacy post-page navigation only. A cursor rejects changed access, query or resumed source/version snapshots. truncated with no continuation means unavailable evidence or a per-post scan bound left coverage incomplete. Empty results do not establish absence or no fit.",
       "exhausted": true,
       "grant_version": 2,
       "has_more": false,

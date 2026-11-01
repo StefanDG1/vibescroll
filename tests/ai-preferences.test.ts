@@ -79,6 +79,7 @@ it("keeps plan preference personal, off by default and independent of hosted aut
     personalAlphaEnabled: false,
     linkAnalysisEnabled: false,
     cloudAnalysisEnabled: false,
+    preparedAnalysisEnabled: false,
     processingRoute: null,
     workCloud: null,
   });

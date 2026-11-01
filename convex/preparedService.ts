@@ -155,11 +155,6 @@ async function quoteFor(
   );
   if (config.paidCustomer) {
     await requirePaidProcessing(ctx, a.actor, a.organization._id);
-    ensure(
-      (await paidProcessingCapacity(ctx))?.available,
-      "BUDGET_EXCEEDED",
-      "Processing capacity is temporarily unavailable.",
-    );
   }
   ensure(
     ["instagram", "tiktok"].includes(
@@ -199,6 +194,12 @@ async function quoteFor(
     }
   }
   const cacheHit = ready && !request.reanalyze;
+  if (config.paidCustomer && !cacheHit)
+    ensure(
+      (await paidProcessingCapacity(ctx))?.available,
+      "BUDGET_EXCEEDED",
+      "Processing capacity is temporarily unavailable.",
+    );
   const cachedVersion =
     cacheHit && a.source.selectedAnalysisVersionId
       ? await ctx.db.get(a.source.selectedAnalysisVersionId)

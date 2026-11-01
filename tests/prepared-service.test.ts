@@ -1556,6 +1556,10 @@ it("admits paid non-pilot users, reserves once and rejects refund risk before a 
     end: Date.now() + 86400000,
     verifiedPayment: true,
   });
+  expect(
+    (await f.owner.query(api.aiPreferences.read, { organizationId: f.org }))
+      .preparedAnalysisEnabled,
+  ).toBe(true);
   const q = await f.quote();
   const args = {
     ...f.request,
@@ -1578,6 +1582,13 @@ it("admits paid non-pilot users, reserves once and rejects refund risk before a 
   expect((await f.t.run((c) => c.db.get(a.runId!)))?.policyId).toBe(
     "paid-prepared-paid-fixture-funding",
   );
+  await f.t.run((c) => c.db.patch(counter!._id, { jobs: 10 }));
+  const cached = await f.owner.query(api.preparedService.quote, {
+    sourceId: f.sourceId,
+    executor: "gateway",
+  });
+  expect(cached.cacheHit).toBe(true);
+  expect(cached.maximumCredits).toBe(0);
   await f.t.run((c) =>
     c.db.insert("billingRiskHolds", {
       organizationId: f.org,

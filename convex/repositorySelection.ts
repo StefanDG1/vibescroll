@@ -81,6 +81,11 @@ export const save = mutation({
       "owner",
       "admin",
     ]);
+    ensure(
+      a.choices.length <= 1000,
+      "BATCH_LIMIT",
+      "Select projects in batches of at most 1,000. Existing connections are preserved.",
+    );
     await limit(ctx, `repo-selection:${a.organizationId}`, 10);
     const entitlement = await wallet(ctx, a.organizationId);
     const repositoryLimit = repositoryAllowance(
@@ -96,7 +101,12 @@ export const save = mutation({
     const bindings = await ctx.db
       .query("githubBindings")
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
-      .collect();
+      .take(1001);
+    ensure(
+      bindings.length < 1001,
+      "BATCH_LIMIT",
+      "This bulk selection needs an installation batch review. Existing connections are preserved.",
+    );
     const connection = await ctx.db
       .query("connections")
       .withIndex("by_provider", (q) =>

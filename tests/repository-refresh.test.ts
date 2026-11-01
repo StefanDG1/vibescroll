@@ -4,6 +4,30 @@ import { api, internal } from "../convex/_generated/api";
 
 afterEach(() => vi.unstubAllEnvs());
 
+it("rejects an oversized selection before changing connections, wallets or scheduling work", async () => {
+  const f = await fixture();
+  const snapshot = () =>
+    f.t.run(async (ctx) => ({
+      repositories: await ctx.db.query("repositories").collect(),
+      wallets: await ctx.db.query("wallets").collect(),
+      scheduled: await ctx.db.system.query("_scheduled_functions").collect(),
+    }));
+  const before = await snapshot();
+  await expect(
+    f.owner.mutation(api.repositorySelection.save, {
+      organizationId: f.org,
+      draftContext: false,
+      maxCredits: 0,
+      choices: Array.from({ length: 1001 }, (_, i) => ({
+        installationId: 42,
+        providerId: i + 100,
+        fullName: `owned/project-${i}`,
+      })),
+    }),
+  ).rejects.toThrow("batches of at most 1,000");
+  expect(await snapshot()).toEqual(before);
+});
+
 it("connects a sixteenth Pro repository without spending credits or changing existing project data", async () => {
   const f = await fixture();
   await f.t.mutation(internal.commerce.grantPeriod, {
@@ -52,6 +76,66 @@ it("connects a sixteenth Pro repository without spending credits or changing exi
     before.repositories,
   );
   expect(after.wallets).toEqual(before.wallets);
+});
+
+it("saves sixteen authorized Pro selections in one batch without an analysis charge", async () => {
+  const f = await fixture();
+  await f.t.mutation(internal.commerce.grantPeriod, {
+    organizationId: f.org,
+    subscription: "sub_pro_selection",
+    tier: "pro",
+    interval: "monthly",
+    start: Date.now(),
+    end: Date.now() + 31 * 86400000,
+    verifiedPayment: true,
+  });
+  const choices = [
+    { installationId: 42, providerId: 55, fullName: "owned/synthetic" },
+    ...Array.from({ length: 15 }, (_, i) => ({
+      installationId: 42,
+      providerId: 2000 + i,
+      fullName: `owned/selected-${i}`,
+    })),
+  ];
+  await f.t.run(async (ctx) => {
+    const now = Date.now(),
+      tenant = { organizationId: f.org, createdAt: now, updatedAt: now };
+    await ctx.db.insert("connections", {
+      ...tenant,
+      provider: "github",
+      ciphertext: "synthetic-unused",
+      keyVersion: "test",
+      status: "connected",
+    });
+    await ctx.db.insert("githubBindings", {
+      ...tenant,
+      githubUserId: 42,
+      installationId: 42,
+      repositories: choices.map((c) => ({
+        id: c.providerId,
+        fullName: c.fullName,
+      })),
+      status: "connected",
+    });
+  });
+  const before = await f.t.run((ctx) => ctx.db.query("wallets").collect());
+  const result = await f.owner.mutation(api.repositorySelection.save, {
+    organizationId: f.org,
+    choices,
+    draftContext: false,
+    maxCredits: 0,
+  });
+  expect(result).toHaveLength(16);
+  expect(
+    await f.t.run((ctx) => ctx.db.query("repositories").collect()),
+  ).toHaveLength(16);
+  expect(await f.t.run((ctx) => ctx.db.query("wallets").collect())).toEqual(
+    before,
+  );
+  expect(await f.t.run((ctx) => ctx.db.get(f.projectId))).toMatchObject({
+    sha: "a".repeat(40),
+    confirmed: true,
+  });
 });
 
 async function preparedRefresh() {

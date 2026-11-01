@@ -1,6 +1,6 @@
 # Workspace search and retained post context
 
-Date: November1,2026. Status: first checkpoint deployed under R141. [Dated production receipt](../operations/evidence/launch-20261101-context-retrieval.json) records partial host image acceptance and the remaining second checkpoint.
+Date: November1,2026. Status: both checkpoints deployed under R141/R142. [Extended acceptance](../operations/evidence/launch-20261101-context-retrieval-extended.json) records actual filtered/project-context host continuation. [First acceptance](../operations/evidence/launch-20261101-context-retrieval.json) retains initial host-image failures and successful sequential diagnostics.
 
 ## Decision
 

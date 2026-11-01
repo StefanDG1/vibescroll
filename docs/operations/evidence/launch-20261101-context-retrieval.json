@@ -67,11 +67,19 @@
     "rankedSelectedInsightFirst": true,
     "frameAttempts": 8,
     "viewableFrames": 5,
-    "failedFrameIds": ["frame-001", "frame-003", "frame-005"],
+    "failedFrameIds": [
+      "frame-001",
+      "frame-003",
+      "frame-005"
+    ],
     "failedFrameStatus": "MCP -32603; no corresponding backend image actions observed; diagnosis pending",
     "noAnalysisOrWalletOperationsRequested": true,
     "sequentialDiagnostic": {
-      "frameIds": ["frame-001", "frame-003", "frame-005"],
+      "frameIds": [
+        "frame-001",
+        "frame-003",
+        "frame-005"
+      ],
       "viewableFrames": 3,
       "allReturnedManifestIdentitiesMatch": true,
       "noReconnectOrAnalysis": true
@@ -97,9 +105,8 @@
     }
   },
   "remaining": [
-    "resolve actual host image failures",
-    "filters, selected-project fit and explicit multi-workspace search",
-    "automatic joined-team MCP defaults approved by owner",
-    "source-free lexical/semantic evaluation and records"
+    "initial3 host image failures remain unexplained; one-at-a-time route accepted",
+    "second checkpoint completed separately: launch-20261101-context-retrieval-extended.json",
+    "real expected-hit/latency and conditional semantic/provider follow-ups remain unclaimed"
   ]
 }

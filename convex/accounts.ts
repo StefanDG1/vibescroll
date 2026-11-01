@@ -43,11 +43,38 @@ export const syncUser = internalMutation({
         await ctx.db.patch(existing._id, {
           ...profile,
           ...(verified ? { profileVerifiedAt: Date.now() } : {}),
+          ...(verified &&
+          !existing.profileVerifiedAt &&
+          !existing.onboarding &&
+          process.env.ONBOARDING_ENABLED === "true" &&
+          existing.createdAt >=
+            Number(process.env.ONBOARDING_LAUNCH_AT ?? Infinity)
+            ? {
+                onboarding: {
+                  version: 1 as const,
+                  stage: "quiz" as const,
+                  goal: "",
+                  interests: [],
+                  updatedAt: Date.now(),
+                },
+              }
+            : {}),
         });
       return existing._id;
     }
     return ctx.db.insert("users", {
       ...profile,
+      ...(verified && process.env.ONBOARDING_ENABLED === "true"
+        ? {
+            onboarding: {
+              version: 1 as const,
+              stage: "quiz" as const,
+              goal: "",
+              interests: [],
+              updatedAt: Date.now(),
+            },
+          }
+        : {}),
       ...(verified ? { profileVerifiedAt: Date.now() } : {}),
       status: "active",
       createdAt: Date.now(),

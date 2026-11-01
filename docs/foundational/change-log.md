@@ -1,5 +1,11 @@
 # Foundational document change log
 
+## F098: real interest-matched onboarding, November1
+
+The later sequencing clarification places optional GitHub/repository setup after signup and before payment, retaining valid authorization and choices for direct paywall resumption. Account-before-payment is the recommended sequence, not a demonstrated conversion advantage. Paid processing and real proposal generation still wait for Pro and applicable quotes. [Sequence and recovery](../strategy/INTEREST-LED-ONBOARDING.md#preserve-pre-payment-setup-and-resume-at-the-paywall).
+
+Record R143 and its [review plan](../strategy/INTEREST-LED-ONBOARDING.md) across the four briefs. The owner approves one complete curated result before payment and rejects the proposed synthetic onboarding sample. This is a planned narrow preview of real ready posts, with optional Instagram saved-post import, not a new hosted free tier or full-catalog entitlement. The existing importer is source evidence; the new funnel, current export screenshots and conversion effects remain untested. Current production, prices, six beliefs, funding and private content stay unchanged. No application implementation starts before plan review.
+
 ## F097: public MCP explanation, November1
 
 All four briefs preserve the owner's public documentation request: useful diagrams, actual tool/data behavior, skills versus custom connections, separate host/OAuth authentication and honest cost limits. No new commercial promise, audience, permission, price or customer-validation claim. [ADR225](../adr/225-public-mcp-reference-and-authentication-boundaries.md).

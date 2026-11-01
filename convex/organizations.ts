@@ -148,7 +148,7 @@ export const createPrivate = mutation({
     if (existing) {
       if (existing.status !== "active")
         fail("Private library deletion is in progress.");
-      await access(ctx, existing._id, ["owner"]);
+      await access(ctx, existing._id, ["owner"], true);
       return existing._id;
     }
     await limit(ctx, `org:${actor._id}`, 5);

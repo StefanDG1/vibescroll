@@ -44,6 +44,8 @@ export const config = {
     "/sign-in",
     "/sign-up",
     "/callback",
+    "/onboarding/resume/:path*",
+    "/onboarding/project/:path*",
     "/api/product",
     "/api/realtime/:path*",
     "/api/source/:path*",

@@ -1,5 +1,9 @@
 # VibeScroll foundational research
 
+## F098: real interest-matched onboarding, November1
+
+R143 requests a real, interest-matched ready-post onboarding experience and optional saved-post import. The owner approves one complete curated result before payment. The [review plan](../strategy/INTEREST-LED-ONBOARDING.md) records the existing local Instagram importer and the still-unverified current export walkthrough. Better comprehension and conversion are hypotheses, not customer findings. No application implementation, public catalog exposure or fresh free processing follows from this planning update.
+
 ## F097: public MCP explanation, November1
 
 R135 requests public technical documentation with useful request/authentication, funding and shared-cache diagrams. Explain actual tools, packaged versus installed skills, exact data limits and the distinction between host subscription reasoning and VibeScroll API credits. Keep unmeasured Convex costs and host discovery explicit. This changes no audience, price, permission or verified customer outcome. [Documentation decision](../adr/225-public-mcp-reference-and-authentication-boundaries.md).

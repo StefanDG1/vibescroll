@@ -1,6 +1,6 @@
 # Owner request register
 
-Mode: reference. Reviewed October 30, 2026, Europe/Berlin.
+Mode: reference. Reviewed November 1, 2026, Europe/Berlin.
 
 This register reconciles the owner messages visible in the link-to-insights conversation, including questions, screenshots, approvals and later corrections. Repeated status requests are consolidated. Short quotes are retrieval anchors, not a verbatim transcript. Linked plans retain the detailed implementation scope. This register does not grant new spending, source rights or provider capabilities.
 
@@ -16,6 +16,12 @@ Status vocabulary:
 - **Superseded**: a later owner instruction replaces the earlier choice.
 
 ## Capture, extraction and visible results
+
+R144, November1: the owner approves implementation of the complete [interest-led onboarding plan](INTEREST-LED-ONBOARDING.md) and requests a working, visually verified production journey. Include the real curated preview, saved quiz progress, account before payment, optional pre-payment GitHub/repository selection, paywall resumption, Pro activation, first real proposal/issue flow, and optional import guidance. Preserve existing accounts, individual Pro funding, source/version rights, provider gates and monetary caps. Plan implementation is authorized; production completion requires actual acceptance evidence.
+
+R143 sequencing clarification, November1: the owner requests GitHub connection after login/signup but before payment, retaining the account, authorization and setup so a later unpaid sign-in returns to the paywall. They ask whether signup should be before or after payment. The [plan](INTEREST-LED-ONBOARDING.md#preserve-pre-payment-setup-and-resume-at-the-paywall) recommends account first, optional GitHub/repository selection, then Pro. Keep valid authorization without repeated consent, but respect provider expiry/revocation; do not store credentials in the quiz draft. Pre-payment setup starts no paid repository/media/plan work. Reuse the connection for the first real post-payment proposal and Approve & create issue. This remains a design update, not implementation or production acceptance.
+
+R143, November1: prepare a separate, resumable quiz onboarding plan for developers/founders first, with a team branch, account creation and the current Pro paywall. The owner rejects the proposed synthetic onboarding sample and requests interest-matched real posts with existing ready insights, selected editorially or using honest popularity. The owner explicitly approves one complete curated result before account creation/payment. This is a limited starter preview, not full-catalog entitlement or fresh free analysis. Offer an optional Instagram Saved-only, All-time export guide/import branch, with other platform imports later; keep browsing while the export is pending. Reuse the real Home reader and existing local ZIP/JSON/HTML importer. Browsing alone must not import posts, and bulk import must not start unquoted processing. The [interest-led onboarding plan](INTEREST-LED-ONBOARDING.md) preserves older quiz/resume requirements while reconciling the later paid-only offer. Application implementation and publication remain pending owner review; current production is unchanged.
 
 Detailed owners: [versioned flow](../launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md), [prepared evidence](../launch-plan/2026-10-23/PREPARED-EVIDENCE-AND-CREDITS-2026-10-29.md), [app map](../DASHBOARD-AND-MOBILE-UX.md).
 

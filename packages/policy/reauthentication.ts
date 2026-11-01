@@ -26,7 +26,9 @@ export function authenticationReviewRequired(value: unknown): boolean {
 }
 
 export function authenticationReturnTo(candidate: string): string {
-  return /^(?:\/app|\/account)(?:[/?#]|$)/.test(candidate) &&
+  return /^(?:\/app|\/account|\/onboarding\/(?:resume|project))(?:[/?#]|$)/.test(
+    candidate,
+  ) &&
     candidate.length <= 4096 &&
     !/[\\\r\n]/.test(candidate)
     ? candidate

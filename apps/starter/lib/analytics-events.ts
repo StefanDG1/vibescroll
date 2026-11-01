@@ -16,6 +16,9 @@ const views = [
   "menu",
 ];
 const events: Record<string, Record<string, readonly string[] | "count">> = {
+  onboarding_step_viewed: {
+    step: ["interests", "goal", "feed", "reader", "import"],
+  },
   page_viewed: {
     surface: ["website", "app"],
     page: [

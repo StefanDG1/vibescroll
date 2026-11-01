@@ -30,6 +30,7 @@ export function ProjectProposalComposer({
   onContinue,
   onSaved,
   onPreferencesChange,
+  initialGoal = "",
 }: {
   organizationId: string;
   sourceId: string;
@@ -51,6 +52,7 @@ export function ProjectProposalComposer({
   onContinue?: (proposalId: string) => Promise<void>;
   onSaved?: (proposalId: string) => void;
   onPreferencesChange?: () => void;
+  initialGoal?: string;
 }) {
   const uid = useId();
   const [open, setOpen] = useState(false);
@@ -61,7 +63,7 @@ export function ProjectProposalComposer({
   const [title, setTitle] = useState(
     (sourceTitle ?? insight.title).slice(0, 160),
   );
-  const [goal, setGoal] = useState("");
+  const [goal, setGoal] = useState(initialGoal);
   const [change, setChange] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");

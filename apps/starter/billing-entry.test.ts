@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { isValidElement, type ReactElement } from "react";
 const mock = vi.hoisted(() => ({ mutation: vi.fn(), query: vi.fn() }));
 vi.mock("@/lib/backend", () => ({
@@ -8,6 +8,7 @@ vi.mock("@/lib/backend", () => ({
     billing: { authorize: "authorize" },
     commerce: { catalogue: "catalogue" },
     product: { usage: "usage" },
+    onboarding: { status: "onboarding-status" },
   },
 }));
 vi.mock("next/navigation", () => ({
@@ -27,6 +28,9 @@ import Page from "./app/app/page";
 import BillingPage from "./app/app/[org]/billing/page";
 import { startV1Checkout, buyV1Credits, refreshBilling } from "./app/actions";
 afterEach(() => vi.resetAllMocks());
+beforeEach(() =>
+  mock.query.mockResolvedValue({ legacy: true, paid: false, progress: null }),
+);
 it("opens personal Pro billing even when the selected workspace is a team", async () => {
   mock.mutation.mockResolvedValue("my-personal-account");
   await expect(
@@ -56,17 +60,19 @@ function billingData(
   pools: object[] = [],
 ) {
   mock.query.mockImplementation(async (endpoint) =>
-    endpoint === "authorize"
-      ? { personal: true, billing }
-      : endpoint === "catalogue"
-        ? {
-            proOffer: { configured: true },
-            liveEnabled: true,
-            sandboxEnabled: false,
-            billingCountryRequired: false,
-            countries: [],
-          }
-        : { wallet, pools, entries: [], reservations: [] },
+    endpoint === "onboarding-status"
+      ? { legacy: true, paid: false, progress: null }
+      : endpoint === "authorize"
+        ? { personal: true, billing }
+        : endpoint === "catalogue"
+          ? {
+              proOffer: { configured: true },
+              liveEnabled: true,
+              sandboxEnabled: false,
+              billingCountryRequired: false,
+              countries: [],
+            }
+          : { wallet, pools, entries: [], reservations: [] },
   );
 }
 it("offers read-only reconciliation rather than a second checkout after an unverified checkout return", async () => {
@@ -121,4 +127,29 @@ it("keeps ordinary app entry on its selected workspace", async () => {
   expect(mock.mutation).toHaveBeenCalledExactlyOnceWith("default", {
     preferredId: "team-account",
   });
+});
+it("returns a new unpaid account directly to its saved paywall without changing workspaces", async () => {
+  mock.query.mockResolvedValue({
+    legacy: false,
+    paid: false,
+    progress: { stage: "paywall" },
+  });
+  await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow(
+    "redirect:/onboarding/resume",
+  );
+  expect(mock.mutation).not.toHaveBeenCalled();
+});
+it("routes a new account's checkout return to verified onboarding recovery", async () => {
+  mock.query.mockResolvedValue({
+    legacy: false,
+    paid: false,
+    progress: { stage: "paywall" },
+  });
+  await expect(
+    BillingPage({
+      params: Promise.resolve({ org: "personal" }),
+      searchParams: Promise.resolve({ checkout: "complete" }),
+    }),
+  ).rejects.toThrow("redirect:/onboarding/resume?checkout=complete");
+  expect(mock.mutation).not.toHaveBeenCalled();
 });

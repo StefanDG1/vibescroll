@@ -6,7 +6,10 @@ import type { Id } from "./_generated/dataModel";
 import { isPaid } from "../packages/company-config";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { billingFor } from "./lib/billingAccess";
-import { requireTeamSubscription } from "./lib/accountSubscription";
+import {
+  requireTeamSubscription,
+  requireAccountPro,
+} from "./lib/accountSubscription";
 export { billingFor } from "./lib/billingAccess";
 export function fail(message: string): never {
   throw new ConvexError(message);
@@ -44,6 +47,7 @@ export async function access(
   ctx: QueryCtx,
   organizationId: Id<"organizations">,
   roles?: string[],
+  onboardingSetup = false,
 ) {
   const actor = await user(ctx);
   const membership = await ctx.db
@@ -61,6 +65,10 @@ export async function access(
     return fail("Organization unavailable.");
   if (roles && !roles.includes(membership.role))
     return fail("You do not have permission for this action.");
+  // Existing accounts retain their policy. New hosted accounts may authenticate
+  // and configure billing/GitHub before payment, but ordinary workspace access
+  // is enforced here for direct API and MCP calls as well as the website.
+  if (actor.onboarding && !onboardingSetup) await requireAccountPro(ctx, actor);
   await requireTeamSubscription(ctx, actor, organization);
   return { actor, membership, organization };
 }
@@ -68,8 +76,9 @@ export async function writeAccess(
   ctx: MutationCtx,
   organizationId: Id<"organizations">,
   roles = ["owner", "admin", "member"],
+  onboardingSetup = false,
 ) {
-  return access(ctx, organizationId, roles);
+  return access(ctx, organizationId, roles, onboardingSetup);
 }
 export async function paid(ctx: QueryCtx, id: Id<"organizations">) {
   if (!isPaid(await billingFor(ctx, id)))

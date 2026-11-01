@@ -436,7 +436,7 @@ export const recordAcceptance = internalMutation({
     immediateService: v.boolean(),
   },
   handler: async (ctx, a) => {
-    const actor = await writeAccess(ctx, a.organizationId, ["owner"]);
+    const actor = await writeAccess(ctx, a.organizationId, ["owner"], true);
     await ctx.db.insert("legalAcceptances", {
       ...a,
       actor: actor.actor._id,

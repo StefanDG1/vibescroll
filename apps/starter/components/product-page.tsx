@@ -1,7 +1,8 @@
 import { Console } from "./console";
 import { workspaceData } from "@/lib/workspace-data";
 import { withAuth } from "@workos-inc/authkit-nextjs";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { backend, api } from "@/lib/backend";
 export async function ProductPage({
   org,
   view,
@@ -36,6 +37,14 @@ export async function ProductPage({
   publicVersion?: number;
 }) {
   const { user } = await withAuth();
+  if (!["account", "menu", "connections"].includes(view)) {
+    const onboarding = await (await backend()).query(api.onboarding.status, {});
+    if (
+      !onboarding.legacy &&
+      (!onboarding.paid || onboarding.progress?.stage !== "complete")
+    )
+      redirect("/onboarding/resume");
+  }
   const initial = await workspaceData({
     org,
     view: draft ? "full" : view,

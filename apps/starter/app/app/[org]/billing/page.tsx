@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { ActionForm } from "@/components/action-form";
@@ -26,6 +27,9 @@ export default async function Page({
   const { org } = await params,
     c = await backend(),
     organizationId = org as Id<"organizations">;
+  const onboarding = await c.query(api.onboarding.status, {});
+  if (!onboarding.legacy && (await searchParams)?.checkout === "complete")
+    redirect("/onboarding/resume?checkout=complete");
   const [auth, catalogue, usage] = await Promise.all([
     c.query(api.billing.authorize, { organizationId }),
     c.query(api.commerce.catalogue, {}),

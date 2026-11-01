@@ -131,6 +131,18 @@ async function setup(
   };
 }
 
+it("allows a new unpaid onboarding account to open checkout without granting Pro or processing", async () => {
+  const { t, user, args } = await setup();
+  await t.run(async (ctx) => {
+    const actor = await ctx.db.query("users").withIndex("by_subject", (q) => q.eq("subject", "pro-checkout")).unique();
+    await ctx.db.patch(actor!._id, { onboarding: { version: 1, stage: "paywall", goal: "build_faster", interests: ["coding"], updatedAt: Date.now() } });
+  });
+  await expect(user.action(api.billingV1.checkout, args)).resolves.toBe("https://checkout.stripe.com/synthetic");
+  expect(mocks.checkout).toHaveBeenCalledTimes(1);
+  expect((await user.query(api.onboarding.status, {})).paid).toBe(false);
+  expect(await t.run((ctx) => ctx.db.query("billingPeriods").first())).toBeNull();
+  expect(await t.run((ctx) => ctx.db.query("reservations").first())).toBeNull();
+});
 it.each(["weekly", "monthly", "annual"] as const)(
   "opens exact %s Pro checkout and reuses its intent",
   async (interval) => {

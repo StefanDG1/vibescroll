@@ -1,4 +1,5 @@
 import { assistantTables } from "./assistantSchema";
+import { onboardingState } from "./onboardingSchema";
 import { providerFundingTables } from "./providerFundingSchema";
 import { workspaceSearchTables } from "./workspaceSearchSchema";
 import { postEngagementTables } from "./postEngagementSchema";
@@ -56,6 +57,7 @@ export default defineSchema({
     profileVerifiedAt: v.optional(v.number()),
     preferChatGPTPlan: v.optional(v.boolean()),
     defaultWorkspaceId: v.optional(v.id("organizations")),
+    onboarding: v.optional(onboardingState),
     fullCatalogEnabled: v.optional(v.boolean()),
     fullCatalogGrant: v.optional(
       v.object({

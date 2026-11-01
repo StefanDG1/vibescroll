@@ -13,7 +13,7 @@ export const processingAvailable = internalQuery({
   args: { organizationId: v.id("organizations"), requirePro: v.boolean() },
   returns: v.boolean(),
   handler: async (ctx, a) => {
-    const principal = await access(ctx, a.organizationId, ["owner"]);
+    const principal = await access(ctx, a.organizationId, ["owner"], !a.requirePro);
     if (a.requirePro)
       await requirePaidProcessing(ctx, principal.actor, a.organizationId);
     return !!(await paidProcessingCapacity(ctx))?.available;
@@ -22,7 +22,7 @@ export const processingAvailable = internalQuery({
 export const authorize = query({
   args: { organizationId: v.id("organizations") },
   handler: async (ctx, { organizationId }) => {
-    const a = await access(ctx, organizationId, ["owner"]);
+    const a = await access(ctx, organizationId, ["owner"], true);
     return {
       name: a.organization.name,
       email: a.actor.email,

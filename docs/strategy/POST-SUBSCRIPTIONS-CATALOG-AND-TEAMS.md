@@ -6,6 +6,8 @@ Read this plan before catalog access, workspace membership, preparation or credi
 
 ## Personal saves and catalog browsing
 
+November1 R143 proposes an explicit [onboarding starter selection](INTEREST-LED-ONBOARDING.md) of real ready posts. The owner approves one complete curated result before payment. This narrow preview does not grant full-library browsing, create personal saves on view, expose private results or change production access before implementation and acceptance. Continued hosted use retains the existing Pro policy.
+
 Retain permitted neutral evidence and immutable insight versions under an independent service owner. A personal library contains only posts the user explicitly saved or requested. Requesting an already-analyzed post creates that user's durable association and reuses the compatible selected version. It must not copy the corpus, duplicate media bundles, start inference or debit analysis credits. Browsing alone creates no personal association.
 
 Base Pro includes compatible cache reuse for requested posts. Full-library browsing is a separate paid add-on with an account Settings toggle. The owner requests an enabled admin concession for their account. Record it as an operator grant, not a fabricated paid subscription. Paid add-on checkout and webhook activation require real commerce integration before purchase is advertised. Turning browsing off preserves personal saves and base cache reuse.

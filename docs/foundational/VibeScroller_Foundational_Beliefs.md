@@ -1,5 +1,9 @@
 # VibeScroll foundational beliefs
 
+## F098: real interest-matched onboarding, November1
+
+R143's approved one-result preview lets a prospect inspect real retained insights before deciding whether to buy Pro. The [review plan](../strategy/INTEREST-LED-ONBOARDING.md) preserves the six beliefs, user choice and honest cached-versus-fresh states. Popularity is not verified usefulness, and an optional export never starts unquoted analysis. The new journey remains unimplemented and its effectiveness unmeasured.
+
 ## F097: public MCP explanation, November1
 
 R135 requests public technical documentation with useful request/authentication, funding and shared-cache diagrams. Explain actual tools, packaged versus installed skills, exact data limits and the distinction between host subscription reasoning and VibeScroll API credits. Keep unmeasured Convex costs and host discovery explicit. This changes no audience, price, permission or verified customer outcome. [Documentation decision](../adr/225-public-mcp-reference-and-authentication-boundaries.md).

@@ -20,7 +20,7 @@ export const complete = action({
     code: v.string(),
   },
   handler: async (ctx, a): Promise<void> => {
-    const { actor } = await ctx.runQuery(api.jobs.authorizeOwner, {
+    const { actor } = await ctx.runQuery(api.onboarding.authorizeGitHub, {
       organizationId: a.organizationId,
     });
     await ctx.runMutation(internal.githubLinks.consume, {
@@ -80,7 +80,7 @@ export const complete = action({
 export const refreshChoices = action({
   args: { organizationId: v.id("organizations") },
   handler: async (ctx, a): Promise<void> => {
-    await ctx.runQuery(api.jobs.authorizeOwner, a);
+    await ctx.runQuery(api.onboarding.authorizeGitHub, a);
     let row = await ctx.runQuery(internal.jobs.secret, {
       ...a,
       provider: "github",

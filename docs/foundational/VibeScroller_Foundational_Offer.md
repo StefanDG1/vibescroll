@@ -1,5 +1,9 @@
 # VibeScroll foundational offer
 
+## F098: real interest-matched onboarding, November1
+
+R143 plans one complete curated ready result before account creation/payment, followed by the current Pro offer for continued hosted use. The owner selected this preview and rejected the proposed synthetic onboarding sample. The [review plan](../strategy/INTEREST-LED-ONBOARDING.md) keeps full-catalog access separate and optional imports distinct from quoted analysis. The preview is not deployed, a free hosted tier or a promise of instant fresh analysis. Existing prices and production entitlements remain unchanged.
+
 ## F097: public MCP explanation, November1
 
 R135 requests public technical documentation with useful request/authentication, funding and shared-cache diagrams. Explain actual tools, packaged versus installed skills, exact data limits and the distinction between host subscription reasoning and VibeScroll API credits. Keep unmeasured Convex costs and host discovery explicit. This changes no audience, price, permission or verified customer outcome. [Documentation decision](../adr/225-public-mcp-reference-and-authentication-boundaries.md).

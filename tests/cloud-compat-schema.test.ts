@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { onboardingState } from "../convex/onboardingSchema";
 import { productTables } from "../convex/productSchema";
 import { assistantTables } from "../convex/assistantSchema";
 import { publicTables } from "../convex/publicSchema";
@@ -30,6 +31,13 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
   // Include the explicitly new, initially empty preparation table. Component
   // configuration and every historical table/index remain checked below.
   expect(Object.keys(schema.tables)).toHaveLength(106);
+  expect(
+    (schema.tables.users as any).export().documentType.value.onboarding,
+  ).toEqual({
+    fieldType: (defineTable({ value: onboardingState }) as any).export()
+      .documentType.value.value.fieldType,
+    optional: true,
+  });
   expect(Object.keys(workspaceSearchTables).sort()).toEqual([
     "workspaceSearchDocuments",
     "workspaceSearchOrigins",
@@ -284,6 +292,11 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
     expect(
       file === "schema.ts"
         ? content
+            .replace(
+              'import { onboardingState } from "./onboardingSchema";\n',
+              "",
+            )
+            .replace("    onboarding: v.optional(onboardingState),\n", "")
             .replace(
               'import { workspaceSearchTables } from "./workspaceSearchSchema";\n',
               "",

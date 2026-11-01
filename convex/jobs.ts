@@ -457,7 +457,7 @@ export const connections = query({
 export const revoke = mutation({
   args: { ...org, provider: v.string() },
   handler: async (ctx, a) => {
-    await writeAccess(ctx, a.organizationId, ["owner"]);
+    await writeAccess(ctx, a.organizationId, ["owner"], true);
     const rows = await ctx.db
       .query("connections")
       .withIndex("by_provider", (q) =>

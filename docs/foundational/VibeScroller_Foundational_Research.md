@@ -1,5 +1,9 @@
 # VibeScroll foundational research
 
+## F096: paid-credit production launch, November1
+
+R133 enables the approved Pro offer and EUR17/200credits or EUR35/500credits top-ups in production after zero live charges/invoices/subscriptions were verified. Eight unused old prices are archived. One exact live EUR35checkout was opened and expired unpaid; no card, charge, customer revenue or willingness to pay is established. Paid processing uses each member's own Pro/credits and finite existing provider funding, with no Auto Reload or operator purchase. Preserve requested-post cache access, private project isolation and honest measured claims. Public offer availability is distinct from independent paid-customer acceptance or demonstrated profitability. [Decision](../adr/224-paid-credit-launch-without-operator-purchases.md).
+
 ## F095: approved live Pro offer and terms, November1
 
 The owner explicitly approves EUR35/month with300monthly credits, EUR350/year with300credits granted monthly, and EUR17every seven days with75credits, plus the reviewed fair-use terms. Three prices and a safe portal are created and configured under the existing live product; old price records remain unchanged. Website/backend480e9fc publish the matching terms after24staged/24canonical checks. Sales remain explicitly closed pending funded customer admission. Keep the prior policy bundle, admin/test balances and valid results. [ADR223](../adr/223-approved-pro-offer-and-published-terms.md) separates publication from funded customer admission. The actual processing configuration is still an owner-only finite pilot. Do not claim general paid availability, independent customer acceptance, unlimited resources or proven margins. This approval is not a provider purchase, automatic top-up or reset of existing pilot counters.

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { safeSourceUrl } from "../media/acquisition-policy.mjs";
 
 export const onboardingInterests = [
   { id: "coding", label: "Development", description: "Build better software" },
@@ -25,12 +26,11 @@ export const onboardingInterests = [
   },
 ] as const;
 export const interestId = z.enum(onboardingInterests.map((item) => item.id));
-export const onboardingDraft = z
+const onboardingFields = z
   .object({
     version: z.literal(1),
     interests: z
       .array(interestId)
-      .min(1)
       .max(3)
       .refine((values) => new Set(values).size === values.length),
     goal: z.enum([
@@ -39,6 +39,22 @@ export const onboardingDraft = z
       "build_faster",
       "find_ideas",
     ]),
+    customTopic: z.string().trim().min(2).max(80).optional(),
+    pendingUrl: z
+      .string()
+      .max(2048)
+      .transform((value, ctx) => {
+        try {
+          return safeSourceUrl(value);
+        } catch {
+          ctx.addIssue({
+            code: "custom",
+            message: "Use a supported public video link.",
+          });
+          return z.NEVER;
+        }
+      })
+      .optional(),
     team: z.boolean().optional(),
     importRequested: z.boolean().optional(),
     selectedFamilyId: z
@@ -47,6 +63,18 @@ export const onboardingDraft = z
       .optional(),
   })
   .strict();
+export const onboardingLocalState = z
+  .object({
+    draft: onboardingFields.partial(),
+    step: z.enum(["interests", "goal", "feed", "import"]),
+  })
+  .strict();
+export const onboardingDraft = onboardingFields.refine(
+  (value) => value.interests.length > 0 || !!value.customTopic,
+  {
+    message: "Choose an interest or add your own topic.",
+  },
+);
 export type OnboardingDraft = z.infer<typeof onboardingDraft>;
 export const draftStorageKey = "vibescroll.onboarding.v1";
 export const starterSelection = z

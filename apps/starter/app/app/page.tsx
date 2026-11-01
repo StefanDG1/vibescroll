@@ -1,3 +1,8 @@
+import { cookies } from "next/headers";
+import {
+  onboardingInviteCookie,
+  invitationPath,
+} from "../../../../packages/onboarding/invitation";
 import { redirect } from "next/navigation";
 import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -27,6 +32,10 @@ export default async function Page({
     const personal = await client.mutation(api.organizations.createPrivate, {});
     redirect(`/app/${personal}/billing?tier=pro`);
   }
+  const invitation = invitationPath(
+    (await cookies()).get(onboardingInviteCookie)?.value,
+  );
+  if (invitation) redirect(invitation);
   const id = await client.mutation(
     api.organizations.ensureDefault,
     query.workspace

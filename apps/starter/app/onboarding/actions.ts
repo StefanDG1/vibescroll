@@ -1,4 +1,8 @@
 "use server";
+import {
+  onboardingInviteCookie,
+  invitationPath,
+} from "../../../../packages/onboarding/invitation";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { backend, api } from "@/lib/backend";
@@ -85,12 +89,15 @@ export async function finishOnboarding() {
         key: `onboarding-v1:${selected.familyId}`,
         kind: "url",
         url: selected.canonical,
-        title: selected.title,
+        title: selected.title.slice(0, 160),
         rightsAttested: true,
       });
   }
   await client.mutation(api.onboarding.complete, sourceId ? { sourceId } : {});
-  (await cookies()).delete(onboardingCookie);
+  const jar = await cookies();
+  jar.delete(onboardingCookie);
+  const invitation = invitationPath(jar.get(onboardingInviteCookie)?.value);
+  if (invitation) redirect(invitation);
   redirect("/onboarding/project");
 }
 export async function prepareFirstProject(): Promise<FormState> {
@@ -196,4 +203,28 @@ export async function refreshOnboardingRepositories(): Promise<FormState> {
 export async function adoptOnboardingDraft() {
   const draft = await signedOnboardingDraft();
   if (draft) await (await backend()).mutation(api.onboarding.save, { draft });
+}
+
+export async function saveFirstOwnLink(): Promise<FormState> {
+  const client = await backend();
+  const status = await client.query(api.onboarding.status, {});
+  if (!status.paid || !status.progress?.pendingUrl)
+    return { error: "Choose Pro and a public video link first." };
+  const { safeSourceUrl } =
+    await import("../../../../packages/media/acquisition-policy.mjs");
+  const { createHash } = await import("node:crypto");
+  const url = safeSourceUrl(status.progress.pendingUrl);
+  const organizationId = await client.mutation(
+    api.organizations.createPrivate,
+    {},
+  );
+  const sourceId = await client.mutation(api.product.capture, {
+    organizationId,
+    key: `onboarding-own-v1:${createHash("sha256").update(url).digest("hex").slice(0, 32)}`,
+    kind: "url",
+    url,
+    title: "Saved video",
+    rightsAttested: true,
+  });
+  redirect(`/app/${organizationId}/posts/${sourceId}`);
 }

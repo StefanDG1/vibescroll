@@ -1,4 +1,5 @@
 "use client";
+import { track } from "@/lib/analytics";
 import { ProjectProposalComposer } from "./project-proposal-composer";
 import { useRouter } from "next/navigation";
 export function OnboardingProposal({
@@ -50,7 +51,10 @@ export function OnboardingProposal({
       disabled={false}
       call={call}
       initialGoal={goal}
-      onSaved={(id) => router.push(`/app/${organizationId}/proposals/${id}`)}
+      onSaved={(id) => {
+        track("onboarding_milestone", { milestone: "proposal_saved" });
+        router.push(`/app/${organizationId}/proposals/${id}`);
+      }}
     />
   );
 }

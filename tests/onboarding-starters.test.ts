@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { api } from "../convex/_generated/api";
+import { api, internal } from "../convex/_generated/api";
 import { cloudCatalogFixture } from "./cloud-catalog-fixture";
 import { signOnboardingValue } from "../packages/onboarding/journey";
 vi.mock("../packages/providers/storage", () => ({
@@ -157,4 +157,104 @@ it("fails closed on malformed configuration and out-of-bounds topic requests", a
   await expect(
     f.t.query(api.onboardingStarter.list, { interests: ["a", "b", "c", "d"] }),
   ).rejects.toThrow(/INVALID_INPUT/);
+});
+
+it("binds only the selected starter after verified payment, with idempotent zero-credit reuse", async () => {
+  const f = await ready();
+  const subject = "user_03334567890123456789012345";
+  const userId = await f.t.mutation(internal.accounts.syncUser, {
+    subject,
+    email: "new-starter@example.test",
+    name: "New starter",
+    verified: true,
+  });
+  const actor = f.t.withIdentity({ subject });
+  const organizationId = await actor.mutation(
+    api.organizations.createPrivate,
+    {},
+  );
+  await actor.mutation(api.onboarding.save, {
+    draft: {
+      version: 1,
+      interests: ["coding"],
+      goal: "build_faster",
+      selectedFamilyId: f.familyId,
+    },
+  });
+  await actor.mutation(api.onboarding.chooseProject, { organizationId });
+  const input = {
+    organizationId,
+    key: `onboarding-v1:${f.familyId}`,
+    kind: "url",
+    url: f.prepared.post.canonical,
+    title: "Chosen starter",
+    rightsAttested: true,
+  };
+  await expect(actor.mutation(api.product.capture, input)).rejects.toThrow(
+    /Pro/,
+  );
+  const now = Date.now(),
+    end = now + 86400000;
+  await f.t.run(async (ctx) => {
+    await ctx.db.insert("wallets", {
+      organizationId,
+      createdAt: now,
+      updatedAt: now,
+      granted: 300,
+      spent: 0,
+      reserved: 0,
+      purchased: 0,
+      periodEnd: end,
+      tier: "pro",
+      interval: "monthly",
+    });
+    await ctx.db.insert("billing", {
+      organizationId,
+      customerId: "fixture-starter-customer",
+      subscriptionId: "fixture-starter-sub",
+      status: "active",
+      periodEnd: end,
+      verifiedAt: now,
+      revision: 1,
+    });
+    await ctx.db.insert("billingPeriods", {
+      organizationId,
+      createdAt: now,
+      updatedAt: now,
+      key: "fixture-starter-period",
+      start: now - 1,
+      end,
+      credits: 300,
+      subscription: "fixture-starter-sub",
+    });
+  });
+  const attemptsBefore = await f.t.run((ctx) =>
+    ctx.db.query("analysisAttempts").take(100),
+  );
+  const sourceId = await actor.mutation(api.product.capture, input);
+  expect(await actor.mutation(api.product.capture, input)).toBe(sourceId);
+  await actor.mutation(api.onboarding.complete, { sourceId });
+  await actor.mutation(api.onboarding.complete, { sourceId });
+  const result = await f.t.run(async (ctx) => ({
+    user: await ctx.db.get(userId),
+    source: await ctx.db.get(sourceId),
+    sources: await ctx.db
+      .query("sources")
+      .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
+      .take(10),
+    wallet: await ctx.db
+      .query("wallets")
+      .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
+      .unique(),
+    attempts: await ctx.db.query("analysisAttempts").take(100),
+  }));
+  expect(result.sources).toHaveLength(1);
+  expect(result.source?.state).toBe("ready");
+  expect(result.user?.onboarding).toMatchObject({
+    stage: "complete",
+    sourceId,
+    selectedFamilyId: f.familyId,
+  });
+  expect(result.wallet).toMatchObject({ granted: 300, spent: 0, reserved: 0 });
+  expect(result.attempts).toHaveLength(attemptsBefore.length);
 });

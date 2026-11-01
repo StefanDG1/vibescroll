@@ -67,6 +67,8 @@ export const save = mutation({
           actor.onboarding.stage === "quiz" ? "github" : actor.onboarding.stage,
         goal: draft.goal,
         interests: draft.interests,
+        customTopic: draft.customTopic,
+        pendingUrl: draft.pendingUrl,
         ...(draft.team === undefined ? {} : { team: draft.team }),
         ...(draft.importRequested === undefined
           ? {}

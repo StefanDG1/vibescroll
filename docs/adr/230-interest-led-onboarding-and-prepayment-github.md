@@ -1,6 +1,6 @@
 # Interest-led onboarding and pre-payment GitHub
 
-Status: approved for implementation under R144. Production acceptance pending.
+Status: live at3fc0669 under R144, with bounded acceptance. Fresh-account/provider consent and post-payment journey acceptance remain open; see the execution ledger.
 
 Date: November 1, 2026, Europe/Berlin.
 

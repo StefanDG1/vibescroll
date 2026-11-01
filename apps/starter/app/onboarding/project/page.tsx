@@ -5,7 +5,12 @@ import { backend, api } from "@/lib/backend";
 import { OnboardingShell } from "@/components/onboarding";
 import { OnboardingProposal } from "@/components/onboarding-proposal";
 import { ActionForm } from "@/components/action-form";
-import { prepareFirstProject, confirmFirstProject } from "../actions";
+import {
+  prepareFirstProject,
+  confirmFirstProject,
+  saveFirstOwnLink,
+} from "../actions";
+import { OnboardingMilestone } from "@/components/onboarding-milestone";
 import styles from "@/components/onboarding.module.css";
 export const metadata = {
   title: "Your first project plan",
@@ -39,7 +44,19 @@ export default async function Page() {
   );
   return (
     <OnboardingShell step={3} authenticated>
+      <OnboardingMilestone milestone="workspace_ready" />
       <section className={styles.stage}>
+        {status.progress.pendingUrl && (
+          <div className={styles.notice}>
+            <h2>Your link is ready to save.</h2>
+            <p className={styles.subtle}>{status.progress.pendingUrl}</p>
+            <ActionForm action={saveFirstOwnLink} label="Save my link" />
+            <p className={styles.footnote}>
+              A compatible cached result is ready immediately. Fresh analysis
+              uses the normal credit quote and progress view.
+            </p>
+          </div>
+        )}
         <h1>Your first project plan.</h1>
         {source && (
           <p className={styles.subtle}>
@@ -53,8 +70,9 @@ export default async function Page() {
         {!selected ? (
           <>
             <p className={styles.subtle}>
-              Choose a project when you're ready. Your post and its insights are
-              saved.
+              {source
+                ? "Your post and its insights are saved. Choose a project when you're ready."
+                : "Choose a project when you're ready, or save your first post."}
             </p>
             <Link
               href={`/app/${organizationId}/projects`}
@@ -123,13 +141,16 @@ export default async function Page() {
             </p>
             <OnboardingProposal
               goal={
-                status.progress.goal === "grow_business"
+                (status.progress.customTopic
+                  ? `Consider my interest in ${status.progress.customTopic}. `
+                  : "") +
+                (status.progress.goal === "grow_business"
                   ? "Explore how these insights could help grow this project's business."
                   : status.progress.goal === "build_faster"
                     ? "Explore how these insights could help build this project faster."
                     : status.progress.goal === "find_ideas"
                       ? "Explore a useful next idea for this project from the saved insights."
-                      : "Explore how these insights could improve this product."
+                      : "Explore how these insights could improve this product.")
               }
               organizationId={organizationId}
               sourceId={source._id}

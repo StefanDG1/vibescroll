@@ -1,6 +1,7 @@
 import { authkitProxy } from "@workos-inc/authkit-nextjs";
 import { privateContentPolicy } from "./lib/security";
 import { NextResponse, NextRequest, type NextFetchEvent } from "next/server";
+import { onboardingInviteCookie } from "../../packages/onboarding/invitation";
 const auth = authkitProxy({
   middlewareAuth: {
     enabled: true,
@@ -32,6 +33,12 @@ export default async function proxy(
   request.headers.set("Content-Security-Policy", policy);
   const response =
     (await auth(request, event)) ?? NextResponse.next({ request: { headers } });
+  const invitation = /^\/join\/([a-f0-9]{64})$/.exec(request.nextUrl.pathname);
+  if (invitation && process.env.ONBOARDING_ENABLED === "true")
+    response.headers.append(
+      "Set-Cookie",
+      `${onboardingInviteCookie}=${invitation[1]}; Path=/; Max-Age=604800; HttpOnly; SameSite=Lax${request.nextUrl.protocol === "https:" ? "; Secure" : ""}`,
+    );
   response.headers.set("Content-Security-Policy", policy);
   response.headers.set("Cache-Control", "private, no-store");
   return response;

@@ -1,3 +1,4 @@
+import { invitationPath } from "../onboarding/invitation";
 // Fresh sign-in is reserved for destructive or externally sensitive changes.
 export const highRiskAuthenticationActions = [
   "delete_account",
@@ -26,6 +27,8 @@ export function authenticationReviewRequired(value: unknown): boolean {
 }
 
 export function authenticationReturnTo(candidate: string): string {
+  if (candidate.startsWith("/join/") && invitationPath(candidate.slice(6)))
+    return candidate;
   return /^(?:\/app|\/account|\/onboarding\/(?:resume|project))(?:[/?#]|$)/.test(
     candidate,
   ) &&

@@ -87,8 +87,18 @@ it("allows unpaid GitHub and billing setup but blocks ordinary direct workspace 
   await expect(
     f.actor.query(api.billing.authorize, { organizationId: f.org }),
   ).resolves.toMatchObject({ personal: true });
-  await expect(f.actor.query(internal.billing.processingAvailable, { organizationId: f.org, requirePro: false })).resolves.toBe(false);
-  await expect(f.actor.query(internal.billing.processingAvailable, { organizationId: f.org, requirePro: true })).rejects.toThrow(/Pro/);
+  await expect(
+    f.actor.query(internal.billing.processingAvailable, {
+      organizationId: f.org,
+      requirePro: false,
+    }),
+  ).resolves.toBe(false);
+  await expect(
+    f.actor.query(internal.billing.processingAvailable, {
+      organizationId: f.org,
+      requirePro: true,
+    }),
+  ).rejects.toThrow(/Pro/);
   await expect(
     f.actor.query(api.product.repositories, { organizationId: f.org }),
   ).rejects.toThrow(/Pro/);
@@ -311,4 +321,46 @@ it("authenticates preview claims and keeps thumbnail authority separate from ful
   expect(onboardingDraft.safeParse({ ...draft, interests: [] }).success).toBe(
     false,
   );
+});
+
+it("stores a custom-only interest and a safe own-link without granting processing access", async () => {
+  const f = await account();
+  await f.actor.mutation(api.onboarding.save, {
+    draft: {
+      version: 1,
+      interests: [],
+      customTopic: "Developer education",
+      goal: "build_faster",
+      pendingUrl: "https://www.instagram.com/reel/AbCdEfG1234/?tracking=drop",
+    },
+  });
+  expect(
+    (await f.actor.query(api.onboarding.status, {})).progress,
+  ).toMatchObject({
+    interests: [],
+    customTopic: "Developer education",
+    pendingUrl: "https://www.instagram.com/reel/AbCdEfG1234/",
+  });
+  await expect(
+    f.actor.query(api.product.repositories, { organizationId: f.org }),
+  ).rejects.toThrow(/Pro/);
+  for (const pendingUrl of [
+    "http://127.0.0.1/private",
+    "https://user:secret@instagram.com/reel/AbCdEfG1234/",
+    "https://evil.example/video",
+  ])
+    await expect(
+      f.actor.mutation(api.onboarding.save, {
+        draft: {
+          version: 1,
+          interests: ["coding"],
+          goal: "build_faster",
+          pendingUrl,
+        },
+      }),
+    ).rejects.toThrow();
+  await f.actor.mutation(api.onboarding.save, { draft });
+  expect(
+    (await f.actor.query(api.onboarding.status, {})).progress?.customTopic,
+  ).toBeUndefined();
 });

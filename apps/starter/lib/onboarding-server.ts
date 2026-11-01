@@ -30,7 +30,7 @@ export async function signedOnboardingDraft() {
 export async function starterMetadata(interests: string[]) {
   try {
     return await starterClient().query(api.onboardingStarter.list, {
-      interests,
+      interests: [...new Set(interests)].sort().slice(0, 3),
     });
   } catch {
     return [];

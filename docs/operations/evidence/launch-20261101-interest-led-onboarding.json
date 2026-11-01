@@ -1,0 +1,84 @@
+{
+  "recordedAtUTC": "2026-11-01T22:33:58.183372+00:00",
+  "requirement": "R144",
+  "websiteCommit": "3fc066993e123873d0563027ec54edcfcd08fbfa",
+  "backendCommit": "3fc066993e123873d0563027ec54edcfcd08fbfa",
+  "websiteVersion": "0.1.0-alpha.20261101222101.g3fc066993e12",
+  "deploymentId": "dpl_GL3JxzjgRVZsEynTtqzmYA6Y5d9e",
+  "exactCI": {
+    "id": 41356709474,
+    "conclusion": "success"
+  },
+  "local": {
+    "mainPassed": 1693,
+    "mainSkipped": 9,
+    "authPassed": 61,
+    "knowledgePassed": 179,
+    "bothBuildsPassed": true,
+    "productionDependencyTriagePassed": true
+  },
+  "isolatedAdditionalAcceptance": {
+    "selectedStarterAfterVerifiedPro": true,
+    "sameSaveReplaySameSource": true,
+    "onlyOneSelectedSource": true,
+    "analysisAttemptsAdded": 0,
+    "creditsSpent": 0,
+    "starterCasesPassed": 6
+  },
+  "backend": {
+    "deterministicPreparations": 2,
+    "releaseGuardsPassed": 17,
+    "finishAcknowledged": true,
+    "optionalFieldsAdded": ["users.onboarding"],
+    "newTables": 0,
+    "newIndexes": 0,
+    "populatedScans": 0,
+    "backfills": 0,
+    "existingAccountsBackfilled": 0
+  },
+  "website": {
+    "buildSeconds": 60.172,
+    "buildMachine": "Basic 2vCPU 8GB",
+    "queue": "normal",
+    "sameBuildPromotion": true,
+    "normalDomainAssignmentRestored": true,
+    "stagedHomeCases": 4,
+    "stagedLibraryCases": 8,
+    "canonicalExactHealth": true
+  },
+  "onboarding": {
+    "newAccountsEnabled": true,
+    "starterFamilies": 5,
+    "metadataOrderingObserved": true,
+    "stagedThumbnailsDecoded": 5,
+    "completeResultsObserved": 2,
+    "completeResultsInsightCounts": [4, 6],
+    "sampleFramesDecoded": 8,
+    "desktopWidth": 1440,
+    "mobileWidth": 390,
+    "themes": ["light", "dark"],
+    "horizontalOverflow": false,
+    "secondDistinctPreviewDenied": true,
+    "samePreviewReopened": true,
+    "localImportPreviewUniqueLinks": 1,
+    "rawExportUploaded": false
+  },
+  "existingAccount": {
+    "normalHomeRead": true,
+    "originalMcpGrant": 12,
+    "automaticAnalysis": true,
+    "setupRequired": false
+  },
+  "notClaimed": [
+    "Fresh WorkOS signup and new-account paywall in production: test email/sign-in pending",
+    "Fresh prepayment GitHub provider consent in production",
+    "Real paid transaction: prohibited by owner",
+    "Guided first proposal completion by a new paid production account",
+    "Current Meta export screenshots: exact labels unverified"
+  ],
+  "noNewAnalysis": true,
+  "noPaidAI": true,
+  "noRealPayment": true,
+  "noPurchase": true,
+  "oldHoldsPreserved": true
+}

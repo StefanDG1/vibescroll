@@ -2,7 +2,7 @@
 
 Mode: explanation and proposed implementation plan. Updated November 1, 2026, Europe/Berlin.
 
-Status: implementation approved by the owner on November 1, 2026. The owner approves one complete curated result before payment and allows GitHub connection after signup but before payment. Recommended account timing is before payment. Implementation is in progress; production acceptance is not yet claimed. This document does not change production entitlements, pricing or funding.
+Status: implementation approved by the owner on November 1, 2026. The owner approves one complete curated result before payment and allows GitHub connection after signup but before payment. Recommended account timing is before payment. The first bounded checkpoint is live at3fc0669; the execution ledger distinguishes production from the completion candidate and remaining fresh-account acceptance. This document does not change production entitlements, pricing or funding.
 
 ## Direction and prior decisions
 
@@ -87,7 +87,7 @@ The starter feed needs a small, explicit server-selected collection. Do not invo
 
 Return bounded metadata pages with stable cursors, then load the selected analysis and its images on demand. Reuse immutable source/version/frame references. Store neither a complete copy per preview session nor screenshots repeated under every insight. Keep raw export contents, personal notes and project context out of the public projection.
 
-Use existing publication/revocation mechanisms where they fit. Withdrawing a result removes it from future pages and blocks stale detail/image access. Cache public metadata by selection version and category combination. Private responses remain scoped to current account, membership and grants. Interest choices never grant full-library access or team disclosure.
+Use existing publication/revocation mechanisms where they fit. Withdrawing a result removes it from future pages and blocks stale detail/image access. Use Convex's existing dependency-aware query cache for the deployed selection and normalized category combination, rather than creating another copied table or Next TTL. The anonymous query reads only the explicit selection and current artifact headers; configuration/source changes and current detail/image authority remain authoritative. [Convex query caching](https://docs.convex.dev/functions/query-functions#caching--reactivity--consistency) reuses identical arguments, so the adapter sorts/deduplicates the chosen category set. No additional frontend TTL is claimed. Private responses remain scoped to current account, membership and grants. Interest choices never grant full-library access or team disclosure.
 
 Define an anonymous preview mechanism with signed, bounded state and rate limiting. It is not a strong person-identity guarantee; do not build invasive fingerprinting to enforce one sample. No fresh processing, model request, proposal generation or credit grant is available through the anonymous endpoint. Server enforcement matters even if the client hides the button.
 
@@ -104,7 +104,7 @@ The guide should explain this intended route, with current mobile screenshots ve
 5. When available, select the downloaded ZIP or its Saved JSON/HTML file in VibeScroll.
 6. Review valid links and duplicates, choose what to import, then choose a small first analysis batch after seeing its quote.
 
-These labels are a draft guide, not newly verified provider instructions. The [official Instagram export help](https://help.instagram.com/181231772500920) returned HTTP429 during this research; the browser follow-up did not complete. Verify the current screens with the owner's walkthrough or an authorized account before publishing exact labels or timings. Support existing JSON and HTML variations. Do not promise an export delivery time, one exact filename, collection preservation or complete metadata across every account version.
+These labels are a draft guide, not newly verified provider instructions. The original help endpoint returned HTTP429. On November1, the [official iPhone help variant](https://www.facebook.com/help/instagram/181231772500920?cms_platform=iphone-app&helpref=platform_switcher) was read successfully: it now describes Meta Account and warns that Accounts Center remains visible for some users. Use the provider's current Profile/Menu → information/permissions → create export → device path. These are verified help instructions, not inspected screenshots of the owner's Instagram app. Support existing JSON and HTML variations. Do not promise an export delivery time, one exact filename, collection preservation or complete metadata across every account version.
 
 Saved exports generally identify posts; they are not a guarantee that the video files, transcripts or captions are included or that a deleted/private post can be downloaded. Private platform login is not requested by VibeScroll. Do not collect Instagram passwords, cookies or the rest of the account archive.
 

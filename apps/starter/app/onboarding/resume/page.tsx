@@ -4,6 +4,7 @@ import { FolderGit2, Check, ArrowRight } from "lucide-react";
 import { backend, api } from "@/lib/backend";
 import { signedOnboardingDraft } from "@/lib/onboarding-server";
 import { Onboarding, OnboardingShell } from "@/components/onboarding";
+import { OnboardingMilestone } from "@/components/onboarding-milestone";
 import { OnboardingPayment } from "@/components/onboarding-payment";
 import { ChoiceSelect } from "@/components/choice-select";
 import {
@@ -42,6 +43,7 @@ export default async function Page({
   if (status.paid)
     return (
       <OnboardingShell step={3} authenticated>
+        <OnboardingMilestone milestone="pro_verified" />
         <section className={styles.stage}>
           <span className={styles.status}>
             <Check size={20} /> Pro is ready
@@ -74,6 +76,10 @@ export default async function Page({
     });
     return (
       <OnboardingShell step={3} authenticated>
+        <OnboardingMilestone milestone="account_ready" />
+        {query.github === "connected" && (
+          <OnboardingMilestone milestone="github_connected" />
+        )}
         <section className={styles.stage}>
           <FolderGit2 size={32} />
 
@@ -173,6 +179,8 @@ export default async function Page({
   const catalogue = await client.query(api.commerce.catalogue, {});
   return (
     <OnboardingShell step={3} authenticated>
+      <OnboardingMilestone milestone="account_ready" />
+      <OnboardingMilestone milestone="paywall_viewed" />
       <section className={styles.stage}>
         <OnboardingPayment
           initialInterval={status.progress?.interval}

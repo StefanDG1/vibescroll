@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { isValidElement, type ReactElement } from "react";
-const mock = vi.hoisted(() => ({ mutation: vi.fn(), query: vi.fn() }));
+const mock = vi.hoisted(() => ({
+  mutation: vi.fn(),
+  query: vi.fn(),
+  cookie: vi.fn(),
+}));
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: mock.cookie }),
+}));
 vi.mock("@/lib/backend", () => ({
   backend: async () => mock,
   api: {
@@ -151,5 +158,27 @@ it("routes a new account's checkout return to verified onboarding recovery", asy
       searchParams: Promise.resolve({ checkout: "complete" }),
     }),
   ).rejects.toThrow("redirect:/onboarding/resume?checkout=complete");
+  expect(mock.mutation).not.toHaveBeenCalled();
+});
+
+it("retains an exact pending team invitation after Pro without bypassing the unpaid funnel", async () => {
+  const token = "a".repeat(64);
+  mock.cookie.mockReturnValue({ value: token });
+  mock.query.mockResolvedValue({
+    legacy: false,
+    paid: false,
+    progress: { stage: "paywall" },
+  });
+  await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow(
+    "redirect:/onboarding/resume",
+  );
+  mock.query.mockResolvedValue({
+    legacy: false,
+    paid: true,
+    progress: { stage: "complete" },
+  });
+  await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow(
+    `redirect:/join/${token}`,
+  );
   expect(mock.mutation).not.toHaveBeenCalled();
 });

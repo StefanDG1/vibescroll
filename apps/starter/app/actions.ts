@@ -1,4 +1,5 @@
 "use server";
+import { onboardingInviteCookie } from "../../../packages/onboarding/invitation";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
@@ -293,6 +294,7 @@ export async function acceptInvite(_: FormState, d: FormData) {
     ).mutation(api.organizations.acceptInvite, {
       tokenHash: createHash("sha256").update(token).digest("hex"),
     });
+    (await cookies()).delete(onboardingInviteCookie);
     return { path: `/app/${id}` };
   });
 }
@@ -353,4 +355,9 @@ export async function deleteAccount(_: FormState, d: FormData) {
 }
 export async function logout() {
   await signOut({ returnTo: signOutUrl() });
+}
+
+export async function skipPendingInvitation() {
+  (await cookies()).delete(onboardingInviteCookie);
+  redirect("/app");
 }

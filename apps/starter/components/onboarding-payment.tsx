@@ -142,6 +142,14 @@ export function OnboardingPayment({
           return here later.
         </output>
       )}
+      {!returned && (
+        <Link
+          className={styles.secondary}
+          href={`/app/${organizationId}/billing`}
+        >
+          Manage an existing checkout
+        </Link>
+      )}
       <p className={styles.footnote}>
         Fresh processing and plans use quoted credits. Full-catalog browsing is
         separate. Stripe confirms applicable tax and the total before payment.

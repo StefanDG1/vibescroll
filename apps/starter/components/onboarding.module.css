@@ -445,3 +445,19 @@
   vertical-align: middle;
   accent-color: var(--teal);
 }
+
+.field input,
+.field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+}
+.ownLink {
+  margin: 24px 0;
+  max-width: 660px;
+}

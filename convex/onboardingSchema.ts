@@ -9,6 +9,8 @@ export const onboardingState = v.object({
   ),
   goal: v.string(),
   interests: v.array(v.string()),
+  customTopic: v.optional(v.string()),
+  pendingUrl: v.optional(v.string()),
   team: v.optional(v.boolean()),
   importRequested: v.optional(v.boolean()),
   interval: v.optional(

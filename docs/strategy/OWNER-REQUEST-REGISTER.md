@@ -17,6 +17,10 @@ Status vocabulary:
 
 ## Capture, extraction and visible results
 
+R146, November2: the owner explicitly corrects R145. Keep and improve the onboarding quiz, with better steps, animations and explanatory graphics. Replace only the recommended-post picker with the same Home feed view and shared components so users can scroll real ready posts. Keep the mascot removed, unnecessary labels reduced and choices without dropdowns. Ask when a material interpretation is unclear. [Corrected plan](../design/SEARCH-FIRST-ONBOARDING.md), [ADR232](../adr/232-quiz-onboarding-with-shared-home-preview.md). This is recorded direction; quiz restoration and shared Home preview are not yet deployed.
+
+The R145 records below preserve actual deployed behavior and the agent's mistaken interpretation. R146 supersedes their claim that quiz removal was requested or accepted.
+
 R145 accepted, November2: website3748525/backend796b2cf, exact CI41441002106. One60.900s Basic build promoted unchanged; real five-post discovery, creator search, six-insight preview, direct preview-limit Continue and four desktop/mobile theme cases pass. Mascot/quiz removed, onboarding choices visible, Home tour skippable/reopenable. Saved drafts and access/funding contracts remain. No backend, inference, payment or public issue. [Acceptance](../operations/evidence/launch-20261102-search-first-onboarding.json).
 
 R145, November2: remove the mascot, redundant onboarding labels and dropdowns. Replace the required quiz with a cleaner searchable ready-post feed and a short dismissible Home tutorial, then let users scroll. Use visible plan and repository choices, restrained purposeful animation and reduced-motion support. Preserve saved drafts, current account/payment/provider boundaries and the optional first-project guide. The public search initially filters the explicitly authorized ready selection, without silently enabling whole-catalog browsing or new model work. Follow [the refinement](../design/SEARCH-FIRST-ONBOARDING.md).

@@ -6,7 +6,7 @@ Status: implementation approved by the owner on November 1, 2026. The owner appr
 
 ## November2 refinement
 
-R145 replaces the required quiz with [search-first onboarding](../design/SEARCH-FIRST-ONBOARDING.md). The ready collection, one complete preview, account/payment contracts and saved progress remain. Remove the mascot, redundant labels and dropdowns; use a short Home tutorial and direct choices. Earlier quiz screens below are historical design context, not the new entry requirement.
+R146 corrects the agent's R145 interpretation. Keep and improve the quiz described below. Replace only the recommended-post picker with the existing Home feed and shared post/insight/proposal components. Add step-specific explanatory graphics and purposeful transitions; keep the mascot removed, copy concise and choices visible without dropdowns. The ready collection, one complete preview, account/payment contracts and saved progress remain. Follow [the corrected design](../design/SEARCH-FIRST-ONBOARDING.md). The deployed quiz removal is a regression to correct, not owner-approved simplification.
 
 ## Direction and prior decisions
 

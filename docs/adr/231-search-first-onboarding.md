@@ -1,6 +1,6 @@
 # ADR231: Search-first onboarding
 
-Status: accepted owner direction R145, November2,2026. Production acceptance is recorded separately.
+Status: superseded by [ADR232](232-quiz-onboarding-with-shared-home-preview.md) and owner correction R146, November2,2026. The agent misinterpreted R145 as requesting quiz removal. Preserve this ADR as implementation history, not current owner direction. The quiz removal was deployed; restoration remains separately tracked.
 
 Replace the mandatory quiz with a metadata-only searchable ready selection and a short Home tutorial. Remove the mascot and onboarding dropdowns. Preserve the current visual language, one complete public preview, saved preferences, account before optional GitHub/Pro, individual funding and all existing verification gates. Search is bounded client-side discovery over the explicit starter selection; it grants no global catalog access.
 

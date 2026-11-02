@@ -302,7 +302,7 @@ export function Onboarding({
             <h1 ref={heading} tabIndex={-1}>
               Find your next idea.
             </h1>
-            <FeedTour autoStart={!loadingFeed && posts.length > 0} />
+            <FeedTour discovery autoStart={!loadingFeed && posts.length > 0} />
           </div>
           <label className={styles.searchBox}>
             <Search size={20} aria-hidden="true" />

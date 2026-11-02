@@ -11,6 +11,7 @@ vi.mock("./components/action-form", () => ({
     <form>{children}</form>
   ),
 }));
+import { FeedTour } from "./components/feed-tour";
 import { SearchChoices } from "./components/search-choices";
 import { OnboardingPayment } from "./components/onboarding-payment";
 beforeEach(() => vi.stubGlobal("React", React));
@@ -65,3 +66,12 @@ it.each(["monthly", "annual", "weekly"] as const)(
     expect(html).not.toContain("<select");
   },
 );
+
+it("explains discovery and the saved Home feed in their own context", () => {
+  expect(renderToStaticMarkup(<FeedTour discovery />)).toContain(
+    "Search the ready posts below",
+  );
+  const home = renderToStaticMarkup(<FeedTour />);
+  expect(home).toContain("Your analyzed posts appear here");
+  expect(home).not.toContain("Search the ready posts below");
+});

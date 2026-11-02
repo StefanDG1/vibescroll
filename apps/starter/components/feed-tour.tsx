@@ -29,7 +29,13 @@ const steps = [
   },
 ];
 
-export function FeedTour({ autoStart = false }: { autoStart?: boolean }) {
+export function FeedTour({
+  autoStart = false,
+  discovery = false,
+}: {
+  autoStart?: boolean;
+  discovery?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -147,7 +153,11 @@ export function FeedTour({ autoStart = false }: { autoStart?: boolean }) {
             <span />
           </div>
           <h2 id={titleId}>{title}</h2>
-          <p>{text}</p>
+          <p>
+            {step === 0 && !discovery
+              ? "Save a Reel or TikTok link. Your analyzed posts appear here, ready to scroll."
+              : text}
+          </p>
         </div>
         <footer>
           <div className={styles.dots} aria-label={`Step ${step + 1} of 3`}>

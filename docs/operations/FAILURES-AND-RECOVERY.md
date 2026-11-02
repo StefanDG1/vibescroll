@@ -6,6 +6,8 @@ Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation
 
 The real pre-payment GitHub picker displayed Choose and retained the first repository after another numeric-ID option was clicked. Native option IDs were numbers, while Radix RadioGroup and form state used strings. Normalize option values once inside the shared ChoiceSelect. The regression reproduces the missing selected label before correction and preserves string model choices afterward. Check the displayed label and submitted hidden repository ID through the real browser before Continue; rendering an option list alone does not verify selection. A live test also caught a misencoded separator in the ready-post caption.
 
+The next real step prepared the repository successfully but remained on Prepare my project. The action returns state ready in its acknowledgement; persisted repository status is connected. The onboarding page and confirmation action incorrectly checked persisted status ready. Correct both consumers to connected, test the actual serialized shape through the server page and confirmation action, and continue the existing prepared snapshot. Do not rerun snapshot preparation or change the backend status vocabulary. Four regressions cover context confirmation, all-insight proposal context, unfinished preparation and exact revision-bound confirmation.
+
 Whitelist connector response fields before logging. A Vercel alias response unexpectedly included a temporary share-link bypass secret. The exact exposed link was revoked and its absence verified; app OAuth, MCP grants and provider keys were unchanged. Never print raw alias/project responses.
 
 ## November1 core MCP integration and search recovery

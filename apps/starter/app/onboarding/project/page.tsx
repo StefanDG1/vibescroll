@@ -81,7 +81,7 @@ export default async function Page() {
               <FolderGit2 size={17} /> Choose a project
             </Link>
           </>
-        ) : !repository || repository.status !== "ready" ? (
+        ) : !repository || repository.status !== "connected" ? (
           <>
             <p className={styles.status}>
               <FolderGit2 size={18} /> {selected.fullName}

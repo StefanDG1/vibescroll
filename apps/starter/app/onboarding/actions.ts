@@ -147,7 +147,7 @@ export async function confirmFirstProject(
       (repo) =>
         repo.providerId === status.progress?.repository?.id &&
         repo.enabled &&
-        repo.status === "ready",
+        repo.status === "connected",
     );
     if (!repository) return { error: "Prepare the current repository first." };
     const profile = String(form.get("profile") ?? "").trim();

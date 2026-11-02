@@ -29,7 +29,18 @@ const events: Record<string, Record<string, readonly string[] | "count">> = {
     ],
   },
   onboarding_step_viewed: {
-    step: ["interests", "goal", "feed", "reader", "import"],
+    step: [
+      "welcome",
+      "interests",
+      "goal",
+      "work",
+      "obstacle",
+      "summary",
+      "feed",
+      "reader",
+      "import_benefit",
+      "import",
+    ],
   },
   page_viewed: {
     surface: ["website", "app"],

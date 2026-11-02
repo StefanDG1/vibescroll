@@ -1,5 +1,12 @@
 "use client";
-import { useEffect, useEffectEvent, useId, useRef, useState } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Image from "next/image";
 import {
   ArrowDown,
@@ -26,6 +33,10 @@ import {
   type FeedEngagement,
 } from "@/lib/home-feed";
 import styles from "./home-feed.module.css";
+export type FeedCardPost = Pick<
+  FeedPost,
+  "title" | "authorName" | "kind" | "thumbnailAssetIds"
+> & { id: string };
 
 export function FeedPostCard({
   post,
@@ -42,8 +53,9 @@ export function FeedPostCard({
   onVisible,
   onRetry,
   nextPost,
+  preview,
 }: {
-  post: FeedPost;
+  post: FeedCardPost;
   detail?: FeedDetail;
   engagement?: FeedEngagement;
   onReaction: (
@@ -58,7 +70,13 @@ export function FeedPostCard({
   base: string;
   onVisible: () => void;
   onRetry: () => void;
-  nextPost?: FeedPost;
+  nextPost?: FeedCardPost;
+  preview?: {
+    resolveThumbnail: (id: string, ownerId?: string) => string;
+    onContinue: () => void;
+    evidence?: ReactNode;
+    projectName?: string;
+  };
 }) {
   const article = useRef<HTMLElement>(null);
   const reportVisible = useEffectEvent(onVisible);
@@ -70,7 +88,11 @@ export function FeedPostCard({
   const [likeError, setLikeError] = useState("");
   const likeFlight = useRef(false);
   const uid = useId();
-  const sourceHref = demo ? `/demo?source=demo-0` : `${base}/posts/${post.id}`;
+  const sourceHref = preview
+    ? "/onboarding"
+    : demo
+      ? `/demo?source=demo-0`
+      : `${base}/posts/${post.id}`;
   const title = detail?.title ?? post.title;
   const author = detail?.authorName ?? post.authorName ?? "Saved post";
   const candidates = detail?.thumbnailAssetIds.length
@@ -144,7 +166,18 @@ export function FeedPostCard({
       .getElementById(`feed-title-${nextPost.id}`)
       ?.focus({ preventScroll: true });
   }
-  const reactions = (
+  const thumbnailResolver = preview
+    ? (id: string) => preview.resolveThumbnail(id, post.id)
+    : undefined;
+  const reactions = preview ? (
+    <button
+      type="button"
+      className="button primary"
+      onClick={preview.onContinue}
+    >
+      Keep this post <ChevronRight size={16} aria-hidden="true" />
+    </button>
+  ) : (
     <PostEngagement
       likes={
         demo && engagement
@@ -171,6 +204,11 @@ export function FeedPostCard({
         candidates={nextPost.thumbnailAssetIds}
         kind={nextPost.kind}
         demo={demo}
+        resolve={
+          preview
+            ? (id: string) => preview.resolveThumbnail(id, nextPost.id)
+            : undefined
+        }
       />
       <span>
         <small>Next post</small>
@@ -201,7 +239,7 @@ export function FeedPostCard({
                 {author.slice(0, 1).toUpperCase()}
               </span>
               <strong>{author}</strong>
-              {!demo && <FeedTour />}
+              {!demo && !preview && <FeedTour />}
               <button
                 type="button"
                 onClick={() => setSettingsOpen(true)}
@@ -220,7 +258,11 @@ export function FeedPostCard({
                   className={styles.demoPoster}
                 />
               ) : (
-                <PostThumbnail candidates={candidates} kind={post.kind} />
+                <PostThumbnail
+                  candidates={candidates}
+                  kind={post.kind}
+                  resolve={thumbnailResolver}
+                />
               )}
               {detail?.url ? (
                 <a
@@ -283,6 +325,7 @@ export function FeedPostCard({
                 candidates={candidates}
                 kind={post.kind}
                 demo={demo}
+                resolve={thumbnailResolver}
               />
               <div>
                 <h3>{title}</h3>
@@ -294,7 +337,18 @@ export function FeedPostCard({
               {detail && active && <span>{insights.length}</span>}
             </div>
             <div className={styles.insightList}>
-              {error && active ? (
+              {preview && (!detail || !active) ? (
+                <div className={styles.noProjects}>
+                  <p>Keep exploring with your own library.</p>
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={preview.onContinue}
+                  >
+                    Continue setup
+                  </button>
+                </div>
+              ) : error && active ? (
                 <ErrorState
                   title="Insights unavailable"
                   detail={error}
@@ -329,9 +383,13 @@ export function FeedPostCard({
                           }
                         >
                           <p>{item.claim}</p>
-                          <a href={sourceHref}>
-                            View source evidence and transcript
-                          </a>
+                          {preview ? (
+                            preview.evidence
+                          ) : (
+                            <a href={sourceHref}>
+                              View source evidence and transcript
+                            </a>
+                          )}
                         </SettingsPanel>
                       </InsightCardControl>
                       <div
@@ -377,6 +435,7 @@ export function FeedPostCard({
               candidates={candidates}
               kind={post.kind}
               demo={demo}
+              resolve={thumbnailResolver}
             />
             <div>
               <h3>{title}</h3>
@@ -390,16 +449,40 @@ export function FeedPostCard({
               triggerLabel={`Project options for ${title}`}
             >
               <p>Each proposal considers all insights from this post.</p>
-              <a
-                className="button"
-                href={demo ? "/demo?view=projects" : `${base}/projects`}
-              >
-                Manage projects
-              </a>
+              {preview ? (
+                <p>
+                  A project is a product, business or codebase you are working
+                  on.
+                </p>
+              ) : (
+                <a
+                  className="button"
+                  href={demo ? "/demo?view=projects" : `${base}/projects`}
+                >
+                  Manage projects
+                </a>
+              )}
             </SettingsPanel>
           </div>
           <div className={styles.planList}>
-            {!detail || !active ? (
+            {preview ? (
+              <div className={`${styles.noProjects} ${styles.previewPlan}`}>
+                <FolderGit2 size={28} aria-hidden="true" />
+                <h3>{preview.projectName || "Put the idea to work"}</h3>
+                <p>
+                  A plan connects the useful ideas in this post to a change you
+                  could make. You can discuss and edit it before acting.
+                </p>
+                <button
+                  type="button"
+                  className="button primary"
+                  onClick={preview.onContinue}
+                >
+                  Use for my project{" "}
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+              </div>
+            ) : !detail || !active ? (
               <FeedSkeleton label="Project plans load with this post" />
             ) : (
               <>
@@ -512,9 +595,13 @@ export function FeedPostCard({
           </p>
         )}
         <h4>Analysis and evidence</h4>
-        <a className="button" href={sourceHref}>
-          Open complete post
-        </a>
+        {preview ? (
+          preview.evidence
+        ) : (
+          <a className="button" href={sourceHref}>
+            Open complete post
+          </a>
+        )}
         <p className="fine">
           Version history, transcript, screenshots and advanced analysis options
           are on the complete post.

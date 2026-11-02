@@ -56,6 +56,11 @@ const onboardingFields = z
       })
       .optional(),
     team: z.boolean().optional(),
+    workStage: z.enum(["existing", "new", "team", "exploring"]).optional(),
+    obstacle: z
+      .enum(["lost", "forgotten", "apply", "overload", "unsure"])
+      .optional(),
+    projectDescription: z.string().trim().max(160).optional(),
     importRequested: z.boolean().optional(),
     selectedFamilyId: z
       .string()
@@ -63,10 +68,24 @@ const onboardingFields = z
       .optional(),
   })
   .strict();
+export const onboardingStep = z.enum([
+  "welcome",
+  "goal",
+  "interests",
+  "work",
+  "obstacle",
+  "summary",
+  "feed",
+  "reader",
+  "import_benefit",
+  "import",
+]);
+export type OnboardingStep = z.infer<typeof onboardingStep>;
 export const onboardingLocalState = z
   .object({
     draft: onboardingFields.partial(),
-    step: z.enum(["interests", "goal", "feed", "import"]),
+    step: onboardingStep.exclude(["reader"]),
+    history: z.array(onboardingStep).max(30).optional(),
   })
   .strict();
 export const onboardingDraft = onboardingFields.refine(

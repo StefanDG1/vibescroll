@@ -2,6 +2,8 @@
 
 Mode: reference. Snapshot reviewed November2,2026, Europe/Berlin. This is the current-state entry point, not a live dashboard or spending authority. Check provider state before the next hosted operation.
 
+November2 R151 implementation checkpoint: the owner approved the reviewed V1. The typed quiz, shared Home guest preview, forgotten-saves/import guide and optional assistant setup are implemented locally. Focused recovery/authorization tests and desktop/mobile visual checks pass; full checks and compatible publication are in progress. The production versions below remain unchanged until a separate acceptance receipt. V2 remains deferred.
+
 November2 R150 planning correction: the [onboarding review](../design/ONBOARDING-V1-V2-REVIEW.md#forgotten-posts-useful-ideas-and-input-methods) now leads with forgotten saved posts and cross-project usefulness, with a benefit screen immediately before the Instagram import tutorial/local preview. Direct link input remains available. This corrects the agent's R149 positioning inference, not production behavior. Review-before-build remains; no code, account settings or deployment changed.
 
 November2 R149 historical planning interpretation, superseded by R150: the [onboarding proposal](../design/ONBOARDING-V1-V2-REVIEW.md#forgotten-posts-useful-ideas-and-input-methods) now starts from sending a link, not owning saved posts. It explains the pain, the send/understand/apply flow and unfamiliar product words where needed. Imports remain optional. This is a docs-only revision awaiting owner review, with no change to production or account settings.

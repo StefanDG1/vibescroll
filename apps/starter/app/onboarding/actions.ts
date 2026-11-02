@@ -65,7 +65,27 @@ export async function chooseOnboardingProject(form: FormData) {
   });
   redirect("/onboarding/resume");
 }
+export async function chooseOnboardingAssistant(form: FormData) {
+  const choice = String(form.get("choice"));
+  if (!["later", "check", "connected"].includes(choice))
+    throw Error("Choose an available assistant setup option.");
+  await (
+    await backend()
+  ).mutation(api.onboarding.chooseAssistant, {
+    choice: choice as "later" | "check" | "connected",
+  });
+  redirect("/onboarding/resume?setup=github");
+}
+export async function checkOnboardingAssistant() {
+  return (await backend()).query(api.onboarding.assistantStatus, {});
+}
 export async function finishOnboarding() {
+  return finishOnboardingAt("home");
+}
+export async function continueOnboardingProject() {
+  return finishOnboardingAt("project");
+}
+async function finishOnboardingAt(destination: "home" | "project") {
   const client = await backend();
   const state = await client.query(api.onboarding.status, {});
   if (state.legacy) redirect("/app");
@@ -98,6 +118,7 @@ export async function finishOnboarding() {
   jar.delete(onboardingCookie);
   const invitation = invitationPath(jar.get(onboardingInviteCookie)?.value);
   if (invitation) redirect(invitation);
+  if (destination === "project") redirect("/onboarding/project");
   redirect(`/app/${organizationId}`);
 }
 export async function prepareFirstProject(): Promise<FormState> {

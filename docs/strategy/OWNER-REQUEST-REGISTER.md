@@ -17,6 +17,8 @@ Status vocabulary:
 
 ## Capture, extraction and visible results
 
+R151, November2: the owner approves continuing the plan and building the reviewed V1, including the quiz, shared Home, graphics, forgotten-saves/import steps and optional assistant setup. R148's review-before-build hold is lifted for V1. V2 features remain separately deferred, and existing provider/funding/data boundaries remain. Implementation, verification and deployment must be recorded separately.
+
 R150, November2: the owner corrects the agent's link-first interpretation. Highlight forgotten saved posts and their useful ideas, including how importing can help across the user's projects. Place a benefit screen immediately before the Instagram saved-post import screen/tutorial. Keep direct link entry available without making it the emotional promise. [Revised positioning](../design/ONBOARDING-V1-V2-REVIEW.md#forgotten-posts-useful-ideas-and-input-methods). The R148 review-before-build hold remains; no application release is part of this correction.
 
 R149, November2: users need not have saved posts; individual link sends may be the more common entry. The agent inferred link-first positioning from this input clarification; R150 corrects that interpretation. Explain the pain/problem and the whole flow, and define product words when they matter. Imports stay optional; VibeScroll retention is the result of a link request, not a requirement to save on the original platform first. [Revised positioning and terms](../design/ONBOARDING-V1-V2-REVIEW.md#forgotten-posts-useful-ideas-and-input-methods). This refines the R148 proposal; it does not approve building or deploying it.

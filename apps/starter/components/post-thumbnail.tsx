@@ -7,10 +7,12 @@ export function PostThumbnail({
   candidates,
   kind,
   demo = false,
+  resolve,
 }: {
   candidates: string[];
   kind: string;
   demo?: boolean;
+  resolve?: (id: string) => string;
 }) {
   const [failed, setFailed] = useState<string[]>([]);
   const [loadedId, setLoadedId] = useState<string>();
@@ -21,7 +23,11 @@ export function PostThumbnail({
       {!demo && frameId && (
         <Image
           className={loaded ? "source-preview ready" : "source-preview"}
-          src={`/api/evidence/${encodeURIComponent(frameId)}?inline=true`}
+          src={
+            resolve
+              ? resolve(frameId)
+              : `/api/evidence/${encodeURIComponent(frameId)}?inline=true`
+          }
           width={60}
           height={76}
           alt=""

@@ -1,6 +1,6 @@
 # Onboarding V1 and V2 review
 
-Status: proposed for owner review, November 2, 2026. R148 requests this screen-by-screen plan before application implementation. No approval to build, deploy, reset an account, start inference or change prices follows from this document. Website 3748525/backend 796b2cf remain the last verified live source. The removed quiz is still a product regression to correct.
+Status: V1 approved for implementation under R151, November 2, 2026. V2 remains deferred. R151 authorizes this V1 implementation and routine publication within the standing limits. No inference, payment or price change is part of this checkpoint. Website3748525/backend796b2cf remain the last verified live source until the new acceptance receipt.
 
 ## What simpler means
 
@@ -332,7 +332,7 @@ Do not add ad targeting, review gating, rewards for paying or artificial streaks
 
 ## Delivery and acceptance after owner review
 
-1. Review this sequence, question usefulness, credit explanation and shared Home approach. Application work remains paused until the owner's review.
+1. Review this sequence, question usefulness, credit explanation and shared Home approach. R151 supplies this approval for V1.
 2. Restore/improve the quiz, migrate answers, preserve Back/resume, add step-specific graphics and the MCP skip explanation.
 3. Adapt real Home components to the guest boundary and guided interactions. Preserve one full preview and per-post association.
 4. Integrate assistant/GitHub/account/checkout resumption. Verify connection without source writes or inference.
@@ -341,4 +341,4 @@ Do not add ad targeting, review gating, rewards for paying or artificial streaks
 
 Measure quiz completion per question, actual insight expansion, signup, assistant setup/skip/first successful read, GitHub setup, checkout start/verified activation, cache attachment and first durable proposal. Separate a guest preview from a user's retained first result. Measure active time separately from external waits. Use consented fixed event enums without raw answers, URLs or repo content. Never improve conversion by hiding pricing or degrading the connect-later path.
 
-Review priorities: whether all four quiz questions earn their place, whether the credit explanation is clear and fair, and whether the actual Home preview teaches the workflow without a picker. Silence is not approval to build.
+Review priorities: whether all four quiz questions earn their place, whether the credit explanation is clear and fair, and whether the actual Home preview teaches the workflow without a picker. R151 explicitly approves V1; further scope changes still need review.

@@ -1,6 +1,12 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
-import { mutation } from "./lib/projectedMutations";
+import { query, type QueryCtx } from "./_generated/server";
+import { mutation, internalMutation } from "./lib/projectedMutations";
+import type { Doc } from "./_generated/dataModel";
+import { assistantPrincipal, assistantGrant } from "./lib/assistantPrincipal";
+import {
+  assistantGrantActive,
+  assistantClients,
+} from "../packages/policy/assistant";
 import { user, access, limit } from "./lib";
 import { ensure, PolicyError } from "../packages/policy";
 import { requireAccountPro } from "./lib/accountSubscription";
@@ -69,11 +75,165 @@ export const save = mutation({
         interests: draft.interests,
         customTopic: draft.customTopic,
         pendingUrl: draft.pendingUrl,
+        ...(draft.workStage === undefined
+          ? {}
+          : { workStage: draft.workStage }),
+        ...(draft.obstacle === undefined ? {} : { obstacle: draft.obstacle }),
+        ...(draft.projectDescription === undefined
+          ? {}
+          : { projectDescription: draft.projectDescription }),
         ...(draft.team === undefined ? {} : { team: draft.team }),
         ...(draft.importRequested === undefined
           ? {}
           : { importRequested: draft.importRequested }),
         ...(family ? { selectedFamilyId: family.family._id } : {}),
+        updatedAt: Date.now(),
+      },
+    });
+    return null;
+  },
+});
+
+async function observedConnection(ctx: QueryCtx, actor: Doc<"users">) {
+  const proof = actor.onboarding?.assistantConnection;
+  if (!proof || process.env.MCP_ENABLED !== "true") return null;
+  const grant = await ctx.db.get(proof.grantId);
+  const client = assistantClients().find((item) => item.id === proof.clientId);
+  if (!grant) return null;
+  const organization = await ctx.db.get(grant.organizationId);
+  const membership = await ctx.db
+    .query("memberships")
+    .withIndex("by_pair", (q) =>
+      q.eq("organizationId", grant.organizationId).eq("userId", actor._id),
+    )
+    .unique();
+  if (
+    !organization ||
+    organization.status !== "active" ||
+    organization.privateOwnerId !== actor._id ||
+    membership?.role !== "owner"
+  )
+    return null;
+  try {
+    await requireAccountPro(ctx, actor);
+  } catch (error) {
+    if (error instanceof PolicyError && error.code === "FORBIDDEN") return null;
+    throw error;
+  }
+  return grant &&
+    client &&
+    grant.actor === actor._id &&
+    grant.clientId === proof.clientId &&
+    grant.version === proof.grantVersion &&
+    assistantGrantActive(grant) &&
+    grant.scopes.includes("context:read")
+    ? { client: client.name, checkedAt: proof.checkedAt }
+    : null;
+}
+
+export const assistantStatus = query({
+  args: {},
+  returns: v.object({
+    ready: v.boolean(),
+    client: v.union(v.string(), v.null()),
+    oauthClient: v.union(
+      v.object({ id: v.string(), name: v.string() }),
+      v.null(),
+    ),
+  }),
+  handler: async (ctx) => {
+    const proof = await observedConnection(ctx, await user(ctx));
+    const clients = assistantClients();
+    const selected = process.env.MCP_ONBOARDING_CLIENT_ID
+      ? clients.find(
+          (client) => client.id === process.env.MCP_ONBOARDING_CLIENT_ID,
+        )
+      : clients.length === 1
+        ? clients[0]
+        : null;
+    return {
+      ready: !!proof,
+      client: proof?.client ?? null,
+      oauthClient: selected ? { id: selected.id, name: selected.name } : null,
+    };
+  },
+});
+
+export const chooseAssistant = mutation({
+  args: {
+    choice: v.union(
+      v.literal("later"),
+      v.literal("check"),
+      v.literal("connected"),
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const actor = await user(ctx);
+    ensure(
+      actor.onboarding && actor.onboarding.stage !== "quiz",
+      "FORBIDDEN",
+      "Complete your questions first.",
+    );
+    await limit(ctx, `onboarding-assistant:${actor._id}`, 15);
+    ensure(
+      args.choice !== "connected" || (await observedConnection(ctx, actor)),
+      "FORBIDDEN",
+      "Check the connection from your assistant first.",
+    );
+    await ctx.db.patch(actor._id, {
+      onboarding: {
+        ...actor.onboarding,
+        assistantChoice: args.choice,
+        updatedAt: Date.now(),
+      },
+    });
+    return null;
+  },
+});
+
+// Called only after a successful authenticated MCP get_profile. No model or
+// source write is needed, and an app button cannot manufacture this receipt.
+export const recordAssistantConnection = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const principal = await assistantPrincipal(ctx, "context:read");
+    const actor = principal.actor;
+    if (!actor.onboarding) return null;
+    const organization = await ctx.db
+      .query("organizations")
+      .withIndex("by_private_owner", (q) => q.eq("privateOwnerId", actor._id))
+      .unique();
+    if (!organization) return null;
+    // A valid profile read may contain only joined teams. Optional onboarding
+    // bookkeeping must not reject it when personal access was turned off.
+    let authorized;
+    try {
+      authorized = await assistantGrant(ctx, organization._id, "context:read");
+    } catch (error) {
+      if (error instanceof PolicyError && error.code === "FORBIDDEN")
+        return null;
+      throw error;
+    }
+    const { grant } = authorized;
+    const old = actor.onboarding.assistantConnection;
+    if (
+      old?.grantId === grant._id &&
+      old.grantVersion === grant.version &&
+      actor.onboarding.assistantChoice === "connected"
+    )
+      return null;
+    await ctx.db.patch(actor._id, {
+      onboarding: {
+        ...actor.onboarding,
+        assistantChoice: "connected",
+        assistantConnection: {
+          clientId: principal.client.id,
+          grantId: grant._id,
+          grantVersion: grant.version,
+          checkedAt: Date.now(),
+        },
         updatedAt: Date.now(),
       },
     });

@@ -26,7 +26,7 @@ export function matchesStarter(
   return words.every((word) => text.includes(word));
 }
 
-/** Old answers win; a newly selected post provides setup defaults, not a quiz. */
+/** Compatibility defaults for older drafts; explicit answers always win. */
 export function discoveryDraft(
   draft: Partial<OnboardingDraft>,
   categories: string[] = [],
@@ -39,10 +39,11 @@ export function discoveryDraft(
     ...draft,
     version: 1,
     goal: draft.goal ?? "find_ideas",
-    interests: draft.interests?.length
-      ? draft.interests
-      : interests.length
-        ? interests
-        : ["coding"],
+    interests:
+      draft.interests?.length || draft.customTopic
+        ? (draft.interests ?? [])
+        : interests.length
+          ? interests
+          : ["coding"],
   };
 }

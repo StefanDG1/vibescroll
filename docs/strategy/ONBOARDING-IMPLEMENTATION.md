@@ -4,11 +4,23 @@ Mode: reference. Updated November 2, 2026, Europe/Berlin.
 
 R144 authorizes the [plan](INTEREST-LED-ONBOARDING.md) and [ADR230](../adr/230-interest-led-onboarding-and-prepayment-github.md). Website3748525/backend796b2cf are live. [Search-first acceptance](../operations/evidence/launch-20261102-search-first-onboarding.json). [Current production acceptance](../operations/evidence/launch-20261102-onboarding-continuation.json), [first publication](../operations/evidence/launch-20261101-interest-led-onboarding.json).
 
-## R148 detailed review awaiting owner approval
+## R151 approved V1 implementation
 
-R150 corrects the agent's link-first framing. Lead with forgotten saved posts and their potential use across projects. Screens7a-7c now propose a saved-post benefit screen, immediately followed by the Instagram export/import tutorial and an optional local-file preview. Keep direct links and the ready example as alternatives, preserve actual quotes and account/access boundaries, and never promise all posts will be available or processed automatically. Contextual term explanations remain. No application implementation or release has started.
+The owner approves V1 implementation. The prior review hold is superseded for this scope. V2 stays deferred.
 
-The [V1/V2 proposal](../design/ONBOARDING-V1-V2-REVIEW.md) explains each screen, alternate flow, component reuse, graphics, motion and test phases. [Research](../design/ONBOARDING-RESEARCH-2026-11-02.md) covers60 indexed onboarding matches/25 posts, additional queries, the actual Exponential source and attributed screenshots. No product code or release is part of this review. Simplify each step rather than cutting useful steps; mascot remains V2 only. Connect later is approved and followed by the fair credit explanation; supported assistant work is preferred after verified connection. Await owner review before application implementation.
+- [x] Ground existing draft, preview, Home, assistant, GitHub, payment and project contracts.
+- [x] Extend the versioned journey and preserve old drafts.
+- [x] Build focused quiz/graphics and adapt the real Home card through a guest boundary.
+- [x] Add forgotten-saves, visual import tutorial and local preview.
+- [x] Add resumable assistant setup, credit explanation and observed connection status.
+- [ ] Verify account/GitHub/Pro/Home/project continuation and focused regressions.
+- [ ] Complete batched desktop/mobile/theme checks, exact CI and compatible publication.
+
+## R148 reviewed design, now approved by R151
+
+R150 corrects the agent's link-first framing. Lead with forgotten saved posts and their potential use across projects. Screens7a-7c now propose a saved-post benefit screen, immediately followed by the Instagram export/import tutorial and an optional local-file preview. Keep direct links and the ready example as alternatives, preserve actual quotes and account/access boundaries, and never promise all posts will be available or processed automatically. Contextual term explanations remain. R151 implementation is underway; no new production release is claimed here.
+
+The [V1/V2 proposal](../design/ONBOARDING-V1-V2-REVIEW.md) explains each screen, alternate flow, component reuse, graphics, motion and test phases. [Research](../design/ONBOARDING-RESEARCH-2026-11-02.md) covers60 indexed onboarding matches/25 posts, additional queries, the actual Exponential source and attributed screenshots. This section retains the reviewed design; R151 separately approves V1 implementation. Simplify each step rather than cutting useful steps; mascot remains V2 only. Connect later is approved and followed by the fair credit explanation; supported assistant work is preferred after verified connection. R151 supersedes the earlier review hold for V1.
 
 ## R147 assistant connection pending implementation
 

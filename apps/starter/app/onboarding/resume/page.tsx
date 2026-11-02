@@ -7,9 +7,11 @@ import { Onboarding, OnboardingShell } from "@/components/onboarding";
 import { OnboardingMilestone } from "@/components/onboarding-milestone";
 import { OnboardingPayment } from "@/components/onboarding-payment";
 import { SearchChoices } from "@/components/search-choices";
+import { OnboardingAssistant } from "@/components/onboarding-assistant";
 import {
   chooseOnboardingProject,
   finishOnboarding,
+  continueOnboardingProject,
   refreshOnboardingRepositories,
 } from "../actions";
 import { ActionForm } from "@/components/action-form";
@@ -22,7 +24,12 @@ export const metadata = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ github?: string; checkout?: string; edit?: string }>;
+  searchParams: Promise<{
+    github?: string;
+    checkout?: string;
+    edit?: string;
+    setup?: string;
+  }>;
 }) {
   const query = await searchParams,
     client = await backend();
@@ -56,6 +63,21 @@ export default async function Page({
     api.organizations.createPrivate,
     {},
   );
+  const assistant = await client.query(api.onboarding.assistantStatus, {});
+  if (
+    !status.paid &&
+    query.setup !== "github" &&
+    !query.github &&
+    query.edit !== "github" &&
+    ((!status.progress?.assistantChoice &&
+      status.progress?.stage === "github") ||
+      query.edit === "assistant")
+  )
+    return (
+      <OnboardingShell authenticated>
+        <OnboardingAssistant initialReady={assistant} paid={false} />
+      </OnboardingShell>
+    );
   if (status.paid)
     return (
       <OnboardingShell step={3} authenticated>
@@ -68,9 +90,17 @@ export default async function Page({
           <p className={styles.subtle}>
             Your selected post is waiting on Home.
           </p>
+          {status.progress?.assistantChoice !== "later" && (
+            <OnboardingAssistant compact initialReady={assistant} paid />
+          )}
           <form action={finishOnboarding}>
             <button className={styles.primary}>
               Open Home <ArrowRight size={16} />
+            </button>
+          </form>
+          <form action={continueOnboardingProject}>
+            <button className={styles.secondary}>
+              Apply this post to a project <ArrowRight size={16} />
             </button>
           </form>
         </section>
@@ -78,6 +108,7 @@ export default async function Page({
     );
   if (
     status.progress?.stage === "github" ||
+    query.setup === "github" ||
     query.edit === "github" ||
     query.github === "connected" ||
     query.github === "failed"
@@ -200,6 +231,12 @@ export default async function Page({
         <div className={styles.actions}>
           <Link href="/account" className={styles.secondary}>
             Account & connections
+          </Link>
+          <Link
+            href="/onboarding/resume?edit=assistant"
+            className={styles.secondary}
+          >
+            Assistant setup
           </Link>
           <form action={logout}>
             <button className={styles.secondary}>Sign out</button>

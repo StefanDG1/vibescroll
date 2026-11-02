@@ -620,6 +620,10 @@ export const tools = httpAction(async (ctx, request) => {
           ...input.args,
           profileId: selectedProfile,
         });
+        await ctx.runMutation(
+          internal.onboarding.recordAssistantConnection,
+          {},
+        );
         break;
       case "get_project_application_context":
         value = await ctx.runQuery(

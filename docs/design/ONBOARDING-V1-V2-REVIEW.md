@@ -10,13 +10,13 @@ Recommend an experience-first sequence: explain the outcome, ask relevant questi
 
 The proposal uses four short quiz screens. Every answer changes recommendations or guidance. These are useful decisions, not a target number to maximize. There is no invented completion-time promise. Optional branches appear only when relevant.
 
-## Link-first positioning and the problem
+## Forgotten posts, useful ideas and input methods
 
-R149 clarifies that sending a link is a primary way to use VibeScroll. Users do not need an existing collection of saved posts or a platform export. Imports remain optional. A post becomes part of the user's VibeScroll library through their requested link flow; saving it on Instagram or TikTok first is not a prerequisite.
+R150 corrects the positioning inferred under R149: sending a link is an input method, not the emotional promise. Lead with useful posts that people save, forget and never apply. Introduce a dedicated benefit screen immediately before the Instagram saved-post import screen/tutorial. Users can still start with one link or the ready example; an existing saved collection is not required.
 
-Lead with the problem: people encounter useful advice, lose the link or forget the lesson, and struggle to turn it into a change they can actually make. The value is connecting discovery to useful action, with a searchable record to return to. This is proposed positioning, not a claim that every user has this pain or that VibeScroll guarantees better outcomes.
+Saving a useful post does not make it useful later. Good advice gets buried, its lesson is forgotten, and it never reaches the projects where it could help. VibeScroll brings those posts back as findable ideas and helps people decide how to apply them across their work. This is proposed positioning, not a guarantee that every saved post is available, useful or relevant to every project.
 
-Show the complete mechanism in ordinary language: **Send a link → Find the useful ideas → Apply them to your work.** The post and result remain available in VibeScroll afterward. Project application is optional; learning, discussing and finding an idea later are valid outcomes.
+Show the benefit in ordinary language: **Rediscover forgotten posts → Find the useful ideas → Put them to work in your projects.** Then explain the two inputs: import earlier saves or send a new link. The post and result remain available in VibeScroll afterward. Project application is optional; learning, discussing and finding an idea later are valid outcomes.
 
 For connected users, sending can start in their supported assistant chat. Other users paste the link in VibeScroll and use the current quoted credit route. Ordinary MCP connection alone does not make every host chat an automatic media worker. Show actual source availability, processing progress and result status. The ready onboarding example demonstrates the retained result, not a promise that every fresh link is instant.
 
@@ -24,12 +24,12 @@ For connected users, sending can start in their supported assistant chat. Other 
 
 | Word                        | Plain explanation in the relevant screen                                                                                                                                            |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Post                        | The original video or social post behind the link you sent. You do not have to save it on the platform first.                                                                       |
+| Post                        | The original video or social post brought in through an import or a link. A prior platform save is not required for direct link entry.                                              |
 | Analysis                    | VibeScroll processes the available content to identify useful ideas and their context. Actual missing content stays disclosed.                                                      |
 | Insight                     | A useful idea, lesson or takeaway from the post. Explain beside the first real insight rather than showing a glossary first.                                                        |
 | Project                     | Something you are working on, such as a product, business or codebase. A GitHub repository is one way to supply its context.                                                        |
 | Proposal or plan            | A draft of how the post's ideas could help your project. It can be discussed and edited; creating it does not change code. Prefer Plan in introductory copy.                        |
-| Library                     | The posts and ideas kept in VibeScroll from the links you request, plus content you deliberately add or share. Not a required platform-saves import.                                |
+| Library                     | The posts and ideas brought into VibeScroll through requested links, selected imports or deliberate sharing, so they can be found again.                                            |
 | Assistant connection or MCP | The connection that lets a supported assistant retrieve your authorized VibeScroll data and save supported work back. Say Connect your assistant first; MCP is explanatory detail.  |
 | Credits                     | Your VibeScroll allowance for the processing and in-app AI work shown in a quote. Assistant reasoning may use its own allowance; some preparation can still use VibeScroll credits. |
 | Ready result                | A compatible analysis already exists, so it can be reused under the current access policy. Keep Cache as secondary terminology.                                                     |
@@ -54,7 +54,10 @@ flowchart TD
     D --> E[Main obstacle]
     E --> F[Your starting point]
     F --> G[Guided real Home preview]
-    G --> H[Create account to keep it]
+    G --> R[Make forgotten saves useful]
+    R -->|Import Instagram saves| S[Export tutorial and local preview]
+    R -->|Start with one post| H[Create account to keep it]
+    S -->|Ready or export pending| H
     H --> I[Connect your assistant]
     I -->|Connect| J[Host setup and return]
     J --> K[Optional GitHub]
@@ -73,11 +76,11 @@ Quiz progress describes only the quiz. Do not show a false total across optional
 
 ## Screen 1: The promise
 
-**Headline:** Turn the links you send into ideas you use.
+**Headline:** Make your forgotten posts useful again.
 
-**Pain and solution:** Useful advice gets lost in feeds and chats. Send VibeScroll a link to find the useful ideas, keep them within reach and turn them into a next step for your work.
+**Pain and solution:** You saved it because it could help. Then it got buried. VibeScroll brings back the useful ideas and helps you apply them to the things you are building.
 
-Show a compact graphic starting with a pasted/sent link, then its post, a useful takeaway and an optional project plan. Use short captions: Send a link; Understand the idea; Put it to work. The relationship must remain understandable without animation. Use existing typography, source-card shapes and green accents. Illustrate the workflow without inventing a generated plan, live metrics or a completed analysis. Review artifacts identify illustrations; the user flow does not need a large synthetic-content banner.
+Show a compact graphic starting with a buried collection of posts, then one rediscovered useful idea connected to project cards. Briefly show Import saved posts and Add a link as ways in. Use short captions: Find it again; Understand the idea; Put it to work. The relationship must remain understandable without animation. Use existing typography, source-card shapes and green accents. Illustrate the workflow without inventing a generated plan, live metrics or a completed analysis. Review artifacts identify illustrations; the user flow does not need a large synthetic-content banner.
 
 **Primary:** Get started. **Secondary:** Sign in. Keep pricing discoverable through a quiet link. No email field, carousel, menu, mascot or autoplaying audio. The graphic makes one short transition and rests; reduced motion uses its static final arrangement. Do not imply a saved-post collection, import or GitHub account is needed to begin.
 
@@ -117,7 +120,7 @@ This changes the first help: Keep and revisit, search/categories, project applic
 
 **Headline:** A starting point for your ideas.
 
-Show a compact visual summary of actual answers: topics, goal and the practical next action. Explain the app with three short steps: Send a link; Find useful ideas; Apply them to your work. Briefly show that the link and ideas stay available in VibeScroll. Highlight the relevant step based on the obstacle. Answers remain editable without losing independent later progress.
+Show a compact visual summary of actual answers: topics, goal and the practical next action. Explain the app with three short steps: Bring in a post; Find useful ideas; Apply them to your work. Briefly show that the post and ideas stay available in VibeScroll. Highlight the relevant step based on the obstacle. Answers remain editable without losing independent later progress.
 
 **Primary:** Show me how it works. This deterministic summary is not an AI project plan. Open the real Home preview, not a separate picker. Selecting recommendations can show a real skeleton while fetching. No timed fake spinner, typed-out explanation or claim that a model is thinking. Continue immediately when ready.
 
@@ -131,7 +134,33 @@ At first expansion, explain Insight as a useful takeaway from the post. At the p
 
 **Next action:** Keep this post. **Contextual action:** Use for my project. Both preserve the post and next action through signup. Guests see account-required actions instead of fake likes, fit scores or successful writes. Counts must come from allowed data; omit unknown counts. Evidence stays on demand. Use the retained poster and Open original if playback is unavailable.
 
-An own link is a prominent alternative: Have a link in mind? Retain its normalized intent for after access and explain that fresh analysis needs a quote. It is not instantly analyzed. Have saved posts already? remains secondary local import/export help. Reading a guide is allowed now; importing or processing account data is not required for the preview.
+An own link remains available: Have a link in mind? Retain its normalized intent for after access and explain that fresh analysis needs a quote. It is not instantly analyzed. Continue into the saved-post benefit screen before offering Instagram import instructions. Reading the guide or previewing a selected local export does not start account-level import or analysis.
+
+### Screen 7a: Make forgotten saves useful
+
+Place this benefit screen immediately before the Instagram import screen/tutorial. It follows the real Home preview so the promise has a concrete example behind it.
+
+**Headline:** You saved them for a reason.
+
+**Copy:** Good ideas get buried in your saved posts. Bring them into VibeScroll to rediscover the useful advice and see where it could help your projects.
+
+Show a saved-post stack becoming insight cards, with one idea connecting to several project cards. Explain reuse across projects, not that every post fits every project or that plans already exist. Reuse retained post/evidence data; project-specific plans remain separate reviewed work with their normal quote.
+
+**Primary:** Import my Instagram saves. **Secondary:** Start with one post. The secondary path keeps the example or pending own link and continues to signup. No mascot, guilt message, invented count of forgotten saves or promise that everything is automatically analyzed.
+
+### Screen 7b: Instagram import screen and tutorial
+
+**Headline:** Bring your Instagram saves into VibeScroll.
+
+Explain the outcome first: choose a Saved export, review its post links and select what to bring in. Two visible paths are Get my Instagram export and I already have a file. Keep the tutorial visual and stepwise using verified current provider instructions. Guide the user to export only Saved information, All time and JSON where supported. Verify actual platform labels/screens before publishing new tutorial assets.
+
+Explain that Instagram may take time to prepare an export. Continue with this example preserves the reminder and returns to signup without losing progress. No Instagram password, cookie or full private account archive is required. Users can return to the guide later from Home/Connections help.
+
+### Screen 7c: Local file preview, when a file is ready
+
+Reuse the existing device-local ZIP/JSON/HTML preview. Show actual valid links, duplicates and unsupported entries. Selecting a local file does not upload the full archive or process every video. Explain that selected account saves follow the normal account/access step and new analysis requires its current quote. Compatible ready results can be reused under the normal policy.
+
+Retain only the safe draft/reminder and acknowledged selections allowed by the existing contract. A missing File after reload requires reselection; do not claim it is still available. Do not store a giant archive in localStorage. This preview remains optional and never blocks the ready Home example.
 
 ## Screen 8: Save progress with an account
 
@@ -221,31 +250,31 @@ Show real queued/working/validating/ready/failure states. A ready version can be
 
 ## Branches and recovery
 
-| Situation                              | Expected behavior                                                                                                                                        |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Existing paid/completed user           | Open workspace/Home. No repeated quiz or payment.                                                                                                        |
-| Partial anonymous quiz                 | Restore valid answers and visited-step history. Back preserves independent later answers.                                                                |
-| Returning unpaid account               | Resume stored setup/paywall and post. Do not recreate integrations.                                                                                      |
-| Team invitation                        | Preserve exact destination, ask only missing personal setup, verify membership and each member's Pro/credits. No automatic personal-save sharing.        |
-| Exploring/no project                   | Reading/keeping first. Project/GitHub optional.                                                                                                          |
-| No ready match                         | Disclose a broader eligible suggestion; allow topic edits. No invented relevance or unquoted work.                                                       |
-| Image/preview unavailable              | Preserve position; retry/allowed poster/original. Preserve preview allowance and distinguish a fetch failure from a consumed full preview.               |
-| Second full preview                    | Continue to account/Pro with first result retained. Shared UI cannot bypass the allowance.                                                               |
-| Own link before access                 | Retain normalized intent; fresh processing follows access and quote. No job now.                                                                         |
-| Import wanted                          | Existing local guide/preview; continue the ready result while an export is pending. No social passwords/full-archive upload or bulk analysis by default. |
-| Connect later                          | One-time credit explanation, remembered choice, normal continuation.                                                                                     |
-| Existing MCP                           | Reuse grant; after entitlement check actual capability. No duplicate app/scopes.                                                                         |
-| MCP denied/expired/unsupported         | Retain draft; retry, alternate client or credits. Provider-driven reconnect.                                                                             |
-| MCP ready but Events absent            | Ordinary MCP ready and background analysis not configured are separate states. No silent monitor or paid fallback.                                       |
-| GitHub skipped/denied/empty            | Continue to Pro. Description or later setup remains possible. Preserve completed OAuth.                                                                  |
-| Checkout cancelled/declined            | Restore selected Pro interval/setup. No wallet grant.                                                                                                    |
-| Pending webhook/lost return            | Reconcile existing checkout and current entitlement on login. No duplicate purchase or redirect-only unlock.                                             |
-| Network interruption                   | Restore local/server progress and retry exact idempotent operation. Unknown jobs/charges keep their holds.                                               |
-| Insufficient credits/provider capacity | Keep authorized saved reads usable; explain quote/admission before new work. No automatic purchase/top-up/model substitution.                            |
-| Mobile app switching/stale tabs        | Reconcile current server revision; older tabs cannot overwrite completed connections or newer answers.                                                   |
-| Consent rejected/reduced motion        | Full experience remains usable, without analytics or autoplay requirement.                                                                               |
-| Back/refresh/direct link               | Validate actual state and safe return destination. Local flags cannot grant access.                                                                      |
-| Account deletion/access revocation     | Existing account rules apply. Onboarding never re-enables an explicitly revoked grant automatically.                                                     |
+| Situation                              | Expected behavior                                                                                                                                                                                              |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Existing paid/completed user           | Open workspace/Home. No repeated quiz or payment.                                                                                                                                                              |
+| Partial anonymous quiz                 | Restore valid answers and visited-step history. Back preserves independent later answers.                                                                                                                      |
+| Returning unpaid account               | Resume stored setup/paywall and post. Do not recreate integrations.                                                                                                                                            |
+| Team invitation                        | Preserve exact destination, ask only missing personal setup, verify membership and each member's Pro/credits. No automatic personal-save sharing.                                                              |
+| Exploring/no project                   | Reading/keeping first. Project/GitHub optional.                                                                                                                                                                |
+| No ready match                         | Disclose a broader eligible suggestion; allow topic edits. No invented relevance or unquoted work.                                                                                                             |
+| Image/preview unavailable              | Preserve position; retry/allowed poster/original. Preserve preview allowance and distinguish a fetch failure from a consumed full preview.                                                                     |
+| Second full preview                    | Continue to account/Pro with first result retained. Shared UI cannot bypass the allowance.                                                                                                                     |
+| Own link before access                 | Retain normalized intent; fresh processing follows access and quote. No job now.                                                                                                                               |
+| Import wanted                          | Show the forgotten-saves benefit screen, then the Instagram tutorial/local preview; continue the ready result while an export is pending. No social passwords/full-archive upload or bulk analysis by default. |
+| Connect later                          | One-time credit explanation, remembered choice, normal continuation.                                                                                                                                           |
+| Existing MCP                           | Reuse grant; after entitlement check actual capability. No duplicate app/scopes.                                                                                                                               |
+| MCP denied/expired/unsupported         | Retain draft; retry, alternate client or credits. Provider-driven reconnect.                                                                                                                                   |
+| MCP ready but Events absent            | Ordinary MCP ready and background analysis not configured are separate states. No silent monitor or paid fallback.                                                                                             |
+| GitHub skipped/denied/empty            | Continue to Pro. Description or later setup remains possible. Preserve completed OAuth.                                                                                                                        |
+| Checkout cancelled/declined            | Restore selected Pro interval/setup. No wallet grant.                                                                                                                                                          |
+| Pending webhook/lost return            | Reconcile existing checkout and current entitlement on login. No duplicate purchase or redirect-only unlock.                                                                                                   |
+| Network interruption                   | Restore local/server progress and retry exact idempotent operation. Unknown jobs/charges keep their holds.                                                                                                     |
+| Insufficient credits/provider capacity | Keep authorized saved reads usable; explain quote/admission before new work. No automatic purchase/top-up/model substitution.                                                                                  |
+| Mobile app switching/stale tabs        | Reconcile current server revision; older tabs cannot overwrite completed connections or newer answers.                                                                                                         |
+| Consent rejected/reduced motion        | Full experience remains usable, without analytics or autoplay requirement.                                                                                                                                     |
+| Back/refresh/direct link               | Validate actual state and safe return destination. Local flags cannot grant access.                                                                                                                            |
+| Account deletion/access revocation     | Existing account rules apply. Onboarding never re-enables an explicitly revoked grant automatically.                                                                                                           |
 
 ## Visual and interaction specification
 

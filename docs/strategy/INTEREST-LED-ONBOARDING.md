@@ -6,7 +6,7 @@ Status: implementation approved by the owner on November 1, 2026. The owner appr
 
 ## November2 review before rebuilding
 
-R149 clarifies that users can begin by sending a single link. No collection of saved posts or export is required. The detailed review now leads with the pain and send → understand → apply, explaining terms at the relevant interaction. Saved content refers to what VibeScroll retains afterward; platform imports are optional.
+R150 makes forgotten saved posts the emotional starting point. The detailed review introduces a benefit screen immediately before the Instagram saved-post import tutorial, showing how rediscovered insights can help across projects. Direct link entry remains available; no existing saved collection is required. Explain the terms in context and preserve the normal account/access/quote boundaries.
 
 R148 asks for the complete researched [V1/V2 screen review](../design/ONBOARDING-V1-V2-REVIEW.md) before application implementation. Simplify each screen; more useful steps are acceptable. Connect later is approved, with an honest credit explanation, and the mascot is excluded from V1. The review preserves this plan's account/payment/preview contracts. Await owner review; the current quiz removal is still live.
 

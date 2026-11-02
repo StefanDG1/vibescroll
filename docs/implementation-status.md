@@ -1,6 +1,10 @@
 # Implementation status
 
-## November2: retained shared-reader repair candidate
+## November 2: retained shared-reader repair accepted
+
+Backend 1843f1f is live after exact CI 41511408079 and 17 compatible guards, with unchanged website 189dc4f and no schema/index/auth/cron change. The original saved post opens with five insights and complete 15-item MCP context. All eight actual JPEGs match retained hashes/sizes/dimensions; the six source/import/family/artifact/version/evidence documents are unchanged. four post viewport/theme cases and Home, actual native MCP image/exact-version/whole-context reads, another retained result, authorized second-account control and foreign personal-source denial pass. No reanalysis, credits, website build, permission/policy or credential change. [Receipt and limits](operations/evidence/launch-20261102-shared-read-repair.json).
+
+## November 2: retained shared-reader repair candidate, superseded by acceptance above
 
 R152 reproduces a ready shared result whose reader mistakes a subscription model for API execution. Provenance now selects the processing review; full website detail validates selected immutable evidence before its legacy-media fallback.82focused sharing/entitlement/read cases, full local checks/both builds and dependency audit pass. The saved five-insight/eight-frame result still satisfies strict contracts. No data/schema/index/environment change, reanalysis or new media request. Exact CI, compatible backend-only publication and live full-read acceptance remain pending. [Plan](operations/SHARED-READ-REPAIR-2026-11-02.md), [ADR235](adr/235-provenance-bound-shared-analysis-readers.md).
 

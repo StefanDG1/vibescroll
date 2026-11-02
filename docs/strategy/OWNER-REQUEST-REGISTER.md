@@ -17,7 +17,7 @@ Status vocabulary:
 
 ## Capture, extraction and visible results
 
-R152, November2: repair the older saved shared post and verify shared-database/full-analysis reads in production. Preserve its existing data and results; diagnose the exact underlying failure rather than delete/reanalyze or change the working connection. [Repair plan](../operations/SHARED-READ-REPAIR-2026-11-02.md).
+R152, November2: repair the older saved shared post and verify shared-database/full-analysis reads in production. Preserve its existing data and results; diagnose the exact underlying failure rather than delete/reanalyze or change the working connection. [Repair plan](../operations/SHARED-READ-REPAIR-2026-11-02.md). Live at backend 1843f1f with original data unchanged; full app/MCP/image reads and account-isolation controls pass. [Acceptance](../operations/evidence/launch-20261102-shared-read-repair.json).
 
 R151, November2: the owner approves continuing the plan and building the reviewed V1, including the quiz, shared Home, graphics, forgotten-saves/import steps and optional assistant setup. R148's review-before-build hold is lifted for V1. V2 features remain separately deferred, and existing provider/funding/data boundaries remain. Implemented and deployed at189dc4f, with separate local/staged/canonical evidence. [Acceptance and limits](../operations/evidence/launch-20261102-focused-onboarding.json). New-customer payment/identity/assistant OAuth and V2 remain separately unclaimed.
 

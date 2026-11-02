@@ -2,6 +2,16 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November2 shared-reader classification repair
+
+R152 resolved the older shared-read failure at backend 1843f1f. A bounded 12-event backend log read exposed Prepared processing publication authority changed. Exact-source-chain inspection showed the preparation permission hash still matched; this was not expired permission or lost media. The reader chose an OpenAI API review from requestedModel alone, although the stored authenticated_host_reported/own_subscription provenance identified subscription execution. Model names do not establish executor, billing route or processing permission.
+
+The expanded full-read regression also caught legacy private orderedMedia being validated before selected immutable/shared evidence. Validate the selected retained version first. An unavailable selected version still fails closed; never fall back to an old private result after withdrawal.
+
+Regression coverage runs subscription publication/read through a non-API model plus gpt-6.1-sol and gpt-6-luna, with current and revoked unrelated API configuration. Actual API policy changes and preparation permission changes still refuse access. Website detail, exact/default MCP summary, whole context and image bytes are tested. Source rights, Pro, workspace/grant, canonical family, immutable evidence and withdrawal checks remain. Production reads preserve the exact stored chain.
+
+Start future opaque 404/MCP read diagnosis with a narrow underlying function-log capture and a direct immutable-chain comparison. Do not guess at OAuth/reconnection, delete good data, run another analysis or add a historical-permission registry without evidence. During visual acceptance, assert controls by the actual surface: post reader insight expanders and Home data-insight-id wrappers differ. A wrong selector is a test failure, not a product failure.
+
 ## November2 focused onboarding verification
 
 A temporary local component-review route was removed before publication, but Next's generated dev validator still imported it. The first full check failed on that stale generated artifact. Regenerating production route types and removing only the exact generated validator resolved it; the subsequent full check and exact CI pass. No source type-check exclusion or broad cache removal was used.
@@ -12,7 +22,7 @@ The file picker's visually hidden input overflowed its parent because a broad in
 
 An onboarding connection receipt is optional bookkeeping after a successful profile read. A valid team-only read must keep working when personal access was explicitly revoked. Return no personal readiness for that expected boundary; do not revive the grant or fail the already successful team read. Expired Pro, changed grant version and lost membership invalidate readiness without deleting the saved receipt.
 
-Existing-account smoke testing found shared source px74tg2860md7kfh8wmg5dcgad8h8cj3 with ready generation0 metadata and a public-import association, while the website full read returned404 and one MCP diagnostic returned INVALID_ARGUMENT. Its prior successful record is launch-20261030-shared-proposals-compact-production.json. The full-read route catches all exceptions as404, so this does not establish deletion or a particular permission failure. Preserve the source/results; next diagnosis should distinguish the selected artifact, source/family authority, retained evidence and unrelated query failure. Do not delete or run a new analysis to hide this symptom.
+Existing-account smoke testing found shared source px74tg2860md7kfh8wmg5dcgad8h8cj3 with ready generation0 metadata and a public-import association, while the website full read returned404 and one MCP diagnostic returned INVALID_ARGUMENT. Its prior successful record is launch-20261030-shared-proposals-compact-production.json. The full-read route catches all exceptions as404, so the initial observation did not establish deletion or a particular permission failure. The R152 diagnosis and repair above now supersede that unknown cause. Do not delete or run a new analysis to hide this symptom.
 
 ## November2 onboarding scope misinterpretation
 

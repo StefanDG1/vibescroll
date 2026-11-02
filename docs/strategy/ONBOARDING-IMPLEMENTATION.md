@@ -2,7 +2,7 @@
 
 Mode: reference. Updated November 2, 2026, Europe/Berlin.
 
-R144 authorizes the [plan](INTEREST-LED-ONBOARDING.md) and [ADR230](../adr/230-interest-led-onboarding-and-prepayment-github.md). Website3748525/backend796b2cf are live. [Search-first acceptance](../operations/evidence/launch-20261102-search-first-onboarding.json). [Current production acceptance](../operations/evidence/launch-20261102-onboarding-continuation.json), [first publication](../operations/evidence/launch-20261101-interest-led-onboarding.json).
+R144 authorizes the [plan](INTEREST-LED-ONBOARDING.md) and [ADR230](../adr/230-interest-led-onboarding-and-prepayment-github.md). Website/backend189dc4f are live. [Focused V1 acceptance](../operations/evidence/launch-20261102-focused-onboarding.json). [Search-first acceptance](../operations/evidence/launch-20261102-search-first-onboarding.json). [Current production acceptance](../operations/evidence/launch-20261102-onboarding-continuation.json), [first publication](../operations/evidence/launch-20261101-interest-led-onboarding.json).
 
 ## R151 approved V1 implementation
 
@@ -13,22 +13,28 @@ The owner approves V1 implementation. The prior review hold is superseded for th
 - [x] Build focused quiz/graphics and adapt the real Home card through a guest boundary.
 - [x] Add forgotten-saves, visual import tutorial and local preview.
 - [x] Add resumable assistant setup, credit explanation and observed connection status.
-- [ ] Verify account/GitHub/Pro/Home/project continuation and focused regressions.
-- [ ] Complete batched desktop/mobile/theme checks, exact CI and compatible publication.
+- [x] Verify account/GitHub/Pro/Home/project continuation regressions; retain earlier live account/GitHub/project acceptance. New payment/identity/assistant OAuth are not newly claimed.
+- [x] Complete batched desktop/mobile/theme checks, exact CI and compatible publication.
+
+## R151 production acceptance
+
+Website/backend189dc4f are live. Exact CI41504180285 passes1,710main/11skips,79auth,179knowledge, Node/Python/both builds and audit.17guard tests, two deterministic preparations and actual no-scan/no-backfill admission passed for five optional fields. One57.096s Basic build was staged and promoted unchanged. Canonical welcome/Home4, Library8, real four-insight preview/540px poster, import guide/local preview and signed official signup handoff pass. Native Back/radio/cross-tab recovery and assistant setup component checks pass. Original MCP grant12 stays ready. No new inference, payment, wallet grant, identity or OAuth consent.56private screenshots include20canonical views. [Receipt and limits](../operations/evidence/launch-20261102-focused-onboarding.json).
+
+An existing shared source has ready metadata but an unavailable full read. It is preserved as a separate diagnosis; no universal feed-health claim follows from onboarding acceptance.
 
 ## R148 reviewed design, now approved by R151
 
-R150 corrects the agent's link-first framing. Lead with forgotten saved posts and their potential use across projects. Screens7a-7c now propose a saved-post benefit screen, immediately followed by the Instagram export/import tutorial and an optional local-file preview. Keep direct links and the ready example as alternatives, preserve actual quotes and account/access boundaries, and never promise all posts will be available or processed automatically. Contextual term explanations remain. R151 implementation is underway; no new production release is claimed here.
+R150 corrects the agent's link-first framing. Lead with forgotten saved posts and their potential use across projects. Screens7a-7c now propose a saved-post benefit screen, immediately followed by the Instagram export/import tutorial and an optional local-file preview. Keep direct links and the ready example as alternatives, preserve actual quotes and account/access boundaries, and never promise all posts will be available or processed automatically. Contextual term explanations remain. R151 implements and publishes this reviewed V1; the acceptance section above is current.
 
 The [V1/V2 proposal](../design/ONBOARDING-V1-V2-REVIEW.md) explains each screen, alternate flow, component reuse, graphics, motion and test phases. [Research](../design/ONBOARDING-RESEARCH-2026-11-02.md) covers60 indexed onboarding matches/25 posts, additional queries, the actual Exponential source and attributed screenshots. This section retains the reviewed design; R151 separately approves V1 implementation. Simplify each step rather than cutting useful steps; mascot remains V2 only. Connect later is approved and followed by the fair credit explanation; supported assistant work is preferred after verified connection. R151 supersedes the earlier review hold for V1.
 
-## R147 assistant connection pending implementation
+## R147 assistant connection, implemented in R151
 
-Include a first-class ChatGPT or supported MCP-client connection step after signup, with resumable setup, honest observed connection status and no duplicate grant setup. The owner requires MCP access for the app. R148 allows Connect later without blocking app entry. Preserve Pro boundaries and distinguish ordinary MCP from Events automation. [Requirement](../design/SEARCH-FIRST-ONBOARDING.md#required-mcp-setup). No new connection gate or onboarding UI is deployed.
+Include a first-class ChatGPT or supported MCP-client connection step after signup, with resumable setup, honest observed connection status and no duplicate grant setup. The owner requires MCP access for the app. R148 allows Connect later without blocking app entry. Preserve Pro boundaries and distinguish ordinary MCP from Events automation. [Requirement](../design/SEARCH-FIRST-ONBOARDING.md#required-mcp-setup). The optional connection step is deployed at189dc4f; fresh-user OAuth acceptance remains separate.
 
-## R146 correction pending
+## R146 correction, deployed in R151
 
-The owner clarified that the quiz must remain and improve. Only the recommended-post selection should become the shared Home feed, with explanatory graphics and better transitions. [Corrected design](../design/SEARCH-FIRST-ONBOARDING.md). No application correction is deployed yet. Preserve valid R145 fixes and the earlier preview/account/payment boundaries.
+The owner clarified that the quiz must remain and improve. Only the recommended-post selection should become the shared Home feed, with explanatory graphics and better transitions. [Corrected design](../design/SEARCH-FIRST-ONBOARDING.md). The restored quiz/shared Home correction is deployed at189dc4f. Preserve valid R145 fixes and the earlier preview/account/payment boundaries.
 
 ## R145 deployed behavior, interpretation corrected
 

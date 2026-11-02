@@ -1,5 +1,9 @@
 # Implementation status
 
+## November2: focused onboarding production acceptance
+
+Website/backend189dc4f are live with exact CI41504180285,17compatible guards, two deterministic preparations and one57.096s normal Basic build. Canonical real preview/import/signup handoff, viewport/theme4 and Library8 pass. Original MCP grant12 remains ready.56private screenshots include20canonical captures. No new model job, payment, wallet grant, identity or assistant OAuth consent. One older shared-post read remains unavailable despite ready metadata; preserve its data and diagnose separately. [Receipt and acceptance limits](operations/evidence/launch-20261102-focused-onboarding.json).
+
 ## November2: approved focused onboarding candidate
 
 R151 restores the quiz and implements the reviewed V1 with four focused questions, answer-specific guidance, the shared Home post/insight layout, a forgotten-saves benefit screen, illustrated Instagram export steps and device-local import preview. Optional ChatGPT/Codex setup follows signup, with Connect later and honest credit guidance; current authenticated profile/grant evidence records readiness without starting analysis or changing explicit restrictions. Signed draft adoption, optional GitHub, Pro, cache attachment and first-project/proposal contracts remain. Full local checks pass1,711main/9skips,79auth,179knowledge, Node/Python and both builds. Ten final focused journey/authority cases pass, including expired Pro and revoked personal access. Native local desktop/mobile/theme checks cover the quiz, shared feed fixture, import and assistant guide. Exact CI, actual compatible guards and staged/canonical production acceptance remain pending. No inference, payment, new price or balance change. [Execution ledger](strategy/ONBOARDING-IMPLEMENTATION.md), [ADR234](adr/234-focused-quiz-and-shared-home-onboarding.md).

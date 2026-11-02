@@ -1,6 +1,6 @@
 # Onboarding V1 and V2 review
 
-Status: V1 approved for implementation under R151, November 2, 2026. V2 remains deferred. R151 authorizes this V1 implementation and routine publication within the standing limits. No inference, payment or price change is part of this checkpoint. Website3748525/backend796b2cf remain the last verified live source until the new acceptance receipt.
+Status: V1 approved for implementation under R151, November 2, 2026. V2 remains deferred. R151 authorizes this V1 implementation and routine publication within the standing limits. No inference, payment or price change is part of this checkpoint. Website/backend189dc4f are live under the [R151 acceptance receipt](../operations/evidence/launch-20261102-focused-onboarding.json).
 
 ## What simpler means
 

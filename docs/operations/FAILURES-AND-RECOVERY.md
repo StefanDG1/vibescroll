@@ -2,6 +2,18 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November2 focused onboarding verification
+
+A temporary local component-review route was removed before publication, but Next's generated dev validator still imported it. The first full check failed on that stale generated artifact. Regenerating production route types and removing only the exact generated validator resolved it; the subsequent full check and exact CI pass. No source type-check exclusion or broad cache removal was used.
+
+Keep every browser operation bound to the exact CDP session. Another chat and the owner can change the selected Chrome tab; target-level sessions avoided wrong-page capture and do not require pausing unrelated work. Assert readiness after navigation before interpreting an empty page or missing payment warning. Wait for image decoding before capturing lazy thumbnails. One staged next thumbnail initially appeared empty, then returned an actual540px JPEG and decoded correctly.
+
+The file picker's visually hidden input overflowed its parent because a broad input selector set its dimensions. Scope the file-input dimensions explicitly. For preview thumbnails, bind each frame to its own family, including the next-post peek; never use the active family for another post's image. Guest preview reads must use the public starter authority rather than authenticated evidence APIs.
+
+An onboarding connection receipt is optional bookkeeping after a successful profile read. A valid team-only read must keep working when personal access was explicitly revoked. Return no personal readiness for that expected boundary; do not revive the grant or fail the already successful team read. Expired Pro, changed grant version and lost membership invalidate readiness without deleting the saved receipt.
+
+Existing-account smoke testing found shared source px74tg2860md7kfh8wmg5dcgad8h8cj3 with ready generation0 metadata and a public-import association, while the website full read returned404 and one MCP diagnostic returned INVALID_ARGUMENT. Its prior successful record is launch-20261030-shared-proposals-compact-production.json. The full-read route catches all exceptions as404, so this does not establish deletion or a particular permission failure. Preserve the source/results; next diagnosis should distinguish the selected artifact, source/family authority, retained evidence and unrelated query failure. Do not delete or run a new analysis to hide this symptom.
+
 ## November2 onboarding scope misinterpretation
 
 A second interpretation error followed: allowing individual link input was turned into the product's emotional positioning. R150 distinguishes the two. The product pain is useful saved posts being forgotten; import and direct links are ways to bring content in. Apply wording changes at the requested screen and scope instead of replacing the overall product story. Preserve both valid input paths.

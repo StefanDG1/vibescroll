@@ -4,6 +4,8 @@ Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/deci
 
 ## Current mandatory owner direction
 
+R147 requires ChatGPT or equivalent MCP setup in onboarding. Read [the MCP setup requirement](docs/design/SEARCH-FIRST-ONBOARDING.md#required-mcp-setup); the precise client-connection app-entry gate is awaiting owner clarification. Do not conflate MCP access with Events automation or supported hosted subscription inference.
+
 R146 corrects the agent's R145 interpretation: keep and improve the onboarding quiz. Only the recommended-post picker becomes the existing Home feed with shared post/insight/proposal components. Add step-specific explanatory graphics and purposeful transitions; keep the mascot removed, copy concise and choices visible without dropdowns. Follow [the corrected onboarding design](docs/design/SEARCH-FIRST-ONBOARDING.md) and [ADR232](docs/adr/232-quiz-onboarding-with-shared-home-preview.md). R145 quiz removal is deployed behavior, not the desired product. Preserve R144 account/payment/preview contracts and saved drafts. Ask about genuinely ambiguous choices before replacing an established flow.
 
 R144 approves the complete [interest-led onboarding plan](docs/strategy/INTEREST-LED-ONBOARDING.md). Read its [execution ledger](docs/strategy/ONBOARDING-IMPLEMENTATION.md) until accepted. Preserve one real ready result before signup/payment, account before optional pre-payment GitHub, stored progress and paywall resumption, individual Pro, and the real all-insight proposal/issue path. Existing accounts bypass the new funnel; anonymous preview is an explicit bounded selection, not full catalog access. No real operator payment or private-content publication follows from testing.

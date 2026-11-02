@@ -17,6 +17,8 @@ Status vocabulary:
 
 ## Capture, extraction and visible results
 
+R147, November2: include Connect to ChatGPT or equivalent MCP access in onboarding; the owner calls MCP access required for the app. Reuse current connection guides/grants and include a supported alternate client. Distinguish account MCP permission, observed host connection and automatic Events processing. A focused question is pending about blocking app entry on a completed client connection versus enabling MCP access by default with connection later. Add the step now; do not infer the unresolved blocking policy or make unsupported hosted subscription promises. [Onboarding requirements](../design/SEARCH-FIRST-ONBOARDING.md#required-mcp-setup). This is documented scope, not deployed onboarding behavior.
+
 R146, November2: the owner explicitly corrects R145. Keep and improve the onboarding quiz, with better steps, animations and explanatory graphics. Replace only the recommended-post picker with the same Home feed view and shared components so users can scroll real ready posts. Keep the mascot removed, unnecessary labels reduced and choices without dropdowns. Ask when a material interpretation is unclear. [Corrected plan](../design/SEARCH-FIRST-ONBOARDING.md), [ADR232](../adr/232-quiz-onboarding-with-shared-home-preview.md). This is recorded direction; quiz restoration and shared Home preview are not yet deployed.
 
 The R145 records below preserve actual deployed behavior and the agent's mistaken interpretation. R146 supersedes their claim that quiz removal was requested or accepted.

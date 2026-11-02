@@ -4,6 +4,10 @@ Mode: reference. Updated November 2, 2026, Europe/Berlin.
 
 R144 authorizes the [plan](INTEREST-LED-ONBOARDING.md) and [ADR230](../adr/230-interest-led-onboarding-and-prepayment-github.md). Website3748525/backend796b2cf are live. [Search-first acceptance](../operations/evidence/launch-20261102-search-first-onboarding.json). [Current production acceptance](../operations/evidence/launch-20261102-onboarding-continuation.json), [first publication](../operations/evidence/launch-20261101-interest-led-onboarding.json).
 
+## R147 assistant connection pending
+
+Include a first-class ChatGPT or supported MCP-client connection step after signup, with resumable setup, honest observed connection status and no duplicate grant setup. The owner requires MCP access for the app. The precise client-connection app-entry gate awaits clarification. Preserve Pro boundaries and distinguish ordinary MCP from Events automation. [Requirement](../design/SEARCH-FIRST-ONBOARDING.md#required-mcp-setup). No new connection gate or onboarding UI is deployed.
+
 ## R146 correction pending
 
 The owner clarified that the quiz must remain and improve. Only the recommended-post selection should become the shared Home feed, with explanatory graphics and better transitions. [Corrected design](../design/SEARCH-FIRST-ONBOARDING.md). No application correction is deployed yet. Preserve valid R145 fixes and the earlier preview/account/payment boundaries.

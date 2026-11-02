@@ -2,6 +2,8 @@
 
 Status: owner clarification R146, November 2, 2026. Planned correction; not deployed.
 
+R148 now requests the detailed [V1/V2 screen review](../design/ONBOARDING-V1-V2-REVIEW.md) before implementation. Simplify each screen; useful steps may increase. The owner accepts MCP Connect later, with an honest credit explanation, and optional mascot scope only in V2. The review is not application-build approval.
+
 The owner wants an improved onboarding quiz with clearer steps, better animations and graphics explaining the app. The agent incorrectly removed the quiz under ADR231. That interpretation is superseded.
 
 Keep the quiz and its saved answers. Replace only the recommended-post picker with the existing Home feed and shared post, insight and proposal components. Personalize eligible ready recommendations using quiz answers and teach the real interactions in place. Keep the mascot removed, copy concise and choices visible without dropdowns.

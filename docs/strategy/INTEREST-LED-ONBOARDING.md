@@ -4,6 +4,10 @@ Mode: explanation and proposed implementation plan. Updated November 1, 2026, Eu
 
 Status: implementation approved by the owner on November 1, 2026. The owner approves one complete curated result before payment and allows GitHub connection after signup but before payment. Recommended account timing is before payment. The first bounded checkpoint is live at3fc0669; the execution ledger distinguishes production from the completion candidate and remaining fresh-account acceptance. This document does not change production entitlements, pricing or funding.
 
+## November2 review before rebuilding
+
+R148 asks for the complete researched [V1/V2 screen review](../design/ONBOARDING-V1-V2-REVIEW.md) before application implementation. Simplify each screen; more useful steps are acceptable. Connect later is approved, with an honest credit explanation, and the mascot is excluded from V1. The review preserves this plan's account/payment/preview contracts. Await owner review; the current quiz removal is still live.
+
 ## November2 refinement
 
 R146 corrects the agent's R145 interpretation. Keep and improve the quiz described below. Replace only the recommended-post picker with the existing Home feed and shared post/insight/proposal components. Add step-specific explanatory graphics and purposeful transitions; keep the mascot removed, copy concise and choices visible without dropdowns. The ready collection, one complete preview, account/payment contracts and saved progress remain. Follow [the corrected design](../design/SEARCH-FIRST-ONBOARDING.md). The deployed quiz removal is a regression to correct, not owner-approved simplification.

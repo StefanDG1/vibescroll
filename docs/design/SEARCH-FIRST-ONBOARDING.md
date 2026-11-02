@@ -2,6 +2,8 @@
 
 R146 corrects the agent's interpretation of R145 on November 2, 2026. The owner never requested removal of the quiz. The requested replacement applies to the recommended-post picker: show recommendations directly in the existing Home experience and let users scroll.
 
+The owner now requests the complete [V1/V2 review](ONBOARDING-V1-V2-REVIEW.md) under R148 before application implementation. This shorter document records the correction; use the review for the proposed screen sequence, research, visual references and remaining approval. Simplify each screen, not the useful step count. Connect later is approved and does not block app entry.
+
 ## Intended flow
 
 1. Keep the resumable onboarding quiz. Improve its goal and interest questions, adapt relevant steps for developers/founders and teams, and preserve existing answers. Use one clear question per screen and visible choices without dropdowns.
@@ -12,7 +14,7 @@ R146 corrects the agent's interpretation of R145 on November 2, 2026. The owner 
 
 ## Required MCP setup
 
-R147 adds ChatGPT connection or equivalent MCP access to onboarding as a core app requirement. The exact access gate is awaiting one focused owner answer: must a working client connection precede app entry, or is default MCP access sufficient while the client connection may finish later? Include the setup step in either case; do not silently choose the stricter gate.
+R147 adds ChatGPT connection or equivalent MCP access to onboarding as a core app requirement. R148 resolves the access question: offer Connect later and allow app entry through the normal Pro gate. After skipping, show the concise credit explanation in the review. After verified connection, prefer supported assistant work without another activation checkbox. Keep provider, entitlement and actual executor requirements; a connection alone does not establish automatic Events processing.
 
 Reuse the existing connection guide, public descriptor and account-scoped OAuth mechanism. Present ChatGPT first, with a supported alternative client. Preserve valid existing grants and automatically permitted personal/joined-team defaults, explicit disabled access, current membership and each member's own Pro. Do not add another library-scope checklist or require recreation of the working plugin.
 

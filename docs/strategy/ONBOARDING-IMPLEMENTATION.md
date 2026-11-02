@@ -4,9 +4,13 @@ Mode: reference. Updated November 2, 2026, Europe/Berlin.
 
 R144 authorizes the [plan](INTEREST-LED-ONBOARDING.md) and [ADR230](../adr/230-interest-led-onboarding-and-prepayment-github.md). Website3748525/backend796b2cf are live. [Search-first acceptance](../operations/evidence/launch-20261102-search-first-onboarding.json). [Current production acceptance](../operations/evidence/launch-20261102-onboarding-continuation.json), [first publication](../operations/evidence/launch-20261101-interest-led-onboarding.json).
 
-## R147 assistant connection pending
+## R148 detailed review awaiting owner approval
 
-Include a first-class ChatGPT or supported MCP-client connection step after signup, with resumable setup, honest observed connection status and no duplicate grant setup. The owner requires MCP access for the app. The precise client-connection app-entry gate awaits clarification. Preserve Pro boundaries and distinguish ordinary MCP from Events automation. [Requirement](../design/SEARCH-FIRST-ONBOARDING.md#required-mcp-setup). No new connection gate or onboarding UI is deployed.
+The [V1/V2 proposal](../design/ONBOARDING-V1-V2-REVIEW.md) explains each screen, alternate flow, component reuse, graphics, motion and test phases. [Research](../design/ONBOARDING-RESEARCH-2026-11-02.md) covers60 indexed onboarding matches/25 posts, additional queries, the actual Exponential source and attributed screenshots. No product code or release is part of this review. Simplify each step rather than cutting useful steps; mascot remains V2 only. Connect later is approved and followed by the fair credit explanation; supported assistant work is preferred after verified connection. Await owner review before application implementation.
+
+## R147 assistant connection pending implementation
+
+Include a first-class ChatGPT or supported MCP-client connection step after signup, with resumable setup, honest observed connection status and no duplicate grant setup. The owner requires MCP access for the app. R148 allows Connect later without blocking app entry. Preserve Pro boundaries and distinguish ordinary MCP from Events automation. [Requirement](../design/SEARCH-FIRST-ONBOARDING.md#required-mcp-setup). No new connection gate or onboarding UI is deployed.
 
 ## R146 correction pending
 

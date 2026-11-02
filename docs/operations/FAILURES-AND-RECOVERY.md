@@ -4,7 +4,7 @@ Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation
 
 ## November2 onboarding scope misinterpretation
 
-The agent treated removal of the mascot, extra text and dropdowns as permission to remove the entire onboarding quiz. It then wrote that interpretation as owner direction and deployed it. The owner clarified that only the recommended-post picker should become the existing Home feed; the quiz should improve with visual explanations and better transitions. Keep the original request separate from the agent's inference. When a proposed simplification removes an established requested flow, ask a focused question before implementing it. Updating records to call an inference accepted does not make it owner approval. R146 corrects the plan; application restoration remains pending.
+The agent treated removal of the mascot, extra text and dropdowns as permission to remove the entire onboarding quiz. It then wrote that interpretation as owner direction and deployed it. The owner clarified that only the recommended-post picker should become the existing Home feed; the quiz should improve with visual explanations and better transitions. R148 further clarifies that simpler screens may mean more useful steps. Do not equate simplification with fewer steps. Keep the original request separate from the agent's inference. When a proposed simplification removes an established requested flow, ask a focused question before implementing it. Updating records to call an inference accepted does not make it owner approval. R146 corrects the plan; application restoration remains pending.
 
 ## November2 promotion and visual evidence
 

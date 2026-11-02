@@ -1,0 +1,20 @@
+[
+  {
+    "file": "linear-onboarding-reference.png",
+    "source": "https://www.saasui.design/application/linear",
+    "capturedOrCopiedOn": "2026-11-02",
+    "width": 1200,
+    "height": 750,
+    "sha256": "8c8ce2553896134d20fcf8957676ee9113128e3cde2069957e126934ad77e596",
+    "kind": "research reference, not VibeScroll production"
+  },
+  {
+    "file": "exponential-question-reference.png",
+    "source": "StefanDG1/Exponential historical local October17 review",
+    "capturedOrCopiedOn": "2026-11-02",
+    "width": 390,
+    "height": 844,
+    "sha256": "fc6a3f4a10d2d8c12dded679045517bbf91e37672b04160571671c684038ecb8",
+    "kind": "research reference, not VibeScroll production"
+  }
+]

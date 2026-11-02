@@ -8,6 +8,8 @@ The real pre-payment GitHub picker displayed Choose and retained the first repos
 
 The next real step prepared the repository successfully but remained on Prepare my project. The action returns state ready in its acknowledgement; persisted repository status is connected. The onboarding page and confirmation action incorrectly checked persisted status ready. Correct both consumers to connected, test the actual serialized shape through the server page and confirmation action, and continue the existing prepared snapshot. Do not rerun snapshot preparation or change the backend status vocabulary. Four regressions cover context confirmation, all-insight proposal context, unfinished preparation and exact revision-bound confirmation.
 
+A staged Vercel URL opened in the isolated application-test browser stopped at Vercel login. The normal operator browser already had the required Vercel session and opened that same build immediately. Use the appropriate existing browser context for deployment protection and keep the application-test identity isolated. Log only host/path/title for OAuth navigation, not full query strings.
+
 Whitelist connector response fields before logging. A Vercel alias response unexpectedly included a temporary share-link bypass secret. The exact exposed link was revoked and its absence verified; app OAuth, MCP grants and provider keys were unchanged. Never print raw alias/project responses.
 
 ## November1 core MCP integration and search recovery

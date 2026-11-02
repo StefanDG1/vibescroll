@@ -1,5 +1,9 @@
 # VibeScroller foundational document process
 
+## F099: search-first, quiet onboarding, November2
+
+R145 replaces mandatory quiz screens with search and scrolling through the authorized real ready collection, followed by an optional short Home tutorial. Remove the mascot, redundant labels and onboarding dropdowns. Preserve one complete preview, account before Pro, current prices, user data and each user's funding. This is the owner's design preference, not measured conversion or semantic/global search evidence. [Refinement](../design/SEARCH-FIRST-ONBOARDING.md).
+
 ## F096: paid-credit production launch, November1
 
 R133 enables the approved Pro offer and EUR17/200credits or EUR35/500credits top-ups in production after zero live charges/invoices/subscriptions were verified. Eight unused old prices are archived. One exact live EUR35checkout was opened and expired unpaid; no card, charge, customer revenue or willingness to pay is established. Paid processing uses each member's own Pro/credits and finite existing provider funding, with no Auto Reload or operator purchase. Preserve requested-post cache access, private project isolation and honest measured claims. Public offer availability is distinct from independent paid-customer acceptance or demonstrated profitability. [Decision](../adr/224-paid-credit-launch-without-operator-purchases.md).

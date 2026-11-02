@@ -2,6 +2,12 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November2 first-visit UI sequencing
+
+The consent provider synchronizes on mount, focus and a two-second poll, not only after a new choice. Dispatching the tour cue on every sync opened two first-visit prompts together. Emit the cue only for a valid changed consent value, including a necessary-only rejection. The regression proves initial invalid consent emits nothing, rejection leaves tracking off, and unchanged polling emits no extra cue. The tour is always skippable and never controls analytics authorization.
+
+A browser fixture must fulfill Fetch requests on the same CDP session that enabled interception. Switching tabs attaches a new session and caused Fetch domain is not enabled. Keep the explicit session ID, drain obsolete events before reload and ignore only cancelled read interception IDs. This is test transport behavior, not a production extraction failure.
+
 ## November2 onboarding repository selection
 
 The real pre-payment GitHub picker displayed Choose and retained the first repository after another numeric-ID option was clicked. Native option IDs were numbers, while Radix RadioGroup and form state used strings. Normalize option values once inside the shared ChoiceSelect. The regression reproduces the missing selected label before correction and preserves string model choices afterward. Check the displayed label and submitted hidden repository ID through the real browser before Continue; rendering an option list alone does not verify selection. A live test also caught a misencoded separator in the ready-post caption.

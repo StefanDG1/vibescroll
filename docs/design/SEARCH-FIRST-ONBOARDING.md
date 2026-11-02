@@ -1,0 +1,7 @@
+# Search-first onboarding refinement
+
+R145 supersedes the required interest/goal quiz under R144. Keep the existing typography, neutral palette, shared reader and account/billing contracts. Remove Scroll and its unused animation code. The new public entry is a search field and scrollable real ready-post cards, with a dismissible three-step tutorial that can be reopened from Home. Search matches title, creator and category words within the currently authorized starter selection. Do not claim a global popularity ranking or semantic search.
+
+Selecting a post seeds ordinary setup defaults from its categories; the goal defaults to finding ideas. Preserve existing saved answers, own links, import reminders and selected results. Signup remains before optional GitHub and Pro. All three plan intervals are visible radio choices; repositories use a searchable visible list. Keep necessary payment/credit disclosures and consent. After access, attach the selected cached post once and open Home. The optional project/context/proposal guide remains reachable.
+
+Use one short reveal for stage changes and direct press feedback, with no typing animation or delayed search. Respect reduced motion. Keep controls keyboard accessible and give errors, loading, empty searches and unavailable preview states a clear recovery. No new backend/schema, inference, source analysis or payment is needed. Verify desktop/mobile and both themes together, fix any observed issues in one batch, then confirm once. Release only after exact CI and same-build checks within current funding.

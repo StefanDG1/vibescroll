@@ -12,17 +12,17 @@ import Image from "next/image";
 import {
   ArrowLeft,
   ArrowRight,
-  Check,
-  Code2,
-  Sparkles,
-  Palette,
-  TrendingUp,
-  BriefcaseBusiness,
-  Video,
+  Search,
+  X,
+  LoaderCircle,
   FolderGit2,
   ExternalLink,
 } from "lucide-react";
-import { ScrollCharacter } from "./scroll-character";
+import { FeedTour } from "./feed-tour";
+import {
+  discoveryDraft,
+  matchesStarter,
+} from "../../../packages/onboarding/discovery";
 import { AppTheme } from "./app-theme";
 import { InsightCardControl } from "./insight-card-control";
 import { ErrorState } from "./assistant-elements/error-state";
@@ -60,29 +60,6 @@ const emptyDraft: Partial<OnboardingDraft> = {
   version: 1 as const,
   interests: [] as OnboardingDraft["interests"],
 };
-const icons = [Code2, Sparkles, Palette, TrendingUp, BriefcaseBusiness, Video];
-const goals = [
-  {
-    id: "improve_product",
-    label: "Improve my product",
-    detail: "Design, features and better experiences",
-  },
-  {
-    id: "grow_business",
-    label: "Grow my business",
-    detail: "Marketing, positioning and sales",
-  },
-  {
-    id: "build_faster",
-    label: "Build faster",
-    detail: "Tools and useful development ideas",
-  },
-  {
-    id: "find_ideas",
-    label: "Find my next idea",
-    detail: "Explore what I could make next",
-  },
-] as const;
 type Starter = {
   familyId: string;
   title: string;
@@ -114,7 +91,6 @@ type Detail = {
 };
 export function OnboardingShell({
   children,
-  step = 0,
   authenticated = false,
 }: {
   children: React.ReactNode;
@@ -126,21 +102,8 @@ export function OnboardingShell({
       <AppTheme />
       <header className={styles.top}>
         <Link href="/" className={styles.brand}>
-          <ScrollCharacter compact />
           <span>VibeScroll</span>
         </Link>
-        <div
-          className={styles.steps}
-          aria-label={`Step ${Math.min(step + 1, 4)} of 4`}
-        >
-          {[0, 1, 2, 3].map((item) => (
-            <span
-              key={item}
-              className={styles.step}
-              data-active={item <= step}
-            />
-          ))}
-        </div>
         <Link
           href={authenticated ? "/account" : "/sign-in"}
           className={styles.secondary}
@@ -189,19 +152,31 @@ export function Onboarding({
   ) {
     setEditedDraft((value) => update(value ?? draft));
   }
-  const [chosenStep, setStep] = useState<
-    "interests" | "goal" | "feed" | "reader" | "import"
-  >();
-  const step =
-    chosenStep ?? (initialDraft ? "feed" : (restored?.step ?? "interests"));
+  const [chosenStep, setStep] = useState<"feed" | "reader" | "import">();
+  const step = chosenStep ?? (restored?.step === "import" ? "import" : "feed");
   const [loadedInterests, setLoadedInterests] = useState<string>();
   const interestsKey = (draft.interests ?? []).join(",");
   const loadingFeed = step === "feed" && loadedInterests !== interestsKey;
-  const [interestSearch, setInterestSearch] = useState("");
+  const [search, setSearch] = useState<string>();
+  const query = search ?? draft.pendingUrl ?? "";
+  function setQuery(value: string) {
+    setSearch(value);
+    const parsed = onboardingDraft.safeParse({
+      ...discoveryDraft(draft),
+      pendingUrl: value,
+    });
+    setDraft((previous) => ({
+      ...previous,
+      pendingUrl: parsed.success ? parsed.data.pendingUrl : undefined,
+    }));
+  }
+  const [feedRevision, refreshFeed] = useState(0);
+  const [openingId, setOpeningId] = useState<string>();
   const [posts, setPosts] = useState<Starter[]>([]);
   const [detail, setDetail] = useState<Detail>();
   const [selected, setSelected] = useState<string>();
   const [error, setError] = useState("");
+  const [previewUsed, setPreviewUsed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [importedCount, setImportedCount] = useState<number>();
   const [pending, startTransition] = useTransition();
@@ -249,9 +224,10 @@ export function Onboarding({
         if (!controller.signal.aborted) setLoadedInterests(interestsKey);
       });
     return () => controller.abort();
-  }, [step, interestsKey]);
+  }, [step, interestsKey, feedRevision]);
   async function open(post: Starter) {
     setBusy(true);
+    setOpeningId(post.familyId);
     setError("");
     try {
       const response = await fetch("/api/onboarding/starter", {
@@ -260,10 +236,16 @@ export function Onboarding({
         body: JSON.stringify({ familyId: post.familyId }),
       });
       const value = await response.json();
-      if (!response.ok) throw Error(value.error);
+      if (!response.ok) {
+        setPreviewUsed(value.code === "PREVIEW_USED");
+        throw Error(value.error);
+      }
       track("onboarding_result_viewed", { route: "cached" });
       setDetail(value);
-      setDraft((d) => ({ ...d, selectedFamilyId: post.familyId }));
+      setDraft((d) => ({
+        ...discoveryDraft(d, post.interests),
+        selectedFamilyId: post.familyId,
+      }));
       setSelected(value.analysis.insights[0]?.id);
       setStep("reader");
     } catch (e) {
@@ -272,12 +254,16 @@ export function Onboarding({
       );
     } finally {
       setBusy(false);
+      setOpeningId(undefined);
     }
   }
   function continueSetup() {
-    const parsed = onboardingDraft.safeParse(draft);
+    const value = discoveryDraft(draft);
+    if (step === "feed" && /^https?:\/\//i.test(query.trim()))
+      value.pendingUrl = query.trim();
+    const parsed = onboardingDraft.safeParse(value);
     if (!parsed.success) {
-      setError("Choose your interests and a goal first.");
+      setError("Use a public Reel, TikTok or another supported video link.");
       return;
     }
     startTransition(async () => {
@@ -294,280 +280,152 @@ export function Onboarding({
       ))}
     </div>
   );
+  const visiblePosts = posts.filter((post) => matchesStarter(post, query));
+  const isLink = /^https?:\/\//i.test(query.trim());
+  function retryFeed() {
+    setError("");
+    setLoadedInterests(undefined);
+    refreshFeed((value) => value + 1);
+  }
   const commonError = error && (
-    <ErrorState title="Let's try that again" detail={error} tone="attention" />
+    <ErrorState
+      title={previewUsed ? "Keep exploring with Pro" : "Let's try that again"}
+      detail={error}
+      tone="attention"
+    />
   );
   return (
-    <OnboardingShell
-      authenticated={authenticated}
-      step={step === "interests" ? 0 : step === "goal" ? 1 : 2}
-    >
-      {step === "interests" && (
-        <section className={styles.stage}>
-          <h1 ref={heading} tabIndex={-1}>
-            What catches your attention?
-          </h1>
-          <p className={styles.subtle}>
-            Pick up to three interests. We'll find ready insights for you.
-          </p>
-          <label className={styles.field}>
-            Find an interest
-            <input
-              type="search"
-              value={interestSearch}
-              onChange={(e) => setInterestSearch(e.target.value)}
-              placeholder="Design, growth, development…"
-            />
-          </label>
-          <div className={styles.choices} aria-label="Interests">
-            {onboardingInterests.map((item, index) => {
-              if (
-                interestSearch &&
-                !`${item.label} ${item.description}`
-                  .toLowerCase()
-                  .includes(interestSearch.toLowerCase())
-              )
-                return null;
-              const Icon = icons[index];
-              const active = draft.interests?.includes(item.id);
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={styles.choice}
-                  aria-pressed={!!active}
-                  onClick={() =>
-                    setDraft((d) => ({
-                      ...d,
-                      interests: active
-                        ? d.interests?.filter((id) => id !== item.id)
-                        : (d.interests?.length ?? 0) < 3
-                          ? [...(d.interests ?? []), item.id]
-                          : d.interests,
-                    }))
-                  }
-                >
-                  <Icon size={22} />
-                  <span>
-                    <strong>{item.label}</strong>
-                    <small>{item.description}</small>
-                  </span>
-                  {active && <Check size={16} />}
-                </button>
-              );
-            })}
-          </div>
-          <details>
-            <summary>Another topic?</summary>
-            <label className={styles.field}>
-              Your interest
-              <input
-                value={draft.customTopic ?? ""}
-                maxLength={80}
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    customTopic: e.target.value || undefined,
-                  }))
-                }
-                placeholder="For example, developer education"
-              />
-            </label>
-            <p className={styles.footnote}>
-              We'll keep your topic for your project plan. Our ready collection
-              may include broader ideas.
-            </p>
-          </details>
-          <div className={styles.actions}>
-            <span className={styles.subtle}>
-              {draft.interests?.length ?? 0} of 3 selected
-            </span>
-            <button
-              className={styles.primary}
-              disabled={
-                !draft.interests?.length &&
-                (draft.customTopic?.trim().length ?? 0) < 2
-              }
-              onClick={() => setStep("goal")}
-            >
-              Continue <ArrowRight size={16} />
-            </button>
-          </div>
-          <p className={styles.footnote}>
-            Try one complete ready result. Pro starts at €35/month for continued
-            use.
-          </p>
-        </section>
-      )}
-      {step === "goal" && (
-        <section className={styles.stage}>
-          <h1 ref={heading} tabIndex={-1}>
-            What would you like to do?
-          </h1>
-          <p className={styles.subtle}>
-            Your interests find the posts. Your goal gives them somewhere to go.
-          </p>
-          <div className={styles.choices}>
-            {goals.map((item) => (
-              <button
-                className={styles.choice}
-                key={item.id}
-                aria-pressed={draft.goal === item.id}
-                onClick={() => setDraft((d) => ({ ...d, goal: item.id }))}
-              >
-                <span>
-                  <strong>{item.label}</strong>
-                  <small>{item.detail}</small>
-                </span>
-                {draft.goal === item.id && <Check size={18} />}
-              </button>
-            ))}
-          </div>
-          <div className={styles.actions}>
-            <button
-              className={styles.secondary}
-              onClick={() => setStep("interests")}
-            >
-              <ArrowLeft size={16} /> Back
-            </button>
-            <button
-              className={styles.primary}
-              disabled={!draft.goal}
-              onClick={() => {
-                track("onboarding_milestone", { milestone: "quiz_completed" });
-                setStep("feed");
-              }}
-            >
-              Find my posts <ArrowRight size={16} />
-            </button>
-          </div>
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={draft.team ?? false}
-              onChange={(event) =>
-                setDraft((value) => ({ ...value, team: event.target.checked }))
-              }
-            />
-            I'm working with a team
-          </label>
-        </section>
-      )}
+    <OnboardingShell authenticated={authenticated}>
       {step === "feed" && (
         <section className={styles.feed}>
-          <div className={styles.feedHeading}>
-            <div>
-              <h1 ref={heading} tabIndex={-1}>
-                A good place to start.
-              </h1>
-              <p className={styles.subtle}>
-                Choose a post. Its insights are already ready.
-              </p>
-            </div>
-            <button
-              className={styles.secondary}
-              onClick={() => setStep("interests")}
-            >
-              <ArrowLeft size={16} /> Change interests
-            </button>
+          <div className={styles.discoverHeading}>
+            <h1 ref={heading} tabIndex={-1}>
+              Find your next idea.
+            </h1>
+            <FeedTour autoStart={!loadingFeed && posts.length > 0} />
           </div>
-          {draft.customTopic && (
-            <p className={styles.subtle}>
-              Your topic: {draft.customTopic}. These are ready ideas from our
-              launch collection.
-            </p>
-          )}
+          <label className={styles.searchBox}>
+            <Search size={20} aria-hidden="true" />
+            <input
+              type="search"
+              aria-label="Search posts or paste a link"
+              placeholder="Search posts or paste a link"
+              value={query}
+              onChange={(event) => setQuery(event.target.value.slice(0, 2048))}
+            />
+            {query && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setQuery("")}
+              >
+                <X size={17} aria-hidden="true" />
+              </button>
+            )}
+          </label>
           {notice && <output className={styles.notice}>{notice}</output>}
           {commonError}
+          {error && (
+            <button
+              className={styles.secondary}
+              onClick={() => (previewUsed ? continueSetup() : retryFeed())}
+            >
+              {previewUsed ? "Continue" : "Try again"}
+            </button>
+          )}
           {loadingFeed && (
-            <output className={styles.notice}>Finding ready posts…</output>
+            <output
+              className={styles.postGrid}
+              aria-label="Loading ready posts"
+            >
+              {[0, 1, 2].map((id) => (
+                <span key={id} className={styles.skeleton} />
+              ))}
+            </output>
           )}
           <div className={styles.postGrid}>
-            {posts.map((post) => (
+            {visiblePosts.map((post) => (
               <article className={styles.post} key={post.familyId}>
-                {post.thumbnailFrameId && (
-                  <Image
-                    className={styles.poster}
-                    src={poster(post.familyId, post.thumbnailFrameId, true)}
-                    alt={`Video by ${post.authorName ?? "the creator"}`}
-                    width={400}
-                    height={300}
-                    unoptimized
-                  />
-                )}
-                <div className={styles.postCopy}>
-                  <span className={styles.ready}>
-                    <Check size={14} /> Already analyzed · {post.insightCount}{" "}
-                    insights
-                  </span>
-                  <h2>{post.title}</h2>
-                  <p className={styles.subtle}>{post.authorName}</p>
-                  {tags(post.interests)}
-                  {post.matched === 0 && (
-                    <p className={styles.footnote}>
-                      A broader pick from our ready collection.
-                    </p>
+                <button
+                  className={styles.posterButton}
+                  aria-label={`Open ${post.title}`}
+                  disabled={busy}
+                  onClick={() => open(post)}
+                >
+                  {post.thumbnailFrameId && (
+                    <Image
+                      className={styles.poster}
+                      src={poster(post.familyId, post.thumbnailFrameId, true)}
+                      alt={`Video by ${post.authorName ?? "the creator"}`}
+                      width={400}
+                      height={500}
+                      unoptimized
+                    />
                   )}
+                  <span className={styles.insightCount}>
+                    {post.insightCount} insights
+                  </span>
+                </button>
+                <div className={styles.postCopy}>
+                  <p className={styles.creatorName}>{post.authorName}</p>
+                  <h2>{post.title}</h2>
+                  {tags(post.interests.slice(0, 2))}
                   <button
-                    className={styles.primary}
+                    className={styles.openPost}
                     disabled={busy}
                     onClick={() => open(post)}
                   >
-                    View insights <ArrowRight size={15} />
+                    {openingId === post.familyId ? (
+                      <>
+                        <LoaderCircle size={16} className={styles.spinner} />{" "}
+                        Opening…
+                      </>
+                    ) : (
+                      <>
+                        Read insights{" "}
+                        <ArrowRight size={16} aria-hidden="true" />
+                      </>
+                    )}
                   </button>
                 </div>
               </article>
             ))}
           </div>
-          {!loadingFeed && posts.length === 0 && (
-            <div className={styles.next}>
-              <h2>We're refreshing the starter collection.</h2>
+          {!loadingFeed && visiblePosts.length === 0 && (
+            <section className={styles.empty} aria-live="polite">
+              <h2>
+                {isLink
+                  ? "Start with your link."
+                  : posts.length
+                    ? "No posts found."
+                    : "The ready collection is unavailable."}
+              </h2>
               <p className={styles.subtle}>
-                Your interests are saved. You can continue with your own post
-                after setup.
+                {isLink
+                  ? "Your link stays saved through setup. Fresh analysis is quoted after Pro."
+                  : posts.length
+                    ? "Try a topic like AI, development or marketing."
+                    : "Try again, or paste a Reel or TikTok link above."}
               </p>
               <button
                 className={styles.primary}
-                onClick={continueSetup}
                 disabled={pending}
-              >
-                Continue setup
-              </button>
-            </div>
-          )}
-          <details className={styles.ownLink}>
-            <summary>Start with my own link</summary>
-            <label className={styles.field}>
-              Public video link
-              <input
-                type="url"
-                value={draft.pendingUrl ?? ""}
-                maxLength={2048}
-                placeholder="Paste a Reel or TikTok link"
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    pendingUrl: e.target.value || undefined,
-                  }))
+                onClick={() =>
+                  isLink
+                    ? continueSetup()
+                    : posts.length
+                      ? setQuery("")
+                      : retryFeed()
                 }
-              />
-            </label>
-            <p className={styles.footnote}>
-              Your link stays with your setup. After Pro, save it and review the
-              analysis quote. Nothing is downloaded now.
-            </p>
-            <button
-              className={styles.primary}
-              disabled={
-                pending ||
-                !draft.pendingUrl ||
-                !onboardingDraft.safeParse(draft).success
-              }
-              onClick={continueSetup}
-            >
-              Continue with my link <ArrowRight size={16} />
-            </button>
-          </details>
+              >
+                {isLink
+                  ? "Continue with this link"
+                  : posts.length
+                    ? "Show all posts"
+                    : "Try again"}
+              </button>
+            </section>
+          )}
           <div className={styles.actions}>
             <button
               className={styles.secondary}
@@ -576,18 +434,15 @@ export function Onboarding({
                 setStep("import");
               }}
             >
-              Bring my Instagram saves
+              Import Instagram saves
             </button>
-            <span className={styles.footnote}>
-              One complete result before you choose Pro.
-            </span>
             {draft.selectedFamilyId && (
               <button
-                className={styles.primary}
+                className={styles.secondary}
                 onClick={continueSetup}
                 disabled={pending}
               >
-                Keep my selected post <ArrowRight size={16} />
+                Keep selected post <ArrowRight size={15} />
               </button>
             )}
           </div>
@@ -628,16 +483,12 @@ export function Onboarding({
               </a>
             </div>
             <div>
-              <span className={styles.ready}>
-                <Check size={14} /> Already analyzed
-              </span>
               <p className={styles.subtle}>{detail.analysis.summary}</p>
               <div className={styles.insights}>
                 {detail.analysis.insights.map((insight) => (
                   <article className={styles.insight} key={insight.id}>
                     <InsightCardControl
                       title={insight.title}
-                      subtitle="Explore the idea"
                       icon="lightbulb"
                       expanded={selected === insight.id}
                       onClick={() =>
@@ -686,18 +537,9 @@ export function Onboarding({
             </div>
             <aside className={styles.next}>
               <FolderGit2 size={23} />
-              <h2>
-                {draft.goal === "grow_business"
-                  ? "Put this idea to work for your business."
-                  : draft.goal === "build_faster"
-                    ? "Turn this into a build plan."
-                    : draft.goal === "find_ideas"
-                      ? "Keep your next idea close."
-                      : "Try this in your product."}
-              </h2>
+              <h2>Keep this idea.</h2>
               <p className={styles.subtle}>
-                Keep the post, connect a project and turn its insights into a
-                plan you can act on.
+                Save the post and use its insights in a project.
               </p>
               {commonError}
               <button
@@ -709,7 +551,7 @@ export function Onboarding({
                 <ArrowRight size={16} />
               </button>
               <p className={styles.footnote}>
-                Create your account, then choose Pro. Your place is saved.
+                Continue with an account and Pro. Your place is saved.
               </p>
             </aside>
           </div>

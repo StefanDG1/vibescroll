@@ -328,20 +328,27 @@ export function ProjectProposalComposer({
           </section>
         ) : (
           <form className="proposal-composer" onSubmit={save}>
-            <label htmlFor={`${uid}-project`}>Project</label>
-            <select
-              id={`${uid}-project`}
-              value={projectId}
-              disabled={locked}
-              onChange={(e) => setProjectId(e.target.value)}
-              required
-            >
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            {projects.length > 1 && (
+              <label htmlFor={`${uid}-project`}>Project</label>
+            )}
+            {projects.length === 1 ? (
+              <p className="muted">{projects[0].name}</p>
+            ) : (
+              <select
+                id={`${uid}-project`}
+                value={projectId}
+                disabled={locked}
+                onChange={(e) => setProjectId(e.target.value)}
+                required
+              >
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <label htmlFor={`${uid}-title`}>Title</label>
             <input
               id={`${uid}-title`}

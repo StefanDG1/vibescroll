@@ -4,6 +4,10 @@ Mode: explanation and proposed implementation plan. Updated November 1, 2026, Eu
 
 Status: implementation approved by the owner on November 1, 2026. The owner approves one complete curated result before payment and allows GitHub connection after signup but before payment. Recommended account timing is before payment. The first bounded checkpoint is live at3fc0669; the execution ledger distinguishes production from the completion candidate and remaining fresh-account acceptance. This document does not change production entitlements, pricing or funding.
 
+## November2 refinement
+
+R145 replaces the required quiz with [search-first onboarding](../design/SEARCH-FIRST-ONBOARDING.md). The ready collection, one complete preview, account/payment contracts and saved progress remain. Remove the mascot, redundant labels and dropdowns; use a short Home tutorial and direct choices. Earlier quiz screens below are historical design context, not the new entry requirement.
+
 ## Direction and prior decisions
 
 Replace the proposed synthetic onboarding example with real posts whose retained insights are already ready. Ask about interests, recommend relevant posts, and teach the existing post-to-insight-to-project workflow through the real Home reader. Developers and founders are the first audience; adapt the questions for teams.

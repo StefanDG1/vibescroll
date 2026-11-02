@@ -98,7 +98,7 @@ export async function finishOnboarding() {
   jar.delete(onboardingCookie);
   const invitation = invitationPath(jar.get(onboardingInviteCookie)?.value);
   if (invitation) redirect(invitation);
-  redirect("/onboarding/project");
+  redirect(`/app/${organizationId}`);
 }
 export async function prepareFirstProject(): Promise<FormState> {
   const client = await backend(),

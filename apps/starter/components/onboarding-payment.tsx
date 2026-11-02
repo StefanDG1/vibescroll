@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, RefreshCw } from "lucide-react";
 import { ActionForm } from "./action-form";
-import { ChoiceSelect } from "./choice-select";
+import { SearchChoices } from "./search-choices";
 import { startOnboardingCheckout } from "@/app/onboarding/actions";
 import { proOffer } from "../../../packages/billing/pro-offer";
 import styles from "./onboarding.module.css";
@@ -37,49 +37,46 @@ export function OnboardingPayment({
     }, 2000);
     return () => clearInterval(timer);
   }, [returned, router]);
-  const offer =
-    interval === "annual"
-      ? proOffer.annual
-      : interval === "weekly"
-        ? proOffer.weekly
-        : proOffer.monthly;
   return (
     <>
-      <h1>Your ideas, ready to use.</h1>
-      <p className={styles.subtle}>
-        Your setup is saved. Pro unlocks your library and project plans.
-      </p>
-      <label className={styles.field} htmlFor="onboarding-plan">
-        Choose your plan
-        <ChoiceSelect
-          id="onboarding-plan"
-          value={interval}
-          onValueChange={setPlanInterval}
-          aria-label="Choose your plan"
-        >
-          <option value="monthly">Monthly</option>
-          <option value="annual">Yearly · save 16.7%</option>
-          <option value="weekly">Every seven days</option>
-        </ChoiceSelect>
-      </label>
-      <p className={styles.price}>
-        €{offer.amountCents / 100}
-        <small>
-          /
-          {interval === "annual"
-            ? "year"
-            : interval === "weekly"
-              ? "week"
-              : "month"}
-        </small>
-      </p>
-      <p className={styles.subtle}>
-        {offer.credits} credits{" "}
-        {interval === "weekly" ? "every seven days" : "each month"}
-        {interval === "annual"
-          ? ". Billed yearly; credits granted monthly."
-          : "."}
-      </p>
+      <h1>Continue with Pro.</h1>
+      <fieldset className={styles.planChoices}>
+        <legend className="sr-only">Choose your plan</legend>
+        {(["monthly", "annual", "weekly"] as const).map((value) => {
+          const item = proOffer[value];
+          return (
+            <label
+              key={value}
+              className={styles.planChoice}
+              data-selected={interval === value}
+            >
+              <input
+                type="radio"
+                name="plan-choice"
+                value={value}
+                checked={interval === value}
+                onChange={() => setPlanInterval(value)}
+              />
+              <span>
+                {value === "annual"
+                  ? "Yearly"
+                  : value === "weekly"
+                    ? "Weekly"
+                    : "Monthly"}
+              </span>
+              <strong>€{item.amountCents / 100}</strong>
+              <small>
+                {item.credits} credits{value === "weekly" ? "/week" : "/month"}
+              </small>
+            </label>
+          );
+        })}
+      </fieldset>
+      {interval === "annual" && (
+        <p className={styles.footnote}>
+          Billed yearly. Credits granted monthly. Save 16.7%.
+        </p>
+      )}
       <div className={styles.offer}>
         <span>
           <Check size={16} /> Your saved posts and ready insights
@@ -113,16 +110,21 @@ export function OnboardingPayment({
           <input type="hidden" name="tier" value="pro" />
           <input type="hidden" name="interval" value={interval} />
           {countryRequired && (
-            <label className={styles.field}>
-              Billing country
-              <ChoiceSelect name="country" defaultValue="RO" required>
-                {countries.map((country) => (
-                  <option key={country} value={country}>
-                    {country === "RO" ? "Romania" : country}
-                  </option>
-                ))}
-              </ChoiceSelect>
-            </label>
+            <div className={styles.field}>
+              <span>Billing country</span>
+              <SearchChoices
+                name="country"
+                defaultValue="RO"
+                label="Find your billing country"
+                options={countries.map((value) => ({
+                  value,
+                  label:
+                    new Intl.DisplayNames(["en"], { type: "region" }).of(
+                      value,
+                    ) ?? value,
+                }))}
+              />
+            </div>
           )}
           <label className={styles.check}>
             <input type="checkbox" name="terms" required />I accept the{" "}

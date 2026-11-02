@@ -6,11 +6,10 @@ import { signedOnboardingDraft } from "@/lib/onboarding-server";
 import { Onboarding, OnboardingShell } from "@/components/onboarding";
 import { OnboardingMilestone } from "@/components/onboarding-milestone";
 import { OnboardingPayment } from "@/components/onboarding-payment";
-import { ChoiceSelect } from "@/components/choice-select";
+import { SearchChoices } from "@/components/search-choices";
 import {
   chooseOnboardingProject,
   finishOnboarding,
-  disconnectOnboardingGitHub,
   refreshOnboardingRepositories,
 } from "../actions";
 import { ActionForm } from "@/components/action-form";
@@ -65,14 +64,13 @@ export default async function Page({
           <span className={styles.status}>
             <Check size={20} /> Pro is ready
           </span>
-          <h1>Let's put your first idea to work.</h1>
+          <h1>You're ready.</h1>
           <p className={styles.subtle}>
-            Keep your selected post and prepare a proposal for your project. You
-            review the plan before anything is published.
+            Your selected post is waiting on Home.
           </p>
           <form action={finishOnboarding}>
             <button className={styles.primary}>
-              Open my workspace <ArrowRight size={16} />
+              Open Home <ArrowRight size={16} />
             </button>
           </form>
         </section>
@@ -100,7 +98,7 @@ export default async function Page({
         <section className={styles.stage}>
           <FolderGit2 size={32} />
 
-          <h1>Which project are you building?</h1>
+          <h1>Choose a project.</h1>
           <p className={styles.subtle}>
             Connect GitHub now. We'll keep the connection ready for your first
             project plan after Pro.
@@ -118,25 +116,17 @@ export default async function Page({
                 name="organizationId"
                 value={organizationId}
               />
-              <label className={styles.field}>
-                Choose a repository
-                <ChoiceSelect
-                  name="repositoryId"
-                  defaultValue={
-                    status.progress?.repository?.id.toString() ??
-                    String(choices[0].id)
-                  }
-                >
-                  {choices.slice(0, 200).map((repo) => (
-                    <option
-                      key={`${repo.installationId}:${repo.id}`}
-                      value={repo.id}
-                    >
-                      {repo.fullName}
-                    </option>
-                  ))}
-                </ChoiceSelect>
-              </label>
+              <SearchChoices
+                name="repositoryId"
+                label="Find a repository"
+                defaultValue={
+                  status.progress?.repository?.id.toString() ??
+                  String(choices[0].id)
+                }
+                options={choices
+                  .slice(0, 200)
+                  .map((repo) => ({ value: repo.id, label: repo.fullName }))}
+              />
               <button className={styles.primary}>
                 Continue <ArrowRight size={16} />
               </button>
@@ -177,18 +167,8 @@ export default async function Page({
           )}
           <form action={chooseOnboardingProject}>
             <input type="hidden" name="organizationId" value={organizationId} />
-            <button className={styles.secondary}>Skip for now</button>
+            <button className={styles.secondary}>Not now</button>
           </form>
-          {choices.length > 0 && (
-            <form action={disconnectOnboardingGitHub}>
-              <input
-                type="hidden"
-                name="organizationId"
-                value={organizationId}
-              />
-              <button className={styles.secondary}>Disconnect GitHub</button>
-            </form>
-          )}
         </section>
       </OnboardingShell>
     );

@@ -46,7 +46,7 @@ export function InsightCardControl({
   ...button
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   icon: InsightIconKey;
   expanded: boolean;
   hasBadge?: boolean;
@@ -71,12 +71,14 @@ export function InsightCardControl({
         </span>
         <span className="hybrid-insight-copy">
           <strong title={title}>{title}</strong>
-          <small>
-            <FileText size={14} aria-hidden="true" />
-            <span className="hybrid-source-label" title={subtitle}>
-              {subtitle}
-            </span>
-          </small>
+          {subtitle && (
+            <small>
+              <FileText size={14} aria-hidden="true" />
+              <span className="hybrid-source-label" title={subtitle}>
+                {subtitle}
+              </span>
+            </small>
+          )}
         </span>
         {hasBadge && (
           <span className="hybrid-proposal-slot" aria-hidden="true" />

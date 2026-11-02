@@ -14,6 +14,7 @@ import { InsightCardControl } from "./insight-card-control";
 import { PostThumbnail } from "./post-thumbnail";
 import { PostEngagement } from "./post-engagement";
 import { ProjectProposalComposer } from "./project-proposal-composer";
+import { FeedTour } from "./feed-tour";
 import { SettingsPanel } from "./settings-panel";
 import { ErrorState } from "./assistant-elements/error-state";
 import { ProposalArtifact } from "./assistant-elements/proposal-artifact";
@@ -200,6 +201,7 @@ export function FeedPostCard({
                 {author.slice(0, 1).toUpperCase()}
               </span>
               <strong>{author}</strong>
+              {!demo && <FeedTour />}
               <button
                 type="button"
                 onClick={() => setSettingsOpen(true)}

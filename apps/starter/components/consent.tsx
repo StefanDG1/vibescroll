@@ -29,11 +29,19 @@ let initialized = false;
 let lastPage = "";
 export function ConsentProvider() {
   useEffect(() => {
+    let lastChoice: string | undefined;
     const sync = () => {
-      const allowed =
-        Consent.validConsent() &&
-        Consent.getCookie()?.revision === 1 &&
-        Consent.getCookie()?.categories?.includes("analytics");
+      const cookie = Consent.getCookie();
+      const valid = Consent.validConsent() && cookie?.revision === 1;
+      const choice = valid
+        ? JSON.stringify(cookie?.categories ?? [])
+        : undefined;
+      if (choice !== lastChoice) {
+        lastChoice = choice;
+        if (valid)
+          window.dispatchEvent(new Event("vibescroll:consent-changed"));
+      }
+      const allowed = valid && cookie?.categories?.includes("analytics");
       if (!allowed) lastPage = "";
       void setAnalyticsConsent(Boolean(allowed))
         .then(() => {
@@ -83,9 +91,9 @@ export function ConsentProvider() {
           translations: {
             en: {
               consentModal: {
-                title: "Your privacy, your choice",
+                title: "Optional analytics",
                 description:
-                  "Essential cookies keep you signed in. With your permission, PostHog helps us understand which steps work. It never receives your saved content or repository details.",
+                  "Help us understand which parts of VibeScroll are useful. You can change this later.",
                 acceptAllBtn: "Allow analytics",
                 acceptNecessaryBtn: "Reject analytics",
                 showPreferencesBtn: "Preferences",

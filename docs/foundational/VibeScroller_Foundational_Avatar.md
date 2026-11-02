@@ -1,5 +1,9 @@
 # VibeScroll foundational avatar
 
+## F099: search before questions, November2
+
+R145 keeps developers and founders as the first audience but removes mandatory interest/goal questions. Let visitors search real ready posts and learn the Home workflow through a short optional tour. Selected-post categories provide defaults; existing answers remain saved. The one-complete-result preview and individual Pro boundaries remain. No measured funnel lift is claimed.
+
 ## F098: real interest-matched onboarding, November1
 
 For the new onboarding, R143 prioritizes developers and founders with a short team branch. The owner approves one complete real curated result before payment, selected from stated interests. Optional Instagram saved-post import serves an existing behavior without becoming a prerequisite. The [review plan](../strategy/INTEREST-LED-ONBOARDING.md) records this positioning; it does not establish prospect demand, conversion or permission to infer sensitive facts from saves.

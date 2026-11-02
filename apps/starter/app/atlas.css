@@ -577,9 +577,6 @@
 .atlas-shell .dashboard-stat-strip strong {
   color: var(--ink);
 }
-.atlas-shell .studio-welcome .scroll-character {
-  max-width: 100px;
-}
 @media (max-width: 700px) {
   .atlas-shell .product-main {
     padding-top: 18px;
@@ -882,9 +879,6 @@
     padding: 12px;
     gap: 12px;
     margin-bottom: 14px;
-  }
-  .atlas-shell .studio-welcome .scroll-character {
-    width: 64px;
   }
   .atlas-shell .studio-next h2 {
     font-size: 23px;

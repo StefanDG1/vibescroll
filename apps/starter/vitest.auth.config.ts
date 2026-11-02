@@ -13,6 +13,8 @@ export default defineConfig({
   test: {
     server: { deps: { inline: ["@workos-inc/authkit-nextjs"] } },
     include: [
+      "apps/starter/onboarding-consent-cue.test.ts",
+      "apps/starter/onboarding-choices.test.tsx",
       "apps/starter/onboarding-project.test.tsx",
       "apps/starter/choice-select.test.tsx",
       "apps/starter/proposal-page-data.test.ts",

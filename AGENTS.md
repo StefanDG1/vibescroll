@@ -4,6 +4,8 @@ Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/deci
 
 ## Current mandatory owner direction
 
+R145 refines onboarding to a searchable ready-post feed, short Home tutorial, no mascot or dropdowns. Follow [search-first onboarding](docs/design/SEARCH-FIRST-ONBOARDING.md). It supersedes the mandatory quiz while preserving R144 account/payment/preview contracts and saved drafts.
+
 R144 approves the complete [interest-led onboarding plan](docs/strategy/INTEREST-LED-ONBOARDING.md). Read its [execution ledger](docs/strategy/ONBOARDING-IMPLEMENTATION.md) until accepted. Preserve one real ready result before signup/payment, account before optional pre-payment GitHub, stored progress and paywall resumption, individual Pro, and the real all-insight proposal/issue path. Existing accounts bypass the new funnel; anonymous preview is an explicit bounded selection, not full catalog access. No real operator payment or private-content publication follows from testing.
 
 Start with [current accepted state](docs/operations/CURRENT-STATE.md) and the [owner request register](docs/strategy/OWNER-REQUEST-REGISTER.md). The register reconciles this conversation, later overrides and unfinished requests. Use [the continuation procedure](docs/operations/CONTINUE-VIBESCROLL.md) and [failure reference](docs/operations/FAILURES-AND-RECOVERY.md) before diagnosis or release. Read the relevant subsystem documents below; do not infer current authority or production status from an older handover/ADR's present-tense wording.

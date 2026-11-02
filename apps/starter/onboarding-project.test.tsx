@@ -1,20 +1,28 @@
 import React from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-const state = vi.hoisted(() => ({ query: vi.fn(), mutation: vi.fn() }));
+const state = vi.hoisted(() => ({
+  query: vi.fn(),
+  mutation: vi.fn(),
+  redirect: vi.fn(),
+}));
 vi.mock("@/lib/backend", () => ({
   backend: async () => state,
   api: {
-    onboarding: { status: "status" },
+    onboarding: { status: "status", complete: "complete" },
     organizations: { createPrivate: "workspace" },
     product: { repositories: "repositories", detail: "post" },
     profiles: { saveDraft: "saveDraft", confirmDraft: "confirmDraft" },
   },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("next/headers", () => ({ cookies: vi.fn() }));
-vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ delete: vi.fn(), get: () => undefined }),
+}));
+vi.mock("next/navigation", () => ({ redirect: state.redirect }));
 vi.mock("@/app/actions", () => ({ logout: vi.fn(), startV1Checkout: vi.fn() }));
-vi.mock("@/lib/onboarding-server", () => ({}));
+vi.mock("@/lib/onboarding-server", () => ({
+  onboardingCookie: "synthetic-onboarding-cookie",
+}));
 vi.mock("@/components/onboarding", () => ({ OnboardingShell: "section" }));
 vi.mock("@/components/onboarding-milestone", () => ({
   OnboardingMilestone: "span",
@@ -24,7 +32,10 @@ vi.mock("@/components/onboarding-proposal", () => ({
 }));
 vi.mock("@/components/action-form", () => ({ ActionForm: "form" }));
 import Page from "./app/onboarding/project/page";
-import { confirmFirstProject } from "./app/onboarding/actions";
+import {
+  confirmFirstProject,
+  finishOnboarding,
+} from "./app/onboarding/actions";
 
 const repo = {
   _id: "project",
@@ -46,6 +57,9 @@ function nodes(value: unknown): React.ReactElement<any>[] {
 }
 beforeEach(() => {
   vi.stubGlobal("React", React);
+  state.redirect.mockImplementation((path: string) => {
+    throw new Error(`REDIRECT:${path}`);
+  });
   state.query.mockImplementation(async (op) => {
     if (op === "status")
       return {
@@ -129,4 +143,24 @@ it("confirms the actual connected snapshot and its current profile revision", as
     version: 0,
     selectionVersion: 1,
   });
+});
+
+it("opens Home with the existing cache association after setup instead of requiring another project step", async () => {
+  await expect(finishOnboarding()).rejects.toThrow("REDIRECT:/app/workspace");
+  expect(state.mutation.mock.calls.map(([op]) => op)).toEqual([
+    "workspace",
+    "complete",
+  ]);
+  expect(state.mutation.mock.lastCall?.[1]).toEqual({ sourceId: "source" });
+});
+it("keeps the actual paid-access gate before the new Home destination", async () => {
+  state.query.mockResolvedValueOnce({
+    paid: false,
+    legacy: false,
+    progress: { stage: "paywall" },
+  });
+  await expect(finishOnboarding()).rejects.toThrow(
+    "REDIRECT:/onboarding/resume",
+  );
+  expect(state.mutation).not.toHaveBeenCalled();
 });

@@ -6,6 +6,8 @@ The owner now requests the complete [V1/V2 review](ONBOARDING-V1-V2-REVIEW.md) u
 
 ## Intended flow
 
+R149 makes the proposal link-first: explain lost useful links and difficulty applying ideas, then teach send → understand → apply. Define product terms in context. Existing saves/imports are optional; the Home preview and retained result teach the flow without requiring prior source-platform saving.
+
 1. Keep the resumable onboarding quiz. Improve its goal and interest questions, adapt relevant steps for developers/founders and teams, and preserve existing answers. Use one clear question per screen and visible choices without dropdowns.
 2. Explain what each step enables with concise copy and step-specific graphics. Show how a link becomes insights and how insights become a project plan. Keep the mascot removed. Use purposeful transitions, selection feedback, back navigation and reduced-motion support.
 3. Use the quiz answers to choose eligible ready recommendations. Render them directly with the existing Home feed, post reader, insight cards and proposal components, through an adapter for authorized guest data and actions. Do not build a separate onboarding gallery or ask users to pick a card before seeing the real reader.

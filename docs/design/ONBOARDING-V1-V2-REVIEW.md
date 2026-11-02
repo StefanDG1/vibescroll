@@ -10,6 +10,32 @@ Recommend an experience-first sequence: explain the outcome, ask relevant questi
 
 The proposal uses four short quiz screens. Every answer changes recommendations or guidance. These are useful decisions, not a target number to maximize. There is no invented completion-time promise. Optional branches appear only when relevant.
 
+## Link-first positioning and the problem
+
+R149 clarifies that sending a link is a primary way to use VibeScroll. Users do not need an existing collection of saved posts or a platform export. Imports remain optional. A post becomes part of the user's VibeScroll library through their requested link flow; saving it on Instagram or TikTok first is not a prerequisite.
+
+Lead with the problem: people encounter useful advice, lose the link or forget the lesson, and struggle to turn it into a change they can actually make. The value is connecting discovery to useful action, with a searchable record to return to. This is proposed positioning, not a claim that every user has this pain or that VibeScroll guarantees better outcomes.
+
+Show the complete mechanism in ordinary language: **Send a link → Find the useful ideas → Apply them to your work.** The post and result remain available in VibeScroll afterward. Project application is optional; learning, discussing and finding an idea later are valid outcomes.
+
+For connected users, sending can start in their supported assistant chat. Other users paste the link in VibeScroll and use the current quoted credit route. Ordinary MCP connection alone does not make every host chat an automatic media worker. Show actual source availability, processing progress and result status. The ready onboarding example demonstrates the retained result, not a promise that every fresh link is instant.
+
+### Explain words when they first matter
+
+| Word                        | Plain explanation in the relevant screen                                                                                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Post                        | The original video or social post behind the link you sent. You do not have to save it on the platform first.                                                                       |
+| Analysis                    | VibeScroll processes the available content to identify useful ideas and their context. Actual missing content stays disclosed.                                                      |
+| Insight                     | A useful idea, lesson or takeaway from the post. Explain beside the first real insight rather than showing a glossary first.                                                        |
+| Project                     | Something you are working on, such as a product, business or codebase. A GitHub repository is one way to supply its context.                                                        |
+| Proposal or plan            | A draft of how the post's ideas could help your project. It can be discussed and edited; creating it does not change code. Prefer Plan in introductory copy.                        |
+| Library                     | The posts and ideas kept in VibeScroll from the links you request, plus content you deliberately add or share. Not a required platform-saves import.                                |
+| Assistant connection or MCP | The connection that lets a supported assistant retrieve your authorized VibeScroll data and save supported work back. Say Connect your assistant first; MCP is explanatory detail.  |
+| Credits                     | Your VibeScroll allowance for the processing and in-app AI work shown in a quote. Assistant reasoning may use its own allowance; some preparation can still use VibeScroll credits. |
+| Ready result                | A compatible analysis already exists, so it can be reused under the current access policy. Keep Cache as secondary terminology.                                                     |
+
+Do not teach every word on a single page. Pair a short explanation with the action or real object it describes. Consistent terms and small graphics should explain the product without adding a manual to the quiz.
+
 ## Research and direction
 
 The [research notes](ONBOARDING-RESEARCH-2026-11-02.md) record bounded live VibeScroll searches, exact Exponential source and external examples. The onboarding query returned 60 indexed matches across 25 distinct accessible posts after continuation to exhaustion. Quiz, activation and paywall searches supplied additional context. This is relevant-index research, not a claim that every stored transcript was scanned or that semantic search exists. The separately granted catalog has no ready search projection and did not add an independently searchable corpus.
@@ -47,11 +73,13 @@ Quiz progress describes only the quiz. Do not show a false total across optional
 
 ## Screen 1: The promise
 
-**Headline:** Turn saved posts into something you can build.
+**Headline:** Turn the links you send into ideas you use.
 
-Show a compact animated product graphic: a post becomes insight cards, then a project plan. Use existing typography, source-card shapes and green accents. Illustrate the workflow without inventing a generated plan, live metrics or a completed analysis. Review artifacts identify illustrations; the user flow does not need a large synthetic-content banner.
+**Pain and solution:** Useful advice gets lost in feeds and chats. Send VibeScroll a link to find the useful ideas, keep them within reach and turn them into a next step for your work.
 
-**Primary:** Build my feed. **Secondary:** Sign in. Keep pricing discoverable through a quiet link. No email field, carousel, menu, mascot or autoplaying audio. The diagram makes one short transition and rests; reduced motion uses its static final arrangement.
+Show a compact graphic starting with a pasted/sent link, then its post, a useful takeaway and an optional project plan. Use short captions: Send a link; Understand the idea; Put it to work. The relationship must remain understandable without animation. Use existing typography, source-card shapes and green accents. Illustrate the workflow without inventing a generated plan, live metrics or a completed analysis. Review artifacts identify illustrations; the user flow does not need a large synthetic-content banner.
+
+**Primary:** Get started. **Secondary:** Sign in. Keep pricing discoverable through a quiet link. No email field, carousel, menu, mascot or autoplaying audio. The graphic makes one short transition and rests; reduced motion uses its static final arrangement. Do not imply a saved-post collection, import or GitHub account is needed to begin.
 
 ## Screen 2: Desired outcome
 
@@ -81,7 +109,7 @@ The answer determines whether project setup is prominent and which first action 
 
 **Question:** Where do good ideas usually get stuck?
 
-Choices: I save them and forget; I cannot find the right one later; I struggle to apply them; I save too much to sort. Not sure is valid.
+Choices: I lose useful links; I forget the useful advice; I struggle to apply it; I find more ideas than I can use. Not sure is valid. These choices cover people sending individual links as well as those importing earlier saves.
 
 This changes the first help: Keep and revisit, search/categories, project application, or focused recommendations. A small relevant diagram changes with selection. No diagnosis, invented improvement percentage or unrelated demographic question. If implementation cannot make this answer affect guidance, remove this question after review instead of collecting unused data.
 
@@ -89,9 +117,9 @@ This changes the first help: Keep and revisit, search/categories, project applic
 
 **Headline:** A starting point for your ideas.
 
-Show a compact visual summary of actual answers: topics, goal and the practical next action. Explain the app with three short steps: Save a post; Find useful ideas; Apply them to your project. Highlight the relevant step based on the obstacle. Answers remain editable without losing independent later progress.
+Show a compact visual summary of actual answers: topics, goal and the practical next action. Explain the app with three short steps: Send a link; Find useful ideas; Apply them to your work. Briefly show that the link and ideas stay available in VibeScroll. Highlight the relevant step based on the obstacle. Answers remain editable without losing independent later progress.
 
-**Primary:** Show my feed. This deterministic summary is not an AI project plan. Selecting recommendations can show a real skeleton while fetching. No timed fake spinner, typed-out explanation or claim that a model is thinking. Continue immediately when ready.
+**Primary:** Show me how it works. This deterministic summary is not an AI project plan. Open the real Home preview, not a separate picker. Selecting recommendations can show a real skeleton while fetching. No timed fake spinner, typed-out explanation or claim that a model is thinking. Continue immediately when ready.
 
 ## Screen 7: The real Home preview
 
@@ -99,13 +127,15 @@ Open the first relevant eligible post directly in the existing Home feed. No int
 
 A dismissible cue points first to expanding an actual insight, then to applying the post to a project. Keep one cue visible. Users may scroll without a long mandatory tour. Search and metadata browsing remain bounded to the authorized starter selection. Preserve the one-complete-result preview: the chosen result may be reopened; another full result needs account/Pro. Sharing UI does not expose the full catalog.
 
+At first expansion, explain Insight as a useful takeaway from the post. At the project action, explain that a Project is their product, business or codebase and a Plan is a draft of what to do with the idea. Use the real current post to teach these relationships. Avoid introducing analysis, evidence, proposal, repository, catalog and MCP together in the opening screen.
+
 **Next action:** Keep this post. **Contextual action:** Use for my project. Both preserve the post and next action through signup. Guests see account-required actions instead of fake likes, fit scores or successful writes. Counts must come from allowed data; omit unknown counts. Evidence stays on demand. Use the retained poster and Open original if playback is unavailable.
 
-An own link retains normalized intent for after access and explains that fresh analysis needs a quote. It is not instantly analyzed. Have saved posts already? opens existing local import/export help. Reading a guide is allowed now; importing or processing account data is not required for the preview.
+An own link is a prominent alternative: Have a link in mind? Retain its normalized intent for after access and explain that fresh analysis needs a quote. It is not instantly analyzed. Have saved posts already? remains secondary local import/export help. Reading a guide is allowed now; importing or processing account data is not required for the preview.
 
 ## Screen 8: Save progress with an account
 
-**Headline:** Keep this idea and make it yours.
+**Headline:** Keep your links and ideas together.
 
 Show the selected real post compactly and existing WorkOS sign-in choices. Ask only for identity-provider requirements. Explain that setup and Pro follow; hosted payment is not a surprise.
 
@@ -113,9 +143,9 @@ Preserve answers, post, Apply intent and local import reminder through sign-in. 
 
 ## Screen 9: Connect an assistant
 
-**Headline:** Use your ideas in the chat you already work in.
+**Headline:** Send links and use their ideas in your assistant.
 
-ChatGPT is the primary connection action. Codex is another supported MCP client with concise instructions, not a dropdown. Benefit: Search saved insights, discuss them and save project plans from your assistant. The quieter action is Connect later.
+ChatGPT is the primary connection action. Codex is another supported MCP client with concise instructions, not a dropdown. Benefit: Send supported links, retrieve their useful ideas, discuss them and save project plans from your assistant. Explain that MCP is the connection used for this, not an extra AI subscription sold by VibeScroll. The quieter action is Connect later.
 
 Reuse the current guide and official authorization. Do not promise one-click install where the provider requires manual setup. Reuse valid grants, remove duplicate scope pickers and preserve explicit off/narrowed access. Default access includes authorized personal/joined-team collections under current policy.
 
@@ -178,6 +208,8 @@ Return to the same Home reader and saved intent. A dismissible checklist in the 
 Exploration can continue through authorized saved posts. Public curation does not silently become paid full-catalog browsing. A new account retains its selected result and can explicitly request another curated post, save an own link or import. Never expose private global results as starter recommendations.
 
 Connected users get a supported Open in assistant action or accurate instructions. Other users can connect from Connections/contextual help without replaying onboarding. In-app analysis keeps its quoted credit route unless a different supported executor is ready and chosen.
+
+When showing the next link action, say Send another link or Paste a link. Import saved posts is an optional secondary action. Explain that their Library is where VibeScroll keeps requested posts and insights so they can return later; it does not require maintaining a saved list on the original social platform.
 
 ## Screen 15: First proposal, in the actual workflow
 

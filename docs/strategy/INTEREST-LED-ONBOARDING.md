@@ -6,6 +6,8 @@ Status: implementation approved by the owner on November 1, 2026. The owner appr
 
 ## November2 review before rebuilding
 
+R149 clarifies that users can begin by sending a single link. No collection of saved posts or export is required. The detailed review now leads with the pain and send → understand → apply, explaining terms at the relevant interaction. Saved content refers to what VibeScroll retains afterward; platform imports are optional.
+
 R148 asks for the complete researched [V1/V2 screen review](../design/ONBOARDING-V1-V2-REVIEW.md) before application implementation. Simplify each screen; more useful steps are acceptable. Connect later is approved, with an honest credit explanation, and the mascot is excluded from V1. The review preserves this plan's account/payment/preview contracts. Await owner review; the current quiz removal is still live.
 
 ## November2 refinement

@@ -2,6 +2,8 @@
 
 Mode: reference. Snapshot reviewed November2,2026, Europe/Berlin. This is the current-state entry point, not a live dashboard or spending authority. Check provider state before the next hosted operation.
 
+November2 R149 planning clarification: the [onboarding proposal](../design/ONBOARDING-V1-V2-REVIEW.md#link-first-positioning-and-the-problem) now starts from sending a link, not owning saved posts. It explains the pain, the send/understand/apply flow and unfamiliar product words where needed. Imports remain optional. This is a docs-only revision awaiting owner review, with no change to production or account settings.
+
 November2 R148 planning checkpoint: the [V1/V2 onboarding review](../design/ONBOARDING-V1-V2-REVIEW.md) and [research](../design/ONBOARDING-RESEARCH-2026-11-02.md) are prepared for owner review. Simplify each screen, retain useful steps and the quiz, reuse Home, and keep the mascot V2-only. MCP Connect later is approved; supported assistant work should become the preference after verified connection, with accurate credit/Events boundaries. No product code, account settings or production behavior changed for this review. Do not implement the revised flow before owner review.
 
 November2 owner correction R146: quiz removal was an agent misinterpretation. The target retains an improved visual quiz and replaces only the recommended-post picker with the existing Home feed/components. See [the corrected plan](../design/SEARCH-FIRST-ONBOARDING.md). This correction is documentation only so far; website3748525/backend796b2cf remain live. Do not describe the removed quiz or separate starter gallery as the desired final design.

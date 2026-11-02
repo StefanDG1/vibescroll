@@ -2,6 +2,12 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November2 promotion and visual evidence
+
+A successful promote request returned a null body before canonical propagation. The first health/UI read still showed the prior build. Inspect only alias/deployment IDs, then wait for both canonical health and actual DOM to match; do not start another build or publish a success from the acknowledgement alone.
+
+Background Chrome can defer media-query events and scrolling, producing screenshots with mismatched appearance or offscreen headings. Bring the owned target into browser focus, assert the resolved appearance and scroll position, and capture after the normal saved preference is applied. Wait for visible images to finish loading with positive natural dimensions; layout readiness alone can capture empty lazy thumbnails. Use instant scrolling in the screenshot harness; normal product motion remains unchanged. These were capture/propagation conditions, not evidence of a source-processing failure.
+
 ## November2 first-visit UI sequencing
 
 The consent provider synchronizes on mount, focus and a two-second poll, not only after a new choice. Dispatching the tour cue on every sync opened two first-visit prompts together. Emit the cue only for a valid changed consent value, including a necessary-only rejection. The regression proves initial invalid consent emits nothing, rejection leaves tracking off, and unchanged polling emits no extra cue. The tour is always skippable and never controls analytics authorization.

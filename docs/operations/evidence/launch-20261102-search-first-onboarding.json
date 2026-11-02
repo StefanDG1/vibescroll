@@ -1,0 +1,74 @@
+{
+  "recordedAtUTC": "2026-11-02T12:28:05.631086+00:00",
+  "requirement": "R145 / ADR231",
+  "website": {
+    "commit": "37485259f98e3f4d0e5f94065502987a5425db29",
+    "version": "0.1.0-alpha.20261102115844.g37485259f98e",
+    "deployment": "dpl_A2nCwVDPyWaHcR17yMfc2DiQsaXf",
+    "exactCI": 41441002106,
+    "buildMilliseconds": 60900,
+    "fixedBasic": "2 cores, 8 GB; normal queue",
+    "sameBuildPromoted": true,
+    "normalDomainAssignmentRestored": true,
+    "canonicalVersionAndAliasMatched": true
+  },
+  "backend": {
+    "commit": "796b2cf2b1dc30ce6d939031a2582d8035632c8b",
+    "noDeployment": true,
+    "noSchemaAuthProviderOrPriceChanges": true
+  },
+  "changes": [
+    "removed mascot component and unused animation CSS",
+    "search-first ready feed instead of required quiz; previous drafts preserved",
+    "selected post seeds defaults; goal defaults to find ideas",
+    "visible plan radios and searchable repository choices",
+    "Home destination after verified access; optional project guide remains",
+    "shared skippable and reopenable Home tour with context-specific copy",
+    "consent prompt and tour serialized without requiring analytics",
+    "restrained transitions and reduced-motion support",
+    "shared insight subtitle omitted where redundant; single-project selector omitted"
+  ],
+  "checks": {
+    "localFull": "1702 main passed / 9 skipped, 75 auth, 179 UI, Node/Python and both builds",
+    "finalFocused": "76 auth; final widget package; secret scan of both source commits; dependency audit with no unresolved findings",
+    "exactCI": {
+      "mainPassed": 1700,
+      "mainSkipped": 11,
+      "authPassed": 76,
+      "uiPassed": 179,
+      "nodePythonBuilds": "passed"
+    },
+    "native": [
+      "local layout fixtures distinguish transport from production",
+      "staged real five-post metadata, creator search to one match, zero additional metadata search requests",
+      "staged six-insight real preview and decoded540px poster",
+      "canonical health and actual new UI after alias propagation",
+      "canonical desktop1440x900 and mobile390x844, light and dark, no horizontal overflow",
+      "no mascot; tour reopen and Escape dismissal",
+      "first visit waits for cookie choice, including analytics rejection",
+      "empty search, normalized own-link persistence, reduced motion",
+      "canonical six retained insights, real thumbnail and Keep action",
+      "different second preview refused with a direct Continue action"
+    ]
+  },
+  "screenshots": {
+    "private": true,
+    "canonicalViews": 6,
+    "mainDomainScreenshotsKeptOutsideGit": true
+  },
+  "funding": {
+    "existingCapEUR": 15.5,
+    "batchMaximumUSD": 0.024,
+    "oneBasicBuild": true,
+    "allOldHoldsPreserved": true,
+    "noInferencePaymentOrPurchase": true,
+    "settlement": "unknown; no invoice claim"
+  },
+  "limits": [
+    "Guest search filters the explicitly authorized starter selection, not a global or semantic index.",
+    "This frontend release does not repeat new-identity or live paid activation acceptance.",
+    "Native plan/repository presentation is covered by isolated serializer/interval tests; no live checkout was opened.",
+    "Shared widget resources were regenerated from existing components; no new MCP scopes, tool methods or host reconnection.",
+    "Promotion acknowledgement preceded canonical propagation; first read was the old build. Canonical health/UI later matched without another deployment."
+  ]
+}

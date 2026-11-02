@@ -3793,3 +3793,7 @@ Website/backend72df4f7 are live. Exact CI41343115350 passes1676main/11skips,59au
 ## November2 onboarding continuation acceptance
 
 Websitee6cf399/backend796b2cf are live. Exact CI41364980672 passes1,697main/11skips,68auth,179knowledge, Node/Python and both builds; focused local68auth, lint/types/validation, both builds and secret scan pass. One36.366s Basic build promoted unchanged after staging. Earlier20e9a68 picker fix used46.637s Basic and CI41363874515. Native authorized reset-account email/GitHub/paywall/cache/project/context/private-draft checks pass; original finite trial restored. Zero spent/reserved credits, reservations and cost entries. Forty screenshots kept privately. No new identity, real payment, AI call or public issue is claimed. [Receipt](operations/evidence/launch-20261102-onboarding-continuation.json).
+
+## November2 search-first onboarding production
+
+Website3748525/backend796b2cf, exact CI41441002106:1,700main/11skips,76auth,179UI, Node/Python and both builds pass. Local full/focused, dependency and secret checks pass. One60.900s fixed Basic build promoted unchanged; canonical health/UI and four theme/viewport cases pass. Real creator search returns one of five metadata cards without another metadata request; six retained insights/thumbnail and preview-limit recovery pass. No backend, inference, checkout or payment. [Receipt](operations/evidence/launch-20261102-search-first-onboarding.json).

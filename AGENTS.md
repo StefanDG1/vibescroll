@@ -4,6 +4,8 @@ Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/deci
 
 ## Current mandatory owner direction
 
+R152 prioritizes [repairing retained shared reads](docs/operations/SHARED-READ-REPAIR-2026-11-02.md). Preserve the original source, immutable versions, independent evidence and existing connection. Verify provenance-specific processing authority and selected-version evidence before legacy fallback; no deletion/reanalysis to hide a read failure. Follow its acceptance ledger until completed.
+
 R151 approves implementing the reviewed V1 onboarding, including R146-R150 corrections. Build the quiz, explanatory graphics, shared Home preview, forgotten-saves/import branch and assistant setup with Connect later. The earlier review-before-build hold is superseded for V1. V2 remains deferred. Preserve account, source, payment, provider and funding boundaries. Follow the [execution ledger](docs/strategy/ONBOARDING-IMPLEMENTATION.md).
 
 R150 corrects the link-first positioning inferred under R149. Lead with forgotten saved posts and putting their useful ideas to work across projects. Add a dedicated benefit screen immediately before the Instagram saved-post import screen/tutorial. Direct link input remains available; it is an input method, not the product promise. Follow the [revised positioning and import sequence](docs/design/ONBOARDING-V1-V2-REVIEW.md#forgotten-posts-useful-ideas-and-input-methods). The R148 review-before-build hold remains.

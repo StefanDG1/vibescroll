@@ -11,7 +11,12 @@ import { cloudCatalogFixture } from "./cloud-catalog-fixture";
 import { tools as assistantHttpTools } from "../convex/assistantHttp";
 import { createKnowledgeHandler } from "../packages/mcp/server";
 import { workCloudMonitorMessage } from "../packages/onboarding/work-cloud-monitor";
-import { currentCloudArtifact } from "../convex/lib/cloudCatalog";
+import {
+  currentCloudArtifact,
+  associateContributedCloudVersion,
+} from "../convex/lib/cloudCatalog";
+import { postContextPageOutput } from "../packages/contracts/post-context";
+import { knowledgeFetchStructuredOutput } from "../packages/contracts/knowledge-read";
 import * as analysisHistory from "../convex/lib/analysisHistory";
 import { preparedStatusOutput } from "../packages/contracts/prepared-service";
 const preparationMock = vi.hoisted(() => ({ run: vi.fn() }));
@@ -1447,106 +1452,261 @@ it("carries credit quote, start and status through actual MCP2 and authenticated
   });
 });
 
-it("settles preparation only for native reasoning and saves its version without legacy extraction", async () => {
-  const s = await fixture();
-  vi.stubEnv("WORK_CLOUD_SAVED_LINKS_ENABLED", "true");
-  vi.stubEnv("WORK_CLOUD_SAVED_LINKS_VERIFIED", "true");
-  vi.stubEnv(
-    "WORK_CLOUD_ADMISSION_JSON",
-    JSON.stringify({
-      id: "native-prepared-policy",
-      subject: s.actor.subject,
-      maximumJobs: 100,
-      maximumHourlyJobs: 20,
-      period: "day",
-      startsAt: Date.now(),
-      expiresAt: null,
-    }),
-  );
-  await s.t.run((c) =>
-    c.db.patch(s.grant.id, {
-      cloudSaveDefaults: {
-        version: "link-save-cloud-v2",
-        model: "synthetic-new-model",
-        effort: "high",
-        retentionMs: 86400000,
+it.each(["synthetic-new-model", "gpt-6.1-sol", "gpt-6-luna"])(
+  "retains subscription analysis independently of API model names: %s",
+  async (model) => {
+    const s = await fixture(true);
+    vi.stubEnv("WORK_CLOUD_SAVED_LINKS_ENABLED", "true");
+    vi.stubEnv("WORK_CLOUD_SAVED_LINKS_VERIFIED", "true");
+    vi.stubEnv(
+      "WORK_CLOUD_ADMISSION_JSON",
+      JSON.stringify({
+        id: "native-prepared-policy",
+        subject: s.actor.subject,
+        maximumJobs: 100,
+        maximumHourlyJobs: 20,
+        period: "day",
+        startsAt: Date.now(),
+        expiresAt: null,
+      }),
+    );
+    await s.t.run((c) =>
+      c.db.patch(s.grant.id, {
+        cloudSaveDefaults: {
+          version: "link-save-cloud-v2",
+          model,
+          effort: "high",
+          retentionMs: 86400000,
+        },
+      }),
+    );
+    await s.assistant.mutation(internal.assistantEvents.install, {
+      profileId: s.org,
+      grantVersion: s.grant.version,
+      eventName: "video_link_saved",
+      externalId: "sub_" + "b".repeat(64),
+      ciphertext: "synthetic-native-authority",
+      keyVersion: "1",
+      expiresAt: Date.now() + 600000,
+      callbackVerifiedAt: Date.now(),
+    });
+    const request = { ...s.request, executor: "work_cloud" as const },
+      q = await s.owner.query(api.preparedService.quote, request);
+    expect(q).toMatchObject({
+      maximumCredits: 1,
+      preparationCredits: 1,
+      analysisCredits: 0,
+    });
+    const run = await s.owner.mutation(api.preparedService.start, {
+      ...request,
+      key: "native-prepared-start",
+      quoteHash: q.quoteHash,
+      maximumCredits: 1,
+    });
+    const e = await retained(s, run.runId!, 74302, false);
+    const attemptId = await s.t.mutation(
+      internal.preparedAnalysis.queueSubscription,
+      { runId: run.runId! },
+    );
+    const claim = await s.assistant.mutation(
+      internal.analysisVersions.dispatch,
+      {
+        sourceId: s.sourceId,
+        attemptId,
+        taskId: "native-prepared-fixture",
+        operation: "claim",
       },
-    }),
-  );
-  await s.assistant.mutation(internal.assistantEvents.install, {
-    profileId: s.org,
-    grantVersion: s.grant.version,
-    eventName: "video_link_saved",
-    externalId: "sub_" + "b".repeat(64),
-    ciphertext: "synthetic-native-authority",
-    keyVersion: "1",
-    expiresAt: Date.now() + 600000,
-    callbackVerifiedAt: Date.now(),
-  });
-  const request = { ...s.request, executor: "work_cloud" as const },
-    q = await s.owner.query(api.preparedService.quote, request);
-  expect(q).toMatchObject({
-    maximumCredits: 1,
-    preparationCredits: 1,
-    analysisCredits: 0,
-  });
-  const run = await s.owner.mutation(api.preparedService.start, {
-    ...request,
-    key: "native-prepared-start",
-    quoteHash: q.quoteHash,
-    maximumCredits: 1,
-  });
-  const e = await retained(s, run.runId!, 74302, false);
-  const attemptId = await s.t.mutation(
-    internal.preparedAnalysis.queueSubscription,
-    { runId: run.runId! },
-  );
-  const claim = await s.assistant.mutation(internal.analysisVersions.dispatch, {
-    sourceId: s.sourceId,
-    attemptId,
-    taskId: "native-prepared-fixture",
-    operation: "claim",
-  });
-  const lease = {
-    sourceId: s.sourceId,
-    attemptId,
-    taskId: "native-prepared-fixture",
-    leaseToken: claim.leaseToken,
-  };
-  await s.assistant.mutation(internal.analysisVersions.acknowledgeFrame, {
-    ...lease,
-    frameId: "frame-1",
-  });
-  const output = {
-    schemaVersion: "analysis-version-output-v1",
-    sourceId: s.sourceId,
-    attemptId,
-    evidenceHash: e.prepared.evidence.evidenceHash,
-    postRevisionHash: e.prepared.evidence.sourceRevisionHash,
-    summary: "Native prepared insights",
-    warnings: [],
-    insights: s.output.insights,
-  };
-  const done = await s.assistant.mutation(internal.analysisVersions.dispatch, {
-    ...lease,
-    operation: "complete",
-    output,
-  });
-  expect(done.accepted).toBe(true);
-  expect(
-    await s.owner.query(api.preparedService.status, { sourceId: s.sourceId }),
-  ).toMatchObject({
-    state: "ready",
-    chargedCredits: 1,
-    billingState: "settled",
-  });
-  vi.stubEnv("VERCEL_AI_GATEWAY_API_KEY", "");
-  const again = await s.owner.query(api.preparedService.quote, request);
-  expect(again).toMatchObject({
-    maximumCredits: 0,
-    reusedEvidenceId: e.evidenceId,
-  });
-});
+    );
+    const lease = {
+      sourceId: s.sourceId,
+      attemptId,
+      taskId: "native-prepared-fixture",
+      leaseToken: claim.leaseToken,
+    };
+    await s.assistant.mutation(internal.analysisVersions.acknowledgeFrame, {
+      ...lease,
+      frameId: "frame-1",
+    });
+    const output = {
+      schemaVersion: "analysis-version-output-v1",
+      sourceId: s.sourceId,
+      attemptId,
+      evidenceHash: e.prepared.evidence.evidenceHash,
+      postRevisionHash: e.prepared.evidence.sourceRevisionHash,
+      summary: "Native prepared insights",
+      warnings: [],
+      insights: s.output.insights,
+    };
+    const done = await s.assistant.mutation(
+      internal.analysisVersions.dispatch,
+      {
+        ...lease,
+        operation: "complete",
+        output,
+      },
+    );
+    expect(done.accepted).toBe(true);
+    expect(
+      await s.owner.query(api.preparedService.status, { sourceId: s.sourceId }),
+    ).toMatchObject({
+      state: "ready",
+      chargedCredits: 1,
+      billingState: "settled",
+    });
+    vi.stubEnv("VERCEL_AI_GATEWAY_API_KEY", "");
+    const again = await s.owner.query(api.preparedService.quote, request);
+    expect(again).toMatchObject({
+      maximumCredits: 0,
+      reusedEvidenceId: e.evidenceId,
+    });
+    const preview = await s.owner.query(api.cloudCatalog.preview, {
+      sourceId: s.sourceId,
+      versionId: done.versionId!,
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) =>
+        init?.method === "PUT"
+          ? new Response(null, { status: 200 })
+          : new Response(s.bytes, {
+              headers: { "content-type": "image/jpeg" },
+            }),
+      ),
+    );
+    const contribution = await s.owner.action(
+      api.cloudCatalogActions.contribute,
+      {
+        sourceId: s.sourceId,
+        versionId: done.versionId!,
+        key: "subscription-catalog-copy",
+        consent: preview.consent,
+      },
+    );
+    const row = (await s.t.run((ctx) =>
+      ctx.db.get(contribution.contributionId),
+    ))!;
+    const shared = await s.t.run((ctx) =>
+      currentCloudArtifact(ctx, row.artifactId),
+    );
+    expect(shared.authority).toMatchObject({
+      funding: "own_subscription",
+      provenance: "authenticated_host_reported",
+      requestedModel: model,
+    });
+    const operator = s.t.withIdentity({
+      subject: "user_02234567890123456789012345",
+      auth_time: Math.floor(Date.now() / 1000),
+    });
+    const assessment = {
+      rubric: "evidence-review-v1" as const,
+      fidelity: 4,
+      completeness: 4,
+      citationAccuracy: 4,
+      uncertainty: 4,
+      usefulness: 4,
+      reason: "Synthetic subscription shared-reader regression",
+    };
+    const review = await operator.query(
+      api.cloudCatalog.reviewRecommendation,
+      {
+        artifactId: shared.artifact._id,
+        assessment,
+      },
+    );
+    await operator.mutation(api.cloudCatalog.selectRecommendation, {
+      artifactId: shared.artifact._id,
+      assessment,
+      reviewHash: review.reviewHash,
+      expectedSelectionRevision: review.selectionRevision,
+    });
+    await s.owner.run(async (ctx) => {
+      expect(
+        await associateContributedCloudVersion(
+          ctx,
+          (await ctx.db.get(s.sourceId))!,
+          s.actor._id,
+          shared.artifact._id,
+        ),
+      ).toBe(true);
+    });
+    const detail = await s.owner.query(api.product.detail, {
+      id: s.sourceId,
+      organizationId: s.org,
+    });
+    expect(detail.analysis.insights).toEqual(shared.version.output.insights);
+    const structured = knowledgeFetchStructuredOutput.parse(
+      await s.assistant.query(internal.assistant.fetch, {
+        id: s.sourceId,
+        format: "structured_v1",
+      }),
+    );
+    expect(structured.analysis.insights).toHaveLength(
+      shared.version.output.insights.length,
+    );
+    knowledgeFetchStructuredOutput.parse(
+      await s.assistant.query(internal.assistant.fetch, {
+        id: `${s.sourceId}@${shared.version._id}`,
+        format: "structured_v1",
+      }),
+    );
+    const context = postContextPageOutput.parse(
+      await s.assistant.query(internal.assistant.fetch, {
+        id: s.sourceId,
+        format: "post_context_v1",
+      }),
+    );
+    expect(context.context.analysisVersionId).toBe(shared.version._id);
+    expect(context.context.totals.transcript).toBe(1);
+    const frame = await s.assistant.action(internal.postContextFrames.read, {
+      sourceId: s.sourceId,
+      analysisVersionId: shared.version._id,
+      frameId: "frame-1",
+      expectedEvidenceHash: context.context.evidenceHash,
+    });
+    expect(Buffer.from(frame.data, "base64")).toEqual(Buffer.from(s.bytes));
+    // A separate API policy, including its later revocation, does not authorize
+    // or invalidate reasoning performed in the user's own host subscription.
+    const apiPolicy = enableOpenAi(s);
+    vi.stubEnv(
+      "OPENAI_PROMOTIONAL_CONFIGURATION_JSON",
+      JSON.stringify({
+        ...apiPolicy,
+        enabled: false,
+        providerPermissionReference: "Unrelated changed API processing review",
+      }),
+    );
+    await s.t.run((ctx) => currentCloudArtifact(ctx, row.artifactId));
+    vi.stubEnv(
+      "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+      JSON.stringify({
+        ...s.config,
+        providerPermissionReference: "Different preparation permission",
+      }),
+    );
+    await expect(
+      s.t.run((ctx) => currentCloudArtifact(ctx, row.artifactId)),
+    ).rejects.toThrow(/publication authority changed/);
+    vi.stubEnv(
+      "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+      JSON.stringify(s.config),
+    );
+    await s.t.run((ctx) =>
+      ctx.db.patch(shared.artifact._id, { state: "blocked" }),
+    );
+    await expect(
+      s.owner.query(api.product.detail, {
+        id: s.sourceId,
+        organizationId: s.org,
+      }),
+    ).rejects.toThrow(/SOURCE_UNAVAILABLE/);
+    await expect(
+      s.assistant.query(internal.assistant.fetch, {
+        id: s.sourceId,
+        format: "post_context_v1",
+      }),
+    ).rejects.toThrow(/SOURCE_UNAVAILABLE/);
+  },
+);
 
 it("projects service-prepared managed results with truthful provenance into the existing catalog family", async () => {
   const s = await fixture(true),

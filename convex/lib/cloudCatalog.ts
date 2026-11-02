@@ -651,9 +651,12 @@ async function currentCloudArtifactHeaderUncached(
   if (authority.version === "prepared-catalog-authority-v2") {
     const config = preparedServiceConfiguration(undefined, true);
     const openAi =
+      authority.provenance === "managed_api_reported" &&
       Object.hasOwn(apiModels, authority.requestedModel) &&
       apiModels[authority.requestedModel as keyof typeof apiModels].provider ===
         "openai_responses";
+    // A model name can be used by both a subscription host and the API.
+    // Only API execution requires the additional OpenAI processing review.
     const processingReviewHash = config
       ? openAi
         ? await openAiPreparedProcessingReviewHash(

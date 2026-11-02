@@ -1,5 +1,9 @@
 # Implementation status
 
+## November2: retained shared-reader repair candidate
+
+R152 reproduces a ready shared result whose reader mistakes a subscription model for API execution. Provenance now selects the processing review; full website detail validates selected immutable evidence before its legacy-media fallback.82focused sharing/entitlement/read cases, full local checks/both builds and dependency audit pass. The saved five-insight/eight-frame result still satisfies strict contracts. No data/schema/index/environment change, reanalysis or new media request. Exact CI, compatible backend-only publication and live full-read acceptance remain pending. [Plan](operations/SHARED-READ-REPAIR-2026-11-02.md), [ADR235](adr/235-provenance-bound-shared-analysis-readers.md).
+
 ## November2: focused onboarding production acceptance
 
 Website/backend189dc4f are live with exact CI41504180285,17compatible guards, two deterministic preparations and one57.096s normal Basic build. Canonical real preview/import/signup handoff, viewport/theme4 and Library8 pass. Original MCP grant12 remains ready.56private screenshots include20canonical captures. No new model job, payment, wallet grant, identity or assistant OAuth consent. One older shared-post read remains unavailable despite ready metadata; preserve its data and diagnose separately. [Receipt and acceptance limits](operations/evidence/launch-20261102-focused-onboarding.json).

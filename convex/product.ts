@@ -704,8 +704,9 @@ export const detail = query({
         "SOURCE_UNAVAILABLE",
         "Source permission changed.",
       );
-    if (s.orderedMedia && s.state === "ready") await currentOrderedSource(s);
     const selected = await selectedAnalysis(ctx, s);
+    if (!selected && s.orderedMedia && s.state === "ready")
+      await currentOrderedSource(s);
     const analysisHash = s.analysis
       ? await digest(JSON.stringify(s.analysis))
       : undefined;

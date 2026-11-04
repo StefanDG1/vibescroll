@@ -2,6 +2,14 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November 4 credit, quota and widget diagnosis
+
+A current quota error was initially described as missing user credits. A read of the current wallet and the bounded actor/policy counter showed available credits alongside an exhausted ten-attempt preparation pilot. Inspect the exact admission boundary; never equate QUOTA_EXCEEDED with INSUFFICIENT_CREDITS. Failed attempts remain in history and count toward that legacy pilot. A larger credit grant alone does not resolve it. Known automatic-start refusal can also roll back capture inside the same mutation; return a persistent saved receipt after a recoverable admission refusal.
+
+A catalog-named service workspace is not the canonical catalog browsing route. Verify the current catalog entitlement and toggle separately from workspace source counts. The active inline and expanded resources currently mount the same CompactApp. That app discards the bootstrap snapshot, bypasses saved-default resolution, calls a broader-scoped discovery tool, ignores explicit-source offset continuation and reduces rich job stages to a coarse status. Repair these contracts before adding animation. An iframe or mock that loads does not prove current desktop or physical-phone acceptance.
+
+The initial CLI read in this diagnosis failed because the compatible checkout has no CONVEX_DEPLOYMENT environment variable. Set only the verified deployment selector for a bounded read; do not run convex dev or replay a release wrapper. Windows Python stdout needs explicit UTF-8 when printing symbols; browser-side Intl avoids installing timezone data just to format a date. [Plan and acceptance](../strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md).
+
 ## November2 shared-reader classification repair
 
 R152 resolved the older shared-read failure at backend 1843f1f. A bounded 12-event backend log read exposed Prepared processing publication authority changed. Exact-source-chain inspection showed the preparation permission hash still matched; this was not expired permission or lost media. The reader chose an OpenAI API review from requestedModel alone, although the stored authenticated_host_reported/own_subscription provenance identified subscription execution. Model names do not establish executor, billing route or processing permission.

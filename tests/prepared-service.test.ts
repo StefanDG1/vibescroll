@@ -1606,13 +1606,10 @@ it.each(["synthetic-new-model", "gpt-6.1-sol", "gpt-6-luna"])(
       usefulness: 4,
       reason: "Synthetic subscription shared-reader regression",
     };
-    const review = await operator.query(
-      api.cloudCatalog.reviewRecommendation,
-      {
-        artifactId: shared.artifact._id,
-        assessment,
-      },
-    );
+    const review = await operator.query(api.cloudCatalog.reviewRecommendation, {
+      artifactId: shared.artifact._id,
+      assessment,
+    });
     await operator.mutation(api.cloudCatalog.selectRecommendation, {
       artifactId: shared.artifact._id,
       assessment,
@@ -1998,5 +1995,176 @@ it.each(["paid-processing-prefunded-v1", "paid-processing-monetary-v2"])(
       }),
     );
     await expect(f.quote()).rejects.toThrow();
+  },
+);
+
+it.each(["pilot", "credits", "operator"] as const)(
+  "keeps an automatic app/MCP Save and rolls back admission holds after a known %s refusal",
+  async (blocker) => {
+    const s = await fixture();
+    await nativeReady(s);
+    const config = {
+      ...s.config,
+      maximumTotalJobs: blocker === "pilot" ? 1 : 100,
+      automaticOwnSubscriptionPreparation: true,
+    };
+    vi.stubEnv("PREPARED_ANALYSIS_CONFIGURATION_JSON", JSON.stringify(config));
+    if (blocker === "pilot") {
+      const old = await s.start("used-legacy-pilot");
+      await s.t.run((c) => c.db.patch(old.runId!, { state: "failed" }));
+    }
+    if (blocker === "credits")
+      await s.t.run(async (c) => {
+        const wallet = await c.db
+          .query("wallets")
+          .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+          .unique();
+        if (wallet) await c.db.patch(wallet._id, { granted: 0 });
+        for (const pool of await c.db
+          .query("creditPools")
+          .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+          .take(20))
+          await c.db.patch(pool._id, { granted: pool.spent + pool.reserved });
+      });
+    if (blocker === "operator")
+      await s.t.run(async (c) => {
+        const key = `all:${new Date().toISOString().slice(0, 7)}`;
+        const row = await c.db
+          .query("operatorBudgets")
+          .withIndex("by_key", (q) => q.eq("key", key))
+          .unique();
+        if (row) await c.db.patch(row._id, { ceiling: 0 });
+        else
+          await c.db.insert("operatorBudgets", {
+            key,
+            ceiling: 0,
+            spent: 0,
+            reserved: 0,
+            updatedAt: Date.now(),
+          });
+      });
+    const before = await s.t.run(async (c) => ({
+      pools: await c.db
+        .query("creditPools")
+        .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+        .take(20),
+      reservations: await c.db
+        .query("reservations")
+        .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+        .take(20),
+      wallet: await c.db
+        .query("wallets")
+        .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+        .unique(),
+    }));
+    const expected =
+      blocker === "pilot"
+        ? "QUOTA_EXCEEDED"
+        : blocker === "credits"
+          ? "INSUFFICIENT_CREDITS"
+          : "OPERATOR_BUDGET_REACHED";
+    const app = await s.owner.mutation(api.workCloudSaves.capture, {
+      organizationId: s.org,
+      key: `preserve-app-${blocker}`,
+      url: "https://www.instagram.com/reel/KeepApp0001/",
+      title: "Keep this link",
+      rightsAttested: true,
+      grantId: s.grant.id,
+      grantVersion: s.grant.version,
+    });
+    expect(app).toMatchObject({
+      status: "processing_blocked",
+      blockedReason: expected,
+    });
+    const saved = await s.t.run((c) => c.db.get(app.sourceId));
+    expect(saved).toMatchObject({
+      personalMedia: { admissionBlock: { code: expected } },
+    });
+    expect(["saved", "needs_upload"]).toContain(saved!.state);
+    const storedGrant = (await s.t.run((c) => c.db.get(s.grant.id)))!;
+    const scopes = [...storedGrant.scopes, "links:save"];
+    await s.t.run((c) => c.db.patch(storedGrant._id, { scopes }));
+    vi.stubEnv(
+      "MCP_CLIENTS",
+      JSON.stringify([
+        { id: storedGrant.clientId, name: "Native test", scopes },
+      ]),
+    );
+    const assistant = s.t.withIdentity({
+      subject: s.actor.subject,
+      issuer: process.env.MCP_AUTH_ISSUER!,
+      client_id: storedGrant.clientId,
+      scope: scopes.join(" "),
+      sid: "app_consent_01234567890123456789012345",
+    });
+    const args = {
+      profileId: s.org,
+      key: `preserve-mcp-${blocker}`,
+      url: "https://www.instagram.com/reel/KeepMcp0001/",
+      title: "Keep this too",
+      rightsAttested: true as const,
+    };
+    const mcp = await assistant.mutation(internal.assistant.saveLink, args);
+    expect(mcp).toMatchObject({
+      saved: true,
+      status: "processing_blocked",
+      analysis_started: false,
+      analysis_requested: false,
+      blocked_reason: expected,
+    });
+    const replay = await assistant.mutation(internal.assistant.saveLink, args);
+    expect(replay.source_id).toBe(mcp.source_id);
+    expect(
+      await assistant.query(internal.assistant.getJobStatus, {
+        profileId: s.org,
+        sourceId: mcp.source_id,
+      }),
+    ).toMatchObject({
+      status: "processing_blocked",
+      processing: { failure_code: expected, charged_credits: 0 },
+    });
+    const after = await s.t.run(async (c) => ({
+      pools: await c.db
+        .query("creditPools")
+        .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+        .take(20),
+      reservations: await c.db
+        .query("reservations")
+        .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+        .take(20),
+      wallet: await c.db
+        .query("wallets")
+        .withIndex("by_org", (q) => q.eq("organizationId", s.org))
+        .unique(),
+    }));
+    expect(after).toEqual(before);
+    if (blocker === "operator") {
+      const budgetKey = `all:${new Date().toISOString().slice(0, 7)}`;
+      await s.t.run(async (c) => {
+        const budget = await c.db
+          .query("operatorBudgets")
+          .withIndex("by_key", (q) => q.eq("key", budgetKey))
+          .unique();
+        await c.db.patch(budget!._id, { ceiling: 100000 });
+      });
+      const request = { sourceId: mcp.source_id, executor: "gateway" as const };
+      const quote = await s.owner.query(api.preparedService.quote, request);
+      const admitted = await s.owner.mutation(api.preparedService.start, {
+        ...request,
+        key: "after-known-refusal",
+        quoteHash: quote.quoteHash,
+        maximumCredits: quote.maximumCredits,
+      });
+      const source = (await s.t.run((c) => c.db.get(mcp.source_id)))!;
+      expect(source.generation).toBe(saved!.generation);
+      expect(source.personalMedia?.admissionBlock).toBeUndefined();
+      await finish({ ...s, sourceId: source._id, source }, admitted.runId!);
+      const ready = await assistant.query(internal.assistant.getJobStatus, {
+        profileId: s.org,
+        sourceId: source._id,
+      });
+      expect(ready.status).toBe("ready");
+      expect(ready.processing?.charged_credits).toBeGreaterThan(0);
+    }
   },
 );

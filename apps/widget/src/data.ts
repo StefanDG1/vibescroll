@@ -43,6 +43,9 @@ export const profileSchema = z.object({
   projects: z.array(z.record(z.string(), z.unknown())).default([]),
   automatic_analysis: z.boolean().optional(),
   cloud_request_policy: z.string().nullable().optional(),
+  kind: z.enum(["personal", "team"]).optional(),
+  is_default: z.boolean().optional(),
+  selected: z.boolean().optional(),
   context: z.record(z.string(), z.unknown()).optional(),
 });
 export type Profile = z.infer<typeof profileSchema>;

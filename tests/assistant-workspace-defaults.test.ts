@@ -504,7 +504,7 @@ it("keeps implicit read, status, proposal and widget selection on the app defaul
   ).rejects.toThrow(/PROFILE_SELECTION_REQUIRED/);
   await expect(
     f.assistant.query(internal.assistantWidget.state, {}),
-  ).rejects.toThrow(/PROFILE_SELECTION_REQUIRED/);
+  ).resolves.toMatchObject({ profile_id: f.org, selection_reason: "personal" });
   await expect(
     f.assistant.query(internal.assistant.getJobStatus, { sourceId: personal }),
   ).rejects.toThrow(/PROFILE_SELECTION_REQUIRED/);

@@ -29,6 +29,8 @@ type Host = {
   demo: boolean;
   error: string;
   payload: ToolRecord | null;
+  input: ToolRecord | null;
+  initialPending: boolean;
   route: WidgetRoute | null;
   theme: "light" | "dark";
   fullscreen: boolean;
@@ -36,6 +38,7 @@ type Host = {
   canContext: boolean;
   canDownload: boolean;
   call: (name: string, args: ToolRecord) => Promise<ToolRecord>;
+  readImage: (name: string, args: ToolRecord) => Promise<string>;
   open: (url: string) => Promise<void>;
   message: (text: string) => Promise<void>;
   attach: (text: string, data?: ToolRecord) => Promise<void>;
@@ -52,6 +55,8 @@ export function HostProvider({ children }: { children: ReactNode }) {
     ready: false,
     error: "",
     payload: null as ToolRecord | null,
+    input: null as ToolRecord | null,
+    initialPending: false,
     route: null as WidgetRoute | null,
     theme: (isDemo &&
     new URLSearchParams(location.search).get("theme") === "dark"
@@ -102,16 +107,24 @@ export function HostProvider({ children }: { children: ReactNode }) {
       try {
         const payload = decodeToolResult(result as ToolResult);
         const metadata = (result as { _meta?: Record<string, unknown> })
-          ._meta?.["vibescroll/widget"] as { route?: unknown } | undefined;
+          ._meta?.["vibescroll/widget"] as
+          { route?: unknown; input?: ToolRecord } | undefined;
         const card = metadata?.route
           ? widgetRoute.safeParse(metadata.route)
           : null;
         if (card?.success) payload.route = card.data;
-        setState((old) => ({ ...old, payload, error: "" }));
+        setState((old) => ({
+          ...old,
+          payload,
+          ...(metadata?.input ? { input: metadata.input } : {}),
+          initialPending: false,
+          error: "",
+        }));
       } catch (error) {
         setState((old) => ({
           ...old,
           payload: null,
+          initialPending: false,
           error:
             error instanceof Error
               ? error.message
@@ -120,6 +133,14 @@ export function HostProvider({ children }: { children: ReactNode }) {
       }
     };
     app.ontoolinput = async (params) => {
+      if (active)
+        setState((old) => ({
+          ...old,
+          input: (params.arguments ?? {}) as ToolRecord,
+          initialPending: true,
+          payload: null,
+          error: "",
+        }));
       const file = params.arguments?.file as
         { resourceUri?: string } | undefined;
       if (
@@ -165,7 +186,8 @@ export function HostProvider({ children }: { children: ReactNode }) {
       setState((old) => ({
         ...old,
         ready: true,
-        fullscreen: true,
+        fullscreen:
+          new URLSearchParams(location.search).get("display") !== "inline",
         canMessage: true,
         canContext: true,
         canDownload: true,
@@ -215,6 +237,28 @@ export function HostProvider({ children }: { children: ReactNode }) {
   const host: Host = {
     ...state,
     demo: isDemo,
+    readImage: async (name, args) => {
+      if (!state.ready || isDemo)
+        throw new Error("A retained frame is unavailable in this preview.");
+      const result = await app.callServerTool(
+        { name, arguments: args },
+        { timeout: 25000 },
+      );
+      if (result.isError) {
+        decodeToolResult(result as ToolResult);
+        throw new Error("This frame is unavailable.");
+      }
+      const frame = result.content?.find((item) => item.type === "image");
+      if (
+        !frame ||
+        frame.type !== "image" ||
+        frame.mimeType !== "image/jpeg" ||
+        frame.data.length > 8388608 ||
+        !/^[A-Za-z0-9+/]*={0,2}$/.test(frame.data)
+      )
+        throw new Error("The retained frame could not be read.");
+      return `data:image/jpeg;base64,${frame.data}`;
+    },
     call: async (name, args) => {
       if (isDemo) return (await import("./preview-data")).demoCall(name, args);
       if (!state.ready) throw new Error("The plugin connection is not ready.");
@@ -222,7 +266,30 @@ export function HostProvider({ children }: { children: ReactNode }) {
         { name, arguments: args },
         { timeout: 25000 },
       );
-      return decodeToolResult(result as ToolResult);
+      try {
+        return decodeToolResult(result as ToolResult);
+      } catch (error) {
+        // Preserve a safe machine-readable refusal without exposing raw tool logs.
+        const response = result as ToolResult;
+        let code: unknown;
+        try {
+          const body =
+            response.structuredContent ??
+            JSON.parse(
+              response.content?.find((item) => item.type === "text")?.text ??
+                "{}",
+            );
+          code =
+            body && typeof body === "object" && "code" in body
+              ? body.code
+              : undefined;
+        } catch {
+          /* The existing decoder owns malformed-result errors. */
+        }
+        if (error instanceof Error && typeof code === "string")
+          Object.assign(error, { code });
+        throw error;
+      }
     },
     open: async (value) => {
       const url = safeAppUrl(value);
@@ -271,7 +338,15 @@ export function HostProvider({ children }: { children: ReactNode }) {
       });
     },
     expand: async () => {
-      if (!isDemo) await app.requestDisplayMode({ mode: "fullscreen" });
+      if (isDemo) setState((old) => ({ ...old, fullscreen: true }));
+      else {
+        const result = await app.requestDisplayMode({ mode: "fullscreen" });
+        if (result.mode !== "fullscreen")
+          throw new Error(
+            "This host cannot open the full view. Continue in VibeScroll.",
+          );
+        contextDisplayMode(result.mode);
+      }
     },
     download: async (text) => {
       if (new TextEncoder().encode(text).length > 262144)
@@ -309,6 +384,9 @@ export function HostProvider({ children }: { children: ReactNode }) {
       }
     },
   };
+  function contextDisplayMode(mode: string) {
+    setState((old) => ({ ...old, fullscreen: mode === "fullscreen" }));
+  }
   return <HostContext.Provider value={host}>{children}</HostContext.Provider>;
 }
 export function useHost() {

@@ -1,3 +1,7 @@
+import {
+  processingAccountSummary,
+  optionalProcessingAccountSummary,
+} from "./lib/processingAccount";
 import { internalQuery } from "./_generated/server";
 import { postContextPage } from "./lib/postContext";
 import { internalMutation } from "./lib/projectedMutations";
@@ -114,6 +118,12 @@ async function automaticCloudReceipt(
   const common = {
     source_id: source._id,
     profile_id: a.organization._id,
+    saved: true,
+    account: await optionalProcessingAccountSummary(
+      ctx,
+      a.actor,
+      a.organization._id,
+    ),
     url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
     analysis_started: false,
     analysis_route: "own_cloud",
@@ -190,10 +200,24 @@ async function automaticCloudReceipt(
       return {
         ...common,
         status: prepared.state,
-        analysis_requested: true,
+        analysis_requested: prepared.state !== "processing_blocked",
         analysis_route: "prepared_own_cloud",
         run_id: prepared.runId,
-        note: "Saved. Server preparation is queued, then your existing ChatGPT Assistant will analyze the retained transcript and screenshots. No paid API reasoning fallback.",
+        account:
+          "account" in prepared
+            ? prepared.account
+            : await optionalProcessingAccountSummary(
+                ctx,
+                a.actor,
+                a.organization._id,
+              ),
+        ...("failureCode" in prepared
+          ? { blocked_reason: prepared.failureCode }
+          : {}),
+        note:
+          prepared.state === "processing_blocked"
+            ? "Your link is saved. Analysis has not started. Review the returned processing reason and personal credit balance; no new processing hold was kept."
+            : "Saved. Server preparation is queued, then your existing ChatGPT Assistant will analyze the retained transcript and screenshots. No paid API reasoning fallback.",
       };
   }
   const queued = await queueSavedCloudIntent(
@@ -518,6 +542,19 @@ async function selectedWork(
       source.generation !== ref.generation || source.updatedAt !== ref.revision,
   };
 }
+export const getProcessingAccount = internalQuery({
+  args: { ...profile },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const a = await assistantGrant(
+      ctx,
+      await selectedProfile(ctx, args.profileId, "analysis:request"),
+      "analysis:request",
+    );
+    return processingAccountSummary(ctx, a.actor);
+  },
+});
+
 export const getJobStatus = internalQuery({
   args: { ...profile, sourceId: v.id("sources") },
   handler: async (ctx, args) => {
@@ -577,13 +614,24 @@ export const getJobStatus = internalQuery({
           ? cloud.state
           : source.state
       : null;
+    const admissionBlock =
+      source.personalMedia?.admissionBlock?.generation === source.generation &&
+      (!preparedRun || ["ready", "failed"].includes(preparedRun.state))
+        ? source.personalMedia.admissionBlock
+        : null;
     const pendingVersion = source.pendingAnalysisAttemptId
       ? await ctx.db.get(source.pendingAnalysisAttemptId)
       : null;
     return {
       source_id: source._id,
+      account: await optionalProcessingAccountSummary(
+        ctx,
+        a.actor,
+        a.organization._id,
+      ),
       profile_id: a.organization._id,
       status:
+        (admissionBlock ? "processing_blocked" : null) ??
         preparedRun?.state ??
         cloudStatus ??
         (waitingForCloud
@@ -626,26 +674,35 @@ export const getJobStatus = internalQuery({
                 : "consumed",
           }
         : null,
-      processing: preparedRun
+      processing: admissionBlock
         ? {
-            executor:
-              preparedRun.executor === "gateway" ? "credits" : "work_cloud",
-            state: preparedRun.state,
-            stage: source.personalMedia.stage,
-            run_id: preparedRun._id,
-            maximum_credits:
-              preparedRun.receipt?.admission?.quote.maximumCredits ?? 0,
-            charged_credits:
-              preparedRun.receipt?.billing?.chargedCredits ?? null,
-            failure_code: preparedRun.receipt?.failure?.code ?? null,
+            executor: "work_cloud",
+            state: "processing_blocked",
+            stage: "admission",
+            maximum_credits: 0,
+            charged_credits: 0,
+            failure_code: admissionBlock.code,
           }
-        : cloud
+        : preparedRun
           ? {
-              executor: "work_cloud",
-              state: cloud.state,
-              stage: cloud.stage,
+              executor:
+                preparedRun.executor === "gateway" ? "credits" : "work_cloud",
+              state: preparedRun.state,
+              stage: source.personalMedia.stage,
+              run_id: preparedRun._id,
+              maximum_credits:
+                preparedRun.receipt?.admission?.quote.maximumCredits ?? 0,
+              charged_credits:
+                preparedRun.receipt?.billing?.chargedCredits ?? null,
+              failure_code: preparedRun.receipt?.failure?.code ?? null,
             }
-          : null,
+          : cloud
+            ? {
+                executor: "work_cloud",
+                state: cloud.state,
+                stage: cloud.stage,
+              }
+            : null,
       receipt,
       evidence_changed: changed,
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,

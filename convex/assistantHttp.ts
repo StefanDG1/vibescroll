@@ -1,3 +1,4 @@
+import { processingAccountInput } from "../packages/contracts/processing-account";
 import {
   assistantExceptionCode,
   assistantFailureStatus,
@@ -33,6 +34,8 @@ import {
 import { analysisVersionOperations } from "../packages/contracts/analysis-versions";
 import {
   widgetBrowseInput,
+  widgetCatalogPostInput,
+  widgetCatalogFrameInput,
   widgetTopicInput,
   widgetProposalInput,
 } from "../packages/widget/contracts";
@@ -49,6 +52,18 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z.strictObject({
+    operation: z.literal("get_processing_account"),
+    args: processingAccountInput,
+  }),
+  z.strictObject({
+    operation: z.literal("widget_catalog_post"),
+    args: widgetCatalogPostInput,
+  }),
+  z.strictObject({
+    operation: z.literal("widget_catalog_frame"),
+    args: widgetCatalogFrameInput,
+  }),
   z.strictObject({
     operation: z.literal("read_post_frame"),
     args: postContextFrameInput,
@@ -124,7 +139,7 @@ const operations = z.discriminatedUnion("operation", [
   z
     .object({
       operation: z.literal("widget_profiles"),
-      args: z.object({}).strict(),
+      args: z.object({ profileId }).strict(),
     })
     .strict(),
   z
@@ -383,7 +398,26 @@ export const tools = httpAction(async (ctx, request) => {
     let value: unknown;
     switch (input.operation) {
       case "widget_profiles":
-        value = await ctx.runQuery(internal.assistantWidget.profiles, {});
+        value = await ctx.runQuery(internal.assistantWidget.profiles, {
+          profileId: selectedProfile,
+        });
+        break;
+      case "widget_catalog_post":
+        value = await ctx.runQuery(internal.assistantWidget.catalogPost, {
+          ...input.args,
+          profileId: selectedProfile,
+          familyId: input.args.familyId as Id<"catalogFamilies">,
+          artifactId: input.args.artifactId as
+            Id<"publicArtifacts"> | undefined,
+        });
+        break;
+      case "widget_catalog_frame":
+        value = await ctx.runAction(internal.widgetCatalogFrames.read, {
+          ...input.args,
+          profileId: selectedProfile,
+          familyId: input.args.familyId as Id<"catalogFamilies">,
+          artifactId: input.args.artifactId as Id<"publicArtifacts">,
+        });
         break;
       case "widget_state":
         value = await ctx.runQuery(internal.assistantWidget.state, {
@@ -613,6 +647,11 @@ export const tools = httpAction(async (ctx, request) => {
           ...input.args,
           profileId: selectedProfile,
           sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "get_processing_account":
+        value = await ctx.runQuery(internal.assistant.getProcessingAccount, {
+          profileId: selectedProfile,
         });
         break;
       case "get_profile":

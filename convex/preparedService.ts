@@ -1,3 +1,10 @@
+import type { ProcessingAccountSummary } from "../packages/contracts/processing-account";
+import { processingAdmission } from "./lib/processingAdmission";
+import {
+  processingAccountSummary,
+  optionalProcessingAccountSummary,
+} from "./lib/processingAccount";
+import { readAdminProcessingAllowance } from "./lib/adminProcessingAllowance";
 import { v } from "convex/values";
 import { query, internalQuery } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
@@ -235,7 +242,12 @@ async function quoteFor(
         ? 0
         : Math.ceil(durationMaximumMs * 27.78);
   if (
-    config?.paidCustomer &&
+    (config?.paidCustomer ||
+      !!(await readAdminProcessingAllowance(
+        ctx,
+        a.actor,
+        a.organization._id,
+      ))) &&
     !cacheHit &&
     (gatewayMaximumNanoUsd > 0 ||
       paidProcessingConfiguration()?.version === "paid-processing-prefunded-v1")
@@ -487,21 +499,11 @@ async function startHandler(
     "SOURCE_BUSY",
     "Existing preparation is active or uncertain.",
   );
-  const daily = await ctx.db
-    .query("mediaPreparations")
-    .withIndex("by_actor_policy", (x) =>
-      x.eq("actor", a.actor._id).eq("policyId", processingConfig.id),
-    )
-    .order("desc")
-    .take(Math.max(101, processingConfig.maximumTotalJobs + 1));
+  const admission = await processingAdmission(ctx, a.actor, a.organization._id);
   ensure(
-    daily.length < processingConfig.maximumTotalJobs &&
-      daily.filter((r) => r.createdAt > Date.now() - 86400000).length <
-        processingConfig.maximumDailyJobs &&
-      daily.filter((r) => r.createdAt > Date.now() - 3600000).length <
-        processingConfig.maximumHourlyJobs,
-    "QUOTA_EXCEEDED",
-    "The server processing rate limit is reached.",
+    admission.allowed,
+    admission.reason ?? "QUOTA_EXCEEDED",
+    admission.message ?? "Processing is unavailable.",
   );
   if (
     a.source.state === "ready" &&
@@ -538,13 +540,15 @@ async function startHandler(
     reservationKey,
     q.quote.maximumCredits,
   );
-  const providerReservationId = processingConfig.paidCustomer
-    ? await reservePaidProcessing(ctx, {
-        operationKey: reservationKey,
-        requestHash: q.quoteHash,
-        maximumNanoUsd: q.gatewayMaximumNanoUsd,
-      })
-    : null;
+  const providerReservationId =
+    processingConfig.paidCustomer ||
+    !!(await readAdminProcessingAllowance(ctx, a.actor, a.organization._id))
+      ? await reservePaidProcessing(ctx, {
+          operationKey: reservationKey,
+          requestHash: q.quoteHash,
+          maximumNanoUsd: q.gatewayMaximumNanoUsd,
+        })
+      : null;
   const runId = await ctx.db.insert("mediaPreparations", {
     organizationId: a.source.organizationId,
     sourceId: a.source._id,
@@ -586,9 +590,14 @@ async function startHandler(
       ...(q.evidence ? [{ stage: "evidence_ready", at: now }] : []),
     ],
   });
+  const personalMedia = { ...a.source.personalMedia };
+  // A committed new admission supersedes the earlier refusal for this source.
+  // Keep the immutable old run/credit receipts, but do not show it as blocked
+  // again when the new run completes at the same source generation.
+  delete personalMedia.admissionBlock;
   await ctx.db.patch(a.source._id, {
     personalMedia: {
-      ...a.source.personalMedia,
+      ...personalMedia,
       version: "service-preparation-progress-v1",
       runId,
       stage: q.evidence ? "evidence_ready" : "queued",
@@ -744,7 +753,96 @@ export async function requestPreparedFromAssistant(
   });
 }
 
+type AutomaticPreparedReceipt = {
+  sourceId: Id<"sources">;
+  runId: Id<"mediaPreparations"> | null;
+  state: string;
+  reused?: boolean;
+  cacheHit?: boolean;
+  chargedCredits?: number;
+  maximumCredits?: number;
+  analysisStarted?: boolean;
+  failureCode?: string;
+  account?: ProcessingAccountSummary | null;
+};
+
+export const automaticStart = internalMutation({
+  args: { sourceId: v.id("sources") },
+  returns: v.any(),
+  handler: async (
+    ctx,
+    { sourceId },
+  ): Promise<AutomaticPreparedReceipt | null> => {
+    const a = await owner(ctx, sourceId, true);
+    return queueAutomaticPreparedWithinTransaction(ctx, a.source, a.actor);
+  },
+});
+
 export async function queueAutomaticPreparedSource(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  actor: Doc<"users">,
+): Promise<AutomaticPreparedReceipt | null> {
+  // Preserve the separately supported native route when server preparation is
+  // disabled. Its entitlement is checked by that route, not by this adapter.
+  if (
+    !preparedServiceConfiguration(actor.subject)
+      ?.automaticOwnSubscriptionPreparation
+  )
+    return null;
+  try {
+    // A nested mutation gives admission its own rollback boundary. Saving the
+    // user's link can survive a known funding refusal without partial holds.
+    return await ctx.runMutation(internal.preparedService.automaticStart, {
+      sourceId: source._id,
+    });
+  } catch (error) {
+    const code =
+      error instanceof Error
+        ? error.message.match(/\b([A-Z][A-Z_]{1,63}):/)?.[1]
+        : null;
+    if (
+      !code ||
+      ![
+        "QUOTA_EXCEEDED",
+        "INSUFFICIENT_CREDITS",
+        "BUDGET_EXCEEDED",
+        "OPERATOR_BUDGET_REACHED",
+        "SETUP_REQUIRED",
+      ].includes(code)
+    )
+      throw error;
+    let account = null;
+    try {
+      account = await processingAccountSummary(ctx, actor);
+    } catch {
+      /* Missing financial authority never invents a zero balance. */
+    }
+    const current = await ctx.db.get(source._id);
+    if (current && current.state !== "deleted")
+      await ctx.db.patch(current._id, {
+        personalMedia: {
+          ...current.personalMedia,
+          admissionBlock: {
+            code,
+            generation: current.generation,
+            observedAt: Date.now(),
+          },
+        },
+        updatedAt: Date.now(),
+      });
+    return {
+      sourceId: source._id,
+      runId: null,
+      state: "processing_blocked",
+      analysisStarted: false,
+      failureCode: code,
+      account,
+    };
+  }
+}
+
+async function queueAutomaticPreparedWithinTransaction(
   ctx: MutationCtx,
   source: Doc<"sources">,
   actor: Doc<"users">,
@@ -828,6 +926,11 @@ async function statusHandler(
     }
   }
   return {
+    account: await optionalProcessingAccountSummary(
+      ctx,
+      a.actor,
+      a.organization._id,
+    ),
     sourceId,
     state,
     runId: run?._id ?? null,

@@ -108,9 +108,12 @@ export const capture = mutation({
       v.literal("existing_work_preserved"),
       v.literal("reused_shared_analysis"),
       v.literal("preparing_evidence"),
+      v.literal("processing_blocked"),
     ),
     intentId: v.union(v.string(), v.null()),
     expiresAt: v.union(v.number(), v.null()),
+    blockedReason: v.optional(v.string()),
+    account: v.optional(v.any()),
   }),
   handler: async (ctx, a) => {
     const owner = await writeAccess(ctx, a.organizationId, ["owner"]);
@@ -168,13 +171,17 @@ export const capture = mutation({
       if (!servicePrepared)
         await queuePreparedComparison(ctx, source, owner.actor, a.key);
       return {
+        ...(service?.failureCode ? { blockedReason: service.failureCode } : {}),
+        ...(service?.account ? { account: service.account } : {}),
         sourceId,
         status:
           service?.state === "ready"
             ? ("existing_work_preserved" as const)
             : service?.state === "waiting_for_shared_analysis"
               ? ("waiting_for_shared_analysis" as const)
-              : ("preparing_evidence" as const),
+              : service?.state === "processing_blocked"
+                ? ("processing_blocked" as const)
+                : ("preparing_evidence" as const),
         intentId: null,
         expiresAt: null,
       };

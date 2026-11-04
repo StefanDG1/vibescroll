@@ -5,6 +5,68 @@ import {
 } from "../../../packages/sources/progress";
 import { AgentPlan } from "./assistant-elements/agent-plan";
 import { ErrorState } from "./assistant-elements/error-state";
+import type { ReactNode } from "react";
+
+/** Shared presentation. Each transport supplies only currently observed states. */
+export function ObservedSourceProgress({
+  progress,
+  steps,
+  action,
+  paused = false,
+  observedAt,
+}: {
+  progress: NonNullable<ReturnType<typeof sourceProgress>>;
+  steps: ReturnType<typeof sourceProgressSteps>;
+  action?: ReactNode;
+  paused?: boolean;
+  observedAt?: number;
+}) {
+  if (progress.tone && !paused)
+    return (
+      <section className="source-progress" aria-label="Analysis progress">
+        <ErrorState
+          title={progress.title}
+          detail={progress.description}
+          tone={progress.tone}
+          action={action}
+        />
+      </section>
+    );
+  return (
+    <section
+      className="panel source-progress"
+      aria-label="Analysis progress"
+      aria-live="polite"
+      aria-atomic="true"
+      data-observation-paused={paused || undefined}
+    >
+      <h2>{paused ? "Updates paused" : progress.title}</h2>
+      {progress.busy && !paused && <progress aria-label={progress.title} />}
+      <p>
+        {paused
+          ? "The request may still be running. Refresh to check its current status."
+          : progress.description}
+      </p>
+      {observedAt !== undefined && (
+        <p className="fine">
+          Last checked{" "}
+          {new Date(observedAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      )}
+      {steps.length > 0 && (
+        <details className="source-progress-details">
+          <summary>Processing details</summary>
+          {paused && <p className="fine">Last observed steps</p>}
+          <AgentPlan steps={steps} />
+        </details>
+      )}
+      {action}
+    </section>
+  );
+}
 
 export function SourceProgressPanel({
   source,
@@ -39,39 +101,13 @@ export function SourceProgressPanel({
         : "Review analysis options"}
     </a>
   );
-  if (progress.tone)
-    return (
-      <section
-        className="source-progress"
-        aria-label="Analysis progress"
-        data-preparation-stage={source.personalMedia?.stage}
-      >
-        <ErrorState
-          title={progress.title}
-          detail={progress.description}
-          tone={progress.tone}
-          action={action}
-        />
-      </section>
-    );
   return (
-    <section
-      className="panel source-progress"
-      aria-label="Analysis progress"
-      aria-live="polite"
-      aria-atomic="true"
-      data-preparation-stage={source.personalMedia?.stage}
-    >
-      <h2>{progress.title}</h2>
-      {progress.busy && <progress aria-label={progress.title} />}
-      <p>{progress.description}</p>
-      {steps.length > 0 && (
-        <details className="source-progress-details">
-          <summary>Processing details</summary>
-          <AgentPlan steps={steps} />
-        </details>
-      )}
-      {action}
-    </section>
+    <div data-preparation-stage={source.personalMedia?.stage}>
+      <ObservedSourceProgress
+        progress={progress}
+        steps={steps}
+        action={action}
+      />
+    </div>
   );
 }

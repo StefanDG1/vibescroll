@@ -1,297 +1,365 @@
-/* eslint-disable react/set-state-in-effect -- Host payloads and route changes are external navigation; clear earlier authority before reading. */
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpen,
   ExternalLink,
+  FolderGit2,
+  Home,
+  Maximize2,
   Plus,
   RefreshCw,
+  Search,
+  Video,
 } from "lucide-react";
-import { useHost } from "./host";
+import { useApplication, type CollectionKind } from "./use-application";
 import {
-  fetchSource,
   profilesOf,
-  sourcesOf,
   reauthorizeSources,
   evidenceLabel,
+  insightSchema,
   type Source,
-  type Profile,
 } from "./data";
 import {
-  widgetRoute,
-  jobPresentation,
   appOrigin,
+  jobPresentation,
   type ToolRecord,
 } from "../../../packages/widget/contracts";
 import { PostInsightReader } from "../../starter/components/post-insight-reader";
 import { InsightCardControl } from "../../starter/components/insight-card-control";
 import { SettingsPanel } from "../../starter/components/settings-panel";
 import { ProjectProposalComposer } from "../../starter/components/project-proposal-composer";
+import { ObservedSourceProgress } from "../../starter/components/source-progress";
+import {
+  ProcessingAccountSummary,
+  ProcessingCreditReceipt,
+} from "../../starter/components/processing-account-summary";
+import { InsightDiscovery } from "../../starter/components/insight-discovery";
 import { insightPresentation } from "../../../packages/insights/presentation";
 import { suggestProjects } from "../../starter/lib/project-suggestions";
 
+type View = "home" | "explore" | "work" | "save" | "catalog";
 export function CompactApp() {
-  const host = useHost();
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [profileId, setProfileId] = useState("");
-  const [rows, setRows] = useState<Source[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [source, setSource] = useState<Source | null>(null);
-  const [job, setJob] = useState<ToolRecord | null>(null);
-  const [pollExpired, setPollExpired] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const model = useApplication();
+  const { host, source } = model;
+  const full = host.fullscreen;
+  const [view, setView] = useState<View>("home");
   const [url, setUrl] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const epoch = useRef(0);
-  const pollFlight = useRef(false);
-  const originalJobStarted = useRef(0);
-  const profile = profiles.find((p) => p.profile_id === profileId);
-  const projectRows = (profile?.projects ?? []).flatMap((p) => {
-    const id = p.project_id ?? p.repository_id;
-    return typeof id === "string" &&
-      typeof p.name === "string" &&
-      p.context_changed !== true
-      ? [
-          {
-            id,
-            name: p.name,
-            profile: typeof p.context === "string" ? p.context : "",
-          },
-        ]
-      : [];
-  });
-  const suggestions = source
-    ? suggestProjects(
-        {
-          analysisVersion: { id: source.analysisVersionId },
-          analysis: { insights: source.insights },
-        },
-        projectRows.map((p) => ({
-          _id: p.id,
-          fullName: p.name,
-          profile: p.profile,
-          enabled: true,
-          confirmed: true,
-          status: "connected",
-        })),
-      ).items
-    : [];
-  const status = jobPresentation(job ?? { status: source?.state });
-  const webUrl = profileId
-    ? `${appOrigin}/app/${profileId}`
+  const [query, setQuery] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [submitted, setSubmitted] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [projects, setProjects] = useState<
+    { id: string; name: string; profile: string }[]
+  >([]);
+  const [projectSource, setProjectSource] = useState("");
+  const [projectBusy, setProjectBusy] = useState(false);
+  const [frame, setFrame] = useState<{
+    id: string;
+    data: string;
+    key: string;
+  } | null>(null);
+  const [frameBusy, setFrameBusy] = useState(false);
+  const [frameError, setFrameError] = useState("");
+  const webUrl = model.profileId
+    ? `${appOrigin}/app/${model.profileId}`
     : `${appOrigin}/app`;
-  function failed(failure: unknown) {
-    setSource(null);
-    setRows([]);
-    setJob(null);
-    setError(
-      failure instanceof Error
-        ? failure.message
-        : "This view could not be loaded. Retry or open VibeScroll.",
+  const catalog = model.workspace?.catalog as
+    Record<string, unknown> | undefined;
+  async function open(destination: string) {
+    try {
+      await host.open(destination);
+    } catch (failed) {
+      model.fail(failed, true);
+    }
+  }
+  async function expand() {
+    try {
+      await host.expand();
+    } catch (failed) {
+      model.fail(failed, true);
+    }
+  }
+  function navigate(nextView: View) {
+    setView(nextView);
+    setExpanded(null);
+    setProjects([]);
+    setProjectSource("");
+    setFrame(null);
+    model.clearSelection();
+    const kind: CollectionKind =
+      nextView === "catalog"
+        ? "catalog"
+        : nextView === "work"
+          ? "proposals"
+          : "sources";
+    if (nextView !== "save" && nextView !== "explore")
+      void model.load(model.profileId || undefined, undefined, undefined, kind);
+  }
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    if (saving || !model.profileId) return;
+    const link = url.trim();
+    const current = model.captureScope();
+    setSaving(true);
+    setSubmitted(link);
+    try {
+      const result = await host.call("save_link", {
+        profileId: model.profileId,
+        url: link,
+      });
+      if (!current()) return;
+      if (typeof result.source_id !== "string")
+        throw Error(
+          "Save was not confirmed. Check VibeScroll before trying again.",
+        );
+      setSubmitted("");
+      setUrl("");
+      await model.load(
+        String(result.profile_id ?? model.profileId),
+        result.source_id,
+        undefined,
+        "sources",
+        model.workspace,
+        result,
+      );
+    } catch (failed) {
+      if (current()) model.fail(failed, true);
+    } finally {
+      setSaving(false);
+    }
+  }
+  function openSource(selected: {
+    id: string;
+    profileId?: string;
+    fetchId?: string;
+  }) {
+    setExpanded(null);
+    setProjectSource("");
+    setProjects([]);
+    void model.load(
+      selected.profileId ?? model.profileId,
+      selected.fetchId ?? selected.id,
     );
   }
-  async function load(
-    selectedProfile?: string,
-    selectedSource?: string,
-    next?: string,
-  ) {
-    const ticket = ++epoch.current;
-    setBusy(true);
-    setError("");
-    if (!next) {
-      setSource(null);
-      setRows([]);
-      setJob(null);
-      setPollExpired(false);
-      setExpanded(null);
-    }
+  async function showProjects() {
+    if (!source || projectBusy || !model.actions.context) return;
+    setProjectBusy(true);
+    const currentScope = model.captureScope();
     try {
       const current = profilesOf(
-        await host.call(
-          "get_profile",
-          selectedProfile ? { profileId: selectedProfile } : {},
-        ),
+        await host.call("get_profile", { profileId: model.profileId }),
       );
-      if (ticket !== epoch.current) return;
-      setProfiles(current);
-      const chosen =
-        selectedProfile && current.some((p) => p.profile_id === selectedProfile)
-          ? selectedProfile
-          : current.length === 1
-            ? current[0].profile_id
-            : "";
-      setProfileId(chosen);
-      if (!chosen) return;
-      if (selectedSource) {
-        if (!selectedProfile) {
-          const detailed = profilesOf(
-            await host.call("get_profile", { profileId: chosen }),
-          );
-          if (ticket !== epoch.current) return;
-          setProfiles(detailed);
-        }
-        const result = fetchSource(
-          await host.call("fetch", { profileId: chosen, id: selectedSource }),
-        );
-        const state =
-          result.state === "ready"
-            ? { status: "ready" }
-            : await host.call("get_job_status", {
-                profileId: chosen,
-                sourceId: result.id,
-              });
-        if (ticket !== epoch.current) return;
-        originalJobStarted.current = Date.now();
-        setSource(result);
-        setJob(state);
-      } else {
-        const result = await host.call("widget_browse", {
-          profileId: chosen,
-          kind: "sources",
-          ...(next ? { cursor: next } : {}),
-        });
-        if (ticket !== epoch.current) return;
-        setRows((old) =>
-          next ? [...old, ...sourcesOf(result)] : sourcesOf(result),
-        );
-        setCursor(
-          typeof result.next_cursor === "string" ? result.next_cursor : null,
-        );
-      }
-    } catch (failure) {
-      if (ticket === epoch.current) failed(failure);
-    } finally {
-      if (ticket === epoch.current) setBusy(false);
-    }
-  }
-  const cancel = useEffectEvent(() => {
-    epoch.current++;
-  });
-  const initialize = useEffectEvent(() => {
-    if (!host.ready || host.error) return;
-    const route = widgetRoute.safeParse(
-      host.payload?.route ?? host.route ?? {},
-    );
-    void load(
-      route.success ? route.data.profileId : undefined,
-      route.success ? route.data.sourceId : undefined,
-    );
-  });
-  useEffect(() => {
-    initialize();
-    return () => cancel();
-  }, [host.ready, host.error, host.payload, host.route]);
-  const poll = useEffectEvent(async () => {
-    if (
-      !source ||
-      !status.active ||
-      document.hidden ||
-      pollFlight.current ||
-      pollExpired
-    )
-      return;
-    if (Date.now() - originalJobStarted.current > 300000) {
-      setPollExpired(true);
-      return;
-    }
-    pollFlight.current = true;
-    const ticket = epoch.current;
-    try {
-      const next = await host.call("get_job_status", {
-        profileId,
-        sourceId: source.id,
-      });
-      if (ticket !== epoch.current) return;
-      setJob(next);
-      if (
-        !jobPresentation(next).active &&
-        next.source_status === "ready" &&
-        source.state !== "ready"
-      ) {
-        const ready = fetchSource(
-          await host.call("fetch", { profileId, id: source.id }),
-        );
-        if (ticket === epoch.current) setSource(ready);
-      }
-    } catch (failure) {
-      if (ticket === epoch.current) failed(failure);
-    } finally {
-      pollFlight.current = false;
-    }
-  });
-  const sourceId = source?.id;
-  useEffect(() => {
-    if (!sourceId || !status.active || pollExpired) return;
-    const timer = setInterval(() => {
-      void poll();
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [sourceId, status.active, pollExpired]);
-  async function saveLink(event: React.FormEvent) {
-    event.preventDefault();
-    if (busy || !profileId) return;
-    const ticket = ++epoch.current;
-    setBusy(true);
-    setError("");
-    try {
-      const saved = await host.call("save_link", {
-        url: url.trim(),
-        profileId,
-      });
-      if (ticket !== epoch.current) return;
-      if (typeof saved.source_id !== "string")
-        throw Error(
-          "Save was not confirmed. Open VibeScroll to check before retrying.",
-        );
-      setUrl("");
-      await load(profileId, saved.source_id);
-    } catch (failure) {
-      if (ticket === epoch.current) failed(failure);
-    } finally {
-      if (ticket === epoch.current) setBusy(false);
-    }
-  }
-  async function open(url: string) {
-    try {
-      await host.open(url);
-    } catch {
-      setError(
-        "The host did not open the page. Open VibeScroll in your browser to continue.",
+      if (!currentScope()) return;
+      const list =
+        current.find((p) => p.profile_id === model.profileId)?.projects ?? [];
+      setProjects(
+        list.flatMap((p) => {
+          const id = p.project_id ?? p.repository_id;
+          return typeof id === "string" &&
+            typeof p.name === "string" &&
+            p.context_changed !== true
+            ? [
+                {
+                  id,
+                  name: p.name,
+                  profile: typeof p.context === "string" ? p.context : "",
+                },
+              ]
+            : [];
+        }),
       );
+      setProjectSource(source.id);
+    } catch (failed) {
+      if (currentScope()) model.fail(failed, true);
+    } finally {
+      setProjectBusy(false);
     }
-  }
-  async function continueProposal(proposalId: string) {
-    await host.call("get_project_proposal", { profileId, proposalId });
-    await host.message(
-      `Continue my VibeScroll proposal ${proposalId} in profile ${profileId}. Use get_project_proposal to read its exact current draft, then review all post insights and project context. Ask focused questions where context is missing and propose a concrete plan. Saving a draft does not authorize coding, spending or publication.`,
-    );
   }
   async function proposalCall(operation: string, args: unknown) {
-    if (!source) throw Error("Open a saved source first.");
+    if (!source) throw Error("Open a saved post first.");
     if (operation === "projectPlanningContext")
-      await reauthorizeSources(host.call, profileId, [source]);
+      await reauthorizeSources(host.call, model.profileId, [source]);
     const name =
       operation === "projectPlanningContext"
         ? "get_project_application_context"
         : operation === "projectProposalSave"
           ? "save_project_proposal"
           : null;
-    if (!name) throw Error("This compact action is unavailable.");
-    return host.call(name, { ...(args as ToolRecord), profileId });
+    if (!name) throw Error("Open VibeScroll for this project action.");
+    return host.call(name, {
+      ...(args as ToolRecord),
+      profileId: model.profileId,
+    });
   }
+  async function continueProposal(proposalId: string) {
+    await host.call("get_project_proposal", {
+      profileId: model.profileId,
+      proposalId,
+    });
+    await host.message(
+      `Continue my VibeScroll proposal ${proposalId} in profile ${model.profileId}. Read get_project_proposal and all retained post insights with the selected project context. Saving a draft does not authorize coding, spending or publication.`,
+    );
+  }
+  const suggestions =
+    source && projectSource === source.id
+      ? suggestProjects(
+          {
+            analysisVersion: { id: source.analysisVersionId },
+            analysis: { insights: source.insights },
+          },
+          projects.map((p) => ({
+            _id: p.id,
+            fullName: p.name,
+            profile: p.profile,
+            enabled: true,
+            confirmed: true,
+            status: "connected",
+          })),
+        ).items
+      : [];
+  const progress = model.progress;
+  const title =
+    typeof model.job?.title === "string" ? model.job.title : source?.title;
+  const readyInsights = (post: Source, compact = false) => (
+    <PostInsightReader
+      sourceAction={null}
+      sourcePreview={
+        full ? (
+          <div className="application-source">
+            <Video size={30} aria-hidden="true" />
+            <h2>{post.title}</h2>
+            <p>{jobPresentation({ status: post.state }).label}</p>
+            <button
+              className="compact-open"
+              onClick={() => void open(post.url)}
+            >
+              Open retained evidence
+              <ExternalLink size={14} />
+            </button>
+          </div>
+        ) : undefined
+      }
+    >
+      {post.insights.slice(0, compact ? 3 : undefined).map((insight) => (
+        <article
+          className="post-insight-card"
+          key={`${post.analysisVersionId}:${insight.id}`}
+          data-selected={expanded === insight.id}
+        >
+          <InsightCardControl
+            title={insight.title}
+            subtitle={insight.claim}
+            icon={insightPresentation(insight).icon}
+            expanded={expanded === insight.id}
+            onClick={() =>
+              setExpanded(expanded === insight.id ? null : insight.id)
+            }
+          >
+            <SettingsPanel
+              title="Insight evidence"
+              triggerLabel={`Evidence and options for ${insight.title}`}
+            >
+              <p>{insight.title}</p>
+              {insight.evidence.length ? (
+                <ul>
+                  {insight.evidence.map((ref, i) => (
+                    <li key={i}>{evidenceLabel(ref)}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Open the post to inspect retained evidence.</p>
+              )}
+              <button className="button" onClick={() => void open(post.url)}>
+                Open full evidence
+                <ExternalLink size={15} />
+              </button>
+            </SettingsPanel>
+          </InsightCardControl>
+          {expanded === insight.id && (
+            <div className="post-insight-detail">
+              <p>{insight.claim}</p>
+              {full &&
+                model.actions.draft &&
+                post.analysisVersionId &&
+                projectSource === post.id && (
+                  <ProjectProposalComposer
+                    organizationId={model.profileId}
+                    sourceId={post.id}
+                    analysisVersionId={post.analysisVersionId}
+                    insight={insight}
+                    insights={post.insights}
+                    sourceTitle={post.title}
+                    projects={projects}
+                    suggestions={suggestions}
+                    disabled={model.busy}
+                    call={proposalCall}
+                    onNavigate={host.open}
+                    onContinue={host.canMessage ? continueProposal : undefined}
+                  />
+                )}
+            </div>
+          )}
+        </article>
+      ))}
+    </PostInsightReader>
+  );
+  const saveForm = (
+    <form className="compact-save" onSubmit={save}>
+      <label className="sr-only" htmlFor="compact-url">
+        Post link
+      </label>
+      <input
+        id="compact-url"
+        type="url"
+        required
+        maxLength={2048}
+        placeholder="Paste a Reel or TikTok link"
+        value={url}
+        onChange={(event) => setUrl(event.target.value)}
+        disabled={saving || !model.actions.save}
+      />
+      <button
+        type="submit"
+        disabled={saving || !url.trim() || !model.actions.save}
+        aria-label="Save link"
+      >
+        <Plus size={20} />
+      </button>
+    </form>
+  );
   return (
-    <main className="compact-root" data-theme={host.theme}>
+    <main
+      className={`compact-root${full ? " application-full" : " application-inline"}`}
+      data-theme={host.theme}
+      data-presentation={full ? "fullscreen" : "inline"}
+    >
       <header className="compact-header">
         <strong>VibeScroll</strong>
-        <button
-          className="compact-open"
-          onClick={() => {
-            void open(webUrl);
-          }}
-        >
-          Open app <ExternalLink size={15} aria-hidden="true" />
-        </button>
+        <div className="application-header-actions">
+          <ProcessingAccountSummary
+            account={model.account}
+            unavailable={model.accountUnavailable}
+            onOpen={(destination) => void open(destination)}
+          />
+          {full ? (
+            <button
+              className="compact-open"
+              onClick={() => void open(webUrl)}
+              aria-label="Open VibeScroll website"
+            >
+              <ExternalLink size={16} />
+            </button>
+          ) : (
+            <button
+              className="compact-open"
+              onClick={() => void expand()}
+              aria-label="Open full VibeScroll view"
+            >
+              <Maximize2 size={16} />
+            </button>
+          )}
+        </div>
       </header>
       {host.demo && (
         <p className="compact-demo">
@@ -303,9 +371,7 @@ export function CompactApp() {
           <p>{host.error}</p>
           <button
             className="button"
-            onClick={() => {
-              void open(`${appOrigin}/app`);
-            }}
+            onClick={() => void open(`${appOrigin}/app`)}
           >
             Continue in VibeScroll
           </button>
@@ -314,17 +380,64 @@ export function CompactApp() {
         <output>Connecting to VibeScroll…</output>
       ) : (
         <>
-          {profiles.length > 1 && (
+          {full && (
+            <nav className="application-nav" aria-label="VibeScroll">
+              <button
+                aria-current={view === "home" ? "page" : undefined}
+                onClick={() => navigate("home")}
+              >
+                <Home size={17} />
+                Home
+              </button>
+              <button
+                aria-current={view === "explore" ? "page" : undefined}
+                onClick={() => navigate("explore")}
+              >
+                <Search size={17} />
+                Explore
+              </button>
+              <button
+                aria-current={view === "work" ? "page" : undefined}
+                onClick={() => navigate("work")}
+              >
+                <FolderGit2 size={17} />
+                Work
+              </button>
+              <button
+                aria-current={view === "save" ? "page" : undefined}
+                onClick={() => navigate("save")}
+              >
+                <Plus size={17} />
+                Save
+              </button>
+              {catalog?.allowed === true && (
+                <button
+                  aria-current={view === "catalog" ? "page" : undefined}
+                  onClick={() => navigate("catalog")}
+                >
+                  <BookOpen size={17} />
+                  Catalog
+                </button>
+              )}
+              <button
+                className="application-account-link"
+                onClick={() => void open(`${webUrl}/account`)}
+              >
+                Account
+              </button>
+            </nav>
+          )}
+          {full && model.profiles.length > 1 && (
             <label className="compact-workspace">
               Workspace
               <select
-                value={profileId}
-                onChange={(e) => {
-                  void load(e.target.value);
+                value={model.profileId}
+                onChange={(event) => {
+                  setView("home");
+                  void model.load(event.target.value);
                 }}
               >
-                <option value="">Choose workspace</option>
-                {profiles.map((p) => (
+                {model.profiles.map((p) => (
                   <option key={p.profile_id} value={p.profile_id}>
                     {p.name}
                   </option>
@@ -332,205 +445,366 @@ export function CompactApp() {
               </select>
             </label>
           )}
-          {error && (
-            <section role="alert">
-              <p>{error}</p>
-              <button
-                className="button"
-                onClick={() => {
-                  void load(profileId || undefined);
-                }}
-              >
-                Retry loading
+          {!model.profileId && !model.search && !model.busy && (
+            <section>
+              <h1>Choose your workspace</h1>
+              <p>{model.coverage}</p>
+              {model.profiles.map((p) => (
+                <button
+                  className="button"
+                  key={p.profile_id}
+                  onClick={() => void model.load(p.profile_id)}
+                >
+                  {p.name}
+                  <ArrowRight size={15} />
+                </button>
+              ))}
+              {!model.profiles.length && (
+                <button
+                  className="button"
+                  onClick={() => void open(`${appOrigin}/app`)}
+                >
+                  Review access in VibeScroll
+                </button>
+              )}
+            </section>
+          )}
+          {model.error && (
+            <section role="alert" className="application-error">
+              <p>{model.error}</p>
+              <button className="button" onClick={() => void model.refresh()}>
+                Refresh
               </button>
               <button
                 className="compact-open"
-                onClick={() => {
-                  void open(webUrl);
-                }}
+                onClick={() => void open(webUrl)}
               >
                 Open app
               </button>
             </section>
           )}
-          {busy && <output className="compact-loading">Loading…</output>}
-          {source ? (
-            <>
-              <button
-                className="compact-back"
-                onClick={() => {
-                  void load(profileId);
-                }}
-              >
-                <ArrowLeft size={16} aria-hidden="true" />
-                Recent posts
+          {(saving ||
+            submitted ||
+            (host.initialPending && typeof host.input?.url === "string")) && (
+            <section aria-live="polite" className="compact-progress">
+              <strong>{saving ? "Saving link…" : "Save needs checking"}</strong>
+              <p className="fine">
+                {submitted || String(host.input?.url ?? "")}
+              </p>
+              <p>
+                Submitted link. Saving and processing are confirmed separately.
+              </p>
+            </section>
+          )}
+          {full && (view === "explore" || model.search) && (
+            <form
+              className="application-search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (query.trim()) void model.runSearch(query.trim());
+              }}
+            >
+              <label className="sr-only" htmlFor="knowledge-query">
+                Search saved insights
+              </label>
+              <Search size={18} aria-hidden="true" />
+              <input
+                id="knowledge-query"
+                placeholder="What would you like to put to work?"
+                maxLength={200}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+              <button className="button" type="submit" disabled={!query.trim()}>
+                Search
               </button>
-              <div className="compact-post-title">
-                <h1>
-                  {typeof job?.title === "string" ? job.title : source.title}
-                </h1>
+            </form>
+          )}
+          {model.search ? (
+            <>
+              <InsightDiscovery
+                page={model.search.page}
+                query={model.search.query}
+                busy={model.search.busy}
+                error={model.search.error}
+                compact={!full}
+                onOpen={openSource}
+                onMore={() => void model.runSearch(model.search!.query, true)}
+              />
+              {!full && (
+                <button className="button" onClick={() => void expand()}>
+                  Open full view
+                  <Maximize2 size={15} />
+                </button>
+              )}
+            </>
+          ) : source ? (
+            <>
+              {full && (
                 <button
-                  aria-label="Refresh this post"
-                  className="icon-button"
-                  disabled={busy}
-                  onClick={() => {
-                    void load(profileId, source.id);
-                  }}
+                  className="compact-back"
+                  onClick={() => void model.load(model.profileId)}
                 >
-                  <RefreshCw size={17} aria-hidden="true" />
+                  <ArrowLeft size={16} />
+                  Home
+                </button>
+              )}
+              <div className="compact-post-title">
+                <h1>{title}</h1>
+                <button
+                  className="icon-button"
+                  disabled={model.busy}
+                  onClick={() => void model.refresh()}
+                  aria-label="Refresh this post"
+                >
+                  <RefreshCw size={17} />
                 </button>
               </div>
-              {(status.active || source.state !== "ready") && (
-                <section className="compact-progress" aria-live="polite">
-                  <strong>
-                    {pollExpired ? "Check latest status" : status.label}
-                  </strong>
-                  {status.active && !pollExpired && (
-                    <progress aria-label={status.label} />
-                  )}
-                  <button
-                    className="compact-open"
-                    onClick={() => {
-                      void open(source.url);
-                    }}
-                  >
-                    View progress in app{" "}
-                    <ArrowRight size={14} aria-hidden="true" />
-                  </button>
-                </section>
-              )}
-              <PostInsightReader>
-                {source.insights.map((insight) => (
-                  <article
-                    className="post-insight-card"
-                    key={insight.id}
-                    data-selected={expanded === insight.id}
-                  >
-                    <InsightCardControl
-                      title={insight.title}
-                      subtitle={insight.claim}
-                      icon={insightPresentation(insight).icon}
-                      expanded={expanded === insight.id}
-                      onClick={() =>
-                        setExpanded(expanded === insight.id ? null : insight.id)
-                      }
-                    >
-                      <SettingsPanel
-                        title="Insight evidence"
-                        triggerLabel={`Evidence and options for ${insight.title}`}
+              {progress.progress && (
+                <ObservedSourceProgress
+                  progress={progress.progress}
+                  steps={progress.steps}
+                  paused={model.paused}
+                  observedAt={model.observedAt}
+                  action={
+                    model.paused ? (
+                      <button
+                        className="button"
+                        onClick={() => void model.refresh()}
                       >
-                        <p>{insight.title}</p>
-                        {insight.evidence.length ? (
-                          <ul>
-                            {insight.evidence.map((ref, index) => (
-                              <li key={index}>{evidenceLabel(ref)}</li>
-                            ))}
-                          </ul>
+                        Refresh status
+                      </button>
+                    ) : undefined
+                  }
+                />
+              )}
+              <ProcessingCreditReceipt processing={model.job?.processing} />
+              {!progress.progress && source.state !== "ready" && (
+                <p className="fine">
+                  Saved. No active processing was reported.
+                </p>
+              )}
+              {model.busy && (
+                <output className="compact-loading">
+                  Loading current post…
+                </output>
+              )}
+              <div className="application-post-content">
+                {readyInsights(source, !full)}
+                {full && (
+                  <aside className="application-projects">
+                    <h2>Put this post to work</h2>
+                    {model.actions.draft ? (
+                      projectSource === source.id ? (
+                        projects.length ? (
+                          <p>
+                            Open any insight to prepare a project plan. The plan
+                            uses all retained post insights.
+                          </p>
                         ) : (
-                          <p>Open the post to inspect its retained evidence.</p>
-                        )}
+                          <>
+                            <p>No current granted projects were returned.</p>
+                            <button
+                              className="button"
+                              onClick={() => void open(`${webUrl}/projects`)}
+                            >
+                              Review projects
+                            </button>
+                          </>
+                        )
+                      ) : (
                         <button
                           className="button"
-                          onClick={() => {
-                            void open(source.url);
-                          }}
+                          disabled={projectBusy}
+                          onClick={() => void showProjects()}
                         >
-                          Open full evidence{" "}
-                          <ExternalLink size={15} aria-hidden="true" />
+                          {projectBusy
+                            ? "Loading projects…"
+                            : "Apply to a project"}
                         </button>
-                      </SettingsPanel>
-                    </InsightCardControl>
-                    {expanded === insight.id && (
-                      <div className="post-insight-detail">
-                        <p>{insight.claim}</p>
-                        {source.analysisVersionId && (
-                          <ProjectProposalComposer
-                            organizationId={profileId}
-                            sourceId={source.id}
-                            analysisVersionId={source.analysisVersionId}
-                            insight={insight}
-                            projects={projectRows}
-                            suggestions={suggestions}
-                            disabled={busy}
-                            call={proposalCall}
-                            onNavigate={host.open}
-                            onContinue={
-                              host.canMessage ? continueProposal : undefined
-                            }
-                          />
-                        )}
-                      </div>
+                      )
+                    ) : (
+                      <button
+                        className="button"
+                        onClick={() => void open(`${webUrl}/connections`)}
+                      >
+                        Review project access
+                      </button>
                     )}
-                  </article>
-                ))}
-              </PostInsightReader>
-              <button
-                className="compact-open"
-                onClick={() => {
-                  void open(source.url);
-                }}
-              >
-                {source.more_ideas
-                  ? "See all insights in VibeScroll"
-                  : "Open post in VibeScroll"}
-                <ExternalLink size={15} aria-hidden="true" />
-              </button>
-            </>
-          ) : (
-            profileId &&
-            !error && (
-              <>
-                <form className="compact-save" onSubmit={saveLink}>
-                  <label className="sr-only" htmlFor="compact-url">
-                    Post link
-                  </label>
-                  <input
-                    id="compact-url"
-                    type="url"
-                    required
-                    maxLength={2048}
-                    placeholder="Paste a Reel or TikTok link"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    disabled={busy}
-                  />
-                  <button
-                    type="submit"
-                    disabled={busy || !url.trim()}
-                    aria-label="Save link"
-                  >
-                    <Plus size={20} aria-hidden="true" />
+                  </aside>
+                )}
+              </div>
+              {!full && (
+                <div className="inline-primary-actions">
+                  <button className="button" onClick={() => void expand()}>
+                    {source.insights.length
+                      ? "View insights"
+                      : "Open full view"}
+                    <Maximize2 size={15} />
                   </button>
-                </form>
-                <h1>Recent posts</h1>
-                <div className="compact-recent">
-                  {rows.map((row) => (
-                    <button
-                      key={row.id}
-                      onClick={() => {
-                        void load(profileId, row.id);
-                      }}
-                    >
-                      <span>
-                        <strong>{row.title}</strong>
-                        <small>
-                          {jobPresentation({ status: row.state }).label}
-                        </small>
-                      </span>
-                      <ArrowRight size={17} aria-hidden="true" />
-                    </button>
-                  ))}
-                </div>
-                {!busy && !rows.length && <p>Save a link to get started.</p>}
-                {cursor && (
-                  <button
-                    className="button"
-                    disabled={busy}
-                    onClick={() => {
-                      void load(profileId, undefined, cursor);
-                    }}
+                  <SettingsPanel
+                    title="Saved source"
+                    triggerLabel="View saved source"
+                    trigger={<span>Source</span>}
                   >
-                    Load more
+                    <p>{source.title}</p>
+                    <button
+                      className="button"
+                      onClick={() => void open(source.url)}
+                    >
+                      Open source evidence
+                      <ExternalLink size={15} />
+                    </button>
+                  </SettingsPanel>
+                </div>
+              )}
+            </>
+          ) : model.catalogPost ? (
+            <CatalogPost
+              post={model.catalogPost}
+              onBack={() =>
+                void model.load(
+                  model.profileId,
+                  undefined,
+                  undefined,
+                  "catalog",
+                )
+              }
+              onFrame={async (id) => {
+                const post = model.catalogPost!;
+                setFrameBusy(true);
+                setFrameError("");
+                try {
+                  const data = await host.readImage("widget_catalog_frame", {
+                    profileId: model.profileId,
+                    familyId: post.family_id,
+                    artifactId: post.artifact_id,
+                    frameId: id,
+                  });
+                  setFrame({
+                    id,
+                    data,
+                    key: `${post.family_id}:${post.artifact_id}`,
+                  });
+                } catch (failed) {
+                  setFrameError(
+                    failed instanceof Error
+                      ? failed.message
+                      : "Frame unavailable.",
+                  );
+                } finally {
+                  setFrameBusy(false);
+                }
+              }}
+              frame={
+                frame?.key ===
+                `${model.catalogPost.family_id}:${model.catalogPost.artifact_id}`
+                  ? frame
+                  : null
+              }
+              frameBusy={frameBusy}
+              frameError={frameError}
+            />
+          ) : (
+            model.profileId && (
+              <>
+                {model.busy && (
+                  <output className="compact-loading">Loading…</output>
+                )}
+                {(view === "save" || !full) && saveForm}
+                {((view !== "explore" && view !== "save") || !full) && (
+                  <>
+                    <h1>
+                      {model.kind === "catalog"
+                        ? "Shared catalog"
+                        : model.kind === "proposals"
+                          ? "Your project plans"
+                          : "Recent posts"}
+                    </h1>
+                    {model.kind === "catalog" && (
+                      <p className="fine">
+                        Browsing retained shared results does not add them to
+                        your saved posts or start analysis.
+                      </p>
+                    )}
+                    <div className="compact-recent">
+                      {model.kind === "sources"
+                        ? model.rows.map((post) => (
+                            <button
+                              key={post.id}
+                              onClick={() => openSource(post)}
+                            >
+                              <span>
+                                <strong>{post.title}</strong>
+                                <small>
+                                  {
+                                    jobPresentation({ status: post.state })
+                                      .label
+                                  }
+                                </small>
+                              </span>
+                              <ArrowRight size={17} />
+                            </button>
+                          ))
+                        : model.records.map((record) => (
+                            <button
+                              key={String(record.id)}
+                              onClick={() =>
+                                model.kind === "catalog"
+                                  ? void model.openCatalog(record)
+                                  : void open(String(record.url))
+                              }
+                            >
+                              <span>
+                                <strong>{String(record.title)}</strong>
+                                <small>
+                                  {model.kind === "catalog"
+                                    ? `${record.insight_count} retained insights`
+                                    : String(record.state)}
+                                </small>
+                              </span>
+                              <ArrowRight size={17} />
+                            </button>
+                          ))}
+                    </div>
+                    {!model.busy &&
+                      !(model.rows.length || model.records.length) && (
+                        <p>
+                          {model.next
+                            ? "No visible records on this page. Continue to inspect the next page."
+                            : model.kind === "catalog"
+                              ? "No eligible catalog posts were returned."
+                              : model.kind === "proposals"
+                                ? "No current plans were returned for your granted projects."
+                                : "No saved posts were returned for this workspace."}
+                        </p>
+                      )}
+                    {model.coverage && <p className="fine">{model.coverage}</p>}
+                    {model.next && (
+                      <button
+                        className="button"
+                        disabled={model.busy}
+                        onClick={() =>
+                          void model.load(
+                            model.profileId,
+                            undefined,
+                            model.next!,
+                            model.kind,
+                          )
+                        }
+                      >
+                        Load more
+                      </button>
+                    )}
+                  </>
+                )}
+                {full && view === "home" && (
+                  <button
+                    className="compact-open"
+                    onClick={() => void open(`${webUrl}/library`)}
+                  >
+                    Open Library Tree and Folders
+                    <ExternalLink size={15} />
                   </button>
                 )}
               </>
@@ -539,5 +813,90 @@ export function CompactApp() {
         </>
       )}
     </main>
+  );
+}
+
+function CatalogPost({
+  post,
+  onBack,
+  onFrame,
+  frame,
+  frameBusy,
+  frameError,
+}: {
+  post: ToolRecord;
+  onBack: () => void;
+  onFrame: (id: string) => void;
+  frame: { id: string; data: string } | null;
+  frameBusy: boolean;
+  frameError: string;
+}) {
+  const analysis = post.analysis as ToolRecord | undefined;
+  const parsed = insightSchema.array().safeParse(analysis?.insights ?? []);
+  const insights = parsed.success ? parsed.data : [];
+  const frames = (post.frames ?? []) as ToolRecord[];
+  return (
+    <section>
+      <button className="compact-back" onClick={onBack}>
+        <ArrowLeft size={16} />
+        Catalog
+      </button>
+      <h1>{String(post.title)}</h1>
+      <p className="fine">
+        {String(post.author_name ?? "")} · Shared retained result
+      </p>
+      <PostInsightReader>
+        {insights.map((idea) => (
+          <article className="post-insight-card catalog-insight" key={idea.id}>
+            <h2>{idea.title}</h2>
+            <p>{idea.claim}</p>
+            <SettingsPanel
+              title="Retained insight evidence"
+              triggerLabel={`Evidence for ${idea.title}`}
+            >
+              <ul>
+                {idea.evidence.map((ref, i) => (
+                  <li key={i}>{evidenceLabel(ref)}</li>
+                ))}
+              </ul>
+            </SettingsPanel>
+          </article>
+        ))}
+      </PostInsightReader>
+      <SettingsPanel
+        title="Retained frames"
+        triggerLabel="View retained frames"
+        trigger={<span>Source frames</span>}
+      >
+        <p>Frames belong to this exact retained catalog version.</p>
+        {frames.map((item) => (
+          <button
+            className="button"
+            key={String(item.id)}
+            disabled={frameBusy}
+            onClick={() => onFrame(String(item.id))}
+          >
+            {typeof item.timestampMs === "number"
+              ? evidenceLabel({ startMs: item.timestampMs })
+              : "View frame"}
+          </button>
+        ))}
+        {frameBusy && <output>Loading retained frame…</output>}
+        {frameError && <p role="alert">{frameError}</p>}
+        {frame && (
+          // eslint-disable-next-line next/no-img-element -- The MCP iframe uses authorized in-memory JPEG bytes; Next's image endpoint and website cookies are unavailable.
+          <img
+            className="catalog-frame"
+            src={frame.data}
+            alt="Selected retained evidence frame"
+          />
+        )}
+      </SettingsPanel>
+      <p className="fine">
+        {typeof post.coverage === "string"
+          ? post.coverage
+          : "Current authorized catalog version. No personal save or new analysis."}
+      </p>
+    </section>
   );
 }

@@ -96,6 +96,35 @@ const handoff = "/docs/workflows/handoff";
 const skills = "/docs/mcp/skills";
 
 export const toolGuide: Record<string, ToolGuideEntry> = {
+  get_processing_account: {
+    group: "analysis",
+    skills: ["vibescroll-setup"],
+    funding: "no_ai",
+    purpose:
+      "Read the requesting person's available/held credits and current processing admission.",
+    result:
+      "A minimal self-account summary, allowance renewal and credit/rate/provider reason. No invoice or transaction history.",
+    flow: analyze,
+  },
+  widget_catalog_post: {
+    group: "embedded",
+    skills: ["vibescroll-library"],
+    funding: "no_ai",
+    purpose:
+      "Open an exact permitted catalog version without adding a personal Save.",
+    result:
+      "Current neutral insights and bounded evidence references under the separate catalog entitlement.",
+    flow: skills,
+  },
+  widget_catalog_frame: {
+    group: "embedded",
+    skills: ["vibescroll-library"],
+    funding: "no_ai",
+    purpose: "Read actual bytes for one entitled catalog screenshot.",
+    result:
+      "A native JPEG and verified public dimensions/hash; no storage key or signed URL.",
+    flow: skills,
+  },
   get_profile: {
     group: "connect",
     skills: ["vibescroll-setup", "vibescroll-project-review"],

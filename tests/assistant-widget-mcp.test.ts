@@ -209,3 +209,97 @@ it("renders ordinary fetched results as inline cards without changing headless c
     sourceId: "source-id~2",
   });
 });
+
+it("returns scoped personal processing credits without granting knowledge-only clients financial access", async () => {
+  const account = {
+    version: "processing-account-v1",
+    availableCredits: 332,
+    reservedCredits: 0,
+    expiredReservedCredits: 10,
+    observedAt: 100,
+    nextExpiry: 200,
+    allowanceKind: "admin",
+    monthlyAllowance: 300,
+    nextRenewal: 300,
+    processing: {
+      allowed: true,
+      reason: null,
+      message: null,
+      dimension: null,
+      retryAt: null,
+      limit: null,
+      used: null,
+    },
+    reviewUrl: "https://scroll.companynerve.com/app/personal/usage",
+  };
+  invoke.mockClear();
+  const denied = await packet(
+    await call(
+      "tools/call",
+      { name: "get_processing_account", arguments: {} },
+      ["knowledge:read"],
+    ),
+  );
+  expect(denied.result?.structuredContent).toBeUndefined();
+  expect(invoke).not.toHaveBeenCalled();
+  invoke.mockResolvedValueOnce({ ok: true, status: 200, value: account });
+  const allowed = await packet(
+    await call(
+      "tools/call",
+      { name: "get_processing_account", arguments: {} },
+      ["analysis:request"],
+    ),
+  );
+  expect(allowed.result.structuredContent).toEqual(account);
+  expect(invoke).toHaveBeenCalledWith("get_processing_account", {});
+});
+
+it("delivers a catalog frame as one native JPEG with safe identities instead of a storage URL", async () => {
+  invoke.mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    value: {
+      mimeType: "image/jpeg",
+      data: "c3ludGhldGlj",
+      familyId: "family",
+      artifactId: "artifact",
+      frameId: "frame",
+      sha256: "a".repeat(64),
+      size: 10,
+      width: 540,
+      height: 960,
+    },
+  });
+  const result = await packet(
+    await call(
+      "tools/call",
+      {
+        name: "widget_catalog_frame",
+        arguments: {
+          profileId: "personal",
+          familyId: "family",
+          artifactId: "artifact",
+          frameId: "frame",
+        },
+      },
+      ["knowledge:read"],
+    ),
+  );
+  expect(result.error).toBeUndefined();
+  expect(result.result.content[1]).toEqual({
+    type: "image",
+    mimeType: "image/jpeg",
+    data: "c3ludGhldGlj",
+  });
+  expect(JSON.parse(result.result.content[0].text)).toMatchObject({
+    familyId: "family",
+    artifactId: "artifact",
+    frameId: "frame",
+  });
+  expect(result.result.structuredContent).toBeUndefined();
+  const listed = await packet(await call("tools/list", {}, ["knowledge:read"]));
+  const frame = listed.result.tools.find(
+    (t: { name: string }) => t.name === "widget_catalog_frame",
+  );
+  expect(frame._meta.ui.visibility).toEqual(["app"]);
+});

@@ -1,23 +1,56 @@
 import { internalQuery } from "./_generated/server";
+import { internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
 import type { QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
-import { selectedProfile, sourceFor } from "./assistant";
+import { sourceFor } from "./assistant";
 import { postDisplayTitle } from "../packages/sources/display";
-import { assistantGrant, assistantPrincipal } from "./lib/assistantPrincipal";
-import { workspaceReadable } from "./lib/workspacePrivacy";
-import { assistantGrantActive } from "../packages/policy/assistant";
+import { assistantGrant } from "./lib/assistantPrincipal";
 import { assistantProject } from "./lib/assistantProject";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
 import { draftCurrent } from "./issues";
 import { ensure } from "../packages/policy";
 import { automaticAnalysisEnabled } from "./lib/workCloudSave";
-import { teamSubscriptionCurrent } from "./lib/accountSubscription";
+import {
+  widgetAccess,
+  widgetDiscovery,
+  widgetWorkspaceKind,
+} from "./lib/assistantWidgetSelection";
+import { fullCatalogEntitled } from "./lib/fullCatalogAccess";
+import { catalogConfiguration } from "./lib/cloudCatalog";
+import {
+  catalogMetadataPage,
+  catalogPostDetail,
+  catalogFrameLocation,
+} from "./lib/catalogBrowse";
 
 const profile = { profileId: v.optional(v.id("organizations")) };
 const url = (org: string, suffix = "") =>
   `https://scroll.companynerve.com/app/${org}${suffix}`;
 type Authorized = Awaited<ReturnType<typeof assistantGrant>>;
+
+async function catalogStatus(ctx: QueryCtx, a: Authorized) {
+  const scope = a.grant.libraryScope === "all";
+  const entitled = scope && (await fullCatalogEntitled(ctx, a.actor));
+  const enabled = entitled && a.actor.fullCatalogEnabled === true;
+  const available = scope && !!catalogConfiguration();
+  return {
+    entitled,
+    enabled,
+    available,
+    allowed: enabled && available,
+    source: entitled ? a.actor.fullCatalogGrant!.source : null,
+    review_url: url(a.organization._id, "/privacy"),
+  };
+}
+
+function requireCatalogScope(a: Authorized) {
+  ensure(
+    a.grant.libraryScope === "all",
+    "FORBIDDEN",
+    "Catalog browsing requires the reviewed full-library knowledge scope.",
+  );
+}
 
 function cursorFor(a: Authorized, kind: string, cursor: string | null) {
   return cursor
@@ -124,51 +157,27 @@ async function authorizedDraft(
 }
 
 export const profiles = internalQuery({
-  args: {},
+  args: profile,
   returns: v.any(),
-  handler: async (ctx) => {
-    const p = await assistantPrincipal(ctx, "knowledge:read");
-    const grants = await ctx.db
-      .query("assistantGrants")
-      .withIndex("by_actor_client", (q) =>
-        q.eq("actor", p.actor._id).eq("clientId", p.client.id),
-      )
-      .take(51);
-    const profiles = [];
-    for (const grant of grants.slice(0, 50)) {
-      if (
-        !assistantGrantActive(grant) ||
-        !grant.scopes.includes("knowledge:read")
-      )
-        continue;
-      const org = await ctx.db.get(grant.organizationId);
-      const member = await ctx.db
-        .query("memberships")
-        .withIndex("by_pair", (q) =>
-          q
-            .eq("organizationId", grant.organizationId)
-            .eq("userId", p.actor._id),
-        )
-        .unique();
-      if (
-        org &&
-        member &&
-        workspaceReadable(org, p.actor._id) &&
-        (await teamSubscriptionCurrent(ctx, p.actor, org))
-      )
-        profiles.push({
-          profile_id: org._id,
-          name: org.name.slice(0, 200),
-          grant_version: grant.version,
-          expires_at: grant.expiresAt,
-          projects: [],
-        });
-    }
+  handler: async (ctx, args) => {
+    ctx = knowledgeReadContext(ctx);
+    const discovery = await widgetDiscovery(ctx, args.profileId);
     return {
-      profiles,
-      truncated: grants.length > 50,
+      profiles: discovery.available.map((a) => ({
+        profile_id: a.organization._id,
+        name: a.organization.name.slice(0, 200),
+        grant_version: a.grant.version,
+        expires_at: a.grant.expiresAt,
+        projects: [],
+        kind: widgetWorkspaceKind(a),
+        is_default: a.actor.defaultWorkspaceId === a.organization._id,
+        selected: discovery.selected?.organization._id === a.organization._id,
+      })),
+      selected_profile_id: discovery.selected?.organization._id ?? null,
+      selection_reason: discovery.reason,
+      truncated: discovery.truncated,
       coverage:
-        "Up to fifty current knowledge-readable workspace grants. No project context or source content is disclosed by discovery.",
+        "Up to fifty current knowledge-readable workspace grants. Service workspaces are omitted. Explicit selection, a current saved default, or an eligible personal workspace takes precedence. No project context or source content is disclosed.",
     };
   },
 });
@@ -177,11 +186,7 @@ export const state = internalQuery({
   args: profile,
   returns: v.any(),
   handler: async (ctx, args) => {
-    const a = await assistantGrant(
-      ctx,
-      await selectedProfile(ctx, args.profileId, "knowledge:read"),
-      "knowledge:read",
-    );
+    const { a, reason } = await widgetAccess(ctx, args.profileId);
     const allowed = (scope: string) =>
       a.scopes.includes(scope) &&
       a.client.scopes.includes(scope as never) &&
@@ -195,9 +200,15 @@ export const state = internalQuery({
             )
             .unique()
         : null;
+    const catalog = await catalogStatus(ctx, a);
     return {
       schema_version: "vibescroll-widget-v1",
       profile_id: a.organization._id,
+      selected_profile_id: a.organization._id,
+      selection_reason: reason,
+      kind: widgetWorkspaceKind(a),
+      is_default: a.actor.defaultWorkspaceId === a.organization._id,
+      catalog,
       name: a.organization.name.slice(0, 200),
       role: a.membership.role,
       grant_version: a.grant.version,
@@ -213,6 +224,7 @@ export const state = internalQuery({
       processing_route:
         setup?.actor === a.actor._id ? (setup.processingRoute ?? null) : null,
       actions: {
+        catalog: catalog.allowed,
         jobs: allowed("jobs:read"),
         context: allowed("context:read"),
         save: a.membership.role !== "viewer" && allowed("links:save"),
@@ -248,6 +260,7 @@ export const browse = internalQuery({
     ...profile,
     kind: v.union(
       v.literal("sources"),
+      v.literal("catalog"),
       v.literal("topics"),
       v.literal("jobs"),
       v.literal("proposals"),
@@ -259,15 +272,58 @@ export const browse = internalQuery({
   returns: v.any(),
   handler: async (ctx, args) => {
     ctx = knowledgeReadContext(ctx);
-    const a = await assistantGrant(
-      ctx,
-      await selectedProfile(ctx, args.profileId, "knowledge:read"),
-      "knowledge:read",
-    );
+    const { a } = await widgetAccess(ctx, args.profileId);
     const base = {
       profile_id: a.organization._id,
       grant_version: a.grant.version,
     };
+    ensure(
+      args.offset === undefined ||
+        (Number.isSafeInteger(args.offset) &&
+          args.offset >= 0 &&
+          args.offset < 50),
+      "INVALID_INPUT",
+      "Invalid page.",
+    );
+    const sourceOffsets =
+      !a.grant.libraryScope && ["sources", "jobs"].includes(args.kind);
+    ensure(
+      sourceOffsets || !args.offset,
+      "INVALID_INPUT",
+      "This collection uses cursors, not source offsets.",
+    );
+    if (args.kind === "catalog") {
+      requireCatalogScope(a);
+      const page = await catalogMetadataPage(
+        ctx,
+        a.organization._id,
+        readCursor(a, "catalog", args.cursor),
+        10,
+      );
+      return {
+        ...base,
+        items: page.items.map((item) => ({
+          id: item.familyId,
+          family_id: item.familyId,
+          artifact_id: item.artifactId,
+          version_id: item.versionId,
+          kind: "catalog",
+          state: "ready",
+          canonical: item.canonical,
+          title: item.title,
+          author_name: item.authorName,
+          duration_seconds: item.durationSeconds,
+          insight_count: item.insightCount,
+          updated_at: item.updatedAt,
+          thumbnail_reference: item.thumbnailReference,
+          url: url(a.organization._id, "/explore"),
+        })),
+        next_cursor: cursorFor(a, "catalog", page.next),
+        next_offset: null,
+        coverage:
+          "Up to ten canonical catalog candidates per page. Only metadata for current selected versions is returned; unavailable candidates are omitted within this page. Browsing saves no personal post and starts no processing. Continue only when you choose to load more.",
+      };
+    }
     if (args.kind === "jobs")
       await assistantGrant(ctx, a.organization._id, "jobs:read");
     if (args.kind === "usage")
@@ -464,8 +520,87 @@ export const browse = internalQuery({
       items,
       next_cursor: next,
       next_offset: nextOffset,
+      coverage: sourceOffsets
+        ? "Up to five explicit source references per page. Hidden and stale references are omitted within this slice. Continue with next_offset; no complete-library coverage is implied."
+        : "Up to five saved-source candidates per page. Hidden and stale candidates are omitted within this page. Continue with next_cursor only when you choose to load more. This list does not browse the shared catalog.",
+    };
+  },
+});
+
+export const catalogPost = internalQuery({
+  args: {
+    ...profile,
+    familyId: v.id("catalogFamilies"),
+    artifactId: v.optional(v.id("publicArtifacts")),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    ctx = knowledgeReadContext(ctx);
+    const { a } = await widgetAccess(ctx, args.profileId);
+    requireCatalogScope(a);
+    const post = await catalogPostDetail(
+      ctx,
+      a.organization._id,
+      args.familyId,
+      args.artifactId,
+    );
+    return {
+      profile_id: a.organization._id,
+      grant_version: a.grant.version,
+      family_id: post.familyId,
+      artifact_id: post.artifactId,
+      version_id: post.versionId,
+      canonical: post.canonical,
+      title: post.title,
+      author_name: post.authorName,
+      analysis: post.analysis,
+      transcript: post.transcript,
+      provenance: post.provenance,
+      frames: post.frames,
       coverage:
-        "Up to five permitted sources per page. Hidden and stale records are omitted. Continue only when you choose to load more.",
+        "The current selected catalog version and its retained evidence. No personal association, analysis, credit charge or publication is created by this read.",
+    };
+  },
+});
+
+// This private locator must stay inside the server-side image handler. Using a
+// mutation rechecks current grant/entitlement/time for every byte disclosure.
+export const catalogFrame = internalMutation({
+  args: {
+    ...profile,
+    familyId: v.id("catalogFamilies"),
+    artifactId: v.id("publicArtifacts"),
+    frameId: v.string(),
+  },
+  returns: v.object({
+    key: v.string(),
+    size: v.number(),
+    sha256: v.string(),
+    width: v.number(),
+    height: v.number(),
+    profileId: v.id("organizations"),
+    grantId: v.id("assistantGrants"),
+    grantVersion: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const { a } = await widgetAccess(ctx, args.profileId);
+    requireCatalogScope(a);
+    ensure(
+      args.frameId.length > 0 && args.frameId.length <= 200,
+      "INVALID_INPUT",
+      "Invalid screenshot reference.",
+    );
+    const location = await catalogFrameLocation(ctx, {
+      organizationId: a.organization._id,
+      familyId: args.familyId,
+      artifactId: args.artifactId,
+      frameId: args.frameId,
+    });
+    return {
+      ...location,
+      profileId: a.organization._id,
+      grantId: a.grant._id,
+      grantVersion: a.grant.version,
     };
   },
 });
@@ -479,11 +614,7 @@ export const topic = internalQuery({
   returns: v.any(),
   handler: async (ctx, args) => {
     ctx = knowledgeReadContext(ctx);
-    const a = await assistantGrant(
-      ctx,
-      await selectedProfile(ctx, args.profileId, "knowledge:read"),
-      "knowledge:read",
-    );
+    const { a } = await widgetAccess(ctx, args.profileId);
     ensure(
       a.grant.libraryScope === "all",
       "FORBIDDEN",
@@ -543,11 +674,7 @@ export const proposal = internalQuery({
   args: { ...profile, proposalId: v.id("issueDrafts") },
   returns: v.any(),
   handler: async (ctx, args) => {
-    const a = await assistantGrant(
-      ctx,
-      await selectedProfile(ctx, args.profileId, "knowledge:read"),
-      "knowledge:read",
-    );
+    const { a } = await widgetAccess(ctx, args.profileId);
     const draft = await authorizedDraft(ctx, a, args.proposalId);
     return {
       id: draft._id,

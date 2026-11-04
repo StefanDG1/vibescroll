@@ -1135,6 +1135,167 @@
       "securitySchemes": [{ "type": "oauth2", "scopes": ["jobs:read"] }]
     },
     {
+      "name": "get_processing_account",
+      "description": "Read your own available, reserved and expired-held credits, monthly allowance and current processing limit. No invoices, transactions, team-owner balance, grant or charge. Use this to explain an analysis admission failure; ready cached reads remain free.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "profileId": { "type": "string", "minLength": 1, "maxLength": 100 }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "version": { "type": "string", "const": "processing-account-v1" },
+          "availableCredits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "reservedCredits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expiredReservedCredits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "observedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "nextExpiry": {
+            "anyOf": [
+              { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+              { "type": "null" }
+            ]
+          },
+          "allowanceKind": {
+            "type": "string",
+            "enum": ["admin", "paid", "legacy"]
+          },
+          "monthlyAllowance": {
+            "anyOf": [
+              { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+              { "type": "null" }
+            ]
+          },
+          "nextRenewal": {
+            "anyOf": [
+              { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+              { "type": "null" }
+            ]
+          },
+          "processing": {
+            "type": "object",
+            "properties": {
+              "allowed": { "type": "boolean" },
+              "reason": {
+                "anyOf": [
+                  { "type": "string", "maxLength": 100 },
+                  { "type": "null" }
+                ]
+              },
+              "message": {
+                "anyOf": [
+                  { "type": "string", "maxLength": 300 },
+                  { "type": "null" }
+                ]
+              },
+              "dimension": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "hour",
+                      "day",
+                      "pilot",
+                      "credits",
+                      "provider",
+                      "setup"
+                    ]
+                  },
+                  { "type": "null" }
+                ]
+              },
+              "retryAt": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  { "type": "null" }
+                ]
+              },
+              "limit": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  { "type": "null" }
+                ]
+              },
+              "used": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  { "type": "null" }
+                ]
+              }
+            },
+            "required": [
+              "allowed",
+              "reason",
+              "message",
+              "dimension",
+              "retryAt",
+              "limit",
+              "used"
+            ],
+            "additionalProperties": false
+          },
+          "reviewUrl": {
+            "type": "string",
+            "format": "starts_with",
+            "pattern": "^https:\\/\\/scroll\\.companynerve\\.com\\/app\\/.*"
+          }
+        },
+        "required": [
+          "version",
+          "availableCredits",
+          "reservedCredits",
+          "expiredReservedCredits",
+          "observedAt",
+          "nextExpiry",
+          "allowanceKind",
+          "monthlyAllowance",
+          "nextRenewal",
+          "processing",
+          "reviewUrl"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "securitySchemes": [{ "type": "oauth2", "scopes": ["analysis:request"] }]
+    },
+    {
       "name": "get_profile",
       "description": "Discover currently granted workspaces and projects. Prefer detail=summary to choose a project without loading full profiles or evaluations; use get_project_application_context for one exact post/project. Omit detail for compatible full selected-profile context. Stable IDs survive reconnect. No general chat history or repository code.",
       "inputSchema": {
@@ -2638,14 +2799,17 @@
               "setup",
               "account",
               "usage",
-              "export"
+              "export",
+              "catalog",
+              "search"
             ]
           },
           "profileId": { "type": "string", "minLength": 1, "maxLength": 300 },
           "sourceId": { "type": "string", "minLength": 1, "maxLength": 300 },
           "insightId": { "type": "string", "minLength": 1, "maxLength": 300 },
           "projectId": { "type": "string", "minLength": 1, "maxLength": 300 },
-          "proposalId": { "type": "string", "minLength": 1, "maxLength": 300 }
+          "proposalId": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "query": { "type": "string", "maxLength": 500 }
         },
         "additionalProperties": false
       },
@@ -4708,6 +4872,167 @@
             "format": "starts_with",
             "pattern": "^https:\\/\\/scroll\\.companynerve\\.com\\/app\\/.*"
           },
+          "account": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string",
+                    "const": "processing-account-v1"
+                  },
+                  "availableCredits": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "reservedCredits": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "expiredReservedCredits": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "observedAt": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "nextExpiry": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      { "type": "null" }
+                    ]
+                  },
+                  "allowanceKind": {
+                    "type": "string",
+                    "enum": ["admin", "paid", "legacy"]
+                  },
+                  "monthlyAllowance": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      { "type": "null" }
+                    ]
+                  },
+                  "nextRenewal": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      { "type": "null" }
+                    ]
+                  },
+                  "processing": {
+                    "type": "object",
+                    "properties": {
+                      "allowed": { "type": "boolean" },
+                      "reason": {
+                        "anyOf": [
+                          { "type": "string", "maxLength": 100 },
+                          { "type": "null" }
+                        ]
+                      },
+                      "message": {
+                        "anyOf": [
+                          { "type": "string", "maxLength": 300 },
+                          { "type": "null" }
+                        ]
+                      },
+                      "dimension": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "hour",
+                              "day",
+                              "pilot",
+                              "credits",
+                              "provider",
+                              "setup"
+                            ]
+                          },
+                          { "type": "null" }
+                        ]
+                      },
+                      "retryAt": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          { "type": "null" }
+                        ]
+                      },
+                      "limit": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          { "type": "null" }
+                        ]
+                      },
+                      "used": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          { "type": "null" }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "allowed",
+                      "reason",
+                      "message",
+                      "dimension",
+                      "retryAt",
+                      "limit",
+                      "used"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewUrl": {
+                    "type": "string",
+                    "format": "starts_with",
+                    "pattern": "^https:\\/\\/scroll\\.companynerve\\.com\\/app\\/.*"
+                  }
+                },
+                "required": [
+                  "version",
+                  "availableCredits",
+                  "reservedCredits",
+                  "expiredReservedCredits",
+                  "observedAt",
+                  "nextExpiry",
+                  "allowanceKind",
+                  "monthlyAllowance",
+                  "nextRenewal",
+                  "processing",
+                  "reviewUrl"
+                ],
+                "additionalProperties": false
+              },
+              { "type": "null" }
+            ]
+          },
           "next_action": {
             "type": "object",
             "properties": {
@@ -4776,7 +5101,14 @@
           "kind": {
             "default": "sources",
             "type": "string",
-            "enum": ["sources", "topics", "jobs", "proposals", "usage"]
+            "enum": [
+              "sources",
+              "topics",
+              "jobs",
+              "proposals",
+              "usage",
+              "catalog"
+            ]
           }
         },
         "additionalProperties": false
@@ -5024,6 +5356,81 @@
                     "url"
                   ],
                   "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "family_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "artifact_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "version_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "kind": { "type": "string", "const": "catalog" },
+                    "state": { "type": "string", "const": "ready" },
+                    "canonical": {
+                      "type": "string",
+                      "maxLength": 2048,
+                      "format": "uri"
+                    },
+                    "title": { "type": "string", "maxLength": 200 },
+                    "author_name": {
+                      "anyOf": [
+                        { "type": "string", "maxLength": 200 },
+                        { "type": "null" }
+                      ]
+                    },
+                    "duration_seconds": {
+                      "anyOf": [
+                        { "type": "number", "minimum": 0 },
+                        { "type": "null" }
+                      ]
+                    },
+                    "insight_count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "updated_at": { "type": "number" },
+                    "thumbnail_reference": {
+                      "anyOf": [
+                        { "type": "string", "maxLength": 1000 },
+                        { "type": "null" }
+                      ]
+                    },
+                    "url": { "type": "string", "maxLength": 2048 }
+                  },
+                  "required": [
+                    "id",
+                    "family_id",
+                    "artifact_id",
+                    "version_id",
+                    "kind",
+                    "state",
+                    "canonical",
+                    "title",
+                    "author_name",
+                    "duration_seconds",
+                    "insight_count",
+                    "updated_at",
+                    "thumbnail_reference",
+                    "url"
+                  ],
+                  "additionalProperties": false
                 }
               ]
             }
@@ -5055,12 +5462,313 @@
       "securitySchemes": [{ "type": "oauth2", "scopes": ["knowledge:read"] }]
     },
     {
+      "name": "widget_catalog_frame",
+      "description": "Read one actual entitled catalog JPEG with current byte and access checks.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "profileId": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "familyId": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "artifactId": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "frameId": { "type": "string", "minLength": 1, "maxLength": 100 }
+        },
+        "required": ["familyId", "artifactId", "frameId"],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "securitySchemes": [{ "type": "oauth2", "scopes": ["knowledge:read"] }]
+    },
+    {
+      "name": "widget_catalog_post",
+      "description": "Read an exact currently entitled catalog result without saving it to your library.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "profileId": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "familyId": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "artifactId": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
+        "required": ["familyId"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "profile_id": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "grant_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "family_id": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "artifact_id": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "version_id": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "canonical": { "type": "string", "maxLength": 2048, "format": "uri" },
+          "title": { "type": "string", "maxLength": 200 },
+          "author_name": {
+            "anyOf": [
+              { "type": "string", "maxLength": 200 },
+              { "type": "null" }
+            ]
+          },
+          "analysis": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string",
+                "const": "neutral-cloud-analysis-v1"
+              },
+              "evidenceHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "sourceRevisionHash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "summary": { "type": "string", "maxLength": 1500 },
+              "warnings": {
+                "maxItems": 20,
+                "type": "array",
+                "items": { "type": "string", "maxLength": 500 }
+              },
+              "insights": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9_-]{1,100}$"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": ["idea", "lesson", "summary"]
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 160
+                    },
+                    "claim": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000
+                    },
+                    "interpretation": { "type": "string", "maxLength": 2000 },
+                    "categories": {
+                      "maxItems": 5,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "coding",
+                          "ai",
+                          "video_editing",
+                          "sales",
+                          "business_operations",
+                          "marketing",
+                          "product_design",
+                          "general_advice",
+                          "other"
+                        ]
+                      }
+                    },
+                    "topics": {
+                      "maxItems": 4,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 48
+                      }
+                    },
+                    "evidence": {
+                      "minItems": 1,
+                      "maxItems": 30,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["image_observation", "video_observation"]
+                          },
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9_-]{1,100}$"
+                          },
+                          "startMs": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 600000
+                              },
+                              { "type": "null" }
+                            ]
+                          },
+                          "endMs": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 600000
+                              },
+                              { "type": "null" }
+                            ]
+                          }
+                        },
+                        "required": ["kind", "id", "startMs", "endMs"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "confidence": {
+                      "type": "string",
+                      "enum": ["supported", "uncertain", "unsupported"]
+                    },
+                    "verificationNeeds": {
+                      "maxItems": 10,
+                      "type": "array",
+                      "items": { "type": "string", "maxLength": 500 }
+                    },
+                    "icon": {
+                      "type": "string",
+                      "enum": [
+                        "lightbulb",
+                        "compass",
+                        "checklist",
+                        "code",
+                        "chart",
+                        "megaphone",
+                        "users",
+                        "palette",
+                        "shield",
+                        "workflow",
+                        "book",
+                        "heart",
+                        "wrench"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "title",
+                    "claim",
+                    "interpretation",
+                    "categories",
+                    "evidence",
+                    "confidence",
+                    "verificationNeeds"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "version",
+              "evidenceHash",
+              "sourceRevisionHash",
+              "summary",
+              "warnings",
+              "insights"
+            ],
+            "additionalProperties": false
+          },
+          "transcript": {
+            "maxItems": 240,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+                "startMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "endMs": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "text": { "type": "string", "maxLength": 6000 },
+                "textHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+              },
+              "required": ["id", "startMs", "endMs", "text", "textHash"],
+              "additionalProperties": false
+            }
+          },
+          "provenance": { "type": "string", "maxLength": 100 },
+          "frames": {
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+                "timestampMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "width": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 4096
+                },
+                "height": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 4096
+                },
+                "reference": { "type": "string", "maxLength": 1000 }
+              },
+              "required": ["id", "timestampMs", "width", "height", "reference"],
+              "additionalProperties": false
+            }
+          },
+          "coverage": { "type": "string", "maxLength": 1000 }
+        },
+        "required": [
+          "profile_id",
+          "grant_version",
+          "family_id",
+          "artifact_id",
+          "version_id",
+          "canonical",
+          "title",
+          "author_name",
+          "analysis",
+          "transcript",
+          "provenance",
+          "frames",
+          "coverage"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "securitySchemes": [{ "type": "oauth2", "scopes": ["knowledge:read"] }]
+    },
+    {
       "name": "widget_profiles",
       "description": "Discover current knowledge-readable workspace grants without disclosing selected project context.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "properties": {},
+        "properties": { "profileId": { "type": "string", "maxLength": 300 } },
         "additionalProperties": false
       },
       "outputSchema": {
@@ -5090,7 +5798,10 @@
                   "maxItems": 0,
                   "type": "array",
                   "items": { "not": {} }
-                }
+                },
+                "kind": { "type": "string", "enum": ["personal", "team"] },
+                "is_default": { "type": "boolean" },
+                "selected": { "type": "boolean" }
               },
               "required": [
                 "profile_id",
@@ -5103,6 +5814,22 @@
             }
           },
           "truncated": { "type": "boolean" },
+          "selected_profile_id": {
+            "anyOf": [
+              { "type": "string", "minLength": 1, "maxLength": 300 },
+              { "type": "null" }
+            ]
+          },
+          "selection_reason": {
+            "type": "string",
+            "enum": [
+              "explicit",
+              "saved_default",
+              "personal",
+              "sole",
+              "required"
+            ]
+          },
           "coverage": { "type": "string", "maxLength": 1000 }
         },
         "required": ["profiles", "truncated", "coverage"],
@@ -5235,6 +5962,49 @@
             "minimum": 0,
             "maximum": 9007199254740991
           },
+          "selected_profile_id": {
+            "anyOf": [
+              { "type": "string", "minLength": 1, "maxLength": 300 },
+              { "type": "null" }
+            ]
+          },
+          "selection_reason": {
+            "type": "string",
+            "enum": [
+              "explicit",
+              "saved_default",
+              "personal",
+              "sole",
+              "required"
+            ]
+          },
+          "kind": { "type": "string", "enum": ["personal", "team"] },
+          "is_default": { "type": "boolean" },
+          "catalog": {
+            "type": "object",
+            "properties": {
+              "entitled": { "type": "boolean" },
+              "enabled": { "type": "boolean" },
+              "available": { "type": "boolean" },
+              "allowed": { "type": "boolean" },
+              "source": {
+                "anyOf": [
+                  { "type": "string", "enum": ["operator", "billing_addon"] },
+                  { "type": "null" }
+                ]
+              },
+              "review_url": { "type": "string", "maxLength": 2048 }
+            },
+            "required": [
+              "entitled",
+              "enabled",
+              "available",
+              "allowed",
+              "source",
+              "review_url"
+            ],
+            "additionalProperties": false
+          },
           "name": { "type": "string", "maxLength": 200 },
           "role": {
             "type": "string",
@@ -5261,6 +6031,7 @@
           "actions": {
             "type": "object",
             "properties": {
+              "catalog": { "type": "boolean" },
               "jobs": { "type": "boolean" },
               "context": { "type": "boolean" },
               "save": { "type": "boolean" },

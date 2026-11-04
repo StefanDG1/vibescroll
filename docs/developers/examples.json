@@ -303,6 +303,7 @@
       "truncated": false
     },
     "preparedStatus": {
+      "account": null,
       "billingState": "not_applicable",
       "catalogStatus": null,
       "chargedCredits": null,

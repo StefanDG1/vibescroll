@@ -217,3 +217,11 @@ Production acceptance begins with reads and zero-work cached posts. It proves cu
 ## Outside this change
 
 Semantic embeddings, a local runner, unsupported hosted ChatGPT-login inference, community/model rankings, mascot, Stripe offer redesign and a new website visual redesign remain in their existing later plans. Preserve the approved visual references. This work makes the existing useful flows consistent and observable.
+
+## November5 execution checkpoint
+
+R155 approves implementation and the Connected prototype. The first local checkpoint adds an exact-account 300-credit UTC-month grant with idempotent renewal, 20/hour and 100/day admin processing limits, unchanged legacy pilot history and monetary admission. No Stripe subscription or tier is fabricated. Existing pools and expired unknown reservations remain intact.
+
+Known admission refusal runs in a nested Convex mutation. Its credit writes roll back while the parent retains the saved link and a safe blocked receipt. Unexpected or unknown dispatch failures still stop without an automatic retry. A minimal processing-account tool and optional Save/status account receipts use current analysis permission and expose no invoices or team-owner balance.
+
+Knowledge-only widget bootstrap selects the current app default without reading project context, excludes service workspaces, and exposes separately entitled catalog metadata, selected post context and native verified frames. Connected discovery uses actual returned source/insight references. Local checks, publication and actual host acceptance are recorded separately. No release has occurred at this checkpoint.

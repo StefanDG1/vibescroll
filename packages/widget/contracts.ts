@@ -20,6 +20,8 @@ export const widgetViews = [
   "account",
   "usage",
   "export",
+  "catalog",
+  "search",
 ] as const;
 export const widgetRoute = z
   .object({
@@ -29,6 +31,7 @@ export const widgetRoute = z
     insightId: id.optional(),
     projectId: id.optional(),
     proposalId: id.optional(),
+    query: z.string().max(500).optional(),
   })
   .strict();
 export type WidgetRoute = z.infer<typeof widgetRoute>;
@@ -38,6 +41,13 @@ export function inlineCardRoute(
   operation: string,
   value: Record<string, unknown>,
 ): WidgetRoute | null {
+  if (operation === "search") {
+    const parsed = widgetRoute.safeParse({
+      view: "search",
+      profileId: value.profile_id,
+    });
+    return parsed.success ? parsed.data : null;
+  }
   if (operation !== "fetch" && operation !== "save_link") return null;
   const parsed = widgetRoute.safeParse({
     view: operation === "fetch" ? "insight" : "save",
@@ -53,10 +63,21 @@ export const widgetBrowseInput = z
     cursor: z.string().max(4096).nullable().optional(),
     offset: z.number().int().min(0).max(49).optional(),
     kind: z
-      .enum(["sources", "topics", "jobs", "proposals", "usage"])
+      .enum(["sources", "topics", "jobs", "proposals", "usage", "catalog"])
       .default("sources"),
   })
   .strict();
+export const widgetCatalogPostInput = z.strictObject({
+  profileId: id.optional(),
+  familyId: id,
+  artifactId: id.optional(),
+});
+export const widgetCatalogFrameInput = z.strictObject({
+  profileId: id.optional(),
+  familyId: id,
+  artifactId: id,
+  frameId: z.string().min(1).max(100),
+});
 export const widgetTopicInput = z
   .object({
     profileId: id.optional(),

@@ -1,10 +1,17 @@
 import { afterEach, expect, it, vi } from "vitest";
+import { makeFunctionReference } from "convex/server";
 import { api, internal } from "../convex/_generated/api";
 import { cloudCatalogFixture } from "./cloud-catalog-fixture";
+import { widgetOutputs } from "../packages/widget/outputs";
+
+const readCatalogFrame = makeFunctionReference<"action">(
+  "widgetCatalogFrames:read",
+);
 
 vi.mock("../packages/providers/storage", () => ({
   signedObject: (key: string) =>
     `https://storage.example.test/${encodeURIComponent(key)}`,
+  deleteObject: vi.fn(async () => {}),
 }));
 afterEach(() => {
   vi.clearAllTimers();
@@ -225,3 +232,335 @@ it("honors toggle-off and withdrawal on detail and frame access", async () => {
     f.owner.mutation(api.catalogBrowse.frame, binding),
   ).rejects.toThrow();
 });
+
+it("lets a knowledge-only widget read canonical catalog metadata, a selected post and its exact evidence without saving it", async () => {
+  const f = await published();
+  const widget = f.t.withIdentity({
+    subject: "user_01234567890123456789012345",
+    issuer: "https://fixture.authkit.app",
+    client_id: "client_01234567890123456789012345",
+    scope: "knowledge:read",
+    sid: "app_consent_01234567890123456789012345",
+  });
+  await f.t.mutation(internal.catalogAccess.grantOperatorAccess, {
+    subject: "user_01234567890123456789012345",
+    enabled: true,
+    reason: "Explicit widget catalog test",
+  });
+  const snapshot = () =>
+    f.t.run(async (ctx) => ({
+      sources: await ctx.db.query("sources").take(100),
+      imports: await ctx.db.query("publicImports").take(100),
+      reservations: await ctx.db.query("reservations").take(100),
+      jobs: await ctx.db.query("mediaPreparations").take(100),
+      wallets: await ctx.db.query("wallets").take(100),
+    }));
+  const before = await snapshot();
+  const state = await widget.query(internal.assistantWidget.state, {
+    profileId: f.org,
+  });
+  expect(state.actions).toMatchObject({
+    catalog: true,
+    context: false,
+    save: false,
+  });
+  expect(state.catalog).toMatchObject({
+    entitled: true,
+    enabled: true,
+    available: true,
+    allowed: true,
+    source: "operator",
+  });
+  const page = await widget.query(internal.assistantWidget.browse, {
+    profileId: f.org,
+    kind: "catalog",
+  });
+  expect(widgetOutputs.widget_browse.parse(page)).toEqual(page);
+  expect(page.items).toHaveLength(1);
+  expect(page.items[0]).toMatchObject({
+    id: f.familyId,
+    family_id: f.familyId,
+    artifact_id: f.artifact._id,
+    kind: "catalog",
+  });
+  expect(JSON.stringify(page)).not.toContain('"analysis"');
+  expect(JSON.stringify(page)).not.toContain('"transcript"');
+  const binding = {
+    profileId: f.org,
+    familyId: f.familyId,
+    artifactId: f.artifact._id,
+  };
+  const post = await widget.query(
+    internal.assistantWidget.catalogPost,
+    binding,
+  );
+  expect(widgetOutputs.widget_catalog_post.parse(post)).toEqual(post);
+  expect(post.analysis.insights).toHaveLength(f.output.insights.length);
+  expect(post.frames[0].reference).toContain(
+    `catalog-browse~${f.org}~${f.familyId}~${f.artifact._id}~`,
+  );
+  expect(post).not.toHaveProperty("source_id");
+  const frame = await widget.mutation(internal.assistantWidget.catalogFrame, {
+    ...binding,
+    frameId: "frame-1",
+  });
+  expect(frame).toMatchObject({ size: f.bytes.length });
+  expect(await snapshot()).toEqual(before);
+  await f.owner.mutation(api.catalogAccess.setEnabled, { enabled: false });
+  expect(
+    (await widget.query(internal.assistantWidget.state, { profileId: f.org }))
+      .catalog.allowed,
+  ).toBe(false);
+  await expect(
+    widget.query(internal.assistantWidget.catalogPost, binding),
+  ).rejects.toThrow(/Turn on/);
+  await expect(
+    widget.mutation(internal.assistantWidget.catalogFrame, {
+      ...binding,
+      frameId: "frame-1",
+    }),
+  ).rejects.toThrow(/Turn on/);
+  await f.owner.mutation(api.catalogAccess.setEnabled, { enabled: true });
+  await f.t.mutation(internal.catalogAccess.revokeOperatorAccess, {
+    subject: "user_01234567890123456789012345",
+  });
+  await expect(
+    widget.query(internal.assistantWidget.browse, {
+      profileId: f.org,
+      kind: "catalog",
+    }),
+  ).rejects.toThrow(/add-on/);
+  await expect(
+    widget.mutation(internal.assistantWidget.catalogFrame, {
+      ...binding,
+      frameId: "frame-1",
+    }),
+  ).rejects.toThrow(/add-on/);
+});
+
+it("does not widen a source-only grant or base cache entitlement into catalog browsing", async () => {
+  const f = await published();
+  await expect(
+    f.assistant.query(internal.assistantWidget.browse, {
+      profileId: f.org,
+      kind: "catalog",
+    }),
+  ).rejects.toThrow(/add-on/);
+  await f.t.mutation(internal.catalogAccess.grantOperatorAccess, {
+    subject: "user_01234567890123456789012345",
+    enabled: true,
+    reason: "Restricted grant isolation test",
+  });
+  await f.t.run(async (ctx) => {
+    const grant = (await ctx.db
+      .query("assistantGrants")
+      .withIndex("by_org", (q) => q.eq("organizationId", f.org))
+      .first())!;
+    const source = (await ctx.db.get(f.sourceId))!;
+    await ctx.db.patch(grant._id, {
+      libraryScope: undefined,
+      sources: [
+        {
+          sourceId: f.sourceId,
+          generation: source.generation,
+          revision: source.updatedAt,
+        },
+      ],
+    });
+  });
+  const args = {
+    profileId: f.org,
+    familyId: f.familyId,
+    artifactId: f.artifact._id,
+  };
+  expect(
+    (
+      await f.assistant.query(internal.assistantWidget.state, {
+        profileId: f.org,
+      })
+    ).catalog,
+  ).toMatchObject({ allowed: false, entitled: false, source: null });
+  await expect(
+    f.assistant.query(internal.assistantWidget.browse, {
+      profileId: f.org,
+      kind: "catalog",
+    }),
+  ).rejects.toThrow(/full-library/);
+  await expect(
+    f.assistant.query(internal.assistantWidget.catalogPost, args),
+  ).rejects.toThrow(/full-library/);
+  await expect(
+    f.assistant.mutation(internal.assistantWidget.catalogFrame, {
+      ...args,
+      frameId: "frame-1",
+    }),
+  ).rejects.toThrow(/full-library/);
+  await expect(
+    f.assistant.query(api.catalogBrowse.list, { organizationId: f.org }),
+  ).rejects.toThrow(/full-library/);
+  await expect(
+    f.assistant.mutation(api.catalogBrowse.frame, {
+      organizationId: f.org,
+      familyId: f.familyId,
+      artifactId: f.artifact._id,
+      frameId: "frame-1",
+    }),
+  ).rejects.toThrow(/full-library/);
+  await f.owner.query(api.product.detail, {
+    organizationId: f.org,
+    id: f.sourceId,
+  });
+});
+
+it("paginates physical catalog candidates without filling past unavailable families and binds continuation to the grant", async () => {
+  const f = await published();
+  await f.t.mutation(internal.catalogAccess.grantOperatorAccess, {
+    subject: "user_01234567890123456789012345",
+    enabled: true,
+    reason: "Bounded widget catalog pagination",
+  });
+  await f.t.run(async (ctx) => {
+    const original = (await ctx.db.get(f.familyId))!;
+    const { _id, _creationTime, ...fields } = original;
+    for (let i = 0; i < 10; i++)
+      await ctx.db.insert("catalogFamilies", {
+        ...fields,
+        key: `unavailable-page-${i}`,
+        state: "blocked",
+      });
+  });
+  const first = await f.assistant.query(internal.assistantWidget.browse, {
+    profileId: f.org,
+    kind: "catalog",
+  });
+  expect(first.items).toEqual([]);
+  expect(first.next_cursor).toBeTypeOf("string");
+  const second = await f.assistant.query(internal.assistantWidget.browse, {
+    profileId: f.org,
+    kind: "catalog",
+    cursor: first.next_cursor,
+  });
+  expect(second.items.map((item: { id: string }) => item.id)).toEqual([
+    f.familyId,
+  ]);
+  expect(second.next_cursor).toBeNull();
+  await expect(
+    f.assistant.query(internal.assistantWidget.browse, {
+      profileId: f.org,
+      kind: "sources",
+      cursor: first.next_cursor,
+    }),
+  ).rejects.toThrow(/Access changed/);
+  await f.t.run(async (ctx) => {
+    const grant = (await ctx.db
+      .query("assistantGrants")
+      .withIndex("by_org", (q) => q.eq("organizationId", f.org))
+      .first())!;
+    await ctx.db.patch(grant._id, { version: grant.version + 1 });
+  });
+  await expect(
+    f.assistant.query(internal.assistantWidget.browse, {
+      profileId: f.org,
+      kind: "catalog",
+      cursor: first.next_cursor,
+    }),
+  ).rejects.toThrow(/Access changed/);
+});
+
+it("returns a byte-verified native catalog JPEG without its storage locator", async () => {
+  const f = await published();
+  await f.t.mutation(internal.catalogAccess.grantOperatorAccess, {
+    subject: "user_01234567890123456789012345",
+    enabled: true,
+    reason: "Native catalog frame verification",
+  });
+  const args = {
+    profileId: f.org,
+    familyId: f.familyId,
+    artifactId: f.artifact._id,
+    frameId: "frame-1",
+  };
+  const result = await f.assistant.action(readCatalogFrame, args);
+  expect(result).toMatchObject({
+    mimeType: "image/jpeg",
+    familyId: f.familyId,
+    artifactId: f.artifact._id,
+    frameId: "frame-1",
+    size: f.bytes.length,
+    width: 2,
+    height: 2,
+  });
+  expect(Uint8Array.from(atob(result.data), (c) => c.charCodeAt(0))).toEqual(
+    f.bytes,
+  );
+  expect(result).not.toHaveProperty("key");
+  expect(result).not.toHaveProperty("grantId");
+  expect(JSON.stringify(result)).not.toContain("catalog/");
+});
+
+it("refuses a catalog image whose stored bytes no longer match the retained hash", async () => {
+  const f = await published();
+  await f.t.mutation(internal.catalogAccess.grantOperatorAccess, {
+    subject: "user_01234567890123456789012345",
+    enabled: true,
+    reason: "Native catalog corrupt-byte test",
+  });
+  const corrupt = Uint8Array.from(f.bytes);
+  corrupt[corrupt.length - 3] ^= 1;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(corrupt, { headers: { "content-type": "image/jpeg" } }),
+    ),
+  );
+  await expect(
+    f.assistant.action(readCatalogFrame, {
+      profileId: f.org,
+      familyId: f.familyId,
+      artifactId: f.artifact._id,
+      frameId: "frame-1",
+    }),
+  ).rejects.toThrow(/Retained image bytes changed/);
+});
+
+it.each(["toggle", "grant_version"] as const)(
+  "refuses bytes when %s changes during catalog storage retrieval",
+  async (change) => {
+    const f = await published();
+    await f.t.mutation(internal.catalogAccess.grantOperatorAccess, {
+      subject: "user_01234567890123456789012345",
+      enabled: true,
+      reason: "Native catalog authority race test",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        if (change === "toggle") {
+          await f.owner.mutation(api.catalogAccess.setEnabled, {
+            enabled: false,
+          });
+        } else {
+          await f.t.run(async (ctx) => {
+            const grant = (await ctx.db
+              .query("assistantGrants")
+              .withIndex("by_org", (q) => q.eq("organizationId", f.org))
+              .first())!;
+            await ctx.db.patch(grant._id, { version: grant.version + 1 });
+          });
+        }
+        return new Response(f.bytes, {
+          headers: { "content-type": "image/jpeg" },
+        });
+      }),
+    );
+    await expect(
+      f.assistant.action(readCatalogFrame, {
+        profileId: f.org,
+        familyId: f.familyId,
+        artifactId: f.artifact._id,
+        frameId: "frame-1",
+      }),
+    ).rejects.toThrow(change === "toggle" ? /Turn on/ : /APPROVAL_STALE/);
+  },
+);

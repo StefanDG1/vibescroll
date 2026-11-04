@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as widgetCatalogFrames from "../widgetCatalogFrames.js";
+import type * as adminProcessingAllowance from "../adminProcessingAllowance.js";
 import type * as preparedService from "../preparedService.js";
 import type * as preparedAnalysis from "../preparedAnalysis.js";
 import type * as preparedMedia from "../preparedMedia.js";
@@ -176,6 +178,8 @@ declare const fullApi: ApiFromModules<{
   catalogBrowse: typeof catalogBrowse;
   preparedMedia: typeof preparedMedia;
   preparedAnalysis: typeof preparedAnalysis;
+  widgetCatalogFrames: typeof widgetCatalogFrames;
+  adminProcessingAllowance: typeof adminProcessingAllowance;
   preparedService: typeof preparedService;
   postContext: typeof postContext;
   postContextFrames: typeof postContextFrames;

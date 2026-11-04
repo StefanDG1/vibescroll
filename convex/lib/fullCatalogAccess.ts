@@ -10,7 +10,9 @@ export { requireAccountPro } from "./accountSubscription";
 export async function catalogViewer(
   ctx: QueryCtx,
   organizationId: Id<"organizations">,
-) {
+): Promise<
+  Awaited<ReturnType<typeof access>> & { grant?: Doc<"assistantGrants"> }
+> {
   const identity = await ctx.auth.getUserIdentity();
   if (identity && isAssistantIdentity(identity))
     return assistantGrant(ctx, organizationId, "knowledge:read");
@@ -52,6 +54,12 @@ export async function requireFullCatalog(
   organizationId: Id<"organizations">,
 ) {
   const viewer = await catalogViewer(ctx, organizationId);
+  if (viewer.grant)
+    ensure(
+      viewer.grant.libraryScope === "all",
+      "FORBIDDEN",
+      "Catalog browsing requires the reviewed full-library knowledge scope.",
+    );
   ensure(
     await fullCatalogEntitled(ctx, viewer.actor),
     "FORBIDDEN",

@@ -6,7 +6,10 @@ import {
   sourceProgressDeadline,
   sourceProgressSteps,
 } from "../../packages/sources/progress";
-import { SourceProgressPanel } from "./components/source-progress";
+import {
+  SourceProgressPanel,
+  ObservedSourceProgress,
+} from "./components/source-progress";
 
 const waiting = {
   generation: 0,
@@ -29,6 +32,26 @@ const render = (source: Parameters<typeof sourceProgress>[0], now = 1000) =>
   renderToStaticMarkup(
     createElement(SourceProgressPanel, { source, now, organizationId: "org1" }),
   );
+
+it("stops implying live observation when the widget pauses while preserving last observed stages", () => {
+  const html = renderToStaticMarkup(
+    createElement(ObservedSourceProgress, {
+      progress: {
+        title: "Analyzing evidence",
+        description: "Observed active work.",
+        busy: true,
+      },
+      steps: [{ id: "analysis", label: "Analyze evidence", state: "running" }],
+      paused: true,
+      observedAt: 1000,
+    }),
+  );
+  expect(html).toContain("Updates paused");
+  expect(html).toContain("may still be running");
+  expect(html).toContain("Last observed steps");
+  expect(html).not.toContain("<progress");
+  expect(html).not.toMatch(/\d+%|ETA|Retry/);
+});
 
 it("distinguishes saved intents, queued jobs and claimed processing without a fake percentage", () => {
   expect(render(waiting)).toContain("Waiting for ChatGPT");

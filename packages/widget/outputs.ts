@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { safeAppUrl, widgetVersion } from "./contracts";
+import {
+  neutralCloudAnalysis,
+  neutralCloudEvidence,
+} from "../contracts/cloud-catalog";
 
 const id = z.string().min(1).max(300);
 const version = z.number().int().nonnegative();
@@ -84,6 +88,32 @@ const proposal = z
 const base = { profile_id: id, grant_version: version };
 const cursor = z.string().max(4096).nullable().optional();
 const coverage = z.string().max(1000);
+const selectionReason = z.enum([
+  "explicit",
+  "saved_default",
+  "personal",
+  "sole",
+  "required",
+]);
+const workspaceKind = z.enum(["personal", "team"]);
+const catalogMetadata = z
+  .object({
+    id,
+    family_id: id,
+    artifact_id: id,
+    version_id: id,
+    kind: z.literal("catalog"),
+    state: z.literal("ready"),
+    canonical: z.string().url().max(2048),
+    title,
+    author_name: z.string().max(200).nullable(),
+    duration_seconds: z.number().nonnegative().nullable(),
+    insight_count: z.number().int().nonnegative(),
+    updated_at: z.number(),
+    thumbnail_reference: z.string().max(1000).nullable(),
+    url,
+  })
+  .strict();
 export const widgetOutputs = {
   widget_profiles: z
     .object({
@@ -96,11 +126,16 @@ export const widgetOutputs = {
               grant_version: version,
               expires_at: z.number().nullable(),
               projects: z.array(z.never()).length(0),
+              kind: workspaceKind.optional(),
+              is_default: z.boolean().optional(),
+              selected: z.boolean().optional(),
             })
             .strict(),
         )
         .max(50),
       truncated: z.boolean(),
+      selected_profile_id: id.nullable().optional(),
+      selection_reason: selectionReason.optional(),
       coverage,
     })
     .strict(),
@@ -108,6 +143,21 @@ export const widgetOutputs = {
     .object({
       schema_version: z.literal(widgetVersion),
       ...base,
+      selected_profile_id: id.nullable().optional(),
+      selection_reason: selectionReason.optional(),
+      kind: workspaceKind.optional(),
+      is_default: z.boolean().optional(),
+      catalog: z
+        .object({
+          entitled: z.boolean(),
+          enabled: z.boolean(),
+          available: z.boolean(),
+          allowed: z.boolean(),
+          source: z.enum(["operator", "billing_addon"]).nullable(),
+          review_url: url,
+        })
+        .strict()
+        .optional(),
       name: title,
       role: z.enum(["owner", "admin", "member", "viewer"]),
       expires_at: z.number().nullable(),
@@ -117,6 +167,7 @@ export const widgetOutputs = {
       processing_route: z.enum(["local", "cloud", "save_only"]).nullable(),
       actions: z
         .object({
+          catalog: z.boolean().optional(),
           jobs: z.boolean(),
           context: z.boolean(),
           save: z.boolean(),
@@ -143,10 +194,40 @@ export const widgetOutputs = {
   widget_browse: z
     .object({
       ...base,
-      items: z.array(z.union([source, job, topic, proposal])).max(10),
+      items: z
+        .array(z.union([source, job, topic, proposal, catalogMetadata]))
+        .max(10),
       next_cursor: cursor,
       next_offset: z.number().int().min(0).max(49).nullable().optional(),
       review_url: url.optional(),
+      coverage,
+    })
+    .strict(),
+  widget_catalog_post: z
+    .object({
+      ...base,
+      family_id: id,
+      artifact_id: id,
+      version_id: id,
+      canonical: z.string().url().max(2048),
+      title,
+      author_name: z.string().max(200).nullable(),
+      analysis: neutralCloudAnalysis,
+      transcript: neutralCloudEvidence.shape.segments,
+      provenance: z.string().max(100),
+      frames: z
+        .array(
+          z
+            .object({
+              id: z.string().min(1).max(100),
+              timestampMs: z.number().int().nonnegative(),
+              width: z.number().int().positive().max(4096),
+              height: z.number().int().positive().max(4096),
+              reference: z.string().max(1000),
+            })
+            .strict(),
+        )
+        .max(8),
       coverage,
     })
     .strict(),

@@ -59,6 +59,28 @@ export async function demoCall(
   name: string,
   args: ToolRecord,
 ): Promise<ToolRecord> {
+  if (name === "get_processing_account")
+    return {
+      version: "processing-account-v1",
+      availableCredits: 284,
+      reservedCredits: 11,
+      expiredReservedCredits: 0,
+      observedAt: Date.now(),
+      nextExpiry: null,
+      allowanceKind: "admin",
+      monthlyAllowance: 300,
+      nextRenewal: null,
+      processing: {
+        allowed: true,
+        reason: null,
+        message: null,
+        dimension: null,
+        retryAt: null,
+        limit: null,
+        used: null,
+      },
+      reviewUrl: `https://scroll.companynerve.com/app/${profile}/usage`,
+    };
   if (name === "get_project_application_context")
     return {
       contextHash: "c".repeat(64),
@@ -80,6 +102,8 @@ export async function demoCall(
     return { proposalId: "demo-planning-proposal", version: 1 };
   if (name === "get_profile" || name === "widget_profiles")
     return {
+      selected_profile_id: profile,
+      selection_reason: "personal",
       profiles: [
         {
           profile_id: profile,
@@ -232,6 +256,11 @@ export async function demoCall(
     };
   if (name === "search")
     return {
+      profile_id: profile,
+      grant_version: 1,
+      exhausted: true,
+      has_more: false,
+      truncated: false,
       results: sources.flatMap((source) =>
         source.insights
           .filter((idea) =>

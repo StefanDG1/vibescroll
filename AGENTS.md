@@ -4,6 +4,8 @@ Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/deci
 
 ## Current mandatory owner direction
 
+R155 approves implementation of the complete R153/R154 plan and selects Connected search motion. Release the credit/quota repair first, then the shared UI and observed search. Current cumulative engineering ceiling is EUR17 with a USD0.90 bounded release/test envelope and at most two fresh video tests. Retain old holds and provider gates; app credits are not cash authority. Read private operational state before spending.
+
 R154 adds [insight-first animated search](docs/strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md#search-discovery-and-synthesis). Show real returned source/citation connections and settle into matching insights; never fabricate progress or semantic relationships. Reuse approved design tokens and the selected shared components. Keep the owner credit/quota repair ahead of the search enhancement.
 
 R153 makes [shared app/MCP UI and processing UX](docs/strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md) the next implementation priority. Fix the separate owner pilot quota, expose truthful personal credits and admission, correct default workspace/catalog discovery, then share inline progress and the fullscreen application presentation. The owner approves 300 monthly admin credits and generous finite rates; this does not authorize additional provider spending or a fabricated subscription. Preserve history, existing balances and unknown holds. Read its research and phase acceptance ledger before related work.

@@ -6,6 +6,108 @@ import { CreditMeter } from "./components/assistant-elements/credit-meter";
 import { ProjectFitBreakdown } from "./components/assistant-elements/project-fit-breakdown";
 import { usageOverview } from "../../packages/billing/usage-overview";
 import { suggestProjects } from "./lib/project-suggestions";
+import { InsightDiscovery } from "./components/insight-discovery";
+import { discoveryPage } from "../../packages/reader/discovery";
+import {
+  ProcessingAccountSummary,
+  processingAccountView,
+} from "./components/processing-account-summary";
+
+it("shows no invented source nodes before a search result and renders returned insight citations immediately", () => {
+  const loading = renderToStaticMarkup(
+    createElement(InsightDiscovery, {
+      page: null,
+      query: "onboarding",
+      busy: true,
+      onOpen: () => {},
+      onMore: () => {},
+    }),
+  );
+  expect(loading).toContain("Looking for matching posts and insights");
+  expect(loading).not.toContain('viewBox="0 0 600 88"');
+  expect(loading).not.toContain("0 sources");
+  const page = discoveryPage({
+    mode: "ranked_v1",
+    profile_id: "p",
+    grant_version: 1,
+    posts: [
+      {
+        id: "post",
+        fetch_id: "post",
+        title: "Real cited source",
+        url: "https://scroll.companynerve.com/app/p/posts/post",
+        reference: { generation: 1, revision: 2 },
+      },
+    ],
+    matches: [
+      {
+        id: "post~idea",
+        post_id: "post",
+        kind: "insight",
+        title: "Use the useful result first",
+        excerpt: "Retained supporting excerpt.",
+      },
+    ],
+    exhausted: false,
+    has_more: true,
+    next_cursor: "next",
+    coverage: "Bounded partial page.",
+  });
+  const html = renderToStaticMarkup(
+    createElement(InsightDiscovery, {
+      page,
+      query: "onboarding",
+      busy: false,
+      onOpen: () => {},
+      onMore: () => {},
+    }),
+  );
+  expect(html).toContain("Partial results");
+  expect(html).toContain("Use the useful result first");
+  expect(html).toContain("Real cited source");
+  expect(html).toContain("Retained supporting excerpt.");
+  expect(html).toContain("Continue search");
+  expect(html).toContain("1 matching insights");
+  expect((html.match(/<path /g) ?? []).length).toBeGreaterThanOrEqual(1);
+});
+it("keeps unavailable financial scope distinct from an actual zero and validates canonical credit observations", () => {
+  const unavailable = renderToStaticMarkup(
+    createElement(ProcessingAccountSummary, {
+      account: null,
+      unavailable: true,
+      onOpen: () => {},
+    }),
+  );
+  expect(unavailable).toContain("Credits unavailable for this connection");
+  expect(unavailable).not.toContain("0 credits");
+  expect(processingAccountView({ availableCredits: 300 })).toBeNull();
+  const account = processingAccountView({
+    version: "processing-account-v1",
+    availableCredits: 0,
+    reservedCredits: 11,
+    expiredReservedCredits: 3,
+    observedAt: 1000,
+    nextExpiry: null,
+    allowanceKind: "admin",
+    monthlyAllowance: 300,
+    nextRenewal: 2000,
+    processing: {
+      allowed: false,
+      reason: "QUOTA_EXCEEDED",
+      message: "Hourly capacity is used.",
+      dimension: "hour",
+      retryAt: 3000,
+      limit: 20,
+      used: 20,
+    },
+    reviewUrl: "https://scroll.companynerve.com/app/p/usage",
+  });
+  expect(account?.reservedCredits).toBe(11);
+  const zero = renderToStaticMarkup(
+    createElement(ProcessingAccountSummary, { account, onOpen: () => {} }),
+  );
+  expect(zero).toContain("0 credits available");
+});
 
 it("shows real credit use independently of the recent page and keeps expired holds separate", () => {
   const usage = usageOverview(

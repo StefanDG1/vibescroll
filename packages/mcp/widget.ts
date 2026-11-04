@@ -10,6 +10,8 @@ import {
   widgetBrowseInput,
   widgetTopicInput,
   widgetProposalInput,
+  widgetCatalogPostInput,
+  widgetCatalogFrameInput,
   safeAppUrl,
   appOrigin,
 } from "../widget/contracts";
@@ -258,9 +260,19 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
   );
   const operations = [
     [
+      "widget_catalog_post",
+      "Read an exact currently entitled catalog result without saving it to your library.",
+      widgetCatalogPostInput,
+    ],
+    [
+      "widget_catalog_frame",
+      "Read one actual entitled catalog JPEG with current byte and access checks.",
+      widgetCatalogFrameInput,
+    ],
+    [
       "widget_profiles",
       "Discover current knowledge-readable workspace grants without disclosing selected project context.",
-      z.object({}).strict(),
+      z.object({ profileId: z.string().max(300).optional() }).strict(),
     ],
     [
       "widget_state",
@@ -290,7 +302,9 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
         title: description.split(".")[0],
         description,
         inputSchema: schema,
-        outputSchema: widgetOutputs[name],
+        ...(name === "widget_catalog_frame"
+          ? {}
+          : { outputSchema: widgetOutputs[name] }),
         annotations: {
           readOnlyHint: true,
           destructiveHint: false,
@@ -300,7 +314,21 @@ export function registerWidget(server: McpServer, invoke: Invoke) {
         scopeChallenge: requireScopes("knowledge:read"),
         _meta: { ...scopes, ui: { visibility: ["app"] } },
       },
-      async (args: Record<string, unknown>) => reply(await read(name, args)),
+      async (args: Record<string, unknown>) => {
+        const value = await read(name, args);
+        if (name === "widget_catalog_frame") {
+          const { data, ...metadata } = value;
+          if (typeof data !== "string" || metadata.mimeType !== "image/jpeg")
+            throw Error("Catalog image response is unavailable.");
+          return {
+            content: [
+              { type: "text" as const, text: JSON.stringify(metadata) },
+              { type: "image" as const, mimeType: "image/jpeg", data },
+            ],
+          };
+        }
+        return reply(value);
+      },
     );
 
   app.mentions.setHandler(async ({ query }) => {

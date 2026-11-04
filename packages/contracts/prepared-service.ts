@@ -1,3 +1,4 @@
+import { processingAccountOutput } from "./processing-account";
 import { z } from "zod";
 import { modelAnalysisCredits, type ApiModelId } from "./api-models";
 
@@ -39,6 +40,7 @@ export const preparedStatusOutput = z.strictObject({
   failure: z.string().max(100).nullable(),
   catalogStatus: z.string().max(100).nullable(),
   url: z.url().startsWith("https://scroll.companynerve.com/app/"),
+  account: processingAccountOutput.nullable().optional(),
   next_action: z
     .strictObject({
       tool: z.literal("analysis_version"),

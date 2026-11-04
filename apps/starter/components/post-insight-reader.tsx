@@ -3,9 +3,11 @@ import type { ReactNode } from "react";
 /** Presentation only. Route adapters supply authorized media, evidence and actions. */
 export function PostInsightReader({
   sourcePreview,
+  sourceAction,
   children,
 }: {
   sourcePreview?: ReactNode;
+  sourceAction?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -13,12 +15,16 @@ export function PostInsightReader({
       {sourcePreview && (
         <aside className="post-reader-source" aria-label="Original post">
           {sourcePreview}
-          <a
-            className="button post-reader-project"
-            href="#source-analysis-actions"
-          >
-            Apply to a project
-          </a>
+          {sourceAction === undefined ? (
+            <a
+              className="button post-reader-project"
+              href="#source-analysis-actions"
+            >
+              Apply to a project
+            </a>
+          ) : (
+            sourceAction
+          )}
         </aside>
       )}
       <div className="post-reader-insights">{children}</div>

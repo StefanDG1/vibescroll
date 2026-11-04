@@ -295,3 +295,236 @@ it("returns only the caller's private saved processing route and requires jobs s
     }),
   ).rejects.toThrow();
 });
+
+it("bootstraps a knowledge-only widget using explicit selection, the saved default, then its personal workspace", async () => {
+  const s = await setup();
+  await s.owner.mutation(api.assistantGrants.save, s.args);
+  const team = await s.owner.mutation(api.organizations.create, {
+    name: "Joined workspace",
+  });
+  await s.owner.mutation(api.assistantGrants.save, {
+    ...s.args,
+    organizationId: team,
+    sources: [],
+    libraryScope: "all",
+  });
+  const actor = (await s.t.run((ctx) => ctx.db.get(s.organizationId)))!
+    .privateOwnerId!;
+  await s.t.run((ctx) => ctx.db.patch(actor, { defaultWorkspaceId: team }));
+  const knowledge = s.t.withIdentity({
+    subject,
+    issuer,
+    client_id: clientId,
+    scope: "knowledge:read",
+    sid: "app_consent_01234567890123456789012345",
+  });
+  const implicit = await knowledge.query(internal.assistantWidget.profiles, {});
+  expect(widgetOutputs.widget_profiles.parse(implicit)).toEqual(implicit);
+  expect(implicit).toMatchObject({
+    selected_profile_id: team,
+    selection_reason: "saved_default",
+  });
+  expect(
+    implicit.profiles.find(
+      (p: { profile_id: string }) => p.profile_id === team,
+    ),
+  ).toMatchObject({ is_default: true, selected: true, projects: [] });
+  expect(
+    await knowledge.query(internal.assistantWidget.state, {}),
+  ).toMatchObject({
+    profile_id: team,
+    selection_reason: "saved_default",
+    actions: { context: false, save: false },
+  });
+  expect(
+    await knowledge.query(internal.assistantWidget.profiles, {
+      profileId: s.organizationId,
+    }),
+  ).toMatchObject({
+    selected_profile_id: s.organizationId,
+    selection_reason: "explicit",
+  });
+  await s.t.run((ctx) =>
+    ctx.db.patch(actor, { defaultWorkspaceId: undefined }),
+  );
+  expect(
+    await knowledge.query(internal.assistantWidget.profiles, {}),
+  ).toMatchObject({
+    selected_profile_id: s.organizationId,
+    selection_reason: "personal",
+  });
+  const teamGrant = (await s.t.run((ctx) =>
+    ctx.db
+      .query("assistantGrants")
+      .withIndex("by_pair", (q) =>
+        q
+          .eq("organizationId", team)
+          .eq("actor", actor)
+          .eq("clientId", clientId),
+      )
+      .unique(),
+  ))!;
+  await s.owner.mutation(api.assistantGrants.revoke, {
+    id: teamGrant._id,
+    expectedVersion: teamGrant.version,
+  });
+  await s.t.run((ctx) => ctx.db.patch(actor, { defaultWorkspaceId: team }));
+  expect(
+    await knowledge.query(internal.assistantWidget.state, {}),
+  ).toMatchObject({
+    profile_id: s.organizationId,
+    selection_reason: "personal",
+  });
+  await expect(
+    knowledge.query(internal.assistantWidget.profiles, { profileId: team }),
+  ).rejects.toThrow(/grant/);
+});
+
+it("keeps the configured catalog service out of normal workspace discovery even when processing is disabled", async () => {
+  const s = await setup();
+  await s.owner.mutation(api.assistantGrants.save, s.args);
+  const service = await s.owner.mutation(api.organizations.create, {
+    name: "Catalog infrastructure",
+  });
+  await s.owner.mutation(api.assistantGrants.save, {
+    ...s.args,
+    organizationId: service,
+    sources: [],
+    libraryScope: "all",
+  });
+  const actor = (await s.t.run((ctx) => ctx.db.get(s.organizationId)))!
+    .privateOwnerId!;
+  await s.t.run((ctx) => ctx.db.patch(actor, { defaultWorkspaceId: service }));
+  vi.stubEnv("CLOUD_CATALOG_ENABLED", "false");
+  vi.stubEnv(
+    "CLOUD_CATALOG_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "cloud-catalog-config-v1",
+      serviceOrganizationId: service,
+      maximumStorageBytes: 1000000,
+      reviewedAt: Date.now() - 10000,
+      expiresAt: Date.now() - 1000,
+      permissions: [],
+    }),
+  );
+  const profiles = await s.assistant.query(
+    internal.assistantWidget.profiles,
+    {},
+  );
+  expect(
+    profiles.profiles.map((p: { profile_id: string }) => p.profile_id),
+  ).toEqual([s.organizationId]);
+  expect(profiles.selected_profile_id).toBe(s.organizationId);
+  await expect(
+    s.assistant.query(internal.assistantWidget.state, { profileId: service }),
+  ).rejects.toThrow(/own workspace/);
+});
+
+it("requires selection between joined workspaces when the personal grant is revoked and rejects an unauthorized explicit route", async () => {
+  const s = await setup();
+  const personal = await s.owner.mutation(api.assistantGrants.save, s.args);
+  for (const name of ["First team", "Second team"]) {
+    const organizationId = await s.owner.mutation(api.organizations.create, {
+      name,
+    });
+    await s.owner.mutation(api.assistantGrants.save, {
+      ...s.args,
+      organizationId,
+      sources: [],
+      libraryScope: "all",
+    });
+  }
+  await s.owner.mutation(api.assistantGrants.revoke, {
+    id: personal.id,
+    expectedVersion: personal.version,
+  });
+  const actor = (await s.t.run((ctx) => ctx.db.get(s.organizationId)))!
+    .privateOwnerId!;
+  await s.t.run((ctx) =>
+    ctx.db.patch(actor, { defaultWorkspaceId: undefined }),
+  );
+  expect(
+    await s.assistant.query(internal.assistantWidget.profiles, {}),
+  ).toMatchObject({
+    selected_profile_id: null,
+    selection_reason: "required",
+    truncated: false,
+  });
+  await expect(
+    s.assistant.query(internal.assistantWidget.state, {}),
+  ).rejects.toThrow(/PROFILE_SELECTION_REQUIRED/);
+  await expect(
+    s.assistant.query(internal.assistantWidget.profiles, {
+      profileId: s.organizationId,
+    }),
+  ).rejects.toThrow(/grant/);
+});
+
+it("continues explicit-source grants by offset without scanning ahead past stale references", async () => {
+  const s = await setup();
+  const refs = await s.t.run(async (ctx) => {
+    const original = (await ctx.db.get(s.sourceId))!;
+    const { _id, _creationTime, ...fields } = original;
+    const refs = [
+      {
+        sourceId: _id,
+        generation: original.generation,
+        revision: original.updatedAt,
+      },
+    ];
+    for (let i = 1; i < 6; i++) {
+      const sourceId = await ctx.db.insert("sources", {
+        ...fields,
+        key: `offset-reference-${i}`,
+        canonical: `text:offset-${i}`,
+        title: `Offset ${i}`,
+      });
+      refs.push({
+        sourceId,
+        generation: original.generation,
+        revision: original.updatedAt,
+      });
+    }
+    return refs;
+  });
+  await s.owner.mutation(api.assistantGrants.save, {
+    ...s.args,
+    sources: refs,
+  });
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, { updatedAt: refs[0].revision + 1 }),
+  );
+  const first = await s.assistant.query(internal.assistantWidget.browse, {
+    kind: "sources",
+  });
+  expect(first.items).toHaveLength(4);
+  expect(first).toMatchObject({ next_cursor: null, next_offset: 5 });
+  expect(first.coverage).toContain("next_offset");
+  const second = await s.assistant.query(internal.assistantWidget.browse, {
+    kind: "sources",
+    offset: 5,
+  });
+  expect(second.items.map((p: { id: string }) => p.id)).toEqual([
+    refs[5].sourceId,
+  ]);
+  expect(second).toMatchObject({ next_cursor: null, next_offset: null });
+  await expect(
+    s.assistant.query(internal.assistantWidget.browse, {
+      kind: "sources",
+      cursor: "wrong",
+      offset: 5,
+    }),
+  ).rejects.toThrow(/offsets/);
+  await s.owner.mutation(api.assistantGrants.save, {
+    ...s.args,
+    expectedVersion: 1,
+    sources: [],
+    libraryScope: "all",
+  });
+  await expect(
+    s.assistant.query(internal.assistantWidget.browse, {
+      kind: "sources",
+      offset: 5,
+    }),
+  ).rejects.toThrow(/cursors/);
+});

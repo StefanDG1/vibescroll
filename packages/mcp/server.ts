@@ -1,3 +1,7 @@
+import {
+  processingAccountInput,
+  processingAccountOutput,
+} from "../contracts/processing-account";
 import { safeAssistantFailure } from "../contracts/assistant-errors";
 import { measureToolPresentation, type AssistantObserver } from "./measurement";
 import { proposalLoopInputs } from "../contracts/proposal-loop";
@@ -87,6 +91,7 @@ export function createKnowledgeHandler(
     StandardSchemaWithJSON<Record<string, unknown>>
   > = {
     get_profile: profileReadOutput,
+    get_processing_account: processingAccountOutput,
     search: workspaceSearchMcpOutput,
     fetch: knowledgeFetchMcpOutput,
     list_project_proposals: chatProposalListOutput,
@@ -145,13 +150,15 @@ export function createKnowledgeHandler(
               [
                 "get_profile",
                 "get_job_status",
+                "get_processing_account",
                 "get_project_application_context",
                 "save_project_proposal",
                 "get_project_proposal",
               ].includes(name)
                 ? { ui: { visibility: ["model", "app"] } }
                 : {}),
-              ...(widgetEnabled && ["fetch", "save_link"].includes(name)
+              ...(widgetEnabled &&
+              ["fetch", "save_link", "search"].includes(name)
                 ? {
                     ui: {
                       resourceUri: widgetResourceUris.card,
@@ -247,11 +254,24 @@ export function createKnowledgeHandler(
                 ],
                 structuredContent: result.value,
                 ...(card
-                  ? { _meta: { "vibescroll/widget": { route: card } } }
+                  ? {
+                      _meta: {
+                        "vibescroll/widget": {
+                          route: card,
+                          ...(name === "search" ? { input: args } : {}),
+                        },
+                      },
+                    }
                   : {}),
               };
             }),
         );
+      register(
+        "get_processing_account",
+        "Read your own available, reserved and expired-held credits, monthly allowance and current processing limit. No invoices, transactions, team-owner balance, grant or charge. Use this to explain an analysis admission failure; ready cached reads remain free.",
+        "analysis:request",
+        processingAccountInput,
+      );
       register(
         "draft_project_suggestion",
         "Prepare or reopen a private cited project draft from an exact current relevant evaluation returned by get_profile(profileId). Explicit selected project context and evidence are required. Preserve manual edits and distinguish no-fit, already implemented, unsupported, needs-context and deferred results. This tool starts no analysis, spending, publication or coding.",

@@ -1,3 +1,7 @@
+import {
+  readAdminProcessingAllowance,
+  refreshAdminProcessingAllowance,
+} from "./lib/adminProcessingAllowance";
 import { unclaimedCloudHandoff } from "./workCloudAnalysis";
 import { billingRiskHeld } from "./lib/billingRisk";
 import { singleProConfigured } from "../packages/billing/credit-policy";
@@ -134,6 +138,28 @@ export async function wallet(
     });
     w = (await ctx.db.get(key))!;
   }
+  if (await readAdminProcessingAllowance(ctx, undefined, id)) {
+    // Materialize only the same legacy balance that reserve would have used,
+    // before adding a new monthly pool. Existing spending/holds stay allocated.
+    const existing = await ctx.db
+      .query("creditPools")
+      .withIndex("by_org", (q) => q.eq("organizationId", id))
+      .take(1);
+    if (!existing.length && w.tier === "trial")
+      await ctx.db.insert("creditPools", {
+        organizationId: id,
+        key: `trial:${id}`,
+        kind: "included",
+        granted: w.granted,
+        spent: w.spent,
+        reserved: w.reserved,
+        expiresAt: w.periodEnd,
+        createdAt: w.createdAt,
+        updatedAt: Date.now(),
+      });
+    if (await refreshAdminProcessingAllowance(ctx, id))
+      w = (await ctx.db.get(w._id))!;
+  }
   return w;
 }
 export async function reserve(
@@ -227,12 +253,12 @@ export async function reserve(
   const operatorReviewFunded =
     max > 0 &&
     owner?.status === "active" &&
-    personalAllowed(owner.subject) &&
-    allocations.every(
-      (allocation) =>
-        valid.find((pool) => pool._id === allocation.poolId)?.kind ===
-        "operator_quality_review",
-    );
+    (personalAllowed(owner.subject) ||
+      !!(await readAdminProcessingAllowance(ctx, owner, id))) &&
+    allocations.every((allocation) => {
+      const kind = valid.find((pool) => pool._id === allocation.poolId)?.kind;
+      return kind === "operator_quality_review" || kind === "admin_monthly";
+    });
   const month = new Date().toISOString().slice(0, 7);
   const operatorKeys = [
     `all:${month}`,

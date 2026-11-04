@@ -1,3 +1,4 @@
+import { readAdminProcessingAllowance } from "./adminProcessingAllowance";
 import type { QueryCtx } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import { billingFor } from "./billingAccess";
@@ -23,6 +24,10 @@ export async function requireProCatalogAccess(
       // A finite operator test entitlement is distinct from paid Pro. Never
       // manufacture a billing subscription or wallet to exercise shared reuse.
       if (!paidOnly && process.env.RESTORE_LOCK !== "true") {
+        // Explicit admin entitlement is independent of Stripe and of finite
+        // alpha trials. It never satisfies a paidOnly customer check.
+        if (await readAdminProcessingAllowance(ctx, undefined, organizationId))
+          return null;
         let alpha;
         try {
           alpha = cloudCatalogAlphaAccess.parse(

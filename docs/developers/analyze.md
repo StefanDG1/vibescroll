@@ -25,3 +25,11 @@ If the result is waiting or queued, use the configured Events task or a bounded 
 For a confirmed failure, use only the returned eligible recovery action. A stale quote requires a fresh quote. Cancelled unclaimed work and unknown dispatched work have different remedies. Unknown work retains its exposure until reconciled; it must not trigger an automatic paid fallback.
 
 Once ready, read the saved version or [apply all its insights to a project](/docs/workflows/proposals). To request a deliberate second analysis, use [the version workflow](/docs/workflows/reanalyze).
+
+## Check credits and admission
+
+Use `get_processing_account` to read your own available credits, current reservations, expired held credits, next expiry and current processing admission. It requires your existing analysis permission. It exposes no invoices, transaction history or another member's wallet. Library-only connections can keep reading knowledge without this permission.
+
+Credits and processing capacity are separate. An hourly/daily limit reports its retry time; provider capacity reports its own refusal. A confirmed `processing_blocked` Save receipt means the link was saved but analysis did not start. Keep that source ID, show the reason and remaining credits, and retry only after the relevant condition is resolved. A failed or uncertain forwarding request is not the same as a confirmed refusal.
+
+The embedded card observes the same saved source. While visible it checks active work at bounded intervals, pauses after its observation window and offers Refresh. Closing a card does not cancel the job. Metadata and stages are displayed only after the backend returns them; an animation is not a completion percentage. The website remains the destination for advanced settings.

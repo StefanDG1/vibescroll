@@ -11,6 +11,7 @@ export default defineConfig({
   },
   test: {
     include: [
+      "apps/widget/src/use-application.test.tsx",
       "apps/starter/prepared-analysis-ui.test.ts",
       "apps/starter/home-feed-ui.test.ts",
       "apps/starter/project-fit-live-ui.test.ts",

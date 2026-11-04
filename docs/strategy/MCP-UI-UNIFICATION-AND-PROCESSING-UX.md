@@ -47,6 +47,24 @@ Display the submitted link immediately as unverified input. Show authoritative t
 
 The header shows personal available credits when the caller has the ordinary processing scope. Quote shows maximum required credits. Running work shows its held maximum; completion shows actual charged credits and current available balance. Unknown usage remains pending. A library-only connection can still read posts; absent financial scope is unavailable, never zero.
 
+### Search discovery and synthesis
+
+R154 adds an insight-first discovery view. While a bounded search is running, show one focused research canvas. Actual returned sources appear as small nodes and connect to their retained insight matches. Shared-topic groupings can appear only when the returned categories/terms support them. Source-to-insight edges are citation relationships; topic/project associations remain separately labeled. Never draw an invented knowledge graph or imply an unevaluated semantic relationship.
+
+On completion, settle into a compact list of matching insights or patterns, with the source count and citations available on demand. Do not make raw post tiles the primary search output. Exact post requests still open the full retained post. The initial view contains at most a few source nodes and insight groups; larger graphs belong in expanded Explore, not inside the inline card.
+
+Extend the existing search tool's UI-resource metadata and renderer to consume its initial tool input/result. Before any result arrives, use an abstract activity indicator with no fabricated source names or counts. Consume each real returned page immediately. Do not run a duplicate widget query while the host's initial tool call is pending, and do not delay cached results to complete an animation. A batch may reveal with a short transition; individual source arrival is not claimed when the backend returned one page.
+
+The shared discovery controller handles accepted input, received page, deduplicated source/insight references, current categories, continuation, partial coverage, completion and failure. Old replies cannot enter a new query/workspace. Keys include current profile/grant and source/version references; cancellation removes superseded observers. Preserve authoritative coverage and both cursor/offset paths. “Partial results” remains distinct from “Search complete.”
+
+Use the existing scoped ranked lexical search first. This UI does not implement embeddings, broader catalog access or synthesis inference. A larger synthesis is an explicit chat/model action over returned evidence. Begin with one query and its continuation. Combining arbitrary tool calls into one persistent host card needs verified host support; do not invent a widget-session API.
+
+Use SVG for a few meaningful connections, CSS for basic state feedback and Motion/Motion Primitives only for layout continuity or interruptible expansion. Three-source nodes do not require a graph engine. Reduced motion presents the same real counts, citations and results without moving lines. Screen readers receive concise batch/status updates and a usable result list.
+
+Official inline guidance limits primary actions to two, avoids nested scrolling/tabs/deep navigation, and keeps the native ChatGPT composer available. Ready cards offer View insights and a secondary Sources action; detailed browsing and proposal discussion move into fullscreen. Keep the proposal-scoped discussion there and avoid adding a second global chat composer.
+
+A local Connected/Quiet replay study uses three actual authorized search results. It verifies desktop/mobile themes, 320px wrapping, reduced motion, native source-dialog opening and Escape. It is a private local preview, not a live search stream or actual ChatGPT host acceptance. No credit or model job is started.
+
 ### Fullscreen application
 
 Use the website's content frame, design tokens, post/insight/proposal components and responsive layout. Home is the default; expose Library/Explore and Work using the existing navigation concepts. Account/billing/security and unsupported advanced features open the real website. Preserve the requested content-first mobile layout and desktop three columns. Do not nest the complete website chrome inside ChatGPT's own chrome.
@@ -171,7 +189,7 @@ Do not add direct iframe database credentials, a second paid realtime service or
 | 6. Host and production acceptance      | Versioned resources, official bridge harness, actual desktop/mobile host, old cards, explicit failures, both routes and cache controls                                                 | Full checks and exact CI, compatible no-scan release, canonical website and actual host receipts. One bounded permitted canary per route only under current funding; cached controls first. |
 | 7. Closeout                            | Public MCP docs/screenshots, request ledger, failure lessons, operator limits and honest production report                                                                             | Mark implemented, deployed and host-accepted separately. Preserve remaining host/mobile limitations.                                                                                        |
 
-Phase 1 to 3 is the first useful release. Do not make its quota/balance/workspace repair wait for the full scene extraction. Later phases publish coherent accepted improvements within actual funding/provider limits. Documentation-only updates do not build the website.
+Phase 1, Phase 2 and processing-card Phase 3a form the first useful release. Search-discovery Phase 3b follows as a focused improvement; it does not delay the owner allowance or processing repair. Do not make its quota/balance/workspace repair wait for the full scene extraction. Later phases publish coherent accepted improvements within actual funding/provider limits. Documentation-only updates do not build the website.
 
 ## Test matrix
 
@@ -191,7 +209,8 @@ Production acceptance begins with reads and zero-work cached posts. It proves cu
 - [x] Compare architectures, obtain independent review and record synthesis.
 - [x] Capture owner approval for 300 monthly admin credits and generous finite rates.
 - [ ] Implement and publish Phase 1 within actual funding.
-- [ ] Complete Phase 2 and Phase 3, with actual inline host acceptance.
+- [ ] Complete Phase 2 and processing-card Phase 3a, with actual inline host acceptance.
+- [ ] Implement insight-first search discovery Phase 3b from actual returned pages and citations.
 - [ ] Complete shared fullscreen and proposal continuity.
 - [ ] Finish actual host matrix, public docs and final production acceptance.
 

@@ -4,6 +4,8 @@ Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/deci
 
 ## Current mandatory owner direction
 
+R154 adds [insight-first animated search](docs/strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md#search-discovery-and-synthesis). Show real returned source/citation connections and settle into matching insights; never fabricate progress or semantic relationships. Reuse approved design tokens and the selected shared components. Keep the owner credit/quota repair ahead of the search enhancement.
+
 R153 makes [shared app/MCP UI and processing UX](docs/strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md) the next implementation priority. Fix the separate owner pilot quota, expose truthful personal credits and admission, correct default workspace/catalog discovery, then share inline progress and the fullscreen application presentation. The owner approves 300 monthly admin credits and generous finite rates; this does not authorize additional provider spending or a fabricated subscription. Preserve history, existing balances and unknown holds. Read its research and phase acceptance ledger before related work.
 
 R152 prioritizes [repairing retained shared reads](docs/operations/SHARED-READ-REPAIR-2026-11-02.md). Preserve the original source, immutable versions, independent evidence and existing connection. Verify provenance-specific processing authority and selected-version evidence before legacy fallback; no deletion/reanalysis to hide a read failure. Follow its acceptance ledger until completed.

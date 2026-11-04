@@ -65,5 +65,69 @@
   "appComponents": "https://www.assistant-ui.com/elements",
   "accountEvidence": "Private local records excluded; real balance, pilot counters and catalog status read without inference or changes.",
   "ownerDecision": "Recurring 300-credit monthly admin allowance with generous hourly/daily rates; no Stripe fabrication or extra provider-spend authority.",
-  "productChanged": false
+  "productChanged": false,
+  "followUp": "R154 animation/design research and local search replay",
+  "animationRepositories": [
+    {
+      "repo": "ibelick/motion-primitives",
+      "status": 200,
+      "stars": 6897,
+      "license": "MIT",
+      "url": "https://github.com/ibelick/motion-primitives",
+      "archived": false
+    },
+    {
+      "repo": "formkit/auto-animate",
+      "status": 200,
+      "stars": 13958,
+      "license": "MIT",
+      "url": "https://github.com/formkit/auto-animate",
+      "archived": false
+    },
+    {
+      "repo": "imskyleen/animate-ui",
+      "status": 200,
+      "stars": 4885,
+      "license": "NOASSERTION",
+      "url": "https://github.com/imskyleen/animate-ui",
+      "archived": false
+    },
+    {
+      "repo": "magicuidesign/magicui",
+      "status": 200,
+      "stars": 23084,
+      "license": "MIT",
+      "url": "https://github.com/magicuidesign/magicui",
+      "archived": false
+    },
+    {
+      "repo": "phosphor-icons/react",
+      "status": 200,
+      "stars": 1790,
+      "license": "MIT",
+      "url": "https://github.com/phosphor-icons/react",
+      "archived": false
+    },
+    {
+      "repo": "iconoir-icons/iconoir",
+      "status": 200,
+      "stars": 4618,
+      "license": "MIT",
+      "url": "https://github.com/iconoir-icons/iconoir",
+      "archived": false
+    }
+  ],
+  "additionalOfficialDocs": [
+    "https://developers.openai.com/plugins/concepts/ui-guidelines",
+    "https://developers.openai.com/plugins/build/examples"
+  ],
+  "localPreview": {
+    "connectedAndQuiet": true,
+    "actualRetainedResultReplay": true,
+    "liveHostOrSearchStream": false,
+    "viewportChecks": [1440, 390, 320],
+    "themes": ["light", "dark"],
+    "reducedMotionAndSourceDialog": true,
+    "noInferenceOrBackendMutation": true
+  }
 }

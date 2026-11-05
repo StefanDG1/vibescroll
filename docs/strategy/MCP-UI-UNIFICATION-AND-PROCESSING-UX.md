@@ -209,7 +209,7 @@ Production acceptance begins with reads and zero-work cached posts. It proves cu
 - [x] Compare architectures, obtain independent review and record synthesis.
 - [x] Capture owner approval for 300 monthly admin credits and generous finite rates.
 - [x] Implement and publish Phase 1 within actual funding.
-- [ ] Complete Phase 2 and processing-card Phase 3a, with actual inline host acceptance.
+- [x] Implement and publish Phase 2 and processing-card Phase 3a. Actual inline host acceptance remains in Phase6.
 - [x] Implement insight-first search discovery Phase 3b from actual returned pages and citations. Published e51429d; actual ChatGPT/mobile acceptance remains in Phase6.
 - [x] Implement shared fullscreen and proposal continuity. Built official-bridge acceptance and publication are recorded separately below.
 - [ ] Finish actual host matrix, public docs and final production acceptance.
@@ -228,8 +228,10 @@ Knowledge-only widget bootstrap selects the current app default without reading 
 
 ## Production and remaining acceptance, November5
 
-Backend4b66616 and website e51429d are the current releases. The exact admin monthly grant and financial preservation passed actual read-back. The first canary revealed an entitlement mismatch at the dispatch barrier; the correction and its revoked-authority test pass. Its zero-dispatch/stopped proof permits exact reconciliation without touching old unknown work.
+The earlier dispatch checkpoint used backend4b66616 and website e51429d. The exact admin monthly grant and financial preservation passed actual read-back. The first canary revealed an entitlement mismatch at the dispatch barrier; the correction and its revoked-authority test pass. Its zero-dispatch/stopped proof permits exact reconciliation without touching old unknown work. The final b064887 publication below supersedes those serving commits.
 
 The next fresh native run completed and automatically published4 insights and8 verified frames. A retained-evidence Muse control produced6 insights without another preparation pass. They settled1 credit each. The previous shared recommendation stayed selected. Two fresh preparation tests are now used; do not launch another fresh pass from this approval. The unused verification allowance funded the retained API control within the same USD0.90 envelope; engineering holds remain.
 
-Phase4/5 code now shares the website's feed and proposal artifact through thin platform adapters. It uses current proposal records, durable discussion, scoped quote/start and explicit issue approval, plus one current context/JPEG metadata load. Canonical backend stages drive polling, and valid shared waits remain observable. Full local checks, generated-resource bridge checks, publication and actual-host/mobile acceptance must still be recorded separately.
+Phase4/5 is implemented and published at b064887. It shares the website's feed and proposal artifact through thin platform adapters, using current proposal records, durable discussion, scoped quote/start and explicit issue approval, plus one current context/JPEG metadata load. Canonical backend stages drive polling, and valid shared waits remain observable. Exact CI,17 publication guards,20 final built official-bridge cases,13 staged/13 canonical cases and authenticated post/Home/proposal reads pass. No schemas/indexes/components/auth/crons changed. [Production acceptance](../operations/evidence/launch-20261105-shared-ui-production.json).
+
+Phase6's actual new ChatGPT iframe and physical-phone checks remain open, with a read-only owner check requested. Two hundred percent browser text zoom is unverified. Sent discussion is backend-durable. Generic opaque hosts preserve unsent discussion and pending keys only within the iframe lifetime; the optional documented private widget-state adapter additionally passes a synthetic full-reload fixture. This is not a universal host-persistence guarantee. Phase7 public developer documentation, request records and recovery lessons are updated; no new release is needed for operational closeout documents.

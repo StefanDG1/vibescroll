@@ -154,6 +154,15 @@ export function createKnowledgeHandler(
                 "get_project_application_context",
                 "save_project_proposal",
                 "get_project_proposal",
+                "list_project_proposals",
+                "get_proposal_discussion",
+                "add_proposal_message",
+                "reply_to_project_plan",
+                "quote_project_plan",
+                "start_project_plan",
+                "preview_project_issue",
+                "approve_project_issue",
+                "retry_project_issue",
               ].includes(name)
                 ? { ui: { visibility: ["model", "app"] } }
                 : {}),

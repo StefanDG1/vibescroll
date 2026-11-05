@@ -2168,3 +2168,165 @@ it.each(["pilot", "credits", "operator"] as const)(
     }
   },
 );
+
+it("uses current exact admin authority for both funded dispatches without a fabricated Stripe subscription", async () => {
+  const f = await fixture();
+  const policy = {
+    version: "admin-processing-allowance-v1",
+    id: "dispatch-admin-fixture",
+    enabled: true,
+    subject: f.actor.subject,
+    organizationId: f.org,
+    monthlyCredits: 300,
+    maximumHourlyJobs: 20,
+    maximumDailyJobs: 100,
+    startsAt: Date.now() - 1000,
+  };
+  vi.stubEnv("ADMIN_PROCESSING_ALLOWANCE_JSON", JSON.stringify(policy));
+  vi.stubEnv(
+    "PAID_PROCESSING_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "paid-processing-monetary-v2",
+      id: "admin-dispatch-funding",
+      enabled: true,
+      verifiedAt: Date.now() - 1000,
+      expiresAt: Date.now() + 86400000,
+      operatingPoolNanoUsd: 900000000,
+      maximumJobNanoUsd: 50000000,
+      verifiedProviderCreditNanoUsd: 1000000000,
+      providerKeyBudgetNanoUsd: 1000000000,
+      priorExposureNanoUsd: 100000000,
+    }),
+  );
+  vi.stubEnv(
+    "PROPOSAL_SERVICE_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "proposal-service-v1",
+      enabled: true,
+      privateProjectContextAllowed: true,
+      permissionReference: "synthetic admin dispatch authority",
+    }),
+  );
+  const run = await f.start("admin-funded-dispatch");
+  const row = (await f.t.run((c) => c.db.get(run.runId!)))!;
+  expect(row.receipt.admission.providerReservationId).toBeTruthy();
+  expect(
+    await f.t.run((c) =>
+      c.db
+        .query("billing")
+        .withIndex("by_org", (q) => q.eq("organizationId", f.org))
+        .unique(),
+    ),
+  ).toBeNull();
+  // Reconciliation needs the committed pre-dispatch proof, not an error label.
+  await f.t.mutation(internal.preparedAnalysis.progress, {
+    runId: run.runId!,
+    stage: "transcribing",
+  });
+  await f.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId: run.runId!,
+    kind: "preparation",
+    receipt: { stopAcknowledged: true },
+  });
+  await f.t.mutation(internal.preparedAnalysis.fail, {
+    runId: run.runId!,
+    code: "PREPARATION_OUTCOME_UNCONFIRMED",
+  });
+  expect((await f.t.run((c) => c.db.get(run.runId!)))?.state).toBe("unknown");
+  await f.t.mutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+    runId: run.runId!,
+  });
+  const reconciled = (await f.t.run((c) => c.db.get(run.runId!)))!;
+  expect(reconciled).toMatchObject({
+    state: "failed",
+    receipt: {
+      failure: { code: "PREPARATION_OUTCOME_UNCONFIRMED" },
+      billing: { chargedCredits: 0 },
+      reconciliation: { proof: "stopped_before_gateway_dispatch" },
+    },
+  });
+  expect(
+    await f.t.run((c) => c.db.get(row.receipt.admission.providerReservationId)),
+  ).toMatchObject({ state: "released", actualNanoUsd: 0 });
+  expect(
+    await f.t.mutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+      runId: run.runId!,
+    }),
+  ).toBe(true);
+  const next = await f.start("admin-next-dispatch");
+  const nextRow = (await f.t.run((c) => c.db.get(next.runId!)))!;
+  await f.t.mutation(internal.preparedAnalysis.claim, { runId: next.runId! });
+  await f.t.mutation(internal.preparedAnalysis.providerDispatch, {
+    runId: next.runId!,
+    component: "transcription",
+  });
+  const funded = await f.t.run((c) =>
+    c.db.get(nextRow.receipt.admission.providerReservationId),
+  );
+  expect(funded).toMatchObject({
+    state: "dispatched",
+    dispatches: ["transcription"],
+  });
+  await expect(
+    f.t.mutation(internal.preparedAnalysis.providerDispatch, {
+      runId: next.runId!,
+      component: "transcription",
+    }),
+  ).rejects.toThrow("SOURCE_BUSY");
+  const beforeDispatched = (await f.t.run((c) => c.db.get(next.runId!)))!;
+  await f.t.run((c) =>
+    c.db.patch(next.runId!, {
+      state: "unknown",
+      receipt: {
+        ...beforeDispatched.receipt,
+        preparation: { stopAcknowledged: true },
+        failure: {
+          stage: "transcribing",
+          code: "PREPARATION_OUTCOME_UNCONFIRMED",
+        },
+      },
+    }),
+  );
+  await expect(
+    f.t.mutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+      runId: next.runId!,
+    }),
+  ).rejects.toThrow("COST_RECONCILIATION_REQUIRED");
+  expect(
+    await f.t.run((c) =>
+      c.db.get(nextRow.receipt.admission.providerReservationId),
+    ),
+  ).toEqual(funded);
+  await f.t.run((c) =>
+    c.db.patch(next.runId!, {
+      state: beforeDispatched.state,
+      receipt: beforeDispatched.receipt,
+    }),
+  );
+  await retained(f, next.runId!);
+  vi.stubEnv(
+    "ADMIN_PROCESSING_ALLOWANCE_JSON",
+    JSON.stringify({ ...policy, enabled: false }),
+  );
+  await expect(
+    f.t.mutation(internal.preparedAnalysis.providerDispatch, {
+      runId: next.runId!,
+      component: "analysis",
+    }),
+  ).rejects.toThrow(/active Pro/);
+  expect(
+    await f.t.run((c) =>
+      c.db.get(nextRow.receipt.admission.providerReservationId),
+    ),
+  ).toEqual(funded);
+  vi.stubEnv("ADMIN_PROCESSING_ALLOWANCE_JSON", JSON.stringify(policy));
+  await f.t.mutation(internal.preparedAnalysis.providerDispatch, {
+    runId: next.runId!,
+    component: "analysis",
+  });
+  expect(
+    await f.t.run((c) =>
+      c.db.get(nextRow.receipt.admission.providerReservationId),
+    ),
+  ).toMatchObject({ dispatches: ["transcription", "analysis"] });
+});

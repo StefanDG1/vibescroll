@@ -1,3 +1,4 @@
+import { readAdminProcessingAllowance } from "./lib/adminProcessingAllowance";
 import { z } from "zod";
 import { v } from "convex/values";
 import { engagementEnabled } from "./lib/postEngagement";
@@ -616,7 +617,14 @@ export const providerDispatch = internalMutation({
         "APPROVAL_STALE",
         "The Gateway dispatch differs from its funded media operation.",
       );
-      await requirePaidProcessing(ctx, c.actor);
+      if (
+        !(await readAdminProcessingAllowance(
+          ctx,
+          c.actor,
+          c.run.organizationId,
+        ))
+      )
+        await requirePaidProcessing(ctx, c.actor);
       await markProviderDispatch(ctx, reservationId, component);
     }
     return null;
@@ -1263,15 +1271,41 @@ export const reconcileReturnedFailure = internalMutation({
     const c = await current(ctx, runId),
       failure = c.run.receipt?.failure;
     if (c.run.state === "failed") return true;
+    const providerId = c.run.receipt?.admission?.providerReservationId
+      ? ctx.db.normalizeId(
+          "providerFundingReservations",
+          c.run.receipt.admission.providerReservationId,
+        )
+      : null;
+    const provider = providerId ? await ctx.db.get(providerId) : null;
+    // Both Gateway POSTs await a durable providerDispatch mutation first. An
+    // empty exact reservation proves neither request left this action. This
+    // does not reconcile a dispatched request, ASR receipt or old unknown hold.
+    const neverDispatched =
+      !!provider &&
+      ["reserved", "unknown"].includes(provider.state) &&
+      provider.dispatches.length === 0 &&
+      provider.operationKey === c.run.receipt.admission.reservationKey &&
+      provider.requestHash === c.run.receipt.admission.quoteHash &&
+      c.run.receipt.preparation?.stopAcknowledged === true &&
+      !c.run.receipt.reusedPreparation &&
+      !c.run.evidenceId &&
+      !c.run.attemptId &&
+      !c.run.receipt.asr &&
+      !c.run.receipt.asr_output &&
+      !c.run.receipt.analysis &&
+      !c.run.receipt.analysis_output &&
+      !c.run.versionId;
     ensure(
       c.run.state === "unknown" &&
         failure?.stage === "transcribing" &&
-        knownReturnedPreparationFailure(
-          { ...c.run, state: failure.stage },
-          failure.code,
-        ),
+        (neverDispatched ||
+          knownReturnedPreparationFailure(
+            { ...c.run, state: failure.stage },
+            failure.code,
+          )),
       "COST_RECONCILIATION_REQUIRED",
-      "Only a returned, rejected preparation with a stopped VM can be reconciled here.",
+      "Only a stopped, returned preparation with verified dispatch evidence can be reconciled here.",
     );
     await ctx.db.patch(runId, { state: "failed", updatedAt: Date.now() });
     if (c.source.personalMedia?.runId === runId)
@@ -1282,6 +1316,24 @@ export const reconcileReturnedFailure = internalMutation({
           updatedAt: Date.now(),
         },
       });
+    if (neverDispatched) {
+      await ctx.db.patch(runId, {
+        receipt: {
+          ...c.run.receipt,
+          reconciliation: {
+            proof: "stopped_before_gateway_dispatch",
+            providerReservationId: provider!._id,
+            at: Date.now(),
+          },
+        },
+      });
+      await settlePreparedCredits(
+        ctx,
+        (await ctx.db.get(runId))!,
+        1,
+        "never_started",
+      );
+    }
     return true;
   },
 });

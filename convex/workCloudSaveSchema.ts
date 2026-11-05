@@ -1,0 +1,47 @@
+import { v } from "convex/values";
+
+export const cloudSaveDefaults = v.object({
+  version: v.union(
+    v.literal("app-save-cloud-v1"),
+    v.literal("link-save-cloud-v2"),
+  ),
+  model: v.string(),
+  effort: v.union(
+    v.literal("low"),
+    v.literal("medium"),
+    v.literal("high"),
+    v.literal("xhigh"),
+  ),
+  retentionMs: v.number(),
+  resultRetention: v.optional(v.literal("until_deleted")),
+});
+
+export const cloudSaveIntent = v.object({
+  version: v.union(
+    v.literal("app-save-cloud-v1"),
+    v.literal("link-save-cloud-v2"),
+  ),
+  origin: v.optional(v.union(v.literal("app"), v.literal("mcp"))),
+  id: v.string(),
+  actor: v.id("users"),
+  grantId: v.id("assistantGrants"),
+  grantVersion: v.number(),
+  clientId: v.string(),
+  generation: v.number(),
+  revision: v.number(),
+  sourceHash: v.string(),
+  defaultsHash: v.string(),
+  policyHash: v.string(),
+  model: v.string(),
+  effort: v.union(
+    v.literal("low"),
+    v.literal("medium"),
+    v.literal("high"),
+    v.literal("xhigh"),
+  ),
+  retainUntil: v.number(),
+  resultRetention: v.optional(v.literal("until_deleted")),
+  createdAt: v.number(),
+  expiresAt: v.number(),
+  analysisGeneration: v.optional(v.number()),
+});

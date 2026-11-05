@@ -7,6 +7,8 @@ import { personalAllowed } from "./lib/personalAccess";
 import { hostedMediaAllowed } from "./lib/hostedMediaAccess";
 import { privateLibrary } from "./librarySpaces";
 import { parsePreflightReport } from "../packages/onboarding/preflight-report";
+import { savedCloudRoute } from "./lib/workCloudSave";
+import { preparedServiceAvailable } from "./lib/preparedServicePolicy";
 
 export const status = query({
   args: { organizationId: v.id("organizations") },
@@ -42,7 +44,9 @@ export const status = query({
       .query("assistantGrants")
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
       .take(30);
+    const workCloud = await savedCloudRoute(ctx, actor, organization);
     return {
+      workCloud,
       version: setup?.version ?? 0,
       localPreflight: setup?.localPreflight
         ? {
@@ -52,10 +56,13 @@ export const status = query({
           }
         : null,
       snapshot: {
+        workCloudAvailable: workCloud?.available ?? false,
         purposeSaved: setup?.confirmed === true,
         sourceSaved: sources.some((s) => s.state !== "deleted"),
         route: setup?.processingRoute,
-        cloudAvailable: hostedMediaAllowed(actor.subject),
+        cloudAvailable:
+          hostedMediaAllowed(actor.subject) ||
+          (await preparedServiceAvailable(ctx, actor, a.organizationId)),
         localEligible: personalAllowed(actor.subject),
         // The web has no trusted local prerequisite/startup bridge. A heartbeat
         // proves availability only; it never certifies a local installation.
@@ -88,14 +95,25 @@ export const save = mutation({
     organizationId: v.id("organizations"),
     expectedVersion: v.number(),
     route: v.optional(
-      v.union(v.literal("local"), v.literal("cloud"), v.literal("save_only")),
+      v.union(
+        v.literal("local"),
+        v.literal("cloud"),
+        v.literal("save_only"),
+        v.literal("work_cloud"),
+      ),
     ),
     importReviewed: v.optional(v.boolean()),
     preferencesReviewed: v.optional(v.boolean()),
     preflightReport: v.optional(v.any()),
   },
   handler: async (ctx, a) => {
-    const { actor } = await privateLibrary(ctx, a.organizationId);
+    const { actor, organization } = await privateLibrary(ctx, a.organizationId);
+    if (a.route === "work_cloud")
+      ensure(
+        (await savedCloudRoute(ctx, actor, organization))?.available,
+        "SETUP_REQUIRED",
+        "Finish the reviewed ChatGPT saved-link setup before selecting automatic Cloud analysis.",
+      );
     await limit(ctx, `setup-journey:${actor._id}`, 30);
     const old = await ctx.db
       .query("librarySetup")

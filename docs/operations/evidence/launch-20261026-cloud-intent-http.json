@@ -1,0 +1,144 @@
+{
+  "recordedAtUTC": "2026-10-26T20:39:24.219998+00:00",
+  "productionFailure": {
+    "automaticEventDelivered": true,
+    "runtimePreflightPassed": true,
+    "requestAnalysisCalls": 1,
+    "refusal": "INVALID_ARGUMENT generic authorization/evidence error",
+    "generationAfter": 0,
+    "processingAfter": null,
+    "mediaAcquisition": false,
+    "asrOrAnalysis": false,
+    "automaticRetry": false,
+    "pilotPaused": true
+  },
+  "rootCause": "strict assistantHttp request_analysis schema omitted savedIntentId already declared by MCP and backend",
+  "fix": "optional 64-character lowercase hexadecimal field; all existing authorization and saved-default checks retained",
+  "reproducedBeforeFix": {
+    "fullChainCasesFailed": 4,
+    "existingCasesPassed": 33
+  },
+  "fullChainCases": {
+    "protocols": [
+      "2025-11-25",
+      "2026-07-28"
+    ],
+    "libraries": [
+      "private",
+      "original sole owner"
+    ],
+    "actualAppSaveIntent": true,
+    "mcpToAuthenticatedHttpToRealConvexMutation": true,
+    "providerUserinfo": "mocked",
+    "hostedCalls": 0,
+    "oneGenerationAndOneZeroCostReservation": true,
+    "replayIdempotent": true,
+    "malformedRawHttpRejectedBeforeProviderOrMutation": true,
+    "unknownAndCreditOverridesRejected": true
+  },
+  "focusedCasesPassed": 57,
+  "fullCheck": {
+    "exitCode": 0,
+    "vitestPassed": 1300,
+    "hostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 67,
+    "windowsSkipped": 5,
+    "typesPassed": true,
+    "zeroWarningLint": true,
+    "productionBuildsPassed": true
+  },
+  "schemaIndexComponentChanges": false,
+  "oauthScopeOrGrantChanges": false,
+  "hostedPublication": true,
+  "automaticMediaAccepted": false,
+  "exactCI": {
+    "runId": 40397618609,
+    "conclusion": "success"
+  },
+  "updatedAtUTC": "2026-10-26T20:55:46.239814+00:00",
+  "production": {
+    "frontendCommit": "3ac324723577ee5af0deaf471716270deb40872b",
+    "backendCommit": "3ac324723577ee5af0deaf471716270deb40872b",
+    "deploymentId": "dpl_2v6aiXEurixg9ojkKfE1mSVnmN5i",
+    "canonicalVersion": "0.1.0-alpha.20261026203931.g3ac324723577",
+    "sameBuildPromotion": true,
+    "normalAutoDomainAssignmentRestoredAndUiVerified": true,
+    "canonicalGuideVerified": true,
+    "canonicalRuntimeBytes": 78361,
+    "canonicalRuntimeSHA256": "f2bf4676b125184040bcbf2368a99ec4392e11c93dc845fe170afb0deb9bc9d4",
+    "actualPostRegionalInviteAbsent": true,
+    "actualPostAdvancedPrivacyInitiallyClosed": true
+  },
+  "subsequentAutomaticSave": {
+    "clickedAtUTC": "2026-10-26T20:53:12.211Z",
+    "chatTabClosed": true,
+    "callbackAtUTC": "2026-10-26T20:53:15.460Z",
+    "httpStatus": 200,
+    "attempts": 1,
+    "generation": 1,
+    "savedIntentState": "consumed",
+    "stageObserved": "acquiring",
+    "canonicalResultAccepted": false,
+    "lastStatus": "unknown",
+    "sourceStatus": "failed",
+    "sourceMediaAsrAndProviderUsage": "unreconciled",
+    "retryOrReplacement": false,
+    "actualNativeReport": {
+      "clipAcquired": true,
+      "durationSeconds": 104,
+      "captionTracks": 0,
+      "nativeMetadataAccepted": true,
+      "asrConstruction": 0,
+      "transcriptions": 0,
+      "framePreparations": 0,
+      "completions": 0,
+      "stopReason": "operational monitor instruction mistakenly forbade cached model construction throughout source lease",
+      "leaseRelinquishmentAccepted": true,
+      "ownedMediaAndExecutionCopyRemoved": true,
+      "sharedCachesPreserved": true,
+      "providerDeletion": "unverified",
+      "subscriptionUsage": "unresolved"
+    },
+    "pilotPaused": true,
+    "readOnlyNativeReconciliation": {
+      "acquisitionOperations": 1,
+      "inspectStages": 1,
+      "acquireStages": 1,
+      "commandExitCode": 0,
+      "mediaFiles": 1,
+      "metadataSubmissionsAccepted": 1,
+      "asrConstructions": 0,
+      "transcriptions": 0,
+      "framePreparations": 0,
+      "uploads": 0,
+      "preparationBindings": 0,
+      "completions": 0,
+      "relinquishmentsAccepted": 1,
+      "precedingHeartbeatValid": true,
+      "leaseExpiryRefusalObserved": false,
+      "outstandingLaunchedSessionsInRetainedEvidence": 0,
+      "freshProcessScan": false,
+      "providerAttestedHostStop": false,
+      "jobRootRemoved": {
+        "files": 7,
+        "bytes": 5890901
+      },
+      "toolsCopyRemoved": {
+        "files": 1176,
+        "bytes": 13649277
+      },
+      "providerDeletionAndSubscriptionUsage": "unverified",
+      "auditToolCalls": 0,
+      "monitorPaused": true
+    }
+  },
+  "candidateClarification": {
+    "scope": "preflight stays static; existing authorized offline preparation may initialize separately verified local model under fresh V2",
+    "noPolicyHashOrAuthorityChange": true,
+    "focusedSetupCasesPassed": 23,
+    "independentSourceReview": "no actionable phase inconsistency; real V2 wrapper remains mandatory",
+    "published": false,
+    "pausedActionSavedAndReopenedVerified": true
+  }
+}

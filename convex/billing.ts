@@ -4,13 +4,29 @@ import { v } from "convex/values";
 import { access, billingFor, fail, limit } from "./lib";
 import { billingReadiness } from "../packages/providers/billing-readiness";
 import { ensure } from "../packages/policy";
+import { billingRiskHeld } from "./lib/billingRisk";
+import {
+  paidProcessingCapacity,
+  requirePaidProcessing,
+} from "./lib/paidProcessing";
+export const processingAvailable = internalQuery({
+  args: { organizationId: v.id("organizations"), requirePro: v.boolean() },
+  returns: v.boolean(),
+  handler: async (ctx, a) => {
+    const principal = await access(ctx, a.organizationId, ["owner"], !a.requirePro);
+    if (a.requirePro)
+      await requirePaidProcessing(ctx, principal.actor, a.organizationId);
+    return !!(await paidProcessingCapacity(ctx))?.available;
+  },
+});
 export const authorize = query({
   args: { organizationId: v.id("organizations") },
   handler: async (ctx, { organizationId }) => {
-    const a = await access(ctx, organizationId, ["owner"]);
+    const a = await access(ctx, organizationId, ["owner"], true);
     return {
       name: a.organization.name,
       email: a.actor.email,
+      personal: a.organization.privateOwnerId === a.actor._id,
       mode: process.env.STRIPE_MODE === "live" ? "live" : "test",
       configured: Boolean(
         billingReadiness(process.env).catalogueConfigured ||
@@ -92,6 +108,11 @@ export const reserveCheckout = internalMutation({
       );
       return { key: row.checkoutKey, expires: row.checkoutExpires };
     }
+    ensure(
+      !(await billingRiskHeld(ctx, organizationId)),
+      "PAYMENT_REVIEW_REQUIRED",
+      "New purchases are paused for payment review. Existing invoices and results are preserved.",
+    );
     const expires = Date.now() + 31 * 60000;
     const key = `checkout:${organizationId}:${crypto.randomUUID()}`;
     await ctx.db.patch(row._id, {

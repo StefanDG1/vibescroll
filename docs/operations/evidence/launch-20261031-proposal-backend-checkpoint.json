@@ -1,0 +1,51 @@
+{
+  "observedAtUTC": "2026-10-31T15:07:00Z",
+  "candidate": "33aaa6fafc95b025b07a2cbecb22ad61b8727c5c",
+  "websiteCommit": "8b6a754f77b427a7a47708716169255e5f1446c5",
+  "exactCI": {
+    "run": 41211015160,
+    "passed": true,
+    "vitestPassed": 1636,
+    "vitestSkipped": 5,
+    "fullChecksAndDependencyAudit": true
+  },
+  "backend": {
+    "published": true,
+    "finishAcknowledgedAtUTC": "2026-10-31T14:57:30.504Z",
+    "finishSHA256": "2f3a5cb71d40b9b0aa599b29a53b7aced73bb349827c68359410cbfaf027c3e8",
+    "deterministicOfflinePreparations": 2,
+    "activeExistingSchemasCompared": 12,
+    "newComponent": "agent",
+    "newRootTables": ["proposalOperations", "proposalServiceCounters"],
+    "newRootIndexes": 5,
+    "newEmptyComponentIndexes": 35,
+    "existingSchemaAndIndexChanges": 0,
+    "existingPopulatedScansOrBackfills": 0,
+    "authAndCronChanges": 0
+  },
+  "recovery": {
+    "extraAdvisoryPreflightWaitReturned500BeforeStart": true,
+    "knownStartReplyExceededOldOneMegabyteParserCap": true,
+    "knownStartContinuedWithoutAnotherStart": true,
+    "finishReconciledWithoutReplay": true,
+    "unknownFinancialHoldsRetained": true
+  },
+  "actualUserAcceptance": {
+    "originalMCPSavedPrivateWholePostProposal": true,
+    "normalWebsiteSessionReadProposal": true,
+    "quoteReturnedMaximumCredits": 3,
+    "paidReplyRefusedBeforeInference": "INSUFFICIENT_CREDITS",
+    "diagnosis": "New empty personal account took precedence over configured legacy owner's existing allowance",
+    "paidProviderCalls": 0,
+    "newVideoProcessing": 0,
+    "newIssuesPublished": 0,
+    "newWebsiteBuilds": 0
+  },
+  "remaining": [
+    "Publish owner-only legacy funding correction",
+    "Accept one GLM plan and real credit settlement",
+    "Publish website and MCP catalogue after physical hosting headroom reconciliation",
+    "Native desktop/mobile plan review and issue publication acceptance",
+    "OpenAI organization-funded route remains separate planned work"
+  ]
+}

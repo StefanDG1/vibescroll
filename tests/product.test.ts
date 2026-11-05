@@ -1985,15 +1985,11 @@ describe("V1 library and resource allowances", () => {
       }),
     ).rejects.toThrow();
   });
-  it("requires fresh authentication before pairing and consumes approval once", async () => {
+  it("pairs using the normal owner session and consumes approval once", async () => {
     const { t, org } = await setup();
     const stale = t.withIdentity({
       subject: "a",
       auth_time: Math.floor(Date.now() / 1000) - 301,
-    });
-    const fresh = t.withIdentity({
-      subject: "a",
-      auth_time: Math.floor(Date.now() / 1000),
     });
     const args = {
       organizationId: org,
@@ -2001,19 +1997,15 @@ describe("V1 library and resource allowances", () => {
       fingerprint: "a".repeat(64),
       codeHash: "b".repeat(64),
     };
-    await expect(stale.mutation(api.devices.start, args)).rejects.toThrow();
-    const id = await fresh.mutation(api.devices.start, args);
+    const id = await stale.mutation(api.devices.start, args);
     const approve = {
       id,
       fingerprint: args.fingerprint,
       credentialHash: "c".repeat(64),
     };
+    await stale.mutation(api.devices.approve, approve);
     await expect(
       stale.mutation(api.devices.approve, approve),
-    ).rejects.toThrow();
-    await fresh.mutation(api.devices.approve, approve);
-    await expect(
-      fresh.mutation(api.devices.approve, approve),
     ).rejects.toThrow();
   });
 });

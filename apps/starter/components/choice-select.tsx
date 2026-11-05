@@ -34,13 +34,18 @@ export function ChoiceSelect({
     .filter(isValidElement)
     .map((item) => {
       const props = item.props as {
-        value: string;
+        value: string | number;
         children: ReactNode;
         disabled?: boolean;
         required?: boolean;
         "data-group"?: string;
       };
-      return props;
+      // Native <option> accepts numeric IDs; form and Radix values are strings.
+      return {
+        ...props,
+        value:
+          typeof props.value === "number" ? String(props.value) : props.value,
+      };
     });
   const [local, setLocal] = useState(defaultValue ?? options[0]?.value ?? "");
   const [portalContainer, setPortalContainer] = useState<HTMLElement>();

@@ -1,0 +1,48 @@
+{
+  "id": "v1-2026-10-03.1",
+  "effectiveDate": "2026-10-03",
+  "operatorApproved": true,
+  "approvalEvidence": "Owner conversation on 3 October 2026: current policies accepted and implementation authorized.",
+  "professionalLegalReviewClaimed": false,
+  "paymentRoute": "managed_payments",
+  "markets": "verified_tax_covered",
+  "previousDraftRetained": "archive/pre-publication-2026-10-03",
+  "documents": {
+    "TERMS": {
+      "version": "1.0.0",
+      "sha256": "535a6dccad08e0ce84ac777c457e5b2047df49e4bd64fdf69e3272143aaaf1c6"
+    },
+    "REFUNDS": {
+      "version": "1.0.0",
+      "sha256": "2264ed8db3b1827da9926b8d939f47e07152dc5686908f59ebd9bd55ce222afd"
+    },
+    "PRIVACY": {
+      "version": "1.0.0",
+      "sha256": "bb30c6c09bf1abb55566434b06fdc9cda4769afdb4fa1757cf0cf9213cd367ca"
+    },
+    "COOKIES": {
+      "version": "1.1.0",
+      "sha256": "39040946c125c4fcfb933f6fb27ee412a79782fe3f880e752757b9712c260a93"
+    },
+    "ACCEPTABLE-USE": {
+      "version": "1.0.0",
+      "sha256": "89e32fb5508fdad612f51b1720f3acdac34df46e07754f835aa14b6e61f79e22"
+    },
+    "COPYRIGHT": {
+      "version": "1.0.0",
+      "sha256": "f4c0bdaeb727aa50682c41c703d9e8b72c37216b046f31337295a76c71405446"
+    },
+    "LEGAL-NOTICE": {
+      "version": "1.0.0",
+      "sha256": "f340898549d1e7b2b6606eece7a1fe5d72e266cf1a4ca62543a53cc7b218f531"
+    },
+    "SUBPROCESSORS": {
+      "version": "1.0.0",
+      "sha256": "70a0287ee5631db6d8c75f82edb59b12d942d5f4de40fc3d3cdd250817ca6149"
+    },
+    "DPA": {
+      "version": "1.0.0",
+      "sha256": "0c2062c5018f49c6c5de5118d91a3514345cae643b6c420e50b8348bfc334e1d"
+    }
+  }
+}

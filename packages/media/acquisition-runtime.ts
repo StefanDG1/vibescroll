@@ -41,10 +41,10 @@ export function acquisitionPolicy(raw: string) {
   } else {
     platform = "tiktok";
     ensure(
-      host === "vm.tiktok.com"
+      ["vm.tiktok.com", "vt.tiktok.com"].includes(host)
         ? /^\/[A-Za-z0-9]{5,30}\/?$/.test(url.pathname)
         : host === "tiktok.com" &&
-            /^\/@[A-Za-z0-9_.]{1,40}\/video\/[0-9]{10,25}\/?$/.test(
+            /^(?:\/@[A-Za-z0-9_.]{1,40}\/video\/[0-9]{10,25}|\/t\/[A-Za-z0-9]{5,30})\/?$/.test(
               url.pathname,
             ),
       "UNSUPPORTED_SOURCE",

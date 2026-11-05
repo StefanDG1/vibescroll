@@ -13,6 +13,62 @@ const choice = v.object({
   fullName: v.string(),
   snapshotPaths: v.optional(v.array(v.string())),
 });
+// Refreshing one project must not reselect or prepare the rest of a workspace.
+export const startRefresh = mutation({
+  args: {
+    id: v.id("repositories"),
+    expectedSha: v.string(),
+    expectedSelectionVersion: v.number(),
+  },
+  returns: v.object({
+    id: v.id("repositories"),
+    organizationId: v.id("organizations"),
+    actor: v.id("users"),
+    installationId: v.number(),
+    providerId: v.number(),
+    fullName: v.string(),
+    snapshotPaths: v.array(v.string()),
+    selectionVersion: v.number(),
+  }),
+  handler: async (ctx, a) => {
+    const repo = await ctx.db.get(a.id);
+    ensure(repo?.enabled, "FORBIDDEN", "Project unavailable.");
+    const { actor } = await writeAccess(ctx, repo.organizationId, [
+      "owner",
+      "admin",
+    ]);
+    ensure(
+      repo.sha === a.expectedSha &&
+        (repo.selectionVersion ?? 0) === a.expectedSelectionVersion,
+      "APPROVAL_STALE",
+      "Read the current project before refreshing its snapshot.",
+    );
+    ensure(
+      !["preparing", "drafting_context"].includes(repo.status) &&
+        !repo.profileDraftKey,
+      "SOURCE_BUSY",
+      "This project is already preparing. Check its status before refreshing.",
+    );
+    await limit(ctx, `repo-refresh:${repo._id}`, 10);
+    const selectionVersion = (repo.selectionVersion ?? 0) + 1;
+    await ctx.db.patch(repo._id, {
+      selectionVersion,
+      status: "preparing",
+      preparationError: undefined,
+      updatedAt: Date.now(),
+    });
+    return {
+      id: repo._id,
+      organizationId: repo.organizationId,
+      actor: actor._id,
+      installationId: repo.installationId,
+      providerId: repo.providerId,
+      fullName: repo.fullName,
+      snapshotPaths: repo.snapshotPaths ?? [],
+      selectionVersion,
+    };
+  },
+});
 export const save = mutation({
   args: {
     organizationId: v.id("organizations"),
@@ -25,11 +81,19 @@ export const save = mutation({
       "owner",
       "admin",
     ]);
+    ensure(
+      a.choices.length <= 1000,
+      "BATCH_LIMIT",
+      "Select projects in batches of at most 1,000. Existing connections are preserved.",
+    );
     await limit(ctx, `repo-selection:${a.organizationId}`, 10);
     const entitlement = await wallet(ctx, a.organizationId);
+    const repositoryLimit = repositoryAllowance(
+      entitlement.tier,
+      actor.subject,
+    );
     ensure(
-      a.choices.length <=
-        repositoryAllowance(entitlement.tier, actor.subject) &&
+      (repositoryLimit === null || a.choices.length <= repositoryLimit) &&
         new Set(a.choices.map((r) => r.providerId)).size === a.choices.length,
       "REPOSITORY_LIMIT",
       "Choose repositories within the existing allowance.",
@@ -37,7 +101,12 @@ export const save = mutation({
     const bindings = await ctx.db
       .query("githubBindings")
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
-      .collect();
+      .take(1001);
+    ensure(
+      bindings.length < 1001,
+      "BATCH_LIMIT",
+      "This bulk selection needs an installation batch review. Existing connections are preserved.",
+    );
     const connection = await ctx.db
       .query("connections")
       .withIndex("by_provider", (q) =>
@@ -65,7 +134,12 @@ export const save = mutation({
     const old = await ctx.db
       .query("repositories")
       .withIndex("by_org", (q) => q.eq("organizationId", a.organizationId))
-      .collect();
+      .take(1001);
+    ensure(
+      old.length < 1001,
+      "BATCH_LIMIT",
+      "This bulk selection needs a project batch review. Existing connections are preserved.",
+    );
     // Validate every requested scope before changing selection or starting provider work.
     const choices = a.choices.map((c) => ({
       ...c,

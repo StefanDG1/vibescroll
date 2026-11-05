@@ -1,0 +1,253 @@
+{
+  "kind": "server-prepared-service-production-pilot-v1",
+  "observedAtUTC": "2026-10-29T21:41:33.535398+00:00",
+  "backendCommit": "e0ca2324a742571ce1e3f949394122620f1bb069",
+  "backendExactCI": 40957292958,
+  "websiteCommit": "b0ec5b6530362819206666a9077b516b895949bd",
+  "websiteVersion": "0.1.0-alpha.20261029201911.gb0ec5b653036",
+  "deployment": "dpl_8y7ZvcFhasQHA1GDCd2yEB7GKeo8",
+  "release": {
+    "published": true,
+    "actualCompatibleGuards": 22,
+    "components": 12,
+    "tables": 138,
+    "indexes": 301,
+    "schemaChanges": 0,
+    "scans": 0,
+    "backfills": 0,
+    "websiteBuildForCorrection": false
+  },
+  "tests": {
+    "fullLocalVitestBeforeFinalExtraCase": 1549,
+    "finalNativeRetryFocusedCases": 20,
+    "finalTypesPassed": true,
+    "exactLinuxCIPassed": true,
+    "exactCIVitest": 1548,
+    "localHostedSkipped": 3,
+    "localWindowsPythonSkipped": 7,
+    "actualDecoderOversizeBeforePCMFramesRegression": true,
+    "exactCIVitestSkipped": 5
+  },
+  "runs": [
+    {
+      "entry": "explicit settled-failure MCP retry",
+      "executor": "gateway",
+      "sourceId": "px7daqmpamn8s0ad5man74r1as8h72n5",
+      "runId": "y17904eg6g5tvp6cmsy78ndwkd8h7s8b",
+      "sourceGeneration": 0,
+      "privateVersionId": "xh7c0f2rn79z405qkmacjcd3n98h63y6",
+      "sharedVersionId": "xh7ah9nr1xrb6sqe9nqzjrkzf98h6eke",
+      "sharedArtifactId": "vx79zs78qrz541v2ff16ta50y58h65h8",
+      "state": "ready",
+      "catalogState": "published",
+      "insightCount": 6,
+      "durationMs": 27931,
+      "transcriptSegments": 1,
+      "frames": 8,
+      "allReturnedJPEGsDecodedAndHashed": true,
+      "frameDimensions": [540, 960],
+      "resultRetention": "until_deleted",
+      "provenance": "managed_api_reported",
+      "requestedModel": "meta/muse-spark-1.3-contributor",
+      "requestedEffort": "medium",
+      "hostReportedModel": "meta/muse-spark-1.3-contributor",
+      "hostReportedEffort": "medium",
+      "billing": {
+        "maximumCredits": 4,
+        "chargedCredits": 2,
+        "preparationCredits": 1,
+        "analysisCredits": 1
+      },
+      "timing": {
+        "origin": "server stages; fresh acquisition and ASR included",
+        "queuedToInsightsMs": 65082,
+        "queuedToSharedAssociationMs": 72605,
+        "queuedToRetainedEvidenceMs": 33251,
+        "workerPreparationMs": 26207,
+        "asrMs": 5903,
+        "eventWaitMs": 0,
+        "reasoningAndCompletionMs": 31686
+      },
+      "stopAcknowledged": true,
+      "providerDeletionIndependentlyVerified": false,
+      "nativeTaskInstallsDownloadsASR": null
+    },
+    {
+      "entry": "explicit settled-failure MCP retry",
+      "executor": "work_cloud",
+      "sourceId": "px7a0q1ys176ncpwx9fn3srqd18h7cbx",
+      "runId": "y17c5w1dx3mk38c606fc3naa518h6mf1",
+      "sourceGeneration": 0,
+      "privateVersionId": "xh74pgnjmc8w6p9xsz50tfn6gx8h7yw7",
+      "sharedVersionId": "xh70s47hxzvz3sts0qdr93kqsh8h6xtn",
+      "sharedArtifactId": "vx737amcswnpwv11yd5pe4t1118h7w4b",
+      "state": "ready",
+      "catalogState": "published",
+      "insightCount": 4,
+      "durationMs": 56081,
+      "transcriptSegments": 1,
+      "frames": 8,
+      "allReturnedJPEGsDecodedAndHashed": true,
+      "frameDimensions": [540, 960],
+      "resultRetention": "until_deleted",
+      "provenance": "authenticated_host_reported",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "hostReportedModel": null,
+      "hostReportedEffort": null,
+      "billing": {
+        "maximumCredits": 1,
+        "chargedCredits": 1,
+        "preparationCredits": 1,
+        "analysisCredits": 0
+      },
+      "timing": {
+        "origin": "server stages; fresh acquisition and ASR included",
+        "queuedToInsightsMs": 212223,
+        "queuedToSharedAssociationMs": 218000,
+        "queuedToRetainedEvidenceMs": 32590,
+        "workerPreparationMs": 28326,
+        "asrMs": 2341,
+        "eventWaitMs": 62957,
+        "reasoningAndCompletionMs": 116525
+      },
+      "stopAcknowledged": true,
+      "providerDeletionIndependentlyVerified": false,
+      "nativeTaskInstallsDownloadsASR": false
+    },
+    {
+      "entry": "ordinary MCP save_link; analyze omitted",
+      "executor": "work_cloud",
+      "sourceId": "px707b9fx1524x540btbfnvtxh8h77md",
+      "runId": "y17ex9hx82fh5xt8p1ey1yh9w98h75ej",
+      "sourceGeneration": 0,
+      "privateVersionId": "xh747p74pcvx2s0s9b1t0s5rn18h6hkb",
+      "sharedVersionId": "xh76mqy5reqr884nf0az4xjhkx8h7f14",
+      "sharedArtifactId": "vx7exn76x76mchbkg4t3bryacn8h7t8s",
+      "state": "ready",
+      "catalogState": "published",
+      "insightCount": 4,
+      "durationMs": 63086,
+      "transcriptSegments": 1,
+      "frames": 8,
+      "allReturnedJPEGsDecodedAndHashed": true,
+      "frameDimensions": [540, 960],
+      "resultRetention": "until_deleted",
+      "provenance": "authenticated_host_reported",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "hostReportedModel": null,
+      "hostReportedEffort": null,
+      "billing": {
+        "maximumCredits": 1,
+        "chargedCredits": 1,
+        "preparationCredits": 1,
+        "analysisCredits": 0
+      },
+      "timing": {
+        "origin": "server stages; fresh acquisition and ASR included",
+        "queuedToInsightsMs": 197383,
+        "queuedToSharedAssociationMs": 203359,
+        "queuedToRetainedEvidenceMs": 33478,
+        "workerPreparationMs": 30154,
+        "asrMs": 1337,
+        "eventWaitMs": 55470,
+        "reasoningAndCompletionMs": 108296
+      },
+      "stopAcknowledged": true,
+      "providerDeletionIndependentlyVerified": false,
+      "nativeTaskInstallsDownloadsASR": false
+    }
+  ],
+  "cacheAndReplay": {
+    "ordinarySaveReplaySameRun": true,
+    "warmExistingResultSaveReady": true,
+    "warmNewAcquisition": false,
+    "warmNewAnalysis": false,
+    "warmNewCredits": 0,
+    "historyReadyPrivateAndServiceCopies": true,
+    "newManagedArtifactSecondAccountBrowserRetested": false,
+    "newNativeArtifactSecondAccountBrowserRetested": false
+  },
+  "native": {
+    "sameExistingMonitor": true,
+    "savedActionSHA256": "6d202dda159681635ab5bbf705499e733e17c3ac97ed556c308526623bd3e3b6",
+    "generationZeroAccepted": true,
+    "automaticEventsClaimedAndCompleted": 2,
+    "manualRunNow": false,
+    "newSetupPromptPasted": false,
+    "resultRepliesObserved": 2,
+    "finalMonitorState": "Monitoring",
+    "providerModelEffortAttested": false
+  },
+  "priorFailures": {
+    "count": 2,
+    "asrInferenceOccurred": false,
+    "appCreditsCharged": 0,
+    "originalMetadataNotRetained": true,
+    "sameReelLaterMissingExtractorDurationObserved": true,
+    "nativeSetupCauseUnproved": true,
+    "safeFailurePhaseInstrumentationAdded": true,
+    "oldFinancialHoldsRetained": true,
+    "onlySandboxNameRetained": true,
+    "sessionCommand404NotDeletionProof": true,
+    "boundedNamedSessionLookupReturnedNoSession": true
+  },
+  "gatewayProviderReadback": {
+    "generations": [
+      {
+        "model": "microsoft/mai-transcribe-2",
+        "provider": "azure",
+        "totalCostUSD": 0.0007758954
+      },
+      {
+        "model": "meta/muse-spark-1.3-contributor",
+        "provider": "meta",
+        "totalCostUSD": 0.0014276
+      },
+      {
+        "model": "microsoft/mai-transcribe-2",
+        "provider": "azure",
+        "totalCostUSD": 0.0015579024
+      },
+      {
+        "model": "microsoft/mai-transcribe-2",
+        "provider": "azure",
+        "totalCostUSD": 0.0017526402
+      }
+    ],
+    "totalUSD": 0.005514038,
+    "isFinalInfrastructureInvoice": false
+  },
+  "budget": {
+    "cumulativeCapEUR": 15,
+    "serviceEnvelopeUSD": 0.75,
+    "keyProviderMinimumCapUSD": 1,
+    "serverGatewayAggregateMaximumUSD": 0.3,
+    "maximumServiceJobs": 10,
+    "serviceJobsConsumed": 5,
+    "serviceJobsRemaining": 5,
+    "VercelObservedUSD": 18.06,
+    "VercelStrictMaximumUSD": 20,
+    "conservativeHostingUpperUSD": 19.66,
+    "subscriptionTokensOutsideCashAccounting": true,
+    "purchasesOrTopups": false,
+    "previousHoldsPreserved": true
+  },
+  "wallet": {
+    "available": 40,
+    "newAcceptedJobsChargedCredits": 4,
+    "oldExpiredReservedPreserved": 10
+  },
+  "limits": [
+    "Finite owner pilot; public Pro/checkout/credit migration not accepted.",
+    "Different fresh source videos; not a controlled relative model-speed benchmark.",
+    "No observed fresh production platform-caption reuse; ASR used on all three accepted Reels.",
+    "Current provider callbacks and image bytes accepted; no measured broad reliability percentage.",
+    "Source preview native title/author/thumbnail updates; top-level legacy post heading still uses its placeholder.",
+    "Independent cold onboarding and new managed-artifact cross-account browser acceptance remain open.",
+    "MCP host descriptions still include legacy diagnostic instructions; current prepared responses and guide identify the service route.",
+    "Embedded UI, local execution and wider proposal/issue feedback remain deferred/open as recorded in the owner register.",
+    "Retain Sandbox currentSession().id alongside its name in the next diagnostic change; the earlier name-to-session command lookup was not a valid deletion proof."
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "date": "2026-11-01",
+  "scope": "R141 first production retrieval checkpoint; Phase2 in progress",
+  "commit": "00e249c30ff467500e795333dab51fff207ee22f",
+  "website": {
+    "deployment": "dpl_6WvPKLS9M1YCZrZFYDxzHCbTgfvo",
+    "version": "0.1.0-alpha.20261101183506.g00e249c30ff4",
+    "build": "Basic 2 cores/8 GB, normal queue",
+    "buildMs": 49234,
+    "sameBuildPromoted": true,
+    "canonicalAliasesCompleted": 2,
+    "domainAssignmentRestored": true
+  },
+  "backend": {
+    "finishAcknowledgedUTC": "2026-11-01T18:40:43.001Z",
+    "processExit": 0,
+    "guardsPassed": 17,
+    "components": 14,
+    "tables": 167,
+    "indexes": 362,
+    "newInitiallyEmptyTables": 3,
+    "newIndexes": 7,
+    "historicalSchemasUnchanged": true,
+    "populatedScanOrBackfill": false
+  },
+  "ci": {
+    "run": 41337384561,
+    "mainPassed": 1646,
+    "mainSkipped": 11,
+    "authPassed": 59,
+    "knowledgePassed": 179,
+    "result": "success"
+  },
+  "local": {
+    "mainPassed": 1648,
+    "mainSkipped": 9,
+    "authPassed": 59,
+    "knowledgePassed": 179,
+    "fullChecksAndBothBuilds": "passed",
+    "dependencyAudit": "no unresolved findings"
+  },
+  "browser": {
+    "localDocs": 34,
+    "stagedDocs": 34,
+    "canonicalDocs": 34,
+    "stagedHome": 4,
+    "stagedLibrary": 8,
+    "canonicalHome": 4,
+    "canonicalLibrary": 8
+  },
+  "index": {
+    "ownerSavedSourcesVisited": 210,
+    "boundedBootstrapCalls": 212,
+    "ready": true,
+    "newAnalysisJobs": 0,
+    "creditsSpent": 0
+  },
+  "host": {
+    "connection": "original existing VibeScroll; refreshed tools without reconnect",
+    "conversation": "6ae78e71-b09c-83eb-b750-6d7532236bbe",
+    "postContextPages": 1,
+    "transcriptSegments": 1,
+    "insights": 6,
+    "observations": 9,
+    "manifestFrames": 8,
+    "rankedMatches": 8,
+    "rankedSelectedInsightFirst": true,
+    "frameAttempts": 8,
+    "viewableFrames": 5,
+    "failedFrameIds": [
+      "frame-001",
+      "frame-003",
+      "frame-005"
+    ],
+    "failedFrameStatus": "MCP -32603; no corresponding backend image actions observed; diagnosis pending",
+    "noAnalysisOrWalletOperationsRequested": true,
+    "sequentialDiagnostic": {
+      "frameIds": [
+        "frame-001",
+        "frame-003",
+        "frame-005"
+      ],
+      "viewableFrames": 3,
+      "allReturnedManifestIdentitiesMatch": true,
+      "noReconnectOrAnalysis": true
+    },
+    "distinctFramesRenderedAcrossBothTests": 8,
+    "initialFailureCause": "unresolved; none of the three appeared as backend image actions; sequential reads succeeded"
+  },
+  "sampledBackendMetrics": {
+    "scope": "one actual call per operation, not end-to-end request, billed invoice, host tokens or latency percentile",
+    "fetch": {
+      "seconds": 0.144461556,
+      "databaseReadBytes": 28068,
+      "databaseReadDocuments": 22,
+      "returnBytes": 12459,
+      "databaseWrites": 0
+    },
+    "rankedSearch": {
+      "seconds": 0.286413555,
+      "databaseReadBytes": 183813,
+      "databaseReadDocuments": 90,
+      "returnBytes": 9382,
+      "databaseWrites": 0
+    }
+  },
+  "remaining": [
+    "initial3 host image failures remain unexplained; one-at-a-time route accepted",
+    "second checkpoint completed separately: launch-20261101-context-retrieval-extended.json",
+    "real expected-hit/latency and conditional semantic/provider follow-ups remain unclaimed"
+  ]
+}

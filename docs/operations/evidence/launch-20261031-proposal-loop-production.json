@@ -1,0 +1,110 @@
+{
+  "observedAtUTC": "2026-10-31T15:45:01.704Z",
+  "websiteCommit": "487d184079ed8ecbdf31cd7edcd6a36780131327",
+  "backendCommit": "487d184079ed8ecbdf31cd7edcd6a36780131327",
+  "version": "0.1.0-alpha.20261031151200.g487d184079ed",
+  "deploymentId": "dpl_DM21siPfKXxuKxGZZ5tvy1Z8mKw7",
+  "exactCI": {
+    "run": 41213718227,
+    "passed": true,
+    "vitestPassed": 1638,
+    "vitestSkipped": 5,
+    "fullChecksAndAudit": true
+  },
+  "backend": {
+    "deterministicPreparations": 2,
+    "publicationGuardsPassed": 12,
+    "existingComponentSchemasCompared": 13,
+    "schemaIndexComponentAuthCronChanges": 0,
+    "populatedScansOrBackfills": 0,
+    "finishAcknowledgedAtUTC": "2026-10-31T15:16:59.130Z",
+    "finishSHA256": "7f2b66fc958d89a075c39b84b92fef683009e27ec9a6f1809088dfa303f49253"
+  },
+  "website": {
+    "fixedBasicBuild": true,
+    "onDemandConcurrencyDisabled": true,
+    "buildDurationMs": 55113,
+    "stagedExactHealth": true,
+    "stagedFeedCases": 4,
+    "stagedLibraryCases": 8,
+    "sameBuildPromoted": true,
+    "canonicalExactHealthAndAlias": true,
+    "normalDomainAssignmentRestored": true,
+    "canonicalFeedCasesAfterExactHealth": 4,
+    "canonicalLibraryCasesAfterExactHealth": 8
+  },
+  "planning": {
+    "model": "zai/glm-5.3-flash",
+    "providerRequested": "deepinfra",
+    "reasoningRequested": "high",
+    "noTrainingRoutingRequired": true,
+    "retainedWholePostInsights": 6,
+    "newVideoProcessing": 0,
+    "initialPaidReply": {
+      "elapsedMs": 29883,
+      "inputTokens": 3849,
+      "outputTokens": 1221,
+      "providerTokenRateEstimateUSD": 0.000593925,
+      "totalTariffEstimateUSD": 0.001593925,
+      "creditsSettled": 1,
+      "outputVersion": 2
+    },
+    "identicalReplay": {
+      "returnedSameOperation": true,
+      "operations": 1,
+      "messages": 2,
+      "extraCharge": 0
+    },
+    "nativePhoneReply": {
+      "elapsedMs": 28811,
+      "inputTokens": 5320,
+      "outputTokens": 1762,
+      "providerTokenRateEstimateUSD": 0.0008395,
+      "totalTariffEstimateUSD": 0.0018395,
+      "creditsSettled": 1,
+      "outputVersion": 3
+    },
+    "nativeWritingStateObserved": true,
+    "unsentDraftSurvivedReload": true,
+    "currentVersionAndDiscussionSurvivedReload": true,
+    "discussionMessages": 4,
+    "originalMCPReadVersion3": true,
+    "settledProviderInvoiceClaimed": false
+  },
+  "capacity": {
+    "additionalJobsApproved": 10,
+    "additionalJobsUsedForNativeAcceptance": 1,
+    "remaining": 9,
+    "policyIdAndPriorCounterPreserved": true,
+    "additionalApiMaximumUSD": 0.2
+  },
+  "nativePhone": {
+    "width": 390,
+    "height": 900,
+    "pageWidth": 380,
+    "composerTop": 651,
+    "composerBottom": 691,
+    "displayedMaximumCredits": 3,
+    "error": false
+  },
+  "funding": {
+    "cumulativeCapEUR": 15.5,
+    "vercelUsageObservedBeforeBuildUSD": 18.49,
+    "physicalPreflightUSD": 19.045,
+    "priorFinancialHoldsRetained": true,
+    "purchasesTopupsFasterBuilds": false,
+    "openAIGrantLinkedAndUnusedVerified": true,
+    "openAIGrantFundedRoutingImplemented": false
+  },
+  "remaining": [
+    "Generated plan remains needs_context; no new issue was published",
+    "Independent acceptance of new MCP discussion/generation/publication tools after host discovery refresh",
+    "One useful exact reviewed combined issue-publication canary",
+    "Shorter model copy and avoid repeated step numbers in rendering",
+    "OpenAI organization/project key, model tariffs and grant-funded inference adapter"
+  ],
+  "cleanup": {
+    "oldExposedTemporaryPreviewLinkRevokedAndReadBackAbsent": true,
+    "mainSignInAndOriginalMCPPreserved": true
+  }
+}

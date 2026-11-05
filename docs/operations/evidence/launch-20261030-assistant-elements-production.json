@@ -1,0 +1,80 @@
+{
+  "recordedAtUTC": "2026-10-30T19:53:44.093439+00:00",
+  "websiteCommit": "b8162b5df8bee6d988bb796f680cf5a98bf4c34a",
+  "websiteVersion": "0.1.0-alpha.20261030194527.gb8162b5df8be",
+  "backendCommit": "8e97e18c6aab2d8750b5b6ff10fb763e1c45e3fe",
+  "deploymentId": "dpl_LzyozxELbbbNQiNCr1g8hCp9GNWL",
+  "exactCI": 41117862156,
+  "ciVitest": {
+    "passed": 1595,
+    "skipped": 5
+  },
+  "localFullVitest": {
+    "passed": 1597,
+    "skipped": 3
+  },
+  "localFocusedFinalUi": 9,
+  "dependencyAudit": "no known vulnerabilities",
+  "changedSourceSecretScanFindings": 0,
+  "basicBuildSeconds": 68.999,
+  "sameBuildPromoted": true,
+  "canonicalExactHealth": true,
+  "normalDomainAssignmentRestored": true,
+  "newAnalysisRuns": 0,
+  "backendPublications": 0,
+  "newScopes": false,
+  "reconnect": false,
+  "balanceOrTariffMigration": false,
+  "localBrowser": {
+    "analysisStates": 8,
+    "galleryLayouts": 4,
+    "heroLayouts": 4,
+    "libraryLayouts": 8,
+    "compactProtocolCases": 10,
+    "recoveryOpensAndFocusesOptions": true
+  },
+  "stagedBrowser": {
+    "heroNativeExpansion": true,
+    "phoneNoOverflow": true,
+    "galleryData": true
+  },
+  "canonicalBrowser": {
+    "galleryData": true,
+    "libraryLayouts": 8,
+    "signedInPost": {
+      "title": "Video by admanage.ai",
+      "decodedThumbnail": [540, 960],
+      "insights": 6,
+      "topicFitExpanded": true,
+      "draftPanelOpenedWithoutSave": true,
+      "scoresObserved": [50, 50]
+    },
+    "signedInCredits": {
+      "available": 38,
+      "usedInUnexpiredPools": 32,
+      "reservedInUnexpiredPools": 0,
+      "expiredHoldPreserved": 10,
+      "phoneNoOverflow": true
+    },
+    "heroLayouts": 4
+  },
+  "limits": [
+    "Topic coverage is an explicit deterministic discovery hint, not a repository-code review or benefit prediction.",
+    "Similar-proposal/outcome history, precise project importance, tooltip/icon-button and model-logo integration remain planned.",
+    "No fresh media timing/reliability, new commerce or cold-user onboarding is accepted by this UI release.",
+    "Actual infrastructure usage remains separately unsettled; every earlier hold remains."
+  ],
+  "modelReportedOutcome": {
+    "proposalId": "p57c0s8q45qkptdsqgmzsx0cx98h8p11",
+    "status": "completed",
+    "commitSha": "b8162b5df8bee6d988bb796f680cf5a98bf4c34a",
+    "readBack": true,
+    "proposalVersion": 1,
+    "review": "unreviewed",
+    "githubIssue": 196,
+    "signedProviderState": "open",
+    "bodyMatchesFrozen": true,
+    "merged": false,
+    "benefitVerified": false
+  }
+}

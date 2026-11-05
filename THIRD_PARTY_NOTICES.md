@@ -1,5 +1,9 @@
 # Third-party material
 
+## Fumadocs
+
+The public developer documentation uses `fumadocs-core` and `fumadocs-ui`16.17.9, MIT licensed. Source and copyright notices: [fuma-nama/fumadocs](https://github.com/fuma-nama/fumadocs). These installed dependencies retain their distributed license files. Documentation pages are authored in this repository; upstream theme source was not copied into the application.
+
 ## Assistant protocol runtime
 
 The exact `@modelcontextprotocol/server` 2.3.1 dependency implements the official MCP protocol. Its complete mixed license notice is preserved in [the runtime notice](licenses/modelcontextprotocol-server-2.3.1.txt): Apache-2.0 for new and consented code, MIT for unrelicensed contributions, and CC-BY-4.0 for documentation excluding specifications. Upstream source is [modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk). The dependency's SDK version does not change VibeScroll's product V1 scope. Protocol support alone does not establish a working account connection, persistent Events delivery, or provider approval.
@@ -19,3 +23,11 @@ The optional E2B acquisition image installs the official yt-dlp Linux release re
 ## SEO audit snapshot
 
 The `seo-audit` skill is copied from coreyhaines31/marketingskills at commit `5b2c0007766c6a1cf1d53fd8fc73e979e0821022`. Its MIT license, copyright notice, and references are retained in `.agents/skills/seo-audit`. The original `companynerve-launch` skill is covered by this repository's MIT license. Earlier copied notices remain unchanged.
+
+## assistant-ui Elements
+
+The analysis step list, error state and expandable saved-plan card adapt the MIT-licensed AgentPlan, ErrorState and ArtifactCard components from assistant-ui/assistant-ui at commit `3fa379f814dadb02b9f9ad04e31c2d2ba92df094`, copyright2026 AgentbaseAI Inc. The complete [MIT notice](licenses/assistant-ui-elements-3fa379f.txt) is retained. Adaptations use VibeScroll styles, explicit observed stage states, indeterminate progress and server-approved recovery actions. No assistant-ui inference/chat runtime is installed.
+
+## Durable discussion storage
+
+The pinned `@convex-dev/agent`0.7.9 component and its AI SDK7.0.159 peer are Apache-2.0 dependencies used for persistent proposal messages. Their upstream package licences remain applicable. This integration uses supported standalone message/thread helpers; it does not copy their source or add an embedding/inference agent loop. The existing provider contract and server authorization remain separate.

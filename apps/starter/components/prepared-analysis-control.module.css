@@ -1,0 +1,25 @@
+.control {
+  display: grid;
+  gap: 12px;
+  padding-block: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.control h3,
+.control p {
+  margin: 0;
+}
+.selectors {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.selectors label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 180px;
+  font-size: 0.875rem;
+}
+.selectors button {
+  width: 100%;
+}

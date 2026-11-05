@@ -1,0 +1,71 @@
+{
+  "recordedAtUTC": "2026-10-26T19:41:00Z",
+  "scope": "one owner-supplied TikTok, actual app Save to native Events preflight",
+  "productionAtSave": {
+    "frontendCommit": "21de39d04672d386ec1424d6fd49b756844e8c91",
+    "frontendVersion": "0.1.0-alpha.20261026191210.g21de39d04672",
+    "backendCommit": "f6dd6d4eb944fee5a88e3826e6a058b987b4b3d4",
+    "backendFinishedAtUTC": "2026-10-26T19:12:59.462Z",
+    "schemaIndexComponentChanges": false,
+    "backfills": 0
+  },
+  "setup": {
+    "originalLibraryPreserved": true,
+    "grantVersion": 9,
+    "actionsAndProjectContextsUnchanged": true,
+    "automaticDefaults": "gpt-6.1-sol/high/7-day-results",
+    "funding": "own_subscription",
+    "maximumApiUsd": 0,
+    "nativeEvent": "video_link_saved",
+    "originalConnectionUsed": true,
+    "setupTurnFinishedBeforeSave": true
+  },
+  "actualSave": {
+    "clickedAtUTC": "2026-10-26T19:25:25.817Z",
+    "button": "Add and analyze",
+    "clicks": 1,
+    "ownedChatTabClosedBeforeSave": true,
+    "existingSourceIdPreserved": true,
+    "finiteIntentCreated": true,
+    "generation": 0,
+    "state": "waiting_for_runtime",
+    "manualMessagesBeforeAutomaticOutcome": 0,
+    "manualRunNow": false
+  },
+  "nativeAutomaticOutcome": {
+    "supportedThreadReadConfirmed": true,
+    "matchingEventConfirmed": true,
+    "currentWaitingIntentConfirmed": true,
+    "retainedPinsAndFreshDecoderSocketDenialPassed": true,
+    "cacheBytes": 1324167617,
+    "stop": "acquisition-network enforcement evidence unavailable",
+    "observedNetworkDenial": false,
+    "analysisRequested": false,
+    "jobClaimed": false,
+    "sourceMediaDownloaded": false,
+    "asrRun": false,
+    "automaticMediaAccepted": false
+  },
+  "followup": {
+    "pilotVisiblyPausedAfterReload": true,
+    "readOnlyManualDiagnosisAfterAutomaticOutcome": true,
+    "finiteIntentPreserved": true,
+    "reservedUnknownAndOriginalDisputedPostsUntouched": true,
+    "paidApiOrServerFallback": false
+  },
+  "networkDiagnosis": {
+    "missingFileAndStatusApiWereUndocumentedAssumptions": true,
+    "absenceProvesNoEnforcementFailure": true,
+    "standardProxyAndCaNamesPresent": true,
+    "proxyOrCaValuesRead": false,
+    "effectiveDestinationControlsEstablished": false,
+    "networkProbeOrSourceOperation": false,
+    "policyUnchanged": true
+  },
+  "remaining": [
+    "establish supported current Work Cloud acquisition-network evidence or an independently reviewed enforcing adapter",
+    "automatic source acquisition, real transcript, inspected JPEG uploads, thumbnail and canonical result acceptance",
+    "show pre-job runtime failure clearly in the app",
+    "original disputed result image repair and full linked plans"
+  ]
+}

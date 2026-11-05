@@ -254,7 +254,7 @@ it("rejects foreign batch rows before deduplication and keeps late acquisition m
   expect(row?.acquisition).toBeUndefined();
   expect(row?.personalAnalysis?.state).toBe("canceled");
 });
-it("checks fresh personal access before upload without reserving usage and rejects stale or other-tenant sessions", async () => {
+it("checks normal personal access before upload without reserving usage and denies other tenants", async () => {
   const s = await setup();
   expect(
     await s.a.query(api.personalAnalysis.checkSession, {
@@ -273,7 +273,7 @@ it("checks fresh personal access before upload without reserving usage and rejec
   });
   await expect(
     stale.query(api.personalAnalysis.checkSession, { organizationId: s.org }),
-  ).rejects.toThrow("Sign in again");
+  ).resolves.toBe(true);
   vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", "[]");
   await expect(
     s.a.query(api.personalAnalysis.checkSession, { organizationId: s.org }),
@@ -386,7 +386,7 @@ it("refuses foreign accounts, unapproved models, absent consent, stale identity 
     s.t
       .withIdentity({ subject: "a" })
       .mutation(api.personalAnalysis.approve, args),
-  ).rejects.toThrow("Sign in again");
+  ).resolves.toBeDefined();
   vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", "[]");
   await expect(s.approve()).rejects.toThrow("FORBIDDEN");
   await expect(s.dispatch({ operation: "poll" })).rejects.toThrow("FORBIDDEN");

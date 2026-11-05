@@ -148,9 +148,14 @@ export function postPreviewMetadata(html: string, sourceUrl: string) {
       const name = attrs.get("property") || attrs.get("name");
       if (
         name &&
-        ["og:image", "og:url", "og:title", "article:published_time"].includes(
-          name,
-        ) &&
+        [
+          "og:image",
+          "og:url",
+          "og:title",
+          "article:published_time",
+          "author",
+          "video:duration",
+        ].includes(name) &&
         !fields.has(name)
       )
         fields.set(name, attrs.get("content") || "");
@@ -187,7 +192,10 @@ export function postPreviewMetadata(html: string, sourceUrl: string) {
     return null;
   }
   const image = fields.get("og:image");
-  if (!image) return null;
+  const author = fields.get("author")?.trim();
+  const authorName =
+    author && !/^https?:\/\//i.test(author) ? author.slice(0, 160) : undefined;
+  const duration = Number(fields.get("video:duration"));
   const date = fields.get("article:published_time") || "";
   const timestamp = /^\d{4}-\d{2}-\d{2}T/.test(date) ? Date.parse(date) : NaN;
   const publishedAt =
@@ -199,6 +207,10 @@ export function postPreviewMetadata(html: string, sourceUrl: string) {
   return {
     image,
     title: (fields.get("og:title") || "").slice(0, 160),
+    ...(authorName ? { authorName } : {}),
+    ...(Number.isFinite(duration) && duration > 0 && duration <= 600
+      ? { durationSeconds: duration }
+      : {}),
     ...(publishedAt ? { publishedAt } : {}),
   };
 }
@@ -207,6 +219,8 @@ export async function sourcePreview(sourceUrl: string) {
   let image: string;
   let title = "";
   let publishedAt: number | undefined;
+  let authorName: string | undefined;
+  let durationSeconds: number | undefined;
   if (policy.platform === "youtube") {
     const u = new URL(policy.url),
       id =
@@ -226,9 +240,12 @@ export async function sourcePreview(sourceUrl: string) {
       policy.url,
     );
     if (!metadata) return null;
-    image = metadata.image;
+    image = metadata.image ?? "";
     title = metadata.title;
     publishedAt = metadata.publishedAt;
+    authorName = metadata.authorName;
+    durationSeconds = metadata.durationSeconds;
+    if (!image) return { title, authorName, durationSeconds, publishedAt };
   }
   const hosts = {
     instagram: ["*.cdninstagram.com", "*.fbcdn.net"],
@@ -241,13 +258,20 @@ export async function sourcePreview(sourceUrl: string) {
       "*.ibytedtos.com",
     ],
   }[policy.platform];
-  const bytes = await boundedGet(image, hosts, 1000000, "jpeg");
+  const metadata = { title, authorName, durationSeconds, publishedAt };
+  // An unavailable cover must not discard already retrieved text metadata.
+  let bytes: Uint8Array;
+  try {
+    bytes = await boundedGet(image, hosts, 1000000, "jpeg");
+  } catch {
+    return metadata;
+  }
   if (
     bytes.length < 4 ||
     bytes[0] !== 255 ||
     bytes[1] !== 216 ||
     bytes[2] !== 255
   )
-    throw Error("Preview image denied");
-  return { bytes, title, ...(publishedAt ? { publishedAt } : {}) };
+    return metadata;
+  return { ...metadata, bytes };
 }

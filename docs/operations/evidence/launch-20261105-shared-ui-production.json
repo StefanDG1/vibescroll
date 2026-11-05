@@ -1,0 +1,163 @@
+{
+  "recordedAtUTC": "2026-11-05T01:01:04.804839+00:00",
+  "requirements": [
+    "R153",
+    "R154",
+    "R155"
+  ],
+  "backend": {
+    "commit": "b0648870b1e36fe97586ca0efc8cabc41c4c0a56",
+    "previousLive": "4b6661616051201c1b4b92c6406a47f1868ee28f",
+    "exactCI": 41943775261,
+    "actualFinishAcknowledged": true,
+    "deterministicPreparations": 2,
+    "finalPreparationMatches": true,
+    "guardTests": 17,
+    "schemaIndexComponentAuthCronChanges": false,
+    "populatedScanOrBackfill": false
+  },
+  "website": {
+    "commit": "b0648870b1e36fe97586ca0efc8cabc41c4c0a56",
+    "version": "0.1.0-alpha.20261105004602.gb0648870b1e3",
+    "deployment": "dpl_3czhVfXJrynKYK9x4A5dRBpf92co",
+    "buildDurationMs": 46218,
+    "fixedBasic": true,
+    "normalQueue": true,
+    "sameBuildPromotion": true,
+    "stagedCases": 13,
+    "canonicalCases": 13,
+    "bothCanonicalAliasesCompleted": true,
+    "normalDomainAssignmentRestoredAndVerified": true
+  },
+  "checks": {
+    "exactCI": {
+      "mainPassed": 1791,
+      "mainSkipped": 11,
+      "authPassed": 82,
+      "sharedUiPassed": 190,
+      "nodePythonBothBuildsAndDependencyAudit": "passed"
+    },
+    "finalBuiltOfficialBridgeCases": 20,
+    "resourceSha256": "b1ed9ce6164c5ed0b675a0ea87df80158a91f48c12479e91b711ca3ce3d089ca",
+    "authenticatedHome": [
+      {
+        "width": 1440,
+        "page": 1430,
+        "posts": 11,
+        "loadedAnalyses": 1,
+        "insights": 3,
+        "alerts": 0
+      },
+      {
+        "width": 390,
+        "page": 390,
+        "posts": 11,
+        "loadedAnalyses": 1,
+        "insights": 3,
+        "alerts": 0
+      }
+    ],
+    "actualReel": {
+      "cases": [
+        {
+          "theme": "light",
+          "width": 1440,
+          "page": 1430,
+          "insights": 4,
+          "poster": [
+            {
+              "decoded": true,
+              "width": 540,
+              "height": 960
+            }
+          ]
+        },
+        {
+          "theme": "dark",
+          "width": 1440,
+          "page": 1430,
+          "insights": 4,
+          "poster": [
+            {
+              "decoded": true,
+              "width": 540,
+              "height": 960
+            }
+          ]
+        },
+        {
+          "theme": "light",
+          "width": 390,
+          "page": 390,
+          "insights": 4,
+          "poster": [
+            {
+              "decoded": true,
+              "width": 540,
+              "height": 960
+            }
+          ]
+        },
+        {
+          "theme": "dark",
+          "width": 390,
+          "page": 390,
+          "insights": 4,
+          "poster": [
+            {
+              "decoded": true,
+              "width": 540,
+              "height": 960
+            }
+          ]
+        }
+      ],
+      "nativeInsightExpanded": true,
+      "modelOrMutation": false
+    },
+    "existingProposal": {
+      "readable": true,
+      "horizontalOverflow": false,
+      "errors": 0,
+      "mutationOrGeneration": false
+    },
+    "mcp": {
+      "originalGrantVersion": 12,
+      "automaticAnalysis": true,
+      "intakeSetupRequired": false,
+      "olderSharedPost": {
+        "complete": true,
+        "insights": 5,
+        "frames": 8
+      },
+      "newReel": {
+        "complete": true,
+        "insights": 4,
+        "frames": 8
+      },
+      "newConnectionRequired": false
+    }
+  },
+  "changes": [
+    "One monthly admin allowance and finite rate admission, minimal self-wallet receipts",
+    "Shared website feed and proposal presentations behind MCP adapters",
+    "Current discussion, quote/start and exact explicit issue tools available to expanded UI",
+    "Observed canonical processing stages and zero-charge shared waits",
+    "One bounded current-version metadata/context read and retained JPEG",
+    "Connected animation from real returned source/insight citation edges",
+    "Bounded proposal draft and exact unknown-operation recovery with optional private widget state"
+  ],
+  "limits": [
+    "Actual new ChatGPT iframe and physical-phone acceptance remain unclaimed; owner read-only check requested.",
+    "200-percent browser text zoom is not verified.",
+    "Optional host-state full reload was tested through a synthetic supported-extension fixture.",
+    "The generic no-storage opaque iframe retains unsent drafts only for its lifetime.",
+    "The native timing includes fresh preparation of a saved failed source; the API comparison reuses its evidence.",
+    "No fresh media/model call, issue publication, customer payment, provider purchase or reconnect during this final UI release.",
+    "Engineering usage holds remain conservative and do not claim settled provider cost."
+  ],
+  "related": [
+    "launch-20261105-processing-routes.json",
+    "launch-20261105-shared-ui-built.json"
+  ]
+}

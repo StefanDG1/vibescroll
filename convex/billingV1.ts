@@ -11,6 +11,13 @@ import {
 import { checkoutPaymentRoute } from "../packages/providers/stripe-checkout";
 import { managedMarketVerified } from "../packages/providers/managed-markets";
 import { policyRelease } from "../packages/policy/publication";
+import {
+  candidateCheckoutPolicy,
+  resolveCreditPolicy,
+  singleProConfigured,
+} from "../packages/billing/credit-policy";
+import { proOffer } from "../packages/billing/pro-offer";
+import { verifiedProPortal } from "../packages/billing/pro-portal";
 function stripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   ensure(
@@ -41,6 +48,11 @@ export const quoteChange = action({
     tier: v.union(v.literal("starter"), v.literal("pro")),
   },
   handler: async (ctx, a): Promise<string> => {
+    ensure(
+      !singleProConfigured(process.env),
+      "CHANGE_UNAVAILABLE",
+      "Existing subscriptions keep their terms. Contact support to review a change to the new Pro offer.",
+    );
     ensure(
       process.env.STRIPE_MODE !== "live" ||
         billingReadiness(process.env).liveEnabled,
@@ -273,6 +285,15 @@ export const checkout = action({
       "RELEASE_GATE",
       "Live checkout is disabled.",
     );
+    if (live && singleProConfigured(process.env))
+      ensure(
+        await ctx.runQuery(internal.billing.processingAvailable, {
+          organizationId: a.organizationId,
+          requirePro: false,
+        }),
+        "RELEASE_GATE",
+        "Processing capacity is temporarily unavailable.",
+      );
     const route = checkoutPaymentRoute({
       tax,
       country: a.country,
@@ -283,17 +304,32 @@ export const checkout = action({
       managedMarketVerified: managedMarketVerified(process.env),
     });
     const treatment = route.treatment;
-    const price = priceId(a.tier, a.interval);
+    const candidate = candidateCheckoutPolicy(process.env, a.interval);
+    if (candidate)
+      ensure(
+        a.tier === "pro" && auth.personal,
+        "PERSONAL_FUNDING_REQUIRED",
+        "Subscribe to Pro from your personal account. Each workspace member uses their own credits.",
+      );
+    const price = candidate?.priceId ?? priceId(a.tier, a.interval);
     ensure(
       price,
       "BILLING_UNAVAILABLE",
       "This product price is not configured.",
     );
     const client = await verifiedStripe();
+    if (candidate) await verifiedProPortal(client, process.env);
     const actualPrice = await client.prices.retrieve(price);
-    const expected = Math.round(
-      pricing.tiers[a.tier][`${a.interval}_price_eur`] * 100,
-    );
+    const expected = candidate
+      ? proOffer[a.interval].amountCents
+      : Math.round(pricing.tiers[a.tier][`${a.interval}_price_eur`] * 100);
+    if (candidate)
+      ensure(
+        resolveCreditPolicy(process.env, actualPrice)?.version ===
+          candidate.version,
+        "CATALOGUE_MISMATCH",
+        "The Stripe price does not match the reviewed Pro policy.",
+      );
     ensure(
       actualPrice.currency === "eur" &&
         actualPrice.active &&
@@ -338,6 +374,11 @@ export const checkout = action({
       limit: 100,
     });
     ensure(
+      !subs.has_more,
+      "BILLING_RECONCILIATION_REQUIRED",
+      "Review your existing subscriptions before opening another checkout.",
+    );
+    ensure(
       !subs.data.some(
         (s) => !["canceled", "incomplete_expired"].includes(s.status),
       ),
@@ -377,6 +418,7 @@ export const checkout = action({
           termsVersion: policyRelease.id,
           taxTreatment: treatment,
           marketPolicy: route.marketPolicy,
+          ...(candidate ? { creditPolicy: candidate.version } : {}),
         },
         subscription_data: {
           metadata: {
@@ -385,6 +427,7 @@ export const checkout = action({
             interval: a.interval,
             organizationId: a.organizationId,
             billingRoute: process.env.STRIPE_BILLING_ROUTE ?? "direct",
+            ...(candidate ? { creditPolicy: candidate.version } : {}),
           },
         },
         expires_at: Math.floor(reserved.expires / 1000),
@@ -428,7 +471,7 @@ export const cancel = action({
 export const topup = action({
   args: {
     organizationId: v.id("organizations"),
-    pack: v.union(v.literal("200"), v.literal("550")),
+    pack: v.union(v.literal("200"), v.literal("500")),
     country: v.optional(v.string()),
     termsAccepted: v.boolean(),
     immediateService: v.boolean(),
@@ -448,6 +491,18 @@ export const topup = action({
       "BILLING_REQUIRED",
       "Create a billing account first.",
     );
+    if (singleProConfigured(process.env)) {
+      const available = await ctx.runQuery(
+        internal.billing.processingAvailable,
+        { organizationId: a.organizationId, requirePro: true },
+      );
+      if (process.env.STRIPE_MODE === "live")
+        ensure(
+          available,
+          "RELEASE_GATE",
+          "Processing capacity is temporarily unavailable.",
+        );
+    }
     ensure(
       a.termsAccepted,
       "TERMS_REQUIRED",
@@ -474,7 +529,7 @@ export const topup = action({
     ensure(price, "BILLING_UNAVAILABLE", "Top-up price unavailable.");
     const client = await verifiedStripe();
     const p = await client.prices.retrieve(price),
-      expected = a.pack === "200" ? 1000 : 2500;
+      expected = a.pack === "200" ? 1700 : 3500;
     ensure(
       p.active &&
         !p.recurring &&

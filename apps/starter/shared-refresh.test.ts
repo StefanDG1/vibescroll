@@ -10,13 +10,14 @@ import { GET } from "./app/api/workspace/[org]/route";
 afterEach(() => {
   vi.resetAllMocks();
 });
-it("loads Usage through two required queries and strips raw private ledger and workspace content", async () => {
+it("loads Usage and header Save setup through three scoped queries and strips raw private ledger and workspace content", async () => {
   const names: string[] = [];
   state.query.mockImplementation(async (reference) => {
     const name = getFunctionName(reference);
     names.push(name);
     if (name === "organizations:details")
       return { name: "Synthetic", private: true, role: "owner" };
+    if (name === "aiPreferences:read") return { workCloud: null };
     if (name === "product:usage")
       return {
         wallet: { tier: "trial", _id: "private-wallet" },
@@ -43,7 +44,11 @@ it("loads Usage through two required queries and strips raw private ledger and w
   );
   expect(response.status).toBe(200);
   expect(response.headers.get("cache-control")).toBe("no-store");
-  expect(names.sort()).toEqual(["organizations:details", "product:usage"]);
+  expect(names.sort()).toEqual([
+    "aiPreferences:read",
+    "organizations:details",
+    "product:usage",
+  ]);
   const body = await response.json();
   expect(body).toMatchObject({
     workspaceSlice: "usage",

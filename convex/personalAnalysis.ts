@@ -7,7 +7,7 @@ import { internal } from "./_generated/api";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { access, writeAccess, recentAuthentication, limit, audit } from "./lib";
+import { access, writeAccess, limit, audit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { reserve, settle } from "./product";
 import { personalAllowed } from "./lib/personalAccess";
@@ -83,7 +83,6 @@ export const checkSession = query({
       "admin",
       "member",
     ]);
-    await recentAuthentication(ctx);
     ensure(
       personalAllowed(actor.subject),
       "FORBIDDEN",
@@ -179,7 +178,7 @@ export async function approvePersonalCore(
       "APPROVAL_STALE",
       "Review the current scan authorization.",
     );
-  } else await recentAuthentication(ctx);
+  }
   await limit(ctx, `personal-approval:${actor._id}`, 6);
   const device = await ctx.db.get(a.deviceId);
   ensure(

@@ -403,7 +403,8 @@ it("finds the newest compatible public artifact beyond ten historical versions a
       .query("publicImports")
       .withIndex("by_source", (q) => q.eq("sourceId", saved.sourceId))
       .unique();
-    expect((await ctx.db.get(imported!.artifactId))!.editionVersion).toBe(12);
+    const artifact = (await ctx.db.get(imported!.artifactId))!;
+    expect("editionVersion" in artifact && artifact.editionVersion).toBe(12);
   });
   const exported = await s.owner.query(api.jobs.exportPage, {
     organizationId: s.organizationId,

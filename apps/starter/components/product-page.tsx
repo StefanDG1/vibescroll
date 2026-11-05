@@ -1,7 +1,8 @@
 import { Console } from "./console";
 import { workspaceData } from "@/lib/workspace-data";
 import { withAuth } from "@workos-inc/authkit-nextjs";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { backend, api } from "@/lib/backend";
 export async function ProductPage({
   org,
   view,
@@ -11,6 +12,7 @@ export async function ProductPage({
   category = "",
   sort = "newest",
   sourceId,
+  proposalId,
   compactHome = false,
   reviewDraftId,
   sharedSourceId,
@@ -26,6 +28,7 @@ export async function ProductPage({
   category?: string;
   sort?: string;
   sourceId?: string;
+  proposalId?: string;
   compactHome?: boolean;
   reviewDraftId?: string;
   sharedSourceId?: string;
@@ -34,6 +37,14 @@ export async function ProductPage({
   publicVersion?: number;
 }) {
   const { user } = await withAuth();
+  if (!["account", "menu", "connections"].includes(view)) {
+    const onboarding = await (await backend()).query(api.onboarding.status, {});
+    if (
+      !onboarding.legacy &&
+      (!onboarding.paid || onboarding.progress?.stage !== "complete")
+    )
+      redirect("/onboarding/resume");
+  }
   const initial = await workspaceData({
     org,
     view: draft ? "full" : view,
@@ -42,11 +53,17 @@ export async function ProductPage({
     category,
     sort,
     sourceId,
+    proposalId,
     compactHome,
     sharedSourceId,
     sharedGrantId,
   });
   if (sourceId && !("selectedSource" in initial && initial.selectedSource))
+    notFound();
+  if (
+    proposalId &&
+    !("selectedProposal" in initial && initial.selectedProposal)
+  )
     notFound();
   return (
     <Console
@@ -61,9 +78,13 @@ export async function ProductPage({
       }
       compactHomePreview={compactHome}
       initialReviewDraftId={reviewDraftId}
-      key={`${org}:${sourceId ?? "workspace"}`}
+      key={`${org}:${sourceId ?? proposalId ?? "workspace"}`}
       initialSource={
-        "selectedSource" in initial ? initial.selectedSource : null
+        "selectedSource" in initial
+          ? initial.selectedSource
+          : "selectedProposal" in initial
+            ? initial.selectedProposal
+            : null
       }
       initialSharedDraft={draft.slice(0, 2048)}
       publicEdition={publicEdition}
@@ -75,6 +96,7 @@ export async function ProductPage({
       organizationId={org}
       initialView={view}
       readOnly={initial.role === "viewer"}
+      canRepairEvidence={initial.role === "owner"}
       canSuggestCategories={["owner", "admin"].includes(initial.role)}
       initial={initial}
     />

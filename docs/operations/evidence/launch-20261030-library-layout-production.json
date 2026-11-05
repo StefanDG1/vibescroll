@@ -1,0 +1,56 @@
+{
+  "acceptedAtUTC": "2026-10-30T17:55:41.816840+00:00",
+  "websiteCommit": "c51f8f09b032e4a6535aa543b03018422f149d1c",
+  "backendCommit": "8974c3908c1e4a19f326188a9e889c8981fa5cc7",
+  "version": "0.1.0-alpha.20261030173606.gc51f8f09b032",
+  "deploymentId": "dpl_6Yntv4fjynZ6F6rEdBLD8GDyEFNd",
+  "exactCI": 41100236714,
+  "exactCIConclusion": "success",
+  "vitestPassed": 1585,
+  "vitestSkipped": 5,
+  "ciStatusRecovery": "Workflow and browser eventually reported success; completed logs were recovered. Job/check metadata remained stale. Normal and force cancellation requests were refused; no rerun was dispatched.",
+  "basicBuildSeconds": 32.956,
+  "sameBuildPromoted": true,
+  "normalDomainAssignmentRestored": true,
+  "stagedExactHealth": true,
+  "canonicalAliasAndExactHealth": true,
+  "rootCause": "Shared CSS extraction left .hybrid-node-card grouped with the 24px proposal badge selector, collapsing Tree and Folder wrappers and hiding labels.",
+  "fix": "Restore standalone position:relative and min-width:0 node-card rule; keep badge sizing separate.",
+  "canonicalDemoGeometry": {
+    "cases": 8,
+    "widths": [
+      1440,
+      390
+    ],
+    "representations": [
+      "Tree",
+      "Folders"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "allPassed": true
+  },
+  "actualSignedInLibrary": {
+    "desktopAndMobileScreenshotsInspected": true,
+    "treeNodes": 8,
+    "desktopNodeWidth": 210,
+    "mobileNodeWidth": 200,
+    "desktopLabelWidth": 134,
+    "mobileLabelWidth": 124,
+    "mobileFoldersLabelMinimumWidth": 235,
+    "pageHorizontalOverflow": false,
+    "originalTreeModeAndDesktopViewportRestored": true
+  },
+  "newBackendPublications": 0,
+  "newAnalysisRuns": 0,
+  "savedDataChanged": false,
+  "oldHoldsRetained": true,
+  "actualInfrastructureCostSettled": false,
+  "secondAccountSessionPreserved": true,
+  "limitations": [
+    "Phone verification uses a 390px browser viewport, not a physical handset.",
+    "Independent new service-artifact second-account cache acceptance remains the next checkpoint."
+  ]
+}

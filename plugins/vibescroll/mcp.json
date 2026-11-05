@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "vibescroll": {
+      "type": "streamable-http",
+      "url": "https://scroll.companynerve.com/mcp"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # Acceptable-use policy
 
-Status: published. Effective 3 October 2026. Version: 1.0.0. Release: v1-2026-10-03.1.
+Status: published. Effective 1 November 2026. Version: 1.1.0. Release: v1-2026-11-01.1.
 
 Use VibeScroller only with content, repositories, accounts, and processing rights you are authorized to use.
 
@@ -13,5 +13,7 @@ Do not direct agents to manipulate public reviews, fabricate testimonials, imper
 Do not attempt to access another workspace, exceed authorized budgets through replay or account abuse, or disable execution isolation. Security researchers can report vulnerabilities privately through contact@exponentialeducation.ro. This policy is not a promise of a bounty or permission to test third-party systems.
 
 We may stop a specific job, restrict a capability, or suspend an account when needed to address a credible violation or immediate risk. We will give appropriate information and a contact route where lawful and safe. We consider the scope of the issue rather than automatically deleting all unrelated paid content.
+
+Do not share individual access credentials or use abusive automation that disrupts other users. Paid processing uses the quoted credits and existing concurrency controls. Unusual resource demand may require a limit on new requests or an appropriate arrangement. Such limits do not erase purchased credits or valid retained results. Deletion, account closure and valid takedown requests still apply.
 
 This policy does not remove mandatory consumer rights, data-protection rights, or lawful reporting rights.

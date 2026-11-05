@@ -409,16 +409,22 @@ it.each([
   undefined,
   Math.floor(Date.now() / 1000) - 301,
   Math.floor(Date.now() / 1000) + 60,
-])("requires recent authentication at mutation time: %s", async (auth_time) => {
-  const { t, preview } = await setup();
-  const staleOwner = t.withIdentity({
-    subject: "adoption-owner",
-    ...(auth_time === undefined ? {} : { auth_time }),
-  });
-  await expect(
-    staleOwner.mutation(api.organizations.adoptPrivate, adoptionArgs(preview)),
-  ).rejects.toThrow("Sign in again");
-});
+])(
+  "uses a normal session without relying on auth_time for private adoption: %s",
+  async (auth_time) => {
+    const { t, preview } = await setup();
+    const staleOwner = t.withIdentity({
+      subject: "adoption-owner",
+      ...(auth_time === undefined ? {} : { auth_time }),
+    });
+    await expect(
+      staleOwner.mutation(
+        api.organizations.adoptPrivate,
+        adoptionArgs(preview),
+      ),
+    ).resolves.toBeDefined();
+  },
+);
 
 it("requires the explicit private-only acknowledgement", async () => {
   const { owner, preview } = await setup();

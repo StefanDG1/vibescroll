@@ -1,0 +1,23 @@
+{
+  "observedAtUTC": "2026-10-30T11:19:49.987200+00:00",
+  "websiteCommit": "9fb9d7dc66172c3c7aa97bf124c98cc2ef2828d4",
+  "backendCommit": "c862450aafa3f49e7756965a0bbc566f038323f1",
+  "version": "0.1.0-alpha.20261030110732.g9fb9d7dc6617",
+  "deploymentId": "dpl_Hjgxny6XvzVA7eJqygvhGaFSUmC9",
+  "exactCI": 41045808912,
+  "ciPassed": true,
+  "fullLocalCheckPassedWithReviewedPythonWrapper": true,
+  "originalWrongPythonInvocationRetained": true,
+  "fixedBasic": true,
+  "normalQueue": true,
+  "buildDurationMs": 37837,
+  "stagedHealthExact": true,
+  "sameBuildPromoted": true,
+  "normalDomainAssignmentRestored": true,
+  "productionRelatedCardAbsent": true,
+  "productionAdvancedClosedBelowReader": true,
+  "backendBundleUnchanged": true,
+  "newAnalysisJobs": 0,
+  "newCreditCharges": 0,
+  "laterOwnerDirection": "Five-destination navigation, gear settings, reusable expandable Library insight cards and deterministic project hints are the next checkpoint, not included in this release."
+}

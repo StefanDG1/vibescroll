@@ -1,0 +1,120 @@
+{
+  "dateUTC": "2026-10-26",
+  "status": "published_compatible_line_public_guide_and_synthetic_demo_verified",
+  "mainRuntimeCommit": "63e5d0b617481aae4cb9931ad9a3120b3dd2a2e0",
+  "servingCommit": "ff7d88f5601c5d717f3ac5cad6ff73489ba29a25",
+  "choices": [
+    {
+      "id": "work_cloud",
+      "title": "My own Cloud Work",
+      "funding": "own_ChatGPT_subscription",
+      "recommended": true,
+      "automaticVideoSelectable": false
+    },
+    {
+      "id": "cloud",
+      "title": "VibeScroll's servers",
+      "funding": "separately_bought_processing_credits",
+      "availability": "existing_route_checks"
+    },
+    {
+      "id": "local",
+      "title": "Local machine",
+      "funding": "own_eligible_subscription",
+      "availability": "existing_route_checks_plus_per_task_account_runtime_isolation"
+    }
+  ],
+  "preserved": [
+    "saved_posts_and_results",
+    "existing_grants_and_rights",
+    "credit_approval_and_balances",
+    "saved_route_no_fallback",
+    "legacy_preference_value_and_api",
+    "budget_and_provider_privacy_release_gates"
+  ],
+  "schemaIndexChanges": 0,
+  "sourceJobsOrMediaDownloads": 0,
+  "localChecks": {
+    "mainFullVitestPassed": 2079,
+    "mainAdditionalFocusedPreferenceTestPassed": 3,
+    "compatibleFullVitestPassed": 1229,
+    "nodePassedEach": 19,
+    "mainPythonPassed": 47,
+    "compatiblePythonPassed": 38,
+    "hostedSkippedEach": 3,
+    "typesLintBothBuilds": "passed",
+    "finalScreenshotGuideBuild": "passed_both_branches"
+  },
+  "review": {
+    "initialP2": "paired status misrepresented as readiness",
+    "fixed": true,
+    "rereviewP1P2Findings": 0
+  },
+  "browser": {
+    "source": "actual_synthetic_demo",
+    "widthsCSS": [320, 390, 1600],
+    "pageAndDialogOverflow": false,
+    "keyboardMoreInfo": true,
+    "savedDataOrCreditsUsed": false,
+    "productionPublicGuide": {
+      "widthsCSS": [320, 1600],
+      "imageDecoded": true,
+      "pageOverflow": false
+    },
+    "productionSyntheticSaveDialog": {
+      "widthsCSS": [320, 1600],
+      "threeRadioChoicesOrdered": true,
+      "unavailableChoicesDisabled": true,
+      "mobileOverflow": false,
+      "keyboardCloudMoreInfo": true,
+      "noSaveSubmitted": true
+    },
+    "limitation": "Public Help and synthetic demo verified after publication; authenticated production picker not freshly exercised in this release."
+  },
+  "screenshot": {
+    "path": "apps/starter/public/help/task-locations.png",
+    "width": 652,
+    "height": 1066,
+    "sha256": "0cdd0e6c406dc778675f236a2a547ed28ec0d495b849b5a5cb2f78bc5a38ade5",
+    "captureCommit": "63e5d0b617481aae4cb9931ad9a3120b3dd2a2e0",
+    "synthetic": true
+  },
+  "budget": {
+    "capEUR": 8,
+    "retainedUSD": 8.245014256044614,
+    "unreservedUSD": 0.23498574395538618,
+    "oldHoldsReleased": false,
+    "releaseReservationUSD": 0.42
+  },
+  "next": [
+    "native image/network/isolation/package admission",
+    "reviewed finite app-Save intent then exact existing job",
+    "actual Event to retained video analysis"
+  ],
+  "release": {
+    "sourceCommit": "ff7d88f5601c5d717f3ac5cad6ff73489ba29a25",
+    "frontendDeploymentId": "dpl_8G43fAuUiZE4oMBWnGpBj4ytD5E6",
+    "backendFinishUTC": "2026-10-26T13:54:42.591Z",
+    "canonicalHealthUTC": "2026-10-26T13:55:15.987380+00:00",
+    "normalDomainAssignmentRestored": true,
+    "fixedBasicQueued": true,
+    "analysisRuns": 0,
+    "priorHoldsReleased": false,
+    "invoiceCertified": false,
+    "knownFirstAttemptPreflightHaltBeforePublication": true,
+    "version": "0.1.0-alpha.20261026131113.gff7d88f5601c",
+    "compatibleCI": "40328458291",
+    "mainCI": "40328455038",
+    "mainDeployed": false,
+    "backendSchemaScans": 0,
+    "backendIndexBackfills": 0,
+    "liveBaselineModulesMatched": 291,
+    "guardTestsPassed": 11,
+    "zeroConfiguredLogSinksUTC": "2026-10-26T13:54:02.581Z"
+  },
+  "security": {
+    "confirmedAutomationBypassDisclosure": "revoked_and_regenerated_2026-10-26T13:34:31Z",
+    "newCredentialPrinted": false,
+    "olderDeploymentCredentialRotationIncident": "open"
+  }
+}

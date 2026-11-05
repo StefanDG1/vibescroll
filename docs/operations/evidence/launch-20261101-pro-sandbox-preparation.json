@@ -1,0 +1,80 @@
+{
+  "observedAtUTC": "2026-10-31T23:36:28Z",
+  "scope": "isolated_stripe_sandbox_and_offline_candidate",
+  "websiteCommitUnchanged": "cbe062de63bf565eaf7a91bc69bbeb0021980392",
+  "backendCommitUnchanged": "2510081684fac4991bc8fac5449b65c295a01c8f",
+  "candidatePolicy": "pro-eur-20261031-preview-v2",
+  "testedCodeCommit": "85af4f23d9e97ec3a29a3988ad345ed6c573fdcf",
+  "exactCI": 41253310064,
+  "exactCIConclusion": "success",
+  "readOnlyLiveReview": {
+    "configuredMerchantVerified": true,
+    "exactLegacyPriceBindingsVerified": 6,
+    "customerRecordsRead": 0,
+    "providerWrites": 0,
+    "chargesEnabled": true,
+    "payoutsEnabled": true,
+    "taxRegistrationsVerified": false
+  },
+  "candidateSandboxPricesVerified": 3,
+  "legacySandboxPricesUnchanged": 8,
+  "createdProducts": 0,
+  "initialPaidSubscriptionsVerified": 3,
+  "paidRenewalsVerified": 3,
+  "paidInvoiceGraphsVerified": 6,
+  "monthlyClampedRenewal": {
+    "startUTC": "2026-11-30T12:00:00Z",
+    "endUTC": "2026-12-31T12:00:00Z",
+    "credits": 300
+  },
+  "annualWindows": 12,
+  "annualCreditsPerWindow": 300,
+  "failedMonthlyRenewal": {
+    "subscriptionStatus": "past_due",
+    "invoiceStatus": "open",
+    "amountPaidCents": 0,
+    "paymentFailedEventVerified": true
+  },
+  "recovery": {
+    "sameInvoicePaid": true,
+    "subscriptionActive": true,
+    "paidEventCount": 1,
+    "sameKeyReplaySameInvoice": true,
+    "periodEndCancellationVerified": true,
+    "noNewRenewalInvoiceAfterCancellation": true
+  },
+  "validation": {
+    "focusedCalendarAndProviderReceiptTestsPassed": 8,
+    "fullOfflineCheckPassed": true,
+    "mainVitestPassed": 1473,
+    "mainVitestSkipped": 6,
+    "authVitestPassed": 52,
+    "knowledgeVitestPassed": 174,
+    "privateReceiptTestsInFullOfflineCheck": "three_skipped_by_environment_isolation_separately_passed_opt_in",
+    "nodeAndPythonChecksPassed": true,
+    "bothLocalProductionBuildsPassed": true,
+    "dependencyAuditUnresolved": 0
+  },
+  "securityCleanup": {
+    "temporaryAcceptanceKeyExpiredApi401Verified": true,
+    "twoPreexistingSandboxKeysRotatedWithOwnerApproval": true,
+    "immediateOldKeyExpirationSelected": true,
+    "encryptedReplacementsReadChecked": true,
+    "liveKeysUnaffected": true
+  },
+  "productionChanges": false,
+  "realCustomerPayments": false,
+  "applicationCreditsGranted": false,
+  "signedWebhookDeliveryAccepted": false,
+  "customerMigrationAccepted": false,
+  "liveActivationApproved": false,
+  "hostedWebsiteBuilds": 0,
+  "paidAiCalls": 0,
+  "limitations": [
+    "Provider API and event reads do not establish signed webhook delivery or application wallet correctness.",
+    "The candidate helper is not installed as the production credit scheduler.",
+    "Versioned price-policy integration and voluntary migration still need acceptance.",
+    "Actual operator tax, storage, top-up and customer terms still need concrete review.",
+    "The Stripe connector continues to report UNAUTHORIZED despite completed owner consent."
+  ]
+}

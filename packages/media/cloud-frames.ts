@@ -1,0 +1,172 @@
+import {
+  completedResultRetained,
+  resultRetained,
+} from "../contracts/result-retention";
+import { isCloudObservedMedia } from "../social/contracts";
+// Pixels are stored separately from the immutable observed-media preparation.
+export type CloudFrame = {
+  frameId: string;
+  assetId: string;
+  sha256: string;
+  timestampMs: number;
+  size: number;
+};
+export function retainedCloudFrames(
+  source: any,
+  now = Date.now(),
+): CloudFrame[] {
+  const job = source.personalAnalysis;
+  const media = job?.executor === "work_cloud" ? job.cloud?.media : null;
+  const saved = source.personalMedia?.cloudFrames;
+  if (
+    source.state === "deleted" ||
+    !source.rightsAttested ||
+    !media ||
+    !Number.isFinite(media.retainUntil) ||
+    job.generation !== source.generation ||
+    (!completedResultRetained(source) && media.retainUntil <= now) ||
+    (source.sourceRetentionUntil !== undefined &&
+      source.sourceRetentionUntil <= now) ||
+    !saved ||
+    saved.generation !== source.generation ||
+    saved.preparationHash !== media.preparationHash ||
+    !media.preparationHash ||
+    !isCloudObservedMedia(source.orderedMedia?.post) ||
+    !Array.isArray(source.orderedMedia.post.frames) ||
+    !Array.isArray(saved.frames) ||
+    saved.frames.length > 48
+  )
+    return [];
+  return saved.frames
+    .filter((frame: CloudFrame) =>
+      source.orderedMedia.post.frames.some(
+        (observed: any) =>
+          observed.id === frame.frameId &&
+          observed.sha256 === frame.sha256 &&
+          observed.bytes === frame.size &&
+          observed.timestampMs === frame.timestampMs,
+      ),
+    )
+    .sort(
+      (a: CloudFrame, b: CloudFrame) =>
+        a.timestampMs - b.timestampMs || a.frameId.localeCompare(b.frameId),
+    );
+}
+export function cloudFrameAssetCurrent(
+  source: any,
+  asset: any,
+  now = Date.now(),
+) {
+  return (
+    asset.kind === "work_cloud_frame" &&
+    asset.state === "complete" &&
+    asset.type === "image/jpeg" &&
+    (asset.expiresAt === undefined || asset.expiresAt > now) &&
+    asset.sourceId === source._id &&
+    asset.organizationId === source.organizationId &&
+    asset.sourceGeneration === source.generation &&
+    retainedCloudFrames(source, now).some(
+      (frame) => frame.assetId === asset._id && frame.size === asset.size,
+    )
+  );
+}
+export function sourceEvidenceFrames(source: any, now = Date.now()) {
+  if (
+    source.preparedService?.version === "service-prepared-detail-v1" &&
+    source.state !== "deleted" &&
+    source.rightsAttested &&
+    (source.sourceRetentionUntil ?? Infinity) > now
+  )
+    return source.preparedService.frames.map((f: any) => ({
+      id: f.reference,
+      kind: "frame",
+      startMs: f.timestampMs,
+      endMs: f.timestampMs,
+    }));
+  if (source.sharedCloud?.version === "shared-cloud-detail-v1")
+    return resultRetained(source.sharedCloud, now) &&
+      (source.sourceRetentionUntil ?? Infinity) > now
+      ? source.sharedCloud.frames.map(
+          (frame: { reference: string; timestampMs: number }) => ({
+            id: frame.reference,
+            kind: "frame",
+            startMs: frame.timestampMs,
+            endMs: frame.timestampMs,
+          }),
+        )
+      : [];
+  if (isCloudObservedMedia(source.orderedMedia?.post))
+    return retainedCloudFrames(source, now).map((frame) => ({
+      kind: "frame",
+      id: frame.assetId,
+      startMs: frame.timestampMs,
+      endMs: frame.timestampMs,
+    }));
+  return (source.originalMediaEvidence ?? source.mediaEvidence ?? []).filter(
+    (e: any) => e.kind === "frame",
+  );
+}
+// Adapt only the view reference. Keep the canonical analysis and its IDs intact.
+export function cloudCitationForDisplay(
+  source: any,
+  ref: any,
+  now = Date.now(),
+) {
+  if (
+    source.preparedService?.version === "service-prepared-detail-v1" &&
+    ref.kind === "video_observation"
+  ) {
+    const observed = source.preparedService.observations.find(
+      (o: any) =>
+        o.id === ref.id && o.startMs === ref.startMs && o.endMs === ref.endMs,
+    );
+    if (!observed) return ref;
+    if (observed.basis === "transcript") return { ...ref, kind: "transcript" };
+    const frame = source.preparedService.frames.find(
+      (f: any) => f.id === ref.id && f.timestampMs === ref.startMs,
+    );
+    return frame ? { ...ref, kind: "frame", id: frame.reference } : ref;
+  }
+  if (
+    source.sharedCloud?.version === "shared-cloud-detail-v1" &&
+    ref.kind === "video_observation"
+  ) {
+    const shared = source.sharedCloud;
+    if (
+      !resultRetained(shared, now) ||
+      (source.sourceRetentionUntil ?? Infinity) <= now
+    )
+      return ref;
+    const observation = shared.observations.find(
+      (entry: any) =>
+        entry.id === ref.id &&
+        entry.startMs === ref.startMs &&
+        entry.endMs === ref.endMs,
+    );
+    if (!observation) return ref;
+    if (observation.basis === "transcript")
+      return { ...ref, kind: "transcript" };
+    const frame = shared.frames.find(
+      (entry: any) => entry.id === ref.id && entry.timestampMs === ref.startMs,
+    );
+    return frame ? { ...ref, kind: "frame", id: frame.reference } : ref;
+  }
+  if (
+    !isCloudObservedMedia(source.orderedMedia?.post) ||
+    ref.kind !== "video_observation"
+  )
+    return ref;
+  const observed = source.orderedMedia.evidence?.find(
+    (e: any) =>
+      e.id === ref.id &&
+      e.kind === ref.kind &&
+      e.startMs === ref.startMs &&
+      e.endMs === ref.endMs,
+  );
+  if (!observed) return ref;
+  if (observed.basis === "transcript") return { ...ref, kind: "transcript" };
+  const frame = retainedCloudFrames(source, now).find(
+    (f) => f.frameId === ref.id && f.timestampMs === ref.startMs,
+  );
+  return frame ? { ...ref, kind: "frame", id: frame.assetId } : ref;
+}

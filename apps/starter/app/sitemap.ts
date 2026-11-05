@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
 import { helpArticles } from "@/lib/help-content";
+import { developerPages } from "@/lib/developer-docs";
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     "",
     "pricing",
     "how-it-works",
-    "docs",
+    ...developerPages.map(({ slug }) => `docs${slug ? `/${slug}` : ""}`),
     "help",
     "example",
     "open-source",

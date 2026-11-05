@@ -1,0 +1,972 @@
+import type { ProcessingAccountSummary } from "../packages/contracts/processing-account";
+import { processingAdmission } from "./lib/processingAdmission";
+import {
+  processingAccountSummary,
+  optionalProcessingAccountSummary,
+} from "./lib/processingAccount";
+import { readAdminProcessingAllowance } from "./lib/adminProcessingAllowance";
+import { v } from "convex/values";
+import { query, internalQuery } from "./_generated/server";
+import { mutation, internalMutation } from "./lib/projectedMutations";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
+import { access } from "./lib";
+import { assistantGrant } from "./lib/assistantPrincipal";
+import { isAssistantIdentity } from "../packages/policy/assistant";
+import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
+import { ensure, PolicyError } from "../packages/policy";
+import { paidProcessingConfiguration } from "../packages/contracts/paid-processing";
+import { reserve, digest } from "./product";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import {
+  preparedCreditQuote,
+  preparedTariff,
+} from "../packages/contracts/prepared-service";
+import { privateCloudMediaIdentity } from "../packages/social/contracts";
+import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
+import { requireProCatalogAccess } from "./lib/catalogEntitlement";
+import {
+  requirePaidProcessing,
+  paidProcessingCapacity,
+  reservePaidProcessing,
+} from "./lib/paidProcessing";
+import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
+import { sourceRetained } from "./lib/sourceAuthority";
+import { savedCloudRoute, savedCloudGrantCurrent } from "./lib/workCloudSave";
+import { preparedEvidenceIsCurrent } from "./lib/preparedEvidenceAccess";
+import {
+  freezeAnalysisBaseline,
+  verifyRetainedAssets,
+  selectedAnalysis,
+  retainedVersion,
+} from "./lib/analysisHistory";
+import { recordAutomaticCatalogIntent } from "./lib/catalogPolicy";
+import { reserveCatalogProducer } from "./lib/cloudCatalog";
+import { cloudRetryRequest } from "../packages/contracts/cloud-retry";
+import {
+  apiModelSelection,
+  apiModelTariff,
+  apiModels,
+  type ApiModelId,
+  type ApiEffort,
+} from "../packages/contracts/api-models";
+import {
+  openAiQuoteAuthority,
+  openAiGrantConfiguration,
+} from "./lib/openAiGrant";
+
+const requested = {
+  sourceId: v.id("sources"),
+  executor: v.union(v.literal("gateway"), v.literal("work_cloud")),
+  reanalyze: v.optional(v.boolean()),
+  model: v.optional(
+    v.union(
+      v.literal("meta/muse-spark-1.3-contributor"),
+      v.literal("gpt-6-luna"),
+      v.literal("gpt-6.1-sol"),
+    ),
+  ),
+  effort: v.optional(
+    v.union(
+      v.literal("none"),
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("xhigh"),
+      v.literal("max"),
+    ),
+  ),
+};
+type Request = {
+  sourceId: Id<"sources">;
+  executor: "gateway" | "work_cloud";
+  reanalyze?: boolean;
+  model?: ApiModelId;
+  effort?: ApiEffort;
+};
+
+async function owner(
+  ctx: QueryCtx,
+  sourceId: Id<"sources">,
+  write = false,
+  requireEntitlement = true,
+  readScope: "knowledge:read" | "jobs:read" = "knowledge:read",
+) {
+  const source = await ctx.db.get(sourceId);
+  ensure(
+    source &&
+      source.kind === "url" &&
+      source.state !== "deleted" &&
+      source.rightsAttested &&
+      sourceRetained(source.sourceRetentionUntil),
+    "SOURCE_UNAVAILABLE",
+    "This saved video is unavailable.",
+  );
+  const identity = await ctx.auth.getUserIdentity();
+  const assistant = isAssistantIdentity(identity)
+    ? await assistantGrant(
+        ctx,
+        source.organizationId,
+        write ? "analysis:request" : readScope,
+      )
+    : null;
+  const a = assistant ?? (await access(ctx, source.organizationId));
+  ensure(
+    await workCloudSourceEligible(ctx, a.organization, a.actor._id),
+    "PERSONAL_FUNDING_REQUIRED",
+    "Analyze in your own personal workspace, then share retained results with a team.",
+  );
+  ensure(
+    a.organization.privateOwnerId === a.actor._id ||
+      (!a.organization.privateOwnerId &&
+        preparedServiceConfiguration(a.actor.subject, true)
+          ?.legacyOwnerFundingOrganizationId === a.organization._id),
+    "PERSONAL_FUNDING_REQUIRED",
+    "Use your personal account's credit pool; workspaces do not create extra allowances.",
+  );
+  if (assistant) {
+    const grant = assistant.grant;
+    ensure(
+      grant &&
+        (await sourceWithinAssistantScope(
+          ctx,
+          grant,
+          a.organization,
+          a.actor._id,
+          source,
+        )),
+      "FORBIDDEN",
+      "This post is outside the current library grant.",
+    );
+    if (write)
+      ensure(
+        grant.scopes.includes("analysis:execute") &&
+          assistant.scopes.includes("analysis:execute"),
+        "FORBIDDEN",
+        "Execution permission is required for this reviewed analysis.",
+      );
+  }
+  if (requireEntitlement)
+    await requireProCatalogAccess(ctx, source.organizationId);
+  return { source, actor: a.actor, organization: a.organization };
+}
+
+async function quoteFor(
+  ctx: QueryCtx,
+  a: Awaited<ReturnType<typeof owner>>,
+  request: Request,
+) {
+  const cacheHit =
+    !request.reanalyze &&
+    a.source.state === "ready" &&
+    !!(
+      a.source.selectedAnalysisVersionId ||
+      a.source.analysis ||
+      a.source.publicImportId
+    );
+  const config = preparedServiceConfiguration(a.actor.subject);
+  ensure(
+    config || cacheHit,
+    "SETUP_REQUIRED",
+    "Server preparation is not available for this account yet.",
+  );
+  if (config?.paidCustomer) {
+    await requirePaidProcessing(ctx, a.actor, a.organization._id);
+  }
+  ensure(
+    ["instagram", "tiktok"].includes(
+      privateCloudMediaIdentity(a.source.url ?? a.source.canonical).platform,
+    ),
+    "UNSUPPORTED_SOURCE",
+    "Server preparation currently supports individual Reels and TikToks.",
+  );
+  // A ready selection still needs current source/evidence/retention authority.
+  // Processing setup is required only when this request would create work.
+  if (
+    cacheHit &&
+    (a.source.selectedAnalysisVersionId || a.source.publicImportId)
+  )
+    await selectedAnalysis(ctx, a.source);
+  let evidence: Doc<"analysisEvidence"> | null = null;
+  const runs = await ctx.db
+    .query("mediaPreparations")
+    .withIndex("by_org_source", (q) =>
+      q
+        .eq("organizationId", a.source.organizationId)
+        .eq("sourceId", a.source._id),
+    )
+    .order("desc")
+    .take(20);
+  for (const run of runs) {
+    if (
+      !run.evidenceId ||
+      !["ready", "evidence_ready", "failed"].includes(run.state)
+    )
+      continue;
+    const candidate = await ctx.db.get(run.evidenceId);
+    if (preparedEvidenceIsCurrent(a.source, candidate)) {
+      await verifyRetainedAssets(ctx, a.source, candidate);
+      evidence = candidate;
+      break;
+    }
+  }
+  const cachedVersion =
+    cacheHit && a.source.selectedAnalysisVersionId
+      ? await ctx.db.get(a.source.selectedAnalysisVersionId)
+      : null;
+  ensure(
+    request.executor === "gateway" || (!request.model && !request.effort),
+    "INVALID_INPUT",
+    "Use your saved subscription model settings for the assistant route.",
+  );
+  const apiModel =
+    request.executor === "gateway"
+      ? apiModelSelection(
+          request.model ?? "meta/muse-spark-1.3-contributor",
+          request.effort,
+        )
+      : null;
+  const openAi =
+    !cacheHit && apiModel?.provider === "openai_responses"
+      ? await openAiQuoteAuthority(ctx, a.actor.subject, apiModel.id)
+      : null;
+  const durationMaximumMs = evidence
+    ? evidence.prepared.evidence.durationMs
+    : (config?.maximumDurationMs ?? 0);
+  const gatewayMaximumNanoUsd = cacheHit
+    ? 0
+    : request.executor === "gateway" && !openAi
+      ? Math.ceil(config!.maximumApiUsd * 1e9)
+      : evidence
+        ? 0
+        : Math.ceil(durationMaximumMs * 27.78);
+  if (
+    (config?.paidCustomer ||
+      !!(await readAdminProcessingAllowance(
+        ctx,
+        a.actor,
+        a.organization._id,
+      ))) &&
+    !cacheHit &&
+    (gatewayMaximumNanoUsd > 0 ||
+      paidProcessingConfiguration()?.version === "paid-processing-prefunded-v1")
+  )
+    ensure(
+      (await paidProcessingCapacity(ctx, gatewayMaximumNanoUsd))?.available,
+      "BUDGET_EXCEEDED",
+      "Processing capacity is temporarily unavailable.",
+    );
+  const cost = cacheHit
+    ? { preparation: 0, analysis: 0, maximum: 0 }
+    : preparedCreditQuote(
+        durationMaximumMs,
+        request.executor,
+        !!evidence,
+        apiModel?.id,
+      );
+  if (!cacheHit && request.executor === "gateway")
+    ensure(
+      config!.maximumApiUsd >=
+        (openAi ? openAi.policy.maximumRequestNanoUsd / 1e9 : 0.02) +
+          (evidence ? 0 : (durationMaximumMs / 1000) * 0.00002778),
+      "SETUP_REQUIRED",
+      "The configured API envelope must cover both transcription and analysis before dispatch.",
+    );
+  if (!cacheHit && ((request.executor === "gateway" && !openAi) || !evidence))
+    ensure(
+      process.env.VERCEL_AI_GATEWAY_API_KEY,
+      "SETUP_REQUIRED",
+      "The service processing provider is not configured.",
+    );
+  let grant;
+  if (!cacheHit && request.executor === "work_cloud") {
+    const route = await savedCloudRoute(ctx, a.actor, a.organization);
+    grant = route?.grantId ? await ctx.db.get(route.grantId) : null;
+    ensure(
+      route?.available &&
+        grant &&
+        (await savedCloudGrantCurrent(ctx, a.actor, a.organization, grant)),
+      "SETUP_REQUIRED",
+      "Resume or complete the existing VibeScroll Assistant setup.",
+    );
+  }
+  const quote = {
+    tariff: preparedTariff,
+    configurationId: config?.id ?? "retained-ready-cache-v1",
+    sourceId: a.source._id,
+    generation: a.source.generation,
+    selectionRevision: a.source.analysisSelectionRevision ?? 0,
+    canonical: a.source.canonical,
+    executor: request.executor,
+    reanalyze: request.reanalyze ?? false,
+    model:
+      request.executor === "gateway"
+        ? apiModel!.id
+        : (grant?.cloudSaveDefaults?.model ?? null),
+    effort:
+      request.executor === "gateway"
+        ? apiModel!.effort
+        : (grant?.cloudSaveDefaults?.effort ?? null),
+    durationMaximumMs,
+    reusedEvidenceId: evidence?._id ?? null,
+    cacheHit,
+    // model/effort describe a new requested run, never relabel cached output.
+    cachedAnalysis: cacheHit
+      ? {
+          versionId: cachedVersion?._id ?? null,
+          model:
+            cachedVersion?.reportedModel ??
+            cachedVersion?.requestedModel ??
+            null,
+          effort:
+            cachedVersion?.reportedEffort ??
+            cachedVersion?.requestedEffort ??
+            null,
+        }
+      : null,
+    preparationCredits: cost.preparation,
+    analysisCredits: cost.analysis,
+    maximumCredits: cost.maximum,
+    grantId: grant?._id ?? null,
+    grantVersion: grant?.version ?? null,
+    maximumApiUsd: config?.maximumApiUsd ?? 0,
+    ...(openAi
+      ? {
+          apiTariff: apiModelTariff,
+          openAi: {
+            ...openAi.quote,
+            processingReviewHash: await digest(
+              canonicalJson({
+                preparation: config!.providerPermissionReference,
+                analysis: openAi.policy.providerPermissionReference,
+              }),
+            ),
+          },
+        }
+      : {}),
+  };
+  return {
+    quote,
+    quoteHash: await digest(canonicalJson(quote)),
+    config,
+    gatewayMaximumNanoUsd,
+    evidence,
+    grant,
+  };
+}
+async function quoteHandler(ctx: QueryCtx, args: Request) {
+  const a = await owner(ctx, args.sourceId);
+  const q = await quoteFor(ctx, a, args);
+  return {
+    ...q.quote,
+    quoteHash: q.quoteHash,
+    creditsUnit: "existing_service_credit",
+    note: "Preparation and analysis are quoted separately. Final started-minute analysis uses actual video duration; old balances and purchases keep their denomination.",
+  };
+}
+export const options = query({
+  args: { sourceId: v.id("sources") },
+  returns: v.any(),
+  handler: async (ctx, { sourceId }) => {
+    const a = await owner(ctx, sourceId);
+    const config = preparedServiceConfiguration(a.actor.subject);
+    if (!config) return { available: false, models: [] };
+    const policy = openAiGrantConfiguration(a.actor.subject);
+    const counter = policy
+      ? await ctx.db
+          .query("proposalServiceCounters")
+          .withIndex("by_policy", (q) =>
+            q.eq("policyId", `openai-grant:${policy.id}`),
+          )
+          .unique()
+      : null;
+    const ids: ApiModelId[] = [];
+    if (process.env.VERCEL_AI_GATEWAY_API_KEY && config.contributorAllowed)
+      ids.push("meta/muse-spark-1.3-contributor");
+    // Sol has not passed production acceptance and is not offered for dispatch.
+    if (
+      policy?.allowedModels.includes("gpt-6-luna") &&
+      process.env.OPENAI_PROMOTIONAL_API_KEY &&
+      (counter?.jobs ?? 0) < policy.maximumJobs
+    )
+      ids.push("gpt-6-luna");
+    return {
+      available: ids.length > 0,
+      models: ids.map((id) => ({
+        id,
+        name: apiModels[id].name,
+        efforts: apiModels[id].efforts,
+        defaultEffort: apiModels[id].defaultEffort,
+        creditMultiplier: apiModels[id].creditMultiplier,
+      })),
+    };
+  },
+});
+
+export const quote = query({
+  args: requested,
+  returns: v.any(),
+  handler: quoteHandler,
+});
+export const assistantQuote = internalQuery({
+  args: requested,
+  returns: v.any(),
+  handler: quoteHandler,
+});
+
+const startArgs = {
+  ...requested,
+  key: v.string(),
+  quoteHash: v.string(),
+  maximumCredits: v.number(),
+};
+async function startHandler(
+  ctx: MutationCtx,
+  args: Request & { key: string; quoteHash: string; maximumCredits: number },
+) {
+  const a = await owner(ctx, args.sourceId, true);
+  ensure(
+    /^[A-Za-z0-9_-]{8,64}$/.test(args.key),
+    "INVALID_INPUT",
+    "Use a stable operation key.",
+  );
+  const prior = await ctx.db
+    .query("mediaPreparations")
+    .withIndex("by_org_source_key", (q) =>
+      q
+        .eq("organizationId", a.source.organizationId)
+        .eq("sourceId", args.sourceId)
+        .eq("key", args.key),
+    )
+    .unique();
+  if (prior) {
+    ensure(
+      prior.actor === a.actor._id &&
+        prior.receipt?.admission?.quoteHash === args.quoteHash &&
+        prior.receipt.admission.quote.maximumCredits === args.maximumCredits,
+      "APPROVAL_STALE",
+      "This operation key already identifies different work.",
+    );
+    return {
+      sourceId: args.sourceId,
+      runId: prior._id,
+      state: prior.state,
+      reused: true,
+    };
+  }
+  const q = await quoteFor(ctx, a, args);
+  ensure(
+    q.quoteHash === args.quoteHash &&
+      q.quote.maximumCredits === args.maximumCredits,
+    "QUOTE_CHANGED",
+    "Read the current quote before starting this analysis.",
+  );
+  if (q.quote.cacheHit)
+    return {
+      sourceId: args.sourceId,
+      state: "ready",
+      cacheHit: true,
+      chargedCredits: 0,
+      runId: null,
+    };
+  const processingConfig = q.config;
+  ensure(
+    processingConfig,
+    "SETUP_REQUIRED",
+    "Current processing configuration is required for new work.",
+  );
+  ensure(
+    !a.source.pendingAnalysisAttemptId &&
+      !["queued", "running", "recovering", "unknown"].includes(
+        a.source.personalAnalysis?.state ?? "",
+      ),
+    "SOURCE_BUSY",
+    "The existing task must finish or be reconciled first.",
+  );
+  const runs = await ctx.db
+    .query("mediaPreparations")
+    .withIndex("by_org_source", (q) =>
+      q
+        .eq("organizationId", a.source.organizationId)
+        .eq("sourceId", args.sourceId),
+    )
+    .order("desc")
+    .take(21);
+  ensure(
+    runs.length <= 20 &&
+      !runs.some((r) => !["ready", "failed"].includes(r.state)),
+    "SOURCE_BUSY",
+    "Existing preparation is active or uncertain.",
+  );
+  const admission = await processingAdmission(ctx, a.actor, a.organization._id);
+  ensure(
+    admission.allowed,
+    admission.reason ?? "QUOTA_EXCEEDED",
+    admission.message ?? "Processing is unavailable.",
+  );
+  if (
+    a.source.state === "ready" &&
+    a.source.analysis &&
+    !a.source.selectedAnalysisVersionId &&
+    !a.source.publicImportId
+  )
+    await freezeAnalysisBaseline(ctx, a.source);
+  const now = Date.now(),
+    reservationKey = `prepared:${a.source._id}:${args.key}`;
+  const catalog = await recordAutomaticCatalogIntent(ctx, a.source, a.actor);
+  if (catalog && !args.reanalyze) {
+    const producer = await reserveCatalogProducer(
+      ctx,
+      a.source,
+      a.actor,
+      catalog,
+      args.quoteHash,
+      now + 900000,
+      now + 86400000,
+    );
+    if (producer.waiting)
+      return {
+        sourceId: a.source._id,
+        runId: null,
+        state: "waiting_for_shared_analysis",
+        maximumCredits: 0,
+        chargedCredits: 0,
+      };
+  }
+  await reserve(
+    ctx,
+    a.source.organizationId,
+    reservationKey,
+    q.quote.maximumCredits,
+  );
+  const providerReservationId =
+    processingConfig.paidCustomer ||
+    !!(await readAdminProcessingAllowance(ctx, a.actor, a.organization._id))
+      ? await reservePaidProcessing(ctx, {
+          operationKey: reservationKey,
+          requestHash: q.quoteHash,
+          maximumNanoUsd: q.gatewayMaximumNanoUsd,
+        })
+      : null;
+  const runId = await ctx.db.insert("mediaPreparations", {
+    organizationId: a.source.organizationId,
+    sourceId: a.source._id,
+    actor: a.actor._id,
+    key: args.key,
+    policyId: processingConfig.id,
+    generation: a.source.generation,
+    canonical: privateCloudMediaIdentity(a.source.canonical).url,
+    executor: args.executor,
+    state: q.evidence ? "evidence_ready" : "queued",
+    createdAt: now,
+    updatedAt: now,
+    deadline: now + 900000,
+    maximumApiUsd: processingConfig.maximumApiUsd,
+    ...(q.grant ? { grantId: q.grant._id, grantVersion: q.grant.version } : {}),
+    ...(q.evidence ? { evidenceId: q.evidence._id } : {}),
+    receipt: {
+      admission: {
+        version: "prepared-service-admission-v1",
+        configurationId: processingConfig.id,
+        quote: q.quote,
+        quoteHash: q.quoteHash,
+        reservationKey,
+        ...(providerReservationId ? { providerReservationId } : {}),
+        at: now,
+      },
+      ...(q.evidence
+        ? {
+            reusedPreparation: {
+              evidenceId: q.evidence._id,
+              preparationHash: q.evidence.extractionPreparationHash,
+              at: now,
+            },
+          }
+        : {}),
+    },
+    stages: [
+      { stage: "queued", at: now },
+      ...(q.evidence ? [{ stage: "evidence_ready", at: now }] : []),
+    ],
+  });
+  const personalMedia = { ...a.source.personalMedia };
+  // A committed new admission supersedes the earlier refusal for this source.
+  // Keep the immutable old run/credit receipts, but do not show it as blocked
+  // again when the new run completes at the same source generation.
+  delete personalMedia.admissionBlock;
+  await ctx.db.patch(a.source._id, {
+    personalMedia: {
+      ...personalMedia,
+      version: "service-preparation-progress-v1",
+      runId,
+      stage: q.evidence ? "evidence_ready" : "queued",
+      executor: args.executor,
+      updatedAt: now,
+    },
+  });
+  await ctx.scheduler.runAfter(
+    0,
+    q.evidence
+      ? args.executor === "gateway"
+        ? internal.preparedMedia.runRetainedGateway
+        : internal.preparedAnalysis.queueSubscription
+      : internal.preparedMedia.run,
+    { runId },
+  );
+  await ctx.scheduler.runAfter(900000, internal.preparedAnalysis.expire, {
+    runId,
+  });
+  return {
+    sourceId: a.source._id,
+    runId,
+    state: q.evidence ? "evidence_ready" : "queued",
+    maximumCredits: q.quote.maximumCredits,
+    preparationCredits: q.quote.preparationCredits,
+    analysisCredits: q.quote.analysisCredits,
+    reusedEvidence: !!q.evidence,
+  };
+}
+export const start = mutation({
+  args: startArgs,
+  returns: v.any(),
+  handler: startHandler,
+});
+export const assistantStart = internalMutation({
+  args: startArgs,
+  returns: v.any(),
+  handler: startHandler,
+});
+
+// Existing MCP clients can use their already-discovered credit request shape.
+// This admits first analysis and explicit retries of settled failures.
+// New versions and model choices use the exact quote/start contract above.
+export async function requestPreparedFromAssistant(
+  ctx: MutationCtx,
+  args: {
+    sourceId: Id<"sources">;
+    generation?: number;
+    maxCredits?: number;
+    executor?: "gateway" | "work_cloud";
+    retry?: { generation: number; revision: number; key: string };
+  },
+) {
+  const a = await owner(ctx, args.sourceId, true);
+  const executor = args.executor ?? "gateway";
+  const retry = args.retry ? cloudRetryRequest.parse(args.retry) : undefined;
+  const key = retry
+    ? `mcp-retry-${await digest(canonicalJson({ sourceId: args.sourceId, executor, retry }))}`.slice(
+        0,
+        64,
+      )
+    : `mcp-credit-${a.source._id}-${a.source.generation}`;
+  if (args.maxCredits !== undefined || executor === "work_cloud") {
+    const prior = await ctx.db
+      .query("mediaPreparations")
+      .withIndex("by_org_source_key", (q) =>
+        q
+          .eq("organizationId", a.source.organizationId)
+          .eq("sourceId", a.source._id)
+          .eq("key", key),
+      )
+      .unique();
+    if (prior) {
+      ensure(
+        (retry?.generation ?? args.generation) === prior.generation &&
+          prior.executor === executor &&
+          (executor === "work_cloud" ||
+            args.maxCredits === prior.receipt?.admission?.quote.maximumCredits),
+        "QUOTE_CHANGED",
+        "Use the current source and accepted credit cap.",
+      );
+      return startHandler(ctx, {
+        sourceId: args.sourceId,
+        executor,
+        key,
+        quoteHash: prior.receipt.admission.quoteHash,
+        maximumCredits: prior.receipt.admission.quote.maximumCredits,
+      });
+    }
+  }
+  if (retry) {
+    const latest = await ctx.db
+      .query("mediaPreparations")
+      .withIndex("by_org_source", (q) =>
+        q
+          .eq("organizationId", a.source.organizationId)
+          .eq("sourceId", args.sourceId),
+      )
+      .order("desc")
+      .first();
+    ensure(
+      retry.generation === a.source.generation &&
+        retry.revision === a.source.updatedAt &&
+        latest?.generation === retry.generation &&
+        latest.state === "failed" &&
+        latest.receipt?.billing?.state === "settled",
+      "SOURCE_BUSY",
+      "Retry requires the current post revision and a confirmed settled failure. Active or uncertain work must be reconciled first.",
+    );
+  }
+  const q = await quoteFor(ctx, a, {
+    sourceId: args.sourceId,
+    executor,
+  });
+  if (q.quote.cacheHit)
+    return {
+      sourceId: args.sourceId,
+      runId: null,
+      state: "ready",
+      cacheHit: true,
+      chargedCredits: 0,
+    };
+  if (args.maxCredits === undefined && executor === "gateway")
+    return {
+      state: "quote_required",
+      quote: { ...q.quote, quoteHash: q.quoteHash },
+      next_action: {
+        tool: "request_analysis",
+        args: {
+          sourceId: args.sourceId,
+          mode: "credits",
+          generation: a.source.generation,
+          maxCredits: q.quote.maximumCredits,
+          ...(retry ? { retry } : {}),
+        },
+      },
+      note: "Review and accept the maximum service credits, then repeat this exact credit request. Preparation and Muse analysis are included; no native job starts.",
+    };
+  ensure(
+    executor === "work_cloud"
+      ? !!retry && q.quote.maximumCredits <= 1
+      : args.generation === a.source.generation &&
+          args.maxCredits === q.quote.maximumCredits,
+    "QUOTE_CHANGED",
+    "Read the current credit quote before starting this fixed-baseline analysis.",
+  );
+  return startHandler(ctx, {
+    sourceId: args.sourceId,
+    executor,
+    key,
+    quoteHash: q.quoteHash,
+    maximumCredits: q.quote.maximumCredits,
+  });
+}
+
+type AutomaticPreparedReceipt = {
+  sourceId: Id<"sources">;
+  runId: Id<"mediaPreparations"> | null;
+  state: string;
+  reused?: boolean;
+  cacheHit?: boolean;
+  chargedCredits?: number;
+  maximumCredits?: number;
+  analysisStarted?: boolean;
+  failureCode?: string;
+  account?: ProcessingAccountSummary | null;
+};
+
+export const automaticStart = internalMutation({
+  args: { sourceId: v.id("sources") },
+  returns: v.any(),
+  handler: async (
+    ctx,
+    { sourceId },
+  ): Promise<AutomaticPreparedReceipt | null> => {
+    const a = await owner(ctx, sourceId, true);
+    return queueAutomaticPreparedWithinTransaction(ctx, a.source, a.actor);
+  },
+});
+
+export async function queueAutomaticPreparedSource(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  actor: Doc<"users">,
+): Promise<AutomaticPreparedReceipt | null> {
+  // Preserve the separately supported native route when server preparation is
+  // disabled. Its entitlement is checked by that route, not by this adapter.
+  if (
+    !preparedServiceConfiguration(actor.subject)
+      ?.automaticOwnSubscriptionPreparation
+  )
+    return null;
+  try {
+    // A nested mutation gives admission its own rollback boundary. Saving the
+    // user's link can survive a known funding refusal without partial holds.
+    return await ctx.runMutation(internal.preparedService.automaticStart, {
+      sourceId: source._id,
+    });
+  } catch (error) {
+    const code =
+      error instanceof Error
+        ? error.message.match(/\b([A-Z][A-Z_]{1,63}):/)?.[1]
+        : null;
+    if (
+      !code ||
+      ![
+        "QUOTA_EXCEEDED",
+        "INSUFFICIENT_CREDITS",
+        "BUDGET_EXCEEDED",
+        "OPERATOR_BUDGET_REACHED",
+        "SETUP_REQUIRED",
+      ].includes(code)
+    )
+      throw error;
+    let account = null;
+    try {
+      account = await processingAccountSummary(ctx, actor);
+    } catch {
+      /* Missing financial authority never invents a zero balance. */
+    }
+    const current = await ctx.db.get(source._id);
+    if (current && current.state !== "deleted")
+      await ctx.db.patch(current._id, {
+        personalMedia: {
+          ...current.personalMedia,
+          admissionBlock: {
+            code,
+            generation: current.generation,
+            observedAt: Date.now(),
+          },
+        },
+        updatedAt: Date.now(),
+      });
+    return {
+      sourceId: source._id,
+      runId: null,
+      state: "processing_blocked",
+      analysisStarted: false,
+      failureCode: code,
+      account,
+    };
+  }
+}
+
+async function queueAutomaticPreparedWithinTransaction(
+  ctx: MutationCtx,
+  source: Doc<"sources">,
+  actor: Doc<"users">,
+) {
+  const config = preparedServiceConfiguration(actor.subject);
+  if (!config?.automaticOwnSubscriptionPreparation) return null;
+  const key = `prepared-save-${source._id}-${source.generation}`;
+  const prior = await ctx.db
+    .query("mediaPreparations")
+    .withIndex("by_org_source_key", (x) =>
+      x
+        .eq("organizationId", source.organizationId)
+        .eq("sourceId", source._id)
+        .eq("key", key),
+    )
+    .unique();
+  if (prior)
+    return {
+      sourceId: source._id,
+      runId: prior._id,
+      state: prior.state,
+      reused: true,
+    };
+  const a = await owner(ctx, source._id, true),
+    q = await quoteFor(ctx, a, {
+      sourceId: source._id,
+      executor: "work_cloud",
+    });
+  ensure(
+    q.quote.maximumCredits <= 1,
+    "QUOTE_CHANGED",
+    "Automatic own-subscription preparation is capped at one service credit.",
+  );
+  return startHandler(ctx, {
+    sourceId: source._id,
+    executor: "work_cloud",
+    key,
+    quoteHash: q.quoteHash,
+    maximumCredits: q.quote.maximumCredits,
+  });
+}
+
+async function statusHandler(
+  ctx: QueryCtx,
+  { sourceId }: { sourceId: Id<"sources"> },
+) {
+  const a = await owner(ctx, sourceId, false, false, "jobs:read");
+  const latest = await ctx.db
+    .query("mediaPreparations")
+    .withIndex("by_org_source", (x) =>
+      x.eq("organizationId", a.source.organizationId).eq("sourceId", sourceId),
+    )
+    .order("desc")
+    .first();
+  const run =
+    latest?.generation === a.source.generation && latest.actor === a.actor._id
+      ? latest
+      : null;
+  const waitingForShared =
+    a.source.catalogWait?.actor === a.actor._id &&
+    a.source.catalogWait.generation === a.source.generation &&
+    a.source.catalogWait.expiresAt > Date.now() &&
+    (!run || ["ready", "failed"].includes(run.state));
+  const state = waitingForShared
+    ? "waiting_for_shared_analysis"
+    : (run?.state ?? a.source.state);
+  const versionId =
+    run?.versionId ?? a.source.selectedAnalysisVersionId ?? null;
+  let nextAction: {
+    tool: "analysis_version";
+    args: { sourceId: Id<"sources">; versionId: Id<"analysisVersions"> };
+  } | null = null;
+  if (state === "ready" && versionId) {
+    try {
+      const readable = await owner(
+        ctx,
+        sourceId,
+        false,
+        true,
+        "knowledge:read",
+      );
+      await retainedVersion(ctx, readable.source, versionId);
+      nextAction = { tool: "analysis_version", args: { sourceId, versionId } };
+    } catch (error) {
+      // Stale evidence or missing current read authority must not break status.
+      // Unexpected storage/infrastructure failures remain visible to diagnostics.
+      if (!(error instanceof PolicyError)) throw error;
+    }
+  }
+  return {
+    account: await optionalProcessingAccountSummary(
+      ctx,
+      a.actor,
+      a.organization._id,
+    ),
+    sourceId,
+    state,
+    runId: waitingForShared ? null : (run?._id ?? null),
+    versionId,
+    stages: waitingForShared ? [] : (run?.stages.slice(-20) ?? []),
+    executor: waitingForShared ? null : (run?.executor ?? null),
+    maximumCredits: waitingForShared
+      ? 0
+      : (run?.receipt?.admission?.quote.maximumCredits ?? 0),
+    chargedCredits: waitingForShared
+      ? 0
+      : (run?.receipt?.billing?.chargedCredits ?? null),
+    billingState: waitingForShared
+      ? "not_applicable"
+      : (run?.receipt?.billing?.state ??
+        (run?.receipt?.admission ? "reserved" : "not_applicable")),
+    failure: waitingForShared ? null : (run?.receipt?.failure?.code ?? null),
+    catalogStatus: a.source.catalogStatus?.state ?? null,
+    url: `https://scroll.companynerve.com/app/${a.source.organizationId}/posts/${sourceId}`,
+    ...(nextAction ? { next_action: nextAction } : {}),
+  };
+}
+export const status = query({
+  args: { sourceId: v.id("sources") },
+  returns: v.any(),
+  handler: statusHandler,
+});
+export const assistantStatus = internalQuery({
+  args: { sourceId: v.id("sources") },
+  returns: v.any(),
+  handler: statusHandler,
+});

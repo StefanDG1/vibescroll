@@ -1,0 +1,57 @@
+{
+  "date": "2026-11-01",
+  "scope": "ADR222 single-Pro checkout, portal and no repository-count quota",
+  "status": "local and actual sandbox accepted; production unchanged",
+  "fullLocalCheck": {
+    "command": "node scripts/run-offline.mjs pnpm check",
+    "exit": 0,
+    "mainPass": 1498,
+    "mainSkipped": 9,
+    "authPass": 52,
+    "knowledgePass": 174,
+    "bothProductionBuilds": true
+  },
+  "actualSandboxCheckout": {
+    "test": "tests/pro-checkout.acceptance.test.ts",
+    "durationSeconds": 7.05,
+    "exactMonthlyEURCents": 3500,
+    "managedPayments": true,
+    "actualSafePortalSession": true,
+    "payments": 0,
+    "realAppWrites": 0,
+    "newWalletGrants": 0,
+    "ownedCheckoutExpired": true,
+    "temporaryPortalArchived": true,
+    "preExistingCustomerRetained": true
+  },
+  "dependencyAudit": {
+    "unresolved": 0
+  },
+  "preserved": [
+    "legacy settlement mappings",
+    "admin/test wallets and purchases",
+    "old reservations and unknown holds",
+    "existing sandbox fixtures",
+    "valid saved results",
+    "old portal configuration"
+  ],
+  "candidatePolicyActivated": false,
+  "livePricesCreated": false,
+  "next": [
+    "exact CI",
+    "unchanged-schema preparation and actual admission",
+    "staged/canonical desktop and phone billing/pricing checks",
+    "concrete live-offer review"
+  ],
+  "visualRegression": {
+    "symptom": "Light Pro card had dark background despite correct text and geometry",
+    "cause": "Later global panel hard-coded background and border",
+    "fix": "Existing panel/line theme tokens",
+    "newReadOnlyChecker": "scripts/check-pro-pricing.py",
+    "pricingCases": 4,
+    "feedCases": 4,
+    "libraryCases": 8,
+    "hostedBuildsBeforeCorrection": 0
+  },
+  "finalLandingCopyBuildPassed": true
+}

@@ -1,0 +1,191 @@
+{
+  "date": "2026-11-01",
+  "status": "production checkout and prefunded paid-user processing enabled; no paid live transaction performed",
+  "commit": "1f96e6d0098d27b0c72928885f84941d434d447c",
+  "ci": {
+    "run": 41308430227,
+    "exactCommit": true,
+    "conclusion": "success"
+  },
+  "local": {
+    "mainPassed": 1511,
+    "mainSkipped": 9,
+    "authPassed": 54,
+    "knowledgePassed": 176,
+    "nodeAndPythonChecks": true,
+    "bothProductionBuilds": true,
+    "dependencyAuditUnresolved": 0
+  },
+  "backend": {
+    "deterministicPreparations": 2,
+    "actualGuardsPassed": 17,
+    "actualFinishAcknowledged": true,
+    "components": 14,
+    "tables": 162,
+    "indexes": 353,
+    "schemaChanges": 0,
+    "indexChanges": 0,
+    "authChanges": 0,
+    "cronChanges": 0,
+    "populatedScansOrBackfills": 0
+  },
+  "website": {
+    "builds": 1,
+    "buildDurationMs": 45063,
+    "machine": "fixed Basic",
+    "cores": 2,
+    "memoryGB": 8,
+    "queue": "normal",
+    "sameBuildPromoted": true,
+    "exactCanonicalHealth": true,
+    "aliasesCompleted": true,
+    "normalDomainAssignmentRestored": true,
+    "stagedCases": 24,
+    "canonicalCases": 24,
+    "signedInBillingCases": 2
+  },
+  "commerce": {
+    "currency": "EUR",
+    "taxBehavior": "inclusive",
+    "pro": [
+      {
+        "price": 35,
+        "interval": "month",
+        "credits": 300,
+        "grant": "monthly"
+      },
+      {
+        "price": 350,
+        "interval": "year",
+        "credits": 300,
+        "grant": "monthly"
+      },
+      {
+        "price": 17,
+        "interval": "week",
+        "credits": 75,
+        "grant": "every seven days"
+      }
+    ],
+    "topups": [
+      {
+        "price": 17,
+        "credits": 200
+      },
+      {
+        "price": 35,
+        "credits": 500
+      }
+    ],
+    "unusedOldPricesArchived": 8,
+    "activeLivePrices": 5,
+    "initialLiveHistory": {
+      "charges": 0,
+      "invoices": 0,
+      "subscriptions": 0,
+      "noFurtherPages": true
+    },
+    "finalLiveRead": {
+      "charges": 0,
+      "subscriptions": 0
+    },
+    "newSalesEnabled": true,
+    "exactPriceMappingReadBack": true,
+    "personalBillingEntry": true,
+    "safePortalPreserved": true
+  },
+  "checkout": {
+    "actualUnpaidSandboxApplicationSessions": 2,
+    "sandboxAmountsEURCents": [1700, 3500],
+    "sandboxSessionsExpired": true,
+    "ownedSyntheticSandboxCustomerDeleted": true,
+    "sandboxCheckoutPaymentsTaken": 0,
+    "isolatedSignedGrantRefundReplayAndRiskChecks": true,
+    "priorActualSignedSandboxSubscriptionDelivery": "accepted separately in launch-20261101-credit-policy-backend.json; not replayed",
+    "actualLiveApplicationSession": true,
+    "liveAmountEURCents": 3500,
+    "liveExactProPrice": true,
+    "liveMode": true,
+    "liveSessionExpired": true,
+    "exactLiveCheckoutLockCleared": true,
+    "paymentDetailsEntered": false,
+    "realPayments": 0,
+    "newLiveSubscriptions": 0,
+    "realUserCreditGrants": 0,
+    "livePaidTransactionVerified": false
+  },
+  "processing": {
+    "paidPersonalProRequired": true,
+    "operatorCatalogConcessionDoesNotGrantPaidProcessing": true,
+    "personalWalletAcrossWorkspaces": true,
+    "paymentRiskAndWorkerClaimRechecked": true,
+    "sharedAtomicProviderCapacity": true,
+    "duplicateStartsDoNotConsumeTwice": true,
+    "readyCacheQuoteZeroAfterCapacityExhaustion": true,
+    "newSaveUsesPreparedQuoteAndStart": true,
+    "displayedSaveMaximumCredits": 11,
+    "unsupportedLocalAndUploadPathsNotEnabled": true,
+    "publicModels": [
+      "Muse Contributor video analysis",
+      "GLM Flash project plans"
+    ],
+    "ownerOpenAiGrantNotExpanded": true,
+    "newLiveAnalysisOrPlanCalls": 0
+  },
+  "funding": {
+    "providerExistingCreditObservedUSD": 12.72,
+    "keyLifetimeBudgetUSD": 6,
+    "refresh": "never",
+    "priorExposureRetainedUSD": 1,
+    "newCustomerMaximumExposureUSD": 5,
+    "maximumNewCustomerJobs": 100,
+    "maximumJobEnvelopeUSD": 0.05,
+    "operatorPaymentOrProviderPurchase": 0,
+    "autoReload": false,
+    "finitePrefunding": true,
+    "automaticCashReplenishment": false,
+    "ownerPilotIdsAndCountersUnchanged": true,
+    "allOldEngineeringHoldsPreserved": true,
+    "engineeringCapEUR": 15.5,
+    "batchReservedUSD": 0.095,
+    "vercelPreflightCycleUsageUSD": 0.08,
+    "vercelConservativeUpperUSD": 0.89,
+    "vercelCeilingUSD": 20,
+    "settledInfrastructureUsageKnown": false
+  },
+  "preservation": {
+    "wholeOwnerUsageTextUnchanged": true,
+    "expiredUnknownHoldPreserved": true,
+    "savedResultsPreserved": true,
+    "defaultWorkspaceNotMovedByBillingRoute": true,
+    "originalMcpReadPassed": true,
+    "automaticAnalysisEnabled": true,
+    "mcpSetupRequired": false,
+    "newOAuthConnection": false
+  },
+  "webhook": {
+    "existingEndpointPreserved": true,
+    "enabledEvents": 13,
+    "added": [
+      "charge.dispute.created",
+      "charge.dispute.closed",
+      "radar.early_fraud_warning.created"
+    ],
+    "signingSecretNotRotated": true
+  },
+  "ciRecovery": {
+    "downloadHostTimedOut": true,
+    "unchangedReviewedArchiveRetained": true,
+    "bytes": 12040788,
+    "sha256": "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e",
+    "upstreamLicensesRetained": true,
+    "decoderBuildFlagsUnchanged": true,
+    "newProductionRuntime": false
+  },
+  "open": [
+    "live completed paid transaction and independent paid-customer acceptance intentionally untested",
+    "provider prefunding must be reviewed before exhaustion/expiry; purchases and Auto Recharge remain disabled",
+    "full-catalog add-on price/purchase separate from requested-post cache",
+    "fresh-host new MCP proposal write/publication acceptance remains distinct"
+  ]
+}

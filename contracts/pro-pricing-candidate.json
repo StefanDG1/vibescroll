@@ -1,0 +1,45 @@
+{
+  "version": "pro-eur-20261031-preview-v2",
+  "status": "review_required",
+  "currency": "EUR",
+  "priceMode": "tax_inclusive_where_applicable",
+  "tier": "pro",
+  "hostedFreeTier": false,
+  "poolScope": "one_person_across_workspaces",
+  "plans": [
+    {
+      "interval": "week",
+      "amountCents": 1700,
+      "credits": 75,
+      "grantInterval": "week"
+    },
+    {
+      "interval": "month",
+      "amountCents": 3500,
+      "credits": 300,
+      "grantInterval": "month"
+    },
+    {
+      "interval": "year",
+      "amountCents": 35000,
+      "credits": 300,
+      "grantInterval": "month"
+    }
+  ],
+  "sharedCache": "requested_posts",
+  "fullCatalogue": "separate_addon",
+  "automaticTopups": false,
+  "legacyPolicy": "preserve_existing_terms_and_purchased_units",
+  "activationBlocks": [
+    "Review whole-pipeline costs, tax and payment fees",
+    "Review storage limits, topups and full-catalogue addon",
+    "Accept sandbox migration and exact legacy price mapping",
+    "Review live prices and customer migration before activation"
+  ],
+  "weeklyCreditDecision": {
+    "credits": 75,
+    "grantEveryDays": 7,
+    "status": "owner_confirmed",
+    "date": "2026-10-31"
+  }
+}

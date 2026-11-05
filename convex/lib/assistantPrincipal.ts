@@ -6,8 +6,12 @@ import {
   isAssistantIdentity,
   type AssistantScope,
 } from "../../packages/policy/assistant";
-import { ensure } from "../../packages/policy";
+import { ensure, PolicyError } from "../../packages/policy";
 import { workspaceReadable } from "./workspacePrivacy";
+import {
+  requireTeamSubscription,
+  requireAccountPro,
+} from "./accountSubscription";
 export async function assistantPrincipal(
   ctx: QueryCtx,
   required?: AssistantScope,
@@ -48,6 +52,19 @@ export async function assistantPrincipal(
     "FORBIDDEN",
     "Complete app account setup first.",
   );
+  if (actor.onboarding) {
+    try {
+      await requireAccountPro(ctx, actor);
+    } catch (error) {
+      if (!(error instanceof PolicyError) || error.code !== "FORBIDDEN")
+        throw error;
+      ensure(
+        false,
+        "PAYMENT_REQUIRED",
+        "Complete Pro checkout in VibeScroll. Your connection and setup progress are saved.",
+      );
+    }
+  }
   return { identity, actor, client, scopes };
 }
 export async function assistantGrant(
@@ -93,5 +110,6 @@ export async function assistantGrant(
       "FORBIDDEN",
       "Write access is unavailable.",
     );
+  await requireTeamSubscription(ctx, principal.actor, organization);
   return { ...principal, organization, membership, grant };
 }

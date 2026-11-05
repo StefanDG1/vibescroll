@@ -1,0 +1,133 @@
+{
+  "date": "2026-11-04",
+  "requirement": "R153",
+  "kind": "read-only research and plan, no product deployment",
+  "repositories": [
+    {
+      "repo": "assistant-ui/assistant-ui",
+      "status": 200,
+      "stars": 12948,
+      "license": "MIT",
+      "url": "https://github.com/assistant-ui/assistant-ui",
+      "updated": "2026-11-04T21:41:07Z",
+      "archived": false
+    },
+    {
+      "repo": "shadcn-ui/ui",
+      "status": 200,
+      "stars": 127360,
+      "license": "MIT",
+      "url": "https://github.com/shadcn-ui/ui",
+      "updated": "2026-11-04T07:50:48Z",
+      "archived": false
+    },
+    {
+      "repo": "motiondivision/motion",
+      "status": 200,
+      "stars": 34905,
+      "license": "MIT",
+      "url": "https://github.com/motiondivision/motion",
+      "updated": "2026-11-04T07:47:16Z",
+      "archived": false
+    },
+    {
+      "repo": "modelcontextprotocol/ext-apps",
+      "status": 200,
+      "stars": 3047,
+      "license": "NOASSERTION",
+      "url": "https://github.com/modelcontextprotocol/ext-apps",
+      "updated": "2026-11-04T18:07:49Z",
+      "archived": false
+    },
+    {
+      "repo": "openai/openai-apps-sdk-examples",
+      "status": 200,
+      "stars": 2385,
+      "license": "MIT",
+      "url": "https://github.com/openai/openai-apps-sdk-examples",
+      "updated": "2026-04-15T17:01:42Z",
+      "archived": false
+    },
+    {
+      "repo": "ibelick/prompt-kit",
+      "status": 200,
+      "stars": 3146,
+      "license": "MIT",
+      "url": "https://github.com/ibelick/prompt-kit",
+      "updated": "2026-09-28T13:33:31Z",
+      "archived": false
+    }
+  ],
+  "officialDocs": [
+    "https://developers.openai.com/plugins/build/chatgpt-ui",
+    "https://developers.openai.com/plugins/reference"
+  ],
+  "appComponents": "https://www.assistant-ui.com/elements",
+  "accountEvidence": "Private local records excluded; real balance, pilot counters and catalog status read without inference or changes.",
+  "ownerDecision": "Recurring 300-credit monthly admin allowance with generous hourly/daily rates; no Stripe fabrication or extra provider-spend authority.",
+  "productChanged": false,
+  "followUp": "R154 animation/design research and local search replay",
+  "animationRepositories": [
+    {
+      "repo": "ibelick/motion-primitives",
+      "status": 200,
+      "stars": 6897,
+      "license": "MIT",
+      "url": "https://github.com/ibelick/motion-primitives",
+      "archived": false
+    },
+    {
+      "repo": "formkit/auto-animate",
+      "status": 200,
+      "stars": 13958,
+      "license": "MIT",
+      "url": "https://github.com/formkit/auto-animate",
+      "archived": false
+    },
+    {
+      "repo": "imskyleen/animate-ui",
+      "status": 200,
+      "stars": 4885,
+      "license": "NOASSERTION",
+      "url": "https://github.com/imskyleen/animate-ui",
+      "archived": false
+    },
+    {
+      "repo": "magicuidesign/magicui",
+      "status": 200,
+      "stars": 23084,
+      "license": "MIT",
+      "url": "https://github.com/magicuidesign/magicui",
+      "archived": false
+    },
+    {
+      "repo": "phosphor-icons/react",
+      "status": 200,
+      "stars": 1790,
+      "license": "MIT",
+      "url": "https://github.com/phosphor-icons/react",
+      "archived": false
+    },
+    {
+      "repo": "iconoir-icons/iconoir",
+      "status": 200,
+      "stars": 4618,
+      "license": "MIT",
+      "url": "https://github.com/iconoir-icons/iconoir",
+      "archived": false
+    }
+  ],
+  "additionalOfficialDocs": [
+    "https://developers.openai.com/plugins/concepts/ui-guidelines",
+    "https://developers.openai.com/plugins/build/examples"
+  ],
+  "localPreview": {
+    "connectedAndQuiet": true,
+    "actualRetainedResultReplay": true,
+    "liveHostOrSearchStream": false,
+    "viewportChecks": [1440, 390, 320],
+    "themes": ["light", "dark"],
+    "reducedMotionAndSourceDialog": true,
+    "noInferenceOrBackendMutation": true
+  }
+}

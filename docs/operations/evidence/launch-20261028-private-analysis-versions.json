@@ -1,0 +1,63 @@
+{
+  "kind": "private-analysis-versions-release-v1",
+  "observedAtUTC": "2026-10-28T14:09:25Z",
+  "commit": "da275f423dc454a06ce42be37aa53dca23bfd0bb",
+  "version": "0.1.0-alpha.20261028133636.gda275f423dc4",
+  "ci": { "runId": 40698034035, "conclusion": "success" },
+  "frontend": {
+    "url": "https://scroll.companynerve.com",
+    "target": "production",
+    "deploymentId": "dpl_2YmTF4uCDwtYkjm7gaYvoGbSektT",
+    "framework": "Next.js",
+    "buildSeconds": 55.922,
+    "fixedBasicNormalQueue": true,
+    "sameBuildPromotion": true,
+    "canonicalHealthMatched": true,
+    "normalDomainAssignmentRestored": true
+  },
+  "backend": {
+    "published": true,
+    "newInitiallyEmptyTables": 3,
+    "newIndexesOnNewTablesOnly": 12,
+    "existingTableIndexChanges": 0,
+    "componentAuthCronChanges": false,
+    "preflightStopBeforeStartPush": "One earlier preflight stopped on duplicate tagged index fields; its cost hold and failure receipt are retained. A separately reviewed narrow decoder passed captured-response regression tests before one successful publication."
+  },
+  "verification": {
+    "bothPublishedRuntimeArchiveHashesPassed": true,
+    "illustratedSetupAndVersionGuidePassed": true,
+    "authenticatedHistoryReadPassed": true,
+    "analysisVersionsDisclosureVisible": true,
+    "incumbentGeneration": 1,
+    "originalAnalysisUnchanged": true,
+    "originalOrderedEvidenceUnchanged": true,
+    "originalJobUnchanged": true,
+    "originalMediaBindingsUnchanged": true,
+    "historyInitiallyEmpty": true,
+    "pendingAttemptInitiallyAbsent": true,
+    "nativeRetainedReanalysisAccepted": false,
+    "productionSelectionRollbackAccepted": false,
+    "sharedCacheImplemented": false,
+    "secondAccountPaidReuseAccepted": false
+  },
+  "budget": {
+    "ownerCumulativeEUR": 12,
+    "newEnvelopeMaximumUSD": 1,
+    "maximumAnalysisAttempts": 4,
+    "analysisAttemptsDispatchedAtCheckpoint": 0,
+    "maximumIncludedBasicBuilds": 2,
+    "includedBasicBuildsDispatched": 1,
+    "lastObservedVercelIncludedUsageUSD": 17.65,
+    "strictVercelCeilingUSD": 20,
+    "meterMayLagOneHour": true,
+    "allEarlierHoldsPreserved": true,
+    "paidAiApiOrCashBuildOverage": false
+  },
+  "limits": [
+    "Private owner pilot; no general customer availability claim.",
+    "Reanalysis needs the native work_cloud_waiting subscription before the app request. Missing-subscription recovery remains follow-up work.",
+    "Model settings and execution provenance remain host-reported.",
+    "Shared contribution, service-owned images, paid cache acceptance and wider rollout remain open.",
+    "Provider erasure and settled usage are not attested."
+  ]
+}

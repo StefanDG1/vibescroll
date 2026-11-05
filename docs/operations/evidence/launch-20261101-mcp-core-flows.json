@@ -1,0 +1,129 @@
+{
+  "date": "2026-11-01",
+  "scope": "R137 core MCP flows; R138/R139 retrieval design only",
+  "website": {
+    "commit": "593984cbd612154bdc892394d88f86230bbe2b39",
+    "version": "0.1.0-alpha.20261101162438.g593984cbd612",
+    "deployment": "dpl_6mfCf6Qo7Agiwdt3RC7K6VeaycNb",
+    "build": "Basic 2 cores/8 GB, normal queue",
+    "buildReadyAfterStartMs": 59081,
+    "sameBuildPromoted": true,
+    "canonicalAliasesCompleted": 2,
+    "normalDomainAssignmentRestored": true
+  },
+  "backend": {
+    "commit": "02860d60cbec3bc55e156dfedd045353cf604d8b",
+    "publications": 2,
+    "guardsPerPublication": 17,
+    "finalFinishAcknowledgedUTC": "2026-11-01T17:00:12.787Z",
+    "finalProcessExit": 0,
+    "newEmptyFundingTables": 2,
+    "historicalSchemasUnchanged": true,
+    "populatedScanOrBackfill": false,
+    "components": 14,
+    "tables": 164,
+    "indexes": 355
+  },
+  "ci": [
+    {
+      "run": 41326256285,
+      "commit": "593984cbd612154bdc892394d88f86230bbe2b39",
+      "mainPassed": 1611,
+      "mainSkipped": 11,
+      "authPassed": 59,
+      "knowledgePassed": 179,
+      "result": "success"
+    },
+    {
+      "run": 41328785963,
+      "commit": "02860d60cbec3bc55e156dfedd045353cf604d8b",
+      "mainPassed": 1616,
+      "mainSkipped": 11,
+      "authPassed": 59,
+      "knowledgePassed": 179,
+      "result": "success"
+    }
+  ],
+  "localFinal": {
+    "mainPassed": 1618,
+    "mainSkipped": 9,
+    "authPassed": 59,
+    "knowledgePassed": 179,
+    "fullChecksAndBothBuilds": "passed",
+    "dependencyAudit": "no unresolved findings"
+  },
+  "browser": {
+    "localDocsCases": 34,
+    "stagedDocsCases": 34,
+    "canonicalPinnedDocsCases": 34,
+    "stagedHomeCases": 4,
+    "stagedLibraryCases": 8,
+    "canonicalHomeCases": 4,
+    "canonicalLibraryCases": 8,
+    "nativeFiltersAndSearch": "passed",
+    "initialFailedReceiptsPreserved": true
+  },
+  "publicDocs": {
+    "pages": 17,
+    "toolDescriptors": 53,
+    "normalGroups": 9,
+    "advancedGroups": 2,
+    "skillTags": 9,
+    "diagramKinds": 6,
+    "url": "https://scroll.companynerve.com/docs"
+  },
+  "productionReads": {
+    "profile": "current automatic setup ready; no reconnect",
+    "proposalList": "success",
+    "existingCacheQuote": "hit; preparation/analysis/maximum credits zero; no start",
+    "retainedFetch": "six insights",
+    "searchFirstPage": {
+      "results": 6,
+      "hasMore": true,
+      "truncated": true,
+      "exhausted": false
+    },
+    "searchSecondPage": {
+      "results": 16,
+      "duplicateIds": 0,
+      "hasMore": true,
+      "truncated": true,
+      "exhausted": false
+    }
+  },
+  "funding": {
+    "monetaryV2Activated": true,
+    "samePolicyIdAndExpiry": true,
+    "operatingPoolUsd": 5,
+    "priorExposureUsd": 1,
+    "keyCeilingUsd": 6,
+    "ownerConfigurationsUnchanged": true,
+    "unknownHoldsPreserved": true,
+    "liveCustomerReservationTest": "not run; isolated signed flow passed"
+  },
+  "host": {
+    "freshChatReadOnly": "profile/list/detail/discussion/exact GitHub issue read passed",
+    "chatUrl": "https://chatgpt.com/c/6ae75f2e-f6c8-83ed-913b-6a8aa2b60514",
+    "optionalPlanWriting": "not run; automatic approval review blocked browser send with blocked by policy",
+    "customSkillInstallation": "not established"
+  },
+  "github": {
+    "checkRunSubscriptionEnabled": true,
+    "repositoryPermissionsChanged": false,
+    "actualCheckRunCreatedDeliveryHttpStatus": 200,
+    "deliveryId": "09a1d370-d615-11f1-8e15-da19b074d6d1",
+    "proposalCorrelatedPrAcceptance": "not established"
+  },
+  "limits": [
+    "No generic no-monitor hosted subscription route",
+    "No real paid transaction in this batch",
+    "No new video/model canary in this batch",
+    "No production database bill, host-token or p95 savings measurement",
+    "Whole-post reference expansion and semantic search remain planned"
+  ],
+  "newAiCalls": 0,
+  "realPayments": 0,
+  "providerPurchases": 0,
+  "savedDataDeleted": false,
+  "originalConnectionRecreated": false
+}

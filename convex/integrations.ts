@@ -1,5 +1,6 @@
 "use node";
 import { action, internalAction } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import {
@@ -574,6 +575,83 @@ export const selectRepositories = action({
     return result;
   },
 });
+export const refreshRepository = action({
+  args: {
+    id: v.id("repositories"),
+    expectedSha: v.string(),
+    expectedSelectionVersion: v.number(),
+  },
+  returns: v.object({
+    repositoryId: v.id("repositories"),
+    state: v.union(v.literal("ready"), v.literal("needs_attention")),
+    baseSha: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }),
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    repositoryId: Id<"repositories">;
+    state: "ready" | "needs_attention";
+    baseSha?: string;
+    error?: string;
+  }> => {
+    const repo = await ctx.runMutation(
+      api.repositorySelection.startRefresh,
+      args,
+    );
+    const progress = {
+      id: repo.id,
+      actor: repo.actor,
+      version: repo.selectionVersion,
+    };
+    try {
+      await authorizeRepository(ctx, repo);
+      const previous = await ctx.runQuery(internal.jobs.previousSnapshot, {
+        organizationId: repo.organizationId,
+        providerId: repo.providerId,
+      });
+      const data = await snapshot(
+        repo.installationId,
+        repo.providerId,
+        repo.fullName,
+        previous,
+        repo.snapshotPaths,
+      );
+      await ctx.runMutation(internal.jobs.saveRepository, {
+        organizationId: repo.organizationId,
+        installationId: repo.installationId,
+        providerId: repo.providerId,
+        fullName: repo.fullName,
+        selectionVersion: repo.selectionVersion,
+        snapshotActor: repo.actor,
+        ...data,
+      });
+      await ctx.runMutation(internal.repositorySelection.preparationState, {
+        ...progress,
+        state: "connected",
+      });
+      return {
+        repositoryId: repo.id,
+        state: "ready" as const,
+        baseSha: data.sha,
+      };
+    } catch (error) {
+      const code = preparationFailure(error);
+      await ctx.runMutation(internal.repositorySelection.preparationState, {
+        ...progress,
+        state: "needs_attention",
+        error: code,
+      });
+      return {
+        repositoryId: repo.id,
+        state: "needs_attention" as const,
+        error: code,
+      };
+    }
+  },
+});
+
 export const connectRepository = action({
   args: {
     organizationId: v.id("organizations"),
@@ -811,7 +889,10 @@ export const testKey = action({
     ctx,
     a,
   ): Promise<{ verified: boolean; availableModels: number }> => {
-    const actorId = await ctx.runQuery(api.jobs.authorizeCredential, a);
+    const actorId = await ctx.runQuery(api.jobs.authorizeCredential, {
+      ...a,
+      readOnly: true,
+    });
     const connection = await ctx.runQuery(internal.jobs.secret, {
       ...a,
       provider: "openai",

@@ -1,0 +1,50 @@
+{
+  "observedAtUTC": "2026-10-30T11:00:47.544460+00:00",
+  "websiteCommit": "6b2df2f06a0d45af4b335b3204f428fa049a0a39",
+  "backendCommit": "c862450aafa3f49e7756965a0bbc566f038323f1",
+  "version": "0.1.0-alpha.20261030105108.g6b2df2f06a0d",
+  "deploymentId": "dpl_399Hh35seHe5hgnWuy8ZQoNCHapd",
+  "exactCI": 41043791562,
+  "ciPassed": true,
+  "fullLocalCheckPassed": true,
+  "finalTypesPassed": true,
+  "touchTargetFollowupBuildPassed": true,
+  "fixedBasic": true,
+  "normalQueue": true,
+  "buildDurationMs": 50234,
+  "stagedHealthExact": true,
+  "stagedPhoneNoOverflow": true,
+  "sameBuildPromoted": true,
+  "canonicalHealthExact": true,
+  "normalDomainAssignmentRestored": true,
+  "backendBundleUnchanged": true,
+  "backendPublication": false,
+  "newAnalysisJobs": 0,
+  "newCreditCharges": 0,
+  "localVisual": {
+    "desktopDark": true,
+    "phoneDark": true,
+    "desktopLight": true,
+    "projectShortcutHeightPx": 47.59375,
+    "shortcutReachedExistingProjectControls": true
+  },
+  "production": {
+    "signedInRealPost": true,
+    "retainedThumbnailLoaded": true,
+    "thumbnailDimensions": [540, 960],
+    "insights": 6,
+    "citationDisclosureOpened": true,
+    "citationTranscriptAndFrameControlsPresent": true,
+    "desktopColumnsPx": [320, 660],
+    "phoneWidth": 390,
+    "phoneHorizontalOverflow": false
+  },
+  "limits": [
+    "This is the initial shared reader layout, not the complete home feed or inline playback implementation.",
+    "Protected image routes and original-source links remain; no new external player is loaded.",
+    "Management sections above the reader still need simplification.",
+    "Fresh-host discovery and actual OAuth writes for the previous proposal tools remain unverified.",
+    "No source was reanalyzed; caption-specific work is off the critical path.",
+    "Provider invoices and old holds remain unsettled."
+  ]
+}

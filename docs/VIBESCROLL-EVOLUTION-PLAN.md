@@ -316,6 +316,8 @@ Keep decision feedback distinct: useful, not relevant, already implemented, unsa
 
 ## 6. Onboarding that produces a useful first result
 
+November1 R143 revises the proposed first-run experience. Follow the [interest-led onboarding review](strategy/INTEREST-LED-ONBOARDING.md): real interest-matched ready posts replace the proposed synthetic onboarding sample. The owner approves one complete curated result before account/payment, then the existing Pro offer for continued hosted use. The historical free fresh-analysis allowance below is superseded by the later paid-only offer. Optional Instagram saved-post import must not block first value. Branching, resumable progress and optional integrations remain requirements. Implementation of this revised journey is awaiting review.
+
 ### Sequence
 
 Use a short branching quiz with a visible setup preview, back navigation and saved progress. Each answer changes a named piece of setup or is omitted. Do not stretch the quiz simply to increase sunk cost.

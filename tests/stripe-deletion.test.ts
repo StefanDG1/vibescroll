@@ -194,69 +194,78 @@ it("reconciles hard-deleted provider objects on polling without relying on a del
   ).toBe("free");
 });
 
-it("grants a delayed top-up once after payment succeeds, never on an unpaid or wrong-price event", async () => {
-  const { t } = await setup();
-  vi.stubEnv("STRIPE_MODE", "test");
-  vi.stubEnv("STRIPE_V1_WEBHOOK_SECRET", "whsec_synthetic");
-  vi.stubEnv("STRIPE_TOPUP_200_PRICE_ID", "price_synthetic");
-  const linked = await t.query(internal.billing.byCustomer, {
-    customerId: "cus_synthetic",
-  });
-  mocks.customer.mockResolvedValue({ id: "cus_synthetic" });
-  mocks.subscriptions.mockResolvedValue({ data: [], has_more: false });
-  const session = {
-    id: "cs_synthetic",
-    customer: "cus_synthetic",
-    payment_intent: "pi_syntheticAsync",
-    livemode: false,
-    payment_status: "unpaid",
-    metadata: {
-      product: "vibescroller",
-      organizationId: linked!.organizationId,
-      credits: "200",
-    },
-    line_items: {
-      data: [{ quantity: 1, price: { id: "price_synthetic" } }],
-      has_more: false,
-    },
-  };
-  async function event(type: string, id: string) {
-    mocks.session.mockResolvedValue(session);
-    return t.action(internal.reconciliation.stripeEvent, {
-      body: JSON.stringify({
-        id,
-        type,
-        livemode: false,
-        data: {
-          object: {
-            id: session.id,
-            mode: "payment",
-            customer: session.customer,
-          },
-        },
-      }),
-      signature: "synthetic-verified-fixture",
+it.each([200, 500])(
+  "grants a delayed %s-credit top-up once after payment succeeds, never on an unpaid or wrong-price event",
+  async (credits) => {
+    const { t } = await setup();
+    vi.stubEnv("STRIPE_MODE", "test");
+    vi.stubEnv("STRIPE_V1_WEBHOOK_SECRET", "whsec_synthetic");
+    vi.stubEnv(`STRIPE_TOPUP_${credits}_PRICE_ID`, "price_synthetic");
+    const linked = await t.query(internal.billing.byCustomer, {
+      customerId: "cus_synthetic",
     });
-  }
-  await event("checkout.session.completed", "evt_syntheticUnpaid");
-  expect(
-    await t.run(async (ctx) => await ctx.db.query("creditPools").collect()),
-  ).toHaveLength(0);
-  session.payment_status = "paid";
-  session.line_items.data[0].price.id = "price_other";
-  await event(
-    "checkout.session.async_payment_succeeded",
-    "evt_syntheticWrongPrice",
-  );
-  expect(
-    await t.run(async (ctx) => await ctx.db.query("creditPools").collect()),
-  ).toHaveLength(0);
-  session.line_items.data[0].price.id = "price_synthetic";
-  await event("checkout.session.async_payment_succeeded", "evt_syntheticPaid");
-  await event("checkout.session.async_payment_succeeded", "evt_syntheticPaid");
-  const pools = await t.run(
-    async (ctx) => await ctx.db.query("creditPools").collect(),
-  );
-  expect(pools).toHaveLength(1);
-  expect(pools[0]).toMatchObject({ kind: "purchased", granted: 200 });
-});
+    mocks.customer.mockResolvedValue({ id: "cus_synthetic" });
+    mocks.subscriptions.mockResolvedValue({ data: [], has_more: false });
+    const session = {
+      id: "cs_synthetic",
+      customer: "cus_synthetic",
+      payment_intent: "pi_syntheticAsync",
+      livemode: false,
+      payment_status: "unpaid",
+      metadata: {
+        product: "vibescroller",
+        organizationId: linked!.organizationId,
+        credits: String(credits),
+      },
+      line_items: {
+        data: [{ quantity: 1, price: { id: "price_synthetic" } }],
+        has_more: false,
+      },
+    };
+    async function event(type: string, id: string) {
+      mocks.session.mockResolvedValue(session);
+      return t.action(internal.reconciliation.stripeEvent, {
+        body: JSON.stringify({
+          id,
+          type,
+          livemode: false,
+          data: {
+            object: {
+              id: session.id,
+              mode: "payment",
+              customer: session.customer,
+            },
+          },
+        }),
+        signature: "synthetic-verified-fixture",
+      });
+    }
+    await event("checkout.session.completed", "evt_syntheticUnpaid");
+    expect(
+      await t.run(async (ctx) => await ctx.db.query("creditPools").collect()),
+    ).toHaveLength(0);
+    session.payment_status = "paid";
+    session.line_items.data[0].price.id = "price_other";
+    await event(
+      "checkout.session.async_payment_succeeded",
+      "evt_syntheticWrongPrice",
+    );
+    expect(
+      await t.run(async (ctx) => await ctx.db.query("creditPools").collect()),
+    ).toHaveLength(0);
+    session.line_items.data[0].price.id = "price_synthetic";
+    await event(
+      "checkout.session.async_payment_succeeded",
+      "evt_syntheticPaid",
+    );
+    await event(
+      "checkout.session.async_payment_succeeded",
+      "evt_syntheticPaid",
+    );
+    const pools = await t.run(
+      async (ctx) => await ctx.db.query("creditPools").collect(),
+    );
+    expect(pools).toHaveLength(1);
+    expect(pools[0]).toMatchObject({ kind: "purchased", granted: credits });
+  },
+);

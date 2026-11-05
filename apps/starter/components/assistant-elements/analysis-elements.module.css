@@ -1,0 +1,89 @@
+.steps {
+  list-style: none;
+  display: grid;
+  gap: 16px;
+  padding: 16px 0 0;
+  margin: 0;
+}
+.steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--subtle);
+}
+.steps li[data-state="running"],
+.steps li[data-state="waiting"] {
+  color: var(--ink);
+}
+.stepIcon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.dot {
+  height: 5px;
+  width: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+.stepLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.stepStatus {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--subtle);
+  margin-top: 2px;
+}
+.error {
+  --error-ink: #b42318;
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.error > svg {
+  color: var(--error-ink);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.error[data-tone="attention"] > svg {
+  color: var(--teal);
+}
+.errorCopy {
+  min-width: 0;
+}
+.errorCopy p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--subtle);
+}
+.errorCopy .errorTitle {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.errorCopy a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 8px;
+}
+:global(:root[data-app-theme="dark"]) .error {
+  --error-ink: #ffb4ab;
+}
+@media (prefers-reduced-motion: reduce) {
+  .steps svg,
+  .error svg {
+    animation: none;
+  }
+}

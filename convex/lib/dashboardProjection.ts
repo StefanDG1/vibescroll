@@ -1,6 +1,7 @@
 import type { Doc } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 import type { WithoutSystemFields } from "convex/server";
+import { postDisplayTitle } from "../../packages/sources/display";
 export type DashboardEntity = "sources" | "repositories" | "proposals" | "runs";
 type Entity = Doc<DashboardEntity>;
 
@@ -28,6 +29,7 @@ function fields(
     return {
       ...base,
       kind: "source",
+      title: postDisplayTitle(row).slice(0, 200),
       state: row.state,
       sourceId: row._id,
       sourceKind: row.kind,

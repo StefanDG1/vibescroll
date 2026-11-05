@@ -1,0 +1,33 @@
+{
+  "recordedAtUTC": "2026-11-05T00:46:01.933735+00:00",
+  "requirements": [
+    "R153",
+    "R154",
+    "R155"
+  ],
+  "builtResource": {
+    "sha256": "b1ed9ce6164c5ed0b675a0ea87df80158a91f48c12479e91b711ca3ce3d089ca",
+    "bytes": 3002161,
+    "officialBridgeCasesPassed": 20,
+    "opaqueSandbox": true
+  },
+  "verified": [
+    "Current default workspace, minimal self-balance and no project-context read for startup",
+    "Shared feed and proposal artifact use website cores through MCP adapters",
+    "Actual retained JPEG bytes render; mismatched identity is rejected while metadata survives",
+    "Mobile390 and320px with dark/reduced-motion checks and no horizontal overflow",
+    "Canonical preparation stages, bounded observation pause, revoked-access clearing",
+    "Connected search uses exactly actual returned citation edges without duplicate query",
+    "Discussion draft reopen and exact unknown operation-key recovery",
+    "Optional privateContent fixture restores draft across iframe reload without model-context update",
+    "Explicit issue approval recovers an interrupted response with one fixture publication",
+    "Keyboard dialog/Escape focus restoration, fullscreen source preservation and ready/pending replacement"
+  ],
+  "realProviderCallsDuringUiHarness": false,
+  "limits": [
+    "Actual ChatGPT iframe and physical phone acceptance remain separate.",
+    "200-percent browser text zoom is not verified.",
+    "Private widget-state reload acceptance uses a synthetic supported-extension fixture.",
+    "Without host state or browser storage, generic iframe draft memory lasts only for that iframe."
+  ]
+}

@@ -18,6 +18,7 @@ it("keeps repeated large snapshot reads within the query budget and starts fresh
   };
   const base = { db: reader } as unknown as QueryCtx;
   const first = knowledgeReadContext(base);
+  expect(knowledgeReadContext(first)).toBe(first);
   const id = "repository" as Parameters<QueryCtx["db"]["get"]>[0];
   const rows = await Promise.all(
     Array.from({ length: 30 }, () => first.db.get(id)),

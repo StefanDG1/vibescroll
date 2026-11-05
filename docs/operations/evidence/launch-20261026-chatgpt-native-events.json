@@ -1,0 +1,152 @@
+{
+  "observedDateUTC": "2026-10-26",
+  "status": "native_connection_renewal_and_actual_app_save_acknowledgement_accepted_private_pilot",
+  "servingFrontend": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
+  "servingBackend": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
+  "providerSurface": "ChatGPT web Work, native MCP Events and Automations",
+  "originalPluginPreserved": true,
+  "parallelPluginCreatedAndAuthedByOwner": true,
+  "discovered": {
+    "ordinaryTools": 20,
+    "events": [
+      "analysis_completed",
+      "work_cloud_waiting",
+      "work_cloud_connection_verified"
+    ]
+  },
+  "modernOfflineWire": {
+    "package": "@modelcontextprotocol/server",
+    "version": "2.3.1",
+    "revision": "2026-07-28",
+    "actualLiveNegotiatedRevisionSeparatelyCaptured": false
+  },
+  "firstSubscription": {
+    "callbackVerifiedAtMs": 1793011156200,
+    "createdAtMs": 1793011156438,
+    "originalExpiresAtMs": 1793011452000,
+    "renewedUpdatedAtMs": 1793011371849,
+    "renewedExpiresAtMs": 1793011670000,
+    "sameSubscription": true,
+    "extraLoginOrChatMessageForRenewal": false
+  },
+  "afterPauseResume": {
+    "callbackVerifiedAtMs": 1793011709548,
+    "createdAtMs": 1793011709656,
+    "deliveryReceivedAtMs": 1793011710354,
+    "httpStatus": 200,
+    "deliveryAttempts": 1,
+    "newSubscription": true
+  },
+  "mediaDownloads": 0,
+  "analysisJobs": 0,
+  "creditsReserved": 0,
+  "paidInferenceRouteSelected": false,
+  "savedLinkCandidate": {
+    "event": "video_link_saved",
+    "live": true,
+    "actualAppSaveCanaryPassed": true,
+    "focusedTestsPassed": 49,
+    "typesPassed": true,
+    "fullCheck": "initial umbrella command stopped at missing Python modules; prepared-venv media suite and remaining build-policy/build steps passed",
+    "newTables": 0,
+    "newIndexes": 0,
+    "newComponents": 0,
+    "newCrons": 0,
+    "schemaChange": "existing event validator widening only",
+    "runtimeCommit": "a6b44ad341f4fee3af619be1233b6fa235e5c1a5",
+    "testedAtUTC": "2026-10-26T11:19:27.376682+00:00",
+    "environment": "Windows; Node24.22.1; pnpm12.3.4; prepared Python3.14.0 venv; network-denied offline wrapper",
+    "vitestPassed": 1220,
+    "nodeTestsPassed": 19,
+    "pythonTestsPassed": 38,
+    "hostedSkips": 3,
+    "lintWarnings": 0,
+    "bothBuildsPassed": true,
+    "productionAudit": {
+      "passed": true,
+      "low": 2,
+      "moderate": 2,
+      "high": 0,
+      "critical": 0
+    },
+    "fullDependencyTreeAudit": {
+      "low": 3,
+      "moderate": 11,
+      "high": 6,
+      "critical": 0,
+      "highPaths": "development-only adm-zip via disabled rclone.js installation and vite test/dev tooling; unchanged dependencies; not represented as a clean whole-tree audit"
+    },
+    "dirtyWorkerFilesUnchanged": 12,
+    "servingCommit": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
+    "releaseCI": 40314319573,
+    "releaseCIConclusion": "success",
+    "fullMainCI": 40314319488,
+    "fullMainCIConclusion": "success"
+  },
+  "budget": {
+    "cumulativeCapEUR": 7.5,
+    "workingCeilingUSD": 7.95,
+    "newProbeReservedUSD": 0.06,
+    "allPriorHoldsPreserved": true,
+    "retainedMaximumUSD": 7.785014256044614,
+    "unreservedUSD": 0.1649857439553859,
+    "invoiceCertification": false,
+    "newReleaseFunded": true,
+    "newReleaseMaximumUSD": 0.45
+  },
+  "limits": [
+    "Finite automatic renewal observed, not permanent credential validity.",
+    "Old registration failure root cause not isolated.",
+    "Connection event acknowledgement is not app-save or media-analysis acceptance.",
+    "Original repair, both TikToks, unknown attempt, full-main migration and provider/privacy/release gates remain held.",
+    "Actual app-save acknowledgement accepted; automatic media execution remains unaccepted. Both canary monitors are paused and encrypted delivery authority was removed; plugin authentication remains."
+  ],
+  "sources": [
+    "https://developers.openai.com/plugins/build/mcp-events",
+    "https://developers.openai.com/plugins/build/plugins",
+    "https://developers.openai.com/plugins/build/examples"
+  ],
+  "connectionProbeServing": {
+    "frontend": "bba2715aa8fdb14501e0b54033addb1ff4f280ae",
+    "backend": "f84285ff0b773344bc960179cb7dd9b823107a3c"
+  },
+  "actualAppSaveReceipt": "launch-20261026-saved-link-native-ack.json",
+  "connectionProbeSourceSaves": 0,
+  "connectionProbeDeployments": 0,
+  "connectionProbeAgentReplies": {
+    "exactText": "VibeScroll event received: work_cloud_connection_verified",
+    "observedCount": 2,
+    "followupChatMessageOrRunNowUsed": false,
+    "pageReloadNeededToDisplay": true,
+    "chatTabClosedTested": false
+  },
+  "connectionMonitor": {
+    "name": "VibeScroll connection test",
+    "event": "work_cloud_connection_verified",
+    "grantVersion": 8,
+    "finalState": "paused",
+    "scheduledPolling": false,
+    "workspaceAgentsUsed": false
+  },
+  "connectionProbeCleanup": {
+    "subscriptionsObserved": 0,
+    "subscriptionsCheckedAtUTC": "2026-10-26T11:00:51.587343+00:00",
+    "deliveriesObserved": 0,
+    "deliveriesCheckedAtUTC": "2026-10-26T11:02:47.564505+00:00",
+    "pluginStillConnected": true
+  },
+  "actualAppSaveSaves": 1,
+  "newSources": 0,
+  "additionalRelease": {
+    "backendPublications": 1,
+    "frontendBuilds": 1,
+    "sameBuildPromotions": 1
+  },
+  "cleanup": {
+    "bothCanaryMonitorsPaused": true,
+    "subscriptionRows": 0,
+    "deliveryRows": 0,
+    "checkedAtUTC": "2026-10-26T11:46:14.610704+00:00",
+    "pluginStillConnected": true
+  }
+}

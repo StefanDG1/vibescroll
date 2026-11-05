@@ -2,7 +2,7 @@ import { releaseUnstarted } from "./personalMediaState";
 import { query } from "./_generated/server";
 import { mutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
-import { access, fail, limit, recentAuthentication, writeAccess } from "./lib";
+import { access, fail, limit, writeAccess } from "./lib";
 import { ensure } from "../packages/policy";
 import { settle } from "./product";
 export const list = query({
@@ -36,7 +36,6 @@ export const start = mutation({
   },
   handler: async (ctx, a) => {
     const u = await writeAccess(ctx, a.organizationId, ["owner", "admin"]);
-    await recentAuthentication(ctx);
     await limit(ctx, `pair:${u.actor._id}`, 3);
     ensure(
       /^[a-f0-9]{64}$/.test(a.fingerprint) &&
@@ -68,7 +67,6 @@ export const approve = mutation({
     const d = await ctx.db.get(a.id);
     if (!d) fail("Device unavailable.");
     const u = await writeAccess(ctx, d.organizationId, ["owner", "admin"]);
-    await recentAuthentication(ctx);
     ensure(
       d.owner === u.actor._id &&
         d.fingerprint === a.fingerprint &&

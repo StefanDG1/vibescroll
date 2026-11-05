@@ -1,0 +1,50 @@
+{
+  "recordedAtUTC": "2026-11-05T00:01:33.170846+00:00",
+  "requirement": "R155 / R153 / R154",
+  "backend": {
+    "commit": "e51429d6d1f1da41d413af85ce1caba0742d075c",
+    "exactCI": 41936221189,
+    "deterministicPreparations": 2,
+    "compatibleGuards": 17,
+    "finishAcknowledged": true,
+    "schemaIndexAuthCronChanges": false
+  },
+  "website": {
+    "commit": "e51429d6d1f1da41d413af85ce1caba0742d075c",
+    "deployment": "dpl_4dyEULHtQqjZ4uLnhusX2KABr4Lf",
+    "fixedBasicNormalQueue": true,
+    "sameBuildPromoted": true,
+    "canonicalHealthVerified": true,
+    "normalDomainAssignmentRestored": true,
+    "stagedCases": 13,
+    "canonicalCases": 13
+  },
+  "allowance": {
+    "monthly": 300,
+    "availableBeforeCanary": 332,
+    "oldPoolsAndReservationsUnchanged": true,
+    "billingTierUnchanged": true,
+    "sameMonthReplayAddsNothing": true,
+    "hourly": 20,
+    "daily": 100,
+    "oldPilotReset": false
+  },
+  "tests": {
+    "main": 1784,
+    "auth": 79,
+    "sharedUi": 186,
+    "officialBridgeScenarios": 9,
+    "actualChatgptUiUnclaimed": true
+  },
+  "canary": {
+    "state": "unknown",
+    "stage": "transcribing",
+    "originalHoldPreserved": true,
+    "dispatchEntitlementMismatchFixPending": true
+  },
+  "remaining": [
+    "publish and verify exact admin dispatch correction",
+    "finish shared fullscreen/feed/proposal continuity",
+    "actual host and both route acceptance"
+  ]
+}

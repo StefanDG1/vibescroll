@@ -1,0 +1,170 @@
+{
+  "date": "2026-11-01",
+  "scope": "R141/R142 filters, selected-project topic fit, explicit workspace federation and automatic joined-team defaults",
+  "commit": "72df4f79c70df131a35306e01d7b4962f037afd2",
+  "website": {
+    "deployment": "dpl_4f7uVHHvYhuUTkW8PuKnaWMeyWy1",
+    "version": "0.1.0-alpha.20261101194244.g72df4f79c70d",
+    "build": "Basic 2 cores/8 GB, normal queue",
+    "buildMs": 46306,
+    "sameBuildPromoted": true,
+    "canonicalAliasesCompleted": 2,
+    "domainAssignmentRestored": true
+  },
+  "backend": {
+    "finishAcknowledgedUTC": "2026-11-01T19:47:08.598Z",
+    "processExit": 0,
+    "guardsPassed": 17,
+    "requests": 23,
+    "components": 14,
+    "tables": 167,
+    "indexes": 362,
+    "newTables": 0,
+    "newIndexes": 0,
+    "optionalSearchMetadataFields": 3,
+    "populatedScanOrBackfill": false,
+    "authAndCronsUnchanged": true
+  },
+  "ci": {
+    "run": 41343115350,
+    "result": "success",
+    "mainPassed": 1676,
+    "mainSkipped": 11,
+    "authPassed": 59,
+    "knowledgePassed": 179,
+    "bothBuilds": true,
+    "auditNoUnresolved": true
+  },
+  "local": {
+    "mainPassed": 1678,
+    "mainSkipped": 9,
+    "authPassed": 59,
+    "knowledgePassed": 179,
+    "retrievalFocusedCases": 26,
+    "fullChecksAndBothBuilds": true,
+    "deterministicFinalPreparations": 2,
+    "supersededPreparationsRetained": true,
+    "stagedSecretPatternsMatched": 0
+  },
+  "browser": {
+    "localDocs": 34,
+    "stagedDocs": 34,
+    "canonicalDocs": 34,
+    "stagedHome": 4,
+    "stagedLibrary": 8,
+    "canonicalHome": 4,
+    "canonicalLibrary": 8
+  },
+  "existingOwnerConnection": {
+    "grantVersion": 12,
+    "automaticAnalysis": true,
+    "setupRequired": false,
+    "selectedProjects": 5,
+    "reconnected": false,
+    "toolRefreshHTTP": 200
+  },
+  "hostExtendedSearch": {
+    "status": "passed actual ChatGPT host with existing connection after Refresh tools HTTP200",
+    "conversation": "6ae78e71-b09c-83eb-b750-6d7532236bbe",
+    "actualTool": "mcp__codex_apps__vibescroll_search",
+    "calls": 2,
+    "workspaceCount": 1,
+    "newArgumentsAccepted": [
+      "mode",
+      "workspaceIds",
+      "projectId",
+      "filters.platforms",
+      "target",
+      "cursor"
+    ],
+    "profileIdOmitted": true,
+    "pageMatches": [
+      10,
+      5
+    ],
+    "scannedCandidates": [
+      10,
+      5
+    ],
+    "loadedCandidates": [
+      15,
+      15
+    ],
+    "sessionCandidates": [
+      10,
+      15
+    ],
+    "duplicateMatchIds": 0,
+    "indexReady": [
+      true,
+      true
+    ],
+    "hasMore": [
+      true,
+      false
+    ],
+    "exhausted": [
+      false,
+      false
+    ],
+    "truncated": [
+      true,
+      true
+    ],
+    "projectProfileVersion": 7,
+    "projectSelectionVersion": 23,
+    "contextGrantVersion": 12,
+    "exampleFit": {
+      "matched": 1,
+      "total": 2,
+      "criteriaOmitted": 0,
+      "rubric": "topic-coverage-v1"
+    },
+    "newAnalysisOrCreditOperations": 0,
+    "limitations": "one live owner workspace; filter enforcement and multi-member federation covered by isolated tests, not inferred from argument acceptance"
+  },
+  "firstCheckpoint": "launch-20261101-context-retrieval.json",
+  "isolatedAcceptance": [
+    "personal/team isolation and current own Pro",
+    "viewer/token/client scope intersection",
+    "revoked/expired/narrowed grants preserved",
+    "teams with55 other-member grants",
+    "current app default preserved after team setup",
+    "narrowed grants reject ranked mode before candidate/state enumeration",
+    "mixed restricted federation starts zero candidate cores",
+    "continuation without lost Unicode overflow matches",
+    "purpose-bound cursor tamper/reorder/revocation rejection",
+    "global hydration/serialized byte bounds",
+    "real retained post/image fixtures"
+  ],
+  "knownLimits": [
+    "fit is page-local topic coverage",
+    "filters use analysis categories rather than manual folders",
+    "shared workspace-added dates remain unknown and are omitted from date filters",
+    "fixed scope quotas may leave spare capacity",
+    "only access paths observed on emitted page are returned",
+    "busy index changes can require a fresh query",
+    "Convex index-query accounting is not workspace-local billing",
+    "initial3 host image errors remain unexplained; all8 frames rendered across sequential diagnostics",
+    "real-library recall/latency percentiles and independent live multi-member host acceptance remain unclaimed"
+  ],
+  "semanticDecision": {
+    "syntheticPosts": 16,
+    "syntheticInsights": 17,
+    "tests": 3,
+    "paraphraseMissObserved": true,
+    "twoScriptedLexicalQueriesRecoveredDeclaredHits": true,
+    "newEmbeddingProviderActivated": false,
+    "next": "owner-reviewed real expected-hit set before a paid embedding/provider decision"
+  },
+  "spending": {
+    "newVideoAnalyses": 0,
+    "paidAIAPICalls": 0,
+    "realPayments": 0,
+    "providerPurchases": 0,
+    "oldHoldsPreserved": true,
+    "ownerCapEUR": 15.5,
+    "batchMaximumUSD": 0.3,
+    "vercelConservativeUpperUSD": 19.9
+  }
+}

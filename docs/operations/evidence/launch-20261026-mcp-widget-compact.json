@@ -1,0 +1,64 @@
+{
+  "dateUTC": "2026-10-26",
+  "status": "published_new_compact_host_acceptance_blocked_by_cached_resource",
+  "frontendCommit": "21de39d04672d386ec1424d6fd49b756844e8c91",
+  "backendCommit": "f6dd6d4eb944fee5a88e3826e6a058b987b4b3d4",
+  "ci": {
+    "run": 40384656875,
+    "conclusion": "success"
+  },
+  "local": {
+    "vitestPassed": 1292,
+    "hostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonCases": 59,
+    "linuxOnlyWindowsSkipped": 4,
+    "types": "passed",
+    "lint": "passed_zero_warnings",
+    "productionBuilds": "passed",
+    "dependencyAdvisories": 0,
+    "bridgeCases": 6,
+    "finishReview": "source_title_finding_resolved_only"
+  },
+  "frontend": {
+    "deploymentId": "dpl_AniRT3yDoh9GAJ7MrQ4qYgKH8eD3",
+    "builds": 1,
+    "fixedBasicQueued": true,
+    "stagedHealthExact": true,
+    "widgetEnabled": true,
+    "illustratedGuideVerified": true,
+    "runtimeZipBytes": 71925,
+    "runtimeZipSHA256": "dcfe182a7be7793a5429d89d7d6d9bf927ecd3a92224085c8d6df74e3b5b3c77",
+    "sameBuildPromoted": true,
+    "canonicalVersion": "0.1.0-alpha.20261026191210.g21de39d04672",
+    "normalDomainAssignmentRestored": true
+  },
+  "backendPublicationsFromThisChat": 0,
+  "host": {
+    "realChatGPTExistingResultRendered": true,
+    "developerCSPEnforcementRemainedOn": true,
+    "observedCoverageLabel": "ordered media",
+    "observedCitationRows": 5,
+    "observedDisclosure": null,
+    "expectedCurrentCitationRows": 2,
+    "newCompactHostAccepted": false,
+    "cacheKeyAtObservation": "ui://vibescroll/card/v1.html",
+    "sourceSaves": 0,
+    "analysisJobs": 0,
+    "grantChanges": 0,
+    "codexToolDiscoveryAndOpen": "passed",
+    "codexVisualRendering": "unverified"
+  },
+  "retainedNonPasses": [
+    "First guide read used a page without the illustration; correct processing-and-recovery guide subsequently verified.",
+    "First DOM inspection addressed the outer host sandbox; inspection of its inner widget frame confirmed the old five-row HTML.",
+    "New compact UI host acceptance remains open despite exact source publication."
+  ],
+  "followUp": {
+    "resourceCacheKeys": "local_generated_HTML_fingerprint_fix_prepared_not_published",
+    "legacySetupMessageGate": "dafd896_prepared_for_next_combined_release",
+    "standaloneExtraBuilds": 0
+  },
+  "sources": ["https://developers.openai.com/plugins/build/chatgpt-ui"],
+  "scope": "Existing-account core widget publication and real CSP-on legacy-card rendering only; not full-plan, fresh-account, skills or public-directory acceptance."
+}

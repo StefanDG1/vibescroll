@@ -1,0 +1,110 @@
+{
+  "recordedAtUTC": "2026-11-02T19:49:05.495983+00:00",
+  "requirement": "R152 / ADR235",
+  "backend": {
+    "commit": "1843f1f4bc368b2ea1883e242fb4fb55422adf54",
+    "baseline": "189dc4f2149f70a1136caa1a0f58eb88ec567be7",
+    "exactCI": 41511408079,
+    "actualFinishAcknowledged": true,
+    "deterministicPreparations": 2,
+    "guardTests": 17,
+    "schemaIndexComponentAuthCronChanges": false,
+    "populatedScanOrBackfill": false
+  },
+  "website": {
+    "commit": "189dc4f2149f70a1136caa1a0f58eb88ec567be7",
+    "deployment": "dpl_Bx9NpwvhauqkNptr1gVHzrzBcpqK",
+    "noNewBuild": true,
+    "existingCanonicalPostAndHomeVerified": true
+  },
+  "target": {
+    "sourceId": "px74tg2860md7kfh8wmg5dcgad8h8cj3",
+    "analysisVersionId": "xh76ep6gphztsay6bhxk85gt598h9rtx",
+    "originalReadyGeneration": 0,
+    "insights": 5,
+    "transcriptSegments": 1,
+    "observations": 9,
+    "frames": 8,
+    "provenance": "authenticated_host_reported",
+    "funding": "own_subscription",
+    "requestedModel": "gpt-6.1-sol"
+  },
+  "rootCauses": [
+    "Shared reader inferred OpenAI API processing from a model name also used by subscription hosts; preparation permission still matched.",
+    "Website detail validated old private orderedMedia before resolving a current immutable/shared analysis."
+  ],
+  "fixes": [
+    "Require managed_api_reported provenance before selecting the independent OpenAI API processing review.",
+    "Validate the selected immutable analysis/evidence; use legacy ordered-media validation only without a selected retained result. Preserve denial after selected shared withdrawal."
+  ],
+  "checks": {
+    "localFull": {
+      "mainPassed": 1714,
+      "mainSkipped": 9,
+      "authPassed": 79,
+      "knowledgePassed": 179,
+      "nodePythonBothBuilds": "passed"
+    },
+    "exactCI": {
+      "mainPassed": 1712,
+      "mainSkipped": 11,
+      "authPassed": 79,
+      "knowledgePassed": 179,
+      "nodePythonBothBuildsAndAudit": "passed"
+    },
+    "focused": "82 sharing, entitlement, full-context, image and preparation cases; two model-name collision cases failed before the provenance fix; converted shared-source detail failed before selected-version-first validation.",
+    "actualRetainedContracts": true,
+    "websiteFeedEndpointBefore": 404,
+    "websiteFeedEndpointAfter": 200,
+    "sameVersionReturned": true,
+    "canonicalPostCases": "desktop1440/mobile390 in light/dark; five visible matching insight controls and decoded540x960 poster; no horizontal overflow",
+    "homeRepairedPost": "loaded, five insight controls, zero error alerts at390px",
+    "mcp": [
+      "structured_v1 returns five cited insights",
+      "exact source@version structured read succeeds",
+      "post_context_v1 complete=true with all15 retained items and eight frames",
+      "retained transcript/observation hashes, insight IDs, version/output/evidence hashes match prior records",
+      "read_post_frame returned actual native JPEG",
+      "another existing three-insight/eight-frame retained result reads completely",
+      "owner grant12 remains automatic=true, intake setup not required",
+      "a foreign personal-source reference is denied with FORBIDDEN"
+    ],
+    "frameBytes": {
+      "count": 8,
+      "allSha256SizesAndDimensionsMatch": true,
+      "sha256Manifest": "f68d2507547f6057de4e960fbe87ad395ab126386ac9c7928fc2b546dcf10163"
+    },
+    "secondAccount": {
+      "method": "authorized operator CLI read with existing secondary account identity; no new browser/OAuth sign-in",
+      "sameCachedVersionAndAnalysis": true,
+      "insights": 4,
+      "transcriptSegments": 29,
+      "frames": 8
+    },
+    "storedChainUnchanged": {
+      "artifact": true,
+      "evidence": true,
+      "family": true,
+      "layer": true,
+      "source": true,
+      "version": true
+    },
+    "dependencyAudit": "zero unresolved findings",
+    "changedSourceSecretScan": "zero findings"
+  },
+  "funding": {
+    "ownerCapEUR": 15.5,
+    "batchMaximumUSD": 0.04,
+    "backendMaximumUSD": 0.025,
+    "verificationMaximumUSD": 0.015,
+    "noWebsiteBuildInferencePaymentPurchaseDeletionOrGrantChange": true,
+    "allOldHoldsPreserved": true,
+    "noUserCreditsOrAnalysisJobs": true,
+    "settledCost": "unknown; holds preserved"
+  },
+  "limits": [
+    "Checks cover the repaired result, two existing retained controls and current authorized-account boundaries; no large-scale reliability rate is claimed.",
+    "Independent fresh-user OAuth and real paid purchase remain outside this read repair.",
+    "No media was reacquired or analyzed; the returned transcript and sampled screenshots are the exact retained evidence, not a claim of full visual coverage."
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "observedAtUTC": "2026-10-26T15:34:34.366495+00:00",
+  "status": "kernel_and_synthetic_decoder_passed_not_full_host_or_source_admission",
+  "servingCommit": "ff7d88f5601c5d717f3ac5cad6ff73489ba29a25",
+  "nativeMetadata": {
+    "chatURL": "https://chatgpt.com/c/6adf4371-7f2c-83eb-a9d8-6a1fae54101f",
+    "tool": "exec_command",
+    "commands": 1,
+    "requestedMaximumSeconds": 10,
+    "uid": 0,
+    "euid": 0,
+    "CapEff": "0000000000000000",
+    "CapPrm": "0000000000000000",
+    "CapAmb": "0000000000000000",
+    "CapBnd": "0000000000000000",
+    "NoNewPrivs": 1,
+    "Seccomp": 2,
+    "Seccomp_filters": 1,
+    "CapInh": "not queried in initial read; independently reported zero after synthetic test",
+    "restrictionOrPrivilegeChanges": false,
+    "networkOrSourceAccess": false,
+    "fileWrites": 0,
+    "appCalls": 0,
+    "sourceJobs": 0,
+    "monitorStateChanged": false
+  },
+  "conclusion": "V1 rejected this native Work configuration on UID0. The separately pinned V2 candidate passed raw child/exec socket denial and synthetic decoding on that actual capless/NNP/provider-filter host. This is network and decoder evidence only; actual provider boundary, acquisition policy, tools/captions/ASR, lease control, source result and event-run admission remain separate.",
+  "policyVersion": "linux-provider-vm-decoder-socket-denial-v2",
+  "adapterFiles": {
+    "decoder_network_denial_v1.py": {
+      "bytes": 9088,
+      "sha256": "924a3e8e9b1ea7bd956a30526d609d995f45f09d50eef9206890d4d26e8972e3"
+    },
+    "decoder_network_denial_v2.py": {
+      "bytes": 2878,
+      "sha256": "5cd8513cb8a87e77d54110814c5c82ecd53d9b19e6254fb4f265281a5ce1e90e"
+    }
+  },
+  "acceptedMediaPackageChanged": false,
+  "nativeSyntheticTest": {
+    "commit": "dfb4acac519b09898bc465791a51fabe77b53866",
+    "attempts": 1,
+    "sourceFiles": 3,
+    "sourcePinsMatched": true,
+    "exitCode": 0,
+    "testsPassed": 8,
+    "testsFailed": 0,
+    "testsErrored": 0,
+    "testsSkipped": 0,
+    "fixtureCases": 6,
+    "actualCases": {
+      "socketDenialAcrossExec": "passed",
+      "synthetic32x32JPEGUnderSameDenial": "passed"
+    },
+    "ordinaryProcess": {
+      "CapInh": "0000000000000000",
+      "CapBnd": "0000000000000000",
+      "NoNewPrivs": 1,
+      "Seccomp": 2,
+      "Seccomp_filters": 1
+    },
+    "cleanup": "host reports owned test tree and synthetic JPEG directory removed; no uncertainty",
+    "monitorStateChanged": false,
+    "sourceJobs": 0,
+    "appCalls": 0,
+    "normalSetupTurnNotEvent": true,
+    "uiObservation": "one normal chat reload displayed persisted completion; test was not resubmitted"
+  },
+  "budget": {
+    "cumulativeCapEUR": 8,
+    "newReadOnlyHoldUSD": 0.01,
+    "retainedUSD": 8.355014256044612,
+    "unreservedUSD": 0.12498574395538853,
+    "priorHoldsReleased": false,
+    "syntheticDecoderHoldUSD": 0.02,
+    "pendingCaptionToolsHoldUSD": 0.03
+  },
+  "sources": [
+    "https://learn.chatgpt.com/docs/enterprise/chatgpt-work-cloud-security",
+    "https://learn.chatgpt.com/docs/sandboxing?surface=web",
+    "https://docs.kernel.org/userspace-api/no_new_privs.html",
+    "https://docs.kernel.org/userspace-api/seccomp_filter.html"
+  ],
+  "localValidation": {
+    "fullCheckLog": "outputs/provider-vm-decoder-full-check-20261026.log",
+    "fullCheckExit": 0,
+    "vitestPassed": 2115,
+    "vitestExternalSkipped": 3,
+    "nodePassed": 19,
+    "pythonTotalAtFullCheck": 67,
+    "pythonWindowsSkippedAtFullCheck": 3,
+    "finalProviderVMFocusedTotal": 8,
+    "finalProviderVMWindowsSkipped": 2,
+    "finalAddition": "actual Linux FFmpeg/FFprobe synthetic JPEG test; exact CI remains",
+    "lintZeroWarnings": true,
+    "typesPassed": true,
+    "productionBuilds": 2,
+    "unchangedAcceptedPackageManifestVerified": true,
+    "finalPythonTotal": 68,
+    "finalPythonWindowsSkipped": 4
+  },
+  "nativeTestFile": {
+    "path": "tests/decoder_provider_vm_test.py",
+    "bytes": 7288,
+    "sha256": "83272279bb83e81a0834804a0e199b1a9cd024cfebd72eddb6b287a88f449627"
+  },
+  "exactCI": {
+    "commit": "dfb4acac519b09898bc465791a51fabe77b53866",
+    "runId": "40351522420",
+    "jobId": "121672557550",
+    "status": "passed",
+    "mandatoryFlagForwarded": true,
+    "providerVMSuite": {
+      "total": 8,
+      "passed": 8,
+      "skipped": 0,
+      "actualSocketExecAndFFmpegTestsRan": true
+    },
+    "originalSuite": {
+      "total": 13,
+      "passed": 12,
+      "skipped": 1,
+      "skipReason": "negative unsupported-host CLI test inapplicable on admitted nonroot Linux"
+    },
+    "vitestPassed": 2113,
+    "vitestSkipped": 5
+  }
+}

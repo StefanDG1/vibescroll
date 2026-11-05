@@ -1,13 +1,24 @@
+import type { HighRiskAuthenticationAction } from "../packages/policy/reauthentication";
 import { isAssistantIdentity } from "../packages/policy/assistant";
 import { ConvexError } from "convex/values";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { isPaid } from "../packages/company-config";
 import { workspaceReadable } from "./lib/workspacePrivacy";
+import { billingFor } from "./lib/billingAccess";
+import {
+  requireTeamSubscription,
+  requireAccountPro,
+} from "./lib/accountSubscription";
+export { billingFor } from "./lib/billingAccess";
 export function fail(message: string): never {
   throw new ConvexError(message);
 }
-export async function recentAuthentication(ctx: QueryCtx, maxAgeSeconds = 300) {
+export async function recentAuthentication(
+  ctx: QueryCtx,
+  _action: HighRiskAuthenticationAction,
+) {
+  const maxAgeSeconds = 300;
   const identity = await ctx.auth.getUserIdentity();
   const authenticatedAt = identity?.auth_time;
   if (
@@ -16,7 +27,7 @@ export async function recentAuthentication(ctx: QueryCtx, maxAgeSeconds = 300) {
     authenticatedAt > Date.now() / 1000 ||
     Date.now() / 1000 - authenticatedAt > maxAgeSeconds
   )
-    fail("Sign in again before changing a sensitive connection.");
+    fail("REAUTH_REQUIRED: Sign in again to confirm this high-risk action.");
 }
 export async function user(ctx: QueryCtx) {
   if (process.env.RESTORE_LOCK === "true")
@@ -36,6 +47,7 @@ export async function access(
   ctx: QueryCtx,
   organizationId: Id<"organizations">,
   roles?: string[],
+  onboardingSetup = false,
 ) {
   const actor = await user(ctx);
   const membership = await ctx.db
@@ -53,19 +65,20 @@ export async function access(
     return fail("Organization unavailable.");
   if (roles && !roles.includes(membership.role))
     return fail("You do not have permission for this action.");
+  // Existing accounts retain their policy. New hosted accounts may authenticate
+  // and configure billing/GitHub before payment, but ordinary workspace access
+  // is enforced here for direct API and MCP calls as well as the website.
+  if (actor.onboarding && !onboardingSetup) await requireAccountPro(ctx, actor);
+  await requireTeamSubscription(ctx, actor, organization);
   return { actor, membership, organization };
 }
-export const billingFor = (ctx: QueryCtx, id: Id<"organizations">) =>
-  ctx.db
-    .query("billing")
-    .withIndex("by_org", (q) => q.eq("organizationId", id))
-    .unique();
 export async function writeAccess(
   ctx: MutationCtx,
   organizationId: Id<"organizations">,
   roles = ["owner", "admin", "member"],
+  onboardingSetup = false,
 ) {
-  return access(ctx, organizationId, roles);
+  return access(ctx, organizationId, roles, onboardingSetup);
 }
 export async function paid(ctx: QueryCtx, id: Id<"organizations">) {
   if (!isPaid(await billingFor(ctx, id)))

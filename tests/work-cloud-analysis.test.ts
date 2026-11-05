@@ -323,7 +323,7 @@ it("completes a private text result once, stores only the token hash and preserv
   ).rejects.toThrow("FORBIDDEN");
 });
 
-it("keeps approval behind recent app authentication, exact preview input and current grant version", async () => {
+it("keeps approval bound to exact preview input and current grant version in a normal session", async () => {
   const s = await setup(),
     p = await s.preview();
   const args = {
@@ -337,11 +337,6 @@ it("keeps approval behind recent app authentication, exact preview input and cur
     useOwnPlan: true as const,
     maxApiUsd: 0 as const,
   };
-  await expect(
-    s.t
-      .withIdentity({ subject, auth_time: Math.floor(Date.now() / 1000) - 301 })
-      .mutation(api.workCloudAnalysis.approve, args),
-  ).rejects.toThrow();
   await expect(
     s.owner.mutation(api.workCloudAnalysis.approve, {
       ...args,
@@ -876,3 +871,23 @@ it.each(["expired", "revoked", "version"])(
     ).toBeNull();
   },
 );
+
+it("allows an established normal session to approve the exact private Cloud source", async () => {
+  const s = await setup(),
+    p = await s.preview();
+  await expect(
+    s.t
+      .withIdentity({ subject })
+      .mutation(api.workCloudAnalysis.approve, {
+        sourceId: s.sourceId,
+        generation: p.generation,
+        grantId: s.grant.id,
+        grantVersion: p.grantVersion,
+        expectedInputHash: p.inputHash,
+        model: "synthetic-model",
+        effort: "high",
+        useOwnPlan: true,
+        maxApiUsd: 0,
+      }),
+  ).resolves.toBeDefined();
+});

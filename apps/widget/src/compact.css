@@ -433,6 +433,40 @@ textarea:focus-visible {
   object-fit: contain;
   margin-top: 16px;
 }
+.widget-shared-feed {
+  --feed-accent: color-mix(in srgb, var(--teal) 8%, var(--panel));
+  min-width: 0;
+}
+.widget-shared-feed .source-thumb img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: cover;
+}
+.widget-shared-feed > article {
+  height: calc(100svh - 180px);
+  min-height: 540px;
+}
+.widget-source-scene {
+  min-width: 0;
+}
+.widget-proposal-panel {
+  min-width: 0;
+  max-width: 760px;
+  margin-inline: auto;
+}
+.widget-project-panel {
+  min-width: 0;
+}
+.compact-root[data-theme="dark"] [data-slot="error-state"] {
+  --error-ink: #ffb4ab;
+}
+@media (max-width: 720px) {
+  .widget-shared-feed > article {
+    height: auto;
+    min-height: 0;
+  }
+}
 @media (max-width: 950px) {
   .application-post-content {
     grid-template-columns: minmax(0, 1fr);

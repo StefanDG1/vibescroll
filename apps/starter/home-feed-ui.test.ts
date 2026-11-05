@@ -3,6 +3,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ProposalArtifact } from "./components/assistant-elements/proposal-artifact";
 import { PostEngagement } from "./components/post-engagement";
+import { FeedPostCardCore } from "./components/home-feed-post-core";
+import { ProposalArtifactCore } from "./components/assistant-elements/proposal-artifact-core";
 import { feedDemoDetails } from "./lib/home-feed-demo";
 
 const backendMock = vi.hoisted(() => ({ query: vi.fn(), backend: vi.fn() }));
@@ -16,6 +18,50 @@ vi.mock("./lib/backend", () => ({
 import { GET } from "./app/api/feed/[id]/route";
 beforeEach(() => backendMock.query.mockResolvedValue(null));
 afterEach(() => vi.resetAllMocks());
+
+it("shares the full post scene without leaking website image endpoints into the MCP presentation", () => {
+  const detail = feedDemoDetails["feed-demo-0"];
+  const html = renderToStaticMarkup(
+    createElement(FeedPostCardCore, {
+      post: {
+        id: detail.id,
+        title: detail.title,
+        authorName: detail.authorName,
+        kind: "instagram",
+        thumbnailAssetIds: [],
+      },
+      detail,
+      active: true,
+      demo: false,
+      readOnly: true,
+      organizationId: "workspace",
+      call: async () => ({}),
+      base: "https://scroll.companynerve.com/app/workspace",
+      onReaction: () => {},
+      onVisible: () => {},
+      onRetry: () => {},
+      showTour: false,
+      projectPanel: createElement("p", null, "Authorized project actions"),
+      endLabel: "End of this bounded page",
+    }),
+  );
+  for (const column of ["source", "insights", "plans"])
+    expect(html).toContain(`data-feed-column="${column}"`);
+  expect(html).toContain(detail.insights[0].claim);
+  expect(html).toContain("Authorized project actions");
+  expect(html).not.toMatch(/\/api\/evidence|src="\/icon.svg|You’re up to date/);
+  const plan = renderToStaticMarkup(
+    createElement(ProposalArtifactCore, {
+      proposal: detail.proposals[0],
+      href: "https://scroll.companynerve.com/app/workspace/proposals/plan",
+      transport: "mcp",
+      initiallyOpen: true,
+    }),
+  );
+  expect(plan).toContain("Approve &amp; create issue");
+  expect(plan).toContain("Plan discussion");
+  expect(plan).not.toContain('src="/icon.svg"');
+});
 
 it("shows distinct link requesters as a count, rather than an outbound Share action", () => {
   const html = renderToStaticMarkup(

@@ -77,8 +77,13 @@ export function useApplication() {
       setSearch(null);
     }
     if (isAccessFailure(failed)) {
+      epoch.current++;
+      setBusy(false);
       setAccount(null);
+      setAccountUnavailable(true);
       setWorkspace(null);
+      setProfileId("");
+      setProfiles([]);
     }
     setError(
       failed instanceof Error
@@ -108,7 +113,9 @@ export function useApplication() {
     }
     try {
       const balance = processingAccountView(
-        await host.call("get_processing_account", {}),
+        await host.call("get_processing_account", {
+          profileId: String(state.profile_id),
+        }),
       );
       if (ticket === epoch.current) {
         setAccount(balance);
@@ -128,6 +135,7 @@ export function useApplication() {
     collection: CollectionKind = "sources",
     bootstrap?: ToolRecord | null,
     receipt?: ToolRecord | null,
+    shared?: { sharedGrantId?: string; sharedGrantVersion?: number },
   ) {
     const ticket = ++epoch.current;
     setBusy(true);
@@ -136,11 +144,13 @@ export function useApplication() {
     setSearch(null);
     if (!continuation) {
       setSource(null);
-      setRows([]);
+      if (!selectedSource || selectedProfile !== profileId) {
+        setRows([]);
+        setNext(null);
+        setCoverage("");
+      }
       setJob(null);
       setRecords([]);
-      setNext(null);
-      setCoverage("");
       setCatalogPost(null);
     }
     try {
@@ -206,12 +216,16 @@ export function useApplication() {
                 await host.call("fetch", {
                   profileId: chosen,
                   id: selectedSource,
+                  ...shared,
                 }),
               );
         if (ticket !== epoch.current) return;
-        setSource(retained);
+        setSource({ ...retained, ...shared });
         // Ready incumbent evidence can coexist with a new pending analysis.
-        if ((state.actions as Record<string, boolean>)?.jobs) {
+        if (
+          (state.actions as Record<string, boolean>)?.jobs &&
+          !shared?.sharedGrantId
+        ) {
           const status = raw?.source_status
             ? raw
             : await host.call("get_job_status", {
@@ -226,11 +240,18 @@ export function useApplication() {
         } else setJob({ status: retained.state });
         observationStarted.current = Date.now();
       } else {
-        const result = await host.call("widget_browse", {
-          profileId: chosen,
-          kind: collection,
-          ...continuation,
-        });
+        const result =
+          collection === "proposals"
+            ? await host.call("list_project_proposals", {
+                profileId: chosen,
+                detail: "summary",
+                ...continuation,
+              })
+            : await host.call("widget_browse", {
+                profileId: chosen,
+                kind: collection,
+                ...continuation,
+              });
         if (ticket !== epoch.current) return;
         if (collection === "sources")
           setRows((old) =>
@@ -238,15 +259,27 @@ export function useApplication() {
               ? boundedMerge(old, sourcesOf(result))
               : sourcesOf(result),
           );
-        else
+        else {
+          const records = ((result.items ?? []) as ToolRecord[]).map(
+            (record) =>
+              collection === "proposals"
+                ? {
+                    ...record,
+                    id: String(record.proposalId),
+                    state: record.review,
+                    url: record.reviewUrl,
+                  }
+                : record,
+          );
           setRecords((old) =>
             continuation
               ? boundedMerge(
                   old as (ToolRecord & { id: string })[],
-                  result.items as (ToolRecord & { id: string })[],
+                  records as (ToolRecord & { id: string })[],
                 )
-              : ((result.items ?? []) as ToolRecord[]),
+              : records,
           );
+        }
         setNext(continuationOf(result));
         setCoverage(typeof result.coverage === "string" ? result.coverage : "");
       }
@@ -291,6 +324,7 @@ export function useApplication() {
       epoch.current++;
       failure(new Error(host.error));
       setAccount(null);
+      setAccountUnavailable(true);
       setWorkspace(null);
       return;
     }
@@ -336,6 +370,13 @@ export function useApplication() {
       route.success && route.data.view === "catalog" ? "catalog" : "sources",
       snapshot,
       payload,
+      typeof host.input?.sharedGrantId === "string" &&
+        typeof host.input?.sharedGrantVersion === "number"
+        ? {
+            sharedGrantId: host.input.sharedGrantId,
+            sharedGrantVersion: host.input.sharedGrantVersion,
+          }
+        : undefined,
     );
   });
   useEffect(() => {
@@ -386,6 +427,7 @@ export function useApplication() {
       if (balance) setAccount(balance);
       if (
         status.source_status === "ready" &&
+        !source.fetchId?.split("~")[0].includes("@") &&
         (source.state !== "ready" ||
           (current.versionId && current.versionId !== source.analysisVersionId))
       ) {

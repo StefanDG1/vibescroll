@@ -1,6 +1,6 @@
 # Owner request register
 
-Mode: reference. Reviewed November 2, 2026, Europe/Berlin.
+Mode: reference. Reviewed November 5, 2026, Europe/Berlin.
 
 This register reconciles the owner messages visible in the link-to-insights conversation, including questions, screenshots, approvals and later corrections. Repeated status requests are consolidated. Short quotes are retrieval anchors, not a verbatim transcript. Linked plans retain the detailed implementation scope. This register does not grant new spending, source rights or provider capabilities.
 
@@ -16,6 +16,8 @@ Status vocabulary:
 - **Superseded**: a later owner instruction replaces the earlier choice.
 
 ## Capture, extraction and visible results
+
+R155, November5: implement the complete R153/R154 plan, credit/quota repair first, then shared plugin UI and Connected search. Publish useful checkpoints. The owner approves a cumulative EUR17 engineering cap and USD0.90 release/test envelope, at most two fresh video tests, existing balances only, old holds preserved and Vercel below USD20. Routine releases remain delegated. The recurring300-credit admin allowance and20/hour,100/day limits are live. Native preparation/subscription analysis and a retained-evidence API control passed;330 credits remain after their settlements. Both fresh tests are used. Shared scene/proposal code and built bridge acceptance are being finalized; actual ChatGPT/mobile UI acceptance stays separate. [Route receipt](../operations/evidence/launch-20261105-processing-routes.json) and [current phase ledger](MCP-UI-UNIFICATION-AND-PROCESSING-UX.md#production-and-remaining-acceptance-november5).
 
 R154, November 4: extend the MCP/UI plan with animation libraries, design skills, official app references and relevant saved VibeScroll knowledge. The owner requests an insight-first, visually engaging search view where actual returned sources/data points connect into useful insights as results arrive. Preserve truthful progress, scoped data, source citations and the approved visual style. Research and a private Connected/Quiet replay study are complete; live search UI implementation remains pending under [R153 Phase 3b](MCP-UI-UNIFICATION-AND-PROCESSING-UX.md#search-discovery-and-synthesis). The credit/quota repair stays first.
 

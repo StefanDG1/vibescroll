@@ -1,4 +1,4 @@
-Verification date: November 1, 2026. Code support, an observed owner workflow and independent customer acceptance are different evidence. Feature flags, scopes, grants and host discovery determine the tools available to a particular connection.
+Verification date: November 5, 2026. Code support, an observed owner workflow and independent customer acceptance are different evidence. Feature flags, scopes, grants and host discovery determine the tools available to a particular connection.
 
 ## Capabilities and evidence
 
@@ -15,7 +15,7 @@ Verification date: November 1, 2026. Code support, an observed owner workflow an
 | Text-only MCP client              | Ordinary results include text content                                                      | Local protocol fixtures cover the server contract                                                                    | Independent text-only client acceptance and compact-output changes require separate tests   |
 | Local analysis execution          | Product direction retains a local option                                                   | Deferred                                                                                                             | No current general local-executor availability claim                                        |
 
-The full reference lists 54 feature-enabled descriptors, including worker and embedded adapters. It is not a promise that all 54 appear in an ordinary chat. Events subscription methods are separate protocol operations.
+The full reference lists 57 feature-enabled descriptors, including worker and embedded adapters. It is not a promise that all 57 appear in an ordinary chat. Events subscription methods are separate protocol operations.
 
 ## Authentication and task readiness
 
@@ -28,3 +28,13 @@ A workspace selection does not require reconnecting. A missing or paused monitor
 Host-written plans use the active host's allowance before VibeScroll persists them. API-start tools use their quoted route regardless of the calling chat. Server preparation can cost credits even when native reasoning uses a subscription. Compatible ready-cache reuse starts no new analysis.
 
 Native retained-frame completion requires actual image inspection in a supported authorized task. Text about a screenshot cannot replace its pixels. A generic direct-completion contract for any active chat remains under investigation, not an available alternative.
+
+## Shared views and current limits
+
+The compact card and expanded scene use the website's source, insight, progress and proposal presentations with host-specific navigation. Initial tool results supply the selected workspace; ordinary library startup needs no project-context read. Catalog browsing is a separately entitled collection, rather than a service workspace masquerading as an empty personal library.
+
+Search motion connects only returned source/insight citations. It does not stream invented matches or claim semantic similarity. Native images are fetched one at a time under the exact retained version/evidence identity. A built official-bridge test is separate from acceptance in a particular ChatGPT client or a physical phone.
+
+Sent discussion and plans are durable backend records. Unsent discussion uses bounded local recovery. In ChatGPT, the optional documented private widget-state adapter can also restore it after the iframe reloads, without sending it to the model. Generic sandboxed hosts without storage or this extension preserve drafts only while that iframe remains alive. Unconfirmed actions retain their exact operation key; recovery does not silently start another generation or publish a second issue.
+
+The November5 owner control completed automatic prepared native analysis and a retained-evidence managed API analysis, with current credit receipts and ordinary MCP result/image retrieval. It preserves the selected shared result. Broad platform reliability, every host's iframe behavior and independent paid-user acceptance remain separate.

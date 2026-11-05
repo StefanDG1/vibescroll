@@ -890,18 +890,25 @@ async function statusHandler(
   { sourceId }: { sourceId: Id<"sources"> },
 ) {
   const a = await owner(ctx, sourceId, false, false, "jobs:read");
-  const run = await ctx.db
+  const latest = await ctx.db
     .query("mediaPreparations")
     .withIndex("by_org_source", (x) =>
       x.eq("organizationId", a.source.organizationId).eq("sourceId", sourceId),
     )
     .order("desc")
     .first();
-  const state =
-    run?.state ??
-    (a.source.catalogWait && a.source.catalogWait.expiresAt > Date.now()
-      ? "waiting_for_shared_analysis"
-      : a.source.state);
+  const run =
+    latest?.generation === a.source.generation && latest.actor === a.actor._id
+      ? latest
+      : null;
+  const waitingForShared =
+    a.source.catalogWait?.actor === a.actor._id &&
+    a.source.catalogWait.generation === a.source.generation &&
+    a.source.catalogWait.expiresAt > Date.now() &&
+    (!run || ["ready", "failed"].includes(run.state));
+  const state = waitingForShared
+    ? "waiting_for_shared_analysis"
+    : (run?.state ?? a.source.state);
   const versionId =
     run?.versionId ?? a.source.selectedAnalysisVersionId ?? null;
   let nextAction: {
@@ -933,16 +940,21 @@ async function statusHandler(
     ),
     sourceId,
     state,
-    runId: run?._id ?? null,
+    runId: waitingForShared ? null : (run?._id ?? null),
     versionId,
-    stages: run?.stages.slice(-20) ?? [],
-    executor: run?.executor ?? null,
-    maximumCredits: run?.receipt?.admission?.quote.maximumCredits ?? 0,
-    chargedCredits: run?.receipt?.billing?.chargedCredits ?? null,
-    billingState:
-      run?.receipt?.billing?.state ??
-      (run?.receipt?.admission ? "reserved" : "not_applicable"),
-    failure: run?.receipt?.failure?.code ?? null,
+    stages: waitingForShared ? [] : (run?.stages.slice(-20) ?? []),
+    executor: waitingForShared ? null : (run?.executor ?? null),
+    maximumCredits: waitingForShared
+      ? 0
+      : (run?.receipt?.admission?.quote.maximumCredits ?? 0),
+    chargedCredits: waitingForShared
+      ? 0
+      : (run?.receipt?.billing?.chargedCredits ?? null),
+    billingState: waitingForShared
+      ? "not_applicable"
+      : (run?.receipt?.billing?.state ??
+        (run?.receipt?.admission ? "reserved" : "not_applicable")),
+    failure: waitingForShared ? null : (run?.receipt?.failure?.code ?? null),
     catalogStatus: a.source.catalogStatus?.state ?? null,
     url: `https://scroll.companynerve.com/app/${a.source.organizationId}/posts/${sourceId}`,
     ...(nextAction ? { next_action: nextAction } : {}),

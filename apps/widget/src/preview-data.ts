@@ -55,6 +55,40 @@ const links = Object.fromEntries(
     ],
   ),
 );
+const proposalSummary = {
+  proposalId: "demo-planning-proposal",
+  profileId: profile,
+  sourceId: sources[0].id,
+  projectId: "demo-project",
+  analysisVersionId: "demo-analysis-version-0",
+  insightIds: ["idea-0"],
+  version: 1,
+  review: "unreviewed",
+  title: "Keep evidence beside the useful result",
+  disposition: "relevant",
+  current: true,
+  origin: "chat_planning",
+  repositoryCodeIncluded: false,
+  creditsSpent: 0,
+  analysisStarted: false,
+  codingAuthorized: false,
+  publicationAuthorized: false,
+  reviewUrl: `${links.projects}?proposal=demo-planning-proposal`,
+};
+const proposalBody = {
+  title: proposalSummary.title,
+  disposition: "relevant",
+  currentProblem: "People need a useful result before completing more setup.",
+  proposedChange:
+    "Show the first retained idea with its evidence and one next step.",
+  benefitHypothesis: null,
+  risks: [],
+  nonGoals: ["Starting coding automatically"],
+  acceptanceCriteria: ["The same retained source is cited."],
+  verificationNeeds: ["Review the first useful result."],
+  steps: ["Open the retained insight", "Review its source evidence"],
+};
+const demoMessages: ToolRecord[] = [];
 export async function demoCall(
   name: string,
   args: ToolRecord,
@@ -98,8 +132,67 @@ export async function demoCall(
       analysisStarted: false,
       codingAuthorized: false,
     };
-  if (name === "get_project_proposal")
-    return { proposalId: "demo-planning-proposal", version: 1 };
+  if (name === "list_project_proposals")
+    return {
+      items: [proposalSummary],
+      next_cursor: null,
+      examined: 1,
+      has_more: false,
+      exhausted: true,
+      coverage: "One synthetic saved plan.",
+    };
+  if (name === "get_project_proposal") {
+    const {
+      title: _title,
+      disposition: _disposition,
+      ...summary
+    } = proposalSummary;
+    return {
+      ...summary,
+      contextHash: "c".repeat(64),
+      handoff: null,
+      body: proposalBody,
+    };
+  }
+  if (name === "get_proposal_discussion")
+    return {
+      actorId: "demo-actor",
+      proposalId: proposalSummary.proposalId,
+      version: 1,
+      review: "unreviewed",
+      current: true,
+      contextHash: "c".repeat(64),
+      body: proposalBody,
+      handoff: null,
+      generatedVersion: null,
+      discussionRevision: demoMessages.length,
+      messages: { page: demoMessages, isDone: true, continueCursor: "" },
+      operation: null,
+      issueOperation: null,
+      recentOperations: [],
+      analysisStarted: false,
+      codingAuthorized: false,
+    };
+  if (name === "add_proposal_message") {
+    const old = demoMessages.find((message) => message.id === args.key);
+    if (!old)
+      demoMessages.push({
+        id: args.key,
+        author: "You",
+        role: "user",
+        body: String(args.text),
+        createdAt: Date.now(),
+      });
+    return { messageId: args.key, replayed: !!old };
+  }
+  if (name === "preview_project_issue")
+    return {
+      proposalId: proposalSummary.proposalId,
+      version: 1,
+      contextHash: "c".repeat(64),
+      visibility: "private",
+      repository: "synthetic/project",
+    };
   if (name === "get_profile" || name === "widget_profiles")
     return {
       selected_profile_id: profile,

@@ -10,7 +10,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Video,
 } from "lucide-react";
 import { useApplication, type CollectionKind } from "./use-application";
 import {
@@ -37,12 +36,22 @@ import {
 import { InsightDiscovery } from "../../starter/components/insight-discovery";
 import { insightPresentation } from "../../../packages/insights/presentation";
 import { suggestProjects } from "../../starter/lib/project-suggestions";
+import { ProposalPanel } from "./proposal-panel";
+import { FullscreenFeed } from "./fullscreen-feed";
+import { useSourceMedia } from "./source-media";
 
 type View = "home" | "explore" | "work" | "save" | "catalog";
 export function CompactApp() {
   const model = useApplication();
   const { host, source } = model;
   const full = host.fullscreen;
+  const media = useSourceMedia(
+    full ? source : null,
+    model.profileId,
+    Number(model.workspace?.grant_version ?? 0),
+    host.call,
+    host.readImage,
+  );
   const [view, setView] = useState<View>("home");
   const [url, setUrl] = useState("");
   const [query, setQuery] = useState("");
@@ -54,6 +63,10 @@ export function CompactApp() {
   >([]);
   const [projectSource, setProjectSource] = useState("");
   const [projectBusy, setProjectBusy] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<{
+    id: string;
+    profileId: string;
+  } | null>(null);
   const [frame, setFrame] = useState<{
     id: string;
     data: string;
@@ -68,7 +81,7 @@ export function CompactApp() {
     Record<string, unknown> | undefined;
   async function open(destination: string) {
     try {
-      await host.open(destination);
+      await host.open(new URL(destination, appOrigin).href);
     } catch (failed) {
       model.fail(failed, true);
     }
@@ -85,6 +98,7 @@ export function CompactApp() {
     setExpanded(null);
     setProjects([]);
     setProjectSource("");
+    setSelectedProposal(null);
     setFrame(null);
     model.clearSelection();
     const kind: CollectionKind =
@@ -133,13 +147,26 @@ export function CompactApp() {
     id: string;
     profileId?: string;
     fetchId?: string;
+    sharedGrantId?: string;
+    sharedGrantVersion?: number;
   }) {
+    setSelectedProposal(null);
     setExpanded(null);
     setProjectSource("");
     setProjects([]);
     void model.load(
       selected.profileId ?? model.profileId,
       selected.fetchId ?? selected.id,
+      undefined,
+      "sources",
+      undefined,
+      undefined,
+      selected.sharedGrantId
+        ? {
+            sharedGrantId: selected.sharedGrantId,
+            sharedGrantVersion: selected.sharedGrantVersion,
+          }
+        : undefined,
     );
   }
   async function showProjects() {
@@ -219,28 +246,93 @@ export function CompactApp() {
         ).items
       : [];
   const progress = model.progress;
+  const processingView = (
+    <>
+      {progress.progress && (
+        <ObservedSourceProgress
+          progress={progress.progress}
+          steps={progress.steps}
+          paused={model.paused}
+          observedAt={model.observedAt}
+          action={
+            model.paused ? (
+              <button className="button" onClick={() => void model.refresh()}>
+                Refresh status
+              </button>
+            ) : undefined
+          }
+        />
+      )}
+      <ProcessingCreditReceipt processing={model.job?.processing} />
+    </>
+  );
+  const projectPanel = source ? (
+    <div className="widget-project-panel">
+      {selectedProposal?.profileId === model.profileId ? (
+        <ProposalPanel
+          draftStorage={host.draftStorage}
+          readOnly={!model.actions.draft}
+          proposalId={selectedProposal.id}
+          profileId={model.profileId}
+          call={host.call}
+          onNavigate={(value) => void open(value)}
+          onBack={() => setSelectedProposal(null)}
+        />
+      ) : model.actions.draft ? (
+        projectSource === source.id ? (
+          projects.length && source.analysisVersionId && source.insights[0] ? (
+            <ProjectProposalComposer
+              key={`${model.profileId}:${source.id}:${source.analysisVersionId}`}
+              organizationId={model.profileId}
+              sourceId={source.id}
+              analysisVersionId={source.analysisVersionId}
+              insight={source.insights[0]}
+              insights={source.insights}
+              sourceTitle={source.title}
+              projects={projects}
+              suggestions={suggestions}
+              disabled={model.busy}
+              call={proposalCall}
+              onNavigate={host.open}
+              onSaved={(id) =>
+                setSelectedProposal({ id, profileId: model.profileId })
+              }
+              onContinue={host.canMessage ? continueProposal : undefined}
+            />
+          ) : (
+            <>
+              <p>No current granted projects were returned.</p>
+              <button
+                className="button"
+                onClick={() => void open(`${webUrl}/projects`)}
+              >
+                Review projects
+              </button>
+            </>
+          )
+        ) : (
+          <button
+            className="button"
+            disabled={projectBusy}
+            onClick={() => void showProjects()}
+          >
+            {projectBusy ? "Loading projects…" : "Apply to a project"}
+          </button>
+        )
+      ) : (
+        <button
+          className="button"
+          onClick={() => void open(`${webUrl}/connections`)}
+        >
+          Review project access
+        </button>
+      )}
+    </div>
+  ) : null;
   const title =
     typeof model.job?.title === "string" ? model.job.title : source?.title;
   const readyInsights = (post: Source, compact = false) => (
-    <PostInsightReader
-      sourceAction={null}
-      sourcePreview={
-        full ? (
-          <div className="application-source">
-            <Video size={30} aria-hidden="true" />
-            <h2>{post.title}</h2>
-            <p>{jobPresentation({ status: post.state }).label}</p>
-            <button
-              className="compact-open"
-              onClick={() => void open(post.url)}
-            >
-              Open retained evidence
-              <ExternalLink size={14} />
-            </button>
-          </div>
-        ) : undefined
-      }
-    >
+    <PostInsightReader sourceAction={null}>
       {post.insights.slice(0, compact ? 3 : undefined).map((insight) => (
         <article
           className="post-insight-card"
@@ -279,25 +371,6 @@ export function CompactApp() {
           {expanded === insight.id && (
             <div className="post-insight-detail">
               <p>{insight.claim}</p>
-              {full &&
-                model.actions.draft &&
-                post.analysisVersionId &&
-                projectSource === post.id && (
-                  <ProjectProposalComposer
-                    organizationId={model.profileId}
-                    sourceId={post.id}
-                    analysisVersionId={post.analysisVersionId}
-                    insight={insight}
-                    insights={post.insights}
-                    sourceTitle={post.title}
-                    projects={projects}
-                    suggestions={suggestions}
-                    disabled={model.busy}
-                    call={proposalCall}
-                    onNavigate={host.open}
-                    onContinue={host.canMessage ? continueProposal : undefined}
-                  />
-                )}
             </div>
           )}
         </article>
@@ -520,7 +593,60 @@ export function CompactApp() {
               </button>
             </form>
           )}
-          {model.search ? (
+          {full &&
+          view === "work" &&
+          selectedProposal?.profileId === model.profileId ? (
+            <ProposalPanel
+              draftStorage={host.draftStorage}
+              readOnly={!model.actions.draft}
+              key={`${model.profileId}:${selectedProposal.id}`}
+              proposalId={selectedProposal.id}
+              profileId={model.profileId}
+              call={host.call}
+              onNavigate={(value) => void open(value)}
+              onBack={() => setSelectedProposal(null)}
+            />
+          ) : full && view === "home" && model.rows.length > 0 ? (
+            <>
+              <FullscreenFeed
+                media={media}
+                posts={model.rows}
+                active={source}
+                status={processingView}
+                nextPage={!!model.next}
+                onVisible={(post) => {
+                  if (model.source?.id !== post.id) openSource(post);
+                }}
+                onOpen={(value) => void open(value)}
+                projectPanel={projectPanel}
+                evidence={
+                  <button
+                    className="button"
+                    onClick={() => source && void open(source.url)}
+                  >
+                    Open retained evidence
+                  </button>
+                }
+              />
+              {model.coverage && <p className="fine">{model.coverage}</p>}
+              {model.next && (
+                <button
+                  className="button"
+                  disabled={model.busy}
+                  onClick={() =>
+                    void model.load(
+                      model.profileId,
+                      undefined,
+                      model.next!,
+                      "sources",
+                    )
+                  }
+                >
+                  Load more posts
+                </button>
+              )}
+            </>
+          ) : model.search ? (
             <>
               <InsightDiscovery
                 page={model.search.page}
@@ -589,49 +715,31 @@ export function CompactApp() {
                   Loading current post…
                 </output>
               )}
-              <div className="application-post-content">
-                {readyInsights(source, !full)}
-                {full && (
-                  <aside className="application-projects">
-                    <h2>Put this post to work</h2>
-                    {model.actions.draft ? (
-                      projectSource === source.id ? (
-                        projects.length ? (
-                          <p>
-                            Open any insight to prepare a project plan. The plan
-                            uses all retained post insights.
-                          </p>
-                        ) : (
-                          <>
-                            <p>No current granted projects were returned.</p>
-                            <button
-                              className="button"
-                              onClick={() => void open(`${webUrl}/projects`)}
-                            >
-                              Review projects
-                            </button>
-                          </>
-                        )
-                      ) : (
-                        <button
-                          className="button"
-                          disabled={projectBusy}
-                          onClick={() => void showProjects()}
-                        >
-                          {projectBusy
-                            ? "Loading projects…"
-                            : "Apply to a project"}
-                        </button>
-                      )
-                    ) : (
+              <div
+                className={
+                  full ? "widget-source-scene" : "application-post-content"
+                }
+              >
+                {full ? (
+                  <FullscreenFeed
+                    media={media}
+                    posts={[source]}
+                    active={source}
+                    nextPage={false}
+                    onVisible={() => {}}
+                    onOpen={(value) => void open(value)}
+                    projectPanel={projectPanel}
+                    evidence={
                       <button
                         className="button"
-                        onClick={() => void open(`${webUrl}/connections`)}
+                        onClick={() => void open(source.url)}
                       >
-                        Review project access
+                        Open retained evidence
                       </button>
-                    )}
-                  </aside>
+                    }
+                  />
+                ) : (
+                  readyInsights(source, true)
                 )}
               </div>
               {!full && (
@@ -752,7 +860,10 @@ export function CompactApp() {
                               onClick={() =>
                                 model.kind === "catalog"
                                   ? void model.openCatalog(record)
-                                  : void open(String(record.url))
+                                  : setSelectedProposal({
+                                      id: String(record.proposalId),
+                                      profileId: model.profileId,
+                                    })
                               }
                             >
                               <span>

@@ -33,6 +33,9 @@ export const sourceSchema = z.object({
   insights: z.array(insightSchema).default([]),
   more_ideas: z.boolean().optional(),
   analysisVersionId: z.string().optional(),
+  fetchId: z.string().optional(),
+  sharedGrantId: z.string().optional(),
+  sharedGrantVersion: z.number().optional(),
 });
 export type Source = z.infer<typeof sourceSchema>;
 export const profileSchema = z.object({
@@ -65,7 +68,8 @@ export function fetchSource(data: ToolRecord): Source {
     throw new Error("The source result was invalid.");
   }
   return sourceSchema.parse({
-    id: String(data.id).split("~")[0],
+    id: String(data.id).split("~")[0].split("@")[0],
+    fetchId: String(data.id),
     title: data.title,
     url: data.url,
     state: parsed.state,
@@ -111,7 +115,16 @@ export async function reauthorizeSources(
   await Promise.all(
     unique.map(async (source) => {
       const current = fetchSource(
-        await call("fetch", { profileId, id: source.id }),
+        await call("fetch", {
+          profileId,
+          id: source.fetchId ?? source.id,
+          ...(source.sharedGrantId
+            ? {
+                sharedGrantId: source.sharedGrantId,
+                sharedGrantVersion: source.sharedGrantVersion,
+              }
+            : {}),
+        }),
       );
       if (
         current.id !== source.id ||

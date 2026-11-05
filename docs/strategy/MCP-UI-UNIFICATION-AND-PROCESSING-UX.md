@@ -208,10 +208,10 @@ Production acceptance begins with reads and zero-work cached posts. It proves cu
 - [x] Research primary documentation and repositories above 1,000 stars.
 - [x] Compare architectures, obtain independent review and record synthesis.
 - [x] Capture owner approval for 300 monthly admin credits and generous finite rates.
-- [ ] Implement and publish Phase 1 within actual funding.
+- [x] Implement and publish Phase 1 within actual funding.
 - [ ] Complete Phase 2 and processing-card Phase 3a, with actual inline host acceptance.
-- [ ] Implement insight-first search discovery Phase 3b from actual returned pages and citations.
-- [ ] Complete shared fullscreen and proposal continuity.
+- [x] Implement insight-first search discovery Phase 3b from actual returned pages and citations. Published e51429d; actual ChatGPT/mobile acceptance remains in Phase6.
+- [x] Implement shared fullscreen and proposal continuity. Built official-bridge acceptance and publication are recorded separately below.
 - [ ] Finish actual host matrix, public docs and final production acceptance.
 
 ## Outside this change
@@ -224,4 +224,12 @@ R155 approves implementation and the Connected prototype. The first local checkp
 
 Known admission refusal runs in a nested Convex mutation. Its credit writes roll back while the parent retains the saved link and a safe blocked receipt. Unexpected or unknown dispatch failures still stop without an automatic retry. A minimal processing-account tool and optional Save/status account receipts use current analysis permission and expose no invoices or team-owner balance.
 
-Knowledge-only widget bootstrap selects the current app default without reading project context, excludes service workspaces, and exposes separately entitled catalog metadata, selected post context and native verified frames. Connected discovery uses actual returned source/insight references. Local checks, publication and actual host acceptance are recorded separately. No release has occurred at this checkpoint.
+Knowledge-only widget bootstrap selects the current app default without reading project context, excludes service workspaces, and exposes separately entitled catalog metadata, selected post context and native verified frames. Connected discovery uses actual returned source/insight references. Local checks, publication and actual host acceptance are recorded separately. This paragraph records the initial local checkpoint; the production section below supersedes its deployment state.
+
+## Production and remaining acceptance, November5
+
+Backend4b66616 and website e51429d are the current releases. The exact admin monthly grant and financial preservation passed actual read-back. The first canary revealed an entitlement mismatch at the dispatch barrier; the correction and its revoked-authority test pass. Its zero-dispatch/stopped proof permits exact reconciliation without touching old unknown work.
+
+The next fresh native run completed and automatically published4 insights and8 verified frames. A retained-evidence Muse control produced6 insights without another preparation pass. They settled1 credit each. The previous shared recommendation stayed selected. Two fresh preparation tests are now used; do not launch another fresh pass from this approval. The unused verification allowance funded the retained API control within the same USD0.90 envelope; engineering holds remain.
+
+Phase4/5 code now shares the website's feed and proposal artifact through thin platform adapters. It uses current proposal records, durable discussion, scoped quote/start and explicit issue approval, plus one current context/JPEG metadata load. Canonical backend stages drive polling, and valid shared waits remain observable. Full local checks, generated-resource bridge checks, publication and actual-host/mobile acceptance must still be recorded separately.

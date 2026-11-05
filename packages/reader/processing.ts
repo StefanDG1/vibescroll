@@ -1,4 +1,5 @@
 import { sourceProgress, sourceProgressSteps } from "../sources/progress";
+import { preparationStages } from "../contracts/prepared-evidence";
 
 type Row = Record<string, unknown>;
 const row = (value: unknown): Row =>
@@ -6,6 +7,9 @@ const row = (value: unknown): Row =>
 const text = (value: unknown) =>
   typeof value === "string" ? value : undefined;
 const active = new Set([
+  ...preparationStages.filter(
+    (stage) => !["ready", "failed", "unknown"].includes(stage),
+  ),
   "queued",
   "claimed",
   "running",
@@ -18,6 +22,7 @@ const active = new Set([
   "transcribing",
   "validating",
   "cancel_requested",
+  "waiting_for_shared_analysis",
 ]);
 
 /** Adapt observed MCP job fields to the website's existing progress presenter. */
@@ -51,6 +56,13 @@ export function observedProcessing(
       : {}),
   };
   let progress = sourceProgress(model, now);
+  if (state === "waiting_for_shared_analysis")
+    progress = {
+      title: "Waiting for shared analysis",
+      description:
+        "Another request is preparing this post. No new analysis was started for this save.",
+      busy: true,
+    };
   if (state === "processing_blocked") {
     const admission = row(row(value.account).processing);
     progress = {
@@ -81,7 +93,10 @@ export function observedProcessing(
     };
   return {
     progress,
-    steps: sourceProgressSteps(model, now),
+    steps:
+      state === "waiting_for_shared_analysis"
+        ? []
+        : sourceProgressSteps(model, now),
     active: isActive,
     versionId:
       typeof value.selected_analysis_version_id === "string"

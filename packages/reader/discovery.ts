@@ -6,6 +6,8 @@ export type DiscoverySource = {
   title: string;
   url: string;
   fetchId: string;
+  sharedGrantId?: string;
+  sharedGrantVersion?: number;
 };
 export type DiscoveryInsight = {
   key: string;
@@ -65,6 +67,15 @@ export function discoveryPage(value: Row): DiscoveryPage {
         title: text(post.title),
         url: text(post.url),
         fetchId: text(post.fetch_id),
+        ...(typeof object(post.reference).sharedGrantId === "string" &&
+        typeof object(post.reference).sharedGrantVersion === "number"
+          ? {
+              sharedGrantId: String(object(post.reference).sharedGrantId),
+              sharedGrantVersion: Number(
+                object(post.reference).sharedGrantVersion,
+              ),
+            }
+          : {}),
       };
       byId.set(id, source);
       sources.push(source);

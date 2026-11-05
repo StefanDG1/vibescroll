@@ -23,6 +23,11 @@ import {
   type ToolResult,
   type WidgetRoute,
 } from "../../../packages/widget/contracts";
+import {
+  widgetDraftStorage,
+  type WidgetStateBridge,
+} from "./widget-draft-storage";
+import type { ProposalDraftStorage } from "../../starter/lib/proposal-draft-memory";
 
 type Host = {
   ready: boolean;
@@ -31,6 +36,7 @@ type Host = {
   payload: ToolRecord | null;
   input: ToolRecord | null;
   initialPending: boolean;
+  draftStorage: ProposalDraftStorage;
   route: WidgetRoute | null;
   theme: "light" | "dark";
   fullscreen: boolean;
@@ -77,6 +83,13 @@ export function HostProvider({ children }: { children: ReactNode }) {
     [],
   );
   const extensions = useMemo(() => new OpenAIExtensions(app), [app]);
+  const drafts = useMemo(
+    () =>
+      widgetDraftStorage(
+        () => (window as unknown as { openai?: WidgetStateBridge }).openai,
+      ),
+    [],
+  );
   useEffect(() => {
     let active = true;
     const context = () => {
@@ -237,6 +250,7 @@ export function HostProvider({ children }: { children: ReactNode }) {
   const host: Host = {
     ...state,
     demo: isDemo,
+    draftStorage: drafts,
     readImage: async (name, args) => {
       if (!state.ready || isDemo)
         throw new Error("A retained frame is unavailable in this preview.");
@@ -249,6 +263,26 @@ export function HostProvider({ children }: { children: ReactNode }) {
         throw new Error("This frame is unavailable.");
       }
       const frame = result.content?.find((item) => item.type === "image");
+      const metadata = decodeToolResult(result as ToolResult);
+      for (const key of [
+        "sourceId",
+        "analysisVersionId",
+        "frameId",
+        "familyId",
+        "artifactId",
+      ] as const) {
+        if (args[key] !== undefined && metadata[key] !== args[key])
+          throw new Error(
+            "The retained frame identity changed. Refresh its source before opening it again.",
+          );
+      }
+      if (
+        args.expectedEvidenceHash !== undefined &&
+        metadata.evidenceHash !== args.expectedEvidenceHash
+      )
+        throw new Error(
+          "The retained evidence changed. Refresh its source before opening the frame.",
+        );
       if (
         !frame ||
         frame.type !== "image" ||
@@ -288,11 +322,39 @@ export function HostProvider({ children }: { children: ReactNode }) {
         }
         if (error instanceof Error && typeof code === "string")
           Object.assign(error, { code });
+        if (
+          typeof code === "string" &&
+          [
+            "FORBIDDEN",
+            "AUTH_REQUIRED",
+            "PAYMENT_REQUIRED",
+            "SOURCE_UNAVAILABLE",
+          ].includes(code)
+        ) {
+          const message =
+            code === "AUTH_REQUIRED"
+              ? "Sign in through your existing VibeScroll connection to continue."
+              : code === "PAYMENT_REQUIRED"
+                ? "Your current Pro access needs review. Your saved results are preserved."
+                : code === "SOURCE_UNAVAILABLE"
+                  ? "This retained source is no longer available through your current access."
+                  : "This view is no longer available through your current connection. Review its workspace access in VibeScroll.";
+          throw Object.assign(new Error(message), {
+            code,
+            outcome: "rejected",
+          });
+        }
         throw error;
       }
     },
     open: async (value) => {
-      const url = safeAppUrl(value);
+      const url =
+        safeAppUrl(value) ??
+        (/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/(?:issues|pull)\/[1-9][0-9]*$/.test(
+          value,
+        )
+          ? value
+          : null);
       if (!url)
         throw new Error("That destination is not an approved VibeScroll page.");
       if (isDemo) {

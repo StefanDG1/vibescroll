@@ -111,6 +111,57 @@ afterEach(() => {
   for (const slot of harness.slots) if (slot?.cleanup) slot.cleanup();
   vi.unstubAllGlobals();
 });
+
+it("never restores an in-flight balance after a current access denial", async () => {
+  let release!: (value: unknown) => void;
+  harness.host.payload = {
+    route: { view: "insight", profileId: "team", sourceId: "post" },
+    snapshot: { ...state, actions: { jobs: true, analysis: true } },
+  };
+  harness.host.call = vi.fn(async (name) => {
+    if (name === "get_processing_account")
+      return new Promise((resolve) => {
+        release = resolve;
+      });
+    if (name === "fetch")
+      return {
+        id: "post",
+        title: "Retained post",
+        url: "https://scroll.companynerve.com/app/team/posts/post",
+        text: JSON.stringify({ state: "ready", insights: [] }),
+      };
+    throw Object.assign(new Error("Access revoked"), { code: "FORBIDDEN" });
+  });
+  render();
+  await flush();
+  expect(model.profileId).toBe("");
+  expect(model.busy).toBe(false);
+  expect(model.accountUnavailable).toBe(true);
+  release({
+    version: "processing-account-v1",
+    availableCredits: 332,
+    reservedCredits: 0,
+    expiredReservedCredits: 0,
+    observedAt: 1000,
+    nextExpiry: null,
+    allowanceKind: "admin",
+    monthlyAllowance: 300,
+    nextRenewal: null,
+    processing: {
+      allowed: true,
+      reason: null,
+      message: null,
+      dimension: null,
+      retryAt: null,
+      limit: null,
+      used: null,
+    },
+    reviewUrl: "https://scroll.companynerve.com/app/team/usage",
+  });
+  await flush();
+  expect(model.account).toBeNull();
+  expect(model.source).toBeNull();
+});
 it("consumes bootstrap, preserves the selected team, and never needs project or financial scope for a plain read", async () => {
   render();
   await flush();

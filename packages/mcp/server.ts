@@ -151,6 +151,7 @@ export function createKnowledgeHandler(
                 "get_profile",
                 "get_job_status",
                 "get_processing_account",
+                "read_post_frame",
                 "get_project_application_context",
                 "save_project_proposal",
                 "get_project_proposal",

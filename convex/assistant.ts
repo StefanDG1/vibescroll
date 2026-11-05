@@ -137,7 +137,12 @@ async function automaticCloudReceipt(
       analysis_requested: false,
       note: "Existing insights reused. No extraction or analysis was started.",
     };
-  if (source.catalogWait && source.catalogWait.expiresAt > Date.now())
+  if (
+    source.catalogWait &&
+    source.catalogWait.expiresAt > Date.now() &&
+    source.catalogWait.actor === a.actor._id &&
+    source.catalogWait.generation === source.generation
+  )
     return {
       ...common,
       status: "waiting_for_shared_analysis",
@@ -614,7 +619,13 @@ export const getJobStatus = internalQuery({
           ? cloud.state
           : source.state
       : null;
+    const waitingForShared =
+      source.catalogWait?.actor === a.actor._id &&
+      source.catalogWait.generation === source.generation &&
+      source.catalogWait.expiresAt > Date.now() &&
+      (!preparedRun || ["ready", "failed"].includes(preparedRun.state));
     const admissionBlock =
+      !waitingForShared &&
       source.personalMedia?.admissionBlock?.generation === source.generation &&
       (!preparedRun || ["ready", "failed"].includes(preparedRun.state))
         ? source.personalMedia.admissionBlock
@@ -632,6 +643,7 @@ export const getJobStatus = internalQuery({
       profile_id: a.organization._id,
       status:
         (admissionBlock ? "processing_blocked" : null) ??
+        (waitingForShared ? "waiting_for_shared_analysis" : null) ??
         preparedRun?.state ??
         cloudStatus ??
         (waitingForCloud
@@ -683,26 +695,33 @@ export const getJobStatus = internalQuery({
             charged_credits: 0,
             failure_code: admissionBlock.code,
           }
-        : preparedRun
+        : waitingForShared
           ? {
-              executor:
-                preparedRun.executor === "gateway" ? "credits" : "work_cloud",
-              state: preparedRun.state,
-              stage: source.personalMedia.stage,
-              run_id: preparedRun._id,
-              maximum_credits:
-                preparedRun.receipt?.admission?.quote.maximumCredits ?? 0,
-              charged_credits:
-                preparedRun.receipt?.billing?.chargedCredits ?? null,
-              failure_code: preparedRun.receipt?.failure?.code ?? null,
+              state: "waiting_for_shared_analysis",
+              stage: "waiting",
+              maximum_credits: 0,
+              charged_credits: 0,
             }
-          : cloud
+          : preparedRun
             ? {
-                executor: "work_cloud",
-                state: cloud.state,
-                stage: cloud.stage,
+                executor:
+                  preparedRun.executor === "gateway" ? "credits" : "work_cloud",
+                state: preparedRun.state,
+                stage: source.personalMedia.stage,
+                run_id: preparedRun._id,
+                maximum_credits:
+                  preparedRun.receipt?.admission?.quote.maximumCredits ?? 0,
+                charged_credits:
+                  preparedRun.receipt?.billing?.chargedCredits ?? null,
+                failure_code: preparedRun.receipt?.failure?.code ?? null,
               }
-            : null,
+            : cloud
+              ? {
+                  executor: "work_cloud",
+                  state: cloud.state,
+                  stage: cloud.stage,
+                }
+              : null,
       receipt,
       evidence_changed: changed,
       url: `https://scroll.companynerve.com/app/${a.organization._id}/library/${source._id}`,

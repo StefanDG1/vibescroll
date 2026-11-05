@@ -4,6 +4,11 @@ import type { FunctionReturnType } from "convex/server";
 import type { api } from "../../../convex/_generated/api";
 import { useProposalLive } from "./use-source-live";
 import {
+  proposalDraftMemory,
+  type PendingProposalRequest,
+  type ProposalDraftStorage,
+} from "./proposal-draft-memory";
+import {
   confirmedProcessingRejection,
   processingRecovery,
   type ProcessingRecovery,
@@ -15,6 +20,8 @@ export function useProposalWork(
   proposalId: string,
   enabled: boolean,
   call?: Call,
+  transport: "web" | "mcp" = "web",
+  draftStorage?: ProposalDraftStorage,
 ) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>();
   const [error, setError] = useState("");
@@ -28,14 +35,12 @@ export function useProposalWork(
   const [olderCursor, setOlderCursor] = useState<string | null>();
   const flight = useRef(false);
   const liveRevision = useRef(0);
-  const pending = useRef<{
-    operation: string;
-    args: Record<string, unknown>;
-  } | null>(null);
+  const pending = useRef<PendingProposalRequest | null>(null);
   const draftKey = snapshot?.actorId
     ? `vibescroll:proposal-draft:${snapshot.actorId}:${proposalId}`
     : null;
   const storageKey = useRef<string | null>(null);
+  const storage = () => draftStorage ?? localStorage;
   const invoke = useEffectEvent((operation: string, args: unknown) =>
     call!(operation, args),
   );
@@ -47,11 +52,10 @@ export function useProposalWork(
         setUncertain(false);
         setDraft("");
         storageKey.current = key;
-        try {
-          setDraft(localStorage.getItem(key) ?? "");
-          const retained = JSON.parse(
-            localStorage.getItem(`${key}:request`) ?? "null",
-          );
+        const volatile = proposalDraftMemory.read(key);
+        const restore = (
+          retained: PendingProposalRequest | null | undefined,
+        ) => {
           if (
             retained &&
             [
@@ -66,16 +70,25 @@ export function useProposalWork(
             pending.current = retained;
             setUncertain(true);
           }
+        };
+        try {
+          setDraft(storage().getItem(key) ?? volatile?.text ?? "");
+          const retained = JSON.parse(
+            storage().getItem(`${key}:request`) ?? "null",
+          );
+          restore(retained ?? volatile?.pending);
         } catch {
-          /* Browser storage is optional. */
+          setDraft(volatile?.text ?? "");
+          restore(volatile?.pending);
         }
       }
     }
     setSnapshot(value);
     if (!value) {
+      if (storageKey.current) proposalDraftMemory.clear(storageKey.current);
       try {
-        if (storageKey.current) localStorage.removeItem(storageKey.current);
-        localStorage.removeItem(`${storageKey.current}:request`);
+        if (storageKey.current) storage().removeItem(storageKey.current);
+        storage().removeItem(`${storageKey.current}:request`);
       } catch {
         /* Storage may be unavailable. */
       }
@@ -91,10 +104,14 @@ export function useProposalWork(
   }
   const accept = useEffectEvent(receive);
   const connected = !!call;
-  useProposalLive(proposalId, enabled && connected, (value) => {
-    liveRevision.current++;
-    receive(value);
-  });
+  useProposalLive(
+    proposalId,
+    enabled && connected && transport === "web",
+    (value) => {
+      liveRevision.current++;
+      receive(value);
+    },
+  );
   useEffect(() => {
     if (!enabled || !connected) return;
     let current = true;
@@ -111,6 +128,65 @@ export function useProposalWork(
       current = false;
     };
   }, [proposalId, enabled, connected]);
+  // MCP uses its existing OAuth tool transport. It never requests website cookies
+  // or realtime credentials from inside the sandboxed host frame.
+  const observe = useEffectEvent(async () => {
+    return invoke("proposalDiscussion", { proposalId });
+  });
+  useEffect(() => {
+    if (transport !== "mcp" || !enabled || !connected) return;
+    let active = true,
+      flight = false;
+    let started = Date.now();
+    const read = async (resume = false) => {
+      if (!active || document.hidden || flight) return;
+      if (resume) started = Date.now();
+      if (Date.now() - started >= 300000) {
+        clearInterval(timer);
+        setError(
+          "Live updates paused. Refresh this saved plan to check its current status.",
+        );
+        return;
+      }
+      flight = true;
+      try {
+        const value = await observe();
+        if (active) {
+          liveRevision.current++;
+          accept(value);
+        }
+      } catch (failure) {
+        if (active) {
+          if (
+            failure instanceof Error &&
+            "code" in failure &&
+            ["FORBIDDEN", "AUTH_REQUIRED", "PAYMENT_REQUIRED"].includes(
+              String(failure.code),
+            )
+          )
+            accept(null);
+          else
+            setError(
+              "Updates paused. Refresh this saved plan to check its current status.",
+            );
+        }
+      } finally {
+        flight = false;
+      }
+    };
+    const timer = setInterval(() => {
+      void read();
+    }, 5000);
+    const resume = () => {
+      if (!document.hidden) void read(true);
+    };
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      active = false;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [proposalId, transport, enabled, connected]);
   const quoteBinding = snapshot
     ? `${snapshot.version}:${snapshot.discussionRevision}`
     : "";
@@ -140,10 +216,11 @@ export function useProposalWork(
   }, [autoQuote, quoteBinding, proposalId]);
   function updateDraft(text: string) {
     setDraft(text);
+    if (draftKey) proposalDraftMemory.draft(draftKey, text);
     try {
       if (draftKey) {
-        if (text) localStorage.setItem(draftKey, text);
-        else localStorage.removeItem(draftKey);
+        if (text) storage().setItem(draftKey, text);
+        else storage().removeItem(draftKey);
       }
     } catch {
       /* Keep the in-memory draft. */
@@ -161,6 +238,22 @@ export function useProposalWork(
     try {
       await fn();
     } catch (e) {
+      if (
+        e instanceof Error &&
+        "code" in e &&
+        e.code === "UI_DRAFT_STORAGE_FULL"
+      ) {
+        const detail =
+          "Draft recovery storage is full. No request was sent. Keep this plan open while you resolve another pending action, then recover this same request.";
+        setRecovery({
+          title: "Keep this plan open",
+          detail,
+          action: "refresh_status",
+          confirmedRejection: true,
+        });
+        setError(detail);
+        return;
+      }
       const reason = processingRecovery(e, pending.current ? "start" : "quote");
       setRecovery(reason);
       setError(reason.detail);
@@ -176,14 +269,25 @@ export function useProposalWork(
     if (pending.current && pending.current.operation !== operation)
       throw Error("Check or retry the previous action first.");
     pending.current ??= { operation, args };
+    const volatileSaved =
+      !!draftKey && proposalDraftMemory.request(draftKey, pending.current);
+    let persisted = false;
     try {
-      if (draftKey)
-        localStorage.setItem(
+      if (draftKey) {
+        storage().setItem(
           `${draftKey}:request`,
           JSON.stringify(pending.current),
         );
+        persisted = true;
+      }
     } catch {
       /* The current view retains the same key. */
+    }
+    if (!volatileSaved && !persisted) {
+      setUncertain(true);
+      throw Object.assign(new Error("Draft recovery storage is full."), {
+        code: "UI_DRAFT_STORAGE_FULL",
+      });
     }
     try {
       const result = await call(
@@ -191,9 +295,10 @@ export function useProposalWork(
         pending.current.args,
       );
       pending.current = null;
+      if (draftKey) proposalDraftMemory.request(draftKey, null);
       setUncertain(false);
       try {
-        if (draftKey) localStorage.removeItem(`${draftKey}:request`);
+        if (draftKey) storage().removeItem(`${draftKey}:request`);
       } catch {
         /* Optional browser storage. */
       }
@@ -201,10 +306,11 @@ export function useProposalWork(
     } catch (e) {
       if (confirmedProcessingRejection(e)) {
         pending.current = null;
+        if (draftKey) proposalDraftMemory.request(draftKey, null);
         setUncertain(false);
         setQuote(undefined);
         try {
-          if (draftKey) localStorage.removeItem(`${draftKey}:request`);
+          if (draftKey) storage().removeItem(`${draftKey}:request`);
         } catch {
           /* Optional browser storage. */
         }

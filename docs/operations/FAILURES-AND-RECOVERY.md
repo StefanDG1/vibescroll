@@ -10,6 +10,14 @@ A catalog-named service workspace is not the canonical catalog browsing route. V
 
 The initial CLI read in this diagnosis failed because the compatible checkout has no CONVEX_DEPLOYMENT environment variable. Set only the verified deployment selector for a bounded read; do not run convex dev or replay a release wrapper. Windows Python stdout needs explicit UTF-8 when printing symbols; browser-side Intl avoids installing timezone data just to format a date. [Plan and acceptance](../strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md).
 
+## November5 shared UI verification
+
+Test the built resource inside the official bridge's opaque iframe, not only a direct-origin preview. The opaque sandbox rejects localStorage with SecurityError. Use bounded in-memory recovery for reopen and optional documented private widget state for ChatGPT iframe reloads. Keep exact unknown command keys and never autosend a draft. Sent discussion remains a backend record; widget state does not establish business authority or universal persistence. If both storage and the recovery buffer reject an operation, do not dispatch it.
+
+A real retained JPEG revealed two context thumbnails growing to their native width at390px. Clamp the image inside the shared thumbnail wrapper, then test320px, dark mode and reduced motion with the actual decoded dimensions. A placeholder image cannot establish this geometry. Verify the image's returned source/version/evidence identity before displaying it; retain valid text metadata when an individual frame is unavailable.
+
+Drive polling from the canonical preparation-stage list. Testing only queued/analyzing misses starting, metadata, download, evidence-ready and assistant-wait transitions. A current shared-producer wait must supersede an older terminal attempt or admission block, but must match the requesting actor, source generation and expiry. It carries zero preparation/analysis charge for the waiter.
+
 ## November2 shared-reader classification repair
 
 R152 resolved the older shared-read failure at backend 1843f1f. A bounded 12-event backend log read exposed Prepared processing publication authority changed. Exact-source-chain inspection showed the preparation permission hash still matched; this was not expired permission or lost media. The reader chose an OpenAI API review from requestedModel alone, although the stored authenticated_host_reported/own_subscription provenance identified subscription execution. Model names do not establish executor, billing route or processing permission.

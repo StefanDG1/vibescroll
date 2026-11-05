@@ -1,6 +1,8 @@
 import { expect, it } from "vitest";
 import { appendDiscovery, discoveryPage } from "../packages/reader/discovery";
 import { observedProcessing } from "../packages/reader/processing";
+import { preparationStages } from "../packages/contracts/prepared-evidence";
+import { fetchSource } from "../apps/widget/src/data";
 import {
   bootstrapProfiles,
   boundedMerge,
@@ -191,4 +193,69 @@ it("keeps blocked and unknown work stationary and does not imply a retry or succ
   expect(
     observedProcessing({ status: "ready" }, "ready", 1000).progress,
   ).toBeNull();
+});
+it("observes every actual nonterminal preparation stage, including startup and assistant waits", () => {
+  for (const state of preparationStages) {
+    const view = observedProcessing(
+      { processing: { state, stage: state } },
+      state === "ready" ? "ready" : "processing",
+      1000,
+    );
+    expect(view.active, state).toBe(
+      !["ready", "failed", "unknown"].includes(state),
+    );
+  }
+  expect(
+    observedProcessing(
+      {
+        processing: { state: "evidence_ready", stage: "waiting_for_assistant" },
+      },
+      "processing",
+      1000,
+    ).progress?.title,
+  ).toBe("Waiting for your VibeScroll Assistant");
+});
+it("normalizes a pinned ranked fetch identity without losing its exact version or sharing reference", () => {
+  const post = fetchSource({
+    id: "source@version~0",
+    title: "Current insight",
+    url: "https://scroll.companynerve.com/app/team/shared",
+    text: JSON.stringify({
+      state: "ready",
+      insights: [
+        {
+          id: "idea",
+          title: "Cited idea",
+          claim: "Retained claim",
+          reference: {
+            sourceId: "source",
+            generation: 1,
+            revision: 2,
+            insightId: "idea",
+            analysisVersionId: "version",
+          },
+        },
+      ],
+    }),
+  });
+  expect(post.id).toBe("source");
+  expect(post.fetchId).toBe("source@version~0");
+  expect(post.analysisVersionId).toBe("version");
+  const page = discoveryPage({
+    ...ranked(),
+    posts: [
+      {
+        ...ranked().posts[0],
+        reference: {
+          ...ranked().posts[0].reference,
+          sharedGrantId: "shared",
+          sharedGrantVersion: 3,
+        },
+      },
+    ],
+  });
+  expect(page.sources[0]).toMatchObject({
+    sharedGrantId: "shared",
+    sharedGrantVersion: 3,
+  });
 });

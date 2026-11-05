@@ -2330,3 +2330,94 @@ it("uses current exact admin authority for both funded dispatches without a fabr
     ),
   ).toMatchObject({ dispatches: ["transcription", "analysis"] });
 });
+
+it("reports only the current actor/generation shared wait through MCP until cache association is ready", async () => {
+  const f = await fixture();
+  const familyId = await f.t.run((c) =>
+    c.db.insert("catalogFamilies", {
+      organizationId: f.org,
+      key: "synthetic-wait-status",
+      canonical: f.source.canonical,
+      language: "en",
+      permissionId: "synthetic",
+      permissionHash: "a".repeat(64),
+      state: "active",
+      selectionRevision: 0,
+      nextVersionNumber: 1,
+      members: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      retainUntil: Date.now() + 86400000,
+    }),
+  );
+  const source = (await f.t.run((c) => c.db.get(f.sourceId)))!;
+  const wait = {
+    familyId,
+    actor: f.actor._id,
+    generation: source.generation,
+    expiresAt: Date.now() + 60000,
+  };
+  await f.t.run((c) =>
+    c.db.patch(source._id, {
+      catalogWait: wait,
+      personalMedia: {
+        admissionBlock: {
+          generation: source.generation,
+          code: "QUOTA_EXCEEDED",
+          observedAt: Date.now() - 1000,
+        },
+      },
+    }),
+  );
+  const read = () =>
+    f.assistant.query(internal.assistant.getJobStatus, {
+      profileId: f.org,
+      sourceId: source._id,
+    });
+  expect(await read()).toMatchObject({
+    status: "waiting_for_shared_analysis",
+    processing: {
+      state: "waiting_for_shared_analysis",
+      maximum_credits: 0,
+      charged_credits: 0,
+    },
+  });
+  expect(
+    await f.owner.query(api.preparedService.status, { sourceId: source._id }),
+  ).toMatchObject({
+    state: "waiting_for_shared_analysis",
+    runId: null,
+    maximumCredits: 0,
+    chargedCredits: 0,
+  });
+  const foreign = await f.t.run((c) =>
+    c.db.insert("users", {
+      subject: "user_22222222222222222222222222",
+      email: "wait-other@example.test",
+      name: "Other",
+      status: "active",
+      createdAt: Date.now(),
+    }),
+  );
+  for (const stale of [
+    { ...wait, generation: wait.generation + 1 },
+    { ...wait, expiresAt: Date.now() - 1 },
+    { ...wait, actor: foreign },
+  ]) {
+    await f.t.run((c) =>
+      c.db.patch(source._id, { catalogWait: stale, personalMedia: {} }),
+    );
+    expect((await read()).status).not.toBe("waiting_for_shared_analysis");
+    expect(
+      (
+        await f.owner.query(api.preparedService.status, {
+          sourceId: source._id,
+        })
+      ).state,
+    ).not.toBe("waiting_for_shared_analysis");
+  }
+  await f.t.run((c) =>
+    c.db.patch(source._id, { catalogWait: undefined, state: "ready" }),
+  );
+  expect((await read()).status).toBe("ready");
+});

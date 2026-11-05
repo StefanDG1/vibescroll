@@ -5,9 +5,11 @@ const hooks = vi.hoisted(() => ({
   effect: 0,
   effects: [] as any[],
   receive: undefined as any,
+  liveEnabled: [] as boolean[],
 }));
 vi.mock("./lib/use-source-live", () => ({
   useProposalLive: (_id: string, _enabled: boolean, receive: any) => {
+    hooks.liveEnabled.push(_enabled);
     hooks.receive = receive;
   },
 }));
@@ -35,6 +37,7 @@ vi.mock("react", async (original) => ({
   },
 }));
 import { useProposalWork } from "./lib/use-proposal-work";
+import { proposalDraftMemory } from "./lib/proposal-draft-memory";
 const snapshot = {
   actorId: "owner-a",
   proposalId: "plan-one",
@@ -46,15 +49,15 @@ const snapshot = {
   messages: { page: [], isDone: true, continueCursor: "" },
 };
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
-function render(call: any) {
+function render(call: any, transport: "web" | "mcp" = "web") {
   hooks.index = 0;
   hooks.effect = 0;
-  const value = useProposalWork("plan-one", true, call);
+  const value = useProposalWork("plan-one", true, call, transport);
   for (const e of hooks.effects)
     if (e.run) {
       const run = e.run;
       e.run = null;
-      run();
+      e.cleanup = run();
     }
   return value;
 }
@@ -68,10 +71,123 @@ function storage() {
   return data;
 }
 afterEach(() => {
+  for (let i = 0; i < 20; i++) proposalDraftMemory.clear(`occupied:${i}`);
+  proposalDraftMemory.clear("vibescroll:proposal-draft:owner-a:plan-one");
+  for (const effect of hooks.effects) effect.cleanup?.();
   hooks.cells = [];
   hooks.effects = [];
   hooks.receive = undefined;
+  hooks.liveEnabled = [];
   vi.unstubAllGlobals();
+});
+it("does not dispatch when every recovery slot is an uncertain request and persistent storage is denied", async () => {
+  for (let i = 0; i < 20; i++)
+    proposalDraftMemory.request(`occupied:${i}`, {
+      operation: "proposalComment",
+      args: {
+        proposalId: `plan-${i}`,
+        key: `existing-key-${i}`,
+        text: "Existing feedback",
+      },
+    });
+  const denied = () => {
+    throw new DOMException("Storage denied", "SecurityError");
+  };
+  vi.stubGlobal("localStorage", {
+    getItem: denied,
+    setItem: denied,
+    removeItem: denied,
+  });
+  const call = vi.fn(async () => snapshot);
+  render(call);
+  await flush();
+  let value = render(call);
+  value.updateDraft("Do not dispatch without recovery");
+  value = render(call);
+  await value.send();
+  value = render(call);
+  expect(value.uncertain).toBe(true);
+  expect(value.error).toContain("No request was sent");
+  expect(call).toHaveBeenCalledTimes(1);
+  expect(proposalDraftMemory.read("occupied:0")?.pending?.args.key).toBe(
+    "existing-key-0",
+  );
+});
+
+it("preserves a blocked-storage draft and the identical uncertain request through unmount and reopening", async () => {
+  const unavailable = () => {
+    throw new DOMException("Storage denied", "SecurityError");
+  };
+  vi.stubGlobal("localStorage", {
+    getItem: unavailable,
+    setItem: unavailable,
+    removeItem: unavailable,
+  });
+  let unknown = true;
+  const call = vi.fn(async (operation: string) => {
+    if (operation === "proposalDiscussion") return snapshot;
+    if (unknown) throw Error("Unknown response");
+    return { messageId: "saved" };
+  });
+  render(call);
+  await flush();
+  let value = render(call);
+  value.updateDraft("Preserve this exact feedback");
+  value = render(call);
+  await value.send();
+  const original = call.mock.calls.find(
+    ([operation]) => operation === "proposalComment",
+  );
+  for (const effect of hooks.effects) effect.cleanup?.();
+  hooks.cells = [];
+  hooks.effects = [];
+  render(call);
+  await flush();
+  value = render(call);
+  expect(value.draft).toBe("Preserve this exact feedback");
+  expect(value.uncertain).toBe(true);
+  unknown = false;
+  await value.retryPending();
+  const attempts = call.mock.calls.filter(
+    ([operation]) => operation === "proposalComment",
+  );
+  expect(attempts).toHaveLength(2);
+  expect(attempts[1]).toEqual(original);
+  value = render(call);
+  value.updateDraft("Private unsent correction");
+  hooks.receive(null);
+  expect(
+    proposalDraftMemory.read("vibescroll:proposal-draft:owner-a:plan-one"),
+  ).toBeUndefined();
+});
+
+it("uses visible MCP discussion reads without requesting website realtime or starting generation", async () => {
+  storage();
+  let tick: (() => void) | undefined;
+  vi.stubGlobal("document", {
+    hidden: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  });
+  vi.stubGlobal("setInterval", (callback: () => void) => {
+    tick = callback;
+    return 1;
+  });
+  vi.stubGlobal("clearInterval", vi.fn());
+  const call = vi.fn(async (operation: string) => {
+    expect(operation).toBe("proposalDiscussion");
+    return snapshot;
+  });
+  render(call, "mcp");
+  await flush();
+  expect(hooks.liveEnabled.every((enabled) => !enabled)).toBe(true);
+  expect(render(call, "mcp").snapshot?.actorId).toBe("owner-a");
+  tick?.();
+  await flush();
+  expect(call).toHaveBeenCalledTimes(2);
+  expect(
+    call.mock.calls.every(([operation]) => operation === "proposalDiscussion"),
+  ).toBe(true);
 });
 it("retains a lost-reply message and its exact key across reload, then recovers without erasing newer draft text", async () => {
   const data = storage();

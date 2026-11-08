@@ -1,5 +1,9 @@
 # Foundational idea backlog
 
+## F100: saved-post-to-feature messaging variants, November 5
+
+R156 requests a reusable [marketing copy bank](MARKETING-COPY-BANK.md) for future ads, social posts and copywriting. It keeps the owner's direct feature line, the saved-post variation and alternatives grouped by angle and placement. The owner also wants a full feature or pull request as a possible outcome, with a GitHub issue as one handoff option. These are draft messages for the existing founder/developer audience. Compare comprehension of the path from a saved post to a reviewed plan, then to implementation and a pull request through a coding agent or teammate. The direct feature line may imply automatic coding, so show the handoff in supporting copy. [Product evidence](../operations/CURRENT-STATE.md)
+
 ## F098: real interest-matched onboarding, November1
 
 R143 replaces the proposed synthetic onboarding example with real posts and already-ready insights selected by interests. The owner approves one complete curated result before payment, followed by the existing Pro offer for continued hosted use. Add an optional Saved-only Instagram export/import guide and preserve progress while the export is pending. The [review plan](../strategy/INTEREST-LED-ONBOARDING.md) reuses Home, existing metadata/insight cards and the local importer. No application implementation or publication is authorized by creating this plan.

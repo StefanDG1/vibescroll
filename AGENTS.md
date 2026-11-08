@@ -4,6 +4,8 @@ Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/deci
 
 ## Current mandatory owner direction
 
+November8 continuation override: the owner explicitly stopped MCP UI work and deferred it. The existing issue197 proposal was read and scoped, but the owner requires approval before implementation. The later main-app-first recommendation is advice awaiting the owner's selection, not an approved redesign. Follow the [current handover](docs/operations/CURRENT-STATE.md) and R158 before selecting new work. Production and pushed implementation-branch code are separate from GitHub main; PR186 is a draft against an intermediate branch.
+
 R155 approves implementation of the complete R153/R154 plan and selects Connected search motion. Release the credit/quota repair first, then the shared UI and observed search. Current cumulative engineering ceiling is EUR17 with a USD0.90 bounded release/test envelope and at most two fresh video tests. Retain old holds and provider gates; app credits are not cash authority. Read private operational state before spending.
 
 R154 adds [insight-first animated search](docs/strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md#search-discovery-and-synthesis). Show real returned source/citation connections and settle into matching insights; never fabricate progress or semantic relationships. Reuse approved design tokens and the selected shared components. Keep the owner credit/quota repair ahead of the search enhancement.

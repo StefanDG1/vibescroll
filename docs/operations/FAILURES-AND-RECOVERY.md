@@ -2,6 +2,12 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November8 legacy startup and embedded feed sizing
+
+The owner's actual Codex screenshot exposed a state absent from the earlier fixtures. Older discovery snapshots contain profiles but omit selected_profile_id. Consuming them as current discovery leaves profileId empty. A native select visually displays its first option while the separate chooser repeats the list, and the credit header shows a pending read that never starts. Refresh legacy discovery through the current authorized server. Preserve a current explicitly null selection for the user. Gate account status on resolved workspace state and keep raw grant coverage in a disclosure. Both targeted regressions fail before this correction.
+
+Viewport-sized sections can feed back into a host that auto-resizes an iframe from its content height. Reusing a website component also requires testing its sizing in the host. Bound the embedded sections and verify the actual source, insight and plan geometry after the host resizes. The final official-bridge matrix covers nine startup/layout/keyboard cases. Cross-origin iframe keyboard events must be routed through the focused parent target after focusing the child control. The first keyboard-driver attempt reached the wrong input target; the actual parent-routed Enter activates the selected workspace. [Repair record](../design/MCP-STARTUP-REPAIR-2026-11-08.md).
+
 ## November 4 credit, quota and widget diagnosis
 
 A current quota error was initially described as missing user credits. A read of the current wallet and the bounded actor/policy counter showed available credits alongside an exhausted ten-attempt preparation pilot. Inspect the exact admission boundary; never equate QUOTA_EXCEEDED with INSUFFICIENT_CREDITS. Failed attempts remain in history and count toward that legacy pilot. A larger credit grant alone does not resolve it. Known automatic-start refusal can also roll back capture inside the same mutation; return a persistent saved receipt after a recoverable admission refusal.

@@ -175,6 +175,45 @@ it("consumes bootstrap, preserves the selected team, and never needs project or 
   expect(model.next).toEqual({ offset: 5 });
   expect(model.coverage).toContain("empty candidate page");
 });
+it("refreshes an older discovery snapshot before resolving the current saved workspace", async () => {
+  harness.host.payload = {
+    snapshot: {
+      profiles: [
+        ...discovery.profiles,
+        {
+          profile_id: "old-service",
+          name: "Old catalog service",
+          grant_version: 1,
+        },
+      ],
+      coverage: "Up to fifty current knowledge-readable workspace grants.",
+    },
+  };
+  render();
+  await flush();
+  expect(harness.host.call.mock.calls.map(([name]: [string]) => name)).toEqual([
+    "widget_profiles",
+    "widget_state",
+    "widget_browse",
+  ]);
+  expect(model.profileId).toBe("team");
+  expect(model.profiles.map((profile) => profile.profile_id)).toEqual([
+    "personal",
+    "team",
+  ]);
+});
+it("leaves an intentionally ambiguous current selection to the user without a pending credit check", async () => {
+  harness.host.payload = {
+    snapshot: { ...discovery, selected_profile_id: null },
+  };
+  render();
+  await flush();
+  expect(model.profileId).toBe("");
+  expect(model.workspace).toBeNull();
+  expect(model.busy).toBe(false);
+  expect(model.accountUnavailable).toBe(true);
+  expect(harness.host.call).not.toHaveBeenCalled();
+});
 it("waits for an initial host search and consumes its result without issuing a duplicate search", async () => {
   harness.host.input = { query: "useful" };
   harness.host.initialPending = true;

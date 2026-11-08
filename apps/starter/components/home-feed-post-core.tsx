@@ -274,8 +274,8 @@ export function FeedPostCardCore({
           : undefined
       }
     >
-      <div className={styles.columns}>
-        <div className={styles.readingPane}>
+      <div className={styles.columns} data-feed-columns>
+        <div className={styles.readingPane} data-feed-reading-pane>
           <section
             className={styles.source}
             data-feed-column="source"

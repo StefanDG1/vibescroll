@@ -168,7 +168,9 @@ export function useApplication() {
           });
       } else {
         const discovery =
-          bootstrap && Array.isArray(bootstrap.profiles)
+          bootstrap &&
+          Array.isArray(bootstrap.profiles) &&
+          "selected_profile_id" in bootstrap
             ? bootstrap
             : await host.call(
                 "widget_profiles",
@@ -185,6 +187,8 @@ export function useApplication() {
         setProfileId(chosen);
         if (!chosen) {
           setWorkspace(null);
+          setAccount(null);
+          setAccountUnavailable(true);
           setCoverage(
             typeof discovery.coverage === "string"
               ? discovery.coverage

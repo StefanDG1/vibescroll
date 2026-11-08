@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  CircleUserRound,
   ExternalLink,
   FolderGit2,
   Home,
@@ -408,13 +409,35 @@ export function CompactApp() {
       data-presentation={full ? "fullscreen" : "inline"}
     >
       <header className="compact-header">
-        <strong>VibeScroll</strong>
+        <div className="compact-brand">
+          <strong>VibeScroll</strong>
+          {full && model.profiles.length > 1 && model.profileId && (
+            <label className="compact-workspace">
+              <span className="sr-only">Workspace</span>
+              <select
+                value={model.profileId}
+                onChange={(event) => {
+                  setView("home");
+                  void model.load(event.target.value);
+                }}
+              >
+                {model.profiles.map((profile) => (
+                  <option key={profile.profile_id} value={profile.profile_id}>
+                    {profile.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
         <div className="application-header-actions">
-          <ProcessingAccountSummary
-            account={model.account}
-            unavailable={model.accountUnavailable}
-            onOpen={(destination) => void open(destination)}
-          />
+          {model.workspace && (
+            <ProcessingAccountSummary
+              account={model.account}
+              unavailable={model.accountUnavailable}
+              onOpen={(destination) => void open(destination)}
+            />
+          )}
           {full ? (
             <button
               className="compact-open"
@@ -453,7 +476,7 @@ export function CompactApp() {
         <output>Connecting to VibeScroll…</output>
       ) : (
         <>
-          {full && (
+          {full && model.profileId && (
             <nav className="application-nav" aria-label="VibeScroll">
               <button
                 aria-current={view === "home" ? "page" : undefined}
@@ -463,7 +486,9 @@ export function CompactApp() {
                 Home
               </button>
               <button
-                aria-current={view === "explore" ? "page" : undefined}
+                aria-current={
+                  view === "explore" || view === "catalog" ? "page" : undefined
+                }
                 onClick={() => navigate("explore")}
               >
                 <Search size={17} />
@@ -483,55 +508,54 @@ export function CompactApp() {
                 <Plus size={17} />
                 Save
               </button>
-              {catalog?.allowed === true && (
-                <button
-                  aria-current={view === "catalog" ? "page" : undefined}
-                  onClick={() => navigate("catalog")}
-                >
-                  <BookOpen size={17} />
-                  Catalog
-                </button>
-              )}
               <button
                 className="application-account-link"
                 onClick={() => void open(`${webUrl}/account`)}
               >
+                <CircleUserRound size={17} />
                 Account
               </button>
             </nav>
           )}
-          {full && model.profiles.length > 1 && (
-            <label className="compact-workspace">
-              Workspace
-              <select
-                value={model.profileId}
-                onChange={(event) => {
-                  setView("home");
-                  void model.load(event.target.value);
-                }}
-              >
-                {model.profiles.map((p) => (
-                  <option key={p.profile_id} value={p.profile_id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+          {model.busy && !model.profileId && !model.search && (
+            <section
+              className="compact-startup"
+              aria-busy="true"
+              aria-label="Loading your library"
+            >
+              <output>Opening your library…</output>
+              <div className="startup-card" aria-hidden="true" />
+              <div className="startup-card" aria-hidden="true" />
+              <div className="startup-card" aria-hidden="true" />
+            </section>
           )}
           {!model.profileId && !model.search && !model.busy && (
-            <section>
-              <h1>Choose your workspace</h1>
-              <p>{model.coverage}</p>
-              {model.profiles.map((p) => (
-                <button
-                  className="button"
-                  key={p.profile_id}
-                  onClick={() => void model.load(p.profile_id)}
-                >
-                  {p.name}
-                  <ArrowRight size={15} />
-                </button>
-              ))}
+            <section className="workspace-start">
+              <h1>
+                {model.profiles.length
+                  ? "Your workspaces"
+                  : "Connect your library"}
+              </h1>
+              <p>
+                {model.profiles.length
+                  ? "Choose where to view your posts."
+                  : "Open VibeScroll to set up access to your saved posts."}
+              </p>
+              <div className="workspace-options">
+                {model.profiles.map((profile) => (
+                  <button
+                    className="workspace-option"
+                    key={profile.profile_id}
+                    onClick={() => void model.load(profile.profile_id)}
+                  >
+                    <span className="workspace-avatar" aria-hidden="true">
+                      {profile.name.trim().slice(0, 1).toUpperCase()}
+                    </span>
+                    <span>{profile.name}</span>
+                    <ArrowRight size={17} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
               {!model.profiles.length && (
                 <button
                   className="button"
@@ -593,6 +617,15 @@ export function CompactApp() {
               </button>
             </form>
           )}
+          {full && view === "explore" && catalog?.allowed === true && (
+            <button
+              className="compact-back"
+              onClick={() => navigate("catalog")}
+            >
+              <BookOpen size={17} />
+              Browse shared catalog
+            </button>
+          )}
           {full &&
           view === "work" &&
           selectedProposal?.profileId === model.profileId ? (
@@ -628,7 +661,12 @@ export function CompactApp() {
                   </button>
                 }
               />
-              {model.coverage && <p className="fine">{model.coverage}</p>}
+              {model.coverage && (
+                <details className="compact-coverage">
+                  <summary>About these results</summary>
+                  <p>{model.coverage}</p>
+                </details>
+              )}
               {model.next && (
                 <button
                   className="button"
@@ -890,7 +928,12 @@ export function CompactApp() {
                                 : "No saved posts were returned for this workspace."}
                         </p>
                       )}
-                    {model.coverage && <p className="fine">{model.coverage}</p>}
+                    {model.coverage && (
+                      <details className="compact-coverage">
+                        <summary>About these results</summary>
+                        <p>{model.coverage}</p>
+                      </details>
+                    )}
                     {model.next && (
                       <button
                         className="button"

@@ -15,6 +15,10 @@ Status vocabulary:
 - **Rule**: an active operating instruction, not a shipped feature.
 - **Superseded**: a later owner instruction replaces the earlier choice.
 
+## Marketing and copywriting
+
+R156, November 5. Keep the owner's “Turn social media posts into product features,” the suggested “Turn saved posts into features worth building,” and other ways to express the same value in a reusable file for ads, social posts and copywriting. Include a full feature and a pull request as marketing outcomes, with a GitHub issue as one handoff option. The [marketing copy bank](../foundational/MARKETING-COPY-BANK.md) records the draft variants and explains hooks, headlines, value propositions and taglines. [Idea backlog](../foundational/idea-backlog.md#f100-saved-post-to-feature-messaging-variants-november-5)
+
 ## Capture, extraction and visible results
 
 R155, November5: implement the complete R153/R154 plan, credit/quota repair first, then shared plugin UI and Connected search. Publish useful checkpoints. The owner approves a cumulative EUR17 engineering cap and USD0.90 release/test envelope, at most two fresh video tests, existing balances only, old holds preserved and Vercel below USD20. Routine releases remain delegated. The recurring300-credit admin allowance and20/hour,100/day limits are live. Native preparation/subscription analysis and a retained-evidence API control passed;330 credits remain after their settlements. Both fresh tests are used. Shared scene/proposal UI and Connected search are live at b064887 with20 built bridge cases and staged/canonical acceptance; actual ChatGPT/mobile UI acceptance stays separate. [Production receipt](../operations/evidence/launch-20261105-shared-ui-production.json), [route receipt](../operations/evidence/launch-20261105-processing-routes.json) and [current phase ledger](MCP-UI-UNIFICATION-AND-PROCESSING-UX.md#production-and-remaining-acceptance-november5).
@@ -79,6 +83,8 @@ Detailed owners: [versioned flow](../launch-plan/2026-10-23/VERSIONED-LINK-TO-IN
 | R018 | Use failed, queued or unanalyzed production posts for tests; production account links may be obtained as needed.                 | Rule. Use exact current authority and preserve the specifically reserved source and active/unknown work. Public accessibility is not a blanket reuse licence. No new source job is authorized by this documentation audit.                  |
 
 ## App structure, setup and simplification
+
+R157, November 8. The owner reports the actual Codex MCP panel is visually poor, with duplicate workspace choice, technical grant text and an indefinite credit label. Correct the startup and presentation using the existing shared components and approved design. The [repair record](../design/MCP-STARTUP-REPAIR-2026-11-08.md) traces the older bootstrap shape and embedded viewport feedback, with targeted regressions and built bridge acceptance. Production publication remains separately recorded in CURRENT-STATE.
 
 Detailed owners: [simple setup](SIMPLE-SETUP-AND-CLOSED-LOOP-PROPOSALS.md), [single assistant](ONE-CLOUD-ASSISTANT-PER-USER.md), [recent posts ADR184](../adr/184-recent-posts-metadata-feed.md).
 

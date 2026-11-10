@@ -82,7 +82,10 @@ class SelectedPost(unittest.TestCase):
             worker.write_json('request.json', {'maximumDurationMs': 6000})
             worker.write_json('x-acquired.json', {'postId': POST, 'canonical': f'https://x.com/i/web/status/{POST}',
                                                'provider': 'gallery-dl', 'text': 'Full caption', 'assets': assets})
-            worker.decode()
+            try:
+                worker.decode()
+            except subprocess.CalledProcessError as error:
+                self.fail(error.stderr.decode('utf-8', errors='replace'))
             result = worker.read_json('x-result.json')
             self.assertEqual(len(result['post']['assets']), 3)
             self.assertEqual(len(result['frames']), 17)

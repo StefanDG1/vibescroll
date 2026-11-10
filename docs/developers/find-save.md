@@ -25,6 +25,8 @@ Ask: "Save this link to VibeScroll without analysis." The assistant uses `save_l
 
 For ordinary analysis requests, the reviewed connection defaults determine the supported automatic route. Save-only requests stay save-only. GitHub and Reddit links save metadata and use their own review path; they do not inherit video extraction authority. Other unsupported sources require an upload or supplied text in the website.
 
+Public X/Twitter status links use server preparation with gallery-dl and a bounded FxTwitter fallback. The full post text and every direct attachment are required. A selected-video or selected-photo suffix still imports the whole post. Text-only posts are valid. Attached images and sampled video frames have separate asset references; caption and image citations have no video timestamp. Outbound links and quoted posts are not attached media. X results stay private under the current catalog policy. Existing access, size, duration and funding limits apply; a missing attachment fails preparation. The anonymous preview funnel retains its separately supported sources.
+
 ## Continue from the receipt
 
 - If a compatible result is ready, open or fetch it. Reuse avoids another analysis, although data delivery still uses infrastructure.

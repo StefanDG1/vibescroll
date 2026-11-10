@@ -1,4 +1,4 @@
-Get insights from a saved supported video while keeping its actual route, progress and credit state visible.
+Get insights from a saved supported post while keeping its actual route, progress and credit state visible.
 
 ## Reuse or quote before starting
 

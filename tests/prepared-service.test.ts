@@ -564,7 +564,32 @@ it.each([
 ])(
   "automatically prepares an MCP link without a legacy intent: %s",
   async (url) => {
-    const s = await fixture();
+    const s = await fixture(true);
+    if (!("serviceOrg" in s)) throw Error("Expected catalog fixture");
+    vi.stubEnv(
+      "CLOUD_CATALOG_CONFIGURATION_JSON",
+      JSON.stringify({
+        version: "cloud-catalog-config-v2",
+        serviceOrganizationId: s.serviceOrg,
+        maximumStorageBytes: 20000000,
+        reviewedAt: Date.now() - 5000,
+        expiresAt: Date.now() + 86400000,
+        permissions: [],
+        defaultPolicy: {
+          version: "automatic-neutral-catalog-v1",
+          id: "x-private-standing-test",
+          disclosureVersion: "synthetic-notice",
+          rightsBasis: "user_attested",
+          platforms: ["instagram", "tiktok"],
+          providerPermissionReference: "synthetic source route",
+          contentPermissionReference: "synthetic user attestation",
+          privacyReviewReference: "synthetic neutral projection",
+          reviewedAt: Date.now() - 5000,
+          expiresAt: Date.now() + 86400000,
+          maximumRetentionMs: 86400000,
+        },
+      }),
+    );
     await nativeReady(s);
     const grant = (await s.t.run((c) => c.db.get(s.grant.id)))!,
       scopes = [...grant.scopes, "links:save"];
@@ -609,6 +634,14 @@ it.each([
     const source = await s.t.run((c) => c.db.get(first.source_id));
     expect(source?.workCloudSaveIntent).toBeUndefined();
     expect(source?.personalAnalysis).toBeUndefined();
+    if (url.includes("/status/")) {
+      expect(source?.catalogPolicy).toBeUndefined();
+      expect(source?.catalogWait).toBeUndefined();
+      expect(source?.publicImportId).toBeUndefined();
+      expect(
+        await s.t.run((c) => c.db.query("catalogFamilies").collect()),
+      ).toEqual([]);
+    }
   },
 );
 

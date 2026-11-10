@@ -373,12 +373,21 @@ async function joinPendingCatalog(
   source: Doc<"sources">,
   actor: Id<"users">,
 ) {
-  if (
-    !catalogConfiguration()?.defaultPolicy ||
-    !source.url ||
-    !(await catalogReadAllowed(ctx, source.organizationId))
-  )
+  const policy = catalogConfiguration()?.defaultPolicy;
+  if (!policy || !source.url) return false;
+  // A standing catalog policy covers only its reviewed platforms. Other
+  // permitted private sources cannot join a shared producer or require its rights.
+  try {
+    const identity = privateCloudMediaIdentity(source.url);
+    if (
+      (identity.platform !== "instagram" && identity.platform !== "tiktok") ||
+      !policy.platforms.includes(identity.platform)
+    )
+      return false;
+  } catch {
     return false;
+  }
+  if (!(await catalogReadAllowed(ctx, source.organizationId))) return false;
   const reviewed = await catalogPermission(ctx, source.url);
   const key = await cloudCatalogFamilyKey(
     reviewed.permission.canonical,

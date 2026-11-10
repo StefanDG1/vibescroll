@@ -1190,20 +1190,32 @@ function knownReturnedPreparationFailure(
   code?: string,
 ) {
   const receipt = run.receipt;
+  const returned = (value: any) =>
+    value?.model === "microsoft/mai-transcribe-2" &&
+    value.provider === "azure" &&
+    Number.isSafeInteger(value.startedAt) &&
+    Number.isSafeInteger(value.completedAt) &&
+    value.completedAt >= value.startedAt &&
+    value.startedAt >= run.createdAt &&
+    value.completedAt <= Date.now();
+  const parts = Object.keys(receipt ?? {}).filter((key) =>
+    /^asr_asset-(?:[1-9]|[12][0-9]|3[0-5])$/.test(key),
+  );
+  const returnedPostParts =
+    privateCloudMediaIdentity(run.canonical).platform === "x" &&
+    parts.length > 0 &&
+    parts.every(
+      (key) =>
+        returned(receipt[key]) && !!receipt[key.replace("asr_", "asr_output_")],
+    );
   return (
-    (run.executor === "gateway" || !!run.receipt?.admission) &&
+    (run.executor === "gateway" || !!receipt?.admission) &&
     run.state === "transcribing" &&
     ["INVALID_EVIDENCE", "PREPARED_IMAGE_STORAGE_MISMATCH"].includes(
       code ?? "",
     ) &&
     receipt?.preparation?.stopAcknowledged === true &&
-    receipt.asr?.model === "microsoft/mai-transcribe-2" &&
-    receipt.asr.provider === "azure" &&
-    Number.isSafeInteger(receipt.asr.startedAt) &&
-    Number.isSafeInteger(receipt.asr.completedAt) &&
-    receipt.asr.completedAt >= receipt.asr.startedAt &&
-    receipt.asr.startedAt >= run.createdAt &&
-    receipt.asr.completedAt <= Date.now() &&
+    (returned(receipt.asr) || returnedPostParts) &&
     !receipt.analysis &&
     !run.versionId &&
     !run.attemptId
@@ -1398,6 +1410,13 @@ export const reconcileReturnedFailure = internalMutation({
         (await ctx.db.get(runId))!,
         1,
         "never_started",
+      );
+    } else {
+      await settlePreparedCredits(
+        ctx,
+        (await ctx.db.get(runId))!,
+        1,
+        "returned_failure",
       );
     }
     return true;

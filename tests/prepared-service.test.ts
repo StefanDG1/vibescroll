@@ -2774,3 +2774,69 @@ it.each([false, true])(
     }
   },
 );
+
+it("reconciles returned X attachment ASR without releasing its unknown provider cost", async () => {
+  const f = await xSetupFixture();
+  await f.t.mutation(internal.preparedAnalysis.progress, {
+    runId: f.runId,
+    stage: "transcribing",
+  });
+  await f.t.mutation(internal.preparedAnalysis.providerDispatch, {
+    runId: f.runId,
+    component: "transcription",
+  });
+  await f.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId: f.runId,
+    kind: "preparation",
+    receipt: { stopAcknowledged: true },
+  });
+  await f.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId: f.runId,
+    kind: "asr",
+    assetId: "asset-1",
+    receipt: {
+      model: "microsoft/mai-transcribe-2",
+      provider: "azure",
+      startedAt: Date.now(),
+      completedAt: Date.now(),
+      costCeilingUsd: 0.001,
+    },
+  });
+  await f.t.mutation(internal.preparedAnalysis.recordReceipt, {
+    runId: f.runId,
+    kind: "asr_output",
+    assetId: "asset-1",
+    receipt: {
+      text: "",
+      segments: [{ text: "", startSecond: 0, endSecond: 1 }],
+    },
+  });
+  const row = (await f.t.run((c) => c.db.get(f.runId)))!;
+  await f.t.run((c) =>
+    c.db.patch(f.runId, {
+      state: "unknown",
+      receipt: {
+        ...row.receipt,
+        failure: {
+          stage: "transcribing",
+          code: "INVALID_EVIDENCE",
+          at: Date.now(),
+        },
+      },
+    }),
+  );
+  await f.t.mutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+    runId: f.runId,
+  });
+  const recovered = (await f.t.run((c) => c.db.get(f.runId)))!;
+  expect(recovered).toMatchObject({
+    state: "failed",
+    receipt: {
+      billing: { chargedCredits: 0 },
+      "asr_output_asset-1": { text: "" },
+    },
+  });
+  expect(
+    await f.t.run((c) => c.db.get(row.receipt.admission.providerReservationId)),
+  ).toMatchObject({ state: "unknown", dispatches: ["transcription"] });
+});

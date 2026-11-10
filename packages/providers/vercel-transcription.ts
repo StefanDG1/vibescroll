@@ -10,12 +10,14 @@ export const preparedAsrModel = "microsoft/mai-transcribe-2" as const;
 
 export function normalizedApiTranscript(value: unknown, durationMs: number) {
   const result = apiTranscriptResponse.parse(value);
-  const segments = result.segments.map((s, i) => ({
-    id: `speech-${i + 1}`,
-    text: s.text.trim(),
-    startMs: Math.round(s.startSecond * 1000),
-    endMs: Math.round(s.endSecond * 1000),
-  }));
+  const segments = result.segments
+    .filter((s) => s.text.trim().length > 0)
+    .map((s, i) => ({
+      id: `speech-${i + 1}`,
+      text: s.text.trim(),
+      startMs: Math.round(s.startSecond * 1000),
+      endMs: Math.round(s.endSecond * 1000),
+    }));
   ensure(
     Number.isSafeInteger(durationMs) &&
       durationMs > 0 &&

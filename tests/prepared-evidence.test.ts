@@ -137,6 +137,25 @@ it("accepts no speech without manufacturing a transcript and rejects unaligned t
   expect(
     normalizedApiTranscript({ text: "", segments: [] }, 10000).segments,
   ).toEqual([]);
+  expect(
+    normalizedApiTranscript(
+      {
+        text: "",
+        durationInSeconds: 31.06,
+        segments: [{ text: "", startSecond: 0, endSecond: 31.061 }],
+      },
+      31061,
+    ),
+  ).toEqual({ segments: [], language: "und" });
+  expect(() =>
+    normalizedApiTranscript(
+      {
+        text: "Speech",
+        segments: [{ text: "", startSecond: 0, endSecond: 1 }],
+      },
+      10000,
+    ),
+  ).toThrow(/INVALID_EVIDENCE/);
   expect(() =>
     normalizedApiTranscript({ text: "Speech", segments: [] }, 10000),
   ).toThrow(/INVALID_EVIDENCE/);

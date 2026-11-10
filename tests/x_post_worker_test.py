@@ -17,6 +17,27 @@ POST = '1234567890123456789'
 
 
 class SelectedPost(unittest.TestCase):
+    def setUp(self):
+        environment = patch.dict(worker.os.environ, {'VIBE_DOWNLOAD_PROXY': 'http://127.0.0.1:47891'})
+        environment.start()
+        self.addCleanup(environment.stop)
+
+    def test_acquisition_requires_the_exact_broker_for_both_providers(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(worker, 'ROOT', Path(tmp)), \
+             patch.object(worker.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stderr=b'', stdout=json.dumps(self.gallery()).encode())) as run:
+            worker.write_json('request.json', {'url': f'https://x.com/i/web/status/{POST}'})
+            worker.inspect()
+            command = run.call_args.args[0]
+            self.assertEqual(command[command.index('--proxy') + 1], 'http://127.0.0.1:47891')
+        with patch.object(worker.urllib.request, 'build_opener', side_effect=RuntimeError('synthetic_stop_before_network')) as opener:
+            with self.assertRaisesRegex(RuntimeError, 'synthetic_stop_before_network'):
+                worker.get(f'https://api.fxtwitter.com/2/status/{POST}', 1000)
+            self.assertEqual(opener.call_args.args[0].proxies, {'https': 'http://127.0.0.1:47891'})
+        for invalid in ['', 'http://example.test:47891']:
+            with patch.dict(worker.os.environ, {'VIBE_DOWNLOAD_PROXY': invalid}):
+                with self.assertRaisesRegex(ValueError, 'acquisition_proxy_required'):
+                    worker.get(f'https://api.fxtwitter.com/2/status/{POST}', 1000)
+
     def gallery(self, count=0):
         meta = {'tweet_id': int(POST), 'content': 'Complete long text 🐦' * 100, 'count': count, 'author': {'name': 'Author'}}
         return [[2, meta]] + [[3, 'https://pbs.twimg.com/media/image.png', dict(meta, type='photo')] for _ in range(count)]

@@ -67,9 +67,16 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise ValueError('source_redirect_denied')
 
 
+def acquisition_proxy():
+    proxy = os.environ.get('VIBE_DOWNLOAD_PROXY')
+    if proxy != 'http://127.0.0.1:47891':
+        raise ValueError('acquisition_proxy_required')
+    return proxy
+
+
 def get(raw, maximum, output=None):
     request = urllib.request.Request(raw, headers={'User-Agent': 'VibeScroll/1.0 selected-post reader', 'Accept-Encoding': 'identity'})
-    opener = urllib.request.build_opener(NoRedirect)
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({'https': acquisition_proxy()}), NoRedirect)
     with opener.open(request, timeout=12) as response:
         if response.status != 200 or int(response.headers.get('Content-Length', '0')) > maximum:
             raise ValueError('source_response_over_limit')
@@ -157,7 +164,7 @@ def inspect():
     expected = post_id(request['url'])
     env = dict(os.environ)
     env['PYTHONPATH'] = str(TOOLS / '_deps')
-    command = [sys.executable, '-B', '-m', 'gallery_dl', '--config-ignore', '--http-timeout', '8', '--retries', '0',
+    command = [sys.executable, '-B', '-m', 'gallery_dl', '--proxy', acquisition_proxy(), '--config-ignore', '--http-timeout', '8', '--retries', '0',
                '-o', 'cache.file=null', '-o', 'extractor.twitter.ratelimit=abort', '-o', 'extractor.twitter.retries-api=0',
                '-o', 'extractor.twitter.text-tweets=true', '-o', 'extractor.twitter.quoted=false',
                '-o', 'extractor.twitter.conversations=false', '-o', 'extractor.twitter.cards=false',

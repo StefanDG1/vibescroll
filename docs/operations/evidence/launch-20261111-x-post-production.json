@@ -6,14 +6,14 @@
     "R162"
   ],
   "websiteCommit": "455eb3f54fc9321e37d25cd451809ff0ca03a4f0",
-  "backendCommit": "0833d619f5b1bc3671c7fbea934cffe2701f8a0a",
+  "backendCommit": "35c83632ed5321ad0ea9406a4c48515867f2d774",
   "websiteDeployment": "dpl_FyZnT3kszQ87KdYVgyQZsP52j4H5",
   "websiteBasicBuildDurationMs": 48734,
   "websiteSameBuildPromotionVerified": true,
   "normalDomainAssignmentRestored": true,
   "backendExactCI": {
-    "runId": 42923135337,
-    "url": "https://github.com/StefanDG1/vibescroll/actions/runs/42923135337",
+    "runId": 42925847822,
+    "url": "https://github.com/StefanDG1/vibescroll/actions/runs/42925847822",
     "conclusion": "success",
     "mainPassed": 1804,
     "mainSkipped": 11,
@@ -87,10 +87,15 @@
     "Normal automation requires an active eligible account, current connection/defaults, funding admission and native Events monitor. Source access and host availability remain revocable."
   ],
   "paidNonPilotCorrection": {
-    "status": "focused_tests_passed_publication_pending",
+    "status": "production_finish_acknowledged",
     "personalPilotSubjectsClearedInTest": true,
     "setupSaveReplayEventClaimInputCompletionPassed": true,
     "revokedProBlocksClaimedTask": true,
-    "legacyHostAcquisitionPilotUnchanged": true
-  }
+    "legacyHostAcquisitionPilotUnchanged": true,
+    "backendCommit": "35c83632ed5321ad0ea9406a4c48515867f2d774",
+    "exactCI": 42925847822,
+    "allFourExistingVersionsReadBack": true,
+    "originalAutomaticConnectionSetupRequired": false
+  },
+  "initialFourOwnerResultsVerifiedBackend": "0833d619f5b1bc3671c7fbea934cffe2701f8a0a"
 }

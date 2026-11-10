@@ -4,6 +4,8 @@ for (const [file, symbol] of [
   ["decode-prepared.py", "preparedDecoder"],
   ["acquire-prepared.py", "preparedAcquirer"],
   ["cloud_extraction.py", "preparedExtraction"],
+  ["x-post-worker.py", "xPostWorker"],
+  ["prepare_cloud_dependencies.py", "cloudDependencySetup"],
 ]) {
   const text = await readFile(
     new URL(`../packages/media/${file}`, import.meta.url),
@@ -48,6 +50,8 @@ for (const file of [
   "preparedDecoder",
   "preparedAcquirer",
   "preparedExtraction",
+  "xPostWorker",
+  "cloudDependencySetup",
   "decoder",
   "acquirer",
   "decoder-personal",

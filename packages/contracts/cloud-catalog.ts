@@ -13,6 +13,7 @@ import {
   validateOrderedEvidence,
 } from "../social/contracts";
 import { containsSecret } from "../policy/secrets.mjs";
+import { xPostEvidence } from "../social/x-post";
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const timestamp = z.number().int().positive();
@@ -161,6 +162,9 @@ export function currentCloudCatalogPermission(
 }
 
 const observation = z.strictObject({
+  kind: z
+    .enum(["caption", "image_observation", "video_observation"])
+    .optional(),
   id: z.string().min(1).max(100),
   assetId: z.string().min(1).max(100),
   assetIndex: z.number().int().nonnegative(),
@@ -168,10 +172,12 @@ const observation = z.strictObject({
   textHash: hash,
   startMs: z.number().int().nonnegative(),
   endMs: z.number().int().positive(),
-  basis: z.enum(["transcript", "visible"]),
+  basis: z.enum(["transcript", "visible", "caption"]),
   uncertainty: z.string().max(2000),
 });
 const frame = z.strictObject({
+  assetId: z.string().min(1).max(100).optional(),
+  assetIndex: z.number().int().min(0).max(34).optional(),
   id: z.string().min(1).max(100),
   timestampMs: z.number().int().nonnegative(),
   sha256: hash,
@@ -179,29 +185,59 @@ const frame = z.strictObject({
   width: z.number().int().positive().max(4096),
   height: z.number().int().positive().max(4096),
 });
-export const neutralCloudEvidence = z.strictObject({
-  version: z.literal("neutral-cloud-evidence-v1"),
-  canonical,
-  platform: z.enum(["instagram", "tiktok"]),
-  evidenceHash: hash,
-  sourceRevisionHash: hash,
-  observedAt: timestamp,
-  language,
-  durationMs: z.number().int().positive(),
-  segments: z
-    .array(
-      z.strictObject({
-        id: z.string().min(1).max(100),
-        startMs: z.number().int().nonnegative(),
-        endMs: z.number().int().positive(),
-        text: z.string().max(6000),
-        textHash: hash,
-      }),
+export const neutralCloudEvidence = z
+  .strictObject({
+    version: z.enum(["neutral-cloud-evidence-v1", "neutral-post-evidence-v2"]),
+    canonical,
+    platform: z.enum(["instagram", "tiktok", "x"]),
+    post: xPostEvidence.optional(),
+    evidenceHash: hash,
+    sourceRevisionHash: hash,
+    observedAt: timestamp,
+    language,
+    durationMs: z.number().int().nonnegative().max(600000),
+    segments: z
+      .array(
+        z.strictObject({
+          assetId: z.string().min(1).max(100).optional(),
+          assetIndex: z.number().int().min(0).max(34).optional(),
+          id: z.string().min(1).max(100),
+          startMs: z.number().int().nonnegative(),
+          endMs: z.number().int().positive(),
+          text: z.string().max(6000),
+          textHash: hash,
+        }),
+      )
+      .max(240),
+    observations: z.array(observation).max(298),
+    frames: z.array(frame).max(48),
+  })
+  .superRefine((e, ctx) => {
+    const post = e.version === "neutral-post-evidence-v2";
+    if (
+      post !== (e.platform === "x") ||
+      post !== !!e.post ||
+      (!post &&
+        (e.post !== undefined ||
+          e.durationMs <= 0 ||
+          e.frames.length < 1 ||
+          e.frames.length > 8 ||
+          e.observations.length > 248 ||
+          e.frames.some(
+            (f) => f.assetId !== undefined || f.assetIndex !== undefined,
+          ) ||
+          e.segments.some(
+            (s) => s.assetId !== undefined || s.assetIndex !== undefined,
+          ) ||
+          e.observations.some(
+            (o) => o.kind !== undefined || o.basis === "caption",
+          )))
     )
-    .max(240),
-  observations: z.array(observation).max(248),
-  frames: z.array(frame).min(1).max(8),
-});
+      ctx.addIssue({
+        code: "custom",
+        message: "Evidence protocol and coverage differ.",
+      });
+  });
 export const neutralCloudAnalysis = z.strictObject({
   version: z.literal("neutral-cloud-analysis-v1"),
   evidenceHash: hash,
@@ -216,7 +252,15 @@ export function neutralCloudObservations(value: unknown) {
   const evidence = neutralCloudEvidence.parse(value);
   return evidence.observations.map((observation) => ({
     ...observation,
-    kind: "video_observation" as const,
+    kind: observation.kind ?? ("video_observation" as const),
+    startMs:
+      observation.kind === "caption" || observation.kind === "image_observation"
+        ? null
+        : observation.startMs,
+    endMs:
+      observation.kind === "caption" || observation.kind === "image_observation"
+        ? null
+        : observation.endMs,
     postRevisionHash: evidence.sourceRevisionHash,
   }));
 }

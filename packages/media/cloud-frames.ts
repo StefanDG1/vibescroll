@@ -82,6 +82,13 @@ export function sourceEvidenceFrames(source: any, now = Date.now()) {
       kind: "frame",
       startMs: f.timestampMs,
       endMs: f.timestampMs,
+      ...(f.sourceMediaKind
+        ? {
+            mediaKind: f.sourceMediaKind,
+            sourceAssetId: f.sourceAssetId,
+            sourceAssetIndex: f.sourceAssetIndex,
+          }
+        : {}),
     }));
   if (source.sharedCloud?.version === "shared-cloud-detail-v1")
     return resultRetained(source.sharedCloud, now) &&
@@ -114,7 +121,7 @@ export function cloudCitationForDisplay(
 ) {
   if (
     source.preparedService?.version === "service-prepared-detail-v1" &&
-    ref.kind === "video_observation"
+    ["video_observation", "image_observation"].includes(ref.kind)
   ) {
     const observed = source.preparedService.observations.find(
       (o: any) =>
@@ -123,7 +130,9 @@ export function cloudCitationForDisplay(
     if (!observed) return ref;
     if (observed.basis === "transcript") return { ...ref, kind: "transcript" };
     const frame = source.preparedService.frames.find(
-      (f: any) => f.id === ref.id && f.timestampMs === ref.startMs,
+      (f: any) =>
+        f.id === ref.id &&
+        (ref.kind === "image_observation" || f.timestampMs === ref.startMs),
     );
     return frame ? { ...ref, kind: "frame", id: frame.reference } : ref;
   }

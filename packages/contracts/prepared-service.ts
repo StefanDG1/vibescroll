@@ -59,15 +59,18 @@ export function preparedCreditQuote(
   executor: z.infer<typeof preparedExecutor>,
   reuse: boolean,
   model: ApiModelId = "meta/muse-spark-1.3-contributor",
+  inputKind: "video" | "post" = "video",
 ) {
   if (
     !Number.isSafeInteger(durationMs) ||
-    durationMs <= 0 ||
+    (inputKind === "post" ? durationMs < 0 : durationMs <= 0) ||
     durationMs > 600000
   )
     throw Error("INVALID_DURATION");
   const preparation = reuse ? 0 : 1;
   const analysis =
-    executor === "gateway" ? modelAnalysisCredits(durationMs, model) : 0;
+    executor === "gateway"
+      ? modelAnalysisCredits(Math.max(1, durationMs), model)
+      : 0;
   return { preparation, analysis, maximum: preparation + analysis };
 }

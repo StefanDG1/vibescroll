@@ -771,7 +771,7 @@ export const detail = query({
     try {
       automaticVideoSupported =
         s.kind === "url" &&
-        ["instagram", "tiktok"].includes(
+        ["instagram", "tiktok", "x"].includes(
           privateCloudMediaIdentity(s.url ?? s.canonical).platform,
         );
     } catch {

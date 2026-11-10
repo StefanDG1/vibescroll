@@ -75,7 +75,7 @@ export async function sharedTypedCitations(
             retrieved: evidence.frames.length,
             omitted: 0,
             omissions: [
-              "Service-prepared transcript and sampled source screenshots. Sampling does not establish complete visual coverage or independent claim verification.",
+              "Retained post text, transcript and attachment screenshots where supplied. Video frames are sampled and do not establish complete visual coverage or independent claim verification.",
             ],
           },
           summarize: (references: InsightCitation[]) =>

@@ -284,61 +284,154 @@ export const run = internalAction({
         : null;
       await ctx.runQuery(internal.preparedAnalysis.input, { runId });
       // The ASR request and durable JPEG upload are independent once decoding completes.
-      const asrPromise = native
-        ? Promise.resolve({
-            segments: native.segments,
-            language: native.transcript.language,
-            provenance: {
-              origin: native.transcript.origin,
-              model: null,
-              provider: null,
-              inputSha256: native.transcript.trackSha256,
-            },
-            receipt: null,
-          })
-        : prepared.audio
-          ? transcribePreparedAudio(
-              prepared.audio,
-              durationMs,
-              Math.min(input.maximumApiUsd, 0.02),
-              {
-                apiKey,
-                onDispatch: async () => {
-                  if (input.receipt?.admission?.providerReservationId)
-                    await ctx.runMutation(
-                      internal.preparedAnalysis.providerDispatch,
-                      { runId, component: "transcription" },
-                    );
-                },
-                onReceipt: async (receipt) => {
-                  await ctx.runMutation(
-                    internal.preparedAnalysis.recordReceipt,
-                    { runId, kind: "asr", receipt },
-                  );
-                },
-                onTranscript: async (receipt) => {
-                  await ctx.runMutation(
-                    internal.preparedAnalysis.recordReceipt,
-                    {
-                      runId,
-                      kind: "asr_output",
-                      receipt,
+      const post = "post" in prepared ? prepared.post : undefined;
+      const asrPromise =
+        "audioParts" in prepared && prepared.audioParts.length
+          ? (async () => {
+              const segments: {
+                id: string;
+                text: string;
+                startMs: number;
+                endMs: number;
+                assetId: string;
+                assetIndex: number;
+              }[] = [];
+              const receipts: Record<string, unknown>[] = [];
+              const outputs: { assetId: string; output: unknown }[] = [];
+              const hashes: string[] = [];
+              let costCeilingUsd = 0;
+              let language = "und";
+              let provenance:
+                | Awaited<
+                    ReturnType<typeof transcribePreparedAudio>
+                  >["provenance"]
+                | undefined;
+              for (const part of prepared.audioParts) {
+                const result = await transcribePreparedAudio(
+                  part.bytes,
+                  part.durationMs,
+                  Math.min(input.maximumApiUsd, 0.02) - costCeilingUsd,
+                  {
+                    apiKey,
+                    onDispatch: async () => {
+                      if (input.receipt?.admission?.providerReservationId)
+                        await ctx.runMutation(
+                          internal.preparedAnalysis.providerDispatch,
+                          { runId, component: "transcription" },
+                        );
                     },
-                  );
+                    onReceipt: async (receipt) => {
+                      receipts.push({ ...receipt, assetId: part.assetId });
+                      await ctx.runMutation(
+                        internal.preparedAnalysis.recordReceipt,
+                        {
+                          runId,
+                          kind: "asr",
+                          receipt: {
+                            parts: receipts,
+                            costCeilingUsd:
+                              costCeilingUsd + Number(receipt.costCeilingUsd),
+                          },
+                        },
+                      );
+                    },
+                    onTranscript: async (receipt) => {
+                      outputs.push({ assetId: part.assetId, output: receipt });
+                      await ctx.runMutation(
+                        internal.preparedAnalysis.recordReceipt,
+                        {
+                          runId,
+                          kind: "asr_output",
+                          receipt: { parts: outputs },
+                        },
+                      );
+                    },
+                  },
+                );
+                costCeilingUsd += result.receipt.costCeilingUsd;
+                hashes.push(result.provenance.inputSha256);
+                if (result.segments.length) {
+                  provenance = result.provenance;
+                  language = result.language;
+                }
+                segments.push(
+                  ...result.segments.map((s) => ({
+                    ...s,
+                    id: `${part.assetId}-${s.id}`,
+                    assetId: part.assetId,
+                    assetIndex: part.assetIndex,
+                  })),
+                );
+              }
+              return {
+                segments,
+                language,
+                provenance: {
+                  origin: provenance?.origin ?? ("none" as const),
+                  model: provenance?.model ?? null,
+                  provider: provenance?.provider ?? null,
+                  inputSha256: createHash("sha256")
+                    .update(JSON.stringify(hashes))
+                    .digest("hex"),
                 },
-              },
-            )
-          : Promise.resolve({
-              segments: [],
-              language: "und",
-              provenance: {
-                origin: "none" as const,
-                model: null,
-                provider: null,
-                inputSha256: null,
-              },
-              receipt: null,
-            });
+                receipt: { parts: receipts, costCeilingUsd },
+              };
+            })()
+          : native
+            ? Promise.resolve({
+                segments: native.segments,
+                language: native.transcript.language,
+                provenance: {
+                  origin: native.transcript.origin,
+                  model: null,
+                  provider: null,
+                  inputSha256: native.transcript.trackSha256,
+                },
+                receipt: null,
+              })
+            : prepared.audio
+              ? transcribePreparedAudio(
+                  prepared.audio,
+                  durationMs,
+                  Math.min(input.maximumApiUsd, 0.02),
+                  {
+                    apiKey,
+                    onDispatch: async () => {
+                      if (input.receipt?.admission?.providerReservationId)
+                        await ctx.runMutation(
+                          internal.preparedAnalysis.providerDispatch,
+                          { runId, component: "transcription" },
+                        );
+                    },
+                    onReceipt: async (receipt) => {
+                      await ctx.runMutation(
+                        internal.preparedAnalysis.recordReceipt,
+                        { runId, kind: "asr", receipt },
+                      );
+                    },
+                    onTranscript: async (receipt) => {
+                      await ctx.runMutation(
+                        internal.preparedAnalysis.recordReceipt,
+                        {
+                          runId,
+                          kind: "asr_output",
+                          receipt,
+                        },
+                      );
+                    },
+                  },
+                )
+              : Promise.resolve({
+                  segments: [],
+                  language: "und",
+                  provenance: {
+                    origin: "none" as const,
+                    model: null,
+                    provider: null,
+                    inputSha256: null,
+                  },
+                  receipt: null,
+                });
       const uploadsPromise = Promise.all(
         prepared.frames.map(async (frame) => {
           const key = `${input.organizationId}/prepared-${randomUUID()}`;
@@ -383,7 +476,9 @@ export const run = internalAction({
         prepared.metadata.resolvedCanonical,
       );
       ensure(
-        identity.platform === "instagram" || identity.platform === "tiktok",
+        identity.platform === "instagram" ||
+          identity.platform === "tiktok" ||
+          identity.platform === "x",
         "SOURCE_UNAVAILABLE",
         "Use a supported social video.",
       );
@@ -399,6 +494,7 @@ export const run = internalAction({
         requestedCanonical: input.canonical,
         canonical: identity.url,
         platform: identity.platform,
+        ...(post ? { post } : {}),
         sourceHash: prepared.sourceReceipt.sourceHash,
         recipeHash,
         downloaderVersion: prepared.downloaderVersion,
@@ -411,6 +507,9 @@ export const run = internalAction({
         segments: asr.segments,
         frames: prepared.frames.map((f) => ({
           id: f.id,
+          ...("assetId" in f
+            ? { assetId: f.assetId, assetIndex: f.assetIndex }
+            : {}),
           timestampMs: f.timestampMs,
           sha256: f.sha256,
           bytes: f.bytes.byteLength,

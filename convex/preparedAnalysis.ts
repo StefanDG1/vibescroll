@@ -743,8 +743,8 @@ export const retain = internalMutation({
       .withIndex("by_org", (q) => q.eq("organizationId", c.run.organizationId))
       .unique();
     ensure(
-      usage &&
-        usage.bytes + a.frames.reduce((n, f) => n + f.size, 0) <= 1000000000,
+      (usage?.bytes ?? 0) + a.frames.reduce((n, f) => n + f.size, 0) <=
+        1000000000,
       "QUOTA_EXCEEDED",
       "Evidence storage exceeds the comparison allowance.",
     );
@@ -802,7 +802,7 @@ export const retain = internalMutation({
         ...c.source.linkPreview,
         state: "ready",
         origin: "extractor",
-        assetId: frames[0].assetId,
+        ...(frames[0] ? { assetId: frames[0].assetId } : {}),
         title: prepared.metadata.title.slice(0, 160),
         authorName: prepared.metadata.authorName,
         durationSeconds: e.durationMs / 1000,

@@ -159,7 +159,7 @@ async function automaticCloudReceipt(
     };
   let supported = false;
   try {
-    supported = ["instagram", "tiktok"].includes(
+    supported = ["instagram", "tiktok", "x"].includes(
       privateCloudMediaIdentity(source.url ?? source.canonical).platform,
     );
   } catch {
@@ -170,7 +170,7 @@ async function automaticCloudReceipt(
       ...common,
       status: "unsupported_cloud_source",
       analysis_requested: false,
-      note: "Saved. Automatic Cloud links currently support single Instagram and TikTok videos. Use the separately supported source route for this post.",
+      note: "Saved. Automatic Cloud links support individual Instagram and TikTok videos and X posts. Use the separately supported source route for this post.",
     };
   if (!a.scopes.includes("analysis:request"))
     return {
@@ -225,6 +225,13 @@ async function automaticCloudReceipt(
             : "Saved. Server preparation is queued, then your existing ChatGPT Assistant will analyze the retained transcript and screenshots. No paid API reasoning fallback.",
       };
   }
+  if (privateCloudMediaIdentity(source.canonical).platform === "x")
+    return {
+      ...common,
+      status: "cloud_setup_required",
+      analysis_requested: false,
+      note: "Saved. X posts require the configured server-preparation route before assistant analysis.",
+    };
   const queued = await queueSavedCloudIntent(
     ctx,
     a.actor,
@@ -328,7 +335,7 @@ export const saveLink = internalMutation({
         ?.automaticOwnSubscriptionPreparation
     ) {
       try {
-        serverPrepared = ["instagram", "tiktok"].includes(
+        serverPrepared = ["instagram", "tiktok", "x"].includes(
           privateCloudMediaIdentity(url).platform,
         );
       } catch {

@@ -289,6 +289,55 @@
                           {
                             "type": "object",
                             "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "assetId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "assetIndex": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 34
+                              },
+                              "postRevisionHash": {
+                                "type": "string",
+                                "pattern": "^[a-f0-9]{64}$"
+                              },
+                              "textHash": {
+                                "type": "string",
+                                "pattern": "^[a-f0-9]{64}$"
+                              },
+                              "uncertainty": {
+                                "type": "string",
+                                "maxLength": 500
+                              },
+                              "kind": { "type": "string", "const": "caption" },
+                              "startMs": { "type": "null" },
+                              "endMs": { "type": "null" },
+                              "basis": { "type": "string", "const": "caption" }
+                            },
+                            "required": [
+                              "id",
+                              "assetId",
+                              "assetIndex",
+                              "postRevisionHash",
+                              "textHash",
+                              "uncertainty",
+                              "kind",
+                              "startMs",
+                              "endMs",
+                              "basis"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
                               "kind": { "type": "string", "maxLength": 64 },
                               "startMs": { "type": "number" },
                               "endMs": { "type": "number" }
@@ -696,7 +745,7 @@
               },
               "coverage": { "type": "string" },
               "frames": {
-                "maxItems": 8,
+                "maxItems": 48,
                 "type": "array",
                 "items": {
                   "type": "object",
@@ -778,6 +827,16 @@
                               "minLength": 1,
                               "maxLength": 100
                             },
+                            "assetId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "assetIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
                             "startMs": {
                               "type": "integer",
                               "minimum": 0,
@@ -821,7 +880,11 @@
                             },
                             "kind": {
                               "type": "string",
-                              "enum": ["image_observation", "video_observation"]
+                              "enum": [
+                                "caption",
+                                "image_observation",
+                                "video_observation"
+                              ]
                             },
                             "assetId": {
                               "type": "string",
@@ -835,7 +898,12 @@
                             },
                             "basis": {
                               "type": "string",
-                              "enum": ["transcript", "visible", "ocr"]
+                              "enum": [
+                                "caption",
+                                "transcript",
+                                "visible",
+                                "ocr"
+                              ]
                             },
                             "text": {
                               "anyOf": [
@@ -858,7 +926,7 @@
                               ]
                             },
                             "frameIds": {
-                              "maxItems": 8,
+                              "maxItems": 48,
                               "type": "array",
                               "items": {
                                 "type": "string",
@@ -978,7 +1046,8 @@
                                     "type": "string",
                                     "enum": [
                                       "image_observation",
-                                      "video_observation"
+                                      "video_observation",
+                                      "caption"
                                     ]
                                   },
                                   "id": {
@@ -3239,7 +3308,7 @@
     },
     {
       "name": "request_analysis",
-      "description": "For a user-sent Reel/TikTok, save_link defaults to analysis; pass analyze=false for save-only. Follow the returned exact next_action/source/profile without overriding funding. Current reviewed defaults and native Events queue the user's prepared Work Cloud task; the sending chat needs no runtime. Reuse ready/shared work and preserve active/unknown work. Report actual waiting/setup state and the post link; never start a second foreground job, ask for per-post review, recreate OAuth or switch to paid API. Setup is once per connection/monitor. Results reach the saved post and subscribed task, not an unrelated originating chat. Omit mode to use reviewed background Cloud defaults. Only an explicitly chosen foreground Work Cloud diagnostic uses mode=work_cloud with per-post model/effort options. For a user-requested analysis in an active supported host, inspect current status first. Retained-evidence attempts and server-prepared native jobs need actual JPEG inspection, not downloader/ASR bootstrap. Claim only the exact authorized request and read work_cloud_input; its contract determines the route. Source-acquisition jobs require the reviewed isolated runtime/network/tools before claim; stop if unavailable. Existing explicit-per-source requests need current generation/revision/grantVersion, the requested model/effort, useOwnPlan=true, maxApiUsd=0 and bounded retention. Keep one taskId and lease, obey deadlines/heartbeat, inspect all required actual images, complete the same request and fetch the saved result. Do not infer that any chat can claim a configured monitor's work. No paid fallback or project authority. Save-only does not grant future execution.  For a native saved-link event, first read this exact post's status. Only a current saved_cloud_intent permits automatic processing. Complete actual runtime/package/isolation preflight before starting its short job. Call request_analysis with mode=work_cloud and savedIntentId, without cloud, generation, revision, grantVersion, project or credit overrides. The server binds the saved model, effort, retention and zero-API funding. Preserve ready, active, expired or unknown work; reconcile uncertain replies without replacing a generation. Only when the user explicitly asks to retry and get_job_status reports cloud_retry_eligible=true, pass mode=work_cloud and retry={generation,revision,key} using that status and one stable unique key. Omit all other Cloud, funding and project overrides. This creates a new never-claimed attempt using current defaults; never retry automatically or reset claimed/unknown work. Ordinary save-only events have no analysis authority. Request supported media local extraction, optional project evaluation, or cancellation of waiting work. GitHub, Reddit and typed source revisions return an app review link for retrieval, analysis and project approval; local/credits/projects modes never route them into the media workflow. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without reviewed automatic Cloud defaults, omitting mode returns setup guidance or the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it.",
+      "description": "For a user-sent Reel/TikTok/X post, save_link defaults to analysis; pass analyze=false for save-only. Follow the returned exact next_action/source/profile without overriding funding. Current reviewed defaults and native Events queue the user's prepared Work Cloud task; the sending chat needs no runtime. Reuse ready/shared work and preserve active/unknown work. Report actual waiting/setup state and the post link; never start a second foreground job, ask for per-post review, recreate OAuth or switch to paid API. Setup is once per connection/monitor. Results reach the saved post and subscribed task, not an unrelated originating chat. Omit mode to use reviewed background Cloud defaults. Only an explicitly chosen foreground Work Cloud diagnostic uses mode=work_cloud with per-post model/effort options. For a user-requested analysis in an active supported host, inspect current status first. Retained-evidence attempts and server-prepared native jobs need actual JPEG inspection, not downloader/ASR bootstrap. Claim only the exact authorized request and read work_cloud_input; its contract determines the route. Source-acquisition jobs require the reviewed isolated runtime/network/tools before claim; stop if unavailable. Existing explicit-per-source requests need current generation/revision/grantVersion, the requested model/effort, useOwnPlan=true, maxApiUsd=0 and bounded retention. Keep one taskId and lease, obey deadlines/heartbeat, inspect all required actual images, complete the same request and fetch the saved result. Do not infer that any chat can claim a configured monitor's work. No paid fallback or project authority. Save-only does not grant future execution.  For a native saved-link event, first read this exact post's status. Only a current saved_cloud_intent permits automatic processing. Complete actual runtime/package/isolation preflight before starting its short job. Call request_analysis with mode=work_cloud and savedIntentId, without cloud, generation, revision, grantVersion, project or credit overrides. The server binds the saved model, effort, retention and zero-API funding. Preserve ready, active, expired or unknown work; reconcile uncertain replies without replacing a generation. Only when the user explicitly asks to retry and get_job_status reports cloud_retry_eligible=true, pass mode=work_cloud and retry={generation,revision,key} using that status and one stable unique key. Omit all other Cloud, funding and project overrides. This creates a new never-claimed attempt using current defaults; never retry automatically or reset claimed/unknown work. Ordinary save-only events have no analysis authority. Request supported media local extraction, optional project evaluation, or cancellation of waiting work. GitHub, Reddit and typed source revisions return an app review link for retrieval, analysis and project approval; local/credits/projects modes never route them into the media workflow. Use mode=credits only after the user explicitly chooses the current credit offer, passing its generation and maxCredits. Never choose credits automatically. Without reviewed automatic Cloud defaults, omitting mode returns setup guidance or the existing review link. Report actual settled usage and remaining balance; unresolved usage is not final. After default extraction offer project evaluation without starting it.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3415,7 +3484,7 @@
     },
     {
       "name": "save_link",
-      "description": "For a user-sent Reel/TikTok, save_link defaults to analysis; pass analyze=false for save-only. Follow the returned exact next_action/source/profile without overriding funding. Current reviewed defaults and native Events queue the user's prepared Work Cloud task; the sending chat needs no runtime. Reuse ready/shared work and preserve active/unknown work. Report actual waiting/setup state and the post link; never start a second foreground job, ask for per-post review, recreate OAuth or switch to paid API. Setup is once per connection/monitor. Results reach the saved post and subscribed task, not an unrelated originating chat. Save a supported YouTube, Instagram, TikTok or Vimeo link, an exact GitHub repository URL, or a Reddit discussion the user sends to VibeScroll. Use the reviewed connection permission; do not ask for repeated rights confirmation. GitHub and Reddit save link metadata only and return an app review link; they never inherit media extraction defaults. Direct provider access remains gated by verified setup and source review. Non-Cloud connections keep their reviewed local preferences; set analyze=false for save only. Project evaluation requires a named project or explicit bestProjects request; never infer that request from source content. Use a short inferred title and stable request key without asking the user to supply them. Return the receipt and optional credit offer without automatically spending credits. Reuse existing results and do not poll repeatedly. Other sources need an upload or supplied text in the app.",
+      "description": "For a user-sent Reel/TikTok/X post, save_link defaults to analysis; pass analyze=false for save-only. Follow the returned exact next_action/source/profile without overriding funding. Current reviewed defaults and native Events queue the user's prepared Work Cloud task; the sending chat needs no runtime. Reuse ready/shared work and preserve active/unknown work. Report actual waiting/setup state and the post link; never start a second foreground job, ask for per-post review, recreate OAuth or switch to paid API. Setup is once per connection/monitor. Results reach the saved post and subscribed task, not an unrelated originating chat. Save a supported YouTube, Instagram, TikTok or Vimeo link, an exact GitHub repository URL, or a Reddit discussion the user sends to VibeScroll. Use the reviewed connection permission; do not ask for repeated rights confirmation. GitHub and Reddit save link metadata only and return an app review link; they never inherit media extraction defaults. Direct provider access remains gated by verified setup and source review. Non-Cloud connections keep their reviewed local preferences; set analyze=false for save only. Project evaluation requires a named project or explicit bestProjects request; never infer that request from source content. Use a short inferred title and stable request key without asking the user to supply them. Return the receipt and optional credit offer without automatically spending credits. Reuse existing results and do not poll repeatedly. Other sources need an upload or supplied text in the app.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -5598,7 +5667,11 @@
                         "properties": {
                           "kind": {
                             "type": "string",
-                            "enum": ["image_observation", "video_observation"]
+                            "enum": [
+                              "image_observation",
+                              "video_observation",
+                              "caption"
+                            ]
                           },
                           "id": {
                             "type": "string",
@@ -5688,6 +5761,16 @@
             "items": {
               "type": "object",
               "properties": {
+                "assetId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "assetIndex": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 34
+                },
                 "id": { "type": "string", "minLength": 1, "maxLength": 100 },
                 "startMs": {
                   "type": "integer",

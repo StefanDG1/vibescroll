@@ -445,21 +445,40 @@ export async function selectedAnalysis(ctx: QueryCtx, source: Doc<"sources">) {
     source,
     source.selectedAnalysisVersionId,
   );
+  const service = isServicePreparedEvidence(evidence.prepared)
+    ? servicePreparedEvidence.parse(evidence.prepared).evidence
+    : null;
   return {
     output: version.output,
     metadata: versionMetadata(version),
     evidenceId: evidence._id,
-    ...(isServicePreparedEvidence(evidence.prepared)
+    ...(service
       ? {
           preparedService: {
             version: "service-prepared-detail-v1",
+            ...(service.post ? { post: service.post } : {}),
             transcript: retainedEvidenceContent(evidence).transcript,
             observations: retainedEvidenceContent(evidence).observations,
-            frames: evidence.frames.map((f) => ({
-              id: f.frameId,
-              reference: f.assetId,
-              timestampMs: f.timestampMs,
-            })),
+            frames: evidence.frames.map((f) => {
+              const observed = service.frames.find(
+                (frame) => frame.id === f.frameId,
+              );
+              const asset = service.post?.assets.find(
+                (asset) => asset.id === observed?.assetId,
+              );
+              return {
+                id: f.frameId,
+                reference: f.assetId,
+                timestampMs: f.timestampMs,
+                ...(asset
+                  ? {
+                      sourceAssetId: asset.id,
+                      sourceAssetIndex: asset.index,
+                      sourceMediaKind: asset.kind,
+                    }
+                  : {}),
+              };
+            }),
           },
         }
       : {}),

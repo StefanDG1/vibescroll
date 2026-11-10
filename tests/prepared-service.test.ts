@@ -557,50 +557,60 @@ it("automatic app Save prepares once and creates a generation-zero retained Assi
   ).toMatchObject({ state: "waiting_for_assistant", chargedCredits: 1 });
 });
 
-it("an ordinary MCP link Save automatically admits server preparation without a legacy saved intent", async () => {
-  const s = await fixture();
-  await nativeReady(s);
-  const grant = (await s.t.run((c) => c.db.get(s.grant.id)))!,
-    scopes = [...grant.scopes, "links:save"];
-  await s.t.run((c) => c.db.patch(grant._id, { scopes }));
-  vi.stubEnv(
-    "MCP_CLIENTS",
-    JSON.stringify([
-      { id: grant.clientId, name: "Synthetic native connection", scopes },
-    ]),
-  );
-  vi.stubEnv(
-    "PREPARED_ANALYSIS_CONFIGURATION_JSON",
-    JSON.stringify({ ...s.config, automaticOwnSubscriptionPreparation: true }),
-  );
-  const assistant = s.t.withIdentity({
-    subject: s.actor.subject,
-    issuer: process.env.MCP_AUTH_ISSUER!,
-    client_id: grant.clientId,
-    scope: scopes.join(" "),
-    sid: "app_consent_01234567890123456789012345",
-  });
-  const args = {
-    profileId: s.org,
-    url: "https://www.instagram.com/reel/Fresh000003/",
-    title: "Imported video link",
-    rightsAttested: true as const,
-    key: "mcp-auto-prepared-link",
-  };
-  const first = await assistant.mutation(internal.assistant.saveLink, args),
-    again = await assistant.mutation(internal.assistant.saveLink, args);
-  expect(first).toMatchObject({
-    analysis_route: "prepared_own_cloud",
-    analysis_requested: true,
-    status: "queued",
-  });
-  if (!("run_id" in first) || !("run_id" in again))
-    throw Error("Expected prepared Save receipts");
-  expect(again.run_id).toBe(first.run_id);
-  const source = await s.t.run((c) => c.db.get(first.source_id));
-  expect(source?.workCloudSaveIntent).toBeUndefined();
-  expect(source?.personalAnalysis).toBeUndefined();
-});
+it.each([
+  "https://www.instagram.com/reel/Fresh000003/",
+  "https://x.com/creator/status/1234567890123456789",
+  "https://twitter.com/creator/status/1234567890123456789/video/1",
+])(
+  "automatically prepares an MCP link without a legacy intent: %s",
+  async (url) => {
+    const s = await fixture();
+    await nativeReady(s);
+    const grant = (await s.t.run((c) => c.db.get(s.grant.id)))!,
+      scopes = [...grant.scopes, "links:save"];
+    await s.t.run((c) => c.db.patch(grant._id, { scopes }));
+    vi.stubEnv(
+      "MCP_CLIENTS",
+      JSON.stringify([
+        { id: grant.clientId, name: "Synthetic native connection", scopes },
+      ]),
+    );
+    vi.stubEnv(
+      "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+      JSON.stringify({
+        ...s.config,
+        automaticOwnSubscriptionPreparation: true,
+      }),
+    );
+    const assistant = s.t.withIdentity({
+      subject: s.actor.subject,
+      issuer: process.env.MCP_AUTH_ISSUER!,
+      client_id: grant.clientId,
+      scope: scopes.join(" "),
+      sid: "app_consent_01234567890123456789012345",
+    });
+    const args = {
+      profileId: s.org,
+      url,
+      title: "Imported video link",
+      rightsAttested: true as const,
+      key: "mcp-auto-prepared-link",
+    };
+    const first = await assistant.mutation(internal.assistant.saveLink, args),
+      again = await assistant.mutation(internal.assistant.saveLink, args);
+    expect(first).toMatchObject({
+      analysis_route: "prepared_own_cloud",
+      analysis_requested: true,
+      status: "queued",
+    });
+    if (!("run_id" in first) || !("run_id" in again))
+      throw Error("Expected prepared Save receipts");
+    expect(again.run_id).toBe(first.run_id);
+    const source = await s.t.run((c) => c.db.get(first.source_id));
+    expect(source?.workCloudSaveIntent).toBeUndefined();
+    expect(source?.personalAnalysis).toBeUndefined();
+  },
+);
 
 it("quotes duration boundaries once, with a separate preparation credit and free subscription reasoning", () => {
   expect(
@@ -2420,4 +2430,127 @@ it("reports only the current actor/generation shared wait through MCP until cach
     c.db.patch(source._id, { catalogWait: undefined, state: "ready" }),
   );
   expect((await read()).status).toBe("ready");
+});
+
+it("saves complete text-only X evidence, finishes cited analysis and reuses it without a media duration", async () => {
+  const s = await fixture();
+  const canonical = "https://x.com/i/web/status/1234567890123456789";
+  await s.t.run((c) =>
+    c.db.patch(s.sourceId, {
+      canonical,
+      url: canonical,
+      title: "X post",
+      state: "queued",
+      analysis: undefined,
+      orderedMedia: undefined,
+      personalAnalysis: undefined,
+    }),
+  );
+  const run = await s.start("x-text-only-once");
+  await s.t.mutation(internal.preparedAnalysis.claim, { runId: run.runId! });
+  await s.t.mutation(internal.preparedAnalysis.progress, {
+    runId: run.runId!,
+    stage: "transcribing",
+  });
+  const text = "A complete post caption with no attachments.";
+  const { socialHash } = await import("../packages/social/contracts");
+  const { canonicalJson } =
+    await import("../packages/contracts/canonical-json.mjs");
+  const prepared = await makePreparedEvidence({
+    requestedCanonical: canonical,
+    canonical,
+    platform: "x",
+    post: {
+      version: "x-post-evidence-v1",
+      postId: "1234567890123456789",
+      provider: "gallery-dl",
+      text,
+      textHash: await socialHash(text),
+      expectedAssetCount: 0,
+      coverage: "complete_manifest",
+      assets: [],
+    },
+    sourceHash: await socialHash(
+      canonicalJson({ canonical, text, assets: [] }),
+    ),
+    recipeHash: "b".repeat(64),
+    downloaderVersion: "gallery-dl/1.32.19",
+    title: "X post",
+    authorName: "Author",
+    durationMs: 0,
+    language: "und",
+    observedAt: Date.now(),
+    transcript: {
+      origin: "none",
+      model: null,
+      provider: null,
+      inputSha256: null,
+    },
+    segments: [],
+    frames: [],
+  });
+  await s.t.mutation(internal.preparedAnalysis.retain, {
+    runId: run.runId!,
+    prepared,
+    frames: [],
+    receipt: {},
+  });
+  await s.t.mutation(internal.preparedAnalysis.progress, {
+    runId: run.runId!,
+    stage: "analyzing",
+  });
+  const output = {
+    schemaVersion: "analysis-version-output-v1",
+    sourceId: s.sourceId,
+    attemptId: run.runId!,
+    evidenceHash: prepared.evidence.evidenceHash,
+    postRevisionHash: prepared.evidence.sourceRevisionHash,
+    summary: "Caption analysis",
+    warnings: [],
+    insights: s.output.insights.map((i) => ({
+      ...i,
+      evidence: [
+        { kind: "caption", id: "post-caption-1", startMs: null, endMs: null },
+      ],
+    })),
+  };
+  const versionId = await s.t.mutation(
+    internal.preparedAnalysis.finishGateway,
+    {
+      runId: run.runId!,
+      output,
+      receipt: {
+        model: "meta/muse-spark-1.3-contributor",
+        provider: "meta",
+        requestId: "gen_" + "a".repeat(26),
+        startedAt: Date.now() - 1000,
+        completedAt: Date.now(),
+        rateEstimateUsd: 0.002,
+      },
+    },
+  );
+  const source = (await s.t.run((c) => c.db.get(s.sourceId)))!;
+  expect(source.selectedAnalysisVersionId).toBe(versionId);
+  expect(source.linkPreview?.title).toBe("X post");
+  const quote = await s.quote();
+  expect(quote.durationMaximumMs).toBe(0);
+  expect(quote.preparationCredits).toBe(0);
+  expect(quote.analysisCredits).toBeGreaterThan(0);
+  const context = postContextPageOutput.parse(
+    await s.assistant.query(internal.assistant.fetch, {
+      id: s.sourceId,
+      profileId: s.org,
+      format: "post_context_v1",
+    }),
+  );
+  expect(context.context.complete).toBe(true);
+  expect(context.context.frames).toEqual([]);
+  expect(
+    context.context.items.some(
+      (item) =>
+        item.kind === "observation" &&
+        item.value.kind === "caption" &&
+        item.value.text === text,
+    ),
+  ).toBe(true);
 });

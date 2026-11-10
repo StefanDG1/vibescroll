@@ -48,6 +48,13 @@ const mediaCitationFields = {
 // legacy timestamp-only branch. None permits excerpts or asset capabilities.
 export const knowledgeReadCitationOutput = z.union([
   z.strictObject({
+    ...mediaCitationFields,
+    kind: z.literal("caption"),
+    startMs: z.null(),
+    endMs: z.null(),
+    basis: z.literal("caption"),
+  }),
+  z.strictObject({
     kind: z.string().max(64),
     startMs: z.number().optional(),
     endMs: z.number().optional(),

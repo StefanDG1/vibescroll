@@ -8,12 +8,16 @@ import { policyRelease } from "../packages/policy/publication.ts";
 import { preparedDecoder } from "../packages/media/preparedDecoder.ts";
 import { preparedAcquirer } from "../packages/media/preparedAcquirer.ts";
 import { preparedExtraction } from "../packages/media/preparedExtraction.ts";
+import { xPostWorker } from "../packages/media/xPostWorker.ts";
+import { cloudDependencySetup } from "../packages/media/cloudDependencySetup.ts";
 const root = resolve(import.meta.dirname, "..");
 const errors = [];
 for (const [content, file] of [
   [preparedDecoder, "decode-prepared.py"],
   [preparedAcquirer, "acquire-prepared.py"],
   [preparedExtraction, "cloud_extraction.py"],
+  [xPostWorker, "x-post-worker.py"],
+  [cloudDependencySetup, "prepare_cloud_dependencies.py"],
 ])
   if (
     content !==

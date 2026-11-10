@@ -22,6 +22,8 @@ export const postContextFrameInput = z.strictObject({
 });
 const segment = z.strictObject({
   id,
+  assetId: id.optional(),
+  assetIndex: position.optional(),
   startMs: position,
   endMs: position,
   text: z.string().max(6000),
@@ -29,14 +31,14 @@ const segment = z.strictObject({
 });
 const observation = z.strictObject({
   id,
-  kind: z.enum(["image_observation", "video_observation"]),
+  kind: z.enum(["caption", "image_observation", "video_observation"]),
   assetId: id,
   assetIndex: position,
-  basis: z.enum(["transcript", "visible", "ocr"]),
+  basis: z.enum(["caption", "transcript", "visible", "ocr"]),
   text: z.string().max(6000).nullable(),
   textHash: hash,
   segmentId: id.nullable(),
-  frameIds: z.array(id).max(8),
+  frameIds: z.array(id).max(48),
   startMs: position.nullable(),
   endMs: position.nullable(),
   uncertainty: z.string().max(2000),
@@ -75,7 +77,7 @@ export const postContextDataOutput = z.strictObject({
         height: position,
       }),
     )
-    .max(8),
+    .max(48),
   totals: z.strictObject({
     transcript: position,
     observations: position,

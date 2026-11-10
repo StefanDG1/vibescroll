@@ -1,5 +1,6 @@
 import type { MutationCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
+import { privateCloudMediaIdentity } from "../../packages/social/contracts";
 import { preparedCreditQuote } from "../../packages/contracts/prepared-service";
 import { settle, digest } from "../product";
 import { ensure } from "../../packages/policy";
@@ -35,6 +36,9 @@ export async function settlePreparedCredits(
             run.executor,
             quote.reusedEvidenceId !== null,
             model,
+            privateCloudMediaIdentity(run.canonical).platform === "x"
+              ? "post"
+              : "video",
           ).maximum;
   ensure(
     Number.isSafeInteger(credits) &&

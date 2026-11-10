@@ -3856,15 +3856,23 @@ export function SourceDetail({
   }, [demo, statusDeadline]);
   const savedFrames = sourceEvidenceFrames(detail, retentionTime);
   const untimedImages =
-    detail.coverage === "visual_only" &&
-    savedFrames.length > 1 &&
-    savedFrames.every((frame: any) => frame.startMs === 0);
+    (savedFrames.length > 0 &&
+      savedFrames.every((frame: any) => frame.mediaKind === "image")) ||
+    (detail.coverage === "visual_only" &&
+      savedFrames.length > 1 &&
+      savedFrames.every((frame: any) => frame.startMs === 0));
   const imageLabel = (frameId: string) => {
     const position = savedFrames.findIndex(
       (frame: any) => frame.id === frameId,
     );
     return position < 0 ? "Image" : `Image ${position + 1}`;
   };
+  const frameLabel = (frame: any) =>
+    frame.sourceAssetId
+      ? `Attachment ${frame.sourceAssetIndex + 1} · ${frame.mediaKind === "image" ? "Image" : `${(frame.startMs / 1000).toFixed(1)}s`}`
+      : untimedImages
+        ? imageLabel(frame.id)
+        : `${(frame.startMs / 1000).toFixed(1)}s`;
   const insightIds = (detail.analysis?.insights ?? [])
     .map((i: any) => i.id)
     .filter((key: string) => !excludedInsights.includes(key));
@@ -4167,20 +4175,34 @@ export function SourceDetail({
               <p>Confirmed correction: {detail.analysis.correctedText}</p>
             )}
           </details>
-          {detail.acquisition?.description && (
+          {(detail.preparedService?.post?.text ||
+            detail.acquisition?.description) && (
             <details id="source-caption" className="panel" tabIndex={-1}>
               <summary>Post caption</summary>
               <p style={{ whiteSpace: "pre-wrap" }}>
-                {detail.acquisition.description}
+                {detail.preparedService?.post?.text ??
+                  detail.acquisition.description}
               </p>
             </details>
           )}
           {!demo && savedFrames.length > 0 && (
             <section
               className="panel"
-              aria-label={untimedImages ? "Image evidence" : "Video evidence"}
+              aria-label={
+                detail.preparedService?.post
+                  ? "Attachment evidence"
+                  : untimedImages
+                    ? "Image evidence"
+                    : "Video evidence"
+              }
             >
-              <h2>{untimedImages ? "Image evidence" : "Video evidence"}</h2>
+              <h2>
+                {detail.preparedService?.post
+                  ? "Attachment evidence"
+                  : untimedImages
+                    ? "Image evidence"
+                    : "Video evidence"}
+              </h2>
               <div className="evidence-grid">
                 {visibleFrames.map((frame: any) => (
                   <figure key={frame.id}>
@@ -4194,11 +4216,7 @@ export function SourceDetail({
                     >
                       <Image
                         src={`/api/evidence/${encodeURIComponent(frame.id)}?inline=true`}
-                        alt={
-                          untimedImages
-                            ? `Private source ${imageLabel(frame.id).toLowerCase()}`
-                            : `Private sampled video frame at ${(frame.startMs / 1000).toFixed(1)} seconds`
-                        }
+                        alt={`Private source evidence: ${frameLabel(frame)}`}
                         width={960}
                         height={540}
                         unoptimized
@@ -4206,11 +4224,7 @@ export function SourceDetail({
                         decoding="async"
                       />
                     </button>
-                    <figcaption>
-                      {untimedImages
-                        ? imageLabel(frame.id)
-                        : `${(frame.startMs / 1000).toFixed(1)}s`}
-                    </figcaption>
+                    <figcaption>{frameLabel(frame)}</figcaption>
                   </figure>
                 ))}
               </div>

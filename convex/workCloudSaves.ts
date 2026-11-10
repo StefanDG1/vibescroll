@@ -119,14 +119,19 @@ export const capture = mutation({
     const owner = await writeAccess(ctx, a.organizationId, ["owner"]);
     const requestedIdentity = privateCloudMediaIdentity(a.url);
     ensure(
-      ["instagram", "tiktok"].includes(requestedIdentity.platform),
+      ["instagram", "tiktok", "x"].includes(requestedIdentity.platform),
       "SOURCE_UNAVAILABLE",
-      "Automatic Cloud saves currently accept single Instagram or TikTok videos.",
+      "Automatic Cloud saves accept individual Instagram and TikTok videos and X posts.",
     );
     const policy = preparedPolicy(owner.actor.subject, requestedIdentity.url);
     const servicePrepared = preparedServiceConfiguration(
       owner.actor.subject,
     )?.automaticOwnSubscriptionPreparation;
+    ensure(
+      requestedIdentity.platform !== "x" || servicePrepared,
+      "SETUP_REQUIRED",
+      "X posts require the configured server-preparation route.",
+    );
     if (policy?.executor === "work_cloud" || servicePrepared) {
       const grant = await ctx.db.get(a.grantId);
       ensure(

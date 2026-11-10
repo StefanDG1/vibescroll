@@ -1,5 +1,6 @@
 import pricing from "../../contracts/pricing.json";
 import { ConvexError } from "convex/values";
+import { xPostUrl } from "../media/x-identity.mjs";
 export { pricing };
 export class PolicyError extends ConvexError<string> {
   constructor(
@@ -16,6 +17,24 @@ export function ensure(ok: unknown, code: string, message: string): asserts ok {
 }
 export function safeSourceUrl(raw: string) {
   const u = new URL(raw);
+  if (
+    [
+      "x.com",
+      "www.x.com",
+      "twitter.com",
+      "www.twitter.com",
+      "mobile.twitter.com",
+    ].includes(u.hostname)
+  ) {
+    try {
+      return xPostUrl(raw).canonical;
+    } catch {
+      throw new PolicyError(
+        "UNSUPPORTED_SOURCE",
+        "Use a single public X post link.",
+      );
+    }
+  }
   ensure(
     u.protocol === "https:" && !u.username && !u.password && !u.port,
     "UNSUPPORTED_SOURCE",

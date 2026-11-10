@@ -12,6 +12,7 @@ import { decoderManifest } from "../media/manifest";
 import { jpegDimensions } from "../media/jpeg";
 import { ensure, PolicyError } from "../policy";
 import { readResponseBytes } from "./binary";
+import { prepareHostedXPost } from "./x-post-preparation";
 
 const downloader = {
   version: "2026.10.26",
@@ -40,6 +41,8 @@ export async function prepareHostedEvidence(
     maximumDurationMs?: number;
   },
 ) {
+  if (acquisitionPolicy(url).platform === "x")
+    return prepareHostedXPost(url, callbacks);
   const policy = acquisitionPolicy(url),
     times: Record<string, number> = {};
   const startedAt = Date.now();

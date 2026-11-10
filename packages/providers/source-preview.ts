@@ -248,6 +248,7 @@ export async function sourcePreview(sourceUrl: string) {
     if (!image) return { title, authorName, durationSeconds, publishedAt };
   }
   const hosts = {
+    x: ["pbs.twimg.com"],
     instagram: ["*.cdninstagram.com", "*.fbcdn.net"],
     youtube: ["*.ytimg.com"],
     vimeo: ["*.vimeocdn.com"],

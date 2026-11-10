@@ -236,6 +236,11 @@ async function sourceInput(
     );
     const acquisition = privateCloudMediaIdentity(source.url!);
     ensure(
+      acquisition.platform !== "x",
+      "UNSUPPORTED_SOURCE",
+      "X posts use server-prepared evidence.",
+    );
+    ensure(
       acquisition.url === privateCloudMediaIdentity(source.canonical).url &&
         (!source.orderedMedia || !!bound?.cloud.media?.preparationHash),
       "APPROVAL_STALE",

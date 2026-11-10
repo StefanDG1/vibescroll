@@ -175,11 +175,11 @@ async function quoteFor(
     await requirePaidProcessing(ctx, a.actor, a.organization._id);
   }
   ensure(
-    ["instagram", "tiktok"].includes(
+    ["instagram", "tiktok", "x"].includes(
       privateCloudMediaIdentity(a.source.url ?? a.source.canonical).platform,
     ),
     "UNSUPPORTED_SOURCE",
-    "Server preparation currently supports individual Reels and TikToks.",
+    "Server preparation supports individual Reels, TikToks and X posts.",
   );
   // A ready selection still needs current source/evidence/retention authority.
   // Processing setup is required only when this request would create work.
@@ -264,6 +264,9 @@ async function quoteFor(
         request.executor,
         !!evidence,
         apiModel?.id,
+        privateCloudMediaIdentity(a.source.canonical).platform === "x"
+          ? "post"
+          : "video",
       );
   if (!cacheHit && request.executor === "gateway")
     ensure(

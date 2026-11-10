@@ -5,6 +5,7 @@ from pathlib import Path
 import tempfile
 import shutil
 import subprocess
+import wave
 import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
@@ -65,10 +66,13 @@ class SelectedPost(unittest.TestCase):
             root = Path(tmp)
             def run(args):
                 subprocess.run(['ffmpeg', '-nostdin', '-v', 'error'] + args, check=True, capture_output=True)
-            (root / 'pixel.ppm').write_bytes(b'P6\n2 2\n255\n' + bytes([10, 80, 200]) * 4)
-            run(['-i', str(root / 'pixel.ppm'), '-frames:v', '1', '-f', 'image2', str(root / 'asset-1.input')])
-            for index, audio in ((2, 'anullsrc=r=16000:cl=mono'), (3, 'sine=frequency=440:sample_rate=16000')):
-                run(['-f', 'lavfi', '-i', 'color=c=green:s=160x240:r=10:d=2', '-f', 'lavfi', '-i', audio,
+            run(['-f', 'lavfi', '-i', 'color=c=blue:s=160x240', '-frames:v', '1', '-c:v', 'mjpeg', '-f', 'image2', str(root / 'asset-1.input')])
+            with wave.open(str(root / 'silent.wav'), 'wb') as stream:
+                stream.setnchannels(1); stream.setsampwidth(2); stream.setframerate(16000)
+                stream.writeframes(bytes(16000 * 2 * 2))
+            for index in (2, 3):
+                audio = ['-i', str(root / 'silent.wav')] if index == 2 else ['-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=16000']
+                run(['-f', 'lavfi', '-i', 'color=c=green:s=160x240:r=10:d=2'] + audio + [
                      '-t', '2', '-c:v', 'mpeg4', '-c:a', 'aac', '-f', 'mp4', str(root / f'asset-{index}.input')])
             assets = []
             for index in range(1, 4):

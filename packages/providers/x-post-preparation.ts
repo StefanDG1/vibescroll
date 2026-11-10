@@ -102,6 +102,7 @@ export async function prepareHostedXPost(
   const sandbox = await createJobSandbox("acquisition", 240, policy.domains);
   let stopped = false,
     phase = "setup";
+  let failure: Record<string, unknown> | null = null;
   const command = async (stage: string, timeoutMs: number) => {
     const result = await sandbox.commands.run(
       `python3 /home/user/media/x-post-worker.py ${stage}`,
@@ -133,8 +134,8 @@ export async function prepareHostedXPost(
         data,
       })),
     ]);
-    await command("setup", 15000);
     await hardenAcquisition(sandbox);
+    await command("setup", 15000);
     phase = "metadata";
     await callbacks.stage(phase);
     await command("inspect", 45000);
@@ -157,13 +158,18 @@ export async function prepareHostedXPost(
     phase = "preparing";
     await callbacks.stage(phase);
     await command("decode", 90000);
-    const raw = await sandbox.files.read("/home/user/media/x-result.json");
+    const rawBytes = await sandbox.files.read(
+      "/home/user/media/x-result.json",
+      { format: "bytes" },
+    );
     ensure(
-      new TextEncoder().encode(raw).byteLength <= 240000,
+      rawBytes.byteLength <= 240000,
       "INVALID_EVIDENCE",
       "The X post exceeds the preparation payload limit.",
     );
-    const output = outputSchema.parse(JSON.parse(raw));
+    const output = outputSchema.parse(
+      JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(rawBytes)),
+    );
     const videos = output.post.assets.filter((a) => a.kind === "video");
     const speech = videos.filter((a) => a.audioStatus === "prepared");
     ensure(
@@ -304,17 +310,26 @@ export async function prepareHostedXPost(
       stopped: true as const,
     };
   } catch (error) {
-    if (callbacks.failed)
-      await callbacks.failed({
-        phase,
-        code:
-          error instanceof PolicyError ? error.code : "X_PREPARATION_FAILED",
+    failure = {
+      phase,
+      code: error instanceof PolicyError ? error.code : "X_PREPARATION_FAILED",
+    };
+    throw error;
+  } finally {
+    if (!stopped) {
+      await sandbox.kill();
+      stopped = true;
+      times.stopped = Date.now();
+    }
+    if (failure)
+      await callbacks.failed?.({
+        ...failure,
         sandboxId: sandbox.sandboxId,
         startedAt,
         times,
+        completedAt: Date.now(),
+        stopAcknowledged: stopped,
+        providerDeletionVerified: false,
       });
-    throw error;
-  } finally {
-    if (!stopped) await sandbox.kill();
   }
 }

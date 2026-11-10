@@ -558,12 +558,13 @@ it("automatic app Save prepares once and creates a generation-zero retained Assi
 });
 
 it.each([
-  "https://www.instagram.com/reel/Fresh000003/",
-  "https://x.com/creator/status/1234567890123456789",
-  "https://twitter.com/creator/status/1234567890123456789/video/1",
-])(
-  "automatically prepares an MCP link without a legacy intent: %s",
-  async (url) => {
+  ["https://www.instagram.com/reel/Fresh000003/", false],
+  ["https://x.com/creator/status/1234567890123456789", false],
+  ["https://twitter.com/creator/status/1234567890123456789/video/1", false],
+  ["https://x.com/creator/status/1234567890123456789", true],
+] as const)(
+  "automatically prepares an MCP link without a legacy intent: %s, paid=%s",
+  async (url, paid) => {
     const s = await fixture(true);
     if (!("serviceOrg" in s)) throw Error("Expected catalog fixture");
     vi.stubEnv(
@@ -604,9 +605,33 @@ it.each([
       "PREPARED_ANALYSIS_CONFIGURATION_JSON",
       JSON.stringify({
         ...s.config,
+        ...(paid ? { subjects: ["user_99999999999999999999999999"] } : {}),
         automaticOwnSubscriptionPreparation: true,
       }),
     );
+    if (paid) {
+      fundedPreparation(s);
+      await s.t.mutation(internal.billing.attach, {
+        organizationId: s.org,
+        customerId: "cus_auto_paid",
+      });
+      await s.t.mutation(internal.billing.apply, {
+        customerId: "cus_auto_paid",
+        subscriptionId: "sub_auto_paid",
+        status: "active",
+        periodEnd: Date.now() + 86400000,
+        revision: 1,
+      });
+      await s.t.mutation(internal.commerce.grantPeriod, {
+        organizationId: s.org,
+        subscription: "sub_auto_paid",
+        tier: "pro",
+        interval: "monthly",
+        start: Date.now() - 1000,
+        end: Date.now() + 86400000,
+        verifiedPayment: true,
+      });
+    }
     const assistant = s.t.withIdentity({
       subject: s.actor.subject,
       issuer: process.env.MCP_AUTH_ISSUER!,
@@ -2587,3 +2612,165 @@ it("saves complete text-only X evidence, finishes cited analysis and reuses it w
     ),
   ).toBe(true);
 });
+
+function fundedPreparation(
+  f: Awaited<ReturnType<typeof fixture>>,
+  admin = false,
+) {
+  if (admin)
+    vi.stubEnv(
+      "ADMIN_PROCESSING_ALLOWANCE_JSON",
+      JSON.stringify({
+        version: "admin-processing-allowance-v1",
+        id: "x-recovery-admin",
+        enabled: true,
+        subject: f.actor.subject,
+        organizationId: f.org,
+        monthlyCredits: 300,
+        maximumHourlyJobs: 20,
+        maximumDailyJobs: 100,
+        startsAt: Date.now() - 1000,
+      }),
+    );
+  vi.stubEnv(
+    "PAID_PROCESSING_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "paid-processing-monetary-v2",
+      id: "x-recovery-funding",
+      enabled: true,
+      verifiedAt: Date.now() - 1000,
+      expiresAt: Date.now() + 86400000,
+      operatingPoolNanoUsd: 900000000,
+      maximumJobNanoUsd: 50000000,
+      verifiedProviderCreditNanoUsd: 1000000000,
+      providerKeyBudgetNanoUsd: 1000000000,
+      priorExposureNanoUsd: 100000000,
+    }),
+  );
+  vi.stubEnv(
+    "PROPOSAL_SERVICE_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "proposal-service-v1",
+      enabled: true,
+      privateProjectContextAllowed: true,
+      permissionReference: "synthetic exact X preparation permission",
+    }),
+  );
+}
+async function xSetupFixture() {
+  const f = await fixture();
+  await f.t.run((c) =>
+    c.db.patch(f.sourceId, {
+      canonical: "https://x.com/i/web/status/1234567890123456789",
+      url: "https://x.com/i/web/status/1234567890123456789",
+      state: "queued",
+      analysis: undefined,
+      orderedMedia: undefined,
+      personalAnalysis: undefined,
+    }),
+  );
+  fundedPreparation(f, true);
+  const { runId } = await f.start("x-setup-failure-proof");
+  await f.t.mutation(internal.preparedAnalysis.claim, { runId: runId! });
+  return { ...f, runId: runId! };
+}
+it("retains immutable independent X attachment transcription receipts", async () => {
+  const f = await xSetupFixture();
+  await f.t.mutation(internal.preparedAnalysis.progress, {
+    runId: f.runId,
+    stage: "transcribing",
+  });
+  for (const assetId of ["asset-1", "asset-2"]) {
+    await f.t.mutation(internal.preparedAnalysis.recordReceipt, {
+      runId: f.runId,
+      assetId,
+      kind: "asr",
+      receipt: { model: "synthetic", assetId },
+    });
+    await f.t.mutation(internal.preparedAnalysis.recordReceipt, {
+      runId: f.runId,
+      assetId,
+      kind: "asr_output",
+      receipt: {
+        text: assetId,
+        segments: [{ text: assetId, startSecond: 0, endSecond: 1 }],
+      },
+    });
+  }
+  const row = (await f.t.run((c) => c.db.get(f.runId)))!;
+  expect(row.receipt["asr_output_asset-1"].text).toBe("asset-1");
+  expect(row.receipt["asr_output_asset-2"].text).toBe("asset-2");
+  await expect(
+    f.t.mutation(internal.preparedAnalysis.recordReceipt, {
+      runId: f.runId,
+      assetId: "asset-1",
+      kind: "asr_output",
+      receipt: { text: "changed", segments: [] },
+    }),
+  ).rejects.toThrow("APPROVAL_STALE");
+  await expect(
+    f.t.mutation(internal.preparedAnalysis.recordReceipt, {
+      runId: f.runId,
+      assetId: "asset-36",
+      kind: "asr",
+      receipt: { model: "synthetic" },
+    }),
+  ).rejects.toThrow("INVALID_INPUT");
+});
+it.each([false, true])(
+  "reconciles only an exact deleted X setup with zero provider dispatches: dispatched=%s",
+  async (dispatched) => {
+    const f = await xSetupFixture();
+    if (dispatched)
+      await f.t.mutation(internal.preparedAnalysis.providerDispatch, {
+        runId: f.runId,
+        component: "transcription",
+      });
+    await f.t.mutation(internal.preparedAnalysis.recordReceipt, {
+      runId: f.runId,
+      kind: "preparation_failure",
+      receipt: { phase: "setup", sandboxId: "vercel:synthetic-original" },
+    });
+    await f.t.mutation(internal.preparedAnalysis.fail, {
+      runId: f.runId,
+      code: "SOURCE_UNAVAILABLE",
+    });
+    const row = (await f.t.run((c) => c.db.get(f.runId)))!;
+    expect(row.state).toBe("unknown");
+    const providerId = row.receipt.admission.providerReservationId;
+    const held = await f.t.run((c) => c.db.get(providerId));
+    const proof = {
+      providerMissing: true as const,
+      observedAt: Date.now(),
+      sandboxId: "vercel:synthetic-original",
+    };
+    await expect(
+      f.t.mutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+        runId: f.runId,
+        setupStopProof: { ...proof, sandboxId: "vercel:another-job" },
+      }),
+    ).rejects.toThrow("COST_RECONCILIATION_REQUIRED");
+    if (dispatched) {
+      await expect(
+        f.t.mutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+          runId: f.runId,
+          setupStopProof: proof,
+        }),
+      ).rejects.toThrow("COST_RECONCILIATION_REQUIRED");
+      expect(await f.t.run((c) => c.db.get(providerId))).toEqual(held);
+    } else {
+      await f.t.mutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+        runId: f.runId,
+        setupStopProof: proof,
+      });
+      expect(await f.t.run((c) => c.db.get(f.runId))).toMatchObject({
+        state: "failed",
+        receipt: { billing: { chargedCredits: 0 } },
+      });
+      expect(await f.t.run((c) => c.db.get(providerId))).toMatchObject({
+        state: "released",
+        actualNanoUsd: 0,
+      });
+    }
+  },
+);

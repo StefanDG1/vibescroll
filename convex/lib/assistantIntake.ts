@@ -361,7 +361,7 @@ export async function intakeReceipt(
   const preparedCreditRoute =
     actor &&
     source.kind === "url" &&
-    /(?:instagram|tiktok)\.com/i.test(source.canonical) &&
+    /(?:instagram|tiktok|x|twitter)\.com/i.test(source.canonical) &&
     (await preparedServiceAvailable(ctx, actor, source.organizationId));
   const creditRouteAvailable =
     !!preparedCreditRoute ||

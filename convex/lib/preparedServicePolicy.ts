@@ -74,7 +74,8 @@ export function preparedServiceConfiguration(
         maximumDailyJobs: 100,
         maximumHourlyJobs: 20,
         maximumTotalJobs: 1000,
-        automaticOwnSubscriptionPreparation: false,
+        automaticOwnSubscriptionPreparation:
+          c.automaticOwnSubscriptionPreparation,
         paidCustomer: true,
       };
     }

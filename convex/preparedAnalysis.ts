@@ -1126,6 +1126,7 @@ export const queueSubscription = internalMutation({
 export const recordReceipt = internalMutation({
   args: {
     runId: v.id("mediaPreparations"),
+    assetId: v.optional(v.string()),
     kind: v.union(
       v.literal("preparation"),
       v.literal("preparation_failure"),
@@ -1140,8 +1141,18 @@ export const recordReceipt = internalMutation({
     receipt: v.any(),
   },
   returns: v.null(),
-  handler: async (ctx, { runId, kind, receipt }) => {
+  handler: async (ctx, { runId, kind, receipt, assetId }) => {
     const c = await current(ctx, runId);
+    ensure(
+      !assetId ||
+        (privateCloudMediaIdentity(c.run.canonical).platform === "x" &&
+          c.run.state === "transcribing" &&
+          /^asset-(?:[1-9]|[12][0-9]|3[0-5])$/.test(assetId) &&
+          ["asr", "asr_output"].includes(kind)),
+      "INVALID_INPUT",
+      "Use an exact X audio attachment receipt.",
+    );
+    const receiptKey = assetId ? `${kind}_${assetId}` : kind;
     // This private, source-scoped response survives validation failure. Strip
     // transport/provider metadata before retaining transcript content.
     const value =
@@ -1156,15 +1167,20 @@ export const recordReceipt = internalMutation({
       "INVALID_EVIDENCE",
       "Use a bounded sanitized provider receipt.",
     );
-    if (c.run.receipt?.[kind])
+    if (c.run.receipt?.[receiptKey])
       ensure(
-        canonicalJson(c.run.receipt[kind]) === text,
+        canonicalJson(c.run.receipt[receiptKey]) === text,
         "APPROVAL_STALE",
         "A received provider receipt is immutable.",
       );
-    await ctx.db.patch(runId, {
-      receipt: { ...c.run.receipt, [kind]: value },
-    });
+    const next = { ...c.run.receipt, [receiptKey]: value };
+    if (assetId)
+      ensure(
+        new TextEncoder().encode(canonicalJson(next)).byteLength <= 750000,
+        "INVALID_EVIDENCE",
+        "Attachment transcription receipts exceed the bounded run record.",
+      );
+    await ctx.db.patch(runId, { receipt: next });
     return null;
   },
 });
@@ -1264,13 +1280,57 @@ export const fail = internalMutation({
   },
 });
 
-export const reconcileReturnedFailure = internalMutation({
+export const stoppedXSetupInput = internalQuery({
   args: { runId: v.id("mediaPreparations") },
-  returns: v.boolean(),
+  returns: v.object({ sandboxId: v.string() }),
   handler: async (ctx, { runId }) => {
+    const c = await current(ctx, runId);
+    const failure = c.run.receipt?.preparation_failure;
+    ensure(
+      c.run.state === "unknown" &&
+        privateCloudMediaIdentity(c.run.canonical).platform === "x" &&
+        c.run.receipt?.failure?.stage === "starting" &&
+        c.run.receipt.failure.code === "SOURCE_UNAVAILABLE" &&
+        failure?.phase === "setup" &&
+        /^vercel:[A-Za-z0-9_-]{1,100}$/.test(failure.sandboxId) &&
+        !c.run.evidenceId &&
+        !c.run.attemptId &&
+        !c.run.versionId,
+      "COST_RECONCILIATION_REQUIRED",
+      "Select the exact unresolved X setup failure.",
+    );
+    return { sandboxId: failure.sandboxId };
+  },
+});
+
+export const reconcileReturnedFailure = internalMutation({
+  args: {
+    runId: v.id("mediaPreparations"),
+    setupStopProof: v.optional(
+      v.object({
+        sandboxId: v.string(),
+        observedAt: v.number(),
+        providerMissing: v.literal(true),
+      }),
+    ),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, { runId, setupStopProof }) => {
     const c = await current(ctx, runId),
       failure = c.run.receipt?.failure;
     if (c.run.state === "failed") return true;
+    const stoppedSetup =
+      !!setupStopProof &&
+      privateCloudMediaIdentity(c.run.canonical).platform === "x" &&
+      failure?.stage === "starting" &&
+      failure.code === "SOURCE_UNAVAILABLE" &&
+      c.run.receipt.preparation_failure?.phase === "setup" &&
+      setupStopProof.sandboxId ===
+        c.run.receipt.preparation_failure.sandboxId &&
+      /^vercel:[A-Za-z0-9_-]{1,100}$/.test(setupStopProof.sandboxId) &&
+      Number.isSafeInteger(setupStopProof.observedAt) &&
+      setupStopProof.observedAt <= Date.now() &&
+      setupStopProof.observedAt > Date.now() - 60000;
     const providerId = c.run.receipt?.admission?.providerReservationId
       ? ctx.db.normalizeId(
           "providerFundingReservations",
@@ -1287,18 +1347,21 @@ export const reconcileReturnedFailure = internalMutation({
       provider.dispatches.length === 0 &&
       provider.operationKey === c.run.receipt.admission.reservationKey &&
       provider.requestHash === c.run.receipt.admission.quoteHash &&
-      c.run.receipt.preparation?.stopAcknowledged === true &&
+      (c.run.receipt.preparation?.stopAcknowledged === true || stoppedSetup) &&
       !c.run.receipt.reusedPreparation &&
       !c.run.evidenceId &&
       !c.run.attemptId &&
       !c.run.receipt.asr &&
       !c.run.receipt.asr_output &&
+      !Object.keys(c.run.receipt).some((key) =>
+        /^asr(?:_output)?_asset-/.test(key),
+      ) &&
       !c.run.receipt.analysis &&
       !c.run.receipt.analysis_output &&
       !c.run.versionId;
     ensure(
       c.run.state === "unknown" &&
-        failure?.stage === "transcribing" &&
+        (failure?.stage === "transcribing" || stoppedSetup) &&
         (neverDispatched ||
           knownReturnedPreparationFailure(
             { ...c.run, state: failure.stage },
@@ -1321,7 +1384,10 @@ export const reconcileReturnedFailure = internalMutation({
         receipt: {
           ...c.run.receipt,
           reconciliation: {
-            proof: "stopped_before_gateway_dispatch",
+            proof: stoppedSetup
+              ? "x_setup_failed_and_provider_confirmed_deleted_before_dispatch"
+              : "stopped_before_gateway_dispatch",
+            ...(stoppedSetup ? { setupStopProof } : {}),
             providerReservationId: provider!._id,
             at: Date.now(),
           },

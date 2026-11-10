@@ -21,6 +21,49 @@ import {
   readResponseBytes,
 } from "../packages/providers/binary";
 import { ensure, PolicyError } from "../packages/policy";
+import { Sandbox, APIError } from "@vercel/sandbox";
+import { sandboxCredentials } from "../packages/providers/sandbox";
+
+// Operator-only recovery of an exact pre-source setup failure. This reads the
+// original provider resource without resuming it and never starts a new VM.
+export const reconcileStoppedXSetup = internalAction({
+  args: { runId: v.id("mediaPreparations") },
+  returns: v.boolean(),
+  handler: async (ctx, { runId }): Promise<boolean> => {
+    const input = await ctx.runQuery(
+      internal.preparedAnalysis.stoppedXSetupInput,
+      { runId },
+    );
+    const { snapshots: _snapshots, ...credentials } =
+      await sandboxCredentials();
+    let missing = false;
+    try {
+      await Sandbox.get({
+        name: input.sandboxId.slice("vercel:".length),
+        resume: false,
+        ...credentials,
+        signal: AbortSignal.timeout(10000),
+      });
+    } catch (error) {
+      if (error instanceof APIError && error.response.status === 404)
+        missing = true;
+      else throw error;
+    }
+    ensure(
+      missing,
+      "COST_RECONCILIATION_REQUIRED",
+      "The original sandbox is not confirmed deleted; preserve its hold.",
+    );
+    return ctx.runMutation(internal.preparedAnalysis.reconcileReturnedFailure, {
+      runId,
+      setupStopProof: {
+        sandboxId: input.sandboxId,
+        observedAt: Date.now(),
+        providerMissing: true,
+      },
+    });
+  },
+});
 
 async function analyzeServicePreparedEvidence(
   ctx: ActionCtx,
@@ -297,10 +340,10 @@ export const run = internalAction({
                 assetIndex: number;
               }[] = [];
               const receipts: Record<string, unknown>[] = [];
-              const outputs: { assetId: string; output: unknown }[] = [];
               const hashes: string[] = [];
               let costCeilingUsd = 0;
               let language = "und";
+              let transcriptionDispatched = false;
               let provenance:
                 | Awaited<
                     ReturnType<typeof transcribePreparedAudio>
@@ -314,11 +357,16 @@ export const run = internalAction({
                   {
                     apiKey,
                     onDispatch: async () => {
-                      if (input.receipt?.admission?.providerReservationId)
+                      if (
+                        input.receipt?.admission?.providerReservationId &&
+                        !transcriptionDispatched
+                      ) {
                         await ctx.runMutation(
                           internal.preparedAnalysis.providerDispatch,
                           { runId, component: "transcription" },
                         );
+                        transcriptionDispatched = true;
+                      }
                     },
                     onReceipt: async (receipt) => {
                       receipts.push({ ...receipt, assetId: part.assetId });
@@ -327,22 +375,19 @@ export const run = internalAction({
                         {
                           runId,
                           kind: "asr",
-                          receipt: {
-                            parts: receipts,
-                            costCeilingUsd:
-                              costCeilingUsd + Number(receipt.costCeilingUsd),
-                          },
+                          assetId: part.assetId,
+                          receipt,
                         },
                       );
                     },
                     onTranscript: async (receipt) => {
-                      outputs.push({ assetId: part.assetId, output: receipt });
                       await ctx.runMutation(
                         internal.preparedAnalysis.recordReceipt,
                         {
                           runId,
                           kind: "asr_output",
-                          receipt: { parts: outputs },
+                          assetId: part.assetId,
+                          receipt,
                         },
                       );
                     },
@@ -397,11 +442,12 @@ export const run = internalAction({
                   {
                     apiKey,
                     onDispatch: async () => {
-                      if (input.receipt?.admission?.providerReservationId)
+                      if (input.receipt?.admission?.providerReservationId) {
                         await ctx.runMutation(
                           internal.preparedAnalysis.providerDispatch,
                           { runId, component: "transcription" },
                         );
+                      }
                     },
                     onReceipt: async (receipt) => {
                       await ctx.runMutation(

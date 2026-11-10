@@ -1,12 +1,12 @@
 import type { QueryCtx, MutationCtx } from "../_generated/server";
-import type { Doc } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import {
   assistantClients,
   assistantGrantActive,
 } from "../../packages/policy/assistant";
 import { canonicalJson } from "../../packages/contracts/canonical-json.mjs";
 import { workCloudMediaPolicy } from "../../packages/contracts/work-cloud-text";
-import { workCloudMediaAllowed } from "./personalAccess";
+import { preparedSubscriptionAllowed } from "./preparedServicePolicy";
 import { workCloudSourceEligible } from "./workCloudSourceAccess";
 import { digest } from "../product";
 import { sourceRetained } from "./sourceAuthority";
@@ -19,9 +19,13 @@ import { recordAutomaticCatalogIntent } from "./catalogPolicy";
 import { reserveCatalogProducer } from "./cloudCatalog";
 
 export const cloudSaveIntentLifetimeMs = 86400000;
-export function savedCloudEnabled(subject: string) {
+export async function savedCloudEnabled(
+  ctx: QueryCtx,
+  actor: Doc<"users">,
+  organizationId: Id<"organizations">,
+) {
   return (
-    workCloudMediaAllowed(subject) &&
+    (await preparedSubscriptionAllowed(ctx, actor, organizationId)) &&
     process.env.MCP_ENABLED === "true" &&
     process.env.MCP_EVENTS_ENABLED === "true" &&
     process.env.WORK_CLOUD_SAVED_LINKS_ENABLED === "true" &&
@@ -69,7 +73,7 @@ export async function savedCloudRoute(
   organization: Doc<"organizations">,
 ) {
   if (
-    !savedCloudEnabled(actor.subject) ||
+    !(await savedCloudEnabled(ctx, actor, organization._id)) ||
     !(await workCloudSourceEligible(ctx, organization, actor._id))
   )
     return null;
@@ -113,7 +117,7 @@ export async function savedCloudGrantCurrent(
     "jobs:read",
   ] as const;
   return (
-    savedCloudEnabled(actor.subject) &&
+    (await savedCloudEnabled(ctx, actor, organization._id)) &&
     actor.status === "active" &&
     (await workCloudSourceEligible(ctx, organization, actor._id)) &&
     grant.organizationId === organization._id &&

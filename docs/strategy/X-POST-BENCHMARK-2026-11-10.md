@@ -1,5 +1,7 @@
 # X input tool comparison on recent owner shares
 
+Historical research checkpoint. Subsequent production implementation and saved-result acceptance are recorded in [X operations](../operations/X-POST-SUPPORT.md) and [ADR236](../adr/236-complete-x-post-evidence.md).
+
 Mode: measured research. November 10, 2026, Europe/Berlin. R160 expands R159 from feasibility to testing the owner's recent failed X shares and analyzing their content. Raw responses, chat mappings, media evidence and individual analyses remain in ignored private operator outputs. No application implementation or release occurred.
 
 ## Finding

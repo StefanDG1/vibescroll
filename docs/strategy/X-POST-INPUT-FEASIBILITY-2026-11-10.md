@@ -1,5 +1,7 @@
 # X posts as analysis inputs
 
+Historical research checkpoint. Subsequent production implementation and saved-result acceptance are recorded in [X operations](../operations/X-POST-SUPPORT.md) and [ADR236](../adr/236-complete-x-post-evidence.md).
+
 Mode: research and proposed scope. November 10, 2026, Europe/Berlin. Owner request R159. Investigated at `e1f7b19` in the compatible checkout. The initial investigation below used offline probes. The owner's follow-up expanded it to [non-paid-API tools and live public endpoint checks](X-POST-NON-API-OPTIONS-2026-11-10.md). No application implementation, deployment or paid request occurred. The existing MCP UI deferral and issue197 approval boundary remain in force.
 
 ## Finding

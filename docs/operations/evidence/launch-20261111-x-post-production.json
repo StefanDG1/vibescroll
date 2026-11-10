@@ -1,0 +1,96 @@
+{
+  "date": "2026-11-11",
+  "timezone": "Europe/Berlin",
+  "requirements": [
+    "R161",
+    "R162"
+  ],
+  "websiteCommit": "455eb3f54fc9321e37d25cd451809ff0ca03a4f0",
+  "backendCommit": "0833d619f5b1bc3671c7fbea934cffe2701f8a0a",
+  "websiteDeployment": "dpl_FyZnT3kszQ87KdYVgyQZsP52j4H5",
+  "websiteBasicBuildDurationMs": 48734,
+  "websiteSameBuildPromotionVerified": true,
+  "normalDomainAssignmentRestored": true,
+  "backendExactCI": {
+    "runId": 42923135337,
+    "url": "https://github.com/StefanDG1/vibescroll/actions/runs/42923135337",
+    "conclusion": "success",
+    "mainPassed": 1804,
+    "mainSkipped": 11,
+    "authPassed": 82,
+    "publicAndSharedUiPassed": 192,
+    "nodeAndPythonChecksPassed": true,
+    "bothProductionBuildsPassed": true,
+    "dependencyAuditPassed": true
+  },
+  "compatibleBackend": {
+    "deterministicPreparations": 2,
+    "guardsPassed": 17,
+    "modules": 565,
+    "components": 14,
+    "tables": 167,
+    "indexes": 362,
+    "schemaIndexAuthCronComponentChanges": false,
+    "populatedScanOrBackfill": false,
+    "finishAcknowledged": true,
+    "physicalRequests": 23
+  },
+  "acceptance": {
+    "ownerPostsReady": 4,
+    "textOnlyPosts": 2,
+    "videoPosts": 2,
+    "fullCaptionCharacterCounts": [
+      40,
+      50,
+      106,
+      1684
+    ],
+    "exactBenchmarkCaptionMatches": 4,
+    "directMediaAttachments": 2,
+    "originalMediaBytesAcquired": 11261326,
+    "aggregateVideoDurationMs": 85442,
+    "retainedVideoFrames": 16,
+    "framesPerVideo": 8,
+    "citedInsights": 16,
+    "privateSelectedVersionsReadBack": 4,
+    "completeMcpPostContexts": 4,
+    "untilDeletedRetentionConfirmed": true,
+    "nativeAssistantRepliesVerified": true,
+    "nativeAllVideoFramesInspected": true,
+    "automaticNativeEvents": true,
+    "foregroundAnalysisOrManualMonitorNudge": false,
+    "originalConnectionAndGrantPreserved": true,
+    "desktop1440AndMobile390ReadersChecked": true,
+    "fullCaptionsAvailableInPostSettings": true,
+    "horizontalOverflowObserved": false,
+    "realRetainedJpegReadPerVideo": true,
+    "galleryDlObservedInProduction": true,
+    "fxTwitterProductionFallbackObserved": false,
+    "fxTwitterFallbackSyntheticBoundariesPassed": true,
+    "ordinaryPaidNonOwnerAutomaticMcpSaveAndDuplicateRegressionPassed": true,
+    "privateXCatalogExcluded": true
+  },
+  "funding": {
+    "ownerEngineeringCapEUR": 17,
+    "reconciledBatchMaximumUSD": 0.42,
+    "unknownProviderCostsPreserved": true,
+    "noPurchaseOrTopup": true,
+    "newSuccessfulPreparationCredits": 4,
+    "incompletePreparationCreditsCharged": 0,
+    "nativeReasoningApiUSD": 0,
+    "unknownInfrastructureNotClaimedSettled": true
+  },
+  "limits": [
+    "Video evidence is sampled; original videos and raw audio are ephemeral.",
+    "Actual owner acceptance covers two text-only posts and two single-video posts. Image/GIF/mixed-media coverage is synthetic, not an additional production canary.",
+    "Four successes do not establish a reliability percentage or independent cold-user setup acceptance.",
+    "Normal automation requires an active eligible account, current connection/defaults, funding admission and native Events monitor. Source access and host availability remain revocable."
+  ],
+  "paidNonPilotCorrection": {
+    "status": "focused_tests_passed_publication_pending",
+    "personalPilotSubjectsClearedInTest": true,
+    "setupSaveReplayEventClaimInputCompletionPassed": true,
+    "revokedProBlocksClaimedTask": true,
+    "legacyHostAcquisitionPilotUnchanged": true
+  }
+}

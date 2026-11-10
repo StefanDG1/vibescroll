@@ -1,5 +1,7 @@
 # X inputs without the paid developer API
 
+Historical research checkpoint. Subsequent production implementation and saved-result acceptance are recorded in [X operations](../operations/X-POST-SUPPORT.md) and [ADR236](../adr/236-complete-x-post-evidence.md).
+
 Mode: research and recommendation. November 10, 2026, Europe/Berlin. R159 follow-up. This expands the [first feasibility investigation](X-POST-INPUT-FEASIBILITY-2026-11-10.md), which focused too narrowly on the official API. The owner explicitly requested examination of existing tools and other repositories. No acquisition provider has been adopted or deployed.
 
 ## Conclusion

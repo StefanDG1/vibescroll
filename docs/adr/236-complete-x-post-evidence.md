@@ -1,6 +1,6 @@
 # Complete X post evidence
 
-Date: November 10, 2026. Requirement R161. Implementation candidate; production acceptance is pending.
+Date: November 10, 2026. Requirement R161. Implemented and accepted in the bounded four-post production set on November11. See the [production receipt](../operations/evidence/launch-20261111-x-post-production.json).
 
 The owner requests production X post support with gallery-dl first, FxTwitter fallback, then saving and analyzing the four previously benchmarked posts. The benchmark established complete text and matching media manifests from both providers on those four posts. It did not establish production integration.
 
@@ -14,6 +14,6 @@ The existing restricted HTTPS broker handles acquisition. The same microVM then 
 
 Reuse preparation credits and the selected analysis executor. A zero-duration text/image post uses the minimum analysis credit band when API reasoning is explicitly selected; its actual evidence duration remains zero. No speech means no fabricated transcript. Multiple video audio parts use distinct speech IDs and one aggregate funding envelope. Private X evidence is excluded from the existing Instagram/TikTok catalog permission policy.
 
-No schema, index, auth, component, cron, provider purchase or billing product change is intended. Production release and the four owner analyses require a current bounded infrastructure reservation. Preserve prior unknown outcomes and holds. Verification must distinguish synthetic contract tests, actual hosted acquisition, saved ready analyses and user-host acceptance.
+Production changed no schema, index, auth, component, cron or billing product, and made no provider purchase. Release and the four completed owner analyses used the bounded existing infrastructure reservation. Preserve prior unknown outcomes and holds. Verification must distinguish synthetic contract tests, actual hosted acquisition, saved ready analyses and user-host acceptance.
 
 The November 10 reliability clarification requires ordinary ChatGPT link submission to use this route without manual extraction or repair. The enabled automatic preparation setting applies to admitted paid customers as well as the finite owner pilot. Existing Pro, credit, provider-capacity, assistant-grant and Events readiness checks remain. Native reasoning uses the user subscription; no paid reasoning fallback is introduced.

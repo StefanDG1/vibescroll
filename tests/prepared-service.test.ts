@@ -591,7 +591,6 @@ it.each([
         },
       }),
     );
-    await nativeReady(s);
     const grant = (await s.t.run((c) => c.db.get(s.grant.id)))!,
       scopes = [...grant.scopes, "links:save"];
     await s.t.run((c) => c.db.patch(grant._id, { scopes }));
@@ -632,6 +631,18 @@ it.each([
         verifiedPayment: true,
       });
     }
+    if (paid) vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", "[]");
+    await nativeReady(s);
+    if (paid)
+      expect(
+        await s.owner.query(api.assistantGrants.setup, {
+          organizationId: s.org,
+        }),
+      ).toMatchObject({
+        serverPreparationEnabled: true,
+        workCloudMediaEnabled: true,
+        workCloudSavedEnabled: true,
+      });
     const assistant = s.t.withIdentity({
       subject: s.actor.subject,
       issuer: process.env.MCP_AUTH_ISSUER!,
@@ -659,6 +670,149 @@ it.each([
     const source = await s.t.run((c) => c.db.get(first.source_id));
     expect(source?.workCloudSaveIntent).toBeUndefined();
     expect(source?.personalAnalysis).toBeUndefined();
+    if (paid) {
+      await assistant.mutation(internal.assistantEvents.install, {
+        profileId: s.org,
+        grantVersion: grant.version,
+        eventName: "work_cloud_waiting",
+        externalId: "sub_" + "c".repeat(64),
+        ciphertext: "synthetic-native-waiting",
+        keyVersion: "1",
+        expiresAt: Date.now() + 600000,
+        callbackVerifiedAt: Date.now(),
+      });
+      const runId = first.run_id!;
+      await s.t.mutation(internal.preparedAnalysis.claim, { runId });
+      await s.t.mutation(internal.preparedAnalysis.progress, {
+        runId,
+        stage: "transcribing",
+      });
+      const canonical = source!.canonical,
+        text = "Complete ordinary paid post";
+      const { socialHash } = await import("../packages/social/contracts");
+      const { canonicalJson } =
+        await import("../packages/contracts/canonical-json.mjs");
+      const prepared = await makePreparedEvidence({
+        requestedCanonical: canonical,
+        canonical,
+        platform: "x",
+        post: {
+          version: "x-post-evidence-v1",
+          postId: "1234567890123456789",
+          provider: "gallery-dl",
+          text,
+          textHash: await socialHash(text),
+          expectedAssetCount: 0,
+          coverage: "complete_manifest",
+          assets: [],
+        },
+        sourceHash: await socialHash(
+          canonicalJson({ canonical, text, assets: [] }),
+        ),
+        recipeHash: "b".repeat(64),
+        downloaderVersion: "gallery-dl/1.32.19",
+        title: "Ordinary paid X post",
+        authorName: "Author",
+        durationMs: 0,
+        language: "und",
+        observedAt: Date.now(),
+        transcript: {
+          origin: "none",
+          model: null,
+          provider: null,
+          inputSha256: null,
+        },
+        segments: [],
+        frames: [],
+      });
+      await s.t.mutation(internal.preparedAnalysis.retain, {
+        runId,
+        prepared,
+        frames: [],
+        receipt: { preparation: { stopAcknowledged: true } },
+      });
+      const attemptId = await s.t.mutation(
+        internal.preparedAnalysis.queueSubscription,
+        { runId },
+      );
+      const deliveries = await s.t.run((c) =>
+        c.db.query("assistantDeliveries").take(5),
+      );
+      expect(
+        deliveries.some(
+          (d) => "analysisAttemptId" in d && d.analysisAttemptId === attemptId,
+        ),
+      ).toBe(true);
+      const binding = {
+        sourceId: first.source_id,
+        attemptId,
+        taskId: "ordinary-paid-native-task",
+      };
+      const claim = await assistant.mutation(
+        internal.analysisVersions.dispatch,
+        { ...binding, operation: "claim" },
+      );
+      const lease = { ...binding, leaseToken: claim.leaseToken };
+      const input = await assistant.query(
+        internal.analysisVersions.input,
+        lease,
+      );
+      expect(input).toMatchObject({
+        inputKind: "retained_evidence",
+        maxApiUsd: 0,
+      });
+      // Revoking Pro prevents this same already-claimed task from continuing.
+      await s.t.mutation(internal.billing.apply, {
+        customerId: "cus_auto_paid",
+        subscriptionId: "sub_auto_paid",
+        status: "canceled",
+        periodEnd: Date.now() + 86400000,
+        revision: 2,
+      });
+      await expect(
+        assistant.query(internal.analysisVersions.input, lease),
+      ).rejects.toThrow("APPROVAL_STALE");
+      await s.t.mutation(internal.billing.apply, {
+        customerId: "cus_auto_paid",
+        subscriptionId: "sub_auto_paid",
+        status: "active",
+        periodEnd: Date.now() + 86400000,
+        revision: 3,
+      });
+      const done = await assistant.mutation(
+        internal.analysisVersions.dispatch,
+        {
+          ...lease,
+          operation: "complete",
+          output: {
+            schemaVersion: "analysis-version-output-v1",
+            sourceId: first.source_id,
+            attemptId,
+            evidenceHash: input.evidenceHash,
+            postRevisionHash: input.postRevisionHash,
+            summary: "A complete caption-based result",
+            warnings: [],
+            insights: s.output.insights.map((i) => ({
+              ...i,
+              evidence: [
+                {
+                  kind: "caption",
+                  id: "post-caption-1",
+                  startMs: null,
+                  endMs: null,
+                },
+              ],
+            })),
+          },
+        },
+      );
+      expect(done.versionId).toBeTruthy();
+      expect(
+        await s.owner.query(api.preparedService.status, {
+          sourceId: first.source_id,
+        }),
+      ).toMatchObject({ state: "ready", chargedCredits: 1 });
+    }
     if (url.includes("/status/")) {
       expect(source?.catalogPolicy).toBeUndefined();
       expect(source?.catalogWait).toBeUndefined();

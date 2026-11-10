@@ -1,6 +1,6 @@
 # X post support
 
-Implementation candidate, November 10, 2026. Production release and the four saved analyses are pending. See [ADR236](../adr/236-complete-x-post-evidence.md) and the [four-post benchmark](../strategy/X-POST-BENCHMARK-2026-11-10.md).
+Production acceptance, November 11, 2026. Backend0833d61 and website455eb3f are live. All four owner posts are saved and Ready, with exact full captions, both attached videos,16 sampled JPEGs and16 cited insights. The native Assistant processed the queued events without a manual nudge. [Production receipt](evidence/launch-20261111-x-post-production.json). See [ADR236](../adr/236-complete-x-post-evidence.md) and the [four-post benchmark](../strategy/X-POST-BENCHMARK-2026-11-10.md).
 
 Submit a public `https://x.com/<handle>/status/<id>` or equivalent `twitter.com` status URL through the normal app Save flow or MCP `save_link`. Tracking parameters and selected-media suffixes normalize to `https://x.com/i/web/status/<id>`. Automatic analysis requires the existing server-preparation configuration, current assistant connection and native Events monitor. The original connection and grant are reused. Eligible paid users inherit the enabled server-preparation route under their own Pro, credits and provider admission. They submit the link in ChatGPT; no per-post downloader setup, cookie export, tool installation or operator action is part of the workflow. One-time connection and monitor setup remains required. Duplicate submissions reuse the same operation instead of starting duplicate extraction.
 
@@ -19,3 +19,13 @@ Runtime initialization installs the restricted acquisition bridge before the fir
 Both retrieval providers must explicitly use the fixed `VIBE_DOWNLOAD_PROXY` supplied by the restricted sandbox. gallery-dl receives its proxy option; FxTwitter and media downloads use an explicit HTTPS proxy handler. Missing or changed broker configuration fails before a request. The isolated namespace cannot make direct source connections. Parser-only fixtures do not establish this transport integration.
 
 A successful ASR response may contain empty timed segments for music-only audio. Drop empty segments before speech validation; nonempty text without usable timed speech remains invalid. Classify a stopped run with returned per-attachment responses as a known failure, refund its incomplete preparation credit and preserve its unknown provider-cost hold. Do not replay the old ASR request.
+
+## Paid non-pilot eligibility correction
+
+The four owner results are accepted. A final eligibility audit found that the native setup/Events/retained execution gates still required the personal pilot list. The focused ordinary-paid regression now clears every personal pilot subject, then exercises setup, Save, replay, waiting-event delivery, claim, input and completion. It fails before this correction and passes afterward; revoking Pro blocks the same claimed task. This correction awaits compatible publication. It admits retained-evidence reasoning under current paid authority. Legacy host source acquisition keeps its existing pilot gate, and no API reasoning fallback is introduced.
+
+## Verified scope
+
+The four production cases are two text-only posts and two single-video posts. gallery-dl acquired all four. FxTwitter returned matching text/media in the prior repeated benchmark; automatic fallback and refusal boundaries pass focused tests, but this production batch did not need fallback. Images, GIFs and mixed attachment order have synthetic worker coverage. This is bounded acceptance, not a measured service-wide success rate. An ordinary paid non-owner MCP Save and idempotent replay pass isolation tests; independent cold-customer setup is separate acceptance.
+
+The original connection and grant were preserved. Native replies and each selected private result are confirmed, with one preparation credit per successful post and zero paid API reasoning. Unknown provider/ASR costs remain held independently. Complete post text is available under Post settings > Post caption, and attachment screenshots retain their asset labels. Video screenshots are sampled, not continuous coverage or permanent original-video hosting.

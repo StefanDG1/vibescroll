@@ -2,6 +2,18 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November11 X acquisition and music-only speech
+
+A gallery-dl/FxTwitter benchmark outside the product VM does not prove the restricted acquisition integration. Initialize the public-download bridge before the first user command. The isolated namespace supplies only `VIBE_DOWNLOAD_PROXY`; pass its exact broker address to gallery-dl and an explicit HTTPS proxy handler to urllib. Missing or changed broker configuration must stop before contact. Parser-only tests missed both initialization and transport defects. The controller lifecycle and both provider transports now have focused regressions.
+
+Read complete X manifests as bounded UTF-8 bytes. The sandbox text-read limit is smaller than a valid long post. Check the full attachment count and hashes before Ready. Private X posts must skip an Instagram/TikTok-only shared producer lookup rather than requiring an irrelevant publication permission.
+
+Music-only audio can return empty text with a timed empty segment. Remove empty segments before validating usable speech. Nonempty text still requires aligned segments. Multiple video attachments need separate immutable ASR/output receipts and one aggregate admitted dispatch marker. A returned per-attachment response is distinct from a request still in flight. A known rejected preparation refunds its incomplete app credit while preserving unknown ASR/provider costs; it does not grant a replay of the old request. The initial setup failure was reconciled only after same-project provider deletion and zero-dispatch proof. Preserve all unrelated holds.
+
+A non-owner preparation-policy test can still accidentally retain a personal-alpha subject. Clear every pilot subject when checking paid-user setup, Events and retained execution. Current paid authority must be rechecked after claim; revoking Pro stops the task. Keep legacy host source acquisition outside this eligibility extension.
+
+Native webhook delivery is distinct from analysis completion. Check the exact attempt state and later Assistant result instead of starting a duplicate foreground analysis. Browser acceptance also needs a focused target and an actual Insights readiness predicate; an unhydrated page is not a failed layout. Wait for smooth scrolling to settle before reading a target box and clicking. Keep incomplete initial screen snapshots alongside the later focused evidence. [Production acceptance](X-POST-SUPPORT.md).
+
 ## November8 legacy startup and embedded feed sizing
 
 The owner's actual Codex screenshot exposed a state absent from the earlier fixtures. Older discovery snapshots contain profiles but omit selected_profile_id. Consuming them as current discovery leaves profileId empty. A native select visually displays its first option while the separate chooser repeats the list, and the credit header shows a pending read that never starts. Refresh legacy discovery through the current authorized server. Preserve a current explicitly null selection for the user. Gate account status on resolved workspace state and keep raw grant coverage in a disclosure. Both targeted regressions fail before this correction.

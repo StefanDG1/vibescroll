@@ -1,8 +1,10 @@
 # Implementation status
 
-## November10: complete X post implementation candidate
+## November11: X link submission and four saved analyses accepted
 
-R161 adds the gallery-dl-first/FxTwitter-fallback acquisition worker, complete caption and per-attachment evidence, text-only inputs, multipart video speech, private retained analysis and app/MCP context readers. No database schema/index/auth/cron change or shared catalog permission expansion. [Decision](adr/236-complete-x-post-evidence.md), [operations](operations/X-POST-SUPPORT.md). 157 focused cases passed before final integration; the final four-file integration run passed45 cases. All app/backend typechecks, zero-warning lint, both production builds,82 auth checks,192 public/shared UI checks,14 installer checks, media/Python checks and5 build-policy checks pass. The broad main run had1 stale generated-reference failure with1798 passes/9 skips; regeneration and both exact reference checks passed. Linux CI remains the exact-commit gate. Production deployment and the four saved analyses remain pending; no new hosted analysis has been dispatched.
+R161/R162 are live on website455eb3f/backend0833d61. Ordinary ChatGPT link submission uses gallery-dl, FxTwitter fallback and server preparation before the existing native Assistant. The paid non-pilot eligibility correction is verified locally and awaiting compatible backend publication. All four owner posts are Ready with exact full captions, both direct video attachments,16 retained JPEGs and16 cited insights; app/MCP reads and native replies pass. No manual monitor nudge or foreground analysis was used. Each successful preparation charged1 app credit; incomplete attempts charged0. Unknown provider costs remain held.
+
+Exact [CI42923135337](https://github.com/StefanDG1/vibescroll/actions/runs/42923135337) passed1,804 main cases/11 skips,82 auth and192 public/shared UI cases, Node/Python checks, both production builds and audit. Two deterministic preparations and17 guards preserve unchanged schema/index/auth/component/cron topology with actual compatible finish acknowledgement. Later fixes needed no additional website build. [Production receipt](operations/evidence/launch-20261111-x-post-production.json), [operations and limits](operations/X-POST-SUPPORT.md), [decision](adr/236-complete-x-post-evidence.md). Video coverage remains sampled; production image/GIF/mixed-media and independent cold-customer acceptance are separate.
 
 ## November 10: recent owner X corpus benchmarked and analyzed
 

@@ -1,9 +1,9 @@
 import { workCloudModelChoices } from "../packages/onboarding/work-cloud-models";
-import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import {
-  workCloudTextAllowed,
-  workCloudMediaAllowed,
-} from "./lib/personalAccess";
+  preparedServiceConfiguration,
+  preparedSubscriptionAllowed,
+} from "./lib/preparedServicePolicy";
+import { workCloudTextAllowed } from "./lib/personalAccess";
 import { query, type MutationCtx } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v, type Infer } from "convex/values";
@@ -57,6 +57,11 @@ export const setup = query({
       organization,
       actor._id,
     );
+    const mediaAllowed = await preparedSubscriptionAllowed(
+      ctx,
+      actor,
+      organization._id,
+    );
     return {
       checkedAt: Date.now(),
       processingRoute:
@@ -68,14 +73,16 @@ export const setup = query({
       modelChoices: workCloudModelChoices,
       serverPreparationEnabled:
         cloudEligible &&
+        mediaAllowed &&
         !!preparedServiceConfiguration(actor.subject)
           ?.automaticOwnSubscriptionPreparation,
       workCloudTextEnabled:
         cloudEligible && workCloudTextAllowed(actor.subject),
-      workCloudMediaEnabled:
-        cloudEligible && workCloudMediaAllowed(actor.subject),
+      workCloudMediaEnabled: cloudEligible && mediaAllowed,
       eventsEnabled: process.env.MCP_EVENTS_ENABLED === "true",
-      workCloudSavedEnabled: cloudEligible && savedCloudEnabled(actor.subject),
+      workCloudSavedEnabled:
+        cloudEligible &&
+        (await savedCloudEnabled(ctx, actor, organization._id)),
       devices: (
         await ctx.db
           .query("devices")
@@ -340,7 +347,7 @@ async function saveGrant(
   if (a.cloudRequestPolicy) {
     ensure(
       (await workCloudSourceEligible(ctx, organization, actor._id)) &&
-        workCloudMediaAllowed(actor.subject) &&
+        (await preparedSubscriptionAllowed(ctx, actor, organization._id)) &&
         a.scopes.includes("analysis:request") &&
         a.scopes.includes("analysis:execute") &&
         !a.analysisDefaults?.enabled,
@@ -357,7 +364,7 @@ async function saveGrant(
       "Automatic app and ChatGPT links need the one-time explicit-link saving permission.",
     );
     ensure(
-      savedCloudEnabled(actor.subject) &&
+      (await savedCloudEnabled(ctx, actor, organization._id)) &&
         (await workCloudSourceEligible(ctx, organization, actor._id)) &&
         a.cloudRequestPolicy === "explicit_per_source_v1" &&
         a.libraryScope === "all" &&
@@ -672,7 +679,7 @@ export const ensureDefaults = internalMutation({
       const cloud =
         privateOwner &&
         (!setup?.processingRoute || setup.processingRoute === "work_cloud") &&
-        savedCloudEnabled(p.actor.subject) &&
+        (await savedCloudEnabled(ctx, p.actor, org._id)) &&
         (await workCloudSourceEligible(ctx, org, p.actor._id)) &&
         [
           "analysis:request",

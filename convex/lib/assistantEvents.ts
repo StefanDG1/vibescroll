@@ -7,6 +7,7 @@ import {
 } from "../../packages/policy/assistant";
 import { workspaceReadable } from "./workspacePrivacy";
 import { sourceWithinAssistantScope } from "./assistantSourceScope";
+import { preparedSubscriptionAllowed } from "./preparedServicePolicy";
 import { workCloudSourceEligible } from "./workCloudSourceAccess";
 import { workCloudMediaAllowed, workCloudTextAllowed } from "./personalAccess";
 import { workCloudRequestPolicies } from "../../packages/contracts/work-cloud-text";
@@ -51,7 +52,7 @@ export async function cloudProfileEligible(
     scopes.every(
       (scope) => grant.scopes.includes(scope) && client?.scopes.includes(scope),
     ) &&
-    (workCloudMediaAllowed(actor.subject) ||
+    ((await preparedSubscriptionAllowed(ctx, actor, organization._id)) ||
       workCloudTextAllowed(actor.subject)) &&
     (await workCloudSourceEligible(ctx, organization, actor._id))
   );
@@ -159,7 +160,10 @@ export async function cloudWaitingCurrent(
       grant &&
       organization &&
       source.organizationId === s.organizationId &&
-      (source.state === "ready" || (!attempt.basedOnVersionId && source.personalMedia?.version === "service-preparation-progress-v1")) &&
+      (source.state === "ready" ||
+        (!attempt.basedOnVersionId &&
+          source.personalMedia?.version ===
+            "service-preparation-progress-v1")) &&
       source.rightsAttested &&
       (!source.sourceRetentionUntil ||
         source.sourceRetentionUntil > Date.now()) &&
@@ -178,7 +182,7 @@ export async function cloudWaitingCurrent(
       attempt.clientId === s.clientId &&
       attempt.createdAt === occurrence.completedRevision &&
       occurrence.generation === attempt.sourceGeneration &&
-      workCloudMediaAllowed(actor.subject) &&
+      (await preparedSubscriptionAllowed(ctx, actor, organization._id)) &&
       (await sourceWithinAssistantScope(
         ctx,
         grant,

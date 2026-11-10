@@ -23,7 +23,7 @@ import {
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { notifyVersionWaiting } from "./lib/assistantEvents";
-import { workCloudMediaAllowed } from "./lib/personalAccess";
+import { preparedSubscriptionAllowed } from "./lib/preparedServicePolicy";
 import { digest, reserve, settle } from "./product";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import {
@@ -493,7 +493,7 @@ export async function requestRetainedAnalysis(
   );
   const a = await historySource(ctx, args.sourceId, true);
   ensure(
-    workCloudMediaAllowed(a.actor.subject),
+    await preparedSubscriptionAllowed(ctx, a.actor, a.organization._id),
     "FORBIDDEN",
     "This account is not admitted for Cloud analysis.",
   );
@@ -811,7 +811,7 @@ async function executionContext(
       a.grant._id === attempt.grantId &&
       a.grant.version === attempt.grantVersion &&
       a.client.id === attempt.clientId &&
-      workCloudMediaAllowed(a.actor.subject) &&
+      (await preparedSubscriptionAllowed(ctx, a.actor, a.organization._id)) &&
       (await sourceWithinAssistantScope(
         ctx,
         a.grant,

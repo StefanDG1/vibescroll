@@ -8,6 +8,7 @@ import {
   requirePaidProcessing,
 } from "./paidProcessing";
 import { PolicyError } from "../../packages/policy";
+import { workCloudMediaAllowed } from "./personalAccess";
 
 export async function preparedServiceAvailable(
   ctx: QueryCtx,
@@ -107,4 +108,32 @@ export function preparedServiceRunPolicy(
     "The prepared-service admission changed or is unavailable.",
   );
   return { ...config, expiresAt: run.deadline, executor: run.executor };
+}
+
+// Paid eligibility admits retained-evidence reasoning only. Legacy host source
+// acquisition keeps its existing personal-pilot gate in workCloudAnalysis.
+export async function preparedSubscriptionAllowed(
+  ctx: QueryCtx,
+  actor: Doc<"users">,
+  organizationId?: Id<"organizations">,
+) {
+  if (workCloudMediaAllowed(actor.subject)) return true;
+  const config = preparedServiceConfiguration(actor.subject);
+  if (
+    !config?.paidCustomer ||
+    !config.automaticOwnSubscriptionPreparation ||
+    process.env.WORK_CLOUD_MEDIA_ENABLED !== "true" ||
+    process.env.WORK_CLOUD_MEDIA_VERIFIED !== "true" ||
+    process.env.DISABLE_PERSONAL_ANALYSIS === "true" ||
+    process.env.DISABLE_INFERENCE === "true" ||
+    process.env.RESTORE_LOCK === "true"
+  )
+    return false;
+  try {
+    await requirePaidProcessing(ctx, actor, organizationId);
+    return true;
+  } catch (error) {
+    if (error instanceof PolicyError) return false;
+    throw error;
+  }
 }

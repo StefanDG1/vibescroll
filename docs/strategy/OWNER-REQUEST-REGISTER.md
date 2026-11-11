@@ -1,6 +1,6 @@
 # Owner request register
 
-R168, November 11. Use the revised Convex hybrid search in production, verify the changed paths and remove the superseded search modes. [Search release procedure](../operations/WORKSPACE-HYBRID-SEARCH.md).
+R168, November 11. The revised Convex hybrid search is live in the Library and MCP. Exact references, project ranking, compound retrieval and retirement of the superseded search modes were verified on production. [Production receipt](../operations/evidence/launch-20261111-workspace-hybrid-search.json), [search release procedure](../operations/WORKSPACE-HYBRID-SEARCH.md).
 
 R163, November 11. Report which social platforms work and update relevant documentation and marketing copy. Use the production-verified automatic analysis list of Instagram Reels and video posts, TikTok videos, and public X posts. Document older downloader formats and separately reviewed sources with their actual routes. The homepage, FAQ, and help copy are prepared for the next website release. [Supported links](../developers/find-save.md#links-for-automatic-analysis) and [marketing copy](../foundational/MARKETING-COPY-BANK.md#supported-platforms-for-public-copy).
 

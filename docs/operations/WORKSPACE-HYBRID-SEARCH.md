@@ -2,6 +2,8 @@
 
 The Library and MCP use one retrieval service. Convex indexes authorized saved text, retained passages and multilingual MiniLM embeddings. The VibeScroll website runs the pinned model. It downloads public model weights verified by SHA-256. Query and evidence text go to the authenticated first-party service.
 
+The November 11 release covers all five active workspaces. See the [production receipt](evidence/launch-20261111-workspace-hybrid-search.json) and [design decision](../adr/238-live-workspace-hybrid-search.md).
+
 ## Prepare and activate
 
 1. Review the exact branch, dependency audit, focused retrieval checks and Linux CI. Confirm production targets, current usage, existing holds and approved release room.

@@ -1,11 +1,11 @@
 # Continue VibeScroll without repeating known failures
 
-Mode: how-to. Updated October 29,2026, Europe/Berlin. Use the [current snapshot](CURRENT-STATE.md), [owner register](../strategy/OWNER-REQUEST-REGISTER.md) and [failure reference](FAILURES-AND-RECOVERY.md) together.
+Mode: how-to. Updated November 11, 2026, Europe/Berlin. Use the [current snapshot](CURRENT-STATE.md), [owner register](../strategy/OWNER-REQUEST-REGISTER.md) and [failure reference](FAILURES-AND-RECOVERY.md) together.
 
 ## Establish the actual starting point
 
 1. Read `AGENTS.md`, current state and the requirements relevant to the task. Read the linked subsystem plan before changing it. Treat an older ADR's release count, budget or paused status as historical unless the current record explicitly retains it.
-2. Run `git status --short`, identify the checkout/branch and inspect uncommitted changes. Preserve other work. The known compatible checkout is `C:/Code/VibeScroller/.worktrees/link-cloud-compatible-20261025`; verify it rather than assuming the user-facing root is the repository.
+2. Run `git status --short`, identify the checkout and branch and inspect uncommitted changes. Preserve other work. Verify the active compatible checkout at `C:/Code/VibeScroller/.worktrees/production-search-20261111`.
 3. Inspect the canonical health/version and actual current MCP profile/status only when needed for the task. Use supported connectors or browser-harness. Do not start an analysis as a connection test.
 4. Compare the live backend baseline, target commit and current private release/usage ledger before a hosted spending batch. Retain all historical holds and protected source identities. Never print credentials or raw environment lists.
 5. State the next user-visible checkpoint and its acceptance assertions. Continue useful work without asking again for routine release/build counts. Ask only when a required user step or actual authority is missing.

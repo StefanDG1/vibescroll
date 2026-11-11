@@ -1142,6 +1142,11 @@ export function Console({
         state: s.state,
         coverage: s.coverage,
       });
+    if (s.searchHref && !demo) {
+      const link = new URL(s.searchHref);
+      router.push(link.pathname + link.search);
+      return;
+    }
     setSelected(s);
     setView("source");
     if (!demo) {

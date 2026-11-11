@@ -25,6 +25,13 @@ export const workspaceSearchTables = {
     itemKey: v.string(),
     kind: v.union(v.literal("post"), v.literal("insight")),
     insightId: v.optional(v.string()),
+    evidenceIds: v.optional(v.array(v.string())),
+    creator: v.optional(v.string()),
+    creatorKey: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    normalizedTitle: v.optional(v.string()),
+    personal: v.optional(v.boolean()),
+    business: v.optional(v.boolean()),
     title: v.string(),
     excerpt: v.string(),
     searchText: v.string(),
@@ -41,9 +48,33 @@ export const workspaceSearchTables = {
       "itemKey",
     ])
     .index("by_post", ["organizationId", "canonicalKey", "analysisKey"])
+    .index("by_creator", ["organizationId", "creatorKey", "itemKey"])
+    .index("by_title", ["organizationId", "normalizedTitle"])
+    .index("by_url", ["organizationId", "canonicalUrl"])
     .searchIndex("search_text", {
       searchField: "searchText",
-      filterFields: ["organizationId", "kind"],
+      filterFields: [
+        "organizationId",
+        "kind",
+        "creatorKey",
+        "personal",
+        "business",
+      ],
+    }),
+  workspaceSearchVectors: defineTable({
+    organizationId: v.id("organizations"),
+    documentId: v.id("workspaceSearchDocuments"),
+    documentRevision: v.number(),
+    searchableWorkspace: v.optional(v.id("organizations")),
+    embedding: v.optional(v.array(v.float64())),
+    pending: v.boolean(),
+  })
+    .index("by_document", ["documentId"])
+    .index("by_pending", ["organizationId", "pending"])
+    .vectorIndex("semantic", {
+      vectorField: "embedding",
+      dimensions: 384,
+      filterFields: ["searchableWorkspace"],
     }),
   workspaceSearchState: defineTable({
     organizationId: v.id("organizations"),
@@ -55,6 +86,8 @@ export const workspaceSearchTables = {
     ),
     cursor: v.union(v.string(), v.null()),
     shareOffset: v.number(),
+    vectorJob: v.optional(v.id("_scheduled_functions")),
+    indexVersion: v.optional(v.literal(2)),
     updatedAt: v.number(),
   }).index("by_org", ["organizationId"]),
 };

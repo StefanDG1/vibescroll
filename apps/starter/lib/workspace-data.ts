@@ -1,6 +1,7 @@
 import "server-only";
 import { suggestProjects } from "./project-suggestions";
 import { backend, api } from "./backend";
+import { loadLibraryPage } from "./library-query";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 
@@ -334,9 +335,9 @@ async function workspaceViewData({
     categories,
     selectedSource,
   ] = await Promise.all([
-    c.query(api.product.library, {
+    loadLibraryPage(c, {
       organizationId,
-      search: search || undefined,
+      query: search || undefined,
       state: filter || undefined,
       category: category || undefined,
       sort,

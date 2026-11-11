@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
 import { buildVersion } from "../../scripts/version.mjs";
 const config: NextConfig = {
+  serverExternalPackages: ["onnxruntime-web"],
   outputFileTracingIncludes: {
     "/help/[slug]": ["../../docs/help/**/*.md"],
+    "/api/internal/search-embeddings": [
+      "../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.*",
+      "../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.*",
+    ],
   },
   transpilePackages: [
     "@companynerve/ui",

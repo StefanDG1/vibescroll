@@ -105,11 +105,7 @@ export const productTables = {
       "organizationId",
       "categoryKey",
       "publishedAt",
-    ])
-    .searchIndex("category_search", {
-      searchField: "searchable",
-      filterFields: ["organizationId", "categoryKey"],
-    }),
+    ]),
   mediaStages: defineTable({
     ...tenant,
     sourceId: v.id("sources"),
@@ -420,11 +416,7 @@ export const productTables = {
       "personalAnalysis.state",
     ])
     .index("by_key", ["organizationId", "key"])
-    .index("by_canonical", ["organizationId", "canonical"])
-    .searchIndex("source_search", {
-      searchField: "searchable",
-      filterFields: ["organizationId", "state"],
-    }),
+    .index("by_canonical", ["organizationId", "canonical"]),
   repositoryManifests: defineTable({
     organizationId: v.id("organizations"),
     repositoryId: v.id("repositories"),

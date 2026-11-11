@@ -69,14 +69,6 @@ export async function syncCategories(
   for (const item of categories) {
     const previous = old.find((link) => link.categoryKey === item.key);
     const fields = {
-      searchable: [
-        source.title,
-        source.searchable,
-        source.summary,
-        ...categories.map((c) => c.name),
-      ]
-        .filter(Boolean)
-        .join(" "),
       title: source.title.toLowerCase(),
       sourceCreatedAt: source.createdAt,
       sourceUpdatedAt: source.updatedAt,
@@ -84,7 +76,8 @@ export async function syncCategories(
       publishedAt: source.publishedAt ?? 0,
       updatedAt: Date.now(),
     };
-    if (previous) await ctx.db.patch(previous._id, fields);
+    if (previous)
+      await ctx.db.patch(previous._id, { ...fields, searchable: undefined });
     else
       await ctx.db.insert("sourceCategories", {
         ...fields,

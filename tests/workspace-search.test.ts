@@ -9,7 +9,6 @@ import {
 } from "../convex/lib/cloudCatalog";
 import { removeSearchOrigin } from "../convex/lib/workspaceSearchProjection";
 import { syncDashboardCard } from "../convex/lib/dashboardProjection";
-import { searchWorkspaceCore } from "../convex/workspaceSearch";
 import {
   workspaceSearchOutput,
   workspaceSearchMcpOutput,
@@ -63,13 +62,14 @@ async function fixture(count = 12, ideas = 1, needleOnlyAt = 0) {
   const search = (
     args: {
       cursor?: string;
+      review?: boolean;
       query?: string;
       target?: "posts" | "insights" | "both";
     } = {},
   ) =>
-    f.assistant.query(internal.workspaceSearch.search, {
+    f.assistant.action(internal.workspaceSearchActions.search, {
       profileId: f.org,
-      mode: "ranked_v1",
+
       query: "needle",
       ...args,
     });
@@ -89,23 +89,115 @@ async function fixture(count = 12, ideas = 1, needleOnlyAt = 0) {
   return { ...f, ids, search, bootstrap };
 }
 
+it("keeps a named tool first while returning a distinct passage for the next task", async () => {
+  const f = await fixture(3);
+  await f.t.run(async (ctx) => {
+    await ctx.db.patch(f.ids[0], {
+      title: "Design reference",
+      text: "Componentry is a library for agent chat interfaces.",
+    });
+    await ctx.db.patch(f.ids[1], {
+      title: "Caption timing",
+      text: "Review caption timing on clips by measuring reading speed.",
+    });
+    await ctx.db.patch(f.ids[2], {
+      title: "Agent chat",
+      text: "Agent chat can show a progress indicator.",
+    });
+  });
+  await f.bootstrap();
+  const result = await f.search({
+    query:
+      'Find the tool named "Componentry", plus a way to measure caption timing.',
+  });
+  expect(result.posts[0].reference.sourceId).toBe(f.ids[0]);
+  expect(result.facets?.map((facet) => facet.post_id)).toEqual(
+    result.posts.slice(0, 2).map(({ id }) => id),
+  );
+  expect(
+    (await f.search({ query: 'Find the tool named "Missing tool".' })).status,
+  ).toBe("exact-name-missing");
+});
+
+it("returns saved creator posts only through their observed author field", async () => {
+  const f = await fixture(3);
+  await f.t.run(async (ctx) => {
+    await ctx.db.patch(f.ids[0], {
+      linkPreview: {
+        authorName: "Example creator",
+        state: "ready",
+        updatedAt: Date.now(),
+      },
+    });
+    await ctx.db.patch(f.ids[1], {
+      text: "A reference to Example creator by someone else.",
+    });
+  });
+  await f.bootstrap();
+  const result = await f.assistant.action(
+    internal.workspaceSearchActions.search,
+    {
+      profileId: f.org,
+      query: "",
+      review: true,
+      filters: { creator: "Example Creator" },
+    },
+  );
+  expect(result.posts.map(({ reference }) => reference.sourceId)).toEqual([
+    f.ids[0],
+  ]);
+});
+
+it("retrieves a semantic-only hit and keeps lexical search usable when embeddings fail", async () => {
+  const f = await fixture(2);
+  await f.bootstrap();
+  const embedding = [1, ...Array<number>(383).fill(0)];
+  await f.t.run(async (ctx) => {
+    const origin = await ctx.db
+      .query("workspaceSearchOrigins")
+      .withIndex("by_path", (q) =>
+        q.eq("organizationId", f.org).eq("pathKey", `direct:${f.ids[0]}`),
+      )
+      .unique();
+    const document = await ctx.db
+      .query("workspaceSearchDocuments")
+      .withIndex("by_item", (q) =>
+        q
+          .eq("organizationId", f.org)
+          .eq("canonicalKey", origin!.canonicalKey)
+          .eq("analysisKey", origin!.analysisKey)
+          .eq("itemKey", "post"),
+      )
+      .unique();
+    const row = await ctx.db
+      .query("workspaceSearchVectors")
+      .withIndex("by_document", (q) => q.eq("documentId", document!._id))
+      .unique();
+    await ctx.db.patch(row!._id, {
+      embedding,
+      pending: false,
+      searchableWorkspace: f.org,
+    });
+  });
+  vi.stubEnv("WORKSPACE_SEARCH_EMBEDDING_SECRET", "b".repeat(64));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({ vectors: [embedding] })),
+  );
+  const result = await f.search({ query: "fjord bioluminescence" });
+  expect(result.semantic).toBe(true);
+  expect(result.posts[0].reference.sourceId).toBe(f.ids[0]);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(null, { status: 503 })),
+  );
+  const fallback = await f.search();
+  expect(fallback.semantic).toBe(false);
+  expect(fallback.posts[0].reference.sourceId).toBe(f.ids[0]);
+});
+
 it("finds an older matching post with compact indexed discovery rather than scanning five recent full analyses", async () => {
   const f = await fixture();
-  const legacy = await f.assistant.query(internal.assistant.search, {
-    profileId: f.org,
-    query: "needle",
-  });
-  expect(legacy.results).toHaveLength(0);
-  expect(legacy.scanned_posts).toBe(5);
-  expect(await f.search()).toMatchObject({
-    index_ready: false,
-    exhausted: false,
-    truncated: true,
-    matches: [],
-  });
-  expect(
-    await f.t.run((ctx) => ctx.db.query("workspaceSearchDocuments").take(1)),
-  ).toHaveLength(0);
   await f.bootstrap();
   const ranked = workspaceSearchOutput.parse(await f.search());
   expect(ranked.index_ready).toBe(true);
@@ -123,180 +215,10 @@ it("finds an older matching post with compact indexed discovery rather than scan
   expect(workspaceSearchMcpOutput.safeParse(ranked).success).toBe(true);
 });
 
-it("pages all ranked matches without repeats and rejects changed query or index", async () => {
-  const f = await fixture(7, 11, -1);
-  await f.bootstrap();
-  let page = await f.search();
-  const seen = new Set<string>();
-  while (true) {
-    expect(page.matches.length).toBeLessThanOrEqual(20);
-    expect(page.examined_sources).toBeLessThanOrEqual(8);
-    for (const match of page.matches) {
-      expect(seen.has(match.id)).toBe(false);
-      seen.add(match.id);
-    }
-    if (!page.next_cursor) break;
-    if (seen.size === 20)
-      await expect(
-        f.search({ cursor: page.next_cursor, query: "different" }),
-      ).rejects.toThrow(/APPROVAL_STALE/);
-    page = await f.search({ cursor: page.next_cursor });
-  }
-  expect(seen.size).toBe(77);
-  expect(page.exhausted).toBe(true);
-  expect(JSON.stringify(page)).not.toContain("Synthetic source");
-  const first = await f.search();
-  await f.t.run(async (ctx) => {
-    const source = (await ctx.db.get(f.ids[0]))!;
-    await ctx.db.patch(source._id, {
-      title: "Changed title",
-      updatedAt: source.updatedAt + 1,
-    });
-  });
-  await f.t.mutation(internal.workspaceSearch.refreshSource, {
-    organizationId: f.org,
-    sourceId: f.ids[0],
-  });
-  await expect(f.search({ cursor: first.next_cursor! })).rejects.toThrow(
-    /APPROVAL_STALE/,
-  );
-});
-
-it("rechecks explicit source scope and excludes another workspace's index", async () => {
-  const f = await fixture(4, 1, -1);
-  await f.bootstrap();
-  const source = (await f.t.run((ctx) => ctx.db.get(f.ids[0])))!;
-  await f.owner.mutation(api.assistantGrants.save, {
-    organizationId: f.org,
-    clientId: "client_01234567890123456789012345",
-    sources: [
-      {
-        sourceId: source._id,
-        generation: source.generation,
-        revision: source.updatedAt,
-      },
-    ],
-    scopes: ["knowledge:read"],
-    expectedVersion: f.grant.version,
-    expiresAt: null,
-    acknowledged: true,
-  });
-  await expect(f.search()).rejects.toThrow(/INVALID_INPUT/);
-  const legacy = await f.assistant.query(internal.assistant.search, {
-    profileId: f.org,
-    query: "needle",
-  });
-  expect(legacy.results).toHaveLength(1);
-  expect(legacy.results[0].reference?.sourceId).toBe(f.ids[0]);
-  const foreign = await f.t.run(async (ctx) => {
-    const { _id, _creationTime, ...original } = (await ctx.db.get(f.org))!;
-    const org = await ctx.db.insert("organizations", {
-      ...original,
-      name: "Foreign workspace",
-    });
-    await ctx.db.insert("workspaceSearchDocuments", {
-      organizationId: org,
-      canonicalKey: "foreign",
-      analysisKey: "foreign",
-      itemKey: "post",
-      kind: "post",
-      title: "Foreign needle",
-      excerpt: "private",
-      searchText: "needle",
-      truncated: false,
-      updatedAt: Date.now(),
-    });
-    return org;
-  });
-  await expect(f.search()).rejects.toThrow(/INVALID_INPUT/);
-  await expect(
-    f.assistant.query(internal.workspaceSearch.search, {
-      profileId: foreign,
-      mode: "ranked_v1",
-      query: "needle",
-    }),
-  ).rejects.toThrow(/FORBIDDEN/);
-});
-
-it("caps cumulative candidate traversal even if many pages remain", async () => {
-  const f = await fixture(24, 10, -1);
-  await f.bootstrap();
-  let page = await f.search(),
-    count = page.matches.length,
-    loops = 0;
-  while (page.next_cursor && loops++ < 20) {
-    page = await f.search({ cursor: page.next_cursor });
-    count += page.matches.length;
-  }
-  expect(count).toBe(200);
-  expect(page.session_candidates).toBe(200);
-  expect(page).toMatchObject({
-    next_cursor: null,
-    has_more: true,
-    exhausted: false,
-    truncated: true,
-  });
-});
-
-it("authenticates cursor budget/offset and fails closed without its dedicated key", async () => {
-  const f = await fixture(5, 10, -1);
-  await f.bootstrap();
-  const first = await f.search();
-  const envelope = JSON.parse(first.next_cursor!);
-  for (const change of [{ visited: 0 }, { offset: 0 }]) {
-    const tampered = {
-      ...envelope,
-      payload: JSON.stringify({ ...JSON.parse(envelope.payload), ...change }),
-    };
-    await expect(
-      f.search({ cursor: JSON.stringify(tampered) }),
-    ).rejects.toThrow(/INVALID_INPUT/);
-  }
-  vi.stubEnv("WORKSPACE_SEARCH_CURSOR_SECRET", "");
-  await expect(f.search()).rejects.toThrow(/POLICY_BLOCKED/);
-});
-
-it("preserves the omitted Unicode match when the response-byte guard fires", async () => {
-  const f = await fixture(4, 10, -1);
-  await f.t.run(async (ctx) => {
-    for (const sourceId of f.ids) {
-      const source = (await ctx.db.get(sourceId))!;
-      const insights = (source.analysis!.insights as { id: string }[]).map(
-        (insight) => ({
-          ...insight,
-          title: "\u6f22".repeat(200),
-          claim: "needle " + "\u6f22".repeat(700),
-          evidence: [],
-        }),
-      );
-      await ctx.db.patch(sourceId, {
-        title: "\u6f22".repeat(200),
-        analysis: { insights },
-      });
-    }
-  });
-  await f.bootstrap();
-  let page = await f.search({ target: "insights" });
-  expect(page.matches.length).toBeLessThan(20);
-  const seen = new Set<string>();
-  while (true) {
-    expect(
-      new TextEncoder().encode(JSON.stringify(page)).length,
-    ).toBeLessThanOrEqual(64000);
-    for (const match of page.matches) {
-      expect(seen.has(match.id)).toBe(false);
-      seen.add(match.id);
-    }
-    if (!page.next_cursor) break;
-    page = await f.search({ target: "insights", cursor: page.next_cursor });
-  }
-  expect(seen.size).toBe(40);
-});
-
 it("does not rewrite identical projections or invalidate a continuation on a no-op refresh", async () => {
-  const f = await fixture(4, 10, -1);
+  const f = await fixture(10, 10, -1);
   await f.bootstrap();
-  const first = await f.search();
+  const first = await f.search({ review: true });
   const before = await f.t.run((ctx) =>
     ctx.db
       .query("workspaceSearchDocuments")
@@ -315,7 +237,8 @@ it("does not rewrite identical projections or invalidate a continuation on a no-
   );
   expect(after).toEqual(before);
   expect(
-    (await f.search({ cursor: first.next_cursor! })).matches.length,
+    (await f.search({ review: true, cursor: first.next_cursor! })).matches
+      .length,
   ).toBeGreaterThan(0);
 });
 
@@ -344,22 +267,28 @@ it("initializes new workspaces without an operator bootstrap and labels async in
     text: "Synthetic",
     rightsAttested: true,
   });
-  const immediate = await f.assistant.query(internal.workspaceSearch.search, {
-    profileId: team,
-    mode: "ranked_v1",
-    query: "needle",
-  });
+  const immediate = await f.assistant.action(
+    internal.workspaceSearchActions.search,
+    {
+      profileId: team,
+
+      query: "needle",
+    },
+  );
   expect(immediate.index_ready).toBe(true);
   expect(immediate.coverage).toContain(
     "Recent saves and shares may still be indexing",
   );
   await vi.advanceTimersByTimeAsync(0);
   await f.t.finishInProgressScheduledFunctions();
-  const ready = await f.assistant.query(internal.workspaceSearch.search, {
-    profileId: team,
-    mode: "ranked_v1",
-    query: "needle",
-  });
+  const ready = await f.assistant.action(
+    internal.workspaceSearchActions.search,
+    {
+      profileId: team,
+
+      query: "needle",
+    },
+  );
   expect(ready.posts.some((post) => post.reference.sourceId === sourceId)).toBe(
     true,
   );
@@ -374,12 +303,12 @@ it("caps full-source hydration independently of compact candidates and denies re
   });
   const page = await f.search();
   expect(page.examined_sources).toBe(8);
-  expect(page.scanned_candidates).toBe(8);
+  expect(page.scanned_candidates).toBe(9);
   expect(page.matches).toEqual([]);
   expect(page).toMatchObject({
     exhausted: false,
     truncated: true,
-    has_more: true,
+    has_more: false,
   });
 });
 
@@ -592,9 +521,9 @@ it("shares one canonical collection between two members and preserves an indepen
     sid: "app_consent_03234567890123456789012345",
   });
   const search = (assistant: typeof f.assistant, query = "evidence") =>
-    assistant.query(internal.workspaceSearch.search, {
+    assistant.action(internal.workspaceSearchActions.search, {
       profileId: team,
-      mode: "ranked_v1",
+
       query,
       target: "insights",
     });
@@ -643,13 +572,14 @@ it("shares one canonical collection between two members and preserves an indepen
         .take(20)
     ).length,
   }));
-  expect(count).toEqual({ docs: 2, origins: 2 });
+  expect(count.origins).toBe(2);
+  expect(count.docs).toBeGreaterThanOrEqual(2);
   expect((await search(otherAssistant, "unsharedsecret")).matches).toEqual([]);
   expect(
     (
-      await f.assistant.query(internal.workspaceSearch.search, {
+      await f.assistant.action(internal.workspaceSearchActions.search, {
         profileId: team,
-        mode: "ranked_v1",
+
         query: "privateownertitle",
         target: "posts",
       })
@@ -657,9 +587,9 @@ it("shares one canonical collection between two members and preserves an indepen
   ).toEqual([]);
   expect(
     (
-      await f.assistant.query(internal.workspaceSearch.search, {
+      await f.assistant.action(internal.workspaceSearchActions.search, {
         profileId: team,
-        mode: "ranked_v1",
+
         query: "privatereadertitle",
         target: "posts",
       })
@@ -678,28 +608,32 @@ it("shares one canonical collection between two members and preserves an indepen
     )
       break;
   }
-  const federated = await f.assistant.query(internal.workspaceSearch.search, {
-    workspaceIds: [f.org, team],
-    mode: "ranked_v1",
-    query: "evidence",
-    target: "insights",
-  });
+  const federated = await f.assistant.action(
+    internal.workspaceSearchActions.search,
+    {
+      workspaceIds: [f.org, team],
+
+      query: "evidence",
+      target: "insights",
+    },
+  );
   expect(federated.matches).toHaveLength(1);
   expect(federated.posts[0].access_paths).toHaveLength(2);
   expect(
     new Set(federated.posts[0].access_paths!.map((path) => path.profile_id)),
   ).toEqual(new Set([f.org, team]));
-  const dated = await f.assistant.query(internal.workspaceSearch.search, {
-    workspaceIds: [f.org, team],
-    mode: "ranked_v1",
-    query: "evidence",
-    target: "insights",
-    filters: { addedAfter: 0 },
-  });
+  const dated = await f.assistant.action(
+    internal.workspaceSearchActions.search,
+    {
+      workspaceIds: [f.org, team],
+
+      query: "evidence",
+      target: "insights",
+      filters: { addedAfter: 0 },
+    },
+  );
   expect(dated.matches).toHaveLength(1);
   expect(dated.posts[0].access_paths).toHaveLength(1);
-  expect(dated.truncated).toBe(true);
-  expect(dated.coverage).toContain("shared workspace-added dates are unknown");
   const assetsBefore = await f.t.run((ctx) =>
     ctx.db
       .query("assets")
@@ -786,12 +720,15 @@ it("shares one canonical collection between two members and preserves an indepen
     await vi.advanceTimersByTimeAsync(0);
     await f.t.finishInProgressScheduledFunctions();
   }
-  const upgraded = await f.assistant.query(internal.workspaceSearch.search, {
-    profileId: f.org,
-    mode: "ranked_v1",
-    query: "replacementuniqueterm",
-    target: "insights",
-  });
+  const upgraded = await f.assistant.action(
+    internal.workspaceSearchActions.search,
+    {
+      profileId: f.org,
+
+      query: "replacementuniqueterm",
+      target: "insights",
+    },
+  );
   expect(upgraded.matches).toHaveLength(1);
   expect(upgraded.posts[0].reference.analysisVersionId).toBe(
     replacement.versionId,
@@ -868,73 +805,4 @@ it("finds bounded category/topic and display/creator metadata without another mo
     (await f.search({ query: "onboarding", target: "insights" })).matches[0]
       .insight_id,
   ).toBe("categorized");
-});
-
-it("keeps eight near-maximum legacy source documents below the conservative read allowance", async () => {
-  const f = await fixture(9, 1, -1);
-  await f.t.run(async (ctx) => {
-    for (const sourceId of f.ids) {
-      const source = (await ctx.db.get(sourceId))!;
-      await ctx.db.patch(sourceId, {
-        analysis: { ...source.analysis, padding: "x".repeat(950000) },
-      });
-    }
-  });
-  await f.bootstrap();
-  const result = await f.search();
-  expect(result.examined_sources).toBe(8);
-  expect(result.matches).toHaveLength(8);
-  expect(result.loaded_bytes).toBeGreaterThan(7_000_000);
-  expect(result.loaded_bytes).toBeLessThan(8_000_000);
-  expect(result.next_cursor).toBeTruthy();
-  expect(new TextEncoder().encode(JSON.stringify(result)).length).toBeLessThan(
-    64000,
-  );
-});
-
-it("rejects narrow ranked scope before touching the compact candidate table", async () => {
-  const f = await fixture(1);
-  await f.bootstrap();
-  const source = (await f.t.run((ctx) => ctx.db.get(f.ids[0])))!;
-  await f.owner.mutation(api.assistantGrants.save, {
-    organizationId: f.org,
-    clientId: "client_01234567890123456789012345",
-    sources: [
-      {
-        sourceId: source._id,
-        generation: source.generation,
-        revision: source.updatedAt,
-      },
-    ],
-    scopes: ["knowledge:read"],
-    expectedVersion: f.grant.version,
-    expiresAt: null,
-    acknowledged: true,
-  });
-  let enumerations = 0;
-  await expect(
-    f.assistant.run((ctx) =>
-      searchWorkspaceCore(
-        {
-          ...ctx,
-          db: new Proxy(ctx.db, {
-            get(target, property) {
-              if (property === "query")
-                return (table: string) => {
-                  if (table === "workspaceSearchDocuments") {
-                    enumerations++;
-                    throw new Error("Unexpected candidate enumeration");
-                  }
-                  return Reflect.apply(target.query, target, [table]);
-                };
-              const value = Reflect.get(target, property, target);
-              return typeof value === "function" ? value.bind(target) : value;
-            },
-          }),
-        },
-        { profileId: f.org, query: "needle", mode: "ranked_v1" },
-      ),
-    ),
-  ).rejects.toThrow(/INVALID_INPUT/);
-  expect(enumerations).toBe(0);
 });

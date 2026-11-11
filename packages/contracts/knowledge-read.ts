@@ -14,19 +14,6 @@ export const knowledgeFetchFormat = z.enum([
 const id = z.string().min(1).max(100);
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const nonnegative = z.number().nonnegative();
-// The old library cursor shape remains valid. New cursors can resume matching
-// items within the same bounded candidate page without discarding overflow.
-export const knowledgeSearchCursor = z.strictObject({
-  grant: id,
-  version: z.number().int().positive(),
-  scope: z.enum(["all", "personal", "business", "selected_sources"]),
-  query: z.string().max(200),
-  cursor: z.string().nullable(),
-  offset: z.number().int().min(0).max(49).optional(),
-  resultOffset: z.number().int().min(0).max(640).optional(),
-  snapshotHash: hash.optional(),
-  scanLimited: z.boolean().optional(),
-});
 const typedCitationFields = {
   id,
   startMs: z.null(),
@@ -205,48 +192,6 @@ export type KnowledgeReadAnalysis = {
   sourceContentHash?: string;
   sourceCoverage?: SourceRevision["coverage"];
 };
-
-export const knowledgeSearchCoverage = z.strictObject({
-  // Current authorized posts whose title/insights were inspected on this page.
-  scanned_posts: z.number().int().min(0).max(5),
-  matched_items: z.number().int().min(0).max(20),
-  // next_cursor resumes remaining matches or advances to a later candidate page.
-  has_more: z.boolean(),
-  // No remaining cursor and no per-post scan limit anywhere in this cursor chain.
-  // This is not a semantic no-fit claim or a snapshot of future library changes.
-  exhausted: z.boolean(),
-  // Coverage is incomplete: overflow, a scan bound or unavailable evidence.
-  truncated: z.boolean(),
-  match_limit_reached: z.boolean(),
-});
-export type KnowledgeSearchCoverage = z.infer<typeof knowledgeSearchCoverage>;
-
-export const knowledgeSearchOutput = knowledgeSearchCoverage.extend({
-  results: z
-    .array(
-      z.union([
-        z.strictObject({
-          id: z.string(),
-          title: z.string().max(200),
-          url: z.string().url(),
-          excerpt: z.string().max(600),
-          reference: knowledgeReadReferenceOutput,
-        }),
-        z.strictObject({
-          id,
-          title: z.string(),
-          url: z.string().url(),
-          state: z.string(),
-        }),
-      ]),
-    )
-    .max(20),
-  next_offset: z.number().int().nonnegative().nullable(),
-  next_cursor: z.string().nullable(),
-  profile_id: id,
-  grant_version: z.number().int().positive(),
-  coverage: z.string(),
-});
 
 export const profileReadOutput = z.strictObject({
   profiles: z

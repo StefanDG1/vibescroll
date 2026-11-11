@@ -1957,9 +1957,9 @@ describe("V1 library and resource allowances", () => {
     ).toBe(45);
     expect(
       (
-        await a.query(api.product.library, {
+        await a.action(api.workspaceSearchActions.library, {
           organizationId: org,
-          search: "uniqueforeignmarker",
+          query: "uniqueforeignmarker",
         })
       ).items,
     ).toHaveLength(0);

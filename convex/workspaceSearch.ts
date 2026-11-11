@@ -1334,6 +1334,51 @@ export const resumeVectors = internalMutation({
   },
 });
 
+export const retireObsoleteFields = internalMutation({
+  args: {
+    organizationId: v.id("organizations"),
+    cursor: v.union(v.string(), v.null()),
+  },
+  returns: v.object({
+    next: v.union(v.string(), v.null()),
+    cleared: v.number(),
+  }),
+  handler: async (ctx, { organizationId, cursor }) => {
+    ensure(
+      process.env.RESTORE_LOCK !== "true",
+      "POLICY_BLOCKED",
+      "Search migration is paused.",
+    );
+    const state = await workspaceSearchState(ctx, organizationId);
+    ensure(
+      state?.phase === "ready" && state.indexVersion === 2,
+      "APPROVAL_STALE",
+      "Complete the search projection first.",
+    );
+    const page = await ctx.db
+      .query("sources")
+      .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
+      .paginate({ cursor, numItems: 8 });
+    let cleared = 0;
+    for (const source of page.page) {
+      if (source.searchable !== undefined) {
+        await ctx.db.patch(source._id, { searchable: undefined });
+        cleared++;
+      }
+      const links = await ctx.db
+        .query("sourceCategories")
+        .withIndex("by_source", (q) => q.eq("sourceId", source._id))
+        .take(64);
+      for (const link of links)
+        if (link.searchable !== undefined) {
+          await ctx.db.patch(link._id, { searchable: undefined });
+          cleared++;
+        }
+    }
+    return { next: page.isDone ? null : page.continueCursor, cleared };
+  },
+});
+
 export const refreshFamily = internalMutation({
   args: { familyId: v.id("catalogFamilies"), cursor: v.optional(v.string()) },
   returns: v.null(),

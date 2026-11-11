@@ -29,7 +29,6 @@ import { z } from "zod";
 import { postContextFrameInput } from "../contracts/post-context";
 import {
   workspaceSearchInput,
-  workspaceSearchFilters,
   workspaceSearchMcpOutput,
 } from "../contracts/workspace-search";
 import {
@@ -325,32 +324,9 @@ export function createKnowledgeHandler(
       );
       register(
         "search",
-        "Find permitted knowledge. Prefer mode=ranked_v1 for compact ranked posts and insight matches, including team shares. Ranked search requires whole-workspace library access; source/space-limited grants use search without mode, filters, projectId or workspaceIds. Default to the active workspace; use workspaceIds for an explicit search of up to three authorized workspaces, without profileId. Optional filters narrow category, platform and known direct-save dates. projectId adds page-local topic fit from current permitted project context. Fetch using fetch_id and exact workspace/shared-grant references, not the opaque grouping id. Respect index_ready, coverage, candidate/session bounds and next_cursor. If meaning is missed, try at most two concise alternative queries, then report incomplete recall. Legacy mode examines five allowed posts per page; offsets are legacy only. Never fall back to the global catalog. No analysis or credits.",
+        "Find saved posts and insights in your authorized workspaces. Search natural language, exact names, or several distinct tasks. Name a confirmed project or pass its projectId to use permitted context. Use filters.creator for an observed creator name or handle. Use review=true and follow next_cursor for complete saved-evidence reviews. A creator-only review can use an empty query. Use fetch_id and exact workspace/share references for detail. Use status and facets to report missing support. Search does not start analysis or spend app credits.",
         "knowledge:read",
-        z
-          .object({
-            query: z.string().min(1).max(200),
-            profileId: z.string().max(100).optional(),
-            offset: z.number().int().min(0).max(49).optional(),
-            cursor: z.string().max(24_576).optional(),
-            mode: z.literal("ranked_v1").optional(),
-            target: z.enum(["posts", "insights", "both"]).optional(),
-            workspaceIds: workspaceSearchInput.shape.workspaceIds,
-            filters: workspaceSearchFilters.optional(),
-            projectId: z.string().min(1).max(100).optional(),
-          })
-          .strict()
-          .refine(
-            (args) =>
-              args.mode
-                ? workspaceSearchInput.safeParse(args).success
-                : args.target === undefined &&
-                  args.workspaceIds === undefined &&
-                  args.filters === undefined &&
-                  args.projectId === undefined &&
-                  (args.cursor?.length ?? 0) <= 4096,
-            "Use mode=ranked_v1 for ranked search fields; offsets are legacy only.",
-          ),
+        workspaceSearchInput,
       );
       register(
         "read_post_frame",

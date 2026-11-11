@@ -9,6 +9,7 @@ dedupePeerDependents: false
 allowBuilds:
   core-js: false
   esbuild: true
+  protobufjs: false
   rclone.js: false
   sharp: true
   workerd: true

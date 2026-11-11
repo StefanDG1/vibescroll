@@ -139,6 +139,32 @@ export const purgeOrganization = internalMutation({
         return;
       }
     }
+    const searchRows = await Promise.all([
+      ctx.db
+        .query("workspaceSearchOrigins")
+        .withIndex("by_path", (q) => q.eq("organizationId", organizationId))
+        .take(100),
+      ctx.db
+        .query("workspaceSearchDocuments")
+        .withIndex("by_post", (q) => q.eq("organizationId", organizationId))
+        .take(100),
+      ctx.db
+        .query("workspaceSearchVectors")
+        .withIndex("by_pending", (q) => q.eq("organizationId", organizationId))
+        .take(100),
+    ]);
+    for (const row of searchRows.flat()) await ctx.db.delete(row._id);
+    if (searchRows.some((rows) => rows.length === 100)) {
+      await ctx.scheduler.runAfter(0, internal.maintenance.purgeOrganization, {
+        organizationId,
+      });
+      return;
+    }
+    const searchState = await ctx.db
+      .query("workspaceSearchState")
+      .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
+      .unique();
+    if (searchState) await ctx.db.delete(searchState._id);
     await ctx.db.delete(organizationId);
   },
 });

@@ -67,9 +67,6 @@ export const links = mutation({
             ? {}
             : { originalSavedAt: row.savedAt }),
           tags: row.collection ? [row.collection] : [],
-          searchable: [row.title ?? "Imported video link", row.collection]
-            .filter(Boolean)
-            .join(" "),
         });
         entries.push({
           row: row.row,

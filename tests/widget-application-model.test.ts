@@ -11,7 +11,7 @@ import {
 } from "../apps/widget/src/application-model";
 
 const ranked = (version = "v1") => ({
-  mode: "ranked_v1",
+  mode: "hybrid",
   profile_id: "personal",
   grant_version: 7,
   posts: [
@@ -68,16 +68,24 @@ it("uses only returned citation parents and preserves source/version identity ac
     appendDiscovery(first, discoveryPage({ ...ranked(), profile_id: "other" })),
   ).toThrow("access changed");
 });
-it("does not infer an insight from a legacy post result and retains empty partial continuations", () => {
+it("does not infer an insight from a post result and retains empty partial continuations", () => {
   const post = discoveryPage({
     profile_id: "p",
     grant_version: 2,
-    results: [
+    posts: [
       {
-        id: "source",
+        id: "post-key",
         title: "Post title",
-        state: "ready",
+        fetch_id: "source",
         url: "https://scroll.companynerve.com/app/p/posts/source",
+      },
+    ],
+    matches: [
+      {
+        id: "post-match",
+        kind: "post",
+        post_id: "post-key",
+        title: "Post title",
       },
     ],
     next_cursor: "next",

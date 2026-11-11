@@ -1,8 +1,8 @@
 import { internalQuery, internalMutation } from "./_generated/server";
 import type { QueryCtx } from "./_generated/server";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
-import { v } from "convex/values";
+import { v, type Infer } from "convex/values";
 import { selectedProfile } from "./assistant";
 import { assistantGrant } from "./lib/assistantPrincipal";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
@@ -19,36 +19,45 @@ import {
   bumpWorkspaceSearch,
   refreshDirectSearchSource,
   refreshSharedSearchSource,
+  scheduleSearchVectors,
   workspaceSearchEnabled,
   workspaceSearchState,
 } from "./lib/workspaceSearchProjection";
 
+import { access } from "./lib";
 import {
-  rankedCursorKey,
-  readRankedCursor,
-  signRankedCursor,
-} from "./lib/workspaceSearchCursor";
-
+  assistantProject,
+  currentPlanningProject,
+} from "./lib/assistantProject";
+import { sourceRetained } from "./lib/sourceAuthority";
+import { sharedTypedCitations } from "./lib/sourceCitations";
+import { cloudSourceMetadata } from "./lib/cloudCatalog";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import {
-  runWorkspaceSearchRequest,
-  type CoreSearchArgs,
-  type CoreSearchOptions,
-} from "./lib/workspaceSearchFederation";
+  assistantSearchArgs,
+  projectValue,
+  scopeValue,
+  vectorResultValue,
+} from "./lib/workspaceSearchValues";
+import {
+  namedSearchReference,
+  recordRequirement,
+  splitProjectTasks,
+} from "../packages/search/intent";
+import {
+  combineSearchTasks,
+  containsPhrase,
+  normalizeSearchText,
+  rankSearchUnits,
+  rankedLexicalQuery,
+  searchTerms,
+  type SearchUnit,
+} from "../packages/search/ranking";
 import {
   fitMatch,
   metadataMatchesFilters,
-  insightSearchTopics,
-  outputSearchTopics,
-  sourcePlatform,
   type SearchFilters,
-  searchPrefixHash,
 } from "./lib/workspaceSearchFilters";
-
-const targetValue = v.union(
-  v.literal("posts"),
-  v.literal("insights"),
-  v.literal("both"),
-);
 const referenceValue = v.object({
   sourceId: v.string(),
   generation: v.number(),
@@ -77,8 +86,8 @@ const accessPathValue = v.object({
   url: v.string(),
   reference: referenceValue,
 });
-const outputValue = v.object({
-  mode: v.literal("ranked_v1"),
+export const outputValue = v.object({
+  mode: v.literal("hybrid"),
   posts: v.array(
     v.object({
       id: v.string(),
@@ -95,6 +104,7 @@ const outputValue = v.object({
       post_id: v.string(),
       kind: v.union(v.literal("post"), v.literal("insight")),
       insight_id: v.optional(v.string()),
+      evidence_ids: v.optional(v.array(v.string())),
       title: v.string(),
       excerpt: v.string(),
       project_fit: v.optional(fitValue),
@@ -114,6 +124,24 @@ const outputValue = v.object({
   session_candidates: v.number(),
   projection_revision: v.number(),
   index_ready: v.boolean(),
+  semantic: v.boolean(),
+  status: v.union(
+    v.literal("results"),
+    v.literal("no-matches"),
+    v.literal("exact-name-missing"),
+    v.literal("needs-project-record"),
+    v.literal("needs-current-data"),
+    v.literal("index-pending"),
+  ),
+  facets: v.optional(
+    v.array(
+      v.object({
+        query: v.string(),
+        post_id: v.optional(v.string()),
+        match_id: v.optional(v.string()),
+      }),
+    ),
+  ),
   workspaces: v.optional(
     v.array(
       v.object({
@@ -137,7 +165,7 @@ const outputValue = v.object({
     }),
   ),
 });
-type Reader = Awaited<ReturnType<typeof assistantGrant>>;
+
 type Hydrated = {
   source: Doc<"sources">;
   output: unknown;
@@ -181,7 +209,7 @@ async function hydrateOrigin(
     try {
       let source: Doc<"sources"> | null = null;
       if (origin.grantId) {
-        if (reader.grant.libraryScope !== "all") continue;
+        if (reader.grant && reader.grant.libraryScope !== "all") continue;
         budget.remaining--;
         budget.examined++;
         const shared = await exactGrantedSource(
@@ -198,16 +226,28 @@ async function hydrateOrigin(
         budget.remaining--;
         budget.examined++;
         source = await ctx.db.get(origin.sourceId);
-        if (
-          !(await sourceWithinAssistantScope(
-            ctx,
-            reader.grant,
-            reader.organization,
-            reader.actor._id,
-            source,
-          ))
-        )
-          continue;
+        if (reader.grant) {
+          if (
+            !(await sourceWithinAssistantScope(
+              ctx,
+              reader.grant,
+              reader.organization,
+              reader.actor._id,
+              source,
+            ))
+          )
+            continue;
+        } else {
+          if (
+            !source ||
+            source.organizationId !== reader.organization._id ||
+            source.state === "deleted" ||
+            !source.rightsAttested ||
+            !sourceRetained(source.sourceRetentionUntil)
+          )
+            continue;
+          await sharedTypedCitations(ctx, source);
+        }
       }
       if (
         !source ||
@@ -250,263 +290,600 @@ async function hydrateOrigin(
   return { value: null, limited };
 }
 
-export async function searchWorkspaceCore(
-  rawCtx: QueryCtx,
-  args: CoreSearchArgs,
-  options: CoreSearchOptions = {},
-): Promise<WorkspaceSearchResult> {
-  const ctx = knowledgeReadContext(rawCtx);
-  ensure(
-    args.query.trim().length > 0 && args.query.length <= 200,
-    "INVALID_INPUT",
-    "Use a short search query.",
-  );
-  const query = args.query.trim(),
-    target = args.target ?? "both";
-  const reader =
-    options.reader ??
-    (await assistantGrant(
-      ctx,
-      await selectedProfile(ctx, args.profileId, "knowledge:read"),
-      "knowledge:read",
-    ));
-  ensure(
-    reader.grant.libraryScope === "all",
-    "INVALID_INPUT",
-    "Use search without ranked_v1 mode for this source- or space-limited grant. Access was not widened.",
-  );
-  const cursorKey = await rankedCursorKey();
-  const state = await workspaceSearchState(ctx, reader.organization._id),
-    revision = state?.revision ?? 0;
-  const ready = workspaceSearchEnabled() && state?.phase === "ready";
-  const result: WorkspaceSearchResult = {
-    mode: "ranked_v1",
-    posts: [],
-    matches: [],
-    next_cursor: null,
-    has_more: false,
-    exhausted: false,
-    truncated: !ready,
-    coverage: ready
-      ? "Ranked text matches from the current authorized workspace. Text projections are bounded; no transcript or semantic search is performed. Exhaustion refers only to indexed entries. Recent saves and shares may still be indexing; an empty result does not prove whole-library absence."
-      : "Workspace search indexing is pending. Use legacy search or exact fetch while the operator completes bounded indexing.",
-    profile_id: reader.organization._id,
-    grant_version: reader.grant.version,
-    scanned_candidates: 0,
-    examined_sources: 0,
-    loaded_bytes: 0,
-    session_candidates: 0,
-    projection_revision: revision,
-    index_ready: !!ready,
+export const authorize = internalQuery({
+  args: {
+    ...assistantSearchArgs,
+    libraryId: v.optional(v.id("organizations")),
+  },
+  returns: v.array(
+    v.object({ scope: scopeValue, project: v.optional(projectValue) }),
+  ),
+  handler: async (rawCtx, args) => {
+    const ctx = knowledgeReadContext(rawCtx);
+    const ids = args.libraryId
+      ? [args.libraryId]
+      : (args.workspaceIds ?? [
+          await selectedProfile(ctx, args.profileId, "knowledge:read"),
+        ]);
+    const readers = await Promise.all(
+      ids.map((id) => searchReader(ctx, id, !!args.libraryId)),
+    );
+    return Promise.all(
+      readers.map(async (reader) => ({
+        scope: await currentScope(ctx, reader),
+        project: await searchProject(ctx, reader, args.query, args.projectId),
+      })),
+    );
+  },
+});
+
+type WebsiteReader = Awaited<ReturnType<typeof access>> & { grant?: undefined };
+type Reader = Awaited<ReturnType<typeof assistantGrant>> | WebsiteReader;
+
+async function searchReader(
+  ctx: QueryCtx,
+  id: Id<"organizations">,
+  website: boolean,
+): Promise<Reader> {
+  return website ? access(ctx, id) : assistantGrant(ctx, id, "knowledge:read");
+}
+
+async function currentScope(ctx: QueryCtx, reader: Reader) {
+  const state = await workspaceSearchState(ctx, reader.organization._id);
+  const semantic =
+    !!process.env.WORKSPACE_SEARCH_EMBEDDING_SECRET &&
+    (!reader.grant || reader.grant.libraryScope === "all") &&
+    !!(await ctx.db
+      .query("workspaceSearchVectors")
+      .withIndex("by_pending", (q) =>
+        q.eq("organizationId", reader.organization._id).eq("pending", false),
+      )
+      .first());
+  return {
+    organizationId: reader.organization._id,
+    actorId: reader.actor._id,
+    key:
+      reader.grant?._id ?? `${reader.membership._id}:${reader.membership.role}`,
+    version: reader.grant?.version ?? 1,
+    revision: state?.revision ?? 0,
+    ready: state?.phase === "ready",
+    narrow: !!reader.grant && reader.grant.libraryScope !== "all",
+    semantic,
   };
-  let pageStart: string | null = null,
-    offset = 0,
-    visited = 0,
-    incomplete = false;
-  if (args.cursor) {
-    ensure(
-      args.cursor.length <= 4096,
-      "INVALID_INPUT",
-      "Invalid workspace search cursor.",
-    );
-    const cursor = await readRankedCursor(cursorKey, args.cursor);
-    ensure(
-      cursor.profileId === reader.organization._id &&
-        cursor.grantId === reader.grant._id &&
-        cursor.grantVersion === reader.grant.version &&
-        cursor.projectionRevision === revision &&
-        cursor.query === query &&
-        cursor.target === target,
-      "APPROVAL_STALE",
-      "Workspace search access, query or index changed. Start a new search.",
-    );
-    pageStart = cursor.page;
-    offset = cursor.offset;
-    visited = cursor.visited;
-    incomplete = cursor.incomplete;
-  }
-  if (!ready) return workspaceSearchOutput.parse(result);
-  const candidates = ctx.db
-    .query("workspaceSearchDocuments")
-    .withSearchIndex("search_text", (q) => {
-      const search = q
-        .search("searchText", query)
-        .eq("organizationId", reader.organization._id);
-      return target === "both"
-        ? search
-        : search.eq("kind", target === "posts" ? "post" : "insight");
-    });
-  let page: {
-    page: Doc<"workspaceSearchDocuments">[];
-    isDone: boolean;
-    continueCursor: string;
-  };
-  if (options.prefix) {
-    offset = options.prefix.offset;
-    visited = offset;
-    ensure(
-      offset <= options.prefix.sessionLimit,
-      "INVALID_INPUT",
-      "Invalid workspace candidate share.",
-    );
-    const amount = Math.min(
-      options.prefix.sessionLimit,
-      offset + (options.candidateLimit ?? limits.candidatesPerPage),
-    );
-    const rows = await candidates.take(amount);
-    if (offset)
+}
+
+async function searchProject(
+  ctx: QueryCtx,
+  reader: Reader,
+  query: string,
+  projectId?: Id<"repositories">,
+) {
+  const org = reader.organization._id;
+  const contextReader = reader.grant
+    ? reader.grant.scopes.includes("context:read")
+      ? await assistantGrant(ctx, org, "context:read").catch(
+          (error: unknown) => {
+            if (
+              projectId ||
+              !(error instanceof PolicyError) ||
+              error.code !== "FORBIDDEN"
+            )
+              throw error;
+            return undefined;
+          },
+        )
+      : undefined
+    : undefined;
+  if (!projectId && reader.grant && !contextReader) return undefined;
+  const resolve = async (id: Id<"repositories">) => {
+    if (reader.grant) {
       ensure(
-        rows.length >= offset &&
-          (await searchPrefixHash(
-            rows.slice(0, offset).map((row) => row._id),
-          )) === options.prefix.hash,
-        "APPROVAL_STALE",
-        "Indexed candidate order changed. Start a new search.",
+        contextReader,
+        "FORBIDDEN",
+        "This workspace cannot read the requested project.",
       );
-    page = { page: rows, isDone: rows.length < amount, continueCursor: "" };
-    result.loaded_candidates = rows.length;
-  } else
-    page = await candidates.paginate({
-      cursor: pageStart,
-      numItems: options.candidateLimit ?? limits.candidatesPerPage,
-    });
-  const hydrated = new Map<
-    string,
-    Promise<{ value: Hydrated | null; limited: boolean }>
-  >();
-  const sharedReadBudget = options.sharedReadBudget ?? { bytes: 0 };
-  const initialBytes = sharedReadBudget.bytes;
-  const hydrationBudget = {
-    remaining: options.sourceLimit ?? limits.sourceHydrations,
-    examined: 0,
-    get bytes() {
-      return sharedReadBudget.bytes;
-    },
-    set bytes(value: number) {
-      sharedReadBudget.bytes = value;
-    },
-  };
-  const sessionMaximum = Math.min(
-    limits.candidatesPerSession,
-    options.prefix?.sessionLimit ?? limits.candidatesPerSession,
-    visited + (options.remainingCandidates ?? limits.candidatesPerSession),
-  );
-  const measuredCtx = {
-    ...ctx,
-    db: new Proxy(ctx.db, {
-      get(target, property) {
-        if (property === "get")
-          return async (...args: unknown[]) => {
-            ensure(
-              hydrationBudget.bytes < limits.loadedBytes,
-              "RETRIEVAL_BUDGET_REACHED",
-              "Narrow the query to read more evidence.",
-            );
-            const value = await Reflect.apply(target.get, target, args);
-            hydrationBudget.bytes += new TextEncoder().encode(
-              JSON.stringify(value),
-            ).length;
-            return value;
-          };
-        const value = Reflect.get(target, property, target);
-        return typeof value === "function" ? value.bind(target) : value;
-      },
-    }),
-  };
-  let index = offset;
-  for (
-    ;
-    index < page.page.length &&
-    result.matches.length < (options.resultLimit ?? limits.results) &&
-    visited < sessionMaximum;
-    index++
-  ) {
-    const doc = page.page[index];
-    const postId = `${doc.canonicalKey}:${doc.analysisKey}`;
-    if (!hydrated.has(postId) && hydrationBudget.remaining <= 0) {
-      incomplete = true;
-      break;
+      return assistantProject(ctx, contextReader, id);
     }
-    visited++;
-    result.scanned_candidates++;
-    if (
-      doc.metadataVersion === 2 &&
-      !metadataMatchesFilters(doc, options.filters)
+    return currentPlanningProject(ctx, org, id);
+  };
+  let repository:
+    Awaited<ReturnType<typeof currentPlanningProject>> | undefined;
+  if (projectId) {
+    const project = await ctx.db.get(projectId);
+    ensure(project, "FORBIDDEN", "Project unavailable.");
+    if (project.organizationId !== org) return undefined;
+    repository = await resolve(projectId);
+  } else if (query.length > 3) {
+    const names = await ctx.db
+      .query("repositories")
+      .withIndex("by_org", (q) => q.eq("organizationId", org))
+      .take(51);
+    if (names.length > 50) return undefined;
+    const matching = names.filter((item) => {
+      const name = item.fullName.split("/").at(-1)!;
+      return (
+        item.confirmed &&
+        item.enabled &&
+        name.length > 2 &&
+        containsPhrase(query, name.replaceAll("-", " "))
+      );
+    });
+    if (matching.length === 1) {
+      try {
+        repository = await resolve(matching[0]._id);
+      } catch (error) {
+        if (!expectedUnavailable(error)) throw error;
+      }
+    }
+  }
+  if (!repository) return undefined;
+  const shortName = repository.fullName.split("/").at(-1)!;
+  return {
+    id: repository._id,
+    profileId: org,
+    name: (containsPhrase(query, shortName.replaceAll("-", " "))
+      ? shortName.replaceAll("-", " ")
+      : shortName
+    ).slice(0, 200),
+    profile: repository.profile,
+    baseSha: repository.sha,
+    profileVersion: repository.profileVersion,
+    selectionVersion: repository.selectionVersion ?? 0,
+    grantVersion: contextReader?.grant.version ?? 1,
+  };
+}
+
+type SearchDocument = Doc<"workspaceSearchDocuments">;
+type Unit = SearchUnit & { document: SearchDocument };
+type Scope = Infer<typeof scopeValue>;
+
+const unit = (doc: SearchDocument): Unit => ({
+  id: `${doc.canonicalKey}:${doc.analysisKey}:${doc.itemKey}`,
+  post: `${doc.canonicalKey}:${doc.analysisKey}`,
+  title: doc.title,
+  text: doc.excerpt || doc.searchText,
+  topics: doc.categoryKeys ?? [],
+  document: doc,
+});
+
+const emptySearch = (scope: Scope): WorkspaceSearchResult => ({
+  mode: "hybrid",
+  posts: [],
+  matches: [],
+  next_cursor: null,
+  has_more: false,
+  exhausted: false,
+  truncated: !scope.ready,
+  coverage: "",
+  profile_id: scope.organizationId,
+  grant_version: scope.version,
+  scanned_candidates: 0,
+  examined_sources: 0,
+  loaded_bytes: 0,
+  session_candidates: 0,
+  projection_revision: scope.revision,
+  index_ready: scope.ready,
+  status: scope.ready ? "no-matches" : "index-pending",
+  semantic: false,
+});
+
+async function originDocuments(
+  ctx: QueryCtx,
+  origin: Doc<"workspaceSearchOrigins"> | null,
+) {
+  if (!origin) return [];
+  return ctx.db
+    .query("workspaceSearchDocuments")
+    .withIndex("by_post", (q) =>
+      q
+        .eq("organizationId", origin.organizationId)
+        .eq("canonicalKey", origin.canonicalKey)
+        .eq("analysisKey", origin.analysisKey),
     )
-      continue;
-    let current = hydrated.get(postId);
-    if (!current) {
-      current = hydrateOrigin(
+    .take(161);
+}
+
+const directOrigin = (
+  ctx: QueryCtx,
+  id: Id<"organizations">,
+  source: Id<"sources">,
+) =>
+  ctx.db
+    .query("workspaceSearchOrigins")
+    .withIndex("by_path", (q) =>
+      q.eq("organizationId", id).eq("pathKey", `direct:${source}`),
+    )
+    .unique();
+
+async function selectedOrigin(
+  ctx: QueryCtx,
+  reader: Reader,
+  sourceId: Id<"sources">,
+) {
+  if (!reader.grant)
+    return directOrigin(ctx, reader.organization._id, sourceId);
+  const source = await ctx.db.get(sourceId);
+  if (
+    !(await sourceWithinAssistantScope(
+      ctx,
+      reader.grant,
+      reader.organization,
+      reader.actor._id,
+      source,
+    ))
+  )
+    return null;
+  return directOrigin(ctx, reader.organization._id, sourceId);
+}
+
+function acceptsDocument(
+  doc: SearchDocument,
+  target: "posts" | "insights" | "both",
+  filters?: SearchFilters,
+) {
+  const creator =
+    filters?.creator && normalizeSearchText(filters.creator).replace(/^@/, "");
+  return (
+    (target === "both" ||
+      doc.kind === (target === "posts" ? "post" : "insight")) &&
+    (!creator || doc.creatorKey === creator) &&
+    metadataMatchesFilters(doc, filters)
+  );
+}
+
+function acceptsState(state: string | undefined, source: Doc<"sources">) {
+  if (!state) return true;
+  if (state === "not_analyzed") return source.state !== "ready";
+  if (state === "in_progress")
+    return source.state === "queued" || source.state === "processing";
+  return source.state === state;
+}
+
+const scopePage = v.object({
+  result: outputValue,
+  next: v.union(v.string(), v.null()),
+  scores: v.array(v.object({ id: v.string(), score: v.number() })),
+});
+
+export const retrieve = internalQuery({
+  args: {
+    ...assistantSearchArgs,
+    scope: scopeValue,
+    project: v.optional(projectValue),
+    library: v.boolean(),
+    state: v.optional(v.string()),
+    vectors: v.array(vectorResultValue),
+    page: v.union(v.string(), v.null()),
+  },
+  returns: scopePage,
+  handler: async (rawCtx, args) => {
+    const ctx = knowledgeReadContext(rawCtx);
+    const org = args.scope.organizationId;
+    const reader = await searchReader(ctx, org, args.library);
+    const scope = await currentScope(ctx, reader);
+    const { key, actorId, version, revision } = args.scope;
+    ensure(
+      key === scope.key &&
+        actorId === scope.actorId &&
+        version === scope.version &&
+        revision === scope.revision,
+      "APPROVAL_STALE",
+      "Search access or index changed. Start a new search.",
+    );
+    const project = await searchProject(
+      ctx,
+      reader,
+      args.query,
+      args.projectId,
+    );
+    ensure(
+      canonicalJson(project) === canonicalJson(args.project),
+      "APPROVAL_STALE",
+      "Search project changed. Start a new search.",
+    );
+    const result = emptySearch(scope);
+    const scores: { id: string; score: number }[] = [];
+    if (!scope.ready) {
+      result.coverage =
+        "This workspace is still indexing. Exact post links can be opened directly.";
+      return { result, next: null, scores };
+    }
+    const query = args.query;
+    const filters = args.filters as SearchFilters | undefined;
+    const creator =
+      filters?.creator &&
+      normalizeSearchText(filters.creator).replace(/^@/, "");
+    const target = args.target ?? "both";
+    const eligible = (doc: SearchDocument) =>
+      doc.organizationId === org && acceptsDocument(doc, target, filters);
+    const reference = namedSearchReference(query);
+    const required = recordRequirement(query, project);
+    const facets =
+      args.review || required ? [] : splitProjectTasks(query, project);
+    const budget = {
+      remaining: args.review ? 24 : limits.sourceHydrations,
+      examined: 0,
+      bytes: 0,
+    };
+    const measuredCtx = {
+      ...ctx,
+      db: new Proxy(ctx.db, {
+        get(target, property) {
+          if (property === "get")
+            return async (...parameters: unknown[]) => {
+              ensure(
+                budget.bytes < limits.loadedBytes,
+                "RETRIEVAL_BUDGET_REACHED",
+                "Narrow the query to read more evidence.",
+              );
+              const value = await Reflect.apply(target.get, target, parameters);
+              budget.bytes += new TextEncoder().encode(
+                JSON.stringify(value),
+              ).length;
+              return value;
+            };
+          const value = Reflect.get(target, property, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      }),
+    };
+    let next: string | null = null;
+    let narrowDocs: SearchDocument[] | undefined;
+    let reviewOrigins:
+      NonNullable<Awaited<ReturnType<typeof directOrigin>>>[] | undefined;
+    const space =
+      reader.grant?.libraryScope === "personal" ||
+      reader.grant?.libraryScope === "business"
+        ? reader.grant.libraryScope
+        : undefined;
+    if (space)
+      ensure(
+        reader.organization.privateOwnerId === reader.actor._id,
+        "FORBIDDEN",
+        "This private space is unavailable.",
+      );
+    if (reader.grant && !reader.grant.libraryScope) {
+      const ids = [
+        ...new Set(reader.grant.sources.map(({ sourceId }) => sourceId)),
+      ];
+      const offset = args.review && args.page ? Number(args.page) : 0;
+      const current = args.review ? ids.slice(offset, offset + 8) : ids;
+      reviewOrigins = (
+        await Promise.all(current.map((id) => selectedOrigin(ctx, reader, id)))
+      ).filter((item) => item !== null);
+      for (const origin of reviewOrigins) {
+        const docs = (await originDocuments(ctx, origin)).filter(eligible);
+        narrowDocs ??= [];
+        narrowDocs.push(...docs);
+      }
+      narrowDocs ??= [];
+      next = args.review && offset + 8 < ids.length ? String(offset + 8) : null;
+    } else if (space && args.review) {
+      const page = await ctx.db
+        .query("sourceSpaces")
+        .withIndex("by_space", (q) =>
+          q.eq("organizationId", org).eq("space", space),
+        )
+        .paginate({ cursor: args.page, numItems: 8 });
+      reviewOrigins = (
+        await Promise.all(
+          page.page.map(({ sourceId }) =>
+            selectedOrigin(ctx, reader, sourceId),
+          ),
+        )
+      ).filter((item) => item !== null);
+      narrowDocs = (
+        await Promise.all(
+          reviewOrigins.map((origin) => originDocuments(ctx, origin)),
+        )
+      )
+        .flat()
+        .filter(eligible);
+      next = page.isDone ? null : page.continueCursor;
+    } else if (args.review && creator) {
+      const page = await ctx.db
+        .query("workspaceSearchDocuments")
+        .withIndex("by_creator", (q) =>
+          q
+            .eq("organizationId", org)
+            .eq("creatorKey", creator)
+            .eq("itemKey", "post"),
+        )
+        .paginate({ cursor: args.page, numItems: 8 });
+      narrowDocs = (
+        await Promise.all(
+          page.page.map((doc) =>
+            ctx.db
+              .query("workspaceSearchDocuments")
+              .withIndex("by_post", (q) =>
+                q
+                  .eq("organizationId", org)
+                  .eq("canonicalKey", doc.canonicalKey)
+                  .eq("analysisKey", doc.analysisKey),
+              )
+              .take(161),
+          ),
+        )
+      )
+        .flat()
+        .filter(eligible);
+      next = page.isDone ? null : page.continueCursor;
+    } else if (args.review) {
+      const page = await ctx.db
+        .query("workspaceSearchOrigins")
+        .withIndex("by_path", (q) => q.eq("organizationId", org))
+        .paginate({ cursor: args.page, numItems: 8 });
+      reviewOrigins = page.page;
+      next = page.isDone ? null : page.continueCursor;
+      narrowDocs = (
+        await Promise.all(
+          reviewOrigins.map((origin) => originDocuments(ctx, origin)),
+        )
+      )
+        .flat()
+        .filter(eligible);
+    }
+    const lexicalSearch = async (text: string) => {
+      if (narrowDocs) {
+        const words = searchTerms(text);
+        return narrowDocs
+          .map((doc) => ({
+            doc,
+            overlap: words.filter((word) =>
+              searchTerms(doc.searchText).includes(word),
+            ).length,
+          }))
+          .filter(({ overlap, doc }) =>
+            args.review
+              ? words.length
+                ? overlap === words.length
+                : !text || containsPhrase(doc.searchText, text)
+              : overlap || !words.length,
+          )
+          .sort((a, b) => b.overlap - a.overlap)
+          .slice(0, args.review ? undefined : 50)
+          .map(({ doc }) => doc);
+      }
+      const term = rankedLexicalQuery(text);
+      if (!term) return [];
+      return (
+        await ctx.db
+          .query("workspaceSearchDocuments")
+          .withSearchIndex("search_text", (q) => {
+            let search = q.search("searchText", term).eq("organizationId", org);
+            if (target !== "both")
+              search = search.eq(
+                "kind",
+                target === "posts" ? "post" : "insight",
+              );
+            if (creator) search = search.eq("creatorKey", creator);
+            if (space) search = search.eq(space, true);
+            return search;
+          })
+          .take(50)
+      ).filter(eligible);
+    };
+    const lexicalReads = new Map<string, ReturnType<typeof lexicalSearch>>();
+    const lexical = (text: string) => {
+      let read = lexicalReads.get(text);
+      if (!read) {
+        read = lexicalSearch(text);
+        lexicalReads.set(text, read);
+      }
+      return read;
+    };
+    const vector = async (text: string) => {
+      const ids = args.vectors.find((entry) => entry.query === text)?.ids ?? [];
+      if (!ids.length || narrowDocs) return [];
+      const values = await Promise.all(
+        ids.slice(0, 50).map(async (id) => {
+          const row = await ctx.db.get(id);
+          if (!row || row.organizationId !== org) return null;
+          const doc = await ctx.db.get(row.documentId);
+          return doc && doc.updatedAt === row.documentRevision && eligible(doc)
+            ? doc
+            : null;
+        }),
+      );
+      return values.filter((value) => value !== null);
+    };
+    const ranked = async (text: string) => {
+      const [words, meaning] = await Promise.all([lexical(text), vector(text)]);
+      result.semantic ||= args.vectors.some((value) => value.query === text);
+      result.scanned_candidates += words.length + meaning.length;
+      return rankSearchUnits(
+        text,
+        [words.map(unit), meaning.map(unit)],
+        project,
+      );
+    };
+    const exactText = reference ?? query;
+    const sourceId = ctx.db.normalizeId("sources", exactText);
+    const direct = sourceId
+      ? await originDocuments(ctx, await selectedOrigin(ctx, reader, sourceId))
+      : [];
+    const exactIndex =
+      !args.review && !narrowDocs && !space && exactText
+        ? await ctx.db
+            .query("workspaceSearchDocuments")
+            .withIndex(
+              /^https?:\/\//i.test(exactText) ? "by_url" : "by_title",
+              (q) =>
+                /^https?:\/\//i.test(exactText)
+                  ? q.eq("organizationId", org).eq("canonicalUrl", exactText)
+                  : q
+                      .eq("organizationId", org)
+                      .eq("normalizedTitle", normalizeSearchText(exactText)),
+            )
+            .take(12)
+        : [];
+    const anchors = !args.review
+      ? rankSearchUnits(exactText, [
+          [
+            ...direct,
+            ...exactIndex,
+            ...(reference ? await lexical(reference) : []),
+          ]
+            .filter(
+              (doc) =>
+                eligible(doc) &&
+                (direct.some((item) => item._id === doc._id) ||
+                  exactIndex.some((item) => item._id === doc._id) ||
+                  containsPhrase(doc.title, exactText) ||
+                  containsPhrase(doc.excerpt, exactText)),
+            )
+            .map(unit),
+        ])
+      : [];
+    const anchoredIds = new Set(anchors.map(({ id }) => id));
+    const [base, ...parts] = await Promise.all([
+      ranked(args.review && reference ? reference : query),
+      ...facets.map((part) =>
+        reference && containsPhrase(part, reference) ? anchors : ranked(part),
+      ),
+    ]);
+    const taskResults = facets.map((query, index) => ({
+      query,
+      results: parts[index],
+    }));
+    const combined = combineSearchTasks(
+      [...anchors, ...base.filter(({ id }) => !anchoredIds.has(id))],
+      taskResults,
+    );
+    let matchedExact = false;
+    for (const hit of combined.hits) {
+      if (budget.remaining <= 0 || result.matches.length >= limits.results) {
+        result.truncated = true;
+        break;
+      }
+      const first = hit.units[0].document;
+      const { value, limited } = await hydrateOrigin(
         measuredCtx,
         reader,
-        doc,
-        hydrationBudget,
-        options.filters,
+        first,
+        budget,
+        filters,
       );
-      hydrated.set(postId, current);
-    }
-    const { value, limited } = await current;
-    incomplete ||= limited || doc.truncated;
-    if (!value) {
-      incomplete = true;
-      continue;
-    }
-    const { source, origin } = value;
-    let title = source.title.slice(0, 200),
-      excerpt = "";
-    let topics: string[] = [],
-      categories: string[] = [];
-    if (doc.kind === "insight") {
-      const raw =
-        value.output && typeof value.output === "object"
-          ? (value.output as { insights?: unknown })
-          : {};
-      const insight = Array.isArray(raw.insights)
-        ? raw.insights.find(
-            (entry: unknown) =>
-              entry &&
-              typeof entry === "object" &&
-              "id" in entry &&
-              entry.id === doc.insightId,
-          )
-        : null;
+      if (!value) continue;
+      result.truncated ||=
+        limited || hit.units.some(({ document }) => document.truncated);
+      const { source, origin } = value;
+      if (!acceptsState(args.state, source)) continue;
       if (
-        !insight ||
-        typeof insight.title !== "string" ||
-        typeof insight.claim !== "string"
-      ) {
-        incomplete = true;
-        continue;
-      }
-      topics = insightSearchTopics(insight);
-      categories = insightSearchTopics(insight, false);
-      title = insight.title.slice(0, 200);
-      excerpt = insight.claim.slice(0, 700);
-    } else {
-      excerpt = doc.excerpt;
-      topics = outputSearchTopics(value.output);
-      categories = outputSearchTopics(value.output, false);
-    }
-    const platform =
-      doc.metadataVersion === 2
-        ? doc.platform
-        : sourcePlatform(source.url ?? "", source.kind);
-    if (
-      !metadataMatchesFilters(
-        { platform, categoryKeys: categories },
-        options.filters,
+        args.review &&
+        reviewOrigins &&
+        !reviewOrigins.some((item) => item._id === origin._id)
       )
-    )
-      continue;
-    const oldPosts = result.posts.length;
-    if (!result.posts.some((post) => post.id === postId))
-      result.posts.push({
-        id: postId,
+        continue;
+      const publicId = hit.id;
+      matchedExact ||= anchoredIds.has(publicId);
+      const post = {
+        id: publicId,
         fetch_id: `${source._id}${origin.analysisVersionId ? `@${origin.analysisVersionId}` : ""}`,
         title: source.title.slice(0, 200),
         url: origin.grantId
-          ? `https://scroll.companynerve.com/app/${reader.organization._id}/shared?grant=${origin.grantId}&source=${source._id}`
-          : `https://scroll.companynerve.com/app/${reader.organization._id}/posts/${source._id}`,
+          ? `https://scroll.companynerve.com/app/${org}/shared?grant=${origin.grantId}&source=${source._id}`
+          : `https://scroll.companynerve.com/app/${org}/posts/${source._id}`,
         reference: {
           sourceId: source._id,
           generation: source.generation,
@@ -521,108 +898,198 @@ export async function searchWorkspaceCore(
               }
             : {}),
         },
-      });
-    result.matches.push({
-      id: `${postId}:${doc.itemKey}`,
-      post_id: postId,
-      kind: doc.kind,
-      ...(doc.insightId ? { insight_id: doc.insightId } : {}),
-      title,
-      excerpt,
-      ...(options.project
-        ? { project_fit: fitMatch(options.project, topics) }
-        : {}),
-    });
-    if (
-      new TextEncoder().encode(JSON.stringify(result)).length >
-      (options.responseBytes ?? limits.responseBytes) - 6000
-    ) {
-      // A valid first item may exceed a soft per-workspace share. Emit it
-      // once if it remains globally bounded, rather than returning a cursor
-      // that can never advance. Federation reserves room for three such items.
+      };
+      const matches: WorkspaceSearchResult["matches"] = hit.units
+        .slice(0, args.review ? 2 : 3)
+        .map(({ document, id }) => ({
+          id,
+          post_id: publicId,
+          kind: document.kind,
+          title: document.title,
+          excerpt: document.excerpt,
+          ...(document.insightId ? { insight_id: document.insightId } : {}),
+          ...(document.evidenceIds?.length
+            ? { evidence_ids: document.evidenceIds }
+            : {}),
+          ...(project
+            ? { project_fit: fitMatch(project, document.categoryKeys ?? []) }
+            : {}),
+        }))
+        .slice(0, limits.results - result.matches.length);
       if (
-        result.matches.length === 1 &&
-        new TextEncoder().encode(JSON.stringify(result)).length <= 16_000
+        new TextEncoder().encode(
+          JSON.stringify([...result.matches, ...matches]),
+        ).length > 44_000
       ) {
-        index++;
+        result.truncated = true;
         break;
       }
-      result.matches.pop();
-      result.posts.splice(oldPosts);
-      visited--;
-      result.scanned_candidates--;
-      incomplete = true;
-      break;
+      scores.push({ id: publicId, score: 1 / (1 + scores.length) });
+      result.posts.push(post);
+      result.matches.push(...matches);
     }
-  }
-  const remaining = index < page.page.length || !page.isDone;
-  const budgetReached = visited >= sessionMaximum;
-  result.session_candidates = visited;
-  result.examined_sources = hydrationBudget.examined;
-  result.loaded_bytes = hydrationBudget.bytes - initialBytes;
-  result.has_more = remaining;
-  result.truncated = incomplete || remaining;
-  result.exhausted = !remaining && !incomplete;
-  if (options.prefix) {
-    options.prefix.nextOffset = index;
-    options.prefix.nextHash = await searchPrefixHash(
-      page.page.slice(0, index).map((row) => row._id),
+    result.facets = combined.support.map((facet) =>
+      result.matches.some(({ id }) => id === facet.match_id)
+        ? facet
+        : { query: facet.query },
     );
-    options.prefix.incomplete = incomplete;
-  }
-  if (remaining && !budgetReached && !options.prefix)
-    result.next_cursor = await signRankedCursor(cursorKey, {
-      version: 1,
-      profileId: reader.organization._id,
-      grantId: reader.grant._id,
-      grantVersion: reader.grant.version,
-      projectionRevision: revision,
-      query,
-      target,
-      page: index < page.page.length ? pageStart : page.continueCursor,
-      offset: index < page.page.length ? index : 0,
-      visited,
-      incomplete,
-    });
-  if (budgetReached && remaining)
-    result.coverage =
-      "The 200-candidate retrieval budget was reached. Narrow the query or filters; no automatic full-workspace traversal occurred.";
-  if (options.filters)
-    result.coverage +=
-      " Filters inspect only bounded candidates; date filters use known direct-save times and omit shared paths whose workspace-added date is unknown.";
-  if (options.project) {
-    result.matches.sort((a, b) => {
-      const aa = a.project_fit!,
-        bb = b.project_fit!;
-      return bb.matched * (aa.total || 1) - aa.matched * (bb.total || 1);
-    });
-    result.coverage +=
-      " Project fit reorders this emitted page only; it is not a global or semantic relevance score.";
-  }
-  return workspaceSearchOutput.parse(result);
-}
+    result.examined_sources = budget.examined;
+    result.loaded_bytes = budget.bytes;
+    result.session_candidates = result.scanned_candidates;
+    result.has_more = next !== null;
+    result.exhausted = !!args.review && !next && !result.truncated;
+    result.status =
+      required ??
+      (reference && !matchedExact && !args.review
+        ? "exact-name-missing"
+        : result.posts.length
+          ? "results"
+          : "no-matches");
+    result.coverage = args.review
+      ? "Complete review visits the authorized saved index in bounded pages. Follow next_cursor until exhausted."
+      : scope.narrow
+        ? "Search is scoped to the current grant. A private space can be reviewed in bounded pages."
+        : result.semantic
+          ? "Ranked search combines saved text and multilingual embeddings across the authorized workspace. Use review for complete traversal."
+          : "Ranked search uses saved text. Semantic indexing or inference is unavailable for this request. Use review for complete traversal.";
+    if (result.status === "needs-project-record")
+      result.coverage += " Saved examples cannot establish this project fact.";
+    if (result.status === "needs-current-data")
+      result.coverage +=
+        " Saved examples cannot establish current external trends.";
+    if (result.status === "exact-name-missing")
+      result.coverage +=
+        " No exact named reference appeared in the searched candidates.";
+    if (filters?.addedAfter !== undefined || filters?.addedBefore !== undefined)
+      result.coverage +=
+        " Date filters omit team shares whose workspace-added dates are unknown.";
+    result.coverage += " Recent saves and shares may still be indexing.";
+    if (project)
+      result.project = {
+        id: project.id,
+        profile_id: project.profileId,
+        name: project.name,
+        base_sha: project.baseSha,
+        profile_version: project.profileVersion,
+        selection_version: project.selectionVersion,
+        context_grant_version: project.grantVersion,
+      };
+    return { result: workspaceSearchOutput.parse(result), next, scores };
+  },
+});
 
-export const search = internalQuery({
+export const libraryItems = internalQuery({
   args: {
-    profileId: v.optional(v.id("organizations")),
-    workspaceIds: v.optional(v.array(v.id("organizations"))),
-    query: v.string(),
-    mode: v.literal("ranked_v1"),
-    target: v.optional(targetValue),
-    filters: v.optional(
+    organizationId: v.id("organizations"),
+    posts: v.array(
       v.object({
-        categoryKeys: v.optional(v.array(v.string())),
-        platforms: v.optional(v.array(v.string())),
-        addedAfter: v.optional(v.number()),
-        addedBefore: v.optional(v.number()),
+        sourceId: v.string(),
+        url: v.string(),
+        revision: v.number(),
+        generation: v.number(),
+        share: v.optional(v.string()),
+        shareVersion: v.optional(v.number()),
+        version: v.optional(v.string()),
+        matches: v.array(v.object({ title: v.string(), excerpt: v.string() })),
       }),
     ),
-    projectId: v.optional(v.id("repositories")),
-    cursor: v.optional(v.string()),
   },
-  returns: outputValue,
-  handler: (ctx, args) =>
-    runWorkspaceSearchRequest(ctx, args, searchWorkspaceCore),
+  returns: v.array(v.any()),
+  handler: async (rawCtx, { organizationId, posts }) => {
+    const ctx = knowledgeReadContext(rawCtx);
+    await access(ctx, organizationId);
+    const items = [];
+    for (const post of posts.slice(0, 20)) {
+      const id = ctx.db.normalizeId("sources", post.sourceId);
+      if (!id) continue;
+      let source: Doc<"sources"> | null;
+      if (post.share) {
+        const share = ctx.db.normalizeId("teamKnowledgeGrants", post.share);
+        if (!share) continue;
+        try {
+          const shared = await exactGrantedSource(
+            ctx,
+            organizationId,
+            share,
+            id,
+            post.shareVersion,
+          );
+          if (shared.reference.analysisVersionId !== post.version) continue;
+          source = shared.source;
+        } catch (error) {
+          if (!expectedUnavailable(error)) throw error;
+          continue;
+        }
+      } else {
+        source = await ctx.db.get(id);
+        if (source?.organizationId !== organizationId) continue;
+      }
+      if (
+        !source ||
+        source.state === "deleted" ||
+        !source.rightsAttested ||
+        !sourceRetained(source.sourceRetentionUntil) ||
+        source.generation !== post.generation ||
+        source.updatedAt !== post.revision
+      )
+        continue;
+      const selected =
+        post.share && post.version
+          ? undefined
+          : await selectedAnalysis(ctx, source);
+      if (!post.share && selected?.metadata.id !== post.version) continue;
+      const first = post.matches[0];
+      if (post.share) {
+        items.push({
+          _id: source._id,
+          organizationId,
+          title: source.title,
+          state: source.state,
+          kind: source.kind,
+          createdAt: source.createdAt,
+          updatedAt: source.updatedAt,
+          summary: first?.excerpt ?? "",
+          insightCount: post.matches.length,
+          mainPoints: post.matches.map(({ title }) => title),
+          tags: [],
+          searchHref: post.url,
+          coverage: source.coverage,
+        });
+        continue;
+      }
+      const {
+        text: _text,
+        analysis,
+        objectKey: _objectKey,
+        searchable: _searchable,
+        selectedAnalysisSummary,
+        selectedAnalysisInsightCount,
+        selectedAnalysisMainPoints,
+        ...card
+      } = source;
+      const shared = await cloudSourceMetadata(ctx, source);
+      items.push({
+        ...card,
+        ...(shared ? { sharedAvailable: shared.available } : {}),
+        summary:
+          first?.excerpt ||
+          (shared
+            ? shared.summary
+            : (selectedAnalysisSummary ?? source.summary)),
+        insightCount:
+          (shared ? shared.insightCount : selectedAnalysisInsightCount) ??
+          analysis?.insights?.length ??
+          0,
+        mainPoints:
+          (shared ? shared.mainPoints : selectedAnalysisMainPoints) ??
+          analysis?.insights
+            ?.slice(0, 3)
+            .map((i: { title: string }) => i.title) ??
+          [],
+      });
+    }
+    return items;
+  },
 });
 
 export const refreshSource = internalMutation({
@@ -679,6 +1146,7 @@ export const bootstrap = internalMutation({
   args: {
     organizationId: v.id("organizations"),
     expectedRevision: v.optional(v.number()),
+    rebuild: v.optional(v.boolean()),
   },
   returns: v.object({
     done: v.boolean(),
@@ -705,20 +1173,32 @@ export const bootstrap = internalMutation({
       await bumpWorkspaceSearch(ctx, args.organizationId);
       state = (await workspaceSearchState(ctx, args.organizationId))!;
     }
+    if (state.phase === "ready" && args.rebuild && state.indexVersion !== 2) {
+      await ctx.db.patch(state._id, {
+        phase: "sources",
+        cursor: null,
+        shareOffset: 0,
+      });
+      state = { ...state, phase: "sources", cursor: null, shareOffset: 0 };
+    }
     let visited = 0;
     if (state.phase === "sources") {
       const page = await ctx.db
-        .query("dashboardCards")
-        .withIndex("by_org_kind_updated", (q) =>
-          q.eq("organizationId", args.organizationId).eq("kind", "source"),
-        )
+        .query("sources")
+        .withIndex("by_org", (q) => q.eq("organizationId", args.organizationId))
         .paginate({ cursor: state.cursor, numItems: 1 });
-      for (const card of page.page) {
-        const sourceId = ctx.db.normalizeId("sources", card.entityId);
-        if (sourceId) {
-          await refreshDirectSearchSource(ctx, args.organizationId, sourceId);
-          visited++;
-        }
+      for (const source of page.page) {
+        await refreshDirectSearchSource(ctx, args.organizationId, source._id);
+        if (source.searchable !== undefined)
+          await ctx.db.patch(source._id, { searchable: undefined });
+        const links = await ctx.db
+          .query("sourceCategories")
+          .withIndex("by_source", (q) => q.eq("sourceId", source._id))
+          .take(64);
+        for (const link of links)
+          if (link.searchable !== undefined)
+            await ctx.db.patch(link._id, { searchable: undefined });
+        visited++;
       }
       await ctx.db.patch(state._id, {
         phase: page.isDone ? "shares" : "sources",
@@ -754,6 +1234,7 @@ export const bootstrap = internalMutation({
           doneGrant = next >= grant.sources.length;
         await ctx.db.patch(state._id, {
           phase: doneGrant && page.isDone ? "ready" : "shares",
+          ...(doneGrant && page.isDone ? { indexVersion: 2 as const } : {}),
           cursor: doneGrant
             ? page.isDone
               ? null
@@ -765,12 +1246,14 @@ export const bootstrap = internalMutation({
       } else
         await ctx.db.patch(state._id, {
           phase: "ready",
+          indexVersion: 2,
           cursor: null,
           shareOffset: 0,
           updatedAt: Date.now(),
         });
     }
     await bumpWorkspaceSearch(ctx, args.organizationId);
+    await scheduleSearchVectors(ctx, args.organizationId);
     const final = (await workspaceSearchState(ctx, args.organizationId))!;
     return {
       done: final.phase === "ready",
@@ -796,10 +1279,103 @@ export const initializeNewWorkspace = internalMutation({
     const state = (await workspaceSearchState(ctx, args.organizationId))!;
     await ctx.db.patch(state._id, {
       phase: "ready",
+      indexVersion: 2,
       cursor: null,
       shareOffset: 0,
     });
     return null;
+  },
+});
+
+export const migrationWorkspaces = internalQuery({
+  args: { cursor: v.union(v.string(), v.null()) },
+  returns: v.object({
+    workspaces: v.array(
+      v.object({
+        id: v.id("organizations"),
+        ready: v.boolean(),
+        semantic: v.boolean(),
+      }),
+    ),
+    next: v.union(v.string(), v.null()),
+  }),
+  handler: async (ctx, { cursor }) => {
+    const page = await ctx.db
+      .query("organizations")
+      .paginate({ cursor, numItems: 20 });
+    const workspaces = await Promise.all(
+      page.page
+        .filter(({ status }) => status === "active")
+        .map(async ({ _id }) => {
+          const state = await workspaceSearchState(ctx, _id);
+          const pending = await ctx.db
+            .query("workspaceSearchVectors")
+            .withIndex("by_pending", (q) =>
+              q.eq("organizationId", _id).eq("pending", true),
+            )
+            .first();
+          return {
+            id: _id,
+            ready: state?.phase === "ready" && state.indexVersion === 2,
+            semantic: !pending,
+          };
+        }),
+    );
+    return { workspaces, next: page.isDone ? null : page.continueCursor };
+  },
+});
+
+export const resumeVectors = internalMutation({
+  args: { organizationId: v.id("organizations") },
+  returns: v.null(),
+  handler: async (ctx, { organizationId }) => {
+    await scheduleSearchVectors(ctx, organizationId);
+    return null;
+  },
+});
+
+export const retireObsoleteFields = internalMutation({
+  args: {
+    organizationId: v.id("organizations"),
+    cursor: v.union(v.string(), v.null()),
+  },
+  returns: v.object({
+    next: v.union(v.string(), v.null()),
+    cleared: v.number(),
+  }),
+  handler: async (ctx, { organizationId, cursor }) => {
+    ensure(
+      process.env.RESTORE_LOCK !== "true",
+      "POLICY_BLOCKED",
+      "Search migration is paused.",
+    );
+    const state = await workspaceSearchState(ctx, organizationId);
+    ensure(
+      state?.phase === "ready" && state.indexVersion === 2,
+      "APPROVAL_STALE",
+      "Complete the search projection first.",
+    );
+    const page = await ctx.db
+      .query("sources")
+      .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
+      .paginate({ cursor, numItems: 8 });
+    let cleared = 0;
+    for (const source of page.page) {
+      if (source.searchable !== undefined) {
+        await ctx.db.patch(source._id, { searchable: undefined });
+        cleared++;
+      }
+      const links = await ctx.db
+        .query("sourceCategories")
+        .withIndex("by_source", (q) => q.eq("sourceId", source._id))
+        .take(64);
+      for (const link of links)
+        if (link.searchable !== undefined) {
+          await ctx.db.patch(link._id, { searchable: undefined });
+          cleared++;
+        }
+    }
+    return { next: page.isDone ? null : page.continueCursor, cleared };
   },
 });
 

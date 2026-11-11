@@ -265,15 +265,7 @@ const operations = z.discriminatedUnion("operation", [
   z
     .object({
       operation: z.literal("search"),
-      args: z
-        .object({
-          query: z.string().min(1).max(200),
-          offset: z.number().int().min(0).max(49).optional(),
-          cursor: z.string().max(4096).optional(),
-          profileId,
-        })
-        .strict()
-        .or(workspaceSearchInput),
+      args: workspaceSearchInput,
     })
     .strict(),
   z
@@ -337,12 +329,7 @@ export const tools = httpAction(async (ctx, request) => {
               typeof value === "object" &&
               "operation" in value &&
               (value.operation === "save_project_proposal" ||
-                (value.operation === "search" &&
-                  "args" in value &&
-                  !!value.args &&
-                  typeof value.args === "object" &&
-                  "mode" in value.args &&
-                  value.args.mode === "ranked_v1"))
+                value.operation === "search")
             ? 32768
             : 8192,
       ),
@@ -756,20 +743,13 @@ export const tools = httpAction(async (ctx, request) => {
         });
         break;
       case "search":
-        value =
-          "mode" in input.args && input.args.mode === "ranked_v1"
-            ? await ctx.runQuery(internal.workspaceSearch.search, {
-                ...input.args,
-                profileId: selectedProfile,
-                workspaceIds: input.args.workspaceIds as
-                  Id<"organizations">[] | undefined,
-                projectId: input.args.projectId as
-                  Id<"repositories"> | undefined,
-              })
-            : await ctx.runQuery(internal.assistant.search, {
-                ...input.args,
-                profileId: selectedProfile,
-              });
+        value = await ctx.runAction(internal.workspaceSearchActions.search, {
+          ...input.args,
+          profileId: selectedProfile,
+          workspaceIds: input.args.workspaceIds as
+            Id<"organizations">[] | undefined,
+          projectId: input.args.projectId as Id<"repositories"> | undefined,
+        });
         break;
       case "fetch":
         value = await ctx.runQuery(internal.assistant.fetch, {

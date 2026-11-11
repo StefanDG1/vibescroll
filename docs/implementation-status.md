@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 11 R168 workspace search production acceptance
+
+The Library and MCP use Convex text and vector indexes, exact reference ranking, confirmed project context, and separate retrieval for compound requests. The migration visited 320 source records and completed vector indexing in all five active workspaces. The final deploy removed two obsolete indexes, cleanup cleared 2,191 obsolete derived values, and the live MCP rejected the retired mode. Live Library and MCP returned Componentry first. Live compound MCP search returned Space UI first with distinct progress feedback evidence. A signed-in ChatGPT chat returned two saved references from its compound request.
+
+The staged website used `31d2a8613a640fa5c98ccba35db309579dc68455` and was promoted without a rebuild. The final Convex deploy used `2918a4e5c431435fc895e9f17100adc1710e9dd8` on November 11 at 21:50 Europe/Berlin. The changed retrieval checks passed. The Linux CI-equivalent run passed 1,773 main tests with 11 skips. The schema assertion still expected 106 tables and failed on the approved addition. The final commit updated that test only. Its targeted rerun, remaining CI checks, both builds and audit passed in the same pinned Ubuntu environment. The hosted GitHub runs had queued during release verification. See the [production receipt](operations/evidence/launch-20261111-workspace-hybrid-search.json) for the versions and check scope.
+
 ## November11: X link submission and four saved analyses accepted
 
 R161/R162 are live on website `455eb3f` / backend `35c8363`. Ordinary ChatGPT link submission uses gallery-dl, FxTwitter fallback and server preparation before the existing native Assistant. Paid non-pilot setup, Events and retained execution are live under current Pro/risk/grant authority. The full isolated paid flow clears every personal-pilot subject and verifies that Pro revocation stops a claimed task. All four owner posts are Ready with exact full captions, both direct video attachments,16 retained JPEGs and16 cited insights; app/MCP reads and native replies pass. No manual monitor nudge or foreground analysis was used. Each successful preparation charged1 app credit; incomplete attempts charged0. Unknown provider costs remain held.

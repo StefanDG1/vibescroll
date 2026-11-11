@@ -633,16 +633,6 @@ export async function sourceFinishCore(
             "Automatic local speech recognition can contain errors. Check the cited segments and frames.",
         }
       : undefined,
-    searchable: [
-      s.title,
-      output.summary,
-      s.correctionAuthor
-        ? s.text
-        : j.transcript.segments.map((x: any) => x.text).join(" "),
-      ...s.tags,
-    ]
-      .filter(Boolean)
-      .join(" "),
     localAnalysisReceipt: {
       model: run.model,
       effort: run.effort,

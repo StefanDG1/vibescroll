@@ -8,8 +8,10 @@ Use a post you are permitted to process, the intended VibeScroll workspace and a
 
 ## Share or copy a link
 
+For automatic analysis, send a public Instagram video post or Reel, a TikTok video, or a public X post. Review link formats and processing options. [Find and save a post](/docs/workflows/find-save)
+
 1. Open the permitted post. On Android or iPhone, choose ChatGPT only if that sharing destination is actually offered. Otherwise copy the link and open ChatGPT yourself. On a computer, start by copying the browser link.
-2. In the supported ChatGPT interface, explicitly choose VibeScroll using the tool controls available to your account. A generic chat share does not guarantee tool invocation. No special prompt URL forces installation or bypasses permission.
+2. Open a ChatGPT conversation that has access to your VibeScroll connection.
 3. Send an explicit request, for example: `Use VibeScroll to save this post and extract its ideas: [paste link]`.
 4. Read the actual receipt and open its source/status link. Saved, waiting, processing, failed and cited-ready are different states. If completion is uncertain, check that source before submitting another copy. Existing own-library results are not a new processing run.
 5. For a ready result, inspect its references and coverage. Compare one claim with the supplied evidence. An illustration or ready badge is not a quality guarantee.
@@ -20,7 +22,7 @@ Native menus and supported destinations vary by device, app and account. These a
 
 Open [your library](/app), choose **Save**, and submit the permitted link, upload or supplied text. Review the actual route, account consent and maximum before requesting processing. Automatic analysis requires its own current permission and a ready route. The fallback does not bypass source restrictions or silently switch to a paid provider.
 
-The personal local route needs an eligible official account and a supported awake paired computer. [Review setup](/help/getting-started) or [repair processing](/help/processing-and-recovery). Computer-free own-account Cloud processing remains under verification. Never paste passwords, cookies, OAuth tokens or private pairing credentials into chat.
+Hosted automatic analysis runs after you set up an eligible connection and automatic processing. The personal local route uses an awake paired computer. Keep passwords, cookies, OAuth tokens, and pairing credentials out of chat. [Review setup](/help/getting-started) or [repair processing](/help/processing-and-recovery).
 
 ## You have finished when
 

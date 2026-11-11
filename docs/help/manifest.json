@@ -224,7 +224,7 @@
     {
       "slug": "share-a-post",
       "title": "Send a post explicitly to VibeScroll",
-      "summary": "Choose VibeScroll explicitly in a supported ChatGPT surface, or copy the link into web Save.",
+      "summary": "Send an Instagram video post, TikTok video, or public X post through ChatGPT or web Save.",
       "file": "share-a-post.md",
       "status": "approved",
       "reviewMode": "Root source-reviewed compatible release; actual native-device and independent comprehension pending",

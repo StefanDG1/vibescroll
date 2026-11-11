@@ -6,7 +6,7 @@ Keep the saved source while you repair the smallest missing prerequisite.
 
 Open **Connections** and choose where tasks run. The Save form uses your chosen route:
 
-1. **My own Cloud Work**, recommended. This uses your ChatGPT subscription in ChatGPT Work with Cloud selected. Your computer can be off. The private pilot requires current connection permissions, setup and a monitor. The choice stays disabled when these are unavailable; wider automatic-video acceptance is still pending.
+1. **My own Cloud Work**, recommended. This uses your ChatGPT subscription in ChatGPT Work with Cloud selected. Your computer can be off. Eligible accounts need current connection permissions and a ready monitor. Connections shows whether your account can use this route.
 2. **VibeScroll's servers**. This uses processing credits bought separately from your ChatGPT subscription. Review the maximum before starting. Buying credits does not enable an unavailable processing route.
 3. **Local machine**. This uses your own eligible subscription on a paired computer. Keep the computer and its companion on. Review any preparation credits before starting.
 
@@ -14,17 +14,17 @@ Select one route to see only its setup. **Continue** saves the standard library,
 
 ![Task locations in a synthetic account](/help/task-locations.png)
 
-Choosing My own Cloud Work makes supported new video saves request analysis automatically; there is no second analysis checkbox. Choosing the route alone starts no video job. An explicit save-only request still saves without analysis. VibeScroll never switches a failed task to a different subscription or credit route automatically.
+Choosing My own Cloud Work makes supported new post saves request analysis automatically; there is no second analysis checkbox. Choosing the route alone starts no video job. An explicit save-only request still saves without analysis. VibeScroll never switches a failed task to a different subscription or credit route automatically.
 
 ## Set up automatic Cloud saves
 
-These steps apply when the private pilot is enabled for your account. A native saved-link event can wake the prepared Work task. Complete video-to-result acceptance and general availability remain separate.
+Use this setup when Connections offers **My own Cloud Work**. Automatic analysis supports individual public Instagram Reels and video posts, TikTok videos, and X posts. [Supported link formats](/docs/workflows/find-save#links-for-automatic-analysis)
 
 1. In ChatGPT, connect **VibeScroll** using its normal sign-in and consent. Reuse your existing working connection. You do not need to delete it or create a second test connection.
 2. In VibeScroll **Connections**, select **My own Cloud Work**, choose the model and press **Continue**. Standard setup includes current and future library posts, confirmed projects and supported ordinary actions. Results stay until deleted. Actual OAuth scopes and workspace roles still apply. You can narrow access in **Advanced settings**, or disconnect anytime. A normal signed-in session is enough; no fresh five-minute sign-in is required.
-3. Open **Finish or resume ChatGPT setup**, copy the current setup message and paste it into your own ChatGPT Work chat with Cloud selected. Let its tool checks finish. A first setup may need tools or a speech model. The pinned cache verifier handles wheel metadata correctly; a failed integrity check stops setup without deleting your cache.
+3. Open **Finish or resume ChatGPT setup**, copy the current setup message and paste it into your own ChatGPT Work chat with Cloud selected. Let the checks for your route finish. With server preparation, VibeScroll retrieves and prepares the post before the ChatGPT task analyzes it.
 4. Wait until that chat reports **Monitoring** for new saved links and approved reanalysis requests. The current setup uses both native event types in the same Work task. Its supported subscriptions renew automatically. You can close the chat tab and turn your computer off. Reconfigure if you revoke access, change the reviewed grant, lose host capabilities or ChatGPT asks you to sign in again. Renewal is not a promise that a revoked connection works forever.
-5. In the app, choose **My own Cloud Work**, paste a permitted Reel or TikTok, confirm your right to process it and choose **Add and analyze**. Save opens its post page. The link remains saved while the task checks readiness; a waiting state is not completed analysis. Inspect the actual transcript, images and citations when a result returns. Bookmark its separate post URL or reopen it from **Posts**.
+5. In the app, choose **My own Cloud Work**, paste a permitted Instagram video post, TikTok video, or X post, confirm your right to process it and choose **Add and analyze**. Save opens its post page. The link remains saved while the task checks readiness; a waiting state is not completed analysis. Inspect the actual transcript, images and citations when a result returns. Bookmark its separate post URL or reopen it from **Posts**.
 
 The monitor must be ready before normal saves. A source that needs unavailable speech recognition or cannot be accessed stops without paid fallback. Keep the existing post while checking the reason in ChatGPT. A failed or unknown analysis is not automatically replayed.
 

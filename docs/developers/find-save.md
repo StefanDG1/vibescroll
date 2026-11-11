@@ -23,7 +23,21 @@ Team results carry their exact sharing-grant reference and version, which subseq
 
 Ask: "Save this link to VibeScroll without analysis." The assistant uses `save_link` with `analyze=false`, an inferred factual title and one stable request key. Keep the returned source ID and post URL.
 
-For ordinary analysis requests, the reviewed connection defaults determine the supported automatic route. Save-only requests stay save-only. GitHub and Reddit links save metadata and use their own review path; they do not inherit video extraction authority. Other unsupported sources require an upload or supplied text in the website.
+For ordinary analysis requests, the reviewed connection defaults determine the processing route. Save-only requests stay save-only.
+
+### Links for automatic analysis
+
+After you set up an eligible VibeScroll connection and automatic analysis in ChatGPT, use an individual public post link.
+
+| Platform | Links to send |
+| --- | --- |
+| Instagram | Reels and posts containing a video |
+| TikTok | Individual videos, including supported TikTok short links |
+| X (Twitter) | Individual posts with text, supported attachments, or both |
+
+Post access, media format, and processing limits apply. The production checks covered Instagram Reels, TikTok videos, and X posts with text only or one video.
+
+The older downloader accepts individual YouTube and Vimeo video links. Check the available processing options in web Save. GitHub and Reddit links save metadata for a separate review. For other sources, use a permitted upload or supplied text when offered.
 
 Public X/Twitter status links use server preparation with gallery-dl and a bounded FxTwitter fallback. The full post text and every direct attachment are required. A selected-video or selected-photo suffix still imports the whole post. Text-only posts are valid. Attached images and sampled video frames have separate asset references; caption and image citations have no video timestamp. Outbound links and quoted posts are not attached media. X results stay private under the current catalog policy. Existing access, size, duration and funding limits apply; a missing attachment fails preparation. The anonymous preview funnel retains its separately supported sources.
 

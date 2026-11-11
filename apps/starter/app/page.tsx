@@ -280,11 +280,11 @@ export default function Home() {
             ],
             [
               "Do I need to keep my computer running?",
-              "The personal local route needs an eligible paired computer that is awake. Managed processing has separate funding and availability checks. Check the current route in your workspace; computer-free own-account Cloud support is still awaiting acceptance.",
+              "Hosted analysis runs while your computer is off. Set up an eligible connection and automatic analysis first. If you choose local processing, keep your paired computer awake.",
             ],
             [
-              "Can every Instagram or TikTok post be analyzed?",
-              "Support depends on source access, media format, rights and the available processing route. Results identify incomplete evidence. A saved URL is not permission to retrieve its media.",
+              "Which social posts can I analyze?",
+              "Send a public Instagram Reel or video post, a TikTok video, or a public X post. Analysis depends on access to the post, the media format, and your processing setup.",
             ],
             [
               "Does merging mean the idea helped?",

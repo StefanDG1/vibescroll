@@ -15,6 +15,15 @@ Working drafts for landing pages, ads, social posts, email and product demos. St
 | Earlier website brief | Turn saved videos into changes worth building. | Video-specific landing page |
 | Earlier brand line | Make scrolling productive. | Tagline candidate and test baseline |
 
+## Supported platforms for public copy
+
+Use “public Instagram Reels and video posts, TikTok videos, and public X posts” when describing automatic analysis. Lead with what customers can do with the posts they saved.
+
+- “Save a public Reel, TikTok video, or X post. Get cited insights you can use in your next project.”
+- “Saved an idea on X? Once automatic analysis is set up, send the public post to VibeScroll in ChatGPT. VibeScroll keeps the full text and analyzes supported attachments.”
+
+The X production check covered two text posts and two posts with one video each. Photo, GIF, and mixed-attachment cases have synthetic coverage. Keep demos and reliability claims within the formats actually checked in production. [X production evidence](../operations/evidence/launch-20261111-x-post-production.json)
+
 ## Headline variants by angle
 
 ### Product features

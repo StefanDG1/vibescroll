@@ -35,9 +35,9 @@ const pages: Record<string, { title: string; body: string[] }> = {
     title: "Before you start",
     body: [
       "GitHub is optional. You can keep a library without creating a project or starting code work.",
-      "A saved link is metadata until an enabled route processes permitted evidence. Private and blocked sources can need a permitted upload or supplied text.",
-      "Browser library use needs no installed companion. Personal analysis needs an eligible paired computer and your connected official account. Managed processing uses its separately reviewed credit route.",
-      "A ChatGPT subscription has its own eligibility and quota. It does not include transcription, VibeScroll hosting or cloud compute. General hosted commercial subscription-funded access remains gated.",
+      "Automatic analysis supports public Instagram Reels and video posts, TikTok videos, and public X posts. For private or blocked sources, use a permitted upload or supplied text when offered.",
+      "Set up your VibeScroll connection and automatic analysis in ChatGPT once. Hosted analysis runs while your computer is off. If you choose local processing, keep your paired computer awake.",
+      "ChatGPT has its own eligibility and usage limits. VibeScroll may charge preparation credits for a new analysis.",
       "No fit and already implemented are useful decisions. A plan, coding approval, patch approval, draft publication, merge and measured outcome remain separate.",
     ],
   },
@@ -154,7 +154,18 @@ export default async function Page({
             </a>
           </div>
         )}
-        {slug === "faq" && <Link href="/help">Find help with your task</Link>}
+        {slug === "faq" && (
+          <ul>
+            <li>
+              <Link href="/docs/workflows/find-save#links-for-automatic-analysis">
+                See supported post links
+              </Link>
+            </li>
+            <li>
+              <Link href="/help">Find help with your task</Link>
+            </li>
+          </ul>
+        )}
         {slug === "contact" && (
           <a className="primary" href="mailto:contact@exponentialeducation.ro">
             Email support

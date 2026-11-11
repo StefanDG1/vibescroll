@@ -4,6 +4,10 @@ Mode: reference. This document specifies controls and evidence. It does not clai
 
 For implemented user-facing boundaries, download domains and data flow, see [security and privacy for users](SECURITY-FOR-USERS.md). The table below lists requirements and verification criteria, not blanket pass results. [Implementation status](implementation-status.md) records actual checks. Private reports follow the repository's [security policy](../SECURITY.md).
 
+## Assistant preference review
+
+[ADR183](adr/183-normal-session-assistant-preferences.md) removes the duplicate five-minute sign-in requirement for routine app workflows in the next candidate. A normal active app session, current role, explicit acknowledgement and current source/context/grant versions remain required. MCP identities cannot edit their own grants. Only the typed high-risk inventory retains a fresh-sign-in requirement; credential changes, account/workspace deletion and deliberate publication have direct sign-in/back navigation without action replay. Funding, ordinary session expiry and all other server permissions remain enforced. This local policy change is not a completed security audit or production acceptance.
+
 ## Assets and trust boundaries
 
 Protected assets include provider credentials, source media, transcripts, repository content, plans, payment state, device credentials, approval records, and private evidence URLs. The browser, external media, repository content, model output, and execution sandbox are less trusted than the authorization and credential services.

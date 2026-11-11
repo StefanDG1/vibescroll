@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-10",
+  "baseline": "e1f7b19",
+  "scope": "offline synthetic contract probe; no live X retrieval or media/model job",
+  "downloaderVersion": "2026.10.21",
+  "network": "socket connections forbidden; extractor provider status injected",
+  "results": [
+    {
+      "name": "text_only_raises_no_video",
+      "passed": true
+    },
+    {
+      "name": "photos_only_raises_no_video",
+      "passed": true
+    },
+    {
+      "name": "video_returns_video_and_description",
+      "passed": true
+    },
+    {
+      "name": "gif_returns_playable_variant",
+      "passed": true
+    },
+    {
+      "name": "mixed_photo_and_video_omits_photo",
+      "passed": true
+    },
+    {
+      "name": "two_videos_returns_playlist",
+      "passed": true
+    },
+    {
+      "name": "external_link_returns_redirect_result",
+      "passed": true
+    },
+    {
+      "name": "graphql_conversion_does_not_preserve_note_tweet_text",
+      "passed": true
+    },
+    {
+      "name": "quoted_video_is_merged_into_parent_result",
+      "passed": true
+    },
+    {
+      "name": "current_cloud_worker_rejects_x_identity",
+      "passed": true
+    }
+  ]
+}

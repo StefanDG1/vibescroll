@@ -1,0 +1,76 @@
+# Interest-led onboarding execution
+
+Mode: reference. Updated November 2, 2026, Europe/Berlin.
+
+R144 authorizes the [plan](INTEREST-LED-ONBOARDING.md) and [ADR230](../adr/230-interest-led-onboarding-and-prepayment-github.md). Website/backend189dc4f are live. [Focused V1 acceptance](../operations/evidence/launch-20261102-focused-onboarding.json). [Search-first acceptance](../operations/evidence/launch-20261102-search-first-onboarding.json). [Current production acceptance](../operations/evidence/launch-20261102-onboarding-continuation.json), [first publication](../operations/evidence/launch-20261101-interest-led-onboarding.json).
+
+## R151 approved V1 implementation
+
+The owner approves V1 implementation. The prior review hold is superseded for this scope. V2 stays deferred.
+
+- [x] Ground existing draft, preview, Home, assistant, GitHub, payment and project contracts.
+- [x] Extend the versioned journey and preserve old drafts.
+- [x] Build focused quiz/graphics and adapt the real Home card through a guest boundary.
+- [x] Add forgotten-saves, visual import tutorial and local preview.
+- [x] Add resumable assistant setup, credit explanation and observed connection status.
+- [x] Verify account/GitHub/Pro/Home/project continuation regressions; retain earlier live account/GitHub/project acceptance. New payment/identity/assistant OAuth are not newly claimed.
+- [x] Complete batched desktop/mobile/theme checks, exact CI and compatible publication.
+
+## R151 production acceptance
+
+Website/backend189dc4f are live. Exact CI41504180285 passes1,710main/11skips,79auth,179knowledge, Node/Python/both builds and audit.17guard tests, two deterministic preparations and actual no-scan/no-backfill admission passed for five optional fields. One57.096s Basic build was staged and promoted unchanged. Canonical welcome/Home4, Library8, real four-insight preview/540px poster, import guide/local preview and signed official signup handoff pass. Native Back/radio/cross-tab recovery and assistant setup component checks pass. Original MCP grant12 stays ready. No new inference, payment, wallet grant, identity or OAuth consent.56private screenshots include20canonical views. [Receipt and limits](../operations/evidence/launch-20261102-focused-onboarding.json).
+
+An existing shared source has ready metadata but an unavailable full read. It is preserved as a separate diagnosis; no universal feed-health claim follows from onboarding acceptance.
+
+## R148 reviewed design, now approved by R151
+
+R150 corrects the agent's link-first framing. Lead with forgotten saved posts and their potential use across projects. Screens7a-7c now propose a saved-post benefit screen, immediately followed by the Instagram export/import tutorial and an optional local-file preview. Keep direct links and the ready example as alternatives, preserve actual quotes and account/access boundaries, and never promise all posts will be available or processed automatically. Contextual term explanations remain. R151 implements and publishes this reviewed V1; the acceptance section above is current.
+
+The [V1/V2 proposal](../design/ONBOARDING-V1-V2-REVIEW.md) explains each screen, alternate flow, component reuse, graphics, motion and test phases. [Research](../design/ONBOARDING-RESEARCH-2026-11-02.md) covers60 indexed onboarding matches/25 posts, additional queries, the actual Exponential source and attributed screenshots. This section retains the reviewed design; R151 separately approves V1 implementation. Simplify each step rather than cutting useful steps; mascot remains V2 only. Connect later is approved and followed by the fair credit explanation; supported assistant work is preferred after verified connection. R151 supersedes the earlier review hold for V1.
+
+## R147 assistant connection, implemented in R151
+
+Include a first-class ChatGPT or supported MCP-client connection step after signup, with resumable setup, honest observed connection status and no duplicate grant setup. The owner requires MCP access for the app. R148 allows Connect later without blocking app entry. Preserve Pro boundaries and distinguish ordinary MCP from Events automation. [Requirement](../design/SEARCH-FIRST-ONBOARDING.md#required-mcp-setup). The optional connection step is deployed at189dc4f; fresh-user OAuth acceptance remains separate.
+
+## R146 correction, deployed in R151
+
+The owner clarified that the quiz must remain and improve. Only the recommended-post selection should become the shared Home feed, with explanatory graphics and better transitions. [Corrected design](../design/SEARCH-FIRST-ONBOARDING.md). The restored quiz/shared Home correction is deployed at189dc4f. Preserve valid R145 fixes and the earlier preview/account/payment boundaries.
+
+## R145 deployed behavior, interpretation corrected
+
+The agent incorrectly replaced mandatory quiz screens with a searchable ready feed, short Home tour, no mascot and visible plan/repository choices. Existing saved answers, selected post, own links, invitations, one complete preview and exact checkout/credit contracts remain. After access, the new default destination is Home; the optional project guide remains. Local search/default preservation, exact interval/ID serialization, paid Home gating and consent/tour sequencing have focused regressions. Batched local fixture review and actual staged/canonical checks pass separately. Exact CI41441002106, one60.900s Basic build and same-build promotion pass; four canonical viewport/theme cases, real creator search, six-insight preview and preview-limit recovery pass. No backend or model job was dispatched. [Receipt](../operations/evidence/launch-20261102-search-first-onboarding.json).
+
+| Checkpoint            | Live behavior                                                                                                                                       | Accepted evidence                                                                                                                                                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Interests and goal    | Six searchable interests, custom-only topic, goal/team preference, versioned partial draft and step resumption                                      | Native desktop1440/mobile390, themes, Back/reload, own-link normalization and custom-topic tap target; isolated draft validation                                                                        |
+| Real ready posts      | Five explicitly configured service-owned families, maximum six metadata choices, interest ordering                                                  | Five decoded540x960 thumbnails; bounded selection without catalog entitlement; no new processing                                                                                                        |
+| Complete preview      | One signed family, neutral retained insights, separate thumbnail authority, frame bytes checked against hash/dimensions/current authority           | Four- and six-insight real results, all eight decoded frames, repeat same preview accepted, second distinct family refused                                                                              |
+| Account and resume    | Account before payment; signed draft adoption; new verified users enrolled, existing accounts bypass                                                | Owner-approved reset of the secondary existing account; actual emailed-code return preserved selected post, two interests and goal. New identity creation remains separately untested                   |
+| GitHub before payment | Optional existing encrypted OAuth, repository choice, install/refresh recovery, Skip/disconnect                                                     | Owner completed GitHub sign-in; actual numeric choice label, hidden ID and stored repository agree; skip returns to paywall                                                                             |
+| Paywall               | Current monthly/yearly/weekly Pro, stored interval, strict verified provider period/wallet, account recovery reachable                              | All three real offer controls; unpaid /app returns to paywall; no redirect-only unlock. Existing signed sandbox wallet delivery and isolated expiry/delay/replay checks remain accepted                 |
+| Cache attachment      | After access, one idempotent personal association to the chosen retained result                                                                     | Original finite operator trial restored exactly; complete setup attached one four-insight result with zero reanalysis, spent/reserved credits or cost entries                                           |
+| First project         | Reuse GitHub and chosen repository; explicit snapshot, manual context confirmation                                                                  | One real snapshot, persisted connected status, current revision-bound confirmation; no repeated preparation or AI profile call                                                                          |
+| First proposal        | Shared all-post composer, private durable draft, existing quote/generation/discussion/issue flow                                                    | Native guide/form includes all four insights; one private manual draft saved and reopened on desktop/mobile. Same-session version-bound typo correction saved version2; zero credits/operations charged |
+| Import and own link   | Device-local ZIP/JSON/HTML preview, current export guide, cancellation and saved reminder; supported own link retained to explicit post-access Save | Existing parser and native one-link local fixture; no full archive upload. Actual app guide captured. Real Instagram app screens remain unavailable                                                     |
+| Invitation return     | Exact-token HttpOnly destination, POST acceptance/dismissal, current membership and each user's own Pro                                             | Isolated destination/authorization tests; independent invited-member paid first run remains untested                                                                                                    |
+| Telemetry and caching | Consented fixed milestone/route enums; canonical interest sets reuse Convex query cache                                                             | Isolated contracts; no raw answers, imported URL, archive or project data in events. No measured conversion claims                                                                                      |
+
+## Releases and root causes
+
+The backend796b2cf passed exact CI41360197654, deterministic preparation and17 actual compatible guards, with only two optional onboarding strings and no populated scan/backfill. Its website54.337s Basic build passed native partial draft, own-link, custom-topic and preview checks. The earlier3fc0669 backend introduced optional users.onboarding, without new tables/indexes or an existing-user migration.
+
+The real GitHub step then exposed numeric option IDs against string Radix/form state. Shared ChoiceSelect normalization and a reproduced regression shipped on20e9a68 after exact CI41363874515, full local1,699main/64auth/179knowledge checks and one46.637s Basic build. Correct selected label, submitted ID and stored repository were observed in production.
+
+The next real step exposed a different contract mismatch. Repository preparation acknowledges state ready, but persists status connected. The onboarding page and confirmation action incorrectly required persisted ready. Both consumers now use connected. Three workflow regressions failed before correction; all four pass afterward, including unfinished preparation and exact profile revision. Final exact CI41364980672 passes1,697main/11skips,68auth and179knowledge, Node/Python checks, both builds and dependency audit. Final focused local68auth, types/lint/validation, both builds and secret scan pass. One36.366s Basic build was staged, promoted unchanged and verified through canonical health and actual project/context/proposal continuation. No backend release was needed for either correction.
+
+Normal domain assignment is restored. The original owner MCP grant12 retains automatic analysis and reports no setup required. All monetary holds and protected sources remain. The completion batch remains within EUR15.50, with USD0.175 reserved for its backend/three included-credit Basic builds/verification; no settled infrastructure invoice is claimed.
+
+## Acceptance limits
+
+The owner chose resetting an existing authorized account rather than a new email. Do not ask again for another identity or describe this as actual new WorkOS identity creation. Only the onboarding field was reset; valid saved data, balances and connections were preserved. The test account's exact original operator trial is restored, without an expiry extension or fabricated subscription. Its new valid cached post, confirmed project and private draft are kept.
+
+No real payment or checkout was made in this continuation. A newly paid customer's entire activation journey remains separate from strict isolated billing/webhook tests and prior actual unpaid checkout acceptance. No new AI inference or public issue was requested. The existing [production proposal loop](../operations/evidence/launch-20261031-proposal-loop-production.json) retains its separately accepted generation and issue path; this onboarding walkthrough exercised a manual draft, not a new paid model call.
+
+One initial preview image element failed to render; exact retrieval returned a valid540x960JPEG and native reopening rendered all eight. The first transfer's cause is unproved. Keep that failure separate from the successful recheck. Independent invited-member activation, real Instagram app screenshots and measured funnel conversion remain open.
+
+Forty actual screenshots, including sixteen paired desktop/mobile views and additional insight/evidence captures, are retained in the ignored operator review folder with a SHA256 manifest. Account-specific screenshots remain private and are not committed or published as public tutorial images.

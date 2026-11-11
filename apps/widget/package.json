@@ -1,0 +1,31 @@
+{
+  "name": "@vibescroll/widget",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4318",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "1.7.5",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@openai/apps-sdk-ui": "0.2.2",
+    "@openai/mcp-extensions": "0.2.1",
+    "@tanstack/react-query": "5.105.0",
+    "lucide-react": "1.44.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vite-plugin-singlefile": "2.3.4"
+  }
+}

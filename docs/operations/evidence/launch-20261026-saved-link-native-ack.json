@@ -1,0 +1,117 @@
+{
+  "observedDateUTC": "2026-10-26",
+  "status": "actual_app_save_to_native_chatgpt_acknowledgement_accepted_private_owner_pilot",
+  "servingFrontend": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
+  "servingBackend": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
+  "frontendDeploymentId": "dpl_GPwJTmiaeiN7ZgLVTtQmMATNjMxz",
+  "frontendVersion": "0.1.0-alpha.20261026112007.g6cdcb1c8b256",
+  "ci": {
+    "compatibleRun": 40314319573,
+    "compatibleHead": "6cdcb1c8b25621da8ae2071928d9d56fa1836396",
+    "compatibleConclusion": "success",
+    "mainParityRun": 40314319488,
+    "mainParityHead": "2f20b8ca254ad7a1ec883e9f8c515fd05d48334e",
+    "mainParityConclusion": "success"
+  },
+  "release": {
+    "backendFinishAtUTC": "2026-10-26T11:30:18.760Z",
+    "componentsPredicted": 12,
+    "tablesPredicted": 131,
+    "schemaScans": 0,
+    "indexBackfills": 0,
+    "changedValidators": [
+      "assistantSubscriptions.eventName",
+      "assistantDeliveries.eventName"
+    ],
+    "frontendBuilds": 1,
+    "buildMachine": "fixed Basic, normal queue, elastic concurrency off",
+    "stagedHealthPassed": true,
+    "stagedPublicGuidePassed": true,
+    "canonicalUnauthenticatedHealthPassed": true,
+    "promotedSameBuild": true,
+    "normalDomainAssignmentRestored": true
+  },
+  "connection": {
+    "originalPluginPreserved": true,
+    "testPluginAlreadyAuthenticated": true,
+    "refreshToolsDiscoveredFourthEvent": true,
+    "reauthenticationOrAppGrantChangeRequired": false,
+    "appGrantVersion": 8,
+    "appGrantUntilRevoked": true,
+    "nativeAutomaticRenewalPreviouslyVerified": true,
+    "workspaceAgentsUsed": false,
+    "elapsedBetweenAuthenticatedSubscriptionsMilliseconds": 3632043,
+    "extraOwnerLoginDuringThatInterval": false
+  },
+  "canary": {
+    "sourceId": "px70f4p0q5vd475anpdp346ytd8gwvqb",
+    "existingReadyReel": true,
+    "appButton": "Save source",
+    "automaticAnalysis": false,
+    "uiSaveClicks": 1,
+    "monitorName": "VibeScroll saved-link acknowledgement",
+    "eventName": "video_link_saved",
+    "setupTurnFinishedBeforeSave": true,
+    "savedAtMs": 1793014867403,
+    "callbackReceivedAtMs": 1793014868350,
+    "callbackHTTPStatus": 200,
+    "callbackAttempts": 1,
+    "callbackDeliveryMilliseconds": 947,
+    "reply": "VibeScroll saved-link received: px70f4p0q5vd475anpdp346ytd8gwvqb",
+    "replyObservedAtUTC": "2026-10-26T11:43:10.355Z",
+    "followupChatMessageAfterSave": false,
+    "manualRunUsed": false,
+    "pollingScheduleUsed": false,
+    "browserReloadNeededToDisplayReply": true,
+    "chatTabClosedBeforeSaveTested": false
+  },
+  "savedDataPreserved": {
+    "coreBeforeSHA256": "b67cafe8e6a10cea1aabd39ccea04e8ec440c9d02b8d54e28b355e640fb2307b",
+    "coreAfterSHA256": "b67cafe8e6a10cea1aabd39ccea04e8ec440c9d02b8d54e28b355e640fb2307b",
+    "unchanged": true,
+    "state": "ready",
+    "generation": 1,
+    "transcriptSegments": 20,
+    "insights": 5,
+    "retainedFrames": 8,
+    "fields": [
+      "source identity, ownership, state, generation, creation/update times, title, canonical URL, rights",
+      "analysis",
+      "ordered media and transcript/preparation",
+      "personal analysis and retained frame bindings",
+      "source retention"
+    ]
+  },
+  "newSources": 0,
+  "mediaDownloads": 0,
+  "analysisJobs": 0,
+  "processingCreditReservations": 0,
+  "paidInferenceRouteSelected": false,
+  "cleanup": {
+    "monitorPaused": true,
+    "originalConnectionMonitorStillPaused": true,
+    "pluginStillConnected": true,
+    "subscriptionsRemaining": 0,
+    "deliveriesRemaining": 0,
+    "verifiedAtUTC": "2026-10-26T11:46:14.582553+00:00"
+  },
+  "budget": {
+    "ownerAuthorization": "Raise cumulative cap to EUR7.50",
+    "capEUR": 7.5,
+    "workingCeilingUSD": 7.95,
+    "additionalEnvelopeUSD": 0.45,
+    "retainedMaximumUSD": 7.785014256044614,
+    "unreservedUSD": 0.1649857439553859,
+    "allPriorHoldsPreserved": true,
+    "holdsReleasedUSD": 0,
+    "invoiceCertification": false
+  },
+  "remaining": [
+    "Automatic media analysis from an app save is not yet accepted.",
+    "Native monitor identity/renewal and acknowledged save do not establish a media execution environment.",
+    "The save form still defaults to the earlier local-analysis choice; the test explicitly disabled it.",
+    "Permanent credential validity, physical-device notifications and a closed-chat-tab case are not established.",
+    "Original image repair, independent speech review, TikTok availability, main-only Home/region/navigation publication and populated-index migration remain open.",
+    "Existing provider/privacy/rights/paid-entry and release gates remain."
+  ]
+}

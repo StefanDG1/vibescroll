@@ -3,19 +3,23 @@ import { mutation } from "./lib/projectedMutations";
 import type { QueryCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { access, recentAuthentication, limit, audit } from "./lib";
+import { access, limit, audit } from "./lib";
 import { privateLibrary } from "./librarySpaces";
 import { workspaceReadable } from "./lib/workspacePrivacy";
 import { ensure } from "../packages/policy";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { cardSourceRetained, sourceRetained } from "./lib/sourceAuthority";
 import { knowledgeReadContext } from "./lib/knowledgeReadContext";
+import { retainedVersion, selectedAnalysis } from "./lib/analysisHistory";
 const binding = v.object({
   sourceId: v.id("sources"),
   generation: v.number(),
   revision: v.number(),
 });
-async function grantCurrent(ctx: QueryCtx, grant: Doc<"teamKnowledgeGrants">) {
+export async function grantCurrent(
+  ctx: QueryCtx,
+  grant: Doc<"teamKnowledgeGrants">,
+) {
   if (
     process.env.RESTORE_LOCK === "true" ||
     grant.state !== "active" ||
@@ -53,6 +57,64 @@ async function grantCurrent(ctx: QueryCtx, grant: Doc<"teamKnowledgeGrants">) {
     ["owner", "admin", "member"].includes(targetMember.role)
   );
 }
+
+/** Caller must first authorize the recipient workspace and its read scope. */
+export async function exactGrantedSource(
+  ctx: QueryCtx,
+  recipientOrganizationId: Doc<"organizations">["_id"],
+  grantId: Doc<"teamKnowledgeGrants">["_id"],
+  sourceId: Doc<"sources">["_id"],
+  expectedVersion?: number,
+) {
+  const grant = await ctx.db.get(grantId);
+  ensure(
+    grant &&
+      grant.recipientOrganizationId === recipientOrganizationId &&
+      grant.sources.length <= 50 &&
+      (await grantCurrent(ctx, grant)),
+    "FORBIDDEN",
+    "This shared post is no longer available.",
+  );
+  ensure(
+    expectedVersion === undefined || expectedVersion === grant.version,
+    "APPROVAL_STALE",
+    "The sharing grant changed.",
+  );
+  const reference = grant.sources.find((entry) => entry.sourceId === sourceId);
+  ensure(
+    reference,
+    "FORBIDDEN",
+    "This post is not shared into this workspace.",
+  );
+  const card = await ctx.db
+    .query("dashboardCards")
+    .withIndex("by_entity", (q) => q.eq("entityId", sourceId))
+    .unique();
+  ensure(
+    card?.kind === "source" &&
+      card.organizationId === grant.organizationId &&
+      card.rightsAttested &&
+      (await cardSourceRetained(ctx, card)) &&
+      card.generation === reference.generation &&
+      card.updatedAt === reference.revision,
+    "FORBIDDEN",
+    "This shared source changed.",
+  );
+  const source = await ctx.db.get(sourceId);
+  ensure(
+    source &&
+      source.organizationId === grant.organizationId &&
+      source.state !== "deleted" &&
+      source.rightsAttested &&
+      sourceRetained(source.sourceRetentionUntil) &&
+      source.generation === reference.generation &&
+      source.updatedAt === reference.revision,
+    "FORBIDDEN",
+    "This shared source is unavailable.",
+  );
+  await sharedTypedCitations(ctx, source, reference.analysisVersionId);
+  return { grant, reference, source };
+}
 export async function grantedSources(
   ctx: QueryCtx,
   grant: Doc<"teamKnowledgeGrants">,
@@ -85,8 +147,13 @@ export async function grantedSources(
         source.updatedAt !== reference.revision
       )
         continue;
+      let insights = source.analysis?.insights ?? [];
       try {
-        await sharedTypedCitations(ctx, source);
+        await sharedTypedCitations(ctx, source, reference.analysisVersionId);
+        if (reference.analysisVersionId)
+          insights = (
+            await retainedVersion(ctx, source, reference.analysisVersionId)
+          ).version.output.insights;
       } catch {
         continue;
       }
@@ -96,9 +163,12 @@ export async function grantedSources(
         state: source.state,
         generation: reference.generation,
         revision: reference.revision,
+        ...(reference.analysisVersionId
+          ? { analysisVersionId: reference.analysisVersionId }
+          : {}),
         mainPoints:
           source.state === "ready"
-            ? (source.analysis?.insights ?? [])
+            ? insights
                 .slice(0, 3)
                 .flatMap((i: { title?: unknown }) =>
                   typeof i?.title === "string" ? [i.title.slice(0, 140)] : [],
@@ -179,7 +249,6 @@ export const save = mutation({
   },
   handler: async (ctx, a) => {
     const { actor } = await privateLibrary(ctx, a.organizationId);
-    await recentAuthentication(ctx);
     await limit(ctx, `team-grant:${a.organizationId}`, 10);
     const target = await access(ctx, a.recipientOrganizationId, [
       "owner",
@@ -206,6 +275,7 @@ export const save = mutation({
       "INVALID_INPUT",
       "Choose an expiry within 30 days.",
     );
+    const boundSources = [];
     for (const ref of a.sources) {
       const source = await ctx.db.get(ref.sourceId);
       ensure(
@@ -219,6 +289,12 @@ export const save = mutation({
         "STALE_APPROVAL",
         "A selected source changed. Review it before sharing.",
       );
+      const selected =
+        source.state === "ready" ? await selectedAnalysis(ctx, source) : null;
+      boundSources.push({
+        ...ref,
+        ...(selected ? { analysisVersionId: selected.metadata.id } : {}),
+      });
     }
     const old = await ctx.db
       .query("teamKnowledgeGrants")
@@ -250,7 +326,7 @@ export const save = mutation({
       organizationId: a.organizationId,
       recipientOrganizationId: a.recipientOrganizationId,
       actor: actor._id,
-      sources: a.sources,
+      sources: boundSources,
       version: (old?.version ?? 0) + 1,
       state: "active" as const,
       expiresAt: a.expiresAt,
@@ -359,7 +435,23 @@ export const fetchShared = query({
       "FORBIDDEN",
       "Shared source unavailable or changed.",
     );
-    const typed = await sharedTypedCitations(ctx, source);
+    const selectedReference = grant.sources.find(
+      (ref) => ref.sourceId === source._id,
+    )!;
+    const typed = await sharedTypedCitations(
+      ctx,
+      source,
+      selectedReference.analysisVersionId,
+    );
+    const analysis = selectedReference.analysisVersionId
+      ? (
+          await retainedVersion(
+            ctx,
+            source,
+            selectedReference.analysisVersionId,
+          )
+        ).version.output
+      : source.analysis;
     return {
       ...current,
       ...(typed
@@ -372,13 +464,16 @@ export const fetchShared = query({
       url: `https://scroll.companynerve.com/app/${a.organizationId}/shared?grant=${grant._id}&source=${a.sourceId}`,
       insights:
         source.state === "ready"
-          ? (source.analysis?.insights ?? []).slice(0, 20).map((i: any) => ({
+          ? (analysis?.insights ?? []).slice(0, 20).map((i: any) => ({
               id: i.id,
               reference: {
                 sourceId: current.sourceId,
                 generation: current.generation,
                 revision: current.revision,
                 insightId: i.id,
+                ...(selectedReference.analysisVersionId
+                  ? { analysisVersionId: selectedReference.analysisVersionId }
+                  : {}),
               },
               title: String(i.title ?? "").slice(0, 200),
               claim: String(i.claim ?? "").slice(0, 2000),
@@ -408,6 +503,7 @@ export async function referencesGranted(
     generation: number;
     revision: number;
     insightId: string;
+    analysisVersionId?: string;
   }[],
 ) {
   if (
@@ -423,7 +519,8 @@ export async function referencesGranted(
         (s) =>
           s.sourceId === ref.sourceId &&
           s.generation === ref.generation &&
-          s.revision === ref.revision,
+          s.revision === ref.revision &&
+          s.analysisVersionId === ref.analysisVersionId,
       )
     )
       return false;
@@ -438,9 +535,22 @@ export async function referencesGranted(
       !source.rightsAttested ||
       !sourceRetained(source.sourceRetentionUntil) ||
       source.generation !== ref.generation ||
-      source.updatedAt !== ref.revision ||
-      !source.analysis?.insights?.some((i: any) => i.id === ref.insightId)
+      source.updatedAt !== ref.revision
     )
+      return false;
+    const versionId = ref.analysisVersionId
+      ? ctx.db.normalizeId("analysisVersions", ref.analysisVersionId)
+      : null;
+    if (ref.analysisVersionId && !versionId) return false;
+    let output = source.analysis;
+    if (versionId) {
+      try {
+        output = (await retainedVersion(ctx, source, versionId)).version.output;
+      } catch {
+        return false;
+      }
+    }
+    if (!output?.insights?.some((i: any) => i.id === ref.insightId))
       return false;
   }
   return true;

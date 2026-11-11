@@ -1,13 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 export function SourceRelationships({
   sourceId,
   sources,
+  loadSources,
   call,
   readOnly,
 }: {
   sourceId: string;
   sources: { _id?: string; id?: string; title: string }[];
+  loadSources?: () => Promise<{ _id?: string; id?: string; title: string }[]>;
   call: (operation: string, args: any) => Promise<any>;
   readOnly: boolean;
 }) {
@@ -16,6 +18,33 @@ export function SourceRelationships({
   >(null);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [choices, setChoices] = useState<typeof sources | null>(null);
+  const [choicesBusy, setChoicesBusy] = useState(false);
+  const alive = useRef(true);
+  const loadingChoices = useRef(false);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  async function chooseSources() {
+    if (!loadSources || choices || loadingChoices.current) return;
+    loadingChoices.current = true;
+    setChoicesBusy(true);
+    try {
+      const result = await loadSources();
+      if (alive.current) setChoices(result);
+    } catch {
+      if (alive.current)
+        setError(
+          "Source choices are unavailable. Reopen this panel to try again.",
+        );
+    } finally {
+      loadingChoices.current = false;
+      if (alive.current) setChoicesBusy(false);
+    }
+  }
   async function load() {
     const value = await call("sourceRelationships", { id: sourceId });
     if (!value) throw Error("Relationships are unavailable.");
@@ -35,7 +64,12 @@ export function SourceRelationships({
     }
   }
   return (
-    <details className="panel">
+    <details
+      className="panel"
+      onToggle={(event) => {
+        if (event.currentTarget.open && !readOnly) void chooseSources();
+      }}
+    >
       <summary>Related sources</summary>
       <p>
         Keep an announcement and its repository separate. A relationship can
@@ -91,11 +125,14 @@ export function SourceRelationships({
             });
           }}
         >
+          {choicesBusy && (
+            <output aria-live="polite">Loading sources...</output>
+          )}
           <label>
             Another saved source
-            <select name="source" required disabled={busy}>
+            <select name="source" required disabled={busy || choicesBusy}>
               <option value="">Choose a source from this loaded page</option>
-              {sources
+              {(choices ?? sources)
                 .filter((source) => (source._id ?? source.id) !== sourceId)
                 .map((source) => (
                   <option

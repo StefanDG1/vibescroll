@@ -30,7 +30,7 @@ async function setup() {
     id: "price_synthetic200",
     active: true,
     recurring: null,
-    unit_amount: 1000,
+    unit_amount: 1700,
     currency: "eur",
     tax_behavior: "inclusive",
     metadata: { product: "vibescroller" },
@@ -111,3 +111,40 @@ it("refuses a missing return origin before provider calls or billing-intent writ
   expect(billing).not.toBeNull();
   expect(billing?.checkoutIntent).toBeUndefined();
 });
+
+it.each([
+  ["200", 1700],
+  ["500", 3500],
+] as const)(
+  "quotes the approved %s-credit pack and refuses its old price",
+  async (pack, amount) => {
+    const { user, args } = await setup();
+    vi.stubEnv(`STRIPE_TOPUP_${pack}_PRICE_ID`, `price_synthetic${pack}`);
+    mocks.price.mockResolvedValue({
+      id: `price_synthetic${pack}`,
+      active: true,
+      recurring: null,
+      unit_amount: amount,
+      currency: "eur",
+      tax_behavior: "inclusive",
+      metadata: { product: "vibescroller" },
+    });
+    await user.action(api.billingV1.topup, { ...args, pack });
+    expect(mocks.checkout.mock.calls[0][0].metadata.credits).toBe(pack);
+    expect(mocks.checkout.mock.calls[0][0].line_items[0].price).toBe(
+      `price_synthetic${pack}`,
+    );
+    mocks.price.mockResolvedValue({
+      active: true,
+      recurring: null,
+      unit_amount: pack === "200" ? 1000 : 2500,
+      currency: "eur",
+      tax_behavior: "inclusive",
+      metadata: { product: "vibescroller" },
+    });
+    await expect(
+      user.action(api.billingV1.topup, { ...args, pack }),
+    ).rejects.toThrow("catalogue mismatch");
+    expect(mocks.checkout).toHaveBeenCalledTimes(1);
+  },
+);

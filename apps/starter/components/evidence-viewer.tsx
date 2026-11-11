@@ -112,6 +112,7 @@ export function EvidenceViewer({
                 }
                 width={1280}
                 height={960}
+                loading="eager"
                 unoptimized
                 onLoad={() => setLoaded(frame.id)}
                 onError={() => setFailed(frame.id)}

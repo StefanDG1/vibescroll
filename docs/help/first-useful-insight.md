@@ -10,7 +10,7 @@ Sign in and use a workspace role that permits capture. Have a permitted URL, med
 
 1. Choose **Save**. Select the input type and enter your source.
 2. Review source permission and whether you are saving only or requesting analysis. A link import saves metadata; it does not grant access to blocked content.
-3. If using your own plan, choose the eligible computer and advertised model, then review that account's consent. For a credit route, inspect the quote and maximum. Your platform subscription, personal provider allowance and compute costs are different.
+3. For **My own Cloud Work**, use your configured VibeScroll connection and monitor. For local processing, choose your paired computer. For a credit route, review the quote and maximum. [Set up processing](/help/processing-and-recovery)
 4. Submit once. Keep the durable source/status link. A saved or queued state does not mean that extraction is finished.
 5. Open the source when it is ready. Read the short summary and separate insights. Follow available transcript, caption, frame or user-note references.
 6. Inspect coverage and uncertainty. Sampled frames are not every frame. Text supplied by a user is not proof of audiovisual analysis.

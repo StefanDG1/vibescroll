@@ -1,5 +1,7 @@
 # Interface contracts
 
+R161 implementation candidate adds selected public X/Twitter status URLs to existing Save and server-preparation routes. Media selectors canonicalize to the whole status ID. `service-prepared-post-v2` retains full caption text plus all direct attachment metadata, per-attachment transcripts and sampled JPEGs; text-only posts have duration0 and no frames. Caption and still-image citations use null times. The existing private analysis/context protocols accept those references. Catalog permissions remain Instagram/TikTok-only. [Contract decision and limits](adr/236-complete-x-post-evidence.md), [operational state](operations/X-POST-SUPPORT.md). Production acceptance is pending.
+
 ## Conservative Cloud result return, October 25
 
 [ADR 152](adr/152-conservative-cloud-result-return.md) records a real accepted preparation and rejected completion, followed by exact-payload offline verification. The adapter reduces overstated confidence and supports a recent-owner-reviewed, hash-bound return of the same retained attempt. It starts no processing and preserves saved posts/insights. Current Cloud status overrides old local-intake advice. Production completion remains pending; cumulative EUR5 and all prior holds remain.

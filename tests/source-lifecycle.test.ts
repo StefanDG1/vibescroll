@@ -1295,7 +1295,11 @@ it("includes every tenant source/public table in lifecycle lists and preserves g
   }
   expect(contentExportSections).not.toContain("sourceProviderQuotas");
   expect(recoveryQuarantineSections).not.toContain("sourceProviderQuotas");
-  await s.owner.mutation(api.organizations.remove, {
+  const deletingOwner = s.t.withIdentity({
+    subject: (await s.t.run((ctx) => ctx.db.get(s.actor)))!.subject,
+    auth_time: Math.floor(Date.now() / 1000),
+  });
+  await deletingOwner.mutation(api.organizations.remove, {
     organizationId: s.org,
     confirmation: "Synthetic lifecycle workspace",
   });

@@ -1,0 +1,43 @@
+{
+  "recordedAtUtc": "2026-10-25T19:15:28Z",
+  "stage": "Offline correction after owner disputed production Cloud result quality",
+  "base": "dcc9b30",
+  "observations": {
+    "productionPageInspectedThisPhase": false,
+    "cloudTranscriptRetainedIn": "orderedMedia.post.segments",
+    "oldTranscriptRenderer": "originalText ?? text",
+    "reproduced": "The real Console renderer showed older source text even when retained Cloud speech segments existed.",
+    "frameProtocol": "Cloud preparation retains frame hashes and observations, not uploaded image files or asset references.",
+    "priorProductionAcceptance": "Canonical result return was verified. Native post rendering and transcript accuracy against the audio were not verified."
+  },
+  "change": {
+    "retainedCloudSpeech": "Render the existing authorized Cloud segments in order with their timestamps and React text escaping.",
+    "emptySegments": "Show unavailable instead of older input text.",
+    "corrections": "Preserve separately confirmed analysis.correctedText; older input corrections are not Cloud speech.",
+    "authorizationAndRetention": "Existing source-detail access and retention guards unchanged.",
+    "backendSchemaOrStorageChanges": false
+  },
+  "verification": {
+    "before": "Two added renderer regressions failed because the transcript panel displayed older text.",
+    "focusedFinal": "19 renderer tests passed.",
+    "fullCheck": "Offline pnpm check exit 0, including validation, lint, types, tests and both production builds.",
+    "vitestPassed": 2018,
+    "hostedSkipped": 3,
+    "nodePassed": 19,
+    "pythonPassed": 33,
+    "independentReview": "High reviewer found no P1/P2; retained segments are covered by existing source retention and authorized DTO checks.",
+    "nativeBrowser": "Not repeated for this text-only renderer correction.",
+    "production": "Not deployed or verified."
+  },
+  "remaining": [
+    "Publish and verify the transcript correction within the cumulative budget.",
+    "Verify actual transcript words against the source audio; no ASR accuracy acceptance follows from this display fix.",
+    "Return bounded matching screenshot bytes through existing private storage/assets with exact preparation, generation, rights and retention checks.",
+    "Use a retained sampled frame as a thumbnail when no link preview is available.",
+    "Verify the complete real post on mobile before claiming ordinary Cloud analysis or automatic dispatch is ready."
+  ],
+  "productionDataChanged": false,
+  "newVideoRuns": 0,
+  "paidInferenceCalls": 0,
+  "oldPostsAndInsightsPreserved": true
+}

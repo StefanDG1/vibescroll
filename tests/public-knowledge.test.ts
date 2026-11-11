@@ -568,13 +568,7 @@ it("deduplicates anonymous reports and limits moderation to fresh allowlisted id
     subject: s.recipient.subject,
     auth_time: Math.floor(Date.now() / 1000) - 301,
   });
-  await expect(
-    expired.mutation(api.publicKnowledge.moderate, {
-      reportId: rows[0]._id,
-      action: "remove",
-    }),
-  ).rejects.toThrow(/Sign in again/);
-  await s.recipient.client.mutation(api.publicKnowledge.moderate, {
+  await expired.mutation(api.publicKnowledge.moderate, {
     reportId: rows[0]._id,
     action: "remove",
   });
@@ -582,87 +576,65 @@ it("deduplicates anonymous reports and limits moderation to fresh allowlisted id
     await s.t.query(api.publicKnowledge.readEdition, { slug: edition.slug }),
   ).toBeNull();
 });
-it("counts distinct current voluntary contributors, hides groups below five and returns only broad aggregate geography", async () => {
+it("retires regional opt-in and aggregates while preserving existing consent until withdrawal", async () => {
   const s = await setup();
-  await published(s);
+  const ids = await s.t.run(async (ctx) => {
+    const rows = [];
+    for (let i = 0; i < 5; i++)
+      rows.push(
+        await ctx.db.insert("publicGeography", {
+          organizationId: s.publisher.org,
+          actor: s.publisher.id,
+          cell: "europe",
+          enabled: true,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }),
+      );
+    return rows;
+  });
+  for (const cell of ["europe", "52.5,13.4"])
+    await expect(
+      s.publisher.client.mutation(api.publicKnowledge.setGeography, {
+        organizationId: s.publisher.org,
+        cell,
+        explicitlyOptedIn: true,
+      }),
+    ).rejects.toThrow("POLICY_BLOCKED");
+  expect(await s.t.query(api.publicKnowledge.geography, {})).toEqual([]);
+  const retained = await s.t.run((ctx) =>
+    Promise.all(ids.map((id) => ctx.db.get(id))),
+  );
+  expect(retained.every(Boolean)).toBe(true);
   await expect(
-    s.publisher.client.mutation(api.publicKnowledge.setGeography, {
+    s.recipient.client.mutation(api.publicKnowledge.setGeography, {
       organizationId: s.publisher.org,
-      cell: "europe",
+      cell: null,
       explicitlyOptedIn: false,
     }),
-  ).rejects.toThrow("INVALID_INPUT");
-  await expect(
-    s.publisher.client.mutation(api.publicKnowledge.setGeography, {
-      organizationId: s.publisher.org,
-      cell: "52.5,13.4",
-      explicitlyOptedIn: true,
-    }),
-  ).rejects.toThrow("INVALID_INPUT");
+  ).rejects.toThrow();
   await s.publisher.client.mutation(api.publicKnowledge.setGeography, {
     organizationId: s.publisher.org,
-    cell: "europe",
-    explicitlyOptedIn: true,
-  });
-  await s.t.run(async (ctx) => {
-    for (let i = 0; i < 4; i++)
-      await ctx.db.insert("publicGeography", {
-        organizationId: s.publisher.org,
-        actor: s.publisher.id,
-        cell: "europe",
-        enabled: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-  });
-  expect(await s.t.query(api.publicKnowledge.geography, {})).toEqual([]);
-  const contributors = [];
-  for (let i = 0; i < 4; i++) {
-    const person = await makeActor(s.t, `region-${i}`);
-    const source = await makeSource(s.t, person);
-    await published({ ...s, publisher: person, sourceId: source });
-    await person.client.mutation(api.publicKnowledge.setGeography, {
-      organizationId: person.org,
-      cell: "europe",
-      explicitlyOptedIn: true,
-    });
-    contributors.push(person);
-  }
-  const regions = await s.t.query(api.publicKnowledge.geography, {});
-  expect(regions).toHaveLength(1);
-  expect(regions[0]).toEqual({
-    id: "europe",
-    label: "Europe",
-    latitude: 50,
-    longitude: 15,
-    contributors: "5–9",
-    coverage: "bounded_snapshot",
-  });
-  const publicText = JSON.stringify(regions);
-  for (const person of [s.publisher, ...contributors]) {
-    expect(publicText).not.toContain(person.id);
-    expect(publicText).not.toContain(person.org);
-    expect(publicText).not.toContain(person.subject);
-  }
-  expect(publicText).not.toMatch(
-    /createdAt|updatedAt|publishedAt|lastSeen|count":5/,
-  );
-  const last = contributors.at(-1)!;
-  await last.client.mutation(api.publicKnowledge.setGeography, {
-    organizationId: last.org,
     cell: null,
     explicitlyOptedIn: false,
   });
-  expect(await s.t.query(api.publicKnowledge.geography, {})).toEqual([]);
+  expect(
+    await s.t.run((ctx) => Promise.all(ids.map((id) => ctx.db.get(id)))),
+  ).toEqual(ids.map(() => null));
 });
 it("fails closed behind release/restore gates while keeping voluntary withdrawal available when the feature is off", async () => {
   const s = await setup();
   const edition = await published(s);
-  await s.publisher.client.mutation(api.publicKnowledge.setGeography, {
-    organizationId: s.publisher.org,
-    cell: "europe",
-    explicitlyOptedIn: true,
-  });
+  await s.t.run((ctx) =>
+    ctx.db.insert("publicGeography", {
+      organizationId: s.publisher.org,
+      actor: s.publisher.id,
+      cell: "europe",
+      enabled: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }),
+  );
   vi.stubEnv("PUBLIC_KNOWLEDGE_ENABLED", "false");
   expect(
     await s.t.query(api.publicKnowledge.readEdition, { slug: edition.slug }),

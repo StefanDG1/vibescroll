@@ -1,3 +1,4 @@
+import { xPostUrl } from "./x-identity.mjs";
 // Pure local error. acquisition.ts adapts it to the existing Convex error type.
 export class AcquisitionPolicyError extends Error {
   constructor(code, detail) {
@@ -12,6 +13,24 @@ export function ensure(ok, code, detail) {
 }
 export function safeSourceUrl(raw) {
   const url = new URL(raw);
+  if (
+    [
+      "x.com",
+      "www.x.com",
+      "twitter.com",
+      "www.twitter.com",
+      "mobile.twitter.com",
+    ].includes(url.hostname)
+  ) {
+    try {
+      return xPostUrl(raw).canonical;
+    } catch {
+      throw new AcquisitionPolicyError(
+        "UNSUPPORTED_SOURCE",
+        "Use a single public X post link.",
+      );
+    }
+  }
   ensure(
     url.protocol === "https:" && !url.username && !url.password && !url.port,
     "UNSUPPORTED_SOURCE",
@@ -26,6 +45,7 @@ export function safeSourceUrl(raw) {
     "tiktok.com",
     "www.tiktok.com",
     "vm.tiktok.com",
+    "vt.tiktok.com",
     "vimeo.com",
     "www.vimeo.com",
   ];

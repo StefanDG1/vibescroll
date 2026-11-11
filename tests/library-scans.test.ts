@@ -336,11 +336,7 @@ it("uses only advertised own-account models and requires fresh permission before
         ...approval,
         model: "synthetic-available",
       }),
-  ).rejects.toThrow("Sign in again");
-  await s.a.mutation(api.libraryScans.approve, {
-    ...approval,
-    model: "synthetic-available",
-  });
+  ).resolves.toBeDefined();
   const job = await s.t.run((ctx) => ctx.db.get(id));
   expect(job!.personal).toMatchObject({
     model: "synthetic-available",
@@ -406,7 +402,7 @@ it("keeps the expanded repository allowance personal and bounded", () => {
   vi.stubEnv("PERSONAL_ALPHA_SUBJECTS_JSON", '["verified-owner"]');
   expect(repositoryAllowance("trial", "verified-owner")).toBe(20);
   expect(repositoryAllowance("trial", "other-admin")).toBe(3);
-  expect(repositoryAllowance("pro", "other-admin")).toBe(15);
+  expect(repositoryAllowance("pro", "other-admin")).toBeNull();
   vi.stubEnv("DISABLE_PERSONAL_ANALYSIS", "true");
   expect(repositoryAllowance("trial", "verified-owner")).toBe(20);
   vi.stubEnv("PERSONAL_REPOSITORY_LIMIT", "Infinity");

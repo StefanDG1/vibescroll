@@ -72,3 +72,42 @@ it("backs off failed reads and restores the normal cadence after success", async
   await vi.advanceTimersByTimeAsync(10000);
   expect(read).toHaveBeenCalledTimes(4);
 });
+it("keeps an already loaded idle source quiet while preserving visibility and reconnect refresh", async () => {
+  const read = vi.fn(async () => {});
+  cleanups.push(startPolling(read, null, false));
+  await vi.advanceTimersByTimeAsync(300000);
+  expect(read).not.toHaveBeenCalled();
+  page.visibilityState = "hidden";
+  page.dispatchEvent(new Event("visibilitychange"));
+  page.visibilityState = "visible";
+  page.dispatchEvent(new Event("visibilitychange"));
+  await vi.advanceTimersByTimeAsync(0);
+  expect(read).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(300000);
+  expect(read).toHaveBeenCalledTimes(1);
+  browser.dispatchEvent(new Event("online"));
+  await vi.advanceTimersByTimeAsync(0);
+  expect(read).toHaveBeenCalledTimes(2);
+});
+it("starts active source polling after its interval without duplicating the authoritative initial read", async () => {
+  const read = vi.fn(async () => {});
+  cleanups.push(startPolling(read, 15000, false));
+  await vi.advanceTimersByTimeAsync(14999);
+  expect(read).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(1);
+  expect(read).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(15000);
+  expect(read).toHaveBeenCalledTimes(2);
+});
+it("does not dispatch a mount read when navigation replaces a wake-only source with an already loaded page", async () => {
+  const read = vi.fn(async () => {});
+  const source = startPolling(read, null, false);
+  await vi.advanceTimersByTimeAsync(60000);
+  expect(read).not.toHaveBeenCalled();
+  source();
+  cleanups.push(startPolling(read, 60000, false));
+  await vi.advanceTimersByTimeAsync(0);
+  expect(read).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(60000);
+  expect(read).toHaveBeenCalledTimes(1);
+});

@@ -1,4 +1,21 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { format } from "prettier";
+for (const [file, symbol] of [
+  ["decode-prepared.py", "preparedDecoder"],
+  ["acquire-prepared.py", "preparedAcquirer"],
+  ["cloud_extraction.py", "preparedExtraction"],
+  ["x-post-worker.py", "xPostWorker"],
+  ["prepare_cloud_dependencies.py", "cloudDependencySetup"],
+]) {
+  const text = await readFile(
+    new URL(`../packages/media/${file}`, import.meta.url),
+    "utf8",
+  );
+  await writeFile(
+    new URL(`../packages/media/${symbol}.ts`, import.meta.url),
+    `// Generated from ${file}. Regenerate with scripts/sync-decoder.mjs.\nexport const ${symbol} = ${JSON.stringify(text.replaceAll("\r\n", "\n"))};\n`,
+  );
+}
 const source = await readFile(
   new URL("../packages/media/decode.py", import.meta.url),
   "utf8",
@@ -29,3 +46,19 @@ await writeFile(
     JSON.stringify(personal.replaceAll("\r\n", "\n")) +
     ";\n",
 );
+for (const file of [
+  "preparedDecoder",
+  "preparedAcquirer",
+  "preparedExtraction",
+  "xPostWorker",
+  "cloudDependencySetup",
+  "decoder",
+  "acquirer",
+  "decoder-personal",
+]) {
+  const path = new URL(`../packages/media/${file}.ts`, import.meta.url);
+  await writeFile(
+    path,
+    await format(await readFile(path, "utf8"), { parser: "typescript" }),
+  );
+}

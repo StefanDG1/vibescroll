@@ -20,7 +20,11 @@ import { sealEventCredentials } from "../packages/mcp/credentials";
 import { eventSubscriptionId } from "../packages/mcp/events";
 import { internal, api } from "../convex/_generated/api";
 import { queueSourceCompletion } from "../convex/lib/assistantEvents";
-import { waitingEvent, connectionEvent } from "../packages/mcp/events";
+import {
+  waitingEvent,
+  connectionEvent,
+  videoLinkSavedEvent,
+} from "../packages/mcp/events";
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
@@ -95,7 +99,10 @@ async function runtimeSetup(untilRevoked = false) {
   return { ...s, grant, selected, input, sign, provider, credentials };
 }
 async function profileRuntimeSetup(
-  eventName: "work_cloud_waiting" | "work_cloud_connection_verified",
+  eventName:
+    | "work_cloud_waiting"
+    | "work_cloud_connection_verified"
+    | "video_link_saved",
 ) {
   const s = await runtimeSetup();
   const scopes = ["analysis:execute", "analysis:request", "events:subscribe"];
@@ -229,6 +236,49 @@ it("sends only versioned waiting identity and protected link for an explicitly a
   expect(JSON.stringify(body)).not.toMatch(
     /PRIVATE|leaseToken|inputHash|transcript/,
   );
+});
+it("signs an acknowledgement from an actual capture without analysis or private content", async () => {
+  vi.useFakeTimers();
+  const s = await profileRuntimeSetup("video_link_saved");
+  await s.assistant.action(internal.assistantEventRuntime.subscribe, s.input);
+  const sourceId = await s.owner.mutation(api.product.capture, {
+    organizationId: s.organizationId,
+    kind: "url",
+    url: "https://www.instagram.com/reel/abcdefghijk/",
+    key: "saved-runtime-link",
+    title: "PRIVATE video title",
+    rightsAttested: true,
+  });
+  const row = (await s.t.run((ctx) =>
+    ctx.db.query("assistantDeliveries").first(),
+  ))!;
+  callback.mockClear();
+  await s.t.action(internal.assistantEventRuntime.deliver, { id: row._id });
+  expect(callback).toHaveBeenCalledTimes(1);
+  const sent = callback.mock.calls[0],
+    body = JSON.parse(sent[1]);
+  expect(body.name).toBe(videoLinkSavedEvent.name);
+  expect(body.data).toEqual({
+    schemaVersion: "video-link-saved-v1",
+    sourceId,
+    profileId: s.organizationId,
+    generation: 0,
+    grantVersion: s.grant.version,
+    status: "saved",
+    reviewUrl: `https://scroll.companynerve.com/app/${s.organizationId}/posts/${sourceId}`,
+  });
+  expect(body.timestamp).toBe(new Date(row.createdAt).toISOString());
+  expect(sent[2]["webhook-id"]).toBe(body.eventId);
+  expect(sent[2]["webhook-signature"]).toMatch(/^v1,/);
+  expect(JSON.stringify(body)).not.toMatch(
+    /PRIVATE|instagram|leaseToken|transcript/,
+  );
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(sourceId)))?.personalAnalysis,
+  ).toBeUndefined();
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual([]);
 });
 it("rejects a profile token missing analysis scope before verifying callback ownership", async () => {
   const s = await profileRuntimeSetup("work_cloud_connection_verified");

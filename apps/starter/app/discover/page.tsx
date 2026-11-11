@@ -2,13 +2,11 @@ import Link from "next/link";
 import { PublicPage } from "@/components/site";
 import { PublicKnowledgePending } from "@/components/public-knowledge-pending";
 import { PublicCollectionList } from "@/components/public-collection-list";
-import { CommunityDiscovery } from "@/components/community-discovery";
-import { discoverPublic, publicGeography } from "@/lib/public-knowledge";
+import { discoverPublic } from "@/lib/public-knowledge";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Discover public knowledge",
-  description:
-    "Explore deliberate public collections by topic, with optional voluntary regional aggregates.",
+  description: "Explore deliberate public collections by topic.",
   alternates: { canonical: "https://scroll.companynerve.com/discover" },
 };
 export default async function Discover({
@@ -19,17 +17,10 @@ export default async function Discover({
   const search = await searchParams;
   const topic = (search.topic ?? "").slice(0, 49);
   const result = await discoverPublic(topic, search.cursor ?? null);
-  const geography =
-    result.state === "ready"
-      ? await publicGeography()
-      : { available: false, regions: [] };
   return (
     <PublicPage>
       <h1>Find a useful collection.</h1>
-      <p>
-        Topics and lists work without a globe. Only current explicitly published
-        material appears here.
-      </p>
+      <p>Only current explicitly published material appears here.</p>
       <form className="row" action="/discover">
         <label>
           Topic
@@ -49,10 +40,6 @@ export default async function Discover({
               Next collections page
             </Link>
           )}
-          <CommunityDiscovery
-            regions={geography.regions}
-            available={geography.available}
-          />
         </>
       )}
       <p>

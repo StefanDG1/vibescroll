@@ -12,8 +12,10 @@ export function acquisitionPolicy(raw: string) {
   );
   const url = new URL(safeSourceUrl(raw));
   const host = url.hostname.replace(/^www\./, "");
-  let platform: "youtube" | "instagram" | "vimeo" | "tiktok";
-  if (host === "youtube.com" || host === "youtu.be") {
+  let platform: "youtube" | "instagram" | "vimeo" | "tiktok" | "x";
+  if (host === "x.com") {
+    platform = "x";
+  } else if (host === "youtube.com" || host === "youtu.be") {
     platform = "youtube";
     ensure(
       host === "youtu.be"
@@ -41,10 +43,10 @@ export function acquisitionPolicy(raw: string) {
   } else {
     platform = "tiktok";
     ensure(
-      host === "vm.tiktok.com"
+      ["vm.tiktok.com", "vt.tiktok.com"].includes(host)
         ? /^\/[A-Za-z0-9]{5,30}\/?$/.test(url.pathname)
         : host === "tiktok.com" &&
-            /^\/@[A-Za-z0-9_.]{1,40}\/video\/[0-9]{10,25}\/?$/.test(
+            /^(?:\/@[A-Za-z0-9_.]{1,40}\/video\/[0-9]{10,25}|\/t\/[A-Za-z0-9]{5,30})\/?$/.test(
               url.pathname,
             ),
       "UNSUPPORTED_SOURCE",
@@ -52,6 +54,14 @@ export function acquisitionPolicy(raw: string) {
     );
   }
   const domains = {
+    x: [
+      "x.com",
+      "api.x.com",
+      "abs.twimg.com",
+      "api.fxtwitter.com",
+      "pbs.twimg.com",
+      "video.twimg.com",
+    ],
     youtube: [
       "youtube.com",
       "*.youtube.com",

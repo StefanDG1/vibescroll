@@ -1,0 +1,283 @@
+{
+  "recordedAtUTC": "2026-11-08T16:32:35.126152+00:00",
+  "requirement": "R157",
+  "website": {
+    "commit": "ce6fdb546334076160c36a73dabc52e6f6c227e9",
+    "version": "0.1.0-alpha.20261108162239.gce6fdb546334",
+    "deployment": "dpl_8WMwsATHHSDxnwJuktoXN3NDa6xk",
+    "buildDurationMs": 47594,
+    "fixedBasic": true,
+    "normalQueue": true,
+    "sameBuildPromoted": true,
+    "canonicalHealthVerified": true,
+    "canonicalAliasesCompleted": 2,
+    "normalDomainAssignmentRestoredAndVerified": true
+  },
+  "backend": {
+    "commit": "b0648870b1e36fe97586ca0efc8cabc41c4c0a56",
+    "newPublication": false,
+    "sourceOrSchemaChanges": false
+  },
+  "rootCauses": [
+    "Older discovery snapshots lack selected_profile_id, so the client shows selection instead of resolving the current saved default.",
+    "The unselected native select visually presents its first option, repeating the separate chooser.",
+    "Account loading never starts on that branch while the header still shows Checking credits.",
+    "Raw coverage and infrastructure terminology appear in primary content.",
+    "Viewport-sized feed sections can grow inside an auto-resizing host iframe."
+  ],
+  "changes": [
+    "Refresh only legacy discovery through the current authorized server default resolver.",
+    "Preserve an explicit current null selection as a genuine choice.",
+    "Show financial status after workspace resolution.",
+    "Compact header with one workspace switcher and five navigation actions.",
+    "Move catalog into Explore and result coverage into a collapsed disclosure.",
+    "Bound embedded feed heights and reuse the website source/insight/proposal columns."
+  ],
+  "verification": {
+    "exactCI": 42499591883,
+    "mainPassed": 1791,
+    "mainSkipped": 11,
+    "authPassed": 82,
+    "sharedUiPassed": 192,
+    "nodePythonBothBuildsAndDependencyAudit": "passed",
+    "targetedRegressionsFailedBeforeAndPassedAfter": 2,
+    "builtOfficialBridge": {
+      "passed": 9,
+      "cases": [
+        {
+          "scenario": "legacy",
+          "theme": "dark",
+          "width": 905,
+          "page": 905,
+          "chooser": 0,
+          "switchers": 1,
+          "options": [],
+          "navigation": 5,
+          "columns": [
+            {
+              "role": "source",
+              "height": 680,
+              "left": 16
+            },
+            {
+              "role": "insights",
+              "height": 680,
+              "left": 268
+            },
+            {
+              "role": "plans",
+              "height": 680,
+              "left": 583
+            }
+          ],
+          "checking": false,
+          "jargon": false
+        },
+        {
+          "scenario": "legacy",
+          "theme": "light",
+          "width": 905,
+          "page": 905,
+          "chooser": 0,
+          "switchers": 1,
+          "options": [],
+          "navigation": 5,
+          "columns": [
+            {
+              "role": "source",
+              "height": 680,
+              "left": 16
+            },
+            {
+              "role": "insights",
+              "height": 680,
+              "left": 268
+            },
+            {
+              "role": "plans",
+              "height": 680,
+              "left": 583
+            }
+          ],
+          "checking": false,
+          "jargon": false
+        },
+        {
+          "scenario": "legacy",
+          "theme": "dark",
+          "width": 390,
+          "page": 390,
+          "chooser": 0,
+          "switchers": 1,
+          "options": [],
+          "navigation": 5,
+          "columns": [
+            {
+              "role": "source",
+              "height": 680,
+              "left": 16
+            },
+            {
+              "role": "insights",
+              "height": 680,
+              "left": 16
+            },
+            {
+              "role": "plans",
+              "height": 680,
+              "left": 16
+            }
+          ],
+          "checking": false,
+          "jargon": false
+        },
+        {
+          "scenario": "legacy",
+          "theme": "light",
+          "width": 320,
+          "page": 320,
+          "chooser": 0,
+          "switchers": 1,
+          "options": [],
+          "navigation": 5,
+          "columns": [
+            {
+              "role": "source",
+              "height": 680,
+              "left": 16
+            },
+            {
+              "role": "insights",
+              "height": 680,
+              "left": 16
+            },
+            {
+              "role": "plans",
+              "height": 680,
+              "left": 16
+            }
+          ],
+          "checking": false,
+          "jargon": false
+        },
+        {
+          "scenario": "ambiguous",
+          "theme": "dark",
+          "width": 920,
+          "page": 920,
+          "chooser": 1,
+          "switchers": 0,
+          "options": [
+            {
+              "top": 193,
+              "height": 64
+            },
+            {
+              "top": 265,
+              "height": 64
+            }
+          ],
+          "navigation": 0,
+          "columns": [],
+          "checking": false,
+          "jargon": false
+        },
+        {
+          "scenario": "ambiguous",
+          "theme": "light",
+          "width": 920,
+          "page": 920,
+          "chooser": 1,
+          "switchers": 0,
+          "options": [
+            {
+              "top": 193,
+              "height": 64
+            },
+            {
+              "top": 265,
+              "height": 64
+            }
+          ],
+          "navigation": 0,
+          "columns": [],
+          "checking": false,
+          "jargon": false
+        },
+        {
+          "scenario": "ambiguous",
+          "theme": "dark",
+          "width": 390,
+          "page": 390,
+          "chooser": 1,
+          "switchers": 0,
+          "options": [
+            {
+              "top": 223.5,
+              "height": 64
+            },
+            {
+              "top": 295.5,
+              "height": 64
+            }
+          ],
+          "navigation": 0,
+          "columns": [],
+          "checking": false,
+          "jargon": false
+        },
+        {
+          "scenario": "ambiguous",
+          "theme": "light",
+          "width": 320,
+          "page": 320,
+          "chooser": 1,
+          "switchers": 0,
+          "options": [
+            {
+              "top": 223.5,
+              "height": 64
+            },
+            {
+              "top": 295.5,
+              "height": 64
+            }
+          ],
+          "navigation": 0,
+          "columns": [],
+          "checking": false,
+          "jargon": false
+        },
+        {
+          "scenario": "native-keyboard-selection",
+          "passed": true
+        }
+      ],
+      "resource": {
+        "sha256": "1f8ef3af515e9c3caf4c58688c27144a442f1d257bd06af46e08dca2cbd89f50",
+        "bytes": 3009827
+      }
+    },
+    "stagedCases": 13,
+    "canonicalCases": 13,
+    "realMcpOpen": {
+      "savedDefaultResolved": true,
+      "selectedProfile": "nn7d15ckc9p6xsx0z7sd09w7298fey3s",
+      "currentProfiles": 3,
+      "selectionReason": "saved_default"
+    }
+  },
+  "funding": {
+    "usesThirdPreviouslyApprovedR155WebsiteBuild": true,
+    "envelopeUSD": 0.9,
+    "cumulativeEngineeringCapEUR": 17,
+    "allOldHoldsPreserved": true,
+    "newProviderFundingOrPurchases": false
+  },
+  "limits": [
+    "Actual refreshed Codex panel appearance awaits the owner check.",
+    "Built layout and keyboard checks use synthetic authority/tool fixtures.",
+    "Phone widths are browser emulation.",
+    "No new media preparation, model generation, GitHub publication, grant change or credit mutation."
+  ]
+}

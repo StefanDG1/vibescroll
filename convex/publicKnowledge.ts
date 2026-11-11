@@ -15,7 +15,6 @@ import {
   reusableArtifact,
   editionDto,
 } from "./lib/publicKnowledge";
-import { sharingRegions, contributorBand } from "../packages/sources/geography";
 import { validateEvidenceRegistry } from "../packages/sources/evidence";
 import { sharedTypedCitations } from "./lib/sourceCitations";
 import { sourceRetained } from "./lib/sourceAuthority";
@@ -230,7 +229,6 @@ export const prepareEdition = mutation({
   },
   handler: async (ctx, a) => {
     enabled();
-    await recentAuthentication(ctx);
     const { source, actor } = await publicationSource(ctx, a.sourceId);
     ensure(
       source.generation === a.generation && source.updatedAt === a.revision,
@@ -308,7 +306,7 @@ export const publishEdition = mutation({
   },
   handler: async (ctx, a) => {
     enabled();
-    await recentAuthentication(ctx);
+    await recentAuthentication(ctx, "publish_private_edition");
     const edition = await ctx.db.get(a.id);
     ensure(edition, "SOURCE_UNAVAILABLE", "Publication is unavailable.");
     const { source, actor } = await publicationSource(ctx, edition!.sourceId);
@@ -441,7 +439,10 @@ export const saveEdition = mutation({
       .order("desc")
       .take(10);
     const artifact = candidates.find(
-      (a) => a.editionVersion === edition!.version && a.state === "eligible",
+      (a) =>
+        "editionVersion" in a &&
+        a.editionVersion === edition!.version &&
+        a.state === "eligible",
     );
     ensure(
       artifact && (await reusableArtifact(ctx, artifact._id)),
@@ -506,6 +507,7 @@ export const savedDetail = query({
     const available =
       !!base &&
       base.artifact.compatibilityKey === layer.compatibilityKey &&
+      "editionVersion" in layer &&
       base.edition.version === layer.editionVersion;
     return {
       available,
@@ -659,7 +661,7 @@ export const publishCollection = mutation({
   },
   handler: async (ctx, a) => {
     enabled();
-    await recentAuthentication(ctx);
+    await recentAuthentication(ctx, "publish_public_collection");
     const row = await ctx.db.get(a.id);
     ensure(row, "SOURCE_UNAVAILABLE", "Collection unavailable.");
     await access(ctx, row!.organizationId, ["owner", "admin"]);
@@ -928,7 +930,6 @@ export const moderate = mutation({
   },
   handler: async (ctx, a) => {
     const actor = await moderator(ctx);
-    await recentAuthentication(ctx);
     const report = await ctx.db.get(a.reportId);
     ensure(report, "INVALID_INPUT", "Report unavailable.");
     if (a.action === "remove")
@@ -951,92 +952,27 @@ export const setGeography = mutation({
     cell: v.union(v.string(), v.null()),
     explicitlyOptedIn: v.boolean(),
   },
+  returns: v.object({ sharing: v.literal(false) }),
   handler: async (ctx, a) => {
     const { actor } = await access(ctx, a.organizationId, ["owner", "admin"]);
     ensure(
-      a.cell === null ||
-        (a.explicitlyOptedIn && sharingRegions.some((r) => r.id === a.cell)),
-      "INVALID_INPUT",
-      "Choose a voluntary broad region.",
+      a.cell === null,
+      "POLICY_BLOCKED",
+      "Region sharing has been retired. Existing sharing can be withdrawn.",
     );
-    if (a.cell !== null) enabled();
     const old = await ctx.db
       .query("publicGeography")
       .withIndex("by_actor", (q) => q.eq("actor", actor._id))
       .take(50);
     for (const row of old) await ctx.db.delete(row._id);
-    if (a.cell)
-      await ctx.db.insert("publicGeography", {
-        organizationId: a.organizationId,
-        actor: actor._id,
-        cell: a.cell,
-        enabled: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-    return { sharing: a.cell !== null };
+    return { sharing: false as const };
   },
 });
+// Compatibility for old clients. Retirement never reads regional aggregates.
 export const geography = query({
   args: {},
-  handler: async (ctx) => {
-    if (!publicEnabled()) return [];
-    ctx = knowledgeReadContext(ctx);
-    const budget = publicReadBudget(ctx, 25);
-    let remainingCandidates = 100;
-    let remainingEditionCandidates = 25;
-    const seen = new Set<string>();
-    const result = [];
-    for (const region of sharingRegions) {
-      if (
-        remainingCandidates <= 0 ||
-        remainingEditionCandidates <= 0 ||
-        budget.remaining() <= 0
-      )
-        break;
-      const candidates = await ctx.db
-        .query("publicGeography")
-        .withIndex("by_cell", (q) =>
-          q.eq("cell", region.id).eq("enabled", true),
-        )
-        .take(remainingCandidates);
-      remainingCandidates -= candidates.length;
-      const actors = new Set<string>();
-      for (const person of candidates) {
-        if (
-          actors.size >= 25 ||
-          remainingEditionCandidates <= 0 ||
-          budget.remaining() <= 0
-        )
-          break;
-        const identity = `${person.actor}:${person.organizationId}:${person.cell}`;
-        if (seen.has(identity)) continue;
-        seen.add(identity);
-        const editions = await ctx.db
-          .query("publicEditions")
-          .withIndex("by_actor", (q) => q.eq("actor", person.actor))
-          .order("desc")
-          .take(1);
-        remainingEditionCandidates -= editions.length;
-        for (const edition of editions)
-          if (
-            edition.organizationId === person.organizationId &&
-            (await budget.current(edition))
-          ) {
-            actors.add(person.actor);
-            break;
-          }
-      }
-      const band = contributorBand(actors.size);
-      if (band)
-        result.push({
-          ...region,
-          contributors: band,
-          coverage: "bounded_snapshot" as const,
-        });
-    }
-    return result;
-  },
+  returns: v.array(v.any()),
+  handler: async () => [],
 });
 export async function invalidatePublicEditions(
   ctx: MutationCtx,

@@ -16,6 +16,32 @@ const views = [
   "menu",
 ];
 const events: Record<string, Record<string, readonly string[] | "count">> = {
+  onboarding_result_viewed: { route: ["cached"] },
+  onboarding_milestone: {
+    milestone: [
+      "quiz_completed",
+      "account_ready",
+      "github_connected",
+      "paywall_viewed",
+      "pro_verified",
+      "workspace_ready",
+      "proposal_saved",
+    ],
+  },
+  onboarding_step_viewed: {
+    step: [
+      "welcome",
+      "interests",
+      "goal",
+      "work",
+      "obstacle",
+      "summary",
+      "feed",
+      "reader",
+      "import_benefit",
+      "import",
+    ],
+  },
   page_viewed: {
     surface: ["website", "app"],
     page: [

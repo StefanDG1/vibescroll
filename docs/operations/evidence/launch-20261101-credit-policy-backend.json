@@ -1,0 +1,81 @@
+{
+  "observedAtUTC": "2026-11-01T01:36:59Z",
+  "websiteCommitUnchanged": "cbe062de63bf565eaf7a91bc69bbeb0021980392",
+  "backendCommit": "fc6208c2efa9cf252448899804f5083823375fd4",
+  "previousBackendCommit": "2510081684fac4991bc8fac5449b65c295a01c8f",
+  "exactCI": 41260073813,
+  "exactCIConclusion": "success",
+  "validation": {
+    "fullLocalCheckPassed": true,
+    "mainVitestPassed": 1488,
+    "mainVitestSkipped": 7,
+    "authVitestPassed": 52,
+    "knowledgeVitestPassed": 174,
+    "focusedPolicyWalletSchemaCasesPassed": 67,
+    "deterministicOfflinePreparations": 2,
+    "publicationGuardCasesPassed": 17,
+    "dependencyAuditUnresolved": 0
+  },
+  "publication": {
+    "finishAcknowledged": true,
+    "cliExit": 0,
+    "components": 14,
+    "tables": 162,
+    "indexes": 353,
+    "newTables": ["billingRiskHolds"],
+    "newTableDocumentsBeforeCreation": 0,
+    "addedIndexes": 3,
+    "historicalSchemaChanges": 0,
+    "populatedTableScans": 0,
+    "populatedIndexBackfills": 0,
+    "authChanges": 0,
+    "cronChanges": 0,
+    "websiteBuilds": 0
+  },
+  "productionReadback": {
+    "ownerUsageBeforeAfterIdentical": true,
+    "expiredUnknownHoldPreserved": true,
+    "originalMcpProfileReadPassed": true,
+    "automaticAnalysisStillEnabled": true,
+    "candidatePolicyStillUnset": true,
+    "legacyPricesAndCreditsUnchanged": true,
+    "realWalletGrants": 0,
+    "modelCalls": 0
+  },
+  "actualProviderAcceptance": {
+    "environment": "isolated_stripe_sandbox_to_local_application_handler",
+    "officialStripeCliVersion": "1.35.0",
+    "testElapsedMs": 13070,
+    "actualProviderEventReadBack": true,
+    "cliForwardedSignatureAccepted": true,
+    "isolatedWalletCreditsGranted": 300,
+    "periodCount": 1,
+    "originalDeliveryGrantedBeforeReplay": true,
+    "signedReplayAddedNoGrant": true,
+    "productionDataWrites": 0,
+    "syntheticSubscriptionsCreated": 1,
+    "ownedSyntheticSubscriptionCancelled": true,
+    "localListenerStopped": true
+  },
+  "independentMcpHost": {
+    "evidence": "owner_report_after_original_app_refresh",
+    "getProposalDiscussionInvoked": true,
+    "proposalVersion": 4,
+    "discussionMessages": 4,
+    "linkedIssueNumber": 197,
+    "writes": 0,
+    "creditsSpent": 0,
+    "newPublicationInvocationTested": false
+  },
+  "recoveredLocalFailures": [
+    "The copied release harness assumed zero added indexes and a 350-index prediction cap; updated it for the exact three new empty-table indexes and retained rejection of historical changes/scans/backfills.",
+    "The first CLI process failed before loading the guard on a Windows --import path. No journal or external publication existed. A separately recorded recovery used a file URL; the single actual publication finished successfully."
+  ],
+  "limitations": [
+    "The new price-to-allowance mapping is implemented but unset in production; no new offer or customer contract is activated.",
+    "The actual provider test used a local isolated wallet and sandbox Billing payment. It does not establish live managed Checkout, live tax coverage or a real purchase.",
+    "The owner reports there are no real customers; admin/test balances and historical compatibility remain protected.",
+    "Single-Pro checkout/public offer and no-repository-quota presentation remain the next checkpoint.",
+    "Discussion read discovery passed by independent owner report; new MCP write/publication invocation remains separate."
+  ]
+}

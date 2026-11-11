@@ -1,0 +1,765 @@
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { api, internal } from "../convex/_generated/api";
+import { analysisVersionFixture } from "./analysis-version-fixture";
+import { recordAutomaticCatalogIntent } from "../convex/lib/catalogPolicy";
+import {
+  catalogPermission,
+  currentCloudArtifact,
+  reserveCatalogProducer,
+} from "../convex/lib/cloudCatalog";
+import { requireProCatalogAccess } from "../convex/lib/catalogEntitlement";
+import { socialHash } from "../packages/social/contracts";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { persistCloudResult } from "../convex/lib/persistCloudResult";
+import {
+  freezeAnalysisBaseline,
+  retainedVersion,
+  verifyRetainedAssets,
+} from "../convex/lib/analysisHistory";
+
+vi.mock("../packages/providers/storage", () => ({
+  signedObject: (key: string) =>
+    `https://storage.example.test/${encodeURIComponent(key)}`,
+}));
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => {
+  vi.clearAllTimers();
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
+
+async function setup() {
+  const f = await analysisVersionFixture();
+  const now = Date.now();
+  const operatorSubject = "user_09234567890123456789012345";
+  await f.t.mutation(internal.accounts.syncUser, {
+    subject: operatorSubject,
+    email: "operator@example.test",
+    name: "Synthetic operator",
+    verified: true,
+  });
+  const operator = f.t.withIdentity({ subject: operatorSubject });
+  const serviceOrg = await operator.mutation(api.organizations.create, {
+    name: "Synthetic independent catalog",
+  });
+  const configuration = {
+    version: "cloud-catalog-config-v2",
+    serviceOrganizationId: serviceOrg,
+    maximumStorageBytes: 20_000_000,
+    reviewedAt: now - 5000,
+    expiresAt: now + 8 * 86400000,
+    permissions: [],
+    defaultPolicy: {
+      version: "automatic-neutral-catalog-v1",
+      id: "synthetic-standing-policy",
+      disclosureVersion: "synthetic-catalog-notice",
+      rightsBasis: "user_attested",
+      platforms: ["instagram", "tiktok"],
+      providerPermissionReference: "synthetic permitted public-source route",
+      contentPermissionReference:
+        "synthetic user declaration, not a verified licence",
+      privacyReviewReference: "synthetic neutral-only disclosure",
+      reviewedAt: now - 5000,
+      expiresAt: now + 8 * 86400000,
+      maximumRetentionMs: 7 * 86400000,
+    },
+  };
+  vi.stubEnv("CLOUD_CATALOG_ENABLED", "true");
+  vi.stubEnv("CLOUD_CATALOG_VERIFIED", "true");
+  vi.stubEnv("CLOUD_CATALOG_CONFIGURATION_JSON", JSON.stringify(configuration));
+  const original = (await f.t.run((ctx) => ctx.db.get(f.sourceId)))!;
+  const actorId = original.personalAnalysis!.actor;
+  const subject = (await f.t.run((ctx) => ctx.db.get(actorId)))!.subject;
+  await f.t.mutation(internal.accounts.syncUser, {
+    subject,
+    email: "owner@example.test",
+    name: "Version owner",
+    verified: true,
+  });
+  const network = vi.fn(async (_url: string, init?: RequestInit) =>
+    init?.method === "PUT"
+      ? new Response(null, { status: 200 })
+      : new Response(f.bytes, { headers: { "content-type": "image/jpeg" } }),
+  );
+  vi.stubGlobal("fetch", network);
+  const captureNewCompletion = async () => {
+    const completionHash = await socialHash(
+      canonicalJson({
+        output: f.output,
+        syntheticAcknowledgedCompletion: true,
+      }),
+    );
+    await f.t.run(async (ctx) => {
+      const source = (await ctx.db.get(f.sourceId))!,
+        actor = (await ctx.db.get(actorId))!;
+      await recordAutomaticCatalogIntent(ctx, source, actor);
+      const job = source.personalAnalysis!;
+      if (job.executor !== "work_cloud")
+        throw Error("Synthetic Cloud fixture required");
+      await ctx.db.patch(source._id, {
+        personalAnalysis: {
+          ...job,
+          approvedAt: now,
+          cloud: { ...job.cloud, completionHash },
+        },
+        linkPreview: {
+          state: "ready",
+          origin: "extractor",
+          title: "Native public title",
+          authorName: "Public creator",
+          updatedAt: now,
+        },
+      });
+    });
+  };
+  const alpha = (subjects: string[]) =>
+    vi.stubEnv(
+      "CLOUD_CATALOG_ALPHA_ACCESS_JSON",
+      JSON.stringify({
+        version: "catalog-operator-alpha-access-v1",
+        subjects,
+        reviewedAt: now - 1000,
+        expiresAt: now + 86400000,
+        reviewReference: "synthetic finite operator test grant",
+      }),
+    );
+  return {
+    ...f,
+    now,
+    serviceOrg,
+    actorId,
+    subject,
+    configuration,
+    network,
+    captureNewCompletion,
+    alpha,
+  };
+}
+
+it("publishes a new authenticated first completion without a per-post dialog or a second model run", async () => {
+  const s = await setup();
+  expect(
+    await s.t.mutation(internal.cloudCatalog.prepareAutomatic, {
+      sourceId: s.sourceId,
+      actorId: s.actorId,
+      generation: 1,
+    }),
+  ).toBeNull();
+  await s.captureNewCompletion();
+  const result = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { sourceId: s.sourceId, actorId: s.actorId, generation: 1 },
+  );
+  expect(result.state).toBe("published");
+  if (!("contributionId" in result))
+    throw Error("Expected a published contribution");
+  const contribution = (await s.t.run((ctx) =>
+    ctx.db.get(result.contributionId),
+  ))!;
+  const shared = await s.t.run((ctx) =>
+    currentCloudArtifact(ctx, contribution.artifactId),
+  );
+  expect(shared.family.selectedArtifactId).toBe(shared.artifact._id);
+  expect(shared.family.selectionBasis).toBe("first_eligible");
+  expect(shared.artifact.authority.settingsProviderAttested).toBe(false);
+  expect(shared.artifact.postMetadata?.title).toBe("Native public title");
+  expect(contribution.automaticPolicyHash).toMatch(/^[a-f0-9]{64}$/);
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  const baseline = (await s.t.run((ctx) =>
+    ctx.db.get(source.selectedAnalysisVersionId!),
+  ))!;
+  expect(baseline.sourceCompletion?.completionHash).toMatch(/^[a-f0-9]{64}$/);
+  expect(baseline.provenance).toBe("authenticated_host_reported");
+  expect(source.catalogStatus?.state).toBe("published");
+  expect(source.analysis).toEqual(s.output);
+  expect(source.generation).toBe(1);
+  expect(s.network).toHaveBeenCalledTimes(2);
+  const again = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { sourceId: s.sourceId, actorId: s.actorId, generation: 1 },
+  );
+  if (!("contributionId" in again))
+    throw Error("Expected the existing contribution");
+  expect(again.contributionId).toBe(result.contributionId);
+  expect(s.network).toHaveBeenCalledTimes(2);
+});
+
+it("serves a separate-account cache association with an explicit alpha entitlement and no fake payment", async () => {
+  const s = await setup();
+  await s.captureNewCompletion();
+  const result = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { sourceId: s.sourceId, actorId: s.actorId, generation: 1 },
+  );
+  expect(result.state).toBe("published");
+  const subject = "user_08234567890123456789012345";
+  await s.t.mutation(internal.accounts.syncUser, {
+    subject,
+    email: "second@example.test",
+    name: "Synthetic independent reader",
+    verified: true,
+  });
+  const second = s.t.withIdentity({ subject });
+  const organizationId = await second.mutation(
+    api.organizations.createPrivate,
+    {},
+  );
+  await expect(
+    s.t.run((ctx) => requireProCatalogAccess(ctx, organizationId)),
+  ).rejects.toThrow(/FORBIDDEN/);
+  s.alpha([subject]);
+  const calls = s.network.mock.calls.length;
+  const id = await second.mutation(api.product.capture, {
+    organizationId,
+    key: "automatic-shared-cache",
+    kind: "url",
+    title: "Imported video link",
+    url: s.prepared.post.canonical,
+    rightsAttested: true,
+  });
+  const source = (await s.t.run((ctx) => ctx.db.get(id)))!;
+  expect(source.state).toBe("ready");
+  expect(source.generation).toBe(0);
+  expect(source.personalAnalysis).toBeUndefined();
+  expect(source.publicImportId).toBeTruthy();
+  expect(source.linkPreview?.title).toBe("Native public title");
+  const detail = await second.query(api.product.detail, { organizationId, id });
+  expect(detail.analysis.summary).toBe(s.output.summary);
+  const recent = await second.query(api.posts.recent, { organizationId });
+  expect(
+    recent.items[0].thumbnailAssetIds.some((id) => id.startsWith("catalog~")),
+  ).toBe(true);
+  expect(s.network).toHaveBeenCalledTimes(calls);
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("billing")
+        .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
+        .unique(),
+    ),
+  ).toBeNull();
+});
+
+it("keeps overlapping completion deliveries pending until their one screenshot copy finishes", async () => {
+  const s = await setup();
+  await s.captureNewCompletion();
+  let release!: () => void, entered!: () => void;
+  const copying = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  s.network.mockImplementation(async (_url: string, init?: RequestInit) => {
+    if (init?.method === "PUT") return new Response(null, { status: 200 });
+    entered();
+    await gate;
+    return new Response(s.bytes, { headers: { "content-type": "image/jpeg" } });
+  });
+  const selection = { sourceId: s.sourceId, actorId: s.actorId, generation: 1 };
+  const first = s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    selection,
+  );
+  await copying;
+  const overlap = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    selection,
+  );
+  expect(overlap.state).toBe("pending");
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.catalogStatus?.state,
+  ).toBe("pending");
+  expect(s.network).toHaveBeenCalledTimes(1);
+  release();
+  expect((await first).state).toBe("published");
+  expect(
+    (
+      await s.t.action(internal.cloudCatalogActions.publishCompleted, {
+        ...selection,
+        waitAttempt: 1,
+      })
+    ).state,
+  ).toBe("published");
+  expect(s.network).toHaveBeenCalledTimes(2);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("publicArtifacts").collect()),
+  ).toHaveLength(1);
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(source.catalogStatus?.state).toBe("published");
+  expect(source.analysis).toEqual(s.output);
+});
+
+it("joins an equivalent version during publication and preserves both private versions without duplicate image copies", async () => {
+  const s = await setup();
+  await s.captureNewCompletion();
+  const selection = { sourceId: s.sourceId, actorId: s.actorId, generation: 1 };
+  const first = await s.t.mutation(
+    internal.cloudCatalog.prepareAutomatic,
+    selection,
+  );
+  if (!first || !("copyToken" in first))
+    throw Error("Expected the first copy reservation");
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  const original = (await s.t.run((ctx) =>
+    ctx.db.get(source.selectedAnalysisVersionId!),
+  ))!;
+  const secondVersionId = await s.t.run(async (ctx) => {
+    const { _id, _creationTime, ...version } = original;
+    return ctx.db.insert("analysisVersions", { ...version, number: 2 });
+  });
+  const overlap = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { ...selection, versionId: secondVersionId },
+  );
+  expect(overlap.state).toBe("pending");
+  expect(s.network).not.toHaveBeenCalled();
+  for (let waitAttempt = 1; waitAttempt <= 4; waitAttempt++)
+    expect(
+      (
+        await s.t.action(internal.cloudCatalogActions.publishCompleted, {
+          ...selection,
+          versionId: secondVersionId,
+          waitAttempt,
+        })
+      ).state,
+    ).toBe("pending");
+  await s.t.mutation(internal.cloudCatalog.commitCopy, {
+    contributionId: first.contributionId!,
+    copyToken: first.copyToken!,
+  });
+  await s.t.mutation(internal.cloudCatalog.finishAutomatic, {
+    contributionId: first.contributionId!,
+  });
+  const completed = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { ...selection, versionId: secondVersionId, waitAttempt: 1 },
+  );
+  expect(completed.state).toBe("published");
+  expect(s.network).not.toHaveBeenCalled();
+  expect(
+    await s.t.run((ctx) => ctx.db.query("publicArtifacts").collect()),
+  ).toHaveLength(1);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("catalogContributions").collect()),
+  ).toHaveLength(2);
+  expect(await s.t.run((ctx) => ctx.db.get(original._id))).toEqual(original);
+  expect(await s.t.run((ctx) => ctx.db.get(secondVersionId))).toBeTruthy();
+});
+
+it("derives stable per-post authority from an honest standing policy and rejects retrospective or mismatched requests", async () => {
+  const s = await setup();
+  const a = await s.t.run((ctx) =>
+    catalogPermission(ctx, s.prepared.post.canonical),
+  );
+  expect(a.permission.rightsBasis).toBe("user_attested");
+  expect(a.permission.id).toMatch(/^default_/);
+  expect(
+    (await s.t.run((ctx) => catalogPermission(ctx, s.prepared.post.canonical)))
+      .permissionHash,
+  ).toBe(a.permissionHash);
+  await s.captureNewCompletion();
+  await s.t.run((ctx) =>
+    ctx.db.patch(s.sourceId, {
+      catalogPolicy: {
+        version: "automatic-neutral-catalog-v1",
+        policyHash: "0".repeat(64),
+        disclosureVersion: "synthetic-catalog-notice",
+        actor: s.actorId,
+        requestedAt: s.now,
+      },
+    }),
+  );
+  await expect(
+    s.t.mutation(internal.cloudCatalog.prepareAutomatic, {
+      sourceId: s.sourceId,
+      actorId: s.actorId,
+      generation: 1,
+    }),
+  ).rejects.toThrow(/POLICY_BLOCKED/);
+  expect(s.network).not.toHaveBeenCalled();
+});
+
+it("records an uncertain shared copy without losing private results or automatically repeating storage I/O", async () => {
+  const s = await setup();
+  await s.captureNewCompletion();
+  const before = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  s.network.mockResolvedValue(new Response(null, { status: 503 }));
+  const result = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { sourceId: s.sourceId, actorId: s.actorId, generation: 1 },
+  );
+  expect(result.state).toBe("unknown");
+  const after = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(after.state).toBe("ready");
+  expect(after.analysis).toEqual(before.analysis);
+  expect(after.personalAnalysis).toEqual(before.personalAnalysis);
+  expect(after.catalogStatus?.state).toBe("unknown");
+  const calls = s.network.mock.calls.length;
+  const retry = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { sourceId: s.sourceId, actorId: s.actorId, generation: 1 },
+  );
+  expect(retry.state).toBe("unknown");
+  expect(s.network).toHaveBeenCalledTimes(calls);
+});
+
+it("reuses durable shared evidence for a later analysis version and deduplicates delayed publication replies", async () => {
+  const s = await setup();
+  vi.stubEnv(
+    "CLOUD_CATALOG_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...s.configuration,
+      defaultPolicy: {
+        ...s.configuration.defaultPolicy,
+        resultRetention: "until_deleted",
+      },
+    }),
+  );
+  await s.captureNewCompletion();
+  await s.t.run(async (ctx) =>
+    persistCloudResult(ctx, (await ctx.db.get(s.sourceId))!),
+  );
+  const first = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { sourceId: s.sourceId, actorId: s.actorId, generation: 1 },
+  );
+  if (!("contributionId" in first))
+    throw Error("Expected the first shared version");
+  const firstRow = (await s.t.run((ctx) => ctx.db.get(first.contributionId)))!;
+  const original = await s.t.run((ctx) =>
+    currentCloudArtifact(ctx, firstRow.artifactId),
+  );
+  vi.setSystemTime(s.now + 1000);
+  expect(
+    (
+      await s.t.action(internal.cloudCatalogActions.publishCompleted, {
+        sourceId: s.sourceId,
+        actorId: s.actorId,
+        generation: 1,
+      })
+    ).state,
+  ).toBe("published");
+  expect(s.network).toHaveBeenCalledTimes(2);
+  vi.setSystemTime(s.now + 86400000);
+  const requested = await s.assistant.mutation(api.analysisVersions.request, {
+    sourceId: s.sourceId,
+    expectedSelectionRevision: 0,
+    configuration: s.config,
+    key: "next-durable-shared-version",
+  });
+  const claim = await s.assistant.mutation(internal.analysisVersions.dispatch, {
+    sourceId: s.sourceId,
+    attemptId: requested.attemptId,
+    taskId: "synthetic-durable-version",
+    operation: "claim",
+  });
+  if (!claim.leaseToken)
+    throw Error("Expected a fresh retained-analysis lease");
+  const lease = {
+    sourceId: s.sourceId,
+    attemptId: requested.attemptId,
+    taskId: "synthetic-durable-version",
+    leaseToken: claim.leaseToken,
+  };
+  const input = await s.assistant.query(internal.analysisVersions.input, lease);
+  await s.assistant.action(internal.analysisVersionFrames.read, {
+    ...lease,
+    frameId: input.frames[0].frameId,
+  });
+  const completed = await s.assistant.mutation(
+    internal.analysisVersions.dispatch,
+    {
+      ...lease,
+      operation: "complete",
+      output: {
+        schemaVersion: "analysis-version-output-v1",
+        sourceId: s.sourceId,
+        attemptId: requested.attemptId,
+        evidenceHash: input.evidenceHash,
+        postRevisionHash: input.postRevisionHash,
+        summary: "A distinct later neutral analysis.",
+        warnings: [],
+        insights: s.output.insights,
+      },
+    },
+  );
+  const beforeCopy = s.network.mock.calls.length;
+  const next = await s.t.action(internal.cloudCatalogActions.publishCompleted, {
+    sourceId: s.sourceId,
+    actorId: s.actorId,
+    generation: 1,
+    versionId: completed.versionId,
+  });
+  if (!("contributionId" in next))
+    throw Error("Expected the new shared version");
+  expect(next.state).toBe("published");
+  const nextRow = (await s.t.run((ctx) => ctx.db.get(next.contributionId)))!;
+  const current = await s.t.run((ctx) =>
+    currentCloudArtifact(ctx, nextRow.artifactId),
+  );
+  expect(current.evidence._id).toBe(original.evidence._id);
+  expect(current.version._id).not.toBe(original.version._id);
+  expect(current.artifact.retainUntil).not.toBe(original.artifact.retainUntil);
+  expect(current.version.output.summary).toBe(
+    "A distinct later neutral analysis.",
+  );
+  expect(s.network).toHaveBeenCalledTimes(beforeCopy);
+  expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))!.analysis).toEqual(
+    s.output,
+  );
+});
+
+it("coalesces another account's save behind one producer and attaches the completed result without another job", async () => {
+  const s = await setup();
+  await s.captureNewCompletion();
+  const reserved = await s.t.run(async (ctx) => {
+    const source = (await ctx.db.get(s.sourceId))!,
+      actor = (await ctx.db.get(s.actorId))!;
+    return reserveCatalogProducer(
+      ctx,
+      source,
+      actor,
+      await catalogPermission(ctx, source.canonical),
+      "synthetic-producer",
+      s.now + 86400000,
+      s.now + 7 * 86400000,
+    );
+  });
+  const subject = "user_07234567890123456789012345";
+  await s.t.mutation(internal.accounts.syncUser, {
+    subject,
+    email: "waiting@example.test",
+    name: "Synthetic waiting reader",
+    verified: true,
+  });
+  s.alpha([subject]);
+  const second = s.t.withIdentity({ subject });
+  const organizationId = await second.mutation(
+    api.organizations.createPrivate,
+    {},
+  );
+  const id = await second.mutation(api.product.capture, {
+    organizationId,
+    key: "wait-for-one-producer",
+    kind: "url",
+    title: "Imported video link",
+    url: s.prepared.post.canonical,
+    rightsAttested: true,
+  });
+  const pending = (await s.t.run((ctx) => ctx.db.get(id)))!;
+  expect(pending.catalogWait?.familyId).toBe(reserved.familyId);
+  expect(pending.generation).toBe(0);
+  expect(pending.personalAnalysis).toBeUndefined();
+  expect(pending.workCloudSaveIntent).toBeUndefined();
+  expect(s.network).not.toHaveBeenCalled();
+  const published = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { sourceId: s.sourceId, actorId: s.actorId, generation: 1 },
+  );
+  expect(published.state).toBe("published");
+  await s.t.mutation(internal.cloudCatalog.fulfillWaiters, {
+    familyId: reserved.familyId,
+  });
+  const ready = (await s.t.run((ctx) => ctx.db.get(id)))!;
+  expect(ready.state).toBe("ready");
+  expect(ready.catalogWait).toBeUndefined();
+  expect(ready.personalAnalysis).toBeUndefined();
+  expect(ready.publicImportId).toBeTruthy();
+  const family = (await s.t.run((ctx) => ctx.db.get(reserved.familyId)))!;
+  expect(family.producer).toBeUndefined();
+  expect(family.waiters).toEqual([]);
+  expect(s.network).toHaveBeenCalledTimes(2);
+});
+
+it("reserves one producer for two accounts arriving together and keeps both saved sources", async () => {
+  const s = await setup();
+  const secondSubject = "user_06234567890123456789012345";
+  const secondActor = await s.t.mutation(internal.accounts.syncUser, {
+    subject: secondSubject,
+    email: "simultaneous@example.test",
+    name: "Second saver",
+    verified: true,
+  });
+  s.alpha([s.subject, secondSubject]);
+  const second = s.t.withIdentity({ subject: secondSubject });
+  const secondOrg = await second.mutation(api.organizations.createPrivate, {});
+  const secondSource = await second.mutation(api.product.capture, {
+    organizationId: secondOrg,
+    key: "simultaneous-save",
+    kind: "url",
+    title: "Second independent save",
+    url: s.prepared.post.canonical,
+    rightsAttested: true,
+  });
+  const reserve = (
+    sourceId: typeof s.sourceId,
+    actorId: typeof s.actorId,
+    intent: string,
+  ) =>
+    s.t.run(async (ctx) => {
+      const source = (await ctx.db.get(sourceId))!,
+        actor = (await ctx.db.get(actorId))!;
+      return reserveCatalogProducer(
+        ctx,
+        source,
+        actor,
+        await catalogPermission(ctx, source.canonical),
+        intent,
+        s.now + 86400000,
+        s.now + 7 * 86400000,
+      );
+    });
+  const results = await Promise.all([
+    reserve(s.sourceId, s.actorId, "simultaneous-first"),
+    reserve(secondSource, secondActor, "simultaneous-second"),
+  ]);
+  expect(results[0].familyId).toBe(results[1].familyId);
+  expect(results.filter((r) => r.waiting)).toHaveLength(1);
+  const family = (await s.t.run((ctx) => ctx.db.get(results[0].familyId)))!;
+  expect(family.producer).toBeTruthy();
+  expect(family.waiters).toHaveLength(1);
+  expect(family.waiters![0].sourceId).not.toBe(family.producer!.sourceId);
+  expect(await s.t.run((ctx) => ctx.db.get(s.sourceId))).toBeTruthy();
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(secondSource)))?.organizationId,
+  ).toBe(secondOrg);
+  expect(s.network).not.toHaveBeenCalled();
+});
+
+it("bounds publication waiting and leaves completed personal analysis intact when the copy stays unresolved", async () => {
+  const s = await setup();
+  await s.captureNewCompletion();
+  const selection = { sourceId: s.sourceId, actorId: s.actorId, generation: 1 };
+  await s.t.mutation(internal.cloudCatalog.prepareAutomatic, selection);
+  const result = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { ...selection, waitAttempt: 12 },
+  );
+  expect(result.state).toBe("unknown");
+  const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(source.state).toBe("ready");
+  expect(source.catalogStatus?.state).toBe("unknown");
+  expect(source.analysis).toEqual(s.output);
+  expect(source.generation).toBe(1);
+  expect(s.network).not.toHaveBeenCalled();
+  await expect(
+    s.t.action(internal.cloudCatalogActions.publishCompleted, {
+      ...selection,
+      waitAttempt: 13,
+    }),
+  ).rejects.toThrow(/INVALID_INPUT/);
+});
+
+it("keeps acknowledged results and shared JPEGs beyond the processing window while explicit withdrawal still erases them", async () => {
+  const s = await setup();
+  vi.stubEnv(
+    "CLOUD_CATALOG_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...s.configuration,
+      defaultPolicy: {
+        ...s.configuration.defaultPolicy,
+        resultRetention: "until_deleted",
+      },
+    }),
+  );
+  await s.captureNewCompletion();
+  const baseline = await s.t.run(async (ctx) => {
+    await persistCloudResult(ctx, (await ctx.db.get(s.sourceId))!);
+    return freezeAnalysisBaseline(ctx, (await ctx.db.get(s.sourceId))!, true);
+  });
+  const result = await s.t.action(
+    internal.cloudCatalogActions.publishCompleted,
+    { sourceId: s.sourceId, actorId: s.actorId, generation: 1 },
+  );
+  if (!("contributionId" in result))
+    throw Error("Expected a published contribution");
+  const contribution = (await s.t.run((ctx) =>
+    ctx.db.get(result.contributionId),
+  ))!;
+  const originalSource = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  vi.setSystemTime(s.now + 7.5 * 86400000);
+  await s.t.mutation(internal.workCloudAnalysis.expire, {
+    sourceId: s.sourceId,
+    organizationId: originalSource.organizationId,
+    generation: 1,
+    retainUntil: s.now + 7 * 86400000,
+  });
+  await s.t.mutation(internal.analysisVersions.expireEvidence, {
+    evidenceId: baseline.evidenceId,
+  });
+  await s.t.mutation(internal.cloudCatalog.expireArtifact, {
+    artifactId: contribution.artifactId,
+  });
+  const shared = await s.t.run((ctx) =>
+    currentCloudArtifact(ctx, contribution.artifactId),
+  );
+  expect(shared.artifact.resultRetention).toBe("until_deleted");
+  const preserved = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+  expect(preserved.analysis).toEqual(s.output);
+  expect(preserved.sourceRetentionUntil).toBeUndefined();
+  const retained = await s.t.run((ctx) =>
+    retainedVersion(ctx, preserved, baseline._id),
+  );
+  await s.t.run((ctx) =>
+    verifyRetainedAssets(ctx, preserved, retained.evidence),
+  );
+  for (const frame of retained.evidence.frames)
+    if (frame.assetId) {
+      await s.t.mutation(internal.assets.expireAsset, { id: frame.assetId });
+      expect((await s.t.run((ctx) => ctx.db.get(frame.assetId!)))!.state).toBe(
+        "complete",
+      );
+    }
+  expect(preserved.personalAnalysis).toEqual(originalSource.personalAnalysis);
+  const nextReview = s.now + 9 * 86400000;
+  vi.setSystemTime(nextReview);
+  vi.stubEnv(
+    "CLOUD_CATALOG_CONFIGURATION_JSON",
+    JSON.stringify({
+      ...s.configuration,
+      reviewedAt: nextReview,
+      expiresAt: nextReview + 86400000,
+      defaultPolicy: {
+        ...s.configuration.defaultPolicy,
+        resultRetention: "until_deleted",
+        reviewedAt: nextReview,
+        expiresAt: nextReview + 86400000,
+      },
+    }),
+  );
+  expect(
+    (await s.t.run((ctx) => currentCloudArtifact(ctx, contribution.artifactId)))
+      .artifact._id,
+  ).toBe(shared.artifact._id);
+  await expect(
+    s.request("durable-reanalysis-after-original-window"),
+  ).rejects.toThrow(/SETUP_REQUIRED/);
+  await s.assistant.mutation(internal.assistantEvents.install, {
+    eventName: "work_cloud_waiting",
+    profileId: s.org,
+    grantVersion: s.grant.version,
+    externalId: "sub_" + "a".repeat(64),
+    ciphertext: "synthetic-renewed-authority",
+    keyVersion: "1",
+    expiresAt: Date.now() + 600000,
+    callbackVerifiedAt: Date.now(),
+  });
+  const retry = await s.request("durable-reanalysis-after-original-window");
+  const attempt = (await s.t.run((ctx) => ctx.db.get(retry.attemptId)))!;
+  expect(attempt.expiresAt).toBeGreaterThan(nextReview);
+  expect(attempt.expiresAt).toBeLessThanOrEqual(nextReview + 86400000);
+  expect(attempt.leaseUntil).toBe(0);
+  await s.t.run(async (ctx) => {
+    const { retireCloudArtifact } =
+      await import("../convex/lib/cloudCatalogRetention");
+    await retireCloudArtifact(ctx, contribution.artifactId);
+  });
+  await expect(
+    s.t.run((ctx) => currentCloudArtifact(ctx, contribution.artifactId)),
+  ).rejects.toThrow(/SOURCE_UNAVAILABLE/);
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(shared.evidence._id)))!.frames,
+  ).toEqual([]);
+});

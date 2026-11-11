@@ -1,6 +1,25 @@
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 
+export const cloudEvidenceRepairValue = v.object({
+  state: v.union(
+    v.literal("queued"),
+    v.literal("running"),
+    v.literal("completed"),
+  ),
+  actor: v.id("users"),
+  grantId: v.id("assistantGrants"),
+  grantVersion: v.number(),
+  preparationHash: v.string(),
+  approvedAt: v.number(),
+  expiresAt: v.number(),
+  leaseUntil: v.number(),
+  rawMediaDeleteBy: v.number(),
+  taskId: v.optional(v.string()),
+  leaseTokenHash: v.optional(v.string()),
+  consentId: v.optional(v.string()),
+});
+
 const common = {
   actor: v.id("users"),
   generation: v.number(),
@@ -75,12 +94,16 @@ export const personalAnalysisValue = v.union(
       }),
       v.object({
         ...cloudCommon,
-        schemaVersion: v.literal("work-cloud-media-v2"),
+        schemaVersion: v.union(
+          v.literal("work-cloud-media-v2"),
+          v.literal("work-cloud-media-v3"),
+        ),
         media: v.object({
           canonicalUrl: v.string(),
           toolchainHash: v.string(),
           retainUntil: v.number(),
           preparationHash: v.optional(v.string()),
+          evidenceRepair: v.optional(cloudEvidenceRepairValue),
         }),
       }),
     ),

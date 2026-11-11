@@ -44,6 +44,7 @@ import {
   ChevronDown,
   ExternalLink,
   CircleHelp,
+  Plug,
 } from "lucide-react";
 import { openCookiePreferences } from "./consent";
 export function AccountMenu({
@@ -89,6 +90,10 @@ export function AccountMenu({
           <Menu.Item className="menu-item" onSelect={() => go("menu")}>
             <UserRound size={17} />
             Account and appearance
+          </Menu.Item>
+          <Menu.Item className="menu-item" onSelect={() => go("connections")}>
+            <Plug size={17} />
+            Connections
           </Menu.Item>
           <Menu.Item className="menu-item" onSelect={() => go("usage")}>
             <Settings2 size={17} />

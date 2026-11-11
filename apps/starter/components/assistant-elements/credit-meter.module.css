@@ -1,0 +1,70 @@
+.meter {
+  min-width: 0;
+  padding-block: 12px;
+}
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+.heading > span {
+  color: var(--subtle);
+}
+.heading strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.track {
+  display: flex;
+  gap: 3px;
+  height: 8px;
+  margin-block: 16px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--line);
+}
+.track > span {
+  min-width: 0;
+  flex-basis: 0;
+}
+.track [data-kind="used"],
+.dot[data-kind="used"] {
+  background: var(--teal);
+}
+.track [data-kind="reserved"],
+.dot[data-kind="reserved"] {
+  background: #b67c30;
+}
+.track [data-kind="available"],
+.dot[data-kind="available"] {
+  background: #aebbb7;
+}
+.legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  gap: 12px;
+}
+.legend dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--subtle);
+  font-size: 0.8125rem;
+}
+.legend dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

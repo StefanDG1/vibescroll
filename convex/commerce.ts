@@ -1,11 +1,18 @@
 import { query, internalQuery } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
-import { access, writeAccess, audit, recentAuthentication, limit } from "./lib";
+import { access, writeAccess, audit, limit } from "./lib";
 import { requireInvoiceOperator } from "./lib/invoiceOperator";
 import { wallet } from "./product";
 import { pricing, ensure } from "../packages/policy";
 import { billingReadiness } from "../packages/providers/billing-readiness";
+import {
+  candidateCreditPolicy,
+  singleProConfigured,
+} from "../packages/billing/credit-policy";
+import { proOffer } from "../packages/billing/pro-offer";
+import { billingRiskHeld } from "./lib/billingRisk";
+import { paidProcessingCapacity } from "./lib/paidProcessing";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import {
@@ -102,8 +109,14 @@ export const catalogue = query({
   args: {},
   handler: async (ctx) => {
     const tax = await ctx.db.query("taxConfigurations").first();
+    const readiness = billingReadiness(process.env);
+    const capacity =
+      readiness.liveEnabled && singleProConfigured(process.env)
+        ? await paidProcessingCapacity(ctx)
+        : null;
     return {
       pricing,
+      proOffer: { ...proOffer, configured: singleProConfigured(process.env) },
       taxMode: tax?.domestic ?? "pending_evidence",
       countries: tax?.countries ?? ["RO"],
       billingCountryRequired:
@@ -111,7 +124,10 @@ export const catalogue = query({
         !["provider_supported", "tax_covered"].includes(
           process.env.STRIPE_MANAGED_MARKET ?? "",
         ),
-      ...billingReadiness(process.env),
+      ...readiness,
+      liveEnabled:
+        readiness.liveEnabled &&
+        (!singleProConfigured(process.env) || !!capacity?.available),
     };
   },
 });
@@ -128,8 +144,11 @@ export const grantPeriod = internalMutation({
     invoiceId: v.optional(v.string()),
     billingRevision: v.optional(v.number()),
     pilotEvent: v.optional(pilotProviderEvent),
+    creditPolicyVersion: v.optional(v.string()),
+    policyPriceId: v.optional(v.string()),
   },
   handler: async (ctx, a) => {
+    if (await billingRiskHeld(ctx, a.organizationId)) return;
     if (a.billingRevision !== undefined) {
       const current = await ctx.db
         .query("billing")
@@ -149,16 +168,64 @@ export const grantPeriod = internalMutation({
       "PAYMENT_REQUIRED",
       "Verified payment is required.",
     );
+    let policyCredits: number | undefined;
+    if (a.creditPolicyVersion !== undefined || a.policyPriceId !== undefined) {
+      const policy = candidateCreditPolicy(process.env, a.policyPriceId ?? "");
+      ensure(
+        policy &&
+          policy.version === a.creditPolicyVersion &&
+          a.tier === "pro" &&
+          a.interval ===
+            (policy.interval === "weekly" ? "weekly" : "monthly") &&
+          a.billingRevision !== undefined &&
+          Boolean(a.invoiceId),
+        "BILLING_POLICY_INVALID",
+        "The verified credit policy is unavailable.",
+      );
+      const organization = await ctx.db.get(a.organizationId);
+      const person = organization?.privateOwnerId;
+      const owned = person
+        ? await ctx.db
+            .query("organizations")
+            .withIndex("by_private_owner", (q) =>
+              q.eq("privateOwnerId", person),
+            )
+            .take(2)
+        : [];
+      const membership = person
+        ? await ctx.db
+            .query("memberships")
+            .withIndex("by_pair", (q) =>
+              q.eq("organizationId", a.organizationId).eq("userId", person),
+            )
+            .unique()
+        : null;
+      ensure(
+        organization?.status === "active" &&
+          person &&
+          membership?.role === "owner" &&
+          owned.filter((o) => o.status === "active").length === 1 &&
+          owned.some((o) => o._id === a.organizationId),
+        "PERSONAL_FUNDING_REQUIRED",
+        "Subscription credits belong to your personal account.",
+      );
+      policyCredits = policy.credits;
+    }
     const key = `${a.subscription}:${a.start}`;
     const existing = await ctx.db
       .query("billingPeriods")
       .withIndex("by_key", (q) => q.eq("key", key))
       .unique();
-    const w = await wallet(ctx, a.organizationId);
+    const w = await wallet(
+      ctx,
+      a.organizationId,
+      policyCredits === undefined ? "legacy_trial" : "none",
+    );
     const credits =
-      a.interval === "weekly"
+      policyCredits ??
+      (a.interval === "weekly"
         ? pricing.tiers[a.tier].weekly_credits
-        : pricing.tiers[a.tier].monthly_credits;
+        : pricing.tiers[a.tier].monthly_credits);
     if (existing) {
       ensure(
         existing.organizationId === a.organizationId && existing.end === a.end,
@@ -313,7 +380,6 @@ export const submitReceipt = mutation({
   args: { id: v.id("invoiceTasks"), receipt: v.string() },
   handler: async (ctx, a) => {
     const actor = await requireInvoiceOperator(ctx);
-    await recentAuthentication(ctx);
     const task = await ctx.db.get(a.id);
     ensure(task, "NOT_FOUND", "Invoice task unavailable.");
     const reference = a.receipt.trim();
@@ -370,7 +436,7 @@ export const recordAcceptance = internalMutation({
     immediateService: v.boolean(),
   },
   handler: async (ctx, a) => {
-    const actor = await writeAccess(ctx, a.organizationId, ["owner"]);
+    const actor = await writeAccess(ctx, a.organizationId, ["owner"], true);
     await ctx.db.insert("legalAcceptances", {
       ...a,
       actor: actor.actor._id,
@@ -406,7 +472,7 @@ export const grantTopup = internalMutation({
   },
   handler: async (ctx, a) => {
     ensure(
-      [200, 550].includes(a.credits),
+      [200, 500].includes(a.credits),
       "CATALOGUE_MISMATCH",
       "Invalid top-up credits.",
     );

@@ -1,0 +1,57 @@
+{
+  "observedAtUTC": "2026-10-31T17:45:00Z",
+  "websiteCommit": "3f1897474b1cccddc5feb7115cccdb2139183837",
+  "backendCommit": "3f1897474b1cccddc5feb7115cccdb2139183837",
+  "version": "0.1.0-alpha.20261031173102.g3f1897474b1c",
+  "deploymentId": "dpl_B2V4jdhFVNwYWrnfyJGKtf4t2HYZ",
+  "exactCI": {"run": 41224912177, "passed": true},
+  "local": {"fullOfflineCheckPassed": true, "vitestPassed": 1658, "vitestSkipped": 3, "geometryCases": 12},
+  "backend": {
+    "deterministicPreparations": 2,
+    "publicationGuardsPassed": 17,
+    "existingActiveSchemasCompared": 13,
+    "newEmptyRootTables": ["postEngagement"],
+    "newEmptyComponents": ["shardedCounter"],
+    "newIndexes": 6,
+    "existingTableIndexAuthCronChanges": 0,
+    "populatedScansOrBackfills": 0,
+    "acknowledgedStartRequests": 1,
+    "knownStartContinuedWithoutRestart": true,
+    "finishAcknowledged": true,
+    "engagementEnabled": true
+  },
+  "website": {
+    "fixedBasicBuild": true,
+    "normalQueue": true,
+    "buildDurationMs": 53258,
+    "stagedExactHealth": true,
+    "stagedFeedCases": 4,
+    "stagedLibraryCases": 8,
+    "sameBuildPromoted": true,
+    "canonicalExactHealthAndAlias": true,
+    "canonicalFeedCasesAfterExactHealth": 4,
+    "canonicalLibraryCasesAfterExactHealth": 8,
+    "domainAutoAssignmentRestored": true
+  },
+  "nativeAcceptance": {
+    "realLikeChangedToOneThroughSubscription": true,
+    "likedStateAndCountSurvivedReload": true,
+    "originalUnlikeRestoredAndReadBackAtRevisionTwo": true,
+    "readingPostRestoredAt12pxDesktop": true,
+    "phoneWidth": 390,
+    "phoneHorizontalOverflow": 0,
+    "readyMetadataCards": 10,
+    "loadedAnalysisNeighborhoodMaximumObserved": 3,
+    "originalMcpReadCurrentProposalVersion": 4,
+    "retainedProposalSteps": 5,
+    "analysisRuns": 0,
+    "apiModelCalls": 0,
+    "creditsSpent": 0
+  },
+  "limitations": [
+    "New-ready arrival, repeat Save concurrency, shared preference merging and deletion were exercised in isolated tests; no new production source or analysis was created for these tests.",
+    "Counts begin with instrumentation and do not represent complete historical likes or Saves.",
+    "Independent second-account engagement acceptance and new MCP tool discovery remain unclaimed.",
+    "Funding holds remain reserved; provider invoice settlement is not claimed."
+  ]
+}

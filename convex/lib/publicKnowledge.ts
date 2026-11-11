@@ -105,7 +105,8 @@ export async function reusableArtifact(
   id: Id<"publicArtifacts">,
 ) {
   const artifact = await ctx.db.get(id);
-  if (!artifact || artifact.state !== "eligible") return null;
+  if (!artifact || artifact.state !== "eligible" || !("editionId" in artifact))
+    return null;
   const edition = await publicEdition(ctx, artifact.editionId);
   if (
     !edition ||

@@ -1,7 +1,8 @@
 "use server";
+import { onboardingInviteCookie } from "../../../packages/onboarding/invitation";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createHash, randomBytes } from "node:crypto";
 import { signOut } from "@workos-inc/authkit-nextjs";
 import { ConvexError } from "convex/values";
@@ -9,6 +10,10 @@ import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../convex/_generated/dataModel";
 import type { FormState } from "@/components/action-form";
 import { publicContinuation } from "@/lib/public-knowledge-display";
+import {
+  authenticationReviewRequired,
+  authenticationSignInPath,
+} from "../../../packages/policy/reauthentication";
 function continuation(d: FormData) {
   const result = publicContinuation({
     draft: String(d.get("draft") ?? ""),
@@ -75,6 +80,10 @@ export async function startV1Checkout(_: FormState, d: FormData) {
       SUBSCRIPTION_EXISTS:
         "You already have a subscription. Use the billing portal to manage it.",
       TERMS_REQUIRED: "Accept the service terms before opening checkout.",
+      PERSONAL_FUNDING_REQUIRED:
+        "Subscribe from your personal account. Each workspace member uses their own Pro and credits.",
+      BILLING_RECONCILIATION_REQUIRED:
+        "Contact support to review your existing subscriptions before opening another checkout.",
     };
     const code =
       typeof data === "string"
@@ -108,7 +117,7 @@ export async function buyV1Credits(_: FormState, d: FormData) {
       await backend()
     ).action(api.billingV1.topup, {
       organizationId: org(d),
-      pack: val(d, "pack") as "200" | "550",
+      pack: val(d, "pack") as "200" | "500",
       country: val(d, "country") || undefined,
       termsAccepted: d.get("terms") === "on",
       immediateService: d.get("immediate") === "on",
@@ -141,6 +150,18 @@ async function run(
   try {
     result = await work();
   } catch (e) {
+    if (authenticationReviewRequired(e)) {
+      const requestHeaders = await headers();
+      const referer = requestHeaders.get("referer");
+      let returnTo = "/app";
+      try {
+        const page = new URL(referer ?? "");
+        returnTo = page.pathname + page.search;
+      } catch {
+        /* Use the safe application fallback. */
+      }
+      redirect(authenticationSignInPath(returnTo));
+    }
     return {
       error:
         e instanceof ConvexError
@@ -155,7 +176,7 @@ async function run(
 export async function createOrganization(_: FormState, d: FormData) {
   return run(async () => {
     const c = await backend();
-    const id = await c.mutation(api.organizations.create, {
+    const id = await c.mutation(api.organizations.createTeam, {
       name: val(d, "name"),
     });
     return { path: `/app/${id}${continuation(d)}` };
@@ -169,6 +190,16 @@ export async function createPrivateLibrary(_: FormState, d: FormData) {
     return {
       path: `/app/${id}${continuation(d)}`,
     };
+  });
+}
+export async function setCatalogBrowsing(_: FormState, d: FormData) {
+  return run(async () => {
+    await (
+      await backend()
+    ).mutation(api.catalogAccess.setEnabled, {
+      enabled: d.get("enabled") === "on",
+    });
+    return { message: "Catalog browsing preference saved." };
   });
 }
 export async function saveProject(_: FormState, d: FormData) {
@@ -263,6 +294,7 @@ export async function acceptInvite(_: FormState, d: FormData) {
     ).mutation(api.organizations.acceptInvite, {
       tokenHash: createHash("sha256").update(token).digest("hex"),
     });
+    (await cookies()).delete(onboardingInviteCookie);
     return { path: `/app/${id}` };
   });
 }
@@ -323,4 +355,9 @@ export async function deleteAccount(_: FormState, d: FormData) {
 }
 export async function logout() {
   await signOut({ returnTo: signOutUrl() });
+}
+
+export async function skipPendingInvitation() {
+  (await cookies()).delete(onboardingInviteCookie);
+  redirect("/app");
 }

@@ -1,13 +1,18 @@
 import { backend, api } from "@/lib/backend";
 import { ActionForm } from "@/components/action-form";
-import { acceptInvite } from "@/app/actions";
+import { redirect } from "next/navigation";
+import { acceptInvite, skipPendingInvitation } from "@/app/actions";
 export default async function Page({
   params,
 }: {
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const data = await (await backend()).query(api.accounts.current, {});
+  const client = await backend();
+  const status = await client.query(api.onboarding.status, {});
+  if (!status.legacy && (!status.paid || status.progress?.stage !== "complete"))
+    redirect("/onboarding/resume");
+  const data = await client.query(api.accounts.current, {});
   return (
     <main id="main" className="narrow">
       <h1>Join your team.</h1>
@@ -18,10 +23,9 @@ export default async function Page({
       <ActionForm action={acceptInvite} label="Accept invitation">
         <input type="hidden" name="token" value={token} />
       </ActionForm>
-      <p className="muted" style={{ marginTop: 20 }}>
-        If you had to sign in first, open the invitation link again to return
-        here.
-      </p>
+      <form action={skipPendingInvitation}>
+        <button className="muted">Not now</button>
+      </form>
     </main>
   );
 }

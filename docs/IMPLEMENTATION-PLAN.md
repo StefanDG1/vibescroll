@@ -1,5 +1,9 @@
 # Implementation plan
 
+The mandatory October 28 continuation is [Shared intelligence and the VibeScroll moat](strategy/SHARED-INTELLIGENCE-MOAT.md), with the [versioned link-to-insights execution plan](launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md). Complete S1-S6 for the focused backend-first release; retain S7-S9 experiments, rankings, recommendations and learning as later tracked additions. This owner direction does not claim those stages are already live.
+
+The later [simple setup, permanent results and closed-loop proposal plan](strategy/SIMPLE-SETUP-AND-CLOSED-LOOP-PROPOSALS.md) is also mandatory. Complete it alongside the shared backend; retain real production acceptance separately from candidate implementation.
+
 Mode: how-to. Work packages are ordered dependencies, not time estimates.
 
 ## Complete work in vertical slices

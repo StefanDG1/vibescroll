@@ -1,0 +1,67 @@
+{
+  "observedAtUTC": "2026-10-31T18:45:00Z",
+  "websiteCommit": "6d1ff384a00a4f8797ace25f87dee4fa1234d37a",
+  "backendCommit": "6d1ff384a00a4f8797ace25f87dee4fa1234d37a",
+  "version": "0.1.0-alpha.20261031182414.g6d1ff384a00a",
+  "deploymentId": "dpl_8xeVfTRpPmc4Lqbt4e3sNQkruLUz",
+  "exactCI": {
+    "run": 41229255897,
+    "passed": true
+  },
+  "local": {
+    "fullOfflineCheckPassedForBackendAndSharedComponents": true,
+    "vitestPassed": 1666,
+    "vitestSkipped": 3,
+    "finalMobilePolishLintAndProductionBuildPassed": true
+  },
+  "backend": {
+    "deterministicPreparations": 2,
+    "publicationGuardsPassed": 17,
+    "activeSchemasCompared": 14,
+    "newEmptyRootTables": ["projectRecommendationPreferences"],
+    "newIndexes": 3,
+    "existingSchemaIndexAuthCronChanges": 0,
+    "populatedScansOrBackfills": 0,
+    "finishAcknowledged": true
+  },
+  "website": {
+    "fixedBasicBuild": true,
+    "normalQueue": true,
+    "buildDurationMs": 57488,
+    "stagedExactHealth": true,
+    "stagedTrendsCases": 4,
+    "stagedFeedCases": 4,
+    "stagedLibraryCases": 8,
+    "sameBuildPromoted": true,
+    "canonicalExactHealthAndAlias": true,
+    "canonicalTrendsCases": 4,
+    "canonicalFeedCases": 4,
+    "canonicalLibraryCases": 8,
+    "domainAutoAssignmentRestoreRequested": true,
+    "domainAutoAssignmentBrowserReadback": false
+  },
+  "nativeAcceptance": {
+    "sampledRequestedPosts": 12,
+    "initialLikes": 0,
+    "initialSaves": 0,
+    "likeUpdatedMetricWithoutReload": true,
+    "originalUnlikeRestoredAndReadBack": true,
+    "finalReactionRevision": 4,
+    "sevenAndThirtyDayPicker": true,
+    "phoneWidth": 390,
+    "phoneHorizontalOverflow": 0,
+    "originalMcpSamePostHintsAndSeparateOutcomes": true,
+    "analysisRuns": 0,
+    "apiModelCalls": 0,
+    "creditsSpent": 0
+  },
+  "limitations": [
+    "Priority editing has backend CAS tests but no production native edit acceptance. Inspection found the client must retain acknowledged revisions for repeated edits without parent refresh; correction pending.",
+    "Existing plans for projects with zero direct topic overlap are omitted from recommendation results; correction pending. No score inflation is planned.",
+    "Initial Trends fallback reads need protection against overwriting a newer live callback or denial; correction pending. No production data incident was observed.",
+    "Trends covers at most twelve recent requested posts; per-post signal windows cap at one hundred and report lower bounds. Creator names are reported labels, not verified identities.",
+    "Signed GitHub observations, authenticated agent reports and measured benefit remain separate; benefit is unknown.",
+    "Independent account acceptance, new MCP tool discovery and the exact public issue canary remain open.",
+    "Unknown infrastructure holds remain reserved; provider invoice settlement is not claimed."
+  ]
+}

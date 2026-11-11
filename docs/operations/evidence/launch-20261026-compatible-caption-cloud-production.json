@@ -1,0 +1,44 @@
+{
+  "sourceCommit": "bba2715aa8fdb14501e0b54033addb1ff4f280ae",
+  "ciRun": 40245995834,
+  "publishedBackend": true,
+  "backendFinishAckAt": "2026-10-26T00:25:58.209Z",
+  "backendFinishResponseSha256": "4d1501f39e44ff3ad52a623830914bbcc9378ea634fcd6c1dcdd79c9061becd0",
+  "backendReportTelemetry": "unknown; original hold retained; no retry",
+  "deploymentId": "dpl_5jR1ZeBebPX6j4xfYEcvgS8nUzbb",
+  "frontend": "fixed Basic queued build; exact staged health and Help passed, exact public canonical health passed, automatic domain assignment restored",
+  "schema": {
+    "components": 12,
+    "tables": 131,
+    "indexes": 274,
+    "walks": 0,
+    "backfills": 0,
+    "addedIndexes": 0
+  },
+  "productionReel": {
+    "sourceId": "px7cyt2z0v554qsaq16gkb5ard8gvjyf",
+    "before": "Original transcript is unavailable; no evidence screenshots",
+    "after": "18 retained speech segments and timestamps render on the direct authenticated post page",
+    "audioAccuracy": "not reviewed yet",
+    "imagesRepaired": false,
+    "analysisChanged": false
+  },
+  "newTikTok": {
+    "sourceId": "px74ewzfcn7fg202sb6bkgzgt18h15g9",
+    "url": "https://vm.tiktok.com/ZGdCcv8aa/",
+    "saved": true,
+    "analyzed": false,
+    "creditsUsed": 0
+  },
+  "operationalDecoder": {
+    "helperSha256": "57fbdbfe9f79bb6f372738b94325a090e359aea43b657f86511d34e72af06b78",
+    "actualSyntheticTests": "six sockets denied EPERM, exec child inherited, NoNewPrivs1/Seccomp2/filter count1to2, actual generated video decoded through FFmpeg",
+    "scope": "OS socket-denial layer inside managed host; not a standalone sandbox"
+  },
+  "cloudCatalog": "original six video tools still exposed; new metadata/frame/repair tools absent in both tasks; no source job requested or claimed",
+  "automaticIdleWake": "not exposed or accepted",
+  "reservedPostUnchanged": true,
+  "cumulativeCapEUR": 7,
+  "allPreviousBudgetHoldsPreserved": true,
+  "fullMainHomeAndRegionChangesDeployed": false
+}

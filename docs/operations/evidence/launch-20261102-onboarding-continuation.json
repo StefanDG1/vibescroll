@@ -1,0 +1,79 @@
+{
+  "reviewedAtUTC": "2026-11-02T00:15:08.001389+00:00",
+  "authority": "R144 whole onboarding implementation and delegated routine releases, screenshot request November2",
+  "website": {
+    "commit": "e6cf3990ea528cfa7f706b376d3f5bd8d233c22d",
+    "version": "0.1.0-alpha.20261102000157.ge6cf3990ea52",
+    "deploymentId": "dpl_6aG4pCFx35gYAHN5599A6WTTDWcW",
+    "exactCI": 41364980672,
+    "buildMilliseconds": 36366,
+    "machine": "Basic, 2 cores, 8 GB, normal queue",
+    "sameBuildPromoted": true,
+    "canonicalHealthMatched": true,
+    "normalDomainAssignmentRestored": true
+  },
+  "backend": {
+    "commit": "796b2cf2b1dc30ce6d939031a2582d8035632c8b",
+    "unchangedByCorrections": true,
+    "exactCI": 41360197654,
+    "compatibleOptionalOnboardingFieldsOnly": true,
+    "noPopulatedScanOrBackfill": true
+  },
+  "priorPickerCheckpoint": {
+    "commit": "20e9a689a0f3cdd3d0bbc08f711dee502939c0e2",
+    "exactCI": 41363874515,
+    "buildMilliseconds": 46637,
+    "nativeNumericSelectionAndPersistence": true
+  },
+  "verification": {
+    "finalCI": {
+      "mainPassed": 1697,
+      "mainSkipped": 11,
+      "authPassed": 68,
+      "knowledgePassed": 179,
+      "nodePythonBuildsAndDependencyAudit": "passed"
+    },
+    "local": {
+      "priorFullCheck": "1699 main passed, 9 skipped; 64 auth; 179 knowledge; Node/Python and both builds",
+      "finalCorrection": "68 auth plus lint, types, validation, both builds and secret scan passed",
+      "reproducedBeforeFix": "numeric repository selected label failed; persisted connected repository caused three project-step regressions"
+    },
+    "native": [
+      "real reset-account emailed-code sign-in and existing GitHub login",
+      "selected post, two interests and goal retained",
+      "correct repository label, hidden ID and stored choice",
+      "monthly annual weekly controls; unpaid app entry returns to paywall",
+      "exact original finite operator trial restored; no expiry extension",
+      "one cached four-insight source attached without reanalysis",
+      "one repository prepared; exact connected snapshot confirmed without repeating preparation",
+      "all-four-insight private manual draft saved, version-bound typo correction accepted as version2",
+      "desktop1440/mobile390 screenshot review and no horizontal overflow",
+      "owner original MCP grant12, automatic analysis true, no setup required"
+    ],
+    "zeroChargeReadback": {
+      "spent": 0,
+      "reserved": 0,
+      "reservationCount": 0,
+      "costEntryCount": 0
+    },
+    "screenshots": {
+      "private": true,
+      "count": 40,
+      "index": "ignored operator review folder; no account screenshots committed"
+    }
+  },
+  "limits": [
+    "Reset an existing authorized account, not creation of a new WorkOS identity.",
+    "No real payment, checkout opened, new AI inference, source processing or GitHub issue publication in this walkthrough.",
+    "Post-access acceptance uses restored original operator trial, not a paid provider transaction.",
+    "Current Instagram app screenshots are not supplied; the application export guide is captured.",
+    "One initial preview image element failed; exact read returned valid540x960JPEG and native reopening rendered all8; initial transfer cause unproved.",
+    "Wider invited-member first-run and independent paid-customer activation remain separate acceptance."
+  ],
+  "preserved": [
+    "all old funding holds and protected sources",
+    "original owner MCP grant and session",
+    "saved data and immutable shared analysis",
+    "billing prices, balances and existing provider keys"
+  ]
+}

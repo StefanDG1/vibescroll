@@ -67,15 +67,3 @@ export async function discoverPublic(topic: string, cursor: string | null) {
     return { state: "unavailable" as const, data: null };
   }
 }
-export async function publicGeography() {
-  const client = publicWebClient();
-  if (!client) return { available: false, regions: [] };
-  try {
-    return {
-      available: true,
-      regions: await client.query(api.publicKnowledge.geography, {}),
-    };
-  } catch {
-    return { available: false, regions: [] };
-  }
-}

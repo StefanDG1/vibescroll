@@ -1,0 +1,61 @@
+{
+  "kind": "exact-source-native-events-canary-stopped-v1",
+  "sourceId": "px73nqejwr4zej9aw3yje070jx8h49fm",
+  "canonical": "https://www.instagram.com/reel/DfBOvaHoT_B/",
+  "generation": 1,
+  "saveAt": 1793230384232,
+  "nativeActionSHA256": "b81ec7191f7e8829210cb566b9430684e0fe6c9ed5cd6680f1c3eac58cc4260f",
+  "mutablePromptCounterRequired": false,
+  "events": {
+    "videoLinkSavedAttempt": 1,
+    "videoLinkSavedHTTP": 200,
+    "workCloudWaitingHTTP": 200,
+    "workCloudWaitingAttempt": 1
+  },
+  "job": {
+    "claimedAt": 1793230543528,
+    "newGenerationCount": 1,
+    "leaseUntil": 0,
+    "completed": false,
+    "stage": "acquiring",
+    "approvedAt": 1793230541088,
+    "state": "unknown"
+  },
+  "hostReported": {
+    "modelDownload": false,
+    "sourceInspectionMs": 22410,
+    "ASR": false,
+    "mediaAcquireInvoked": false,
+    "metadataPublication": false,
+    "supervisorExitCode": 2,
+    "preparation": false,
+    "cleanupMs": 261,
+    "audioVideoOrCaptionAcquisition": false,
+    "runtimeBootstrapMs": 53345,
+    "stoppingStage": "cloud_job inspect",
+    "frameUpload": false,
+    "ownedCommandsEndedBeforeRelinquishment": true,
+    "childExitCode": 1,
+    "errorClass": "source_transport_unavailable",
+    "receiptSHA256": "b0b43f2c6d98d26b0feac45f2e8570ccd928769570836bf58f51cc9e0377d38f"
+  },
+  "providerRejectionCauseKnown": false,
+  "providerStopAndSettledUsageVerified": false,
+  "observedPageStates": [
+    "Waiting for ChatGPT with indeterminate progress",
+    "Analysis needs attention without progress animation"
+  ],
+  "nativeMonitorFinalState": "paused",
+  "manualRunNow": false,
+  "manualSourceContinuation": false,
+  "retryDispatched": false,
+  "budget": {
+    "oldHoldsRetained": true,
+    "ordinal": 4,
+    "allFourSlotsConsumedOrHeld": true,
+    "paidAIAPI": false,
+    "maximumUSD": 0.17,
+    "reservedPostUntouched": true
+  },
+  "observedAtUTC": "2026-10-28T23:49:31.1506408Z"
+}

@@ -1,0 +1,140 @@
+{
+  "recordedAtUTC": "2026-10-26T21:35:36.634623+00:00",
+  "scope": "published diagnostics; automatic media attempt stopped before acquisition",
+  "productionBaseline": "3ac324723577ee5af0deaf471716270deb40872b",
+  "actualReelOutcome": {
+    "appSaveAtUTC": "2026-10-26T21:12:41.053Z",
+    "chatTabClosed": true,
+    "eventReceivedAtUTC": "2026-10-26T21:12:43.643Z",
+    "callbackHttpStatus": 200,
+    "callbackAttempts": 1,
+    "generation": 1,
+    "intentConsumed": true,
+    "inspectionCalls": 1,
+    "inspectionExitCode": 1,
+    "safeError": "source_download_failed",
+    "underlyingCause": "not retained; unknown",
+    "mediaAcquisitions": 0,
+    "asrOrFramesOrCompletion": false,
+    "relinquishmentAccepted": true,
+    "priorLeaseCheckValid": true,
+    "ownedTemporaryDirectoriesRemoved": "host-reported",
+    "sharedCachesPreserved": true,
+    "providerDeletionAndUsage": "unverified",
+    "retryOrReplacement": false,
+    "pilotPaused": true
+  },
+  "candidate": {
+    "changedExtractionFiles": [
+      "cloud_extraction.py"
+    ],
+    "rawDiagnosticsReturned": false,
+    "maximumDiagnosticBytes": 64000,
+    "urlsMaskedBeforeClassification": true,
+    "finalFastExitOutputBoundsChecked": true,
+    "diagnosticHintIsNotAttestationOrRetryAuthority": true,
+    "sourceProviderFlagsLimitsAndPermissionsChanged": false,
+    "previousV3ManifestSHA256": "9c2cde19457d2e2da6a61985d1fafe4dc480187bca2ad1638a1f7141efe5d788",
+    "retainedPoliciesMatchedBySchemaPolicyAndToolchainHashes": true,
+    "currentAppSaveExactPolicyCheckUnchanged": true
+  },
+  "runtimeBundle": {
+    "path": "/downloads/cloud-runtime-be21d22c1ecf35ba.zip",
+    "bytes": 80335,
+    "sha256": "be21d22c1ecf35ba0d1a795e5d518e6593deeb1bb59556ae7a4d1c527891e0ce",
+    "sourceCommit": "dc77c0a28bc659361df8cab4af51a5d1430bb55a",
+    "packageManifestSHA256": "4bde8f3763802e7e2d8dd272e85804e63d06771dc9b416ebc6c72646ac524842"
+  },
+  "fullChecks": {
+    "compatible": {
+      "exitCode": 0,
+      "vitestPassed": 1304,
+      "hostedSkipped": 3,
+      "nodePassed": 19,
+      "pythonCases": 70,
+      "windowsSkipped": 7,
+      "types": true,
+      "zeroWarningLint": true,
+      "builds": true
+    },
+    "main": {
+      "exitCode": 0,
+      "vitestPassed": 2138,
+      "hostedSkipped": 3,
+      "nodePassed": 19,
+      "pythonCases": 79,
+      "windowsSkipped": 7,
+      "types": true,
+      "zeroWarningLint": true,
+      "builds": true
+    }
+  },
+  "focusedContractsPassed": 168,
+  "actualLinuxSubprocessChecks": "passed exact Ubuntu CI40405678479",
+  "retainedFailures": [
+    "first compatibility case exposed hard-coded two-version policy selection; generalized only over the bounded reviewed list",
+    "initial unused-import edit removed a V2 reference still used in completion; restored before final checks"
+  ],
+  "automaticMediaAccepted": false,
+  "hostedPublication": true,
+  "exactCI": {
+    "commit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
+    "runId": 40405678479,
+    "jobId": 121862682173,
+    "runner": "ubuntu-24.04",
+    "conclusion": "success",
+    "fullCheckAndDependencyAuditPassed": true
+  },
+  "updatedAtUTC": "2026-10-26T22:26:39.359020+00:00",
+  "publication": {
+    "frontendCommit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
+    "backendCommit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
+    "backendFinishedAtUTC": "2026-10-26T21:45:40.989Z",
+    "deploymentId": "dpl_U79aMCTB69NA9N97kdQMNFC22PZ3",
+    "canonicalVersion": "0.1.0-alpha.20261026213537.g97dfa2c3d83f",
+    "basicNormalQueuedBuilds": 1,
+    "sameBuildPromotion": true,
+    "stagedAndCanonicalRuntimeVerified": true,
+    "normalDomainAssignmentRestoredAndUiVerified": true,
+    "schemaIndexComponentAuthCronChanges": false
+  },
+  "nextAutomaticTest": {
+    "appSaveAtUTC": "2026-10-26T22:13:43.083Z",
+    "chatTabClosed": true,
+    "eventReceivedAtUTC": "2026-10-26T22:13:45.234Z",
+    "callbackHttpStatus": 200,
+    "callbackAttempts": 1,
+    "currentGrantVersion": 10,
+    "firstReconciliationGeneration": 0,
+    "firstReconciliationProcessing": null,
+    "currentFiniteIntent": "waiting_for_runtime",
+    "status": "stopped; generation1 consumed unknown",
+    "automaticMediaAccepted": false,
+    "replayOrManualRun": false,
+    "generation": 1,
+    "inspectionExitCode": 1,
+    "reportedError": "unsupported_source",
+    "mediaAcquisitions": 0,
+    "asrOrFramesOrUploadsOrCompletion": false,
+    "relinquishmentAccepted": true,
+    "precedingHeartbeatValid": true,
+    "observedExpiryRefusal": false,
+    "pilotPaused": true,
+    "ownedTemporaryCleanup": "host-reported retained receipts",
+    "jobRootRemoved": {
+      "files": 2,
+      "bytes": 7848
+    },
+    "disposableToolsRootRemoved": {
+      "files": 1177,
+      "bytes": 13657559
+    },
+    "providerHostStoppedAttested": false,
+    "freshProcessScan": false,
+    "sharedCachesPreserved": true,
+    "providerDeletionAndUsage": "unverified",
+    "returnedUrlValidationFailure": "code-path conclusion, no independently labelled exception trace",
+    "actualReturnedUrlShape": "unavailable; not persisted before validation",
+    "sourceInspectionSubprocessExit0": "inferred from code path, standalone receipt absent"
+  }
+}

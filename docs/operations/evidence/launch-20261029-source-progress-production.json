@@ -1,0 +1,109 @@
+{
+  "kind": "source-progress-and-project-context-production-v1",
+  "observedAtUTC": "2026-10-28T23:23:05.6659554Z",
+  "commit": "d0fb903080fab386c5af85a1acc8efe77a1e1a32",
+  "version": "0.1.0-alpha.20261028224903.gd0fb903080fa",
+  "deploymentId": "dpl_EpzThWmgmjHYaT3vBtcaLVNxGTKQ",
+  "exactCI": 40782836891,
+  "localChecks": {
+    "focusedAfterFreshnessRefinement": 26,
+    "node": 19,
+    "python": 88,
+    "typesLintValidationAndBuilds": true,
+    "windowsPythonSkips": 7,
+    "hostedSkips": 3,
+    "vitest": 1471
+  },
+  "releaseGuards": 35,
+  "actualMigration": {
+    "components": 12,
+    "tables": 137,
+    "indexes": 297,
+    "tableScans": 0,
+    "indexBackfills": 0,
+    "newIndexes": 0,
+    "newDefinitions": 0,
+    "published": true
+  },
+  "website": {
+    "sameBuildPromoted": true,
+    "buildMilliseconds": 37341,
+    "canonicalCommitMatched": true,
+    "stagedGuideHTTP": 200,
+    "stagedHealthHTTP": 200,
+    "fixedBasic": true,
+    "normalQueue": true,
+    "rollbackDeploymentId": "dpl_4Eo9MQXpQNtU6f3wPbCC56gZFXY2",
+    "normalDomainAssignmentRestorationAcknowledged": true
+  },
+  "actualAuthenticatedVerification": {
+    "commit": "d0fb903080fab386c5af85a1acc8efe77a1e1a32",
+    "version": "0.1.0-alpha.20261028224903.gd0fb903080fa",
+    "http": 200,
+    "state": "ready",
+    "generation": 1,
+    "selectedVersion": "xh781szm1mw1jz1rk6kjtyx0e98h411b",
+    "insights": 4,
+    "segments": 23,
+    "allSegmentsInDOM": true,
+    "frames": 8,
+    "title": "Conversion rate optimization hacks backed by real A/B tests: Yuppiech...",
+    "thumbnail": true,
+    "progressHiddenForReady": true,
+    "expiredQueueDisplay": {
+      "heading": "Instagram Reel De-IHn-Bf8t",
+      "progress": "Analysis request expired\n\nCloud did not start this request in time. Your post is saved. Review the analysis options to continue.\n\nReview analysis options",
+      "barCount": 0,
+      "sourceUnavailable": false,
+      "summaryVisible": true,
+      "alerts": []
+    },
+    "normalDomainAssignmentRestorationAcknowledged": true
+  },
+  "mcpProjectContext": {
+    "readBackPending": false,
+    "officialRefreshToolsRequested": true,
+    "grantChanged": false,
+    "newAppOrOAuthConsent": false,
+    "initialHostCatalog": "cached original tool list omitted new action",
+    "deployed": true,
+    "positiveProductionReadAccepted": true,
+    "nativeHostReadBack": {
+      "baseSha": "95f4265b12707d6e1f8b152381a3693ff4677f1b",
+      "profileVersion": 7,
+      "pilotAndSlot4Unchanged": true,
+      "selectionVersion": 22,
+      "sourceId": "px70y842tvp0fxwsta3dfrkqcd8h4qd1",
+      "grantVersion": 12,
+      "projectId": "pd720mhfqmtqaaybfehx0x4b118fgf2y",
+      "creditsSpent": 0,
+      "zeroWrites": true,
+      "analysisVersionId": "xh781szm1mw1jz1rk6kjtyx0e98h411b",
+      "analysisStarted": false,
+      "contextHashPresent": true,
+      "insightCount": 4,
+      "status": "success"
+    }
+  },
+  "newAnalysisRuns": 0,
+  "budget": {
+    "paidAIAPI": false,
+    "lastObservedVercelUSD": 17.77,
+    "conservativeUpperAtDispatchUSD": 19.15,
+    "existingEnvelopeUSD": 1,
+    "usedBasicBuilds": 7,
+    "futureReleaseCountConfirmationRequired": false,
+    "usedBackendReleases": 7,
+    "allOldHoldsRetained": true,
+    "cumulativeEUR": 12,
+    "cashOverage": false,
+    "reservedPostUntouched": true,
+    "strictVercelCeilingUSD": 20
+  },
+  "limits": [
+    "General native monitor remains paused; its prompt bookkeeping must be replaced by a server-enforced or exact-source allowance.",
+    "No production busy-stage run was started for this release; progress stages passed isolated tests and expired-queue display passed on canonical production.",
+    "Private proposal persistence and issue/PR completion feedback remain unfinished.",
+    "Independent cold onboarding, paid-customer acceptance and latency target remain open."
+  ]
+}

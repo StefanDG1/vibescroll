@@ -3,7 +3,7 @@ import { query } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
-import { access, writeAccess, recentAuthentication, audit, limit } from "./lib";
+import { access, writeAccess, audit, limit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { personalAllowed } from "./lib/personalAccess";
 import { digest } from "./product";
@@ -83,7 +83,6 @@ export const prepare = mutation({
   },
   handler: async (ctx, a) => {
     const { actor } = await writeAccess(ctx, a.organizationId);
-    await recentAuthentication(ctx);
     await limit(ctx, `subscription-trial:${actor._id}`, 6);
     ensure(
       personalAllowed(actor.subject) && a.useOwnPlan,

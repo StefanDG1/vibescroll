@@ -1,0 +1,89 @@
+{
+  "recordedAtUTC": "2026-11-05T00:44:07.695970+00:00",
+  "requirements": [
+    "R153",
+    "R154",
+    "R155"
+  ],
+  "backend": {
+    "creditCommit": "e51429d6d1f1da41d413af85ce1caba0742d075c",
+    "dispatchCommit": "4b6661616051201c1b4b92c6406a47f1868ee28f",
+    "exactCI": [
+      41936221189,
+      41938243175
+    ],
+    "actualFinishAcknowledged": true,
+    "schemaIndexComponentAuthCronChanges": false,
+    "populatedScanOrBackfill": false
+  },
+  "allowance": {
+    "monthlyAdminCredits": 300,
+    "hourlyJobs": 20,
+    "dailyJobs": 100,
+    "activationAvailable": 332,
+    "afterTwoAcceptedRoutesAvailable": 330,
+    "oldExpiredReservedUnchanged": 10,
+    "sameMonthGrantReplayAddedCredits": false,
+    "stripeSubscriptionFabricated": false,
+    "originalConnectionReused": true
+  },
+  "firstFreshTest": {
+    "outcome": "saved and prepared; failed before Gateway dispatch",
+    "cause": "admin authority admitted but paid-only dispatch barrier rejected it",
+    "reconciliation": "exact stopped VM and empty durable provider-dispatch list; original failure retained; own new credit/provider hold settled at zero",
+    "historicalUnknownHoldsReleased": false,
+    "engineeringHoldRetained": true
+  },
+  "nativeFreshControl": {
+    "state": "ready",
+    "insights": 4,
+    "transcriptSegments": 1,
+    "observations": 9,
+    "retainedFrames": 8,
+    "queuedToReadyMs": 197544,
+    "queuedToAssistantEvidenceReadyMs": 28955,
+    "chargedPreparationCredits": 1,
+    "paidApiReasoningFallback": false,
+    "automaticallyPublished": true,
+    "provenance": "authenticated_host_reported",
+    "limitation": "Saved failed source with metadata already cached; reviewed fresh quote/start after correction, not a cold first-link measurement."
+  },
+  "retainedApiControl": {
+    "state": "ready",
+    "model": "meta/muse-spark-1.3-contributor",
+    "insights": 6,
+    "elapsedMs": 26644,
+    "chargedAnalysisCredits": 1,
+    "freshPreparation": false,
+    "previousSharedRecommendationPreserved": true,
+    "provenance": "managed_api_reported"
+  },
+  "actualFrames": {
+    "count": 8,
+    "totalBytes": 306235,
+    "allSizesAndSha256Match": true,
+    "dimensions": [
+      540,
+      960
+    ],
+    "firstFrameVisuallyInspected": true
+  },
+  "cachedAutomaticSave": {
+    "saved": true,
+    "ready": true,
+    "analysisStarted": false,
+    "availableCredits": 330,
+    "newExtractionOrModelWork": false
+  },
+  "existingProposalRead": {
+    "discussionMessages": 4,
+    "ordinaryMcpReadSucceeded": true,
+    "mutationOrCharge": false
+  },
+  "limits": [
+    "Two approved fresh media tests are used. No further fresh pass follows from this receipt.",
+    "Retained API timing excludes media preparation and transcription.",
+    "New shared iframe UI and physical-phone acceptance are separate.",
+    "No purchase, provider top-up, new connection, GitHub publication or customer payment."
+  ]
+}

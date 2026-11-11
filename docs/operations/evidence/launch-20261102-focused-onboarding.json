@@ -1,0 +1,97 @@
+{
+  "recordedAtUTC": "2026-11-02T19:11:38.428168+00:00",
+  "requirement": "R151 / ADR234",
+  "website": {
+    "commit": "189dc4f2149f70a1136caa1a0f58eb88ec567be7",
+    "version": "0.1.0-alpha.20261102184915.g189dc4f2149f",
+    "deployment": "dpl_Bx9NpwvhauqkNptr1gVHzrzBcpqK",
+    "exactCI": 41504180285,
+    "buildMilliseconds": 57096,
+    "fixedBasic": "2 cores, 8 GB; normal queue",
+    "sameBuildPromoted": true,
+    "normalDomainAssignmentRestored": true,
+    "canonicalVersionAndAliasMatched": true
+  },
+  "backend": {
+    "commit": "189dc4f2149f70a1136caa1a0f58eb88ec567be7",
+    "baseline": "796b2cf2b1dc30ce6d939031a2582d8035632c8b",
+    "optionalUsersOnboardingFields": [
+      "workStage",
+      "obstacle",
+      "projectDescription",
+      "assistantChoice",
+      "assistantConnection"
+    ],
+    "tables": 167,
+    "indexes": 362,
+    "components": 14,
+    "unchangedSchemasOutsideUsers": 13,
+    "newTablesOrIndexes": 0,
+    "populatedScanOrBackfill": false,
+    "actualFinishAcknowledged": true,
+    "guardTests": 17,
+    "deterministicPreparations": 2
+  },
+  "changes": [
+    "four focused quiz screens with visible choices, search/custom interests and answer-specific guidance",
+    "versioned draft preserves old/partial answers, actual Back trail and cross-tab updates",
+    "shared Home post/insight components through explicit guest media/evidence/action boundaries",
+    "forgotten-saves benefit screen immediately before Instagram guide",
+    "four illustrated export steps and device-local ZIP/JSON/HTML preview",
+    "optional ChatGPT/Codex setup after signup with Connect later and honest allowance/credit explanation",
+    "public OAuth configuration selected from current configured client, without client secrets",
+    "observed assistant readiness bound to current Pro, grant/version and membership after a successful profile read",
+    "current account/GitHub/Pro/cache/project/proposal contracts retained; V2 deferred"
+  ],
+  "checks": {
+    "localFull": "1711 main passed / 9 skipped, 79 auth, 179 knowledge, Node/Python and both production builds",
+    "finalFocused": "10 journey/assistant cases, final types/lint/validation, dependency audit with zero unresolved findings, staged secret scan",
+    "exactCI": {
+      "mainPassed": 1710,
+      "mainSkipped": 11,
+      "authPassed": 79,
+      "knowledgePassed": 179,
+      "nodePythonBuilds": "passed",
+      "dependencyAudit": "passed"
+    },
+    "native": [
+      "production-build native radio arrows, no auto-advance, browser Back and other-tab draft preservation",
+      "local assistant options, skip/credits, three-step ChatGPT guide, no checkbox/dropdown",
+      "staged actual metadata/full preview, decoded first/next thumbnail, one retained JPEG evidence read",
+      "staged different second full preview refused with PREVIEW_USED",
+      "canonical welcome and Home desktop1440/mobile390 light/dark, no horizontal overflow",
+      "canonical quiz, answer-specific summary, real four-insight result and decoded540px poster",
+      "canonical forgotten-saves benefit, all four import-guide steps and one-link local preview",
+      "canonical signed HttpOnly/Secure draft and preview cookies, official WorkOS signup reached",
+      "canonical existing owner bypasses new funnel and enters Home with10 metadata posts",
+      "local and canonical Library Tree/Folders eight viewport/theme cases each",
+      "original MCP profile returns existing owner grant12, automatic analysis true, intake setup not required"
+    ]
+  },
+  "screenshots": {
+    "private": true,
+    "total": 56,
+    "canonical": 20,
+    "manifestSHA256": "8253ae7ece7198d85c96537e42a67bcbb538adf3820a4672f67fdc84447763e8",
+    "scope": "Local fixture, staged, canonical and local assistant component captures remain separately labeled. No native Instagram app screenshot."
+  },
+  "funding": {
+    "existingCapEUR": 15.5,
+    "batchMaximumUSD": 0.09,
+    "oneBackendPublication": true,
+    "oneIncludedCreditBasicBuild": true,
+    "novemberObservedInfrastructureUSD": 0.41,
+    "vercelIncludedCreditUSD": 20,
+    "allOldHoldsPreserved": true,
+    "noInferencePaymentPurchaseOrBalanceChange": true,
+    "ownerReportedInvoicePaid": true,
+    "operatorMadeNoPayment": true,
+    "settlement": "unknown; no invoice or settled infrastructure claim"
+  },
+  "acceptanceLimits": [
+    "No new identity creation, real payment, fresh GitHub consent or new assistant OAuth connection was completed in this batch. Prior actual authorized account/GitHub/project/manual-proposal acceptance is retained; current continuation regressions pass.",
+    "Generic Codex CLI OAuth/client callback compatibility and independent new-customer assistant setup remain unclaimed; ordinary connection is separate from Events worker readiness.",
+    "One older owner shared post px74tg2860md7kfh8wmg5dcgad8h8cj3 has ready generation0 metadata but a failed full detail read. Exact root cause remains open; data and good results are preserved. This prevents a claim that every existing feed result is healthy.",
+    "V2 and all previously deferred capabilities remain deferred."
+  ]
+}

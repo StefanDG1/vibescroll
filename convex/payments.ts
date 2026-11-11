@@ -4,6 +4,8 @@ import { action, internalAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import type { ActionCtx } from "./_generated/server";
+import { singleProConfigured } from "../packages/billing/credit-policy";
+import { verifiedProPortal } from "../packages/billing/pro-portal";
 const stripe = () => {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Billing is not configured.");
@@ -76,10 +78,22 @@ export const portal = action({
     const auth = await ctx.runQuery(api.billing.authorize, { organizationId });
     await ctx.runMutation(internal.billing.throttle, { organizationId });
     if (!auth.billing) throw new Error("No billing account yet.");
+    const client = stripe();
+    let configuration = process.env.STRIPE_PORTAL_CONFIG_ID;
+    if (singleProConfigured(process.env)) {
+      if (
+        (await client.accounts.retrieve(null)).id !==
+        process.env.STRIPE_ACCOUNT_ID
+      )
+        throw new Error(
+          "The provider account does not match billing configuration.",
+        );
+      configuration = await verifiedProPortal(client, process.env);
+    }
     return (
-      await stripe().billingPortal.sessions.create({
+      await client.billingPortal.sessions.create({
         customer: auth.billing.customerId,
-        configuration: process.env.STRIPE_PORTAL_CONFIG_ID,
+        configuration,
         return_url: `${appUrl()}/app/${organizationId}/billing`,
       })
     ).url;

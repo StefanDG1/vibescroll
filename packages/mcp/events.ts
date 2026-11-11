@@ -17,6 +17,7 @@ export const profileEventArguments = z
   })
   .strict();
 export const profileEventName = z.enum([
+  "video_link_saved",
   "work_cloud_waiting",
   "work_cloud_connection_verified",
 ]);
@@ -108,6 +109,8 @@ export const waitingEvent = {
     z
       .object({
         schemaVersion: z.literal("work-cloud-waiting-v1"),
+        attemptId: z.string().optional(),
+        inputKind: z.literal("retained_evidence").optional(),
         sourceId: z.string(),
         profileId: z.string(),
         generation: z.number().int().nonnegative(),
@@ -133,6 +136,26 @@ export const connectionEvent = {
         grantVersion: z.number().int().positive(),
         status: z.literal("webhook_verified"),
         hostExecutionVerified: z.literal(false),
+      })
+      .strict(),
+  ),
+};
+export const videoLinkSavedEvent = {
+  name: "video_link_saved",
+  description:
+    "A user explicitly saved a supported video link in this profile, including a re-save. Repeated saves coalesce per post generation and subscription while the delivery record is retained. No library backfill, bulk imports, media download or analysis. Contains identity and a protected post link only; saving does not authorize analysis.",
+  delivery: ["webhook"],
+  inputSchema: z.toJSONSchema(profileEventArguments),
+  payloadSchema: z.toJSONSchema(
+    z
+      .object({
+        schemaVersion: z.literal("video-link-saved-v1"),
+        sourceId: z.string(),
+        profileId: z.string(),
+        generation: z.number().int().nonnegative(),
+        grantVersion: z.number().int().positive(),
+        status: z.literal("saved"),
+        reviewUrl: z.string().url(),
       })
       .strict(),
   ),

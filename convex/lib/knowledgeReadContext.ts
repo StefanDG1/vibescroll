@@ -20,6 +20,7 @@ export function queryRead<T>(
 
 /** Reuse document reads only within one immutable query snapshot. */
 export function knowledgeReadContext(ctx: QueryCtx): QueryCtx {
+  if (snapshots.has(ctx)) return ctx;
   const reads = new Map<string, Promise<unknown>>();
   const db = new Proxy(ctx.db, {
     get(target, property) {

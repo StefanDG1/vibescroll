@@ -1,11 +1,17 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CompanionSetup } from "./companion-setup";
+import { TaskRuntimePicker } from "./task-runtime-picker";
 import type {
   SetupSnapshot,
   SetupAction,
 } from "../../../packages/onboarding/companion-setup";
-type Progress = { version: number; snapshot: SetupSnapshot };
+type Progress = {
+  version: number;
+  snapshot: SetupSnapshot;
+  workCloud?: { available: boolean; configured: boolean } | null;
+};
 export function SetupJourney({
   organizationId,
   call,
@@ -113,6 +119,58 @@ export function SetupJourney({
   return (
     <details className="panel" open={!progress?.snapshot.sampleCited}>
       <summary>Continue setup</summary>
+      <p>
+        Save and review posts in your browser. Choose where analysis runs below.
+        Each option shows its setup and costs. Saving a preference starts no
+        work.
+      </p>
+      <Link href="/help/processing-and-recovery" prefetch={false}>
+        Help choosing where tasks run
+      </Link>
+      {progress && (
+        <>
+          <p>
+            Saved route:{" "}
+            {progress.snapshot.route === "local"
+              ? "Local machine"
+              : progress.snapshot.route === "cloud"
+                ? "VibeScroll's servers"
+                : progress.snapshot.route === "work_cloud"
+                  ? "My own Cloud Work"
+                  : progress.snapshot.route === "save_only"
+                    ? "Save for later"
+                    : "Not selected"}
+            . Review task limits before starting analysis.
+          </p>
+          <TaskRuntimePicker
+            organizationId={organizationId}
+            value={
+              progress.snapshot.route === "save_only"
+                ? undefined
+                : progress.snapshot.route
+            }
+            onChange={(route) => {
+              void save({ route });
+            }}
+            serverAvailable={progress.snapshot.cloudAvailable}
+            workCloudAvailable={progress.workCloud?.available}
+            workCloudConfigured={progress.workCloud?.configured}
+            localAvailable={progress.snapshot.localEligible}
+            localConfigured={progress.snapshot.paired}
+            localStatus={
+              !progress.snapshot.paired
+                ? "setup_required"
+                : !progress.snapshot.workerAvailable
+                  ? "offline"
+                  : !progress.snapshot.accountConnected ||
+                      !progress.snapshot.prerequisitesChecked
+                    ? "setup_required"
+                    : "check_before_running"
+            }
+            disabled={disabled || saving}
+          />
+        </>
+      )}
       {progress && (
         <CompanionSetup
           snapshot={progress.snapshot}
@@ -122,27 +180,18 @@ export function SetupJourney({
       )}
       {routeReview && progress && (
         <fieldset disabled={disabled || saving} className="form-grid">
-          <legend>Choose your processing route</legend>
-          <p>
-            Saving alone starts no inference. Every analysis still requires its
-            own current approval and maximum.
-          </p>
-          {(["save_only", "local", "cloud"] as const).map((route) => (
-            <button
-              type="button"
-              className="secondary"
-              key={route}
-              onClick={async () => {
-                if (await save({ route })) setRouteReview(false);
-              }}
-            >
-              {route === "save_only"
-                ? "Save for later"
-                : route === "local"
-                  ? "Use my paired computer"
-                  : "Review managed cloud"}
-            </button>
-          ))}
+          <legend>Save without analysis</legend>
+          <p>Choose a task location above, or keep links saved for later.</p>
+          <button
+            type="button"
+            className="secondary"
+            aria-pressed={progress.snapshot.route === "save_only"}
+            onClick={async () => {
+              if (await save({ route: "save_only" })) setRouteReview(false);
+            }}
+          >
+            Save for later
+          </button>
         </fieldset>
       )}
       {instruction && (

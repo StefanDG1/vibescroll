@@ -1,0 +1,404 @@
+{
+  "recordedAtUTC": "2026-11-10T20:31:57.218635+00:00",
+  "clientDate": "2026-11-10",
+  "baseline": "e1f7b19d78e1e6e42893881fe343521934b49a69",
+  "transport": "browser-harness attached browser, owned tabs only",
+  "scope": "public FxTwitter and X syndication metadata, one image decode and one video HEAD; no X login, developer key, VibeScroll source, model/ASR job or deployment",
+  "limitations": [
+    "Samples selected from upstream documentation/extractor fixtures, not a representative reliability study",
+    "Application-level response codes were recorded; browser navigation HTTP status was not captured",
+    "Image bytes decoded in browser; video was checked with HEAD only, not fully downloaded/decoded",
+    "No visual comparison against original X post, production worker integration, rate-limit load test or account authentication test"
+  ],
+  "probes": [
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/20",
+      "expected": "text",
+      "response": {
+        "code": 200,
+        "id": "20",
+        "textLength": 24,
+        "isNote": false,
+        "mediaKeys": [],
+        "photos": 0,
+        "videos": 0,
+        "all": []
+      }
+    },
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/623160978427936768",
+      "expected": "video",
+      "response": {
+        "code": 200,
+        "id": "623160978427936768",
+        "textLength": 160,
+        "isNote": false,
+        "mediaKeys": [],
+        "photos": 0,
+        "videos": 0,
+        "all": []
+      }
+    },
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/1270755918330896395",
+      "expected": "four_photos",
+      "response": {
+        "code": 401,
+        "id": null,
+        "textLength": 0,
+        "rawTextLength": 0,
+        "isNote": null,
+        "mediaKeys": [],
+        "photos": 0,
+        "videos": 0,
+        "all": [],
+        "statusKeys": [],
+        "rootKeys": ["status", "thread", "author", "code"]
+      }
+    },
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/604341487988576256",
+      "expected": "photo",
+      "response": {
+        "code": 200,
+        "id": "604341487988576256",
+        "textLength": 25,
+        "rawTextLength": 48,
+        "isNote": false,
+        "mediaKeys": ["all", "photos"],
+        "photos": 1,
+        "videos": 0,
+        "all": [
+          {
+            "type": "photo",
+            "urlHost": "pbs.twimg.com",
+            "formatCount": 0
+          }
+        ],
+        "statusKeys": [
+          "type",
+          "url",
+          "id",
+          "text",
+          "raw_text",
+          "author",
+          "replies",
+          "reposts",
+          "likes",
+          "bookmarks",
+          "quotes",
+          "embed_card",
+          "created_at",
+          "created_timestamp",
+          "possibly_sensitive",
+          "views",
+          "is_note_tweet",
+          "community_note",
+          "lang",
+          "replying_to",
+          "media",
+          "provider",
+          "reposted_by"
+        ],
+        "rootKeys": ["status", "thread", "author", "code"]
+      }
+    },
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/1629193457112686592",
+      "expected": "long_text",
+      "response": {
+        "code": 200,
+        "id": "1629193457112686592",
+        "textLength": 756,
+        "rawTextLength": 756,
+        "isNote": true,
+        "mediaKeys": ["all", "photos"],
+        "photos": 1,
+        "videos": 0,
+        "all": [
+          {
+            "type": "photo",
+            "urlHost": "pbs.twimg.com",
+            "formatCount": 0
+          }
+        ],
+        "statusKeys": [
+          "type",
+          "url",
+          "id",
+          "text",
+          "raw_text",
+          "author",
+          "replies",
+          "reposts",
+          "likes",
+          "bookmarks",
+          "quotes",
+          "embed_card",
+          "created_at",
+          "created_timestamp",
+          "possibly_sensitive",
+          "views",
+          "is_note_tweet",
+          "community_note",
+          "lang",
+          "replying_to",
+          "media",
+          "provider",
+          "reposted_by"
+        ],
+        "rootKeys": ["status", "thread", "author", "code"]
+      }
+    },
+    {
+      "endpoint": "https://cdn.syndication.twimg.com/tweet-result?id=1270755918330896395",
+      "expected": "four_photos",
+      "response": {
+        "id": null,
+        "textLength": 0,
+        "noteTweet": null,
+        "photos": 0,
+        "media": [],
+        "rootKeys": ["__typename", "tombstone"]
+      }
+    },
+    {
+      "endpoint": "https://cdn.syndication.twimg.com/tweet-result?id=1629193457112686592",
+      "expected": "long_text",
+      "response": {
+        "id": "1629193457112686592",
+        "textLength": 304,
+        "noteTweet": {
+          "id": "Tm90ZVR3ZWV0UmVzdWx0czoxNjI5MTkzNDU2OTY5OTk4MzM3"
+        },
+        "photos": 1,
+        "media": [
+          {
+            "type": "photo",
+            "urlHost": "pbs.twimg.com",
+            "variantCount": 0
+          }
+        ],
+        "rootKeys": [
+          "__typename",
+          "favorite_count",
+          "lang",
+          "possibly_sensitive",
+          "created_at",
+          "display_text_range",
+          "entities",
+          "id_str",
+          "text",
+          "user",
+          "edit_control",
+          "mediaDetails",
+          "photos",
+          "conversation_count",
+          "news_action_type",
+          "isEdited",
+          "isStaleEdit",
+          "note_tweet"
+        ]
+      }
+    },
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/894001459754180609",
+      "expected": "four_photos",
+      "response": {
+        "code": 200,
+        "id": "894001459754180609",
+        "textLength": 80,
+        "rawTextLength": 104,
+        "isNote": false,
+        "photos": 4,
+        "videos": 0,
+        "all": [
+          {
+            "type": "photo",
+            "width": 2048,
+            "height": 1536,
+            "urlHost": "pbs.twimg.com",
+            "formatCount": 0,
+            "formats": []
+          },
+          {
+            "type": "photo",
+            "width": 2048,
+            "height": 1536,
+            "urlHost": "pbs.twimg.com",
+            "formatCount": 0,
+            "formats": []
+          },
+          {
+            "type": "photo",
+            "width": 1536,
+            "height": 2048,
+            "urlHost": "pbs.twimg.com",
+            "formatCount": 0,
+            "formats": []
+          },
+          {
+            "type": "photo",
+            "width": 1536,
+            "height": 2048,
+            "urlHost": "pbs.twimg.com",
+            "formatCount": 0,
+            "formats": []
+          }
+        ]
+      }
+    },
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/1065692031626829824",
+      "expected": "video",
+      "response": {
+        "code": 200,
+        "id": "1065692031626829824",
+        "textLength": 61,
+        "rawTextLength": 85,
+        "isNote": false,
+        "photos": 0,
+        "videos": 1,
+        "all": [
+          {
+            "type": "video",
+            "width": 1280,
+            "height": 720,
+            "urlHost": "video.twimg.com",
+            "formatCount": 4,
+            "formats": [
+              {
+                "container": "m3u8",
+                "urlHost": "video.twimg.com"
+              },
+              {
+                "container": "mp4",
+                "urlHost": "video.twimg.com"
+              },
+              {
+                "container": "mp4",
+                "urlHost": "video.twimg.com"
+              },
+              {
+                "container": "mp4",
+                "urlHost": "video.twimg.com"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/1839019491835129889",
+      "expected": "gif",
+      "response": {
+        "code": 200,
+        "id": "1839019491835129889",
+        "textLength": 47,
+        "rawTextLength": 71,
+        "isNote": false,
+        "photos": 0,
+        "videos": 1,
+        "all": [
+          {
+            "type": "gif",
+            "width": 1696,
+            "height": 768,
+            "urlHost": "video.twimg.com",
+            "formatCount": 1,
+            "formats": [
+              {
+                "container": "mp4",
+                "urlHost": "video.twimg.com"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/1577924293023133696",
+      "expected": "mixed_photo_video",
+      "response": {
+        "code": 200,
+        "id": "1577924293023133696",
+        "textLength": 12,
+        "rawTextLength": 36,
+        "isNote": false,
+        "photos": 1,
+        "videos": 1,
+        "all": [
+          {
+            "type": "photo",
+            "width": 1800,
+            "height": 2000,
+            "urlHost": "pbs.twimg.com",
+            "formatCount": 0,
+            "formats": []
+          },
+          {
+            "type": "video",
+            "width": 1152,
+            "height": 1280,
+            "urlHost": "video.twimg.com",
+            "formatCount": 4,
+            "formats": [
+              {
+                "container": "m3u8",
+                "urlHost": "video.twimg.com"
+              },
+              {
+                "container": "mp4",
+                "urlHost": "video.twimg.com"
+              },
+              {
+                "container": "mp4",
+                "urlHost": "video.twimg.com"
+              },
+              {
+                "container": "mp4",
+                "urlHost": "video.twimg.com"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "endpoint": "https://api.fxtwitter.com/2/status/1577924293023133696",
+      "expected": "image_decode_and_video_head",
+      "response": {
+        "id": "1577924293023133696",
+        "image": {
+          "decoded": true,
+          "width": 1800,
+          "height": 2000
+        },
+        "videoHead": {
+          "status": 200,
+          "contentType": "video/mp4",
+          "contentLength": "44958"
+        }
+      }
+    },
+    {
+      "endpoint": "https://cdn.syndication.twimg.com/tweet-result?id=1577924293023133696",
+      "expected": "mixed_photo_video",
+      "response": {
+        "id": "1577924293023133696",
+        "textLength": 36,
+        "media": [
+          {
+            "type": "photo",
+            "variantCount": 0
+          },
+          {
+            "type": "video",
+            "variantCount": 4
+          }
+        ],
+        "noteTweet": null
+      }
+    }
+  ]
+}

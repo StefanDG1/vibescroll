@@ -1,0 +1,66 @@
+{
+  "observedDateUTC": "2026-10-26",
+  "status": "synthetic_JPEG_handoff_passed_public_TikTok_metadata_blocked",
+  "servingCommit": "ff7d88f5601c5d717f3ac5cad6ff73489ba29a25",
+  "chatURL": "https://chatgpt.com/c/6adf4371-7f2c-83eb-a9d8-6a1fae54101f",
+  "execution": "normal_setup_turns_not_event_triggered",
+  "evidence": "observed_tool_cards_and_sanitized_host_reports",
+  "hostedBrowser": {
+    "namespace": "mcp__cua_repl.js",
+    "entry": "cua.createBrowserTab(\"cdp\", url)",
+    "distinctFromLocalChrome": true,
+    "screenshot": "tab.screenshot({clip?,fullPage?}) -> JPEG Uint8Array",
+    "fileHandoff": "node:fs/promises writeFile under /home/oai/share synchronized to /workspace/scratch",
+    "ownedTabClose": "tab.close()"
+  },
+  "syntheticImage": {
+    "url": "about:blank",
+    "captures": 1,
+    "bytes": 7895,
+    "sha256": "29673cfff5f91a0a95b2b557088525b2a83d37f9edc405cf7b9d993e6eb50f15",
+    "tools": ["mcp__cua_repl.js", "view_image", "exec_command"],
+    "viewedContent": "blank white image",
+    "viewingSuccess": true,
+    "exclusiveCreation": true,
+    "ownedTabClosed": true,
+    "cleanup": "host reported both exact synthetic copies hash-checked, deleted and absent; no directories or unrelated files removed",
+    "actualSourceFrame": false
+  },
+  "onePublicMetadataVisit": {
+    "ownerSuppliedURL": "https://vm.tiktok.com/ZGdCcv8aa/",
+    "visits": 1,
+    "result": "slider_CAPTCHA_and_login_overlay",
+    "pageTitle": "Log in | TikTok",
+    "finalURL": "TikTok post; exact canonical not independently retained",
+    "visibleTitleAuthor": "blocked_unknown; URL username is not verified author metadata",
+    "duration": "unknown",
+    "captionToggleOrTextTracks": "unknown_blocked",
+    "autoplay": "unknown_no_pause_control_exposed",
+    "ownedTabClosed": true,
+    "reloadRetryLoginOrChallengeInteraction": false,
+    "explicitFileDownloads": 0,
+    "savedScreenshots": 0,
+    "browserCacheMediaBytes": "unknown",
+    "browserCacheDeletion": "unverified; closing tab is insufficient"
+  },
+  "applicationEffects": {
+    "sourceSaves": 0,
+    "sourceJobs": 0,
+    "analysisResults": 0,
+    "packageOrModelInstalls": 0,
+    "monitorStateChanged": false,
+    "reservedTikTokTouched": false,
+    "paidApiRouteSelected": false
+  },
+  "conclusion": "Do not use hosted browser as the extraction fallback based on this check. Retain the caption-first downloader direction and current admission gates. No automatic media, real caption, frame-timestamp or provider-history cleanup acceptance.",
+  "budget": {
+    "cumulativeCapEUR": 8,
+    "workingCeilingUSD": 8.48,
+    "syntheticAdmissionHoldUSD": 0.02,
+    "separateOneVisitHoldUSD": 0.03,
+    "retainedUSD": 8.295014256044613,
+    "unreservedUSD": 0.18498574395538725,
+    "priorHoldsReleased": false,
+    "invoiceCertified": false
+  }
+}

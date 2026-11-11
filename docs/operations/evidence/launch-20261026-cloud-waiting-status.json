@@ -1,0 +1,38 @@
+{
+  "recordedAtUTC": "2026-10-26T21:16:04.386217+00:00",
+  "scope": "published and observed on current waiting intent",
+  "productionObservation": {
+    "currentSavedCloudIntent": "waiting_for_runtime",
+    "noCurrentCloudJob": true,
+    "historicalReceiptStatus": "waiting_for_computer",
+    "mcpTopStatusIncorrectlyHistorical": true,
+    "appWaitingForChatGPT": true
+  },
+  "fix": "prefer only a currently authorized unconsumed Cloud intent over historical intake display; preserve intake and expired-intent fallback",
+  "before": {
+    "legacyCohortsFailed": 2,
+    "otherCasesPassed": 37
+  },
+  "after": {
+    "compatibleFocusedCasesPassed": 67,
+    "mainFocusedCasesPassed": 68,
+    "bothTypechecksPassed": true,
+    "changedFileLintWarnings": 0
+  },
+  "sourceGrantSchemaIndexOrFundingChanges": false,
+  "historicalIntakeChanged": false,
+  "automaticReplayAdded": false,
+  "hostedPublication": true,
+  "updatedAtUTC": "2026-10-26T22:16:02.816969+00:00",
+  "servingCommit": "97dfa2c3d83f6631cc36783280da1ef2a70cce84",
+  "productionAfter": {
+    "observedAtUTC": "2026-10-26T22:13:49Z",
+    "currentSavedCloudIntent": "waiting_for_runtime",
+    "generation": 0,
+    "processing": null,
+    "mcpTopStatus": "waiting_for_cloud",
+    "historicalReceiptReturned": false,
+    "intakeMutatedByStatusRead": false,
+    "automaticMediaAccepted": false
+  }
+}

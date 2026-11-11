@@ -1,6 +1,6 @@
 # Terms of service
 
-Status: published. Effective 3 October 2026. Version: 1.0.0. Release: v1-2026-10-03.1.
+Status: published. Effective 1 November 2026. Version: 1.1.0. Release: v1-2026-11-01.1.
 
 ## Who provides the service
 
@@ -44,6 +44,14 @@ Your own ChatGPT or API account is subject to its provider's eligibility, limits
 
 Checkout states the payable price, tax treatment, billing interval, included allowance, and renewal terms. Weekly plans renew every seven days. Monthly and annual plans renew on their stated schedule until cancelled.
 
+New hosted subscriptions use one Pro offer: EUR 35 per month with 300 credits each month; EUR 350 per year with 300 credits replenished monthly; or EUR 17 every seven days with 75 credits per period. Checkout confirms availability and the payable total before payment. Annual payment does not grant 3,600credits up front. Existing subscriptions keep their recorded terms until an agreed change takes effect.
+
+One person uses their own allowance across workspaces. Every workspace member has their own Pro subscription and credits. Workspace invitations do not grant a second allowance or permission to spend another person's credits. Available workspace and project features are included; separately quoted processing consumes credits.
+
+Compatible cached analysis is included for posts you save or request. Ordinary browsing does not add the whole catalogue to your personal library. Full-catalogue browsing is a separate entitlement. The open-source edition is self-hosted and does not include hosted credentials or access to the hosted dataset.
+
+The shared catalogue contains reusable analysis and permitted evidence of public sources. Private project materials and personal notes are not added to that catalogue. Reuse remains subject to applicable third-party rights and provider availability.
+
 Included credits are service units for the stated period and expire at that period's end. Annual subscriptions replenish their included allowance monthly. Purchased extra credits are tracked separately. Credits are not currency, are not transferable, and cannot be used outside the service.
 
 Each metered job displays its quote or operates within an automatic-analysis budget you previously authorized. We do not increase a coding budget without approval. We release an unused reservation under the displayed quote policy. Customer-funded provider API usage is billed by that provider separately.
@@ -61,6 +69,8 @@ Use the billing settings to manage renewal and request service support. The rece
 The paid offer is available to individuals and businesses in the verified tax-covered countries and territories supported by Stripe Managed Payments. Stripe Checkout collects the billing details and determines transaction eligibility, available currency options and applicable taxes. Restricted territories remain unavailable. Purchasing for a business does not add enterprise features or remove rights that apply to someone legally acting as a consumer. A change to direct billing requires a separately reviewed country and tax configuration; a refused Managed Payments transaction does not automatically switch to direct billing.
 
 ## Acceptable use and suspension
+
+Pro includes the product's available workspace and project features. Paid processing consumes the credits quoted before work. Credits do not promise unlimited processing or storage. Do not share individual access credentials, bypass credit or concurrency controls, or use abusive automation that disrupts other users. If usage creates unusual resource demand, we may limit new requests or discuss an appropriate arrangement. Such limits do not erase purchased credits or valid retained results. Deletion, account closure and valid takedown requests still apply.
 
 Follow the [acceptable-use policy](ACCEPTABLE-USE.md). We can restrict work needed to protect accounts, comply with law, prevent unauthorized processing, or respond to credible abuse. We will explain a restriction when doing so is lawful and safe and provide a way to contact us.
 

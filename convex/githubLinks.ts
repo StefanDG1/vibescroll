@@ -1,17 +1,19 @@
 import { internalQuery, query } from "./_generated/server";
 import { mutation, internalMutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
-import { access, limit, writeAccess } from "./lib";
+import { access, limit } from "./lib";
 import { digest } from "./product";
 import { ensure } from "../packages/policy";
 const org = { organizationId: v.id("organizations") };
 export const begin = mutation({
   args: org,
   handler: async (ctx, a) => {
-    const { actor } = await writeAccess(ctx, a.organizationId, [
-      "owner",
-      "admin",
-    ]);
+    const { actor } = await access(
+      ctx,
+      a.organizationId,
+      ["owner", "admin"],
+      true,
+    );
     await limit(ctx, `github-link:${actor._id}`, 5);
     const state = crypto.randomUUID() + crypto.randomUUID();
     await ctx.db.insert("githubLinks", {
@@ -141,7 +143,7 @@ export const binding = internalQuery({
 export const choices = query({
   args: org,
   handler: async (ctx, a) => {
-    await access(ctx, a.organizationId);
+    await access(ctx, a.organizationId, undefined, true);
     return (
       await ctx.db
         .query("githubBindings")

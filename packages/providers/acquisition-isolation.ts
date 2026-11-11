@@ -1,4 +1,5 @@
 import type { JobSandbox } from "./sandbox";
+import { PolicyError } from "../policy";
 
 export async function hardenAcquisition(sandbox: JobSandbox) {
   try {
@@ -22,9 +23,11 @@ PY`,
       { user: "user", timeoutMs: 10000 },
     );
     if (result.exitCode !== 0) throw Error();
-  } catch {
+  } catch (error) {
     await sandbox.kill();
-    throw new Error(
+    if (error instanceof PolicyError) throw error;
+    throw new PolicyError(
+      "ACQUISITION_ISOLATION_FAILED",
       "Link retrieval isolation could not be established. Execution blocked.",
     );
   }

@@ -34,6 +34,11 @@ export async function prepareMedia(
   const link =
     typeof input === "string" ? undefined : acquisitionPolicy(input.url);
   ensure(
+    link?.platform !== "x",
+    "UNSUPPORTED_SOURCE",
+    "X posts require complete server-prepared post evidence.",
+  );
+  ensure(
     process.env.MEDIA_VERIFIED === "true",
     "MEDIA_UNAVAILABLE",
     "Verify the pinned isolated media image before processing.",

@@ -1,0 +1,77 @@
+{
+  "kind": "explicit-never-claimed-cloud-retry-production-v1",
+  "observedAtUTC": "2026-10-28T22:11:40.914492+00:00",
+  "commit": "6ba77de3375541a10c5c5f04782252644d47e1bd",
+  "version": "0.1.0-alpha.20261028215014.g6ba77de33755",
+  "deploymentId": "dpl_4Eo9MQXpQNtU6f3wPbCC56gZFXY2",
+  "exactCI": 40775221645,
+  "localChecks": {
+    "vitest": 1450,
+    "hostedSkips": 3,
+    "node": 19,
+    "python": 88,
+    "windowsPythonSkips": 7,
+    "typesLintValidationBuilds": true,
+    "stagedSecretFindings": 0
+  },
+  "emittedSecretReview": {
+    "newFindings": 0,
+    "unchangedUpstreamDocumentationExamples": 2
+  },
+  "releaseGuards": 35,
+  "actualMigration": {
+    "components": 12,
+    "tables": 137,
+    "indexes": 297,
+    "tableScans": 0,
+    "indexBackfills": 0,
+    "newIndexes": 0,
+    "newDefinitions": 0
+  },
+  "website": {
+    "fixedBasic": true,
+    "normalQueue": true,
+    "buildMilliseconds": 40237,
+    "stagedHealthHTTP": 200,
+    "stagedGuideHTTP": 200,
+    "sameBuildPromoted": true,
+    "canonicalCommitMatched": true,
+    "normalDomainAssignmentRestorationAcknowledged": true
+  },
+  "actualAuthenticatedVerification": {
+    "sourceHTTP": 200,
+    "readyRetryHTTP": 400,
+    "readyRetryCode": "APPROVAL_STALE",
+    "readyRetryEligible": false,
+    "generationStayed1": true,
+    "selectedVersionUnchanged": true,
+    "analysisAndJobUnchanged": true,
+    "insights": 4,
+    "frames": 8,
+    "titleAndThumbnailLoaded": true,
+    "grantVersionStayed12": true,
+    "catalogStatusStayedPublished": true
+  },
+  "newAnalysisRuns": 0,
+  "positiveRetryAcceptance": "isolated app and MCP 2.0 authenticated transport tests; no production retry job started",
+  "budget": {
+    "cumulativeEUR": 12,
+    "existingEnvelopeUSD": 1,
+    "lastObservedVercelUSD": 17.75,
+    "strictVercelCeilingUSD": 20,
+    "conservativeUpperAtDispatchUSD": 19.51,
+    "approvedBackendAndBuildCount": 6,
+    "usedBackendReleases": 6,
+    "usedBasicBuilds": 6,
+    "allOldHoldsRetained": true,
+    "reservedPostUntouched": true,
+    "paidAIAPI": false,
+    "cashOverage": false
+  },
+  "limits": [
+    "The pre-existing native test task was paused at last inspection; user is completing setup separately.",
+    "Independent cold customer onboarding and paid-customer acceptance remain open.",
+    "The previous fresh analysis took 6m11s; no new speed measurement was made.",
+    "Exact-version project follow-up and issue/PR completion feedback remain unfinished."
+  ]
+}

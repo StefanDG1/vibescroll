@@ -1,0 +1,63 @@
+{
+  "observedAtUTC": "2026-10-31T19:13:49.615463+00:00",
+  "websiteCommit": "bed20948153d370f041ae5cb5837f8bec2c5f865",
+  "backendCommit": "bed20948153d370f041ae5cb5837f8bec2c5f865",
+  "version": "0.1.0-alpha.20261031190046.gbed20948153d",
+  "deploymentId": "dpl_8nh6W36jJUwfmiGA4qa7ciSZ86gs",
+  "exactCI": {
+    "run": 41232157316,
+    "passed": true
+  },
+  "local": {
+    "fullOfflineCheckPassed": true,
+    "vitestPassed": 1671,
+    "vitestSkipped": 3
+  },
+  "backend": {
+    "deterministicPreparations": 2,
+    "publicationGuardsPassed": 17,
+    "activeSchemasCompared": 14,
+    "schemaIndexComponentAuthCronChanges": 0,
+    "populatedScansOrBackfills": 0,
+    "finishAcknowledged": true
+  },
+  "website": {
+    "fixedBasicBuild": true,
+    "normalQueue": true,
+    "buildDurationMs": 41282,
+    "stagedExactHealth": true,
+    "stagedTrendsCases": 4,
+    "stagedFeedCases": 4,
+    "stagedLibraryCases": 8,
+    "sameBuildPromoted": true,
+    "canonicalExactHealthAndAlias": true,
+    "canonicalTrendsCases": 4,
+    "canonicalFeedCases": 4,
+    "canonicalLibraryCases": 8,
+    "domainAutoAssignmentRestoreAcknowledged": true,
+    "domainAutoAssignmentBrowserReadback": false
+  },
+  "nativeAcceptance": {
+    "existingZeroOverlapPlanOpenedInsteadOfDuplicating": true,
+    "displayedFit": {
+      "matched": 0,
+      "total": 2,
+      "score": 0
+    },
+    "visibleProjectRows": 3,
+    "priorityHighAcknowledgedRevision": 1,
+    "originalNormalPriorityRestoredWithoutRefreshRevision": 2,
+    "priorityErrors": 0,
+    "analysisRuns": 0,
+    "apiModelCalls": 0,
+    "creditsSpent": 0
+  },
+  "limitations": [
+    "Initial canonical read briefly returned the prior build after promotion; alias and exact canonical health were reconciled before all final canonical checks. Promotion was not repeated.",
+    "Trends fallback/live ordering and denial passed controlled tests, not a forced production access revocation.",
+    "Related-history relevance is an explainable topic hint, not inspected-code suitability or measured benefit.",
+    "The domain auto-assignment restore was acknowledged; a separate browser read-back remains unclaimed.",
+    "Independent customer acceptance, new MCP action discovery, exact public issue publication, OpenAI model routing and live commerce remain open.",
+    "All unknown funding holds remain reserved; no settled provider invoice is claimed."
+  ]
+}

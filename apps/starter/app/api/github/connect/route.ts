@@ -21,7 +21,11 @@ export async function GET(req: NextRequest) {
   const response = NextResponse.redirect(url);
   response.cookies.set(
     "vibe-github-link",
-    JSON.stringify({ state, organizationId }),
+    JSON.stringify({
+      state,
+      organizationId,
+      onboarding: req.nextUrl.searchParams.get("returnTo") === "onboarding",
+    }),
     {
       httpOnly: true,
       secure: req.nextUrl.protocol === "https:",

@@ -1,0 +1,275 @@
+{
+  "schemaVersion": "native-asr-setup-v1",
+  "target": {
+    "os": "linux",
+    "architecture": "x86_64",
+    "minimumGlibc": [
+      2,
+      28
+    ],
+    "python": [
+      3,
+      13,
+      17
+    ]
+  },
+  "python": {
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261021/cpython-3.13.17%2B20261021-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "bytes": 35356674,
+    "sha256": "f829adc9d888e76c8801b4799ed444188d35239fcae3a9808a99ec5cb0d8d92c",
+    "providerRelease": "astral-sh/python-build-standalone/20261021",
+    "extractRoot": "python",
+    "tarFilter": "data"
+  },
+  "installer": {
+    "existingUVVersion": "0.13.4",
+    "mode": "offline_local_wheels_only",
+    "upgrade": false,
+    "usePip": false,
+    "useInstallHooks": false
+  },
+  "wheels": [
+    {
+      "name": "anyio",
+      "version": "4.15.1",
+      "url": "https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl",
+      "filename": "anyio-4.15.1-py3-none-any.whl",
+      "bytes": 132079,
+      "sha256": "6152fdbbf9a77fdec97731721bebf7c4c44f7c29b424b0065826173efc7ed101"
+    },
+    {
+      "name": "av",
+      "version": "19.0.0",
+      "url": "https://files.pythonhosted.org/packages/fe/6e/4531007ff65d2ee36883e20546d9c82f9df84b99434846074a4b7c7b72db/av-19.0.0-cp312-abi3-manylinux_2_28_x86_64.whl",
+      "filename": "av-19.0.0-cp312-abi3-manylinux_2_28_x86_64.whl",
+      "bytes": 35026656,
+      "sha256": "9cd9f692c28990ee234ddde69f72725bbff93831ffa6d2492518d4b193dda0c8"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.19",
+      "url": "https://files.pythonhosted.org/packages/c4/51/29046e48f693c54e5b7412216d447a1d8362c9653148d98c02cdf65fa733/certifi-2026.10.19-py3-none-any.whl",
+      "filename": "certifi-2026.10.19-py3-none-any.whl",
+      "bytes": 136464,
+      "sha256": "42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b"
+    },
+    {
+      "name": "click",
+      "version": "8.5.0",
+      "url": "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl",
+      "filename": "click-8.5.0-py3-none-any.whl",
+      "bytes": 125251,
+      "sha256": "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360"
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6",
+      "url": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+      "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+      "bytes": 25335,
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
+    },
+    {
+      "name": "ctranslate2",
+      "version": "4.8.2",
+      "url": "https://files.pythonhosted.org/packages/89/8b/051962470b8e9df1a43f0c9c7a03ce1c8a279db76be4e6a6fcb5171d1d29/ctranslate2-4.8.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "filename": "ctranslate2-4.8.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 39555517,
+      "sha256": "633f19d1ff8d053a8b179ca742b242002ac7882a2ab44e319c6efcde27d586a4"
+    },
+    {
+      "name": "faster-whisper",
+      "version": "1.2.1",
+      "url": "https://files.pythonhosted.org/packages/05/99/49ee85903dee060d9f08297b4a342e5e0bcfca2f027a07b4ee0a38ab13f9/faster_whisper-1.2.1-py3-none-any.whl",
+      "filename": "faster_whisper-1.2.1-py3-none-any.whl",
+      "bytes": 1118909,
+      "sha256": "79a66ad50688c0b794dd501dc340a736992a6342f7f95e5811be60b5224a26a7"
+    },
+    {
+      "name": "filelock",
+      "version": "4.0.7",
+      "url": "https://files.pythonhosted.org/packages/06/cf/1731c0dd182ee35f80a39e63afb3d03056ea0dd561b7498932b10b2e34d9/filelock-4.0.7-py3-none-any.whl",
+      "filename": "filelock-4.0.7-py3-none-any.whl",
+      "bytes": 109242,
+      "sha256": "a93c4d93269b339a6af4848342c7e940d0f9928ad95eff64764699e5f1bf8a6a"
+    },
+    {
+      "name": "flatbuffers",
+      "version": "25.12.19",
+      "url": "https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "filename": "flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "bytes": 26661,
+      "sha256": "7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4"
+    },
+    {
+      "name": "fsspec",
+      "version": "2026.9.0",
+      "url": "https://files.pythonhosted.org/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl",
+      "filename": "fsspec-2026.9.0-py3-none-any.whl",
+      "bytes": 221738,
+      "sha256": "8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "url": "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+      "filename": "h11-0.16.0-py3-none-any.whl",
+      "bytes": 37515,
+      "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86"
+    },
+    {
+      "name": "hf-xet",
+      "version": "1.6.0",
+      "url": "https://files.pythonhosted.org/packages/67/4e/a28359bf1c1ecf11eba22123168c138698f7cb576ac678f5a2e16cd5da08/hf_xet-1.6.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "filename": "hf_xet-1.6.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "bytes": 4464663,
+      "sha256": "d62671bb130879cef0ee4c9ebe47a14af6c66ec53e6d84dc15936e5ffdfac82f"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9",
+      "url": "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl",
+      "filename": "httpcore-1.0.9-py3-none-any.whl",
+      "bytes": 78784,
+      "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "url": "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl",
+      "filename": "httpx-0.28.1-py3-none-any.whl",
+      "bytes": 73517,
+      "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad"
+    },
+    {
+      "name": "huggingface-hub",
+      "version": "1.33.0",
+      "url": "https://files.pythonhosted.org/packages/fc/16/963096d224b80909432dc16561a615fd33d2d13beef3ce4c63fa25e40867/huggingface_hub-1.33.0-py3-none-any.whl",
+      "filename": "huggingface_hub-1.33.0-py3-none-any.whl",
+      "bytes": 846435,
+      "sha256": "04e434b06e100eddbce9a6e817d72693a7884b10a79bd67ab48080d5c07eb899"
+    },
+    {
+      "name": "idna",
+      "version": "3.20",
+      "url": "https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl",
+      "filename": "idna-3.20-py3-none-any.whl",
+      "bytes": 69583,
+      "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c"
+    },
+    {
+      "name": "numpy",
+      "version": "2.5.3",
+      "url": "https://files.pythonhosted.org/packages/3a/1b/3b16a9bc514a440a7a0883684111dcb1ef1aee960af2ca95da8fc775f124/numpy-2.5.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "filename": "numpy-2.5.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 16708577,
+      "sha256": "a5fa86b80fd24bcd1aff83ad23be44ea323de3f787be8f8b15d4a65621e25321"
+    },
+    {
+      "name": "onnxruntime",
+      "version": "1.30.0",
+      "url": "https://files.pythonhosted.org/packages/f1/a1/ede48ab5dc54907a2999362777f541e132639fb06628ded1932058aa8a36/onnxruntime-1.30.0-cp313-cp313-manylinux_2_28_x86_64.whl",
+      "filename": "onnxruntime-1.30.0-cp313-cp313-manylinux_2_28_x86_64.whl",
+      "bytes": 23585560,
+      "sha256": "86f940afc801ea9681a4da8af84fbe95e1d9ea7d80903952cc1bfad54faad38f"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "url": "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl",
+      "filename": "packaging-26.3-py3-none-any.whl",
+      "bytes": 129956,
+      "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+    },
+    {
+      "name": "protobuf",
+      "version": "7.36.2",
+      "url": "https://files.pythonhosted.org/packages/db/f3/3996583dd2906297a637af12114deddf7658af6e683fedb83be061983fb5/protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl",
+      "filename": "protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl",
+      "bytes": 343223,
+      "sha256": "89f23aa53c24553a2416fd4fd1ec06f74fa42b14b546d8883128813f775bbfd2"
+    },
+    {
+      "name": "pyyaml",
+      "version": "6.0.3",
+      "url": "https://files.pythonhosted.org/packages/74/27/e5b8f34d02d9995b80abcef563ea1f8b56d20134d8f4e5e81733b1feceb2/pyyaml-6.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "filename": "pyyaml-6.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl",
+      "bytes": 801626,
+      "sha256": "0f29edc409a6392443abf94b9cf89ce99889a1dd5376d94316ae5145dfedd5d6"
+    },
+    {
+      "name": "tokenizers",
+      "version": "0.23.2",
+      "url": "https://files.pythonhosted.org/packages/2c/ca/ca6b93c7820df123b2662a9469e8facc826ccc94e98fdd0d615f6431e73a/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "filename": "tokenizers-0.23.2-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "bytes": 3386843,
+      "sha256": "41c2f84d172449b4dadb9cdc508e3e364076613c35b16e76ecfe47a60d1e3305"
+    },
+    {
+      "name": "tqdm",
+      "version": "4.70.1",
+      "url": "https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl",
+      "filename": "tqdm-4.70.1-py3-none-any.whl",
+      "bytes": 80199,
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73"
+    },
+    {
+      "name": "typing-extensions",
+      "version": "4.16.0",
+      "url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+      "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+      "bytes": 45571,
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    }
+  ],
+  "wheelBytes": 127129904,
+  "model": {
+    "schemaVersion": "local-asr-prerequisites-v1",
+    "model": {
+      "repository": "Systran/faster-whisper-small.en",
+      "revision": "d1d751a5f8271d482d14ca55d9e2deeebbae577f",
+      "files": {
+        "model.bin": {
+          "bytes": 483545366,
+          "sha256": "62b2a45b05ee59acb4a5341b33ee35e041395d378d418a18acfe4c9e768ee37a"
+        },
+        "config.json": {
+          "bytes": 2657,
+          "sha256": "666a9605530ac1f61fa8177f3702b4dacec9966749e42610839fcc32661d5fae"
+        },
+        "tokenizer.json": {
+          "bytes": 2128466,
+          "sha256": "929c5252409436dce1b38a75d1abbcb5e132d170d8e324e4e04ed915fa2d22df"
+        },
+        "vocabulary.txt": {
+          "bytes": 422309,
+          "sha256": "ff77588746d3a2595d32ab5b69ffd7b95ce2441ac57533cb66fc3eb575a115cf"
+        }
+      }
+    },
+    "runtime": {
+      "implementation": "CPython",
+      "pythonMajor": 3,
+      "pythonMinor": 13,
+      "fasterWhisperVersion": "1.2.1"
+    }
+  },
+  "modelURLs": {
+    "model.bin": "https://huggingface.co/Systran/faster-whisper-small.en/resolve/d1d751a5f8271d482d14ca55d9e2deeebbae577f/model.bin",
+    "config.json": "https://huggingface.co/Systran/faster-whisper-small.en/resolve/d1d751a5f8271d482d14ca55d9e2deeebbae577f/config.json",
+    "tokenizer.json": "https://huggingface.co/Systran/faster-whisper-small.en/resolve/d1d751a5f8271d482d14ca55d9e2deeebbae577f/tokenizer.json",
+    "vocabulary.txt": "https://huggingface.co/Systran/faster-whisper-small.en/resolve/d1d751a5f8271d482d14ca55d9e2deeebbae577f/vocabulary.txt"
+  },
+  "limits": {
+    "maximumDownloadBytes": 786432000,
+    "maximumExpandedCacheBytes": 1610612736,
+    "maximumSeconds": 900,
+    "maximumDownloads": 29,
+    "automaticRetries": 0
+  },
+  "sourceMediaDownloads": 0,
+  "applicationCalls": 0,
+  "sourceJobs": 0,
+  "paidApi": false,
+  "publicOrCommercialAdmission": false
+}

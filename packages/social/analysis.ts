@@ -9,7 +9,7 @@ import { insightIconKeys } from "../insights/presentation.ts";
 
 const id = z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/);
 const citation = z.strictObject({
-  kind: z.enum(["image_observation", "video_observation"]),
+  kind: z.enum(["image_observation", "video_observation", "caption"]),
   id,
   startMs: z.number().int().nonnegative().max(600000).nullable(),
   endMs: z.number().int().nonnegative().max(600000).nullable(),
@@ -63,14 +63,29 @@ export const orderedMediaSchema = z.strictObject({
 
 export function socialCitation(
   ref: z.infer<typeof citation>,
-  records: readonly SocialEvidence[],
+  records: readonly (
+    | SocialEvidence
+    | {
+        id: string;
+        kind: "caption" | "image_observation" | "video_observation";
+        assetId: string;
+        assetIndex: number;
+        textHash: string;
+        postRevisionHash: string;
+        startMs: number | null;
+        endMs: number | null;
+        basis: "caption" | "visible" | "transcript";
+        uncertainty: string;
+        crop?: undefined;
+      }
+  )[],
 ) {
   const record = records.find(
     (item) => item.id === ref.id && item.kind === ref.kind,
   );
   if (
     !record ||
-    (record.kind === "image_observation"
+    (record.kind === "image_observation" || record.kind === "caption"
       ? ref.startMs !== null || ref.endMs !== null
       : ref.startMs !== record.startMs || ref.endMs !== record.endMs)
   )

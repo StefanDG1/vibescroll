@@ -1,6 +1,6 @@
 # Cancellation, withdrawal, and refunds
 
-Status: published. Effective 3 October 2026. Version: 1.0.0. Release: v1-2026-10-03.1.
+Status: published. Effective 1 November 2026. Version: 1.1.0. Release: v1-2026-11-01.1.
 
 ## Cancel renewal
 
@@ -23,6 +23,8 @@ When you request immediate service, checkout records that request separately. We
 We process an approved refund to the original payment method where possible. We initiate it within the applicable legal deadline. The payment provider or bank can take additional time to display it. We send confirmation and do not require you to accept platform credits instead of a legally required money refund.
 
 ## Extra credits and failed work
+
+The new Pro allowance is 75 credits every seven days or 300 credits monthly, including annual subscriptions. Included credits expire at their stated period boundary. Existing recorded allowances and purchased balances keep their original terms. The existing extra-credit packs remain EUR 10 for 200 credits and EUR 25 for 550 credits unless a separately reviewed offer is shown.
 
 Unused purchased extra credits are tracked separately from included allowance. Contact us to request a refund of unused purchased credits where the policy or law permits. A refund calculation identifies the relevant purchase and consumed service. It never treats included promotional credits as cash.
 

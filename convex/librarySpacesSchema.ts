@@ -14,6 +14,7 @@ export const librarySpacesTables = {
         sourceId: v.id("sources"),
         generation: v.number(),
         revision: v.number(),
+        analysisVersionId: v.optional(v.id("analysisVersions")),
       }),
     ),
     version: v.number(),
@@ -37,7 +38,12 @@ export const librarySpacesTables = {
     stage: v.union(v.literal(0), v.literal(1), v.literal(2)),
     provenance: v.literal("user"),
     processingRoute: v.optional(
-      v.union(v.literal("local"), v.literal("cloud"), v.literal("save_only")),
+      v.union(
+        v.literal("local"),
+        v.literal("cloud"),
+        v.literal("save_only"),
+        v.literal("work_cloud"),
+      ),
     ),
     importReviewed: v.optional(v.boolean()),
     preferencesReviewed: v.optional(v.boolean()),

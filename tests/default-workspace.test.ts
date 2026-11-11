@@ -11,7 +11,10 @@ async function setup() {
     email: "owner@example.test",
     name: "Owner",
   });
-  const owner = t.withIdentity({ subject: "default-owner" });
+  const owner = t.withIdentity({
+    subject: "default-owner",
+    auth_time: Math.floor(Date.now() / 1000),
+  });
   return { t, userId, owner };
 }
 it("creates one owned default across concurrent first visits without purchasing or granting paid access", async () => {
@@ -119,7 +122,10 @@ it("rejects foreign selections, anonymous access, deleting accounts and recovery
     name: "Other",
   });
   const foreign = await t
-    .withIdentity({ subject: "other" })
+    .withIdentity({
+      subject: "other",
+      auth_time: Math.floor(Date.now() / 1000),
+    })
     .mutation(api.organizations.create, { name: "Foreign" });
   await t.run((ctx) => ctx.db.patch(userId, { defaultWorkspaceId: foreign }));
   await expect(

@@ -20,6 +20,9 @@ export default function Help() {
         <p>
           <Link href="/example">Inspect an example without signing in</Link>
         </p>
+        <p>
+          <Link href="/docs/mcp">How VibeScroll works with your assistant</Link>
+        </p>
       </section>
       <div className="help-index">
         {helpArticles.map((article) => (

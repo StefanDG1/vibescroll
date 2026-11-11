@@ -1,0 +1,47 @@
+{
+  "observedAtUTC": "2026-10-31T19:41:10.510991+00:00",
+  "servingCommit": "bed20948153d370f041ae5cb5837f8bec2c5f865",
+  "ownerApprovedExactIssue": true,
+  "proposalVersion": 4,
+  "proposalReview": "accepted",
+  "nativeCombinedApprovalClicks": 1,
+  "issue": {
+    "number": 197,
+    "url": "https://github.com/StefanDG1/vibescroll/issues/197",
+    "repository": "StefanDG1/vibescroll",
+    "visibility": "public",
+    "title": "Give the public demo a synthetic saved-post-to-plan social preview",
+    "bodyMatchesFrozen": true,
+    "bodyHash": "3ca4b2cb491180b2838ddd2348a804ff26f288c38d536e83f39efacb2f9858c8",
+    "assignees": 0,
+    "labels": 0
+  },
+  "publication": {
+    "state": "complete",
+    "provenance": "github_api_receipt",
+    "elapsedFromNativeDispatchMs": 2307
+  },
+  "providerFeedback": {
+    "provenance": "signed_github_webhook",
+    "state": "open",
+    "bodyMatchesFrozen": true,
+    "elapsedFromNativeDispatchMs": 4206
+  },
+  "acceptance": {
+    "originalMcpReadSameAcceptedVersionAndIssue": true,
+    "exactAuthenticatedApprovalReplayReturnedSameOperation": true,
+    "authoritativeGithubTitleBodyReadMatched": true,
+    "nativeOpenIssueAndCopyPromptControlsShown": true,
+    "copyClipboardExecutionTested": false,
+    "codingStarted": false,
+    "analysisRuns": 0,
+    "apiInferenceCalls": 0,
+    "creditsSpent": 0
+  },
+  "limitations": [
+    "Native combined approval was exercised from the Home plan artifact. The older standalone proposal route still shows a handoff-unavailable panel and needs to reuse this working component.",
+    "Signed opened status proves provider delivery, not implementation, merge, CI or benefit. No completion report was fabricated.",
+    "New discussion/publication MCP tool discovery remains separate from the original working read/save/context tools.",
+    "Infrastructure holds remain retained; no provider invoice settlement is claimed."
+  ]
+}

@@ -1,16 +1,16 @@
 # Security and privacy for users
 
-Mode: reference. Reviewed October 22, 2026 against application commit `fc2cb3e18d38c980ec63c405491523acb1fda291`. This page describes implemented boundaries and their limits. [Technical requirements](SECURITY.md) and [dated verification evidence](implementation-status.md) remain separate.
+Mode: reference. The local route was reviewed on October 22, 2026 against application commit `fc2cb3e18d38c980ec63c405491523acb1fda291`. The acquisition list includes hosted X preparation as of November 11, 2026. This page describes implemented boundaries and their limits. [Technical requirements](SECURITY.md) and [dated verification evidence](implementation-status.md) remain separate.
 
 ## Media download allowlist
 
 An allowlist names the destinations a worker may contact. VibeScroll limits media downloads to supported platforms and their content delivery networks, or CDNs. A video page and its video file often use different domains.
 
-The current accepted source hosts are `youtube.com`, `www.youtube.com`, `youtu.be`, `instagram.com`, `www.instagram.com`, `tiktok.com`, `www.tiktok.com`, `vm.tiktok.com`, `vimeo.com` and `www.vimeo.com`. HTTPS is required. URLs with embedded credentials or custom ports are rejected. Tracking parameters are removed; `v` and `t` are retained.
+The source URL policy accepts HTTPS links on the platform hosts listed below, with supported `www` aliases. It also accepts `vm.tiktok.com`, `vt.tiktok.com`, `twitter.com`, and `mobile.twitter.com`. URLs with embedded credentials or custom ports are rejected. The policy strips tracking parameters and retains `v` and `t` for legacy video links. X links normalize to the post ID. [Automatic analysis link formats](developers/find-save.md#links-for-automatic-analysis)
 
-The downloader accepts individual YouTube watch, Shorts, embed and short links; Instagram post and reel links; numeric Vimeo video links; and TikTok video and `vm.tiktok.com` short links. Platform home pages, playlists, arbitrary paths and direct CDN URLs do not qualify as source jobs. Other short-link domains are not implicitly supported.
+Acquisition accepts individual YouTube watch, Shorts, embed, and short links, Instagram post and Reel links, numeric Vimeo video links, TikTok videos and supported short links, and individual public X status links. Acquisition validates the post or video identifier before contacting the platform.
 
-Each source selects only its own platform's download destinations:
+Each source selects its own platform's download destinations. The X row applies to hosted X preparation.
 
 | Platform  | Allowed media download destinations                                                                                                                 |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -18,8 +18,9 @@ Each source selects only its own platform's download destinations:
 | Instagram | `instagram.com`, `*.instagram.com`, `*.cdninstagram.com`, `*.fbcdn.net`                                                                             |
 | Vimeo     | `vimeo.com`, `*.vimeo.com`, `*.vimeocdn.com`                                                                                                        |
 | TikTok    | `tiktok.com`, `*.tiktok.com`, `*.tiktokcdn.com`, `*.tiktokcdn-us.com`, `*.tiktokcdn-eu.com`, `*.byteoversea.com`, `*.ibytedtos.com`, `*.muscdn.com` |
+| X         | `x.com`, `api.x.com`, `abs.twimg.com`, `api.fxtwitter.com`, `pbs.twimg.com`, `video.twimg.com` |
 
-`*.example.com` permits subdomains, not `example.com` itself. Exact base domains appear separately where allowed. This table covers media acquisition. It is not a list of every service used by the website, authentication, storage or model providers.
+A wildcard such as `*.example.com` permits subdomains. Exact base domains appear separately where allowed. This table covers media acquisition. It is not a list of every service used by the website, authentication, storage or model providers.
 
 The source of truth is the [source URL policy](../packages/policy/index.ts) and [acquisition policy](../packages/media/acquisition.ts). Changes to platform delivery domains require a reviewed policy update; an instruction in a video or model response cannot expand the list.
 
@@ -33,7 +34,7 @@ An allowlisted domain does not prove its content is trustworthy, available or pe
 
 ## Local analysis and data flow
 
-The automatic assistant route uses your paired computer and your own eligible ChatGPT connection:
+The local assistant route uses a paired computer and an eligible ChatGPT connection. The hosted route has its own preparation and analysis flow. [Hosted X preparation](operations/X-POST-SUPPORT.md)
 
 1. VibeScroll saves the submitted link and queues extraction and organization under your reviewed assistant preferences.
 2. The local runner retrieves and decodes media inside pinned Docker workers in Docker Desktop's Linux VM. Workers have a read-only system, restricted resources, no direct network access, no host folder mounts and no Docker daemon socket. A separate broker supplies the permitted download connection.

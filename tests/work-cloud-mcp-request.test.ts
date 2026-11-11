@@ -3,6 +3,15 @@ import { convexTest } from "convex-test";
 import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import schema from "../convex/schema";
 import { api, internal } from "../convex/_generated/api";
+import {
+  workCloudMediaPolicy,
+  workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
+} from "../packages/contracts/work-cloud-text";
+import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
+import { socialHash } from "../packages/social/contracts";
 
 const modules = import.meta.glob("../convex/**/*.ts");
 const subject = "user_01234567890123456789012345";
@@ -159,7 +168,7 @@ it("creates one exact private Cloud job through MCP without repository or per-po
     leaseToken: claimed.leaseToken!,
   });
   expect(input).toMatchObject({
-    schemaVersion: "work-cloud-media-v2",
+    schemaVersion: "work-cloud-media-v3",
     maxApiUsd: 0,
     requestedModel: "synthetic-model",
   });
@@ -287,6 +296,19 @@ it.each([
       intake: await ctx.db.get(intakeId),
       reservations: await ctx.db.query("reservations").collect(),
     }));
+    await expect(
+      s.owner.query(api.assistantIntakeUi.status, { sourceId: s.sourceId }),
+    ).resolves.toBeNull();
+    for (const mode of ["cancel", "credits"] as const) {
+      await expect(
+        s.owner.mutation(api.assistantIntakeUi.act, {
+          sourceId: s.sourceId,
+          generation: 1,
+          mode,
+          ...(mode === "credits" ? { maxCredits: 10 } : {}),
+        }),
+      ).rejects.toThrow(/current Cloud request controls/);
+    }
     const result = await s.assistant.query(internal.assistant.getJobStatus, {
       profileId: s.org,
       sourceId: s.sourceId,
@@ -703,19 +725,22 @@ it.each([
   vi.stubEnv(key, key.startsWith("WORK_") ? "false" : "true");
   await expect(s.call()).rejects.toThrow();
 });
-it("requires fresh app authentication to install the new policy", async () => {
+it("uses the normal app session for an explicitly reviewed policy change", async () => {
   const s = await setup(false);
-  const stale = s.t.withIdentity({
+  const established = s.t.withIdentity({
     subject,
     auth_time: Math.floor(Date.now() / 1000) - 1000,
   });
   await expect(
-    stale.mutation(api.assistantGrants.save, {
+    established.mutation(api.assistantGrants.save, {
       ...s.grantArgs,
       cloudRequestPolicy: "explicit_per_source_v1",
       expectedVersion: 1,
     }),
-  ).rejects.toThrow(/Sign in again/);
+  ).resolves.toMatchObject({ version: 2 });
+  expect(
+    (await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.personalAnalysis,
+  ).toBeUndefined();
 });
 it("binds the reviewed media policy and respects revocation", async () => {
   const s = await setup();
@@ -729,6 +754,42 @@ it("binds the reviewed media policy and respects revocation", async () => {
   });
   await expect(s.call()).rejects.toThrow(/FORBIDDEN/);
 });
+it.each([
+  workCloudMediaPolicyV2,
+  workCloudMediaPolicyInitialV3,
+  workCloudMediaPolicyPreDiagnosticsV3,
+  workCloudMediaPolicyPreResolvedV3,
+])(
+  "preserves exact-source consent across a reviewed implementation patch",
+  async (policy) => {
+    const capabilities = (
+      p: typeof workCloudMediaPolicy | typeof workCloudMediaPolicyV2,
+    ) => {
+      const {
+        toolchain: _tools,
+        schemaVersion: _schema,
+        pipelineVersion: _pipeline,
+        ...limits
+      } = p;
+      return limits;
+    };
+    expect(capabilities(policy)).toEqual(capabilities(workCloudMediaPolicy));
+    const s = await setup();
+    const policyHash = await socialHash(canonicalJson(policy));
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.grant.id, { cloudRequestPolicyHash: policyHash }),
+    );
+    await expect(s.call()).resolves.toMatchObject({
+      source_id: s.sourceId,
+      status: "waiting_for_cloud",
+    });
+    const grant = await s.t.run((ctx) => ctx.db.get(s.grant.id));
+    expect(grant?.version).toBe(1);
+    expect(grant?.cloudRequestPolicyHash).toBe(
+      await socialHash(canonicalJson(policy)),
+    );
+  },
+);
 it("rejects expired retention, project or credit options and cross-mode Cloud options", async () => {
   const s = await setup();
   await expect(
@@ -785,3 +846,250 @@ it("bounds new requests per actor/hour, while retrying queued work is free", asy
   vi.advanceTimersByTime(3600000);
   expect(await s.call(request)).toMatchObject({ reused_request: false });
 });
+
+it("admits ten new videos across app and MCP, keeps replays free and refuses the eleventh", async () => {
+  const s = await setup(true, true);
+  const startsAt = Date.now(),
+    expiresAt = startsAt + 86400000;
+  vi.stubEnv(
+    "WORK_CLOUD_ADMISSION_JSON",
+    JSON.stringify({
+      id: "ten-video-fixture",
+      subject,
+      maximumJobs: 10,
+      startsAt,
+      expiresAt,
+    }),
+  );
+  await s.call();
+  await s.t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("limits")
+      .withIndex("by_key", (q) =>
+        q.eq("key", `work-cloud-admission:${s.actorId}:ten-video-fixture`),
+      )
+      .unique();
+    await ctx.db.patch(row!._id, { count: 9 });
+  });
+  expect(await s.call()).toMatchObject({ reused_request: true });
+  const add = async (suffix: string) => {
+    const sourceId = await s.owner.mutation(api.product.capture, {
+      organizationId: s.org,
+      kind: "url",
+      url: `https://www.youtube.com/watch?v=abcdefghij${suffix}`,
+      title: "Synthetic allowance source",
+      key: `allowance-${suffix}`,
+      rightsAttested: true,
+    });
+    return (await s.t.run((ctx) => ctx.db.get(sourceId)))!;
+  };
+  const tenth = await add("m");
+  const tenthRequest = {
+    ...s.request,
+    sourceId: tenth._id,
+    generation: tenth.generation,
+    revision: tenth.updatedAt,
+  };
+  expect(await s.call(tenthRequest)).toMatchObject({ reused_request: false });
+  expect(await s.call(tenthRequest)).toMatchObject({ reused_request: true });
+  const next = await add("n");
+  const appSelection = {
+    sourceId: next._id,
+    grantId: s.grant.id,
+    inputKind: "media" as const,
+    retainUntil: s.request.cloud.retainUntil,
+  };
+  const preview = await s.owner.query(
+    api.workCloudAnalysis.preview,
+    appSelection,
+  );
+  await expect(
+    s.owner.mutation(api.workCloudAnalysis.approve, {
+      ...appSelection,
+      generation: preview.generation,
+      grantVersion: preview.grantVersion,
+      expectedInputHash: preview.inputHash,
+      model: s.request.cloud.model,
+      effort: s.request.cloud.effort,
+      useOwnPlan: true,
+      maxApiUsd: 0,
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+  await expect(
+    s.call({
+      ...s.request,
+      sourceId: next._id,
+      generation: next.generation,
+      revision: next.updatedAt,
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+  expect((await s.t.run((ctx) => ctx.db.get(next._id)))?.generation).toBe(0);
+  // An hour boundary does not replenish the finite allowance.
+  vi.advanceTimersByTime(3600000);
+  await s.t.mutation(internal.maintenance.cleanup, {});
+  const allowance = await s.t.run((ctx) =>
+    ctx.db
+      .query("limits")
+      .withIndex("by_key", (q) =>
+        q.eq("key", `work-cloud-admission:${s.actorId}:ten-video-fixture`),
+      )
+      .unique(),
+  );
+  expect(allowance).toMatchObject({
+    count: 10,
+    window: Math.ceil(expiresAt / 60000),
+  });
+  await expect(
+    s.call({
+      ...s.request,
+      sourceId: next._id,
+      generation: next.generation,
+      revision: next.updatedAt,
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+});
+
+it("retains the hourly counter through minute-based maintenance and preserves legacy count", async () => {
+  const s = await setup(true, true);
+  await s.t.run((ctx) =>
+    ctx.db.insert("limits", {
+      key: `work-cloud-mcp-hour:${s.actorId}`,
+      window: Math.floor(Date.now() / 3600000),
+      count: 4,
+    }),
+  );
+  await s.call();
+  await s.t.mutation(internal.maintenance.cleanup, {});
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("limits")
+        .withIndex("by_key", (q) =>
+          q.eq("key", `work-cloud-mcp-hour:${s.actorId}`),
+        )
+        .unique(),
+    ),
+  ).toMatchObject({ count: 5, window: Math.floor(Date.now() / 3600000) * 60 });
+});
+
+it("allows a standing owner policy with 100 daily jobs, 20 hourly jobs and a UTC daily reset", async () => {
+  vi.setSystemTime(new Date("2026-10-29T23:59:00Z"));
+  const s = await setup(true, true);
+  vi.stubEnv(
+    "WORK_CLOUD_ADMISSION_JSON",
+    JSON.stringify({
+      id: "generous-owner",
+      subject,
+      maximumJobs: 100,
+      period: "day",
+      maximumHourlyJobs: 20,
+      startsAt: Date.now(),
+      expiresAt: null,
+    }),
+  );
+  await s.call();
+  const dayKey = `work-cloud-admission:${s.actorId}:generous-owner:day:${Math.floor(Date.now() / 86400000)}`;
+  await s.t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("limits")
+      .withIndex("by_key", (q) => q.eq("key", dayKey))
+      .unique();
+    await ctx.db.patch(row!._id, { count: 99 });
+  });
+  const nextId = await s.owner.mutation(api.product.capture, {
+    organizationId: s.org,
+    kind: "url",
+    url: "https://www.youtube.com/watch?v=abcdefghijm",
+    title: "Daily-limit source",
+    key: "generous-second",
+    rightsAttested: true,
+  });
+  const next = (await s.t.run((ctx) => ctx.db.get(nextId)))!;
+  const request = {
+    ...s.request,
+    sourceId: nextId,
+    generation: next.generation,
+    revision: next.updatedAt,
+  };
+  expect(await s.call(request)).toMatchObject({ reused_request: false });
+  expect(await s.call(request)).toMatchObject({ reused_request: true });
+  const thirdId = await s.owner.mutation(api.product.capture, {
+    organizationId: s.org,
+    kind: "url",
+    url: "https://www.youtube.com/watch?v=abcdefghijn",
+    title: "Next-day source",
+    key: "generous-third",
+    rightsAttested: true,
+  });
+  const third = (await s.t.run((ctx) => ctx.db.get(thirdId)))!;
+  const thirdRequest = {
+    ...s.request,
+    sourceId: thirdId,
+    generation: third.generation,
+    revision: third.updatedAt,
+  };
+  await expect(s.call(thirdRequest)).rejects.toThrow(/QUOTA_EXCEEDED/);
+  vi.advanceTimersByTime(120000);
+  await s.t.mutation(internal.maintenance.cleanup, {});
+  expect(await s.call(thirdRequest)).toMatchObject({ reused_request: false });
+  expect(
+    await s.t.run((ctx) =>
+      ctx.db
+        .query("limits")
+        .withIndex("by_key", (q) => q.eq("key", dayKey))
+        .unique(),
+    ),
+  ).toMatchObject({ count: 100 });
+  await s.t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("limits")
+      .withIndex("by_key", (q) =>
+        q.eq("key", `work-cloud-mcp-hour:${s.actorId}`),
+      )
+      .unique();
+    await ctx.db.patch(row!._id, { count: 20 });
+  });
+  const fourthId = await s.owner.mutation(api.product.capture, {
+    organizationId: s.org,
+    kind: "url",
+    url: "https://www.youtube.com/watch?v=abcdefghijo",
+    title: "Hourly-limit source",
+    key: "generous-fourth",
+    rightsAttested: true,
+  });
+  const fourth = (await s.t.run((ctx) => ctx.db.get(fourthId)))!;
+  await expect(
+    s.call({
+      ...s.request,
+      sourceId: fourthId,
+      generation: fourth.generation,
+      revision: fourth.updatedAt,
+    }),
+  ).rejects.toThrow(/QUOTA_EXCEEDED/);
+});
+
+it.each(["invalid", "future", "expired"])(
+  "fails closed for %s operator allowance without creating work",
+  async (kind) => {
+    const s = await setup();
+    vi.stubEnv(
+      "WORK_CLOUD_ADMISSION_JSON",
+      kind === "invalid"
+        ? "{"
+        : JSON.stringify({
+            id: "bounded",
+            subject,
+            maximumJobs: 10,
+            startsAt: Date.now() + (kind === "future" ? 60000 : -120000),
+            expiresAt: Date.now() + (kind === "future" ? 120000 : -60000),
+          }),
+    );
+    await expect(s.call()).rejects.toThrow(/SETUP_REQUIRED|QUOTA_EXCEEDED/);
+    expect((await s.t.run((ctx) => ctx.db.get(s.sourceId)))?.generation).toBe(
+      0,
+    );
+    expect(
+      await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+    ).toHaveLength(0);
+  },
+);

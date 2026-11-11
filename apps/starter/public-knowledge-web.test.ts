@@ -26,6 +26,7 @@ import { POST } from "./app/api/public-knowledge/report/route";
 import { PublicEditionContent } from "./components/public-edition-content";
 import Edition from "./app/editions/[slug]/page";
 import Collection from "./app/collections/[slug]/page";
+import Discover from "./app/discover/page";
 import type { PublicEdition } from "./lib/public-knowledge-display";
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "https://synthetic.convex.cloud");
@@ -34,6 +35,16 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.resetAllMocks();
+});
+it("discovers collections without requesting or rendering retired region aggregates", async () => {
+  vi.stubEnv("PUBLIC_KNOWLEDGE_WEB_ENABLED", "true");
+  mock.query.mockResolvedValue({ page: [], isDone: true, continueCursor: "" });
+  const html = renderToStaticMarkup(
+    await Discover({ searchParams: Promise.resolve({}) }),
+  );
+  expect(mock.query).toHaveBeenCalledTimes(1);
+  expect(html).toContain("Find a useful collection.");
+  expect(html).not.toMatch(/globe|regional sharing|sharing region/i);
 });
 it("does not construct or query a backend while the web release gate is off", async () => {
   vi.stubEnv("PUBLIC_KNOWLEDGE_WEB_ENABLED", "false");

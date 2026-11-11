@@ -65,19 +65,17 @@ it("separates company invoice permissions from customer ownership and matching e
   });
   expect(queue.page.map((item) => item._id)).toEqual([taskId]);
 });
-it("requires recent active operator identity, audits evidence and preserves the original reference", async () => {
+it("requires active operator identity, audits evidence and preserves the original reference", async () => {
   const { t, operator, taskId } = await fixture();
   vi.stubEnv("INVOICE_OPERATOR_SUBJECTS_JSON", '["invoice-operator"]');
   const stale = t.withIdentity({
     subject: "invoice-operator",
     auth_time: Date.now() / 1000 - 1000,
   });
-  await expect(
-    stale.mutation(api.commerce.submitReceipt, {
-      id: taskId,
-      receipt: "synthetic-receipt",
-    }),
-  ).rejects.toThrow("Sign in again");
+  await stale.mutation(api.commerce.submitReceipt, {
+    id: taskId,
+    receipt: "synthetic-receipt",
+  });
   await operator.mutation(api.commerce.submitReceipt, {
     id: taskId,
     receipt: " synthetic-receipt ",

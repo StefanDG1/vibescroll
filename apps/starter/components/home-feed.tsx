@@ -136,7 +136,7 @@ export function HomeFeed({
                 source._id,
                 old?.scopeKey === incoming.scopeKey &&
                 old.revision > incoming.revision
-                  ? { ...incoming, liked: old.liked, revision: old.revision }
+                  ? old
                   : incoming,
               ];
             }),
@@ -522,6 +522,13 @@ export function HomeFeed({
                   ...current,
                   [post.id]: {
                     ...previous,
+                    likes:
+                      ack.likes ??
+                      Math.max(
+                        0,
+                        previous.likes + Number(ack.liked) - Number(previous.liked),
+                      ),
+                    shares: ack.shares ?? previous.shares,
                     liked: ack.liked,
                     revision: ack.revision,
                   },

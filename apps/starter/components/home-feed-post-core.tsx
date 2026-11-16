@@ -85,7 +85,8 @@ export function FeedPostCardCore({
   detail?: FeedDetail;
   engagement?: FeedEngagement;
   onReaction: (
-    value: Pick<FeedEngagement, "scopeKey" | "liked" | "revision">,
+    value: Pick<FeedEngagement, "scopeKey" | "liked" | "revision"> &
+      Partial<Pick<FeedEngagement, "likes" | "shares">>,
   ) => void;
   active: boolean;
   demo: boolean;
@@ -144,7 +145,12 @@ export function FeedPostCardCore({
   const [expandedPlan, setExpandedPlan] = useState<string | null>();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [demoLiked, setDemoLiked] = useState(true);
-  const [likeBusy, setLikeBusy] = useState(false);
+  const [pendingLike, setPendingLike] = useState<{
+    scopeKey: string;
+    revision: number;
+    liked: boolean;
+  } | null>(null);
+  const likeBusy = pendingLike !== null;
   const [likeError, setLikeError] = useState("");
   const interfaceMotion = useInterfaceMotion();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -187,10 +193,26 @@ export function FeedPostCardCore({
       )
       .slice(0, Math.max(0, 3 - proposals.length)) ?? [];
   const engagement = demo ? detail?.engagement : observedEngagement;
+  const displayedLiked =
+    pendingLike &&
+    engagement?.scopeKey === pendingLike.scopeKey &&
+    engagement.revision === pendingLike.revision
+      ? pendingLike.liked
+      : engagement?.liked;
+  const displayedLikes = engagement
+    ? Math.max(
+        0,
+        engagement.likes + Number(displayedLiked) - Number(engagement.liked),
+      )
+    : undefined;
   async function like(liked = !engagement?.liked, previous = engagement) {
     if (!previous || likeFlight.current || readOnly) return;
     likeFlight.current = true;
-    setLikeBusy(true);
+    setPendingLike({
+      scopeKey: previous.scopeKey,
+      revision: previous.revision,
+      liked,
+    });
     setLikeError("");
     try {
       const result = await call("setPostLike", {
@@ -203,12 +225,16 @@ export function FeedPostCardCore({
       onReaction(result);
       return result as Pick<FeedEngagement, "scopeKey" | "liked" | "revision">;
     } catch {
-      setLikeError(
-        "Could not confirm your reaction. Check its updated state before trying again.",
-      );
+      setLikeError("Could not confirm your reaction. Try again.");
+      void call("postEngagementRead", { organizationId, sourceIds: [post.id] })
+        .then((items: (FeedEngagement & { sourceId: string })[]) => {
+          const current = items?.find((item) => item.sourceId === post.id);
+          if (current) onReaction(current);
+        })
+        .catch(() => {});
     } finally {
       likeFlight.current = false;
-      setLikeBusy(false);
+      setPendingLike(null);
     }
   }
   async function reviewLike() {
@@ -325,10 +351,10 @@ export function FeedPostCardCore({
       likes={
         demo && engagement
           ? engagement.likes + (demoLiked ? 0 : -1)
-          : engagement?.likes
+          : displayedLikes
       }
       requests={engagement?.shares}
-      liked={demo ? demoLiked : engagement?.liked}
+      liked={demo ? demoLiked : displayedLiked}
       onLike={
         demo
           ? () => setDemoLiked((value) => !value)

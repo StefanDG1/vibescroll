@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-16",
+  "requirement": "R178",
+  "status": "live",
+  "website": {
+    "deployment": "dpl_DszTxMM6oFLAxkd6jpCxuizLjvpA",
+    "commit": "e7f2f6ef423dcf12f0662b61a911a7df1b30c127",
+    "canonical": "https://scroll.companynerve.com",
+    "healthVersion": "0.1.0-alpha.20261116155312.ge7f2f6ef423d",
+    "previousDeployment": "dpl_AeXjUkFkotRij1sds8zNDFgLiccu",
+    "normalDomainAssignmentRestored": true,
+    "buildSeconds": 46.591
+  },
+  "ci": {
+    "run": "https://github.com/StefanDG1/vibescroll/actions/runs/43901327054",
+    "status": "success"
+  },
+  "verification": {
+    "stagedPublicCases": 12,
+    "canonicalPublicCases": 12,
+    "signedInWidths": [
+      390,
+      1440
+    ],
+    "desktopVerticalInsightTitlesStable": true,
+    "saveAvailableDuringReaction": true,
+    "rapidRetapConfirmed": true,
+    "homeRetainedAcrossFocusAndNavigation": true,
+    "advancedSettingsChecked": true,
+    "aiDraftDrawerChecked": true,
+    "localChatGenerationAndReply": "Simulated model responses with real saved-post planning context",
+    "productionWritesSent": 0
+  },
+  "funding": {
+    "observedHostingUsageUSD": 2.9,
+    "reservationUSD": 0.05,
+    "oldHoldsPreserved": true,
+    "paidModelRequests": 0
+  },
+  "backendPublished": false
+}

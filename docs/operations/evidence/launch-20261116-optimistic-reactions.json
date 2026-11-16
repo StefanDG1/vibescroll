@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-16",
+  "status": "live",
+  "website": {
+    "deployment": "dpl_AeXjUkFkotRij1sds8zNDFgLiccu",
+    "commit": "4f4056ad464fb89c240e9b646f3fbdde6ffb141a",
+    "canonical": "https://scroll.companynerve.com",
+    "healthVersion": "0.1.0-alpha.20261116151710.g4f4056ad464f",
+    "sameBuildPromotionVerified": true,
+    "normalDomainAssignmentRestored": true
+  },
+  "ci": {
+    "run": "https://github.com/StefanDG1/vibescroll/actions/runs/43894953886",
+    "status": "success"
+  },
+  "verification": {
+    "viewportWidths": [
+      390,
+      1440
+    ],
+    "stagedCases": 12,
+    "productionCases": 12,
+    "localReactionWidths": [
+      390,
+      1440
+    ],
+    "signedInProductionReactionWidth": 390,
+    "updatedBeforeDelayedResponse": true,
+    "rolledBackAfterControlledRejection": true,
+    "productionWritesSent": 0
+  },
+  "backendPublished": false
+}

@@ -34,7 +34,7 @@
     "keyboardInsightExpansionVerified": true,
     "mobileEngagementCountsVerified": true,
     "productionAuthRedirectExpected": true,
-    "signedInBrowserStatus": "Awaiting fresh authorized login",
+    "signedInBrowserStatus": "Signed-in Browse verified at 390 and 1440 pixels. A retained saved post opened at its full URL.",
     "authorizedMcpProfilesRead": 3,
     "standaloneMarketingStatus": "Built in CI. No separate VibeScroll project or production domain is configured."
   },

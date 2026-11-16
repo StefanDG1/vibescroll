@@ -32,6 +32,7 @@ type Props = {
   organizationId: string;
   initialPage?: FeedPage;
   demo?: boolean;
+  visible?: boolean;
   readOnly: boolean;
   call: (operation: string, args: unknown) => Promise<any>;
   onSave: () => void;
@@ -42,6 +43,7 @@ export function HomeFeed({
   organizationId,
   initialPage,
   demo = false,
+  visible = true,
   readOnly,
   call,
   onSave,
@@ -80,6 +82,7 @@ export function HomeFeed({
   const restoreTarget = useRef<string | null>(null);
   const bookmarkScope = useRef<string | null>(null);
   const wantedIds = useRef<string[]>([]);
+  const staleDetails = useRef(new Set<string>());
   const requests = useRef(new Map<string, AbortController>());
   const pageFlight = useRef<AbortController | null>(null);
   const marker = useRef<HTMLDivElement>(null);
@@ -90,8 +93,11 @@ export function HomeFeed({
   const currentPostId = readyPosts.some((post) => post.id === activeId)
     ? activeId
     : readyPosts[0]?.id;
-  const neighborKey = JSON.stringify(feedNeighbors(readyPosts, activeId));
+  const neighborKey = JSON.stringify(
+    feedNeighbors(readyPosts, currentPostId ?? null),
+  );
   const neighbors: string[] = JSON.parse(neighborKey);
+  const liveIds = [...new Set([...neighbors, ...Object.keys(details)])].sort();
   const base = demo ? "/demo" : `/app/${organizationId}`;
   const clearAccess = useCallback(() => {
     try {
@@ -100,8 +106,10 @@ export function HomeFeed({
     } catch {
       /* Optional browser storage. */
     }
+    pageFlight.current?.abort();
     for (const request of requests.current.values()) request.abort();
     requests.current.clear();
+    staleDetails.current.clear();
     setDetails({});
     setEngagement({});
     setPosts([]);
@@ -112,7 +120,7 @@ export function HomeFeed({
 
   usePostsLive(
     organizationId,
-    neighbors,
+    liveIds,
     !demo && !denied,
     (snapshot) => {
       if (!snapshot) {
@@ -125,8 +133,9 @@ export function HomeFeed({
         setReaderId(snapshot.readerId);
         setRecentReady(snapshot.recentReady);
       }
-      setEngagement((current) =>
-        Object.fromEntries(
+      setEngagement((current) => ({
+        ...current,
+        ...Object.fromEntries(
           metadata
             .filter((source: any) => source.engagement)
             .map((source: any) => {
@@ -141,22 +150,40 @@ export function HomeFeed({
               ];
             }),
         ),
-      );
+      }));
       const byId = new Map<string, any>(
         metadata.map((source: any) => [source._id, source]),
       );
       let changed = false;
-      for (const id of neighbors) {
+      for (const id of liveIds) {
         const source = byId.get(id);
         const key = source ? sourceReadKey(source) : "unavailable";
+        const previousKey = liveKeys.current.get(id);
+        const retained = details[id];
+        const replacedVersion =
+          previousKey !== key &&
+          !!retained &&
+          !!source?.selectedAnalysisVersionId &&
+          retained.analysisVersionId !== source.selectedAnalysisVersionId;
         if (
           !source ||
-          !liveKeys.current.has(id) ||
-          liveKeys.current.get(id) !== key
+          source.state !== "ready" ||
+          replacedVersion ||
+          (!previousKey && !retained && requests.current.has(id)) ||
+          (previousKey && previousKey !== key)
         ) {
           requests.current.get(id)?.abort();
           requests.current.delete(id);
-          setDetails((current) => {
+          staleDetails.current.add(id);
+          if (!source || source.state !== "ready" || replacedVersion) {
+            setDetails((current) => {
+              const copy = { ...current };
+              delete copy[id];
+              return copy;
+            });
+          }
+          setDetailErrors((current) => {
+            if (!current[id]) return current;
             const copy = { ...current };
             delete copy[id];
             return copy;
@@ -166,9 +193,11 @@ export function HomeFeed({
         liveKeys.current.set(id, key);
       }
       if (changed) setRevision((value) => value + 1);
+      for (const id of liveKeys.current.keys())
+        if (!liveIds.includes(id)) liveKeys.current.delete(id);
       setPosts((current) =>
         current.flatMap((post) => {
-          if (!neighbors.includes(post.id)) return [post];
+          if (!liveIds.includes(post.id)) return [post];
           const source = byId.get(post.id);
           if (!source) return [];
           return [
@@ -325,7 +354,7 @@ export function HomeFeed({
   );
 
   const fetchNeighborhood = useEffectEvent((wanted: string[]) => {
-    if (demo || denied) return;
+    if (demo || denied || !visible) return;
     for (const [id, request] of requests.current) {
       if (!wanted.includes(id)) {
         request.abort();
@@ -334,7 +363,12 @@ export function HomeFeed({
     }
     wantedIds.current = wanted;
     for (const id of wanted) {
-      if (details[id] || requests.current.has(id) || detailErrors[id]) continue;
+      if (
+        (details[id] && !staleDetails.current.has(id)) ||
+        requests.current.has(id) ||
+        detailErrors[id]
+      )
+        continue;
       const controller = new AbortController();
       requests.current.set(id, controller);
       void fetch(
@@ -346,21 +380,48 @@ export function HomeFeed({
         },
       )
         .then(async (response) => {
-          if (!response.ok)
+          if (controller.signal.aborted) return;
+          if (response.redirected || response.status === 401) {
+            clearAccess();
+            return;
+          }
+          if ([403, 404].includes(response.status)) {
+            setDetails((current) => {
+              const copy = { ...current };
+              delete copy[id];
+              return copy;
+            });
             throw Error(
-              response.status === 404
-                ? "This post is no longer available. Open Posts to check its status."
-                : "The insights could not be loaded.",
+              "This post is no longer available. Open Posts to check its status.",
             );
+          }
+          if (!response.ok) throw Error("The insights could not be loaded.");
           const detail: FeedDetail = await response.json();
-          if (!controller.signal.aborted)
-            setDetails((current) =>
-              Object.fromEntries(
-                Object.entries({ ...current, [id]: detail }).filter(([key]) =>
-                  wantedIds.current.includes(key),
-                ),
-              ),
+          if (controller.signal.aborted) return;
+          staleDetails.current.delete(id);
+          if (detail.engagement) {
+            const incoming = detail.engagement;
+            setEngagement((current) => {
+              const old = current[id];
+              return old?.scopeKey === incoming.scopeKey &&
+                old.revision > incoming.revision
+                ? current
+                : { ...current, [id]: incoming };
+            });
+          }
+          setDetails((current) => {
+            const retained = Object.entries(current).filter(
+              ([key]) => key !== id,
             );
+            retained.push([id, detail]);
+            const recent = retained.filter(
+              ([key]) => !wantedIds.current.includes(key),
+            );
+            return Object.fromEntries([
+              ...recent.slice(-9),
+              ...retained.filter(([key]) => wantedIds.current.includes(key)),
+            ]);
+          });
         })
         .catch((failure) => {
           if (!controller.signal.aborted)
@@ -383,23 +444,30 @@ export function HomeFeed({
   });
   useEffect(() => {
     fetchNeighborhood(JSON.parse(neighborKey));
-  }, [organizationId, demo, denied, neighborKey, revision]);
+  }, [organizationId, demo, denied, visible, neighborKey, revision]);
 
   useEffect(() => {
-    if (demo) return;
+    if (demo || !visible || denied) return;
+    let lastCheck = 0;
     const revalidate = () => {
-      if (document.visibilityState !== "visible") return;
-      for (const request of requests.current.values()) request.abort();
-      requests.current.clear();
-      setDetails({});
+      if (document.hidden || Date.now() - lastCheck < 15_000) return;
+      lastCheck = Date.now();
+      for (const id of wantedIds.current) staleDetails.current.add(id);
       setDetailErrors({});
       setRevision((value) => value + 1);
     };
     window.addEventListener("focus", revalidate);
-    return () => window.removeEventListener("focus", revalidate);
-  }, [demo]);
+    window.addEventListener("online", revalidate);
+    document.addEventListener("visibilitychange", revalidate);
+    return () => {
+      window.removeEventListener("focus", revalidate);
+      window.removeEventListener("online", revalidate);
+      document.removeEventListener("visibilitychange", revalidate);
+    };
+  }, [demo, visible, denied]);
 
   useEffect(() => {
+    if (!visible) return;
     const browse = (event: Event) => {
       if (
         event instanceof KeyboardEvent &&
@@ -424,9 +492,10 @@ export function HomeFeed({
       window.removeEventListener("touchmove", browse);
       window.removeEventListener("keydown", browse);
     };
-  }, []);
+  }, [visible]);
   useEffect(() => {
     if (
+      !visible ||
       !next ||
       loading ||
       error ||
@@ -452,13 +521,14 @@ export function HomeFeed({
     );
     observer.observe(marker.current);
     return () => observer.disconnect();
-  }, [next, loading, error, denied, loadPage]);
+  }, [visible, next, loading, error, denied, loadPage]);
 
   return (
     <section
       className={styles.feed}
       aria-label="Your analyzed posts"
       data-home-mode="browse"
+      data-paused={!visible}
     >
       {!demo && loaded && newReadyPosts(posts, recentReady) > 0 && (
         <button
@@ -503,60 +573,64 @@ export function HomeFeed({
         </output>
       )}
       {readyPosts.map((post) => (
-          <FeedPostCard
-            key={post.id}
-            post={post}
-            detail={details[post.id]}
-            engagement={engagement[post.id] ?? details[post.id]?.engagement}
-            onReaction={(ack) =>
-              setEngagement((current) => {
-                const previous =
-                  current[post.id] ?? details[post.id]?.engagement;
-                if (
-                  !previous ||
-                  previous.scopeKey !== ack.scopeKey ||
-                  previous.revision > ack.revision
-                )
-                  return current;
-                return {
-                  ...current,
-                  [post.id]: {
-                    ...previous,
-                    likes:
-                      ack.likes ??
-                      Math.max(
-                        0,
-                        previous.likes + Number(ack.liked) - Number(previous.liked),
-                      ),
-                    shares: ack.shares ?? previous.shares,
-                    liked: ack.liked,
-                    revision: ack.revision,
-                  },
-                };
-              })
-            }
-            active={neighbors.includes(post.id)}
-            mode="browse"
-            current={post.id === currentPostId}
-            demo={demo}
-            error={detailErrors[post.id]}
-            organizationId={organizationId}
-            readOnly={readOnly}
-            call={call}
-            base={base}
-            onVisible={() => {
-              if (!restoreTarget.current || restoreTarget.current === post.id)
-                setActiveId(post.id);
-            }}
-            onRetry={() => {
-              setDetailErrors((current) => {
-                const copy = { ...current };
-                delete copy[post.id];
-                return copy;
-              });
-              setRevision((value) => value + 1);
-            }}
-          />
+        <FeedPostCard
+          key={post.id}
+          post={post}
+          detail={details[post.id]}
+          engagement={engagement[post.id] ?? details[post.id]?.engagement}
+          onReaction={(ack) =>
+            setEngagement((current) => {
+              const previous = current[post.id] ?? details[post.id]?.engagement;
+              if (
+                !previous ||
+                previous.scopeKey !== ack.scopeKey ||
+                previous.revision > ack.revision
+              )
+                return current;
+              return {
+                ...current,
+                [post.id]: {
+                  ...previous,
+                  likes:
+                    ack.likes ??
+                    Math.max(
+                      0,
+                      previous.likes +
+                        Number(ack.liked) -
+                        Number(previous.liked),
+                    ),
+                  shares: ack.shares ?? previous.shares,
+                  liked: ack.liked,
+                  revision: ack.revision,
+                },
+              };
+            })
+          }
+          active={visible && neighbors.includes(post.id)}
+          mode="browse"
+          current={post.id === currentPostId}
+          demo={demo}
+          error={detailErrors[post.id]}
+          organizationId={organizationId}
+          readOnly={readOnly}
+          call={call}
+          base={base}
+          onVisible={() => {
+            if (!restoreTarget.current || restoreTarget.current === post.id)
+              setActiveId(post.id);
+          }}
+          onRetry={() => {
+            requests.current.get(post.id)?.abort();
+            requests.current.delete(post.id);
+            staleDetails.current.add(post.id);
+            setDetailErrors((current) => {
+              const copy = { ...current };
+              delete copy[post.id];
+              return copy;
+            });
+            setRevision((value) => value + 1);
+          }}
+        />
       ))}
       {loaded && !error && readyPosts.length === 0 && (
         <div className={styles.empty}>

@@ -72,7 +72,8 @@ it("shows distinct link requesters as a count, rather than an outbound Share act
       onSettings: () => {},
     }),
   );
-  expect(html).toContain('aria-label="2 people have requested this post"');
+  expect(html).toContain("2 people have requested this post");
+  expect(html).not.toContain('role="tooltip"');
   expect(html).toContain("lucide-users");
   expect(html).not.toMatch(/Share post|Share this post|lucide-share/);
   expect(html).toContain('aria-label="Like post"');
@@ -83,7 +84,7 @@ it("does not invent a zero when request tracking is unavailable", () => {
   const html = renderToStaticMarkup(
     createElement(PostEngagement, { onSettings: () => {} }),
   );
-  expect(html).toContain('aria-label="Post request count unavailable"');
+  expect(html).toContain("Post request count unavailable");
   expect(html).not.toContain("0 people");
 });
 

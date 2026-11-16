@@ -105,7 +105,12 @@ function setup(initialPage = page()) {
       events.set(name, callback),
     removeEventListener: (name: string) => events.delete(name),
   });
-  vi.stubGlobal("document", { visibilityState: "visible" });
+  vi.stubGlobal("document", {
+    visibilityState: "visible",
+    addEventListener: (name: string, callback: any) =>
+      events.set(name, callback),
+    removeEventListener: (name: string) => events.delete(name),
+  });
   vi.stubGlobal("Element", class {});
   vi.stubGlobal("KeyboardEvent", class {});
   vi.stubGlobal(
@@ -280,6 +285,29 @@ it("revalidates a detail read that raced the first live version observation", as
     elements(tree).find((node) => node.props.post?.id === "source-0")!.props
       .detail.analysisVersionId,
   ).toBe("new");
+});
+
+it("keeps loaded details visible while focus triggers a background read", async () => {
+  const { view, pending, fetch, events } = setup(page(1));
+  render(view);
+  const url = "/api/feed/source-0?organizationId=workspace";
+  const retained = { id: "source-0", summary: "Retained insight" };
+  pending.get(url)!.resolve({ ok: true, json: async () => retained });
+  await flush();
+  render(view);
+  events.get("focus")!({});
+  const tree = render(view);
+  expect(fetch).toHaveBeenCalledTimes(2);
+  expect(
+    elements(tree).find((node) => node.props.post?.id === "source-0")!.props
+      .detail,
+  ).toEqual(retained);
+  pending.get(url)!.resolve({ ok: false, status: 503 });
+  await flush();
+  expect(
+    elements(render(view)).find((node) => node.props.post?.id === "source-0")!
+      .props.detail,
+  ).toEqual(retained);
 });
 
 it("keeps the authorized shared poster when live metadata has no local thumbnail", () => {

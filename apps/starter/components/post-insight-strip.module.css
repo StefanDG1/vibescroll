@@ -10,15 +10,21 @@
   overscroll-behavior-inline: contain;
   scrollbar-width: thin;
 }
-.card {
-  display: flex;
-  flex-direction: column;
+.item {
   flex: 0 0 clamp(150px, 27%, 208px);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
   gap: 8px;
   align-items: stretch;
   min-width: 0;
   text-align: left;
-  scroll-snap-align: start;
   padding: 6px;
   color: var(--ink);
   background: var(--panel);
@@ -27,7 +33,7 @@
   cursor: pointer;
 }
 @media (min-width: 721px) {
-  .card {
+  .item {
     flex-basis: clamp(128px, calc((100% - 36px) / 4), 186px);
   }
 }
@@ -86,16 +92,62 @@
   align-items: start;
   justify-content: space-between;
   gap: 4px;
-  padding: 3px;
+  padding: 3px 20px 3px 3px;
   font-size: 0.9rem;
   line-height: 1.35;
   font-weight: 650;
   overflow-wrap: anywhere;
 }
-.title svg {
-  flex-shrink: 0;
-  margin-top: 2px;
+.disclosure {
+  position: absolute;
+  inset-inline-end: 8px;
+  top: calc((100% - 16px) / 2);
+  color: var(--subtle);
+}
+.strip[data-vertical="false"] .disclosure {
+  top: auto;
+  bottom: 8px;
+}
+.card[aria-expanded="true"] .disclosure {
   color: var(--teal);
+  transform: rotate(180deg);
+}
+.strip[data-vertical="true"] .rail {
+  display: grid;
+  padding: 2px;
+  gap: 7px;
+  overflow: visible;
+}
+.strip[data-vertical="true"] .item {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+.strip[data-vertical="true"] .item:has([aria-expanded="true"]) {
+  border-color: color-mix(in srgb, var(--teal) 60%, var(--line));
+}
+.strip[data-vertical="true"] .card {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  padding: 6px 10px 6px 6px;
+  height: auto;
+}
+.strip[data-vertical="true"] .title {
+  padding: 0;
+}
+.strip[data-vertical="true"] .disclosure {
+  position: static;
+}
+.strip[data-vertical="true"] .fallback {
+  font-size: 0;
+}
+.strip[data-vertical="true"] .detail:not([hidden]) {
+  margin: 0;
+  padding: 12px 14px;
+  border-inline-start: 0;
+  border-block-start: 1px solid var(--line);
 }
 .detail:not([hidden]) {
   margin-top: 5px;

@@ -10,6 +10,7 @@ export function SettingsPanel({
   showTriggerLabel = false,
   open: controlled,
   onOpenChange,
+  variant,
 }: {
   title: string;
   triggerLabel: string;
@@ -17,6 +18,7 @@ export function SettingsPanel({
   trigger?: ReactNode | false;
   showTriggerLabel?: boolean;
   open?: boolean;
+  variant?: "post" | "proposal";
   onOpenChange?: (value: boolean) => void;
 }) {
   const [localOpen, setLocalOpen] = useState(false);
@@ -83,6 +85,7 @@ export function SettingsPanel({
       <dialog
         ref={dialog}
         className="post-settings-drawer"
+        data-drawer-variant={variant}
         aria-labelledby={titleId}
         onCancel={(event) => {
           event.preventDefault();
@@ -106,7 +109,10 @@ export function SettingsPanel({
               <X size={20} aria-hidden="true" />
             </button>
           </header>
-          {mounted && children}
+          {mounted && (variant
+            ? <div className="post-settings-body">{children}</div>
+            : children
+          )}
         </div>
       </dialog>
     </>

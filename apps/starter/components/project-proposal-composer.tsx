@@ -3,9 +3,11 @@ import { ProjectMark } from "./project-mark";
 import { projectLabel } from "../lib/home-feed";
 import compact from "./compact-projects.module.css";
 import { useId, useRef, useState } from "react";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Plus, Sparkles } from "lucide-react";
 import { Button } from "@companynerve/ui";
 import { SettingsPanel } from "./settings-panel";
+import { ProposalArtifactCore } from "./assistant-elements/proposal-artifact-core";
+import type { FeedProposal } from "../lib/home-feed";
 import { ProjectFitBreakdown } from "./assistant-elements/project-fit-breakdown";
 import type {
   TopicFit,
@@ -35,6 +37,7 @@ export function ProjectProposalComposer({
   onSaved,
   onPreferencesChange,
   initialGoal = "",
+  aiFirst = false,
 }: {
   organizationId: string;
   sourceId: string;
@@ -58,6 +61,7 @@ export function ProjectProposalComposer({
   onSaved?: (proposalId: string) => void;
   onPreferencesChange?: () => void;
   initialGoal?: string;
+  aiFirst?: boolean;
 }) {
   const uid = useId();
   const [open, setOpen] = useState(false);
@@ -74,6 +78,11 @@ export function ProjectProposalComposer({
   const [error, setError] = useState("");
   const [uncertain, setUncertain] = useState(false);
   const [savedId, setSavedId] = useState<string>();
+  const [chatProposal, setChatProposal] = useState<FeedProposal>();
+  const pickedProject = projects.find((project) => project.id === projectId);
+  const pickedName = pickedProject
+    ? projectLabel(pickedProject.name)
+    : "your project";
   const [continuing, setContinuing] = useState(false);
   const [continued, setContinued] = useState(false);
   const pending = useRef<SaveInput | null>(null);
@@ -102,13 +111,19 @@ export function ProjectProposalComposer({
     )
     .slice(0, 3);
   function choose(id: string) {
-    if (!locked) setProjectId(id);
+    if (aiFirst && savedId && id !== projectId) {
+      setChatProposal(undefined);
+      setSavedId(undefined);
+      setGoal(initialGoal);
+      pending.current = null;
+    }
+    if (!locked || (aiFirst && savedId)) setProjectId(id);
     setOpen(true);
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (flight.current || disabled || savedId) return;
-    if (!pending.current && (!title.trim() || !goal.trim())) {
+    if (!aiFirst && !pending.current && (!title.trim() || !goal.trim())) {
       setError("Add a title and a goal for this proposal.");
       return;
     }
@@ -133,14 +148,29 @@ export function ProjectProposalComposer({
           analysisVersionId,
           insightIds,
           contextHash: context.contextHash,
-          title,
-          goal,
-          change,
+          title: aiFirst ? insight.title.slice(0, 160) : title,
+          goal: aiFirst
+            ? goal.trim() ||
+              "Find a useful, feasible improvement for this project using the attached post insights."
+            : goal,
+          change: aiFirst ? "" : change,
         });
       }
       const result = await call("projectProposalSave", pending.current);
       if (!result?.proposalId) throw Error("Save was not confirmed.");
       setSavedId(result.proposalId);
+      if (aiFirst && pickedProject) {
+        setChatProposal({
+          ...pending.current.body,
+          id: result.proposalId,
+          projectId,
+          projectName: pickedProject.name,
+          version: result.version ?? 1,
+          review: "unreviewed",
+          currentProblem: pending.current.body.currentProblem ?? undefined,
+          proposedChange: undefined,
+        });
+      }
       onSaved?.(result.proposalId);
       setUncertain(false);
     } catch (failure) {
@@ -260,8 +290,8 @@ export function ProjectProposalComposer({
                 <Plus size={16} aria-hidden="true" />
                 {visibleSuggestions.length
                   ? "Your other projects"
-                  : "More projects"}{" "}(
-                {moreProjects.length})
+                  : "More projects"}{" "}
+                ({moreProjects.length})
               </summary>
               <ul className={compact.list}>{moreProjects.map(projectTile)}</ul>
             </details>
@@ -368,24 +398,83 @@ export function ProjectProposalComposer({
         </>
       )}
       <SettingsPanel
-        title="Create proposal"
+        title={aiFirst ? "Proposal chat" : "Create proposal"}
         triggerLabel="Create proposal"
+        variant={aiFirst ? "proposal" : undefined}
         trigger={false}
         open={open}
         onOpenChange={setOpen}
       >
-        <details className="proposal-source-claim">
-          <summary>All post insights included</summary>
-          <ul>
-            {contextInsights.map((item) => (
-              <li key={item.id}>
-                <strong>{item.title}</strong>
-                <p>{item.claim}</p>
-              </li>
-            ))}
-          </ul>
-        </details>
-        {savedId ? (
+        {aiFirst && !chatProposal && (
+          <div className={compact.assistantIntro}>
+            <span className={compact.assistantMark}>
+              <Sparkles size={20} aria-hidden="true" />
+            </span>
+            <div>
+              <h3>Draft with AI for {pickedName}</h3>
+              <p>
+                Find a practical change using this post and the project’s
+                context.
+              </p>
+            </div>
+          </div>
+        )}
+        {!chatProposal && (
+          <details className="proposal-source-claim">
+            <summary>
+              {aiFirst ? "Insights included" : "All post insights included"}
+            </summary>
+            <ul>
+              {contextInsights.map((item) => (
+                <li key={item.id}>
+                  <strong>{item.title}</strong>
+                  <p>{item.claim}</p>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+        {aiFirst && chatProposal ? (
+          <ProposalArtifactCore
+            key={chatProposal.id}
+            presentation="reader"
+            chatOnly
+            proposal={chatProposal}
+            enabled={open}
+            readOnly={disabled}
+            href={`/app/${organizationId}/proposals/${chatProposal.id}`}
+            call={call}
+          />
+        ) : aiFirst ? (
+          <form className={compact.assistantForm} onSubmit={save}>
+            <label htmlFor={`${uid}-direction`}>
+              What should the AI focus on? <small>Optional</small>
+            </label>
+            <textarea
+              id={`${uid}-direction`}
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              maxLength={2000}
+              disabled={locked}
+              rows={3}
+              placeholder="Suggest a small change we could ship this week"
+            />
+            {error && <p role="alert">{error}</p>}
+            <Button
+              type="submit"
+              aria-busy={submitting}
+              disabled={disabled || submitting || !projectId}
+            >
+              <Sparkles size={16} aria-hidden="true" />
+              {uncertain
+                ? "Retry opening chat"
+                : submitting
+                  ? "Opening chat…"
+                  : "Start AI draft"}
+            </Button>
+            <small>You’ll see the credit limit before generation starts.</small>
+          </form>
+        ) : savedId ? (
           <section aria-live="polite">
             <h3>Proposal saved</h3>
             <p>Continue refining it in ChatGPT, Codex or VibeScroll.</p>

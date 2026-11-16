@@ -5,6 +5,7 @@
   min-height: 44px;
   color: var(--ink);
 }
+.requests,
 .row button {
   display: inline-flex;
   align-items: center;
@@ -18,6 +19,9 @@
   font-size: 14px;
   font-weight: 550;
   cursor: pointer;
+}
+.requests {
+  cursor: inherit;
 }
 .reaction {
   display: inline-flex;
@@ -53,19 +57,4 @@
 }
 .row button:hover:not(:disabled) {
   color: var(--teal);
-}
-.tooltip {
-  z-index: 100;
-  max-width: min(280px, calc(100vw - 32px));
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--panel);
-  color: var(--ink);
-  box-shadow: 0 4px 18px #00000014;
-  font-size: 12px;
-  line-height: 1.5;
-}
-.tooltipArrow {
-  fill: var(--panel);
 }

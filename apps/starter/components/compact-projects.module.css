@@ -79,3 +79,59 @@ button.tile:disabled {
 .disclosure[open] > summary > svg {
   rotate: 45deg;
 }
+
+.assistantIntro {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--teal) 8%, var(--panel));
+  border-radius: 12px;
+}
+.assistantMark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--teal);
+}
+.assistantIntro h3,
+.assistantIntro p {
+  margin: 0;
+}
+.assistantIntro h3 {
+  font-size: 1rem;
+}
+.assistantIntro p {
+  margin-top: 4px;
+  color: var(--subtle);
+}
+.assistantForm {
+  display: grid;
+  gap: 8px;
+}
+.assistantForm label {
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+.assistantForm small {
+  color: var(--subtle);
+  font-weight: 450;
+}
+.assistantForm textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  resize: vertical;
+}
+.assistantForm button {
+  justify-self: start;
+  min-height: 42px;
+}

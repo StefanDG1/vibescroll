@@ -927,7 +927,7 @@
 }
 @media (min-width: 1040px) {
   .feedPlaceholder {
-    width: min(100%, 1040px);
+    width: min(100%, 1440px);
     grid-template-columns: minmax(285px, .85fr) minmax(0, 1.15fr);
   }
   .placeholderSource,
@@ -1095,7 +1095,7 @@
   min-height: 220px;
 }
 :global(html):has(.feed[data-home-mode="review"]),
-:global(html):has(.feed[data-home-mode="browse"]) {
+:global(html):has(.feed[data-home-mode="browse"]:not([data-paused="true"])) {
   scroll-snap-type: none;
 }
 :global(html):has(.feed[data-home-mode="snap"]) {
@@ -1245,11 +1245,11 @@
 }
 @media (min-width: 1040px) {
   .post[data-feed-layout="browse"] {
-    width: min(100%, 1040px);
+    width: min(100%, 1440px);
   }
   .post[data-feed-layout="browse"] .columns {
     display: grid;
-    grid-template-columns: minmax(285px, 0.85fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
     gap: 0;
   }
   .post[data-feed-layout="browse"] .source {
@@ -1259,7 +1259,7 @@
     align-self: stretch;
   }
   .post[data-feed-layout="browse"] .poster {
-    height: clamp(220px, 40svh, 388px);
+    height: clamp(210px, 37svh, 430px);
   }
   .post[data-feed-layout="browse"] .modeDetails {
     border-inline-start: 1px solid var(--line);
@@ -1487,5 +1487,37 @@
   :global(html[data-motion="on"]) .snapDetails[open],
   :global(html[data-motion="on"]) .post[data-feed-layout="review"][data-feed-current="true"] .columns {
     animation: none;
+  }
+}
+
+.postActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 5px;
+}
+.postActions :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.825rem;
+}
+.postActions button {
+  color: var(--subtle);
+  cursor: pointer;
+}
+@media (min-width: 1040px) {
+  .post[data-feed-layout="browse"] :is(.source, .insights, .plans) {
+    --post-gutter: clamp(16px, 1.6vw, 26px);
+  }
+  .post[data-feed-layout="browse"] .plans {
+    border-radius: 0;
   }
 }

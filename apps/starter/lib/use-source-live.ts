@@ -107,7 +107,9 @@ function useMetadataLive(
             if (!controller.signal.aborted) receive(value);
           },
           () => {
-            if (!controller.signal.aborted) receive(null);
+            // Feed retains its authenticated snapshot during a transport error.
+            // A returned null still takes the access-revocation path above.
+            if (!controller.signal.aborted && mode !== "feed") receive(null);
           },
         );
       })

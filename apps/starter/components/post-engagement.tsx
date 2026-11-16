@@ -1,7 +1,5 @@
 "use client";
-import { useState } from "react";
 import { Heart, MoreVertical, Users } from "lucide-react";
-import { Tooltip } from "@companynerve/ui";
 import styles from "./post-engagement.module.css";
 
 /** Distinct people submitting a link, including cache hits, not outbound shares. */
@@ -11,7 +9,6 @@ export function PostEngagement({
   liked = false,
   onLike,
   onSettings,
-  busy = false,
   notice = "",
 }: {
   likes?: number;
@@ -19,10 +16,8 @@ export function PostEngagement({
   liked?: boolean;
   onLike?: () => void;
   onSettings?: () => void;
-  busy?: boolean;
   notice?: string;
 }) {
-  const [requestHelpOpen, setRequestHelpOpen] = useState(false);
   return (
     <>
       <div className={styles.row} data-slot="post-engagement">
@@ -34,8 +29,7 @@ export function PostEngagement({
             type="button"
             aria-label={liked ? "Unlike post" : "Like post"}
             aria-pressed={liked}
-            disabled={!onLike || busy}
-            aria-busy={busy}
+            disabled={!onLike}
             onClick={onLike}
           >
             <Heart
@@ -56,39 +50,17 @@ export function PostEngagement({
           </button>
         </span>
         <span className={styles.separator} aria-hidden="true" />
-        <Tooltip.Provider delayDuration={200}>
-          <Tooltip.Root
-            open={requestHelpOpen}
-            onOpenChange={setRequestHelpOpen}
-          >
-            <Tooltip.Trigger asChild>
-              <button
-                type="button"
-                onClick={() => setRequestHelpOpen(true)}
-                aria-label={
-                  requests === undefined
-                    ? "Post request count unavailable"
-                    : `${requests} ${requests === 1 ? "person has" : "people have"} requested this post`
-                }
-              >
-                <Users size={24} aria-hidden="true" />
-                <span>{requests ?? "—"}</span>
-              </button>
-            </Tooltip.Trigger>
-            <Tooltip.Portal>
-              <Tooltip.Content
-                className={styles.tooltip}
-                side="top"
-                sideOffset={8}
-                collisionPadding={16}
-              >
-                People who sent this link to VibeScroll, including cached
-                results. Each person counts once, since tracking began.
-                <Tooltip.Arrow className={styles.tooltipArrow} />
-              </Tooltip.Content>
-            </Tooltip.Portal>
-          </Tooltip.Root>
-        </Tooltip.Provider>
+        <span className={styles.requests}>
+          <Users size={24} aria-hidden="true" />
+          <span className="sr-only">
+            {requests === undefined
+              ? "Post request count unavailable"
+              : requests === 1
+                ? "1 person has requested this post"
+                : requests + " people have requested this post"}
+          </span>
+          <span aria-hidden="true">{requests ?? "—"}</span>
+        </span>
         {onSettings && (
           <button
             type="button"

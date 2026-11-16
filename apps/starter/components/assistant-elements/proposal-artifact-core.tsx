@@ -45,6 +45,7 @@ export function ProposalArtifactCore({
   renderLink,
   onNavigate,
   draftStorage,
+  chatOnly = false,
 }: {
   proposal: FeedProposal;
   call?: (operation: string, args: unknown) => Promise<any>;
@@ -61,6 +62,7 @@ export function ProposalArtifactCore({
   renderLink?: (href: string, children: ReactNode) => ReactNode;
   onNavigate?: (href: string) => void;
   draftStorage?: ProposalDraftStorage;
+  chatOnly?: boolean;
 }) {
   const [localOpen, setLocalOpen] = useState(initiallyOpen);
   const contentId = useId();
@@ -73,6 +75,7 @@ export function ProposalArtifactCore({
     call,
     transport,
     draftStorage,
+    chatOnly && !readOnly,
   );
   const live = work.snapshot;
   const proposal: FeedProposal = live
@@ -96,6 +99,7 @@ export function ProposalArtifactCore({
   const [copyFailed, setCopyFailed] = useState(false);
   const preview = useEffectEvent(() => void work.previewIssue());
   const canPreview =
+    !chatOnly &&
     enabled &&
     open &&
     !!live?.current &&
@@ -268,7 +272,7 @@ export function ProposalArtifactCore({
               <p>{proposal.currentProblem}</p>
             </section>
           )}
-          {(!feed || proposal.proposedChange || proposal.currentProblem) && (
+          {(!chatOnly || proposal.proposedChange) && (!feed || proposal.proposedChange || proposal.currentProblem) && (
             <section>
               {reader ? (
                 <h3>{proposal.proposedChange ? "Proposed change" : "Goal"}</h3>
@@ -315,7 +319,7 @@ export function ProposalArtifactCore({
               )}
             </section>
           )}
-          <ProposalWorkObservations handoff={live?.handoff} />
+          {!chatOnly && <ProposalWorkObservations handoff={live?.handoff} />}
           {((!reader && !feed) || enabled || !!proposal.discussion?.length) && (
             <div className={styles.discussion} aria-label="Plan discussion">
               {(enabled ? work.messages : proposal.discussion)?.map(
@@ -340,6 +344,9 @@ export function ProposalArtifactCore({
         </div>
         {enabled && (
           <>
+            {chatOnly && live === undefined && !work.error && (
+              <output className={styles.progress}>Opening saved draft…</output>
+            )}
             {work.uncertain && !work.error && (
               <ErrorState
                 title="Confirm the previous action"
@@ -469,12 +476,12 @@ export function ProposalArtifactCore({
               >
                 {proposal.steps?.length
                   ? "Update plan with credits"
-                  : "Generate plan with credits"}
+                  : chatOnly ? "Check credit limit" : "Generate plan with credits"}
               </button>
             )}
           </>
         )}
-        {!feed && (!reader || enabled) && (
+        {(!feed || chatOnly) && (!reader || enabled) && (!chatOnly || !!live?.generatedVersion) && (
           <div className={styles.composer}>
             <textarea
               aria-label={
@@ -522,7 +529,7 @@ export function ProposalArtifactCore({
             Earlier messages
           </button>
         )}
-        {feed ? (
+        {feed || chatOnly ? (
           <div className={styles.feedFooter}>
             {renderLink ? (
               renderLink(href, "Open full proposal")

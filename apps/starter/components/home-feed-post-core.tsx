@@ -19,6 +19,9 @@ import {
   MoreHorizontal,
   MoreVertical,
   Play,
+  Settings2,
+  ArrowUpRight,
+  FileText,
   Video,
   Heart,
   Image as ImageIcon,
@@ -147,15 +150,20 @@ export function FeedPostCardCore({
   const [demoLiked, setDemoLiked] = useState(true);
   const [pendingLike, setPendingLike] = useState<{
     scopeKey: string;
-    revision: number;
     liked: boolean;
   } | null>(null);
-  const likeBusy = pendingLike !== null;
   const [likeError, setLikeError] = useState("");
   const interfaceMotion = useInterfaceMotion();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const lastTap = useRef(0);
-  const likeFlight = useRef(false);
+  const likeQueue = useRef<{
+    scopeKey: string;
+    desired: boolean;
+  } | null>(null);
+  const latestEngagement = useRef(observedEngagement);
+  useEffect(() => {
+    latestEngagement.current = observedEngagement;
+  }, [observedEngagement]);
   const uid = useId();
   const sourceHref = preview
     ? "/onboarding"
@@ -173,7 +181,7 @@ export function FeedPostCardCore({
     ? detail.thumbnailAssetIds
     : post.thumbnailAssetIds;
   const topics = detail?.categoryKeys ?? [];
-  const insights = active ? (detail?.insights ?? []) : [];
+  const insights = detail?.insights ?? [];
   const expandedInsight =
     selected === null
       ? insights[0]
@@ -181,7 +189,7 @@ export function FeedPostCardCore({
   const insight = insights[0];
   const analysisVersionId = detail?.analysisVersionId;
   const allProjects = detail?.allProjects ?? detail?.projects ?? [];
-  const proposals = active ? (detail?.proposals ?? []) : [];
+  const proposals = detail?.proposals ?? [];
   const openPlan =
     expandedPlan === undefined && !mode ? proposals[0]?.id : expandedPlan;
   const recommendations =
@@ -195,8 +203,7 @@ export function FeedPostCardCore({
   const engagement = demo ? detail?.engagement : observedEngagement;
   const displayedLiked =
     pendingLike &&
-    engagement?.scopeKey === pendingLike.scopeKey &&
-    engagement.revision === pendingLike.revision
+    engagement?.scopeKey === pendingLike.scopeKey
       ? pendingLike.liked
       : engagement?.liked;
   const displayedLikes = engagement
@@ -205,35 +212,66 @@ export function FeedPostCardCore({
         engagement.likes + Number(displayedLiked) - Number(engagement.liked),
       )
     : undefined;
-  async function like(liked = !engagement?.liked, previous = engagement) {
-    if (!previous || likeFlight.current || readOnly) return;
-    likeFlight.current = true;
-    setPendingLike({
-      scopeKey: previous.scopeKey,
-      revision: previous.revision,
-      liked,
-    });
+  async function like(
+    liked = !(likeQueue.current?.desired ?? engagement?.liked),
+    previous = engagement,
+  ) {
+    if (!previous || readOnly) return;
+    const scopeKey = previous.scopeKey;
+    const inFlight = likeQueue.current;
+    if (inFlight && inFlight.scopeKey !== scopeKey) return;
+    const queue = inFlight ?? { scopeKey, desired: liked };
+    queue.desired = liked;
+    setPendingLike({ scopeKey, liked });
     setLikeError("");
+    if (inFlight) return;
+    likeQueue.current = queue;
+    let confirmed = previous;
+    let recovered = false;
     try {
-      const result = await call("setPostLike", {
-        organizationId,
-        sourceId: post.id,
-        liked,
-        expectedRevision: previous.revision,
-        key: crypto.randomUUID(),
-      });
-      onReaction(result);
-      return result as Pick<FeedEngagement, "scopeKey" | "liked" | "revision">;
-    } catch {
-      setLikeError("Could not confirm your reaction. Try again.");
-      void call("postEngagementRead", { organizationId, sourceIds: [post.id] })
-        .then((items: (FeedEngagement & { sourceId: string })[]) => {
+      while (confirmed.liked !== queue.desired) {
+        const target = queue.desired;
+        try {
+          const result: Pick<FeedEngagement, "scopeKey" | "liked" | "revision"> =
+            await call("setPostLike", {
+              organizationId,
+              sourceId: post.id,
+              liked: target,
+              expectedRevision: confirmed.revision,
+              key: crypto.randomUUID(),
+            });
+          if (
+            result.scopeKey !== scopeKey ||
+            result.revision <= confirmed.revision
+          ) throw new Error("The reaction revision changed.");
+          onReaction(result);
+          const observed = latestEngagement.current;
+          confirmed =
+            observed?.scopeKey === scopeKey && observed.revision > result.revision
+              ? observed
+              : { ...confirmed, ...result };
+        } catch (failure) {
+          const items: (FeedEngagement & { sourceId: string })[] | undefined =
+            await call("postEngagementRead", {
+              organizationId,
+              sourceIds: [post.id],
+            }).catch(() => undefined);
           const current = items?.find((item) => item.sourceId === post.id);
-          if (current) onReaction(current);
-        })
-        .catch(() => {});
+          if (!current || current.scopeKey !== scopeKey) throw failure;
+          onReaction(current);
+          confirmed = current;
+          if (current.liked === queue.desired) break;
+          const stale = failure instanceof Error && "code" in failure &&
+            failure.code === "APPROVAL_STALE";
+          if (recovered || (!stale && queue.desired === target)) throw failure;
+          recovered = true;
+        }
+      }
+      return confirmed;
+    } catch {
+      setLikeError("Could not save your reaction. Try again.");
     } finally {
-      likeFlight.current = false;
+      likeQueue.current = null;
       setPendingLike(null);
     }
   }
@@ -259,7 +297,7 @@ export function FeedPostCardCore({
   }
   function likeFromMedia() {
     if (demo) setDemoLiked(true);
-    else if (engagement && !engagement.liked) void like(true);
+    else if (engagement && !displayedLiked) void like(true);
   }
   function pointerDown(event: PointerEvent<HTMLElement>) {
     if (
@@ -362,7 +400,6 @@ export function FeedPostCardCore({
             ? () => void like()
             : undefined
       }
-      busy={likeBusy}
       notice={likeError}
       onSettings={mode ? undefined : () => setSettingsOpen(true)}
     />
@@ -496,7 +533,7 @@ export function FeedPostCardCore({
               type="button"
               aria-label="Like"
               title="Like"
-              disabled={!demo && (!engagement || likeBusy || readOnly)}
+              disabled={!demo && (!engagement || readOnly)}
               onClick={() => void reviewLike()}
             >
               <Heart size={21} aria-hidden="true" />
@@ -584,18 +621,19 @@ export function FeedPostCardCore({
               Continue setup
             </button>
           </div>
-        ) : error && active ? (
+        ) : error && active && !detail ? (
           <ErrorState
             title="Insights unavailable"
             detail={error}
             onRetry={onRetry}
             action={<a href={sourceHref}>Open post</a>}
           />
-        ) : !detail || !active ? (
+        ) : !detail ? (
           <FeedSkeleton label="Insights load as this post approaches" />
         ) : mode && insights.length ? (
           <PostInsightStrip
             insights={insights}
+            desktopList={mode === "browse"}
             selected={selected === null ? undefined : expandedInsight?.id}
             onSelect={(id) => setSelected(selected === id ? "closed" : id)}
             renderFrame={(id) =>
@@ -782,7 +820,7 @@ export function FeedPostCardCore({
               could make. You can discuss and edit it before acting.
             </p>
           </div>
-        ) : !detail || !active ? (
+        ) : !detail ? (
           <FeedSkeleton label="Project plans load with this post" />
         ) : mode ? (
           <>
@@ -797,6 +835,7 @@ export function FeedPostCardCore({
                 sourceTitle={title}
                 projects={detail.projects}
                 compactProjects={allProjects}
+                aiFirst={mode === "browse" && !demo}
                 suggestions={detail.suggestions.items}
                 disabled={readOnly || demo}
                 call={call}
@@ -816,6 +855,10 @@ export function FeedPostCardCore({
                   key={proposal.id}
                   proposal={proposal}
                   presentation="feed"
+                  chatOnly={mode === "browse" && !demo}
+                  enabled={mode === "browse" && !demo && active}
+                  readOnly={readOnly}
+                  call={call}
                   open={openPlan === proposal.id}
                   onOpenChange={(open) =>
                     setExpandedPlan(open ? proposal.id : null)
@@ -830,7 +873,12 @@ export function FeedPostCardCore({
             ) : (
               <p>No proposals yet.</p>
             )}
-            <a href={sourceHref}>Open full post</a>
+            <div className={styles.postActions}>
+              <a href={sourceHref}>Open full post</a>
+              <button type="button" onClick={() => setSettingsOpen(true)}>
+                <Settings2 size={16} aria-hidden="true" /> Advanced settings
+              </button>
+            </div>
           </>
         ) : (
           <>
@@ -925,7 +973,7 @@ export function FeedPostCardCore({
       ref={article}
       className={styles.post}
       data-feed-post={post.id}
-      data-loaded={!!detail && active}
+      data-loaded={!!detail}
       data-feed-layout={mode}
       data-feed-current={current}
       hidden={skipped || (mode === "review" && !current)}
@@ -996,44 +1044,34 @@ export function FeedPostCardCore({
       <SettingsPanel
         title="Post settings"
         triggerLabel="Post settings"
+        variant="post"
         trigger={false}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       >
-        <h3>{title}</h3>
-        <p>{author}</p>
-        {topics.length > 0 && (
-          <ul className={styles.tags}>
-            {topics.map((topic) => (
-              <li key={topic}>{postTopicName(topic)}</li>
-            ))}
-          </ul>
-        )}
-        <h4>About this post</h4>
-        <p>{detail?.summary}</p>
-        {detail?.url && (
-          <p>
-            <a href={detail.url} target="_blank" rel="noopener noreferrer">
-              Open original post
-            </a>
-          </p>
-        )}
-        <h4>Analysis and evidence</h4>
-        {preview ? (
-          preview.evidence
-        ) : (
-          <a className="button" href={sourceHref}>
-            Open complete post
-          </a>
-        )}
-        <p className="fine">
-          Version history, transcript, screenshots and advanced analysis options
-          are on the complete post.
-        </p>
-        <p className="fine">
-          Post requests count people who sent this link to VibeScroll, including
-          cached results. Each person counts once, since tracking began.
-        </p>
+        <section className="post-settings-group" aria-label="Source and evidence">
+          <h3>Source and evidence</h3>
+          <div className="post-settings-links">
+            {detail?.url && (
+              <a href={detail.url} target="_blank" rel="noopener noreferrer">
+                <ArrowUpRight size={18} aria-hidden="true" />
+                <span><strong>Original post</strong><small>Open on the source platform</small></span>
+              </a>
+            )}
+            {preview ? preview.evidence : (
+              <>
+                <a href={`${sourceHref}#post-settings-evidence`}>
+                  <FileText size={18} aria-hidden="true" />
+                  <span><strong>Source evidence</strong><small>Transcript, caption and saved frames</small></span>
+                </a>
+                <a href={`${sourceHref}#post-settings`}>
+                  <Settings2 size={18} aria-hidden="true" />
+                  <span><strong>Analysis and post controls</strong><small>Versions, categories, privacy and processing</small></span>
+                </a>
+              </>
+            )}
+          </div>
+        </section>
       </SettingsPanel>
     </article>
   );

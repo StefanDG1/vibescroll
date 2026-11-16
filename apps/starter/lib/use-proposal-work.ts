@@ -22,6 +22,7 @@ export function useProposalWork(
   call?: Call,
   transport: "web" | "mcp" = "web",
   draftStorage?: ProposalDraftStorage,
+  quoteFirstDraft = false,
 ) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>();
   const [error, setError] = useState("");
@@ -192,7 +193,7 @@ export function useProposalWork(
     : "";
   const autoQuote =
     enabled &&
-    !!snapshot?.generatedVersion &&
+    !!snapshot && (quoteFirstDraft || !!snapshot.generatedVersion) &&
     !!snapshot.current &&
     !["queued", "running", "unknown"].includes(snapshot.operation?.state ?? "");
   useEffect(() => {

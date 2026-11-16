@@ -2,6 +2,8 @@
 
 R178, November 16. Continue with Browse and improve the entire signed-in app, onboarding and public website, including the separate marketing site. Work in parallel within 90 minutes, retest and rescore after each pass, and aim for at least an 8/10 average on each screen. Keep the visual presentation consistent between the local preview and production, without local-only labels or banners. Follow-up selects Browse as the only Home layout, removes the Home header and picker, and delegates responsive differences to improve the score. Keep the desktop rail icon. [November 16 review](../design/APP-UI-REVIEW-2026-11-16.md).
 
+R178 production acceptance. The VibeScroll app and public site serve 73cc8ea after exact GitHub CI and the same staged build passed phone and desktop checks. The separate marketing package passed CI. It has no dedicated VibeScroll production destination. [Deployment and verification](../operations/evidence/launch-20261116-website-redesign.json).
+
 R177, November 15. Choose the Home design that best fits VibeScroll, improve all screens, and review each iteration from browser captures. The target is at least 8 in every category and at least 8 overall per screen. [Iteration results and open coverage](../design/APP-UI-REVIEW-2026-11-15.md).
 
 R176, November 14. Rescore Home with detailed UI criteria and real posts. Put insights and projects in the scroll flow, use icon-only Like and Pass controls, remove navigation arrows and the creator help control, and compact the project picker with project favicons. [Home UI scorecard](../design/HOME-UI-SCORECARD.md).

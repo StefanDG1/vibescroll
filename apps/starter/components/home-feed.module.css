@@ -1446,6 +1446,16 @@
   .post[data-feed-layout="browse"] .sourceCopy .tags {
     gap: 4px;
   }
+  .post[data-feed-layout="browse"] .sourceCopy :global([data-slot="post-engagement"]) {
+    column-gap: clamp(6px, 2vw, 10px);
+  }
+  .post[data-feed-layout="browse"] .sourceCopy :global([data-slot="post-engagement"] button) {
+    column-gap: 4px;
+    white-space: nowrap;
+  }
+  .post[data-feed-layout="browse"] .sourceCopy :global([data-slot="post-engagement"] button svg) {
+    flex: none;
+  }
   .post[data-feed-layout="browse"] .play {
     width: 44px;
     height: 44px;

@@ -5,7 +5,7 @@ import { PublicPage } from "@/components/site";
 import Link from "next/link";
 import { PolicyDocument } from "@/components/policy-document";
 import { publicPolicyDocuments as legal } from "../../../../packages/policy/public-documents";
-import { ProOfferSummary } from "@/components/pro-offer-summary";
+import { PublicPricing } from "@/components/public-pricing";
 const pages: Record<string, { title: string; body: string[] }> = {
   "how-it-works": {
     title: "From saved idea to reviewed change",
@@ -71,7 +71,10 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   return {
-    title: pages[slug]?.title ?? slug.replaceAll("-", " "),
+    title:
+      slug === "pricing"
+        ? "VibeScroll Pro pricing"
+        : (pages[slug]?.title ?? slug.replaceAll("-", " ")),
     robots: {
       index: process.env.SEO_PUBLIC_INDEXING === "true" && !legal[slug],
       follow: true,
@@ -85,49 +88,14 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  if (slug === "pricing")
-    return (
-      <PublicPage>
-        <h1>One Pro plan. Choose your renewal.</h1>
-        <p>
-          EUR prices. The launch offer is being prepared; checkout confirms
-          availability and the total before payment.
-        </p>
-        <article className="panel">
-          <ProOfferSummary />
-          <Link
-            prefetch={false}
-            className="primary"
-            href="/app?view=billing&tier=pro"
-          >
-            View Pro availability
-          </Link>
-        </article>
-        <h2>How credits work</h2>
-        <p>
-          See the credit estimate before starting paid work. Preparation and
-          analysis are quoted separately; model and video length affect usage.
-          Annual credits replenish monthly. Included credits expire at the
-          period boundary; purchased credits stay separate.
-        </p>
-        <p>
-          The open-source edition is self-hosted. Hosted catalogue data is
-          separate, and full-catalog browsing is an additional entitlement.
-        </p>
-        <p>
-          <Link href="/refunds">Refund and withdrawal policy</Link> ·{" "}
-          <Link href="/terms">Terms</Link> ·{" "}
-          <Link href="/contact">Business enquiry</Link>
-        </p>
-      </PublicPage>
-    );
+  if (slug === "pricing") return <PublicPricing />;
   if (legal[slug]) {
     const text = await readFile(
       join(process.cwd(), "content/legal", `${legal[slug]}.md`),
       "utf8",
     );
     return (
-      <PublicPage>
+      <PublicPage layout="reader">
         <PolicyDocument text={text} />
       </PublicPage>
     );
@@ -135,12 +103,57 @@ export default async function Page({
   const p = pages[slug];
   if (!p) notFound();
   return (
-    <PublicPage>
-      <article className="prose">
+    <PublicPage layout="reader">
+      <article className="public-article">
         <h1>{p.title}</h1>
-        {p.body.map((s) => (
-          <p key={s}>{s}</p>
-        ))}
+        {slug === "how-it-works" ? (
+          <ol className="public-workflow-list">
+            {[
+              "Save the source",
+              "Check the evidence",
+              "Review a project match",
+              "Review the proposal",
+              "Inspect the result",
+            ].map((title, index) => (
+              <li key={title}>
+                <h2>{title}</h2>
+                <p>{p.body[index]}</p>
+              </li>
+            ))}
+          </ol>
+        ) : slug === "about" ? (
+          <>
+            <blockquote>{p.body[0]}</blockquote>
+            <p>{p.body[1]}</p>
+          </>
+        ) : slug === "faq" ? (
+          <div className="public-faq-list">
+            {[
+              "Do I need GitHub?",
+              "What posts can I analyze?",
+              "Do I need to leave my computer on?",
+              "How does ChatGPT usage work?",
+              "What happens after a project proposal?",
+            ].map((title, index) => (
+              <details key={title}>
+                <summary>{title}</summary>
+                <p>{p.body[index]}</p>
+              </details>
+            ))}
+          </div>
+        ) : (
+          p.body.map((s) => <p key={s}>{s}</p>)
+        )}
+        {slug === "how-it-works" && (
+          <div className="public-actions">
+            <Link className="primary" href="/example">
+              Open an example
+            </Link>
+            <Link className="secondary" href="/help">
+              Find a how-to guide
+            </Link>
+          </div>
+        )}
         {slug === "docs" && (
           <div className="row">
             <Link className="primary" href="/help/getting-started">
@@ -155,16 +168,12 @@ export default async function Page({
           </div>
         )}
         {slug === "faq" && (
-          <ul>
-            <li>
-              <Link href="/docs/workflows/find-save#links-for-automatic-analysis">
-                See supported post links
-              </Link>
-            </li>
-            <li>
-              <Link href="/help">Find help with your task</Link>
-            </li>
-          </ul>
+          <div className="public-support-links">
+            <Link href="/docs/workflows/find-save#links-for-automatic-analysis">
+              See supported post links
+            </Link>
+            <Link href="/help">Find help with your task</Link>
+          </div>
         )}
         {slug === "contact" && (
           <a className="primary" href="mailto:contact@exponentialeducation.ro">

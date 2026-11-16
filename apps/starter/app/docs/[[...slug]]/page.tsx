@@ -74,6 +74,16 @@ export default async function DocumentationPage({
       </span>
       <DocsTitle>{page.title}</DocsTitle>
       <DocsDescription>{page.description}</DocsDescription>
+      {page.slug === "" && (
+        <nav
+          className="docs-quick-links"
+          aria-label="Common documentation tasks"
+        >
+          <Link href="/docs/workflows/find-save">Find and save a post</Link>
+          <Link href="/docs/workflows/analyze">Get insights</Link>
+          <Link href="/docs/workflows/proposals">Apply ideas to a project</Link>
+        </nav>
+      )}
       {page.diagram && <McpDiagram kind={page.diagram} />}
       <DocsBody>
         <Markdown

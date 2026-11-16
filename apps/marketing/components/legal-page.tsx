@@ -12,16 +12,27 @@ export function LegalPage({
   return (
     <div className="container">
       <Header />
-      <main id="main" className="doc">
-        <p className="intro">{company.product.name} · Legal information</p>
+      <main id="main" className="doc marketing-doc marketing-policy">
         <h1>{title}</h1>
         <p className="muted">Last updated September 11, 2026.</p>
         <nav aria-label="Legal information" className="navlinks">
-          <Link href="/privacy">Privacy policy</Link>
+          <Link
+            href="/privacy"
+            aria-current={title === "Privacy policy" ? "page" : undefined}
+          >
+            Privacy policy
+          </Link>
           {company.website.kind === "template" && (
             <Link href="/terms">Terms of use</Link>
           )}
-          {company.website.operator && <Link href="/legal">Legal notice</Link>}
+          {company.website.operator && (
+            <Link
+              href="/legal"
+              aria-current={title === "Legal notice" ? "page" : undefined}
+            >
+              Legal notice
+            </Link>
+          )}
         </nav>
         {children}
       </main>

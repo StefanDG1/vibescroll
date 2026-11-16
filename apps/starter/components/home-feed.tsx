@@ -87,10 +87,12 @@ export function HomeFeed({
   const consumedGesture = useRef(-1);
   const liveKeys = useRef(new Map<string, string>());
   const readyPosts = posts.filter((post) => post.state === "ready");
+  const currentPostId = readyPosts.some((post) => post.id === activeId)
+    ? activeId
+    : readyPosts[0]?.id;
   const neighborKey = JSON.stringify(feedNeighbors(readyPosts, activeId));
   const neighbors: string[] = JSON.parse(neighborKey);
   const base = demo ? "/demo" : `/app/${organizationId}`;
-
   const clearAccess = useCallback(() => {
     try {
       if (bookmarkScope.current)
@@ -364,7 +366,12 @@ export function HomeFeed({
           if (!controller.signal.aborted)
             setDetailErrors((current) => ({
               ...current,
-              [id]: failure.message,
+              [id]:
+                failure instanceof TypeError
+                  ? "Check your connection and try again."
+                  : failure instanceof SyntaxError
+                    ? "The insights could not be loaded. Try again."
+                    : failure.message,
             }));
         })
         .finally(() => {
@@ -448,7 +455,11 @@ export function HomeFeed({
   }, [next, loading, error, denied, loadPage]);
 
   return (
-    <section className={styles.feed} aria-label="Your analyzed posts">
+    <section
+      className={styles.feed}
+      aria-label="Your analyzed posts"
+      data-home-mode="browse"
+    >
       {!demo && loaded && newReadyPosts(posts, recentReady) > 0 && (
         <button
           type="button"
@@ -471,54 +482,74 @@ export function HomeFeed({
       )}
       {demo && <span className={styles.demoLabel}>Synthetic demo</span>}
       {!loaded && !error && (
-        <output className={styles.initialLoading}>Loading your posts…</output>
+        <output className={styles.feedPlaceholder} aria-label="Loading posts">
+          <span className={styles.placeholderSource} aria-hidden="true">
+            <span className={styles.placeholderAuthor} />
+            <span className={styles.placeholderMedia} />
+            <span className={styles.placeholderCopy}>
+              <span />
+              <span />
+              <span />
+            </span>
+          </span>
+          <span className={styles.placeholderInsights} aria-hidden="true">
+            <span className={styles.placeholderAuthor} />
+            <span className={styles.placeholderCards}>
+              <span />
+              <span />
+              <span />
+            </span>
+          </span>
+        </output>
       )}
-      {readyPosts.map((post, index) => (
-        <FeedPostCard
-          key={post.id}
-          post={post}
-          detail={details[post.id]}
-          engagement={engagement[post.id]}
-          onReaction={(ack) =>
-            setEngagement((current) => {
-              const previous = current[post.id];
-              if (
-                !previous ||
-                previous.scopeKey !== ack.scopeKey ||
-                previous.revision > ack.revision
-              )
-                return current;
-              return {
-                ...current,
-                [post.id]: {
-                  ...previous,
-                  liked: ack.liked,
-                  revision: ack.revision,
-                },
-              };
-            })
-          }
-          active={neighbors.includes(post.id)}
-          demo={demo}
-          error={detailErrors[post.id]}
-          organizationId={organizationId}
-          readOnly={readOnly}
-          call={call}
-          base={base}
-          onVisible={() => {
-            if (!restoreTarget.current || restoreTarget.current === post.id)
-              setActiveId(post.id);
-          }}
-          onRetry={() => {
-            setDetailErrors((current) => {
-              const copy = { ...current };
-              delete copy[post.id];
-              return copy;
-            });
-            setRevision((value) => value + 1);
-          }}
-          nextPost={readyPosts[index + 1]}
-        />
+      {readyPosts.map((post) => (
+          <FeedPostCard
+            key={post.id}
+            post={post}
+            detail={details[post.id]}
+            engagement={engagement[post.id] ?? details[post.id]?.engagement}
+            onReaction={(ack) =>
+              setEngagement((current) => {
+                const previous =
+                  current[post.id] ?? details[post.id]?.engagement;
+                if (
+                  !previous ||
+                  previous.scopeKey !== ack.scopeKey ||
+                  previous.revision > ack.revision
+                )
+                  return current;
+                return {
+                  ...current,
+                  [post.id]: {
+                    ...previous,
+                    liked: ack.liked,
+                    revision: ack.revision,
+                  },
+                };
+              })
+            }
+            active={neighbors.includes(post.id)}
+            mode="browse"
+            current={post.id === currentPostId}
+            demo={demo}
+            error={detailErrors[post.id]}
+            organizationId={organizationId}
+            readOnly={readOnly}
+            call={call}
+            base={base}
+            onVisible={() => {
+              if (!restoreTarget.current || restoreTarget.current === post.id)
+                setActiveId(post.id);
+            }}
+            onRetry={() => {
+              setDetailErrors((current) => {
+                const copy = { ...current };
+                delete copy[post.id];
+                return copy;
+              });
+              setRevision((value) => value + 1);
+            }}
+          />
       ))}
       {loaded && !error && readyPosts.length === 0 && (
         <div className={styles.empty}>

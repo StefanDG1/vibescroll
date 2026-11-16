@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { Copy } from "lucide-react";
 import { setupDescriptor, setupPrompt } from "../../../packages/widget/setup";
 
 export function McpConnectGuide() {
@@ -15,13 +16,16 @@ export function McpConnectGuide() {
     }
   };
   return (
-    <section aria-label="MCP connection instructions">
-      <div className="row">
+    <section
+      className="public-connect-guide"
+      aria-label="MCP connection instructions"
+    >
+      <div className="public-actions">
         <button
           className="primary"
           onClick={() => void copy(setupPrompt, "Agent setup prompt")}
         >
-          Copy agent setup prompt
+          <Copy size={16} aria-hidden="true" /> Copy agent setup prompt
         </button>
         <button
           className="secondary"
@@ -31,38 +35,42 @@ export function McpConnectGuide() {
         </button>
       </div>
       <output aria-live="polite">{message}</output>
-      <h2>Connect from ChatGPT</h2>
-      <ol>
-        <li>Open Plugins and add a custom MCP server.</li>
-        <li>
-          Use <code>{setupDescriptor.server.url}</code> with OAuth
-          authentication.
-        </li>
-        <li>Complete the host confirmation and official sign-in yourself.</li>
-        <li>
-          Review the workspace and access you want to grant in VibeScroll
-          Connections.
-        </li>
-        <li>
-          Open VibeScroll in a new conversation. Widgets require a host with MCP
-          Apps support.
-        </li>
-      </ol>
-      <h2>Connect from Codex</h2>
-      <p>
-        Ask your agent to inspect its installed version and existing MCP
-        configuration first. The normal HTTP setup is:
-      </p>
-      <pre>
-        <code>{`codex mcp add vibescroll --url ${setupDescriptor.server.url}\ncodex mcp login vibescroll`}</code>
-      </pre>
-      <p>
-        If the authorization server requires predefined public client
-        configuration, use the host-specific configuration supplied by the
-        operator. Never paste a private token, code, or password into chat.
-      </p>
-      <details>
-        <summary>Read or copy the full agent prompt</summary>
+      <details className="public-connect-section" open>
+        <summary>Connect from ChatGPT</summary>
+        <ol>
+          <li>Open Plugins and add a custom MCP server.</li>
+          <li>
+            Use <code>{setupDescriptor.server.url}</code> with OAuth
+            authentication.
+          </li>
+          <li>Complete the host confirmation and official sign-in yourself.</li>
+          <li>
+            Review the workspace and access you want to grant in VibeScroll
+            Connections.
+          </li>
+          <li>
+            Open VibeScroll in a new conversation. Widgets require a host with
+            MCP Apps support.
+          </li>
+        </ol>
+      </details>
+      <details className="public-connect-section">
+        <summary>Connect from Codex</summary>
+        <p>
+          Ask your agent to inspect its installed version and existing MCP
+          configuration first. The normal HTTP setup is:
+        </p>
+        <pre>
+          <code>{`codex mcp add vibescroll --url ${setupDescriptor.server.url}\ncodex mcp login vibescroll`}</code>
+        </pre>
+        <p>
+          If the authorization server requires predefined public client
+          configuration, use the host-specific configuration supplied by the
+          operator. Never paste a private token, code, or password into chat.
+        </p>
+      </details>
+      <details className="public-connect-section">
+        <summary>Read the agent setup prompt</summary>
         <textarea
           aria-label="Agent setup prompt"
           value={setupPrompt}

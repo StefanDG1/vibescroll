@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PublicPage } from "@/components/site";
+import { PublicIntro, PublicPage } from "@/components/site";
 export const metadata = {
   title: "Open source, one maintained core",
   description:
@@ -9,23 +9,22 @@ export const metadata = {
 export default function OpenSource() {
   return (
     <PublicPage>
-      <section className="help-intro">
-        <h1>Your library. Inspectable software.</h1>
+      <PublicIntro title="Open-source VibeScroll">
         <p>
           VibeScroll's V1 code is MIT, with CompanyNerve and third-party notices
           preserved. The hosted service supplies managed operation,
           organization, storage within quota and its stated processing
           allowance.
         </p>
-        <div className="row">
-          <a className="primary" href="https://github.com/StefanDG1/vibescroll">
-            View the repository
-          </a>
-          <Link className="secondary" href="/example">
-            Inspect an example
-          </Link>
-        </div>
-      </section>
+      </PublicIntro>
+      <div className="public-actions">
+        <a className="primary" href="https://github.com/StefanDG1/vibescroll">
+          View the repository
+        </a>
+        <Link className="secondary" href="/example">
+          Inspect an example
+        </Link>
+      </div>
       <h2>Choose a starting path</h2>
       <div className="public-table">
         <table>

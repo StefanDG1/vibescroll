@@ -32,6 +32,12 @@ export function Header() {
             <a href={repository}>GitHub</a>
           </>
         )}
+        {company.website.kind === "product" && (
+          <>
+            <a href={company.website.appUrl + "/pricing"}>Pricing</a>
+            <a href={company.website.appUrl + "/help"}>Help</a>
+          </>
+        )}
         <a href={company.website.appUrl + "/sign-in"}>Sign in</a>
       </nav>
     </header>
@@ -59,6 +65,12 @@ export function Footer() {
         <Link href="/privacy">Privacy</Link>
         {company.website.kind === "template" && (
           <Link href="/terms">Terms</Link>
+        )}
+        {company.website.kind === "product" && (
+          <>
+            <a href={company.website.appUrl + "/docs"}>Docs</a>
+            <a href={company.website.appUrl + "/terms"}>Terms</a>
+          </>
         )}
         {company.website.operator && <Link href="/legal">Legal notice</Link>}
         <a href={"mailto:" + company.website.supportEmail}>Contact</a>
@@ -183,11 +195,13 @@ export function Landing({
                 on what makes your product useful.
               </p>
               <div className="actions">
-                <Button asChild>
-                  <a href={company.website.appUrl + "/sign-up"}>
-                    Create a free account
-                  </a>
-                </Button>
+                {company.website.kind === "template" && (
+                  <Button asChild>
+                    <a href={company.website.appUrl + "/sign-up"}>
+                      Create a free account
+                    </a>
+                  </Button>
+                )}
                 <Button variant="outline" asChild>
                   <a href={repository}>Explore the free template</a>
                 </Button>

@@ -2,14 +2,21 @@
   width: 100%;
   max-width: 880px;
   margin-inline: auto;
-  height: min(760px, calc(100dvh - 210px));
-  min-height: 420px;
   display: flex;
   flex-direction: column;
 }
-@media (max-width: 720px) {
-  .reader {
-    height: calc(100dvh - 210px);
-    min-height: 360px;
-  }
+.references {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 8px;
+}
+.references a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 7px;
+  color: var(--teal);
+  font-size: 0.86rem;
+  font-weight: 550;
 }

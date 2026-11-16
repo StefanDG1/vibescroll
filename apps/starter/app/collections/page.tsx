@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { PublicPage } from "@/components/site";
-import { PublicKnowledgePending } from "@/components/public-knowledge-pending";
-import { PublicCollectionList } from "@/components/public-collection-list";
+import { PublicIntro, PublicPage } from "@/components/site";
+import { PublicCollectionDirectory } from "@/components/public-collection-directory";
 import { discoverPublic } from "@/lib/public-knowledge";
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -20,35 +19,19 @@ export default async function Collections({
   const result = await discoverPublic(topic, search.cursor ?? null);
   return (
     <PublicPage>
-      <h1>Knowledge worth returning to.</h1>
-      <p>
-        Read current public editions without signing in. A collection contains
-        deliberately published material, not somebody else's private library.
-      </p>
-      <form className="row" action="/collections">
-        <label>
-          Topic
-          <input name="topic" maxLength={48} defaultValue={topic} />
-        </label>
-        <button type="submit">Find collections</button>
-      </form>
-      {result.state !== "ready" ? (
-        <PublicKnowledgePending unavailable={result.state === "unavailable"} />
-      ) : (
-        <>
-          <PublicCollectionList collections={result.data!.page} />
-          {!result.data!.isDone && (
-            <Link
-              href={`/collections?${new URLSearchParams({ topic, cursor: result.data!.continueCursor })}`}
-            >
-              Next collections page
-            </Link>
-          )}
-        </>
-      )}
-      <p>
-        <Link href="/discover">Find public collections</Link> ·{" "}
-        <Link href="/example">Synthetic example</Link>
+      <PublicIntro title="Public collections">
+        <p>
+          Published editions and their evidence are available without signing
+          in.
+        </p>
+      </PublicIntro>
+      <PublicCollectionDirectory
+        path="/collections"
+        topic={topic}
+        result={result}
+      />
+      <p className="public-next">
+        <Link href="/discover">Go to Discover</Link>
       </p>
     </PublicPage>
   );

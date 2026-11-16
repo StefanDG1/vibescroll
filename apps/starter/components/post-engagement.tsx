@@ -18,7 +18,7 @@ export function PostEngagement({
   requests?: number;
   liked?: boolean;
   onLike?: () => void;
-  onSettings: () => void;
+  onSettings?: () => void;
   busy?: boolean;
   notice?: string;
 }) {
@@ -89,14 +89,16 @@ export function PostEngagement({
             </Tooltip.Portal>
           </Tooltip.Root>
         </Tooltip.Provider>
-        <button
-          type="button"
-          onClick={onSettings}
-          className={styles.more}
-          aria-label="Post settings"
-        >
-          <MoreVertical size={22} aria-hidden="true" />
-        </button>
+        {onSettings && (
+          <button
+            type="button"
+            onClick={onSettings}
+            className={styles.more}
+            aria-label="Post settings"
+          >
+            <MoreVertical size={22} aria-hidden="true" />
+          </button>
+        )}
       </div>
       {notice && (
         <p role="alert" className={styles.notice}>

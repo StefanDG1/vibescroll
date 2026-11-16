@@ -56,6 +56,7 @@ import {
 } from "../../../packages/onboarding/flow";
 import { track } from "@/lib/analytics";
 import styles from "./onboarding.module.css";
+import "../app/public-consent.css";
 
 const icons = {
   code: Code2,
@@ -97,7 +98,7 @@ export function OnboardingShell({
   authenticated?: boolean;
 }) {
   return (
-    <main id="main" className={styles.shell}>
+    <main id="main" className={styles.shell} data-onboarding-shell>
       <AppTheme />
       <header className={styles.top}>
         <Link href="/" className={styles.brand}>
@@ -319,19 +320,18 @@ export function Onboarding({
           <section className={styles.welcome}>
             <div>
               <h1 ref={heading} tabIndex={-1}>
-                Make your forgotten posts useful again.
+                Put forgotten saves to work.
               </h1>
-              <p>You saved it because it could help. Then it got buried.</p>
               <p className={styles.subtle}>
-                Rediscover the useful ideas and put them to work in the things
-                you are building.
+                Go back to the posts you saved for a reason. Find the useful
+                ideas and see where they fit your projects.
               </p>
               <button
                 type="button"
                 className={styles.primary}
                 onClick={() => go("goal")}
               >
-                Get started <ArrowRight size={17} />
+                Get started <ArrowRight size={17} aria-hidden="true" />
               </button>
               <p className={styles.footnote}>
                 Import earlier saves or start with a link.{" "}
@@ -571,8 +571,8 @@ export function Onboarding({
         )}
         {step === "feed" && (
           <>
-            <h1 ref={heading} tabIndex={-1} className={styles.visuallyHidden}>
-              Find the useful idea
+            <h1 ref={heading} tabIndex={-1} className={styles.feedTitle}>
+              Start with a post
             </h1>
             <OnboardingStarterFeed
               draft={draft}

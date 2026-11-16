@@ -1,0 +1,81 @@
+.caption {
+  color: var(--subtle);
+  font-size: 0.8125rem;
+  margin: 0 0 4px;
+}
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: 4px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tile:is(a, button, span) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  text-align: start;
+  text-decoration: none;
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+button.tile:enabled,
+a.tile,
+.disclosure summary {
+  cursor: pointer;
+}
+button.tile:enabled:hover,
+a.tile:hover,
+.disclosure summary:hover {
+  background: var(--soft);
+}
+button.tile:disabled {
+  opacity: 0.62;
+}
+.tile > span:last-child {
+  overflow-wrap: anywhere;
+}
+.mark {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--soft);
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+}
+.mark img {
+  display: block;
+  border-radius: 4px;
+}
+.disclosure {
+  margin-top: 4px;
+}
+.disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  width: fit-content;
+  list-style: none;
+  font-size: 0.875rem;
+  color: var(--subtle);
+}
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.disclosure[open] > summary > svg {
+  rotate: 45deg;
+}

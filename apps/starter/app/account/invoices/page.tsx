@@ -1,57 +1,65 @@
 import Link from "next/link";
+import { Download, ReceiptText } from "lucide-react";
 import { backend, api } from "@/lib/backend";
 import { ActionForm } from "@/components/action-form";
+import {
+  AccountPageFrame,
+  AccountSection,
+  AccountStatus,
+} from "@/components/account-layout";
+import { localSnapshotRequest } from "@/lib/local-snapshot-request";
 import { recordInvoiceReceipt } from "@/app/actions";
 export const metadata = { robots: { index: false, follow: false } };
+
+const date = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "UTC",
+});
+
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ cursor?: string }>;
 }) {
+  const local = await localSnapshotRequest();
   const c = await backend();
-  const access = await c.query(api.invoiceOperations.status, {});
-  if (!access.allowed)
+  const access = local ? null : await c.query(api.invoiceOperations.status, {});
+  const back = { href: "/account", label: "Profile" };
+  if (!access?.allowed)
     return (
-      <main id="main" className="doc">
-        <Link prefetch={false} href="/account">
-          Back to account
-        </Link>
-        <h1>Invoice operator access required</h1>
-        <p>
-          This queue is available to explicitly authorized company invoice
-          operators.
-        </p>
-      </main>
+      <AccountPageFrame title="Invoice reporting" back={back}>
+        <AccountSection
+          title="Invoice operator access required"
+          description="This queue is available to authorized invoice operators."
+          icon={ReceiptText}
+        />
+      </AccountPageFrame>
     );
   const { cursor } = await searchParams;
   const queue = await c.query(api.invoiceOperations.queue, {
     paginationOpts: { cursor: cursor ?? null, numItems: 20 },
   });
   return (
-    <main id="main" className="doc" style={{ overflowWrap: "anywhere" }}>
-      <Link prefetch={false} href="/account">
-        Back to account
-      </Link>
-      <h1>Invoice reporting queue</h1>
-      <p>
-        {queue.mode === "test"
-          ? "Sandbox records. No live invoices are issued here."
-          : "Live billing records."}
-      </p>
-      <p>
-        Use the accountant's Oblio workflow for applicable invoices. This page
-        records a submission reference; it does not create invoices, send them
-        to ANAF or verify acceptance. Reconcile corrections with the accountant
-        while retaining the original record.
-      </p>
-      <section className="panel">
-        <h2>Provider settlements</h2>
-        <p>
-          Download balance movements, provider fee breakdowns and payout
-          references for your accountant. Managed Payments customer invoices
-          come from the transaction merchant.
-        </p>
-        <form action="/api/accounting/settlements" method="get">
+    <AccountPageFrame
+      title="Invoice reporting"
+      description={
+        queue.mode === "test"
+          ? "Sandbox billing records"
+          : "Live billing records"
+      }
+      back={back}
+    >
+      <AccountSection
+        title="Provider settlements"
+        description="Download the month’s balance movements, provider fees and payout references for your accountant."
+        icon={Download}
+      >
+        <form
+          action="/api/accounting/settlements"
+          method="get"
+          className="account-actions"
+        >
           <label>
             Accounting month
             <input
@@ -69,34 +77,65 @@ export default async function Page({
           </button>
         </form>
         <p className="fine">
-          A recent sign-in is required. This is a private provider record, not a
-          tax filing or invoice issuance.
+          A recent sign-in is required. Managed Payments customer invoices come
+          from the transaction merchant.
         </p>
-      </section>
+      </AccountSection>
+      <details className="account-disclosure">
+        <summary>Reporting workflow</summary>
+        <p>
+          Submit applicable invoices through the accountant’s Oblio workflow.
+          Use this queue to record the reference afterward. Reconcile
+          corrections with the accountant and retain the original record.
+        </p>
+      </details>
       {queue.page.length === 0 && (
-        <p>No invoice reporting tasks on this page.</p>
+        <AccountSection
+          title="Invoice queue"
+          icon={ReceiptText}
+          description="No reporting tasks on this page."
+        />
       )}
       {queue.page.map((task) => (
-        <section key={task._id} className="panel stack">
-          <h2>Invoice {task.invoiceId}</h2>
-          <p>Workspace: {task.organizationId}</p>
-          <a href={`/api/accounting/${task._id}`} download>
-            Download accountant record
-          </a>
+        <AccountSection
+          key={task._id}
+          title={`Invoice ${task.invoiceId}`}
+          description={`Workspace ${task.organizationId}`}
+          trailing={
+            <AccountStatus
+              tone={
+                task.state === "submitted"
+                  ? "positive"
+                  : task.dueAt < queue.observedAt
+                    ? "attention"
+                    : "neutral"
+              }
+            >
+              {task.state === "submitted"
+                ? "Reference recorded"
+                : task.dueAt < queue.observedAt
+                  ? "Overdue"
+                  : "Awaiting reference"}
+            </AccountStatus>
+          }
+        >
           <p>
-            Reporting deadline: {new Date(task.dueAt).toISOString()} UTC ·{" "}
-            {task.state === "submitted"
-              ? "Submission reference recorded"
-              : task.dueAt < queue.observedAt
-                ? "Overdue; review with accountant"
-                : "Awaiting submission reference"}
+            Due{" "}
+            <time dateTime={new Date(task.dueAt).toISOString()}>
+              {date.format(task.dueAt)} UTC
+            </time>
           </p>
-          <a
-            href={`https://dashboard.stripe.com/${queue.mode === "test" ? "test/" : ""}invoices/${encodeURIComponent(task.invoiceId)}`}
-            rel="noreferrer"
-          >
-            Inspect source invoice in Stripe
-          </a>
+          <div className="account-actions">
+            <a href={`/api/accounting/${task._id}`} download>
+              Download accountant record
+            </a>
+            <a
+              href={`https://dashboard.stripe.com/${queue.mode === "test" ? "test/" : ""}invoices/${encodeURIComponent(task.invoiceId)}`}
+              rel="noreferrer"
+            >
+              Inspect source invoice in Stripe
+            </a>
+          </div>
           {task.receipt ? (
             <p>Recorded reference: {task.receipt}</p>
           ) : (
@@ -121,16 +160,17 @@ export default async function Page({
               </p>
             </ActionForm>
           )}
-        </section>
+        </AccountSection>
       ))}
       {!queue.isDone && (
         <Link
+          className="button secondary"
           href={`/account/invoices?cursor=${encodeURIComponent(queue.continueCursor)}`}
           prefetch={false}
         >
           Next page
         </Link>
       )}
-    </main>
+    </AccountPageFrame>
   );
 }

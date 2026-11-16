@@ -4,6 +4,7 @@ import {
   invitationPath,
 } from "../../../../packages/onboarding/invitation";
 import { redirect } from "next/navigation";
+import { localSnapshotRequest } from "@/lib/local-snapshot-request";
 import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { publicContinuation } from "@/lib/public-knowledge-display";
@@ -21,6 +22,15 @@ export default async function Page({
 }) {
   const query = await searchParams;
   const continuation = publicContinuation(query);
+  if (
+    process.env.VIBESCROLL_LOCAL_SNAPSHOT === "1" &&
+    (await localSnapshotRequest())
+  ) {
+    const { readLocalSnapshot } = await import("@/lib/local-snapshot");
+    const { organizationId } = await readLocalSnapshot();
+    if (query.view === "billing") redirect(`/app/${organizationId}/billing?tier=pro`);
+    redirect(`/app/${organizationId}${continuation ? `?${continuation}` : ""}`);
+  }
   const client = await backend();
   const onboarding = await client.query(api.onboarding.status, {});
   if (

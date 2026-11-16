@@ -7,27 +7,30 @@ export function PublicCollectionList({
 }) {
   if (!collections.length)
     return (
-      <p>
-        No current public collections were found on this page. There is no
-        fixture activity mixed into these results.
-      </p>
+      <section className="public-state-card">
+        <h2>No collections found</h2>
+        <p>Try a different topic or see how an edition’s evidence works.</p>
+        <Link className="secondary" href="/example">
+          Explore the example
+        </Link>
+      </section>
     );
   return (
-    <div className="help-index">
+    <div className="public-card-grid">
       {collections.map((collection) => (
-        <article key={collection.slug}>
+        <Link
+          className="public-list-card"
+          href={`/collections/${collection.slug}`}
+          key={collection.slug}
+        >
           <p className="fine">{collection.topic}</p>
-          <h2>
-            <Link href={`/collections/${collection.slug}`}>
-              {collection.title}
-            </Link>
-          </h2>
+          <h2>{collection.title}</h2>
           <p>{collection.description}</p>
           <p>
-            {collection.editions.length} currently available editions in this
-            collection
+            {collection.editions.length}{" "}
+            {collection.editions.length === 1 ? "edition" : "editions"}
           </p>
-        </article>
+        </Link>
       ))}
     </div>
   );

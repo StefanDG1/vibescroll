@@ -149,7 +149,7 @@ export function PrivateLibraryUpgradePanel({
   return (
     <section
       id="private-library"
-      className="card form-grid"
+      className="account-section account-private-library form-grid"
       aria-busy={pending}
     >
       <h2>Use this workspace as your private library</h2>
@@ -192,7 +192,7 @@ export function PrivateLibraryUpgradePanel({
               and I will use a separate workspace for a team.
             </label>
           )}
-          <div className="inline-actions">
+          <div className="account-actions">
             <button
               className="secondary"
               disabled={pending}

@@ -1,4 +1,5 @@
 import "server-only";
+import { localSnapshotRequest } from "./local-snapshot-request";
 import { cache } from "react";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { redirect } from "next/navigation";
@@ -14,6 +15,13 @@ export const configured = () =>
   );
 export const backend = cache(
   async (verifiedSession?: Awaited<ReturnType<typeof withAuth>>) => {
+    if (
+      process.env.VIBESCROLL_LOCAL_SNAPSHOT === "1" &&
+      (await localSnapshotRequest())
+    ) {
+      const { localSnapshotClient } = await import("./local-snapshot");
+      return (await localSnapshotClient()) as unknown as ConvexHttpClient;
+    }
     const auth = verifiedSession ?? (await withAuth());
     // AuthKit starts PKCE in the proxy or sign-in route, where cookies are writable.
     // Rendering a Server Component must only read the session and redirect locally.

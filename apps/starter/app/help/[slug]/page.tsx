@@ -31,13 +31,15 @@ export default async function Article({
   const result = await readHelpArticle(slug);
   if (!result) notFound();
   return (
-    <PublicPage>
+    <PublicPage layout="reader">
       <nav aria-label="Help">
-        <Link href="/help">All help</Link>
+        <Link className="public-back" href="/help">
+          <span aria-hidden="true">‹</span> All help
+        </Link>
       </nav>
       <HelpDocument text={result.content} assets={result.article.assets} />
       <aside className="help-related" aria-label="Related guides">
-        <h2>Keep going</h2>
+        <h2>Related guides</h2>
         <ul>
           {result.article.related.map((related) => {
             const article = helpArticle(related);
@@ -49,11 +51,6 @@ export default async function Article({
           })}
         </ul>
       </aside>
-      <p className="fine">
-        Instructions reviewed against source. Live routes depend on your account
-        and connection settings. Independent beginner and device checks remain
-        pending.
-      </p>
     </PublicPage>
   );
 }

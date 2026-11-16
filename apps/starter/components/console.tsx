@@ -1,12 +1,13 @@
 "use client";
+import { postTopics } from "@/lib/project-suggestions";
 import { ProjectProposalComposer } from "./project-proposal-composer";
 import { StandaloneProposal } from "./standalone-proposal";
 import { PreparedAnalysisControl } from "./prepared-analysis-control";
 import { PostInsightReader } from "./post-insight-reader";
-import { InsightCardControl } from "./insight-card-control";
+import { PostInsightStrip } from "./post-insight-strip";
+import { feedInsightEvidence, postTopicName } from "@/lib/home-feed";
 import { SettingsPanel } from "./settings-panel";
-import { insightPresentation } from "../../../packages/insights/presentation";
-import { useState, useEffect, useRef, useEffectEvent } from "react";
+import { useState, useEffect, useRef, useEffectEvent, useId } from "react";
 import { useRouter } from "next/navigation";
 import {
   redirectForAuthentication,
@@ -25,10 +26,27 @@ import {
   PersistedWorkCloudHandoff,
   workCloudHandoffKey,
 } from "./work-cloud-text";
-import { AssistantConnections } from "./assistant-connections";
+import { AccountConnections } from "./account-connections";
+import { AccountComputers } from "./account-computers";
+import { AccountOverview } from "./account-overview";
+import { AccountBack, AccountSection } from "./account-layout";
+import {
+  RecordedWorkOutcomes,
+  WorkActivity,
+  WorkLoading,
+  WorkNavigation,
+  WorkProjects,
+  WorkProposals,
+  WorkStatus,
+  WorkTasks,
+  isWorkView,
+} from "./work-screens";
+import { workDate } from "../lib/work-presentation";
 import { AssistantIntakeStatus } from "./assistant-intake-status";
 import { UsageSummary } from "./usage-summary";
+import { ProOfferSummary } from "./pro-offer-summary";
 import { TrendsDashboard } from "./trends-dashboard";
+import { RecentSaveActivity } from "./recent-save-activity";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 import {
   sourceEvidenceFrames,
@@ -36,7 +54,6 @@ import {
 } from "../../../packages/media/cloud-frames";
 import Link from "next/link";
 import Image from "next/image";
-import { Brand } from "./site";
 import {
   Home,
   Library,
@@ -44,9 +61,6 @@ import {
   Plug,
   Plus,
   Video,
-  PanelLeftClose,
-  PanelLeftOpen,
-  ArrowRight,
   FileEdit,
 } from "./icons/iconoir";
 import {
@@ -58,11 +72,19 @@ import {
   ShieldCheck,
   CreditCard,
   Loader2,
-  Lightbulb,
   Check,
+  ChevronDown,
+  ExternalLink,
+  Search,
+  X,
 } from "lucide-react";
-import { AccountMenu, type AccountProfile } from "./account-menu";
+import {
+  AccountMenu,
+  ProfileAvatar,
+  type AccountProfile,
+} from "./account-menu";
 import { KnowledgeLibrary, LibrarySections } from "./knowledge-library";
+import { CategoryDirectory } from "./category-directory";
 import { LibrarySkeleton } from "./library-skeleton";
 import { LibraryScan } from "./library-scan";
 import { SubscriptionTrials } from "./subscription-trials";
@@ -72,7 +94,6 @@ import { TeamKnowledgeSharing } from "./team-knowledge-sharing";
 import { SharedKnowledge } from "./shared-knowledge";
 import { PrivateLibrary } from "./private-library";
 import { HomeFeed } from "./home-feed";
-import { RecentPosts } from "./recent-posts";
 import { PostThumbnail } from "./post-thumbnail";
 import { postThumbnailCandidates } from "../../../packages/sources/thumbnail";
 import { motion } from "motion/react";
@@ -128,12 +149,14 @@ type Initial = {
     | "source"
     | "proposal"
     | "library"
-    | "posts"
+    | "activity"
+    | "capture"
     | "connections"
     | "usage"
     | "projects"
     | "plans";
   compact?: boolean;
+  role?: string;
   privateLibrary?: boolean;
   sharedKnowledge?: { items: any[]; next: string | null };
   selectedSharedKnowledge?: any;
@@ -171,6 +194,7 @@ type Initial = {
   }[];
   libraryNext?: string | null;
   repositories: any[];
+  projects?: { _id: string; name: string; description: string }[];
   proposals: any[];
   runs: any[];
   notifications: any[];
@@ -192,6 +216,15 @@ type Initial = {
 };
 const id = (o: any) => o._id ?? o.id;
 const label = (s: string) => s.replaceAll("_", " ");
+const calendarDate = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeZone: "UTC",
+});
+const calendarDateTime = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "UTC",
+});
 const blankPlan = {
   scope: "",
   nonGoals: [],
@@ -228,19 +261,51 @@ const Button = ({
   </button>
 );
 
-function SourceThumbnail({ source, demo }: { source: any; demo: boolean }) {
+function SourceThumbnail({
+  source,
+  demo,
+  priority = false,
+}: {
+  source: any;
+  demo: boolean;
+  priority?: boolean;
+}) {
   return (
     <PostThumbnail
       candidates={postThumbnailCandidates(source)}
       kind={source.kind}
       demo={demo}
+      priority={priority}
     />
   );
+}
+
+const postsReturnKey = "vibescroll:posts-return";
+type PostsReturnPosition = {
+  href: string;
+  top: number;
+  postId: string;
+  shown: number;
+  restoreFocus: boolean;
+  recordedAt: number;
+};
+
+function getPostsReturnPosition(): PostsReturnPosition | undefined {
+  try {
+    const position: PostsReturnPosition | null = JSON.parse(
+      sessionStorage.getItem(postsReturnKey) ?? "null",
+    );
+    if (position && Date.now() - position.recordedAt < 30 * 60_000)
+      return position;
+  } catch {
+    // Session storage can be unavailable in private browsing.
+  }
 }
 
 export function Console({
   profile,
   compactHomePreview = false,
+  localSnapshot = false,
   demo = false,
   readOnly = false,
   canSuggestCategories = false,
@@ -261,6 +326,7 @@ export function Console({
 }: {
   profile?: AccountProfile;
   compactHomePreview?: boolean;
+  localSnapshot?: boolean;
   demo?: boolean;
   readOnly?: boolean;
   canSuggestCategories?: boolean;
@@ -283,6 +349,8 @@ export function Console({
   const captureAccess = useRef(true);
   const [journey] = useState(() => createJourneyMeasurements(track));
   const captureOrigin = useRef<HTMLElement | null>(null);
+  const captureDraft = useRef<string | null>(null);
+  const [capturePreparing, setCapturePreparing] = useState(false);
   const router = useRouter(),
     [data, setData] = useState(initial),
     [view, setView] = useState(
@@ -311,6 +379,8 @@ export function Console({
       "info",
     ),
     [busy, setBusy] = useState(false),
+    [loadingView, setLoadingView] = useState(false),
+    [viewError, setViewError] = useState(false),
     [libraryLoading, setLibraryLoading] = useState(
       (demo && demoState === "loading") ||
         (!demo && (initial.compact || initial.workspaceSlice === "library")),
@@ -324,14 +394,7 @@ export function Console({
       !readOnly && Boolean(initialSharedDraft),
     ),
     [planText, setPlanText] = useState(JSON.stringify(blankPlan, null, 2)),
-    [railCollapsed, setRailCollapsed] = useState(false),
-    [libraryPreferencesOpen, setLibraryPreferencesOpen] = useState(false),
-    [pairing, setPairing] = useState<{
-      id: string;
-      fingerprint: string;
-      credentialHash: string;
-      name: string;
-    } | null>(null);
+    [libraryPreferencesOpen, setLibraryPreferencesOpen] = useState(false);
   const [homeData, setHomeData] = useState<Initial | null>(
     initial.compact ? initial : null,
   );
@@ -343,6 +406,7 @@ export function Console({
   const [sharedDraft, setSharedDraft] = useState(initialSharedDraft);
   const [analysisSettingsOpen, setAnalysisSettingsOpen] = useState(false);
   const libraryRequest = useRef(0);
+  const expandedLibrary = useRef(false);
   const libraryAbort = useRef<AbortController | null>(null);
   const refreshFlight = useRef<Promise<Initial | undefined> | null>(null);
   const recordReturn = useEffectEvent((hiddenAt: number) => {
@@ -373,11 +437,31 @@ export function Console({
     document.addEventListener("visibilitychange", changed);
     return () => document.removeEventListener("visibilitychange", changed);
   }, [demo, organizationId]);
+  const showingPosts =
+    view === "posts" || (view === "library" && librarySection === "posts");
+  function updatePostsQuery(key: string, value: string) {
+    const url = new URL(location.href);
+    if (value) url.searchParams.set(key, value);
+    else url.searchParams.delete(key);
+    history.replaceState(null, "", url);
+  }
+  function clearPostsFilters() {
+    setSearch("");
+    setFilter("");
+    setCategory("");
+    setSort("newest");
+    const url = new URL(location.href);
+    for (const key of ["q", "state", "category", "sort"])
+      url.searchParams.delete(key);
+    history.replaceState(null, "", url);
+  }
   async function loadLibrary(append = false) {
     if (demo) {
       setLibraryError("");
       return;
     }
+    if (append && !data.libraryNext) return;
+    expandedLibrary.current = append;
     const generation = ++libraryRequest.current;
     libraryAbort.current?.abort();
     const abort = new AbortController();
@@ -432,7 +516,7 @@ export function Console({
   }
   const loadLibraryFromEffect = useEffectEvent(() => loadLibrary());
   useEffect(() => {
-    if (demo || view !== "library" || librarySection !== "posts") return;
+    if (demo || !showingPosts) return;
     const timeout = setTimeout(() => {
       loadLibraryFromEffect().catch(() =>
         setNotice("Library search is unavailable. Try again."),
@@ -448,7 +532,7 @@ export function Console({
     demo,
     organizationId,
     view,
-    librarySection,
+    showingPosts,
     search,
     filter,
     category,
@@ -517,7 +601,7 @@ export function Console({
         ? previous
         : [
             ...document.querySelectorAll<HTMLButtonElement>(
-              ".product-top button.primary, .mobile-save",
+              ".rail-save, .mobile-save",
             ),
           ].find(available);
       target?.focus();
@@ -527,6 +611,14 @@ export function Console({
   function applyData(next: Initial) {
     captureAccess.current = true;
     setAccessAvailable(true);
+    if (next.workspaceSlice === "capture") {
+      setData((current) => ({
+        ...current,
+        devices: next.devices,
+        aiPreference: next.aiPreference,
+      }));
+      return;
+    }
     if (next.workspaceSlice === "library") {
       setData((current) => ({
         ...current,
@@ -628,8 +720,7 @@ export function Console({
     if (refreshFlight.current) return refreshFlight.current;
     const request = (async () => {
       const next = await refreshWorkspace();
-      if (next && view === "library" && librarySection === "posts")
-        await loadLibrary();
+      if (next && showingPosts && !expandedLibrary.current) await loadLibrary();
       return next;
     })();
     refreshFlight.current = request;
@@ -680,11 +771,21 @@ export function Console({
     ) {
       if (generation !== viewGeneration.current) return;
       clearAccess();
+    } else if (generation === viewGeneration.current) {
+      throw new Error("This view could not be loaded.");
     }
   }
   const refreshView = useEffectEvent(async () => {
-    if (refreshFlight.current) await refreshFlight.current;
-    await refreshWorkspace();
+    const generation = viewGeneration.current;
+    try {
+      if (refreshFlight.current) await refreshFlight.current;
+      if (generation !== viewGeneration.current) return;
+      await refreshWorkspace();
+    } catch {
+      if (generation === viewGeneration.current) setViewError(true);
+    } finally {
+      if (generation === viewGeneration.current) setLoadingView(false);
+    }
   });
   useEffect(() => {
     viewGeneration.current++;
@@ -692,14 +793,11 @@ export function Console({
       firstView.current = false;
       return;
     }
-    if (!demo)
-      refreshView().catch(() =>
-        setNotice("This view could not be loaded. Try again."),
-      );
+    if (!demo) void refreshView();
   }, [view, demo]);
   async function openCapture() {
-    if ((readOnly && !demo) || !captureAccess.current) return;
-    // Full-editor loading can disable Save and move focus to the page body.
+    if ((readOnly && !demo) || !captureAccess.current || capturePreparing) return;
+    // Preparing the form can disable Save and move focus to the page body.
     // Retain the actual opener before starting that asynchronous refresh.
     captureOrigin.current =
       document.activeElement instanceof HTMLElement
@@ -711,20 +809,21 @@ export function Console({
     };
     const generation = viewGeneration.current;
     if (!demo) {
-      setBusy(true);
+      setCapturePreparing(true);
       try {
-        if (refreshFlight.current) await refreshFlight.current;
         if (!captureAccess.current || generation !== viewGeneration.current) {
           forgetOrigin();
           return;
         }
-        const next = await refreshWorkspace("full");
+        const next = await refreshWorkspace("capture");
         if (!captureAccess.current || generation !== viewGeneration.current) {
           forgetOrigin();
           return;
         }
-        if (!next || next.compact || next.workspaceSlice)
+        if (!next || next.workspaceSlice !== "capture")
           throw new Error("Capture options could not be loaded. Try again.");
+        if (next.role === "viewer")
+          throw new Error("Your workspace role allows reading posts only.");
         setCaptureOpen(true);
       } catch (error) {
         forgetOrigin();
@@ -735,7 +834,7 @@ export function Console({
             : "Capture options could not be loaded.",
         );
       } finally {
-        setBusy(false);
+        setCapturePreparing(false);
       }
     } else setCaptureOpen(true);
   }
@@ -794,7 +893,9 @@ export function Console({
     !demo && ["home", "posts", "library"].includes(view),
     (posts) => {
       if (!posts) {
-        void refreshData();
+        void refreshData().catch(() =>
+          setNotice("Post updates are temporarily unavailable."),
+        );
         return;
       }
       const metadata = new Map<string, any>(posts.map((p: any) => [p._id, p]));
@@ -850,7 +951,7 @@ export function Console({
     view === "source"
       ? `${organizationId}:source:${selected ? id(selected) : ""}`
       : organizationId,
-    view !== "source",
+    view !== "source" && !showingPosts,
   );
   const planIdentity = selected
     ? `${id(selected)}:${selected.planHash ?? (selected.planDraftVersion === selected.version ? (selected.planDraftKey ?? JSON.stringify(selected.planDraft ?? null)) : "")}`
@@ -974,7 +1075,9 @@ export function Console({
           ),
         );
       setHomeData(null);
-      await refreshData();
+      await refreshData().catch(() =>
+        setNotice("Saved. Refresh the page to see the update."),
+      );
       if (operation === "deleteSource") go("library");
       setNotice(
         operation === "deleteSource"
@@ -1052,6 +1155,23 @@ export function Console({
   const [projectEvidenceSection, setProjectEvidenceSection] = useState<
     "topics" | "ideas" | "issues"
   >(initialReviewDraftId ? "issues" : "topics");
+  useEffect(() => {
+    if (view !== "projects" || loadingView) return;
+    const revealRepository = () => {
+      const anchor = location.hash.slice(1);
+      if (!anchor.startsWith("repository-")) return;
+      const repository = document.getElementById(anchor);
+      const settings =
+        document.querySelector<HTMLDetailsElement>("#work-project-settings");
+      if (!repository || !settings?.contains(repository)) return;
+      settings.open = true;
+      if (repository instanceof HTMLDetailsElement) repository.open = true;
+      repository.scrollIntoView({ block: "start", behavior: "instant" });
+    };
+    revealRepository();
+    window.addEventListener("hashchange", revealRepository);
+    return () => window.removeEventListener("hashchange", revealRepository);
+  }, [view, loadingView]);
   const pointerInput = useRef(false);
   useEffect(() => {
     const pointer = () => {
@@ -1073,15 +1193,35 @@ export function Console({
       router.push(`/app/${organizationId}/billing`);
       return;
     }
+    if (!demo && view !== v) {
+      setViewError(false);
+      setLoadingView(v !== "home" && v !== "menu");
+    }
+    if (!demo && v === "posts" && !showingPosts) setLibraryLoading(true);
     setView(v);
     setSelected(null);
-    if (!demo) track("workspace_viewed", { view: v });
-    if (!demo)
+    if (!demo) {
+      track("workspace_viewed", { view: v });
+      const query = new URLSearchParams();
+      if (v === "home" && homePreview.current) query.set("homeMode", "compact");
+      if (v === "posts" || v === "library") {
+        for (const [key, value] of Object.entries({
+          q: search,
+          state: filter,
+          category,
+          sort,
+        })) {
+          if (value && (key !== "sort" || value !== "newest"))
+            query.set(key, value);
+        }
+      }
       history.pushState(
         history.state,
         "",
-        `/app/${organizationId}/${v === "home" ? "" : v === "menu" ? "account" : v}${v === "home" && homePreview.current ? "?homeMode=compact" : ""}`,
+        `/app/${organizationId}${v === "home" ? "" : v === "menu" ? "/account" : `/${v}`}${query.size ? `?${query}` : ""}`,
       );
+    }
+    if (view !== v) window.scrollTo({ top: 0, behavior: "instant" });
   };
   useEffect(() => {
     if (demo) return;
@@ -1095,6 +1235,7 @@ export function Console({
           "library",
           "trends",
           "posts",
+          "shared",
           "projects",
           "improvements",
           "inbox",
@@ -1108,13 +1249,35 @@ export function Console({
         ].includes(target) &&
         !parts[3]
       ) {
-        setView(target === "account" ? "menu" : target);
+        const query = new URLSearchParams(location.search);
+        if (target === "posts" || target === "library") {
+          setSearch(query.get("q") ?? "");
+          setFilter(query.get("state") ?? "");
+          setCategory(query.get("category") ?? "");
+          setSort(query.get("sort") ?? "newest");
+          if (
+            target === "library" &&
+            ["q", "state", "category"].some((key) => Boolean(query.get(key)))
+          )
+            setLibrarySection("posts");
+        }
+        const destination = target === "account" ? "menu" : target;
+        if (destination !== view) {
+          setViewError(false);
+          setLoadingView(destination !== "home" && destination !== "menu");
+          setView(destination);
+        }
         setSelected(null);
       }
     };
+    // The router may restore a cached list rendered before its URL filters changed.
+    const restore = requestAnimationFrame(recover);
     window.addEventListener("popstate", recover);
-    return () => window.removeEventListener("popstate", recover);
-  }, [demo, organizationId]);
+    return () => {
+      cancelAnimationFrame(restore);
+      window.removeEventListener("popstate", recover);
+    };
+  }, [demo, organizationId, view]);
   const filtered = !demo
     ? data.sources
     : data.sources.filter(
@@ -1135,13 +1298,66 @@ export function Console({
             s.state === filter ||
             s.matches?.some((m: any) => m.disposition === filter)),
       );
+  const restoreMorePosts = useEffectEvent(() => void loadLibrary(true));
+  useEffect(() => {
+    if (demo || !showingPosts || libraryLoading || libraryError) return;
+    const position = getPostsReturnPosition();
+    const href = location.pathname + location.search;
+    if (position?.href !== href) return;
+
+    const frame = requestAnimationFrame(() => {
+      if (location.pathname + location.search !== href) return;
+      const target = document.querySelector<HTMLElement>(
+        `[data-post-id="${CSS.escape(position.postId)}"] .source-hitarea`,
+      );
+      if (!target) {
+        if (data.libraryNext && data.sources.length < position.shown)
+          restoreMorePosts();
+        return;
+      }
+      window.scrollTo({ top: position.top, behavior: "instant" });
+      if (position.restoreFocus) target.focus({ preventScroll: true });
+      try {
+        sessionStorage.removeItem(postsReturnKey);
+      } catch {
+        // Keep the result visible when storage is blocked.
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [
+    demo,
+    showingPosts,
+    libraryLoading,
+    libraryError,
+    data.libraryNext,
+    data.sources.length,
+  ]);
+
   function findSource(s: any) {
-    if (!demo)
+    if (!demo) {
+      if (showingPosts) {
+        try {
+          const position: PostsReturnPosition = {
+            href: location.pathname + location.search,
+            top: window.scrollY,
+            postId: id(s),
+            shown: data.sources.length,
+            restoreFocus:
+              document.activeElement?.matches(".source-hitarea:focus-visible") ??
+              false,
+            recordedAt: Date.now(),
+          };
+          sessionStorage.setItem(postsReturnKey, JSON.stringify(position));
+        } catch {
+          // Opening a post does not depend on browser storage.
+        }
+      }
       track("source_viewed", {
         kind: s.kind,
         state: s.state,
         coverage: s.coverage,
       });
+    }
     if (s.searchHref && !demo) {
       const link = new URL(s.searchHref);
       router.push(link.pathname + link.search);
@@ -1164,15 +1380,23 @@ export function Console({
       );
     }
   }
+  const accountView = ["menu", "usage", "runners", "connections", "privacy", "billing"].includes(view);
+  const openAccountView = (destination: string) => {
+    go(destination);
+    if (destination === "billing" && !demo) return;
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>("main [data-account-heading]")?.focus({ preventScroll: true });
+    });
+  };
   const nav = [
     ["home", "Home", Home],
-    ["library", "Explore", Library],
+    ["posts", "Posts", Library],
     ["trends", "Trends", Gauge],
     ["save", "Save", Plus],
-    ["posts", "Posts", Video],
+    ["library", "Knowledge", Video],
     ["projects", "Work", GitBranch],
     ["improvements", "Improvements", FileCheck2],
-    ["inbox", "Inbox", Inbox],
+    ["inbox", "Activity", Inbox],
     ["runs", "Runs & PRs", GitPullRequest],
     ["proposals", "Proposals", FileEdit],
     ["usage", "Usage", Gauge],
@@ -1181,112 +1405,80 @@ export function Console({
     ["privacy", "Privacy", ShieldCheck],
     ["billing", "Billing", CreditCard],
   ] as const;
-  const pendingProposals = data.proposals.filter(
-    (p) => p.review === "unreviewed",
-  ).length;
   return (
     <div
-      className={`product-shell atlas-shell quiet-shell ${view === "trends" ? "trends-view" : ""} ${view === "home" ? `feed-view ${demo ? "feed-demo" : ""}` : railCollapsed ? "rail-collapsed" : ""}`}
+      className={`product-shell atlas-shell quiet-shell redesigned-shell ${view === "trends" ? "trends-view" : ""} ${view === "home" ? `feed-view ${demo ? "feed-demo" : ""}` : ""}`}
     >
       <AppTheme />
       <aside className="product-rail">
-        <div className="rail-brand">
-          <Brand href={demo ? "/demo" : `/app/${organizationId}`} />
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="Collapse sidebar"
-            onClick={() => setRailCollapsed(true)}
-          >
-            <PanelLeftClose size={19} />
-          </button>
-        </div>
-        {demo && <p className="workspace-label">Demo workspace</p>}
+        <Link
+          className="desktop-rail-brand"
+          href={demo ? "/demo" : `/app/${organizationId}`}
+          prefetch={false}
+          aria-label="VibeScroll Home"
+          onClick={(event) => {
+            if (
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey
+            )
+              return;
+            event.preventDefault();
+            go("home");
+          }}
+        >
+          <Image src="/icon.svg" alt="" width={30} height={30} />
+        </Link>
         <nav aria-label="Application">
           {nav
             .filter(([key]) =>
-              ["home", "library", "save", "projects"].includes(key),
+              ["home", "posts", "save", "projects"].includes(key),
             )
             .map(([key, title, Icon]) => (
               <button
                 type="button"
                 key={key}
                 aria-current={
-                  mobileNavigationGroup(view) === key ? "page" : undefined
+                  mobileNavigationGroup(view) ===
+                  (key === "posts" ? "library" : key)
+                    ? "page"
+                    : undefined
                 }
-                className={mobileNavigationGroup(view) === key ? "active" : ""}
+                className={
+                  key === "save"
+                    ? "rail-save"
+                    : mobileNavigationGroup(view) ===
+                        (key === "posts" ? "library" : key)
+                      ? "active"
+                      : ""
+                }
                 disabled={
-                  key === "save" && ((readOnly && !demo) || !accessAvailable)
+                  key === "save" &&
+                  ((readOnly && !demo) || busy || capturePreparing || !accessAvailable)
                 }
+                aria-busy={key === "save" && capturePreparing ? true : undefined}
                 onClick={() => (key === "save" ? void openCapture() : go(key))}
               >
-                <Icon size={19} strokeWidth={1.7} aria-hidden="true" />
-                {title}
-                {key === "inbox" && data.notifications.some((n) => !n.read) && (
-                  <span className="nav-count">
-                    {data.notifications.filter((n) => !n.read).length}
-                  </span>
+                {key === "save" && capturePreparing ? (
+                  <Loader2 className="spinner" size={19} aria-hidden="true" />
+                ) : (
+                  <Icon size={19} strokeWidth={1.7} aria-hidden="true" />
                 )}
+                {title}
               </button>
             ))}
         </nav>
         <div className="rail-bottom">
-          <AccountMenu go={go} demo={demo} profile={profile} />
+          <AccountMenu
+            go={go}
+            demo={demo}
+            profile={profile}
+            active={mobileNavigationGroup(view) === "account"}
+          />
         </div>
       </aside>
       <div className="product-body">
-        <header className="product-top">
-          <div className="row">
-            <button
-              type="button"
-              className="icon-button rail-open"
-              aria-label="Expand sidebar"
-              onClick={() => setRailCollapsed(false)}
-            >
-              <PanelLeftOpen size={19} />
-            </button>
-            <Brand href={demo ? "/demo" : `/app/${organizationId}`} />
-            <div className="studio-scope">
-              <span className="top-view">
-                {view === "source"
-                  ? "Library"
-                  : view === "proposal"
-                    ? "Proposals"
-                    : view === "menu"
-                      ? "Account"
-                      : view === "shared"
-                        ? "Shared knowledge"
-                        : (nav.find((n) => n[0] === view)?.[1] ??
-                          "Review plan")}
-              </span>
-              <Link
-                href={demo ? "/demo" : "/app/workspaces"}
-                prefetch={false}
-                title={
-                  data.workspaceName ??
-                  (demo ? "Demo workspace" : "Current workspace")
-                }
-              >
-                {data.workspaceName ??
-                  (demo ? "Demo workspace" : "Current workspace")}
-              </Link>
-            </div>
-            {demo && <span className="status">Synthetic demo</span>}
-          </div>
-          <div className="row">
-            <Button
-              busy={busy}
-              disabled={(readOnly && !demo) || !accessAvailable}
-              primary
-              onClick={() => {
-                void openCapture();
-              }}
-            >
-              <Plus size={17} />
-              Save
-            </Button>
-          </div>
-        </header>
         {readOnly && !demo && (
           <p className="demo-banner">
             Viewer access. You can read this workspace. Captures, edits,
@@ -1299,74 +1491,86 @@ export function Console({
             benefits or live execution.
           </p>
         )}
-        <main id="main" className="product-main">
-          <div
-            className={`page-heading ${view === "source" ? "source-heading" : ""}`}
-          >
-            <div>
-              <h1
-                className={
-                  ["library", "home", "trends"].includes(view)
-                    ? "sr-only"
-                    : undefined
-                }
-              >
-                {view === "source"
-                  ? selected
-                    ? postDisplayTitle(selected)
-                    : "Source unavailable"
-                  : view === "proposal"
-                    ? selected?.title
-                    : view === "menu"
-                      ? "Account"
-                      : view === "shared"
-                        ? "Shared knowledge"
-                        : (nav.find((n) => n[0] === view)?.[1] ??
-                          "Review plan")}
-              </h1>
-            </div>
-            {selected && (
-              <Button
-                busy={busy}
-                onClick={() => go(view === "source" ? "posts" : "proposals")}
-              >
-                Back to list
-              </Button>
-            )}
-          </div>
-          {[
-            "projects",
-            "proposals",
-            "proposal",
-            "runs",
-            "improvements",
-          ].includes(view) && (
-            <nav className="work-sections" aria-label="Work sections">
-              {[
-                ["projects", "Projects"],
-                ["proposals", "Proposals"],
-                ["runs", "Tasks"],
-              ].map(([key, title]) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-current={
-                    view === key || (key === "proposals" && view === "proposal")
-                      ? "page"
-                      : undefined
+        <main id="main" className="product-main" data-app-view={view}>
+          {view === "home" ? (
+            <h1 className="sr-only">Home</h1>
+          ) : (
+            <div
+              className={`page-heading ${view === "source" || view === "proposal" ? "detail-heading" : ""} ${view === "source" ? "source-heading" : ""}`}
+            >
+              <div>
+                {!demo && accountView && view !== "menu" && (
+                  <AccountBack href={`/app/${organizationId}/account`} label="Account" />
+                )}
+                <h1
+                  data-account-heading={accountView ? "" : undefined}
+                  tabIndex={accountView ? -1 : undefined}
+                  className={
+                    view === "source" || view === "proposal" ? "sr-only" : undefined
                   }
-                  onClick={() => go(key)}
+                >
+                  {view === "source"
+                    ? selected
+                      ? postDisplayTitle(selected)
+                      : "Source unavailable"
+                    : view === "proposal"
+                      ? selected?.title
+                      : view === "menu"
+                        ? "Account"
+                        : view === "projects"
+                          ? "Projects"
+                          : view === "runs"
+                            ? "Tasks"
+                            : view === "shared"
+                              ? "Shared knowledge"
+                              : (nav.find((n) => n[0] === view)?.[1] ??
+                                "Review plan")}
+                </h1>
+              </div>
+              {selected && (
+                <Button
+                  busy={busy}
+                  onClick={() => go(view === "source" ? "posts" : "proposals")}
+                >
+                  {view === "source" ? "Back to posts" : "Back to proposals"}
+                </Button>
+              )}
+            </div>
+          )}
+          {isWorkView(view) && (
+            <WorkNavigation
+              organizationId={organizationId}
+              active={view}
+              unread={data.notifications.some((notification) => !notification.read)}
+              onNavigate={go}
+            />
+          )}
+          <NoticeToast
+            message={captureOpen ? "" : notice}
+            kind={noticeKind}
+            onDismiss={() => setNotice("")}
+          />
+          {["posts", "library", "trends", "shared"].includes(view) && (
+            <nav className="posts-sections" aria-label="Saved posts">
+              {[
+                ["posts", "Posts"],
+                ["library", "Knowledge"],
+                ["trends", "Trends"],
+                ...(!data.privateLibrary && !demo || view === "shared"
+                  ? [["shared", "Shared"]]
+                  : []),
+              ].map(([destination, title]) => (
+                <button
+                  key={destination}
+                  type="button"
+                  aria-current={view === destination ? "page" : undefined}
+                  onClick={() => go(destination)}
                 >
                   {title}
                 </button>
               ))}
             </nav>
           )}
-          <NoticeToast
-            message={notice}
-            kind={noticeKind}
-            onDismiss={() => setNotice("")}
-          />
           {!accessAvailable ? (
             <section className="panel" role="alert">
               <h2>Your access changed</h2>
@@ -1381,17 +1585,25 @@ export function Console({
                 Sign in again
               </Link>
             </section>
-          ) : data.compact && view !== "home" && view !== "menu" ? (
-            <section aria-busy="true" className="studio-empty">
-              <output>Loading this workspace view...</output>
-              <Button
-                onClick={() => {
-                  void refreshData();
-                }}
-              >
-                Try again
-              </Button>
-            </section>
+          ) : viewError && view !== "home" ? (
+            <ErrorState
+              title="This page could not load"
+              detail="Try loading this page again."
+              onRetry={() => {
+                setViewError(false);
+                setLoadingView(true);
+                void refreshData()
+                  .catch(() => setViewError(true))
+                  .finally(() => setLoadingView(false));
+              }}
+            />
+          ) : loadingView ||
+            (data.compact && view !== "home" && view !== "menu") ? (
+            isWorkView(view) ? <WorkLoading view={view} /> : (
+              <section aria-busy="true" className="studio-empty">
+                <LibrarySkeleton kind={view === "posts" ? "posts" : "page"} rows={3} />
+              </section>
+            )
           ) : (
             <>
               {view === "shared" && (
@@ -1403,8 +1615,16 @@ export function Console({
                   initialError={data.sharedKnowledgeError}
                 />
               )}
-              {view === "improvements" && (
+              {view === "improvements" && localSnapshot && (
+                <RecordedWorkOutcomes
+                  runs={data.runs}
+                  repositories={data.repositories}
+                  proposals={data.proposals}
+                />
+              )}
+              {view === "improvements" && !localSnapshot && (
                 <Improvements
+                  key={organizationId}
                   organizationId={organizationId}
                   call={call}
                   readOnly={readOnly}
@@ -1422,7 +1642,11 @@ export function Console({
                         )
                       : 0
                   }
-                  onOpenIssues={() => go("projects")}
+                  onOpenIssues={() => {
+                    setProjectEvidenceSection("issues");
+                    setProjectEvidenceOpen(true);
+                    go("projects");
+                  }}
                   onOpenRuns={() => go("runs")}
                   computeReservationCredits={
                     data.customerRoutes?.execution?.computeReservationCredits
@@ -1433,11 +1657,20 @@ export function Console({
                 />
               )}
               {view === "trends" && (
-                <TrendsDashboard
-                  organizationId={organizationId}
-                  call={strictCall}
-                  demo={demo}
-                />
+                <>
+                  <RecentSaveActivity
+                    organizationId={organizationId}
+                    recent={data.recentPosts}
+                    onSave={() => void openCapture()}
+                  />
+                  {!localSnapshot && (
+                    <TrendsDashboard
+                      organizationId={organizationId}
+                      call={strictCall}
+                      demo={demo}
+                    />
+                  )}
+                </>
               )}
               {view === "library" && (
                 <>
@@ -1445,15 +1678,7 @@ export function Console({
                     className="library-secondary"
                     open={librarySection !== "topics"}
                   >
-                    <summary>Posts, insights and sharing</summary>
-                    {!demo && (
-                      <a
-                        className="button secondary"
-                        href={`/app/${organizationId}/trends`}
-                      >
-                        View Trends
-                      </a>
-                    )}
+                    <summary>Library tools</summary>
                     <a
                       href="/help/organize-your-library"
                       target="_blank"
@@ -1461,19 +1686,13 @@ export function Console({
                     >
                       Library and filing help
                     </a>
-                    {!data.privateLibrary && !demo && (
-                      <a
-                        className="button secondary"
-                        href={`/app/${organizationId}/shared`}
-                      >
-                        Knowledge shared with this workspace
-                      </a>
+                    {!localSnapshot && (
+                      <LibrarySections
+                        active={librarySection}
+                        onSelect={setLibrarySection}
+                        posts
+                      />
                     )}
-                    <LibrarySections
-                      active={librarySection}
-                      onSelect={setLibrarySection}
-                      posts
-                    />
                   </details>
                   <details
                     className="library-analysis-settings"
@@ -1500,19 +1719,28 @@ export function Console({
                     className="library-knowledge-container"
                     hidden={librarySection === "posts"}
                   >
-                    <KnowledgeLibrary
-                      enabled={librarySection !== "posts"}
-                      section={
-                        librarySection === "posts" ? "topics" : librarySection
-                      }
-                      key={organizationId}
-                      organizationId={organizationId}
-                      repositories={data.repositories}
-                      readOnly={readOnly}
-                      demo={demo}
-                      call={call}
-                      onOpenImprovements={() => go("improvements")}
-                    />
+                    {librarySection === "topics" && (
+                      <CategoryDirectory
+                        key={`categories:${organizationId}`}
+                        organizationId={organizationId}
+                        categories={data.categories ?? []}
+                      />
+                    )}
+                    {!localSnapshot && (
+                      <KnowledgeLibrary
+                        enabled={librarySection !== "posts"}
+                        section={
+                          librarySection === "posts" ? "topics" : librarySection
+                        }
+                        key={organizationId}
+                        organizationId={organizationId}
+                        repositories={data.repositories}
+                        readOnly={readOnly}
+                        demo={demo}
+                        call={call}
+                        onOpenImprovements={() => go("improvements")}
+                      />
+                    )}
                   </div>
                 </>
               )}
@@ -1563,44 +1791,38 @@ export function Console({
                   )}
                 </>
               )}
-              {view === "posts" && data.recentPosts && (
-                <RecentPosts
-                  key={`${organizationId}:${data.recentPosts.items[0]?.id ?? "empty"}`}
-                  organizationId={organizationId}
-                  initialPage={data.recentPosts}
-                />
-              )}
-              {view === "posts" && !data.recentPosts && (
-                <output>Loading posts…</output>
-              )}
-              {view === "library" && librarySection === "posts" && (
+              {showingPosts && (
                 <>
-                  {pendingProposals > 0 && (
-                    <div className="attention">
-                      <h2>
-                        {pendingProposals}{" "}
-                        {pendingProposals === 1 ? "proposal" : "proposals"} to
-                        review
-                      </h2>
-                      <Button busy={busy} onClick={() => go("proposals")}>
-                        Review <ArrowRight size={16} />
-                      </Button>
-                    </div>
-                  )}
-                  <div className="library-tools">
-                    <label>
-                      <span className="sr-only">Search your library</span>
+                  <search
+                    className="library-tools"
+                    aria-label="Search and filter posts"
+                  >
+                    <div className="posts-search-field">
+                      <Search size={18} aria-hidden="true" />
                       <input
+                        aria-label="Search posts"
+                        type="search"
                         value={search}
-                        placeholder="Search your library"
+                        placeholder="Search posts"
                         onChange={(e) => {
                           setSearch(e.target.value);
-                          const u = new URL(location.href);
-                          u.searchParams.set("q", e.target.value);
-                          history.replaceState(null, "", u);
+                          updatePostsQuery("q", e.target.value);
                         }}
                       />
-                    </label>
+                      {search && (
+                        <button
+                          type="button"
+                          aria-label="Clear search"
+                          className="asset-icon-button"
+                          onClick={() => {
+                            setSearch("");
+                            updatePostsQuery("q", "");
+                          }}
+                        >
+                          <X size={18} aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
                     <label>
                       <span className="sr-only">Filter sources</span>
                       <ChoiceSelect
@@ -1608,9 +1830,7 @@ export function Console({
                         value={filter}
                         onValueChange={(value) => {
                           setFilter(value);
-                          const u = new URL(location.href);
-                          u.searchParams.set("state", value);
-                          history.replaceState(null, "", u);
+                          updatePostsQuery("state", value);
                         }}
                       >
                         <option value="">All posts</option>
@@ -1638,9 +1858,7 @@ export function Console({
                         value={category}
                         onValueChange={(value) => {
                           setCategory(value);
-                          const u = new URL(location.href);
-                          u.searchParams.set("category", value);
-                          history.replaceState(null, "", u);
+                          updatePostsQuery("category", value);
                         }}
                       >
                         <option value="">All categories</option>
@@ -1675,9 +1893,7 @@ export function Console({
                         disabled={Boolean(search)}
                         onValueChange={(value) => {
                           setSort(value);
-                          const u = new URL(location.href);
-                          u.searchParams.set("sort", value);
-                          history.replaceState(null, "", u);
+                          updatePostsQuery("sort", value === "newest" ? "" : value);
                         }}
                       >
                         {search && (
@@ -1696,23 +1912,11 @@ export function Console({
                       </ChoiceSelect>
                     </label>
                     {(search || filter || category || sort !== "newest") && (
-                      <Button
-                        busy={busy}
-                        onClick={() => {
-                          setSearch("");
-                          setFilter("");
-                          setCategory("");
-                          setSort("newest");
-                          const u = new URL(location.href);
-                          for (const key of ["q", "state", "category", "sort"])
-                            u.searchParams.delete(key);
-                          history.replaceState(null, "", u);
-                        }}
-                      >
-                        Clear filters
+                      <Button busy={busy} onClick={clearPostsFilters}>
+                        Reset filters
                       </Button>
                     )}
-                  </div>
+                  </search>
                   {sort === "published" && !search && (
                     <p className="fine">
                       Posts with an unavailable publication date appear last.
@@ -1729,12 +1933,25 @@ export function Console({
                       </Button>
                     </div>
                   )}
+                  {!libraryError && (
+                    <output className="posts-result-status">
+                      {libraryLoading && filtered.length
+                        ? "Updating results…"
+                        : filtered.length
+                          ? `${filtered.length} ${filtered.length === 1 ? "post shown" : "posts shown"}`
+                          : ""}
+                    </output>
+                  )}
                   <div className="source-list" aria-busy={libraryLoading}>
                     {libraryLoading && !filtered.length ? (
-                      <LibrarySkeleton kind="topics" rows={5} />
+                      <LibrarySkeleton kind="posts" rows={5} />
                     ) : filtered.length ? (
                       filtered.map((s) => (
-                        <article key={id(s)} className="source-card">
+                        <article
+                          key={id(s)}
+                          className="source-card"
+                          data-post-id={id(s)}
+                        >
                           <button
                             type="button"
                             className="source-hitarea"
@@ -1743,50 +1960,50 @@ export function Console({
                           />
                           <SourceThumbnail source={s} demo={demo} />
                           <div className="source-card-body">
-                            <h2>{s.title}</h2>
-                            <div className="row spread">
+                            <h2>{postDisplayTitle(s)}</h2>
+                            <div className="source-card-meta">
+                              {s.linkPreview?.authorName && (
+                                <span>{s.linkPreview.authorName}</span>
+                              )}
                               <span className="coverage">
                                 {sourceCoverageLabel(s.coverage)}
                               </span>
+                              {!demo && s.state !== "ready" && (
+                                <span className="source-state">
+                                  {label(s.state ?? "ready")}
+                                </span>
+                              )}
                             </div>
-                            {!demo && s.state !== "ready" && (
-                              <span className="muted source-state">
-                                {label(s.state ?? "ready")}
-                              </span>
-                            )}
                             <p>
                               {s.summary ??
                                 (s.state === "needs_upload"
                                   ? "Add the video or transcript to analyze it."
                                   : ["processing", "queued"].includes(s.state)
-                                    ? "Transcribing and analyzing your source..."
+                                    ? "Transcribing and analyzing your source…"
                                     : s.state === "failed"
                                       ? "Analysis stopped. Open for details."
                                       : "Ready for analysis.")}
                             </p>
-                            <ul className="point-preview">
-                              {s.mainPoints?.slice(0, 3).map((p: string) => (
-                                <li key={p}>{p}</li>
-                              ))}
-                            </ul>
-                            <div className="row wrap">
+                            <div className="row wrap source-card-details">
                               {s.createdAt && (
-                                <span className="fine">
-                                  Added{" "}
-                                  {new Date(s.createdAt).toLocaleDateString()}
-                                </span>
+                                <time
+                                  className="fine"
+                                  dateTime={new Date(s.createdAt).toISOString()}
+                                >
+                                  Added {calendarDate.format(s.createdAt)}
+                                </time>
                               )}
                               {sort === "published" && (
                                 <span className="fine">
                                   {s.publishedAt
-                                    ? `Published ${new Date(s.publishedAt).toLocaleDateString()}`
+                                    ? `Published ${calendarDate.format(s.publishedAt)}`
                                     : "Publication date unavailable"}
                                 </span>
                               )}
                               {sort === "saved" && (
                                 <span className="fine">
                                   {s.originalSavedAt
-                                    ? `Saved ${new Date(s.originalSavedAt).toLocaleDateString()}`
+                                    ? `Saved ${calendarDate.format(s.originalSavedAt)}`
                                     : "Save date unavailable"}
                                 </span>
                               )}
@@ -1800,7 +2017,7 @@ export function Console({
                                   {label(m.disposition)}
                                 </span>
                               ))}
-                              {(s.categoryNames ?? s.tags)
+                              {(s.categoryNames?.length ? s.categoryNames : s.categoryKeys?.map(postTopicName) ?? s.tags)
                                 ?.slice(0, 4)
                                 .map((t: string) => (
                                   <span className="tag" key={t}>
@@ -1825,12 +2042,6 @@ export function Console({
                               )}
                             </div>
                           </div>
-                          <span
-                            className="icon-button source-open"
-                            aria-hidden="true"
-                          >
-                            <ArrowRight size={18} />
-                          </span>
                         </article>
                       ))
                     ) : (
@@ -1852,7 +2063,7 @@ export function Console({
                           primary
                           onClick={() =>
                             search || filter || category
-                              ? (setSearch(""), setFilter(""), setCategory(""))
+                              ? clearPostsFilters()
                               : void openCapture()
                           }
                         >
@@ -1865,12 +2076,8 @@ export function Console({
                   </div>
                   {!demo && data.libraryNext && (
                     <Button
-                      busy={busy}
-                      onClick={() =>
-                        loadLibrary(true).catch(() =>
-                          setNotice("Could not load the next page."),
-                        )
-                      }
+                      busy={libraryLoading}
+                      onClick={() => void loadLibrary(true)}
                     >
                       Load more sources
                     </Button>
@@ -1917,70 +2124,23 @@ export function Console({
               )}
               {view === "projects" && (
                 <>
-                  <section
-                    className="atlas-projects"
-                    aria-label="Your selected projects"
-                  >
-                    {data.repositories
-                      .filter((r) => r.enabled)
-                      .map((r) => {
-                        const proposals = data.proposals.filter(
-                          (p) => p.repositoryId === id(r),
-                        );
-                        return (
-                          <article
-                            className="panel atlas-project"
-                            key={id(r)}
-                            id={`repository-${id(r)}`}
-                            tabIndex={-1}
-                          >
-                            <GitBranch size={24} aria-hidden="true" />
-                            <h2>
-                              {r.fullName ?? r.name ?? "Selected project"}
-                            </h2>
-                            <span className="status">
-                              {r.confirmed
-                                ? "Context reviewed"
-                                : "Context needs review"}
-                            </span>
-                            {proposals.length ? (
-                              <ul>
-                                {proposals.slice(0, 6).map((p) => (
-                                  <li key={id(p)}>
-                                    <button
-                                      onClick={() => void openProposal(id(p))}
-                                    >
-                                      <Lightbulb size={18} aria-hidden="true" />
-                                      <span>{p.title}</span>
-                                      <span className="explore-meta">
-                                        {label(p.review)}
-                                      </span>
-                                      <ArrowRight
-                                        size={16}
-                                        aria-hidden="true"
-                                      />
-                                    </button>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p>No proposals on this loaded page.</p>
-                            )}
-                            <Button onClick={() => go("proposals")}>
-                              Review proposals
-                            </Button>
-                          </article>
-                        );
-                      })}
-                    {!data.repositories.some((r) => r.enabled) && (
-                      <section className="panel">
-                        <h2>Your ideas need a destination</h2>
-                        <p>Choose a project below and review its context.</p>
-                      </section>
-                    )}
-                  </section>
+                  <WorkProjects
+                    organizationId={organizationId}
+                    repositories={data.repositories}
+                    projects={data.projects}
+                    proposals={data.proposals}
+                    canCreate={!readOnly && !demo && ["owner", "admin"].includes(data.role ?? "")}
+                    onOpenProposal={demo ? (proposalId) => void openProposal(proposalId) : undefined}
+                    onManage={() => {
+                      const settings = document.querySelector<HTMLDetailsElement>("#work-project-settings");
+                      if (!settings) return;
+                      settings.open = true;
+                      settings.querySelector("summary")?.focus();
+                    }}
+                  />
                   <details
-                    className="panel atlas-project-settings"
+                    id="work-project-settings"
+                    className="panel atlas-project-settings work-project-settings"
                     open={!data.repositories.some((r) => r.enabled)}
                   >
                     <summary>Project connections and context</summary>
@@ -1990,17 +2150,22 @@ export function Console({
                       repositories={data.repositories}
                       choices={data.githubChoices ?? []}
                       call={call}
-                      readOnly={readOnly}
+                      readOnly={readOnly || localSnapshot}
                       demo={demo}
                     />
-                    {data.repositories.map((r) => (
-                      <BusinessContext
-                        key={`${id(r)}:${r.profileVersion}:${r.selectionVersion ?? 0}:${r.profileDraftSha ?? ""}`}
-                        repo={r}
-                        call={call}
-                        readOnly={readOnly || demo}
-                      />
-                    ))}
+                    {data.repositories.length > 0 && (
+                      <section className="work-context-list" aria-label="Saved project context">
+                        <h2>Project context</h2>
+                        {data.repositories.map((r) => (
+                          <BusinessContext
+                            key={`${id(r)}:${r.profileVersion}:${r.selectionVersion ?? 0}:${r.profileDraftSha ?? ""}`}
+                            repo={r}
+                            call={call}
+                            readOnly={readOnly || demo || localSnapshot}
+                          />
+                        ))}
+                      </section>
+                    )}
                   </details>
                   <details
                     className="panel"
@@ -2068,423 +2233,368 @@ export function Console({
                 </>
               )}
               {view === "proposals" && (
-                <>
-                  {data.proposals.length ? (
-                    data.proposals.map((p) => (
-                      <article className="panel" key={id(p)}>
-                        <span className="status">{label(p.disposition)}</span>
-                        <h2>{p.title}</h2>
-                        <p>{p.detail?.currentProblem}</p>
-                        <p>{label(p.review)}</p>
-                        <Button
-                          busy={busy}
-                          onClick={() => {
-                            setSelected(p);
-                            setView("proposal");
-                          }}
-                        >
-                          Review proposal
-                        </Button>
-                      </article>
-                    ))
-                  ) : (
-                    <div className="empty">
-                      <h2>No proposals to review.</h2>
-                      <p>
-                        Analyze a source and match it to a confirmed repository.
-                        No useful match is a valid result.
-                      </p>
-                      {demo && (
-                        <Button
-                          busy={busy}
-                          onClick={() => {
-                            setSelected({
-                              id: "demo-proposal",
-                              title: "Preview a useful result before setup",
-                              disposition: "relevant",
-                              review: "unreviewed",
-                              version: 1,
-                              detail: {
-                                currentProblem:
-                                  "Demo Planner opens with an empty view.",
-                                proposedChange:
-                                  "Offer a reversible populated example.",
-                                benefitHypothesis:
-                                  "A first-time visitor may understand the product sooner.",
-                                risks: [
-                                  "Sample data could be mistaken for a saved project.",
-                                ],
-                                acceptanceCriteria: [
-                                  "Sample remains labeled",
-                                  "Start fresh removes the example",
-                                ],
-                              },
-                            });
-                            setView("proposal");
-                          }}
-                        >
-                          Open synthetic proposal
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </>
+                <WorkProposals
+                  organizationId={organizationId}
+                  proposals={data.proposals}
+                  repositories={data.repositories}
+                  onOpenProposal={demo ? (proposalId) => void openProposal(proposalId) : undefined}
+                  onOpenPosts={() => go("posts")}
+                />
               )}
-              {view === "proposal" &&
-                selected &&
-                (selected.detail?.schemaVersion ===
-                "chat-project-proposal-v1" ? (
-                  <StandaloneProposal
-                    proposal={selected}
-                    organizationId={organizationId}
-                    fit={
-                      data.projectSuggestions?.items.find(
-                        (p) => p.id === selected.repositoryId,
-                      )?.fit
-                    }
-                    call={strictCall}
-                    readOnly={readOnly}
-                    demo={demo}
-                  />
-                ) : (
-                  <>
-                    <ProposalTrail
-                      proposal={selected}
-                      runs={data.runs.filter(
-                        (r) => r.proposalId === id(selected),
-                      )}
-                    />
-                    <span className="status">
-                      {label(selected.disposition)}
-                    </span>
-                    {selected.reviewerCorrection && (
-                      <p className="notice">
-                        Reviewer correction:{" "}
-                        {label(selected.reviewerCorrection.to)}. Original model
-                        assessment: {label(selected.reviewerCorrection.from)}.
-                        Reason: {selected.reviewerCorrection.reason}
-                      </p>
-                    )}
-                    {!demo && (
-                      <form
-                        className="panel form-grid"
-                        onSubmit={async (event) => {
-                          event.preventDefault();
-                          const form = new FormData(event.currentTarget);
-                          await call("decide", {
-                            id: id(selected),
-                            version: selected.version,
-                            decision: "accepted",
-                            disposition: form.get("disposition"),
-                            note: form.get("reason"),
-                          });
-                        }}
-                      >
-                        <h2>Review the assessment</h2>
-                        <label>
-                          Reviewer assessment
-                          <ChoiceSelect
-                            name="disposition"
-                            defaultValue={selected.disposition}
-                          >
-                            {[
-                              "relevant",
-                              "no_fit",
-                              "already_implemented",
-                              "unsupported_claim",
-                              "needs_context",
-                              "defer",
-                            ].map((value) => (
-                              <option key={value} value={value}>
-                                {label(value)}
-                              </option>
-                            ))}
-                          </ChoiceSelect>
-                        </label>
-                        <label>
-                          Evidence and reason for any correction
-                          <textarea
-                            name="reason"
-                            maxLength={2000}
-                            placeholder="Explain the source and repository evidence. Changing an assessment requires a reason."
-                          />
-                        </label>
-                        <button
-                          className="primary"
-                          disabled={busy}
-                          type="submit"
-                        >
-                          Accept reviewed relevant proposal
-                        </button>
-                      </form>
-                    )}
-
-                    <section className="panel">
-                      <h2>Why this project?</h2>
-                      <p>{selected.detail?.currentProblem}</p>
-                      <h3>Proposed change</h3>
-                      <p>
-                        {selected.detail?.proposedChange ??
-                          "No code change recommended."}
-                      </p>
-                      <h3>Expected benefit, as a hypothesis</h3>
-                      <p>
-                        {selected.detail?.benefitHypothesis ??
-                          "No benefit claim."}
-                      </p>
-                      <h3>Risks and reasons to reject</h3>
-                      <ul>
-                        {selected.detail?.risks?.map((s: string) => (
-                          <li key={s}>{s}</li>
-                        ))}
-                      </ul>
-                      <h3>Acceptance criteria</h3>
-                      <ul>
-                        {selected.detail?.acceptanceCriteria?.map(
-                          (s: string) => (
-                            <li key={s}>{s}</li>
-                          ),
+              {view === "proposal" && selected && (
+                <StandaloneProposal
+                  proposal={
+                    selected.repo
+                      ? selected
+                      : {
+                          ...selected,
+                          repo: {
+                            fullName:
+                              data.repositories.find(
+                                (repo) => id(repo) === selected.repositoryId,
+                              )?.fullName ?? "Project",
+                          },
+                        }
+                  }
+                  organizationId={organizationId}
+                  showReferences={!demo}
+                  fit={
+                    data.projectSuggestions?.items.find(
+                      (project) => project.id === selected.repositoryId,
+                    )?.fit
+                  }
+                  call={strictCall}
+                  readOnly={readOnly}
+                  discussionEnabled={
+                    selected.detail?.schemaVersion === "chat-project-proposal-v1" &&
+                    !demo &&
+                    !localSnapshot
+                  }
+                >
+                  {selected.detail?.schemaVersion !== "chat-project-proposal-v1" && (
+                    <div className="work-proposal-support">
+                      <section className="work-detail-card work-review-summary">
+                        <h3>Assessment</h3>
+                        <WorkStatus value={selected.disposition} />
+                        {selected.reviewerCorrection && (
+                          <p>
+                            Changed from {label(selected.reviewerCorrection.from)} to{" "}
+                            {label(selected.reviewerCorrection.to)}.{" "}
+                            {selected.reviewerCorrection.reason}
+                          </p>
                         )}
-                      </ul>
-                      <details>
-                        <summary>Source and repository evidence</summary>
-                        <pre>
-                          {JSON.stringify(
-                            {
-                              source: selected.detail?.sourceEvidence,
-                              repository: selected.detail?.repositoryEvidence,
-                            },
-                            null,
-                            2,
-                          )}
-                        </pre>
-                      </details>
-                      <div className="row wrap">
-                        {["rejected", "deferred", "accepted"].map((d) => (
-                          <Button
-                            busy={busy}
-                            key={d}
-                            primary={d === "accepted"}
-                            disabled={
-                              d === "accepted" &&
-                              selected.disposition !== "relevant"
-                            }
-                            onClick={async () => {
+                        {selected.detail?.benefitHypothesis && (
+                          <div>
+                            <h4>Expected benefit</h4>
+                            <p>{selected.detail.benefitHypothesis}</p>
+                          </div>
+                        )}
+                        {!!selected.detail?.risks?.length && (
+                          <div>
+                            <h4>Risks</h4>
+                            <ul>
+                              {selected.detail.risks.map((risk: string) => (
+                                <li key={risk}>{risk}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {!localSnapshot && (!readOnly || demo) && (
+                          <div className="work-review-actions">
+                            {([
+                              ["accepted", "Accept proposal"],
+                              ["rejected", "Reject"],
+                              ["deferred", "Defer"],
+                            ] as const).map(([decision, action]) => (
+                              <Button
+                                busy={busy}
+                                key={decision}
+                                primary={decision === "accepted"}
+                                disabled={
+                                  decision === "accepted" &&
+                                  selected.disposition !== "relevant"
+                                }
+                                onClick={async () => {
+                                  await call("decide", {
+                                    id: id(selected),
+                                    version: selected.version,
+                                    decision,
+                                    note: "",
+                                  });
+                                  if (demo)
+                                    setSelected({ ...selected, review: decision });
+                                }}
+                              >
+                                {action}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </section>
+                      <ProposalTrail
+                        proposal={selected}
+                        runs={data.runs.filter(
+                          (run) => run.proposalId === id(selected),
+                        )}
+                      />
+                      {(selected.detail?.sourceEvidence ||
+                        selected.detail?.repositoryEvidence) && (
+                        <details className="work-detail-card work-review-detail">
+                          <summary>Source and repository evidence</summary>
+                          <pre>
+                            {JSON.stringify(
+                              {
+                                source: selected.detail.sourceEvidence,
+                                repository: selected.detail.repositoryEvidence,
+                              },
+                              null,
+                              2,
+                            )}
+                          </pre>
+                        </details>
+                      )}
+                      {!demo && !readOnly && !localSnapshot && (
+                        <details className="work-detail-card work-review-detail">
+                          <summary>Correct the assessment</summary>
+                          <form
+                            className="form-grid"
+                            onSubmit={async (event) => {
+                              event.preventDefault();
+                              const form = new FormData(event.currentTarget);
                               await call("decide", {
                                 id: id(selected),
                                 version: selected.version,
-                                decision: d,
-                                note: "",
+                                decision: "accepted",
+                                disposition: form.get("disposition"),
+                                note: form.get("reason"),
                               });
-                              if (demo) setSelected({ ...selected, review: d });
                             }}
                           >
-                            {d === "accepted"
-                              ? "Accept proposal"
-                              : d === "rejected"
-                                ? "Reject"
-                                : "Defer"}
-                          </Button>
-                        ))}
-                      </div>
-                    </section>
-                    <>
-                      <section className="panel">
-                        <h2>Review and edit the plan</h2>
-                        <a
-                          href="/help/evaluate-an-idea-for-a-project"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Project decision and plan help
-                        </a>
-                        <Button
-                          busy={busy}
-                          disabled={selected.review !== "accepted"}
-                          onClick={() =>
-                            call("draftPlan", {
-                              id: id(selected),
-                              version: selected.version,
-                              maxCredits: 10,
-                            })
-                          }
-                        >
-                          Draft an editable plan, maximum 10 credits
-                        </Button>
-                        {selected.planDraft &&
-                          selected.planDraftVersion === selected.version && (
-                            <details>
-                              <summary>Unconfirmed AI plan draft</summary>
-                              <pre>
-                                {JSON.stringify(selected.planDraft, null, 2)}
-                              </pre>
+                            <label>
+                              Reviewer assessment
+                              <ChoiceSelect
+                                name="disposition"
+                                defaultValue={selected.disposition}
+                              >
+                                {[
+                                  "relevant",
+                                  "no_fit",
+                                  "already_implemented",
+                                  "unsupported_claim",
+                                  "needs_context",
+                                  "defer",
+                                ].map((value) => (
+                                  <option key={value} value={value}>
+                                    {label(value)}
+                                  </option>
+                                ))}
+                              </ChoiceSelect>
+                            </label>
+                            <label>
+                              Evidence and reason for any correction
+                              <textarea
+                                name="reason"
+                                maxLength={2000}
+                                placeholder="Explain the source and repository evidence. Changing an assessment requires a reason."
+                              />
+                            </label>
+                            <button
+                              className="button primary"
+                              disabled={busy}
+                              type="submit"
+                            >
+                              {busy
+                                ? "Saving assessment…"
+                                : "Accept reviewed relevant proposal"}
+                            </button>
+                          </form>
+                        </details>
+                      )}
+                      {!localSnapshot && (!readOnly || demo) && (
+                        <>
+                          <details className="work-detail-card work-review-detail">
+                            <summary>Plan editor and export</summary>
+                            <div className="form-grid">
+                              <a
+                                href="/help/evaluate-an-idea-for-a-project"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Project decision and plan help
+                              </a>
                               <Button
                                 busy={busy}
+                                disabled={selected.review !== "accepted"}
                                 onClick={() =>
-                                  setPlanText(
-                                    JSON.stringify(selected.planDraft, null, 2),
-                                  )
+                                  call("draftPlan", {
+                                    id: id(selected),
+                                    version: selected.version,
+                                    maxCredits: 10,
+                                  })
                                 }
                               >
-                                Copy draft into the editable plan
+                                Draft editable plan · up to 10 credits
                               </Button>
+                              {selected.planDraft &&
+                                selected.planDraftVersion === selected.version && (
+                                  <details>
+                                    <summary>Unconfirmed plan draft</summary>
+                                    <pre>
+                                      {JSON.stringify(selected.planDraft, null, 2)}
+                                    </pre>
+                                    <Button
+                                      busy={busy}
+                                      onClick={() =>
+                                        setPlanText(
+                                          JSON.stringify(selected.planDraft, null, 2),
+                                        )
+                                      }
+                                    >
+                                      Copy draft into editor
+                                    </Button>
+                                  </details>
+                                )}
                               <p>
-                                Review and save a new version before execution.
-                                This draft grants no coding permission.
+                                Save a new plan version before requesting execution.
+                                Existing files must appear in the repository snapshot.
                               </p>
-                            </details>
-                          )}
-                        <p>
-                          Acceptance does not authorize execution. Files marked
-                          existing must appear in the repository snapshot.
-                          Saving creates a new immutable plan hash.
-                        </p>
-                        <PlanEditor
-                          value={planText}
-                          onChange={setPlanText}
-                          disabled={busy || readOnly}
-                        />
-                        <Button
-                          busy={busy}
-                          disabled={selected.review !== "accepted"}
-                          onClick={async () => {
-                            try {
-                              await call("editPlan", {
-                                id: id(selected),
-                                version: selected.version,
-                                plan: reviewedPlan(planText),
-                              });
-                            } catch {
-                              setNotice(
-                                "Add a scope, at least one file, implementation step and check. Keep all required sections and valid JSON.",
-                              );
-                            }
-                          }}
-                        >
-                          Save new plan version
-                        </Button>
-                        <Button
-                          busy={busy}
-                          onClick={() => {
-                            downloadText(
-                              "vibescroller-plan.json",
-                              planText,
-                              "application/json",
-                            );
-                            if (!demo)
-                              journey.planExported(
-                                `${id(selected)}:${selected.version}:${selected.updatedAt}`,
-                                "json",
-                              );
-                          }}
-                        >
-                          Export plan
-                        </Button>
-                      </section>
-                      <ExecutionApproval
-                        proposal={selected}
-                        call={call}
-                        routes={data.customerRoutes}
-                        usage={data.usage}
-                        busy={busy}
-                      />
-                    </>
-                  </>
-                ))}
-              {view === "runs" && (
-                <>
-                  {data.runs.length ? (
-                    data.runs.map((r) => (
-                      <RunCard
-                        key={id(r)}
-                        run={r}
-                        title={
-                          data.proposals.find(
-                            (proposal) => id(proposal) === r.proposalId,
-                          )?.title
-                        }
-                        handoff={
-                          data.proposals.find(
-                            (proposal) => id(proposal) === r.proposalId,
-                          )?.detail?.handoff
-                        }
-                        call={call}
-                        busy={busy}
-                        readOnly={readOnly}
-                      />
-                    ))
-                  ) : (
-                    <div className="empty">
-                      <h2>No authorized runs yet.</h2>
-                      <p>
-                        Approve a reviewed plan with a specific executor and
-                        funding route. An offline laptop never triggers a cloud
-                        charge.
-                      </p>
+                              <PlanEditor
+                                value={planText}
+                                onChange={setPlanText}
+                                disabled={busy || readOnly}
+                              />
+                              <div className="work-review-actions">
+                                <Button
+                                  primary
+                                  busy={busy}
+                                  disabled={selected.review !== "accepted"}
+                                  onClick={async () => {
+                                    try {
+                                      await call("editPlan", {
+                                        id: id(selected),
+                                        version: selected.version,
+                                        plan: reviewedPlan(planText),
+                                      });
+                                    } catch {
+                                      setNotice(
+                                        "Add a scope, at least one file, implementation step and check. Keep all required sections and valid JSON.",
+                                      );
+                                    }
+                                  }}
+                                >
+                                  Save new plan version
+                                </Button>
+                                <Button
+                                  busy={busy}
+                                  onClick={() => {
+                                    downloadText(
+                                      "vibescroller-plan.json",
+                                      planText,
+                                      "application/json",
+                                    );
+                                    if (!demo)
+                                      journey.planExported(
+                                        `${id(selected)}:${selected.version}:${selected.updatedAt}`,
+                                        "json",
+                                      );
+                                  }}
+                                >
+                                  Export plan
+                                </Button>
+                              </div>
+                            </div>
+                          </details>
+                          <details className="work-detail-card work-review-detail">
+                            <summary>Execution approval</summary>
+                            <ExecutionApproval
+                              proposal={selected}
+                              call={call}
+                              routes={data.customerRoutes}
+                              usage={data.usage}
+                              busy={busy}
+                            />
+                          </details>
+                        </>
+                      )}
                     </div>
                   )}
-                </>
+                </StandaloneProposal>
+              )}
+              {view === "runs" && (
+                <WorkTasks
+                  runs={data.runs}
+                  onOpenProposals={() => go("proposals")}
+                  render={(run) => {
+                    const proposal = data.proposals.find((p) => id(p) === run.proposalId);
+                    const repository = data.repositories.find((p) => id(p) === run.repositoryId);
+                    return (
+                      <RunCard
+                        key={id(run)}
+                        run={run}
+                        title={proposal?.title}
+                        repository={repository?.fullName}
+                        handoff={proposal?.detail?.handoff}
+                        call={call}
+                        busy={busy}
+                        readOnly={readOnly || localSnapshot}
+                      />
+                    );
+                  }}
+                />
               )}
               {view === "inbox" && (
-                <>
-                  <p>
-                    Notifications use safe previews. Telegram is planned for
-                    later. Messages never approve execution.
-                  </p>
-                  {data.notifications.length ? (
-                    data.notifications.map((n) => (
-                      <article className="panel" key={id(n)}>
-                        <p>{n.message}</p>
-                        <small>{new Date(n.createdAt).toLocaleString()}</small>
-                      </article>
-                    ))
-                  ) : (
-                    <div className="empty">
-                      <h2>You're caught up.</h2>
-                      <p>
-                        Processing and review notifications will appear here.
-                      </p>
-                    </div>
-                  )}
-                  <Button
-                    busy={busy}
-                    onClick={async () => {
-                      if (!("Notification" in window)) {
+                <WorkActivity
+                  organizationId={organizationId}
+                  notifications={data.notifications}
+                  proposals={data.proposals}
+                  connections={data.connections}
+                  onOpenProposal={demo ? (proposalId) => void openProposal(proposalId) : undefined}
+                  onConnections={() => go("connections")}
+                  onProposals={() => go("proposals")}
+                  settings={
+                    <details className="panel activity-settings">
+                    <summary>Notification settings</summary>
+                    <Button
+                      busy={busy}
+                      onClick={async () => {
+                        if (!("Notification" in window)) {
+                          setNotice(
+                            "This browser does not support desktop notifications. Use the inbox.",
+                          );
+                          return;
+                        }
+                        const result = await Notification.requestPermission();
                         setNotice(
-                          "This browser does not support desktop notifications. Use the inbox.",
+                          result === "granted"
+                            ? "Browser notifications allowed. Delivery still requires an open application or a configured push service."
+                            : "Browser notifications remain off. The inbox is available.",
                         );
-                        return;
+                      }}
+                    >
+                      Enable browser notification permission
+                    </Button>
+                    <CookieSettings className="secondary" />
+                    <Button
+                      busy={busy}
+                      onClick={() =>
+                        call("preferences", {
+                          organizationId,
+                          email: true,
+                          telegram: false,
+                          analytics: false,
+                          legalVersion: policyRelease.id,
+                        })
                       }
-                      const result = await Notification.requestPermission();
-                      setNotice(
-                        result === "granted"
-                          ? "Browser notifications allowed. Delivery still requires an open application or a configured push service."
-                          : "Browser notifications remain off. The inbox is available.",
-                      );
-                    }}
-                  >
-                    Enable browser notification permission
-                  </Button>
-                  <CookieSettings className="secondary" />
-                  <Button
-                    busy={busy}
-                    onClick={() =>
-                      call("preferences", {
-                        organizationId,
-                        email: true,
-                        telegram: false,
-                        analytics: false,
-                        legalVersion: policyRelease.id,
-                      })
-                    }
-                  >
-                    Request email notifications
-                  </Button>
-                  <p>
-                    Email stays unavailable until a verified sender is
-                    connected.
-                  </p>
-                </>
+                    >
+                      Request email notifications
+                    </Button>
+                    <p>
+                      Email stays unavailable until a verified sender is
+                      connected.
+                    </p>
+                  </details>
+                  }
+                />
               )}
               {view === "usage" && (
                 <UsageSummary
@@ -2494,260 +2604,98 @@ export function Console({
                       : usageOverview(data.usage)
                   }
                   organizationId={organizationId}
+                  retry={localSnapshot ? undefined : refreshData}
                 />
               )}
               {view === "connections" && (
-                <>
-                  <AssistantConnections
-                    key={organizationId}
-                    organizationId={organizationId}
-                    call={call}
-                    readOnly={readOnly}
-                    demo={demo}
-                  />
-                  <div className="panel">
-                    <h2>GitHub</h2>
-                    <p>
-                      Install the VibeScroller GitHub App on selected
-                      repositories. Administration and workflow write are not
-                      requested by default.
-                    </p>
-                    <Button busy={busy} onClick={() => go("projects")}>
-                      Manage selected repositories
-                    </Button>
-                    {data.connections?.some(
+                <AccountConnections
+                  organizationId={organizationId}
+                  canLoad={!localSnapshot}
+                  canViewLaunchChecks={
+                    !demo && (data.role === "owner" || data.role === "admin")
+                  }
+                  githubConnected={Boolean(
+                    data.connections?.some(
                       (connection) =>
                         connection.provider === "github" &&
                         connection.status === "connected",
-                    ) ? (
-                      <Button
-                        busy={busy}
-                        onClick={() =>
-                          call("revoke", { organizationId, provider: "github" })
-                        }
-                      >
-                        Disconnect GitHub
-                      </Button>
-                    ) : (
-                      <a
-                        className="secondary"
-                        href={`/api/github/connect?org=${organizationId}`}
-                      >
-                        Link GitHub account
-                      </a>
-                    )}
-                  </div>
-                  <form
-                    className="panel"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const f = new FormData(e.currentTarget);
-                      call("saveKey", {
-                        organizationId,
-                        secret: f.get("secret"),
-                      });
-                      e.currentTarget.reset();
-                    }}
-                  >
-                    <h2>Your OpenAI API credential</h2>
-                    <p>
-                      Provider charges are separate. The server encrypts this
-                      credential; the browser does not retain it. Saving does
-                      not activate execution. A new sign-in is required only
-                      when saving a changed credential, not when testing.
-                    </p>
-                    <p>
-                      Status:{" "}
-                      {label(data.customerRoutes?.status ?? "disconnected")}.{" "}
-                      {data.customerRoutes?.models.length ?? 0} reviewed models
-                      available.
-                    </p>
-                    <label>
-                      API key
-                      <input
-                        name="secret"
-                        type="password"
-                        autoComplete="off"
-                        required
-                      />
-                    </label>
-                    <button className="primary" disabled={busy}>
-                      Encrypt and save credential
-                    </button>
-                    <Button
-                      busy={busy}
-                      onClick={() => call("testKey", { organizationId })}
-                    >
-                      Verify credential with a model-list request
-                    </Button>
-                    <p className="fine">
-                      Verification sends no inference request. Coding requires a
-                      separate USD provider ceiling and platform compute
-                      allowance. No reviewed available model means this route
-                      stays unavailable.
-                    </p>
-                    <Button
-                      busy={busy}
-                      onClick={() =>
-                        call("revoke", { organizationId, provider: "openai" })
-                      }
-                    >
-                      Revoke credential
-                    </Button>
-                  </form>
-                  <div className="panel">
-                    <h2>Telegram</h2>
-                    <p>
-                      Planned for later. Use the web inbox now. Setup needs a
-                      BotFather bot, secret webhook, numeric-user pairing and
-                      replay tests.
-                    </p>
-                  </div>
-                </>
+                    ),
+                  )}
+                  providerStatus={data.customerRoutes?.status}
+                  reviewedModels={data.customerRoutes?.models.length ?? 0}
+                  readOnly={readOnly}
+                  role={data.role}
+                  demo={demo}
+                  busy={busy}
+                  call={call}
+                  openProjects={() => go("projects")}
+                />
               )}
               {view === "runners" && (
-                <>
-                  <div className="panel">
-                    <h2>Optional laptop execution</h2>
-                    <p>
-                      Pair a named computer, confirm its fingerprint, map
-                      repositories, and verify Windows isolation. Official Codex
-                      app-server keeps authentication on the computer. No
-                      inbound port is required.
-                    </p>
-                    <p className="notice">
-                      Execution is blocked until its isolation tests pass. A
-                      worktree alone is not a sandbox.
-                    </p>
-                    <Link href="/docs">Read runner setup</Link>
-                  </div>
-                  {!readOnly && (
-                    <section className="panel">
-                      <h2>Pair this computer</h2>
-                      <p>
-                        Run the documented local pairing command, then paste its
-                        public request here. Check its fingerprint against the
-                        terminal before confirming. A fresh sign-in is required.
-                      </p>
-                      <form
-                        className="form-grid"
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          try {
-                            const value = JSON.parse(
-                              String(
-                                new FormData(e.currentTarget).get("request") ??
-                                  "",
-                              ),
-                            );
-                            if (
-                              Object.keys(value).sort().join(",") !==
-                                "codeHash,credentialHash,fingerprint,name,workspaceId" ||
-                              typeof value.name !== "string" ||
-                              value.workspaceId !== organizationId ||
-                              ![
-                                value.codeHash,
-                                value.credentialHash,
-                                value.fingerprint,
-                              ].every(
-                                (v) =>
-                                  typeof v === "string" &&
-                                  /^[a-f0-9]{64}$/.test(v),
-                              )
-                            )
-                              throw new Error(
-                                "Invalid public pairing request.",
-                              );
-                            const existing = data.devices?.find(
-                              (d) =>
-                                d.personalOwned &&
-                                d.pairingActive &&
-                                d.fingerprint === value.fingerprint &&
-                                d.name === value.name,
-                            );
-                            const deviceId = existing
-                              ? id(existing)
-                              : await call("startDevice", {
-                                  organizationId,
-                                  name: value.name,
-                                  fingerprint: value.fingerprint,
-                                  codeHash: value.codeHash,
-                                });
-                            if (deviceId)
-                              setPairing({
-                                id: deviceId,
-                                name: value.name,
-                                fingerprint: value.fingerprint,
-                                credentialHash: value.credentialHash,
-                              });
-                          } catch {
-                            setNotice(
-                              "Paste the public request generated by your runner. Do not paste keys or login tokens.",
-                            );
-                          }
-                        }}
-                      >
-                        <label>
-                          Public pairing request
-                          <textarea
-                            name="request"
-                            required
-                            maxLength={1200}
-                            rows={5}
-                          />
-                        </label>
-                        <button className="secondary" disabled={busy}>
-                          Review device request
-                        </button>
-                      </form>
-                      {pairing && (
-                        <div>
-                          <h3>Confirm {pairing.name}</h3>
-                          <p className="code-label">
-                            Fingerprint {pairing.fingerprint}
-                          </p>
-                          <p>
-                            Confirm only if this fingerprint matches the
-                            computer you control. Pairing enables communication.
-                            Coding still requires separately verified isolation
-                            and an approved plan.
-                          </p>
-                          <Button
-                            busy={busy}
-                            onClick={async () => {
-                              const result = await call("approveDevice", {
-                                id: pairing.id,
-                                fingerprint: pairing.fingerprint,
-                                credentialHash: pairing.credentialHash,
-                              });
-                              if (result !== undefined) setPairing(null);
-                            }}
-                          >
-                            Confirm matching computer
-                          </Button>
-                        </div>
-                      )}
-                    </section>
-                  )}
-                  {data.devices?.map((d) => (
-                    <article className="panel" key={id(d)}>
-                      <h3>{d.name}</h3>
-                      <p>
-                        {d.state} · Fingerprint {d.fingerprint}
-                      </p>
-                      <Button
-                        busy={busy}
-                        onClick={() => call("revokeDevice", { id: id(d) })}
-                      >
-                        Revoke computer
-                      </Button>
-                    </article>
-                  ))}
-                </>
+                <AccountComputers
+                  key={organizationId}
+                  organizationId={organizationId}
+                  devices={data.devices ?? []}
+                  canPair={
+                    !demo &&
+                    !localSnapshot &&
+                    !readOnly &&
+                    (data.role === "owner" || data.role === "admin")
+                  }
+                  canRevoke={
+                    !demo && !localSnapshot && !readOnly && data.role === "owner"
+                  }
+                  busy={busy}
+                  call={call}
+                />
               )}
               {view === "privacy" && (
-                <>
-                  {!demo && (
+                <div className="account-content">
+                  <AccountSection
+                    title="Your data"
+                    icon={ShieldCheck}
+                    description="Sources, summaries and project context belong to your workspace. Original media expires under your workspace retention policy."
+                  >
+                    <div className="account-actions">
+                      {!localSnapshot && <a className="secondary" href={`/app/${organizationId}/content-export`}>
+                        Export workspace content
+                      </a>}
+                      <Link prefetch={false} className="secondary" href={`/account?workspace=${organizationId}`}>
+                        Account data and deletion
+                      </Link>
+                      {data.role === "owner" && (
+                        <Link prefetch={false} className="secondary" href={`/app/${organizationId}/settings`}>
+                          Workspace settings
+                        </Link>
+                      )}
+                    </div>
+                  </AccountSection>
+                  <div className="account-grid">
+                    <AccountSection title="Cookies and notifications">
+                      <div className="account-actions">
+                        <CookieSettings className="secondary" />
+                        {!localSnapshot && (
+                          <Button
+                            busy={busy}
+                            disabled={readOnly}
+                            onClick={() => call("preferences", {
+                              organizationId,
+                              email: false,
+                              telegram: false,
+                              analytics: false,
+                              legalVersion: policyRelease.id,
+                            })}
+                          >
+                            Turn off optional notifications and analytics
+                          </Button>
+                        )}
+                      </div>
+                    </AccountSection>
+                    <AccountSection title="Accessibility">
+                      <MotionPreference control />
+                    </AccountSection>
+                  </div>
+                  {!demo && !localSnapshot && (
                     <CloudCatalogReceipts
                       key={organizationId}
                       organizationId={organizationId}
@@ -2755,103 +2703,39 @@ export function Console({
                       call={(operation, args) => call(operation, args, true)}
                     />
                   )}
-                  <MotionPreference control />
-                  <div className="panel">
-                    <h2>Your content and preferences</h2>
-                    <p>
-                      Sources, summaries and project context belong to your
-                      workspace. Original media expires within the configured
-                      retention window. Source deletion blocks access
-                      immediately and schedules cleanup.
-                    </p>
-                    <a
-                      className="secondary"
-                      href={`/app/${organizationId}/content-export`}
-                    >
-                      Export workspace content
-                    </a>
-                    <Link
-                      prefetch={false}
-                      className="secondary"
-                      href={`/app/${organizationId}/settings`}
-                    >
-                      Delete workspace
-                    </Link>
-                    <Link
-                      prefetch={false}
-                      className="secondary"
-                      href="/account"
-                    >
-                      Account export & deletion
-                    </Link>
-                  </div>
-                  <CookieSettings className="secondary" />
-                  <Button
-                    busy={busy}
-                    onClick={() =>
-                      call("preferences", {
-                        organizationId,
-                        email: false,
-                        telegram: false,
-                        analytics: false,
-                        legalVersion: policyRelease.id,
-                      })
-                    }
-                  >
-                    Turn off optional notifications and analytics
-                  </Button>
-                  <p>
-                    No private service-worker cache or cross-workspace content
-                    reuse.
-                  </p>
-                </>
+                </div>
               )}
               {view === "billing" && (
-                <>
-                  <div className="panel">
-                    <h2>Live checkout is disabled</h2>
-                    <p>
-                      Tax mode: pending evidence. The intended exemption
-                      strategy is not a claim about the company's registration.
-                      Ordinary VAT, special registration and destination
-                      treatment need matching official records.
-                    </p>
-                    <Link className="secondary" href="/pricing">
-                      View six catalogue prices and allowances
+                <div className="account-content">
+                  <section className="account-section account-billing-offer">
+                    <ProOfferSummary />
+                    <Link className="button secondary" href="/pricing" prefetch={false}>
+                      Compare renewal options
                     </Link>
-                    <Link
-                      prefetch={false}
-                      className="secondary"
-                      href={`/app/${organizationId}/billing`}
-                    >
-                      Billing portal and subscription status
-                    </Link>
-                  </div>
-                  <p>
-                    Cancellation, refunds and invoice compliance remain
-                    server-authorized workflows. A checkout return does not
-                    grant credits.
-                  </p>
-                </>
+                  </section>
+                </div>
               )}
               {view === "menu" && (
-                <section className="panel" aria-label="All application pages">
-                  <h2>Account</h2>
-                  <Link prefetch={false} href="/account">
-                    Profile and sign out
-                  </Link>
-                  <AppTheme control />
-                  <MotionPreference control />
-                  <nav aria-label="All mobile pages" className="form-grid">
-                    {nav.slice(3).map(([key, title, Icon]) => (
-                      <button key={key} onClick={() => go(key)}>
-                        <Icon size={20} aria-hidden="true" />
-                        {title}
-                        <ArrowRight size={16} aria-hidden="true" />
-                      </button>
-                    ))}
-                  </nav>
-                </section>
+                <AccountOverview
+                  avatar={
+                    <ProfileAvatar
+                      profile={
+                        profile ?? (demo ? { firstName: "Demo" } : undefined)
+                      }
+                    />
+                  }
+                  name={
+                    profile?.name ||
+                    profile?.firstName ||
+                    (demo ? "Demo account" : "Your profile")
+                  }
+                  workspace={data.workspaceName ?? (demo ? "Demo workspace" : "Current workspace")}
+                  organizationId={organizationId}
+                  role={data.role}
+                  privateLibrary={data.privateLibrary}
+                  demo={demo}
+                  go={openAccountView}
+                />
               )}
             </>
           )}
@@ -2859,9 +2743,17 @@ export function Console({
         <nav className="mobile-nav" aria-label="Mobile navigation">
           {nav.slice(0, 2).map(([key, title, Icon]) => (
             <button
-              className={mobileNavigationGroup(view) === key ? "active" : ""}
+              className={
+                mobileNavigationGroup(view) ===
+                (key === "posts" ? "library" : key)
+                  ? "active"
+                  : ""
+              }
               aria-current={
-                mobileNavigationGroup(view) === key ? "page" : undefined
+                mobileNavigationGroup(view) ===
+                (key === "posts" ? "library" : key)
+                  ? "page"
+                  : undefined
               }
               key={key}
               onClick={() => go(key)}
@@ -2873,12 +2765,17 @@ export function Console({
           <button
             type="button"
             className="mobile-save"
-            disabled={(readOnly && !demo) || busy || !accessAvailable}
+            disabled={(readOnly && !demo) || busy || capturePreparing || !accessAvailable}
+            aria-busy={capturePreparing || undefined}
             onClick={() => {
               void openCapture();
             }}
           >
-            <Plus size={20} aria-hidden="true" />
+            {capturePreparing ? (
+              <Loader2 className="spinner" size={20} aria-hidden="true" />
+            ) : (
+              <Plus size={20} aria-hidden="true" />
+            )}
             <span>Save</span>
           </button>
           <button
@@ -2916,12 +2813,20 @@ export function Console({
             aria-labelledby="capture-title"
             className="capture-modal"
           >
-            <div className="row spread">
-              <h2 id="capture-title">Add to your library</h2>
-              <Button busy={busy} onClick={() => setCaptureOpen(false)}>
-                Close
-              </Button>
+            <div className="capture-heading">
+              <h2 id="capture-title">Save a post</h2>
+              <button
+                type="button"
+                className="asset-icon-button"
+                aria-label="Close save dialog"
+                onClick={() => setCaptureOpen(false)}
+              >
+                <X size={21} aria-hidden="true" />
+              </button>
             </div>
+            {noticeKind === "error" && notice && (
+              <ErrorState title="Save needs attention" detail={notice} />
+            )}
             <CaptureForm
               devices={data.devices ?? []}
               personalEnabled={data.aiPreference?.personalAlphaEnabled}
@@ -2931,13 +2836,17 @@ export function Console({
               preferredRoute={data.aiPreference?.processingRoute}
               workCloud={data.aiPreference?.workCloud}
               onSetupNavigate={() => setCaptureOpen(false)}
-              sharedDraft={sharedDraft}
+              sharedDraft={captureDraft.current ?? sharedDraft}
+              onDraftChange={(url: string) => {
+                captureDraft.current = url;
+              }}
               demo={demo}
               organizationId={organizationId}
               call={call}
               onDone={(sourceId?: string) => {
                 setCaptureOpen(false);
                 setSharedDraft("");
+                captureDraft.current = null;
                 if (sourceId)
                   findSource({
                     _id: sourceId,
@@ -2969,7 +2878,9 @@ export function CaptureForm({
   workCloud = null,
   onSetupNavigate,
   sharedDraft,
+  onDraftChange,
 }: any) {
+  const kindId = useId();
   const [kind, setKind] = useState(existingSourceId ? "upload" : "url");
   const [saving, setSaving] = useState(false);
   const [autoAnalyze, setAutoAnalyze] = useState(
@@ -3341,36 +3252,23 @@ export function CaptureForm({
         }
       }}
     >
-      <label>
-        Source type
+      <div className="capture-kind">
+        <label htmlFor={kindId}>Post type</label>
         <ChoiceSelect
+          id={kindId}
+          aria-label="Post type"
           disabled={importBusy}
           value={kind}
           onValueChange={(value) => setKind(value)}
         >
-          {!existingSourceId && <option value="url">Video URL</option>}
+          {!existingSourceId && <option value="url">Link</option>}
           {!existingSourceId && (
-            <option value="import">Instagram export or link import</option>
+            <option value="import">Import Instagram saves</option>
           )}
-          <option value="upload">Permitted media upload</option>
-          <option value="text">Supplied transcript</option>
+          <option value="upload">Upload media</option>
+          <option value="text">Transcript</option>
         </ChoiceSelect>
-      </label>
-      {!existingSourceId && kind !== "import" && (
-        <label>
-          Title
-          <input
-            name="title"
-            required={kind === "text"}
-            maxLength={160}
-            placeholder={
-              kind === "upload"
-                ? "Uses the filename if empty"
-                : "Optional title"
-            }
-          />
-        </label>
-      )}
+      </div>
       {kind === "import" ? (
         <div className="form-grid">
           <label>
@@ -3481,18 +3379,19 @@ export function CaptureForm({
         </div>
       ) : kind === "url" ? (
         <label>
-          Source URL
+          Post link
           <input
             name="url"
             type="url"
             defaultValue={sharedDraft ?? ""}
-            placeholder="https://..."
+            onChange={(event) => onDraftChange?.(event.target.value)}
+            placeholder="Paste a link"
             required
           />
         </label>
       ) : kind === "text" ? (
         <label>
-          Original supplied text
+          Transcript
           <textarea name="text" rows={7} required maxLength={60000} />
         </label>
       ) : (
@@ -3506,11 +3405,24 @@ export function CaptureForm({
           />
         </label>
       )}
+      {!existingSourceId && kind !== "import" && (
+        <label>
+          {kind === "text" ? "Title" : "Title (optional)"}
+          <input
+            name="title"
+            required={kind === "text"}
+            maxLength={160}
+            placeholder={kind === "upload" ? "Uses the filename if empty" : undefined}
+          />
+        </label>
+      )}
       <label className="check">
         <input name="rights" type="checkbox" required />I may submit this
         content for processing
       </label>
-      <TaskRuntimePicker
+      <details className="capture-analysis" open={automatic || undefined}>
+        <summary>Analysis options</summary>
+        <TaskRuntimePicker
         organizationId={organizationId}
         value={
           analysisRoute === "personal"
@@ -3544,7 +3456,8 @@ export function CaptureForm({
         }
         disabled={saving || importBusy}
         onSetupNavigate={onSetupNavigate}
-      />
+        />
+      </details>
       {personalEnabled &&
         analysisRoute === "personal" &&
         (kind === "upload" ||
@@ -3766,6 +3679,16 @@ export function SourceDetail({
   const [expandedInsight, setExpandedInsight] = useState<number | null>(null);
   const [cloudRequestError, setCloudRequestError] = useState("");
   const transcript = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      window.location.hash !== "#source-transcript"
+    )
+      return;
+    setSettingsAnchor("source-transcript");
+    setPostSettingsOpen(true);
+    setTranscriptOpen(true);
+  }, []);
   function openPostSettings(anchor: string) {
     setSettingsAnchor(anchor);
     setPostSettingsOpen(true);
@@ -3962,6 +3885,10 @@ export function SourceDetail({
     (["queued", "processing"].includes(detail.state)
       ? "Analysis is underway."
       : "No analysis yet.");
+  const displayedCategories = detail.categoryNames?.length
+    ? detail.categoryNames
+    : (detail.categoryKeys?.length ? detail.categoryKeys : postTopics(detail))
+        .map(postTopicName);
   const overview =
     summary.length > 280
       ? (summary.match(/^.{1,280}[.!?](?:\s|$)/)?.[0]?.trim() ??
@@ -3988,1035 +3915,984 @@ export function SourceDetail({
         <p>This source is unavailable or its retained evidence has expired.</p>
       </section>
     );
-  return (
-    <>
-      <div className="post-reader-tools">
-        <SettingsPanel
-          title="Post settings"
-          triggerLabel="Post settings"
-          open={postSettingsOpen}
-          onOpenChange={(open) => {
-            setPostSettingsOpen(open);
-            if (!open) setSettingsAnchor(null);
-          }}
-        >
-          {!demo && !detailLoading && detail.kind === "url" && (
-            <PreparedAnalysisControl
+  const postTools = (
+    <div className="post-reader-tools">
+      <SettingsPanel
+        title="Advanced settings"
+        triggerLabel="Advanced settings"
+        showTriggerLabel
+        open={postSettingsOpen}
+        onOpenChange={(open) => {
+          setPostSettingsOpen(open);
+          if (!open) setSettingsAnchor(null);
+        }}
+      >
+        {!demo && !detailLoading && detail.kind === "url" && (
+          <PreparedAnalysisControl
+            key={sourceId}
+            sourceId={sourceId}
+            ready={detail.state === "ready"}
+            revision={sourceRevision}
+            disabled={
+              readOnly ||
+              busy ||
+              ["processing", "queued"].includes(detail.state)
+            }
+            call={strictCall ?? call}
+            onChange={() => onRefresh?.()}
+          />
+        )}
+        {!demo &&
+          !detailLoading &&
+          detail.state === "ready" &&
+          (isCloudObservedMedia(detail.orderedMedia?.post) ||
+            detail.preparedService ||
+            detail.sharedCloud) && (
+            <AnalysisHistory
               key={sourceId}
               sourceId={sourceId}
-              ready={detail.state === "ready"}
               revision={sourceRevision}
-              disabled={
-                readOnly ||
-                busy ||
-                ["processing", "queued"].includes(detail.state)
-              }
+              disabled={readOnly || busy}
+              reanalysisDisabled={!detail.workCloudMediaEnabled}
+              recommendationMode={detail.sharedCloud?.selectionMode}
               call={strictCall ?? call}
               onChange={() => onRefresh?.()}
             />
           )}
-          {!demo &&
-            !detailLoading &&
-            detail.state === "ready" &&
-            (isCloudObservedMedia(detail.orderedMedia?.post) ||
-              detail.preparedService ||
-              detail.sharedCloud) && (
-              <AnalysisHistory
-                key={sourceId}
-                sourceId={sourceId}
-                revision={sourceRevision}
-                disabled={readOnly || busy}
-                reanalysisDisabled={!detail.workCloudMediaEnabled}
-                recommendationMode={detail.sharedCloud?.selectionMode}
-                call={strictCall ?? call}
-                onChange={() => onRefresh?.()}
-              />
-            )}
-          <details className="source-notes">
-            <summary>Full summary and analysis notes</summary>
-            {overview !== summary && <p>{summary}</p>}
-            {!!detail.analysis?.warnings?.length && (
-              <section aria-label="Analysis limitations">
-                <h3>Limitations and uncertainty</h3>
-                <ul>
-                  {detail.analysis.warnings.map(
-                    (warning: string, index: number) => (
-                      <li key={index}>{warning}</li>
-                    ),
-                  )}
-                </ul>
-              </section>
-            )}
-            {detail.url && (
-              <a href={detail.url} target="_blank" rel="noopener noreferrer">
-                Original source
-              </a>
-            )}
-            <p className="fine">
-              {detail.createdAt
-                ? `Captured ${new Date(detail.createdAt).toLocaleString()}.`
-                : "Synthetic example; no real capture date."}
-              {detail.originalSavedAt
-                ? ` Original save date supplied by the import: ${new Date(detail.originalSavedAt).toLocaleString()}.`
-                : " Original save date unknown."}{" "}
-              {detail.publishedAt
-                ? `Post published ${new Date(detail.publishedAt).toLocaleString()}.`
-                : "Post publication date unavailable."}
-            </p>
-          </details>{" "}
-          {!demo &&
-            !detailLoading &&
-            detail.state === "ready" &&
-            detail.analysisHash && (
-              <AnalysisReview
-                key={`${sourceId}:${detail.generation}:${detail.analysisHash}`}
-                sourceId={sourceId}
-                generation={detail.generation}
-                analysisHash={detail.analysisHash}
-                initial={detail.analysisReview}
-                disabled={readOnly || busy}
-                call={call}
-                onSaved={(review) =>
-                  setDetail((current: any) => ({
-                    ...current,
-                    analysisReview: review,
-                  }))
-                }
-              />
-            )}
-          {!demo &&
-            canRepairEvidence &&
-            !readOnly &&
-            detail.personalAnalysis?.executor === "work_cloud" &&
-            detail.personalAnalysis.state === "completed" &&
-            isCloudObservedMedia(detail.orderedMedia?.post) &&
-            detail.orderedMedia.post.frames.length > savedFrames.length && (
-              <details className="source-notes">
-                <summary>Restore missing screenshots</summary>
-                <p>
-                  Restore the exact retained screenshots while preserving this
-                  analysis. A connected Cloud task must perform the bounded
-                  repair.
-                </p>
-                {detail.personalAnalysis.cloud.media?.evidenceRepair ? (
-                  <p>
-                    Evidence repair:{" "}
-                    {detail.personalAnalysis.cloud.media.evidenceRepair.state}.
-                    Review that attempt before starting another.
-                  </p>
-                ) : (
-                  <Button
-                    busy={busy}
-                    onClick={async () => {
-                      const result = await call(
-                        "workCloudEvidenceRepairApprove",
-                        {
-                          sourceId,
-                          generation: detail.generation,
-                          preparationHash:
-                            detail.personalAnalysis.cloud.media.preparationHash,
-                          acknowledged: true,
-                        },
-                      );
-                      if (result) await onRefresh?.();
-                    }}
-                  >
-                    Approve screenshot repair
-                  </Button>
+        <details className="source-notes">
+          <summary>Full summary and analysis notes</summary>
+          {overview !== summary && <p>{summary}</p>}
+          {!!detail.analysis?.warnings?.length && (
+            <section aria-label="Analysis limitations">
+              <h3>Limitations and uncertainty</h3>
+              <ul>
+                {detail.analysis.warnings.map(
+                  (warning: string, index: number) => (
+                    <li key={index}>{warning}</li>
+                  ),
                 )}
-              </details>
-            )}
-          <details
-            id="source-transcript"
-            ref={transcript}
-            tabIndex={-1}
-            open={transcriptOpen}
-            onToggle={(event) => setTranscriptOpen(event.currentTarget.open)}
-          >
-            <summary>
-              {detail.kind === "text"
-                ? "Original supplied text and corrections"
-                : "Original transcript and corrections"}
-            </summary>
-            {cloudSpeechSegments ? (
-              cloudSpeechSegments.length ? (
-                cloudSpeechSegments.map((segment: any) => (
-                  <div key={segment.id}>
-                    <p className="fine">
-                      Original transcript segment:{" "}
-                      {(segment.startMs / 1000).toFixed(1)}–
-                      {(segment.endMs / 1000).toFixed(1)} seconds.
-                    </p>
-                    <p style={{ whiteSpace: "pre-wrap" }}>{segment.text}</p>
-                  </div>
-                ))
-              ) : (
-                <p>Original transcript is unavailable.</p>
-              )
-            ) : (
-              <>
-                <p style={{ whiteSpace: "pre-wrap" }}>
-                  {detail.originalText ??
-                    detail.text ??
-                    (detail.kind === "text"
-                      ? "Original supplied text is unavailable."
-                      : "Original transcript is unavailable.")}
-                </p>
-                {detail.originalText && (
-                  <p>Current user correction: {detail.text}</p>
-                )}
-              </>
-            )}
-            {!cloudSpeechSegments &&
-              (detail.originalMediaEvidence ?? detail.mediaEvidence)
-                ?.filter((e: any) => e.kind === "transcript")
-                .map((e: any) => (
-                  <p key={e.id} className="fine">
-                    Original transcript segment: {(e.startMs / 1000).toFixed(1)}
-                    –{(e.endMs / 1000).toFixed(1)} seconds.
-                  </p>
-                ))}
-            {detail.analysis?.correctedText && (
-              <p>Confirmed correction: {detail.analysis.correctedText}</p>
-            )}
-          </details>
-          {(detail.preparedService?.post?.text ||
-            detail.acquisition?.description) && (
-            <details id="source-caption" className="panel" tabIndex={-1}>
-              <summary>Post caption</summary>
-              <p style={{ whiteSpace: "pre-wrap" }}>
-                {detail.preparedService?.post?.text ??
-                  detail.acquisition.description}
-              </p>
-            </details>
-          )}
-          {!demo && savedFrames.length > 0 && (
-            <section
-              className="panel"
-              aria-label={
-                detail.preparedService?.post
-                  ? "Attachment evidence"
-                  : untimedImages
-                    ? "Image evidence"
-                    : "Video evidence"
-              }
-            >
-              <h2>
-                {detail.preparedService?.post
-                  ? "Attachment evidence"
-                  : untimedImages
-                    ? "Image evidence"
-                    : "Video evidence"}
-              </h2>
-              <div className="evidence-grid">
-                {visibleFrames.map((frame: any) => (
-                  <figure key={frame.id}>
-                    <button
-                      type="button"
-                      className="evidence-image-button"
-                      onClick={(event) => {
-                        event.currentTarget.focus({ preventScroll: true });
-                        setViewFrame(frame.id);
-                      }}
-                    >
-                      <Image
-                        src={`/api/evidence/${encodeURIComponent(frame.id)}?inline=true`}
-                        alt={`Private source evidence: ${frameLabel(frame)}`}
-                        width={960}
-                        height={540}
-                        unoptimized
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </button>
-                    <figcaption>{frameLabel(frame)}</figcaption>
-                  </figure>
-                ))}
-              </div>
-              {savedFrames.length > visibleFrames.length || allFrames ? (
-                <Button onClick={() => setAllFrames(!allFrames)}>
-                  {allFrames
-                    ? `Show fewer ${untimedImages ? "images" : "frames"}`
-                    : `View all ${savedFrames.length} ${untimedImages ? "images" : "frames"}`}
-                </Button>
-              ) : null}
-              <p className="fine">
-                {untimedImages
-                  ? "Images support the analysis. Open one to inspect the evidence."
-                  : "Selected frames support the analysis. Sampling can miss short scenes."}
-              </p>
+              </ul>
             </section>
           )}
-          {detail.privateLibrary && !demo && !detailLoading && (
-            <section
-              className="panel source-notes"
-              aria-label="Private space filing"
-            >
-              <h2>File this post</h2>
-              <p className="fine">
-                Personal and Business are views of your private library. Filing
-                never shares this post or runs another analysis.
-              </p>
-              <div className="row">
-                {(["personal", "business"] as const).map((space) => (
-                  <label key={space} className="check">
-                    <input
-                      type="checkbox"
-                      checked={(detail.spaces ?? []).includes(space)}
-                      disabled={readOnly || busy}
-                      onChange={async (event) => {
-                        const spaces = event.target.checked
-                          ? [...(detail.spaces ?? []), space]
-                          : (detail.spaces ?? []).filter(
-                              (s: string) => s !== space,
-                            );
-                        const result = await call("fileSourceSpaces", {
-                          organizationId: org,
-                          sourceId,
-                          spaces,
-                        });
-                        if (result)
-                          setDetail((old: any) => ({
-                            ...old,
-                            spaces: result.spaces,
-                          }));
-                      }}
-                    />
-                    {space === "personal" ? "Personal" : "Business"}
-                  </label>
-                ))}
-              </div>
-            </section>
+          {detail.url && (
+            <a href={detail.url} target="_blank" rel="noopener noreferrer">
+              Original source
+            </a>
           )}
-          {detail.privateLibrary && !demo && !detailLoading && (
-            <TeamKnowledgeSharing
-              key={sourceId}
-              organizationId={org}
-              source={detail}
+          <p className="fine">
+            {detail.createdAt
+              ? `Captured ${new Date(detail.createdAt).toLocaleString()}.`
+              : "Synthetic example; no real capture date."}
+            {detail.originalSavedAt
+              ? ` Original save date supplied by the import: ${new Date(detail.originalSavedAt).toLocaleString()}.`
+              : " Original save date unknown."}{" "}
+            {detail.publishedAt
+              ? `Post published ${new Date(detail.publishedAt).toLocaleString()}.`
+              : "Post publication date unavailable."}
+          </p>
+        </details>{" "}
+        {!demo &&
+          !detailLoading &&
+          detail.state === "ready" &&
+          detail.analysisHash && (
+            <AnalysisReview
+              key={`${sourceId}:${detail.generation}:${detail.analysisHash}`}
+              sourceId={sourceId}
+              generation={detail.generation}
+              analysisHash={detail.analysisHash}
+              initial={detail.analysisReview}
+              disabled={readOnly || busy}
               call={call}
-              readOnly={readOnly}
+              onSaved={(review) =>
+                setDetail((current: any) => ({
+                  ...current,
+                  analysisReview: review,
+                }))
+              }
             />
           )}
-          <details
-            className="panel source-notes"
-            onToggle={(e) => {
-              if (e.currentTarget.open)
-                setCategoryDraft(
-                  (detail.categoryNames ?? [])
-                    .filter(
-                      (_: string, index: number) =>
-                        !detail.categoryKeys?.[index]?.startsWith("domain_"),
-                    )
-                    .join(", "),
-                );
-            }}
-          >
-            <summary>
-              Categories
-              {detail.categoryNames?.length
-                ? ` (${detail.categoryNames.length})`
-                : ""}
-            </summary>
-            {!readOnly && (
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  const names = categoryDraft
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-                  const result = await call("assignCategories", {
-                    id: sourceId,
-                    names,
-                  });
-                  if (result?.saved)
-                    setDetail({
-                      ...detail,
-                      categoryNames: result.names,
-                      categoryKeys: result.keys,
-                    });
-                }}
-              >
-                <label>
-                  Separate categories with commas
-                  <input
-                    value={categoryDraft}
-                    maxLength={400}
-                    onChange={(e) => setCategoryDraft(e.target.value)}
-                    placeholder="Music, Reading, Product design"
-                  />
-                </label>
-                <button
-                  type="submit"
-                  className="secondary"
-                  disabled={busy}
-                  aria-busy={busy || undefined}
-                >
-                  {busy ? "Saving…" : "Save categories"}
-                </button>
-              </form>
-            )}
-            {!demo && canSuggestCategories && !!detail.categoryKeys?.length && (
-              <details>
-                <summary>Suggest a shared category</summary>
-                <p className="fine">
-                  Only this category name is submitted for review. Your videos
-                  and insights stay private. Workspace owners and admins can
-                  submit.
-                </p>
-                {detail.categoryKeys.map((key: string, index: number) => (
-                  <Button
-                    key={key}
-                    busy={busy}
-                    onClick={() =>
-                      call("suggestCategory", { organizationId: org, key })
-                    }
-                  >
-                    Suggest {detail.categoryNames[index]}
-                  </Button>
-                ))}
-              </details>
-            )}
-          </details>
-          {detail.state === "needs_upload" &&
-            !(
-              detail.workCloudSaveIntent &&
-              detail.workCloudSaveIntent.analysisGeneration === undefined &&
-              detail.workCloudSaveIntent.expiresAt > retentionTime
-            ) &&
-            !detail.currentRevisionId &&
-            !["github_repository", "reddit_thread"].includes(
-              detail.sourceType,
-            ) && (
-              <details className="panel" open={!detail.assistantIntake}>
-                <summary>
-                  {detail.assistantIntake
-                    ? "Supply content if link retrieval fails"
-                    : "Supply permitted content"}
-                </summary>
+        {!demo &&
+          canRepairEvidence &&
+          !readOnly &&
+          detail.personalAnalysis?.executor === "work_cloud" &&
+          detail.personalAnalysis.state === "completed" &&
+          isCloudObservedMedia(detail.orderedMedia?.post) &&
+          detail.orderedMedia.post.frames.length > savedFrames.length && (
+            <details className="source-notes">
+              <summary>Restore missing screenshots</summary>
+              <p>
+                Restore the exact retained screenshots while preserving this
+                analysis. A connected Cloud task must perform the bounded
+                repair.
+              </p>
+              {detail.personalAnalysis.cloud.media?.evidenceRepair ? (
                 <p>
-                  {detail.assistantIntake
-                    ? "Automatic analysis uses your saved link. If retrieval fails, you can attach permitted media or a transcript here."
-                    : "This saved URL has no verified audiovisual analysis. Attach a permitted upload or supplied transcript to this saved source."}
+                  Evidence repair:{" "}
+                  {detail.personalAnalysis.cloud.media.evidenceRepair.state}.
+                  Review that attempt before starting another.
                 </p>
-                <CaptureForm
-                  demo={demo}
-                  organizationId={org}
-                  call={call}
-                  existingSourceId={id(source)}
-                  existingGeneration={detail.generation}
-                  devices={devices}
-                  personalEnabled={personalEnabled}
-                  linkAnalysisEnabled={linkAnalysisEnabled}
-                  onDone={() => {}}
-                />
-              </details>
-            )}
-          <details className="panel" hidden={Boolean(detail.publicImportId)}>
-            <summary>Edit summary, tags and transcript correction</summary>
+              ) : (
+                <Button
+                  busy={busy}
+                  onClick={async () => {
+                    const result = await call(
+                      "workCloudEvidenceRepairApprove",
+                      {
+                        sourceId,
+                        generation: detail.generation,
+                        preparationHash:
+                          detail.personalAnalysis.cloud.media.preparationHash,
+                        acknowledged: true,
+                      },
+                    );
+                    if (result) await onRefresh?.();
+                  }}
+                >
+                  Approve screenshot repair
+                </Button>
+              )}
+            </details>
+          )}
+        <h3 id="post-settings-evidence" tabIndex={-1}>
+          Source evidence
+        </h3>
+        <details
+          id="source-transcript"
+          ref={transcript}
+          tabIndex={-1}
+          open={transcriptOpen}
+          onToggle={(event) => setTranscriptOpen(event.currentTarget.open)}
+        >
+          <summary>
+            {detail.kind === "text"
+              ? "Original supplied text and corrections"
+              : "Original transcript and corrections"}
+          </summary>
+          {cloudSpeechSegments ? (
+            cloudSpeechSegments.length ? (
+              cloudSpeechSegments.map((segment: any) => (
+                <div key={segment.id}>
+                  <p className="fine">
+                    Original transcript segment:{" "}
+                    {(segment.startMs / 1000).toFixed(1)}–
+                    {(segment.endMs / 1000).toFixed(1)} seconds.
+                  </p>
+                  <p style={{ whiteSpace: "pre-wrap" }}>{segment.text}</p>
+                </div>
+              ))
+            ) : (
+              <p>Original transcript is unavailable.</p>
+            )
+          ) : (
+            <>
+              <p style={{ whiteSpace: "pre-wrap" }}>
+                {detail.originalText ??
+                  detail.text ??
+                  (detail.kind === "text"
+                    ? "Original supplied text is unavailable."
+                    : "Original transcript is unavailable.")}
+              </p>
+              {detail.originalText && (
+                <p>Current user correction: {detail.text}</p>
+              )}
+            </>
+          )}
+          {!cloudSpeechSegments &&
+            (detail.originalMediaEvidence ?? detail.mediaEvidence)
+              ?.filter((e: any) => e.kind === "transcript")
+              .map((e: any) => (
+                <p key={e.id} className="fine">
+                  Original transcript segment: {(e.startMs / 1000).toFixed(1)}–
+                  {(e.endMs / 1000).toFixed(1)} seconds.
+                </p>
+              ))}
+          {detail.analysis?.correctedText && (
+            <p>Confirmed correction: {detail.analysis.correctedText}</p>
+          )}
+        </details>
+        {(detail.preparedService?.post?.text ||
+          detail.acquisition?.description) && (
+          <details id="source-caption" className="panel" tabIndex={-1}>
+            <summary>Post caption</summary>
+            <p style={{ whiteSpace: "pre-wrap" }}>
+              {detail.preparedService?.post?.text ??
+                detail.acquisition.description}
+            </p>
+          </details>
+        )}
+        {!demo && savedFrames.length > 0 && (
+          <section
+            className="panel"
+            aria-label={
+              detail.preparedService?.post
+                ? "Attachment evidence"
+                : untimedImages
+                  ? "Image evidence"
+                  : "Video evidence"
+            }
+          >
+            <h2>
+              {detail.preparedService?.post
+                ? "Attachment evidence"
+                : untimedImages
+                  ? "Image evidence"
+                  : "Video evidence"}
+            </h2>
+            <div className="evidence-grid">
+              {visibleFrames.map((frame: any) => (
+                <figure key={frame.id}>
+                  <button
+                    type="button"
+                    className="evidence-image-button"
+                    onClick={(event) => {
+                      event.currentTarget.focus({ preventScroll: true });
+                      setViewFrame(frame.id);
+                    }}
+                  >
+                    <Image
+                      src={`/api/evidence/${encodeURIComponent(frame.id)}?inline=true`}
+                      alt={`Private source evidence: ${frameLabel(frame)}`}
+                      width={960}
+                      height={540}
+                      unoptimized
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </button>
+                  <figcaption>{frameLabel(frame)}</figcaption>
+                </figure>
+              ))}
+            </div>
+            {savedFrames.length > visibleFrames.length || allFrames ? (
+              <Button onClick={() => setAllFrames(!allFrames)}>
+                {allFrames
+                  ? `Show fewer ${untimedImages ? "images" : "frames"}`
+                  : `View all ${savedFrames.length} ${untimedImages ? "images" : "frames"}`}
+              </Button>
+            ) : null}
+            <p className="fine">
+              {untimedImages
+                ? "Images support the analysis. Open one to inspect the evidence."
+                : "Selected frames support the analysis. Sampling can miss short scenes."}
+            </p>
+          </section>
+        )}
+        {detail.privateLibrary && !demo && !detailLoading && (
+          <section
+            className="panel source-notes"
+            aria-label="Private space filing"
+          >
+            <h2>File this post</h2>
+            <p className="fine">
+              Personal and Business are views of your private library. Filing
+              never shares this post or runs another analysis.
+            </p>
+            <div className="row">
+              {(["personal", "business"] as const).map((space) => (
+                <label key={space} className="check">
+                  <input
+                    type="checkbox"
+                    checked={(detail.spaces ?? []).includes(space)}
+                    disabled={readOnly || busy}
+                    onChange={async (event) => {
+                      const spaces = event.target.checked
+                        ? [...(detail.spaces ?? []), space]
+                        : (detail.spaces ?? []).filter(
+                            (s: string) => s !== space,
+                          );
+                      const result = await call("fileSourceSpaces", {
+                        organizationId: org,
+                        sourceId,
+                        spaces,
+                      });
+                      if (result)
+                        setDetail((old: any) => ({
+                          ...old,
+                          spaces: result.spaces,
+                        }));
+                    }}
+                  />
+                  {space === "personal" ? "Personal" : "Business"}
+                </label>
+              ))}
+            </div>
+          </section>
+        )}
+        {detail.privateLibrary && !demo && !detailLoading && (
+          <TeamKnowledgeSharing
+            key={sourceId}
+            organizationId={org}
+            source={detail}
+            call={call}
+            readOnly={readOnly}
+          />
+        )}
+        <details
+          className="panel source-notes"
+          onToggle={(e) => {
+            if (e.currentTarget.open)
+              setCategoryDraft(
+                (detail.categoryNames ?? [])
+                  .filter(
+                    (_: string, index: number) =>
+                      !detail.categoryKeys?.[index]?.startsWith("domain_"),
+                  )
+                  .join(", "),
+              );
+          }}
+        >
+          <summary>
+            Categories
+            {detail.categoryNames?.length
+              ? ` (${detail.categoryNames.length})`
+              : ""}
+          </summary>
+          {!readOnly && (
             <form
-              key={`${id(source)}:${detail.updatedAt}`}
-              className="form-grid"
               onSubmit={async (e) => {
                 e.preventDefault();
-                const f = new FormData(e.currentTarget);
-                await call("editSource", {
-                  id: id(source),
-                  summary: f.get("summary"),
-                  tags: String(f.get("tags") ?? "")
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean),
-                  ...(f.get("correction")
-                    ? { correctedText: f.get("correction") }
-                    : {}),
+                const names = categoryDraft
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                const result = await call("assignCategories", {
+                  id: sourceId,
+                  names,
                 });
+                if (result?.saved)
+                  setDetail({
+                    ...detail,
+                    categoryNames: result.names,
+                    categoryKeys: result.keys,
+                  });
               }}
             >
               <label>
-                Summary
-                <textarea
-                  name="summary"
-                  maxLength={1500}
-                  defaultValue={detail.summary ?? ""}
-                />
-              </label>
-              <label>
-                Tags, separated by commas
+                Separate categories with commas
                 <input
-                  name="tags"
-                  defaultValue={detail.tags?.join(", ") ?? ""}
+                  value={categoryDraft}
+                  maxLength={400}
+                  onChange={(e) => setCategoryDraft(e.target.value)}
+                  placeholder="Music, Reading, Product design"
                 />
               </label>
-              <label
-                hidden={Boolean(
+              <button
+                type="submit"
+                className="secondary"
+                disabled={busy}
+                aria-busy={busy || undefined}
+              >
+                {busy ? "Saving…" : "Save categories"}
+              </button>
+            </form>
+          )}
+          {!demo && canSuggestCategories && !!detail.categoryKeys?.length && (
+            <details>
+              <summary>Suggest a shared category</summary>
+              <p className="fine">
+                Only this category name is submitted for review. Your videos and
+                insights stay private. Workspace owners and admins can submit.
+              </p>
+              {detail.categoryKeys.map((key: string, index: number) => (
+                <Button
+                  key={key}
+                  busy={busy}
+                  onClick={() =>
+                    call("suggestCategory", { organizationId: org, key })
+                  }
+                >
+                  Suggest {detail.categoryNames[index]}
+                </Button>
+              ))}
+            </details>
+          )}
+        </details>
+        {detail.state === "needs_upload" &&
+          !(
+            detail.workCloudSaveIntent &&
+            detail.workCloudSaveIntent.analysisGeneration === undefined &&
+            detail.workCloudSaveIntent.expiresAt > retentionTime
+          ) &&
+          !detail.currentRevisionId &&
+          !["github_repository", "reddit_thread"].includes(
+            detail.sourceType,
+          ) && (
+            <details className="panel" open={!detail.assistantIntake}>
+              <summary>
+                {detail.assistantIntake
+                  ? "Supply content if link retrieval fails"
+                  : "Supply permitted content"}
+              </summary>
+              <p>
+                {detail.assistantIntake
+                  ? "Automatic analysis uses your saved link. If retrieval fails, you can attach permitted media or a transcript here."
+                  : "This saved URL has no verified audiovisual analysis. Attach a permitted upload or supplied transcript to this saved source."}
+              </p>
+              <CaptureForm
+                demo={demo}
+                organizationId={org}
+                call={call}
+                existingSourceId={id(source)}
+                existingGeneration={detail.generation}
+                devices={devices}
+                personalEnabled={personalEnabled}
+                linkAnalysisEnabled={linkAnalysisEnabled}
+                onDone={() => {}}
+              />
+            </details>
+          )}
+        <details className="panel" hidden={Boolean(detail.publicImportId)}>
+          <summary>Edit summary, tags and transcript correction</summary>
+          <form
+            key={`${id(source)}:${detail.updatedAt}`}
+            className="form-grid"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget);
+              await call("editSource", {
+                id: id(source),
+                summary: f.get("summary"),
+                tags: String(f.get("tags") ?? "")
+                  .split(",")
+                  .map((t) => t.trim())
+                  .filter(Boolean),
+                ...(f.get("correction")
+                  ? { correctedText: f.get("correction") }
+                  : {}),
+              });
+            }}
+          >
+            <label>
+              Summary
+              <textarea
+                name="summary"
+                maxLength={1500}
+                defaultValue={detail.summary ?? ""}
+              />
+            </label>
+            <label>
+              Tags, separated by commas
+              <input name="tags" defaultValue={detail.tags?.join(", ") ?? ""} />
+            </label>
+            <label
+              hidden={Boolean(
+                detail.currentRevisionId ||
+                detail.publicImportId ||
+                ["github_repository", "reddit_thread"].includes(
+                  detail.sourceType,
+                ),
+              )}
+            >
+              Transcript correction, retained beside the original
+              <textarea
+                name="correction"
+                disabled={Boolean(
                   detail.currentRevisionId ||
                   detail.publicImportId ||
                   ["github_repository", "reddit_thread"].includes(
                     detail.sourceType,
                   ),
                 )}
-              >
-                Transcript correction, retained beside the original
-                <textarea
-                  name="correction"
-                  disabled={Boolean(
-                    detail.currentRevisionId ||
-                    detail.publicImportId ||
-                    ["github_repository", "reddit_thread"].includes(
-                      detail.sourceType,
-                    ),
-                  )}
-                  maxLength={60000}
-                  defaultValue={detail.analysis?.correctedText ?? ""}
-                />
-              </label>
-              <button className="primary">Save source edits</button>
-            </form>
-          </details>
-          {detail.catalogContributionAvailable && (
-            <CloudCatalogContribution
-              key={`${sourceId}:${detail.analysisVersion.id}`}
-              sourceId={sourceId}
-              versionId={detail.analysisVersion.id}
-              disabled={readOnly || busy}
-              call={strictCall ?? call}
-            />
-          )}
-          <section className="panel" aria-label="Advanced project evaluation">
-            <h2>Applies to your projects</h2>
-            {detail.analysisVersion &&
-              detail.analysisVersion.provenance !== "legacy_recorded" && (
-                <p>
-                  Project actions below remain bound to the original analysis.
-                  Existing project reviews keep their original evidence. Select
-                  the original analysis before starting a new project
-                  evaluation.
-                </p>
-              )}
-            <fieldset
-              disabled={
-                readOnly ||
-                busy ||
-                (detail.analysisVersion &&
-                  detail.analysisVersion.provenance !== "legacy_recorded")
-              }
-              style={{ border: 0, padding: 0, minWidth: 0 }}
+                maxLength={60000}
+                defaultValue={detail.analysis?.correctedText ?? ""}
+              />
+            </label>
+            <button className="primary">Save source edits</button>
+          </form>
+        </details>
+        {detail.catalogContributionAvailable && (
+          <CloudCatalogContribution
+            key={`${sourceId}:${detail.analysisVersion.id}`}
+            sourceId={sourceId}
+            versionId={detail.analysisVersion.id}
+            disabled={readOnly || busy}
+            call={strictCall ?? call}
+          />
+        )}
+        <section className="panel" aria-label="Advanced project evaluation">
+          <h2>Applies to your projects</h2>
+          {detail.analysisVersion &&
+            detail.analysisVersion.provenance !== "legacy_recorded" && (
+              <p>
+                Project actions below remain bound to the original analysis.
+                Existing project reviews keep their original evidence. Select
+                the original analysis before starting a new project evaluation.
+              </p>
+            )}
+          <fieldset
+            disabled={
+              readOnly ||
+              busy ||
+              (detail.analysisVersion &&
+                detail.analysisVersion.provenance !== "legacy_recorded")
+            }
+            style={{ border: 0, padding: 0, minWidth: 0 }}
+          >
+            <a
+              href="/help/evaluate-an-idea-for-a-project"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <a
-                href="/help/evaluate-an-idea-for-a-project"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Review project context and alternatives
-              </a>
-              {detail.analysis?.insights?.length > 0 && (
-                <>
-                  <p>
-                    Use{" "}
-                    {insightIds.length === detail.analysis.insights.length
-                      ? "the whole post"
-                      : `${insightIds.length} selected main points`}
-                    .
-                  </p>
-                  <details className="point-selection">
-                    <summary>Advanced · choose main points</summary>
-                    {detail.analysis.insights.map((insight: any) => (
-                      <label key={insight.id}>
-                        <input
-                          type="checkbox"
-                          checked={!excludedInsights.includes(insight.id)}
-                          onChange={(event) =>
-                            setExcludedInsights((old) =>
-                              event.target.checked
-                                ? old.filter((key) => key !== insight.id)
-                                : [...old, insight.id],
-                            )
-                          }
-                        />
-                        {insight.title}
-                      </label>
-                    ))}
-                  </details>
-                  <button
-                    className="secondary"
-                    disabled={busy || readOnly || !insightIds.length}
-                    onClick={() =>
-                      call("suggestRepositories", {
-                        id: id(source),
-                        insightIds,
-                        maxCredits: 10,
-                      })
-                    }
-                  >
-                    Find up to five plausible projects, maximum 10 credits
-                  </button>
-                  <p className="fine">
-                    This selection uses confirmed business profiles. It does not
-                    establish implementation fit or approve coding. Evaluate a
-                    project separately to inspect repository evidence.
-                  </p>
-                  {selection && (
-                    <div>
-                      <p>
-                        {selection.candidates.length
-                          ? "Possible project matches"
-                          : "No plausible project match"}
-                      </p>
-                      {selection.noFitReason && <p>{selection.noFitReason}</p>}
-                      {selection.candidates.map((candidate: any) => (
-                        <article key={candidate.repositoryId}>
-                          <h3>
-                            {repos.find(
-                              (repo: any) =>
-                                id(repo) === candidate.repositoryId,
-                            )?.fullName ?? "Selected project"}
-                          </h3>
-                          <p>{candidate.reason}</p>
-                          <button
-                            className="secondary"
-                            disabled={busy || readOnly || !insightIds.length}
-                            onClick={() =>
-                              call("match", {
-                                id: id(source),
-                                repositoryId: candidate.repositoryId,
-                                insightIds,
-                                maxCredits: 10,
-                              })
-                            }
-                          >
-                            Evaluate inspected repository, maximum 10 credits
-                          </button>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-              {detail.matches?.map((m: any) => (
-                <article key={m.repositoryId}>
-                  <h3>{label(m.disposition)}</h3>
-                  <p>{m.reason}</p>
-                </article>
-              ))}
-              {detail.proposals?.map((p: any) => (
+              Review project context and alternatives
+            </a>
+            {detail.analysis?.insights?.length > 0 && (
+              <>
+                <p>
+                  Use{" "}
+                  {insightIds.length === detail.analysis.insights.length
+                    ? "the whole post"
+                    : `${insightIds.length} selected main points`}
+                  .
+                </p>
+                <details className="point-selection">
+                  <summary>Advanced · choose main points</summary>
+                  {detail.analysis.insights.map((insight: any) => (
+                    <label key={insight.id}>
+                      <input
+                        type="checkbox"
+                        checked={!excludedInsights.includes(insight.id)}
+                        onChange={(event) =>
+                          setExcludedInsights((old) =>
+                            event.target.checked
+                              ? old.filter((key) => key !== insight.id)
+                              : [...old, insight.id],
+                          )
+                        }
+                      />
+                      {insight.title}
+                    </label>
+                  ))}
+                </details>
                 <button
                   className="secondary"
-                  key={id(p)}
-                  onClick={() => onProposal(p)}
-                >
-                  {p.title} · {label(p.disposition)}
-                </button>
-              ))}
-              {repos.map((r: any) => (
-                <button
-                  className="secondary"
-                  key={id(r)}
-                  disabled={
-                    busy ||
-                    readOnly ||
-                    !insightIds.length ||
-                    detail.state !== "ready" ||
-                    !r.enabled ||
-                    !r.confirmed
-                  }
+                  disabled={busy || readOnly || !insightIds.length}
                   onClick={() =>
-                    call("match", {
+                    call("suggestRepositories", {
                       id: id(source),
-                      repositoryId: id(r),
                       insightIds,
                       maxCredits: 10,
                     })
                   }
                 >
-                  Match {r.fullName}, maximum 10 credits
+                  Find up to five plausible projects, maximum 10 credits
                 </button>
-              ))}
-              {!repos.length && !detail.matches?.length && (
-                <p>
-                  No selected repository yet. Your source can remain useful as a
-                  reference.
+                <p className="fine">
+                  This selection uses confirmed business profiles. It does not
+                  establish implementation fit or approve coding. Evaluate a
+                  project separately to inspect repository evidence.
                 </p>
-              )}
-            </fieldset>
-          </section>
-          <div className="panel" id="post-processing-options" tabIndex={-1}>
-            <h2>Processing and retention</h2>
-            {detail.localAnalysisReceipt && (
-              <p>
-                GPT-6.1 Sol · Medium · Your Codex subscription · 0 app credits.{" "}
-                {detail.localAnalysisReceipt.frames} sampled frames; video
-                coverage is sampled.
-              </p>
-            )}
-            {!detail.localAnalysisReceipt && detail.processingReceipt && (
-              <details>
-                <summary>
-                  Cloud · {detail.processingReceipt.chargedCredits} credits ·{" "}
-                  {Math.round(
-                    (detail.processingReceipt.completedAt -
-                      detail.processingReceipt.startedAt) /
-                      1000,
-                  )}
-                  s
-                </summary>
-                <p>
-                  Model: {detail.processingReceipt.model}. Funded by your
-                  VibeScroll allowance.
-                </p>
-                <p>
-                  Inference estimate:{" "}
-                  {new Intl.NumberFormat("en", {
-                    style: "currency",
-                    currency: "EUR",
-                    minimumFractionDigits: 4,
-                    maximumFractionDigits: 4,
-                  }).format(detail.processingReceipt.inferenceMicros / 1000000)}
-                  . This includes a conservative currency and tax provision; it
-                  is not a provider invoice. Cloud preparation used{" "}
-                  {detail.processingReceipt.computeCredits} processing credits.
-                </p>
-                <p>
-                  {detail.processingReceipt.inputTokens.toLocaleString()} input
-                  tokens ·{" "}
-                  {detail.processingReceipt.outputTokens.toLocaleString()}{" "}
-                  output tokens, including thinking.
-                </p>
-                {detail.processingReceipt.reusedMedia && (
-                  <p>Previously prepared speech and frames were reused.</p>
-                )}
-              </details>
-            )}
-            {isCloudObservedMedia(detail.orderedMedia?.post) && (
-              <section className="panel">
-                <h3>Private host-reported media observations</h3>
-                <p>
-                  Partial sampled video evidence reported by the connected host.
-                  Retained screenshots can be opened through their citations.
-                  Source acquisition, model settings and raw-media deletion
-                  remain host-reported.
-                </p>
-                <p>
-                  App result retained until{" "}
-                  {new Date(
-                    detail.orderedMedia.post.retainUntil,
-                  ).toLocaleString()}
-                  .
-                </p>
-                {detail.orderedMedia.post.caption && (
-                  <p>{detail.orderedMedia.post.caption}</p>
-                )}
-              </section>
-            )}
-
-            {detail.speechProvenance && (
-              <details>
-                <summary>Transcription details</summary>
-                <p>
-                  {detail.speechProvenance.model} ·{" "}
-                  {detail.speechProvenance.language || "Language uncertain"} ·
-                  approximate timestamps
-                </p>
-                {detail.speechProvenance.uncertainty && (
-                  <p>{detail.speechProvenance.uncertainty}</p>
-                )}
-              </details>
-            )}
-            {detail.workCloudPrivateLibraryRequired && !readOnly && (
-              <section className="card">
-                <h3>Work Cloud needs your private library</h3>
-                <p>
-                  This older workspace still uses team access. Review whether it
-                  can become your private library while keeping these posts and
-                  links in place.
-                </p>
-                <Link
-                  prefetch={false}
-                  href={`/app/${org}/team#private-library`}
-                >
-                  Review private-library setup
-                </Link>
-              </section>
-            )}
-            {(detail.workCloudTextEnabled || detail.workCloudMediaEnabled) &&
-              !detail.publicImportId &&
-              ((detail.workCloudTextEnabled &&
-                (detail.kind === "text" || detail.currentRevisionId)) ||
-                (detail.workCloudMediaEnabled &&
-                  detail.kind === "url" &&
-                  !detail.currentRevisionId)) &&
-              !["ready", "processing"].includes(detail.state) &&
-              (detail.state !== "queued" || detail.workCloudRetryEligible) && (
-                <>
-                  {detail.kind === "url" && detail.workCloudLinkSetup && (
-                    <section className="panel">
-                      <h3>My own Cloud Work</h3>
-                      <p>
-                        {detail.workCloudLinkSetup?.chatLinksEnabled
-                          ? "New supported links sent to VibeScroll in ChatGPT or added with Cloud selected use your saved Cloud defaults. No per-post app review is needed."
-                          : "Complete automatic app and ChatGPT link setup once in Connections. After setup, supported links use your own Cloud Work without per-post review."}
-                      </p>
-                      {detail.workCloudLinkSetup?.monitorReady &&
-                      (detail.workCloudRetryEligible ||
-                        (detail.generation === 0 &&
-                          !detail.personalAnalysis &&
-                          !detail.workCloudSaveIntent)) ? (
+                {selection && (
+                  <div>
+                    <p>
+                      {selection.candidates.length
+                        ? "Possible project matches"
+                        : "No plausible project match"}
+                    </p>
+                    {selection.noFitReason && <p>{selection.noFitReason}</p>}
+                    {selection.candidates.map((candidate: any) => (
+                      <article key={candidate.repositoryId}>
+                        <h3>
+                          {repos.find(
+                            (repo: any) => id(repo) === candidate.repositoryId,
+                          )?.fullName ?? "Selected project"}
+                        </h3>
+                        <p>{candidate.reason}</p>
                         <button
-                          className="primary"
-                          disabled={readOnly || detailLoading || busy}
-                          onClick={async () => {
-                            setCloudRequestError("");
-                            try {
-                              await strictCall(
-                                detail.workCloudRetryEligible
-                                  ? "retrySavedWorkCloud"
-                                  : "analyzeSavedWorkCloud",
-                                detail.workCloudRetryEligible
-                                  ? {
-                                      sourceId,
-                                      generation: detail.generation,
-                                      revision: detail.updatedAt,
-                                      key: crypto.randomUUID(),
-                                    }
-                                  : { sourceId },
-                              );
-                              onRefresh?.();
-                            } catch {
-                              setCloudRequestError(
-                                "The Cloud request was not confirmed. Check setup and the existing post before trying again.",
-                              );
-                            }
-                          }}
-                        >
-                          {detail.workCloudRetryEligible
-                            ? "Retry using Cloud defaults"
-                            : "Analyze using Cloud defaults"}
-                        </button>
-                      ) : (
-                        <Link prefetch={false} href={`/app/${org}/connections`}>
-                          Complete or resume Cloud setup
-                        </Link>
-                      )}
-                      {cloudRequestError && (
-                        <p role="alert">{cloudRequestError}</p>
-                      )}
-                    </section>
-                  )}
-                  {!detail.workCloudLinkSetup && (
-                    <details
-                      className="panel"
-                      onToggle={(event) =>
-                        setManualCloudOpen(event.currentTarget.open)
-                      }
-                    >
-                      <summary>Advanced: manual Cloud handoff</summary>
-                      <p>
-                        Use this only for a deliberate diagnostic. Normal
-                        automatic links do not need this review.
-                      </p>
-                      {manualCloudOpen && (
-                        <WorkCloudText
-                          sourceId={id(detail)}
-                          organizationId={org}
-                          generation={detail.generation}
-
-                          revision={detail.updatedAt}
-                          media={
-                            detail.kind === "url" && !detail.currentRevisionId
+                          className="secondary"
+                          disabled={busy || readOnly || !insightIds.length}
+                          onClick={() =>
+                            call("match", {
+                              id: id(source),
+                              repositoryId: candidate.repositoryId,
+                              insightIds,
+                              maxCredits: 10,
+                            })
                           }
-
-                          retentionUntil={detail.sourceRetentionUntil}
-                          call={strictCall}
-                          disabled={readOnly || detailLoading}
-                        />
-                      )}
-                    </details>
-                  )}
-                </>
-              )}
-
-            {!demo &&
-              !readOnly &&
-              !detailLoading &&
-              detail.state === "queued" &&
-              source.state === "queued" &&
-              id(detail) === sourceId &&
-              detail.generation === source.generation &&
-              detail.updatedAt === source.updatedAt &&
-              detail.organizationId === org &&
-              detail.workCloudHandoff &&
-              source.workCloudHandoff !== null &&
-              (source.workCloudHandoff === undefined ||
-                workCloudHandoffKey(source.workCloudHandoff) ===
-                  workCloudHandoffKey(detail.workCloudHandoff)) &&
-              (detail.workCloudHandoff.media
-                ? source.workCloudMediaEnabled !== false
-                : source.workCloudTextEnabled !== false) &&
-              (detail.workCloudHandoff.media
-                ? detail.workCloudMediaEnabled
-                : detail.workCloudTextEnabled) && (
-                <PersistedWorkCloudHandoff
-                  receipt={detail.workCloudHandoff}
-                  sourceId={sourceId}
-                  organizationId={org}
-                  generation={detail.generation}
-                  revision={detail.updatedAt}
-                />
-              )}
-            {detail.personalAnalysis?.executor === "work_cloud" && (
-              <section className="panel">
-                <h3>Private Work Cloud request</h3>
-
-                <p>
-                  State: {detail.personalAnalysis.state}. Funding: your own
-                  subscription; API allowance 0 USD.
-                </p>
-
-                <p>
-                  Host execution, model settings, subscription usage and
-                  raw-media retention are unverified. The task ID is a client
-                  correlation UUID, not host attestation.
-                </p>
-
-                {["queued", "running"].includes(
-                  detail.personalAnalysis.state,
-                ) && (
-                  <button
-                    className="secondary"
-                    disabled={readOnly || detailLoading || busy}
-                    onClick={() =>
-                      call("cancelPersonalAnalysis", { id: id(detail) })
-                    }
-                  >
-                    Revoke app access to this request
-                  </button>
+                        >
+                          Evaluate inspected repository, maximum 10 credits
+                        </button>
+                      </article>
+                    ))}
+                  </div>
                 )}
-
-                <p>
-                  Stop the host task separately. Revocation does not confirm
-                  host cancellation or restore allowance. No alternate provider
-                  starts automatically.
-                </p>
-              </section>
+              </>
             )}
-
-            {personalEnabled &&
-              detail.personalAnalysis?.executor !== "work_cloud" && (
-                <PersonalSourceAnalysis
-                  key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
-
-                  source={detail}
-
-                  devices={devices}
-
-                  linkAnalysisEnabled={linkAnalysisEnabled}
-
-                  call={call}
-                />
-              )}
-
-            {detail.error && <p role="alert">{detail.error}</p>}
-            {cloudEnabled && detail.state !== "ready" && (
+            {detail.matches?.map((m: any) => (
+              <article key={m.repositoryId}>
+                <h3>{label(m.disposition)}</h3>
+                <p>{m.reason}</p>
+              </article>
+            ))}
+            {detail.proposals?.map((p: any) => (
               <button
-                className="primary"
+                className="secondary"
+                key={id(p)}
+                onClick={() => onProposal(p)}
+              >
+                {p.title} · {label(p.disposition)}
+              </button>
+            ))}
+            {repos.map((r: any) => (
+              <button
+                className="secondary"
+                key={id(r)}
                 disabled={
-                  busy || ["queued", "processing"].includes(detail.state)
+                  busy ||
+                  readOnly ||
+                  !insightIds.length ||
+                  detail.state !== "ready" ||
+                  !r.enabled ||
+                  !r.confirmed
                 }
                 onClick={() =>
-                  call("process", { id: id(source), maxCredits: 10 })
+                  call("match", {
+                    id: id(source),
+                    repositoryId: id(r),
+                    insightIds,
+                    maxCredits: 10,
+                  })
                 }
               >
-                Analyze in cloud, up to 10 credits
+                Match {r.fullName}, maximum 10 credits
               </button>
+            ))}
+            {!repos.length && !detail.matches?.length && (
+              <p>
+                No selected repository yet. Your source can remain useful as a
+                reference.
+              </p>
             )}
+          </fieldset>
+        </section>
+        <div className="panel" id="post-processing-options" tabIndex={-1}>
+          <h2>Processing and retention</h2>
+          {detail.localAnalysisReceipt && (
+            <p>
+              GPT-6.1 Sol · Medium · Your Codex subscription · 0 app credits.{" "}
+              {detail.localAnalysisReceipt.frames} sampled frames; video
+              coverage is sampled.
+            </p>
+          )}
+          {!detail.localAnalysisReceipt && detail.processingReceipt && (
+            <details>
+              <summary>
+                Cloud · {detail.processingReceipt.chargedCredits} credits ·{" "}
+                {Math.round(
+                  (detail.processingReceipt.completedAt -
+                    detail.processingReceipt.startedAt) /
+                    1000,
+                )}
+                s
+              </summary>
+              <p>
+                Model: {detail.processingReceipt.model}. Funded by your
+                VibeScroll allowance.
+              </p>
+              <p>
+                Inference estimate:{" "}
+                {new Intl.NumberFormat("en", {
+                  style: "currency",
+                  currency: "EUR",
+                  minimumFractionDigits: 4,
+                  maximumFractionDigits: 4,
+                }).format(detail.processingReceipt.inferenceMicros / 1000000)}
+                . This includes a conservative currency and tax provision; it is
+                not a provider invoice. Cloud preparation used{" "}
+                {detail.processingReceipt.computeCredits} processing credits.
+              </p>
+              <p>
+                {detail.processingReceipt.inputTokens.toLocaleString()} input
+                tokens ·{" "}
+                {detail.processingReceipt.outputTokens.toLocaleString()} output
+                tokens, including thinking.
+              </p>
+              {detail.processingReceipt.reusedMedia && (
+                <p>Previously prepared speech and frames were reused.</p>
+              )}
+            </details>
+          )}
+          {isCloudObservedMedia(detail.orderedMedia?.post) && (
+            <section className="panel">
+              <h3>Private host-reported media observations</h3>
+              <p>
+                Partial sampled video evidence reported by the connected host.
+                Retained screenshots can be opened through their citations.
+                Source acquisition, model settings and raw-media deletion remain
+                host-reported.
+              </p>
+              <p>
+                App result retained until{" "}
+                {new Date(
+                  detail.orderedMedia.post.retainUntil,
+                ).toLocaleString()}
+                .
+              </p>
+              {detail.orderedMedia.post.caption && (
+                <p>{detail.orderedMedia.post.caption}</p>
+              )}
+            </section>
+          )}
+
+          {detail.speechProvenance && (
+            <details>
+              <summary>Transcription details</summary>
+              <p>
+                {detail.speechProvenance.model} ·{" "}
+                {detail.speechProvenance.language || "Language uncertain"} ·
+                approximate timestamps
+              </p>
+              {detail.speechProvenance.uncertainty && (
+                <p>{detail.speechProvenance.uncertainty}</p>
+              )}
+            </details>
+          )}
+          {detail.workCloudPrivateLibraryRequired && !readOnly && (
+            <section className="card">
+              <h3>Work Cloud needs your private library</h3>
+              <p>
+                This older workspace still uses team access. Review whether it
+                can become your private library while keeping these posts and
+                links in place.
+              </p>
+              <Link prefetch={false} href={`/app/${org}/team#private-library`}>
+                Review private-library setup
+              </Link>
+            </section>
+          )}
+          {(detail.workCloudTextEnabled || detail.workCloudMediaEnabled) &&
+            !detail.publicImportId &&
+            ((detail.workCloudTextEnabled &&
+              (detail.kind === "text" || detail.currentRevisionId)) ||
+              (detail.workCloudMediaEnabled &&
+                detail.kind === "url" &&
+                !detail.currentRevisionId)) &&
+            !["ready", "processing"].includes(detail.state) &&
+            (detail.state !== "queued" || detail.workCloudRetryEligible) && (
+              <>
+                {detail.kind === "url" && detail.workCloudLinkSetup && (
+                  <section className="panel">
+                    <h3>My own Cloud Work</h3>
+                    <p>
+                      {detail.workCloudLinkSetup?.chatLinksEnabled
+                        ? "New supported links sent to VibeScroll in ChatGPT or added with Cloud selected use your saved Cloud defaults. No per-post app review is needed."
+                        : "Complete automatic app and ChatGPT link setup once in Connections. After setup, supported links use your own Cloud Work without per-post review."}
+                    </p>
+                    {detail.workCloudLinkSetup?.monitorReady &&
+                    (detail.workCloudRetryEligible ||
+                      (detail.generation === 0 &&
+                        !detail.personalAnalysis &&
+                        !detail.workCloudSaveIntent)) ? (
+                      <button
+                        className="primary"
+                        disabled={readOnly || detailLoading || busy}
+                        onClick={async () => {
+                          setCloudRequestError("");
+                          try {
+                            await strictCall(
+                              detail.workCloudRetryEligible
+                                ? "retrySavedWorkCloud"
+                                : "analyzeSavedWorkCloud",
+                              detail.workCloudRetryEligible
+                                ? {
+                                    sourceId,
+                                    generation: detail.generation,
+                                    revision: detail.updatedAt,
+                                    key: crypto.randomUUID(),
+                                  }
+                                : { sourceId },
+                            );
+                            onRefresh?.();
+                          } catch {
+                            setCloudRequestError(
+                              "The Cloud request was not confirmed. Check setup and the existing post before trying again.",
+                            );
+                          }
+                        }}
+                      >
+                        {detail.workCloudRetryEligible
+                          ? "Retry using Cloud defaults"
+                          : "Analyze using Cloud defaults"}
+                      </button>
+                    ) : (
+                      <Link prefetch={false} href={`/app/${org}/connections`}>
+                        Complete or resume Cloud setup
+                      </Link>
+                    )}
+                    {cloudRequestError && (
+                      <p role="alert">{cloudRequestError}</p>
+                    )}
+                  </section>
+                )}
+                {!detail.workCloudLinkSetup && (
+                  <details
+                    className="panel"
+                    onToggle={(event) =>
+                      setManualCloudOpen(event.currentTarget.open)
+                    }
+                  >
+                    <summary>Advanced: manual Cloud handoff</summary>
+                    <p>
+                      Use this only for a deliberate diagnostic. Normal
+                      automatic links do not need this review.
+                    </p>
+                    {manualCloudOpen && (
+                      <WorkCloudText
+                        sourceId={id(detail)}
+                        organizationId={org}
+                        generation={detail.generation}
+
+                        revision={detail.updatedAt}
+                        media={
+                          detail.kind === "url" && !detail.currentRevisionId
+                        }
+
+                        retentionUntil={detail.sourceRetentionUntil}
+                        call={strictCall}
+                        disabled={readOnly || detailLoading}
+                      />
+                    )}
+                  </details>
+                )}
+              </>
+            )}
+
+          {!demo &&
+            !readOnly &&
+            !detailLoading &&
+            detail.state === "queued" &&
+            source.state === "queued" &&
+            id(detail) === sourceId &&
+            detail.generation === source.generation &&
+            detail.updatedAt === source.updatedAt &&
+            detail.organizationId === org &&
+            detail.workCloudHandoff &&
+            source.workCloudHandoff !== null &&
+            (source.workCloudHandoff === undefined ||
+              workCloudHandoffKey(source.workCloudHandoff) ===
+                workCloudHandoffKey(detail.workCloudHandoff)) &&
+            (detail.workCloudHandoff.media
+              ? source.workCloudMediaEnabled !== false
+              : source.workCloudTextEnabled !== false) &&
+            (detail.workCloudHandoff.media
+              ? detail.workCloudMediaEnabled
+              : detail.workCloudTextEnabled) && (
+              <PersistedWorkCloudHandoff
+                receipt={detail.workCloudHandoff}
+                sourceId={sourceId}
+                organizationId={org}
+                generation={detail.generation}
+                revision={detail.updatedAt}
+              />
+            )}
+          {detail.personalAnalysis?.executor === "work_cloud" && (
+            <section className="panel">
+              <h3>Private Work Cloud request</h3>
+
+              <p>
+                State: {detail.personalAnalysis.state}. Funding: your own
+                subscription; API allowance 0 USD.
+              </p>
+
+              <p>
+                Host execution, model settings, subscription usage and raw-media
+                retention are unverified. The task ID is a client correlation
+                UUID, not host attestation.
+              </p>
+
+              {["queued", "running"].includes(
+                detail.personalAnalysis.state,
+              ) && (
+                <button
+                  className="secondary"
+                  disabled={readOnly || detailLoading || busy}
+                  onClick={() =>
+                    call("cancelPersonalAnalysis", { id: id(detail) })
+                  }
+                >
+                  Revoke app access to this request
+                </button>
+              )}
+
+              <p>
+                Stop the host task separately. Revocation does not confirm host
+                cancellation or restore allowance. No alternate provider starts
+                automatically.
+              </p>
+            </section>
+          )}
+
+          {personalEnabled &&
+            detail.personalAnalysis?.executor !== "work_cloud" && (
+              <PersonalSourceAnalysis
+                key={`${id(detail)}:${detail.generation}:${detail.currentRevisionId ?? "legacy"}`}
+
+                source={detail}
+
+                devices={devices}
+
+                linkAnalysisEnabled={linkAnalysisEnabled}
+
+                call={call}
+              />
+            )}
+
+          {detail.error && <p role="alert">{detail.error}</p>}
+          {cloudEnabled && detail.state !== "ready" && (
             <button
-              className="secondary"
-              onClick={() => {
-                if (
-                  confirm(
-                    "Delete this source and its private evidence? Existing GitHub PRs remain on GitHub.",
-                  )
+              className="primary"
+              disabled={busy || ["queued", "processing"].includes(detail.state)}
+              onClick={() =>
+                call("process", { id: id(source), maxCredits: 10 })
+              }
+            >
+              Analyze in cloud, up to 10 credits
+            </button>
+          )}
+          <button
+            className="secondary"
+            onClick={() => {
+              if (
+                confirm(
+                  "Delete this source and its private evidence? Existing GitHub PRs remain on GitHub.",
                 )
-                  call("deleteSource", { id: id(source) });
+              )
+                call("deleteSource", { id: id(source) });
+            }}
+          >
+            Delete source
+          </button>
+          <p>
+            Benefit remains unmeasured. A merged PR does not prove the idea
+            worked.
+          </p>
+        </div>
+        {!demo &&
+          !detailLoading &&
+          canSuggestCategories &&
+          !(detail.publicImportId && !detail.sharedCloud) && (
+            <details
+              className="panel"
+              onToggle={(event) => {
+                if (event.currentTarget.open) setPublicationMounted(true);
               }}
             >
-              Delete source
-            </button>
-            <p>
-              Benefit remains unmeasured. A merged PR does not prove the idea
-              worked.
-            </p>
-          </div>
-          {!demo &&
-            !detailLoading &&
-            canSuggestCategories &&
-            !(detail.publicImportId && !detail.sharedCloud) && (
-              <details
-                className="panel"
-                onToggle={(event) => {
-                  if (event.currentTarget.open) setPublicationMounted(true);
-                }}
-              >
-                <summary>Advanced privacy and publication</summary>
-                {publicationMounted && (
-                  <PublicKnowledgePanel
-                    organizationId={org}
-                    source={detail}
-                    call={strictCall}
-                    readOnly={readOnly}
-                    enabled
-                  />
-                )}
-              </details>
-            )}
-        </SettingsPanel>
-      </div>
-      {!demo && !detailLoading && (
-        <SourceProgressPanel
-          source={progressSource}
-          now={Math.max(retentionTime, Date.now())}
-          organizationId={org}
-          onReviewAnalysis={() => openPostSettings("post-processing-options")}
-        />
-      )}
-      {!demo && !detailLoading && (
-        <>
-          <SourceAcquisitionPanel
-            source={detail}
-            call={strictCall}
-            readOnly={readOnly}
-            onAnalyze={() => openPostSettings("post-processing-options")}
-          />
-          {detail.publicImportId && !detail.sharedCloud ? (
-            <SavedPublicSource
-              sourceId={sourceId}
-              call={strictCall}
-              readOnly={readOnly}
-              enabled
-            />
-          ) : null}
-        </>
-      )}
-      {!demo && !detailLoading && detail.evidenceRegistry && (
-        <section className="panel">
-          <h2>Acquired source evidence</h2>
-          <p>
-            Inspect this retained revision before approving analysis. Retrieval
-            and analysis are separate actions.
-          </p>
-          <TypedSourceEvidence
-            evidenceRegistry={detail.evidenceRegistry}
-            sourceRevision={detail.sourceRevision}
-          />
-          <a
-            href="/help/first-useful-insight"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Evidence and coverage help
-          </a>
-        </section>
-      )}
+              <summary>Advanced privacy and publication</summary>
+              {publicationMounted && (
+                <PublicKnowledgePanel
+                  organizationId={org}
+                  source={detail}
+                  call={strictCall}
+                  readOnly={readOnly}
+                  enabled
+                />
+              )}
+            </details>
+          )}
+      </SettingsPanel>
+    </div>
+  );
+  return (
+    <>
       {viewFrame && (
         <EvidenceViewer
           key={viewFrame}
@@ -5039,28 +4915,64 @@ export function SourceDetail({
         />
       )}
       <PostInsightReader
+        sourceAction={null}
         sourcePreview={
-          detail.url && (
-            <a
-              className="panel source-origin"
-              href={detail.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Open original source: ${postDisplayTitle(detail)}`}
-            >
-              <SourceThumbnail source={detail} demo={demo} />
-              <span className="source-origin-copy">
-                <strong>{postDisplayTitle(detail)}</strong>
-                {detail.linkPreview?.authorName && (
-                  <span>{detail.linkPreview.authorName}</span>
-                )}
-                <span>Open original source</span>
-              </span>
-              <ArrowRight size={20} aria-hidden="true" />
-            </a>
-          )
+          <div
+            className="panel source-origin"
+            data-has-thumbnail={demo || postThumbnailCandidates(detail).length > 0}
+          >
+            <SourceThumbnail source={detail} demo={demo} priority />
+            <div className="source-origin-copy">
+              <strong>{postDisplayTitle(detail)}</strong>
+              {detail.linkPreview?.authorName && (
+                <span>{detail.linkPreview.authorName}</span>
+              )}
+              {!!displayedCategories?.length && (
+                <ul
+                  className="source-reader-categories"
+                  aria-label="Categories"
+                >
+                  {displayedCategories.slice(0, 6).map((name: string) => (
+                    <li key={name}>{name}</li>
+                  ))}
+                </ul>
+              )}
+              {detail.url && (
+                <a href={detail.url} target="_blank" rel="noopener noreferrer">
+                  Open original source{" "}
+                  <ExternalLink size={15} aria-hidden="true" />
+                </a>
+              )}
+            </div>
+          </div>
         }
       >
+        {!demo && !detailLoading && (
+          <SourceProgressPanel
+            source={progressSource}
+            now={Math.max(retentionTime, Date.now())}
+            organizationId={org}
+            onReviewAnalysis={() => openPostSettings("post-processing-options")}
+          />
+        )}
+        {!demo && !detailLoading && (
+          <>
+            <SourceAcquisitionPanel
+              source={detail}
+              call={strictCall}
+              readOnly={readOnly}
+              onAnalyze={() => openPostSettings("post-processing-options")}
+            />
+            {detail.publicImportId && !detail.sharedCloud ? (
+              <SavedPublicSource
+                sourceId={sourceId}
+                call={strictCall}
+                readOnly={readOnly}
+                enabled
+              />
+            ) : null}
+          </>
+        )}
         {detail.assistantIntake && (
           <AssistantIntakeStatus
             key={`${sourceId}:${detail.state}`}
@@ -5070,7 +4982,7 @@ export function SourceDetail({
           />
         )}
         <div className="post-overview">
-          <p>{overview}</p>
+          {detail.summary && <p>{overview}</p>}
           {detail.error &&
             !sourceProgress(
               progressSource,
@@ -5101,262 +5013,306 @@ export function SourceDetail({
               Loading source details…
             </output>
           )}
-          {!detailLoading &&
-            insights.map((i: any, index: number) => (
-              <article
-                className="post-insight-card"
-                id={`insight-${index}`}
-                key={i.id ?? i.title}
-                data-selected={expandedInsight === index}
-              >
-                <InsightCardControl
-                  title={i.title || i.claim}
-                  subtitle={i.claim}
-                  icon={insightPresentation(i).icon}
-                  expanded={expandedInsight === index}
-                  aria-controls={`insight-content-${index}`}
-                  onClick={() =>
-                    setExpandedInsight(expandedInsight === index ? null : index)
-                  }
-                >
-                  <SettingsPanel
-                    title="Insight evidence"
-                    triggerLabel={`Evidence and options for ${i.title || i.claim}`}
-                    onOpenChange={(open) => {
-                      if (open && !demo)
-                        for (const e of i.evidence ?? [])
-                          journey?.citation(
-                            `${sourceId}:${detail.generation}:${detail.updatedAt}:${i.id}:${e.id}`,
-                            e.kind,
-                            detail.coverage,
-                          );
-                    }}
-                  >
-                    <p>{i.title || i.claim}</p>
-                    {i.confidence && <p>Confidence: {i.confidence}</p>}
-                    <section className="insight-evidence">
-                      <ul className="evidence-links">
-                        {i.evidence?.map((e: any) => (
-                          <li key={e.id}>
-                            {e.kind === "frame" && !demo && (
-                              <button
-                                type="button"
-                                className="evidence-link"
-                                onClick={(event) => {
-                                  event.currentTarget.focus({
-                                    preventScroll: true,
-                                  });
-                                  setViewFrame(e.id);
-                                }}
-                              >
-                                {untimedImages
-                                  ? imageLabel(e.id)
-                                  : `Frame · ${(e.startMs / 1000).toFixed(1)}s`}
-                              </button>
-                            )}
-                            {e.kind === "transcript" && (
+          {!detailLoading && insights.length > 0 && (
+            <PostInsightStrip
+              insights={insights.map((i: any) => ({
+                id: i.id,
+                title: i.title,
+                claim: i.claim,
+                ...feedInsightEvidence(detail, i.evidence, retentionTime),
+                frame: (() => {
+                  const frame = i.evidence?.find(
+                    (e: any) =>
+                      e.kind === "frame" &&
+                      savedFrames.some((saved: any) => saved.id === e.id),
+                  );
+                  return frame
+                    ? { id: frame.id, timeMs: frame.startMs }
+                    : undefined;
+                })(),
+              }))}
+              selected={
+                expandedInsight === null
+                  ? undefined
+                  : insights[expandedInsight]?.id
+              }
+              onSelect={(selectedId) => {
+                const index = insights.findIndex(
+                  (item: any) => item.id === selectedId,
+                );
+                const i = insights[index];
+                if (index < 0) return;
+                setExpandedInsight(expandedInsight === index ? null : index);
+                if (index !== expandedInsight && !demo)
+                  for (const e of i.evidence ?? [])
+                    journey?.citation(
+                      `${sourceId}:${detail.generation}:${detail.updatedAt}:${i.id}:${e.id}`,
+                      e.kind,
+                      detail.coverage,
+                    );
+              }}
+              renderFrame={(frameId) => (
+                <PostThumbnail
+                  candidates={[frameId]}
+                  kind="upload"
+                  demo={demo}
+                />
+              )}
+              evidence={(selected) => {
+                const i = insights.find((item: any) => item.id === selected.id);
+                if (!i) return null;
+                return (
+                  <section className="insight-evidence">
+                    <ul className="evidence-links">
+                      {i.evidence?.map((e: any) => (
+                        <li key={e.id}>
+                          {e.kind === "frame" && !demo && (
+                            <button
+                              type="button"
+                              className="evidence-link"
+                              onClick={(event) => {
+                                event.currentTarget.focus({
+                                  preventScroll: true,
+                                });
+                                setViewFrame(e.id);
+                              }}
+                            >
+                              {untimedImages
+                                ? imageLabel(e.id)
+                                : `Frame · ${(e.startMs / 1000).toFixed(1)}s`}
+                            </button>
+                          )}
+                          {e.kind === "transcript" && (
+                            <a
+                              href="#source-transcript"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                openPostSettings("source-transcript");
+                              }}
+                            >
+                              Transcript ·{" "}
+                              {e.startMs === null
+                                ? "supplied text"
+                                : `${(e.startMs / 1000).toFixed(1)}s`}
+                            </a>
+                          )}
+                          {e.kind === "caption" &&
+                            detail.acquisition?.description && (
                               <a
-                                href="#source-transcript"
+                                href="#source-caption"
                                 onClick={(event) => {
                                   event.preventDefault();
-                                  openPostSettings("source-transcript");
+                                  openPostSettings("source-caption");
                                 }}
                               >
-                                Transcript ·{" "}
-                                {e.startMs === null
-                                  ? "supplied text"
-                                  : `${(e.startMs / 1000).toFixed(1)}s`}
+                                Post caption
                               </a>
                             )}
-                            {e.kind === "caption" &&
-                              detail.acquisition?.description && (
-                                <a
-                                  href="#source-caption"
-                                  onClick={(event) => {
-                                    event.preventDefault();
-                                    openPostSettings("source-caption");
-                                  }}
-                                >
-                                  Post caption
-                                </a>
-                              )}
-                            {[
-                              "github_file",
-                              "reddit_post",
-                              "reddit_comment",
-                              "supplied_text",
-                            ].includes(e.kind) && (
+                          {[
+                            "github_file",
+                            "reddit_post",
+                            "reddit_comment",
+                            "supplied_text",
+                          ].includes(e.kind) && (
+                            <span>
+                              {label(e.kind)} · see cited excerpt below
+                            </span>
+                          )}
+                          {![
+                            "github_file",
+                            "reddit_post",
+                            "reddit_comment",
+                            "supplied_text",
+                          ].includes(e.kind) &&
+                            e.kind !== "caption" &&
+                            e.kind !== "transcript" &&
+                            (e.kind !== "frame" || demo) && (
                               <span>
-                                {label(e.kind)} · see cited excerpt below
+                                {label(e.kind)} ·{" "}
+                                {e.startMs === null
+                                  ? "Supplied text"
+                                  : `${(e.startMs / 1000).toFixed(1)}s`}
                               </span>
                             )}
-                            {![
-                              "github_file",
-                              "reddit_post",
-                              "reddit_comment",
-                              "supplied_text",
-                            ].includes(e.kind) &&
-                              e.kind !== "caption" &&
-                              e.kind !== "transcript" &&
-                              (e.kind !== "frame" || demo) && (
-                                <span>
-                                  {label(e.kind)} ·{" "}
-                                  {e.startMs === null
-                                    ? "Supplied text"
-                                    : `${(e.startMs / 1000).toFixed(1)}s`}
-                                </span>
-                              )}
-                          </li>
-                        ))}
-                      </ul>
-                      {detail.orderedMedia &&
-                        !isCloudObservedMedia(detail.orderedMedia.post) && (
-                          <ul>
-                            {i.evidence.map((ref: any) => {
-                              const citation = socialCitation(
-                                ref,
-                                detail.orderedMedia.evidence,
-                              );
-
-                              const record = detail.orderedMedia.evidence.find(
-                                (e: any) =>
-                                  e.id === ref.id && e.kind === ref.kind,
-                              );
-
-                              return (
-                                <li key={ref.id}>
-                                  <p>
-                                    Observed video - {ref.kind} -{" "}
-                                    {ref.startMs === null
-                                      ? "untimed"
-                                      : `${(ref.startMs / 1000).toFixed(1)}s`}{" "}
-                                    - {citation.basis}
-                                  </p>
-                                  <p>{record?.text}</p>
-                                  {citation.uncertainty && (
-                                    <p>{citation.uncertainty}</p>
-                                  )}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
-                      {detail.sharedCloud && (
+                        </li>
+                      ))}
+                    </ul>
+                    {detail.orderedMedia &&
+                      !isCloudObservedMedia(detail.orderedMedia.post) && (
                         <ul>
                           {i.evidence.map((ref: any) => {
-                            const observation =
-                              detail.sharedCloud.observations.find(
-                                (entry: any) => entry.id === ref.id,
-                              );
+                            const citation = socialCitation(
+                              ref,
+                              detail.orderedMedia.evidence,
+                            );
+
+                            const record = detail.orderedMedia.evidence.find(
+                              (e: any) =>
+                                e.id === ref.id && e.kind === ref.kind,
+                            );
+
                             return (
                               <li key={ref.id}>
-                                <blockquote>
-                                  {observation?.text ??
-                                    "Observation unavailable."}
-                                </blockquote>
-                                <p className="fine">
-                                  {observation?.basis}
-                                  {observation?.uncertainty
-                                    ? `. ${observation.uncertainty}`
-                                    : ""}
+                                <p>
+                                  Observed video - {ref.kind} -{" "}
+                                  {ref.startMs === null
+                                    ? "untimed"
+                                    : `${(ref.startMs / 1000).toFixed(1)}s`}{" "}
+                                  - {citation.basis}
                                 </p>
+                                <p>{record?.text}</p>
+                                {citation.uncertainty && (
+                                  <p>{citation.uncertainty}</p>
+                                )}
                               </li>
                             );
                           })}
                         </ul>
                       )}
-
-                      {detail.evidenceRegistry && (
-                        <TypedSourceEvidence
-                          evidenceRegistry={detail.evidenceRegistry.filter(
-                            (record: any) =>
-                              i.evidence.some((e: any) => e.id === record.id),
-                          )}
-                          sourceRevision={detail.sourceRevision}
-                        />
-                      )}
-                    </section>
-                  </SettingsPanel>
-                </InsightCardControl>
-                {
-                  <div
-                    hidden={expandedInsight !== index}
-                    className="post-insight-detail"
-                    id={`insight-content-${index}`}
-                  >
-                    <p>{i.claim}</p>
-                    {i.interpretation && <p>{i.interpretation}</p>}
-                    {detail.analysisVersion?.id ? (
-                      <ProjectProposalComposer
-                        key={`${sourceId}:${detail.analysisVersion.id}:${i.id}`}
-                        organizationId={org}
-                        sourceId={sourceId}
-                        analysisVersionId={detail.analysisVersion.id}
-                        insight={{
-                          id: i.id,
-                          title: i.title || i.claim,
-                          claim: i.claim,
-                        }}
-                        insights={detail.analysis.insights}
-                        sourceTitle={detail.title}
-                        projects={repos
-                          .filter(
-                            (r: any) =>
-                              r.enabled &&
-                              r.confirmed &&
-                              r.status === "connected",
-                          )
-                          .map((r: any) => ({ id: id(r), name: r.fullName }))}
-                        suggestions={
-                          projectSuggestions?.versionId ===
-                          detail.analysisVersion.id
-                            ? projectSuggestions.items
-                            : []
-                        }
-                        disabled={readOnly || !canSuggestCategories || demo}
-                        call={strictCall}
-                      />
-                    ) : (
-                      <a className="button" href="#source-analysis-actions">
-                        Choose a project
-                      </a>
+                    {detail.sharedCloud && (
+                      <ul>
+                        {i.evidence.map((ref: any) => {
+                          const observation =
+                            detail.sharedCloud.observations.find(
+                              (entry: any) => entry.id === ref.id,
+                            );
+                          return (
+                            <li key={ref.id}>
+                              <blockquote>
+                                {observation?.text ??
+                                  "Observation unavailable."}
+                              </blockquote>
+                              <p className="fine">
+                                {observation?.basis}
+                                {observation?.uncertainty
+                                  ? `. ${observation.uncertainty}`
+                                  : ""}
+                              </p>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     )}
-                  </div>
-                }
-              </article>
-            ))}
+
+                    {detail.evidenceRegistry && (
+                      <TypedSourceEvidence
+                        evidenceRegistry={detail.evidenceRegistry.filter(
+                          (record: any) =>
+                            i.evidence?.some((e: any) => e.id === record.id),
+                        )}
+                        sourceRevision={detail.sourceRevision}
+                      />
+                    )}
+                  </section>
+                );
+              }}
+            />
+          )}
           {!detailLoading && !insights.length && !detail.error && (
-            <p>
+            <p className="post-empty-insights">
               {["processing", "queued"].includes(detail.state)
-                ? "Analysis is underway."
-                : "No main points yet. Review the source's analysis options."}
+                ? "Insights will appear here as soon as analysis finishes."
+                : "Insights appear here after a post is analyzed."}
             </p>
           )}
         </section>
-      </PostInsightReader>
-      <section className="post-project-choices" id="source-analysis-actions">
-        <h2>Projects</h2>
-        {repos
-          .filter((r: any) => r.enabled)
-          .map((r: any) => (
-            <Link
-              key={id(r)}
-              prefetch={false}
-              href={`/app/${org}/projects/${id(r)}`}
-              className="project-choice-row"
+        <div className="post-reader-actions">
+          <section className="post-project-choices" id="source-analysis-actions">
+            <h2>Apply to a project</h2>
+            {insights[0] &&
+            detail.analysisVersion?.id &&
+            repos.some(
+              (r: any) => r.enabled && r.confirmed && r.status === "connected",
+            ) ? (
+              <ProjectProposalComposer
+                key={`${sourceId}:${detail.analysisVersion.id}`}
+                organizationId={org}
+                sourceId={sourceId}
+                analysisVersionId={detail.analysisVersion.id}
+                insight={{
+                  id: insights[0].id,
+                  title: insights[0].title || insights[0].claim,
+                  claim: insights[0].claim,
+                }}
+                insights={detail.analysis.insights}
+                sourceTitle={detail.title}
+                projects={repos
+                  .filter(
+                    (r: any) =>
+                      r.enabled && r.confirmed && r.status === "connected",
+                  )
+                  .map((r: any) => ({ id: id(r), name: r.fullName }))}
+                compactProjects={repos.map((r: any) => ({
+                  id: id(r),
+                  name: r.fullName,
+                }))}
+                suggestions={
+                  projectSuggestions?.versionId === detail.analysisVersion.id
+                    ? projectSuggestions.items
+                    : []
+                }
+                disabled={readOnly || !canSuggestCategories || demo}
+                call={strictCall}
+              />
+            ) : (
+              <Link prefetch={false} href={`/app/${org}/projects`}>
+                {repos.length ? "Manage projects" : "Connect a project"}
+              </Link>
+            )}
+          </section>
+          <section className="post-project-choices">
+            <h2>Proposals</h2>
+            {detail.proposals?.length ? (
+              detail.proposals.map((proposal: any) => (
+                <Link
+                  key={id(proposal)}
+                  className="project-choice-row"
+                  href={
+                    demo
+                      ? `/demo?proposal=${id(proposal)}`
+                      : `/app/${org}/proposals/${id(proposal)}`
+                  }
+                >
+                  <span>{proposal.title}</span>
+                </Link>
+              ))
+            ) : (
+              <p>No proposals yet.</p>
+            )}
+          </section>
+          <section className="post-project-choices">
+            <h2>Source evidence</h2>
+            <button
+              type="button"
+              className="button"
+              onClick={() => openPostSettings("post-settings-evidence")}
             >
-              <span>{r.fullName}</span>
-              <span>
-                Review project <ArrowRight size={16} aria-hidden="true" />
-              </span>
-            </Link>
-          ))}
-        {!repos.some((r: any) => r.enabled) && (
-          <Link prefetch={false} href={`/app/${org}/projects`}>
-            Choose a project
-          </Link>
-        )}
-      </section>
+              View source evidence
+            </button>
+          </section>
+          {!demo && !detailLoading && detail.evidenceRegistry && (
+            <section className="panel">
+              <h2>Acquired source evidence</h2>
+              <p>
+                Inspect this retained revision before approving analysis. Retrieval
+                and analysis are separate actions.
+              </p>
+              <TypedSourceEvidence
+                evidenceRegistry={detail.evidenceRegistry}
+                sourceRevision={detail.sourceRevision}
+              />
+              <a
+                href="/help/first-useful-insight"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Evidence and coverage help
+              </a>
+            </section>
+          )}
+          {postTools}
+        </div>
+      </PostInsightReader>
     </>
   );
 }
@@ -5611,7 +5567,7 @@ function ExecutionApproval({ proposal, call, routes, usage, busy }: any) {
   return (
     <section className="panel">
       <h2>Separate execution approval</h2>
-      <p>Repository: {proposal.repositoryId ?? "Demo Planner"}</p>
+      <p>Repository: {proposal.repo?.fullName ?? proposal.repositoryId ?? "Demo Planner"}</p>
       <p>
         Base commit: <code>{proposal.baseSha ?? "Synthetic base"}</code>
       </p>
@@ -5743,131 +5699,144 @@ function ExecutionApproval({ proposal, call, routes, usage, busy }: any) {
     </section>
   );
 }
-function RunCard({ run, title, handoff, call, busy, readOnly }: any) {
+function RunCard({ run, title, repository, handoff, call, busy, readOnly }: any) {
+  const pullRequest = run.prNumber ? `Pull request #${run.prNumber}` : "Pull request";
+  const taskTitle =
+    title ??
+    (run.prUrl ? pullRequest : run.state === "canceled" ? "Canceled execution" : "Coding task");
+  const status = run.reverted ? "reverted" : run.prState ?? run.state;
+  const date = workDate(run.updatedAt ?? run.createdAt);
+  const canCancel = !["completed", "canceled", "failed", "publishing"].includes(run.state);
+  const checkFailed = /^Exit (?!0\b)\d+:/m.test(run.report ?? "");
   return (
-    <article className="panel">
-      <span className="status">{label(run.state)}</span>
-      <h2>{title ?? "Coding task"}</h2>
-      <p>
-        {run.executor} · {label(run.fundingRoute)} · Ceiling {run.maxCredits}{" "}
-        credits
-      </p>
-      {run.fundingRoute === "customer_api_key" && (
-        <p>
-          Customer API model: {run.customerModel?.id}. Provider ceiling USD{" "}
-          {((run.maxProviderUsdCents ?? 0) / 100).toFixed(2)}.{" "}
-          {!run.providerRequestState
-            ? "No provider request was issued."
-            : run.providerRequestState === "settled"
-              ? `Reported provider usage USD ${(run.providerUsdCents / 100).toFixed(2)}.`
-              : `Provider request: ${label(run.providerRequestState ?? "unissued")}. Unknown usage requires reconciliation.`}
-        </p>
-      )}
-      <p>Benefit: not measured</p>
-      <ProposalWorkObservations handoff={handoff} />
-      <ul>
-        {run.events?.map((e: string, i: number) => (
-          <li key={i}>{e}</li>
-        ))}
-      </ul>
+    <article className="work-task">
+      <header className="work-task-heading">
+        <span className="work-record-icon"><GitPullRequest size={18} aria-hidden="true" /></span>
+        <div className="work-record-body">
+          <h2>{taskTitle}</h2>
+          <div className="work-task-byline">
+            {repository && <span>{repository}</span>}
+            {date && <span>{date}</span>}
+          </div>
+        </div>
+        <WorkStatus value={status} />
+      </header>
       {run.error && <p role="alert">{run.error}</p>}
-      {/^Exit (?!0\b)\d+:/m.test(run.report ?? "") && (
-        <p className="notice">
-          Some approved checks failed. Review the report before publishing.
-        </p>
+      {checkFailed && (
+        <p className="notice">Some approved checks failed. Review the report before publishing.</p>
       )}
-      {run.patch && (
-        <details>
-          <summary>Review patch and check report</summary>
-          <pre>{run.patch}</pre>
-          <p>{run.report}</p>
-          {run.state === "awaiting_review" && (
-            <p className="fine">
-              The reviewed patch and title will be shared with the selected
-              GitHub repository. Detailed check output and source evidence stay
-              private.
-            </p>
+      <div className="work-task-actions">
+      {(run.prUrl || run.reverted || canCancel) && (
+        <div className="work-task-links">
+          {run.prUrl && (
+            <a className="work-inline-action" href={run.prUrl} target="_blank" rel="noopener noreferrer">
+              Open on GitHub <ExternalLink size={15} aria-hidden="true" />
+            </a>
           )}
-          {run.state === "awaiting_review" && (
+          {run.reverted && (
+            <a className="work-inline-action" href={run.reverted.url} target="_blank" rel="noopener noreferrer">
+              View reversal <ExternalLink size={15} aria-hidden="true" />
+            </a>
+          )}
+          {canCancel && (
             <button
-              className="primary"
+              type="button"
+              className="secondary"
               disabled={busy || readOnly}
-              onClick={async () => {
-                const hash = await crypto.subtle.digest(
-                  "SHA-256",
-                  new TextEncoder().encode(run.patch),
-                );
-                const patchDigest = Array.from(new Uint8Array(hash), (n) =>
-                  n.toString(16).padStart(2, "0"),
-                ).join("");
-                call("publish", {
-                  id: id(run),
-                  generation: run.generation,
-                  patchDigest,
-                });
-              }}
+              onClick={() => call("cancel", { id: id(run) })}
             >
-              Approve this patch for a draft PR
+              Cancel execution
             </button>
           )}
-        </details>
+        </div>
       )}
-      {run.prUrl && (
-        <>
-          <a
-            className="secondary"
-            href={run.prUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {label(run.prState ?? "status unavailable")} · Open GitHub PR
-          </a>
-          <button
-            className="secondary"
-            disabled={busy || readOnly}
-            onClick={() => call("refreshPR", { id: id(run) })}
-          >
-            Refresh authoritative PR status
-          </button>
+      <details className="work-task-details" open={run.state === "awaiting_review" ? true : undefined}>
+        <summary><ChevronDown size={16} aria-hidden="true" /> Execution details</summary>
+        <div>
           <p>
-            Last checked{" "}
-            {run.observedAt
-              ? new Date(run.observedAt).toLocaleString()
-              : "not checked"}
+            {[
+              run.executor && label(run.executor),
+              run.fundingRoute && label(run.fundingRoute),
+              typeof run.maxCredits === "number" && `Ceiling ${run.maxCredits} credits`,
+            ].filter(Boolean).join(" · ") || "Execution details unavailable"}
           </p>
-          {run.reverted && (
+          {run.fundingRoute === "customer_api_key" && (
             <p>
-              Reverted ·{" "}
-              <a
-                href={run.reverted.url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View verified reversal
-              </a>
-              . The original merge remains in its history.
+              Customer API model: {run.customerModel?.id}. Provider ceiling USD{" "}
+              {((run.maxProviderUsdCents ?? 0) / 100).toFixed(2)}.{" "}
+              {!run.providerRequestState
+                ? "No provider request was issued."
+                : run.providerRequestState === "settled"
+                  ? `Reported provider usage USD ${(run.providerUsdCents / 100).toFixed(2)}.`
+                  : `Provider request: ${label(run.providerRequestState ?? "unissued")}. Unknown usage requires reconciliation.`}
             </p>
           )}
-          {["unverified", "search_limited"].includes(run.revertStatus) &&
-            !run.reverted && (
-              <p className="fine">
-                The bounded reversal check is incomplete. The historical merge
-                remains recorded.
+          <p>Benefit has not been measured.</p>
+          <ProposalWorkObservations handoff={handoff} />
+          {run.events?.length > 0 && (
+            <ul>
+              {run.events.map((event: string, index: number) => <li key={index}>{event}</li>)}
+            </ul>
+          )}
+          {run.patch && (
+            <details>
+              <summary>Review patch and check report</summary>
+              <pre>{run.patch}</pre>
+              <p>{run.report}</p>
+              {run.state === "awaiting_review" && (
+                <>
+                  <p className="fine">
+                    The reviewed patch and title will be shared with the selected
+                    GitHub repository. Detailed check output and source evidence stay private.
+                  </p>
+                  <button
+                    type="button"
+                    className="primary"
+                    disabled={busy || readOnly}
+                    onClick={async () => {
+                      const hash = await crypto.subtle.digest(
+                        "SHA-256",
+                        new TextEncoder().encode(run.patch),
+                      );
+                      const patchDigest = Array.from(new Uint8Array(hash), (byte) =>
+                        byte.toString(16).padStart(2, "0"),
+                      ).join("");
+                      call("publish", {
+                        id: id(run),
+                        generation: run.generation,
+                        patchDigest,
+                      });
+                    }}
+                  >
+                    Approve this patch for a draft PR
+                  </button>
+                </>
+              )}
+            </details>
+          )}
+          {run.prUrl && (
+            <>
+              <p className="work-task-meta">
+                {run.observedAt
+                  ? `Last checked ${calendarDateTime.format(run.observedAt)} UTC`
+                  : "GitHub status has not been checked."}
               </p>
-            )}
-        </>
-      )}
-      {!["completed", "canceled", "failed", "publishing"].includes(
-        run.state,
-      ) && (
-        <button
-          className="secondary"
-          disabled={busy || readOnly}
-          onClick={() => call("cancel", { id: id(run) })}
-        >
-          Cancel pending execution
-        </button>
-      )}
+              <button
+                type="button"
+                className="secondary"
+                disabled={busy || readOnly}
+                onClick={() => call("refreshPR", { id: id(run) })}
+              >
+                Refresh GitHub status
+              </button>
+              {["unverified", "search_limited"].includes(run.revertStatus) && !run.reverted && (
+                <p className="fine">The reversal check is incomplete. The historical merge remains recorded.</p>
+              )}
+            </>
+          )}
+        </div>
+      </details>
+      </div>
     </article>
   );
 }

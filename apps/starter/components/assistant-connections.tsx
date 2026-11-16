@@ -2,7 +2,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { Plug } from "lucide-react";
+import { AccountSection } from "./account-layout";
 import { ChoiceSelect } from "./choice-select";
+import { LibrarySkeleton } from "./library-skeleton";
 import { TaskRuntimePicker, type TaskRuntime } from "./task-runtime-picker";
 import { workCloudMonitorMessage } from "../../../packages/onboarding/work-cloud-monitor";
 const AssistantAccessAdvanced = dynamic(() =>
@@ -38,11 +41,18 @@ type Props = {
   call: (op: string, args: unknown) => Promise<unknown>;
   readOnly: boolean;
   demo: boolean;
+  canLoad?: boolean;
 };
 export function AssistantConnections(props: Props) {
   return <ConnectionSetup key={props.organizationId} {...props} />;
 }
-function ConnectionSetup({ organizationId, call, readOnly, demo }: Props) {
+function ConnectionSetup({
+  organizationId,
+  call,
+  readOnly,
+  demo,
+  canLoad = true,
+}: Props) {
   const [setup, setSetup] = useState<Setup | null>(null);
   const [clientId, setClientId] = useState("");
   const [route, setRoute] = useState<TaskRuntime>("work_cloud");
@@ -84,7 +94,7 @@ function ConnectionSetup({ organizationId, call, readOnly, demo }: Props) {
     [organizationId],
   );
   useEffect(() => {
-    if (demo) return;
+    if (demo || !canLoad) return;
     const controller = new AbortController();
     queueMicrotask(() => {
       if (!controller.signal.aborted)
@@ -93,7 +103,7 @@ function ConnectionSetup({ organizationId, call, readOnly, demo }: Props) {
         });
     });
     return () => controller.abort();
-  }, [demo, load]);
+  }, [canLoad, demo, load]);
   const client =
     setup?.clients.find((c) => c.id === clientId) ??
     setup?.clients.find((c) =>
@@ -168,37 +178,65 @@ function ConnectionSetup({ organizationId, call, readOnly, demo }: Props) {
           setup.serverPreparationEnabled,
         ) ?? "")
       : "");
+  const loading = !setup && !error && canLoad && !demo;
   return (
-    <section
-      className="panel assistant-connections"
-      aria-labelledby="connections-title"
+    <AccountSection
+      title="Where tasks run"
+      icon={Plug}
+      description="Choose where VibeScroll sends supported tasks."
+      className="assistant-connections"
     >
-      <h2 id="connections-title">Where tasks run</h2>
       {error && (
         <p role="alert" className="error">
           {error}
         </p>
       )}
-      {!setup && !demo && !error && <output>Loading your setup…</output>}
-      <TaskRuntimePicker
-        organizationId={organizationId}
-        value={route}
-        onChange={(value) => {
-          routeEdited.current = true;
-          setRoute(value);
-          setSetupMessage("");
-          setMessage("");
-        }}
-        workCloudAvailable={!!setup?.workCloudMediaEnabled}
-        workCloudConfigured={!!grant?.cloudSaveDefaults}
-        localAvailable={devices.length > 0}
-        localConfigured={devices.length > 0}
-        localStatus={
-          devices.some((d) => d.online) ? "check_before_running" : "offline"
-        }
-        disabled={pending || readOnly || demo}
-        setupMode
-      />
+      {!canLoad && <p>Assistant setup details are unavailable.</p>}
+      {loading ? (
+        <LibrarySkeleton kind="page" rows={3} />
+      ) : (
+        <TaskRuntimePicker
+          organizationId={organizationId}
+          value={setup || demo ? route : undefined}
+          onChange={(value) => {
+            routeEdited.current = true;
+            setRoute(value);
+            setSetupMessage("");
+            setMessage("");
+          }}
+          workCloudAvailable={!!setup?.workCloudMediaEnabled}
+          workCloudConfigured={!!grant?.cloudSaveDefaults}
+          localAvailable={devices.length > 0}
+          localConfigured={devices.length > 0}
+          localStatus={
+            devices.some((d) => d.online) ? "check_before_running" : "offline"
+          }
+          disabled={pending || readOnly || demo || !setup}
+          overviewOnly={!canLoad || Boolean(error && !setup)}
+          setupMode
+        />
+      )}
+      {!setup && !loading && !demo && (
+        <div className="account-actions">
+          <Link href="/help/processing-and-recovery" prefetch={false}>
+            Setup guide
+          </Link>
+          {canLoad && error && (
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                setError("");
+                void load().catch(() =>
+                  setError("Could not load setup. Refresh or sign in again."),
+                );
+              }}
+            >
+              Retry setup
+            </button>
+          )}
+        </div>
+      )}
       {setup && route === "work_cloud" && (
         <div className="form-grid">
           <p>
@@ -327,40 +365,45 @@ function ConnectionSetup({ organizationId, call, readOnly, demo }: Props) {
           bought separately when this route is ready.
         </p>
       )}
-      <output aria-live="polite">{message}</output>
-      <details onToggle={(e) => setAdvanced(e.currentTarget.open)}>
-        <summary>Advanced settings</summary>
-        <p>
-          Library access and supported actions are included by default. Saved
-          results stay until deleted. Optional restrictions apply only when you
-          save them below.
-        </p>
-        {route === "work_cloud" && (
-          <label htmlFor={`connection-effort-${organizationId}`}>
-            Reasoning effort
-            <ChoiceSelect
-              id={`connection-effort-${organizationId}`}
-              value={effort}
-              onValueChange={setEffort}
-              disabled={disabled}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="xhigh">Extra high</option>
-            </ChoiceSelect>
-          </label>
-        )}
-        {advanced && (
-          <AssistantAccessAdvanced
-            organizationId={organizationId}
-            call={call}
-            readOnly={readOnly}
-            demo={demo}
-            route={route}
-          />
-        )}
-      </details>
+      {message && <output aria-live="polite">{message}</output>}
+      {(setup || demo) && (
+        <details
+          className="account-disclosure"
+          onToggle={(e) => setAdvanced(e.currentTarget.open)}
+        >
+          <summary>Advanced settings</summary>
+          <p>
+            Library access and supported actions are included by default. Saved
+            results stay until deleted. Optional restrictions apply only when
+            you save them below.
+          </p>
+          {route === "work_cloud" && (
+            <label htmlFor={`connection-effort-${organizationId}`}>
+              Reasoning effort
+              <ChoiceSelect
+                id={`connection-effort-${organizationId}`}
+                value={effort}
+                onValueChange={setEffort}
+                disabled={disabled}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="xhigh">Extra high</option>
+              </ChoiceSelect>
+            </label>
+          )}
+          {advanced && (
+            <AssistantAccessAdvanced
+              organizationId={organizationId}
+              call={call}
+              readOnly={readOnly}
+              demo={demo}
+              route={route}
+            />
+          )}
+        </details>
+      )}
       {active && grant && (
         <button
           type="button"
@@ -386,6 +429,6 @@ function ConnectionSetup({ organizationId, call, readOnly, demo }: Props) {
           Disconnect ChatGPT access
         </button>
       )}
-    </section>
+    </AccountSection>
   );
 }

@@ -12,6 +12,7 @@ const hooks = vi.hoisted(() => ({
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
   useRef: (value: unknown) => ({ current: value }),
+  useId: () => "capture-kind-fixture",
   useState: (initial: unknown) => {
     const index = hooks.index++;
     if (!(index in hooks.cells))

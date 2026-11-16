@@ -2,48 +2,48 @@
 
 /* The app uses the same quiet surfaces in light and dark mode. Public pages keep their recipe. */
 :root[data-app-theme="light"] {
-  --canvas: #ffffff;
+  --canvas: #f7f8f6;
   --panel: #ffffff;
-  --quiet-rail: #f8f8f8;
-  --ink: #242424;
-  --subtle: #636367;
-  --line: #e7e7e9;
-  --background: #ffffff;
-  --foreground: #242424;
+  --quiet-rail: #f1f3ef;
+  --ink: #17211d;
+  --subtle: #536159;
+  --line: #dce2dc;
+  --background: #f7f8f6;
+  --foreground: #17211d;
   --card: #ffffff;
-  --muted: #f1f1f3;
-  --muted-foreground: #636367;
-  --primary: #29292b;
+  --muted: #eef1ed;
+  --muted-foreground: #536159;
+  --primary: #1d5b49;
   --primary-foreground: #ffffff;
-  --border: #e7e7e9;
-  --ring: #737379;
-  --soft: #f1f1f3;
-  --accent: #e9e9ec;
-  --accent-ink: #29292b;
-  --teal: #356e5e;
-  --brand-ink: #242424;
+  --border: #dce2dc;
+  --ring: #2c735a;
+  --soft: #eef1ed;
+  --accent: #dbece2;
+  --accent-ink: #1d5b49;
+  --teal: #23634f;
+  --brand-ink: #17211d;
 }
 :root[data-app-theme="dark"] {
-  --canvas: #181818;
-  --panel: #202020;
-  --quiet-rail: #141414;
-  --ink: #eeeeef;
-  --subtle: #b0b0b4;
-  --line: #343437;
-  --background: #181818;
-  --foreground: #eeeeef;
-  --card: #202020;
-  --muted: #2c2c2f;
-  --muted-foreground: #b0b0b4;
-  --primary: #eeeeef;
-  --primary-foreground: #202020;
-  --border: #343437;
-  --ring: #b0b0b4;
-  --soft: #2c2c2f;
-  --accent: #363639;
-  --accent-ink: #eeeeef;
-  --teal: #a7cebf;
-  --brand-ink: #eeeeef;
+  --canvas: #141816;
+  --panel: #1c221f;
+  --quiet-rail: #111512;
+  --ink: #edf3ee;
+  --subtle: #b2c0b6;
+  --line: #344039;
+  --background: #141816;
+  --foreground: #edf3ee;
+  --card: #1c221f;
+  --muted: #252e28;
+  --muted-foreground: #b2c0b6;
+  --primary: #a6e0c7;
+  --primary-foreground: #112b20;
+  --border: #344039;
+  --ring: #98d1b7;
+  --soft: #252e28;
+  --accent: #293d33;
+  --accent-ink: #b6e4cf;
+  --teal: #a6e0c7;
+  --brand-ink: #edf3ee;
 }
 .quiet-shell {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;

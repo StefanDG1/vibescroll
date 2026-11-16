@@ -1,11 +1,15 @@
 "use client";
 import { Button } from "@companynerve/ui";
 import { clearLibraryPlaces } from "@/lib/library-place";
+import { useFormStatus } from "react-dom";
 export function SignOutButton() {
+  const { pending } = useFormStatus();
   return (
     <Button
       variant="outline"
       type="submit"
+      disabled={pending}
+      aria-busy={pending}
       onClick={() => {
         try {
           clearLibraryPlaces(localStorage);
@@ -14,7 +18,7 @@ export function SignOutButton() {
         }
       }}
     >
-      Sign out
+      {pending ? "Signing out…" : "Sign out"}
     </Button>
   );
 }

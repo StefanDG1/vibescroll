@@ -77,7 +77,7 @@ async function renderDemo(params: {
 it("opens the actual source evidence reached from a demo library link", async () => {
   const source = libraryDemoSources[0];
   const html = await renderDemo({ view: "library", source: source._id });
-  expect(html).toContain("Back to list");
+  expect(html).toContain("Back to posts");
   expect(html).toContain("Insights");
   expect(html).toContain("post-insight-reader");
   expect(html).toContain(source.summary);
@@ -86,8 +86,8 @@ it("opens the actual source evidence reached from a demo library link", async ()
 it("leaves an unknown source on the ordinary demo library", async () => {
   const html = await renderDemo({ view: "library", source: "unknown-source" });
   expect(html).not.toContain("post-insight-reader");
-  expect(html).not.toContain("Back to list");
-  expect(html).toContain('<h1 class="sr-only">Explore</h1>');
+  expect(html).not.toContain("Back to posts");
+  expect(html).toContain("<h1>Knowledge</h1>");
 });
 
 it.each(["loading", "error", "empty"])(
@@ -99,7 +99,7 @@ it.each(["loading", "error", "empty"])(
       uiState,
     });
     expect(html).not.toContain("post-insight-reader");
-    expect(html).not.toContain("Back to list");
+    expect(html).not.toContain("Back to posts");
     if (uiState === "loading") expect(html).toContain('aria-busy="true"');
     if (uiState === "error")
       expect(html).toContain("Synthetic request failure.");
@@ -167,8 +167,9 @@ it.each([
     expect(html).toContain('id="source-transcript"');
     expect(html).toContain("Original &lt;source&gt; passage");
     expect(html).toContain("Current user correction: Corrected source passage");
-    expect(html).toContain("user note · Supplied text");
-    expect(html).not.toContain("user note · 0.0s");
+    expect(html).toContain("Inspect the original passage");
+    expect(html).toMatch(/aria-expanded="false"[^>]*aria-controls=/);
+    expect(html).not.toContain("user note Â· 0.0s");
   },
 );
 
@@ -330,6 +331,6 @@ it("renders retained Cloud screenshots and timestamps while excluding older loca
   expect(html).toContain("/api/evidence/cloud-frame-asset?inline=true");
   expect(html).toContain("12.0");
   expect(html).not.toContain("/api/evidence/old-local-frame");
-  expect(html).toContain('href="#source-transcript"');
-  expect(html).toContain("Frame · 12.0s");
+  expect(html).toContain('id="source-transcript"');
+  expect(html).toContain("0:12");
 });

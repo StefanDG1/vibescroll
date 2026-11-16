@@ -7,6 +7,7 @@ export function SettingsPanel({
   triggerLabel,
   children,
   trigger: triggerContent,
+  showTriggerLabel = false,
   open: controlled,
   onOpenChange,
 }: {
@@ -14,6 +15,7 @@ export function SettingsPanel({
   triggerLabel: string;
   children: ReactNode;
   trigger?: ReactNode | false;
+  showTriggerLabel?: boolean;
   open?: boolean;
   onOpenChange?: (value: boolean) => void;
 }) {
@@ -69,12 +71,13 @@ export function SettingsPanel({
         <button
           ref={trigger}
           type="button"
-          className="post-settings-trigger icon-button"
+          className={showTriggerLabel ? "post-settings-trigger button secondary" : "post-settings-trigger icon-button"}
           aria-label={triggerLabel}
           title={triggerLabel}
           onClick={() => change(true)}
         >
           {triggerContent ?? <Settings2 size={19} aria-hidden="true" />}
+          {showTriggerLabel && <span>{triggerLabel}</span>}
         </button>
       )}
       <dialog

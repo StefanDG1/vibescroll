@@ -6,11 +6,13 @@ export function ActionForm({
   action,
   children,
   label = "Save changes",
+  pendingLabel = "Working…",
   danger = false,
 }: {
   action: (state: FormState, data: FormData) => Promise<FormState>;
   children?: React.ReactNode;
   label?: string;
+  pendingLabel?: string;
   danger?: boolean;
 }) {
   const [state, submit, pending] = useActionState(action, {});
@@ -40,7 +42,7 @@ export function ActionForm({
           disabled={pending}
           aria-busy={pending}
         >
-          {pending ? "Working…" : label}
+          {pending ? pendingLabel : label}
         </Button>
       </div>
     </form>

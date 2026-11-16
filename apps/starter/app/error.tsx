@@ -1,15 +1,27 @@
 "use client";
 import Link from "next/link";
-import { Button } from "@companynerve/ui";
+import { useTransition } from "react";
+import { PublicIntro, PublicPage } from "@/components/site";
 export default function ErrorPage({ reset }: { reset: () => void }) {
+  const [retrying, startTransition] = useTransition();
   return (
-    <main className="narrow">
-      <h1>Something needs attention</h1>
-      <p>We could not load this page. Try again or return home.</p>
-      <Button onClick={reset}>Try again</Button>
-      <p>
-        <Link href="/">Return home</Link>
-      </p>
-    </main>
+    <PublicPage layout="form">
+      <PublicIntro title="This page could not load">
+        <p>Try again, return to the website or check for a guide in Help.</p>
+      </PublicIntro>
+      <div className="public-actions">
+        <button
+          type="button"
+          className="primary"
+          disabled={retrying}
+          onClick={() => startTransition(reset)}
+        >
+          {retrying ? "Trying again…" : "Try again"}
+        </button>
+        <Link className="secondary" href="/">
+          Return home
+        </Link>
+      </div>
+    </PublicPage>
   );
 }

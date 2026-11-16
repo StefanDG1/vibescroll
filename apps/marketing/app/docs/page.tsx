@@ -1,9 +1,48 @@
 import { Header, Footer, repository } from "@/components/site";
+import { company } from "@companynerve/company-config";
 export const metadata = {
   title: "Setup and documentation",
   alternates: { canonical: "/docs" },
 };
 export default function Page() {
+  if (company.website.kind === "product")
+    return (
+      <div className="container">
+        <Header />
+        <main id="main" className="doc marketing-doc">
+          <h1>VibeScroll documentation</h1>
+          <p className="muted">
+            Find help using the app, connecting an assistant, or running your
+            own copy.
+          </p>
+          <div className="marketing-guide-list">
+            {[
+              [
+                "Help guides",
+                "/help",
+                "Save a post, inspect an insight and use it in a project.",
+              ],
+              [
+                "Developer documentation",
+                "/docs",
+                "Browse the assistant integration, tool contracts and setup guides.",
+              ],
+              [
+                "Open-source setup",
+                "/open-source",
+                "Review the requirements for hosting your own VibeScroll deployment.",
+              ],
+            ].map(([label, route, copy]) => (
+              <a href={company.website.appUrl + route} key={route}>
+                <strong>{label}</strong>
+                <span>{copy}</span>
+              </a>
+            ))}
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   return (
     <div className="container">
       <Header />

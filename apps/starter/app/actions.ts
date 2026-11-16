@@ -205,13 +205,13 @@ export async function setCatalogBrowsing(_: FormState, d: FormData) {
 export async function saveProject(_: FormState, d: FormData) {
   return run(async () => {
     const c = await backend();
-    await c.mutation(api.projects.save, {
+    const id = await c.mutation(api.projects.save, {
       organizationId: org(d),
       id: val(d, "id") ? (val(d, "id") as Id<"projects">) : undefined,
       name: val(d, "name"),
       description: val(d, "description"),
     });
-    return { path: `/app/${org(d)}` };
+    return { path: `/app/${org(d)}/projects/${id}` };
   });
 }
 export async function removeProject(_: FormState, d: FormData) {
@@ -223,7 +223,7 @@ export async function removeProject(_: FormState, d: FormData) {
       organizationId: org(d),
       id: val(d, "id") as Id<"projects">,
     });
-    return { path: `/app/${org(d)}` };
+    return { path: `/app/${org(d)}/projects` };
   });
 }
 export async function renameOrganization(_: FormState, d: FormData) {

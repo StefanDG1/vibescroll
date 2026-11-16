@@ -1,5 +1,23 @@
 # Implementation status
 
+## November 16 R178 website redesign
+
+The local candidate has one Browse Home with no title bar or layout picker. The desktop rail retains the brand mark. The phone layout scrolls through the source, insights, project choices, and proposals. The post reader puts source evidence and advanced settings after those sections. The same site components render the private snapshot. Save, filter state, return focus and phone gestures were tested with the actual snapshot and isolated browser sessions.
+
+The website review scores 69 observed screen families across the signed-in app, onboarding, public website and marketing. The rated averages are 8.00–8.33. Verification includes lint, type checks, the repository tests with its pinned caption dependencies, and production builds for both sites. Provider-hosted and populated authorization-dependent states remain outside local acceptance. [November 16 scorecard and navigation map](design/APP-UI-REVIEW-2026-11-16.md)
+
+## November 14 R176 Home refinement
+
+Verified the scroll-through Home views with the production snapshot at 390 × 844 and 1440 × 960. Emulated touch exercised review swipe and Undo, and scrolling into full-screen insights. The compact project list exposed all six projects once and opened the proposal composer. Typecheck, lint, and the 192 public-knowledge and UI tests passed. The [UI scorecard](design/HOME-UI-SCORECARD.md) records the updated rubric and design limitations.
+
+## November 13 R175 local snapshot preview
+
+The selected production workspace was copied from the signed-in browser using scoped reads into private per-user storage outside Git. The localhost preview served 236 posts with full detail, 3,646 retained JPEGs, six projects, five saved proposals, six runs and 30 activity entries. Chrome at 390 and 1440 pixels verified Home, Posts, a full post, Work and Account. All three Home views rendered real locally stored thumbnails with production, Convex, WorkOS and analytics hosts blocked. The local draft save, duplicate retry and reopen passed, and the verification draft was removed. See [local development](local-development.md#review-the-redesign-with-a-private-snapshot) for start and refresh commands.
+
+## November 13 R173 website redesign checkpoint
+
+Local Windows candidate based on `48c37b5`. All three Home views and the signed-in core share the revised shell, insight rail and project/proposal entry. The [review](design/WEBSITE-REDESIGN-REVIEW.md) records the comparison, scope and remaining route coverage. Chrome emulation at 390 × 844 and 1440 × 960 exercised visible controls and layout. Emulated touch input verified both review directions, Browse opening, and full-screen settling in both directions. The auth suite passed 82 and the shared UI suite passed 192. Staging with signed-in data, remaining standalone screens and production verification are pending.
+
 ## November 11 R168 workspace search production acceptance
 
 The Library and MCP use Convex text and vector indexes, exact reference ranking, confirmed project context, and separate retrieval for compound requests. The migration visited 320 source records and completed vector indexing in all five active workspaces. The final deploy removed two obsolete indexes, cleanup cleared 2,191 obsolete derived values, and the live MCP rejected the retired mode. Live Library and MCP returned Componentry first. Live compound MCP search returned Space UI first with distinct progress feedback evidence. A signed-in ChatGPT chat returned two saved references from its compound request.

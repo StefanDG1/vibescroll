@@ -7,11 +7,13 @@ export function PostThumbnail({
   candidates,
   kind,
   demo = false,
+  priority = false,
   resolve,
 }: {
   candidates: string[];
   kind: string;
   demo?: boolean;
+  priority?: boolean;
   resolve?: (id: string) => string;
 }) {
   const [failed, setFailed] = useState<string[]>([]);
@@ -32,7 +34,8 @@ export function PostThumbnail({
           height={76}
           alt=""
           unoptimized
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : undefined}
           onLoad={() => setLoadedId(frameId)}
           onError={() => setFailed((current) => [...current, frameId])}
         />

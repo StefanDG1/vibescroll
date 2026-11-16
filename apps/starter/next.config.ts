@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 import { buildVersion } from "../../scripts/version.mjs";
 const config: NextConfig = {
+  devIndicators:
+    process.env.VIBESCROLL_LOCAL_SNAPSHOT === "1" ? false : undefined,
   serverExternalPackages: ["onnxruntime-web"],
   outputFileTracingIncludes: {
     "/help/[slug]": ["../../docs/help/**/*.md"],

@@ -1,9 +1,11 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Search, X } from "lucide-react";
 import { FeedPostCard, type FeedCardPost } from "./home-feed-post";
 import { FeedTour } from "./feed-tour";
 import { ErrorState } from "./assistant-elements/error-state";
+import { LibrarySkeleton } from "./library-skeleton";
 import { matchesStarter } from "../../../packages/onboarding/discovery";
 import { rankOnboardingPosts } from "../../../packages/onboarding/flow";
 import type { OnboardingDraft } from "../../../packages/onboarding/journey";
@@ -28,7 +30,12 @@ type StarterDetail = {
   frames: { id: string; timestampMs: number }[];
   analysis: {
     summary: string;
-    insights: { id: string; title: string; claim: string }[];
+    insights: {
+      id: string;
+      title: string;
+      claim: string;
+      evidence?: { id: string; kind: string }[];
+    }[];
   };
 };
 export const starterFrame = (
@@ -67,7 +74,7 @@ export function OnboardingStarterFeed({
   const [error, setError] = useState("");
   const [revision, retry] = useState(0);
   const [query, setQuery] = useState(draft.pendingUrl ?? "");
-  const [active, setActive] = useState<string>();
+  const field = useRef<HTMLInputElement>(null);
   const selected = useRef(draft.selectedFamilyId);
   const selectPost = useEffectEvent(onSelected);
   const interests = (draft.interests ?? []).join(",");
@@ -95,7 +102,6 @@ export function OnboardingStarterFeed({
         const first =
           items.find((post) => post.familyId === selected.current) ?? items[0];
         if (!first) return;
-        setActive(first.familyId);
         const result = await fetch("/api/onboarding/starter", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -126,29 +132,48 @@ export function OnboardingStarterFeed({
   }, [interests, goal, revision]);
   const link = /^https?:\/\//i.test(query.trim());
   const visible = posts.filter((post) => !link && matchesStarter(post, query));
-  const evidence = detail && (
-    <div className={styles.frameGrid}>
-      {detail.frames.map((frame) => (
-        <a
-          key={frame.id}
-          href={starterFrame(detail.familyId, frame.id)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Screenshot at {(frame.timestampMs / 1000).toFixed(1)}s
-        </a>
-      ))}
-    </div>
+  const previewPost = visible.find(
+    (post) => post.familyId === detail?.familyId,
+  );
+  const otherPosts = visible.filter(
+    (post) => post.familyId !== detail?.familyId,
+  );
+  const clearSearch = () => {
+    setQuery("");
+    field.current?.focus();
+  };
+  const retryPreview = () => {
+    setError("");
+    retry((value) => value + 1);
+    field.current?.focus();
+  };
+  const evidence = detail && detail.frames.length > 0 && (
+    <details className={styles.previewEvidence}>
+      <summary>Source screenshots ({detail.frames.length})</summary>
+      <div className={styles.frameGrid}>
+        {detail.frames.map((frame) => (
+          <a
+            key={frame.id}
+            href={starterFrame(detail.familyId, frame.id)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Screenshot at {(frame.timestampMs / 1000).toFixed(1)}s
+          </a>
+        ))}
+      </div>
+    </details>
   );
   return (
     <section className={styles.sharedFeed} data-onboarding-stage="feed">
       <div className={styles.previewToolbar}>
         <button type="button" className={styles.secondary} onClick={onBack}>
-          <ArrowLeft size={17} /> Your answers
+          <ArrowLeft size={17} aria-hidden="true" /> Answers
         </button>
         <label className={styles.searchBox}>
           <Search size={18} />
           <input
+            ref={field}
             type="search"
             aria-label="Search ready posts or paste a link"
             placeholder="Search posts or paste your own link"
@@ -159,38 +184,34 @@ export function OnboardingStarterFeed({
             <button
               type="button"
               aria-label="Clear search"
-              onClick={() => setQuery("")}
+              onClick={clearSearch}
             >
               <X size={16} />
             </button>
           )}
         </label>
         <FeedTour discovery />
-        <button type="button" className={styles.primary} onClick={onContinue}>
-          Continue <ArrowRight size={16} />
-        </button>
+        {!link && !previewPost && (
+          <button type="button" className={styles.primary} onClick={onContinue}>
+            Continue <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        )}
       </div>
       <p className={styles.previewHint}>
-        An insight is a useful takeaway from a post. Expand one, then see how it
-        could help your project.
+        Explore one full example or paste a link you want to save.
       </p>
 
       {error && (
         <ErrorState
-          title="Your preview needs another look"
+          title="Could not open the preview"
           detail={error}
-          onRetry={() => (setError(""), retry((value) => value + 1))}
-          action={
-            <button type="button" onClick={onContinue}>
-              Continue setup
-            </button>
-          }
+          onRetry={retryPreview}
         />
       )}
-      {loading && !posts.length && (
-        <output className={styles.previewLoading} aria-live="polite">
-          Opening a ready post…
-        </output>
+      {loading && !link && (
+        <div className={styles.previewLoading}>
+          <LibrarySkeleton rows={3} kind="posts" />
+        </div>
       )}
       {link ? (
         <div className={styles.empty}>
@@ -206,77 +227,109 @@ export function OnboardingStarterFeed({
             Continue with this link <ArrowRight size={16} />
           </button>
         </div>
-      ) : !loading && !visible.length ? (
+      ) : !loading && !error && !visible.length ? (
         <div className={styles.empty}>
           <h2>No ready posts found.</h2>
-          <p>
-            Try another topic, clear the search or continue with your own link.
+          <p className={styles.subtle}>
+            {query
+              ? "Try searching for another topic."
+              : "You can still explore an example or paste your own link."}
           </p>
-          <button
-            type="button"
-            className={styles.secondary}
-            onClick={() => setQuery("")}
-          >
-            Clear search
-          </button>
+          {query && (
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={clearSearch}
+            >
+              Clear search
+            </button>
+          )}
+          {!query && (
+            <Link href="/example" className={styles.secondary}>
+              Explore the example
+            </Link>
+          )}
         </div>
-      ) : (
-        visible.map((post, index) => {
-          const full = detail?.familyId === post.familyId ? detail : undefined;
-          const value: FeedDetail | undefined = full
-            ? {
-                id: full.familyId,
-                generation: 0,
-                title: full.title,
-                authorName: full.authorName,
-                url: full.canonical,
-                summary: full.analysis.summary,
-                categoryKeys: full.interests,
-                thumbnailAssetIds: post.thumbnailFrameId
-                  ? [post.thumbnailFrameId]
-                  : [],
-                analysisVersionId: null,
-                insights: full.analysis.insights,
-                proposals: [],
-                suggestions: { versionId: null, items: [] },
-                projects: [],
-              }
-            : undefined;
-          return (
-            <FeedPostCard
-              key={post.familyId}
-              post={card(post)}
-              detail={value}
-              active={active === post.familyId}
-              demo={false}
-              readOnly
-              organizationId=""
-              base="/onboarding"
-              onReaction={() => {}}
-              call={async () => {
-                throw Error("Continue setup to use this action.");
-              }}
-              onVisible={() => setActive(post.familyId)}
-              onRetry={() => (setError(""), retry((value) => value + 1))}
-              nextPost={
-                visible[index + 1] ? card(visible[index + 1]) : undefined
-              }
-              preview={{
-                onContinue,
-                evidence: full ? evidence : undefined,
-                projectName: draft.projectDescription,
-                resolveThumbnail: (frameId, familyId) =>
-                  starterFrame(familyId ?? post.familyId, frameId, true),
-              }}
-            />
-          );
-        })
+      ) : null}
+      {previewPost && detail && (
+        <FeedPostCard
+          key={previewPost.familyId}
+          post={card(previewPost)}
+          detail={
+            {
+              id: detail.familyId,
+              generation: 0,
+              title: detail.title,
+              authorName: detail.authorName,
+              url: detail.canonical,
+              summary: detail.analysis.summary,
+              categoryKeys: detail.interests,
+              thumbnailAssetIds: previewPost.thumbnailFrameId
+                ? [previewPost.thumbnailFrameId]
+                : [],
+              analysisVersionId: null,
+              insights: detail.analysis.insights.map((insight) => {
+                const frame = detail.frames.find((item) =>
+                  insight.evidence?.some((reference) => reference.id === item.id),
+                );
+                return {
+                  ...insight,
+                  frame: frame
+                    ? { id: frame.id, timeMs: frame.timestampMs }
+                    : undefined,
+                };
+              }),
+              proposals: [],
+              suggestions: { versionId: null, items: [] },
+              projects: [],
+            } satisfies FeedDetail
+          }
+          active
+          demo={false}
+          readOnly
+          mode="browse"
+          organizationId=""
+          base="/onboarding"
+          onReaction={() => {}}
+          call={async () => {
+            throw Error("Continue setup to use this action.");
+          }}
+          onVisible={() => {}}
+          onRetry={retryPreview}
+          showTour={false}
+          endLabel="More posts are available after setup"
+          preview={{
+            onContinue,
+            evidence,
+            projectName: draft.projectDescription,
+            resolveThumbnail: (frameId, familyId) =>
+              starterFrame(familyId ?? previewPost.familyId, frameId, true),
+            resolveEvidenceFrame: (frameId) =>
+              starterFrame(previewPost.familyId, frameId),
+          }}
+        />
       )}
-      <div className={styles.actions}>
-        <button type="button" className={styles.primary} onClick={onContinue}>
-          Make my saved posts useful <ArrowRight size={16} />
-        </button>
-      </div>
+      {!loading && otherPosts.length > 0 && (
+        <section
+          className={styles.starterMetadata}
+          aria-labelledby="starter-more-posts"
+        >
+          <h2 id="starter-more-posts">More posts</h2>
+          <p className={styles.subtle}>Open more full posts after setup.</p>
+          <ul>
+            {otherPosts.map((post) => (
+              <li key={post.familyId}>
+                <strong>{post.title}</strong>
+                <span>
+                  {post.authorName && `${post.authorName} · `}
+                  {post.insightCount}{" "}
+                  {post.insightCount === 1 ? "insight" : "insights"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </section>
   );
 }

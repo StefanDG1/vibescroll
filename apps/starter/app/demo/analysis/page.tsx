@@ -1,4 +1,4 @@
-import { PublicPage } from "@/components/site";
+import { PublicIntro, PublicPage } from "@/components/site";
 import { AnalysisStatusDemo } from "@/components/analysis-status-demo";
 
 export const metadata = {
@@ -9,8 +9,9 @@ export default function Page() {
   return (
     <PublicPage>
       <div className="analysis-status-demo-intro">
-        <h1>Analysis status examples</h1>
-        <p>Synthetic states only. Switching examples starts no work.</p>
+        <PublicIntro title="Analysis status examples">
+          <p>Synthetic processing states show what each stage looks like.</p>
+        </PublicIntro>
         <AnalysisStatusDemo />
       </div>
     </PublicPage>

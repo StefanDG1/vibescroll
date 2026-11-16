@@ -16,6 +16,7 @@ export function ImprovementControls({
 }) {
   const [data, setData] = useState<any>(),
     [preferences, setPreferences] = useState<any>(),
+    [open, setOpen] = useState(false),
     [error, setError] = useState("");
   const generation = useRef({ value: 0 });
   const invalidate = useEffectEvent(() => {
@@ -58,6 +59,7 @@ export function ImprovementControls({
   }
   const loadFromEffect = useEffectEvent(() => load());
   useEffect(() => {
+    if (!open || demo) return;
     let active = true;
     const timer = setTimeout(() => {
       if (active) void loadFromEffect();
@@ -67,14 +69,20 @@ export function ImprovementControls({
       invalidate();
       clearTimeout(timer);
     };
-  }, [organizationId, demo]);
+  }, [organizationId, demo, open]);
   return (
-    <details className="improvement-settings">
+    <details
+      className="improvement-settings"
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
       <summary>
         <Settings2 size={17} aria-hidden="true" />
         Preferences and continuous operation
       </summary>
       {error && <p role="alert">{error}</p>}
+      {open && !demo && !preferences && !error && (
+        <output>Loading settings…</output>
+      )}
       {preferences && (
         <form
           onSubmit={async (e) => {

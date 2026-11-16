@@ -14,6 +14,8 @@ import {
   ChevronDown,
   FolderGit2,
   MoreHorizontal,
+  Minus,
+  Plus,
   Send,
 } from "lucide-react";
 import type { FeedProposal } from "../../lib/home-feed";
@@ -37,6 +39,7 @@ export function ProposalArtifactCore({
   call,
   enabled = false,
   readOnly = false,
+  presentation = "inline",
   transport = "web",
   renderBrandIcon,
   renderLink,
@@ -47,6 +50,7 @@ export function ProposalArtifactCore({
   call?: (operation: string, args: unknown) => Promise<any>;
   enabled?: boolean;
   readOnly?: boolean;
+  presentation?: "inline" | "reader" | "feed";
   fit?: TopicFit;
   href: string;
   initiallyOpen?: boolean;
@@ -60,7 +64,9 @@ export function ProposalArtifactCore({
 }) {
   const [localOpen, setLocalOpen] = useState(initiallyOpen);
   const contentId = useId();
-  const open = controlled ?? localOpen;
+  const reader = presentation === "reader";
+  const feed = presentation === "feed";
+  const open = reader || (controlled ?? localOpen);
   const work = useProposalWork(
     initialProposal.id,
     enabled && open,
@@ -124,6 +130,7 @@ export function ProposalArtifactCore({
       data-slot="artifact-card"
       data-proposal-id={proposal.id}
       data-expanded={open}
+      data-presentation={presentation}
       onClickCapture={
         onNavigate
           ? (event) => {
@@ -137,68 +144,102 @@ export function ProposalArtifactCore({
       }
     >
       <header className={styles.header}>
-        <button
-          type="button"
-          className={styles.expand}
-          aria-expanded={open}
-          aria-controls={contentId}
-          aria-label={`${open ? "Collapse" : "Expand"} plan for ${name}`}
-          onClick={toggle}
-        >
-          <span className={styles.icon}>
-            {name === "VibeScroll" && renderBrandIcon ? (
-              renderBrandIcon(30)
-            ) : (
-              <FolderGit2 size={21} aria-hidden="true" />
-            )}
-          </span>
-          <span className={styles.label}>
-            <strong title={proposal.projectName}>{name}</strong>
-            {!ready && <small>Draft plan</small>}
-          </span>
-        </button>
-        {ready && <span className={styles.status}>Ready</span>}
-        <button
-          type="button"
-          className={styles.collapse}
-          aria-label={`${open ? "Collapse" : "Expand"} ${proposal.title}`}
-          aria-expanded={open}
-          aria-controls={contentId}
-          onClick={toggle}
-        >
-          <ChevronDown
-            className={open ? styles.rotated : undefined}
-            size={18}
-            aria-hidden="true"
-          />
-        </button>
-        <div className={styles.options}>
-          <SettingsPanel
-            title="Plan options"
-            triggerLabel={`Plan options for ${name}`}
-            trigger={<MoreHorizontal size={21} aria-hidden="true" />}
+        {reader ? (
+          <div className={styles.readerIdentity}>
+            <span className={styles.icon}>
+              {name === "VibeScroll" && renderBrandIcon ? (
+                renderBrandIcon(30)
+              ) : (
+                <FolderGit2 size={21} aria-hidden="true" />
+              )}
+            </span>
+            <span className={styles.label}>
+              <strong title={proposal.projectName}>{name}</strong>
+              <small>Version {proposal.version}</small>
+            </span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={styles.expand}
+            aria-expanded={open}
+            aria-controls={contentId}
+            aria-label={`${open ? "Collapse" : "Expand"} ${feed ? proposal.title : `plan for ${name}`}`}
+            onClick={toggle}
           >
-            <h3>{proposal.title}</h3>
-            <p>
-              Version {proposal.version} ·{" "}
-              {proposal.review.replaceAll("_", " ")}
-            </p>
-            {proposal.currentProblem && (
-              <>
-                <h4>Goal</h4>
-                <p>{proposal.currentProblem}</p>
-              </>
+            <span className={styles.icon}>
+              {name === "VibeScroll" && renderBrandIcon ? (
+                renderBrandIcon(30)
+              ) : (
+                <FolderGit2 size={21} aria-hidden="true" />
+              )}
+            </span>
+            <span className={styles.label}>
+              <strong title={feed ? proposal.title : proposal.projectName}>
+                {feed ? proposal.title : name}
+              </strong>
+              {feed ? <small>{name}</small> : !ready && <small>Draft plan</small>}
+            </span>
+            {feed && (open
+              ? <Minus className={styles.feedDisclosure} size={16} aria-hidden="true" />
+              : <Plus className={styles.feedDisclosure} size={16} aria-hidden="true" />
             )}
-            <a className="button" href={href}>
-              Open full plan
-            </a>
-            <p className="fine">
-              Uses all retained post insights and the current project profile.
-              Approving creates an issue; coding starts separately.
-            </p>
-          </SettingsPanel>
-        </div>
-        {ready && score !== null && fit && (
+          </button>
+        )}
+        {reader ? (
+          <span className={styles.status}>
+            {proposal.review === "unreviewed"
+              ? "Needs review"
+              : proposal.review.replaceAll("_", " ")}
+          </span>
+        ) : (
+          ready && <span className={styles.status}>Ready</span>
+        )}
+        {!reader && !feed && (
+          <button
+            type="button"
+            className={styles.collapse}
+            aria-label={`${open ? "Collapse" : "Expand"} ${proposal.title}`}
+            aria-expanded={open}
+            aria-controls={contentId}
+            onClick={toggle}
+          >
+            <ChevronDown
+              className={open ? styles.rotated : undefined}
+              size={18}
+              aria-hidden="true"
+            />
+          </button>
+        )}
+        {!reader && !feed && (
+          <div className={styles.options}>
+            <SettingsPanel
+              title="Plan options"
+              triggerLabel={`Plan options for ${name}`}
+              trigger={<MoreHorizontal size={21} aria-hidden="true" />}
+            >
+              <h3>{proposal.title}</h3>
+              <p>
+                Version {proposal.version} ·{" "}
+                {proposal.review.replaceAll("_", " ")}
+              </p>
+              {proposal.currentProblem && (
+                <>
+                  <h4>Goal</h4>
+                  <p>{proposal.currentProblem}</p>
+                </>
+              )}
+              <a className="button" href={href}>
+                Open full plan
+              </a>
+              <p className="fine">
+                Uses all retained post insights and the current project profile.
+                Approving creates an issue; coding starts separately.
+              </p>
+            </SettingsPanel>
+          </div>
+        )}
+        {!feed && ready && score !== null && fit && (
           <div className={styles.fit}>
             <SettingsPanel
               title={`Topic fit for ${name}`}
@@ -220,55 +261,82 @@ export function ProposalArtifactCore({
       </header>
       <div id={contentId} hidden={!open} className={styles.body}>
         <div className={styles.readArea}>
-          <h3>{proposal.title}</h3>
-          <section>
-            <h4>{proposal.proposedChange ? "Change" : "Goal"}</h4>
-            <p>{proposal.proposedChange ?? proposal.currentProblem ?? "—"}</p>
-          </section>
-          <section>
-            <h4>Steps</h4>
-            {proposal.steps?.length ? (
-              <ol>
-                {proposal.steps.map((step, index) => (
-                  <li key={index}>
-                    {step.replace(/^\s*(?:\d+[.)]|[-*])\s+/, "")}
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className={styles.placeholder}>—</p>
+          {reader ? <h2>{proposal.title}</h2> : !feed && <h3>{proposal.title}</h3>}
+          {reader && proposal.currentProblem && proposal.proposedChange && (
+            <section>
+              <h3>Goal</h3>
+              <p>{proposal.currentProblem}</p>
+            </section>
+          )}
+          {(!feed || proposal.proposedChange || proposal.currentProblem) && (
+            <section>
+              {reader ? (
+                <h3>{proposal.proposedChange ? "Proposed change" : "Goal"}</h3>
+              ) : (
+                <h4>{proposal.proposedChange ? "Change" : "Goal"}</h4>
+              )}
+              <p>{proposal.proposedChange ?? proposal.currentProblem ?? "—"}</p>
+            </section>
+          )}
+          {feed &&
+            !proposal.proposedChange &&
+            !proposal.currentProblem &&
+            !proposal.steps?.length &&
+            !proposal.acceptanceCriteria.length && (
+              <p>No proposal details yet.</p>
             )}
-          </section>
-          <section>
-            <h4>Checks</h4>
-            {proposal.acceptanceCriteria.length ? (
-              <ul>
-                {proposal.acceptanceCriteria.map((criterion, index) => (
-                  <li key={index}>{criterion}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.placeholder}>—</p>
-            )}
-          </section>
+          {((!reader && !feed) || !!proposal.steps?.length) && (
+            <section>
+              {reader ? <h3>Steps</h3> : <h4>Steps</h4>}
+              {proposal.steps?.length ? (
+                <ol>
+                  {proposal.steps.map((step, index) => (
+                    <li key={index}>
+                      {step.replace(/^\s*(?:\d+[.)]|[-*])\s+/, "")}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className={styles.placeholder}>—</p>
+              )}
+            </section>
+          )}
+          {((!reader && !feed) || proposal.acceptanceCriteria.length > 0) && (
+            <section>
+              {reader ? <h3>Acceptance checks</h3> : <h4>Checks</h4>}
+              {proposal.acceptanceCriteria.length ? (
+                <ul>
+                  {proposal.acceptanceCriteria.map((criterion, index) => (
+                    <li key={index}>{criterion}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.placeholder}>—</p>
+              )}
+            </section>
+          )}
           <ProposalWorkObservations handoff={live?.handoff} />
-          <div className={styles.discussion} aria-label="Plan discussion">
-            {(enabled ? work.messages : proposal.discussion)?.map((message) => (
-              <div className={styles.message} key={message.id}>
-                <span className={styles.avatar}>
-                  {message.role === "assistant"
-                    ? (renderBrandIcon?.(29) ?? (
-                        <FolderGit2 size={21} aria-hidden="true" />
-                      ))
-                    : message.author.slice(0, 1)}
-                </span>
-                <div>
-                  <strong>{message.author}</strong>
-                  <p>{message.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          {((!reader && !feed) || enabled || !!proposal.discussion?.length) && (
+            <div className={styles.discussion} aria-label="Plan discussion">
+              {(enabled ? work.messages : proposal.discussion)?.map(
+                (message) => (
+                  <div className={styles.message} key={message.id}>
+                    <span className={styles.avatar}>
+                      {message.role === "assistant"
+                        ? (renderBrandIcon?.(29) ?? (
+                            <FolderGit2 size={21} aria-hidden="true" />
+                          ))
+                        : message.author.slice(0, 1)}
+                    </span>
+                    <div>
+                      <strong>{message.author}</strong>
+                      <p>{message.body}</p>
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+          )}
         </div>
         {enabled && (
           <>
@@ -406,42 +474,44 @@ export function ProposalArtifactCore({
             )}
           </>
         )}
-        <div className={styles.composer}>
-          <textarea
-            aria-label={
-              enabled
-                ? "Plan discussion"
-                : "Proposal discussion, not connected yet"
-            }
-            placeholder="Suggest a change…"
-            rows={1}
-            maxLength={4000}
-            disabled={!writable || work.busy || work.uncertain}
-            value={work.draft}
-            onChange={(event) => work.updateDraft(event.target.value)}
-          />
-          <button
-            type="button"
-            aria-label={
-              live?.generatedVersion ? "Send and update plan" : "Save message"
-            }
-            title={
-              live?.generatedVersion
-                ? "Save this message and generate a revised plan within the displayed credit limit."
-                : "Save feedback. Generating a plan uses the separate credit quote."
-            }
-            disabled={
-              !writable ||
-              work.busy ||
-              work.uncertain ||
-              !work.draft.trim() ||
-              (!!live?.generatedVersion && (!!generating || !work.quote))
-            }
-            onClick={() => void work.send()}
-          >
-            <Send size={19} aria-hidden="true" />
-          </button>
-        </div>
+        {!feed && (!reader || enabled) && (
+          <div className={styles.composer}>
+            <textarea
+              aria-label={
+                enabled
+                  ? "Plan discussion"
+                  : "Proposal discussion, not connected yet"
+              }
+              placeholder="Suggest a change…"
+              rows={1}
+              maxLength={4000}
+              disabled={!writable || work.busy || work.uncertain}
+              value={work.draft}
+              onChange={(event) => work.updateDraft(event.target.value)}
+            />
+            <button
+              type="button"
+              aria-label={
+                live?.generatedVersion ? "Send and update plan" : "Save message"
+              }
+              title={
+                live?.generatedVersion
+                  ? "Save this message and generate a revised plan within the displayed credit limit."
+                  : "Save feedback. Generating a plan uses the separate credit quote."
+              }
+              disabled={
+                !writable ||
+                work.busy ||
+                work.uncertain ||
+                !work.draft.trim() ||
+                (!!live?.generatedVersion && (!!generating || !work.quote))
+              }
+              onClick={() => void work.send()}
+            >
+              <Send size={19} aria-hidden="true" />
+            </button>
+          </div>
+        )}
         {enabled && work.hasOlder && (
           <button
             className={styles.secondary}
@@ -452,7 +522,15 @@ export function ProposalArtifactCore({
             Earlier messages
           </button>
         )}
-        {issue ? (
+        {feed ? (
+          <div className={styles.feedFooter}>
+            {renderLink ? (
+              renderLink(href, "Open full proposal")
+            ) : (
+              <a href={href}>Open full proposal</a>
+            )}
+          </div>
+        ) : issue ? (
           <div className={styles.issueActions}>
             <a
               className={styles.approve}
@@ -522,6 +600,10 @@ export function ProposalArtifactCore({
                 </button>
               )}
           </>
+        ) : reader && !enabled ? (
+          <p className={styles.readerUnavailable}>
+            Plan discussion and issue actions are unavailable.
+          </p>
         ) : (
           <>
             {work.issuePreview && (

@@ -12,6 +12,20 @@ pnpm dev
 
 Open `http://localhost:3001/demo`. The banner identifies synthetic data. Demo actions do not import media, call AI, charge a payment or write a repository. `/demo?uiState=empty`, `/demo?uiState=loading` and `/demo?uiState=error` expose fixture states. A fixture is not an integration test.
 
+## Review the redesign with a private snapshot
+
+On the Windows machine that holds the snapshot, run this command from the checkout.
+
+```powershell
+./scripts/start-local-snapshot.ps1
+```
+
+Open [local VibeScroll](http://localhost:3192/app). Add `?mode=review`, `?mode=browse`, or `?mode=snap` to open a Home view directly. The preview runs on loopback with no hosted credentials. The snapshot stays outside the checkout under `%LOCALAPPDATA%/VibeScroll/ui-snapshot`.
+
+To refresh manually, leave one signed-in production workspace tab open in Chrome and run `Get-Content -Raw ./scripts/capture-local-snapshot.py | browser-harness`. A completed capture becomes active automatically. The old folder remains available, including any drafts saved alongside it.
+
+The preview uses a point-in-time copy of the selected workspace's saved posts, insights, retained images, projects, proposals, runs and activity. It uses local text matching for Posts search. Likes are temporary for the dev server session. New proposal drafts are saved beside the snapshot and can be reopened locally. Provider actions, production account authentication, full knowledge indexing and live updates require a configured development backend.
+
 ## Configure your own development accounts
 
 1. Run `pnpm convex:dev` and select a new project in your own account. Keep its generated ignored root `.env.local`. Never select the operator's production deployment for development.

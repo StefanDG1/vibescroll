@@ -8,7 +8,7 @@ export type AccountProfile = {
   name?: string;
   pictureUrl?: string | null;
 };
-function ProfileAvatar({ profile }: { profile?: AccountProfile }) {
+export function ProfileAvatar({ profile }: { profile?: AccountProfile }) {
   const [failed, setFailed] = useState(false);
   const name = profile?.firstName || profile?.name || "User";
   const initial = Array.from(name.trim())[0]?.toLocaleUpperCase() || "U";
@@ -60,10 +60,26 @@ export function AccountMenu({
   active?: boolean;
   profile?: AccountProfile;
 }) {
+  if (mobile) {
+    return (
+      <button
+        type="button"
+        className={`account-trigger mobile-account-trigger ${active ? "active" : ""}`}
+        aria-current={active ? "page" : undefined}
+        onClick={() => go("menu")}
+      >
+        <ProfileAvatar
+          key={profile?.pictureUrl ?? profile?.firstName ?? "default"}
+          profile={profile ?? (demo ? { firstName: "Demo" } : undefined)}
+        />
+        <span>Account</span>
+      </button>
+    );
+  }
   return (
     <Menu.Root>
       <Menu.Trigger
-        className={`account-trigger ${mobile ? "mobile-account-trigger" : ""} ${active ? "active" : ""}`}
+        className={`account-trigger ${active ? "active" : ""}`}
         aria-label="Account menu"
         aria-current={active ? "page" : undefined}
       >
@@ -72,12 +88,12 @@ export function AccountMenu({
           profile={profile ?? (demo ? { firstName: "Demo" } : undefined)}
         />
         <span>Account</span>
-        {!mobile && <ChevronDown size={15} />}
+        <ChevronDown size={15} />
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Content
           className="account-menu"
-          side={mobile ? "top" : "bottom"}
+          side="top"
           sideOffset={8}
           align="end"
           collisionPadding={12}

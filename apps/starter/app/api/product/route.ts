@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { backend, api, configured } from "@/lib/backend";
 import { withAuth } from "@workos-inc/authkit-nextjs";
+import { localSnapshotEnabled } from "@/lib/local-snapshot-mode";
 import { allowedRequestOrigin } from "@/lib/request-origin";
 const operations = {
   setPostLike: ["mutation", api.postEngagement.setLike],
@@ -200,6 +201,39 @@ export async function POST(req: NextRequest) {
       { error: "Request origin is not allowed.", code: "ORIGIN_DENIED" },
       { status: 403 },
     );
+  if (localSnapshotEnabled(req.headers.get("host"))) {
+    try {
+      if (Number(req.headers.get("content-length") ?? 0) > 150000)
+        return NextResponse.json(
+          { error: "Request too large." },
+          { status: 413 },
+        );
+      const body = await req.text();
+      if (new TextEncoder().encode(body).length > 150000)
+        return NextResponse.json(
+          { error: "Request too large." },
+          { status: 413 },
+        );
+      const { operation, args } = JSON.parse(body);
+      const { localProductOperation } = await import("@/lib/local-snapshot");
+      const result = await localProductOperation(operation, args);
+      return NextResponse.json(
+        { result },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Local action unavailable.",
+          code: "LOCAL_SNAPSHOT",
+        },
+        { status: 400 },
+      );
+    }
+  }
   if (!configured())
     return NextResponse.json(
       { error: "Configure product identity and backend first." },

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PublicPage } from "@/components/site";
+import { PublicIntro, PublicPage } from "@/components/site";
 import { PublicKnowledgePending } from "@/components/public-knowledge-pending";
 import { PublicEditionContent } from "@/components/public-edition-content";
 import { PublicReportForm } from "@/components/public-report-form";
@@ -31,19 +31,26 @@ export default async function Edition({
   if (result.state === "missing") notFound();
   const edition = result.data;
   return (
-    <PublicPage>
-      <Link href="/collections">Public collections</Link>
-      <h1>Public source edition</h1>
+    <PublicPage layout="reader">
+      <PublicIntro
+        title={edition?.title ?? "Public source edition"}
+        back={{ href: "/collections", label: "Public collections" }}
+      >
+        {edition && (
+          <p>
+            Version {edition.version} ·{" "}
+            {edition.publishedDate ?? "Publication date unavailable"}
+          </p>
+        )}
+      </PublicIntro>
       {result.state !== "ready" || !edition ? (
-        <PublicKnowledgePending unavailable={result.state === "unavailable"} />
+        <PublicKnowledgePending
+          unavailable={result.state === "unavailable"}
+          retryHref={`/editions/${slug}`}
+        />
       ) : (
         <>
-          <p>
-            Version {edition.version}. Published{" "}
-            {edition.publishedDate ?? "date unavailable"}. This is an existing
-            extraction, not a fresh analysis.
-          </p>
-          <PublicEditionContent edition={edition} />
+          <PublicEditionContent edition={edition} titleVisible={false} />
           {edition.corrections.length > 0 && (
             <section>
               <h2>Publisher corrections</h2>

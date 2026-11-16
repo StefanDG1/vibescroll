@@ -12,8 +12,11 @@ import {
 import { usePolling } from "@/lib/use-polling";
 import { ChoiceSelect } from "./choice-select";
 import { ImprovementControls } from "./improvement-controls";
+import { WorkEmpty, WorkFilters, WorkStatus } from "./work-screens";
+import { LibrarySkeleton } from "./library-skeleton";
 import { cloudExecutionEstimate } from "../../../packages/plans/execution-quote";
 type Call = (operation: string, args: any) => Promise<any>;
+type Filter = "all" | "active" | "results";
 const stages: Record<string, string> = {
   unavailable: "Evidence unavailable",
   planning: "Preparing a plan",
@@ -32,6 +35,21 @@ const stages: Record<string, string> = {
   failed: "Needs attention",
   canceled: "Stopped",
 };
+const activeStages = new Set([
+  "planning",
+  "planned",
+  "queued",
+  "running",
+  "awaiting_review",
+  "publishing",
+  "pull_request",
+]);
+const resultStages = new Set([
+  "awaiting_outcome",
+  "reviewed",
+  "reverted",
+  "closed_unmerged",
+]);
 export function Improvements({
   organizationId,
   call,
@@ -58,13 +76,16 @@ export function Improvements({
   const [items, setItems] = useState<any[]>([]),
     [next, setNext] = useState<string | null>(null),
     [loading, setLoading] = useState(!demo),
-    [error, setError] = useState("");
+    [refreshing, setRefreshing] = useState(false),
+    [error, setError] = useState(""),
+    [filter, setFilter] = useState<Filter>("all");
   const generation = useRef({ value: 0 }),
     browsing = useRef(false);
-  async function refresh(cursor?: string) {
+  async function refresh(cursor?: string, explicit = false) {
     if (demo) return;
     const g = ++generation.current.value;
     browsing.current = !!cursor;
+    if (explicit) setRefreshing(true);
     try {
       const response = await fetch("/api/product", {
         method: "POST",
@@ -74,9 +95,22 @@ export function Improvements({
           args: { organizationId, cursor },
         }),
       });
-      if (!response.ok || response.redirected)
+      if (
+        response.redirected ||
+        response.status === 401 ||
+        response.status === 403
+      ) {
+        if (g === generation.current.value) {
+          setItems([]);
+          setNext(null);
+        }
         throw new Error(
-          "Improvements are unavailable. Check your connection or sign in again.",
+          "Your access changed. Sign in again to view improvements.",
+        );
+      }
+      if (!response.ok)
+        throw new Error(
+          "Improvements could not be refreshed. Try again in a moment.",
         );
       const data = await response.json();
       if (g !== generation.current.value) return;
@@ -90,11 +124,13 @@ export function Improvements({
         setError(
           e instanceof Error ? e.message : "Could not load improvements.",
         );
-        setItems([]);
       }
       return false;
     } finally {
-      if (g === generation.current.value) setLoading(false);
+      if (g === generation.current.value) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }
   const processing = items.some((i) =>
@@ -108,51 +144,85 @@ export function Improvements({
     !demo,
     organizationId,
   );
+  const active = items.filter((item) => activeStages.has(item.stage));
+  const results = items.filter((item) => resultStages.has(item.stage));
+  const visible =
+    filter === "active" ? active : filter === "results" ? results : items;
   return (
     <section className="improvements" aria-label="Improvements">
-      <ImprovementControls
-        organizationId={organizationId}
-        call={call}
-        readOnly={readOnly}
-        demo={demo}
-      />
-      <div className="improvement-toolbar">
-        <p>Follow an idea through to its result.</p>
+      <div className="work-toolbar">
+        {items.length > 0 ? (
+          <WorkFilters
+            label="Filter improvements"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: "all", label: "All", count: items.length },
+              { value: "active", label: "In progress", count: active.length },
+              { value: "results", label: "Results", count: results.length },
+            ]}
+          />
+        ) : (
+          <p>Plans, pull requests, and measured outcomes</p>
+        )}
         <button
           type="button"
-          className="secondary"
-          onClick={() => void refresh()}
-          aria-label="Refresh improvements"
+          className="work-inline-action"
+          disabled={loading || refreshing || demo}
+          onClick={() => void refresh(undefined, true)}
+          aria-busy={refreshing}
         >
-          <RefreshCw size={17} aria-hidden="true" />
-          Refresh
+          {refreshing ? (
+            <Loader2 size={17} className="spinner" aria-hidden="true" />
+          ) : (
+            <RefreshCw size={17} aria-hidden="true" />
+          )}
+          {refreshing ? "Refreshing…" : "Refresh"}
         </button>
       </div>
       {error && (
-        <p role="alert" className="error">
-          {error}
-        </p>
-      )}
-      {loading && (
-        <output className="improvement-loading">
-          <Loader2 size={20} className="spinner" aria-hidden="true" />
-          Loading improvements…
-        </output>
-      )}
-      {!loading && !error && !items.length && (
-        <div className="improvement-empty">
-          <Sparkles size={24} aria-hidden="true" />
-          <p>
-            Start with an issue you want to explore. AI prepares the plan and
-            does the coding.
-          </p>
-          <button type="button" className="primary" onClick={onOpenIssues}>
-            Choose an issue
-            <ArrowUpRight size={17} aria-hidden="true" />
+        <div role="alert" className="work-feedback">
+          <p>{error}</p>
+          <button
+            type="button"
+            className="secondary"
+            disabled={refreshing}
+            onClick={() => void refresh(undefined, true)}
+          >
+            Try again
           </button>
         </div>
       )}
-      {items.map((i) => (
+      {loading && <LibrarySkeleton kind="proposals" rows={4} />}
+      {!loading && !error && !items.length && (
+        <WorkEmpty
+          icon="outcome"
+          title="No improvements yet"
+          description="Choose a project issue to prepare a plan and follow its progress."
+          action={
+            <button type="button" className="button" onClick={onOpenIssues}>
+              Browse project issues
+            </button>
+          }
+        />
+      )}
+      {items.length > 0 && !visible.length && (
+        <WorkEmpty
+          icon="outcome"
+          title="No matching improvements"
+          description="Choose All to see your current list."
+          action={
+            <button
+              type="button"
+              className="button"
+              onClick={() => setFilter("all")}
+            >
+              Show all improvements
+            </button>
+          }
+        />
+      )}
+      {visible.map((i) => (
         <Improvement
           key={`${i.id}:${i.version}`}
           item={i}
@@ -172,11 +242,18 @@ export function Improvements({
         <button
           type="button"
           className="secondary"
-          onClick={() => void refresh(next)}
+          disabled={refreshing}
+          onClick={() => void refresh(next, true)}
         >
           More improvements
         </button>
       )}
+      <ImprovementControls
+        organizationId={organizationId}
+        call={call}
+        readOnly={readOnly}
+        demo={demo}
+      />
     </section>
   );
 }
@@ -222,11 +299,10 @@ function Improvement({
     <article className="improvement-row">
       <div className="improvement-row-heading">
         <span className="improvement-project">{i.repository}</span>
-        <span
-          className={`improvement-status ${["reviewed", "awaiting_outcome"].includes(i.stage) ? "positive" : ""}`}
-        >
-          {stages[i.stage] ?? "Needs attention"}
-        </span>
+        <WorkStatus
+          value={i.stage}
+          label={stages[i.stage] ?? "Needs attention"}
+        />
       </div>
       <h2>{i.title}</h2>
       <p>{i.goal}</p>

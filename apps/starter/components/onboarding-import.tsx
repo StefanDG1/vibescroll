@@ -76,20 +76,18 @@ export function OnboardingImport({
           <OnboardingGraphic kind="import" />
           <div className={styles.importPaths}>
             <button type="button" onClick={() => setGuide(0)}>
-              <Download size={23} />
+              <Download size={23} aria-hidden="true" />
               <span>
                 <strong>Get my Instagram export</strong>
                 <small>A short guide to finding your saves</small>
               </span>
-              <ArrowRight size={18} />
             </button>
             <button type="button" onClick={() => fileInput.current?.click()}>
-              <FileUp size={23} />
+              <FileUp size={23} aria-hidden="true" />
               <span>
                 <strong>I already have a file</strong>
                 <small>Preview its Saved links on this device</small>
               </span>
-              <ArrowRight size={18} />
             </button>
           </div>
         </>
@@ -99,14 +97,14 @@ export function OnboardingImport({
             <step.Icon size={56} strokeWidth={1.3} />
           </div>
           <p className={styles.guideCopy}>{step.text}</p>
-          <div
-            className={styles.guideProgress}
-            aria-label={`Export guide step ${guide! + 1} of ${steps.length}`}
-          >
+          <div className={styles.guideProgress} aria-hidden="true">
             {steps.map((item, index) => (
               <span key={item.title} data-current={index === guide} />
             ))}
           </div>
+          <p className={styles.guideCounter}>
+            Step {guide! + 1} of {steps.length}
+          </p>
           <div className={styles.actions}>
             <button
               type="button"
@@ -144,6 +142,7 @@ export function OnboardingImport({
         onChange={async (event) => {
           const file = event.target.files?.[0];
           if (!file) return;
+          event.target.value = "";
           controller.current?.abort();
           const current = new AbortController();
           controller.current = current;
@@ -192,7 +191,9 @@ export function OnboardingImport({
       {result && (
         <output className={styles.notice}>
           <Check size={17} /> {result.count} unique links found
-          {result.duplicates ? `; ${result.duplicates} duplicates skipped` : ""}
+          {result.duplicates
+            ? ` and ${result.duplicates} ${result.duplicates === 1 ? "duplicate" : "duplicates"} skipped`
+            : ""}
           . After setup, reselect this file in Save to choose what to import.
           Nothing has been uploaded or analyzed.
         </output>
@@ -201,16 +202,18 @@ export function OnboardingImport({
         <ErrorState title="This file needs another look" detail={error} />
       )}
       <p className={styles.footnote}>
-        Instagram's labels can vary.{" "}
+        Only selected post links are imported. New analysis is quoted
+        separately.
+      </p>
+      <p className={styles.footnote}>
         <a
           href="https://www.facebook.com/help/instagram/181231772500920?cms_platform=iphone-app"
           target="_blank"
           rel="noreferrer"
         >
-          Official export help <ExternalLink size={12} />
+          Official Instagram export help{" "}
+          <ExternalLink size={12} aria-hidden="true" />
         </a>
-        . Only selected post links are imported. New analysis is quoted
-        separately.
       </p>
       <button className={styles.secondary} type="button" onClick={onContinue}>
         Continue with a ready post <ArrowRight size={16} />

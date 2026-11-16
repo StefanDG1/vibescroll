@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { PublicPage } from "@/components/site";
+import { PublicIntro, PublicPage } from "@/components/site";
+import { HelpDirectory } from "@/components/help-directory";
 import { helpArticles } from "@/lib/help-content";
 
 export const metadata = {
@@ -11,34 +12,24 @@ export const metadata = {
 export default function Help() {
   return (
     <PublicPage>
-      <section className="help-intro">
-        <h1>One useful task at a time.</h1>
+      <PublicIntro title="How can we help?">
         <p>
-          Start with your library. Connect a project when you have an idea to
-          review.
+          Find a guide to saving posts, checking evidence or reviewing a project
+          idea.
         </p>
-        <p>
-          <Link href="/example">Inspect an example without signing in</Link>
-        </p>
-        <p>
-          <Link href="/docs/mcp">How VibeScroll works with your assistant</Link>
-        </p>
-      </section>
-      <div className="help-index">
-        {helpArticles.map((article) => (
-          <article key={article.slug}>
-            <h2>
-              <Link href={`/help/${article.slug}`}>{article.title}</Link>
-            </h2>
-            <p>{article.summary}</p>
-          </article>
-        ))}
+      </PublicIntro>
+      <HelpDirectory
+        articles={helpArticles.map(({ slug, title, summary }) => ({
+          slug,
+          title,
+          summary,
+        }))}
+      />
+      <div className="public-support-links">
+        <Link href="/example">Explore an example</Link>
+        <Link href="/docs/mcp">Assistant documentation</Link>
+        <Link href="/contact">Contact support</Link>
       </div>
-      <p>
-        Need a hand? <Link href="/contact">Contact support</Link>. Include the
-        app version and a safe error code. Keep private content and credentials
-        out of your message.
-      </p>
     </PublicPage>
   );
 }

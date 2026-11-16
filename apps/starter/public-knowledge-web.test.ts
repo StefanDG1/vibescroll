@@ -43,7 +43,7 @@ it("discovers collections without requesting or rendering retired region aggrega
     await Discover({ searchParams: Promise.resolve({}) }),
   );
   expect(mock.query).toHaveBeenCalledTimes(1);
-  expect(html).toContain("Find a useful collection.");
+  expect(html).toContain("Discover public ideas");
   expect(html).not.toMatch(/globe|regional sharing|sharing region/i);
 });
 it("does not construct or query a backend while the web release gate is off", async () => {

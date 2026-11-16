@@ -17,6 +17,8 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
+  Minus,
+  Plus,
 } from "lucide-react";
 import type { InsightIconKey } from "../../../packages/insights/presentation";
 const icons = {
@@ -34,6 +36,10 @@ const icons = {
   heart: Heart,
   wrench: Wrench,
 };
+const indicators = {
+  chevron: { open: ChevronDown, closed: ChevronRight },
+  plus: { open: Minus, closed: Plus },
+};
 
 /** Shared with the Library. Actions remain siblings of the expansion button. */
 export function InsightCardControl({
@@ -41,6 +47,7 @@ export function InsightCardControl({
   subtitle,
   icon,
   expanded,
+  disclosure = "chevron",
   hasBadge,
   children,
   ...button
@@ -49,10 +56,12 @@ export function InsightCardControl({
   subtitle?: string;
   icon: InsightIconKey;
   expanded: boolean;
+  disclosure?: keyof typeof indicators;
   hasBadge?: boolean;
   children?: ReactNode;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   const Icon = icons[icon];
+  const Indicator = indicators[disclosure][expanded ? "open" : "closed"];
   return (
     <div className="hybrid-insight-card-control">
       <button
@@ -83,11 +92,7 @@ export function InsightCardControl({
         {hasBadge && (
           <span className="hybrid-proposal-slot" aria-hidden="true" />
         )}
-        {expanded ? (
-          <ChevronDown size={18} aria-hidden="true" />
-        ) : (
-          <ChevronRight size={18} aria-hidden="true" />
-        )}
+        <Indicator size={18} aria-hidden="true" />
       </button>
       {children}
     </div>

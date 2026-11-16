@@ -1,8 +1,13 @@
 import { Console } from "./console";
 import { workspaceData } from "@/lib/workspace-data";
+import { localSnapshotRequest } from "@/lib/local-snapshot-request";
 import { withAuth } from "@workos-inc/authkit-nextjs";
+import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { backend, api } from "@/lib/backend";
+const onboardingStatus = cache(async () =>
+  (await backend()).query(api.onboarding.status, {}),
+);
 export async function ProductPage({
   org,
   view,
@@ -36,15 +41,19 @@ export async function ProductPage({
   publicEdition?: string;
   publicVersion?: number;
 }) {
-  const { user } = await withAuth();
+  const localSnapshot =
+    process.env.VIBESCROLL_LOCAL_SNAPSHOT === "1" &&
+    (await localSnapshotRequest());
+  const auth = localSnapshot ? null : withAuth();
   if (!["account", "menu", "connections"].includes(view)) {
-    const onboarding = await (await backend()).query(api.onboarding.status, {});
+    const onboarding = await onboardingStatus();
     if (
       !onboarding.legacy &&
       (!onboarding.paid || onboarding.progress?.stage !== "complete")
     )
       redirect("/onboarding/resume");
   }
+  const user = (await auth)?.user;
   const initial = await workspaceData({
     org,
     view: draft ? "full" : view,
@@ -67,6 +76,7 @@ export async function ProductPage({
     notFound();
   return (
     <Console
+      localSnapshot={localSnapshot}
       profile={
         user
           ? {

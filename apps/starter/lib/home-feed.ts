@@ -1,6 +1,11 @@
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "../../../convex/_generated/api";
 import type { ProjectSuggestions } from "./project-suggestions";
+import { defaultVocabulary } from "../../../packages/categories";
+import {
+  cloudCitationForDisplay,
+  sourceEvidenceFrames,
+} from "../../../packages/media/cloud-frames";
 
 export type FeedPage = FunctionReturnType<typeof api.posts.recent>;
 export type FeedPost = FeedPage["items"][number];
@@ -10,7 +15,67 @@ export type FeedInsight = {
   claim: string;
   icon?: string;
   categories?: string[];
+  frame?: { id: string; timeMs: number };
+  hasTranscript?: boolean;
+  resources?: { url: string; name: string }[];
 };
+export type HomeMode = "review" | "browse" | "snap";
+
+export function postTopicName(key: string) {
+  const known = defaultVocabulary.find((category) => category.key === key);
+  if (known) return known.name;
+  const readable = key.replaceAll("_", " ");
+  return readable.charAt(0).toUpperCase() + readable.slice(1);
+}
+
+export function feedInsightEvidence(
+  source: Parameters<typeof sourceEvidenceFrames>[0],
+  evidence: {
+    id: string;
+    kind: string;
+    startMs?: number | null;
+    canonicalUrl?: string | null;
+    originalUrl?: string | null;
+    path?: string;
+  }[] = [],
+  now = Date.now(),
+): Pick<FeedInsight, "frame" | "hasTranscript" | "resources"> {
+  const frames: { id: string; startMs: number }[] = sourceEvidenceFrames(
+    source,
+    now,
+  );
+  const citations = evidence
+    .filter((reference) => reference && typeof reference.id === "string")
+    .map((reference) => cloudCitationForDisplay(source, reference, now));
+  const frame = citations
+    .filter((reference) => reference.kind === "frame")
+    .map((reference) =>
+      frames.find((candidate) => candidate.id === reference.id),
+    )
+    .find(Boolean);
+  const resources = new Map<string, { url: string; name: string }>();
+  for (const reference of citations) {
+    const href = reference.canonicalUrl ?? reference.originalUrl;
+    if (!href) continue;
+    try {
+      const url = new URL(href);
+      if (url.protocol === "https:" && !url.username && !url.password)
+        resources.set(url.href, {
+          url: url.href,
+          name: reference.path ?? url.hostname,
+        });
+    } catch {
+      // Some older evidence records lack a usable link.
+    }
+  }
+  return {
+    frame: frame ? { id: frame.id, timeMs: frame.startMs } : undefined,
+    hasTranscript: citations.some(
+      (reference) => reference.kind === "transcript",
+    ),
+    resources: [...resources.values()].slice(0, 4),
+  };
+}
 export type FeedProposal = {
   id: string;
   title: string;
@@ -53,6 +118,7 @@ export type FeedDetail = {
   proposals: FeedProposal[];
   suggestions: ProjectSuggestions;
   projects: { id: string; name: string }[];
+  allProjects?: { id: string; name: string }[];
   durationMs?: number | null;
   engagement?: FeedEngagement;
 };

@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { PublicPage } from "@/components/site";
-import { PublicKnowledgePending } from "@/components/public-knowledge-pending";
-import { PublicCollectionList } from "@/components/public-collection-list";
+import { PublicIntro, PublicPage } from "@/components/site";
+import { PublicCollectionDirectory } from "@/components/public-collection-directory";
 import { discoverPublic } from "@/lib/public-knowledge";
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -19,32 +18,19 @@ export default async function Discover({
   const result = await discoverPublic(topic, search.cursor ?? null);
   return (
     <PublicPage>
-      <h1>Find a useful collection.</h1>
-      <p>Only current explicitly published material appears here.</p>
-      <form className="row" action="/discover">
-        <label>
-          Topic
-          <input name="topic" maxLength={48} defaultValue={topic} />
-        </label>
-        <button type="submit">Find collections</button>
-      </form>
-      {result.state !== "ready" ? (
-        <PublicKnowledgePending unavailable={result.state === "unavailable"} />
-      ) : (
-        <>
-          <PublicCollectionList collections={result.data!.page} />
-          {!result.data!.isDone && (
-            <Link
-              href={`/discover?${new URLSearchParams({ topic, cursor: result.data!.continueCursor })}`}
-            >
-              Next collections page
-            </Link>
-          )}
-        </>
-      )}
-      <p>
-        <Link href="/collections">Read public collections</Link> ·{" "}
-        <Link href="/example">Inspect a labelled synthetic example</Link>
+      <PublicIntro title="Discover public ideas">
+        <p>
+          Browse published collections and check the sources behind their
+          insights.
+        </p>
+      </PublicIntro>
+      <PublicCollectionDirectory
+        path="/discover"
+        topic={topic}
+        result={result}
+      />
+      <p className="public-next">
+        <Link href="/collections">All public collections</Link>
       </p>
     </PublicPage>
   );

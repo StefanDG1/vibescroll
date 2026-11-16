@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import {
   ArrowRight,
   CircleHelp,
+  Compass,
   FolderGit2,
   Lightbulb,
   Link2,
@@ -118,7 +119,11 @@ export function FeedTour({
       <button
         ref={trigger}
         type="button"
-        className={styles.trigger}
+        className={
+          discovery
+            ? `${styles.trigger} ${styles.discoveryTrigger}`
+            : styles.trigger
+        }
         aria-label="Quick tour"
         title="Quick tour"
         onClick={() => {
@@ -127,7 +132,13 @@ export function FeedTour({
           setOpen(true);
         }}
       >
-        <CircleHelp size={19} aria-hidden="true" />
+        {discovery ? (
+          <>
+            <Compass size={17} aria-hidden="true" /> Tour
+          </>
+        ) : (
+          <CircleHelp size={19} aria-hidden="true" />
+        )}
       </button>
       <dialog
         ref={dialog}

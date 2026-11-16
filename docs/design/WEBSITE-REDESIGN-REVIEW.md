@@ -2,7 +2,7 @@
 
 R173–R174 · November 13, 2026 · Local implementation checkpoint
 
-The [screen and loading ledger](APP-SCREEN-AND-LOADING-LEDGER.md) covers the planned site. This checkpoint implements the signed-in core and provides [a browser comparison](../../outputs/redesign-review-2026-11-13/index.html) using synthetic fixtures. The deployed version is tracked in [current state](../operations/CURRENT-STATE.md).
+The [screen and loading ledger](APP-SCREEN-AND-LOADING-LEDGER.md) covers the planned site. This checkpoint implements the signed-in core and provides a browser comparison (`outputs/redesign-review-2026-11-13/index.html`) using synthetic fixtures. The deployed version is tracked in [current state](../operations/CURRENT-STATE.md).
 
 The [November 14 Home scorecard](HOME-UI-SCORECARD.md) supersedes the ratings below and records the newer controls and project picker.
 

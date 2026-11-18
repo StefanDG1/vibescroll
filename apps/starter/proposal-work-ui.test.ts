@@ -80,6 +80,28 @@ afterEach(() => {
   hooks.liveEnabled = [];
   vi.unstubAllGlobals();
 });
+it("shows feedback immediately and replaces it with the confirmed discussion message", async () => {
+  storage();
+  const text = "Keep the current post visible.";
+  const message = { id: "message-one", author: "Owner", body: text, role: "user", createdAt: 1 };
+  let acknowledge: (value: { messageId: string }) => void;
+  const write = new Promise<{ messageId: string }>((resolve) => { acknowledge = resolve; });
+  const call = vi.fn()
+    .mockResolvedValueOnce(snapshot)
+    .mockImplementationOnce(() => write)
+    .mockResolvedValueOnce({ ...snapshot, messages: { ...snapshot.messages, page: [message] } });
+  render(call);
+  await flush();
+  render(call).updateDraft(text);
+  const sending = render(call).send();
+  expect(render(call).outgoing).toEqual({ text, status: "sending" });
+  acknowledge!({ messageId: message.id });
+  await sending;
+  const saved = render(call);
+  expect(saved.outgoing).toBeUndefined();
+  expect(saved.draft).toBe("");
+  expect(saved.messages).toEqual([message]);
+});
 it("does not dispatch when every recovery slot is an uncertain request and persistent storage is denied", async () => {
   for (let i = 0; i < 20; i++)
     proposalDraftMemory.request(`occupied:${i}`, {

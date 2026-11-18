@@ -218,6 +218,31 @@
   padding: 6px 10px;
   font-size: 12px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.messageStatus {
+  display: inline-block;
+  color: var(--subtle);
+  font-size: 11px;
+  margin: 4px 0 0;
+}
+.messageRetry {
+  appearance: none;
+  background: transparent;
+  color: var(--teal);
+  border: 0;
+  min-height: 44px;
+  margin-inline-start: 8px;
+  padding-inline: 6px;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.messageRetry:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 .composer {
   display: flex;

@@ -1,5 +1,7 @@
 import { localSnapshotEnabled } from "@/lib/local-snapshot-mode";
 import { backend, api } from "@/lib/backend";
+import { sourceUnavailable, workspaceAccessLost } from "@/lib/workspace-access";
+import { unstable_rethrow } from "next/navigation";
 import { postTopics, suggestProjects } from "@/lib/project-suggestions";
 import { feedInsightEvidence, type FeedDetail } from "@/lib/home-feed";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
@@ -20,7 +22,8 @@ export async function GET(
     const organizationId = new URL(request.url).searchParams.get(
       "organizationId",
     );
-    if (!organizationId) throw Error("Workspace required");
+    if (!organizationId)
+      return Response.json({ error: "Post unavailable." }, { status: 404, headers });
     const client = await backend();
     const id = (await params).id as Id<"sources">;
     const [source, projects, recommendations] = await Promise.all([
@@ -38,7 +41,8 @@ export async function GET(
         })
         .catch(() => null),
     ]);
-    if (!source || source.state !== "ready") throw Error("Post unavailable");
+    if (!source || source.state !== "ready")
+      return Response.json({ error: "Post unavailable." }, { status: 404, headers });
     const detail: FeedDetail = {
       id: source._id,
       generation: source.generation,
@@ -108,10 +112,11 @@ export async function GET(
       detail.engagement = localFeedEngagement(id);
     }
     return Response.json(detail, { headers });
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     return Response.json(
       { error: "Post unavailable." },
-      { status: 404, headers },
+      { status: workspaceAccessLost(error) ? 403 : sourceUnavailable(error) ? 404 : 503, headers },
     );
   }
 }

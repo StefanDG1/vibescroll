@@ -16,6 +16,12 @@ import {
 
 type Snapshot = FunctionReturnType<typeof api.proposalLoop.read>;
 type Call = (operation: string, args: unknown) => Promise<any>;
+type OutgoingMessage = {
+  text: string;
+  status: "sending" | "sent" | "unconfirmed" | "failed";
+  messageId?: string;
+  operationId?: string;
+};
 export function useProposalWork(
   proposalId: string,
   enabled: boolean,
@@ -29,6 +35,7 @@ export function useProposalWork(
   const [recovery, setRecovery] = useState<ProcessingRecovery>();
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState("");
+  const [outgoing, setOutgoing] = useState<OutgoingMessage>();
   const [uncertain, setUncertain] = useState(false);
   const [quote, setQuote] = useState<any>();
   const [issuePreview, setIssuePreview] = useState<any>();
@@ -52,6 +59,7 @@ export function useProposalWork(
         pending.current = null;
         setUncertain(false);
         setDraft("");
+        setOutgoing(undefined);
         storageKey.current = key;
         const volatile = proposalDraftMemory.read(key);
         const restore = (
@@ -94,6 +102,7 @@ export function useProposalWork(
         /* Storage may be unavailable. */
       }
       setDraft("");
+      setOutgoing(undefined);
       setOlder([]);
       setOlderCursor(undefined);
       pending.current = null;
@@ -217,6 +226,8 @@ export function useProposalWork(
   }, [autoQuote, quoteBinding, proposalId]);
   function updateDraft(text: string) {
     setDraft(text);
+    setOutgoing((message) => message?.status === "failed" && message.text !== text.trim()
+      ? undefined : message);
     if (draftKey) proposalDraftMemory.draft(draftKey, text);
     try {
       if (draftKey) {
@@ -228,7 +239,10 @@ export function useProposalWork(
     }
   }
   async function refresh() {
-    if (call) receive(await call("proposalDiscussion", { proposalId }));
+    if (!call) return;
+    const revision = liveRevision.current;
+    const value = await call("proposalDiscussion", { proposalId });
+    if (revision === liveRevision.current) receive(value);
   }
   async function run(fn: () => Promise<void>) {
     if (flight.current || !call) return;
@@ -319,12 +333,48 @@ export function useProposalWork(
       throw e;
     }
   }
+  async function sendMessage(operation: string, args: Record<string, unknown>) {
+    const text = String(args.text);
+    if (transport === "web") setOutgoing({ text, status: "sending" });
+    try {
+      const result = await mutate(operation, args);
+      if (transport === "web") setOutgoing({
+        text,
+        status: "sent",
+        messageId: result?.messageId,
+        operationId: result?.operation?.id,
+      });
+    } catch (failure) {
+      if (transport === "web") setOutgoing({
+        text,
+        status: pending.current ? "unconfirmed" : "failed",
+      });
+      throw failure;
+    }
+    if (text === draft.trim()) updateDraft("");
+    setQuote((current: unknown) => current === quote ? undefined : current);
+    try {
+      await refresh();
+    } catch {
+      setError("Message saved. Could not refresh the discussion.");
+    }
+  }
+  const visibleOutgoing = outgoing?.status === "sent" && snapshot &&
+    (outgoing.messageId
+      ? snapshot.messages.page.some((message) => message.id === outgoing.messageId)
+      : outgoing.operationId && (
+          snapshot.operation?.id === outgoing.operationId ||
+          snapshot.recentOperations?.some((operation) => operation?.id === outgoing.operationId)
+        ))
+    ? undefined
+    : outgoing;
   return {
     snapshot,
     error,
     recovery,
     busy,
     draft,
+    outgoing: visibleOutgoing,
     updateDraft,
     quote,
     issuePreview,
@@ -333,13 +383,12 @@ export function useProposalWork(
       run(async () => {
         const previous = pending.current;
         if (!previous) return;
-        await mutate(previous.operation, previous.args);
-        if (
-          ["proposalComment", "proposalReply"].includes(previous.operation) &&
-          previous.args.text === draft.trim()
-        )
-          updateDraft("");
-        await refresh();
+        if (["proposalComment", "proposalReply"].includes(previous.operation))
+          await sendMessage(previous.operation, previous.args);
+        else {
+          await mutate(previous.operation, previous.args);
+          await refresh();
+        }
       }),
     hasOlder: !!snapshot && !snapshot.messages.isDone && olderCursor !== null,
     messages: [
@@ -351,11 +400,12 @@ export function useProposalWork(
     send: () =>
       run(async () => {
         if (!snapshot || !draft.trim()) return;
-        const sent = pending.current?.args.text ?? draft.trim();
         const paidReply = !!snapshot.generatedVersion;
         if (paidReply && !quote)
           throw Error("Wait for the current reply quote or refresh this plan.");
-        await mutate(paidReply ? "proposalReply" : "proposalComment", {
+        const operation = paidReply ? "proposalReply" : "proposalComment";
+        await sendMessage(operation, pending.current?.operation === operation
+          ? pending.current.args : {
           proposalId,
           expectedVersion: snapshot.version,
           key: crypto.randomUUID(),
@@ -364,9 +414,6 @@ export function useProposalWork(
             ? { quoteId: quote.quoteId, maximumCredits: quote.maximumCredits }
             : {}),
         });
-        if (sent === draft.trim()) updateDraft("");
-        await refresh();
-        setQuote(undefined);
       }),
     loadOlder: () =>
       run(async () => {

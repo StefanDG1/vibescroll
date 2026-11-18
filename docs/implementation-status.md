@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 18 Home and Work reliability
+
+The local candidate based on `11a84fb` keeps the last loaded Posts and Work views visible while refreshing. Temporary request and live-update failures preserve available content. Confirmed loss of workspace access clears protected data. Home reactions have bounded requests and reuse the same write key after a connection failure. Home and the full post use the same AI-first proposal composer. Outgoing chat messages show their send status and preserve the original request for recovery.
+
+On November 18, the Windows private snapshot at 1280 and 390 pixels passed local browser checks for warm navigation, a simulated 503 with 30 Posts rows retained, immediate like feedback with Save available, a scoped 403, the AI composer, and one confirmed chat message after a simulated write. `pnpm build`, `pnpm lint`, and `pnpm typecheck` passed. Vitest reported 1,778 core tests passed and nine skipped, 91 auth tests passed, and 194 public-knowledge and UI tests passed. Both apps use Next.js 16.4.6. The dependency audit still reports the transitive picomatch advisory with no patched version in the registry. Production deployment and hosted AI confirmation are pending.
+
 ## November 16 R178 website redesign
 
 The local candidate has one Browse Home with no title bar or layout picker. The desktop rail retains the brand mark. The phone layout scrolls through the source, insights, project choices, and proposals. The post reader puts source evidence and advanced settings after those sections. The same site components render the private snapshot. Save, filter state, return focus and phone gestures were tested with the actual snapshot and isolated browser sessions.

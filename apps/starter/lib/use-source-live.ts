@@ -2,6 +2,7 @@
 import { useEffect, useEffectEvent } from "react";
 import { ConvexClient } from "convex/browser";
 import { api } from "../../../convex/_generated/api";
+import { workspaceAccessLost } from "./workspace-access";
 
 export function useSourceLive(
   sourceId: string,
@@ -64,16 +65,19 @@ function useMetadataLive(
     if (!enabled) return;
     const controller = new AbortController();
     let client: ConvexClient | undefined;
+    let retry: ReturnType<typeof setTimeout> | undefined;
     const session = async () => {
       const response = await fetch("/api/realtime/session", {
         method: "POST",
         cache: "no-store",
         signal: controller.signal,
       });
-      if (!response.ok) throw Error("Session unavailable");
+      if (response.status === 401 && !controller.signal.aborted) receive(null);
+      if (!response.ok)
+        throw Object.assign(Error("Session unavailable"), { status: response.status });
       return (await response.json()) as { url: string; token: string };
     };
-    void session()
+    const connect = (retryAllowed: boolean) => void session()
       .then((initial) => {
         if (controller.signal.aborted) return;
         client = new ConvexClient(initial.url, {
@@ -106,18 +110,26 @@ function useMetadataLive(
           (value) => {
             if (!controller.signal.aborted) receive(value);
           },
-          () => {
-            // Feed retains its authenticated snapshot during a transport error.
-            // A returned null still takes the access-revocation path above.
-            if (!controller.signal.aborted && mode !== "feed") receive(null);
+          (error) => {
+            if (controller.signal.aborted) return;
+            // Connection and query failures do not stand in for a deleted record.
+            // Still withdraw data on explicit authorization or retention errors.
+            if (workspaceAccessLost(error) ||
+                /\b(?:FORBIDDEN|SOURCE_UNAVAILABLE):/.test(error?.message ?? ""))
+              receive(null);
           },
         );
       })
-      .catch(() => {
-        /* The existing authenticated refresh remains the fallback. */
+      .catch((error) => {
+        const transient = error instanceof TypeError ||
+          (typeof error?.status === "number" && error.status >= 500);
+        if (transient && retryAllowed && !controller.signal.aborted)
+          retry = setTimeout(() => connect(false), 2000);
       });
+    connect(true);
     return () => {
       controller.abort();
+      clearTimeout(retry);
       void client?.close();
     };
   }, [mode, scope, enabled]);

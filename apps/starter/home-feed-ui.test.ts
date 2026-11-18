@@ -133,7 +133,7 @@ it("requires a workspace before querying saved content", async () => {
 
 it("returns no source or project text after an authorization failure", async () => {
   backendMock.backend.mockResolvedValue({ query: backendMock.query });
-  backendMock.query.mockRejectedValueOnce(Error("Private database detail"));
+  backendMock.query.mockRejectedValueOnce(Error("Organization unavailable."));
   backendMock.query.mockResolvedValueOnce([
     { profile: "private-project-text" },
   ]);
@@ -141,9 +141,21 @@ it("returns no source or project text after an authorization failure", async () 
     new Request("https://example.com/api/feed/source?organizationId=workspace"),
     { params: Promise.resolve({ id: "source" }) },
   );
-  expect(response.status).toBe(404);
+  expect(response.status).toBe(403);
   expect(await response.text()).toBe('{"error":"Post unavailable."}');
   expect(response.headers.get("Cache-Control")).toBe("no-store");
+});
+
+it("distinguishes a transient feed detail failure from a missing post", async () => {
+  backendMock.backend.mockResolvedValue({ query: backendMock.query });
+  backendMock.query.mockRejectedValueOnce(Error("Private upstream diagnostic"));
+  backendMock.query.mockResolvedValue([]);
+  const response = await GET(
+    new Request("https://example.com/api/feed/source?organizationId=workspace"),
+    { params: Promise.resolve({ id: "source" }) },
+  );
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({ error: "Post unavailable." });
 });
 
 it("projects only authorized feed content and binds source, project and recommendation reads to the workspace", async () => {

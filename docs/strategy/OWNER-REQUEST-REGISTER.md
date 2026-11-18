@@ -6,6 +6,8 @@ R178 production acceptance. The VibeScroll app and public site serve 73cc8ea aft
 
 R178 Home follow-up, November 16. Keep the heart and Save available during optimistic reactions, remove the post-request tooltip, and retain loaded Home content across tab changes and background refresh. Use the wider desktop layout with a vertical thumbnail list and stable insight titles. Group advanced settings by task and offer an AI proposal draft and discussion directly from Home.
 
+November 18 audit follow-up. Retain loaded Posts and Work during refresh, keep action and live-update failures local, and recover likes through bounded same-request retries. Use the same AI-first proposal composer on Home and full posts, show outgoing messages immediately, and leave recommendation slots available for projects with no current proposal. [Local verification](../implementation-status.md#november-18-home-and-work-reliability).
+
 R177, November 15. Choose the Home design that best fits VibeScroll, improve all screens, and review each iteration from browser captures. The target is at least 8 in every category and at least 8 overall per screen. [Iteration results and open coverage](../design/APP-UI-REVIEW-2026-11-15.md).
 
 R176, November 14. Rescore Home with detailed UI criteria and real posts. Put insights and projects in the scroll flow, use icon-only Like and Pass controls, remove navigation arrows and the creator help control, and compact the project picker with project favicons. [Home UI scorecard](../design/HOME-UI-SCORECARD.md).

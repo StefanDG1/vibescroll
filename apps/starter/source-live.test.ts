@@ -15,7 +15,7 @@ vi.mock("convex/browser", () => ({
     url: string;
     auth?: () => Promise<string | null>;
     receive?: (value: unknown) => void;
-    error?: () => void;
+    error?: (error: Error) => void;
     constructor(url: string) {
       this.url = url;
       state.clients.push(this);
@@ -27,7 +27,7 @@ vi.mock("convex/browser", () => ({
       _query: unknown,
       _args: unknown,
       receive: (value: unknown) => void,
-      error: () => void,
+      error: (error: Error) => void,
     ) {
       this.receive = receive;
       this.error = error;
@@ -100,6 +100,8 @@ it("does not connect when disabled and discards private detail on a subscription
   const receive = vi.fn();
   useSourceLive("synthetic-source", true, receive);
   await settle();
-  state.clients[0].error();
+  state.clients[0].error(Error("Connection interrupted"));
+  expect(receive).not.toHaveBeenCalled();
+  state.clients[0].error(Error("Organization unavailable."));
   expect(receive).toHaveBeenCalledWith(null);
 });

@@ -1,4 +1,6 @@
 import { workspaceData } from "@/lib/workspace-data";
+import { workspaceAccessLost } from "@/lib/workspace-access";
+import { unstable_rethrow } from "next/navigation";
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ org: string }> },
@@ -24,10 +26,14 @@ export async function GET(
         "Referrer-Policy": "no-referrer",
       },
     });
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     return Response.json(
       { error: "Workspace unavailable." },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
+      {
+        status: workspaceAccessLost(error) ? 403 : 503,
+        headers: { "Cache-Control": "no-store" },
+      },
     );
   }
 }

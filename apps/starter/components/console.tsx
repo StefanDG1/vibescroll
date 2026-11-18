@@ -100,6 +100,7 @@ import { motion } from "motion/react";
 import { useInterfaceMotion } from "./motion-preference";
 import { mobileNavigationGroup } from "@/lib/mobile-navigation";
 import { clearLibraryPlaces } from "@/lib/library-place";
+import { workspaceReadDenied } from "@/lib/workspace-access";
 import {
   libraryPageAfterContext,
   sourceCoverageLabel,
@@ -396,11 +397,13 @@ export function Console({
     [planText, setPlanText] = useState(JSON.stringify(blankPlan, null, 2)),
     [libraryPreferencesOpen, setLibraryPreferencesOpen] = useState(false);
   const [homeData, setHomeData] = useState<Initial | null>(
-    initial.compact ? initial : null,
+    initialView === "home" ? initial : null,
   );
   const viewGeneration = useRef(0);
   const homePreview = useRef(compactHomePreview);
   const firstView = useRef(true);
+  const loadedView = useRef(view);
+  const visitedViews = useRef(new Map<string, Initial>());
   const seenNotifications = useRef(new Set(initial.notifications.map(id)));
   const captureDialog = useRef<HTMLDialogElement>(null);
   const [sharedDraft, setSharedDraft] = useState(initialSharedDraft);
@@ -408,6 +411,11 @@ export function Console({
   const libraryRequest = useRef(0);
   const expandedLibrary = useRef(false);
   const libraryAbort = useRef<AbortController | null>(null);
+  const libraryPage = useRef<{
+    query: string;
+    sources: Initial["sources"];
+    libraryNext: Initial["libraryNext"];
+  } | null>(null);
   const refreshFlight = useRef<Promise<Initial | undefined> | null>(null);
   const recordReturn = useEffectEvent((hiddenAt: number) => {
     const destination = view === "proposals" ? "plans" : view;
@@ -439,6 +447,10 @@ export function Console({
   }, [demo, organizationId]);
   const showingPosts =
     view === "posts" || (view === "library" && librarySection === "posts");
+  const libraryQuery = new URLSearchParams({
+    q: search, state: filter, category, sort,
+  }).toString();
+  const hasLibraryPage = libraryPage.current?.query === libraryQuery;
   function updatePostsQuery(key: string, value: string) {
     const url = new URL(location.href);
     if (value) url.searchParams.set(key, value);
@@ -469,18 +481,13 @@ export function Console({
     setLibraryLoading(true);
     setLibraryError("");
     try {
-      const q = new URLSearchParams({
-        q: search,
-        state: filter,
-        category,
-        sort,
-      });
+      const q = new URLSearchParams(libraryQuery);
       if (append && data.libraryNext) q.set("cursor", data.libraryNext);
       const response = await fetch(`/api/library/${organizationId}?${q}`, {
         cache: "no-store",
         signal: abort.signal,
       });
-      if (response.redirected || [401, 403, 404].includes(response.status)) {
+      if (workspaceReadDenied(response)) {
         if (generation === libraryRequest.current) clearAccess();
         throw new Error("Your library could not be loaded. Sign in again.");
       }
@@ -488,20 +495,25 @@ export function Console({
         throw new Error("Your library could not be loaded. Try again.");
       const result = await response.json();
       if (generation !== libraryRequest.current) return;
-      setData((current) => ({
-        ...current,
-        compact: false,
-        ...(current.compact ? { workspaceSlice: "library" as const } : {}),
-        sources: append
+      const previous = libraryPage.current;
+      const nextPage = {
+        query: libraryQuery,
+        sources: append && previous?.query === libraryQuery
           ? [
-              ...current.sources,
+              ...previous.sources,
               ...result.items.filter(
                 (item: any) =>
-                  !current.sources.some((old) => id(old) === id(item)),
+                  !previous.sources.some((old) => id(old) === id(item)),
               ),
             ]
           : result.items,
         libraryNext: result.next,
+      };
+      libraryPage.current = nextPage;
+      setData((current) => ({
+        ...current,
+        sources: nextPage.sources,
+        libraryNext: nextPage.libraryNext,
       }));
     } catch (error) {
       if (!abort.signal.aborted && generation === libraryRequest.current)
@@ -517,6 +529,8 @@ export function Console({
   const loadLibraryFromEffect = useEffectEvent(() => loadLibrary());
   useEffect(() => {
     if (demo || !showingPosts) return;
+    if (expandedLibrary.current && libraryPage.current?.query === libraryQuery)
+      return;
     const timeout = setTimeout(() => {
       loadLibraryFromEffect().catch(() =>
         setNotice("Library search is unavailable. Try again."),
@@ -533,10 +547,7 @@ export function Console({
     organizationId,
     view,
     showingPosts,
-    search,
-    filter,
-    category,
-    sort,
+    libraryQuery,
   ]);
   useEffect(() => {
     const currentUrl = new URL(window.location.href);
@@ -608,7 +619,7 @@ export function Console({
       captureOrigin.current = null;
     };
   }, [captureOpen]);
-  function applyData(next: Initial) {
+  function applyData(next: Initial, requestView = view) {
     captureAccess.current = true;
     setAccessAvailable(true);
     if (next.workspaceSlice === "capture") {
@@ -620,6 +631,7 @@ export function Console({
       return;
     }
     if (next.workspaceSlice === "library") {
+      loadedView.current = requestView;
       setData((current) => ({
         ...current,
         ...next,
@@ -634,7 +646,7 @@ export function Console({
       notify(next.notifications);
       return;
     }
-    if (view === "home") setHomeData(null);
+    if (requestView === "home") setHomeData(next);
     if (!demo)
       for (const source of next.sources) {
         const old = data.sources.find((s) => id(s) === id(source));
@@ -647,6 +659,7 @@ export function Console({
             source.coverage,
           );
       }
+    loadedView.current = requestView;
     setData((current) => ({ ...next, workspaceName: current.workspaceName }));
     setSelected((current: any) => {
       if (!current) return null;
@@ -699,6 +712,8 @@ export function Console({
     viewGeneration.current++;
     libraryRequest.current++;
     libraryAbort.current?.abort();
+    libraryPage.current = null;
+    visitedViews.current.clear();
     setLibraryLoading(false);
     setLibraryError(
       "Your session or access changed. Sign in again to continue.",
@@ -761,14 +776,9 @@ export function Console({
     ) {
       const next = await response.json();
       if (generation !== viewGeneration.current) return;
-      applyData(next);
+      applyData(next, requestView);
       return next as Initial;
-    } else if (
-      response.redirected ||
-      response.status === 401 ||
-      response.status === 403 ||
-      response.status === 404
-    ) {
+    } else if (workspaceReadDenied(response)) {
       if (generation !== viewGeneration.current) return;
       clearAccess();
     } else if (generation === viewGeneration.current) {
@@ -851,7 +861,8 @@ export function Console({
         `/api/workspace/${organizationId}?view=proposal&proposalId=${encodeURIComponent(proposalId)}`,
         { cache: "no-store" },
       );
-      if ([401, 403, 404].includes(response.status) || response.redirected)
+      if (generation !== viewGeneration.current) return;
+      if (workspaceReadDenied(response))
         clearAccess();
       if (
         !response.ok ||
@@ -867,7 +878,7 @@ export function Console({
         throw new Error(
           "This idea is unavailable. Its evidence may have changed.",
         );
-      applyData(next);
+      applyData(next, "proposal");
       setSelected(next.selectedProposal);
       setView("proposal");
       journey.decision(
@@ -1038,19 +1049,26 @@ export function Console({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ operation, args }),
+        signal:
+          operation === "setPostLike" ? AbortSignal.timeout(8000)
+            : operation === "postEngagementRead" ? AbortSignal.timeout(4000)
+            : operation === "proposalComment" || operation === "proposalReply"
+              ? AbortSignal.timeout(12000) : undefined,
       });
-      if (res.redirected || res.status === 401 || res.status === 403) {
+      const sessionLost = () => {
         clearAccess();
         throw new Error(
           "Your session or access changed. Sign in again to continue.",
         );
-      }
+      };
+      if (res.redirected || res.status === 401) sessionLost();
       if (!res.headers.get("content-type")?.includes("application/json"))
         throw new Error(
           "The application host is temporarily unavailable. No success was confirmed. Check the inbox before retrying this action.",
         );
       const body = await res.json();
       if (!res.ok) {
+        if (body.code === "ACCESS_LOST") sessionLost();
         if (body.code === "REAUTH_REQUIRED") redirectForAuthentication();
         if (!demo)
           track("operation_failed", {
@@ -1102,7 +1120,6 @@ export function Console({
             512,
           ),
         );
-      setHomeData(null);
       await refreshData().catch(() =>
         setNotice("Saved. Refresh the page to see the update."),
       );
@@ -1216,16 +1233,38 @@ export function Console({
     };
   }, []);
   const interfaceMotion = useInterfaceMotion();
+  function prepareNavigation(destination: string, postsQuery = libraryQuery) {
+    if (demo || view === destination) return;
+    viewGeneration.current++;
+    libraryRequest.current++;
+    libraryAbort.current?.abort();
+    if (loadedView.current === view && !["source", "proposal", "shared"].includes(view)) {
+      visitedViews.current.set(view, data);
+    }
+    const cached = visitedViews.current.get(destination);
+    const usesPostList = destination === "posts" || destination === "library";
+    if (cached && !["home", "menu"].includes(destination)) {
+      loadedView.current = destination;
+      const page = libraryPage.current;
+      setData(usesPostList
+        ? { ...cached, sources: page?.query === postsQuery ? page.sources : [],
+            libraryNext: page?.query === postsQuery ? page.libraryNext : null }
+        : cached);
+    }
+    if (usesPostList) {
+      setLibraryLoading(libraryPage.current?.query !== postsQuery);
+      setLibraryError("");
+    }
+    setViewError(false);
+    setLoadingView(!cached && destination !== "home" && destination !== "menu");
+  }
+  const prepareHistoryNavigation = useEffectEvent(prepareNavigation);
   const go = (v: string) => {
     if (!demo && v === "billing") {
       router.push(`/app/${organizationId}/billing`);
       return;
     }
-    if (!demo && view !== v) {
-      setViewError(false);
-      setLoadingView(v !== "home" && v !== "menu");
-    }
-    if (!demo && v === "posts" && !showingPosts) setLibraryLoading(true);
+    prepareNavigation(v);
     if (view === "home" && v !== view) homeScroll.current = window.scrollY;
     setView(v);
     setSelected(null);
@@ -1292,8 +1331,12 @@ export function Console({
         }
         const destination = target === "account" ? "menu" : target;
         if (destination !== view) {
-          setViewError(false);
-          setLoadingView(destination !== "home" && destination !== "menu");
+          prepareHistoryNavigation(destination, new URLSearchParams({
+            q: query.get("q") ?? "",
+            state: query.get("state") ?? "",
+            category: query.get("category") ?? "",
+            sort: query.get("sort") ?? "newest",
+          }).toString());
           setView(destination);
         }
         setSelected(null);
@@ -1638,7 +1681,7 @@ export function Console({
                 Sign in again
               </Link>
             </section>
-          ) : viewError && view !== "home" ? (
+          ) : viewError && view !== "home" && loadedView.current !== view ? (
             <ErrorState
               title="This page could not load"
               detail="Try loading this page again."
@@ -1659,6 +1702,14 @@ export function Console({
             )
           ) : (
             <>
+              {viewError && view !== "home" && (
+                <output className="fine">
+                  Could not refresh this page.{" "}
+                  <button type="button" onClick={() => {
+                    void refreshData().then(() => setViewError(false)).catch(() => {});
+                  }}>Retry</button>
+                </output>
+              )}
               {view === "shared" && (
                 <SharedKnowledge
                   key={`${organizationId}:${JSON.stringify([data.sharedKnowledge, data.selectedSharedKnowledge, data.sharedKnowledgeError])}`}
@@ -1967,7 +2018,7 @@ export function Console({
                   )}
                   {!libraryError && (
                     <output className="posts-result-status">
-                      {libraryLoading && filtered.length
+                      {libraryLoading && (filtered.length || hasLibraryPage)
                         ? "Updating results…"
                         : filtered.length
                           ? `${filtered.length} ${filtered.length === 1 ? "post shown" : "posts shown"}`
@@ -1975,7 +2026,7 @@ export function Console({
                     </output>
                   )}
                   <div className="source-list" aria-busy={libraryLoading}>
-                    {libraryLoading && !filtered.length ? (
+                    {libraryLoading && !filtered.length && !hasLibraryPage ? (
                       <LibrarySkeleton kind="posts" rows={5} />
                     ) : filtered.length ? (
                       filtered.map((s) => (
@@ -2141,6 +2192,9 @@ export function Console({
                   preparedEnabled={data.aiPreference?.preparedAnalysisEnabled}
                   call={call}
                   strictCall={strictCall}
+                  onRefresh={() => {
+                    void refreshWorkspace().catch(() => setViewError(true));
+                  }}
                   journey={journey}
                   onProposal={(p: any) => {
                     setSelected(p);
@@ -3852,42 +3906,29 @@ export function SourceDetail({
       signal: abort.signal,
     })
       .then(async (response) => {
+        if (abort.signal.aborted) return;
+        if (workspaceReadDenied(response) || response.status === 404) {
+          setDetail({ _id: sourceId, state: "deleted", error: "This post is unavailable." });
+          return;
+        }
         if (
           !response.ok ||
           !response.headers.get("content-type")?.includes("application/json")
         )
           throw new Error("Source unavailable");
         const next = await response.json();
-        if (!abort.signal.aborted) {
-          setDetail(next);
-          setDetailLoading(false);
-        }
+        if (!abort.signal.aborted) setDetail(next);
       })
       .catch(() => {
         if (!abort.signal.aborted) {
-          setDetail({
-            ...source,
-            analysis: undefined,
-            text: undefined,
-            originalText: undefined,
-            summary: undefined,
-            mainPoints: undefined,
-            mediaEvidence: undefined,
-            originalMediaEvidence: undefined,
-            repositorySelection: undefined,
-            sharedCloud: undefined,
-            analysisVersion: undefined,
-            personalMedia: undefined,
-            preparedService: undefined,
-            orderedMedia: undefined,
-            selectedAnalysisSummary: undefined,
-            selectedAnalysisMainPoints: undefined,
-            selectedAnalysisInsightCount: undefined,
-            error:
-              "Source details are unavailable. Check access before continuing.",
-          });
-          setDetailLoading(false);
+          setDetail((current: any) => ({
+            ...current,
+            error: "Could not refresh this post. Try again in a moment.",
+          }));
         }
+      })
+      .finally(() => {
+        if (!abort.signal.aborted) setDetailLoading(false);
       });
     return () => abort.abort();
     // The workspace projection is a new object after every poll. Reload private
@@ -5295,8 +5336,10 @@ export function SourceDetail({
                     ? projectSuggestions.items
                     : []
                 }
+                aiFirst={!demo}
                 disabled={readOnly || !canSuggestCategories || demo}
                 call={strictCall}
+                onSaved={onRefresh}
               />
             ) : (
               <Link prefetch={false} href={`/app/${org}/projects`}>

@@ -339,6 +339,32 @@ export function ProposalArtifactCore({
                   </div>
                 ),
               )}
+              {enabled && work.outgoing && (
+                <div className={styles.message} data-message-status={work.outgoing.status}>
+                  <span className={styles.avatar} aria-hidden="true">Y</span>
+                  <div>
+                    <strong>You</strong>
+                    <p>{work.outgoing.text}</p>
+                    <output className={styles.messageStatus}>
+                      {work.outgoing.status === "sending" ? "Sending…"
+                        : work.outgoing.status === "sent" ? "Sent"
+                        : work.outgoing.status === "unconfirmed" ? "Send unconfirmed"
+                        : "Could not send"}
+                    </output>
+                    {work.outgoing.status === "unconfirmed" && (
+                      <button type="button" className={styles.messageRetry}
+                        disabled={work.busy || !writable}
+                        onClick={() => void work.retryPending()}>Retry message</button>
+                    )}
+                    {work.outgoing.status === "failed" && (
+                      <button type="button" className={styles.messageRetry}
+                        disabled={work.busy || !writable || work.outgoing.text !== work.draft.trim() ||
+                          (!!live?.generatedVersion && (!work.quote || !!generating))}
+                        onClick={() => void work.send()}>Retry message</button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -347,7 +373,7 @@ export function ProposalArtifactCore({
             {chatOnly && live === undefined && !work.error && (
               <output className={styles.progress}>Opening saved draft…</output>
             )}
-            {work.uncertain && !work.error && (
+            {work.uncertain && !work.error && !work.outgoing && (
               <ErrorState
                 title="Confirm the previous action"
                 detail="The exact request key is saved. Refresh this plan's status or recover that same request before starting another action."
@@ -371,7 +397,11 @@ export function ProposalArtifactCore({
                 title={work.recovery?.title ?? "Plan action needs attention"}
                 detail={work.error}
                 action={
-                  work.uncertain ? (
+                  work.uncertain && work.outgoing ? (
+                    <button type="button" onClick={() => void work.refresh()}>
+                      Refresh plan status
+                    </button>
+                  ) : work.uncertain ? (
                     <>
                       <button type="button" onClick={() => void work.refresh()}>
                         Refresh plan status
@@ -481,7 +511,7 @@ export function ProposalArtifactCore({
             )}
           </>
         )}
-        {(!feed || chatOnly) && (!reader || enabled) && (!chatOnly || !!live?.generatedVersion) && (
+        {(!feed || chatOnly) && (!reader || enabled) && (!chatOnly || !!live) && (
           <div className={styles.composer}>
             <textarea
               aria-label={
@@ -489,7 +519,7 @@ export function ProposalArtifactCore({
                   ? "Plan discussion"
                   : "Proposal discussion, not connected yet"
               }
-              placeholder="Suggest a change…"
+              placeholder={chatOnly && !live?.generatedVersion ? "Add a direction for the draft…" : "Suggest a change…"}
               rows={1}
               maxLength={4000}
               disabled={!writable || work.busy || work.uncertain}

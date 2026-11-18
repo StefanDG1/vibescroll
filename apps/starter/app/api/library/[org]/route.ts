@@ -1,5 +1,7 @@
 import { backend } from "@/lib/backend";
 import { loadLibraryPage } from "@/lib/library-query";
+import { workspaceAccessLost } from "@/lib/workspace-access";
+import { unstable_rethrow } from "next/navigation";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 export async function GET(
   request: Request,
@@ -21,10 +23,14 @@ export async function GET(
         "Referrer-Policy": "no-referrer",
       },
     });
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     return Response.json(
       { error: "Library unavailable." },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
+      {
+        status: workspaceAccessLost(error) ? 403 : 503,
+        headers: { "Cache-Control": "no-store" },
+      },
     );
   }
 }

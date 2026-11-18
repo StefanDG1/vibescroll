@@ -29,6 +29,7 @@ export function ProjectProposalComposer({
   sourceTitle,
   projects,
   compactProjects,
+  existingProposals,
   suggestions,
   disabled,
   call,
@@ -47,6 +48,7 @@ export function ProjectProposalComposer({
   sourceTitle?: string;
   projects: Project[];
   compactProjects?: Project[];
+  existingProposals?: FeedProposal[];
   suggestions: (Project & {
     topics: string[];
     fit?: TopicFit;
@@ -88,6 +90,12 @@ export function ProjectProposalComposer({
   const pending = useRef<SaveInput | null>(null);
   const flight = useRef(false);
   const locked = submitting || uncertain || !!savedId;
+  function existingPlan(id: string) {
+    const history = suggestions.find((item) => item.id === id)?.history;
+    return history
+      ? history.samePost.find((plan) => plan.current && plan.review !== "rejected")
+      : existingProposals?.find((plan) => plan.projectId === id && plan.review !== "rejected");
+  }
   const visibleSuggestions = suggestions
     .filter(
       (p) =>
@@ -221,8 +229,14 @@ export function ProjectProposalComposer({
       setContinuing(false);
     }
   }
-  const leadingProjects = visibleSuggestions.length
-    ? visibleSuggestions
+  const recommendedProjects = compactProjects ? suggestions
+    .filter((project) =>
+      projects.some((item) => item.id === project.id) &&
+      (project.fit?.matched ?? project.topics.length) > 0 &&
+      !existingPlan(project.id))
+    .slice(0, 3) : [];
+  const leadingProjects = recommendedProjects.length
+    ? recommendedProjects
     : (compactProjects?.slice(0, 3) ?? []);
   const moreProjects =
     compactProjects?.filter(
@@ -230,11 +244,10 @@ export function ProjectProposalComposer({
     ) ?? [];
 
   function projectTile(project: Project) {
-    const existing = suggestions
-      .find((item) => item.id === project.id)
-      ?.history?.samePost.find(
-        (plan) => plan.current && plan.review !== "rejected",
-      );
+    const existing = existingPlan(project.id);
+    const discussion = aiFirst && existingProposals?.find(
+      (proposal) => proposal.id === existing?.id,
+    );
     const name = projectLabel(project.name);
     const contents = (
       <>
@@ -244,7 +257,25 @@ export function ProjectProposalComposer({
     );
     return (
       <li key={project.id}>
-        {existing ? (
+        {discussion ? (
+          <button
+            type="button"
+            className={compact.tile}
+            aria-label={`Open proposal for ${name}`}
+            onClick={() => {
+              if (flight.current || (uncertain && !savedId)) return;
+              setProjectId(project.id);
+              setChatProposal(discussion);
+              setSavedId(discussion.id);
+              setGoal(initialGoal);
+              setError("");
+              pending.current = null;
+              setOpen(true);
+            }}
+          >
+            {contents}
+          </button>
+        ) : existing ? (
           <a
             className={compact.tile}
             href={`/app/${organizationId}/proposals/${existing.id}`}
@@ -273,13 +304,13 @@ export function ProjectProposalComposer({
     <div className="insight-project-suggestions">
       {compactProjects ? (
         <>
-          {visibleSuggestions.length > 0 && (
+          {recommendedProjects.length > 0 && (
             <p className={compact.caption}>Recommended projects</p>
           )}
           <ul
             className={compact.list}
             aria-label={
-              visibleSuggestions.length ? "Suggested projects" : "Your projects"
+              recommendedProjects.length ? "Recommended projects" : "Your projects"
             }
           >
             {leadingProjects.map(projectTile)}
@@ -288,7 +319,7 @@ export function ProjectProposalComposer({
             <details className={compact.disclosure}>
               <summary>
                 <Plus size={16} aria-hidden="true" />
-                {visibleSuggestions.length
+                {recommendedProjects.length
                   ? "Your other projects"
                   : "More projects"}{" "}
                 ({moreProjects.length})

@@ -231,14 +231,22 @@ export function FeedPostCardCore({
     try {
       while (confirmed.liked !== queue.desired) {
         const target = queue.desired;
+        const args = {
+          organizationId,
+          sourceId: post.id,
+          liked: target,
+          expectedRevision: confirmed.revision,
+          key: crypto.randomUUID(),
+        };
         try {
           const result: Pick<FeedEngagement, "scopeKey" | "liked" | "revision"> =
-            await call("setPostLike", {
-              organizationId,
-              sourceId: post.id,
-              liked: target,
-              expectedRevision: confirmed.revision,
-              key: crypto.randomUUID(),
+            await call("setPostLike", args).catch((failure) => {
+              // A timeout leaves the write outcome unknown. Replay the same key
+              // before sending an opposite intent against its revision.
+              if (failure instanceof TypeError ||
+                  (failure instanceof Error && failure.name === "TimeoutError"))
+                return call("setPostLike", args);
+              throw failure;
             });
           if (
             result.scopeKey !== scopeKey ||
@@ -251,6 +259,20 @@ export function FeedPostCardCore({
               ? observed
               : { ...confirmed, ...result };
         } catch (failure) {
+          const stale = failure instanceof Error && "code" in failure &&
+            failure.code === "APPROVAL_STALE";
+          if (!stale && queue.desired === target) {
+            if (failure instanceof Error && !("outcome" in failure)) {
+              void call("postEngagementRead", {
+                organizationId,
+                sourceIds: [post.id],
+              }).then((items: (FeedEngagement & { sourceId: string })[] | null) => {
+                const current = items?.find((item) => item.sourceId === post.id);
+                if (current?.scopeKey === scopeKey) onReaction(current);
+              }).catch(() => {});
+            }
+            throw failure;
+          }
           const items: (FeedEngagement & { sourceId: string })[] | undefined =
             await call("postEngagementRead", {
               organizationId,
@@ -261,9 +283,7 @@ export function FeedPostCardCore({
           onReaction(current);
           confirmed = current;
           if (current.liked === queue.desired) break;
-          const stale = failure instanceof Error && "code" in failure &&
-            failure.code === "APPROVAL_STALE";
-          if (recovered || (!stale && queue.desired === target)) throw failure;
+          if (recovered) throw failure;
           recovered = true;
         }
       }
@@ -835,6 +855,7 @@ export function FeedPostCardCore({
                 sourceTitle={title}
                 projects={detail.projects}
                 compactProjects={allProjects}
+                existingProposals={proposals}
                 aiFirst={mode === "browse" && !demo}
                 suggestions={detail.suggestions.items}
                 disabled={readOnly || demo}

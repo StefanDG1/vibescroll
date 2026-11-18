@@ -61,14 +61,14 @@ it("loads Usage and header Save setup through three scoped queries and strips ra
   expect(JSON.stringify(body)).not.toContain("private-");
 });
 it("denies Usage on loader authorization failure without disclosing private records", async () => {
-  state.query.mockRejectedValue(Error("Private permission diagnostic"));
+  state.query.mockRejectedValue(Error("Organization unavailable."));
   const response = await GET(
     new Request(
       "https://synthetic.example.test/api/workspace/foreign?view=usage",
     ),
     { params: Promise.resolve({ org: "foreign" }) },
   );
-  expect(response.status).toBe(404);
+  expect(response.status).toBe(403);
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(await response.json()).toEqual({ error: "Workspace unavailable." });
 });
@@ -169,14 +169,14 @@ it("loads Library context without hidden source, runner, wallet or full-editor q
   });
 });
 it("clears Library context on actual access failure without returning cached payloads or diagnostics", async () => {
-  state.query.mockRejectedValue(Error("Private permission diagnostic"));
+  state.query.mockRejectedValue(Error("Your own active Pro subscription is required."));
   const response = await GET(
     new Request(
       "https://synthetic.example.test/api/workspace/owner?view=library",
     ),
     { params: Promise.resolve({ org: "owner" }) },
   );
-  expect(response.status).toBe(404);
+  expect(response.status).toBe(403);
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(await response.json()).toEqual({ error: "Workspace unavailable." });
 });
@@ -216,15 +216,15 @@ it("loads Connections through exactly four required queries and omits library, t
     usage: null,
   });
 });
-it("denies Connections on real loader authorization failure without private diagnostics", async () => {
-  state.query.mockRejectedValue(Error("Private permission diagnostic"));
+it("returns a retryable status on a transient Connections loader failure without private diagnostics", async () => {
+  state.query.mockRejectedValue(Error("Private upstream diagnostic"));
   const response = await GET(
     new Request(
       "https://synthetic.example.test/api/workspace/foreign?view=connections",
     ),
     { params: Promise.resolve({ org: "foreign" }) },
   );
-  expect(response.status).toBe(404);
+  expect(response.status).toBe(503);
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(await response.json()).toEqual({ error: "Workspace unavailable." });
 });

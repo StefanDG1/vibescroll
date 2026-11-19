@@ -57,7 +57,7 @@ export async function applyV1Change(_: FormState, d: FormData) {
     }),
   );
 }
-export async function startV1Checkout(_: FormState, d: FormData) {
+export async function requestV1Checkout(d: FormData) {
   let url;
   try {
     url = await (
@@ -97,7 +97,12 @@ export async function startV1Checkout(_: FormState, d: FormData) {
         "Checkout unavailable. Verify the catalogue, environment, terms and tax configuration.",
     };
   }
-  redirect(url);
+  return { checkoutUrl: url };
+}
+export async function startV1Checkout(_: FormState, d: FormData) {
+  const result = await requestV1Checkout(d);
+  if (result.checkoutUrl) redirect(result.checkoutUrl);
+  return { error: result.error };
 }
 export async function cancelV1Subscription(_: FormState, d: FormData) {
   return run(async () => {

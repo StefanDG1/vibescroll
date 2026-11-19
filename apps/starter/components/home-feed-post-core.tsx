@@ -136,6 +136,7 @@ export function FeedPostCardCore({
     resolveThumbnail: (id: string, ownerId?: string) => string;
     resolveEvidenceFrame?: (id: string) => string;
     onContinue: () => void;
+    onProof?: (kind: "insight" | "frame") => void;
     evidence?: ReactNode;
     projectName?: string;
   };
@@ -655,7 +656,10 @@ export function FeedPostCardCore({
             insights={insights}
             desktopList={mode === "browse"}
             selected={selected === null ? undefined : expandedInsight?.id}
-            onSelect={(id) => setSelected(selected === id ? "closed" : id)}
+            onSelect={(id) => {
+              if (selected !== id) preview?.onProof?.("insight");
+              setSelected(selected === id ? "closed" : id);
+            }}
             renderFrame={(id) =>
               demo ? (
                 <ImageView
@@ -682,6 +686,7 @@ export function FeedPostCardCore({
                     href={preview.resolveEvidenceFrame(item.frame.id)}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => preview.onProof?.("frame")}
                   >
                     View source frame
                   </a>

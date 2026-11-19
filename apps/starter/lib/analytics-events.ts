@@ -14,7 +14,30 @@ const views = [
   "billing",
   "plans",
   "menu",
+  "posts",
+  "work",
+  "inbox",
+  "improvements",
 ];
+const onboardingSteps = [
+  "welcome",
+  "interests",
+  "goal",
+  "work",
+  "obstacle",
+  "summary",
+  "feed",
+  "reader",
+  "own_link",
+  "account",
+  "import_benefit",
+  "import",
+  "assistant",
+  "github",
+  "paywall",
+  "ready",
+];
+const campaigns = ["founder_outreach", "community", "launch", "qa"];
 const events: Record<string, Record<string, readonly string[] | "count">> = {
   onboarding_result_viewed: { route: ["cached"] },
   onboarding_milestone: {
@@ -28,19 +51,38 @@ const events: Record<string, Record<string, readonly string[] | "count">> = {
       "proposal_saved",
     ],
   },
-  onboarding_step_viewed: {
-    step: [
-      "welcome",
-      "interests",
-      "goal",
-      "work",
-      "obstacle",
-      "summary",
-      "feed",
-      "reader",
-      "import_benefit",
+  onboarding_step_viewed: { step: onboardingSteps },
+  onboarding_step_completed: { step: onboardingSteps },
+  onboarding_choice: {
+    step: [...onboardingSteps, "post"],
+    choice: [
+      "example",
+      "own_link",
+      "skip",
+      "continue",
+      "signup",
       "import",
+      "connect",
     ],
+  },
+  onboarding_failure: {
+    step: onboardingSteps,
+    reason: [
+      "no_example",
+      "preview_failed",
+      "invalid_link",
+      "handoff_failed",
+      "connection_failed",
+    ],
+  },
+  onboarding_evidence_opened: { kind: ["insight", "frame"] },
+  checkout_progress: {
+    stage: ["requested", "opened", "failed", "returned", "returned_unfinished"],
+    interval: ["monthly", "annual", "weekly"],
+  },
+  public_cta_clicked: {
+    cta: ["start_setup", "try_example", "see_pricing", "view_pro"],
+    page: ["home", "pricing", "example"],
   },
   page_viewed: {
     surface: ["website", "app"],
@@ -48,6 +90,8 @@ const events: Record<string, Record<string, readonly string[] | "count">> = {
       "home",
       "pricing",
       "how_it_works",
+      "example",
+      "onboarding",
       "docs",
       "faq",
       "legal",
@@ -55,6 +99,8 @@ const events: Record<string, Record<string, readonly string[] | "count">> = {
       "app",
       "other",
     ],
+    campaign: campaigns,
+    device: ["compact", "wide"],
   },
   workspace_viewed: { view: views },
   source_viewed: {
@@ -281,6 +327,8 @@ export function publicPageEvent(pathname: string) {
   const pages: Record<string, string> = {
     "/": "home",
     "/pricing": "pricing",
+    "/example": "example",
+    "/onboarding": "onboarding",
     "/how-it-works": "how_it_works",
     "/docs": "docs",
     "/faq": "faq",
@@ -304,4 +352,8 @@ export function publicPageEvent(pathname: string) {
       : (pages[pathname] ??
         (legal.includes(pathname.slice(1)) ? "legal" : "other")),
   });
+}
+
+export function analyticsCampaign(value: string | null) {
+  return value && campaigns.includes(value) ? value : undefined;
 }

@@ -1,12 +1,8 @@
 "use client";
-import Link from "next/link";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Search, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { FeedPostCard, type FeedCardPost } from "./home-feed-post";
-import { FeedTour } from "./feed-tour";
 import { ErrorState } from "./assistant-elements/error-state";
 import { LibrarySkeleton } from "./library-skeleton";
-import { matchesStarter } from "../../../packages/onboarding/discovery";
 import { rankOnboardingPosts } from "../../../packages/onboarding/flow";
 import type { OnboardingDraft } from "../../../packages/onboarding/journey";
 import type { FeedDetail } from "@/lib/home-feed";
@@ -57,26 +53,19 @@ function card(post: StarterPost): FeedCardPost {
 /** Shares Home's view; guest data and actions never use authenticated source APIs. */
 export function OnboardingStarterFeed({
   draft,
-  onSelected,
   onContinue,
-  onBack,
-  onLink,
+  onSkip,
 }: {
   draft: Partial<OnboardingDraft>;
-  onSelected: (id: string) => void;
-  onContinue: () => void;
-  onBack: () => void;
-  onLink: (value: string) => void;
+  onContinue: (id: string) => void;
+  onSkip: () => void;
 }) {
-  const [posts, setPosts] = useState<StarterPost[]>([]);
+  const [previewPost, setPreviewPost] = useState<StarterPost>();
   const [detail, setDetail] = useState<StarterDetail>();
   const [loadedKey, setLoadedKey] = useState("");
   const [error, setError] = useState("");
   const [revision, retry] = useState(0);
-  const [query, setQuery] = useState(draft.pendingUrl ?? "");
-  const field = useRef<HTMLInputElement>(null);
   const selected = useRef(draft.selectedFamilyId);
-  const selectPost = useEffectEvent(onSelected);
   const interests = (draft.interests ?? []).join(",");
   const goal = draft.goal;
   const loadKey = `${interests}:${goal}:${revision}`;
@@ -98,31 +87,46 @@ export function OnboardingStarterFeed({
           goal,
         });
         if (controller.signal.aborted) return;
-        setPosts(items);
         const first =
           items.find((post) => post.familyId === selected.current) ?? items[0];
-        if (!first) return;
+        const familyId =
+          response.headers.get("x-vibescroll-preview") ?? first?.familyId;
+        if (!familyId) {
+          track("onboarding_failure", { step: "feed", reason: "no_example" });
+          return;
+        }
         const result = await fetch("/api/onboarding/starter", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ familyId: first.familyId }),
+          body: JSON.stringify({ familyId }),
           signal: controller.signal,
         });
         const value = await result.json();
         if (!result.ok)
           throw Error(value.error || "This preview is unavailable.");
         if (controller.signal.aborted) return;
+        setPreviewPost(
+          items.find((item) => item.familyId === value.familyId) ?? {
+            ...value,
+            thumbnailFrameId: null,
+            insightCount: value.analysis.insights.length,
+          },
+        );
         setDetail(value);
         selected.current = value.familyId;
-        selectPost(value.familyId);
         track("onboarding_result_viewed", { route: "cached" });
       } catch (e) {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setError(
             e instanceof Error
               ? e.message
               : "This preview could not be loaded.",
           );
+          track("onboarding_failure", {
+            step: "feed",
+            reason: "preview_failed",
+          });
+        }
       } finally {
         if (!controller.signal.aborted)
           setLoadedKey(`${interests}:${goal}:${revision}`);
@@ -130,22 +134,9 @@ export function OnboardingStarterFeed({
     })();
     return () => controller.abort();
   }, [interests, goal, revision]);
-  const link = /^https?:\/\//i.test(query.trim());
-  const visible = posts.filter((post) => !link && matchesStarter(post, query));
-  const previewPost = visible.find(
-    (post) => post.familyId === detail?.familyId,
-  );
-  const otherPosts = visible.filter(
-    (post) => post.familyId !== detail?.familyId,
-  );
-  const clearSearch = () => {
-    setQuery("");
-    field.current?.focus();
-  };
   const retryPreview = () => {
     setError("");
     retry((value) => value + 1);
-    field.current?.focus();
   };
   const evidence = detail && detail.frames.length > 0 && (
     <details className={styles.previewEvidence}>
@@ -157,6 +148,9 @@ export function OnboardingStarterFeed({
             href={starterFrame(detail.familyId, frame.id)}
             target="_blank"
             rel="noreferrer"
+            onClick={() =>
+              track("onboarding_evidence_opened", { kind: "frame" })
+            }
           >
             Screenshot at {(frame.timestampMs / 1000).toFixed(1)}s
           </a>
@@ -165,42 +159,7 @@ export function OnboardingStarterFeed({
     </details>
   );
   return (
-    <section className={styles.sharedFeed} data-onboarding-stage="feed">
-      <div className={styles.previewToolbar}>
-        <button type="button" className={styles.secondary} onClick={onBack}>
-          <ArrowLeft size={17} aria-hidden="true" /> Answers
-        </button>
-        <label className={styles.searchBox}>
-          <Search size={18} />
-          <input
-            ref={field}
-            type="search"
-            aria-label="Search ready posts or paste a link"
-            placeholder="Search posts or paste your own link"
-            value={query}
-            onChange={(event) => setQuery(event.target.value.slice(0, 2048))}
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label="Clear search"
-              onClick={clearSearch}
-            >
-              <X size={16} />
-            </button>
-          )}
-        </label>
-        <FeedTour discovery />
-        {!link && !previewPost && (
-          <button type="button" className={styles.primary} onClick={onContinue}>
-            Continue <ArrowRight size={16} aria-hidden="true" />
-          </button>
-        )}
-      </div>
-      <p className={styles.previewHint}>
-        Explore one full example or paste a link you want to save.
-      </p>
-
+    <section className={styles.sharedFeed} aria-busy={loading}>
       {error && (
         <ErrorState
           title="Could not open the preview"
@@ -208,49 +167,19 @@ export function OnboardingStarterFeed({
           onRetry={retryPreview}
         />
       )}
-      {loading && !link && (
+      {loading && (
         <div className={styles.previewLoading}>
           <LibrarySkeleton rows={3} kind="posts" />
         </div>
       )}
-      {link ? (
+      {!loading && (!previewPost || error) && (
         <div className={styles.empty}>
-          <h2>Start with your link.</h2>
-          <p className={styles.subtle}>
-            Keep this link through setup. Fresh analysis is quoted after Pro.
-          </p>
-          <button
-            type="button"
-            className={styles.primary}
-            onClick={() => onLink(query)}
-          >
-            Continue with this link <ArrowRight size={16} />
+          {!error && <h2>No example is available right now.</h2>}
+          <button type="button" className={styles.secondary} onClick={onSkip}>
+            Continue setup
           </button>
         </div>
-      ) : !loading && !error && !visible.length ? (
-        <div className={styles.empty}>
-          <h2>No ready posts found.</h2>
-          <p className={styles.subtle}>
-            {query
-              ? "Try searching for another topic."
-              : "You can still explore an example or paste your own link."}
-          </p>
-          {query && (
-            <button
-              type="button"
-              className={styles.secondary}
-              onClick={clearSearch}
-            >
-              Clear search
-            </button>
-          )}
-          {!query && (
-            <Link href="/example" className={styles.secondary}>
-              Explore the example
-            </Link>
-          )}
-        </div>
-      ) : null}
+      )}
       {previewPost && detail && (
         <FeedPostCard
           key={previewPost.familyId}
@@ -270,7 +199,9 @@ export function OnboardingStarterFeed({
               analysisVersionId: null,
               insights: detail.analysis.insights.map((insight) => {
                 const frame = detail.frames.find((item) =>
-                  insight.evidence?.some((reference) => reference.id === item.id),
+                  insight.evidence?.some(
+                    (reference) => reference.id === item.id,
+                  ),
                 );
                 return {
                   ...insight,
@@ -297,9 +228,9 @@ export function OnboardingStarterFeed({
           onVisible={() => {}}
           onRetry={retryPreview}
           showTour={false}
-          endLabel="More posts are available after setup"
           preview={{
-            onContinue,
+            onContinue: () => onContinue(previewPost.familyId),
+            onProof: (kind) => track("onboarding_evidence_opened", { kind }),
             evidence,
             projectName: draft.projectDescription,
             resolveThumbnail: (frameId, familyId) =>
@@ -308,27 +239,6 @@ export function OnboardingStarterFeed({
               starterFrame(previewPost.familyId, frameId),
           }}
         />
-      )}
-      {!loading && otherPosts.length > 0 && (
-        <section
-          className={styles.starterMetadata}
-          aria-labelledby="starter-more-posts"
-        >
-          <h2 id="starter-more-posts">More posts</h2>
-          <p className={styles.subtle}>Open more full posts after setup.</p>
-          <ul>
-            {otherPosts.map((post) => (
-              <li key={post.familyId}>
-                <strong>{post.title}</strong>
-                <span>
-                  {post.authorName && `${post.authorName} · `}
-                  {post.insightCount}{" "}
-                  {post.insightCount === 1 ? "insight" : "insights"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
       )}
     </section>
   );

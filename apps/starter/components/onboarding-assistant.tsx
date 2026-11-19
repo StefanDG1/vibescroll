@@ -13,7 +13,9 @@ import { setupDescriptor } from "../../../packages/widget/setup";
 import {
   chooseOnboardingAssistant,
   checkOnboardingAssistant,
+  continueToOnboardingPlans,
 } from "@/app/onboarding/actions";
+import { track } from "@/lib/analytics";
 import { OnboardingGraphic } from "./onboarding-graphic";
 import styles from "./onboarding.module.css";
 
@@ -163,6 +165,21 @@ export function OnboardingAssistant({
             Search your insights, discuss them and save project plans from your
             assistant. MCP is the connection that makes this possible.
           </p>
+          {!paid && (
+            <form
+              action={continueToOnboardingPlans}
+              onSubmit={() =>
+                track("onboarding_choice", {
+                  step: "assistant",
+                  choice: "skip",
+                })
+              }
+            >
+              <button className={styles.primary}>
+                See Pro plans <ArrowRight size={16} aria-hidden="true" />
+              </button>
+            </form>
+          )}
           <OnboardingGraphic kind="assistant" />
           {ready ? (
             <>

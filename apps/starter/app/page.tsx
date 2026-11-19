@@ -10,6 +10,7 @@ import { ProductMedia } from "@/components/product-media";
 import { PublicPage } from "@/components/site";
 import { ScrollShowScenes } from "@/components/scrollshow-scenes";
 import { LandingInsightPreview } from "@/components/landing-insight-preview";
+import { PublicCta } from "@/components/public-cta";
 
 export const metadata = {
   title: "Make scrolling useful",
@@ -72,15 +73,26 @@ export default function Home() {
               decide what fits your project.
             </p>
             <div className="ss-actions">
-              <Link className="primary" href="/onboarding">
-                Start with a post <ArrowRight size={17} aria-hidden="true" />
-              </Link>
-              <Link className="secondary" href="/example">
-                See an example
-              </Link>
+              <PublicCta
+                className="primary"
+                href="/onboarding?example=1"
+                cta="try_example"
+                page="home"
+              >
+                Try a real example <ArrowRight size={17} aria-hidden="true" />
+              </PublicCta>
+              <PublicCta
+                className="secondary"
+                href="/onboarding"
+                cta="start_setup"
+                page="home"
+              >
+                Get started
+              </PublicCta>
             </div>
             <p className="ss-note">
-              You can start with a post and connect a project later.
+              Open an insight, see the source behind it, and decide if it’s
+              useful for your project.
             </p>
           </div>
           <LandingInsightPreview />
@@ -132,9 +144,14 @@ export default function Home() {
               credits.
             </p>
           </div>
-          <Link className="primary" href="/pricing">
+          <PublicCta
+            className="primary"
+            href="/pricing"
+            cta="see_pricing"
+            page="home"
+          >
             View pricing
-          </Link>
+          </PublicCta>
         </section>
         <section className="ss-section ss-faq" aria-labelledby="faq-title">
           <h2 id="faq-title">Before you start</h2>
@@ -152,12 +169,22 @@ export default function Home() {
         >
           <h2 id="closing-title">Start with one saved post</h2>
           <div className="ss-actions">
-            <Link className="primary" href="/onboarding">
+            <PublicCta
+              className="primary"
+              href="/onboarding"
+              cta="start_setup"
+              page="home"
+            >
               Get started
-            </Link>
-            <Link className="secondary" href="/example">
-              Explore the example
-            </Link>
+            </PublicCta>
+            <PublicCta
+              className="secondary"
+              href="/onboarding?example=1"
+              cta="try_example"
+              page="home"
+            >
+              Try a real example
+            </PublicCta>
           </div>
         </section>
       </div>

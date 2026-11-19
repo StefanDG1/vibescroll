@@ -11,12 +11,13 @@ vi.mock("react", () => ({
     state.effect = effect;
   },
 }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/onboarding" }));
 vi.mock("vanilla-cookieconsent", () => ({
   run: async (config: unknown) => {
     state.config = config;
   },
   validConsent: () => state.valid,
-  getCookie: () => ({ revision: 1, categories: state.categories }),
+  getCookie: () => ({ revision: 2, categories: state.categories }),
 }));
 vi.mock("./lib/analytics", () => ({
   setAnalyticsConsent: state.analytics,

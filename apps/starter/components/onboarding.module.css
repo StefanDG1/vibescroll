@@ -40,6 +40,7 @@
 }
 .stage h1,
 .quiz h1,
+.exampleHeading h1,
 .welcome h1 {
   font-size: clamp(29px, 3.8vw, 44px);
   line-height: 1.15;
@@ -50,8 +51,39 @@
 }
 .stage h1:focus,
 .quiz h1:focus,
+.exampleHeading h1:focus,
 .welcome h1:focus {
   outline: none;
+}
+.exampleStep {
+  max-width: 1060px;
+  margin: clamp(16px, 4vh, 42px) auto 0;
+}
+.exampleHeading {
+  margin-bottom: 20px;
+}
+.exampleHeading h1 {
+  margin-block: 6px 8px;
+}
+.exampleHeading p {
+  margin: 0;
+}
+.accountBenefits {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  border-block: 1px solid var(--line);
+}
+.accountBenefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  line-height: 1.5;
+}
+.accountBenefits svg {
+  flex: none;
+  color: var(--onboarding-accent);
 }
 .subtle {
   color: var(--subtle);

@@ -37,6 +37,23 @@ execFileSync("python", ["scripts/build-cloud-media-package.py"], {
 const release = JSON.parse(
   readFileSync(join(root, "legal", policyRelease.manifest), "utf8"),
 );
+const analyticsRelease = JSON.parse(
+  readFileSync(
+    join(root, "legal", "RELEASE-ANALYTICS-2026-11-20.json"),
+    "utf8",
+  ),
+);
+const analyticsDocuments = ["COOKIES", "SUBPROCESSORS"];
+if (
+  analyticsRelease.id !== "analytics-2026-11-20.1" ||
+  analyticsRelease.previousRelease !== release.id ||
+  analyticsRelease.operatorApproved !== true ||
+  Object.keys(analyticsRelease.documents).sort().join(",") !==
+    analyticsDocuments.join(",")
+)
+  errors.push(
+    "Analytics publication manifest does not match the consent update.",
+  );
 if (
   release.id !== policyRelease.id ||
   release.effectiveDate !== policyRelease.effectiveDate ||
@@ -47,9 +64,19 @@ if (
   );
 for (const [name, record] of Object.entries(release.documents)) {
   const file = join(root, "legal", `${name}.md`);
+  const analytics =
+    analyticsDocuments.includes(name) && analyticsRelease.documents[name];
+  if (analytics) {
+    const archived = join(root, "legal/archive/v1-2026-10-03.1", `${name}.md`);
+    if (
+      createHash("sha256").update(readFileSync(archived)).digest("hex") !==
+      record.sha256
+    )
+      errors.push(`Prior published policy bytes are missing: ${name}.`);
+  }
   if (
     createHash("sha256").update(readFileSync(file)).digest("hex") !==
-    record.sha256
+    (analytics ? analytics.sha256 : record.sha256)
   )
     errors.push(
       `Published policy bytes changed without a retained release: ${name}.`,

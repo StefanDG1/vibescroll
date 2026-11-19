@@ -26,6 +26,20 @@ export const onboardingInterests = [
   },
 ] as const;
 export const interestId = z.enum(onboardingInterests.map((item) => item.id));
+export const onboardingSourceUrl = z
+  .string()
+  .max(2048)
+  .transform((value, ctx) => {
+    try {
+      return safeSourceUrl(value);
+    } catch {
+      ctx.addIssue({
+        code: "custom",
+        message: "Use a supported public video link.",
+      });
+      return z.NEVER;
+    }
+  });
 const onboardingFields = z
   .object({
     version: z.literal(1),
@@ -40,21 +54,7 @@ const onboardingFields = z
       "find_ideas",
     ]),
     customTopic: z.string().trim().min(2).max(80).optional(),
-    pendingUrl: z
-      .string()
-      .max(2048)
-      .transform((value, ctx) => {
-        try {
-          return safeSourceUrl(value);
-        } catch {
-          ctx.addIssue({
-            code: "custom",
-            message: "Use a supported public video link.",
-          });
-          return z.NEVER;
-        }
-      })
-      .optional(),
+    pendingUrl: onboardingSourceUrl.optional(),
     team: z.boolean().optional(),
     workStage: z.enum(["existing", "new", "team", "exploring"]).optional(),
     obstacle: z
@@ -77,6 +77,8 @@ export const onboardingStep = z.enum([
   "summary",
   "feed",
   "reader",
+  "own_link",
+  "account",
   "import_benefit",
   "import",
 ]);

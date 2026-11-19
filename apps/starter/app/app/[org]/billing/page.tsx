@@ -16,6 +16,7 @@ import {
   AccountStatus,
 } from "@/components/account-layout";
 import { localSnapshotRequest } from "@/lib/local-snapshot-request";
+import { CheckoutReturnMeasurement } from "@/components/onboarding-milestone";
 import {
   startV1Checkout,
   cancelV1Subscription,
@@ -94,6 +95,7 @@ export default async function Page({
       description="Manage your subscription and processing credits."
       back={back}
     >
+      {!onboarding.legacy && <CheckoutReturnMeasurement completed={returned} />}
       <AccountSection
         title="Credit balance"
         icon={Gauge}

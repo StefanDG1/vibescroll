@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, it } from "vitest";
 import archive from "../legal/archive/v1-2026-10-03.1/publication.json";
+import analytics from "../legal/RELEASE-ANALYTICS-2026-11-20.json";
 import { policyRelease } from "../packages/policy/publication";
 import { proOffer } from "../packages/billing/pro-offer";
 import { publicPolicyDocuments } from "../packages/policy/public-documents";
@@ -16,9 +17,21 @@ it("preserves the complete previous published bundle and unchanged privacy docum
       archive.files[file as keyof typeof archive.files],
     );
   }
-  for (const name of ["PRIVACY", "COOKIES", "DPA"]) {
+  for (const name of ["PRIVACY", "DPA"]) {
     expect(read(`legal/${name}.md`)).toBe(
       read(`legal/archive/${archive.release}/${name}.md`),
+    );
+  }
+});
+it("versions the analytics notices separately from checkout terms", () => {
+  expect(analytics.previousRelease).toBe(policyRelease.id);
+  for (const [name, record] of Object.entries(analytics.documents)) {
+    const notice = read(`legal/${name}.md`);
+    expect(notice).toContain(
+      `Version: ${record.version}. Release: ${analytics.id}.`,
+    );
+    expect(createHash("sha256").update(notice).digest("hex")).toBe(
+      record.sha256,
     );
   }
 });

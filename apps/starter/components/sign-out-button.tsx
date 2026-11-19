@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@companynerve/ui";
 import { clearLibraryPlaces } from "@/lib/library-place";
+import { clearAnalyticsJourney } from "@/lib/analytics";
 import { useFormStatus } from "react-dom";
 export function SignOutButton() {
   const { pending } = useFormStatus();
@@ -11,6 +12,7 @@ export function SignOutButton() {
       disabled={pending}
       aria-busy={pending}
       onClick={() => {
+        clearAnalyticsJourney();
         try {
           clearLibraryPlaces(localStorage);
         } catch {

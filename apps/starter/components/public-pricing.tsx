@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { proOffer } from "../../../packages/billing/pro-offer";
 import { PublicIntro, PublicPage } from "./site";
+import { PublicCta } from "./public-cta";
 
 const terms = [
   {
@@ -55,13 +56,15 @@ export function PublicPricing() {
         ))}
       </div>
       <div className="public-actions public-pricing-actions">
-        <Link
+        <PublicCta
           prefetch={false}
           className="primary"
           href="/app?view=billing&tier=pro"
+          cta="view_pro"
+          page="pricing"
         >
           View Pro availability <ArrowRight size={17} aria-hidden="true" />
-        </Link>
+        </PublicCta>
         <Link className="secondary" href="/help/processing-and-recovery">
           Processing guide
         </Link>

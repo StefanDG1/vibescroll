@@ -1,6 +1,10 @@
 "use client";
+import {
+  useAnalyticsView,
+  trackCheckoutReturn,
+  analyticsReadyEvent,
+} from "@/lib/analytics";
 import { useEffect } from "react";
-import { track } from "@/lib/analytics";
 export type OnboardingMilestoneName =
   | "account_ready"
   | "github_connected"
@@ -13,15 +17,28 @@ export function OnboardingMilestone({
 }: {
   milestone: OnboardingMilestoneName;
 }) {
+  useAnalyticsView("onboarding_milestone", { milestone });
+  return null;
+}
+
+export function OnboardingStageView({
+  step,
+}: {
+  step: "assistant" | "github" | "paywall" | "ready";
+}) {
+  useAnalyticsView("onboarding_step_viewed", { step });
+  return null;
+}
+export function CheckoutReturnMeasurement({
+  completed,
+}: {
+  completed: boolean;
+}) {
   useEffect(() => {
-    try {
-      const key = `vibescroll.onboarding.milestone.${milestone}`;
-      if (sessionStorage.getItem(key)) return;
-      track("onboarding_milestone", { milestone });
-      sessionStorage.setItem(key, "1");
-    } catch {
-      /* Optional telemetry cannot block setup. */
-    }
-  }, [milestone]);
+    const check = () => trackCheckoutReturn(completed);
+    if (check()) return;
+    window.addEventListener(analyticsReadyEvent, check);
+    return () => window.removeEventListener(analyticsReadyEvent, check);
+  }, [completed]);
   return null;
 }

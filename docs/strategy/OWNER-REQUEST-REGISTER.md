@@ -1,5 +1,7 @@
 # Owner request register
 
+November 19 thread workflow. The owner asks to apply the retrospective to future VibeScroll work. Keep startup guidance in [AGENTS.md](../../AGENTS.md), current decisions and release status in the [current state summary](../operations/CURRENT-STATE.md#start-here), and testable interaction expectations in the [screen ledger](../design/APP-SCREEN-AND-LOADING-LEDGER.md#verify-the-core-journeys). The [continuation procedure](../operations/CONTINUE-VIBESCROLL.md) covers review, release preflight, and handoff.
+
 R178, November 16. Continue with Browse and improve the entire signed-in app, onboarding and public website, including the separate marketing site. Work in parallel within 90 minutes, retest and rescore after each pass, and aim for at least an 8/10 average on each screen. Keep the visual presentation consistent between the local preview and production, without local-only labels or banners. Follow-up selects Browse as the only Home layout, removes the Home header and picker, and delegates responsive differences to improve the score. Keep the desktop rail icon. [November 16 review](../design/APP-UI-REVIEW-2026-11-16.md).
 
 R178 production acceptance. The VibeScroll app and public site serve 73cc8ea after exact GitHub CI and the same staged build passed phone and desktop checks. The separate marketing package passed CI. It has no dedicated VibeScroll production destination. [Deployment and verification](../operations/evidence/launch-20261116-website-redesign.json).

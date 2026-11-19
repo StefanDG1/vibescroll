@@ -1,12 +1,25 @@
 # Website screen and loading ledger
 
-R172 · November 13, 2026 · Proposed designs and acceptance
+Route inventory and interaction acceptance. Use [current state](../operations/CURRENT-STATE.md#start-here) for deployed behavior and release evidence.
 
 The [November 16 review](APP-UI-REVIEW-2026-11-16.md) records measured website states and replaces the multi-layout Home proposal with Browse.
 
-Use this ledger with the [page map and implementation plan](APP-STRUCTURE-AND-IMPLEMENTATION-PLAN.md) and the [Home comparison plan](HOME-COMPARISON-AND-WORKSPACE-ENTRY.md). It inventories every current page template in the signed-in and public starter website and the separate marketing website. Route aliases share a design where they share an experience. Handoffs and overlays have their own checks. Update the inventory from the actual route tree at implementation start and each release.
+Use this ledger with the [page map and implementation plan](APP-STRUCTURE-AND-IMPLEMENTATION-PLAN.md). The [Home comparison](HOME-COMPARISON-AND-WORKSPACE-ENTRY.md) records the earlier alternatives. Route aliases share a design where they share an experience. Handoffs and overlays have their own checks. Verify the affected inventory against the route tree when changing or reviewing routes.
 
-The November 13 inventory covers 56 starter page templates and seven marketing page templates. The root error and not-found boundaries in both apps, the signed-in loading boundary, and external handoffs are checked separately.
+The November 13 inventory covered 56 starter page templates and seven marketing page templates. The root error and not-found boundaries in both apps, the signed-in loading boundary, and external handoffs are checked separately.
+
+## Verify the core journeys
+
+Choose the rows the change affects. Use the same post and project when comparing versions. Start with phone and desktop widths. Add the narrower, keyboard, reduced-motion, theme, and access checks that exercise the changed behavior. These rows define expected behavior. Record results in the review or release receipt.
+
+| Journey | Exercise | Pass when |
+| --- | --- | --- |
+| Read a post and check its evidence | Open an insight from Home and from the full post. Try a cited frame and a transcript-only insight. Close the evidence viewer using the keyboard. | Each title stays stable on expansion. The frame or transcript belongs to the selected insight. Closing the viewer restores focus. The post title and thumbnail appear once in the reading flow. |
+| Like a post while continuing to browse | Delay the like response, tap twice, and exercise a rejected response and a timeout. | The heart and count reflect the last tap immediately. Save remains available. Failure stays on the post and the reaction reconciles with saved state. Automatic retries after a timeout keep the same request identity. |
+| Switch tabs and return to loaded content | Scroll Home, filter Posts, open Work, and return to Posts and Home. Delay a refresh, then simulate failure and confirmed access loss separately. | Loaded content stays visible during refresh. Return restores the Home post and the Posts query and position. Transient failure offers local recovery. Confirmed access loss removes protected content. |
+| Choose a project and work on a proposal | Open a post with zero proposals and one with an existing proposal. Open a recommendation or another owned project from Home. Start or reopen a proposal chat and exercise a delayed send, failure, and retry. | Recommended and other projects are accessible independently of proposal count. An existing proposal keeps its chat and leaves room for new recommendations. The send appears immediately as pending, then confirms once or retains the message and offers recovery. Any paid generation uses the displayed credit confirmation. |
+
+For a scored review, use the [12 design criteria](HOME-UI-SCORECARD.md). Zero means unusable, five means average and usable, and ten means perfect. State whether the target applies to the average, each criterion, or both. Record each screen's average and lowest criterion. Record each relevant journey as **Pass**, **Fail**, or **Untested**, with the environment, viewport, inputs, and evidence. Give a reason for each untested journey. A failing or untested critical journey remains open even when the design score meets its target.
 
 ## Loading and feedback rules
 
@@ -107,7 +120,6 @@ Abbreviations in this table are full routes. Each route is a separate acceptance
 | Sign in, sign up, callback | Preserve the safe local return. Use pending on the initiating action until the provider takes over. Callback uses the same neutral entry shell if a wait is visible. | Expired or denied returns show Try again or a safe path. Resume approved intent once. |
 | Global navigation and Back | Keep the active shell and current content through fast navigation. Reveal a shaped destination skeleton within the content area if needed. | Restore scroll, selection and focus. Avoid a global loading flash. |
 | Workspace picker | Use a pending mark in the selected row only. | Close on verified selection, preserve shell, restore a valid destination, or show the local error. |
-| Switch Home mode | Keep the same authorized post and stable media geometry. Delay a local fallback until the next mode is visible. | Restore post and draft. Focus the mode control. Handle unavailable post in place. |
 | Feed first load, next post, and end | Show one media-shaped card on first load. Reserve the next card if metadata is pending. Keep the active media and controls responsive. | Settle to an eligible post or keep the current post. Show a clear end, retry, or more control at the feed boundary. |
 | Like and double tap | Immediate lightweight feedback, with the write tied to the exact post. | Reconcile repeated taps and keep the ordinary Like control available for keyboard users and touch. |
 | Video playback and evidence media | Keep poster visible while player is unavailable or buffering. Only show a small media-local spinner during a real buffering wait. | Resume at the supported position, or show Open original post. An unavailable evidence frame keeps the title and explanation. |
@@ -138,14 +150,14 @@ Use the app's current typography and muted mint accent. Define equivalent light 
 | Public landing and examples | Short value statement, one real product example, clear next action, then supporting sections | Give the product example enough space to show the workflow. Keep reading widths and action hierarchy controlled. |
 | Docs, help and policy | One readable article column, optional table of contents disclosure, contextual next link | Keep navigation and search available beside a readable article. Preserve anchor and search focus. |
 | Entry, setup, invites and forms | One task per screen, visible progress when steps are known, actions within thumb reach and clear of the keyboard | Focused column with enough context beside the current task when helpful. Keep the same order as mobile. |
-| Home and post | Media first. One post identity. Scrollable insight cards and readable details, followed by projects and proposals. | Slim rail and room for media and reading. Preserve order. Use the lifted media layout for Option 3 on both devices. |
-| Explore and Work lists | Readable rows and visible search or filter controls. Open the selected record in place or on its stable screen with a Back action. | Use list/detail where users benefit from seeing both. Keep the selected item and its position visible. |
+| Home and post | Media first. One post identity. Scrollable insight cards and readable details, followed by project choices and proposals. | Preserve the same content order and controls. Keep the brand icon in the slim rail and show insights in a vertical list beside the post on wide Home layouts. |
+| Posts and Work lists | Readable rows and visible search or filter controls. Open the selected record in place or on its stable screen with a Back action. | Use list/detail where users benefit from seeing both. Keep the selected item and its position visible. |
 | Profile, billing and operator | Group settings and show context-specific actions close to the values they affect. Use a dedicated review view for consequential actions. | Group by purpose. Use table and detail layouts for record-heavy views. Keep role-specific actions and pending status visible. |
 
 - Establish shared type, spacing, contrast, focus, motion, buttons, placeholders, lists and responsive navigation. Give the public landing and documentation their own reading hierarchy while carrying the same typography and visual language into the app. Use real product visuals where available. Keep public policy text, auth and permission behavior intact.
-- Approve desktop and mobile compositions for each route, even when multiple routes use one template. Capture a normal and meaningful alternate state. For interactive routes include slow, empty, failed or blocked states as applicable. Use synthetic fixtures or existing authorized data. Record the design version and actual route or template, and link the approved reference.
+- For affected routes, review the desktop and mobile compositions, including shared templates and any changed alias behavior. Capture the normal state and meaningful alternate states such as slow, empty, failed, or blocked. Use controlled fixtures or authorized data. Record the actual route or template and link an approved reference when available.
 - Validate keyboard, visible focus, 200% zoom, reduced motion, light and dark themes, no horizontal overflow at 320/390px, tablet and desktop widths, real mobile browser gestures and resize. Check touch targets, safe areas, long titles and missing media. Use screenshots, keyboard walkthroughs and short gesture recordings.
-- Validate layout stability, first usable screen, loading feedback, and scoped read behavior on ordinary and throttled journeys. Test that Back, repeated submits, route switches and access revocation restore or clear the right state. Verify the same read data and labels across each mode.
+- Validate layout stability, first usable screen, loading feedback, and scoped read behavior on ordinary and throttled journeys. Test that Back, repeated submits, route switches and access revocation restore or clear the right state. Verify consistent data and labels across entry points that share a reader.
 - Before calling a route ready, record the route/template, reference, main and alternate states, phone/desktop and theme coverage, keyboard or gesture check, loading and error check, scope/permission check where applicable, test environment and exact release revision. Keep design approval, implementation and production acceptance separate.
 
 | Route | Reference | States captured | Approval | Implementation | Staged and production evidence |

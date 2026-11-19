@@ -1,66 +1,39 @@
 # Agent instructions
 
-Read [START-HERE](docs/START-HERE.md), [PRD](docs/PRD.md), [Decisions](docs/decisions.md), and the relevant implementation work package before changing code.
+## Start a VibeScroll thread
 
-## Current mandatory owner direction
+1. Read the [current state summary](docs/operations/CURRENT-STATE.md#start-here) and check the active checkout and Git status. Preserve work in other checkouts and any uncommitted changes.
+2. Use the [owner request register](docs/strategy/OWNER-REQUEST-REGISTER.md) for decisions and approvals relevant to the task. The latest applicable owner direction governs. Use [START-HERE](docs/START-HERE.md), the [PRD](docs/PRD.md), [Decisions](docs/decisions.md), and the relevant work package when changing code.
+3. Follow the [continuation procedure](docs/operations/CONTINUE-VIBESCROLL.md) for review, release, and handoff. Consult the [failure reference](docs/operations/FAILURES-AND-RECOVERY.md) for known symptoms or uncertain operations.
 
-November8 continuation override: the owner explicitly stopped MCP UI work and deferred it. The existing issue197 proposal was read and scoped, but the owner requires approval before implementation. The later main-app-first recommendation is advice awaiting the owner's selection, not an approved redesign. Follow the [current handover](docs/operations/CURRENT-STATE.md) and R158 before selecting new work. Production and pushed implementation-branch code are separate from GitHub main; PR186 is a draft against an intermediate branch.
+## Work by area
 
-R155 approves implementation of the complete R153/R154 plan and selects Connected search motion. Release the credit/quota repair first, then the shared UI and observed search. Current cumulative engineering ceiling is EUR17 with a USD0.90 bounded release/test envelope and at most two fresh video tests. Retain old holds and provider gates; app credits are not cash authority. Read private operational state before spending.
+Read the relevant records for the task. Their dated checkpoints explain the decisions and their verification.
 
-R154 adds [insight-first animated search](docs/strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md#search-discovery-and-synthesis). Show real returned source/citation connections and settle into matching insights; never fabricate progress or semantic relationships. Reuse approved design tokens and the selected shared components. Keep the owner credit/quota repair ahead of the search enhancement.
+| Area | References |
+| --- | --- |
+| Website and Home | [Screen and loading ledger](docs/design/APP-SCREEN-AND-LOADING-LEDGER.md), [current design review](docs/design/APP-UI-REVIEW-2026-11-16.md), [Home and proposal history](docs/design/HOME-FEED-AND-PLAN-REVIEW.md) |
+| Onboarding | [Implementation ledger](docs/strategy/ONBOARDING-IMPLEMENTATION.md), [V1 and V2 design review](docs/design/ONBOARDING-V1-V2-REVIEW.md) |
+| Proposal loop and project fit | [Setup and proposal feedback](docs/strategy/SIMPLE-SETUP-AND-CLOSED-LOOP-PROPOSALS.md), [proposal loop](docs/launch-plan/2026-10-31/SHORT-TERM-PROPOSAL-LOOP.md), [project fit](docs/design/ASSISTANT-ELEMENTS-AND-PROJECT-FIT.md), [medium-term work](docs/launch-plan/2026-10-31/MEDIUM-TERM-COMPLETION.md) |
+| MCP and retrieval | [MCP implementation](docs/strategy/MCP-FLOWS-IMPLEMENTATION.md), [shared UI and processing](docs/strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md), [retrieval ledger](docs/strategy/CONTEXT-RETRIEVAL-IMPLEMENTATION.md), [current search operations](docs/operations/WORKSPACE-HYBRID-SEARCH.md) |
+| Sources, retained evidence and sharing | [Shared intelligence](docs/strategy/SHARED-INTELLIGENCE-MOAT.md), [versioned link-to-insights implementation](docs/launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md), [shared-read repair](docs/operations/SHARED-READ-REPAIR-2026-11-02.md) |
+| Entitlements, pricing and credits | [Catalog and individual Pro](docs/strategy/POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md), [pricing and credit groups](docs/strategy/PRO-PRICING-AND-CREDITS.md), [approved offer and terms](docs/adr/223-approved-pro-offer-and-published-terms.md), [current authority](docs/operations/CURRENT-STATE.md#standing-authority-and-sensitive-state) |
 
-R153 makes [shared app/MCP UI and processing UX](docs/strategy/MCP-UI-UNIFICATION-AND-PROCESSING-UX.md) the next implementation priority. Fix the separate owner pilot quota, expose truthful personal credits and admission, correct default workspace/catalog discovery, then share inline progress and the fullscreen application presentation. The owner approves 300 monthly admin credits and generous finite rates; this does not authorize additional provider spending or a fabricated subscription. Preserve history, existing balances and unknown holds. Read its research and phase acceptance ledger before related work.
+## Design and implementation
 
-R152 prioritizes [repairing retained shared reads](docs/operations/SHARED-READ-REPAIR-2026-11-02.md). Preserve the original source, immutable versions, independent evidence and existing connection. Verify provenance-specific processing authority and selected-version evidence before legacy fallback; no deletion/reanalysis to hide a read failure. Follow its acceptance ledger until completed.
+Reuse VibeScroll's components and tokens. For an audit, use Impeccable when available. Use Frontend Design when a surface needs a visual direction and Emil Design Engineering when motion or gestures are central. Pick the skill that addresses the main decision and add another when it answers a distinct question. Use the [core journey checks](docs/design/APP-SCREEN-AND-LOADING-LEDGER.md#verify-the-core-journeys) to judge the result.
 
-R151 approves implementing the reviewed V1 onboarding, including R146-R150 corrections. Build the quiz, explanatory graphics, shared Home preview, forgotten-saves/import branch and assistant setup with Connect later. The earlier review-before-build hold is superseded for V1. V2 remains deferred. Preserve account, source, payment, provider and funding boundaries. Follow the [execution ledger](docs/strategy/ONBOARDING-IMPLEMENTATION.md).
-
-R150 corrects the link-first positioning inferred under R149. Lead with forgotten saved posts and putting their useful ideas to work across projects. Add a dedicated benefit screen immediately before the Instagram saved-post import screen/tutorial. Direct link input remains available; it is an input method, not the product promise. Follow the [revised positioning and import sequence](docs/design/ONBOARDING-V1-V2-REVIEW.md#forgotten-posts-useful-ideas-and-input-methods). The R148 review-before-build hold remains.
-
-R148 requests a researched [V1/V2 onboarding review](docs/design/ONBOARDING-V1-V2-REVIEW.md), including each screen and all material flows, before implementation. Simplify each step; useful steps may increase. Keep the quiz, reuse real Home for recommendations, exclude the mascot from V1 and allow it as optional V2 scope. The owner approves Connect later for MCP, followed by a concise honest credit explanation. Prefer supported assistant work automatically after verified connection; preserve ordinary credit work, explicit grant limits and separate Events readiness. Do not build or release this new onboarding until the owner reviews the plan. R147's connection gate is resolved: client setup does not block app entry.
-
-R146 corrects the agent's R145 interpretation: keep and improve the onboarding quiz. Only the recommended-post picker becomes the existing Home feed with shared post/insight/proposal components. Add step-specific explanatory graphics and purposeful transitions; keep the mascot removed, copy concise and choices visible without dropdowns. Follow [the corrected onboarding design](docs/design/SEARCH-FIRST-ONBOARDING.md) and [ADR232](docs/adr/232-quiz-onboarding-with-shared-home-preview.md). R145 quiz removal is deployed behavior, not the desired product. Preserve R144 account/payment/preview contracts and saved drafts. Ask about genuinely ambiguous choices before replacing an established flow.
-
-R144 approves the complete [interest-led onboarding plan](docs/strategy/INTEREST-LED-ONBOARDING.md). Read its [execution ledger](docs/strategy/ONBOARDING-IMPLEMENTATION.md) until accepted. Preserve one real ready result before signup/payment, account before optional pre-payment GitHub, stored progress and paywall resumption, individual Pro, and the real all-insight proposal/issue path. Existing accounts bypass the new funnel; anonymous preview is an explicit bounded selection, not full catalog access. No real operator payment or private-content publication follows from testing.
-
-Start with [current accepted state](docs/operations/CURRENT-STATE.md) and the [owner request register](docs/strategy/OWNER-REQUEST-REGISTER.md). The register reconciles this conversation, later overrides and unfinished requests. Use [the continuation procedure](docs/operations/CONTINUE-VIBESCROLL.md) and [failure reference](docs/operations/FAILURES-AND-RECOVERY.md) before diagnosis or release. Read the relevant subsystem documents below; do not infer current authority or production status from an older handover/ADR's present-tense wording.
-
-Routine release/build counts are delegated by the owner. Do not ask again for per-release count exceptions. Check actual funding before meaningful spending batches or material changes, preserve monetary/provider limits and unknown holds, and report code, tests, production and independent acceptance separately. The compact shared MCP UI is reactivated under owner requirement R110/ADR208; avoid copying the whole app. Local execution remains deferred. New requirements update the register; verified production changes update CURRENT-STATE in place and retain a dated receipt.
-
-Read [Saved posts, catalog access and individual Pro teams](docs/strategy/POST-SUBSCRIPTIONS-CATALOG-AND-TEAMS.md) before entitlement, sharing, preparation or credit work until accepted. Base Pro reuses cache for requested posts; full-library browsing is a separate add-on/toggle with an explicit owner admin concession. Each team member has their own Pro and credits. Quote preparation and analysis separately, preserve precise intermediate units and round only at final settlement. Preserve legacy balances and distinguish planned commerce from live behavior.
-
-Read [One hosted Pro and credit groups](docs/strategy/PRO-PRICING-AND-CREDITS.md) before pricing, entitlement, onboarding or cache-access work until migration is accepted. Preserve the owner's single paid hosted tier, Muse 1×/premium credit bands, high-reasoning budgets, digital-root-8 prices and premium weekly interval. R132 approves300monthly/75weekly and EUR35/month, EUR350/year, EUR17/week. R133 launches production checkout and paid-user processing at1f96e6d, with replacement EUR17/200 and EUR35/500 top-ups after zero live purchase history was verified. Funding uses finite existing provider credit; no real operator payment, provider purchase or Auto Reload is authorized. Preserve admin/test records and unknown holds; read CURRENT-STATE for exact acceptance and remaining limits.
-
-Until implemented and accepted, read [Shared intelligence and the VibeScroll moat](docs/strategy/SHARED-INTELLIGENCE-MOAT.md) and its [execution plan](docs/launch-plan/2026-10-23/VERSIONED-LINK-TO-INSIGHTS.md) before VibeScroll work. They preserve the October 28 backend-first direction, normal-session routine workflows, default shared reuse, failed-video retry, reliable metadata, separate recent-post routes and later experiments/model/outcome rankings. Update their acceptance ledgers; do not infer that planned capabilities are live.
-
-Also read [Simple setup, persistent results and proposal feedback](docs/strategy/SIMPLE-SETUP-AND-CLOSED-LOOP-PROPOSALS.md). It preserves the later owner screenshots/corrections: route-specific setup, automatic Cloud Save without a second checkbox, ordinary access defaults, real model choices, results until deleted and a scoped issue/PR completion loop. These requirements remain active alongside the shared backend until accepted.
-
-For Home/feed, proposal-review or engagement/analytics work, read the [Home feed and plan review plan](docs/design/HOME-FEED-AND-PLAN-REVIEW.md) and [assistant-ui catalogue review](docs/design/ASSISTANT-UI-CATALOGUE-REVIEW-2026-10-30.md) until accepted. R115-R124 preserve the selected four refined light/dark desktop/mobile renders, viewport-height desktop columns, smooth post snapping with a next-post peek, all-post insight context for proposals, tab-free inline plan discussion without a Needs changes button, ready-plan scores on each proposal, content-first custom mobile chrome, bounded feed loading, preserved Library views and a single version-bound Approve & create issue action.
-
-## Build the specified product
-
-R141 approves the [context retrieval plan](docs/strategy/CONTEXT-AWARE-RETRIEVAL.md). Read its [execution ledger](docs/strategy/CONTEXT-RETRIEVAL-IMPLEMENTATION.md) until accepted. Preserve complete retained-post references, deduplicated evidence, personal/team scope, compact ranked search, bounded continuation and measured semantic decisions. The current legacy five-post scan is not a relevance guarantee. Do not infer that workspace filters make native search billing workspace-local, or that source-only authorization covers team-shared foreign sources. R142 adds automatic missing personal/joined-team MCP defaults while preserving explicit per-client off/custom grants, membership, role and each member's own Pro. Narrow source/space grants use the scoped legacy search, never whole-workspace ranked candidate enumeration.
-
-R137 approves all38core items in the [MCP flows plan](docs/strategy/MCP-FLOWS-AND-IMPROVEMENTS-REVIEW.md). Read the [execution ledger](docs/strategy/MCP-FLOWS-IMPLEMENTATION.md) before related work until accepted. The eight [later suggestions](docs/strategy/MCP-LATER-SUGGESTIONS.md) are saved and excluded from this implementation. Record source, tests, host acceptance and production separately.
-
-The owner now requests completing the [medium-term workflow](docs/launch-plan/2026-10-31/MEDIUM-TERM-COMPLETION.md). Close its remaining short-term acceptance first, then work through feed/engagement, explainable fit, real Trends, OpenAI API funding/model quotes and paid-workspace readiness. Preserve the accepted visual design and ask about material design, architecture or recurring-cost choices. R132 explicitly approves the reviewed live EUR35/month, EUR350/year and EUR17/week offer and terms, with300monthly/75weekly credits. Follow [ADR223](docs/adr/223-approved-pro-offer-and-published-terms.md); do not ask for the same approval again. Existing provider/funding gates remain, and no payment, automatic customer migration or provider purchase is authorized by that approval.
-
-Until accepted, read the [short-term proposal loop](docs/launch-plan/2026-10-31/SHORT-TERM-PROPOSAL-LOOP.md). The October31 owner requests completion of generated plans, durable discussion/refinement and single-action issue publication. Preserve the live feed and shared source/version context; finish these backend workflows before adding social analytics or revisiting the visual design.
-
-For new or substantially rebuilt assistant-related UI, prefer suitable assistant-ui components. The owner confirmed this preference on October 29, 2026. Start with the model selector and reasoning controls; reuse existing VibeScroll components where they already fit. Inspect the selected component's current dependencies and licence. This preference does not require a frontend rewrite or delay backend acceptance. See [the component plan](docs/strategy/MODEL-CATALOGUE-AND-CREDIT-BANDS.md).
-
-For analysis status, credit meters and project recommendations, read the [assistant-elements and fit plan](docs/design/ASSISTANT-ELEMENTS-AND-PROJECT-FIT.md) until accepted. Topic coverage is the current first subset; similarity/history/outcome scoring, meaningful priority/activity, duplicate-proposal opening, tooltips and provider logos remain tracked work. Preserve exact balances, observed states and honest score arithmetic.
+For new or substantially rebuilt assistant UI, prefer suitable assistant-ui components where they fit. Check the component's dependencies and license. See the [model component plan](docs/strategy/MODEL-CATALOGUE-AND-CREDIT-BANDS.md) and [assistant UI catalogue review](docs/design/ASSISTANT-UI-CATALOGUE-REVIEW-2026-10-30.md).
 
 Build a web application first. Every library, proposal, approval, billing, and status workflow must work in a mobile browser. Installation of a desktop application is not a prerequisite. The optional runner exists only to execute authorized tasks on a paired computer.
 
-Use the existing CompanyNerve foundation. Export into a new repository and preserve tested authentication, tenancy, billing, and deletion boundaries. Inspect the actual exported source before assigning paths or replacing components. Paths described as proposed in this package are targets, not claims about upstream files.
+Continue in the existing VibeScroll repository built on the CompanyNerve foundation. Preserve tested authentication, tenancy, billing, and deletion boundaries. Verify actual source paths before replacing components.
 
 Implement V1 completely, including the website and approved draft PR creation. Keep V2 behind a separate roadmap. Do not spend V1 work on autonomous businesses, paid advertising, or social-account creation.
 
 ## Resolve conflicts
 
-The explicit decisions in `docs/DECISIONS.md` override older conversation proposals. Contracts define serialized fields. The PRD defines product requirements. Detailed documents explain each subsystem. A verified external contract can require an adapter change but cannot justify silently dropping a product requirement.
+Use the latest applicable owner decision, then the recorded decisions and PRD for established scope. Contracts define serialized fields. A verified external contract can require an adapter change. Record any resulting product tradeoff explicitly.
 
 Record new decisions in an ADR. Identify affected tests and documents. Do not invent provider permissions, tax registrations, supported model IDs, licensing grants, completed tests, or production success.
 
@@ -80,11 +53,11 @@ Never write secrets into source, prompts, screenshots, logs, issues, or PRs. Nev
 
 ## Ship evidence
 
-Every work package has acceptance tests. Record the command, commit, environment, timestamp, and result in `docs/implementation-status.md`, which the implementation creates. Mark a test as skipped rather than passed when credentials or external approval are absent.
+Record the command, commit, environment, timestamp, and result for implementation checks in [implementation status](docs/implementation-status.md) or its linked receipt. Mark a check as untested when a required account, service, or approval is unavailable.
 
 Separate local tests, staging integrations, and production verification. Do not call a deployment secure or legally approved merely because a build passes.
 
-Before opening a PR, run formatting, lint, types, unit tests, relevant integration tests, production build, dependency checks, secret scanning, and relevant browser tests. Preserve failures in the report.
+Before opening a code PR, run formatting, lint, types, unit tests, relevant integration and browser tests, production build, dependency checks, and secret scanning. For documentation-only work, verify changed links, formatting, and consistency. Preserve failures in the report.
 
 Do not create live billing products, change DNS, send public marketing, run paid ads, or activate live charges without explicit operator authorization for that external action. Preparing code and a setup checklist is not authorization to make a purchase.
 

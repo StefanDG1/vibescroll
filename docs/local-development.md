@@ -20,7 +20,7 @@ On the Windows machine that holds the snapshot, run this command from the checko
 ./scripts/start-local-snapshot.ps1
 ```
 
-Open [local VibeScroll](http://localhost:3192/app). Add `?mode=review`, `?mode=browse`, or `?mode=snap` to open a Home view directly. The preview runs on loopback with no hosted credentials. The snapshot stays outside the checkout under `%LOCALAPPDATA%/VibeScroll/ui-snapshot`.
+Open [local VibeScroll](http://localhost:3192/app). Home opens in Browse, matching production. The preview runs on loopback with no hosted credentials. The snapshot stays outside the checkout under `%LOCALAPPDATA%/VibeScroll/ui-snapshot`.
 
 To refresh manually, leave one signed-in production workspace tab open in Chrome and run `Get-Content -Raw ./scripts/capture-local-snapshot.py | browser-harness`. A completed capture becomes active automatically. The old folder remains available, including any drafts saved alongside it.
 

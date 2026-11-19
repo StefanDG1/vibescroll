@@ -498,7 +498,7 @@ export function FeedPostCardCore({
             render={renderThumbnail}
             candidates={candidates}
             kind={post.kind}
-            priority={Boolean(mode && current)}
+            priority={Boolean(preview || (mode && current))}
             resolve={thumbnailResolver}
           />
         )}

@@ -6,6 +6,7 @@ import type { PostHog } from "posthog-js";
 let sdk: PostHog | undefined;
 let allowed = false;
 let generation = 0;
+const pending: NonNullable<ReturnType<typeof safeAnalyticsEvent>>[] = [];
 let journeyId: string | undefined;
 let engagementExpiry = 0;
 const journeyKey = "vibescroll.analytics.journey";
@@ -26,6 +27,7 @@ function sessionValue(key: string, value?: string) {
   }
 }
 export function clearAnalyticsJourney() {
+  pending.length = 0;
   journeyId = undefined;
   engagementExpiry = 0;
   try {
@@ -106,6 +108,14 @@ export async function setAnalyticsConsent(consented: boolean) {
     navigator.doNotTrack !== "1" &&
     !(navigator as Navigator & { globalPrivacyControl?: boolean })
       .globalPrivacyControl;
+  // Keep attribution before the asynchronous SDK load or a fast route change.
+  if (next && cookieAllowsAnalytics(document.cookie)) {
+    const campaign = analyticsCampaign(
+      new URLSearchParams(window.location.search).get("utm_source"),
+    );
+    if (campaign === "qa" || (campaign && !sessionValue(campaignKey)))
+      sessionValue(campaignKey, campaign);
+  }
   if (next === allowed && (!next || sdk)) {
     if (!next) clearAnalyticsJourney();
     return;
@@ -156,6 +166,8 @@ export async function setAnalyticsConsent(consented: boolean) {
         if (!safe) return null;
         const distinct = getJourneyId();
         if (typeof distinct !== "string" || distinct.length > 100) return null;
+        const production =
+          window.location.hostname === "scroll.companynerve.com";
         return {
           uuid: event.uuid,
           event: event.event,
@@ -164,8 +176,11 @@ export async function setAnalyticsConsent(consented: boolean) {
             ...safe.properties,
             distinct_id: distinct,
             journey_version: "2",
-            campaign:
-              analyticsCampaign(sessionValue(campaignKey) ?? null) ?? "direct",
+            environment: production ? "production" : "stage",
+            campaign: production
+              ? (analyticsCampaign(sessionValue(campaignKey) ?? null) ??
+                "direct")
+              : "qa",
             $process_person_profile: false,
             $geoip_disable: true,
             token: key,
@@ -175,14 +190,13 @@ export async function setAnalyticsConsent(consented: boolean) {
     });
   }
   getJourneyId();
-  const campaign = analyticsCampaign(
-    new URLSearchParams(window.location.search).get("utm_source"),
-  );
-  if (campaign) sessionValue(campaignKey, campaign);
+  for (const event of pending.splice(0)) {
+    if (!track(event.event, event.properties)) break;
+  }
   window.dispatchEvent(new Event(analyticsReadyEvent));
 }
 export function track(name: string, properties: Record<string, unknown> = {}) {
-  if (!consentStillAllowed() || !sdk) return false;
+  if (!consentStillAllowed()) return false;
   const safe = safeAnalyticsEvent(
     name,
     name === "page_viewed"
@@ -195,13 +209,17 @@ export function track(name: string, properties: Record<string, unknown> = {}) {
         }
       : properties,
   );
-  if (safe) {
-    getJourneyId();
-    if (eligibleEngagement.has(name)) retainEngagement();
-    sdk.capture(safe.event, safe.properties);
+  if (!safe) return false;
+  if (!sdk) {
+    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY || pending.length >= 32)
+      return false;
+    pending.push(safe);
     return true;
   }
-  return false;
+  getJourneyId();
+  if (eligibleEngagement.has(name)) retainEngagement();
+  sdk.capture(safe.event, safe.properties);
+  return true;
 }
 
 export function useAnalyticsView(

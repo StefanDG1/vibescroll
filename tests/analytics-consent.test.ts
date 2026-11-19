@@ -33,7 +33,10 @@ it("never initializes or captures before consent and drops SDK defaults after co
       setItem: (key: string, value: string) => local.set(key, value),
       removeItem: (key: string) => local.delete(key),
     },
-    location: { search: "?utm_source=community" },
+    location: {
+      search: "?utm_source=community",
+      hostname: "scroll.companynerve.com",
+    },
   });
   vi.stubGlobal("window", browser);
   const persistedId = crypto.randomUUID();
@@ -50,7 +53,18 @@ it("never initializes or captures before consent and drops SDK defaults after co
   analytics.track("source_viewed", { title: "private" });
   expect(mock.init).not.toHaveBeenCalled();
   expect(mock.capture).not.toHaveBeenCalled();
-  await analytics.setAnalyticsConsent(true);
+  const initialization = analytics.setAnalyticsConsent(true);
+  browser.location.search = "?example=1";
+  expect(
+    analytics.track("public_cta_clicked", { cta: "try_example", page: "home" }),
+  ).toBe(true);
+  await initialization;
+  expect(mock.capture).toHaveBeenCalledWith("public_cta_clicked", {
+    schema_version: "1",
+    cta: "try_example",
+    page: "home",
+  });
+  mock.capture.mockClear();
   expect(mock.init).toHaveBeenCalledTimes(1);
   expect(config.autocapture).toBe(false);
   expect(config.capture_pageview).toBe(false);
@@ -79,6 +93,7 @@ it("never initializes or captures before consent and drops SDK defaults after co
     coverage: "caption_only",
     distinct_id: persistedId,
     journey_version: "2",
+    environment: "production",
     campaign: "community",
     $process_person_profile: false,
     $geoip_disable: true,

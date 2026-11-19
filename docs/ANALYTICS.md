@@ -2,7 +2,7 @@
 
 ## Launch and onboarding
 
-Open the [VibeScroll launch dashboard](https://eu.posthog.com/project/289940/dashboard/1133517). It contains the landing-to-evidence path, quiz and account progression, setup views and failures, checkout and verified access, first useful action, and repeat evidence use. It filters to journey version 2 and excludes `utm_source=qa`. Supported campaign codes are `founder_outreach`, `community` and `launch`. Other values and the full URL are omitted. Review the number of observed browser journeys before reading conversion rates.
+Open the [VibeScroll launch dashboard](https://eu.posthog.com/project/289940/dashboard/1133517). It contains the landing-to-evidence path, quiz and account progression, setup views and failures, checkout and verified access, first useful action, and repeat evidence use. It filters to journey version 2 on the canonical production site and excludes `utm_source=qa`. Supported campaign codes are `founder_outreach`, `community` and `launch`. Other values and the full URL are omitted. Review the number of observed browser journeys before reading conversion rates.
 
 The SDK still runs in memory without replay or autocapture. Under consent revision 2, the application keeps the random journey ID, campaign and checkout marker in tab storage. An observed signed-in evidence inspection or saved plan can retain the ID in the current browser for up to seven days. The retention chart covers consenting browsers with observed activity. It excludes sign-outs, unavailable storage and activity on another device unless independently observed there. It cannot establish the percentage of all visitors who accepted analytics.
 

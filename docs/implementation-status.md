@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 20 onboarding and analytics
+
+The live website offers a real retained example from the landing page. The four-question quiz remains for personalization. The example and personal link entry have separate screens. An account step explains how the choice carries forward. Paid own-link setup opens the saved post after the explicit save action. The consent update, checkout instrumentation and PostHog dashboard distinguish observed browser journeys from verified billing.
+
+The exact GitHub checks passed. Chrome at 390 and 1440 pixels verified both guest routes, evidence, analytics allow/reject/withdrawal, WorkOS sign-up handoff and the signed-in Home smoke check. The initial Windows full run hit three 5-second timeouts in pre-existing service and billing tests. The isolated retry passed 82 cases with a 15-second local timeout. CI used the repository's original settings. No real payment or new hosted analysis was made. [Release receipt](operations/evidence/launch-20261120-onboarding-analytics.json)
+
 ## November 18 Home and Work reliability
 
 The local candidate based on `11a84fb` keeps the last loaded Posts and Work views visible while refreshing. Temporary request and live-update failures preserve available content. Confirmed loss of workspace access clears protected data. Home reactions have bounded requests and reuse the same write key after a connection failure. Home and the full post use the same AI-first proposal composer. Outgoing chat messages show their send status and preserve the original request for recovery.

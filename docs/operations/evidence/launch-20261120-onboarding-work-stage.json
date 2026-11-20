@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-20",
+  "requirement": "R179 follow-up",
+  "status": "live",
+  "commit": "f26b0d93dee48a43ddba2f5f6f6b580a0dcb06b0",
+  "version": "0.1.0-alpha.20261120120722.gf26b0d93dee4",
+  "deployment": "dpl_5qP7TyPKyW1JTaa36FFgxUdL8Jb2",
+  "priorDeployment": "dpl_y3fx7LyRkn9ksAp2eviDuVwDJMEr",
+  "buildSeconds": 36.017,
+  "normalDomainAssignmentRestored": true,
+  "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/44733167505",
+  "verified": "Local, staged and canonical guest flows at 390 and 1440 pixels. Existing-project and team choices continue to the next question. Staged and canonical recap and real example omit the legacy name. Saved drafts still parse.",
+  "backendPublished": false
+}

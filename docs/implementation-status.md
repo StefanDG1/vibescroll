@@ -2,6 +2,8 @@
 
 ## November 20 onboarding and analytics
 
+The work-stage follow-up removed the project name input, recap line and guest preview name. Existing-project and team choices progressed at 390 and 1440 pixels in staging and production. Exact CI passed, and the same build is live. [Follow-up receipt](operations/evidence/launch-20261120-onboarding-work-stage.json)
+
 The live website offers a real retained example from the landing page. The four-question quiz remains for personalization. The example and personal link entry have separate screens. An account step explains how the choice carries forward. Paid own-link setup opens the saved post after the explicit save action. The consent update, checkout instrumentation and PostHog dashboard distinguish observed browser journeys from verified billing.
 
 The exact GitHub checks passed. Chrome at 390 and 1440 pixels verified both guest routes, evidence, analytics allow/reject/withdrawal, WorkOS sign-up handoff and the signed-in Home smoke check. The initial Windows full run hit three 5-second timeouts in pre-existing service and billing tests. The isolated retry passed 82 cases with a 15-second local timeout. CI used the repository's original settings. No real payment or new hosted analysis was made. [Release receipt](operations/evidence/launch-20261120-onboarding-analytics.json)

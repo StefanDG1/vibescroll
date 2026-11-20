@@ -170,6 +170,9 @@ export async function POST(request: Request) {
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
+                ...(operation === "search"
+                  ? { "X-VibeScroll-Search-Contract": "2" }
+                  : {}),
               },
               body: JSON.stringify({ operation, args: input }),
             }),

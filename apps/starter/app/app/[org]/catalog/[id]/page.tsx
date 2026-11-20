@@ -1,7 +1,8 @@
 import { backend, api } from "@/lib/backend";
+import { localSnapshotRequest } from "@/lib/local-snapshot-request";
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
-import { Header } from "@/components/header";
-import { Card } from "@companynerve/ui";
+import { ArrowUpRight, FileQuestion } from "lucide-react";
+import { WorkspaceSubpage } from "@/components/workspace-subpage";
 import { neutralCloudAnalysis } from "../../../../../../../packages/contracts/cloud-catalog";
 
 export const dynamic = "force-dynamic";
@@ -12,37 +13,47 @@ export default async function Page({
   params: Promise<{ org: string; id: string }>;
 }) {
   const { org, id } = await params;
-  const post = await (
-    await backend()
-  ).mutation(api.catalogBrowse.detail, {
-    organizationId: org as Id<"organizations">,
-    familyId: id as Id<"catalogFamilies">,
-  });
+  const post = (await localSnapshotRequest())
+    ? null
+    : await (await backend()).mutation(api.catalogBrowse.detail, {
+        organizationId: org as Id<"organizations">,
+        familyId: id as Id<"catalogFamilies">,
+      }).catch(() => null);
+  if (!post)
+    return (
+      <WorkspaceSubpage org={org} title="Post unavailable" backTo="catalog">
+        <section className="shared-empty">
+          <FileQuestion size={23} strokeWidth={1.65} aria-hidden="true" />
+          <p>This post may have been removed or your access may have changed.</p>
+        </section>
+      </WorkspaceSubpage>
+    );
   const analysis = neutralCloudAnalysis.parse(post.analysis);
   return (
-    <div className="account-page">
-      <Header />
-      <main id="main">
-        <a href={`/app/${org}/catalog`}>Shared library</a>
-        <h1>{post.title}</h1>
-        {post.authorName && <p>{post.authorName}</p>}
+    <WorkspaceSubpage org={org} title={post.title} backTo="catalog">
+      <div className="catalog-post-meta">
+        {post.authorName && <span>{post.authorName}</span>}
         <a href={post.canonical} target="_blank" rel="noreferrer">
-          Original post
+          Original post <ArrowUpRight size={15} aria-hidden="true" />
         </a>
-        <p>{analysis.summary}</p>
-        {analysis.warnings.map((warning, i) => (
-          <p key={i} className="muted">
-            {warning}
-          </p>
-        ))}
-        <div className="stack">
+      </div>
+      <p className="catalog-post-summary">{analysis.summary}</p>
+      {analysis.warnings.length > 0 && (
+        <ul className="catalog-warnings">
+          {analysis.warnings.map((warning, index) => <li key={index}>{warning}</li>)}
+        </ul>
+      )}
+      <section className="shared-reader" aria-labelledby="catalog-insight-heading">
+        <h2 id="catalog-insight-heading">Insights</h2>
+        <ul>
           {analysis.insights.map((insight) => (
-            <Card key={insight.id}>
-              <h2>{insight.title}</h2>
+            <li key={insight.id}>
+              <h3>{insight.title}</h3>
               <p>{insight.claim}</p>
               {insight.interpretation && <p>{insight.interpretation}</p>}
-              <p className="muted">
-                Evidence:{" "}
+              {insight.evidence.length > 0 && (
+              <p className="fine">
+                Evidence ·{" "}
                 {insight.evidence
                   .map((ref) =>
                     ref.startMs === null
@@ -51,10 +62,11 @@ export default async function Page({
                   )
                   .join(", ")}
               </p>
-            </Card>
+              )}
+            </li>
           ))}
-        </div>
-      </main>
-    </div>
+        </ul>
+      </section>
+    </WorkspaceSubpage>
   );
 }

@@ -1,4 +1,6 @@
 import { ProjectForm } from "@/components/project-form";
+import { WorkspaceSubpage } from "@/components/workspace-subpage";
+import { WorkNavigation } from "@/components/work-screens";
 export default async function Page({
   params,
 }: {
@@ -6,9 +8,9 @@ export default async function Page({
 }) {
   const { org } = await params;
   return (
-    <>
-      <h1>New project</h1>
+    <WorkspaceSubpage org={org} title="New project" backTo="projects">
+      <WorkNavigation organizationId={org} active="projects" />
       <ProjectForm organizationId={org} />
-    </>
+    </WorkspaceSubpage>
   );
 }

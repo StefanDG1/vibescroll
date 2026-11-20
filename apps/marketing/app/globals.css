@@ -21,3 +21,242 @@
 .footer .navlinks {
   flex-wrap: wrap;
 }
+
+.marketing-site[data-website-kind="product"] {
+  --background: #f7f8f6;
+  --foreground: #18201c;
+  --card: #fff;
+  --border: #dce5df;
+  --muted: #edf3ee;
+  --muted-foreground: #485750;
+  --primary: #23634f;
+  --primary-foreground: #fff;
+  --brand-ink: #18201c;
+  --ring: #23634f;
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100svh;
+}
+
+@media (prefers-color-scheme: dark) {
+  .marketing-site[data-website-kind="product"] {
+    --background: #141816;
+    --foreground: #eef3f0;
+    --card: #1d2420;
+    --border: #37443d;
+    --muted: #24302a;
+    --muted-foreground: #bdc9c1;
+    --primary: #a6e0c7;
+    --primary-foreground: #142019;
+    --brand-ink: #eef3f0;
+    --ring: #a6e0c7;
+    color-scheme: dark;
+  }
+}
+
+.marketing-site .topbar {
+  min-height: 70px;
+  padding-block: 12px;
+}
+
+.marketing-site .topbar .navlinks a,
+.marketing-site .footer .navlinks a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted-foreground);
+}
+
+.marketing-site :is(a, button):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.marketing-site .footer {
+  gap: 12px 24px;
+}
+
+.product-marketing .hero {
+  min-height: min(560px, 74svh);
+  gap: clamp(28px, 6vw, 80px);
+  padding-block: clamp(38px, 7vw, 90px);
+}
+
+.product-marketing .hero h1,
+.marketing-doc h1,
+.marketing-gallery h1 {
+  font-size: clamp(2.2rem, 5vw, 3.85rem);
+  line-height: 1.04;
+  letter-spacing: -0.053em;
+  font-weight: 680;
+  text-wrap: balance;
+}
+
+.product-marketing .hero h1 {
+  font-size: clamp(2.5rem, 6vw, 5.25rem);
+  max-width: 12ch;
+  margin-block: 0 20px;
+}
+
+.product-marketing .hero .actions a {
+  gap: 8px;
+}
+
+.marketing-result {
+  min-width: 0;
+  margin: 0;
+  padding: clamp(16px, 3vw, 27px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 18px 46px color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.marketing-result figcaption {
+  color: var(--muted-foreground);
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+}
+
+.marketing-result ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.marketing-result li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.marketing-result li > span {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  color: var(--primary);
+  background: var(--muted);
+  border-radius: 10px;
+}
+
+.marketing-result strong {
+  display: block;
+  font-size: 0.93rem;
+}
+
+.marketing-result li p {
+  font-size: 0.9rem;
+  margin: 3px 0 0;
+}
+
+.product-marketing #included {
+  border-top: 1px solid var(--border);
+}
+
+.product-marketing #included :is(h2, p) {
+  max-width: 68ch;
+}
+
+.marketing-doc,
+.marketing-gallery {
+  padding-block: clamp(38px, 6vw, 76px);
+}
+
+.marketing-doc :is(p, li) {
+  line-height: 1.7;
+}
+
+.marketing-policy .navlinks {
+  justify-content: flex-start;
+  padding-block: 10px;
+  border-block: 1px solid var(--border);
+}
+
+.marketing-policy .navlinks a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.marketing-policy .navlinks a[aria-current="page"] {
+  color: var(--primary);
+  font-weight: 650;
+}
+
+.marketing-guide-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.marketing-guide-list a {
+  display: grid;
+  gap: 5px;
+  text-decoration: none;
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.marketing-guide-list a strong {
+  color: var(--foreground);
+}
+
+.marketing-guide-list a span {
+  color: var(--muted-foreground);
+}
+
+.marketing-guide-list a:hover {
+  border-color: var(--primary);
+}
+
+.marketing-gallery {
+  border: 0;
+}
+
+.marketing-gallery .recipe-meta {
+  gap: 5px;
+}
+
+.marketing-gallery .recipe-tile:hover {
+  border-color: var(--primary);
+}
+
+.marketing-status {
+  max-width: 720px;
+  padding-block: clamp(64px, 14vh, 140px);
+}
+
+.marketing-status h1 {
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  letter-spacing: -0.048em;
+  line-height: 1.1;
+}
+
+@media (max-width: 620px) {
+  .marketing-site .topbar {
+    min-height: 60px;
+    gap: 0 12px;
+  }
+
+  .marketing-site .topbar .navlinks {
+    gap: 0 10px;
+  }
+
+  .marketing-site .footer .navlinks {
+    justify-content: flex-start;
+    gap: 0 16px;
+    margin-top: 10px;
+  }
+
+  .product-marketing .hero {
+    gap: 28px;
+    min-height: 0;
+  }
+}

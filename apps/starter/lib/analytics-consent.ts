@@ -1,3 +1,5 @@
+export const analyticsConsentRevision = 2;
+
 export function cookieAllowsAnalytics(cookies: string): boolean {
   try {
     const value = cookies
@@ -7,7 +9,7 @@ export function cookieAllowsAnalytics(cookies: string): boolean {
     if (!value || value.length > 4096) return false;
     const consent = JSON.parse(decodeURIComponent(value));
     return (
-      consent.revision === 1 &&
+      consent.revision === analyticsConsentRevision &&
       Array.isArray(consent.categories) &&
       consent.categories.includes("analytics")
     );

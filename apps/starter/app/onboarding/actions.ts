@@ -18,7 +18,7 @@ import {
 import type { Id } from "../../../../convex/_generated/dataModel";
 import type { FormState } from "@/components/action-form";
 import { revalidatePath } from "next/cache";
-import { startV1Checkout } from "@/app/actions";
+import { requestV1Checkout } from "@/app/actions";
 export async function beginOnboarding(value: unknown) {
   const draft = onboardingDraft.parse(value);
   const jar = await cookies();
@@ -36,9 +36,9 @@ export async function beginOnboarding(value: unknown) {
   redirect("/sign-up?onboarding=1");
 }
 export async function startOnboardingCheckout(
-  state: FormState,
+  _state: FormState,
   form: FormData,
-): Promise<FormState> {
+) {
   const interval = String(form.get("interval"));
   if (!["monthly", "annual", "weekly"].includes(interval))
     return { error: "Choose an available Pro plan." };
@@ -47,7 +47,8 @@ export async function startOnboardingCheckout(
   ).mutation(api.onboarding.selectPlan, {
     interval: interval as "monthly" | "annual" | "weekly",
   });
-  return startV1Checkout(state, form);
+  form.set("tier", "pro");
+  return requestV1Checkout(form);
 }
 export async function saveAuthenticatedOnboarding(value: unknown) {
   await (
@@ -76,6 +77,24 @@ export async function chooseOnboardingAssistant(form: FormData) {
   });
   redirect("/onboarding/resume?setup=github");
 }
+export async function continueToOnboardingPlans() {
+  const client = await backend();
+  const status = await client.query(api.onboarding.status, {});
+  if (status.progress?.stage === "github") {
+    const organizationId = await client.mutation(
+      api.organizations.createPrivate,
+      {},
+    );
+    await client.mutation(api.onboarding.chooseAssistant, { choice: "later" });
+    await client.mutation(api.onboarding.chooseProject, {
+      organizationId,
+      ...(status.progress.repository
+        ? { repositoryId: status.progress.repository.id }
+        : {}),
+    });
+  }
+  redirect("/onboarding/resume");
+}
 export async function checkOnboardingAssistant() {
   return (await backend()).query(api.onboarding.assistantStatus, {});
 }
@@ -95,14 +114,24 @@ async function finishOnboardingAt(destination: "home" | "project") {
     {},
   );
   let sourceId = state.progress?.sourceId;
-  if (!sourceId && state.progress?.selectedFamilyId) {
+  if (
+    !sourceId &&
+    !state.progress?.pendingUrl &&
+    state.progress?.selectedFamilyId
+  ) {
     const { starterClient } = await import("@/lib/onboarding-server");
     const available = await starterClient().query(api.onboardingStarter.list, {
       interests: state.progress.interests,
     });
-    const selected = available.find(
-      (item) => item.familyId === state.progress?.selectedFamilyId,
-    );
+    const selected =
+      available.find(
+        (item) => item.familyId === state.progress?.selectedFamilyId,
+      ) ??
+      (
+        await starterClient().query(api.onboardingStarter.list, {
+          interests: [],
+        })
+      ).find((item) => item.familyId === state.progress?.selectedFamilyId);
     if (selected)
       sourceId = await client.mutation(api.product.capture, {
         organizationId,
@@ -226,7 +255,7 @@ export async function adoptOnboardingDraft() {
   if (draft) await (await backend()).mutation(api.onboarding.save, { draft });
 }
 
-export async function saveFirstOwnLink(): Promise<FormState> {
+export async function captureFirstOwnLink() {
   const client = await backend();
   const status = await client.query(api.onboarding.status, {});
   if (!status.paid || !status.progress?.pendingUrl)
@@ -247,5 +276,14 @@ export async function saveFirstOwnLink(): Promise<FormState> {
     title: "Saved video",
     rightsAttested: true,
   });
-  redirect(`/app/${organizationId}/posts/${sourceId}`);
+  await client.mutation(api.onboarding.complete, {});
+  const jar = await cookies();
+  jar.delete(onboardingCookie);
+  return { postPath: `/app/${organizationId}/posts/${sourceId}` };
+}
+
+export async function saveFirstOwnLink(): Promise<FormState> {
+  const result = await captureFirstOwnLink();
+  if (result.postPath) redirect(result.postPath);
+  return { error: result.error };
 }

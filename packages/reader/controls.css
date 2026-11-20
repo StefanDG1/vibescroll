@@ -250,3 +250,155 @@
 .insight-project-suggestions .button {
   margin-top: 12px;
 }
+
+/* Shared post and proposal drawers keep controls in one scrolling region. */
+.post-settings-drawer[data-drawer-variant] {
+  width: min(560px, 100vw);
+  font: inherit;
+  overflow: hidden;
+}
+.post-settings-drawer[data-drawer-variant="proposal"] {
+  width: min(620px, 100vw);
+}
+.post-settings-drawer[data-drawer-variant] .post-settings-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+.post-settings-drawer[data-drawer-variant] header:first-child {
+  flex-shrink: 0;
+}
+.post-settings-drawer[data-drawer-variant] .post-settings-content > header {
+  margin: 0;
+  padding: 10px clamp(14px, 4vw, 24px);
+  min-height: 60px;
+  border-bottom: 1px solid var(--line);
+}
+.post-settings-drawer[data-drawer-variant] .post-settings-content > header button {
+  width: 40px;
+  height: 40px;
+}
+.post-settings-body {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-height: 0;
+  padding: 16px clamp(14px, 4vw, 24px) max(26px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.post-settings-group {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.post-settings-group > h3 {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  color: var(--subtle);
+}
+.post-settings-group > :is(.panel, details, form, section),
+.post-settings-body > details {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 10px;
+  margin: 0;
+  padding: 10px 12px;
+}
+.post-settings-group > :is(section, div):first-of-type > h2 {
+  margin-top: 0;
+}
+.post-settings-group :is(h2, h3, h4) {
+  line-height: 1.35;
+}
+.post-settings-group :is(h2, h4) {
+  font-size: 1rem;
+}
+.post-settings-group summary,
+.post-settings-body > details > summary {
+  cursor: pointer;
+  min-height: 32px;
+  align-content: center;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+.post-settings-group :is(input:not([type="checkbox"], [type="radio"]), select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+}
+.post-settings-links {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.post-settings-links a {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  min-height: 55px;
+  padding: 8px 12px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.post-settings-links a + a {
+  border-top: 1px solid var(--line);
+}
+.post-settings-links :is(small, strong) {
+  display: block;
+}
+.post-settings-links small {
+  color: var(--subtle);
+  margin-top: 2px;
+}
+.post-settings-links svg {
+  color: var(--teal);
+}
+@media (hover: hover) {
+  .post-settings-links a:hover {
+    background: color-mix(in srgb, var(--teal) 7%, var(--panel));
+  }
+}
+
+.post-settings-group details > summary,
+.post-settings-body > details > summary {
+  position: relative;
+  list-style: none;
+  padding-inline-end: 24px;
+}
+.post-settings-group details > summary::-webkit-details-marker,
+.post-settings-body > details > summary::-webkit-details-marker {
+  display: none;
+}
+.post-settings-group details > summary::after,
+.post-settings-body > details > summary::after {
+  position: absolute;
+  inset-inline-end: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--teal);
+  content: "+";
+}
+.post-settings-group details[open] > summary::after,
+.post-settings-body > details[open] > summary::after {
+  content: "−";
+}
+.post-settings-group .evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-block: 10px;
+}
+.post-settings-group .evidence-grid figure {
+  min-width: 0;
+  margin: 0;
+}
+.post-settings-group .evidence-grid .evidence-image-button {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 0;
+  height: auto;
+}

@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-20",
+  "requirement": "R179",
+  "status": "live",
+  "website": {
+    "deployment": "dpl_y3fx7LyRkn9ksAp2eviDuVwDJMEr",
+    "commit": "89321cae32a6d270c0500701cae726e082fcec72",
+    "version": "0.1.0-alpha.20261119230410.g89321cae32a6",
+    "canonical": "https://scroll.companynerve.com",
+    "previousDeployment": "dpl_BiFRwY2XisJ9AnQ9WxgCs4AFcwYG",
+    "buildSeconds": 31.01,
+    "normalDomainAssignmentRestored": true
+  },
+  "ci": {
+    "run": "https://github.com/StefanDG1/vibescroll/actions/runs/44634394634",
+    "status": "success"
+  },
+  "verification": {
+    "viewportWidths": [390, 1440],
+    "staged": "Link-only path, rejection, real example, thumbnail and evidence, account explanation, and opt-in collector acknowledgment",
+    "canonical": "Both paths at both widths, valid and invalid links, retained answers and choice, WorkOS sign-up handoff, real thumbnail and frame, PostHog delivery and withdrawal",
+    "signedInCanonical": "Signed-in Home rendered Posts navigation and Insights",
+    "checkout": "Sandbox and fixture coverage in CI and prior accepted releases. Fresh independent production purchase and the full subsequent journey are unverified.",
+    "hostedAnalysesStarted": 0,
+    "realChargesCreated": 0
+  },
+  "analytics": {
+    "dashboard": "https://eu.posthog.com/project/289940/dashboard/1133517",
+    "insights": 9,
+    "qaExcluded": true,
+    "observedCanonicalQAEvents": 36,
+    "observedCanonicalQABrowsers": 2
+  },
+  "firstStage": {
+    "buildSeconds": 64.749,
+    "result": "An immediate landing click lost campaign attribution before SDK startup. Corrected initialization and queued eligible events before staging the replacement. The first stage was not promoted."
+  },
+  "backendPublished": false
+}

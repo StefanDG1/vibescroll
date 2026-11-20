@@ -636,7 +636,9 @@ it("offers one Continue for standard Cloud access without per-action checkboxes 
     SimpleConnections,
   );
   const tree = f.render();
-  expect(text(tree)).toContain("Where tasks run");
+  expect(
+    elements(tree).some((node) => node.props.title === "Where tasks run"),
+  ).toBe(true);
   expect(
     elements(tree)
       .filter((n) => n.type === "legend")

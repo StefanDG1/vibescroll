@@ -72,7 +72,8 @@ it("shows distinct link requesters as a count, rather than an outbound Share act
       onSettings: () => {},
     }),
   );
-  expect(html).toContain('aria-label="2 people have requested this post"');
+  expect(html).toContain("2 people have requested this post");
+  expect(html).not.toContain('role="tooltip"');
   expect(html).toContain("lucide-users");
   expect(html).not.toMatch(/Share post|Share this post|lucide-share/);
   expect(html).toContain('aria-label="Like post"');
@@ -83,7 +84,7 @@ it("does not invent a zero when request tracking is unavailable", () => {
   const html = renderToStaticMarkup(
     createElement(PostEngagement, { onSettings: () => {} }),
   );
-  expect(html).toContain('aria-label="Post request count unavailable"');
+  expect(html).toContain("Post request count unavailable");
   expect(html).not.toContain("0 people");
 });
 
@@ -132,7 +133,7 @@ it("requires a workspace before querying saved content", async () => {
 
 it("returns no source or project text after an authorization failure", async () => {
   backendMock.backend.mockResolvedValue({ query: backendMock.query });
-  backendMock.query.mockRejectedValueOnce(Error("Private database detail"));
+  backendMock.query.mockRejectedValueOnce(Error("Organization unavailable."));
   backendMock.query.mockResolvedValueOnce([
     { profile: "private-project-text" },
   ]);
@@ -140,9 +141,21 @@ it("returns no source or project text after an authorization failure", async () 
     new Request("https://example.com/api/feed/source?organizationId=workspace"),
     { params: Promise.resolve({ id: "source" }) },
   );
-  expect(response.status).toBe(404);
+  expect(response.status).toBe(403);
   expect(await response.text()).toBe('{"error":"Post unavailable."}');
   expect(response.headers.get("Cache-Control")).toBe("no-store");
+});
+
+it("distinguishes a transient feed detail failure from a missing post", async () => {
+  backendMock.backend.mockResolvedValue({ query: backendMock.query });
+  backendMock.query.mockRejectedValueOnce(Error("Private upstream diagnostic"));
+  backendMock.query.mockResolvedValue([]);
+  const response = await GET(
+    new Request("https://example.com/api/feed/source?organizationId=workspace"),
+    { params: Promise.resolve({ id: "source" }) },
+  );
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({ error: "Post unavailable." });
 });
 
 it("projects only authorized feed content and binds source, project and recommendation reads to the workspace", async () => {

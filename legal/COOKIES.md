@@ -1,6 +1,6 @@
 # Cookies and similar storage
 
-Status: published. Effective 3 October 2026. Version: 1.1.0. Release: v1-2026-10-03.1.
+Status: published. Effective 20 November 2026. Version: 1.2.0. Release: analytics-2026-11-20.1.
 
 ## Essential storage
 
@@ -18,9 +18,9 @@ Provider sign-in pages such as Google and WorkOS may have their own cookies on t
 
 PostHog EU Cloud receives optional, explicitly named product events only after you allow analytics. They describe workflow steps, coarse states and capped counts, such as an import completing or a proposal being rejected. We do not send your saved source text, caption, source URL, repository name or file content, email, workspace ID or page URL. Session replay, automatic click capture, surveys, advertising identifiers and AI prompt capture are disabled.
 
-The random analytics identifier stays in memory for the current page session. The configured SDK does not persist an analytics identity in cookies or local storage. The consent choice cookie is essential preference storage. PostHog still receives network metadata such as your IP address; these events should not be called anonymous merely because we omit names.
+After you allow analytics, this site stores a random analytics identifier and limited campaign and checkout state in your browser tab. This lets us measure steps through sign-in and checkout returns. If you inspect app evidence or save a plan, the site can keep the random identifier in this browser for seven days to measure repeat use. The identifier contains no account ID. The consent choice cookie stores your preference. PostHog still receives network metadata such as your IP address.
 
-Reject analytics is as accessible as Allow analytics. Preferences lets you choose again. Use Cookie preferences in the app's account menu, privacy screen or website footer to withdraw permission. Future event capture stops and the in-memory identity resets. A request already sent cannot be recalled. Existing events follow the applicable privacy policy and the provider's configured retention. Do Not Track and Global Privacy Control also prevent analytics capture.
+Reject analytics is as accessible as Allow analytics. Preferences lets you choose again. Use Cookie preferences in the app's account menu, privacy screen or website footer to withdraw permission. Future event capture stops and the site clears its optional analytics storage. Signing out also clears the local analytics identifier. A request already sent cannot be recalled. Existing events follow the applicable privacy policy and the provider's configured retention. Do Not Track and Global Privacy Control also prevent analytics capture.
 
 ## Browser and PWA data
 

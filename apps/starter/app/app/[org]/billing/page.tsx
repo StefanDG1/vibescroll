@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CreditCard, Gauge, Wallet } from "lucide-react";
 import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { ActionForm } from "@/components/action-form";
@@ -9,6 +10,13 @@ import { CreditMeter } from "@/components/assistant-elements/credit-meter";
 import { ErrorState } from "@/components/assistant-elements/error-state";
 import { usageOverview } from "../../../../../../packages/billing/usage-overview";
 import { billingRecovery } from "@/lib/processing-recovery";
+import {
+  AccountPageFrame,
+  AccountSection,
+  AccountStatus,
+} from "@/components/account-layout";
+import { localSnapshotRequest } from "@/lib/local-snapshot-request";
+import { CheckoutReturnMeasurement } from "@/components/onboarding-milestone";
 import {
   startV1Checkout,
   cancelV1Subscription,
@@ -27,6 +35,36 @@ export default async function Page({
   const { org } = await params,
     c = await backend(),
     organizationId = org as Id<"organizations">;
+  const back = { href: `/app/${org}/account`, label: "Account" };
+  if (await localSnapshotRequest()) {
+    await c.query(api.organizations.details, { organizationId });
+    return (
+      <AccountPageFrame title="Billing" back={back}>
+        <AccountSection
+          title="Credit balance"
+          icon={Gauge}
+          description="Allowance and subscription details are unavailable."
+        >
+          <Link
+            prefetch={false}
+            className="button secondary"
+            href={`/app/${org}/usage`}
+          >
+            View usage
+          </Link>
+        </AccountSection>
+        <section className="account-section account-billing-offer">
+          <ProOfferSummary />
+          <Link prefetch={false} className="button secondary" href="/pricing">
+            Compare renewal options
+          </Link>
+        </section>
+        <Link className="account-footer-link" href="/refunds">
+          Refund policy
+        </Link>
+      </AccountPageFrame>
+    );
+  }
   const onboarding = await c.query(api.onboarding.status, {});
   if (!onboarding.legacy && (await searchParams)?.checkout === "complete")
     redirect("/onboarding/resume?checkout=complete");
@@ -50,22 +88,30 @@ export default async function Page({
     checkoutReturned: returned,
   });
   const overview = usageOverview(usage);
+  const tier = usage.wallet?.tier;
   return (
-    <main id="main" className="doc">
-      <Link prefetch={false} href={`/app/${org}`}>
-        Back to workspace
-      </Link>
-      <h1>Billing and allowances</h1>
-      <p>
-        Manage your credits and subscription. Existing balances and
-        subscriptions keep their recorded terms.
-      </p>
-      <section className="panel">
-        <h2>Current allowance</h2>
-        <p>
-          {usage.wallet?.tier ?? "No wallet yet"}. Provider status:{" "}
-          {auth.billing?.status ?? "No subscription"}.
-        </p>
+    <AccountPageFrame
+      title="Billing"
+      description="Manage your subscription and processing credits."
+      back={back}
+    >
+      {!onboarding.legacy && <CheckoutReturnMeasurement completed={returned} />}
+      <AccountSection
+        title="Credit balance"
+        icon={Gauge}
+        description={
+          tier
+            ? `${tier.charAt(0).toUpperCase()}${tier.slice(1)} plan`
+            : undefined
+        }
+        trailing={
+          <AccountStatus
+            tone={auth.billing?.status === "active" ? "positive" : "neutral"}
+          >
+            {auth.billing?.status.replaceAll("_", " ") ?? "No subscription"}
+          </AccountStatus>
+        }
+      >
         {overview && (
           <CreditMeter
             used={overview.activeSpent}
@@ -73,6 +119,7 @@ export default async function Page({
             available={overview.available}
           />
         )}
+        {!overview && <p>Allowance details are unavailable.</p>}
         {recovery && (
           <ErrorState
             title={recovery.title}
@@ -88,92 +135,122 @@ export default async function Page({
             }
           />
         )}
-        <p className="fine">
-          Reserved credits are holds, not final charges. Provider capacity is
-          separate from your personal balance.
-        </p>
-        <p>
-          Included credits expire at their entitlement period end. Purchased
-          credits are tracked separately and are not confiscated when renewal
-          stops. Credits are service units, not a cash balance.
-        </p>
-      </section>
-      <section className="panel">
-        <ProOfferSummary />
-        <p>
-          Credits cover quoted work. Cached results for posts you request are
-          included; full-catalog browsing is separate.
-        </p>
-        {offerReady && auth.personal && !hasSubscription && !recovery ? (
-          <ActionForm
-            action={startV1Checkout}
-            label={
-              catalogue.liveEnabled
-                ? "Continue to checkout"
-                : "Open sandbox checkout"
-            }
-          >
-            <input type="hidden" name="organizationId" value={org} />
-            <input type="hidden" name="tier" value="pro" />
-            <label htmlFor="checkout-renewal">
-              Renewal
-              <ChoiceSelect
-                id="checkout-renewal"
-                name="interval"
-                aria-label="Renewal"
-                defaultValue="monthly"
+        <Link prefetch={false} href={`/app/${org}/usage`}>
+          View credit activity
+        </Link>
+      </AccountSection>
+      {auth.billing?.subscriptionId && (
+        <AccountSection
+          title="Subscription"
+          icon={CreditCard}
+          description="Open the billing portal for provider records and payment details."
+        >
+          <div className="account-actions">
+            <ActionForm action={billingPortal} label="Open billing portal">
+              <input type="hidden" name="organizationId" value={org} />
+            </ActionForm>
+            {!recovery && (
+              <ActionForm
+                action={refreshBilling}
+                label="Reconcile provider status"
               >
-                <option value="weekly">Every seven days</option>
-                <option value="monthly">Monthly</option>
-                <option value="annual">Annual with monthly credits</option>
-              </ChoiceSelect>
-            </label>
-            {catalogue.billingCountryRequired && (
-              <label htmlFor="checkout-country">
-                Billing country
+                <input type="hidden" name="organizationId" value={org} />
+              </ActionForm>
+            )}
+          </div>
+          <details className="account-disclosure">
+            <summary>Cancel renewal</summary>
+            <p>Cancellation preserves access through the paid period.</p>
+            <ActionForm
+              action={cancelV1Subscription}
+              label="Cancel renewal at period end"
+            >
+              <input type="hidden" name="organizationId" value={org} />
+            </ActionForm>
+          </details>
+        </AccountSection>
+      )}
+      {!hasSubscription && (
+        <section className="account-section account-billing-offer">
+          <ProOfferSummary />
+          <p>
+            Credits cover quoted work. Cached results for posts you request are
+            included; full-catalog browsing is separate.
+          </p>
+          {offerReady && auth.personal && !recovery ? (
+            <ActionForm
+              action={startV1Checkout}
+              label={
+                catalogue.liveEnabled
+                  ? "Continue to checkout"
+                  : "Open sandbox checkout"
+              }
+            >
+              <input type="hidden" name="organizationId" value={org} />
+              <input type="hidden" name="tier" value="pro" />
+              <label htmlFor="checkout-renewal">
+                Renewal
                 <ChoiceSelect
-                  id="checkout-country"
-                  name="country"
-                  aria-label="Billing country"
-                  defaultValue="RO"
-                  required
+                  id="checkout-renewal"
+                  name="interval"
+                  aria-label="Renewal"
+                  defaultValue="monthly"
                 >
-                  {catalogue.countries.map((country) => (
-                    <option key={country} value={country}>
-                      {country === "RO" ? "Romania" : country}
-                    </option>
-                  ))}
+                  <option value="weekly">Every seven days</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="annual">Annual with monthly credits</option>
                 </ChoiceSelect>
               </label>
-            )}
-            <label className="checkbox-label">
-              <input type="checkbox" name="terms" required />I accept the
-              displayed <Link href="/terms">terms</Link>,{" "}
-              <Link href="/refunds">refund and credit expiry policy</Link>, and
-              applicable <Link href="/dpa">data processing terms</Link>
-            </label>
-            <label className="checkbox-label">
-              <input type="checkbox" name="immediate" />I request immediate
-              service, with statutory rights and the refund policy explained
-            </label>
+              {catalogue.billingCountryRequired && (
+                <label htmlFor="checkout-country">
+                  Billing country
+                  <ChoiceSelect
+                    id="checkout-country"
+                    name="country"
+                    aria-label="Billing country"
+                    defaultValue="RO"
+                    required
+                  >
+                    {catalogue.countries.map((country) => (
+                      <option key={country} value={country}>
+                        {country === "RO" ? "Romania" : country}
+                      </option>
+                    ))}
+                  </ChoiceSelect>
+                </label>
+              )}
+              <label className="checkbox-label">
+                <input type="checkbox" name="terms" required />
+                <span>
+                  I accept the displayed <Link href="/terms">terms</Link>,{" "}
+                  <Link href="/refunds">refund and credit expiry policy</Link>,
+                  and applicable <Link href="/dpa">data processing terms</Link>
+                </span>
+              </label>
+              <label className="checkbox-label">
+                <input type="checkbox" name="immediate" />
+                <span>
+                  I request immediate service, with statutory rights and the
+                  refund policy explained.
+                </span>
+              </label>
+              <p>
+                {catalogue.liveEnabled
+                  ? "The provider confirms your total, currency and applicable taxes before payment."
+                  : "Sandbox only. Use Stripe test details. No real charge is activated."}
+              </p>
+            </ActionForm>
+          ) : (
             <p>
-              {catalogue.liveEnabled
-                ? "The provider confirms your total, currency and applicable taxes before payment."
-                : "Sandbox only. Use Stripe test details. No real charge is activated."}
-            </p>
-          </ActionForm>
-        ) : (
-          <p>
-            {recovery
-              ? "Resolve the existing payment or allowance state above before opening another checkout."
-              : hasSubscription
-                ? "Your subscription controls are below."
+              {recovery
+                ? "Resolve the existing payment or allowance state above before opening another checkout."
                 : !auth.personal
                   ? "Subscribe from your personal account. Each workspace member uses their own Pro and credits."
-                  : "The new Pro offer is not open for checkout yet. Your existing balance remains available."}
-          </p>
-        )}
-      </section>
+                  : "The Pro offer is unavailable for checkout. Your existing balance remains available."}
+            </p>
+          )}
+        </section>
+      )}
       {!auth.personal && (
         <p>
           <Link prefetch={false} href="/app?view=billing&tier=pro">
@@ -181,31 +258,14 @@ export default async function Page({
           </Link>
         </p>
       )}
-      {auth.billing?.subscriptionId && (
-        <section className="panel">
-          <h2>Subscription controls</h2>
-          <p>
-            Cancellation preserves the paid period. Provider reconciliation
-            determines access, not the checkout return URL.
-          </p>
-          <ActionForm
-            action={cancelV1Subscription}
-            label="Cancel renewal at period end"
+      {auth.billing?.subscriptionId &&
+        !recovery &&
+        (catalogue.sandboxEnabled || catalogue.liveEnabled) && (
+          <AccountSection
+            title="Buy credits"
+            icon={Wallet}
+            description="Choose a one-time pack. Your subscription renewal stays separate."
           >
-            <input type="hidden" name="organizationId" value={org} />
-          </ActionForm>
-          <ActionForm action={billingPortal} label="Open billing portal">
-            <input type="hidden" name="organizationId" value={org} />
-          </ActionForm>
-          {!recovery && (
-            <ActionForm
-              action={refreshBilling}
-              label="Reconcile provider status"
-            >
-              <input type="hidden" name="organizationId" value={org} />
-            </ActionForm>
-          )}
-          {!recovery && (catalogue.sandboxEnabled || catalogue.liveEnabled) && (
             <ActionForm
               action={buyV1Credits}
               label={
@@ -246,33 +306,53 @@ export default async function Page({
                 </label>
               )}
               <label className="checkbox-label">
-                <input name="terms" type="checkbox" required />I accept the
-                displayed <Link href="/terms">terms</Link> and processing-credit
-                policy.
+                <input name="terms" type="checkbox" required />
+                <span>
+                  I accept the displayed <Link href="/terms">terms</Link> and
+                  processing-credit policy.
+                </span>
               </label>
               <label className="checkbox-label">
-                <input name="immediate" type="checkbox" />I request immediate
-                service, with statutory rights and the refund policy explained.
+                <input name="immediate" type="checkbox" />
+                <span>
+                  I request immediate service, with statutory rights and the
+                  refund policy explained.
+                </span>
               </label>
             </ActionForm>
-          )}
-          <ActionForm
-            action={requestV1Refund}
-            label="Request invoice-aware refund review"
-          >
+          </AccountSection>
+        )}
+      {auth.billing?.subscriptionId && (
+        <details className="account-disclosure">
+          <summary>Request a refund review</summary>
+          <p>
+            Weekly renewals can qualify for review. The form does not waive
+            statutory consumer rights.
+          </p>
+          <ActionForm action={requestV1Refund} label="Request refund review">
             <input type="hidden" name="organizationId" value={org} />
             <label>
               Your invoice ID
               <input name="invoiceId" required placeholder="in_..." />
             </label>
           </ActionForm>
-        </section>
+        </details>
       )}
-      <Link href="/refunds">Refund policy</Link>
-      <p>
-        Weekly renewals can qualify for review. The form does not waive
-        statutory consumer rights.
-      </p>
-    </main>
+      <details className="account-disclosure">
+        <summary>Credit expiry and reservations</summary>
+        <p>
+          Included credits expire at the end of their allowance period.
+          Purchased credits are tracked separately and stay available under
+          their terms when renewal stops.
+        </p>
+        <p>
+          Reservations hold credits until work settles. Credits are service
+          units separate from the provider balance.
+        </p>
+      </details>
+      <Link className="account-footer-link" href="/refunds">
+        Refund policy
+      </Link>
+    </AccountPageFrame>
   );
 }

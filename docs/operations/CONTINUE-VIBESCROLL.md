@@ -1,14 +1,20 @@
 # Continue VibeScroll without repeating known failures
 
-Mode: how-to. Updated October 29,2026, Europe/Berlin. Use the [current snapshot](CURRENT-STATE.md), [owner register](../strategy/OWNER-REQUEST-REGISTER.md) and [failure reference](FAILURES-AND-RECOVERY.md) together.
+Mode: how-to. Start with the [current state summary](CURRENT-STATE.md#start-here) and the relevant decisions in the [owner register](../strategy/OWNER-REQUEST-REGISTER.md). Use the [failure reference](FAILURES-AND-RECOVERY.md) to diagnose known symptoms.
 
 ## Establish the actual starting point
 
-1. Read `AGENTS.md`, current state and the requirements relevant to the task. Read the linked subsystem plan before changing it. Treat an older ADR's release count, budget or paused status as historical unless the current record explicitly retains it.
-2. Run `git status --short`, identify the checkout/branch and inspect uncommitted changes. Preserve other work. The known compatible checkout is `C:/Code/VibeScroller/.worktrees/link-cloud-compatible-20261025`; verify it rather than assuming the user-facing root is the repository.
+1. Read `AGENTS.md` and confirm the intended outcome, scope, and any deadline or required approval from the current request. Use older plans for context and the latest applicable owner decision for scope.
+2. Run `git status --short`, identify the checkout and branch and inspect uncommitted changes. Preserve other work. Verify the active compatible checkout at `C:/Code/VibeScroller/.worktrees/production-search-20261111`.
 3. Inspect the canonical health/version and actual current MCP profile/status only when needed for the task. Use supported connectors or browser-harness. Do not start an analysis as a connection test.
 4. Compare the live backend baseline, target commit and current private release/usage ledger before a hosted spending batch. Retain all historical holds and protected source identities. Never print credentials or raw environment lists.
 5. State the next user-visible checkpoint and its acceptance assertions. Continue useful work without asking again for routine release/build counts. Ask only when a required user step or actual authority is missing.
+
+## Prepare the design review
+
+1. Open the current app and choose the affected [core journeys](../design/APP-SCREEN-AND-LOADING-LEDGER.md#verify-the-core-journeys). Use the [private production snapshot](../local-development.md#review-the-redesign-with-a-private-snapshot) for realistic content and controlled fixtures for latency, failure, missing media, and access changes. Reuse the snapshot while it covers the task. When saved VibeScroll research informs a decision, link the exact post beside that decision.
+2. Compare alternatives on the same posts and tasks. Use generated boards for visual direction and a working preview for gestures, focus, loading, and recovery. Put a phone-accessible preview link or approved shareable captures first in the review. Keep private workspace content in authorized previews and artifacts.
+3. When work is parallel, agree which files each agent owns and give shared components one owner. Integrate the related changes before reviewing the complete journey. Fit the number of variants and screens to the time available and carry forward any unreviewed work.
 
 ## Diagnose a failed link in order
 
@@ -48,12 +54,12 @@ Mode: how-to. Updated October 29,2026, Europe/Berlin. Use the [current snapshot]
 
 ## Publish a compatible checkpoint
 
-1. Freeze the exact clean candidate and actual serving baseline. Verify required CI for that commit. Preserve fixed Basic/normal queue and unchanged billing/provider gates.
-2. Prepare deterministic backend manifests offline. Review actual schema/index/component/auth/cron impact under the existing compatible guard. Stop if the predicted work requires an unreviewed populated scan/backfill.
+1. At the start of a release task, check the audit with `node scripts/audit-dependencies.mjs`, the browser and viewport controls, and access to an authorized signed-in test session if the affected path needs one. Surface any missing session early. Continue with the checks that can run.
+2. Freeze the exact clean candidate and actual serving baseline. Verify required CI for that commit. Preserve fixed Basic/normal queue and unchanged billing/provider gates. For backend changes, prepare deterministic manifests offline. Review actual schema, index, component, auth and cron impact under the existing compatible guard. Stop if the predicted work requires an unreviewed populated scan or backfill.
 3. Reserve the bounded release batch in the private ledger. Use current usage/headroom and reporting lag. Do not re-ask for a delegated routine release count.
 4. Publish once through the current reviewed official transport. Preserve request/finish journals. Reconcile an ambiguous result before any retry.
 5. Build the website only when application/policy changes require it. Stage without canonical domain promotion, verify exact health and relevant routes, then promote the same build. Restore normal domain assignment.
-6. Verify canonical health, a focused real user path and MCP status. Update current state, requirement acceptance and dated receipt together. Keep detailed earlier failures intact.
+6. Verify canonical health and the affected user journeys. Record public and signed-in checks separately and check MCP status when the release affects it or the release plan calls for it. Update the current state, requirement acceptance and dated receipt together. Keep detailed earlier failures intact.
 
 Do not replay an old private release script merely because it once worked. Those scripts bind a particular commit, path, module manifest, ledger state, deadline and once-only operation. Inspect and prepare the next bounded package. A historical root approval is not reusable authority.
 
@@ -62,8 +68,12 @@ Do not replay an old private release script merely because it once worked. Those
 1. Remove/revoke only exact disposable test policy/key/runtime resources after outcome reconciliation. Preserve good results, valid shared caches, other workers and unrelated credentials. Verify owned resolved paths before cleanup.
 2. Check the Git diff and push the reviewed change. Update the existing PR attachment if needed; do not create a duplicate release chat or message unrelated chats without authorization.
 3. Close owned unneeded browser tabs/servers. Preserve the user's tabs, sessions and result access.
-4. Update [current state](CURRENT-STATE.md) in place. Record exact code, tests, deployment, actual assertions, unknowns and next checkpoint. Mark requirement rows complete only to their demonstrated acceptance level.
-5. Give the owner a concise checkpoint: what they can use now, what is still unreliable/incomplete, what you will do next and any exact human action needed. Avoid another long recitation of implementation details.
+4. Update the [current state summary](CURRENT-STATE.md#start-here) if the live baseline, approved direction, or open verification changed. Link the evidence and keep prior receipts. Record new owner decisions in the register and mark acceptance only to the level verified.
+5. Close with four short lines or bullets when there is a handoff.
+   - **Changed** — the user-visible result or decision.
+   - **Available** — the preview, branch, staging URL, or live URL and the revision when relevant.
+   - **Verified** — the actual checks, environment, and any simulated inputs.
+   - **Pending** — the remaining check and the exact person or service needed, if any.
 
 ## Keep tooling output safe and useful
 
@@ -77,4 +87,4 @@ Use the installed project tools instead of reinstalling caption dependencies. Pr
 
 ## Library layout after shared CSS changes
 
-Run the read-only browser-harness regression against a production-build preview: `python scripts/check-library-layout.py --output outputs/library-layout-check.json`. It checks desktop1440px and mobile390px, Tree/Folders and both CSS themes. Wrappers must contain the44px controls, labels must have usable nonzero width, and the page must fit its viewport. The current production regression failed these assertions even though all topic text existed. Use a hydrated production preview; SSR markup alone is not interaction acceptance. An optional canonical check uses `--url https://scroll.companynerve.com/demo?view=library`. The script only opens/closes its own read-only demo tab.
+Run the read-only browser-harness regression against a hydrated production-build preview with `python scripts/check-library-layout.py --output outputs/library-layout-check.json`. It checks Tree and Folders at 1440 and 390 px in both themes. Wrappers must contain the 44 px controls, labels must have usable width, and the page must fit its viewport. A previous run exposed these failures even though SSR rendered the topic text. An optional canonical check uses `--url https://scroll.companynerve.com/demo?view=library`. The script opens and closes its own read-only demo tab.

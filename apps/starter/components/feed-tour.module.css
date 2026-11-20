@@ -17,6 +17,13 @@
   background: var(--muted);
   color: var(--ink);
 }
+.discoveryTrigger {
+  width: auto;
+  min-height: 44px;
+  gap: 6px;
+  padding-inline: 9px;
+  font-size: 0.84rem;
+}
 .dialog {
   position: fixed;
   inset: 0;

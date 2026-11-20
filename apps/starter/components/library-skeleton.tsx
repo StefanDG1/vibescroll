@@ -5,10 +5,11 @@ export function LibrarySkeleton({
   kind = "insights",
   rows = 5,
 }: {
-  kind?: "topics" | "insights" | "proposals";
+  kind?: "topics" | "insights" | "proposals" | "posts" | "page";
   rows?: number;
 }) {
   const animate = useInterfaceMotion();
+  const postRow = kind === "posts";
   return (
     <output
       className={`library-skeleton library-skeleton-${kind}`}
@@ -19,7 +20,11 @@ export function LibrarySkeleton({
           ? "Loading topics"
           : kind === "proposals"
             ? "Checking proposals"
-            : "Loading insights"}
+            : kind === "posts"
+              ? "Loading posts"
+              : kind === "page"
+                ? "Loading page"
+                : "Loading insights"}
       </span>
       <SkeletonTheme
         baseColor="var(--line)"
@@ -30,10 +35,15 @@ export function LibrarySkeleton({
         <span aria-hidden="true">
           {Array.from({ length: rows }, (_, i) => (
             <span className="library-skeleton-row" key={i}>
-              <Skeleton width={36} height={36} borderRadius={10} />
+              <Skeleton
+                width={postRow ? "100%" : 36}
+                height={postRow ? 74 : 36}
+                borderRadius={postRow ? 7 : 10}
+              />
               <span>
                 <Skeleton width="78%" />
                 <Skeleton width="52%" height={11} />
+                {postRow && <Skeleton width="68%" height={11} />}
               </span>
             </span>
           ))}

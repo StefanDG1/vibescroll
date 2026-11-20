@@ -357,7 +357,7 @@ async function quarantineSource(ctx: MutationCtx, source: Doc<"sources">) {
     personalAnalysis: undefined,
     workCloudSaveIntent: undefined,
     repositorySelection: undefined,
-    searchable: source.title,
+    searchable: undefined,
     coverage: "metadata_only",
     updatedAt: Math.max(Date.now(), source.updatedAt + 1),
   });

@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, RefreshCw } from "lucide-react";
-import { ActionForm } from "./action-form";
+import { ActionForm, type FormState } from "./action-form";
 import { SearchChoices } from "./search-choices";
 import { startOnboardingCheckout } from "@/app/onboarding/actions";
 import { proOffer } from "../../../packages/billing/pro-offer";
 import styles from "./onboarding.module.css";
+import { track, trackCheckoutOpened } from "@/lib/analytics";
 export function OnboardingPayment({
   organizationId,
   countries,
@@ -25,6 +26,34 @@ export function OnboardingPayment({
 }) {
   const [interval, setPlanInterval] = useState<string>(initialInterval);
   const router = useRouter();
+  async function startPayment(
+    state: FormState,
+    form: FormData,
+  ): Promise<FormState> {
+    const selected = String(form.get("interval"));
+    track("checkout_progress", { stage: "requested", interval: selected });
+    try {
+      const result = await startOnboardingCheckout(state, form);
+      if (result.checkoutUrl) {
+        const destination = new URL(result.checkoutUrl);
+        if (
+          destination.protocol !== "https:" ||
+          destination.hostname !== "checkout.stripe.com"
+        )
+          throw new Error("Unexpected checkout destination");
+        trackCheckoutOpened(selected);
+        window.location.assign(destination.href);
+        return { message: "Opening secure checkout…" };
+      }
+      track("checkout_progress", { stage: "failed", interval: selected });
+      return { error: result.error };
+    } catch {
+      track("checkout_progress", { stage: "failed", interval: selected });
+      return {
+        error: "Checkout could not open. Your setup is saved. Try again.",
+      };
+    }
+  }
   useEffect(() => {
     if (!returned) return;
     let ticks = 0;
@@ -102,10 +131,7 @@ export function OnboardingPayment({
           </Link>
         </div>
       ) : ready ? (
-        <ActionForm
-          action={startOnboardingCheckout}
-          label="Continue to secure checkout"
-        >
+        <ActionForm action={startPayment} label="Continue to secure checkout">
           <input type="hidden" name="organizationId" value={organizationId} />
           <input type="hidden" name="tier" value="pro" />
           <input type="hidden" name="interval" value={interval} />

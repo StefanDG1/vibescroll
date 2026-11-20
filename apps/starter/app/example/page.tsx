@@ -1,7 +1,7 @@
 import { ProductMedia } from "@/components/product-media";
 import Link from "next/link";
 import Image from "next/image";
-import { PublicPage } from "@/components/site";
+import { PublicIntro, PublicPage } from "@/components/site";
 export const metadata = {
   title: "Inspect a source and a project decision",
   description:
@@ -11,11 +11,12 @@ export const metadata = {
 export default function Example() {
   return (
     <PublicPage>
-      <h1>One source. A decision you can inspect.</h1>
-      <p className="demo-label">
-        Synthetic example. No real source, repository, processing or measured
-        benefit.
-      </p>
+      <PublicIntro title="From a saved source to a project decision">
+        <p>
+          Read the source passage, then see how the same idea fits three
+          fictional projects.
+        </p>
+      </PublicIntro>
       <div className="example-trail">
         <section className="example-evidence" aria-labelledby="source-title">
           <h2 id="source-title">Show a useful example before setup</h2>
@@ -23,6 +24,7 @@ export default function Example() {
             A fictional product walkthrough suggests showing an editable example
             before asking a new user to connect a project.
           </p>
+          <p className="public-meta">Synthetic example</p>
           <h3>Insight</h3>
           <p>
             Let someone inspect a result before requesting optional

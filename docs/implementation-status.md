@@ -1,5 +1,43 @@
 # Implementation status
 
+## November 20 onboarding and analytics
+
+The work-stage follow-up removed the project name input, recap line and guest preview name. Existing-project and team choices progressed at 390 and 1440 pixels in staging and production. Exact CI passed, and the same build is live. [Follow-up receipt](operations/evidence/launch-20261120-onboarding-work-stage.json)
+
+The live website offers a real retained example from the landing page. The four-question quiz remains for personalization. The example and personal link entry have separate screens. An account step explains how the choice carries forward. Paid own-link setup opens the saved post after the explicit save action. The consent update, checkout instrumentation and PostHog dashboard distinguish observed browser journeys from verified billing.
+
+The exact GitHub checks passed. Chrome at 390 and 1440 pixels verified both guest routes, evidence, analytics allow/reject/withdrawal, WorkOS sign-up handoff and the signed-in Home smoke check. The initial Windows full run hit three 5-second timeouts in pre-existing service and billing tests. The isolated retry passed 82 cases with a 15-second local timeout. CI used the repository's original settings. No real payment or new hosted analysis was made. [Release receipt](operations/evidence/launch-20261120-onboarding-analytics.json)
+
+## November 18 Home and Work reliability
+
+The local candidate based on `11a84fb` keeps the last loaded Posts and Work views visible while refreshing. Temporary request and live-update failures preserve available content. Confirmed loss of workspace access clears protected data. Home reactions have bounded requests and reuse the same write key after a connection failure. Home and the full post use the same AI-first proposal composer. Outgoing chat messages show their send status and preserve the original request for recovery.
+
+On November 18, the Windows private snapshot at 1280 and 390 pixels passed local browser checks for warm navigation, a simulated 503 with 30 Posts rows retained, immediate like feedback with Save available, a scoped 403, the AI composer, and one confirmed chat message after a simulated write. Exact release CI passed both builds, lint, types, 1,778 core tests with 11 skipped, 91 auth tests, and 194 public-knowledge and UI tests. Both apps use Next.js 16.4.6. The dependency audit passed with [local patches for both affected Picomatch versions](adr/239-bounded-picomatch-repetition.md). The website is live with 12 staged and 12 canonical browser checks passed. Signed-in production browser verification and hosted AI confirmation are pending. [Release receipt](operations/evidence/launch-20261118-home-reliability.json).
+
+## November 16 R178 website redesign
+
+The local candidate has one Browse Home with no title bar or layout picker. The desktop rail retains the brand mark. The phone layout scrolls through the source, insights, project choices, and proposals. The post reader puts source evidence and advanced settings after those sections. The same site components render the private snapshot. Save, filter state, return focus and phone gestures were tested with the actual snapshot and isolated browser sessions.
+
+The website review scores 69 observed screen families across the signed-in app, onboarding, public website and marketing. The rated averages are 8.00–8.33. Verification includes lint, type checks, the repository tests with its pinned caption dependencies, and production builds for both sites. Provider-hosted and populated authorization-dependent states remain outside local acceptance. [November 16 scorecard and navigation map](design/APP-UI-REVIEW-2026-11-16.md)
+
+## November 14 R176 Home refinement
+
+Verified the scroll-through Home views with the production snapshot at 390 × 844 and 1440 × 960. Emulated touch exercised review swipe and Undo, and scrolling into full-screen insights. The compact project list exposed all six projects once and opened the proposal composer. Typecheck, lint, and the 192 public-knowledge and UI tests passed. The [UI scorecard](design/HOME-UI-SCORECARD.md) records the updated rubric and design limitations.
+
+## November 13 R175 local snapshot preview
+
+The selected production workspace was copied from the signed-in browser using scoped reads into private per-user storage outside Git. The localhost preview served 236 posts with full detail, 3,646 retained JPEGs, six projects, five saved proposals, six runs and 30 activity entries. Chrome at 390 and 1440 pixels verified Home, Posts, a full post, Work and Account. All three Home views rendered real locally stored thumbnails with production, Convex, WorkOS and analytics hosts blocked. The local draft save, duplicate retry and reopen passed, and the verification draft was removed. See [local development](local-development.md#review-the-redesign-with-a-private-snapshot) for start and refresh commands.
+
+## November 13 R173 website redesign checkpoint
+
+Local Windows candidate based on `48c37b5`. All three Home views and the signed-in core share the revised shell, insight rail and project/proposal entry. The [review](design/WEBSITE-REDESIGN-REVIEW.md) records the comparison, scope and remaining route coverage. Chrome emulation at 390 × 844 and 1440 × 960 exercised visible controls and layout. Emulated touch input verified both review directions, Browse opening, and full-screen settling in both directions. The auth suite passed 82 and the shared UI suite passed 192. Staging with signed-in data, remaining standalone screens and production verification are pending.
+
+## November 11 R168 workspace search production acceptance
+
+The Library and MCP use Convex text and vector indexes, exact reference ranking, confirmed project context, and separate retrieval for compound requests. The migration visited 320 source records and completed vector indexing in all five active workspaces. The final deploy removed two obsolete indexes, cleanup cleared 2,191 obsolete derived values, and the live MCP rejected the retired mode. Live Library and MCP returned Componentry first. Live compound MCP search returned Space UI first with distinct progress feedback evidence. A signed-in ChatGPT chat returned two saved references from its compound request.
+
+The staged website used `31d2a8613a640fa5c98ccba35db309579dc68455` and was promoted without a rebuild. The final Convex deploy used `2918a4e5c431435fc895e9f17100adc1710e9dd8` on November 11 at 21:50 Europe/Berlin. The changed retrieval checks passed. The Linux CI-equivalent run passed 1,773 main tests with 11 skips. The schema assertion still expected 106 tables and failed on the approved addition. The final commit updated that test only. Its targeted rerun, remaining CI checks, both builds and audit passed in the same pinned Ubuntu environment. The hosted GitHub runs had queued during release verification. See the [production receipt](operations/evidence/launch-20261111-workspace-hybrid-search.json) for the versions and check scope.
+
 ## November11: X link submission and four saved analyses accepted
 
 R161/R162 are live on website `455eb3f` / backend `35c8363`. Ordinary ChatGPT link submission uses gallery-dl, FxTwitter fallback and server preparation before the existing native Assistant. Paid non-pilot setup, Events and retained execution are live under current Pro/risk/grant authority. The full isolated paid flow clears every personal-pilot subject and verifies that Pro revocation stops a claimed task. All four owner posts are Ready with exact full captions, both direct video attachments,16 retained JPEGs and16 cited insights; app/MCP reads and native replies pass. No manual monitor nudge or foreground analysis was used. Each successful preparation charged1 app credit; incomplete attempts charged0. Unknown provider costs remain held.

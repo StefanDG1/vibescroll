@@ -2,21 +2,22 @@ import {
   publicCitationUrl,
   type PublicPayload,
 } from "@/lib/public-knowledge-display";
-export function PublicEditionContent({ edition }: { edition: PublicPayload }) {
+export function PublicEditionContent({
+  edition,
+  titleVisible = true,
+}: {
+  edition: PublicPayload;
+  titleVisible?: boolean;
+}) {
   const source = publicCitationUrl(edition.sourceUrl);
   return (
     <article className="public-edition-content">
-      <h2>{edition.title}</h2>
-      <p>
-        AI-generated analysis may contain errors. Review the source references
-        before relying on it. The publisher is responsible for reviewing this
-        edition.
-      </p>
-      <p>{edition.summary}</p>
-      <p>
+      {titleVisible && <h2>{edition.title}</h2>}
+      <p className="public-meta">
         Published by {edition.publisher}. Coverage:{" "}
         {edition.coverage.replaceAll("_", " ")}. Language: {edition.language}.
       </p>
+      <p className="public-edition-summary">{edition.summary}</p>
       {source && (
         <p>
           <a href={source} rel="noreferrer">
@@ -24,10 +25,18 @@ export function PublicEditionContent({ edition }: { edition: PublicPayload }) {
           </a>
         </p>
       )}
+      <p className="public-edition-note">
+        AI-generated analysis may contain errors. Review the source references
+        before relying on it. The publisher is responsible for reviewing this
+        edition.
+      </p>
       <p className="fine">
         A source claim and its interpretation are distinct. References help you
         inspect the claim; they do not establish that the advice is true.
       </p>
+      {!titleVisible && edition.insights.length > 0 && (
+        <h2>Insights and evidence</h2>
+      )}
       {edition.insights.map((insight) => (
         <section className="example-evidence" key={insight.id}>
           <h3>{insight.title}</h3>

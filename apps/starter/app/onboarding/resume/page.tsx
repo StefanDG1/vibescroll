@@ -4,7 +4,11 @@ import { FolderGit2, Check, ArrowRight } from "lucide-react";
 import { backend, api } from "@/lib/backend";
 import { signedOnboardingDraft } from "@/lib/onboarding-server";
 import { Onboarding, OnboardingShell } from "@/components/onboarding";
-import { OnboardingMilestone } from "@/components/onboarding-milestone";
+import {
+  CheckoutReturnMeasurement,
+  OnboardingMilestone,
+  OnboardingStageView,
+} from "@/components/onboarding-milestone";
 import { OnboardingPayment } from "@/components/onboarding-payment";
 import { SearchChoices } from "@/components/search-choices";
 import { OnboardingAssistant } from "@/components/onboarding-assistant";
@@ -15,6 +19,8 @@ import {
   refreshOnboardingRepositories,
 } from "../actions";
 import { ActionForm } from "@/components/action-form";
+import { AnalyticsLogout } from "@/components/analytics-logout";
+import { OnboardingOwnLink } from "@/components/onboarding-own-link";
 import { logout } from "@/app/actions";
 import styles from "@/components/onboarding.module.css";
 export const metadata = {
@@ -75,37 +81,53 @@ export default async function Page({
   )
     return (
       <OnboardingShell authenticated>
+        <OnboardingStageView step="assistant" />
+        <OnboardingMilestone milestone="account_ready" />
         <OnboardingAssistant initialReady={assistant} paid={false} />
       </OnboardingShell>
     );
-  if (status.paid)
+  if (status.paid) {
+    const ownLink = !!status.progress?.pendingUrl;
     return (
       <OnboardingShell step={3} authenticated>
+        <OnboardingStageView step="ready" />
+        {query.checkout === "complete" && (
+          <CheckoutReturnMeasurement completed />
+        )}
         <OnboardingMilestone milestone="pro_verified" />
         <section className={styles.stage}>
           <span className={styles.status}>
             <Check size={20} /> Pro is ready
           </span>
-          <h1>You're ready.</h1>
+          <h1>{ownLink ? "Continue with your link." : "You're ready."}</h1>
           <p className={styles.subtle}>
-            Your selected post is waiting on Home.
+            {ownLink
+              ? "Save the link you brought. If fresh analysis is needed, you’ll see a credit estimate before it starts."
+              : status.progress?.selectedFamilyId
+                ? "Open Home to see the example you kept."
+                : "Open Home to save a post and explore its insights."}
           </p>
-          {status.progress?.assistantChoice !== "later" && (
+          {ownLink && <OnboardingOwnLink />}
+          {!ownLink && status.progress?.assistantChoice !== "later" && (
             <OnboardingAssistant compact initialReady={assistant} paid />
           )}
           <form action={finishOnboarding}>
-            <button className={styles.primary}>
-              Open Home <ArrowRight size={16} />
+            <button className={ownLink ? styles.secondary : styles.primary}>
+              {ownLink ? "Open Home instead" : "Open Home"}{" "}
+              <ArrowRight size={16} />
             </button>
           </form>
-          <form action={continueOnboardingProject}>
-            <button className={styles.secondary}>
-              Apply this post to a project <ArrowRight size={16} />
-            </button>
-          </form>
+          {!ownLink && status.progress?.selectedFamilyId && (
+            <form action={continueOnboardingProject}>
+              <button className={styles.secondary}>
+                Apply this post to a project <ArrowRight size={16} />
+              </button>
+            </form>
+          )}
         </section>
       </OnboardingShell>
     );
+  }
   if (
     status.progress?.stage === "github" ||
     query.setup === "github" ||
@@ -122,6 +144,7 @@ export default async function Page({
     });
     return (
       <OnboardingShell step={3} authenticated>
+        <OnboardingStageView step="github" />
         <OnboardingMilestone milestone="account_ready" />
         {query.github === "connected" && (
           <OnboardingMilestone milestone="github_connected" />
@@ -209,6 +232,8 @@ export default async function Page({
     <OnboardingShell step={3} authenticated>
       <OnboardingMilestone milestone="account_ready" />
       <OnboardingMilestone milestone="paywall_viewed" />
+      <OnboardingStageView step="paywall" />
+      {query.checkout === "complete" && <CheckoutReturnMeasurement completed />}
       <section className={styles.stage}>
         <OnboardingPayment
           initialInterval={status.progress?.interval}
@@ -238,9 +263,9 @@ export default async function Page({
           >
             Assistant setup
           </Link>
-          <form action={logout}>
+          <AnalyticsLogout action={logout}>
             <button className={styles.secondary}>Sign out</button>
-          </form>
+          </AnalyticsLogout>
         </div>
       </section>
     </OnboardingShell>

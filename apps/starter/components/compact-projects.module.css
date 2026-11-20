@@ -1,0 +1,137 @@
+.caption {
+  color: var(--subtle);
+  font-size: 0.8125rem;
+  margin: 0 0 4px;
+}
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: 4px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tile:is(a, button, span) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  text-align: start;
+  text-decoration: none;
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+button.tile:enabled,
+a.tile,
+.disclosure summary {
+  cursor: pointer;
+}
+button.tile:enabled:hover,
+a.tile:hover,
+.disclosure summary:hover {
+  background: var(--soft);
+}
+button.tile:disabled {
+  opacity: 0.62;
+}
+.tile > span:last-child {
+  overflow-wrap: anywhere;
+}
+.mark {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--soft);
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+}
+.mark img {
+  display: block;
+  border-radius: 4px;
+}
+.disclosure {
+  margin-top: 4px;
+}
+.disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  width: fit-content;
+  list-style: none;
+  font-size: 0.875rem;
+  color: var(--subtle);
+}
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.disclosure[open] > summary > svg {
+  rotate: 45deg;
+}
+
+.assistantIntro {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--teal) 8%, var(--panel));
+  border-radius: 12px;
+}
+.assistantMark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--teal);
+}
+.assistantIntro h3,
+.assistantIntro p {
+  margin: 0;
+}
+.assistantIntro h3 {
+  font-size: 1rem;
+}
+.assistantIntro p {
+  margin-top: 4px;
+  color: var(--subtle);
+}
+.assistantForm {
+  display: grid;
+  gap: 8px;
+}
+.assistantForm label {
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+.assistantForm small {
+  color: var(--subtle);
+  font-weight: 450;
+}
+.assistantForm textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  resize: vertical;
+}
+.assistantForm button {
+  justify-self: start;
+  min-height: 42px;
+}

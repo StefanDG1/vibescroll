@@ -9,13 +9,13 @@ it("keeps detail and settings routes associated with their stable bottom destina
     "proposal",
     "improvements",
     "runs",
+    "inbox",
   ])
     expect(mobileNavigationGroup(view)).toBe("projects");
   for (const view of [
     "menu",
     "privacy",
     "usage",
-    "inbox",
     "connections",
     "runners",
     "billing",

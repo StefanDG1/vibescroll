@@ -25,6 +25,8 @@ import {
   Workflow,
   Layers,
   Bookmark,
+  Link2,
+  Sparkles,
 } from "lucide-react";
 import { AppTheme } from "./app-theme";
 import { OnboardingGraphic } from "./onboarding-graphic";
@@ -37,6 +39,7 @@ import {
 } from "@/app/onboarding/actions";
 import {
   onboardingDraft,
+  onboardingSourceUrl,
   onboardingLocalState,
   onboardingStep,
   onboardingInterests,
@@ -54,8 +57,9 @@ import {
   workChoices,
   obstacleChoices,
 } from "../../../packages/onboarding/flow";
-import { track } from "@/lib/analytics";
+import { track, useAnalyticsView } from "@/lib/analytics";
 import styles from "./onboarding.module.css";
+import "../app/public-consent.css";
 
 const icons = {
   code: Code2,
@@ -97,7 +101,7 @@ export function OnboardingShell({
   authenticated?: boolean;
 }) {
   return (
-    <main id="main" className={styles.shell}>
+    <main id="main" className={styles.shell} data-onboarding-shell>
       <AppTheme />
       <header className={styles.top}>
         <Link href="/" className={styles.brand}>
@@ -119,10 +123,12 @@ export function Onboarding({
   authenticated = false,
   initialDraft,
   notice,
+  exampleFirst = false,
 }: {
   authenticated?: boolean;
   initialDraft?: OnboardingDraft;
   notice?: string;
+  exampleFirst?: boolean;
 }) {
   const stored = useSyncExternalStore(subscribe, readStorage, () => unhydrated);
   const restored = useMemo(() => restoreOnboarding(stored), [stored]);
@@ -135,10 +141,11 @@ export function Onboarding({
   }>();
   const step =
     navigation?.step ??
-    restored?.step ??
+    (exampleFirst ? "feed" : restored?.step) ??
     (initialDraft ? "summary" : "welcome");
   const history = navigation?.history ?? restored?.history ?? emptyHistory;
   const [topicQuery, setTopicQuery] = useState("");
+  const [link, setLink] = useState<string>();
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -240,8 +247,14 @@ export function Onboarding({
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "instant" });
-    track("onboarding_step_viewed", { step });
   }, [step]);
+  useAnalyticsView("onboarding_step_viewed", { step });
+  function continueFromPost(next: "example" | "own_link" | "skip") {
+    track("onboarding_choice", { step: "post", choice: next });
+    if (next === "skip")
+      patch({ selectedFamilyId: undefined, pendingUrl: undefined });
+    go(firstMissingQuestion(draft) ?? "account");
+  }
   function continueSetup(value = draft) {
     const parsed = onboardingDraft.safeParse(value);
     if (!parsed.success) {
@@ -258,6 +271,10 @@ export function Onboarding({
         setError(
           "Setup could not continue. Your answers are kept; please try again.",
         );
+        track("onboarding_failure", {
+          step: "account",
+          reason: "handoff_failed",
+        });
       }
     });
   }
@@ -274,7 +291,10 @@ export function Onboarding({
       : step === "work"
         ? draft.workStage
         : draft.obstacle;
-  const nextQuiz = () =>
+  const nextQuiz = () => {
+    track("onboarding_step_completed", { step });
+    if (step === "obstacle")
+      track("onboarding_milestone", { milestone: "quiz_completed" });
     go(
       step === "goal"
         ? "interests"
@@ -282,8 +302,11 @@ export function Onboarding({
           ? "work"
           : step === "work"
             ? "obstacle"
-            : "summary",
+            : draft.selectedFamilyId || draft.pendingUrl
+              ? "account"
+              : "summary",
     );
+  };
   const filteredTopics = onboardingInterests.filter((topic) =>
     `${topic.label} ${topic.description}`
       .toLowerCase()
@@ -303,12 +326,14 @@ export function Onboarding({
       : step === "interests"
         ? "Choose up to three topics, or explore something new."
         : step === "work"
-          ? "This helps us suggest a useful next step. No GitHub account needed yet."
+          ? "This helps us suggest a useful next step. You can connect GitHub later if you want to work with a repository."
           : "We will show you the part of VibeScroll that helps with this.";
   return (
     <OnboardingShell authenticated={authenticated}>
       {notice && <output className={styles.notice}>{notice}</output>}
-      {error && <ErrorState title="Let's try that again" detail={error} />}
+      {error && step !== "own_link" && (
+        <ErrorState title="Let's try that again" detail={error} />
+      )}
       <div
         key={step}
         className={styles.journey}
@@ -319,22 +344,21 @@ export function Onboarding({
           <section className={styles.welcome}>
             <div>
               <h1 ref={heading} tabIndex={-1}>
-                Make your forgotten posts useful again.
+                Put forgotten saves to work.
               </h1>
-              <p>You saved it because it could help. Then it got buried.</p>
               <p className={styles.subtle}>
-                Rediscover the useful ideas and put them to work in the things
-                you are building.
+                Find useful ideas in saved posts. See where each idea came from
+                and turn it into a proposal for your project.
               </p>
               <button
                 type="button"
                 className={styles.primary}
                 onClick={() => go("goal")}
               >
-                Get started <ArrowRight size={17} />
+                Get started <ArrowRight size={17} aria-hidden="true" />
               </button>
               <p className={styles.footnote}>
-                Import earlier saves or start with a link.{" "}
+                Answer four quick questions to find your example.{" "}
                 <Link href="/pricing">See Pro plans</Link>
               </p>
             </div>
@@ -492,21 +516,6 @@ export function Onboarding({
                 })}
               </fieldset>
             )}
-            {step === "work" &&
-              ["existing", "team"].includes(draft.workStage ?? "") && (
-                <label className={styles.field}>
-                  Project name or description{" "}
-                  <span className={styles.subtle}>optional</span>
-                  <input
-                    maxLength={160}
-                    value={draft.projectDescription ?? ""}
-                    onChange={(e) =>
-                      patch({ projectDescription: e.target.value })
-                    }
-                    placeholder="What are you building?"
-                  />
-                </label>
-              )}
             <footer className={styles.quizFooter}>
               <button
                 type="button"
@@ -545,7 +554,6 @@ export function Onboarding({
                 ))}
                 {draft.customTopic && <span>{draft.customTopic}</span>}
               </div>
-              {draft.projectDescription && <p>{draft.projectDescription}</p>}
             </div>
             <p className={styles.subtle}>
               Bring in a post, find its useful ideas and see how they could help
@@ -564,33 +572,165 @@ export function Onboarding({
                 className={styles.primary}
                 onClick={() => go(firstMissingQuestion(draft) ?? "feed")}
               >
-                Show me how it works <ArrowRight size={17} />
+                See my example <ArrowRight size={17} />
               </button>
             </div>
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() => go("own_link")}
+            >
+              Use my own link
+            </button>
           </section>
         )}
         {step === "feed" && (
-          <>
-            <h1 ref={heading} tabIndex={-1} className={styles.visuallyHidden}>
-              Find the useful idea
-            </h1>
+          <section className={styles.exampleStep}>
+            <header className={styles.exampleHeading}>
+              <button type="button" className={styles.secondary} onClick={back}>
+                <ArrowLeft size={17} aria-hidden="true" /> Back
+              </button>
+              <h1 ref={heading} tabIndex={-1}>
+                See what’s worth keeping.
+              </h1>
+              <p className={styles.subtle}>
+                Open an insight to see what you could use and where it came
+                from.
+              </p>
+            </header>
             <OnboardingStarterFeed
               draft={draft}
-              onSelected={(id) => patch({ selectedFamilyId: id })}
-              onContinue={() => go("import_benefit")}
-              onBack={() => go("summary")}
-              onLink={(url) => {
-                const parsed = onboardingDraft.safeParse({
-                  ...draft,
-                  pendingUrl: url,
-                });
-                if (parsed.success) {
-                  patch({ pendingUrl: parsed.data.pendingUrl });
-                  go("import_benefit");
-                } else setError("Use a supported public Reel or TikTok link.");
+              onContinue={(id) => {
+                patch({ selectedFamilyId: id, pendingUrl: undefined });
+                continueFromPost("example");
               }}
+              onSkip={() => continueFromPost("skip")}
             />
-          </>
+          </section>
+        )}
+        {step === "own_link" && (
+          <section className={styles.quiz}>
+            <button type="button" className={styles.secondary} onClick={back}>
+              <ArrowLeft size={17} aria-hidden="true" /> Back
+            </button>
+            <h1 ref={heading} tabIndex={-1}>
+              Which post would you like to keep?
+            </h1>
+            <p className={styles.subtle}>
+              Paste a public post you’re allowed to save. We’ll keep the link
+              through setup.
+            </p>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                const parsed = onboardingSourceUrl.safeParse(
+                  (link ?? draft.pendingUrl ?? "").trim(),
+                );
+                if (!parsed.success) {
+                  setError(
+                    "Use a supported public Instagram Reel, TikTok or X post link.",
+                  );
+                  track("onboarding_failure", {
+                    step: "own_link",
+                    reason: "invalid_link",
+                  });
+                  return;
+                }
+                patch({ pendingUrl: parsed.data, selectedFamilyId: undefined });
+                continueFromPost("own_link");
+              }}
+            >
+              <label className={styles.field}>
+                <span>Public post link</span>
+                <input
+                  type="url"
+                  required
+                  inputMode="url"
+                  maxLength={2048}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "onboarding-link-error" : undefined}
+                  value={link ?? draft.pendingUrl ?? ""}
+                  onChange={(event) => {
+                    setLink(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="https://…"
+                />
+              </label>
+              {error && (
+                <p id="onboarding-link-error" role="alert" className="error">
+                  {error}
+                </p>
+              )}
+              <footer className={styles.quizFooter}>
+                <button type="submit" className={styles.primary}>
+                  Keep this link <ArrowRight size={17} aria-hidden="true" />
+                </button>
+              </footer>
+            </form>
+          </section>
+        )}
+        {step === "account" && (
+          <section className={styles.quiz}>
+            <button type="button" className={styles.secondary} onClick={back}>
+              <ArrowLeft size={17} aria-hidden="true" /> Back
+            </button>
+            <h1 ref={heading} tabIndex={-1}>
+              {authenticated ? "Keep your setup." : "Keep what you’ve started."}
+            </h1>
+            <p className={styles.subtle}>
+              {authenticated
+                ? "Save your choices and pick up from here next time."
+                : "Create a free account to keep your choices and pick up from here next time."}
+            </p>
+            <ul className={styles.accountBenefits}>
+              <li>
+                <Bookmark size={20} aria-hidden="true" />{" "}
+                {draft.pendingUrl
+                  ? "Continue with the link you pasted."
+                  : draft.selectedFamilyId
+                    ? "Keep the example you chose."
+                    : "Remember what you want to explore."}
+              </li>
+              <li>
+                <Link2 size={20} aria-hidden="true" /> Check where each insight
+                came from.
+              </li>
+              <li>
+                <Sparkles size={20} aria-hidden="true" /> Turn useful ideas into
+                proposals for your projects with Pro.
+              </li>
+            </ul>
+            <p className={styles.footnote}>
+              Creating an account is free. You can review Pro plans next.
+            </p>
+            <footer className={styles.quizFooter}>
+              <button
+                type="button"
+                className={styles.primary}
+                disabled={pending}
+                onClick={() => {
+                  const missing = firstMissingQuestion(draft);
+                  if (missing) {
+                    go(missing);
+                    return;
+                  }
+                  track("onboarding_choice", {
+                    step: "account",
+                    choice: authenticated ? "continue" : "signup",
+                  });
+                  continueSetup();
+                }}
+              >
+                {pending
+                  ? "Continuing…"
+                  : authenticated
+                    ? "Save and continue"
+                    : "Create my account"}{" "}
+                <ArrowRight size={17} aria-hidden="true" />
+              </button>
+            </footer>
+          </section>
         )}
         {step === "import_benefit" && (
           <section className={styles.stage}>
@@ -610,8 +750,7 @@ export function Onboarding({
               <button
                 type="button"
                 className={styles.secondary}
-                disabled={pending}
-                onClick={() => continueSetup()}
+                onClick={() => go("account")}
               >
                 Start with one post
               </button>
@@ -629,7 +768,7 @@ export function Onboarding({
           </section>
         )}
         {step === "import" && (
-          <OnboardingImport onBack={back} onContinue={() => continueSetup()} />
+          <OnboardingImport onBack={back} onContinue={() => go("account")} />
         )}
       </div>
     </OnboardingShell>

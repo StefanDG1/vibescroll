@@ -20,22 +20,19 @@ export function triageDependencyAudit(
   const mitigated = [],
     unresolved = [];
   for (const row of relevant) {
-    const candidate = mitigations.find(
-      (record) =>
+    const valid = row.findings?.length && row.findings.every(({ version }) =>
+      mitigations.some((record) =>
         record.advisory === row.github_advisory_id &&
         record.module === row.module_name &&
-        row.findings?.length &&
-        row.findings.every((finding) => finding.version === record.version),
+        record.version === version &&
+        record.status === "local_mitigation" &&
+        Number.isFinite(Date.parse(record.recheckBy)) &&
+        Date.parse(record.recheckBy) > now &&
+        /^patches\/[A-Za-z0-9@._+-]+\.patch$/.test(record.patch) &&
+        /^[a-f0-9]{64}$/.test(record.sha256) &&
+        createHash("sha256").update(readPatch(record.patch)).digest("hex") === record.sha256,
+      ),
     );
-    const valid =
-      candidate &&
-      candidate.status === "local_mitigation" &&
-      Number.isFinite(Date.parse(candidate.recheckBy)) &&
-      Date.parse(candidate.recheckBy) > now &&
-      /^patches\/[A-Za-z0-9@._+-]+\.patch$/.test(candidate.patch) &&
-      /^[a-f0-9]{64}$/.test(candidate.sha256) &&
-      createHash("sha256").update(readPatch(candidate.patch)).digest("hex") ===
-        candidate.sha256;
     (valid ? mitigated : unresolved).push({
       advisory: row.github_advisory_id,
       module: row.module_name,

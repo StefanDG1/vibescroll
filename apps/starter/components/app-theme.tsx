@@ -49,7 +49,7 @@ export function AppTheme({ control = false }: { control?: boolean }) {
   if (!control) return null;
   return (
     <fieldset className="atlas-theme">
-      <legend>Appearance</legend>
+      <legend className="sr-only">Color theme</legend>
       {(["system", "light", "dark"] as const).map((value) => (
         <button
           key={value}

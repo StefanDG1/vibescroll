@@ -41,11 +41,16 @@ vi.mock("@/components/onboarding-payment", () => ({
 }));
 vi.mock("@/components/onboarding-milestone", () => ({
   OnboardingMilestone: "milestone",
+  OnboardingStageView: "stage-view",
+  CheckoutReturnMeasurement: "checkout-return",
 }));
 vi.mock("@/components/search-choices", () => ({
   SearchChoices: "repositories-step",
 }));
 vi.mock("@/components/action-form", () => ({ ActionForm: "action" }));
+vi.mock("@/components/onboarding-own-link", () => ({
+  OnboardingOwnLink: "save-own-link",
+}));
 import Page from "./app/onboarding/resume/page";
 function nodes(value: unknown): React.ReactElement<any>[] {
   if (Array.isArray(value)) return value.flatMap(nodes);
@@ -108,10 +113,34 @@ it("preserves a GitHub callback and permits assistant readiness to finish after 
     await Page({ searchParams: Promise.resolve({ github: "connected" }) }),
   );
   expect(callback.some((n) => n.type === "assistant-step")).toBe(false);
-  status({ stage: "paywall", assistantChoice: "check" }, true);
+  status(
+    {
+      stage: "paywall",
+      assistantChoice: "check",
+      selectedFamilyId: "curated-post",
+    },
+    true,
+  );
   const ready = nodes(await Page({ searchParams: Promise.resolve({}) }));
   expect(
     ready.some((n) => n.type === "assistant-step" && n.props.compact),
   ).toBe(true);
   expect(ready.filter((n) => n.type === "form")).toHaveLength(2);
+});
+
+it("returns a paid visitor straight to the link they brought", async () => {
+  status(
+    { stage: "paywall", pendingUrl: "https://www.instagram.com/reel/abcde/" },
+    true,
+  );
+  const ready = nodes(
+    await Page({ searchParams: Promise.resolve({ checkout: "complete" }) }),
+  );
+  expect(ready.find((n) => n.type === "h1")?.props.children).toBe(
+    "Continue with your link.",
+  );
+  expect(ready.some((n) => n.type === "save-own-link")).toBe(true);
+  expect(
+    ready.some((n) => n.type === "checkout-return" && n.props.completed),
+  ).toBe(true);
 });

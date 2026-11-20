@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { configured } from "@/lib/backend";
+import { PublicIntro, PublicPage } from "@/components/site";
 export default function Page() {
   return (
-    <main className="narrow" id="main">
-      <h1>
-        {configured()
-          ? "Application settings are present."
-          : "Connect your application."}
-      </h1>
-      <p>
-        Environment settings do not verify provider configuration. Complete
-        sign-in with an email one-time code and with Google to check your setup.
-      </p>
-      <ol>
+    <PublicPage layout="reader">
+      <PublicIntro
+        title={
+          configured()
+            ? "Check your application setup"
+            : "Connect your application"
+        }
+      >
+        <p>
+          Set up Convex and WorkOS, then verify email-code and Google sign-in.
+        </p>
+      </PublicIntro>
+      <ol className="public-setup-steps">
         <li>Run the Convex development setup from the repository root.</li>
         <li>
           Create this product&apos;s own WorkOS environment. Register
@@ -34,13 +37,19 @@ export default function Page() {
         </li>
         <li>Restart the starter development server.</li>
       </ol>
-      <p>
-        See docs/local-development.md for the exact steps and environment
-        variables.
-      </p>
-      <Link prefetch={false} href="/sign-in">
-        Continue to sign in
-      </Link>
-    </main>
+      <div className="public-actions">
+        <a
+          href="https://github.com/StefanDG1/vibescroll/blob/main/docs/local-development.md"
+          className="primary"
+        >
+          Read the local setup guide
+        </a>
+        {configured() && (
+          <Link className="secondary" prefetch={false} href="/sign-in">
+            Verify sign-in
+          </Link>
+        )}
+      </div>
+    </PublicPage>
   );
 }

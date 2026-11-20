@@ -1,5 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
+import Link from "next/link";
+import { BookOpen, FileText, Share2 } from "lucide-react";
+import { ErrorState } from "./assistant-elements/error-state";
 import { sharedEvidenceLabel } from "../lib/shared-evidence-label";
 export function SharedKnowledge({
   organizationId,
@@ -62,33 +65,37 @@ export function SharedKnowledge({
     }
   }
   return (
-    <section className="panel private-library-setup">
-      <h2>Knowledge shared with this workspace</h2>
-      <p>
-        Explicit source versions shared by their private owner. A correction,
-        deletion, expired grant or revoked permission can make them unavailable.
-        Your workspace's own library stays separate.
-      </p>
+    <section className="shared-library" aria-label="Shared posts">
       {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
+        <ErrorState
+          title="Shared post unavailable"
+          detail={error}
+          action={<Link href={`/app/${organizationId}/shared`} prefetch={false}>Return to shared posts</Link>}
+        />
       )}
-      {busy && <output>Checking current access...</output>}
+      {busy && <output className="shared-status">Checking access…</output>}
       {!busy && !error && !items.length && (
-        <p className="fine">No current shared sources on this page.</p>
+        <div className="shared-empty">
+          <Share2 size={22} strokeWidth={1.7} aria-hidden="true" />
+          <h2>No shared posts yet</h2>
+          <p>Posts appear here when someone shares them with this workspace.</p>
+          <Link className="button secondary" href={`/app/${organizationId}/posts`} prefetch={false}>
+            Browse your posts
+          </Link>
+        </div>
       )}
-      <ul className="private-space-list">
+      <ul className="shared-posts">
         {items.map((item) => (
           <li key={`${item.grantId}:${item.sourceId}`}>
-            <a
+            <Link
               href={`/app/${organizationId}/shared?grant=${encodeURIComponent(item.grantId)}&source=${encodeURIComponent(item.sourceId)}`}
+              prefetch={false}
+              aria-current={detail?.sourceId === item.sourceId ? "page" : undefined}
             >
-              {item.title}
-            </a>
-            <span className="fine">
-              {item.state === "ready" ? "Cited analysis" : "Saved title"}
-            </span>
+              {item.state === "ready" ? <BookOpen size={18} aria-hidden="true" /> : <FileText size={18} aria-hidden="true" />}
+              <strong>{item.title}</strong>
+              <small>{item.state === "ready" ? "With insights" : "Saved post"}</small>
+            </Link>
           </li>
         ))}
       </ul>
@@ -104,30 +111,30 @@ export function SharedKnowledge({
         </button>
       )}
       {detail && (
-        <section aria-label="Shared source analysis">
-          <h3>{detail.title}</h3>
-          <p className="fine">
-            Source generation {detail.generation}; grant version{" "}
-            {detail.grantVersion}. Coverage:{" "}
-            {detail.coverage.replaceAll("_", " ")}.
-          </p>
+        <section className="shared-reader" aria-label="Shared post insights">
+          <h2>{detail.title}</h2>
           {detail.insights.length ? (
             <ul>
               {detail.insights.map((insight: any) => (
                 <li key={insight.id}>
-                  <h4>{insight.title}</h4>
+                  <h3>{insight.title}</h3>
                   <p>{insight.claim}</p>
-                  <p className="fine">
-                    Exact insight {insight.id}. Source revision{" "}
-                    {insight.reference.revision}.{" "}
-                    {insight.evidence.map(sharedEvidenceLabel).join("; ")}
-                  </p>
+                  {!!insight.evidence.length && (
+                    <p className="fine">{insight.evidence.map(sharedEvidenceLabel).join(" · ")}</p>
+                  )}
                 </li>
               ))}
             </ul>
           ) : (
             <p>No cited analysis in this shared source version.</p>
           )}
+          <details>
+            <summary>Shared version details</summary>
+            <p className="fine">
+              Source generation {detail.generation} · Grant version {detail.grantVersion} ·{" "}
+              {detail.coverage.replaceAll("_", " ")}
+            </p>
+          </details>
           <button
             className="button secondary"
             onClick={() => setDetail(undefined)}

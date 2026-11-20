@@ -1,57 +1,98 @@
 import "server-only";
 import { suggestProjects } from "./project-suggestions";
 import { backend, api } from "./backend";
+import { loadLibraryPage } from "./library-query";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { usageOverview } from "../../../packages/billing/usage-overview";
 
-// The header Save action exists on every workspace view, including metadata-only
+// The Save action exists on every workspace view, including metadata-only
 // lists. Supply its bounded task settings without fetching full post analyses.
 export async function workspaceData(
   args: Parameters<typeof workspaceViewData>[0],
 ) {
-  const data = await workspaceViewData(args);
+  const c = await backend();
+  const data = await workspaceViewData(args, c);
   if (
     args.view === "shared" ||
     ("role" in data && data.role === "viewer") ||
     ("aiPreference" in data && data.aiPreference)
   )
     return data;
-  const aiPreference = await (
-    await backend()
-  ).query(api.aiPreferences.read, {
+  const aiPreference = await c.query(api.aiPreferences.read, {
     organizationId: args.org as Id<"organizations">,
   });
   return { ...data, aiPreference };
 }
 
-async function workspaceViewData({
-  org,
-  view = "",
-  search = "",
-  filter = "",
-  category = "",
-  sort = "newest",
-  sourceId,
-  proposalId,
-  compactHome = false,
-  sharedSourceId,
-  sharedGrantId,
-}: {
-  org: string;
-  view?: string;
-  search?: string;
-  filter?: string;
-  category?: string;
-  sort?: string;
-  sourceId?: string;
-  proposalId?: string;
-  compactHome?: boolean;
-  sharedSourceId?: string;
-  sharedGrantId?: string;
-}) {
-  const c = await backend(),
-    organizationId = org as Id<"organizations">;
-  if (view === "account" || view === "menu" || view === "trends") {
+async function workspaceViewData(
+  {
+    org,
+    view = "",
+    search = "",
+    filter = "",
+    category = "",
+    sort = "newest",
+    sourceId,
+    proposalId,
+    compactHome = false,
+    sharedSourceId,
+    sharedGrantId,
+  }: {
+    org: string;
+    view?: string;
+    search?: string;
+    filter?: string;
+    category?: string;
+    sort?: string;
+    sourceId?: string;
+    proposalId?: string;
+    compactHome?: boolean;
+    sharedSourceId?: string;
+    sharedGrantId?: string;
+  },
+  c: Awaited<ReturnType<typeof backend>>,
+) {
+  const organizationId = org as Id<"organizations">;
+  if (view === "capture") {
+    const [organization, devices, aiPreference] = await Promise.all([
+      c.query(api.organizations.details, { organizationId }),
+      c.query(api.devices.list, { organizationId }),
+      c.query(api.aiPreferences.read, { organizationId }),
+    ]);
+    return {
+      workspaceSlice: "capture" as const,
+      role: organization.role,
+      devices,
+      aiPreference,
+      sources: [],
+      repositories: [],
+      proposals: [],
+      runs: [],
+      notifications: [],
+      usage: null,
+    };
+  }
+  if (view === "trends") {
+    const [organization, recentPosts] = await Promise.all([
+      c.query(api.organizations.details, { organizationId }),
+      c.query(api.posts.recent, { organizationId }),
+    ]);
+    return {
+      workspaceSlice: "usage" as const,
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      recentPosts,
+      sources: [],
+      repositories: [],
+      proposals: [],
+      runs: [],
+      notifications: [],
+      usage: null,
+    };
+  }
+  if (view === "account" || view === "menu") {
     const organization = await c.query(api.organizations.details, {
       organizationId,
     });
@@ -133,27 +174,7 @@ async function workspaceViewData({
     ]);
     if (home.ready) return { ...home, recentPosts };
   }
-  if (view === "posts") {
-    const [organization, recentPosts] = await Promise.all([
-      c.query(api.organizations.details, { organizationId }),
-      c.query(api.posts.recent, { organizationId }),
-    ]);
-    return {
-      workspaceSlice: "posts" as const,
-      compact: false,
-      workspaceName: organization.name,
-      privateLibrary: organization.private,
-      role: organization.role,
-      recentPosts,
-      sources: [],
-      repositories: [],
-      proposals: [],
-      runs: [],
-      notifications: [],
-      usage: null,
-    };
-  }
-  if (view === "library") {
+  if (view === "library" || view === "posts") {
     const [context, categories, aiPreference] = await Promise.all([
       c.query(api.product.libraryContext, { organizationId }),
       c.query(api.categories.list, { organizationId }),
@@ -167,6 +188,28 @@ async function workspaceViewData({
       aiPreference,
       sources: [],
       runs: [],
+      usage: null,
+    };
+  }
+  if (view === "inbox") {
+    const [organization, overview, proposals, connections] = await Promise.all([
+      c.query(api.organizations.details, { organizationId }),
+      c.query(api.product.overview, { organizationId, includeCounts: false }),
+      c.query(api.product.proposals, { organizationId }),
+      c.query(api.jobs.connections, { organizationId }),
+    ]);
+    return {
+      workspaceSlice: "activity" as const,
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      sources: [],
+      repositories: [],
+      proposals,
+      runs: [],
+      notifications: overview.notifications,
+      connections,
       usage: null,
     };
   }
@@ -257,7 +300,11 @@ async function workspaceViewData({
       throw Error("Proposal unavailable.");
     const isChatProposal =
       selectedProposal.detail?.schemaVersion === "chat-project-proposal-v1";
-    const [devices, projectSuggestions] = await Promise.all([
+    const canReviewExecution =
+      !isChatProposal &&
+      selectedProposal.review === "accepted" &&
+      organization.role !== "viewer";
+    const [devices, projectSuggestions, overview, usage, customerRoutes] = await Promise.all([
       isChatProposal
         ? Promise.resolve([])
         : c.query(api.devices.list, { organizationId }),
@@ -268,6 +315,15 @@ async function workspaceViewData({
               sourceId: selectedProposal.sourceId,
             })
             .catch(() => undefined)
+        : Promise.resolve(undefined),
+      isChatProposal
+        ? Promise.resolve(undefined)
+        : c.query(api.product.overview, { organizationId, includeCounts: false }),
+      canReviewExecution
+        ? c.query(api.product.usage, { organizationId })
+        : Promise.resolve(null),
+      canReviewExecution
+        ? c.query(api.jobs.customerRoutes, { organizationId })
         : Promise.resolve(undefined),
     ]);
     return {
@@ -281,19 +337,21 @@ async function workspaceViewData({
       sources: [],
       repositories: [],
       proposals: [],
-      runs: [],
+      runs: overview?.runs.filter((run) => run.proposalId === selectedProposal._id) ?? [],
       notifications: [],
-      usage: null,
+      usage,
+      customerRoutes,
       devices,
     };
   }
   if (view === "projects" || view === "plans" || view === "proposals") {
-    const [organization, proposals, repositories, devices, githubChoices] =
+    const [organization, proposals, repositories, projects, devices, githubChoices] =
       await Promise.all([
         c.query(api.organizations.details, { organizationId }),
         c.query(api.product.proposals, { organizationId }),
+        c.query(api.product.repositories, { organizationId }),
         view === "projects"
-          ? c.query(api.product.repositories, { organizationId })
+          ? c.query(api.projects.list, { organizationId })
           : Promise.resolve([]),
         view === "projects"
           ? c.query(api.devices.list, { organizationId })
@@ -310,13 +368,45 @@ async function workspaceViewData({
       privateLibrary: organization.private,
       role: organization.role,
       sources: [],
-      repositories,
+      repositories:
+        view === "projects"
+          ? repositories
+          : repositories.map(({ _id, fullName }) => ({ _id, fullName })),
+      projects,
       proposals,
       devices,
       githubChoices,
       runs: [],
       notifications: [],
       usage: null,
+    };
+  }
+  if (view === "runs" || view === "improvements") {
+    const [organization, overview, repositories, proposals, usage, customerRoutes] =
+      await Promise.all([
+        c.query(api.organizations.details, { organizationId }),
+        c.query(api.product.overview, { organizationId, includeCounts: false }),
+        c.query(api.product.repositories, { organizationId }),
+        c.query(api.product.proposals, { organizationId }),
+        view === "improvements"
+          ? c.query(api.product.usage, { organizationId })
+          : Promise.resolve(null),
+        view === "improvements"
+          ? c.query(api.jobs.customerRoutes, { organizationId })
+          : Promise.resolve(undefined),
+      ]);
+    return {
+      compact: false,
+      workspaceName: organization.name,
+      privateLibrary: organization.private,
+      role: organization.role,
+      sources: [],
+      repositories: repositories.map(({ _id, fullName }) => ({ _id, fullName })),
+      proposals,
+      runs: overview.runs,
+      notifications: overview.notifications,
+      usage,
+      customerRoutes,
     };
   }
   const [
@@ -334,9 +424,9 @@ async function workspaceViewData({
     categories,
     selectedSource,
   ] = await Promise.all([
-    c.query(api.product.library, {
+    loadLibraryPage(c, {
       organizationId,
-      search: search || undefined,
+      query: search || undefined,
       state: filter || undefined,
       category: category || undefined,
       sort,

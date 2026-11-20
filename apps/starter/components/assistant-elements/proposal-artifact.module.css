@@ -218,6 +218,31 @@
   padding: 6px 10px;
   font-size: 12px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.messageStatus {
+  display: inline-block;
+  color: var(--subtle);
+  font-size: 11px;
+  margin: 4px 0 0;
+}
+.messageRetry {
+  appearance: none;
+  background: transparent;
+  color: var(--teal);
+  border: 0;
+  min-height: 44px;
+  margin-inline-start: 8px;
+  padding-inline: 6px;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.messageRetry:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 .composer {
   display: flex;
@@ -376,10 +401,118 @@
   outline: 2px solid var(--teal);
   outline-offset: 2px;
 }
+.artifact[data-presentation="reader"] {
+  overflow: visible;
+  background: var(--panel);
+  flex: none;
+}
+.artifact[data-presentation="reader"] .header {
+  min-height: unset;
+  padding: 16px clamp(16px, 4vw, 30px);
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.artifact[data-presentation="reader"] .fit {
+  position: static;
+  margin-inline-start: auto;
+}
+.readerIdentity {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+.readerIdentity .label {
+  align-self: center;
+  padding: 0;
+  gap: 2px;
+}
+.artifact[data-presentation="reader"] .status {
+  text-transform: capitalize;
+  font-size: 0.79rem;
+  font-weight: 550;
+}
+.artifact[data-presentation="reader"] .body {
+  padding: clamp(18px, 4vw, 36px) clamp(16px, 4vw, 30px);
+  gap: 12px;
+  flex: none;
+}
+.artifact[data-presentation="reader"] .readArea {
+  overflow: visible;
+  font-size: clamp(0.95rem, 1.7vw, 1.04rem);
+  line-height: 1.6;
+  flex: none;
+}
+.artifact[data-presentation="reader"] .readArea > h2 {
+  margin: 0 0 clamp(18px, 3vw, 26px);
+  max-width: 28ch;
+  font-size: clamp(1.45rem, 4vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+.artifact[data-presentation="reader"] .readArea > section {
+  border-top: 1px solid var(--line);
+  padding-block: 13px 15px;
+}
+.artifact[data-presentation="reader"] .readArea > section h3 {
+  margin: 0 0 6px;
+  font-size: 0.93rem;
+}
+.artifact[data-presentation="reader"] .readArea > section :is(p, ul, ol) {
+  max-width: 71ch;
+}
+.artifact[data-presentation="reader"] .composer {
+  margin-top: 5px;
+}
+.artifact[data-presentation="reader"] .composer textarea {
+  font-size: 0.95rem;
+}
+.readerUnavailable {
+  margin: 0;
+  padding-top: 11px;
+  color: var(--subtle);
+  font-size: 0.84rem;
+  border-top: 1px solid var(--line);
+}
 @media (max-width: 720px) {
   .secondary,
   .approve,
   .composer button {
     min-height: 44px;
   }
+}
+
+.artifact[data-presentation="feed"][data-expanded="true"] {
+  min-height: 0;
+}
+.artifact[data-presentation="feed"] .header {
+  min-height: 56px;
+  padding-inline-end: 10px;
+}
+.artifact[data-presentation="feed"] .expand {
+  min-height: 56px;
+  height: auto;
+  padding: 8px 8px 8px 10px;
+}
+.artifact[data-presentation="feed"] .label {
+  flex: 1;
+  align-self: center;
+  gap: 2px;
+  padding-top: 0;
+}
+.artifact[data-presentation="feed"] .label strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.feedDisclosure {
+  flex-shrink: 0;
+  color: var(--teal);
+}
+.feedFooter a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--teal);
 }

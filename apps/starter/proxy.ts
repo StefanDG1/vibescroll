@@ -1,4 +1,5 @@
 import { authkitProxy } from "@workos-inc/authkit-nextjs";
+import { localSnapshotEnabled } from "./lib/local-snapshot-mode";
 import { privateContentPolicy } from "./lib/security";
 import { NextResponse, NextRequest, type NextFetchEvent } from "next/server";
 import { onboardingInviteCookie } from "../../packages/onboarding/invitation";
@@ -12,6 +13,14 @@ export default async function proxy(
   request: NextRequest,
   event: NextFetchEvent,
 ) {
+  if (localSnapshotEnabled(request.headers.get("host"))) {
+    return NextResponse.next({
+      headers: {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex",
+      },
+    });
+  }
   if (
     !process.env.WORKOS_CLIENT_ID ||
     !process.env.WORKOS_API_KEY ||

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PublicPage } from "@/components/site";
+import { PublicIntro, PublicPage } from "@/components/site";
 import { McpConnectGuide } from "@/components/mcp-connect-guide";
 
 export const metadata = {
@@ -10,26 +10,22 @@ export const metadata = {
 };
 export default function Connect() {
   return (
-    <PublicPage>
-      <section className="help-intro">
-        <h1>Your saved knowledge, in your conversation.</h1>
+    <PublicPage layout="reader">
+      <PublicIntro title="Connect your assistant">
         <p>
           Connect your existing VibeScroll account to a supported AI client.
           Browse current cited insights, save sources and review project
           relevance with the same workspace permissions.
         </p>
-        <p>
-          <Link href="/app" prefetch={false}>
-            Open your VibeScroll account
-          </Link>
-        </p>
-      </section>
+      </PublicIntro>
       <McpConnectGuide />
-      <p>
-        For machine-readable connection information, see the{" "}
-        <Link href="/connect/descriptor">setup descriptor</Link> and{" "}
-        <Link href="/connect/agent">plain-text instructions</Link>.
-      </p>
+      <div className="public-support-links">
+        <Link href="/app" prefetch={false}>
+          Open your account
+        </Link>
+        <Link href="/connect/descriptor">Setup descriptor</Link>
+        <Link href="/connect/agent">Plain-text instructions</Link>
+      </div>
     </PublicPage>
   );
 }

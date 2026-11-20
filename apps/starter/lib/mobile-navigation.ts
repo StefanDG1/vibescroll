@@ -5,7 +5,14 @@ export function mobileNavigationGroup(
   if (["library", "posts", "source", "shared", "trends"].includes(view))
     return "library";
   if (
-    ["projects", "proposals", "proposal", "improvements", "runs"].includes(view)
+    [
+      "projects",
+      "proposals",
+      "proposal",
+      "improvements",
+      "runs",
+      "inbox",
+    ].includes(view)
   )
     return "projects";
   return "account";

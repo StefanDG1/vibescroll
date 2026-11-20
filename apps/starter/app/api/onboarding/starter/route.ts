@@ -98,7 +98,10 @@ export async function GET(req: NextRequest) {
   try {
     const familyId = req.nextUrl.searchParams.get("familyId"),
       frameId = req.nextUrl.searchParams.get("frameId");
-    if (!frameId)
+    if (!frameId) {
+      const previous = req.cookies.has(previewCookie)
+        ? await current(req)
+        : null;
       return NextResponse.json(
         await starterMetadata(
           (req.nextUrl.searchParams.get("interests") ?? "")
@@ -106,8 +109,13 @@ export async function GET(req: NextRequest) {
             .filter(Boolean)
             .slice(0, 3),
         ),
-        { headers },
+        {
+          headers: previous
+            ? { ...headers, "X-VibeScroll-Preview": previous.claim.familyId }
+            : headers,
+        },
       );
+    }
     let token: string;
     if (req.nextUrl.searchParams.get("thumbnail") === "1" && familyId) {
       token = await signOnboardingValue(

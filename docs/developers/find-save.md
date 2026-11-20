@@ -4,12 +4,11 @@ Find a saved result first, or save the exact link you want to keep. A compatible
 
 1. Ask: "Search my VibeScroll library for deployment rollback ideas. Read only; do not start analysis."
 2. Choose a returned workspace if more than one is available. Use `get_profile` for approved workspace IDs.
-3. Use `search(mode="ranked_v1")` with a short query. Optional filters narrow category, platform and known direct-save dates. To search across teams explicitly, pass up to three returned `workspaceIds` and omit `profileId`. Each workspace needs current whole-workspace library access for ranked mode. A source/space-limited connection uses compatible search without `mode` and the ranked-only fields; it does not require broader permissions or another login. `projectId` adds explainable topic fit for the returned page. Prefer `next_cursor` for complete continuation, including matches beyond the first twenty. The older `next_offset` only moves between candidate-post pages. An empty filtered page does not establish whole-library absence.
-4. Read selected results with `fetch`. Ranked post records provide a `fetch_id`; their `id` groups matches and is not a fetch locator. Keep the active profile and any exact sharing-grant/version references, citations and analysis version.
+3. Use `search` with an exact name, a description or a question. Mention a confirmed project or pass its `projectId` to use its context. Put distinct requests in separate clauses. Filter by an observed creator name or handle, category, platform or known direct-save dates. To search multiple teams, pass up to three returned `workspaceIds`.
+4. Use `review: true` when you need a complete pass through the current saved index. Follow `next_cursor`. To list one creator's saved posts, use an empty query with `filters.creator`. An empty intermediate page may still have a continuation.
+5. Read selected results with `fetch`. Pass the returned `fetch_id` and the exact workspace, version and sharing grant. Check `status` and `facets` when the requested record or a supporting passage is missing.
 
-If a paraphrase misses useful candidates, the assistant can try up to two alternative short queries and merge canonical post/version references. This is bounded query expansion, not semantic vector search. Exact source references go directly to `fetch`.
-
-The visible result is cited saved knowledge. Reading it starts no model generation on VibeScroll's servers. Your host can use its own allowance to explain the returned material.
+Search uses saved evidence. Reading it starts no new analysis or app credit charge.
 
 ## Use a particular post as a reference
 
@@ -29,10 +28,10 @@ For ordinary analysis requests, the reviewed connection defaults determine the p
 
 After you set up an eligible VibeScroll connection and automatic analysis in ChatGPT, use an individual public post link.
 
-| Platform | Links to send |
-| --- | --- |
-| Instagram | Reels and posts containing a video |
-| TikTok | Individual videos, including supported TikTok short links |
+| Platform    | Links to send                                              |
+| ----------- | ---------------------------------------------------------- |
+| Instagram   | Reels and posts containing a video                         |
+| TikTok      | Individual videos, including supported TikTok short links  |
 | X (Twitter) | Individual posts with text, supported attachments, or both |
 
 Post access, media format, and processing limits apply. The production checks covered Instagram Reels, TikTok videos, and X posts with text only or one video.

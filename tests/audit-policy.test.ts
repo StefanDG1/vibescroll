@@ -31,6 +31,21 @@ it("allows only the exact unexpired mitigation and keeps the registry finding vi
     registryCounts: { high: 1 },
     locallyMitigated: [{ advisory: row.github_advisory_id }],
   });
+  const twoVersions = {
+    ...audit,
+    advisories: { one: {
+      ...row,
+      findings: [...row.findings, { version: "2.0.0" }],
+    } },
+  };
+  expect(triageDependencyAudit(twoVersions, [mitigation], () => bytes, now).passed)
+    .toBe(false);
+  expect(triageDependencyAudit(
+    twoVersions,
+    [mitigation, { ...mitigation, version: "2.0.0" }],
+    () => bytes,
+    now,
+  ).passed).toBe(true);
   expect(
     triageDependencyAudit(
       audit,

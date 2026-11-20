@@ -13,18 +13,26 @@
         "benefitHypothesis": "This might improve the workflow, subject to verification.",
         "currentProblem": "The project profile may benefit from this source idea.",
         "disposition": "needs_context",
-        "nonGoals": ["No implementation starts here."],
+        "nonGoals": [
+          "No implementation starts here."
+        ],
         "proposedChange": "Inspect the current implementation before choosing a change.",
-        "risks": ["The project code has not been inspected."],
+        "risks": [
+          "The project code has not been inspected."
+        ],
         "title": "Review a useful idea for this project",
-        "verificationNeeds": ["Inspect the selected repository revision."]
+        "verificationNeeds": [
+          "Inspect the selected repository revision."
+        ]
       },
       "codingAuthorized": false,
       "contextHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "creditsSpent": 0,
       "current": true,
       "handoff": null,
-      "insightIds": ["point_1"],
+      "insightIds": [
+        "point_1"
+      ],
       "next_action": {
         "args": {
           "profileId": "synthetic_profile",
@@ -54,18 +62,26 @@
         "benefitHypothesis": "This might improve the workflow, subject to verification.",
         "currentProblem": "The project profile may benefit from this source idea.",
         "disposition": "needs_context",
-        "nonGoals": ["No implementation starts here."],
+        "nonGoals": [
+          "No implementation starts here."
+        ],
         "proposedChange": "Inspect the current implementation before choosing a change.",
-        "risks": ["The project code has not been inspected."],
+        "risks": [
+          "The project code has not been inspected."
+        ],
         "title": "Review a useful idea for this project",
-        "verificationNeeds": ["Inspect the selected repository revision."]
+        "verificationNeeds": [
+          "Inspect the selected repository revision."
+        ]
       },
       "codingAuthorized": false,
       "contextHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "creditsSpent": 0,
       "current": true,
       "handoff": null,
-      "insightIds": ["point_1"],
+      "insightIds": [
+        "point_1"
+      ],
       "origin": "chat_planning",
       "profileId": "synthetic_profile",
       "projectId": "synthetic_project",
@@ -119,7 +135,9 @@
           "creditsSpent": 0,
           "current": true,
           "disposition": "needs_context",
-          "insightIds": ["point_1"],
+          "insightIds": [
+            "point_1"
+          ],
           "origin": "chat_planning",
           "profileId": "synthetic_profile",
           "projectId": "synthetic_project",
@@ -181,7 +199,9 @@
           "current": true,
           "disposition": "needs_context",
           "handoff": null,
-          "insightIds": ["point_1"],
+          "insightIds": [
+            "point_1"
+          ],
           "origin": "chat_planning",
           "profileId": "synthetic_profile",
           "projectId": "synthetic_project",
@@ -261,45 +281,77 @@
       "url": "https://scroll.companynerve.com/app/synthetic_profile/library/synthetic_source"
     },
     "searchMatch": {
-      "coverage": "Up to five authorized posts, 128 ideas per post and 20 results. Prefer next_cursor: it resumes remaining matches before advancing posts. next_offset preserves legacy post-page navigation only. A cursor rejects changed access, query or resumed source/version snapshots. truncated with no continuation means unavailable evidence or a per-post scan bound left coverage incomplete. Empty results do not establish absence or no fit.",
-      "exhausted": true,
+      "coverage": "Ranked search uses saved text. Semantic indexing or inference is unavailable for this request. Use review for complete traversal. Recent saves and shares may still be indexing.",
+      "examined_sources": 1,
+      "exhausted": false,
+      "facets": [],
       "grant_version": 2,
       "has_more": false,
-      "match_limit_reached": false,
-      "matched_items": 1,
-      "next_cursor": null,
-      "next_offset": null,
-      "profile_id": "synthetic_profile",
-      "results": [
+      "index_ready": true,
+      "loaded_bytes": 12735,
+      "matches": [
         {
           "excerpt": "Check the evidence before acting.",
-          "id": "synthetic_source@synthetic_analysis_version~0",
+          "id": "private:synthetic_source:synthetic_analysis_version:insight:point_1",
+          "insight_id": "point_1",
+          "kind": "insight",
+          "post_id": "private:synthetic_source:synthetic_analysis_version",
+          "title": "Check evidence"
+        },
+        {
+          "evidence_ids": [
+            "speech-1"
+          ],
+          "excerpt": "Check the evidence before acting.",
+          "id": "private:synthetic_source:synthetic_analysis_version:passage:0",
+          "kind": "post",
+          "post_id": "private:synthetic_source:synthetic_analysis_version",
+          "title": "Transcript passage"
+        }
+      ],
+      "mode": "hybrid",
+      "next_cursor": null,
+      "posts": [
+        {
+          "fetch_id": "synthetic_source@synthetic_analysis_version",
+          "id": "private:synthetic_source:synthetic_analysis_version",
           "reference": {
             "analysisVersionId": "synthetic_analysis_version",
             "generation": 1,
-            "insightId": "point_1",
             "revision": 1793534400000,
             "sourceId": "synthetic_source"
           },
-          "title": "Check evidence",
-          "url": "https://scroll.companynerve.com/app/synthetic_profile/library/synthetic_source"
+          "title": "Original retained post",
+          "url": "https://scroll.companynerve.com/app/synthetic_profile/posts/synthetic_source"
         }
       ],
-      "scanned_posts": 1,
+      "profile_id": "synthetic_profile",
+      "projection_revision": 4,
+      "scanned_candidates": 2,
+      "semantic": false,
+      "session_candidates": 2,
+      "status": "results",
       "truncated": false
     },
     "searchEmpty": {
-      "coverage": "Up to five authorized posts, 128 ideas per post and 20 results. Prefer next_cursor: it resumes remaining matches before advancing posts. next_offset preserves legacy post-page navigation only. A cursor rejects changed access, query or resumed source/version snapshots. truncated with no continuation means unavailable evidence or a per-post scan bound left coverage incomplete. Empty results do not establish absence or no fit.",
-      "exhausted": true,
+      "coverage": "Ranked search uses saved text. Semantic indexing or inference is unavailable for this request. Use review for complete traversal. Recent saves and shares may still be indexing.",
+      "examined_sources": 0,
+      "exhausted": false,
+      "facets": [],
       "grant_version": 2,
       "has_more": false,
-      "match_limit_reached": false,
-      "matched_items": 0,
+      "index_ready": true,
+      "loaded_bytes": 0,
+      "matches": [],
+      "mode": "hybrid",
       "next_cursor": null,
-      "next_offset": null,
+      "posts": [],
       "profile_id": "synthetic_profile",
-      "results": [],
-      "scanned_posts": 1,
+      "projection_revision": 4,
+      "scanned_candidates": 0,
+      "semantic": false,
+      "session_candidates": 0,
+      "status": "no-matches",
       "truncated": false
     },
     "preparedStatus": {

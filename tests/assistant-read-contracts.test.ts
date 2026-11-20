@@ -1,3 +1,4 @@
+import { workspaceSearchOutput } from "../packages/contracts/workspace-search";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -11,7 +12,6 @@ import {
   knowledgeFetchMcpOutput,
   knowledgeFetchStructuredOutput,
   knowledgeReadCitationOutput,
-  knowledgeSearchOutput,
   profileReadOutput,
 } from "../packages/contracts/knowledge-read";
 import {
@@ -104,12 +104,26 @@ it("checks list, detail, discovery, search, write and status fixtures against th
   expect(structured.analysis).toEqual(JSON.parse(legacy.text));
   examples.fetchLegacy = legacy;
   examples.fetchStructured = structured;
+  vi.stubEnv("WORKSPACE_SEARCH_ENABLED", "true");
+  for (let index = 0; index < 10; index++) {
+    if (
+      (
+        await f.t.mutation(internal.workspaceSearch.bootstrap, {
+          organizationId: f.org,
+        })
+      ).done
+    )
+      break;
+  }
   for (const query of ["evidence", "no-matching-idea"]) {
-    const search = await f.assistant.query(internal.assistant.search, {
-      profileId: f.org,
-      query,
-    });
-    expect(knowledgeSearchOutput.parse(search)).toEqual(search);
+    const search = await f.assistant.action(
+      internal.workspaceSearchActions.search,
+      {
+        profileId: f.org,
+        query,
+      },
+    );
+    expect(workspaceSearchOutput.parse(search)).toEqual(search);
     examples[query === "evidence" ? "searchMatch" : "searchEmpty"] = search;
   }
   const status = await f.owner.query(api.preparedService.status, {

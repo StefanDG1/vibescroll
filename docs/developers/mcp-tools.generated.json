@@ -4207,16 +4207,14 @@
     },
     {
       "name": "search",
-      "description": "Find permitted knowledge. Prefer mode=ranked_v1 for compact ranked posts and insight matches, including team shares. Ranked search requires whole-workspace library access; source/space-limited grants use search without mode, filters, projectId or workspaceIds. Default to the active workspace; use workspaceIds for an explicit search of up to three authorized workspaces, without profileId. Optional filters narrow category, platform and known direct-save dates. projectId adds page-local topic fit from current permitted project context. Fetch using fetch_id and exact workspace/shared-grant references, not the opaque grouping id. Respect index_ready, coverage, candidate/session bounds and next_cursor. If meaning is missed, try at most two concise alternative queries, then report incomplete recall. Legacy mode examines five allowed posts per page; offsets are legacy only. Never fall back to the global catalog. No analysis or credits.",
+      "description": "Find saved posts and insights in your authorized workspaces. Search natural language, exact names, or several distinct tasks. Name a confirmed project or pass its projectId to use permitted context. Use filters.creator for an observed creator name or handle. Use review=true and follow next_cursor for complete saved-evidence reviews. A creator-only review can use an empty query. Use fetch_id and exact workspace/share references for detail. Use status and facets to report missing support. Search does not start analysis or spend app credits.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "properties": {
-          "query": { "type": "string", "minLength": 1, "maxLength": 200 },
-          "profileId": { "type": "string", "maxLength": 100 },
-          "offset": { "type": "integer", "minimum": 0, "maximum": 49 },
-          "cursor": { "type": "string", "maxLength": 24576 },
-          "mode": { "type": "string", "const": "ranked_v1" },
+          "query": { "type": "string", "maxLength": 200 },
+          "profileId": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "review": { "type": "boolean" },
           "target": { "type": "string", "enum": ["posts", "insights", "both"] },
           "workspaceIds": {
             "minItems": 1,
@@ -4259,11 +4257,13 @@
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 9007199254740991
-              }
+              },
+              "creator": { "type": "string", "minLength": 1, "maxLength": 160 }
             },
             "additionalProperties": false
           },
-          "projectId": { "type": "string", "minLength": 1, "maxLength": 100 }
+          "projectId": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "cursor": { "type": "string", "maxLength": 24576 }
         },
         "required": ["query"],
         "additionalProperties": false
@@ -4272,81 +4272,7 @@
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
-          "scanned_posts": { "type": "integer", "minimum": 0, "maximum": 5 },
-          "matched_items": { "type": "integer", "minimum": 0, "maximum": 20 },
-          "has_more": { "type": "boolean" },
-          "exhausted": { "type": "boolean" },
-          "truncated": { "type": "boolean" },
-          "match_limit_reached": { "type": "boolean" },
-          "results": {
-            "maxItems": 20,
-            "type": "array",
-            "items": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "id": { "type": "string" },
-                    "title": { "type": "string", "maxLength": 200 },
-                    "url": { "type": "string", "format": "uri" },
-                    "excerpt": { "type": "string", "maxLength": 600 },
-                    "reference": {
-                      "type": "object",
-                      "properties": {
-                        "sourceId": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 100
-                        },
-                        "generation": { "type": "number", "minimum": 0 },
-                        "revision": { "type": "number", "minimum": 0 },
-                        "analysisVersionId": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 100
-                        },
-                        "insightId": { "type": "string" }
-                      },
-                      "required": ["sourceId", "generation", "revision"],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": ["id", "title", "url", "excerpt", "reference"],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    },
-                    "title": { "type": "string" },
-                    "url": { "type": "string", "format": "uri" },
-                    "state": { "type": "string" }
-                  },
-                  "required": ["id", "title", "url", "state"],
-                  "additionalProperties": false
-                }
-              ]
-            }
-          },
-          "next_offset": {
-            "anyOf": [
-              { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-              { "type": "null" }
-            ]
-          },
-          "next_cursor": { "type": ["string", "null"] },
-          "profile_id": { "type": "string", "minLength": 1, "maxLength": 100 },
-          "grant_version": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "maximum": 9007199254740991
-          },
-          "coverage": { "type": "string" },
-          "mode": { "type": "string", "const": "ranked_v1" },
+          "mode": { "type": "string", "const": "hybrid" },
           "posts": {
             "maxItems": 20,
             "type": "array",
@@ -4471,6 +4397,11 @@
                 "post_id": { "type": "string", "maxLength": 300 },
                 "kind": { "type": "string", "enum": ["post", "insight"] },
                 "insight_id": { "type": "string", "maxLength": 200 },
+                "evidence_ids": {
+                  "maxItems": 16,
+                  "type": "array",
+                  "items": { "type": "string", "maxLength": 200 }
+                },
                 "title": { "type": "string", "maxLength": 200 },
                 "excerpt": { "type": "string", "maxLength": 700 },
                 "project_fit": {
@@ -4518,17 +4449,32 @@
               "additionalProperties": false
             }
           },
+          "next_cursor": { "type": ["string", "null"] },
+          "has_more": { "type": "boolean" },
+          "exhausted": { "type": "boolean" },
+          "truncated": { "type": "boolean" },
+          "coverage": { "type": "string" },
+          "profile_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "grant_version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
           "scanned_candidates": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 50
+            "maximum": 9007199254740991
           },
           "loaded_candidates": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 200
+            "maximum": 9007199254740991
           },
-          "examined_sources": { "type": "integer", "minimum": 0, "maximum": 8 },
+          "examined_sources": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 24
+          },
           "loaded_bytes": {
             "type": "integer",
             "minimum": 0,
@@ -4537,7 +4483,7 @@
           "session_candidates": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 200
+            "maximum": 9007199254740991
           },
           "projection_revision": {
             "type": "integer",
@@ -4545,6 +4491,32 @@
             "maximum": 9007199254740991
           },
           "index_ready": { "type": "boolean" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "results",
+              "no-matches",
+              "exact-name-missing",
+              "needs-project-record",
+              "needs-current-data",
+              "index-pending"
+            ]
+          },
+          "semantic": { "type": "boolean" },
+          "facets": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "query": { "type": "string", "maxLength": 200 },
+                "post_id": { "type": "string", "maxLength": 300 },
+                "match_id": { "type": "string", "maxLength": 500 }
+              },
+              "required": ["query"],
+              "additionalProperties": false
+            }
+          },
           "workspaces": {
             "maxItems": 3,
             "type": "array",
@@ -4607,13 +4579,24 @@
           }
         },
         "required": [
+          "mode",
+          "posts",
+          "matches",
+          "next_cursor",
           "has_more",
           "exhausted",
           "truncated",
-          "next_cursor",
+          "coverage",
           "profile_id",
           "grant_version",
-          "coverage"
+          "scanned_candidates",
+          "examined_sources",
+          "loaded_bytes",
+          "session_candidates",
+          "projection_revision",
+          "index_ready",
+          "status",
+          "semantic"
         ],
         "additionalProperties": false
       },

@@ -432,7 +432,6 @@ export const libraryContext = query({
 export const library = query({
   args: {
     ...org,
-    search: v.optional(v.string()),
     state: v.optional(v.string()),
     category: v.optional(v.string()),
     sort: v.optional(v.string()),
@@ -441,11 +440,6 @@ export const library = query({
   handler: async (ctx, a) => {
     ctx = knowledgeReadContext(ctx);
     await access(ctx, a.organizationId);
-    ensure(
-      !a.search || a.search.length <= 200,
-      "INVALID_INPUT",
-      "Search is too long.",
-    );
     const sourceState = [
       "saved",
       "needs_upload",
@@ -486,51 +480,7 @@ export const library = query({
     );
     const direction = sort === "title" || sort === "oldest" ? "asc" : "desc";
     let result;
-    if (a.search?.trim() && a.category) {
-      const links = await ctx.db
-        .query("sourceCategories")
-        .withSearchIndex("category_search", (q) =>
-          q
-            .search("searchable", a.search!.trim())
-            .eq("organizationId", a.organizationId)
-            .eq("categoryKey", a.category!),
-        )
-        .paginate({ numItems: 30, cursor: a.cursor ?? null });
-      const sources = await Promise.all(
-        links.page.map((link) => ctx.db.get(link.sourceId)),
-      );
-      result = {
-        ...links,
-        page: sources.filter(
-          (s) =>
-            s && s.organizationId === a.organizationId && s.state !== "deleted",
-        ),
-      };
-    } else if (a.search?.trim()) {
-      result = await ctx.db
-        .query("sources")
-        .withSearchIndex("source_search", (q) =>
-          q
-            .search("searchable", a.search!.trim())
-            .eq("organizationId", a.organizationId),
-        )
-        .filter((q) =>
-          sourceState
-            ? q.eq(q.field("state"), sourceState)
-            : notAnalyzed
-              ? q.and(
-                  q.neq(q.field("state"), "ready"),
-                  q.neq(q.field("state"), "deleted"),
-                )
-              : inProgress
-                ? q.or(
-                    q.eq(q.field("state"), "queued"),
-                    q.eq(q.field("state"), "processing"),
-                  )
-                : q.neq(q.field("state"), "deleted"),
-        )
-        .paginate({ numItems: 30, cursor: a.cursor ?? null });
-    } else if (a.category) {
+    if (a.category) {
       const index =
         sort === "published"
           ? "by_category_published"
@@ -654,27 +604,6 @@ export const library = query({
       next: result.isDone ? null : result.continueCursor,
       total: result.isDone && !a.cursor ? page.length : null,
     };
-  },
-});
-export const backfillSearch = internalMutation({
-  args: { cursor: v.optional(v.string()) },
-  handler: async (ctx, a) => {
-    const result = await ctx.db
-      .query("sources")
-      .paginate({ numItems: 20, cursor: a.cursor ?? null });
-    for (const source of result.page)
-      await ctx.db.patch(source._id, {
-        searchable:
-          source.state === "deleted"
-            ? ""
-            : [source.title, source.summary, source.text, ...source.tags]
-                .filter(Boolean)
-                .join(" "),
-      });
-    if (!result.isDone)
-      await ctx.scheduler.runAfter(0, internal.product.backfillSearch, {
-        cursor: result.continueCursor,
-      });
   },
 });
 export const detail = query({
@@ -1155,7 +1084,6 @@ export async function captureAuthorized(
     ...(classified && classified.sourceType !== "media"
       ? { retrievalState: "saved" as const }
       : {}),
-    searchable: [a.title, a.text].filter(Boolean).join(" "),
     state:
       a.kind === "url" && classified?.sourceType === "media"
         ? "needs_upload"
@@ -1753,9 +1681,6 @@ export const commitAnalysis = internalMutation({
           : "legacy-media-text-v1"
         : undefined,
       summary: analysis?.summary,
-      searchable: [s.title, analysis?.summary, s.text, ...s.tags]
-        .filter(Boolean)
-        .join(" "),
       coverage: analysis?.coverage ?? s.coverage,
       error: a.error,
       processingReceipt: receipt,
@@ -1886,9 +1811,6 @@ export const editSource = mutation({
     }
     await ctx.db.patch(s._id, {
       summary: a.summary,
-      searchable: [s.title, a.summary, a.correctedText ?? s.text, ...a.tags]
-        .filter(Boolean)
-        .join(" "),
       tags: a.tags,
       ...(corrected
         ? {
@@ -2006,7 +1928,6 @@ export const attachSource = mutation({
       coverage: a.text ? "caption_only" : "metadata_only",
       summary: undefined,
       analysis: undefined,
-      searchable: [s.title, a.text, ...s.tags].filter(Boolean).join(" "),
       personalAnalysis: undefined,
       workCloudSaveIntent: undefined,
       personalMedia: undefined,
@@ -2112,7 +2033,6 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     canonical: `deleted:${id}`,
     key: `deleted:${id}`,
     title: "Deleted source",
-    searchable: "",
     summary: undefined,
     text: undefined,
     analysis: undefined,

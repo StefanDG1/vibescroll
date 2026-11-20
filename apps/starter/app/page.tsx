@@ -1,8 +1,16 @@
 import Link from "next/link";
+import {
+  ArrowRight,
+  BookmarkPlus,
+  FileSearch,
+  FolderGit2,
+  ListChecks,
+} from "lucide-react";
 import { ProductMedia } from "@/components/product-media";
 import { PublicPage } from "@/components/site";
 import { ScrollShowScenes } from "@/components/scrollshow-scenes";
 import { LandingInsightPreview } from "@/components/landing-insight-preview";
+import { PublicCta } from "@/components/public-cta";
 
 export const metadata = {
   title: "Make scrolling useful",
@@ -11,309 +19,172 @@ export const metadata = {
   alternates: { canonical: "https://scroll.companynerve.com" },
 };
 
+const workflow = [
+  {
+    title: "Save a post",
+    description: "Add a supported link to your own library.",
+    Icon: BookmarkPlus,
+  },
+  {
+    title: "Check the insight",
+    description: "Open the source evidence and see what supports the idea.",
+    Icon: FileSearch,
+  },
+  {
+    title: "Find a project",
+    description: "Use authorized GitHub context to see where the idea fits.",
+    Icon: FolderGit2,
+  },
+  {
+    title: "Review a proposal",
+    description: "Review a plan and choose what happens next.",
+    Icon: ListChecks,
+  },
+];
+
+const questions = [
+  [
+    "Which posts can I analyze?",
+    "Automatic analysis supports public Instagram Reels and video posts, TikTok videos, and public X posts. Results depend on source access, format and your processing setup.",
+  ],
+  [
+    "Do I need to connect GitHub?",
+    "GitHub is optional. You can save posts and read insights first. Connect a project when you want to check an idea against its code.",
+  ],
+  [
+    "Does connecting a project approve code changes?",
+    "Connecting a project provides authorized context. You review and approve implementation and publication separately.",
+  ],
+  [
+    "Do I need to keep my computer running?",
+    "Hosted analysis can run while your computer is off once an eligible route is set up. Your paired computer needs to stay available if you choose local processing.",
+  ],
+];
+
 export default function Home() {
   return (
-    <PublicPage>
+    <PublicPage layout="home">
       <div className="scrollshow-home">
         <section className="ss-hero" aria-labelledby="home-title">
           <div className="ss-hero-copy">
-            <p className="ss-motto">Make scrolling useful.</p>
-            <h1 id="home-title">
-              Find the ideas worth applying to your product.
-            </h1>
+            <h1 id="home-title">Put your saved posts to work.</h1>
             <p className="ss-lead">
-              Save a post. Inspect the cited idea. Review what fits your
-              project.
+              Find the useful ideas in posts you save, check their evidence, and
+              decide what fits your project.
             </p>
             <div className="ss-actions">
-              <Link className="primary" href="/app" prefetch={false}>
-                Try one post
-              </Link>
-              <a className="secondary" href="#product-demo">
-                See how it works
-              </a>
+              <PublicCta
+                className="primary"
+                href="/onboarding?example=1"
+                cta="try_example"
+                page="home"
+              >
+                Try a real example <ArrowRight size={17} aria-hidden="true" />
+              </PublicCta>
+              <PublicCta
+                className="secondary"
+                href="/onboarding"
+                cta="start_setup"
+                page="home"
+              >
+                Get started
+              </PublicCta>
             </div>
             <p className="ss-note">
-              Start with a post. Connect a project when you're ready.
+              Open an insight, see the source behind it, and decide if it’s
+              useful for your project.
             </p>
-            <Link className="ss-example-link" href="/example">
-              View an example without signing in
-            </Link>
           </div>
           <LandingInsightPreview />
         </section>
         <section
+          className="ss-section"
           id="product-demo"
-          className="ss-section ss-demo"
-          aria-labelledby="demo-title"
+          aria-labelledby="workflow-title"
         >
           <div className="ss-heading">
-            <h2 id="demo-title">See what happens after you save.</h2>
-            <p>
-              Open the source, inspect the useful idea, and review how it
-              relates to a product. You choose the next step.
-            </p>
-          </div>
-          <ScrollShowScenes kind="demo" />
-          <details className="ss-recording">
-            <summary>Watch the captioned interface walkthrough</summary>
-            <ProductMedia variant="overview" idPrefix="home-media" />
-          </details>
-        </section>
-        <section
-          id="insight-library"
-          className="ss-section ss-explanation"
-          aria-labelledby="library-title"
-        >
-          <div className="ss-heading">
-            <h2 id="library-title">
-              Keep the idea and the reason you saved it.
-            </h2>
-            <p className="ss-explanation-text">
-              A useful idea needs its source. A product decision needs context.
-              Keep the evidence beside the insight, then review the next step in
-              your private workspace.
-            </p>
-          </div>
-          <ol
-            className="ss-evidence-trail"
-            aria-label="Illustrative source-to-project trail"
-          >
-            <li>
-              <span>Source post</span>
-              <div className="ss-source-art" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </div>
-              <h3>Show an example first</h3>
-              <p>Supplied text for this synthetic demonstration.</p>
-            </li>
-            <li>
-              <span>Cited insight</span>
-              <div className="ss-citation-art" aria-hidden="true">
-                “<i />
-                <i />
-              </div>
-              <h3>Make the first screen useful</h3>
-              <p>Inspect the explanation and its evidence before deciding.</p>
-            </li>
-            <li>
-              <span>Private product review</span>
-              <div className="ss-project-art" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </div>
-              <h3>Does this fit my product?</h3>
-              <p>Review relevance, existing behavior and limitations.</p>
-            </li>
-          </ol>
-          <p className="ss-note">
-            Illustrative example. No live source retrieval, catalog access or
-            repository analysis is shown.
-          </p>
-          <div className="ss-library-notes">
-            <div>
-              <h3>Your library comes first.</h3>
-              <p>
-                Save supported links, keep your notes and return to your own
-                results. A saved link and a completed analysis have separate
-                states.
-              </p>
-            </div>
-            <div>
-              <h3>Shared catalog access is separate.</h3>
-              <p>
-                The planned shared insight catalog requires Pro. Its release
-                checks are still pending. Approved examples are available to
-                inspect now.
-              </p>
-            </div>
-          </div>
-          <Link href="/example">View an approved example</Link>
-        </section>
-        <section className="ss-section" aria-labelledby="workflow-title">
-          <div className="ss-heading">
-            <h2 id="workflow-title">
-              From a useful post to a better-informed product decision.
-            </h2>
+            <h2 id="workflow-title">From saved post to project proposal</h2>
           </div>
           <ol className="ss-workflow">
-            {[
-              [
-                "Find an idea",
-                "Save a supported post and inspect its evidence. An unavailable source stays clearly labeled.",
-              ],
-              [
-                "Connect your product",
-                "Choose the GitHub project you want to improve and authorize the context VibeScroll can use.",
-              ],
-              [
-                "Review the fit",
-                "Inspect a proposed improvement, an existing solution or a reason the idea does not fit.",
-              ],
-              [
-                "Choose the next step",
-                "Review and edit a plan. Implementation, spending and publication need separate approval.",
-              ],
-            ].map(([title, text], index) => (
+            {workflow.map(({ title, description, Icon }) => (
               <li key={title}>
-                <span className="ss-step">0{index + 1}</span>
+                <Icon size={23} aria-hidden="true" />
                 <h3>{title}</h3>
-                <p>{text}</p>
+                <p>{description}</p>
               </li>
             ))}
           </ol>
-          <p className="ss-note">
-            You can use your library without connecting a project.
-          </p>
-        </section>
-        <section className="ss-section" aria-labelledby="features-title">
-          <div className="ss-heading">
-            <h2 id="features-title">Keep the evidence beside the decision.</h2>
-            <p>
-              Move between the source, the insight and your project's context
-              without losing the reason you saved it.
-            </p>
-          </div>
-          <ScrollShowScenes kind="features" />
         </section>
         <section
-          className="ss-section ss-options"
-          aria-label="Processing and source options"
+          id="insight-library"
+          className="ss-section"
+          aria-labelledby="library-title"
         >
-          <div>
-            <h2>Know what can run before you approve it.</h2>
-            <p>
-              Processing depends on the source, your account and the route
-              available in your workspace. Review current readiness, coverage
-              and maximum cost before starting.
-            </p>
-            <Link href="/help/processing-and-recovery">
-              Check processing options
-            </Link>
-          </div>
-          <div>
-            <h2>Bring the posts you choose.</h2>
-            <p>
-              Paste a supported link or preview a Saved-links import. Private,
-              blocked or unsupported sources may need a permitted upload or
-              supplied text. Automatic creator following is awaiting release
-              acceptance.
-            </p>
-            <Link href="/help/share-a-post">
-              Read the source and sharing guide
-            </Link>
-          </div>
-        </section>
-        <section className="ss-section" aria-labelledby="example-title">
           <div className="ss-heading">
-            <h2 id="example-title">
-              Sometimes the right next step is to leave the code alone.
-            </h2>
+            <h2 id="library-title">See the workflow in VibeScroll</h2>
             <p>
-              An idea can be useful for one product, already implemented in
-              another and unsuitable for a third.
+              Browse a saved source, open an insight, then see how a project
+              proposal comes together.
             </p>
           </div>
-          <div className="ss-decisions">
-            {[
-              [
-                "DemoPlanner",
-                "Useful to investigate",
-                "Show a labeled example before asking people to configure an empty screen. Review a small first-screen change.",
-              ],
-              [
-                "DemoGallery",
-                "Already implemented",
-                "The product already offers a labeled sample and a fresh start. Keep the current behavior.",
-              ],
-              [
-                "DemoRecords",
-                "Not a fit",
-                "Access is required before private records can be shown. Consider a separate synthetic example instead.",
-              ],
-            ].map(([project, label, text]) => (
-              <article key={project}>
-                <p className="ss-decision-label">{label}</p>
-                <h3>{project}</h3>
-                <p>{text}</p>
-              </article>
-            ))}
-          </div>
-          <p className="ss-note">
-            Synthetic example with supplied-text evidence. It explains the
-            workflow and does not report a customer result.
-          </p>
-          <Link href="/example">Open the complete example</Link>
+          <ScrollShowScenes />
+          <details className="ss-recording">
+            <summary>Watch the captioned walkthrough</summary>
+            <ProductMedia variant="overview" idPrefix="home-media" />
+          </details>
         </section>
         <section
           className="ss-section ss-pricing"
           aria-labelledby="pricing-title"
         >
           <div>
-            <h2 id="pricing-title">One Pro plan for your saved ideas.</h2>
+            <h2 id="pricing-title">VibeScroll Pro</h2>
             <p>
-              Choose monthly, yearly or weekly renewal. Check the prepared offer
-              and availability before subscribing.
+              Compare monthly, yearly and weekly renewal terms and included
+              credits.
             </p>
           </div>
-          <Link className="primary" href="/pricing">
-            View Pro
-          </Link>
+          <PublicCta
+            className="primary"
+            href="/pricing"
+            cta="see_pricing"
+            page="home"
+          >
+            View pricing
+          </PublicCta>
         </section>
         <section className="ss-section ss-faq" aria-labelledby="faq-title">
           <h2 id="faq-title">Before you start</h2>
-          {[
-            [
-              "Do I need GitHub to get started?",
-              "No. You can save posts, analyze supported sources through an eligible, ready processing route, read your own results and view approved examples without GitHub. Connect GitHub when you want to review an idea against an authorized project's context. Source rights and processing readiness still apply.",
-            ],
-            [
-              "Will every saved idea lead to a code change?",
-              "Some ideas fit, some are already implemented and some are not useful for your project. Review the explanation and choose what happens next.",
-            ],
-            [
-              "Does connecting GitHub approve changes to my code?",
-              "Connecting a project provides authorized context. You review the plan and approve implementation separately. A connection does not approve spending, publication, merging or deployment.",
-            ],
-            [
-              "Do I need to keep my computer running?",
-              "Hosted analysis runs while your computer is off. Set up an eligible connection and automatic analysis first. If you choose local processing, keep your paired computer awake.",
-            ],
-            [
-              "Which social posts can I analyze?",
-              "Send a public Instagram Reel or video post, a TikTok video, or a public X post. Analysis depends on access to the post, the media format, and your processing setup.",
-            ],
-            [
-              "Does merging mean the idea helped?",
-              "No. A merged pull request and a useful outcome are separate facts. Record the outcome with a measurement window and evidence.",
-            ],
-          ].map(([question, answer]) => (
+          {questions.map(([question, answer]) => (
             <details key={question}>
               <summary>{question}</summary>
               <p>{answer}</p>
             </details>
           ))}
-          <Link href="/faq">Read all frequently asked questions</Link>
+          <Link href="/help">Find help with a specific task</Link>
         </section>
         <section
           className="ss-section ss-closing"
           aria-labelledby="closing-title"
         >
-          <h2 id="closing-title">Put one useful idea to work.</h2>
-          <p>
-            Start with a post or an approved example. Connect your product when
-            you are ready to review what fits.
-          </p>
+          <h2 id="closing-title">Start with one saved post</h2>
           <div className="ss-actions">
-            <Link className="primary" href="/app" prefetch={false}>
-              Try one post
-            </Link>
-            <Link className="secondary" href="/example">
-              View the example
-            </Link>
+            <PublicCta
+              className="primary"
+              href="/onboarding"
+              cta="start_setup"
+              page="home"
+            >
+              Get started
+            </PublicCta>
+            <PublicCta
+              className="secondary"
+              href="/onboarding?example=1"
+              cta="try_example"
+              page="home"
+            >
+              Try a real example
+            </PublicCta>
           </div>
         </section>
       </div>

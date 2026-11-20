@@ -1,7 +1,9 @@
 "use client";
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import * as Consent from "vanilla-cookieconsent";
-import { setAnalyticsConsent, track } from "@/lib/analytics";
+import { setAnalyticsConsent, useAnalyticsView } from "@/lib/analytics";
+import { analyticsConsentRevision } from "@/lib/analytics-consent";
 import { publicPageEvent } from "@/lib/analytics-events";
 export function rejectAnalytics() {
   Consent.acceptCategory([]);
@@ -12,7 +14,7 @@ export function openCookiePreferences() {
   const cookie = Consent.getCookie();
   if (
     Consent.validConsent() &&
-    cookie?.revision === 1 &&
+    cookie?.revision === analyticsConsentRevision &&
     Array.isArray(cookie.categories)
   )
     Consent.acceptCategory(cookie.categories);
@@ -26,13 +28,22 @@ export function CookieSettings({ className = "" }: { className?: string }) {
   );
 }
 let initialized = false;
-let lastPage = "";
+function PageView({
+  event,
+}: {
+  event: NonNullable<ReturnType<typeof publicPageEvent>>;
+}) {
+  useAnalyticsView(event.event, event.properties);
+  return null;
+}
 export function ConsentProvider() {
+  const pathname = usePathname();
   useEffect(() => {
     let lastChoice: string | undefined;
     const sync = () => {
       const cookie = Consent.getCookie();
-      const valid = Consent.validConsent() && cookie?.revision === 1;
+      const valid =
+        Consent.validConsent() && cookie?.revision === analyticsConsentRevision;
       const choice = valid
         ? JSON.stringify(cookie?.categories ?? [])
         : undefined;
@@ -42,25 +53,14 @@ export function ConsentProvider() {
           window.dispatchEvent(new Event("vibescroll:consent-changed"));
       }
       const allowed = valid && cookie?.categories?.includes("analytics");
-      if (!allowed) lastPage = "";
-      void setAnalyticsConsent(Boolean(allowed))
-        .then(() => {
-          const event = publicPageEvent(window.location.pathname);
-          if (
-            event &&
-            lastPage !== JSON.stringify(event) &&
-            track(event.event, event.properties)
-          )
-            lastPage = JSON.stringify(event);
-        })
-        .catch(() => {
-          void setAnalyticsConsent(false);
-        });
+      void setAnalyticsConsent(Boolean(allowed)).catch(() => {
+        void setAnalyticsConsent(false);
+      });
     };
     if (!initialized) {
       initialized = true;
       void Consent.run({
-        revision: 1,
+        revision: analyticsConsentRevision,
         mode: "opt-in",
         manageScriptTags: false,
         disablePageInteraction: false,
@@ -141,7 +141,7 @@ export function ConsentProvider() {
                   {
                     title: "Product analytics",
                     description:
-                      "Optional PostHog events record approved actions, coarse states and counts. No replay, automatic click capture, content, account email, repository name or page URL. A random identifier stays in memory for this page session. Network providers still receive your IP address.",
+                      "Optional analytics counts approved actions and setup steps. A random identifier links sign-up and checkout returns in this tab. After you inspect app evidence or save a plan, it can link activity in this browser for up to seven days. We exclude replay, content, account email and full URLs.",
                     linkedCategory: "analytics",
                   },
                   {
@@ -171,5 +171,6 @@ export function ConsentProvider() {
       window.clearInterval(interval);
     };
   }, []);
-  return null;
+  const event = pathname && publicPageEvent(pathname);
+  return event ? <PageView key={pathname} event={event} /> : null;
 }

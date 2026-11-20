@@ -7,6 +7,7 @@ import { access, limit } from "./lib";
 import { ensure, containsSecret } from "../packages/policy";
 import { librarySpace } from "./librarySpacesSchema";
 import { cardSourceRetained } from "./lib/sourceAuthority";
+import { internal } from "./_generated/api";
 
 export async function privateLibrary(
   ctx: QueryCtx,
@@ -150,6 +151,14 @@ export const fileSource = mutation({
           provenance: "user",
           updatedAt: Date.now(),
         });
+    if (
+      rows.length !== a.spaces.length ||
+      rows.some((row) => !a.spaces.includes(row.space))
+    )
+      await ctx.scheduler.runAfter(0, internal.workspaceSearch.refreshSource, {
+        organizationId: a.organizationId,
+        sourceId: a.sourceId,
+      });
     return { spaces: a.spaces };
   },
 });

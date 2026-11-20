@@ -1,6 +1,11 @@
 "use client";
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
+import type { FunctionReturnType } from "convex/server";
+import type { api } from "../../../convex/_generated/api";
 import { ChoiceSelect } from "./choice-select";
+import { ProjectMark } from "./project-mark";
+import { WorkStatus } from "./work-screens";
 import {
   profileFields,
   profileFieldNames as fields,
@@ -22,7 +27,11 @@ export function RepositoryChecklist({
   demo: boolean;
 }) {
   const [checked, setChecked] = useState(
-      new Set(repositories.filter((r) => r.enabled).map((r) => r.providerId)),
+      new Set(
+        repositories
+          .filter((r) => r.enabled && Number.isFinite(r.providerId))
+          .map((r) => r.providerId),
+      ),
     ),
     [search, setSearch] = useState(""),
     [installation, setInstallation] = useState(""),
@@ -51,236 +60,265 @@ export function RepositoryChecklist({
         (c) => !repositories.find((r) => r.providerId === c.id)?.confirmed,
       ).length * 10
     : 0;
+  async function saveSelection() {
+    setBusy(true);
+    setStartedAt(Date.now());
+    setProgress(
+      selected.map((choice) => ({
+        repository: choice.fullName,
+        state: "preparing",
+      })),
+    );
+    try {
+      const result = await call("selectRepositories", {
+        organizationId,
+        choices: selected.map((choice) => ({
+          installationId: choice.installationId,
+          providerId: choice.id,
+          fullName: choice.fullName,
+          snapshotPaths: (paths[choice.id] ?? "")
+            .split(/\r?\n/)
+            .map((path) => path.trim())
+            .filter(Boolean),
+        })),
+        draftContext: draft,
+        maxCredits: quote,
+      });
+      if (result) setProgress(result);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
-    <section className="panel form-grid">
-      <h2>Connect projects</h2>
-      <p>
-        Choose which projects to improve. New repositories stay unselected until
-        you add them.
-      </p>
-      <div className="actions">
-        <a
-          href="https://github.com/apps/vibescroller/installations/new"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Install or change GitHub App access
-        </a>
-        {!demo && (
-          <a href={`/api/github/connect?organizationId=${organizationId}`}>
-            Link GitHub account
-          </a>
-        )}
-        <button
-          disabled={readOnly || busy || demo}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await call("refreshGithubChoices", { organizationId });
-            } finally {
-              setBusy(false);
+    <section className="panel form-grid work-repository-choices">
+      <h2>GitHub access</h2>
+      {!readOnly && (
+        <>
+          <p>
+            Choose which projects to improve. New repositories stay unselected
+            until you add them.
+          </p>
+          <div className="actions">
+            <a
+              href="https://github.com/apps/vibescroller/installations/new"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Install or change GitHub App access
+            </a>
+            {!demo && (
+              <a href={`/api/github/connect?organizationId=${organizationId}`}>
+                Link GitHub account
+              </a>
+            )}
+            <button
+              disabled={busy || demo}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await call("refreshGithubChoices", { organizationId });
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Refresh GitHub repositories
+            </button>
+          </div>
+        </>
+      )}
+      {choices.length > 0 ? (
+        <>
+          <label>
+            Search repository names
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
+            />
+          </label>
+          <label>
+            Installation/account
+            <ChoiceSelect
+              value={installation}
+              onValueChange={(value) => {
+                setInstallation(value);
+                setPage(0);
+              }}
+            >
+              <option value="">All installations</option>
+              {[...new Set(choices.map((r) => r.installationId))].map((i) => (
+                <option key={i} value={i}>
+                  Installation {i} ·{" "}
+                  {
+                    choices
+                      .find((r) => r.installationId === i)
+                      ?.fullName.split("/")[0]
+                  }
+                </option>
+              ))}
+            </ChoiceSelect>
+          </label>
+          <p>
+            {checked.size} selected · {filtered.length} authorized choices match
+            · page {page + 1}
+          </p>
+          <button
+            className="secondary"
+            disabled={readOnly || busy}
+            onClick={() => setChecked(new Set(choices.map((r) => r.id)))}
+          >
+            Select all authorized repositories ({choices.length})
+          </button>
+          <button
+            disabled={readOnly || busy}
+            onClick={() =>
+              setChecked(
+                (old) => new Set([...old, ...visible.map((r) => r.id)]),
+              )
             }
-          }}
-        >
-          Refresh GitHub repositories
-        </button>
-      </div>
-      <label>
-        Search repository names
-        <input
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(0);
-          }}
-        />
-      </label>
-      <label>
-        Installation/account
-        <ChoiceSelect
-          value={installation}
-          onValueChange={(value) => {
-            setInstallation(value);
-            setPage(0);
-          }}
-        >
-          <option value="">All installations</option>
-          {[...new Set(choices.map((r) => r.installationId))].map((i) => (
-            <option key={i} value={i}>
-              Installation {i} ·{" "}
-              {
-                choices
-                  .find((r) => r.installationId === i)
-                  ?.fullName.split("/")[0]
-              }
-            </option>
+          >
+            Select all visible filtered choices ({visible.length})
+          </button>
+          <button
+            disabled={readOnly || busy}
+            onClick={() =>
+              setChecked(
+                (old) =>
+                  new Set(
+                    [...old].filter((id) => !visible.some((r) => r.id === id)),
+                  ),
+              )
+            }
+          >
+            Clear visible choices
+          </button>
+          {visible.map((r) => (
+            <div key={`${r.installationId}:${r.id}`}>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={checked.has(r.id)}
+                  disabled={readOnly || busy}
+                  onChange={(e) =>
+                    setChecked((old) => {
+                      const next = new Set(old);
+                      if (e.target.checked) next.add(r.id);
+                      else next.delete(r.id);
+                      return next;
+                    })
+                  }
+                />
+                {r.fullName}
+              </label>
+              {checked.has(r.id) && (
+                <details>
+                  <summary>
+                    Advanced: limit repository coverage
+                    {paths[r.id] ? " (a limit is active)" : ""}
+                  </summary>
+                  <label>
+                    Optional coverage limit for {r.fullName}
+                    <textarea
+                      rows={3}
+                      maxLength={4000}
+                      value={paths[r.id] ?? ""}
+                      disabled={readOnly || busy}
+                      placeholder={"README.md\nsrc"}
+                      onChange={(e) =>
+                        setPaths((old) => ({ ...old, [r.id]: e.target.value }))
+                      }
+                    />
+                    <span>
+                      Whole-repository discovery is the default. You do not need
+                      to choose files. Only use this limit when you
+                      intentionally want to exclude other areas. Enter literal
+                      paths, one per line; folders include their children.
+                      Secrets and generated files remain excluded in every mode.
+                    </span>
+                  </label>
+                  {!!paths[r.id] && (
+                    <button
+                      disabled={readOnly || busy}
+                      onClick={() =>
+                        setPaths((old) => ({ ...old, [r.id]: "" }))
+                      }
+                    >
+                      Use the whole repository
+                    </button>
+                  )}
+                </details>
+              )}
+            </div>
           ))}
-        </ChoiceSelect>
-      </label>
-      <p>
-        {checked.size} selected · {filtered.length} authorized choices match ·
-        page {page + 1}
-      </p>
-      <button
-        className="secondary"
-        disabled={readOnly || busy}
-        onClick={() => setChecked(new Set(choices.map((r) => r.id)))}
-      >
-        Select all authorized repositories ({choices.length})
-      </button>
-      <button
-        disabled={readOnly || busy}
-        onClick={() =>
-          setChecked((old) => new Set([...old, ...visible.map((r) => r.id)]))
-        }
-      >
-        Select all visible filtered choices ({visible.length})
-      </button>
-      <button
-        disabled={readOnly || busy}
-        onClick={() =>
-          setChecked(
-            (old) =>
-              new Set(
-                [...old].filter((id) => !visible.some((r) => r.id === id)),
-              ),
-          )
-        }
-      >
-        Clear visible choices
-      </button>
-      {visible.map((r) => (
-        <div key={`${r.installationId}:${r.id}`}>
+          {!filtered.length && <p>No repositories match these filters.</p>}
+          {repositories
+            .filter(
+              (r) => r.enabled && !choices.some((c) => c.id === r.providerId),
+            )
+            .map((r) => (
+              <p key={r._id}>
+                {r.fullName}: current access is unavailable. Refresh access or
+                save the remaining selection to remove it.
+              </p>
+            ))}
+          <div className="actions">
+            <button disabled={page === 0} onClick={() => setPage(page - 1)}>
+              Previous choices
+            </button>
+            <button
+              disabled={(page + 1) * 30 >= filtered.length}
+              onClick={() => setPage(page + 1)}
+            >
+              Next choices
+            </button>
+          </div>
           <label className="check">
             <input
               type="checkbox"
-              checked={checked.has(r.id)}
-              disabled={readOnly || busy}
-              onChange={(e) =>
-                setChecked((old) => {
-                  const next = new Set(old);
-                  if (e.target.checked) next.add(r.id);
-                  else next.delete(r.id);
-                  return next;
-                })
-              }
+              checked={draft}
+              onChange={(e) => setDraft(e.target.checked)}
             />
-            {r.fullName}
+            Draft business context with AI for unconfirmed projects (default)
           </label>
-          {checked.has(r.id) && (
-            <details>
-              <summary>
-                Advanced: limit repository coverage
-                {paths[r.id] ? " (a limit is active)" : ""}
-              </summary>
-              <label>
-                Optional coverage limit for {r.fullName}
-                <textarea
-                  rows={3}
-                  maxLength={4000}
-                  value={paths[r.id] ?? ""}
-                  disabled={readOnly || busy}
-                  placeholder={"README.md\nsrc"}
-                  onChange={(e) =>
-                    setPaths((old) => ({ ...old, [r.id]: e.target.value }))
-                  }
-                />
-                <span>
-                  Whole-repository discovery is the default. You do not need to
-                  choose files. Only use this limit when you intentionally want
-                  to exclude other areas. Enter literal paths, one per line;
-                  folders include their children. Secrets and generated files
-                  remain excluded in every mode.
-                </span>
-              </label>
-              {!!paths[r.id] && (
-                <button
-                  disabled={readOnly || busy}
-                  onClick={() => setPaths((old) => ({ ...old, [r.id]: "" }))}
-                >
-                  Use the whole repository
-                </button>
-              )}
-            </details>
-          )}
-        </div>
-      ))}
-      {!choices.length && (
-        <p>
-          Link an authorized GitHub account to discover repositories. Library
-          use works without GitHub.
-        </p>
-      )}
-      {repositories
-        .filter((r) => r.enabled && !choices.some((c) => c.id === r.providerId))
-        .map((r) => (
-          <p key={r._id}>
-            {r.fullName}: current access is unavailable. Refresh access or save
-            the remaining selection to remove it.
+          <p>
+            Preparation discovers the whole eligible repository and inspects a
+            bounded set of foundational documents, roles and feature files.
+            Context drafting reserves up to {quote} processing credits in total
+            (10 per unconfirmed project). Confirmed profiles are preserved.
+            Manual context works without AI funding. Existing budgets can refuse
+            or pause individual projects.
           </p>
-        ))}
-      <div className="actions">
-        <button disabled={page === 0} onClick={() => setPage(page - 1)}>
-          Previous choices
-        </button>
-        <button
-          disabled={(page + 1) * 30 >= filtered.length}
-          onClick={() => setPage(page + 1)}
-        >
-          Next choices
-        </button>
-      </div>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={draft}
-          onChange={(e) => setDraft(e.target.checked)}
-        />
-        Draft business context with AI for unconfirmed projects (default)
-      </label>
-      <p>
-        Preparation discovers the whole eligible repository and inspects a
-        bounded set of foundational documents, roles and feature files. Context
-        drafting reserves up to {quote} processing credits in total (10 per
-        unconfirmed project). Confirmed profiles are preserved. Manual context
-        works without AI funding. Existing budgets can refuse or pause
-        individual projects.
-      </p>
-      <button
-        className="primary"
-        disabled={readOnly || busy || demo}
-        onClick={async () => {
-          setBusy(true);
-          setStartedAt(Date.now());
-          setProgress(
-            selected.map((c) => ({
-              repository: c.fullName,
-              state: "preparing",
-            })),
-          );
-          try {
-            const result = await call("selectRepositories", {
-              organizationId,
-              choices: selected.map((c) => ({
-                installationId: c.installationId,
-                providerId: c.id,
-                fullName: c.fullName,
-                snapshotPaths: (paths[c.id] ?? "")
-                  .split(/\r?\n/)
-                  .map((p) => p.trim())
-                  .filter(Boolean),
-              })),
-              draftContext: draft,
-              maxCredits: quote,
-            });
-            if (result) setProgress(result);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        Save selection and prepare context · up to {quote} credits
-      </button>
+          <button
+            className="primary"
+            disabled={readOnly || busy || demo}
+            onClick={saveSelection}
+          >
+            Save selection and prepare context · up to {quote} credits
+          </button>
+        </>
+      ) : (
+        <>
+          <p>
+            {repositories.some((repository) => repository.enabled)
+              ? "Repository choices are unavailable. You can still review saved project context below."
+              : "Link an authorized GitHub account to discover repositories."}
+          </p>
+          {!readOnly &&
+            !demo &&
+            repositories.some((repository) => repository.enabled) && (
+              <details>
+                <summary>Clear selected repositories</summary>
+                <p>This removes all repositories from the active selection.</p>
+                <button type="button" disabled={busy} onClick={saveSelection}>
+                  Clear repository selection
+                </button>
+              </details>
+            )}
+        </>
+      )}
       <output aria-live="polite">
         {progress.map((r) => {
           const current = repositories.find(
@@ -338,18 +376,134 @@ export function BusinessContext({
   call: Call;
   readOnly: boolean;
 }) {
-  const initial = r.confirmed ? r.profile : (r.profileDraft ?? r.profile);
-  const parsed = Object.fromEntries(
-    fields.map((f) => {
-      const match = initial.match(
-        new RegExp(
-          `(?:^|\\n\\n)${f}: ([\\s\\S]*?)(?=\\n\\n(?:${fields.join("|")}):|$)`,
-        ),
-      );
-      return [f, match?.[1] ?? "unknown"];
-    }),
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <details
+      id={`repository-${r._id ?? r.id}`}
+      className="work-repository-context"
+      onToggle={(event) => {
+        if (event.currentTarget.open) setLoaded(true);
+      }}
+    >
+      <summary>
+        <ProjectMark name={r.fullName} />
+        <span>{r.fullName}</span>
+        <WorkStatus
+          value={r.confirmed ? "connected" : "unreviewed"}
+          label={r.confirmed ? "Context reviewed" : "Review context"}
+        />
+        <ChevronDown size={17} aria-hidden="true" />
+      </summary>
+      {loaded &&
+        (readOnly ? (
+          <BusinessContextSummary repo={r} />
+        ) : (
+          <BusinessContextFields repo={r} call={call} />
+        ))}
+    </details>
   );
-  const [values, setValues] = useState<Record<string, string>>(parsed),
+}
+
+type RepositoryContext = FunctionReturnType<
+  typeof api.product.repositories
+>[number];
+
+function BusinessContextSummary({ repo }: { repo: RepositoryContext }) {
+  const profile = repo.confirmed
+    ? repo.profile
+    : (repo.profileDraft ?? repo.profile);
+  const coverage = repo.snapshotCoverage;
+  return (
+    <section
+      className="work-context-fields work-context-summary"
+      aria-label={`Business context for ${repo.fullName}`}
+    >
+      <dl className="work-context-metadata">
+        <div>
+          <dt>Context version</dt>
+          <dd>{repo.profileVersion ?? "Pending"}</dd>
+        </div>
+        <div>
+          <dt>Inspected commit</dt>
+          <dd>
+            {repo.sha ? (
+              <code title={repo.sha}>{repo.sha.slice(0, 10)}</code>
+            ) : (
+              "Pending"
+            )}
+          </dd>
+        </div>
+        {coverage && (
+          <div>
+            <dt>Files inspected</dt>
+            <dd>
+              {coverage.inspectedFiles} of {coverage.includedFiles} eligible
+            </dd>
+          </div>
+        )}
+      </dl>
+      <div className="work-context-document">
+        <h3>{repo.confirmed ? "Reviewed context" : "Context draft"}</h3>
+        <p>{profile || "No context is available yet."}</p>
+      </div>
+      {coverage && (
+        <details className="work-context-sources">
+          <summary>Snapshot evidence</summary>
+          <ul>
+            <li>
+              {coverage.wholeRepository
+                ? "Whole-repository discovery"
+                : "Selected repository paths"}
+            </li>
+            {!!repo.snapshotPaths?.length && (
+              <li>{repo.snapshotPaths.join(", ")}</li>
+            )}
+            {coverage.omittedFiles > 0 && (
+              <li>
+                {coverage.omittedFiles} files excluded by the coverage limit
+              </li>
+            )}
+            {coverage.wordDocuments > 0 && (
+              <li>{coverage.wordDocuments} Word documents inspected</li>
+            )}
+          </ul>
+          {!!coverage.evidence?.length && (
+            <ul>
+              {coverage.evidence.map((entry) => (
+                <li key={entry.path}>
+                  <code>{entry.path}</code> · lines {entry.startLine}–
+                  {entry.endLine}
+                </li>
+              ))}
+            </ul>
+          )}
+        </details>
+      )}
+      {repo.confirmed && repo.profileDraft && repo.profileDraft !== profile && (
+        <details className="work-context-sources">
+          <summary>Unconfirmed draft</summary>
+          <p>{repo.profileDraft}</p>
+        </details>
+      )}
+    </section>
+  );
+}
+
+function BusinessContextFields({ repo: r, call }: { repo: any; call: Call }) {
+  const initial =
+    (r.confirmed ? r.profile : (r.profileDraft ?? r.profile)) ?? "";
+  const [values, setValues] = useState<Record<string, string>>(() =>
+      Object.fromEntries(
+        fields.map((field) => {
+          const match = initial.match(
+            new RegExp(
+              `(?:^|\\n\\n)${field}: ([\\s\\S]*?)(?=\\n\\n(?:${fields.join("|")}):|$)`,
+            ),
+          );
+          return [field, match?.[1] ?? "unknown"];
+        }),
+      ),
+    ),
     [freeText, setFreeText] = useState(initial),
     [previousDraft, setPreviousDraft] = useState(r.profileDraft ?? ""),
     [manual, setManual] = useState(
@@ -360,8 +514,10 @@ export function BusinessContext({
     ? freeText
     : fields.map((f) => `${f}: ${values[f]}`).join("\n\n");
   return (
-    <section id={`repository-${r._id ?? r.id}`} className="panel form-grid">
-      <h2>{r.fullName}</h2>
+    <section
+      className="form-grid work-context-fields"
+      aria-label={`Business context for ${r.fullName}`}
+    >
       <p>
         {r.confirmed
           ? "Confirmed business context. Later AI drafts propose changes for your review."
@@ -374,7 +530,6 @@ export function BusinessContext({
       <button
         type="button"
         disabled={
-          readOnly ||
           busy ||
           !r.enabled ||
           !!r.profileDraftKey ||
@@ -419,9 +574,7 @@ export function BusinessContext({
         </p>
       )}
       <button
-        disabled={
-          readOnly || busy || !r.enabled || !!r.profileDraftKey || !r.sha
-        }
+        disabled={busy || !r.enabled || !!r.profileDraftKey || !r.sha}
         onClick={async () => {
           setBusy(true);
           try {
@@ -469,7 +622,6 @@ export function BusinessContext({
           <pre>{r.profileDraft}</pre>
           <button
             disabled={
-              readOnly ||
               r.profileDraftSha !== r.sha ||
               r.profileDraftVersion !== r.profileVersion
             }
@@ -487,6 +639,7 @@ export function BusinessContext({
         <input
           type="checkbox"
           checked={manual}
+          disabled={busy}
           onChange={(e) => setManual(e.target.checked)}
         />
         Use a free-text profile (preserves existing profiles)
@@ -497,6 +650,7 @@ export function BusinessContext({
           <textarea
             rows={9}
             value={freeText}
+            readOnly={busy}
             maxLength={8000}
             onChange={(e) => setFreeText(e.target.value)}
           />
@@ -509,6 +663,7 @@ export function BusinessContext({
               rows={2}
               maxLength={8000}
               value={values[f]}
+              readOnly={busy}
               onChange={(e) =>
                 setValues((old) => ({ ...old, [f]: e.target.value }))
               }
@@ -525,7 +680,6 @@ export function BusinessContext({
       <button
         className="secondary"
         disabled={
-          readOnly ||
           busy ||
           !r.enabled ||
           !r.sha ||
@@ -559,7 +713,6 @@ export function BusinessContext({
       <button
         className="primary"
         disabled={
-          readOnly ||
           busy ||
           !r.enabled ||
           !r.sha ||

@@ -1,24 +1,37 @@
 import Link from "next/link";
+import { LibraryBig } from "lucide-react";
 export function PublicKnowledgePending({
   unavailable = false,
+  retryHref,
 }: {
   unavailable?: boolean;
+  retryHref?: string;
 }) {
   return (
-    <section className="help-intro">
+    <section className="public-state-card">
+      <span className="public-state-icon">
+        <LibraryBig size={22} aria-hidden="true" />
+      </span>
       <h2>
         {unavailable
-          ? "Public knowledge could not be loaded."
-          : "Public knowledge is awaiting release review."}
+          ? "Public collections could not load"
+          : "Public collections are currently unavailable"}
       </h2>
       <p>
         {unavailable
-          ? "Try again later. No private data is shown in its place."
-          : "Public editions, collections and discovery are not enabled on this website. No contributions or community activity are implied."}
+          ? "You can try the page again or explore how a source and its evidence are presented in the example."
+          : "The example shows a saved source, its evidence and a project decision."}
       </p>
-      <Link href="/example">
-        Inspect the clearly labelled synthetic example
-      </Link>
+      <div className="public-actions">
+        {unavailable && retryHref && (
+          <a href={retryHref} className="secondary">
+            Try again
+          </a>
+        )}
+        <Link href="/example" className="primary">
+          Explore the example
+        </Link>
+      </div>
     </section>
   );
 }

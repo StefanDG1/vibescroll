@@ -1,8 +1,15 @@
 import type { NextConfig } from "next";
 import { buildVersion } from "../../scripts/version.mjs";
 const config: NextConfig = {
+  devIndicators:
+    process.env.VIBESCROLL_LOCAL_SNAPSHOT === "1" ? false : undefined,
+  serverExternalPackages: ["onnxruntime-web"],
   outputFileTracingIncludes: {
     "/help/[slug]": ["../../docs/help/**/*.md"],
+    "/api/internal/search-embeddings": [
+      "../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.*",
+      "../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.*",
+    ],
   },
   transpilePackages: [
     "@companynerve/ui",

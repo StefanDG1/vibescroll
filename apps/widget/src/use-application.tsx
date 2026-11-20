@@ -498,11 +498,8 @@ export function useApplication() {
       const result = await host.call("search", {
         ...(profileId ? { profileId } : {}),
         query,
-        ...((prior?.mode ??
-          (workspace?.scope === "all" ? "ranked_v1" : "legacy")) === "ranked_v1"
-          ? { mode: "ranked_v1", target: "insights" }
-          : {}),
-        ...(prior?.cursor ? { cursor: prior.cursor } : {}),
+        target: "both",
+        ...(prior?.cursor ? { cursor: prior.cursor, review: true } : {}),
       });
       if (ticket === epoch.current) await acceptSearch(query, result, more);
     } catch (failed) {

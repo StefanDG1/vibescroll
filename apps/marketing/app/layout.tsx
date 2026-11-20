@@ -44,7 +44,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <a href="#main" className="skip">
           Skip to content
         </a>
-        {children}
+        <div
+          className="marketing-site"
+          data-website-kind={company.website.kind}
+        >
+          {children}
+        </div>
       </body>
     </html>
   );

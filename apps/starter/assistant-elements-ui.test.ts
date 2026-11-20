@@ -27,7 +27,7 @@ it("shows no invented source nodes before a search result and renders returned i
   expect(loading).not.toContain('viewBox="0 0 600 88"');
   expect(loading).not.toContain("0 sources");
   const page = discoveryPage({
-    mode: "ranked_v1",
+    mode: "hybrid",
     profile_id: "p",
     grant_version: 1,
     posts: [

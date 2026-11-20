@@ -18,7 +18,6 @@ export type DiscoveryInsight = {
   insightId?: string;
 };
 export type DiscoveryPage = {
-  mode: "ranked_v1" | "legacy";
   profileId: string;
   grantVersion: number;
   sources: DiscoverySource[];
@@ -55,74 +54,45 @@ export function discoveryPage(value: Row): DiscoveryPage {
   const profileId = text(value.profile_id);
   const sources: DiscoverySource[] = [];
   const insights: DiscoveryInsight[] = [];
-  if (value.mode === "ranked_v1") {
-    const byId = new Map<string, DiscoverySource>();
-    for (const post of rows(value.posts)) {
-      const id = text(post.id);
-      if (!id || !text(post.fetch_id) || !text(post.url)) continue;
-      const source = {
-        key: sourceKey(profileId, id, object(post.reference)),
-        id,
-        profileId,
-        title: text(post.title),
-        url: text(post.url),
-        fetchId: text(post.fetch_id),
-        ...(typeof object(post.reference).sharedGrantId === "string" &&
-        typeof object(post.reference).sharedGrantVersion === "number"
-          ? {
-              sharedGrantId: String(object(post.reference).sharedGrantId),
-              sharedGrantVersion: Number(
-                object(post.reference).sharedGrantVersion,
-              ),
-            }
-          : {}),
-      };
-      byId.set(id, source);
-      sources.push(source);
-    }
-    for (const match of rows(value.matches)) {
-      const source = byId.get(text(match.post_id));
-      // A source relationship requires the returned exact parent post.
-      if (!source || !text(match.id)) continue;
-      insights.push({
-        key: `${source.key}:${text(match.id)}`,
-        title: text(match.title),
-        excerpt: text(match.excerpt),
-        kind: match.kind === "insight" ? "insight" : "post",
-        sourceKey: source.key,
-        ...(text(match.insight_id)
-          ? { insightId: text(match.insight_id) }
-          : {}),
-      });
-    }
-  } else {
-    for (const result of rows(value.results)) {
-      const id = text(result.id);
-      if (!id || !text(result.url)) continue;
-      const ref = object(result.reference);
-      const postId = text(ref.sourceId) || id.split("~")[0];
-      const key = sourceKey(profileId, postId, ref);
-      if (!sources.some((source) => source.key === key))
-        sources.push({
-          key,
-          id: postId,
-          profileId,
-          title: text(result.title),
-          url: text(result.url),
-          fetchId: id,
-        });
-      insights.push({
-        key: `${key}:${id}`,
-        title: text(result.title),
-        excerpt: text(result.excerpt),
-        kind: text(ref.insightId) ? "insight" : "post",
-        sourceKey: key,
-        ...(text(ref.insightId) ? { insightId: text(ref.insightId) } : {}),
-      });
-    }
+  const byId = new Map<string, DiscoverySource>();
+  for (const post of rows(value.posts)) {
+    const id = text(post.id);
+    if (!id || !text(post.fetch_id) || !text(post.url)) continue;
+    const path = rows(post.access_paths)[0];
+    const sourceProfile = text(path?.profile_id) || profileId;
+    const reference = object(path?.reference ?? post.reference);
+    const source = {
+      key: sourceKey(sourceProfile, id, reference),
+      id,
+      profileId: sourceProfile,
+      title: text(post.title),
+      url: text(post.url),
+      fetchId: text(post.fetch_id),
+      ...(typeof reference.sharedGrantId === "string" &&
+      typeof reference.sharedGrantVersion === "number"
+        ? {
+            sharedGrantId: reference.sharedGrantId,
+            sharedGrantVersion: reference.sharedGrantVersion,
+          }
+        : {}),
+    };
+    byId.set(id, source);
+    sources.push(source);
+  }
+  for (const match of rows(value.matches)) {
+    const source = byId.get(text(match.post_id));
+    // A source relationship requires the returned exact parent post.
+    if (!source || !text(match.id)) continue;
+    insights.push({
+      key: `${source.key}:${text(match.id)}`,
+      title: text(match.title),
+      excerpt: text(match.excerpt),
+      kind: match.kind === "insight" ? "insight" : "post",
+      sourceKey: source.key,
+      ...(text(match.insight_id) ? { insightId: text(match.insight_id) } : {}),
+    });
   }
   return {
-    mode: value.mode === "ranked_v1" ? "ranked_v1" : "legacy",
     profileId,
     grantVersion: Number(value.grant_version ?? 0),
     sources,

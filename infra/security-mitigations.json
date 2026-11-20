@@ -10,5 +10,27 @@
     "decision": "docs/adr/042-bounded-braces-depth-mitigation.md",
     "tests": "tests/braces-depth.test.ts",
     "scope": "Bound compile, expand and stringify recursive AST traversal. Not an upstream fixed release."
+  },
+  {
+    "advisory": "GHSA-fc5q-39xc-vjpf",
+    "module": "picomatch",
+    "version": "2.3.2",
+    "status": "local_mitigation",
+    "patch": "patches/picomatch@2.3.2.patch",
+    "sha256": "c709d39e649fb59b1e9177fbb1f1388a29e135c99189016c50f4848533dcb84f",
+    "recheckBy": "2026-12-18T00:00:00Z",
+    "decision": "docs/adr/239-bounded-picomatch-repetition.md",
+    "tests": "tests/picomatch-repetition.test.ts"
+  },
+  {
+    "advisory": "GHSA-fc5q-39xc-vjpf",
+    "module": "picomatch",
+    "version": "4.0.7",
+    "status": "local_mitigation",
+    "patch": "patches/picomatch@4.0.7.patch",
+    "sha256": "6f46576ba6d4116b6e66d9f051eec285ec4f0b10b39d0612e04b82339277d15f",
+    "recheckBy": "2026-12-18T00:00:00Z",
+    "decision": "docs/adr/239-bounded-picomatch-repetition.md",
+    "tests": "tests/picomatch-repetition.test.ts"
   }
 ]

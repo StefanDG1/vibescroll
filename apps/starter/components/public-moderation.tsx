@@ -4,8 +4,11 @@ import {
   SignInRedirect,
 } from "../lib/authentication";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ListChecks } from "lucide-react";
+import { AccountSection, AccountStatus } from "./account-layout";
+import { LibrarySkeleton } from "./library-skeleton";
 import {
   publicCitationUrl,
   publicSlug,
@@ -21,7 +24,13 @@ export type ModerationReport = {
   updatedAt: number;
 };
 type Decision = "dismiss" | "remove";
+type Operation = "queue" | "inspection" | "decision";
 type Requester = (input: string, init: RequestInit) => Promise<Response>;
+const reportDate = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "UTC",
+});
 export class ModerationError extends Error {
   constructor(
     public code: string,
@@ -165,7 +174,7 @@ export function PublicModeration() {
   const [selected, setSelected] = useState<string | null>(null);
   const [decision, setDecision] = useState<Decision>("dismiss");
   const [confirmed, setConfirmed] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [operation, setOperation] = useState<Operation | null>(null);
   const [error, setError] = useState<ModerationError | null>(null);
   const [notice, setNotice] = useState("");
   const [inspection, setInspection] = useState<{
@@ -173,10 +182,28 @@ export function PublicModeration() {
     edition: PublicEdition | null;
   } | null>(null);
   const pending = useRef(false);
-  async function run(action: () => Promise<void>) {
+  const queueControl = useRef<HTMLButtonElement>(null);
+  const decisionControl = useRef<HTMLSelectElement>(null);
+  const reviewTrigger = useRef<string | null>(null);
+  const busy = operation !== null;
+
+  useEffect(() => {
+    if (selected) {
+      decisionControl.current?.focus();
+    } else if (reviewTrigger.current) {
+      document.getElementById(reviewTrigger.current)?.focus();
+      reviewTrigger.current = null;
+    }
+  }, [selected]);
+
+  useEffect(() => {
+    if (!busy && (notice || error)) queueControl.current?.focus();
+  }, [busy, notice, error]);
+
+  async function run(operation: Operation, action: () => Promise<void>) {
     if (pending.current) return;
     pending.current = true;
-    setBusy(true);
+    setOperation(operation);
     setError(null);
     setNotice("");
     try {
@@ -207,83 +234,154 @@ export function PublicModeration() {
       );
     } finally {
       pending.current = false;
-      setBusy(false);
+      setOperation(null);
     }
   }
   return (
-    <section aria-labelledby="moderation-reports" aria-busy={busy}>
-      <h2 id="moderation-reports">Open reports</h2>
-      <p>Load up to 50 open reports. This page refreshes only when you ask.</p>
-      <button
-        className="button"
-        disabled={busy}
-        onClick={() =>
-          void run(async () => {
-            setReports(null);
-            setSelected(null);
-            setConfirmed(false);
-            setInspection(null);
-            setReports(await loadModerationReports());
-          })
+    <div className="account-content" aria-busy={busy}>
+      <AccountSection
+        title="Open reports"
+        description="Shows up to 50 open reports, newest first."
+        icon={ListChecks}
+        trailing={
+          reports?.length ? (
+            <AccountStatus>
+              {reports.length} {reports.length === 1 ? "report" : "reports"}
+            </AccountStatus>
+          ) : null
         }
       >
-        {busy ? "Working…" : "Load reports"}
-      </button>
-      {error && (
-        <div role="alert" className="notice" style={{ marginTop: 16 }}>
-          <p>{error.message}</p>
-          {["REAUTH_REQUIRED", "ACCESS_LOST"].includes(error.code) && (
-            <Link
-              className="button secondary"
-              href="/sign-in?reauth=true&returnTo=%2Fapp%2Fmoderation"
-              prefetch={false}
-            >
-              Sign in again
-            </Link>
-          )}
-        </div>
-      )}
-      {notice && <output style={{ display: "block" }}>{notice}</output>}
-      {reports?.length === 0 && (
-        <output style={{ display: "block" }}>
-          No open reports were returned.
-        </output>
+        <button
+          ref={queueControl}
+          type="button"
+          className="button primary"
+          disabled={busy}
+          onClick={() =>
+            void run("queue", async () => {
+              setSelected(null);
+              setConfirmed(false);
+              setInspection(null);
+              setReports(await loadModerationReports());
+            })
+          }
+        >
+          {operation === "queue"
+            ? "Loading reports…"
+            : reports
+              ? "Refresh reports"
+              : "Load reports"}
+        </button>
+        {error && (
+          <div role="alert" className="notice">
+            <p>{error.message}</p>
+            {["REAUTH_REQUIRED", "ACCESS_LOST"].includes(error.code) && (
+              <Link
+                className="button secondary"
+                href="/sign-in?reauth=true&returnTo=%2Fapp%2Fmoderation"
+                prefetch={false}
+              >
+                Sign in again
+              </Link>
+            )}
+          </div>
+        )}
+        {notice && <output>{notice}</output>}
+        {reports?.length === 0 && (
+          <output>No open reports were returned.</output>
+        )}
+      </AccountSection>
+      {operation === "queue" && !reports && (
+        <LibrarySkeleton kind="page" rows={2} />
       )}
       {reports?.map((report) => (
-        <article
-          className="card"
+        <AccountSection
           key={report._id}
-          style={{ marginTop: 16, overflowWrap: "anywhere" }}
+          title={
+            inspection?.id === report._id && inspection.edition
+              ? inspection.edition.title
+              : `Edition ${report.editionId}`
+          }
+          description={
+            <>
+              Reported{" "}
+              <time dateTime={new Date(report.createdAt).toISOString()}>
+                {reportDate.format(report.createdAt)} UTC
+              </time>
+            </>
+          }
+          className="moderation-entry"
         >
-          <h3>Report {report._id}</h3>
-          <p className="muted">Edition {report.editionId}</p>
-          <p style={{ whiteSpace: "pre-wrap" }}>{report.reason}</p>
-          <p className="muted">
-            Reported {new Date(report.createdAt).toISOString()}. Updated{" "}
-            {new Date(report.updatedAt).toISOString()}.
+          <p className="moderation-reason">{report.reason}</p>
+          <p className="fine">
+            Report {report._id}
+            {report.createdAt !== report.updatedAt && (
+              <>
+                {" "}
+                · Updated{" "}
+                <time dateTime={new Date(report.updatedAt).toISOString()}>
+                  {reportDate.format(report.updatedAt)} UTC
+                </time>
+              </>
+            )}
           </p>
-          <button
-            className="button secondary"
-            disabled={busy}
-            onClick={() =>
-              void run(async () => {
-                setInspection(null);
-                setSelected(null);
-                setConfirmed(false);
-                setInspection({
-                  id: report._id,
-                  edition: await inspectModerationReport(report._id),
+          <div className="account-actions">
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              aria-expanded={inspection?.id === report._id}
+              aria-controls={
+                inspection?.id === report._id
+                  ? `moderation-edition-${report._id}`
+                  : undefined
+              }
+              onClick={() => {
+                if (inspection?.id === report._id) {
+                  setInspection(null);
+                  return;
+                }
+                void run("inspection", async () => {
+                  setInspection(null);
+                  setSelected(null);
+                  setConfirmed(false);
+                  setInspection({
+                    id: report._id,
+                    edition: await inspectModerationReport(report._id),
+                  });
                 });
-              })
-            }
-          >
-            Inspect current public edition
-          </button>
+              }}
+            >
+              {inspection?.id === report._id
+                ? "Hide edition"
+                : "Inspect public edition"}
+            </button>
+            {selected !== report._id && (
+              <button
+                id={`review-${report._id}`}
+                type="button"
+                className="button secondary"
+                disabled={busy}
+                onClick={(event) => {
+                  reviewTrigger.current = event.currentTarget.id;
+                  setSelected(report._id);
+                  setDecision("dismiss");
+                  setConfirmed(false);
+                  setError(null);
+                  setNotice("");
+                }}
+              >
+                Review decision
+              </button>
+            )}
+          </div>
           {inspection?.id === report._id && (
-            <div style={{ marginTop: 16 }}>
+            <div
+              id={`moderation-edition-${report._id}`}
+              className="moderation-details"
+            >
               {inspection.edition ? (
                 <>
-                  <h4>{inspection.edition.title}</h4>
+                  <h3>Public edition</h3>
                   <p>{inspection.edition.summary}</p>
                   <p>
                     Public version {inspection.edition.version}.{" "}
@@ -328,25 +426,16 @@ export function PublicModeration() {
               )}
             </div>
           )}
-          {selected !== report._id ? (
-            <button
-              className="button secondary"
+          {selected === report._id && (
+            <fieldset
+              id={`moderation-decision-${report._id}`}
+              className="moderation-details form-grid"
               disabled={busy}
-              onClick={() => {
-                setSelected(report._id);
-                setDecision("dismiss");
-                setConfirmed(false);
-                setError(null);
-                setNotice("");
-              }}
             >
-              Review decision
-            </button>
-          ) : (
-            <fieldset disabled={busy}>
-              <legend>Decision for report {report._id}</legend>
+              <legend>Record a decision</legend>
               <label htmlFor={`decision-${report._id}`}>Action</label>{" "}
               <select
+                ref={decisionControl}
                 id={`decision-${report._id}`}
                 value={decision}
                 onChange={(event) => {
@@ -364,21 +453,24 @@ export function PublicModeration() {
                   ? "This removes the reported edition from public access."
                   : "This closes the report and leaves the edition's publication state unchanged."}
               </p>
-              <label style={{ display: "block", padding: "12px 0" }}>
+              <label className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={confirmed}
                   onChange={(event) => setConfirmed(event.target.checked)}
-                />{" "}
-                I reviewed this report and confirm this{" "}
-                {decision === "remove" ? "removal" : "dismissal"}.
+                />
+                <span>
+                  I reviewed this report and confirm this{" "}
+                  {decision === "remove" ? "removal" : "dismissal"}.
+                </span>
               </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <div className="account-actions">
                 <button
+                  type="button"
                   className="button"
                   disabled={!confirmed || busy}
                   onClick={() =>
-                    void run(async () => {
+                    void run("decision", async () => {
                       await reviewModerationReport(
                         report._id,
                         decision,
@@ -400,9 +492,14 @@ export function PublicModeration() {
                     })
                   }
                 >
-                  Confirm {decision === "remove" ? "removal" : "dismissal"}
+                  {operation === "decision"
+                    ? "Recording decision…"
+                    : decision === "remove"
+                      ? "Confirm removal"
+                      : "Confirm dismissal"}
                 </button>
                 <button
+                  type="button"
                   className="button secondary"
                   onClick={() => {
                     setSelected(null);
@@ -414,8 +511,8 @@ export function PublicModeration() {
               </div>
             </fieldset>
           )}
-        </article>
+        </AccountSection>
       ))}
-    </section>
+    </div>
   );
 }

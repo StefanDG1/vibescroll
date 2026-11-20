@@ -28,9 +28,9 @@ import {
 import { readFileSync } from "node:fs";
 const base = "346b718baf91ba9847fbb707be7bbe069df57257";
 it("preserves historical schemas/config while admitting reviewed empty proposal/engagement tables and components", () => {
-  // Include the explicitly new, initially empty preparation table. Component
-  // configuration and every historical table/index remain checked below.
-  expect(Object.keys(schema.tables)).toHaveLength(106);
+  // The new vector table starts empty. Historical product table definitions
+  // and the two retired search indexes are checked individually below.
+  expect(Object.keys(schema.tables)).toHaveLength(107);
   expect(
     (schema.tables.users as any).export().documentType.value.onboarding,
   ).toEqual({
@@ -42,6 +42,7 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
     "workspaceSearchDocuments",
     "workspaceSearchOrigins",
     "workspaceSearchState",
+    "workspaceSearchVectors",
   ]);
   expect(
     (workspaceSearchTables.workspaceSearchDocuments as any).export()
@@ -50,7 +51,24 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
     {
       indexDescriptor: "search_text",
       searchField: "searchText",
-      filterFields: ["organizationId", "kind"],
+      filterFields: [
+        "organizationId",
+        "kind",
+        "creatorKey",
+        "personal",
+        "business",
+      ],
+    },
+  ]);
+  expect(
+    (workspaceSearchTables.workspaceSearchVectors as any).export()
+      .vectorIndexes,
+  ).toEqual([
+    {
+      indexDescriptor: "semantic",
+      vectorField: "embedding",
+      dimensions: 384,
+      filterFields: ["searchableWorkspace"],
     },
   ]);
   expect(Object.keys(providerFundingTables).sort()).toEqual([
@@ -146,7 +164,7 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
         row.vectorIndexes.length
       );
     }, 0),
-  ).toBe(292);
+  ).toBe(296);
   expect(Object.keys(cloudCatalogTables).sort()).toEqual([
     "catalogAliases",
     "catalogContributions",
@@ -178,6 +196,24 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
   for (const [name, table] of Object.entries(productTables)) {
     const current = (table as any).export(),
       prior = before[name].export();
+    if (name === "sources" || name === "sourceCategories") {
+      const retired = name === "sources" ? "source_search" : "category_search";
+      expect(
+        prior.searchIndexes.map(
+          (index: { indexDescriptor: string }) => index.indexDescriptor,
+        ),
+      ).toContain(retired);
+      expect(
+        current.searchIndexes.some(
+          (index: { indexDescriptor: string }) =>
+            index.indexDescriptor === retired,
+        ),
+      ).toBe(false);
+      prior.searchIndexes = prior.searchIndexes.filter(
+        (index: { indexDescriptor: string }) =>
+          index.indexDescriptor !== retired,
+      );
+    }
     if (name === "assets") {
       expect(current.documentType.value.sourceGeneration).toEqual({
         fieldType: { type: "number" },

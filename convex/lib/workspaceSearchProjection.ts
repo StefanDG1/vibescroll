@@ -1,5 +1,6 @@
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { PolicyError, ensure } from "../../packages/policy";
 import { cloudImport, cloudArtifact } from "./cloudCatalog";
 import { postDisplayTitle } from "../../packages/sources/display";
@@ -8,9 +9,28 @@ import {
   outputSearchTopics,
   sourcePlatform,
 } from "./workspaceSearchFilters";
-import { selectedAnalysis, retainedVersion } from "./analysisHistory";
+import {
+  selectedAnalysis,
+  retainedVersion,
+  retainedEvidenceContent,
+} from "./analysisHistory";
 import { sourceRetained } from "./sourceAuthority";
 import { exactGrantedSource } from "../knowledgeGrants";
+import { normalizeSearchText } from "../../packages/search/ranking";
+
+const maxDocuments = 161;
+
+async function removeSearchDocument(
+  ctx: MutationCtx,
+  id: Id<"workspaceSearchDocuments">,
+) {
+  const vector = await ctx.db
+    .query("workspaceSearchVectors")
+    .withIndex("by_document", (q) => q.eq("documentId", id))
+    .unique();
+  if (vector) await ctx.db.delete(vector._id);
+  await ctx.db.delete(id);
+}
 
 export const workspaceSearchEnabled = () =>
   process.env.WORKSPACE_SEARCH_ENABLED === "true";
@@ -22,6 +42,32 @@ export const workspaceSearchState = (
     .query("workspaceSearchState")
     .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
     .unique();
+
+export async function scheduleSearchVectors(
+  ctx: MutationCtx,
+  organizationId: Id<"organizations">,
+) {
+  if (
+    !process.env.WORKSPACE_SEARCH_EMBEDDING_SECRET ||
+    process.env.RESTORE_LOCK === "true"
+  )
+    return;
+  const state = await workspaceSearchState(ctx, organizationId);
+  if (!state || state.vectorJob) return;
+  const pending = await ctx.db
+    .query("workspaceSearchVectors")
+    .withIndex("by_pending", (q) =>
+      q.eq("organizationId", organizationId).eq("pending", true),
+    )
+    .first();
+  if (!pending) return;
+  const vectorJob = await ctx.scheduler.runAfter(
+    0,
+    internal.workspaceSearchActions.index,
+    { organizationId, failures: 0 },
+  );
+  await ctx.db.patch(state._id, { vectorJob });
+}
 
 export async function bumpWorkspaceSearch(
   ctx: MutationCtx,
@@ -78,13 +124,13 @@ async function cleanOrphanDocuments(
         .eq("canonicalKey", origin.canonicalKey)
         .eq("analysisKey", origin.analysisKey),
     )
-    .take(130);
+    .take(maxDocuments + 1);
   ensure(
-    docs.length <= 129,
+    docs.length <= maxDocuments,
     "POLICY_BLOCKED",
     "Search projection requires operator review.",
   );
-  for (const doc of docs) await ctx.db.delete(doc._id);
+  for (const doc of docs) await removeSearchDocument(ctx, doc._id);
 }
 
 export async function removeSearchOrigin(
@@ -110,6 +156,7 @@ type ProjectedItem = {
   itemKey: string;
   kind: "post" | "insight";
   insightId?: string;
+  evidenceIds?: string[];
   title: string;
   excerpt: string;
   searchText: string;
@@ -121,6 +168,7 @@ function projectionItems(
   output: unknown,
   canonicalTitle = postDisplayTitle(source),
   metadataText = "",
+  evidence: { title: string; text: string; id?: string }[] = [],
 ): ProjectedItem[] {
   const analysis =
     output && typeof output === "object"
@@ -193,6 +241,44 @@ function projectionItems(
         insight.id.length > 200,
     });
   }
+  const passages: ProjectedItem[] = [];
+  for (const unit of evidence) {
+    let remaining = unit.text.trim();
+    while (remaining && passages.length < 32) {
+      const wordBoundary = remaining.lastIndexOf(" ", 700);
+      const end =
+        remaining.length <= 700
+          ? remaining.length
+          : wordBoundary >= 400
+            ? wordBoundary
+            : 700;
+      const excerpt = remaining.slice(0, end);
+      const previous = passages.at(-1);
+      if (
+        previous?.title === unit.title &&
+        previous.excerpt.length + excerpt.length < 700 &&
+        (previous.evidenceIds?.length ?? 0) < 16
+      ) {
+        previous.excerpt += ` ${excerpt}`;
+        previous.searchText += ` ${excerpt}`;
+        if (unit.id && !previous.evidenceIds?.includes(unit.id))
+          (previous.evidenceIds ??= []).push(unit.id);
+      } else
+        passages.push({
+          itemKey: `passage:${passages.length}`,
+          kind: "post",
+          title: unit.title,
+          excerpt,
+          searchText: excerpt,
+          categoryKeys: result[0].categoryKeys,
+          ...(unit.id ? { evidenceIds: [unit.id] } : {}),
+          truncated: false,
+        });
+      remaining = remaining.slice(end).trimStart();
+    }
+    if (remaining) result[0].truncated = true;
+  }
+  result.push(...passages);
   return result;
 }
 
@@ -210,6 +296,7 @@ async function writeSearchProjection(
   origin: Origin,
   source: Doc<"sources">,
   output: unknown,
+  evidence?: Doc<"analysisEvidence">,
 ) {
   const old = await ctx.db
     .query("workspaceSearchOrigins")
@@ -237,9 +324,9 @@ async function writeSearchProjection(
         .eq("canonicalKey", origin.canonicalKey)
         .eq("analysisKey", origin.analysisKey),
     )
-    .take(130);
+    .take(maxDocuments + 1);
   ensure(
-    docs.length <= 129,
+    docs.length <= maxDocuments,
     "POLICY_BLOCKED",
     "Search projection requires operator review.",
   );
@@ -249,7 +336,8 @@ async function writeSearchProjection(
   let canonicalTitle = postDisplayTitle(source);
   let authorName = source.linkPreview?.authorName?.slice(0, 160) ?? "";
   let publicUrl = source.url ?? "";
-  if (origin.canonicalKey.startsWith("shared:")) {
+  const canonicalShared = origin.canonicalKey.startsWith("shared:");
+  if (canonicalShared) {
     const familyId = ctx.db.normalizeId(
       "catalogFamilies",
       origin.canonicalKey.slice(7),
@@ -274,38 +362,107 @@ async function writeSearchProjection(
   } catch {
     /* supplied text has no platform */
   }
+  const retained = evidence ? retainedEvidenceContent(evidence) : undefined;
+  const passages: { title: string; text: string; id?: string }[] = [];
+  if (source.text && !canonicalShared)
+    passages.push({ title: "Saved source text", text: source.text });
+  for (const observation of retained?.observations ?? []) {
+    if (observation.basis === "transcript") continue;
+    passages.push({
+      title:
+        observation.basis === "caption"
+          ? "Source caption"
+          : "Visual observation",
+      text: observation.text,
+      id: observation.id,
+    });
+  }
+  for (const segment of retained?.transcript ?? [])
+    passages.push({
+      title: "Transcript passage",
+      text: segment.text,
+      id: segment.id,
+    });
+  const creator = authorName.trim() || undefined;
+  const creatorKey = creator
+    ? normalizeSearchText(creator).replace(/^@/, "")
+    : undefined;
+  const spaces = !origin.grantId
+    ? await ctx.db
+        .query("sourceSpaces")
+        .withIndex("by_source", (q) => q.eq("sourceId", source._id))
+        .take(2)
+    : [];
   for (const item of projectionItems(
     source,
     output,
     canonicalTitle,
     `${authorName} ${platform}`,
+    passages,
   )) {
     const fields = {
       organizationId: origin.organizationId,
       canonicalKey: origin.canonicalKey,
       analysisKey: origin.analysisKey,
       ...item,
+      ...(creator ? { creator, creatorKey } : {}),
+      ...(spaces.some(({ space }) => space === "personal")
+        ? { personal: true }
+        : {}),
+      ...(spaces.some(({ space }) => space === "business")
+        ? { business: true }
+        : {}),
+      ...(item.itemKey === "post"
+        ? {
+            normalizedTitle: normalizeSearchText(canonicalTitle).slice(0, 200),
+            ...(publicUrl ? { canonicalUrl: publicUrl } : {}),
+          }
+        : {}),
       metadataVersion: 2 as const,
       platform: sourcePlatform(publicUrl, source.kind),
       updatedAt: Date.now(),
     };
     const doc = existing.get(item.itemKey);
+    let documentId: Id<"workspaceSearchDocuments">;
+    let documentRevision: number;
     if (doc) {
-      if (!sameFields(doc, fields)) {
+      const same =
+        sameFields(doc, fields) &&
+        (!doc.personal || !!fields.personal) &&
+        (!doc.business || !!fields.business);
+      if (!same) {
+        fields.updatedAt = Math.max(fields.updatedAt, doc.updatedAt + 1);
         await ctx.db.replace(doc._id, fields);
         changed = true;
       }
+      documentId = doc._id;
+      documentRevision = same ? doc.updatedAt : fields.updatedAt;
       existing.delete(item.itemKey);
     } else {
-      await ctx.db.insert("workspaceSearchDocuments", fields);
+      documentId = await ctx.db.insert("workspaceSearchDocuments", fields);
+      documentRevision = fields.updatedAt;
       changed = true;
     }
+    const vector = await ctx.db
+      .query("workspaceSearchVectors")
+      .withIndex("by_document", (q) => q.eq("documentId", documentId))
+      .unique();
+    const vectorFields = {
+      organizationId: origin.organizationId,
+      documentId,
+      documentRevision,
+      pending: true,
+    };
+    if (!vector) await ctx.db.insert("workspaceSearchVectors", vectorFields);
+    else if (vector.documentRevision !== documentRevision)
+      await ctx.db.replace(vector._id, vectorFields);
   }
   for (const doc of existing.values()) {
-    await ctx.db.delete(doc._id);
+    await removeSearchDocument(ctx, doc._id);
     changed = true;
   }
   if (changed) await bumpWorkspaceSearch(ctx, origin.organizationId);
+  await scheduleSearchVectors(ctx, origin.organizationId);
 }
 
 export async function refreshDirectSearchSource(
@@ -346,6 +503,9 @@ export async function refreshDirectSearchSource(
       },
       source,
       selected?.output ?? (source.state === "ready" ? source.analysis : null),
+      selected
+        ? ((await ctx.db.get(selected.evidenceId)) ?? undefined)
+        : undefined,
     );
     return true;
   } catch (error) {
@@ -378,10 +538,10 @@ export async function refreshSharedSearchSource(
       grantId,
       sourceId,
     );
-    const selected = reference.analysisVersionId
-      ? (await retainedVersion(ctx, source, reference.analysisVersionId))
-          .version
+    const retained = reference.analysisVersionId
+      ? await retainedVersion(ctx, source, reference.analysisVersionId)
       : null;
+    const selected = retained?.version;
     await writeSearchProjection(
       ctx,
       {
@@ -401,6 +561,7 @@ export async function refreshSharedSearchSource(
       },
       source,
       selected?.output ?? source.analysis,
+      retained?.evidence,
     );
     return true;
   } catch (error) {

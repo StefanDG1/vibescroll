@@ -40,6 +40,8 @@ export default async function Demo({
             ? "source"
             : [
                   "library",
+                  "posts",
+                  "inbox",
                   "trends",
                   "projects",
                   "proposals",

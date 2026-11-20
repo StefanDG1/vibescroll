@@ -56,6 +56,16 @@ function fixture(denied = false) {
       return [
         { _id: "proposal", repositoryId: "repo", title: "Synthetic plan" },
       ];
+    if (name === "projects:list")
+      return [{ _id: "project", name: "Manual project" }];
+    if (name === "product:overview")
+      return {
+        runs: [{ _id: "run", proposalId: "proposal", status: "merged" }],
+        notifications: [{ _id: "activity", read: false }],
+      };
+    if (name === "product:usage") return { wallet: null };
+    if (name === "jobs:customerRoutes")
+      return { execution: { cloudReady: true } };
     if (name === "devices:list") return [{ _id: "device", state: "paired" }];
     if (name === "githubLinks:choices")
       return [{ id: 1, fullName: "synthetic/project" }];
@@ -63,13 +73,14 @@ function fixture(denied = false) {
   });
   return calls;
 }
-it("loads project review, context and scan prerequisites in six scoped reads including header Save setup without fetching library or billing", async () => {
+it("loads selected repositories, manual projects and project controls without fetching library or billing", async () => {
   const calls = fixture();
   const result = await workspaceData({ org: organizationId, view: "projects" });
   expect(calls.map((c) => c.name)).toEqual([
     "organizations:details",
     "product:proposals",
     "product:repositories",
+    "projects:list",
     "devices:list",
     "githubLinks:choices",
     "aiPreferences:read",
@@ -82,6 +93,7 @@ it("loads project review, context and scan prerequisites in six scoped reads inc
     sources: [],
     usage: null,
     repositories: [{ _id: "repo" }],
+    projects: [{ _id: "project" }],
     proposals: [{ _id: "proposal" }],
     devices: [{ _id: "device" }],
   });
@@ -150,23 +162,52 @@ it("denies missing or unavailable selected sources instead of loading a broad wo
   );
 });
 it.each(["plans", "proposals"])(
-  "loads %s with three scoped reads including header Save setup",
+  "loads %s with project names and Save settings",
   async (view) => {
     const calls = fixture();
     const result = await workspaceData({ org: organizationId, view });
     expect(calls.map((c) => c.name)).toEqual([
       "organizations:details",
       "product:proposals",
+      "product:repositories",
       "aiPreferences:read",
     ]);
     expect(result).toMatchObject({
       workspaceSlice: "plans",
       sources: [],
-      repositories: [],
+      repositories: [{ _id: "repo", fullName: "synthetic/project" }],
       devices: [],
       githubChoices: [],
       usage: null,
     });
+    expect(result.repositories).toEqual([
+      { _id: "repo", fullName: "synthetic/project" },
+    ]);
+  },
+);
+it.each(["runs", "improvements"])(
+  "loads %s with scoped workflow data and skips unrelated library reads",
+  async (view) => {
+    const calls = fixture();
+    const result = await workspaceData({ org: organizationId, view });
+    expect(calls.map((c) => c.name)).toEqual([
+      "organizations:details",
+      "product:overview",
+      "product:repositories",
+      "product:proposals",
+      ...(view === "improvements"
+        ? ["product:usage", "jobs:customerRoutes"]
+        : []),
+      "aiPreferences:read",
+    ]);
+    expect(result).toMatchObject({
+      sources: [],
+      runs: [{ _id: "run", proposalId: "proposal", status: "merged" }],
+      notifications: [{ _id: "activity", read: false }],
+    });
+    expect(result.repositories).toEqual([
+      { _id: "repo", fullName: "synthetic/project" },
+    ]);
   },
 );
 it("does not convert membership loss into a successful empty project or plan page", async () => {

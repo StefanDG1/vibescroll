@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PublicPage } from "@/components/site";
+import { PublicIntro, PublicPage } from "@/components/site";
 import { PublicKnowledgePending } from "@/components/public-knowledge-pending";
 import { readPublicCollection } from "@/lib/public-knowledge";
 import { publicSlug } from "@/lib/public-knowledge-display";
@@ -29,32 +29,38 @@ export default async function Collection({
   if (result.state === "missing") notFound();
   return (
     <PublicPage>
-      <Link href="/collections">All public collections</Link>
+      <PublicIntro
+        title={result.data?.title ?? "Public collection"}
+        back={{ href: "/collections", label: "All public collections" }}
+      >
+        {result.data?.description && <p>{result.data.description}</p>}
+      </PublicIntro>
       {result.state !== "ready" ? (
-        <PublicKnowledgePending unavailable={result.state === "unavailable"} />
+        <PublicKnowledgePending
+          unavailable={result.state === "unavailable"}
+          retryHref={`/collections/${slug}`}
+        />
       ) : (
         <>
-          <h1>{result.data!.title}</h1>
-          <p>{result.data!.description}</p>
-          <p>Topic: {result.data!.topic}</p>
+          <p className="public-meta">Topic · {result.data!.topic}</p>
           <p>
             These edition summaries are AI-generated and may contain errors.
             Open an edition to review its source references before relying on
             it.
           </p>
-          <div className="help-index">
+          <div className="public-card-grid">
             {result.data!.editions.map((edition) => (
-              <article key={edition.slug}>
-                <h2>
-                  <Link href={`/editions/${edition.slug}`}>
-                    {edition.title}
-                  </Link>
-                </h2>
+              <Link
+                className="public-list-card"
+                href={`/editions/${edition.slug}`}
+                key={edition.slug}
+              >
+                <h2>{edition.title}</h2>
                 <p>{edition.summary}</p>
                 <p>
                   Edition {edition.version}, published by {edition.publisher}
                 </p>
-              </article>
+              </Link>
             ))}
           </div>
           <p>

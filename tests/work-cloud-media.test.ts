@@ -1037,16 +1037,6 @@ it("expires app evidence and schedules generation-bounded derivative scrub witho
   const authoredNotes = await s.t.run((ctx) =>
     ctx.db.query("feedback").collect(),
   );
-  expect(
-    (
-      await s.t.run((ctx) =>
-        ctx.db
-          .query("sourceCategories")
-          .withIndex("by_source", (q) => q.eq("sourceId", s.sourceId))
-          .collect(),
-      )
-    ).some((row) => row.searchable?.includes("Synthetic cited result")),
-  ).toBe(true);
   const original = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
   vi.setSystemTime(s.retainUntil + 1);
   await expect(currentOrderedSource(original)).rejects.toThrow();

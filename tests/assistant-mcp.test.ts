@@ -2,18 +2,24 @@ import { expect, it, vi } from "vitest";
 import { createKnowledgeHandler } from "../packages/mcp/server";
 import { embeddedUiEnabled } from "../packages/widget/setup";
 const emptySearch = {
-  results: [],
-  next_offset: null,
+  mode: "hybrid",
+  posts: [],
+  matches: [],
   next_cursor: null,
   profile_id: "synthetic-profile",
   grant_version: 1,
   coverage: "synthetic",
-  scanned_posts: 0,
-  matched_items: 0,
+  scanned_candidates: 0,
+  examined_sources: 0,
+  loaded_bytes: 0,
+  session_candidates: 0,
+  projection_revision: 0,
+  index_ready: true,
+  semantic: false,
+  status: "no-matches",
   has_more: false,
   exhausted: true,
   truncated: false,
-  match_limit_reached: false,
 };
 const invoke = vi.fn(async () => ({
   ok: true,
@@ -786,9 +792,9 @@ it("exposes the durable proposal loop with explicit paid-start and external-publ
   );
 });
 
-it("keeps federated search inputs through the native MCP schema and rejects ranked-only fields in legacy calls", async () => {
+it("keeps federated search inputs through the native MCP schema and rejects the obsolete mode flag", async () => {
   const value = {
-    mode: "ranked_v1",
+    mode: "hybrid",
     posts: [],
     matches: [],
     next_cursor: null,
@@ -804,11 +810,13 @@ it("keeps federated search inputs through the native MCP schema and rejects rank
     session_candidates: 0,
     projection_revision: 1,
     index_ready: true,
+    semantic: false,
+    status: "no-matches",
   };
   const backend = vi.fn(async () => ({ ok: true, status: 200, value }));
   const args = {
     query: "onboarding",
-    mode: "ranked_v1",
+    review: true,
     workspaceIds: ["one", "two"],
     projectId: "project-one",
     filters: {
@@ -830,10 +838,9 @@ it("keeps federated search inputs through the native MCP schema and rejects rank
   expect(response.result.isError).not.toBe(true);
   expect(backend).toHaveBeenCalledExactlyOnceWith("search", args);
   backend.mockClear();
-  const { mode: _mode, ...withoutMode } = args;
   await call(
     "tools/call",
-    { name: "search", arguments: withoutMode },
+    { name: "search", arguments: { ...args, mode: "ranked_v1" } },
     ["knowledge:read"],
     backend,
     "2026-07-28",

@@ -112,15 +112,3 @@ export function fitMatch(
   }
   return result;
 }
-
-export async function searchPrefixHash(ids: string[]) {
-  const bytes = new Uint8Array(
-    await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(JSON.stringify(ids)),
-    ),
-  );
-  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join(
-    "",
-  );
-}

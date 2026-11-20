@@ -1,3 +1,4 @@
+import { localSnapshotEnabled } from "@/lib/local-snapshot-mode";
 import { backend, api } from "@/lib/backend";
 import { signedObject } from "../../../../../../packages/providers/storage";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
@@ -16,6 +17,20 @@ export async function GET(
 ) {
   try {
     const reference = (await params).id;
+    if (localSnapshotEnabled(req.headers.get("host"))) {
+      const { readLocalEvidence } = await import("@/lib/local-snapshot");
+      const bytes = await readLocalEvidence(reference);
+      const query = new URL(req.url).searchParams;
+      if (query.get("inline") === "true" || query.get("view") === "true") {
+        return new Response(new Uint8Array(bytes), {
+          headers: { ...privateHeaders, "Content-Type": "image/jpeg" },
+        });
+      }
+      return Response.json(
+        { url: `/api/evidence/${encodeURIComponent(reference)}?inline=true` },
+        { headers: privateHeaders },
+      );
+    }
     if (
       reference.startsWith("catalog~") ||
       reference.startsWith("catalog-browse~")

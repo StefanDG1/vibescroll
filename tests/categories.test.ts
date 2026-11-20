@@ -185,20 +185,7 @@ describe("evolving category boundaries", () => {
     const { t, a, org, source } = await setup();
     for (let i = 34; i >= 0; i--)
       await source(`Synthetic ${String(i).padStart(2, "0")}`);
-    await t.run(async (ctx) => {
-      const row = await ctx.db
-        .query("sources")
-        .withIndex("by_org", (q) => q.eq("organizationId", org))
-        .first();
-      await ctx.db.patch(row!._id, { searchable: "uniquestarmarker" });
-    });
     await t.mutation(internal.categories.backfill, {});
-    const search = await a.query(api.product.library, {
-      organizationId: org,
-      category: "astrophotography",
-      search: "uniquestarmarker",
-    });
-    expect(search.items).toHaveLength(1);
     await t.finishAllScheduledFunctions(() => {});
     const first = await a.query(api.product.library, {
       organizationId: org,

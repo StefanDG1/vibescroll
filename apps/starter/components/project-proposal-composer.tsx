@@ -1,8 +1,13 @@
 "use client";
+import { ProjectMark } from "./project-mark";
+import { projectLabel } from "../lib/home-feed";
+import compact from "./compact-projects.module.css";
 import { useId, useRef, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Plus, Sparkles } from "lucide-react";
 import { Button } from "@companynerve/ui";
 import { SettingsPanel } from "./settings-panel";
+import { ProposalArtifactCore } from "./assistant-elements/proposal-artifact-core";
+import type { FeedProposal } from "../lib/home-feed";
 import { ProjectFitBreakdown } from "./assistant-elements/project-fit-breakdown";
 import type {
   TopicFit,
@@ -23,6 +28,8 @@ export function ProjectProposalComposer({
   insights,
   sourceTitle,
   projects,
+  compactProjects,
+  existingProposals,
   suggestions,
   disabled,
   call,
@@ -31,6 +38,7 @@ export function ProjectProposalComposer({
   onSaved,
   onPreferencesChange,
   initialGoal = "",
+  aiFirst = false,
 }: {
   organizationId: string;
   sourceId: string;
@@ -39,6 +47,8 @@ export function ProjectProposalComposer({
   insights?: { id: string; title?: string; claim: string }[];
   sourceTitle?: string;
   projects: Project[];
+  compactProjects?: Project[];
+  existingProposals?: FeedProposal[];
   suggestions: (Project & {
     topics: string[];
     fit?: TopicFit;
@@ -53,6 +63,7 @@ export function ProjectProposalComposer({
   onSaved?: (proposalId: string) => void;
   onPreferencesChange?: () => void;
   initialGoal?: string;
+  aiFirst?: boolean;
 }) {
   const uid = useId();
   const [open, setOpen] = useState(false);
@@ -69,11 +80,22 @@ export function ProjectProposalComposer({
   const [error, setError] = useState("");
   const [uncertain, setUncertain] = useState(false);
   const [savedId, setSavedId] = useState<string>();
+  const [chatProposal, setChatProposal] = useState<FeedProposal>();
+  const pickedProject = projects.find((project) => project.id === projectId);
+  const pickedName = pickedProject
+    ? projectLabel(pickedProject.name)
+    : "your project";
   const [continuing, setContinuing] = useState(false);
   const [continued, setContinued] = useState(false);
   const pending = useRef<SaveInput | null>(null);
   const flight = useRef(false);
   const locked = submitting || uncertain || !!savedId;
+  function existingPlan(id: string) {
+    const history = suggestions.find((item) => item.id === id)?.history;
+    return history
+      ? history.samePost.find((plan) => plan.current && plan.review !== "rejected")
+      : existingProposals?.find((plan) => plan.projectId === id && plan.review !== "rejected");
+  }
   const visibleSuggestions = suggestions
     .filter(
       (p) =>
@@ -97,13 +119,19 @@ export function ProjectProposalComposer({
     )
     .slice(0, 3);
   function choose(id: string) {
-    if (!locked) setProjectId(id);
+    if (aiFirst && savedId && id !== projectId) {
+      setChatProposal(undefined);
+      setSavedId(undefined);
+      setGoal(initialGoal);
+      pending.current = null;
+    }
+    if (!locked || (aiFirst && savedId)) setProjectId(id);
     setOpen(true);
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (flight.current || disabled || savedId) return;
-    if (!pending.current && (!title.trim() || !goal.trim())) {
+    if (!aiFirst && !pending.current && (!title.trim() || !goal.trim())) {
       setError("Add a title and a goal for this proposal.");
       return;
     }
@@ -128,14 +156,29 @@ export function ProjectProposalComposer({
           analysisVersionId,
           insightIds,
           contextHash: context.contextHash,
-          title,
-          goal,
-          change,
+          title: aiFirst ? insight.title.slice(0, 160) : title,
+          goal: aiFirst
+            ? goal.trim() ||
+              "Find a useful, feasible improvement for this project using the attached post insights."
+            : goal,
+          change: aiFirst ? "" : change,
         });
       }
       const result = await call("projectProposalSave", pending.current);
       if (!result?.proposalId) throw Error("Save was not confirmed.");
       setSavedId(result.proposalId);
+      if (aiFirst && pickedProject) {
+        setChatProposal({
+          ...pending.current.body,
+          id: result.proposalId,
+          projectId,
+          projectName: pickedProject.name,
+          version: result.version ?? 1,
+          review: "unreviewed",
+          currentProblem: pending.current.body.currentProblem ?? undefined,
+          proposedChange: undefined,
+        });
+      }
       onSaved?.(result.proposalId);
       setUncertain(false);
     } catch (failure) {
@@ -186,117 +229,283 @@ export function ProjectProposalComposer({
       setContinuing(false);
     }
   }
+  const recommendedProjects = compactProjects ? suggestions
+    .filter((project) =>
+      projects.some((item) => item.id === project.id) &&
+      (project.fit?.matched ?? project.topics.length) > 0 &&
+      !existingPlan(project.id))
+    .slice(0, 3) : [];
+  const leadingProjects = recommendedProjects.length
+    ? recommendedProjects
+    : (compactProjects?.slice(0, 3) ?? []);
+  const moreProjects =
+    compactProjects?.filter(
+      (project) => !leadingProjects.some((item) => item.id === project.id),
+    ) ?? [];
+
+  function projectTile(project: Project) {
+    const existing = existingPlan(project.id);
+    const discussion = aiFirst && existingProposals?.find(
+      (proposal) => proposal.id === existing?.id,
+    );
+    const name = projectLabel(project.name);
+    const contents = (
+      <>
+        <ProjectMark name={project.name} />
+        <span>{name}</span>
+      </>
+    );
+    return (
+      <li key={project.id}>
+        {discussion ? (
+          <button
+            type="button"
+            className={compact.tile}
+            aria-label={`Open proposal for ${name}`}
+            onClick={() => {
+              if (flight.current || (uncertain && !savedId)) return;
+              setProjectId(project.id);
+              setChatProposal(discussion);
+              setSavedId(discussion.id);
+              setGoal(initialGoal);
+              setError("");
+              pending.current = null;
+              setOpen(true);
+            }}
+          >
+            {contents}
+          </button>
+        ) : existing ? (
+          <a
+            className={compact.tile}
+            href={`/app/${organizationId}/proposals/${existing.id}`}
+            aria-label={`Open proposal for ${name}`}
+          >
+            {contents}
+          </a>
+        ) : (
+          <button
+            type="button"
+            className={compact.tile}
+            aria-label={`Draft proposal for ${name}`}
+            disabled={
+              disabled || !projects.some((item) => item.id === project.id)
+            }
+            onClick={() => choose(project.id)}
+          >
+            {contents}
+          </button>
+        )}
+      </li>
+    );
+  }
+
   return (
     <div className="insight-project-suggestions">
-      {visibleSuggestions.length > 0 && (
+      {compactProjects ? (
         <>
-          <h4>Suggested projects</h4>
-          {visibleSuggestions.map((p) => {
-            const existing = p.history?.samePost.find(
-              (plan) => plan.current && plan.review !== "rejected",
-            );
-            return (
-              <div key={p.id}>
-                {existing ? (
-                  <a
-                    className="project-choice-row"
-                    href={`/app/${organizationId}/proposals/${existing.id}`}
-                    onClick={onNavigate ? navigate : undefined}
-                  >
-                    <span>
-                      {p.name}
-                      <small>{existing.title}</small>
-                    </span>
-                    <span>
-                      Open plan <ArrowRight size={16} aria-hidden="true" />
-                    </span>
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    className="project-choice-row"
-                    disabled={disabled}
-                    onClick={() => choose(p.id)}
-                  >
-                    <span>
-                      {p.name}
-                      <small>
-                        Topic overlap:{" "}
-                        {p.topics.map((t) => t.replaceAll("_", " ")).join(", ")}
-                      </small>
-                    </span>
-                    <span>
-                      Draft proposal <ArrowRight size={16} aria-hidden="true" />
-                    </span>
-                  </button>
-                )}
-                {p.fit && (
-                  <ProjectFitBreakdown
-                    fit={p.fit}
-                    projectName={p.name}
-                    history={p.history}
-                    priority={p.priority}
-                    priorityRevision={p.priorityRevision}
-                    proposalBase={`/app/${organizationId}/proposals`}
-                    onPriorityChange={
-                      !disabled && p.history
-                        ? async (priority, expectedRevision) => {
-                            const result = await call("setProjectPriority", {
-                              organizationId,
-                              repositoryId: p.id,
-                              priority,
-                              expectedRevision,
-                            });
-                            onPreferencesChange?.();
-                            return result;
-                          }
-                        : undefined
-                    }
-                  />
-                )}
-              </div>
-            );
-          })}
+          {recommendedProjects.length > 0 && (
+            <p className={compact.caption}>Recommended projects</p>
+          )}
+          <ul
+            className={compact.list}
+            aria-label={
+              recommendedProjects.length ? "Recommended projects" : "Your projects"
+            }
+          >
+            {leadingProjects.map(projectTile)}
+          </ul>
+          {moreProjects.length > 0 && (
+            <details className={compact.disclosure}>
+              <summary>
+                <Plus size={16} aria-hidden="true" />
+                {recommendedProjects.length
+                  ? "Your other projects"
+                  : "More projects"}{" "}
+                ({moreProjects.length})
+              </summary>
+              <ul className={compact.list}>{moreProjects.map(projectTile)}</ul>
+            </details>
+          )}
+        </>
+      ) : (
+        <>
+          {visibleSuggestions.length > 0 && (
+            <>
+              <h4>Suggested projects</h4>
+              {visibleSuggestions.map((p) => {
+                const existing = p.history?.samePost.find(
+                  (plan) => plan.current && plan.review !== "rejected",
+                );
+                return (
+                  <div key={p.id}>
+                    {existing ? (
+                      <a
+                        className="project-choice-row"
+                        href={`/app/${organizationId}/proposals/${existing.id}`}
+                        onClick={onNavigate ? navigate : undefined}
+                      >
+                        <span>
+                          {p.name}
+                          <small>{existing.title}</small>
+                        </span>
+                        <span>
+                          Open plan <ArrowRight size={16} aria-hidden="true" />
+                        </span>
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        className="project-choice-row"
+                        disabled={disabled}
+                        onClick={() => choose(p.id)}
+                      >
+                        <span>
+                          {p.name}
+                          <small>
+                            Topic overlap:{" "}
+                            {p.topics
+                              .map((t) => t.replaceAll("_", " "))
+                              .join(", ")}
+                          </small>
+                        </span>
+                        <span>
+                          Draft proposal{" "}
+                          <ArrowRight size={16} aria-hidden="true" />
+                        </span>
+                      </button>
+                    )}
+                    {p.fit && (
+                      <ProjectFitBreakdown
+                        fit={p.fit}
+                        projectName={p.name}
+                        history={p.history}
+                        priority={p.priority}
+                        priorityRevision={p.priorityRevision}
+                        proposalBase={`/app/${organizationId}/proposals`}
+                        onPriorityChange={
+                          !disabled && p.history
+                            ? async (priority, expectedRevision) => {
+                                const result = await call(
+                                  "setProjectPriority",
+                                  {
+                                    organizationId,
+                                    repositoryId: p.id,
+                                    priority,
+                                    expectedRevision,
+                                  },
+                                );
+                                onPreferencesChange?.();
+                                return result;
+                              }
+                            : undefined
+                        }
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
+          {projects.length > 0 ? (
+            <button
+              type="button"
+              className="button"
+              disabled={disabled}
+              onClick={() => choose(projectId)}
+            >
+              {visibleSuggestions.length
+                ? "Choose another project"
+                : "Use in a project"}
+            </button>
+          ) : (
+            <a
+              href={`https://scroll.companynerve.com/app/${organizationId}/projects`}
+              onClick={onNavigate ? navigate : undefined}
+            >
+              Connect a project
+            </a>
+          )}
         </>
       )}
-      {projects.length > 0 ? (
-        <button
-          type="button"
-          className="button"
-          disabled={disabled}
-          onClick={() => choose(projectId)}
-        >
-          {visibleSuggestions.length
-            ? "Choose another project"
-            : "Use in a project"}
-        </button>
-      ) : (
-        <a
-          href={`https://scroll.companynerve.com/app/${organizationId}/projects`}
-          onClick={onNavigate ? navigate : undefined}
-        >
-          Connect a project
-        </a>
-      )}
       <SettingsPanel
-        title="Create proposal"
+        title={aiFirst ? "Proposal chat" : "Create proposal"}
         triggerLabel="Create proposal"
+        variant={aiFirst ? "proposal" : undefined}
         trigger={false}
         open={open}
         onOpenChange={setOpen}
       >
-        <details className="proposal-source-claim">
-          <summary>All post insights included</summary>
-          <ul>
-            {contextInsights.map((item) => (
-              <li key={item.id}>
-                <strong>{item.title}</strong>
-                <p>{item.claim}</p>
-              </li>
-            ))}
-          </ul>
-        </details>
-        {savedId ? (
+        {aiFirst && !chatProposal && (
+          <div className={compact.assistantIntro}>
+            <span className={compact.assistantMark}>
+              <Sparkles size={20} aria-hidden="true" />
+            </span>
+            <div>
+              <h3>Draft with AI for {pickedName}</h3>
+              <p>
+                Find a practical change using this post and the project’s
+                context.
+              </p>
+            </div>
+          </div>
+        )}
+        {!chatProposal && (
+          <details className="proposal-source-claim">
+            <summary>
+              {aiFirst ? "Insights included" : "All post insights included"}
+            </summary>
+            <ul>
+              {contextInsights.map((item) => (
+                <li key={item.id}>
+                  <strong>{item.title}</strong>
+                  <p>{item.claim}</p>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+        {aiFirst && chatProposal ? (
+          <ProposalArtifactCore
+            key={chatProposal.id}
+            presentation="reader"
+            chatOnly
+            proposal={chatProposal}
+            enabled={open}
+            readOnly={disabled}
+            href={`/app/${organizationId}/proposals/${chatProposal.id}`}
+            call={call}
+          />
+        ) : aiFirst ? (
+          <form className={compact.assistantForm} onSubmit={save}>
+            <label htmlFor={`${uid}-direction`}>
+              What should the AI focus on? <small>Optional</small>
+            </label>
+            <textarea
+              id={`${uid}-direction`}
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              maxLength={2000}
+              disabled={locked}
+              rows={3}
+              placeholder="Suggest a small change we could ship this week"
+            />
+            {error && <p role="alert">{error}</p>}
+            <Button
+              type="submit"
+              aria-busy={submitting}
+              disabled={disabled || submitting || !projectId}
+            >
+              <Sparkles size={16} aria-hidden="true" />
+              {uncertain
+                ? "Retry opening chat"
+                : submitting
+                  ? "Opening chat…"
+                  : "Start AI draft"}
+            </Button>
+            <small>You’ll see the credit limit before generation starts.</small>
+          </form>
+        ) : savedId ? (
           <section aria-live="polite">
             <h3>Proposal saved</h3>
             <p>Continue refining it in ChatGPT, Codex or VibeScroll.</p>
@@ -320,7 +529,7 @@ export function ProjectProposalComposer({
             {error && <p role="alert">{error}</p>}
             <a
               className="button"
-              href={`https://scroll.companynerve.com/app/${organizationId}/proposals/${savedId}`}
+              href={`${onNavigate ? "https://scroll.companynerve.com" : ""}/app/${organizationId}/proposals/${savedId}`}
               onClick={onNavigate ? navigate : undefined}
             >
               Open proposal <ArrowRight size={16} aria-hidden="true" />

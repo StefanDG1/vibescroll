@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-18",
+  "requirement": "R178 audit follow-up",
+  "status": "live",
+  "website": {
+    "deployment": "dpl_BiFRwY2XisJ9AnQ9WxgCs4AFcwYG",
+    "commit": "46c88c721d36a90f0cb12ad80b1de5c1d1d98517",
+    "canonical": "https://scroll.companynerve.com",
+    "healthVersion": "0.1.0-alpha.20261118093707.g46c88c721d36",
+    "previousDeployment": "dpl_DszTxMM6oFLAxkd6jpCxuizLjvpA",
+    "normalDomainAssignmentRestored": true,
+    "buildSeconds": 68.063
+  },
+  "ci": {
+    "run": "https://github.com/StefanDG1/vibescroll/actions/runs/44277669536",
+    "status": "success"
+  },
+  "verification": {
+    "stagedPublicCases": 12,
+    "canonicalPublicCases": 12,
+    "viewportWidths": [390, 1440],
+    "unauthenticatedAppRedirect": "WorkOS authorization",
+    "mcpProfileSummary": "Read succeeded with three profiles",
+    "signedInProduction": "Pending Chrome session",
+    "productionWritesSent": 0
+  },
+  "funding": {
+    "observedHostingUsageUSD": 3.07,
+    "reservationUSD": 0.05,
+    "oldHoldsPreserved": true,
+    "paidModelRequests": 0
+  },
+  "backendPublished": false
+}

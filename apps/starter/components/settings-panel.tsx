@@ -7,14 +7,18 @@ export function SettingsPanel({
   triggerLabel,
   children,
   trigger: triggerContent,
+  showTriggerLabel = false,
   open: controlled,
   onOpenChange,
+  variant,
 }: {
   title: string;
   triggerLabel: string;
   children: ReactNode;
   trigger?: ReactNode | false;
+  showTriggerLabel?: boolean;
   open?: boolean;
+  variant?: "post" | "proposal";
   onOpenChange?: (value: boolean) => void;
 }) {
   const [localOpen, setLocalOpen] = useState(false);
@@ -69,17 +73,19 @@ export function SettingsPanel({
         <button
           ref={trigger}
           type="button"
-          className="post-settings-trigger icon-button"
+          className={showTriggerLabel ? "post-settings-trigger button secondary" : "post-settings-trigger icon-button"}
           aria-label={triggerLabel}
           title={triggerLabel}
           onClick={() => change(true)}
         >
           {triggerContent ?? <Settings2 size={19} aria-hidden="true" />}
+          {showTriggerLabel && <span>{triggerLabel}</span>}
         </button>
       )}
       <dialog
         ref={dialog}
         className="post-settings-drawer"
+        data-drawer-variant={variant}
         aria-labelledby={titleId}
         onCancel={(event) => {
           event.preventDefault();
@@ -103,7 +109,10 @@ export function SettingsPanel({
               <X size={20} aria-hidden="true" />
             </button>
           </header>
-          {mounted && children}
+          {mounted && (variant
+            ? <div className="post-settings-body">{children}</div>
+            : children
+          )}
         </div>
       </dialog>
     </>

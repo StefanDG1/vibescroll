@@ -1,0 +1,76 @@
+/* Keep both consent choices equally available without obscuring the whole page. */
+@media (max-width: 650px) {
+  body:has(.public-site, [data-onboarding-shell], .developer-docs)
+    #cc-main
+    .cm {
+    --cc-modal-margin: 0.5rem;
+    border: 1px solid var(--cc-separator-border-color);
+  }
+
+  body:has(.public-site, [data-onboarding-shell], .developer-docs)
+    #cc-main
+    .cm__texts {
+    padding: 0.85rem 0.95rem 0.45rem;
+  }
+
+  body:has(.public-site, [data-onboarding-shell], .developer-docs)
+    #cc-main
+    .cm__desc {
+    padding: 0.4rem 0 0;
+    line-height: 1.45;
+  }
+
+  body:has(.public-site, [data-onboarding-shell], .developer-docs)
+    #cc-main
+    .cm__btns {
+    padding: 0.6rem 0.95rem;
+    gap: 0.4rem;
+  }
+
+  body:has(.public-site, [data-onboarding-shell], .developer-docs)
+    #cc-main
+    .cm__btn-group:first-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  body:has(.public-site, [data-onboarding-shell], .developer-docs)
+    #cc-main
+    .cm__btn-group {
+    width: 100%;
+    margin: 0;
+  }
+
+  body:has(.public-site, [data-onboarding-shell], .developer-docs)
+    #cc-main
+    .cm__btn-group
+    .cm__btn {
+    flex: 1 1 0;
+    margin: 0 !important;
+    min-height: 44px;
+    padding: 0.45rem 0.55rem;
+    line-height: 1.2;
+  }
+
+  body:has(.public-site, [data-onboarding-shell], .developer-docs)
+    #cc-main
+    .cm__footer {
+    padding: 0.35rem 0.95rem;
+  }
+}
+
+@media (min-width: 365px) and (max-width: 650px) {
+  body:has(.public-site, [data-onboarding-shell], .developer-docs)
+    #cc-main
+    .cm__btns {
+    display: grid !important;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(.public-site, [data-onboarding-shell], .developer-docs) #cc-main {
+    --cc-modal-transition-duration: 0s;
+  }
+}

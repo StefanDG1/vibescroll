@@ -123,7 +123,6 @@ export const finish = internalMutation({
       )
         ? {
             title: metadata.title,
-            searchable: [metadata.title, ...s.tags].join(" "),
           }
         : {}),
       ...(a.publishedAt &&

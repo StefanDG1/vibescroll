@@ -1,0 +1,18 @@
+{
+  "id": "analytics-2026-11-20.1",
+  "effectiveDate": "2026-11-20",
+  "previousRelease": "v1-2026-11-01.1",
+  "operatorApproved": true,
+  "approvalEvidence": "Owner requested production launch and onboarding analytics, including the consented journey and repeat-use measurement proposed in the pilot report.",
+  "professionalLegalReviewClaimed": false,
+  "documents": {
+    "COOKIES": {
+      "version": "1.2.0",
+      "sha256": "cd821738f930835a3d560ee861340596bc28952d038cf454c36540173d733ed6"
+    },
+    "SUBPROCESSORS": {
+      "version": "1.1.0",
+      "sha256": "9680627fab07c90da87702f63a9c01c45caeb6f9be914015532edcd89421d1d5"
+    }
+  }
+}

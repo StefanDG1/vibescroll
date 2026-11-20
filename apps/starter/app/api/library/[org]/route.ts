@@ -1,4 +1,7 @@
-import { backend, api } from "@/lib/backend";
+import { backend } from "@/lib/backend";
+import { loadLibraryPage } from "@/lib/library-query";
+import { workspaceAccessLost } from "@/lib/workspace-access";
+import { unstable_rethrow } from "next/navigation";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 export async function GET(
   request: Request,
@@ -6,11 +9,9 @@ export async function GET(
 ) {
   try {
     const q = new URL(request.url).searchParams;
-    const result = await (
-      await backend()
-    ).query(api.product.library, {
+    const result = await loadLibraryPage(await backend(), {
       organizationId: (await params).org as Id<"organizations">,
-      search: q.get("q") || undefined,
+      query: q.get("q") || undefined,
       state: q.get("state") || undefined,
       category: q.get("category") || undefined,
       sort: q.get("sort") || undefined,
@@ -22,10 +23,14 @@ export async function GET(
         "Referrer-Policy": "no-referrer",
       },
     });
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     return Response.json(
       { error: "Library unavailable." },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
+      {
+        status: workspaceAccessLost(error) ? 403 : 503,
+        headers: { "Cache-Control": "no-store" },
+      },
     );
   }
 }

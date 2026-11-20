@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileVideo, ArrowUpRight } from "lucide-react";
+import { Bookmark, ArrowUpRight, Quote } from "lucide-react";
 import { useId, useState } from "react";
 import { InsightCardControl } from "./insight-card-control";
 import styles from "./landing-insight-preview.module.css";
@@ -30,27 +30,30 @@ export function LandingInsightPreview() {
       className={styles.preview}
       aria-label="Saved post to insights example"
     >
-      <figcaption className={styles.caption}>Synthetic example</figcaption>
+      <figcaption className={styles.caption}>
+        <Bookmark size={17} aria-hidden="true" />
+        <span>From a saved post</span>
+        <small>Synthetic example</small>
+      </figcaption>
       <div className={styles.source}>
-        <p className={styles.stage}>Saved post</p>
+        <p className={styles.stage}>Source passage</p>
         <div className={styles.post}>
-          <FileVideo size={28} aria-hidden="true" />
-          <strong>Make the first screen useful.</strong>
-          <p>
+          <Quote size={22} aria-hidden="true" />
+          <blockquote>
             Show an editable example before asking someone to connect a project.
             Let them explore or start fresh.
-          </p>
+          </blockquote>
         </div>
       </div>
       <div className={styles.insights}>
-        <p className={styles.stage}>Useful insights</p>
+        <p className={styles.stage}>Insights</p>
         {insights.map((insight, index) => (
           <div className={styles.card} key={insight.title}>
             <InsightCardControl
               title={insight.title}
-              subtitle="From this sample post"
               icon={insight.icon}
               expanded={expanded === index}
+              disclosure="plus"
               aria-controls={`${id}-insight-${index}`}
               onClick={() => setExpanded(expanded === index ? null : index)}
             >
@@ -65,7 +68,7 @@ export function LandingInsightPreview() {
           </div>
         ))}
         <Link className={styles.example} href="/example">
-          Explore the example <ArrowUpRight size={16} aria-hidden="true" />
+          Open the full example <ArrowUpRight size={16} aria-hidden="true" />
         </Link>
       </div>
     </figure>

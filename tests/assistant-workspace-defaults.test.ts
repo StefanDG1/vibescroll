@@ -456,12 +456,6 @@ it("keeps implicit read, status, proposal and widget selection on the app defaul
     preferredId: f.org,
   });
   await f.assistant.mutation(internal.assistantGrants.ensureDefaults, {});
-  const legacy = await f.assistant.query(internal.assistant.search, {
-    query: "needle",
-  });
-  expect(legacy.profile_id).toBe(f.org);
-  expect(legacy.results.map((result) => result.id)).toEqual([personal]);
-  expect(legacy.results.map((result) => result.id)).not.toContain(shared);
   const summary = await f.assistant.query(internal.assistant.fetch, {
     id: personal,
     format: "structured_v1",
@@ -480,24 +474,49 @@ it("keeps implicit read, status, proposal and widget selection on the app defaul
   expect(widget.profile_id).toBe(f.org);
   vi.stubEnv("WORKSPACE_SEARCH_ENABLED", "true");
   vi.stubEnv("WORKSPACE_SEARCH_CURSOR_SECRET", "c".repeat(64));
-  const ranked = await f.assistant.query(internal.workspaceSearch.search, {
-    query: "needle",
-    mode: "ranked_v1",
-  });
+  for (const organizationId of [f.org, team.id]) {
+    for (let page = 0; page < 4; page++) {
+      if (
+        (
+          await f.t.mutation(internal.workspaceSearch.bootstrap, {
+            organizationId,
+          })
+        ).done
+      )
+        break;
+    }
+  }
+  const ranked = await f.assistant.action(
+    internal.workspaceSearchActions.search,
+    {
+      query: "needle",
+    },
+  );
   expect(ranked.profile_id).toBe(f.org);
+  expect(ranked.posts.map(({ reference }) => reference.sourceId)).toEqual([
+    personal,
+  ]);
+  expect(ranked.posts.map(({ reference }) => reference.sourceId)).not.toContain(
+    shared,
+  );
   expect(ranked.workspaces).toBeUndefined();
-  const filtered = await f.assistant.query(internal.workspaceSearch.search, {
-    query: "needle",
-    mode: "ranked_v1",
-    filters: { platforms: ["text"] },
-  });
+  const filtered = await f.assistant.action(
+    internal.workspaceSearchActions.search,
+    {
+      query: "needle",
+
+      filters: { platforms: ["text"] },
+    },
+  );
   expect(filtered.profile_id).toBe(f.org);
-  expect(filtered.workspaces).toHaveLength(1);
+  expect(filtered.workspaces).toBeUndefined();
   await f.t.run((ctx) =>
     ctx.db.patch(f.actor, { defaultWorkspaceId: undefined }),
   );
   await expect(
-    f.assistant.query(internal.assistant.search, { query: "needle" }),
+    f.assistant.action(internal.workspaceSearchActions.search, {
+      query: "needle",
+    }),
   ).rejects.toThrow(/PROFILE_SELECTION_REQUIRED/);
   await expect(
     f.assistant.query(internal.assistantProposals.list, { detail: "summary" }),

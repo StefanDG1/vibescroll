@@ -1,6 +1,9 @@
+import { localSnapshotEnabled } from "@/lib/local-snapshot-mode";
 import { backend, api } from "@/lib/backend";
+import { sourceUnavailable, workspaceAccessLost } from "@/lib/workspace-access";
+import { unstable_rethrow } from "next/navigation";
 import { postTopics, suggestProjects } from "@/lib/project-suggestions";
-import type { FeedDetail } from "@/lib/home-feed";
+import { feedInsightEvidence, type FeedDetail } from "@/lib/home-feed";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { postDisplayTitle } from "../../../../../../packages/sources/display";
 import { postThumbnailCandidates } from "../../../../../../packages/sources/thumbnail";
@@ -19,7 +22,8 @@ export async function GET(
     const organizationId = new URL(request.url).searchParams.get(
       "organizationId",
     );
-    if (!organizationId) throw Error("Workspace required");
+    if (!organizationId)
+      return Response.json({ error: "Post unavailable." }, { status: 404, headers });
     const client = await backend();
     const id = (await params).id as Id<"sources">;
     const [source, projects, recommendations] = await Promise.all([
@@ -37,7 +41,8 @@ export async function GET(
         })
         .catch(() => null),
     ]);
-    if (!source || source.state !== "ready") throw Error("Post unavailable");
+    if (!source || source.state !== "ready")
+      return Response.json({ error: "Post unavailable." }, { status: 404, headers });
     const detail: FeedDetail = {
       id: source._id,
       generation: source.generation,
@@ -45,6 +50,10 @@ export async function GET(
       authorName: source.linkPreview?.authorName ?? null,
       url: source.url ?? null,
       summary: source.summary ?? "",
+      durationMs:
+        source.linkPreview?.durationSeconds == null
+          ? null
+          : Math.round(source.linkPreview.durationSeconds * 1000),
       categoryKeys: postTopics(source),
       thumbnailAssetIds: postThumbnailCandidates(source),
       analysisVersionId: source.analysisVersion?.id ?? null,
@@ -54,6 +63,7 @@ export async function GET(
         claim: insight.claim,
         icon: insight.icon,
         categories: insight.categories,
+        ...feedInsightEvidence(source, insight.evidence),
       })),
       proposals: (source.proposals ?? [])
         .sort(
@@ -84,15 +94,29 @@ export async function GET(
           acceptanceCriteria: proposal.detail?.acceptanceCriteria ?? [],
         })),
       suggestions: recommendations ?? suggestProjects(source, projects),
+      allProjects: projects.map((project) => ({
+        id: project._id,
+        name: project.fullName,
+      })),
       projects: projects
-        .filter((project) => project.enabled && project.confirmed)
+        .filter(
+          (project) =>
+            project.enabled &&
+            project.confirmed &&
+            project.status === "connected",
+        )
         .map((project) => ({ id: project._id, name: project.fullName })),
     };
+    if (localSnapshotEnabled(request.headers.get("host"))) {
+      const { localFeedEngagement } = await import("@/lib/local-snapshot");
+      detail.engagement = localFeedEngagement(id);
+    }
     return Response.json(detail, { headers });
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     return Response.json(
       { error: "Post unavailable." },
-      { status: 404, headers },
+      { status: workspaceAccessLost(error) ? 403 : sourceUnavailable(error) ? 404 : 503, headers },
     );
   }
 }

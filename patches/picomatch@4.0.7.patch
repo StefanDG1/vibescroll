@@ -1,0 +1,18 @@
+diff --git a/lib/parse.js b/lib/parse.js
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -287,4 +287,14 @@
+ const analyzeRepeatedExtglob = (body, options) => {
++  // An unescaped glob wildcard adds an unbounded repetition inside this group.
++  // Route it through the existing literal fallback, even when recursion is enabled.
++  for (let index = 0; index < body.length; index++) {
++    if (body[index] === '\\') {
++      index++;
++    } else if (body[index] === '*' && body[index + 1] !== '(') {
++      return { risky: true };
++    }
++  }
++
+   if (options.maxExtglobRecursion === false) {
+     return { risky: false };
+   }

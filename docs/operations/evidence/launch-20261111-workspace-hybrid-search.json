@@ -1,0 +1,77 @@
+{
+  "date": "2026-11-11",
+  "timezone": "Europe/Berlin",
+  "requirement": "R168",
+  "status": "live",
+  "pullRequest": "https://github.com/StefanDG1/vibescroll/pull/200",
+  "website": {
+    "deployment": "dpl_EMC5Kn5KXNngfAiRdPtayJ6RKFyR",
+    "commit": "31d2a8613a640fa5c98ccba35db309579dc68455",
+    "canonicalHealthVersion": "0.1.0-alpha.20261111202031.g31d2a8613a64",
+    "sameBuildPromotionVerified": true,
+    "normalDomainAssignmentRestoredAndVerified": true
+  },
+  "backend": {
+    "deployment": "bold-lemur-667",
+    "preparationCommit": "e458fe71004cfe53e18fde5abea73a36645ec3e1",
+    "commit": "2918a4e5c431435fc895e9f17100adc1710e9dd8",
+    "finalDeployAcknowledged": true,
+    "activeWorkspaces": 5,
+    "projectionSourceRecordsVisited": 320,
+    "lexicalReadyWorkspaces": 5,
+    "vectorReadyWorkspaces": 5,
+    "removedIndexes": [
+      "sourceCategories.category_search",
+      "sources.source_search"
+    ],
+    "obsoleteDerivedValuesCleared": 2191
+  },
+  "verification": {
+    "production": {
+      "libraryExactReferenceRank": 1,
+      "libraryReturnedContinuation": true,
+      "mcpExactReferenceRank": 1,
+      "mcpCompoundExactReferenceRank": 1,
+      "mcpCompoundDistinctEvidencePassages": 2,
+      "mcpCompoundResolvedProject": true,
+      "mcpCompoundUsedSemanticRetrieval": true,
+      "mcpRetiredModeRejected": true,
+      "signedInChatGPTCompoundCheck": {
+        "status": "passed",
+        "promptCount": 1,
+        "vibeScrollSavedReferenceLinks": 2,
+        "findings": ["Space UI", "Pasta UI live progress feedback"]
+      }
+    },
+    "staged": {
+      "embeddingDimensions": 384,
+      "unauthenticatedEmbeddingStatus": 404,
+      "similarTextRankedAboveUnrelatedText": true,
+      "coldEncoderRequestMs": 7290,
+      "warmEncoderRequestMs": 849
+    },
+    "pinnedUbuntu24CI": {
+      "node": "24.22.1",
+      "pnpm": "12.3.4",
+      "command": "node scripts/run-offline.mjs pnpm check",
+      "firstCommitMainPassed": 1773,
+      "firstCommitMainSkipped": 11,
+      "initialSchemaAssertionFailure": "Expected the old table count before adding the search vector table.",
+      "finalCommitChange": "Schema test only.",
+      "finalCommitTargetedSchemaAndRemainingChecksPassed": true,
+      "bothProductionBuildsPassed": true,
+      "dependencyAuditUnresolved": 0,
+      "hostedGitHubRunnerStatusDuringVerification": "Queued."
+    }
+  },
+  "funding": {
+    "conservativeReleaseBudgetUsd": 0.2,
+    "paidModelRequests": 0,
+    "appCreditCharges": 0
+  },
+  "rollback": {
+    "previousWebsiteDeployment": "dpl_FyZnT3kszQ87KdYVgyQZsP52j4H5",
+    "compatibleBackendCommit": "e458fe71004cfe53e18fde5abea73a36645ec3e1",
+    "note": "Restore the compatible backend and repopulate the retired derived search fields before serving the previous website."
+  }
+}

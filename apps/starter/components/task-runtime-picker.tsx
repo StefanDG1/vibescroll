@@ -18,6 +18,7 @@ export function TaskRuntimePicker({
   localStatus = "setup_required",
   disabled = false,
   setupMode = false,
+  overviewOnly = false,
   onSetupNavigate,
 }: {
   value?: TaskRuntime;
@@ -31,6 +32,7 @@ export function TaskRuntimePicker({
   localStatus?: "setup_required" | "offline" | "check_before_running";
   disabled?: boolean;
   setupMode?: boolean;
+  overviewOnly?: boolean;
   onSetupNavigate?: () => void;
 }) {
   const name = useId();
@@ -79,6 +81,17 @@ export function TaskRuntimePicker({
         "Pair your computer and connect your own eligible account. The companion and its isolated runtime must be ready. Review any preparation credits and task limits before starting.",
     },
   ];
+  if (overviewOnly)
+    return (
+      <ul className="account-runtime-summary">
+        {options.map((option) => (
+          <li key={option.id}>
+            <strong>{option.title}</strong>
+            <p>{option.description}</p>
+          </li>
+        ))}
+      </ul>
+    );
   return (
     <fieldset className="task-runtime-picker">
       <legend className={setupMode ? "sr-only" : undefined}>

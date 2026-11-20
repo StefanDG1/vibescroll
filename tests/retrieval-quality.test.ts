@@ -287,25 +287,18 @@ async function fixture() {
       indexedComplete = false;
     do {
       const page = workspaceSearchOutput.parse(
-        await f.assistant.query(internal.workspaceSearch.search, {
+        await f.assistant.action(internal.workspaceSearchActions.search, {
           profileId: f.org,
-          mode: "ranked_v1",
+
           query,
           target,
+          review: true,
           ...(cursor ? { cursor } : {}),
         }),
       );
       const bytes = new TextEncoder().encode(JSON.stringify(page)).byteLength;
       expect(bytes).toBeLessThanOrEqual(workspaceSearchLimits.responseBytes);
-      expect(page.examined_sources).toBeLessThanOrEqual(
-        workspaceSearchLimits.sourceHydrations,
-      );
-      expect(page.scanned_candidates).toBeLessThanOrEqual(
-        workspaceSearchLimits.candidatesPerPage,
-      );
-      expect(page.session_candidates).toBeLessThanOrEqual(
-        workspaceSearchLimits.candidatesPerSession,
-      );
+      expect(page.examined_sources).toBeLessThanOrEqual(24);
       expect(page.posts.map((post) => post.id).length).toBe(
         new Set(page.posts.map((post) => post.id)).size,
       );
@@ -454,7 +447,7 @@ it("records lexical hits, semantic-only misses and bounded host-query expansion 
         {
           date: "2026-11-01",
           environment:
-            "convex-test through actual workspaceSearch.search handler; lexical simulator, not production BM25/latency",
+            "convex-test through actual workspaceSearchActions.search handler; lexical simulator, not production BM25/latency",
           syntheticPosts: posts.length,
           extraFoundationPosts: 1,
           newModelCalls: 0,

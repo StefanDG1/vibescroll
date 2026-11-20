@@ -1,5 +1,13 @@
 # Product analytics
 
+## Launch and onboarding
+
+Open the [VibeScroll launch dashboard](https://eu.posthog.com/project/289940/dashboard/1133517). It contains the landing-to-evidence path, quiz and account progression, setup views and failures, checkout and verified access, first useful action, and repeat evidence use. It filters to journey version 2 on the canonical production site and excludes `utm_source=qa`. Supported campaign codes are `founder_outreach`, `community` and `launch`. Other values and the full URL are omitted. Review the number of observed browser journeys before reading conversion rates.
+
+The SDK still runs in memory without replay or autocapture. Under consent revision 2, the application keeps the random journey ID, campaign and checkout marker in tab storage. An observed signed-in evidence inspection or saved plan can retain the ID in the current browser for up to seven days. The retention chart covers consenting browsers with observed activity. It excludes sign-outs, unavailable storage and activity on another device unless independently observed there. It cannot establish the percentage of all visitors who accepted analytics.
+
+`checkout_progress` records a request, returned Stripe checkout URL, failure or return from an open attempt. `returned_unfinished` is a return to billing without completion and may include a manual return. `pro_verified` describes access the app verified. Use Stripe and the matching entitlement ledger for verified live payments, refunds, and first purchasers. Do not connect or forward customer billing data to PostHog to infer payment from these browser events.
+
 Dedicated project: VibeScroller, PostHog EU Cloud, project 289940. The public write-only project token is configured separately from the existing Exponential project's token. No personal API key is needed in the app. Free setup only; no new purchase.
 
 ## Events and denominators
@@ -30,9 +38,9 @@ Recommended PostHog funnels: import_completed → source_viewed → analysis_app
 
 ## Privacy boundaries
 
-CookieConsent 3.1.0 runs in opt-in mode, equal accept/reject prominence and a persistent preferences control. PostHog JS 1.435.5 uses the no-external bundle loaded only after permission, memory-only identity, no replay/autocapture/page URL/flags/surveys/LLM capture. A second allowlist before_send drops all unknown events and properties, including SDK URL/referrer defaults. Counts cap at 1,000. Tokens are the project's public write-only key, never account credentials. No source, email, workspace, repository or model prompt identifier is added.
+CookieConsent runs in opt-in mode with equal accept and reject controls and a persistent preferences control. PostHog JS uses the no-external bundle loaded only after permission. There is no replay, automatic capture, page URL, flag, survey or prompt capture. A second allowlist in `before_send` drops unknown events and properties, including SDK URL and referrer defaults. Counts cap at 1,000. The capture token is the project's public write-only key. The app does not send source, email, account, workspace, repository or prompt identifiers.
 
-Withdrawal prevents future captures and resets memory. Cookie checks notice withdrawal in another tab. Already-transmitted events cannot be unsent. DNT/GPC override a stored allow choice. Policy drafts do not constitute legal review. Confirm EU provider agreement, retention and production cookie inventory before paid launch.
+Withdrawal stops future captures and clears optional browser storage. Capture checks the consent cookie again so withdrawal in another tab takes effect before the regular sync. Already-transmitted events cannot be unsent. Do Not Track and Global Privacy Control override a stored allow choice. Confirm the actual provider retention and production cookie inventory before broad acquisition.
 
 ## References
 

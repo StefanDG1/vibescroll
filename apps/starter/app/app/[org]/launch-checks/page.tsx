@@ -2,6 +2,9 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { backend, api } from "@/lib/backend";
 import { LaunchChecks } from "@/components/launch-checks";
+import { AccountPageFrame, AccountSection } from "@/components/account-layout";
+import { localSnapshotRequest } from "@/lib/local-snapshot-request";
+import { ClipboardCheck } from "lucide-react";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 
 export default async function Page({
@@ -16,45 +19,67 @@ export default async function Page({
     organizationId: org as Id<"organizations">,
   });
   if (info.role !== "owner" && info.role !== "admin") notFound();
+  const local = await localSnapshotRequest();
   return (
-    <>
-      <h1>Connect LaunchProof</h1>
-      <p>
-        This optional connection shows a report summary for this workspace. It
-        is off until the application operator configures it.
-      </p>
-      <section className="card" style={{ overflowWrap: "anywhere" }}>
-        <h2>Configure and connect</h2>
-        <ol>
+    <AccountPageFrame
+      title="Launch checks"
+      description="Connect LaunchProof to view the test report for this workspace."
+      back={{ href: `/app/${org}/connections`, label: "Connections" }}
+    >
+      {!local && (
+        <Suspense
+          fallback={<output>Checking LaunchProof connection…</output>}
+        >
+          <LaunchChecks organizationId={org} />
+        </Suspense>
+      )}
+      <AccountSection title="Connect LaunchProof" icon={ClipboardCheck}>
+        <ol className="account-steps">
           <li>
-            Open{" "}
-            <a href="https://launch.companynerve.com" rel="noreferrer">
-              LaunchProof
-            </a>{" "}
-            and sign in separately. Create a reporting application in your own
-            workspace.
+            <strong>Create a reporting application</strong>
+            <p>
+              Open{" "}
+              <a href="https://launch.companynerve.com" rel="noreferrer">
+                LaunchProof
+              </a>{" "}
+              and sign in separately. Create a reporting application in your own
+              workspace.
+            </p>
           </li>
           <li>
-            Ask that LaunchProof workspace owner to issue an application token
-            with only <code>reports:read-summary</code>.
+            <strong>Request a summary token</strong>
+            <p>
+              Ask that LaunchProof workspace owner to issue an application token
+              with only <code>reports:read-summary</code>.
+            </p>
           </li>
           <li>
-            Give your application operator the reporting application ID and
-            workspace slug. Explicitly map them to this organization ID:{" "}
-            <code>{org}</code>, your target Convex origin, and the environment
-            you test.
+            <strong>Send your mapping to the app operator</strong>
+            <p>
+              Give your application operator the reporting application ID and
+              workspace slug. Explicitly map them to this organization ID:{" "}
+              <code>{org}</code>, your target Convex origin, and the environment
+              you test.
+            </p>
           </li>
           <li>
-            The operator configures the server variables in{" "}
-            <code>apps/starter/.env.example</code>, following{" "}
-            <code>docs/operations/launchproof.md</code>. Store the summary token
-            only in server secrets. Set <code>LP_INTEGRATION_ENABLED=true</code>{" "}
-            and restart the app after reviewing the mapping.
+            <strong>Enable the connection</strong>
+            <p>
+              The operator configures the server variables in{" "}
+              <code>apps/starter/.env.example</code>, following{" "}
+              <code>docs/operations/launchproof.md</code>. Store the summary
+              token only in server secrets. Set{" "}
+              <code>LP_INTEGRATION_ENABLED=true</code> and restart the app after
+              reviewing the mapping.
+            </p>
           </li>
           <li>
-            Run approved checks locally or in your own CI and upload a sanitized
-            report. Reload this page to read the summary. Only current owners
-            and admins of the mapped organization can see it.
+            <strong>Upload your report</strong>
+            <p>
+              Run approved checks locally or in your own CI and upload a
+              sanitized report. Reload this page to read the summary. Only
+              current owners and admins of the mapped organization can see it.
+            </p>
           </li>
         </ol>
         <p>
@@ -67,9 +92,9 @@ export default async function Page({
           addresses or share session cookies. Exported source contains no
           connection credentials.
         </p>
-      </section>
-      <section className="card" style={{ marginTop: 24 }}>
-        <h2>Disconnect</h2>
+      </AccountSection>
+      <details className="account-disclosure">
+        <summary>Disconnect LaunchProof</summary>
         <ol>
           <li>
             Revoke the summary token in the owning LaunchProof application's
@@ -90,14 +115,7 @@ export default async function Page({
           This page does not save secrets or change server configuration. Your
           application operator performs the connection and disconnection.
         </p>
-      </section>
-      <Suspense
-        fallback={
-          <p className="muted">Checking optional LaunchProof connection…</p>
-        }
-      >
-        <LaunchChecks organizationId={org} />
-      </Suspense>
-    </>
+      </details>
+    </AccountPageFrame>
   );
 }

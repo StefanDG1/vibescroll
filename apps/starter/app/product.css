@@ -2357,25 +2357,6 @@ dialog.capture-modal::backdrop {
   margin: 0;
   text-align: right;
 }
-.account-page .topbar,
-.account-page .navlinks {
-  flex-wrap: wrap;
-}
-.workspace-settings {
-  max-width: 840px;
-  margin: 24px auto;
-  padding-inline: clamp(16px, 3vw, 32px);
-}
-.account-page .topbar .wordmark,
-.account-page .navlinks a,
-.account-page .card > a,
-.workspace-settings .card > a {
-  display: inline-flex;
-  align-items: center;
-  min-width: 44px;
-  min-height: 44px;
-  padding-block: 8px;
-}
 .checkbox-label {
   min-height: 44px;
   padding-block: 8px;

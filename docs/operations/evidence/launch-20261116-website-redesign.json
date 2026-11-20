@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-16",
+  "requirement": "R178",
+  "status": "live",
+  "website": {
+    "deployment": "dpl_6HAFFB5iGJfGbhAfPmY6AGcU9V3m",
+    "commit": "73cc8ea07b143f3019a4a284dda301f1df0e099a",
+    "canonical": "https://scroll.companynerve.com",
+    "canonicalHealthVersion": "0.1.0-alpha.20261116135834.g73cc8ea07b14",
+    "sameBuildPromotionVerified": true,
+    "normalDomainAssignmentRestored": true,
+    "previousDeployment": "dpl_EMC5Kn5KXNngfAiRdPtayJ6RKFyR"
+  },
+  "ci": {
+    "run": "https://github.com/StefanDG1/vibescroll/actions/runs/43881015172",
+    "exactCommit": "73cc8ea07b143f3019a4a284dda301f1df0e099a",
+    "status": "success"
+  },
+  "verification": {
+    "viewportWidths": [
+      390,
+      1440
+    ],
+    "views": [
+      "landing",
+      "onboarding",
+      "Browse demo",
+      "Posts demo",
+      "help",
+      "pricing"
+    ],
+    "stagedCases": 12,
+    "productionCases": 12,
+    "keyboardInsightExpansionVerified": true,
+    "mobileEngagementCountsVerified": true,
+    "productionAuthRedirectExpected": true,
+    "signedInBrowserStatus": "Signed-in Browse verified at 390 and 1440 pixels. A retained saved post opened at its full URL.",
+    "authorizedMcpProfilesRead": 3,
+    "standaloneMarketingStatus": "Built in CI. No separate VibeScroll project or production domain is configured."
+  },
+  "supersededStage": {
+    "deployment": "dpl_FbW5QbF6XbJ4EE4gteyrnvpCUzfS",
+    "reason": "Larger engagement counts wrapped in the phone layout.",
+    "promoted": false
+  },
+  "funding": {
+    "paidModelRequests": 0,
+    "appCreditCharges": 0,
+    "purchases": 0,
+    "reportedVercelUsageUSDAtPreflight": 2.84,
+    "reservationUSD": 0.1,
+    "unsettledHoldsPreserved": true
+  },
+  "backend": {
+    "deployment": "bold-lemur-667",
+    "commit": "2918a4e5c431435fc895e9f17100adc1710e9dd8",
+    "publishedDuringRelease": false
+  }
+}

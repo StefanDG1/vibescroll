@@ -17,6 +17,7 @@ export const feedDemoDetails: Record<string, FeedDetail> = Object.fromEntries(
       const insights = [
         {
           id: "first-value",
+          frame: { id: "example-first-value", timeMs: 2000 },
           title: "Show value before setup",
           claim:
             "Let visitors explore a working example before asking them to configure a project.",
@@ -25,6 +26,7 @@ export const feedDemoDetails: Record<string, FeedDetail> = Object.fromEntries(
         },
         {
           id: "optional",
+          frame: { id: "example-optional", timeMs: 7000 },
           title: "Keep the next step optional",
           claim:
             "Offer a clear path forward while keeping existing users in control of their setup.",
@@ -33,6 +35,7 @@ export const feedDemoDetails: Record<string, FeedDetail> = Object.fromEntries(
         },
         {
           id: "primary",
+          frame: { id: "example-primary", timeMs: 12000 },
           title: "Use one clear primary action",
           claim:
             "Make the next decision easy to find. Keep secondary actions in context.",
@@ -41,6 +44,7 @@ export const feedDemoDetails: Record<string, FeedDetail> = Object.fromEntries(
         },
         {
           id: "context",
+          frame: { id: "example-context", timeMs: 17000 },
           title: "Keep context visible",
           claim:
             "Show the source beside the recommendation so readers can inspect why it matters.",
@@ -68,7 +72,7 @@ export const feedDemoDetails: Record<string, FeedDetail> = Object.fromEntries(
             "A synthetic walkthrough of a clearer first-use experience. Example content only.",
           categoryKeys: ["product_design", "marketing"],
           thumbnailAssetIds: [],
-          durationMs: 48000,
+          durationMs: 40000,
           engagement: {
             scopeKey: `synthetic:${id}`,
             revision: 0,
@@ -80,6 +84,11 @@ export const feedDemoDetails: Record<string, FeedDetail> = Object.fromEntries(
           insights,
           suggestions,
           projects: [{ id: project._id, name: project.fullName }],
+          allProjects: [
+            { id: project._id, name: project.fullName },
+            { id: "synthetic-marketing", name: "Marketing" },
+            { id: "synthetic-onboarding", name: "Onboarding" },
+          ],
           proposals:
             index === 0
               ? [

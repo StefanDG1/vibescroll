@@ -1,8 +1,21 @@
 .shell {
   min-height: 100svh;
-  padding: 20px clamp(18px, 4vw, 64px) 36px;
+  padding: 12px clamp(18px, 4vw, 48px) 36px;
+  --onboarding-accent: #23634f;
+  --onboarding-action-ink: #fff;
+  --onboarding-muted: color-mix(in srgb, var(--teal) 7%, var(--panel));
   background: var(--canvas);
   color: var(--ink);
+}
+:global(:root[data-app-theme="dark"]) .shell {
+  --onboarding-accent: #a6e0c7;
+  --onboarding-action-ink: #142019;
+}
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-app-theme="light"])) .shell {
+    --onboarding-accent: #a6e0c7;
+    --onboarding-action-ink: #142019;
+  }
 }
 .top {
   max-width: 1280px;
@@ -11,6 +24,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  min-height: 53px;
+  border-bottom: 1px solid var(--line);
 }
 .brand {
   color: var(--ink);
@@ -25,6 +40,7 @@
 }
 .stage h1,
 .quiz h1,
+.exampleHeading h1,
 .welcome h1 {
   font-size: clamp(29px, 3.8vw, 44px);
   line-height: 1.15;
@@ -35,8 +51,39 @@
 }
 .stage h1:focus,
 .quiz h1:focus,
+.exampleHeading h1:focus,
 .welcome h1:focus {
   outline: none;
+}
+.exampleStep {
+  max-width: 1060px;
+  margin: clamp(16px, 4vh, 42px) auto 0;
+}
+.exampleHeading {
+  margin-bottom: 20px;
+}
+.exampleHeading h1 {
+  margin-block: 6px 8px;
+}
+.exampleHeading p {
+  margin: 0;
+}
+.accountBenefits {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  border-block: 1px solid var(--line);
+}
+.accountBenefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  line-height: 1.5;
+}
+.accountBenefits svg {
+  flex: none;
+  color: var(--onboarding-accent);
 }
 .subtle {
   color: var(--subtle);
@@ -60,13 +107,16 @@
   padding: 12px 22px;
   border-radius: 10px;
   border: 0;
-  background: var(--ink);
-  color: var(--panel);
+  background: var(--onboarding-accent);
+  color: var(--onboarding-action-ink);
   font: inherit;
   font-weight: 550;
   font-size: 14px;
   cursor: pointer;
   text-decoration: none;
+}
+.primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--onboarding-accent) 85%, var(--ink));
 }
 .primary:disabled {
   opacity: 0.4;
@@ -105,18 +155,25 @@
   color: inherit;
   text-underline-offset: 3px;
 }
+.footnote a svg {
+  display: inline-block;
+  margin-inline-start: 3px;
+  vertical-align: -1px;
+}
 .welcome {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: clamp(30px, 6vw, 100px);
   align-items: center;
   max-width: 1100px;
-  min-height: calc(100svh - 120px);
+  min-height: min(610px, calc(100svh - 105px));
   margin: auto;
 }
 .welcome h1 {
-  font-size: clamp(36px, 4.8vw, 62px);
+  font-size: clamp(40px, 5vw, 70px);
   max-width: 12ch;
+  letter-spacing: -0.052em;
+  font-weight: 650;
 }
 .welcome p {
   line-height: 1.65;
@@ -124,6 +181,12 @@
 }
 .welcome .primary {
   margin-top: 14px;
+}
+.welcome .storyGraphic {
+  background: var(--onboarding-muted);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding-inline: clamp(20px, 4vw, 50px);
 }
 .storyGraphic {
   display: flex;
@@ -254,6 +317,9 @@
   display: grid;
   place-items: center;
   color: var(--teal);
+  min-height: 40px;
+  border-radius: 10px;
+  background: var(--onboarding-muted);
 }
 .choiceMark {
   display: grid;
@@ -267,6 +333,7 @@
 .quizChoice[data-selected="true"] .choiceMark {
   border-color: var(--teal);
   background: var(--teal);
+  color: var(--canvas);
 }
 .quizFooter {
   display: flex;
@@ -385,11 +452,74 @@
   min-width: 36px;
 }
 .sharedFeed {
-  max-width: 1280px;
+  max-width: 1040px;
   margin: 18px auto;
+}
+
+.feedTitle {
+  width: min(100%, 1040px);
+  margin: 28px auto 18px;
+  font-size: clamp(2rem, 4.8vw, 3.05rem);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+  font-weight: 650;
+}
+
+.starterMetadata {
+  margin-block: 28px;
+}
+
+.starterMetadata h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.starterMetadata ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.starterMetadata li {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 15px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+
+.starterMetadata li span {
+  color: var(--subtle);
+  font-size: 0.82rem;
 }
 .sharedFeed > article {
   margin-top: 24px;
+}
+.sharedFeed :global(.button.primary) {
+  gap: 8px;
+  min-height: 44px;
+  border-color: var(--onboarding-accent);
+  background: var(--onboarding-accent);
+  color: var(--onboarding-action-ink);
+}
+.sharedFeed [data-slot="error-state"] > button {
+  flex: none;
+  align-self: center;
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--canvas);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.sharedFeed [data-slot="error-state"] > button:hover {
+  border-color: var(--teal);
 }
 .previewToolbar {
   display: flex;
@@ -415,6 +545,21 @@
   padding-block: 40px;
   color: var(--subtle);
 }
+
+.empty {
+  margin-block: 22px;
+  min-height: 0;
+  padding: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.empty h2 {
+  margin-top: 0;
+  color: var(--ink);
+  font-size: 1.2rem;
+}
 .importPaths {
   display: grid;
   gap: 12px;
@@ -422,7 +567,7 @@
 }
 .importPaths button {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 20px;
+  grid-template-columns: 28px minmax(0, 1fr);
   align-items: center;
   gap: 16px;
   padding: 18px;
@@ -436,6 +581,11 @@
 }
 .importPaths button > svg:first-child {
   color: var(--teal);
+}
+@media (hover: hover) {
+  .importPaths button:hover {
+    border-color: var(--teal);
+  }
 }
 .guideVisual {
   display: grid;
@@ -455,7 +605,13 @@
   display: flex;
   gap: 7px;
   width: 120px;
-  margin: 25px auto;
+  margin: 23px auto 8px;
+}
+.guideCounter {
+  margin: 0;
+  text-align: center;
+  color: var(--subtle);
+  font-size: 0.8rem;
 }
 .guideProgress span {
   flex: 1;
@@ -593,6 +749,17 @@
   gap: 8px;
   margin: 10px 0;
 }
+.previewEvidence > summary {
+  display: list-item;
+  min-height: 44px;
+  padding-block: 10px;
+  cursor: pointer;
+}
+.frameGrid a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
 .frameGrid img {
   width: 100%;
   height: auto;
@@ -715,27 +882,21 @@
   .shell {
     padding: 12px 18px 24px;
   }
-  .top {
-    justify-content: end;
-  }
-  .brand {
-    display: none;
-  }
   .welcome {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    justify-content: center;
-    min-height: calc(100svh - 90px);
-    gap: 16px;
+    justify-content: flex-start;
+    min-height: auto;
+    padding-block: 46px 12px;
+    gap: 18px;
     max-width: 520px;
   }
   .welcome h1 {
-    font-size: clamp(34px, 9vw, 47px);
+    font-size: clamp(38px, 10vw, 52px);
   }
   .welcome .storyGraphic {
-    order: -1;
-    padding-block: 20px;
+    padding: 22px 12px;
   }
   .storyGraphic {
     gap: 24px;
@@ -777,7 +938,8 @@
   .quizFooter {
     position: sticky;
     bottom: 0;
-    padding-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
   }
   .quizFooter .primary {
     width: 100%;
@@ -785,6 +947,11 @@
   .topicChoice {
     padding: 14px;
     min-height: 124px;
+  }
+  .searchBox input,
+  .field input,
+  .field textarea {
+    font-size: 16px;
   }
   .sharedFeed {
     margin-top: 4px;
@@ -914,6 +1081,17 @@
   margin-inline: 0;
 }
 
+:global(:root[data-motion="off"]) .journey,
+:global(:root[data-motion="off"]) .storyTile {
+  animation: none;
+}
+
+:global(:root[data-motion="off"])
+  .shell
+  :is(.primary, .quizChoice, .topicChoice, .importPaths button) {
+  transition: none;
+}
+
 /* The native file control stays available to its picker without widening the page. */
 .shell .fileInput[type="file"] {
   width: 1px;
@@ -931,12 +1109,6 @@
 }
 .previewHint {
   max-width: none;
-}
-@media (min-width: 721px) {
-  .sharedFeed > article {
-    height: calc(100svh - 218px);
-    min-height: 560px;
-  }
 }
 @media (max-width: 720px) {
   .previewToolbar {

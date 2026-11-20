@@ -85,25 +85,32 @@ async function callMcp(
 it("measures exact synthetic tool body bytes without recording payloads or changing the response", async () => {
   const observations: AssistantObservation[] = [];
   const value = {
-    results: [
+    mode: "hybrid",
+    posts: [
       {
         title: "Private café fixture",
         id: "private-source",
         url: "https://example.test/post",
-        state: "queued",
+        fetch_id: "private-source",
+        reference: { sourceId: "private-source", generation: 1, revision: 1 },
       },
     ],
-    next_offset: null,
+    matches: [],
     next_cursor: null,
     profile_id: "synthetic-profile",
     grant_version: 1,
     coverage: "synthetic",
-    scanned_posts: 1,
-    matched_items: 1,
+    scanned_candidates: 1,
+    examined_sources: 1,
+    loaded_bytes: 500,
+    session_candidates: 1,
+    projection_revision: 1,
+    index_ready: true,
+    semantic: true,
+    status: "results",
     has_more: false,
     exhausted: true,
     truncated: false,
-    match_limit_reached: false,
   };
   const { packet } = await callMcp({ ok: true, status: 200, value }, (e) => {
     observations.push(e);
@@ -392,7 +399,7 @@ async function httpFixture(
       Response.json({ sub: "private-subject" }, { status: userinfoStatus }),
     ),
   );
-  const runQuery = vi.fn(async () => {
+  const runAction = vi.fn(async () => {
     if (error) throw error;
     return { results: [] };
   });
@@ -401,14 +408,14 @@ async function httpFixture(
     subject: "private-subject",
   }));
   const response = await http(
-    { runQuery, runMutation },
+    { runAction, runMutation },
     new Request("https://example.test/assistant-tools", {
       method: "POST",
       headers: { authorization: "Bearer private-synthetic-token-0123456789" },
       body: JSON.stringify({ operation: "search", args }),
     }),
   );
-  return { response, runQuery, runMutation };
+  return { response, runAction, runMutation };
 }
 
 it.each([
@@ -436,7 +443,7 @@ it.each([
 
 it("distinguishes a provider outage from an expired token and rejects malformed inputs before dispatch", async () => {
   for (const status of [401, 403, 503]) {
-    const { response, runQuery } = await httpFixture(undefined, status);
+    const { response, runAction } = await httpFixture(undefined, status);
     expect(response.status).toBe(status);
     expect((await response.json()).code).toBe(
       status === 401
@@ -445,23 +452,23 @@ it("distinguishes a provider outage from an expired token and rejects malformed 
           ? "FORBIDDEN"
           : "UNAVAILABLE",
     );
-    expect(runQuery).not.toHaveBeenCalled();
+    expect(runAction).not.toHaveBeenCalled();
   }
-  const { response, runQuery, runMutation } = await httpFixture(
+  const { response, runAction, runMutation } = await httpFixture(
     undefined,
     200,
     { query: "private", extra: "PRIVATE" },
   );
   expect(response.status).toBe(400);
   expect((await response.json()).code).toBe("INVALID_INPUT");
-  expect(runQuery).not.toHaveBeenCalled();
+  expect(runAction).not.toHaveBeenCalled();
   expect(runMutation).not.toHaveBeenCalled();
 });
 
-it("forwards bounded federated search cursors above the ordinary body cap, without widening legacy search", async () => {
+it("forwards bounded federated search cursors above the ordinary body cap, and rejects obsolete fields", async () => {
   const args = {
     query: "onboarding",
-    mode: "ranked_v1",
+    review: true,
     workspaceIds: ["workspace-one", "workspace-two"],
     filters: { platforms: ["instagram"] },
     projectId: "project-one",
@@ -469,19 +476,19 @@ it("forwards bounded federated search cursors above the ordinary body cap, witho
   };
   const ranked = await httpFixture(undefined, 200, args);
   expect(ranked.response.status).toBe(200);
-  expect(ranked.runQuery).toHaveBeenCalledExactlyOnceWith(
+  expect(ranked.runAction).toHaveBeenCalledExactlyOnceWith(
     expect.anything(),
     expect.objectContaining(args),
   );
   for (const invalid of [
-    { query: "onboarding", cursor: args.cursor },
+    { ...args, offset: 0 },
     { ...args, profileId: "workspace-one" },
     { ...args, workspaceIds: ["one", "two", "three", "four"] },
     { ...args, cursor: "c".repeat(24_577) },
   ]) {
     const denied = await httpFixture(undefined, 200, invalid);
     expect(denied.response.status).toBe(400);
-    expect(denied.runQuery).not.toHaveBeenCalled();
+    expect(denied.runAction).not.toHaveBeenCalled();
     expect(denied.runMutation).not.toHaveBeenCalled();
   }
 });

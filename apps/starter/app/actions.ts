@@ -57,7 +57,7 @@ export async function applyV1Change(_: FormState, d: FormData) {
     }),
   );
 }
-export async function startV1Checkout(_: FormState, d: FormData) {
+export async function requestV1Checkout(d: FormData) {
   let url;
   try {
     url = await (
@@ -97,7 +97,12 @@ export async function startV1Checkout(_: FormState, d: FormData) {
         "Checkout unavailable. Verify the catalogue, environment, terms and tax configuration.",
     };
   }
-  redirect(url);
+  return { checkoutUrl: url };
+}
+export async function startV1Checkout(_: FormState, d: FormData) {
+  const result = await requestV1Checkout(d);
+  if (result.checkoutUrl) redirect(result.checkoutUrl);
+  return { error: result.error };
 }
 export async function cancelV1Subscription(_: FormState, d: FormData) {
   return run(async () => {
@@ -205,13 +210,13 @@ export async function setCatalogBrowsing(_: FormState, d: FormData) {
 export async function saveProject(_: FormState, d: FormData) {
   return run(async () => {
     const c = await backend();
-    await c.mutation(api.projects.save, {
+    const id = await c.mutation(api.projects.save, {
       organizationId: org(d),
       id: val(d, "id") ? (val(d, "id") as Id<"projects">) : undefined,
       name: val(d, "name"),
       description: val(d, "description"),
     });
-    return { path: `/app/${org(d)}` };
+    return { path: `/app/${org(d)}/projects/${id}` };
   });
 }
 export async function removeProject(_: FormState, d: FormData) {
@@ -223,7 +228,7 @@ export async function removeProject(_: FormState, d: FormData) {
       organizationId: org(d),
       id: val(d, "id") as Id<"projects">,
     });
-    return { path: `/app/${org(d)}` };
+    return { path: `/app/${org(d)}/projects` };
   });
 }
 export async function renameOrganization(_: FormState, d: FormData) {

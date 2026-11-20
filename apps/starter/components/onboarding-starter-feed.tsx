@@ -232,7 +232,6 @@ export function OnboardingStarterFeed({
             onContinue: () => onContinue(previewPost.familyId),
             onProof: (kind) => track("onboarding_evidence_opened", { kind }),
             evidence,
-            projectName: draft.projectDescription,
             resolveThumbnail: (frameId, familyId) =>
               starterFrame(familyId ?? previewPost.familyId, frameId, true),
             resolveEvidenceFrame: (frameId) =>

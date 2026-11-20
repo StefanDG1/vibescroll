@@ -9,3 +9,7 @@ Explain account creation after the example or link choice. Preserve the existing
 Revision 2 of optional analytics asks for consent before storing a random identifier in the current tab. A signed-in evidence or plan activity can retain that identifier in the browser for up to seven days. It contains no account or workspace identifier. Clear the optional storage on withdrawal and sign-out. Do not add recording, automatic capture, raw URLs, pitch or answer texts, or payments from client signals. The PostHog funnel reports opted-in browser observations. Verified Stripe and entitlement records remain the source for paid orders, refunds and revenue.
 
 See the [analytics operating guide](../ANALYTICS.md) for dashboard controls and metric limits.
+
+## November 20 follow-up
+
+Keep the work-stage choices for personalization. Remove the optional project name or description from the quiz, recap and guest example. Repository selection supplies the actual repository name when the user connects GitHub. GitHub is optional for browsing and saving posts. Previously saved drafts still parse with the legacy field.

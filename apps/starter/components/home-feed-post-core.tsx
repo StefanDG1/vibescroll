@@ -138,7 +138,6 @@ export function FeedPostCardCore({
     onContinue: () => void;
     onProof?: (kind: "insight" | "frame") => void;
     evidence?: ReactNode;
-    projectName?: string;
   };
 }) {
   const article = useRef<HTMLElement>(null);
@@ -839,7 +838,7 @@ export function FeedPostCardCore({
         ) : preview ? (
           <div className={`${styles.noProjects} ${styles.previewPlan}`}>
             <FolderGit2 size={28} aria-hidden="true" />
-            <h3>{preview.projectName || "Put the idea to work"}</h3>
+            <h3>Put the idea to work</h3>
             <p>
               A plan connects the useful ideas in this post to a change you
               could make. You can discuss and edit it before acting.

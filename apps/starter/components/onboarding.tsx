@@ -326,7 +326,7 @@ export function Onboarding({
       : step === "interests"
         ? "Choose up to three topics, or explore something new."
         : step === "work"
-          ? "This helps us suggest a useful next step. No GitHub account needed yet."
+          ? "This helps us suggest a useful next step. You can connect GitHub later if you want to work with a repository."
           : "We will show you the part of VibeScroll that helps with this.";
   return (
     <OnboardingShell authenticated={authenticated}>
@@ -516,21 +516,6 @@ export function Onboarding({
                 })}
               </fieldset>
             )}
-            {step === "work" &&
-              ["existing", "team"].includes(draft.workStage ?? "") && (
-                <label className={styles.field}>
-                  Project name or description{" "}
-                  <span className={styles.subtle}>optional</span>
-                  <input
-                    maxLength={160}
-                    value={draft.projectDescription ?? ""}
-                    onChange={(e) =>
-                      patch({ projectDescription: e.target.value })
-                    }
-                    placeholder="What are you building?"
-                  />
-                </label>
-              )}
             <footer className={styles.quizFooter}>
               <button
                 type="button"
@@ -569,7 +554,6 @@ export function Onboarding({
                 ))}
                 {draft.customTopic && <span>{draft.customTopic}</span>}
               </div>
-              {draft.projectDescription && <p>{draft.projectDescription}</p>}
             </div>
             <p className={styles.subtle}>
               Bring in a post, find its useful ideas and see how they could help

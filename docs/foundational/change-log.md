@@ -4,6 +4,8 @@
 
 R179 makes the first public action a real retained example and gives the quiz and personal-link setup a separate route. The pre-account screen names the choice that will carry forward. This is an implemented copy and navigation decision. The existing audience, offer and credit terms still govern. The pilot has yet to establish conversion or independent customer outcomes. [Decision](../adr/240-focused-onboarding-and-consented-funnels.md).
 
+The owner removed the optional project name question. The quiz asks only about the person's work stage. People can connect GitHub later and choose the actual repository when it helps with project work. [Onboarding follow-up](../adr/240-focused-onboarding-and-consented-funnels.md#november-20-follow-up).
+
 ## F098: real interest-matched onboarding, November1
 
 The later sequencing clarification places optional GitHub/repository setup after signup and before payment, retaining valid authorization and choices for direct paywall resumption. Account-before-payment is the recommended sequence, not a demonstrated conversion advantage. Paid processing and real proposal generation still wait for Pro and applicable quotes. [Sequence and recovery](../strategy/INTEREST-LED-ONBOARDING.md#preserve-pre-payment-setup-and-resume-at-the-paywall).

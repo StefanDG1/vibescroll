@@ -18,6 +18,8 @@ import { privateCloudMediaIdentity } from "../../packages/social/contracts";
 import { recordAutomaticCatalogIntent } from "./catalogPolicy";
 import { reserveCatalogProducer } from "./cloudCatalog";
 
+type SavedCloudMonitorEvent = "video_link_saved" | "work_cloud_waiting";
+
 export const cloudSaveIntentLifetimeMs = 86400000;
 export async function savedCloudEnabled(
   ctx: QueryCtx,
@@ -35,6 +37,7 @@ export async function savedCloudEnabled(
 export async function savedCloudMonitorCurrent(
   ctx: QueryCtx,
   grant: Doc<"assistantGrants">,
+  eventName: SavedCloudMonitorEvent = "video_link_saved",
 ) {
   const rows = await ctx.db
     .query("assistantSubscriptions")
@@ -43,7 +46,7 @@ export async function savedCloudMonitorCurrent(
   if (rows.length > 20) return false;
   for (const row of rows)
     if (
-      row.eventName === "video_link_saved" &&
+      row.eventName === eventName &&
       row.grantId === grant._id &&
       row.grantVersion === grant.version &&
       row.actor === grant.actor &&
@@ -71,6 +74,7 @@ export async function savedCloudRoute(
   ctx: QueryCtx,
   actor: Doc<"users">,
   organization: Doc<"organizations">,
+  eventName: SavedCloudMonitorEvent = "video_link_saved",
 ) {
   if (
     !(await savedCloudEnabled(ctx, actor, organization._id)) ||
@@ -97,7 +101,7 @@ export async function savedCloudRoute(
     };
   const grant = current[0];
   return {
-    available: await savedCloudMonitorCurrent(ctx, grant),
+    available: await savedCloudMonitorCurrent(ctx, grant, eventName),
     configured: true,
     grantId: grant._id,
     grantVersion: grant.version,

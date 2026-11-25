@@ -711,9 +711,15 @@ export const detail = query({
     } catch {
       /* Other source routes keep their own setup. */
     }
+    const workCloudRetryEligible = cloudSourceEligible && cloudRetryEligible(s);
     const automaticRoute =
       cloudSourceEligible && automaticVideoSupported
-        ? await savedCloudRoute(ctx, reader.actor, reader.organization)
+        ? await savedCloudRoute(
+            ctx,
+            reader.actor,
+            reader.organization,
+            workCloudRetryEligible ? "work_cloud_waiting" : "video_link_saved",
+          )
         : null;
     const automaticGrant = automaticRoute?.grantId
       ? await ctx.db.get(automaticRoute.grantId)
@@ -730,7 +736,7 @@ export const detail = query({
               "link-save-cloud-v2",
           }
         : null,
-      workCloudRetryEligible: cloudSourceEligible && cloudRetryEligible(s),
+      workCloudRetryEligible,
       catalogContributionAvailable:
         !!catalogConfiguration() &&
         selected?.metadata.origin === "private" &&

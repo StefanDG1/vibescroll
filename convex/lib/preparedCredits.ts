@@ -34,6 +34,10 @@ export async function settlePreparedCredits(
       "LEDGER_INVALID",
       "The sponsorship does not match the exact run.",
     );
+  const orderedPost =
+    run.evidenceId && outcome === "ready"
+      ? (await ctx.db.get(run.evidenceId))?.prepared?.evidence?.post
+      : null;
   const credits =
     outcome === "never_started" || (poolRun && outcome === "returned_failure")
       ? 0
@@ -47,9 +51,8 @@ export async function settlePreparedCredits(
             quote.reusedEvidenceId !== null,
             model,
             privateCloudMediaIdentity(run.canonical).platform === "x" ||
-              (run.evidenceId &&
-                (await ctx.db.get(run.evidenceId))?.prepared?.evidence?.post
-                  ?.version === "social-post-evidence-v1")
+              (orderedPost?.version === "social-post-evidence-v1" &&
+                orderedPost.coverage === "complete_manifest")
               ? "post"
               : "video",
           ).maximum;

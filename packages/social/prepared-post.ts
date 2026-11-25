@@ -10,6 +10,13 @@ import {
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const stableId = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
+export const downloadedVideoPostMetadata = z.strictObject({
+  platform: z.enum(["instagram", "tiktok"]),
+  postId: stableId,
+  authorId: z.string().regex(/^[0-9]{1,30}$/),
+  authorHandle: z.string().regex(/^[A-Za-z0-9_.]{1,30}$/),
+  text: z.string().max(60000),
+});
 const socialPost = z
   .strictObject({
     version: z.literal("social-post-evidence-v1"),
@@ -18,15 +25,25 @@ const socialPost = z
     authorId: stableId,
     authorHandle: z.string().regex(/^[A-Za-z0-9_.]{1,40}$/),
     publishedAt: z.number().int().positive().max(4102444800000).nullable(),
-    provider: z.enum(["public_page", "instagram_embed", "instagram_graph"]),
+    provider: z.enum([
+      "public_page",
+      "instagram_embed",
+      "instagram_graph",
+      "pinned_video_downloader",
+    ]),
     text: z.string().max(60000),
     textHash: hash,
     expectedAssetCount: z.number().int().min(1).max(35),
-    coverage: z.literal("complete_manifest"),
+    coverage: z.enum(["complete_manifest", "single_downloaded_video"]),
     assets: z.array(preparedPostAsset).min(1).max(35),
   })
   .superRefine((post, ctx) => {
     if (
+      (post.coverage === "single_downloaded_video"
+        ? post.provider !== "pinned_video_downloader" ||
+          post.assets.length !== 1 ||
+          post.assets[0]?.kind !== "video"
+        : post.provider === "pinned_video_downloader") ||
       post.assets.length !== post.expectedAssetCount ||
       post.assets.some(
         (asset, index) =>
@@ -61,7 +78,10 @@ export function preparedPostCanonicalMatches(
   return (
     identity.platform === post.platform &&
     identity.postKey === post.postId &&
-    identity.canonical === canonical
+    identity.canonical === canonical &&
+    (post.coverage !== "single_downloaded_video" ||
+      post.platform !== "tiktok" ||
+      new URL(canonical).pathname.split("/")[2] === "video")
   );
 }
 

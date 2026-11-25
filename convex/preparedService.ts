@@ -229,8 +229,9 @@ async function quoteFor(
     if (
       preparedEvidenceIsCurrent(a.source, candidate) &&
       (!requiresOrderedEvidence ||
-        candidate.prepared?.evidence?.post?.version ===
-          "social-post-evidence-v1")
+        (candidate.prepared?.evidence?.post?.version ===
+          "social-post-evidence-v1" &&
+          candidate.prepared.evidence.post.coverage === "complete_manifest"))
     ) {
       await verifyRetainedAssets(ctx, a.source, candidate);
       evidence = candidate;

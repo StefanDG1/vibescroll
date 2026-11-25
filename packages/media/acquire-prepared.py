@@ -4,7 +4,6 @@ import os
 import pathlib
 import re
 import sys
-import time
 import acquire
 import cloud_extraction as extraction
 
@@ -21,6 +20,25 @@ def run(args, timeout):
     return stdout
 
 
+def video_post_metadata(info, platform, post_id):
+    expected_extractor = 'Instagram' if platform == 'instagram' else 'TikTok'
+    handle_field = 'channel' if platform == 'instagram' else 'uploader'
+    handle = info.get(handle_field)
+    author_id = info.get('uploader_id')
+    if (info.get('extractor_key') != expected_extractor or
+            not isinstance(author_id, str) or not re.fullmatch(r'[0-9]{1,30}', author_id) or
+            not isinstance(handle, str) or not re.fullmatch(r'[A-Za-z0-9_.]{1,24}' if platform == 'tiktok' else r'[A-Za-z0-9_.]{1,30}', handle)):
+        return None
+    text = info.get('description')
+    return {
+        'platform': platform,
+        'postId': post_id,
+        'authorId': author_id,
+        'authorHandle': handle,
+        'text': text if isinstance(text, str) and len(text.encode('utf-16-le', errors='surrogatepass')) <= 120000 else '',
+    }
+
+
 def main():
     phase = sys.argv[1]
     if phase == 'inspect':
@@ -30,10 +48,13 @@ def main():
         worker = extraction.ResolvedDownloader(ROOT, BINARY, run)
         metadata = worker.inspect(url)
         info = worker.info
-        metadata['resolvedCanonical'] = info['webpage_url']
-        handle = info.get('uploader_id')
-        if info.get('extractor_key') == 'TikTok' and isinstance(handle, str) and re.fullmatch(r'[A-Za-z0-9_.]{1,40}', handle):
-            metadata['resolvedCanonical'] = f'https://www.tiktok.com/@{handle}/video/{info["id"]}'
+        platform, post_id = extraction.resolved_identity(info)
+        post = video_post_metadata(info, platform, post_id)
+        metadata['resolvedCanonical'] = extraction.resolved_canonical(url, info)
+        if post:
+            metadata['videoPost'] = post
+            if platform == 'tiktok':
+                metadata['resolvedCanonical'] = f'https://www.tiktok.com/@{post["authorHandle"].lower()}/video/{post_id}'
         (ROOT / 'metadata.json').write_text(json.dumps(metadata))
     elif phase in ('download', 'download-media'):
         worker = extraction.ResolvedDownloader.resume(ROOT, BINARY, run)

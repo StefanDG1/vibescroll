@@ -16,6 +16,7 @@ import { transcribePreparedAudio } from "../packages/providers/vercel-transcript
 import { analyzePreparedEvidence } from "../packages/providers/vercel-insights";
 import { makePreparedEvidence } from "../packages/contracts/prepared-evidence";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
+import { preparedPostSourceIdentity } from "../packages/social/prepared-post";
 import {
   signedObject,
   objectMetadata,
@@ -582,7 +583,12 @@ export const run = internalAction({
         canonical: identity.url,
         platform: identity.platform,
         ...(post ? { post } : {}),
-        sourceHash: prepared.sourceReceipt.sourceHash,
+        sourceHash:
+          post?.coverage === "single_downloaded_video"
+            ? createHash("sha256")
+                .update(preparedPostSourceIdentity(identity.url, post))
+                .digest("hex")
+            : prepared.sourceReceipt.sourceHash,
         recipeHash,
         downloaderVersion: prepared.downloaderVersion,
         title: prepared.metadata.title ?? "",
@@ -591,12 +597,21 @@ export const run = internalAction({
         language: asr.language.split(/[-_]/)[0].toLowerCase(),
         observedAt: prepared.startedAt,
         transcript: asr.provenance,
-        segments: asr.segments,
+        segments:
+          post?.coverage === "single_downloaded_video"
+            ? asr.segments.map((segment) => ({
+                ...segment,
+                assetId: "asset-1",
+                assetIndex: 0,
+              }))
+            : asr.segments,
         frames: prepared.frames.map((f) => ({
           id: f.id,
           ...("assetId" in f
             ? { assetId: f.assetId, assetIndex: f.assetIndex }
-            : {}),
+            : post?.coverage === "single_downloaded_video"
+              ? { assetId: "asset-1", assetIndex: 0 }
+              : {}),
           timestampMs: f.timestampMs,
           sha256: f.sha256,
           bytes: f.bytes.byteLength,

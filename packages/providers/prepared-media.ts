@@ -14,7 +14,11 @@ import { jpegDimensions } from "../media/jpeg";
 import { ensure, PolicyError } from "../policy";
 import { readResponseBytes } from "./binary";
 import { prepareHostedXPost } from "./x-post-preparation";
-import { usesOrderedPostPreparation } from "../social/prepared-post";
+import {
+  downloadedVideoPostMetadata,
+  preparedPostEvidence,
+  usesOrderedPostPreparation,
+} from "../social/prepared-post";
 import { isInstagramSharePath } from "../social/identity.mjs";
 import {
   preparedDownloader as downloader,
@@ -26,6 +30,7 @@ const nativeMetadata = z.object({
   durationSeconds: z.number().positive().max(600).optional(),
   publishedAt: z.number().optional(),
   resolvedCanonical: z.string().url().max(2048),
+  videoPost: downloadedVideoPostMetadata.optional(),
 });
 const parser = {
   url: "https://files.pythonhosted.org/packages/4f/43/6b89c84f5a6753b1dbc43b8d010443b8f2314a2b94f34e448975d115c962/pysubs2-1.9.0-py3-none-any.whl",
@@ -141,13 +146,14 @@ export async function prepareHostedEvidence(
       "/home/user/media/metadata.json",
     );
     ensure(
-      metadataBytes.length <= 5000,
+      metadataBytes.length <= 370000,
       "INVALID_EVIDENCE",
       "Source metadata exceeded its bound.",
     );
     const metadata = nativeMetadata.parse(JSON.parse(metadataBytes));
     times.metadata = Date.now();
-    await callbacks.metadata(metadata);
+    const { videoPost, ...preview } = metadata;
+    await callbacks.metadata(preview);
     phase = "download";
     await callbacks.stage("downloading");
     await command(
@@ -190,6 +196,10 @@ export async function prepareHostedEvidence(
     const sourceReceipt = z
       .object({
         sourceHash: z.string().regex(/^[a-f0-9]{64}$/),
+        mp4ContentHash: z
+          .string()
+          .regex(/^[a-f0-9]{64}$/)
+          .optional(),
         sourceBytes: z
           .number()
           .int()
@@ -253,9 +263,37 @@ export async function prepareHostedEvidence(
     await sandbox.kill();
     stopped = true;
     times.stopped = Date.now();
+    const post =
+      videoPost && sourceReceipt.mp4ContentHash
+        ? preparedPostEvidence.parse({
+            ...videoPost,
+            version: "social-post-evidence-v1",
+            provider: "pinned_video_downloader",
+            coverage: "single_downloaded_video",
+            publishedAt: preview.publishedAt ?? null,
+            textHash: createHash("sha256").update(videoPost.text).digest("hex"),
+            expectedAssetCount: 1,
+            assets: [
+              {
+                id: "asset-1",
+                index: 0,
+                kind: "video",
+                mime: "video/mp4",
+                contentHash: sourceReceipt.mp4ContentHash,
+                bytes: sourceReceipt.sourceBytes,
+                width: sourceReceipt.width,
+                height: sourceReceipt.height,
+                durationMs: Math.round(manifest.durationSeconds * 1000),
+                animated: false,
+                audioStatus: audio || transcript ? "prepared" : "none",
+              },
+            ],
+          })
+        : undefined;
     succeeded = true;
     return {
-      metadata,
+      metadata: preview,
+      post,
       manifest,
       sourceReceipt,
       frames,

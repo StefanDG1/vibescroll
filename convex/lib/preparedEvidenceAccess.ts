@@ -138,6 +138,7 @@ export async function selectedOrderedPostIsComplete(
   const evidence = await ctx.db.get(selected.evidenceId);
   return (
     preparedEvidenceIsCurrent(source, evidence) &&
-    evidence.prepared?.evidence?.post?.version === "social-post-evidence-v1"
+    evidence.prepared?.evidence?.post?.version === "social-post-evidence-v1" &&
+    evidence.prepared.evidence.post.coverage === "complete_manifest"
   );
 }

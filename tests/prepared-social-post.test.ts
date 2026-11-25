@@ -102,6 +102,52 @@ it("rejects incomplete and relabeled post media even before it is sent to the mo
   ).toBe(false);
 });
 
+it("retains the native video caption without treating one download as ordered coverage", async () => {
+  const photo = await photoEvidence();
+  const video = canonical.replace("/photo/", "/video/");
+  const post = preparedPostEvidence.parse({
+    ...photo.post,
+    provider: "pinned_video_downloader",
+    coverage: "single_downloaded_video",
+    expectedAssetCount: 1,
+    assets: [
+      {
+        ...photo.post.assets[0],
+        kind: "video",
+        mime: "video/mp4",
+        durationMs: 2000,
+        audioStatus: "none",
+        animated: false,
+      },
+    ],
+  });
+  expect(
+    preparedPostEvidence.safeParse({ ...post, coverage: "complete_manifest" })
+      .success,
+  ).toBe(false);
+  const input = {
+    ...photo,
+    post,
+    canonical: video,
+    durationMs: 2000,
+    frames: photo.frames.slice(0, 1),
+    sourceHash: await socialHash(preparedPostSourceIdentity(video, post)),
+  };
+  const result = await makePreparedEvidence(input);
+  expect(result.evidence.post?.coverage).toBe("single_downloaded_video");
+  expect(neutralCloudObservations(result.evidence).map((o) => o.kind)).toEqual([
+    "caption",
+    "video_observation",
+  ]);
+  await expect(
+    makePreparedEvidence({
+      ...input,
+      canonical,
+      sourceHash: await socialHash(preparedPostSourceIdentity(canonical, post)),
+    }),
+  ).rejects.toThrow("PREPARED_POST_COVERAGE_INVALID");
+});
+
 it("checks social media type from the platform when ordered preparation is enabled", () => {
   for (const url of [
     canonical,

@@ -2,6 +2,7 @@
 // reviewed setup shortlist, not a promise about another user's subscription.
 // Refresh it after supported host discovery; never scrape private model APIs.
 export const workCloudModelChoices = [
+  { id: "gpt-6.2-sol", name: "GPT-6.2 Sol" },
   { id: "gpt-6.1-sol", name: "GPT-6.1 Sol" },
   { id: "gpt-6.1-terra", name: "GPT-6.1 Terra" },
   { id: "gpt-6-astra", name: "GPT-6 Astra" },

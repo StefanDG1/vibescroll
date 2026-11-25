@@ -24,8 +24,18 @@ export async function settlePreparedCredits(
     quote.apiTariff === apiModelTariff
       ? apiModelSelection(quote.model, quote.effort).id
       : undefined;
+  const creatorPool = run.receipt?.creatorPoolId
+    ? ctx.db.normalizeId("creatorPoolRuns", run.receipt.creatorPoolId)
+    : null;
+  const poolRun = creatorPool ? await ctx.db.get(creatorPool) : null;
+  if (creatorPool)
+    ensure(
+      poolRun && poolRun.runId === run._id && poolRun.sponsorId === run.actor,
+      "LEDGER_INVALID",
+      "The sponsorship does not match the exact run.",
+    );
   const credits =
-    outcome === "never_started"
+    outcome === "never_started" || (poolRun && outcome === "returned_failure")
       ? 0
       : outcome === "returned_failure"
         ? run.evidenceId
@@ -36,7 +46,10 @@ export async function settlePreparedCredits(
             run.executor,
             quote.reusedEvidenceId !== null,
             model,
-            privateCloudMediaIdentity(run.canonical).platform === "x"
+            privateCloudMediaIdentity(run.canonical).platform === "x" ||
+              (run.evidenceId &&
+                (await ctx.db.get(run.evidenceId))?.prepared?.evidence?.post
+                  ?.version === "social-post-evidence-v1")
               ? "post"
               : "video",
           ).maximum;
@@ -48,6 +61,11 @@ export async function settlePreparedCredits(
     "Prepared processing exceeded its reviewed credit quote.",
   );
   await settle(ctx, run.organizationId, a.reservationKey, credits);
+  if (poolRun?.state === "active")
+    await ctx.db.patch(poolRun._id, {
+      chargedCredits: credits,
+      state: outcome === "ready" ? "ready" : "failed",
+    });
   if (a.providerReservationId) await settlePreparedProvider(ctx, run);
   await ctx.db.patch(run._id, {
     receipt: {
@@ -100,11 +118,20 @@ export async function settlePreparedProvider(
     return;
   }
   const receipt = run.receipt?.analysis;
+  const model = run.receipt?.admission?.quote?.model;
+  const modern =
+    model === "meta/muse-ember" || model === "anthropic/claude-haiku-5.5";
+  const expectedProvider =
+    model === "anthropic/claude-haiku-5.5" ? "anthropic" : "meta";
   if (
     row.dispatches.includes("transcription") ||
     !row.dispatches.includes("analysis") ||
-    receipt?.model !== "meta/muse-spark-1.3-contributor" ||
-    receipt.provider !== "meta" ||
+    receipt?.model !== (modern ? model : "meta/muse-spark-1.3-contributor") ||
+    receipt.provider !== expectedProvider ||
+    (modern &&
+      (typeof receipt.providerSettledUsd !== "number" ||
+        !Number.isFinite(receipt.providerSettledUsd) ||
+        receipt.providerSettledUsd < 0)) ||
     !/^[a-f0-9]{64}$/.test(
       run.receipt?.analysis_output?.responseSha256 ?? "",
     ) ||
@@ -118,7 +145,9 @@ export async function settlePreparedProvider(
   let actualNanoUsd: number;
   try {
     actualNanoUsd = safeNanoUsd(
-      receipt.inputTokens * 100 + receipt.outputTokens * 200,
+      modern
+        ? Math.ceil(receipt.providerSettledUsd * 1e9)
+        : receipt.inputTokens * 100 + receipt.outputTokens * 200,
     );
   } catch {
     await settleProviderExposure(ctx, row._id, {
@@ -130,12 +159,13 @@ export async function settlePreparedProvider(
   await settleProviderExposure(ctx, row._id, {
     state: "known",
     actualNanoUsd,
-    basis: "reported_tariff_usage",
+    basis: modern ? "provider_reported_charge" : "reported_tariff_usage",
     receiptHash: await digest(
       canonicalJson({
         model: receipt.model,
         inputTokens: receipt.inputTokens,
         outputTokens: receipt.outputTokens,
+        ...(modern ? { actualNanoUsd } : {}),
         responseSha256: run.receipt.analysis_output.responseSha256,
       }),
     ),

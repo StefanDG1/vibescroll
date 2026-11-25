@@ -1,0 +1,17 @@
+# Save social posts from their original links
+
+25 November 2026.
+
+Use the same link Save operation for the website, MCP, imports, and creator discovery. New saves get media, text, and creator identity from the original post. Existing uploads remain readable under their original access and retention rules. Rollout of server-side upload retirement uses `LINK_ONLY_CAPTURE_ENABLED`.
+
+The evidence for an image post or carousel includes the source and author IDs, original caption, full ordered attachment manifest, and decoded evidence for every attachment. Still images cite the attachment without a timestamp. Video attachments retain timed evidence and available speech evidence. Keep a saved link with a specific source status when access or completeness checks fail. An embed, preview image, or unresolved redirect cannot establish complete evidence.
+
+Guard public ordered acquisition with `VIBESCROLL_ORDERED_SOCIAL_ENABLED`. Verify the post ID after TikTok short-link resolution and before accepting a typed manifest. Retain the existing video and X paths during rollout. The Instagram Graph path uses a reviewed professional-account connection and verifies ownership. A public Instagram carousel returned no authoritative manifest in the November 25 probe. Broad public Instagram coverage remains unverified. Creator discovery uses reviewed creator connections and has separate format and permission requirements from direct Save.
+
+Expose one linked platform icon per verified original. Base creator pages on verified platform account IDs and existing workspace rights. A reviewed account link can group creator pages across platforms. Add a matching original to the post reader after the creator association and retained evidence both pass. Exact matches compare ordered media and captions. Recent re-encodes need corroborating caption, order, and media fingerprints. The candidate retains each original and its evidence for separate access, attribution, and removal.
+
+New native connections default to GPT-6.2 Sol High. Under `VIBESCROLL_MANAGED_AUTO_ENABLED`, an account can explicitly authorize a background model routing preference and maximum app-credit quote. Managed Auto considers eligible OpenAI promotional capacity before the separately funded Muse route. A preference pinned to OpenAI waits when eligible promotional capacity is unavailable. Provider expense and app credits have separate reservations. Existing reviewed connection choices retain their own policy.
+
+Run discovery under `VIBESCROLL_CREATOR_DISCOVERY_ENABLED` with one checkpointed watch per verified platform account. Opt-in sponsorship additionally requires `VIBESCROLL_CREATOR_POOL_ENABLED`, approved feed coverage, and an operator allowance under `VIBESCROLL_CREATOR_POOL_DAILY_NANO_USD`. Use included monthly credits within the disclosed pilot cap and reserve projected use atomically with operator exposure. Choose from comparably eligible sponsors with a stable random tie-breaker using projected share of cap. Keep ledger history across rejoining. Settle one sponsor on Ready. A retry requires a confirmed first outcome, and unknown dispatch keeps the original hold.
+
+Stage the exact build and exercise Save through ChatGPT, evidence retention, both execution routes, creator delivery, and billing before enabling the corresponding production format or funded feature. Follow [implementation status](../implementation-status.md#november-25-link-to-ready-candidate) for current verification. Existing accepted production evidence and holds keep their prior authority.

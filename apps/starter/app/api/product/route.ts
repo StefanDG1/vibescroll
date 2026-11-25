@@ -187,6 +187,7 @@ const operations = {
   reviewAnalysis: ["mutation", api.product.reviewAnalysis],
   preferences: ["mutation", api.commerce.preferences],
   aiPreference: ["mutation", api.aiPreferences.save],
+  managedPostDefaults: ["mutation", api.aiPreferences.saveManagedPostDefaults],
   revokeDevice: ["mutation", api.devices.revoke],
   startDevice: ["mutation", api.devices.start],
   approveDevice: ["mutation", api.devices.approve],

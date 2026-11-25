@@ -246,8 +246,99 @@ export const productTables = {
     .index("by_org_source", ["organizationId", "sourceId"])
     .index("by_key", ["key"])
     .index("by_expiry", ["expiresAt"]),
+  creatorAccountLinks: defineTable({
+    organizationId: v.id("organizations"),
+    accountKey: v.string(),
+    groupKey: v.string(),
+    verifiedEvidenceHash: v.string(),
+    linkedAt: v.number(),
+  })
+    .index("by_org", ["organizationId"])
+    .index("by_org_account", ["organizationId", "accountKey"])
+    .index("by_org_group", ["organizationId", "groupKey"]),
+  creatorPoolRuns: defineTable({
+    creatorKey: v.string(),
+    postKey: v.string(),
+    sponsorId: v.id("users"),
+    organizationId: v.id("organizations"),
+    periodEnd: v.number(),
+    dayStart: v.number(),
+    maxCredits: v.number(),
+    maximumProviderNanoUsd: v.number(),
+    chargedCredits: v.optional(v.number()),
+    runId: v.id("mediaPreparations"),
+    sourceId: v.id("sources"),
+    state: v.union(
+      v.literal("active"),
+      v.literal("ready"),
+      v.literal("failed"),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_post", ["postKey"])
+    .index("by_source", ["sourceId"])
+    .index("by_org", ["organizationId"])
+    .index("by_sponsor_period", ["sponsorId", "periodEnd"])
+    .index("by_sponsor_day", ["sponsorId", "dayStart"])
+    .index("by_day", ["dayStart"]),
+  creatorWatches: defineTable({
+    creatorKey: v.string(),
+    dueAt: v.number(),
+    leaseUntil: v.optional(v.number()),
+    lastSuccessAt: v.optional(v.number()),
+    cursor: v.optional(v.union(v.number(), v.string())),
+    windowStartAt: v.optional(v.number()),
+    state: v.union(
+      v.literal("checking"),
+      v.literal("ready"),
+      v.literal("incomplete"),
+      v.literal("unavailable"),
+    ),
+  })
+    .index("by_key", ["creatorKey"])
+    .index("by_due", ["dueAt"]),
+  creatorDiscoveries: defineTable({
+    creatorKey: v.string(),
+    postKey: v.string(),
+    url: v.string(),
+    publishedAt: v.number(),
+    durationMs: v.optional(v.number()),
+    providerMediaId: v.optional(v.string()),
+    observedAt: v.number(),
+  })
+    .index("by_creator_post", ["creatorKey", "postKey"])
+    .index("by_post_key", ["postKey"])
+    .index("by_creator_published", ["creatorKey", "publishedAt"])
+    .index("by_observed", ["observedAt"]),
+  creatorFollows: defineTable({
+    organizationId: v.id("organizations"),
+    actorId: v.id("users"),
+    creatorKey: v.string(),
+    state: v.union(v.literal("following"), v.literal("unfollowed")),
+    firstFollowedAt: v.number(),
+    activeSince: v.optional(v.number()),
+    sponsor: v.optional(v.boolean()),
+    updatedAt: v.number(),
+  })
+    .index("by_creator_state", ["creatorKey", "state"])
+    .index("by_creator_sponsor", ["creatorKey", "state", "sponsor"])
+    .index("by_actor_workspace_creator", [
+      "actorId",
+      "organizationId",
+      "creatorKey",
+    ])
+    .index("by_org", ["organizationId"]),
   sources: defineTable({
     ...tenant,
+    platformPostKey: v.optional(v.string()),
+    creator: v.optional(
+      v.object({
+        key: v.string(),
+        handle: v.string(),
+        generation: v.number(),
+        contentKey: v.optional(v.string()),
+      }),
+    ),
     cloudRetryReceipts: v.optional(
       v.array(
         v.object({
@@ -406,6 +497,13 @@ export const productTables = {
     generation: v.number(),
   })
     .index("by_org", ["organizationId"])
+    .index("by_org_platform_post", ["organizationId", "platformPostKey"])
+    .index("by_org_creator_content", [
+      "organizationId",
+      "creator.key",
+      "creator.contentKey",
+    ])
+    .index("by_org_creator", ["organizationId", "creator.key", "state"])
     .index("by_org_created", ["organizationId", "createdAt"])
     .index("by_org_title", ["organizationId", "title"])
     .index("by_org_updated", ["organizationId", "updatedAt"])

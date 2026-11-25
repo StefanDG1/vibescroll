@@ -12,7 +12,7 @@ Use an export you are allowed to process and a role that permits import. Keep th
 2. Select the supported saved-link export. Review the local preview, source count, duplicates and unsupported entries.
 3. Choose whether to save metadata only or analyze through an enabled route. Batch processing needs explicit scope and a reviewed maximum.
 4. Submit the reviewed batch. Keep its accepted, duplicate and waiting results separate.
-5. Open a saved entry. A blocked or private source may require a permitted upload or supplied text. Do not assume imported means analyzed.
+5. Open a saved entry. A blocked or private source stays saved with an availability status. Open the result to check if analysis is ready.
 
 ## Export and deletion
 

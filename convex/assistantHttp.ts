@@ -1,3 +1,7 @@
+import {
+  creatorSource,
+  creatorFollowInput,
+} from "../packages/contracts/creator";
 import { processingAccountInput } from "../packages/contracts/processing-account";
 import {
   assistantExceptionCode,
@@ -52,6 +56,11 @@ import {
 } from "../packages/policy/assistant-http";
 const profileId = z.string().max(100).optional();
 const operations = z.discriminatedUnion("operation", [
+  z.strictObject({ operation: z.literal("read_creator"), args: creatorSource }),
+  z.strictObject({
+    operation: z.literal("set_creator_follow"),
+    args: creatorFollowInput,
+  }),
   z.strictObject({
     operation: z.literal("get_processing_account"),
     args: processingAccountInput,
@@ -384,6 +393,19 @@ export const tools = httpAction(async (ctx, request) => {
         : undefined;
     let value: unknown;
     switch (input.operation) {
+      case "read_creator":
+        value = await ctx.runQuery(internal.creators.assistantRead, {
+          profileId: input.args.profileId as Id<"organizations">,
+          sourceId: input.args.sourceId as Id<"sources">,
+        });
+        break;
+      case "set_creator_follow":
+        value = await ctx.runMutation(internal.creators.assistantFollow, {
+          profileId: input.args.profileId as Id<"organizations">,
+          sourceId: input.args.sourceId as Id<"sources">,
+          following: input.args.following,
+        });
+        break;
       case "widget_profiles":
         value = await ctx.runQuery(internal.assistantWidget.profiles, {
           profileId: selectedProfile,

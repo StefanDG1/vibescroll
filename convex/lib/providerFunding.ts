@@ -195,7 +195,7 @@ export async function settleProviderExposure(
         state: "known";
         actualNanoUsd: number;
         receiptHash: string;
-        basis: "reported_tariff_usage";
+        basis: "reported_tariff_usage" | "provider_reported_charge";
       }
     | { state: "unused"; receiptHash: string }
     | { state: "unknown"; block?: boolean },

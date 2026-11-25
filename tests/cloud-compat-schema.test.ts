@@ -30,7 +30,7 @@ const base = "346b718baf91ba9847fbb707be7bbe069df57257";
 it("preserves historical schemas/config while admitting reviewed empty proposal/engagement tables and components", () => {
   // The new vector table starts empty. Historical product table definitions
   // and the two retired search indexes are checked individually below.
-  expect(Object.keys(schema.tables)).toHaveLength(107);
+  expect(Object.keys(schema.tables)).toHaveLength(112);
   expect(
     (schema.tables.users as any).export().documentType.value.onboarding,
   ).toEqual({
@@ -164,7 +164,7 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
         row.vectorIndexes.length
       );
     }, 0),
-  ).toBe(296);
+  ).toBe(318);
   expect(Object.keys(cloudCatalogTables).sort()).toEqual([
     "catalogAliases",
     "catalogContributions",
@@ -192,8 +192,40 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
     revertEvidenceValidator,
     revertStatusValidator,
   );
-  expect(Object.keys(productTables)).toEqual(Object.keys(before));
+  expect(
+    Object.keys(productTables).filter(
+      (name) =>
+        ![
+          "creatorFollows",
+          "creatorAccountLinks",
+          "creatorWatches",
+          "creatorDiscoveries",
+          "creatorPoolRuns",
+        ].includes(name),
+    ),
+  ).toEqual(Object.keys(before));
+  const follows = (productTables.creatorFollows as any).export();
+  expect(
+    follows.indexes.map(
+      (index: { indexDescriptor: string }) => index.indexDescriptor,
+    ),
+  ).toEqual([
+    "by_creator_state",
+    "by_creator_sponsor",
+    "by_actor_workspace_creator",
+    "by_org",
+  ]);
   for (const [name, table] of Object.entries(productTables)) {
+    if (
+      [
+        "creatorFollows",
+        "creatorAccountLinks",
+        "creatorWatches",
+        "creatorDiscoveries",
+        "creatorPoolRuns",
+      ].includes(name)
+    )
+      continue;
     const current = (table as any).export(),
       prior = before[name].export();
     if (name === "sources" || name === "sourceCategories") {
@@ -227,6 +259,14 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
     }
     const nextFields = current.documentType.value,
       oldFields = prior.documentType.value;
+    current.indexes = current.indexes.filter(
+      (index: { indexDescriptor: string }) =>
+        ![
+          "by_org_platform_post",
+          "by_org_creator",
+          "by_org_creator_content",
+        ].includes(index.indexDescriptor),
+    );
     expect(nextFields.workCloudSaveIntent).toEqual({
       fieldType: (defineTable({ value: cloudSaveIntent }) as any).export()
         .documentType.value.value.fieldType,
@@ -235,6 +275,8 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
     delete nextFields.workCloudSaveIntent;
     for (const field of [
       "cloudRetryReceipts",
+      "creator",
+      "platformPostKey",
       "catalogStatus",
       "catalogPolicy",
       "catalogWait",
@@ -334,6 +376,10 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
             )
             .replace("    onboarding: v.optional(onboardingState),\n", "")
             .replace(
+              /^    managedPostDefaults: v\.optional\([\s\S]*?(?=^    defaultWorkspaceId)/m,
+              "",
+            )
+            .replace(
               'import { workspaceSearchTables } from "./workspaceSearchSchema";\n',
               "",
             )
@@ -409,7 +455,12 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
                 "",
               )
               .replace("app.use(shardedCounter);\n", "")
-          : content,
+          : file === "crons.ts"
+            ? content.replace(
+                'crons.interval(\n  "Check reviewed creator feeds",\n  { minutes: 15 },\n  internal.creatorDiscovery.schedule,\n  {},\n);\n',
+                "",
+              )
+            : content,
     ).toBe(
       execFileSync("git", ["show", `${base}:convex/${file}`], {
         encoding: "utf8",

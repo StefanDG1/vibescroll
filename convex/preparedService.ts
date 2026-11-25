@@ -1,3 +1,11 @@
+import {
+  candidateSponsor,
+  creatorPoolDailyExposureLimit,
+  creatorPoolEnabled,
+} from "./lib/creatorPool";
+import { currentAutomaticCatalogPolicy } from "./lib/catalogPolicy";
+import { selectedOrderedPostIsComplete } from "./lib/preparedEvidenceAccess";
+import { usesOrderedPostPreparation } from "../packages/social/prepared-post";
 import type { ProcessingAccountSummary } from "../packages/contracts/processing-account";
 import { processingAdmission } from "./lib/processingAdmission";
 import {
@@ -17,7 +25,7 @@ import { isAssistantIdentity } from "../packages/policy/assistant";
 import { sourceWithinAssistantScope } from "./lib/assistantSourceScope";
 import { ensure, PolicyError } from "../packages/policy";
 import { paidProcessingConfiguration } from "../packages/contracts/paid-processing";
-import { reserve, digest } from "./product";
+import { reserve, digest, captureAuthorized } from "./product";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import {
   preparedCreditQuote,
@@ -63,8 +71,11 @@ const requested = {
   model: v.optional(
     v.union(
       v.literal("meta/muse-spark-1.3-contributor"),
+      v.literal("meta/muse-ember"),
+      v.literal("anthropic/claude-haiku-5.5"),
       v.literal("gpt-6-luna"),
       v.literal("gpt-6.1-sol"),
+      v.literal("gpt-6.2-sol"),
     ),
   ),
   effort: v.optional(
@@ -156,8 +167,16 @@ async function quoteFor(
   ctx: QueryCtx,
   a: Awaited<ReturnType<typeof owner>>,
   request: Request,
+  durationLimit?: number,
 ) {
-  const cacheHit =
+  const sourceUrl = a.source.url ?? a.source.canonical;
+  const platform = privateCloudMediaIdentity(sourceUrl).platform;
+  const ordered = usesOrderedPostPreparation(
+    sourceUrl,
+    process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true",
+  );
+  const requiresOrderedEvidence = ordered && platform !== "x";
+  let cacheHit =
     !request.reanalyze &&
     a.source.state === "ready" &&
     !!(
@@ -165,6 +184,8 @@ async function quoteFor(
       a.source.analysis ||
       a.source.publicImportId
     );
+  if (cacheHit && requiresOrderedEvidence)
+    cacheHit = await selectedOrderedPostIsComplete(ctx, a.source);
   const config = preparedServiceConfiguration(a.actor.subject);
   ensure(
     config || cacheHit,
@@ -205,7 +226,12 @@ async function quoteFor(
     )
       continue;
     const candidate = await ctx.db.get(run.evidenceId);
-    if (preparedEvidenceIsCurrent(a.source, candidate)) {
+    if (
+      preparedEvidenceIsCurrent(a.source, candidate) &&
+      (!requiresOrderedEvidence ||
+        candidate.prepared?.evidence?.post?.version ===
+          "social-post-evidence-v1")
+    ) {
       await verifyRetainedAssets(ctx, a.source, candidate);
       evidence = candidate;
       break;
@@ -220,20 +246,72 @@ async function quoteFor(
     "INVALID_INPUT",
     "Use your saved subscription model settings for the assistant route.",
   );
+  const reviewedManaged =
+    process.env.VIBESCROLL_MANAGED_AUTO_ENABLED === "true";
+  let selectedModel = request.model;
+  let automaticGrant: Awaited<ReturnType<typeof openAiQuoteAuthority>> | null =
+    null;
+  if (
+    !selectedModel &&
+    request.executor === "gateway" &&
+    reviewedManaged &&
+    !cacheHit
+  ) {
+    const policy = openAiGrantConfiguration(a.actor.subject);
+    for (const candidate of ["gpt-6.2-sol", "gpt-6-luna"] as const) {
+      if (!policy?.allowedModels.includes(candidate)) continue;
+      try {
+        automaticGrant = await openAiQuoteAuthority(
+          ctx,
+          a.actor.subject,
+          candidate,
+        );
+        selectedModel = candidate;
+        break;
+      } catch (error) {
+        if (
+          !(error instanceof PolicyError) ||
+          !["BUDGET_EXCEEDED", "SETUP_REQUIRED", "MODEL_UNAVAILABLE"].includes(
+            error.code,
+          )
+        )
+          throw error;
+      }
+    }
+    selectedModel ??= "meta/muse-ember";
+  }
   const apiModel =
     request.executor === "gateway"
       ? apiModelSelection(
-          request.model ?? "meta/muse-spark-1.3-contributor",
-          request.effort,
+          selectedModel ?? "meta/muse-spark-1.3-contributor",
+          automaticGrant ? "medium" : request.effort,
         )
       : null;
+  const standardGateway =
+    apiModel?.id === "meta/muse-ember" ||
+    apiModel?.id === "anthropic/claude-haiku-5.5";
+  ensure(
+    !(
+      requiresOrderedEvidence &&
+      !cacheHit &&
+      apiModel?.id === "meta/muse-spark-1.3-contributor"
+    ),
+    "DATA_POLICY_REQUIRED",
+    "Use a standard managed or subscription route for ordered post media.",
+  );
+  ensure(
+    !standardGateway || reviewedManaged || cacheHit,
+    "SETUP_REQUIRED",
+    "The selected managed model is not enabled.",
+  );
   const openAi =
-    !cacheHit && apiModel?.provider === "openai_responses"
+    automaticGrant ??
+    (!cacheHit && apiModel?.provider === "openai_responses"
       ? await openAiQuoteAuthority(ctx, a.actor.subject, apiModel.id)
-      : null;
+      : null);
   const durationMaximumMs = evidence
     ? evidence.prepared.evidence.durationMs
-    : (config?.maximumDurationMs ?? 0);
+    : Math.min(durationLimit ?? Infinity, config?.maximumDurationMs ?? 0);
   const gatewayMaximumNanoUsd = cacheHit
     ? 0
     : request.executor === "gateway" && !openAi
@@ -264,9 +342,7 @@ async function quoteFor(
         request.executor,
         !!evidence,
         apiModel?.id,
-        privateCloudMediaIdentity(a.source.canonical).platform === "x"
-          ? "post"
-          : "video",
+        ordered || evidence?.prepared?.evidence?.post ? "post" : "video",
       );
   if (!cacheHit && request.executor === "gateway")
     ensure(
@@ -334,6 +410,7 @@ async function quoteFor(
     grantId: grant?._id ?? null,
     grantVersion: grant?.version ?? null,
     maximumApiUsd: config?.maximumApiUsd ?? 0,
+    ...(standardGateway ? { apiTariff: apiModelTariff } : {}),
     ...(openAi
       ? {
           apiTariff: apiModelTariff,
@@ -365,7 +442,7 @@ async function quoteHandler(ctx: QueryCtx, args: Request) {
     ...q.quote,
     quoteHash: q.quoteHash,
     creditsUnit: "existing_service_credit",
-    note: "Preparation and analysis are quoted separately. Final started-minute analysis uses actual video duration; old balances and purchases keep their denomination.",
+    note: "Preparation and analysis are quoted separately. The charge depends on the actual evidence and the quoted model.",
   };
 }
 export const options = query({
@@ -385,9 +462,18 @@ export const options = query({
           .unique()
       : null;
     const ids: ApiModelId[] = [];
-    if (process.env.VERCEL_AI_GATEWAY_API_KEY && config.contributorAllowed)
-      ids.push("meta/muse-spark-1.3-contributor");
-    // Sol has not passed production acceptance and is not offered for dispatch.
+    if (process.env.VERCEL_AI_GATEWAY_API_KEY) {
+      if (process.env.VIBESCROLL_MANAGED_AUTO_ENABLED === "true")
+        ids.push("meta/muse-ember", "anthropic/claude-haiku-5.5");
+      if (config.contributorAllowed)
+        ids.push("meta/muse-spark-1.3-contributor");
+    }
+    if (
+      policy?.allowedModels.includes("gpt-6.2-sol") &&
+      process.env.OPENAI_PROMOTIONAL_API_KEY &&
+      (counter?.jobs ?? 0) < policy.maximumJobs
+    )
+      ids.push("gpt-6.2-sol");
     if (
       policy?.allowedModels.includes("gpt-6-luna") &&
       process.env.OPENAI_PROMOTIONAL_API_KEY &&
@@ -427,8 +513,12 @@ const startArgs = {
 async function startHandler(
   ctx: MutationCtx,
   args: Request & { key: string; quoteHash: string; maximumCredits: number },
+  sponsor?: {
+    authority: Awaited<ReturnType<typeof owner>>;
+    durationLimit: number;
+  },
 ) {
-  const a = await owner(ctx, args.sourceId, true);
+  const a = sponsor?.authority ?? (await owner(ctx, args.sourceId, true));
   ensure(
     /^[A-Za-z0-9_-]{8,64}$/.test(args.key),
     "INVALID_INPUT",
@@ -458,7 +548,7 @@ async function startHandler(
       reused: true,
     };
   }
-  const q = await quoteFor(ctx, a, args);
+  const q = await quoteFor(ctx, a, args, sponsor?.durationLimit);
   ensure(
     q.quoteHash === args.quoteHash &&
       q.quote.maximumCredits === args.maximumCredits,
@@ -542,6 +632,7 @@ async function startHandler(
     a.source.organizationId,
     reservationKey,
     q.quote.maximumCredits,
+    sponsor ? "included" : "standard",
   );
   const providerReservationId =
     processingConfig.paidCustomer ||
@@ -972,4 +1063,193 @@ export const assistantStatus = internalQuery({
   args: { sourceId: v.id("sources") },
   returns: v.any(),
   handler: statusHandler,
+});
+
+export const preferredManagedStart = internalMutation({
+  args: { sourceId: v.id("sources") },
+  returns: v.any(),
+  handler: async (ctx, { sourceId }) => {
+    const a = await owner(ctx, sourceId, true);
+    const defaults = a.actor.managedPostDefaults;
+    ensure(
+      process.env.VIBESCROLL_MANAGED_AUTO_ENABLED === "true" &&
+        defaults?.enabled,
+      "SETUP_REQUIRED",
+      "Enable managed link analysis in Settings.",
+    );
+    const key = `prepared-managed-${sourceId}-${a.source.generation}`;
+    const previous = await ctx.db
+      .query("mediaPreparations")
+      .withIndex("by_org_source_key", (q) =>
+        q
+          .eq("organizationId", a.organization._id)
+          .eq("sourceId", sourceId)
+          .eq("key", key),
+      )
+      .unique();
+    if (previous)
+      return {
+        sourceId,
+        runId: previous._id,
+        state: previous.state,
+        reused: true,
+      };
+    const request = {
+      sourceId,
+      executor: "gateway" as const,
+      ...(defaults.model === "auto"
+        ? {}
+        : {
+            model: apiModelSelection(defaults.model, defaults.effort).id,
+            effort: apiModelSelection(
+              defaults.model,
+              defaults.effort ??
+                (defaults.model === "gpt-6-luna" ? "medium" : undefined),
+            ).effort,
+          }),
+    };
+    const quote = await quoteFor(ctx, a, request);
+    ensure(
+      quote.quote.maximumCredits <= defaults.maximumCredits,
+      "BUDGET_EXCEEDED",
+      "The quote exceeds your automatic post credit limit.",
+    );
+    return startHandler(ctx, {
+      ...request,
+      key,
+      quoteHash: quote.quoteHash,
+      maximumCredits: quote.quote.maximumCredits,
+    });
+  },
+});
+
+export const startCreatorSponsored = internalMutation({
+  args: {
+    discoveryId: v.id("creatorDiscoveries"),
+    followId: v.id("creatorFollows"),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      sourceId: v.id("sources"),
+      runId: v.union(v.id("mediaPreparations"), v.null()),
+    }),
+  ),
+  handler: async (ctx, { discoveryId, followId }) => {
+    const [item, follow] = await Promise.all([
+      ctx.db.get(discoveryId),
+      ctx.db.get(followId),
+    ]);
+    if (
+      !item ||
+      !follow ||
+      item.creatorKey !== follow.creatorKey ||
+      !creatorPoolEnabled(item.creatorKey) ||
+      !item.durationMs ||
+      item.publishedAt < Date.now() - 2 * 86400000
+    )
+      return null;
+    const previous = await ctx.db
+      .query("creatorPoolRuns")
+      .withIndex("by_post", (q) => q.eq("postKey", item.postKey))
+      .take(3);
+    if (
+      previous.length >= 2 ||
+      previous.some(
+        (p) => p.state !== "failed" || p.sponsorId === follow.actorId,
+      )
+    )
+      return null;
+    const candidate = await candidateSponsor(ctx, follow, item.publishedAt);
+    if (!candidate) return null;
+    const { actor, organization, allowance } = candidate;
+    await requirePaidProcessing(ctx, actor, organization._id);
+    const key = `creator-${await digest(item.postKey)}`.slice(0, 56);
+    const sourceId = await captureAuthorized(
+      ctx,
+      {
+        organizationId: organization._id,
+        key,
+        kind: "url",
+        url: item.url,
+        title: "TikTok video",
+        rightsAttested: true,
+      },
+      candidate,
+      true,
+      true,
+      true,
+    );
+    const source = await ctx.db.get(sourceId);
+    ensure(
+      source && source.url && sourceRetained(source.sourceRetentionUntil),
+      "SOURCE_UNAVAILABLE",
+      "The creator source is unavailable.",
+    );
+    // An automatic paid job must be eligible to deliver independent neutral
+    // evidence. Paid rights on a source association alone are insufficient.
+    ensure(
+      await currentAutomaticCatalogPolicy(ctx, source, actor),
+      "DATA_POLICY_REQUIRED",
+      "The creator job has no reviewed shared delivery route.",
+    );
+    const durationLimit = Math.min(600000, item.durationMs + 1000);
+    const request = { sourceId, executor: "gateway" as const };
+    const authority = { source, actor, organization };
+    const quote = await quoteFor(ctx, authority, request, durationLimit);
+    if (quote.quote.cacheHit) return { sourceId, runId: null };
+    ensure(
+      quote.quote.maximumCredits <= allowance.available,
+      "INSUFFICIENT_CREDITS",
+      "The scheduled quote exceeds the current sponsor allowance.",
+    );
+    const maximumProviderNanoUsd =
+      quote.gatewayMaximumNanoUsd + (quote.quote.openAi?.maximumNanoUsd ?? 0);
+    const admissions = await ctx.db
+      .query("creatorPoolRuns")
+      .withIndex("by_day", (q) => q.eq("dayStart", allowance.dayStart))
+      .take(256);
+    ensure(
+      admissions.length < 256 &&
+        admissions.reduce(
+          (total, prior) => total + prior.maximumProviderNanoUsd,
+          0,
+        ) +
+          maximumProviderNanoUsd <=
+          creatorPoolDailyExposureLimit(),
+      "OPERATOR_BUDGET_REACHED",
+      "The funded creator discovery allowance is used.",
+    );
+    const run = await startHandler(
+      ctx,
+      {
+        ...request,
+        key,
+        quoteHash: quote.quoteHash,
+        maximumCredits: quote.quote.maximumCredits,
+      },
+      { authority, durationLimit },
+    );
+    if (run.runId) {
+      const poolId = await ctx.db.insert("creatorPoolRuns", {
+        creatorKey: item.creatorKey,
+        postKey: item.postKey,
+        sponsorId: actor._id,
+        organizationId: organization._id,
+        periodEnd: allowance.periodEnd,
+        dayStart: allowance.dayStart,
+        maxCredits: quote.quote.maximumCredits,
+        maximumProviderNanoUsd,
+        runId: run.runId,
+        sourceId,
+        state: "active",
+        createdAt: Date.now(),
+      });
+      const record = (await ctx.db.get(run.runId))!;
+      await ctx.db.patch(record._id, {
+        receipt: { ...record.receipt, creatorPoolId: poolId },
+      });
+    }
+    return { sourceId, runId: run.runId };
+  },
 });

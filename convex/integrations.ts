@@ -1086,6 +1086,11 @@ export const completeUpload = action({
       "FORBIDDEN",
       "Upload unavailable.",
     );
+    ensure(
+      process.env.LINK_ONLY_CAPTURE_ENABLED !== "true",
+      "UNSUPPORTED_SOURCE",
+      "Save the original post link.",
+    );
     const metadata = await objectMetadata(a.key);
     await ctx.runMutation(internal.assets.complete, {
       ...a,

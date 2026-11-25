@@ -108,8 +108,7 @@ it.each([
   { preferredRoute: "local", expected: "local" },
   { preferredRoute: "cloud", expected: "cloud" },
   { preferredRoute: "save_only", expected: undefined },
-  { existingSourceId: "upload-recovery", expected: "local" },
-])("preserves an explicit route or upload recovery: %j", (selection) => {
+])("preserves an explicit selected route: %j", (selection) => {
   const tree = CaptureForm({
     organizationId: "workspace",
     personalEnabled: true,
@@ -123,6 +122,22 @@ it.each([
     elements(tree).find((node) => node.type === TaskRuntimePicker)!.props.value,
   ).toBe(selection.expected);
 });
+it("offers links and link imports as the only Save modes", () => {
+  const tree = CaptureForm({
+    organizationId: "workspace",
+    call: vi.fn(),
+    onDone: vi.fn(),
+  });
+  const modes = elements(tree).find(
+    (node) => node.props["aria-label"] === "Post type",
+  );
+  expect(
+    elements(modes)
+      .filter((node) => node.type === "option")
+      .map((node) => node.props.value),
+  ).toEqual(["url", "import"]);
+});
+
 it("allows an explicit Save only without starting Cloud or requiring its monitor setup", async () => {
   const call = vi.fn(async () => "saved-only"),
     done = vi.fn(),

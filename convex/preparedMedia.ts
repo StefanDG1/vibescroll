@@ -1,4 +1,9 @@
 "use node";
+
+import {
+  instagramCreatorFeedPolicy,
+  readAuthorizedInstagramPost,
+} from "../packages/social/creator-feed";
 import { internalAction, type ActionCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { analyzeOpenAiPreparedEvidence } from "../packages/providers/openai-prepared-insights";
@@ -150,6 +155,8 @@ async function analyzeServicePreparedEvidence(
     apiKey,
     maximumUsd,
     contributorAllowed: input.contributorAllowed,
+    model: input.receipt?.admission?.quote?.model ?? undefined,
+    effort: input.receipt?.admission?.quote?.effort ?? undefined,
     ...callbacks,
     onDispatch: async () => {
       if (input.receipt?.admission?.providerReservationId)
@@ -246,7 +253,41 @@ export const run = internalAction({
         "SETUP_REQUIRED",
         "Configure the service Gateway credential.",
       );
+      const locator = await ctx.runQuery(
+        internal.creatorDiscovery.instagramMediaLocator,
+        { runId },
+      );
+      const instagramScope = locator
+        ? instagramCreatorFeedPolicy(locator.creatorKey)
+        : null;
+      let authorizedInstagram;
+      if (instagramScope && locator) {
+        try {
+          authorizedInstagram = await readAuthorizedInstagramPost(
+            instagramScope,
+            locator.mediaId,
+            locator.postKey,
+          );
+        } catch {
+          // The reviewed Graph route was not usable. Preserve the exact attempt
+          // and report its cause without trying a second source or credential.
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId,
+            kind: "preparation_failure",
+            receipt: {
+              phase: "metadata",
+              code: "SOURCE_UNAVAILABLE",
+              stopAcknowledged: true,
+            },
+          });
+          throw new PolicyError(
+            "SOURCE_UNAVAILABLE",
+            "The connected Instagram source is unavailable.",
+          );
+        }
+      }
       const prepared = await prepareHostedEvidence(input.url, {
+        ...(authorizedInstagram ? { authorizedInstagram } : {}),
         maximumDurationMs: input.receipt?.admission?.quote.durationMaximumMs,
         failed: async (receipt) => {
           await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {

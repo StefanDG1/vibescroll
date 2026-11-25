@@ -1,5 +1,15 @@
 # Implementation status
 
+## November 25 link-to-Ready candidate
+
+The isolated `codex/link-ready-20261125` candidate adds link-only Save, ordered media and caption evidence, verified creator pages, cross-post originals, MCP creator tools, managed model preferences, and gated daily discovery and sponsorship. The baseline checkout and its proposal changes are separate. [Decision record](adr/244-link-only-posts-and-creator-intake.md)
+
+The local anonymous Convex deployment accepted the new schema and functions. The private browser preview used a synthetic carousel and the normal media route at 390 and 1440 pixels. The narrow reader showed both source slides, platform and creator links, and accessible navigation without horizontal overflow.
+
+The candidate is based on `742555417ebf`. On November 25 at 20:18–20:21 Europe/Paris, `pnpm check` passed on Windows with the hash-pinned caption and downloader test dependencies. It validated 466 documents and 12 skills and passed lint, type checks, 1,791 core tests with nine skips, 92 auth tests, 194 public-knowledge and UI tests, the Node and Python packages, and both production builds. The new feature tests cover the typed TikTok short-link manifest, partial media rejection, read and write scope enforcement over MCP transport, related-post media matching, creator permissions, and pool eligibility. The dependency audit reported zero unresolved findings. The repository-wide build emitted warnings in generated search CSS and in the existing help-content filesystem trace.
+
+On November 25, a public TikTok lookup verified a stable post and author ID and one photo through an accepted alias. A public Instagram carousel lookup returned no authoritative attachment order. A read-only call through the existing production MCP connection reopened a saved TikTok video with eight frames and three insights. None of these checks exercised a new hosted Save, paid run, or creator poll. The candidate awaits exact staged builds and hosted acceptance. Instagram professional-account access, TikTok Photo Mode discovery, and broader cross-platform coverage still have provider or acceptance dependencies. Operator-reviewed creator associations are available in the candidate. Automatic creator identity linking and a historical backfill remain open.
+
 ## November 20 onboarding and analytics
 
 The work-stage follow-up removed the project name input, recap line and guest preview name. Existing-project and team choices progressed at 390 and 1440 pixels in staging and production. Exact CI passed, and the same build is live. [Follow-up receipt](operations/evidence/launch-20261120-onboarding-work-stage.json)

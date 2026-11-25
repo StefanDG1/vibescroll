@@ -127,6 +127,11 @@ export const grant = mutation({
   },
   handler: async (ctx, a) => {
     const u = await writeAccess(ctx, a.organizationId);
+    ensure(
+      process.env.LINK_ONLY_CAPTURE_ENABLED !== "true",
+      "UNSUPPORTED_SOURCE",
+      "Save the original post link.",
+    );
     await limit(ctx, `upload:${u.actor._id}`, 10);
     const entitlement = await wallet(ctx, a.organizationId);
     const retainedBytes = (await storageUsage(ctx, a.organizationId)).bytes;

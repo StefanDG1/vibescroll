@@ -154,6 +154,24 @@ export const toolGuide: Record<string, ToolGuideEntry> = {
       "Cited insight summaries, or explicit retained post context with paginated transcript/observations, insights and one screenshot manifest.",
     flow: find,
   },
+  read_creator: {
+    group: "knowledge",
+    skills: ["vibescroll-find"],
+    funding: "no_ai",
+    purpose: "Open a verified creator from an authorized saved post.",
+    result:
+      "The creator profile link and a bounded page of visible analyzed posts.",
+    flow: find,
+  },
+  set_creator_follow: {
+    group: "knowledge",
+    skills: ["vibescroll-library"],
+    funding: "no_ai",
+    purpose: "Follow or unfollow a verified creator after an explicit request.",
+    result:
+      "The saved follow state and whether new-post monitoring is available.",
+    flow: find,
+  },
   read_post_frame: {
     group: "knowledge",
     skills: ["vibescroll-find", "vibescroll-compare"],

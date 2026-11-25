@@ -122,3 +122,22 @@ export async function preparedAssetCurrent(
       ),
   );
 }
+
+export async function selectedOrderedPostIsComplete(
+  ctx: QueryCtx,
+  source: Doc<"sources">,
+) {
+  if (!source.selectedAnalysisVersionId) return false;
+  const selected = await ctx.db.get(source.selectedAnalysisVersionId);
+  if (
+    !selected ||
+    selected.sourceId !== source._id ||
+    selected.state !== "ready"
+  )
+    return false;
+  const evidence = await ctx.db.get(selected.evidenceId);
+  return (
+    preparedEvidenceIsCurrent(source, evidence) &&
+    evidence.prepared?.evidence?.post?.version === "social-post-evidence-v1"
+  );
+}

@@ -52,7 +52,7 @@ export function safeSourceUrl(raw) {
   ensure(
     hosts.includes(url.hostname.toLowerCase()),
     "UNSUPPORTED_SOURCE",
-    "This source requires a permitted upload or supplied transcript.",
+    "Use a supported original post link.",
   );
   // oxlint-disable-next-line unicorn/no-useless-spread -- Copy before deleting from this mutable iterator.
   for (const key of [...url.searchParams.keys()])

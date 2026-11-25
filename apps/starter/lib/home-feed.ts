@@ -104,11 +104,45 @@ export type FeedEngagement = {
   liked: boolean;
   revision: number;
 };
+export type PostSlide = {
+  id: string;
+  index: number;
+  kind: "image" | "video";
+  portrait?: boolean;
+};
+
+export function orderedFeedMedia(
+  source: Parameters<typeof sourceEvidenceFrames>[0],
+) {
+  const slides = new Map<number, PostSlide>();
+  for (const frame of sourceEvidenceFrames(source)) {
+    if (
+      (frame.mediaKind === "image" || frame.mediaKind === "video") &&
+      Number.isSafeInteger(frame.sourceAssetIndex) &&
+      !slides.has(frame.sourceAssetIndex)
+    ) {
+      const asset =
+        source.preparedService?.post?.assets?.[frame.sourceAssetIndex];
+      slides.set(frame.sourceAssetIndex, {
+        id: frame.id,
+        index: frame.sourceAssetIndex,
+        kind: frame.mediaKind,
+        ...(asset?.height > asset?.width ? { portrait: true } : {}),
+      });
+    }
+  }
+  return [...slides.values()].sort((a, b) => a.index - b.index);
+}
+
 export type FeedDetail = {
   id: string;
   generation: number;
   title: string;
   authorName: string | null;
+  creatorKey?: string;
+  originalLinks?: string[];
+  caption?: string;
+  slides?: PostSlide[];
   url: string | null;
   summary: string;
   categoryKeys: string[];

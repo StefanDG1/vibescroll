@@ -3,9 +3,10 @@ import { postTopics } from "@/lib/project-suggestions";
 import { ProjectProposalComposer } from "./project-proposal-composer";
 import { StandaloneProposal } from "./standalone-proposal";
 import { PreparedAnalysisControl } from "./prepared-analysis-control";
+import { OriginalCaption, PostMediaCarousel, PostOriginals } from "./post-source-media";
 import { PostInsightReader } from "./post-insight-reader";
 import { PostInsightStrip } from "./post-insight-strip";
-import { feedInsightEvidence, postTopicName } from "@/lib/home-feed";
+import { feedInsightEvidence, orderedFeedMedia, postTopicName } from "@/lib/home-feed";
 import { SettingsPanel } from "./settings-panel";
 import { useState, useEffect, useRef, useEffectEvent, useId } from "react";
 import { useRouter } from "next/navigation";
@@ -2139,7 +2140,7 @@ export function Console({
                             ? data.libraryNext
                               ? "Continue loading to check more sources, or clear the filters."
                               : "Clear the filters to see your saved sources."
-                            : "Add a supported link, upload permitted content, or supply a transcript."}
+                            : "Save a supported post link."}
                         </p>
                         <Button
                           busy={busy}
@@ -2936,7 +2937,7 @@ export function Console({
                 if (sourceId)
                   findSource({
                     _id: sourceId,
-                    title: "New upload",
+                    title: "Saved post",
                     state: "processing",
                     coverage: "metadata_only",
                   });
@@ -2953,8 +2954,6 @@ export function CaptureForm({
   organizationId,
   call,
   onDone,
-  existingSourceId,
-  existingGeneration,
   devices = [],
   personalEnabled = false,
   linkAnalysisEnabled = false,
@@ -2967,7 +2966,7 @@ export function CaptureForm({
   onDraftChange,
 }: any) {
   const kindId = useId();
-  const [kind, setKind] = useState(existingSourceId ? "upload" : "url");
+  const [kind, setKind] = useState("url");
   const [saving, setSaving] = useState(false);
   const [autoAnalyze, setAutoAnalyze] = useState(
     preferredRoute !== "save_only",
@@ -2981,7 +2980,7 @@ export function CaptureForm({
           ? "cloud"
           : preferredRoute === "save_only"
             ? ""
-            : !existingSourceId && workCloud?.configured
+            : workCloud?.configured
               ? "work_cloud"
               : personalEnabled
                 ? "personal"
@@ -3011,20 +3010,15 @@ export function CaptureForm({
     personalEnabled &&
     analysisRoute === "personal" &&
     autoAnalyze &&
-    (kind === "upload" ||
-      (linkAnalysisEnabled && ["url", "import"].includes(kind)));
+    linkAnalysisEnabled;
   const cloudAutomatic =
     analysisRoute === "cloud" &&
     (cloudEnabled || (preparedEnabled && kind === "url")) &&
     autoAnalyze &&
-    (kind === "upload" ||
-      kind === "text" ||
-      ((linkAnalysisEnabled || (preparedEnabled && kind === "url")) &&
-        ["url", "import"].includes(kind)));
+    (linkAnalysisEnabled || (preparedEnabled && kind === "url"));
   const workCloudAutomatic =
     analysisRoute === "work_cloud" &&
     kind === "url" &&
-    !existingSourceId &&
     workCloud?.available;
   const automatic = personalAutomatic || cloudAutomatic || workCloudAutomatic;
   const approval = {
@@ -3040,7 +3034,7 @@ export function CaptureForm({
       (!workCloudAutomatic || !workCloud?.grantId || !workCloud?.grantVersion)
     )
       throw new Error(
-        "Finish ChatGPT setup for this video link, or save without analysis. Cloud will not switch to another task location.",
+        "Finish ChatGPT setup for this post link, or save without analysis. Cloud will not switch to another task location.",
       );
     if (cloudAutomatic && f.get("cloudCredits") !== "on")
       throw new Error("Approve the processing-credit maximum before analysis.");
@@ -3146,111 +3140,6 @@ export function CaptureForm({
           }
           return;
         }
-        if (kind === "upload") {
-          if (saving) return;
-          setSaving(true);
-          setImportError("");
-          try {
-            await checkAutomatic(f);
-            const file = f.get("file") as File;
-            if (!file?.size || file.size > 250000000)
-              throw new Error("Choose a video or audio file up to 250 MB.");
-            if (
-              personalAutomatic &&
-              (!computer || !effectiveModel || f.get("ownPlan") !== "on")
-            )
-              throw new Error(
-                "Choose your online computer and approve using your ChatGPT plan.",
-              );
-            if (personalAutomatic) {
-              const fresh = await call("checkPersonalSession", {
-                organizationId,
-              });
-              if (fresh !== true) {
-                onDone();
-                return;
-              }
-            }
-            const grantResponse = await fetch("/api/uploads/grant", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                organizationId,
-                type: file.type,
-                size: file.size,
-              }),
-            });
-            const g = await grantResponse.json();
-            if (!grantResponse.ok || g.error)
-              throw new Error(g.error || "Upload permission failed.");
-            const uploaded = await fetch(g.url, {
-              method: "PUT",
-              headers: { "Content-Type": file.type },
-              body: file,
-            });
-            if (!uploaded.ok)
-              throw new Error("Upload failed. No source was attached.");
-            const doneResponse = await fetch("/api/uploads/complete", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ organizationId, key: g.key }),
-            });
-            const done = await doneResponse.json();
-            if (!doneResponse.ok || done.error)
-              throw new Error(done.error || "Upload verification failed.");
-            let sourceId = existingSourceId;
-            if (existingSourceId) {
-              const attached = await call("attachSource", {
-                id: existingSourceId,
-                objectKey: g.key,
-                rightsAttested: f.get("rights") === "on",
-              });
-              if (attached === undefined) return;
-            } else
-              sourceId = await call("capture", {
-                organizationId,
-                key: crypto.randomUUID(),
-                kind,
-                title: String(f.get("title") || file.name).slice(0, 160),
-                objectKey: g.key,
-                rightsAttested: f.get("rights") === "on",
-              });
-            if (!sourceId) return;
-            if (cloudAutomatic) {
-              if (f.get("cloudCredits") !== "on")
-                throw new Error(
-                  "Approve the processing-credit maximum before analysis.",
-                );
-              await call("process", { id: sourceId, maxCredits: 10 });
-            }
-            if (personalAutomatic) {
-              const approved = await call("approvePersonalAnalysis", {
-                id: sourceId,
-                generation: existingSourceId ? existingGeneration + 1 : 0,
-                deviceId: chosenDevice,
-                model: effectiveModel,
-                effort: "medium",
-                useOwnPlan: true,
-                maxComputeCredits: 10,
-              });
-              if (approved === undefined) {
-                // Open the saved source instead of offering a duplicate upload.
-                onDone(sourceId);
-                return;
-              }
-            }
-            onDone(sourceId);
-          } catch (error) {
-            setImportError(
-              error instanceof Error
-                ? error.message
-                : "Upload failed. Try again.",
-            );
-          } finally {
-            setSaving(false);
-          }
-          return;
-        }
         if (saving) return;
         setSaving(true);
         setImportError("");
@@ -3269,27 +3158,14 @@ export function CaptureForm({
             if (result?.sourceId) onDone(result.sourceId, true);
             return;
           }
-          let sourceId = existingSourceId;
-          if (existingSourceId)
-            await call("attachSource", {
-              id: existingSourceId,
-              text: f.get("text"),
-              rightsAttested: f.get("rights") === "on",
-            });
-          else
-            sourceId = await call("capture", {
-              organizationId,
-              key: crypto.randomUUID(),
-              kind,
-              title: String(
-                f.get("title") ||
-                  (kind === "url" ? defaultLinkTitle : "Saved video"),
-              ),
-              ...(kind === "url"
-                ? { url: f.get("url") }
-                : { text: f.get("text") }),
-              rightsAttested: f.get("rights") === "on",
-            });
+          const sourceId = await call("capture", {
+            organizationId,
+            key: crypto.randomUUID(),
+            kind: "url",
+            title: String(f.get("title") || defaultLinkTitle),
+            url: f.get("url"),
+            rightsAttested: f.get("rights") === "on",
+          });
           if (!sourceId) return;
           if (automatic && !saveOnly) {
             const queued = personalAutomatic
@@ -3298,7 +3174,7 @@ export function CaptureForm({
                   sources: [
                     {
                       id: sourceId,
-                      generation: existingSourceId ? existingGeneration + 1 : 0,
+                      generation: 0,
                     },
                   ],
                 })
@@ -3347,12 +3223,8 @@ export function CaptureForm({
           value={kind}
           onValueChange={(value) => setKind(value)}
         >
-          {!existingSourceId && <option value="url">Link</option>}
-          {!existingSourceId && (
-            <option value="import">Import Instagram saves</option>
-          )}
-          <option value="upload">Upload media</option>
-          <option value="text">Transcript</option>
+          <option value="url">Link</option>
+          <option value="import">Import Instagram saves</option>
         </ChoiceSelect>
       </div>
       {kind === "import" ? (
@@ -3463,7 +3335,7 @@ export function CaptureForm({
             </section>
           )}
         </div>
-      ) : kind === "url" ? (
+      ) : (
         <label>
           Post link
           <input
@@ -3475,31 +3347,11 @@ export function CaptureForm({
             required
           />
         </label>
-      ) : kind === "text" ? (
-        <label>
-          Transcript
-          <textarea name="text" rows={7} required maxLength={60000} />
-        </label>
-      ) : (
-        <label>
-          Video or audio, up to 250 MB and 10 minutes
-          <input
-            name="file"
-            type="file"
-            accept="video/mp4,video/webm,audio/mpeg,audio/wav"
-            required
-          />
-        </label>
       )}
-      {!existingSourceId && kind !== "import" && (
+      {kind !== "import" && (
         <label>
-          {kind === "text" ? "Title" : "Title (optional)"}
-          <input
-            name="title"
-            required={kind === "text"}
-            maxLength={160}
-            placeholder={kind === "upload" ? "Uses the filename if empty" : undefined}
-          />
+          Title (optional)
+          <input name="title" maxLength={160} />
         </label>
       )}
       <label className="check">
@@ -3526,7 +3378,7 @@ export function CaptureForm({
         }}
         serverAvailable={cloudEnabled || (preparedEnabled && kind === "url")}
         workCloudAvailable={
-          !!workCloud?.available && kind === "url" && !existingSourceId
+          !!workCloud?.available && kind === "url"
         }
         workCloudConfigured={workCloud?.configured}
         localAvailable={personalEnabled}
@@ -3546,9 +3398,7 @@ export function CaptureForm({
       </details>
       {personalEnabled &&
         analysisRoute === "personal" &&
-        (kind === "upload" ||
-          ((linkAnalysisEnabled || (preparedEnabled && kind === "url")) &&
-            ["url", "import"].includes(kind))) && (
+        linkAnalysisEnabled && (
           <section
             className="upload-analysis form-grid"
             aria-label="Automatic analysis"
@@ -3613,10 +3463,7 @@ export function CaptureForm({
         )}
       {analysisRoute === "cloud" &&
         (cloudEnabled || (preparedEnabled && kind === "url")) &&
-        (kind === "upload" ||
-          kind === "text" ||
-          ((linkAnalysisEnabled || (preparedEnabled && kind === "url")) &&
-            ["url", "import"].includes(kind))) && (
+        (linkAnalysisEnabled || (preparedEnabled && kind === "url")) && (
           <section
             className="upload-analysis form-grid"
             aria-label="Automatic cloud analysis"
@@ -3673,20 +3520,12 @@ export function CaptureForm({
                     ? "Import next batch"
                     : "Import reviewed links"
             : saving
-              ? kind === "upload"
-                ? "Uploading..."
-                : "Saving..."
-              : kind === "upload" && automatic
-                ? "Upload and analyze"
-                : existingSourceId
-                  ? "Attach permitted content"
-                  : automatic
-                    ? "Add and analyze"
-                    : "Save source"}
+              ? "Saving..."
+              : automatic
+                ? "Save and analyze"
+                : "Save link"}
       </button>
-      {analysisRoute === "work_cloud" &&
-        kind === "url" &&
-        !existingSourceId && (
+      {analysisRoute === "work_cloud" && kind === "url" && (
           <button
             type="submit"
             name="saveOnly"
@@ -3867,6 +3706,8 @@ export function SourceDetail({
     };
   }, [demo, statusDeadline]);
   const savedFrames = sourceEvidenceFrames(detail, retentionTime);
+  const orderedSlides = orderedFeedMedia(detail);
+  const showCarousel = orderedSlides.length > 1 || orderedSlides.some((s) => s.kind === "image");
   const untimedImages =
     (savedFrames.length > 0 &&
       savedFrames.every((frame: any) => frame.mediaKind === "image")) ||
@@ -4386,38 +4227,14 @@ export function SourceDetail({
             )}
           </details>
           {detail.state === "needs_upload" &&
-            !(
-              detail.workCloudSaveIntent &&
-              detail.workCloudSaveIntent.analysisGeneration === undefined &&
-              detail.workCloudSaveIntent.expiresAt > retentionTime
-            ) &&
             !detail.currentRevisionId &&
             !["github_repository", "reddit_thread"].includes(
               detail.sourceType,
             ) && (
-              <details className="panel" open={!detail.assistantIntake}>
-                <summary>
-                  {detail.assistantIntake
-                    ? "Supply content if link retrieval fails"
-                    : "Supply permitted content"}
-                </summary>
-                <p>
-                  {detail.assistantIntake
-                    ? "Automatic analysis uses your saved link. If retrieval fails, you can attach permitted media or a transcript here."
-                    : "This saved URL has no verified audiovisual analysis. Attach a permitted upload or supplied transcript to this saved source."}
-                </p>
-                <CaptureForm
-                  demo={demo}
-                  organizationId={org}
-                  call={call}
-                  existingSourceId={id(source)}
-                  existingGeneration={detail.generation}
-                  devices={devices}
-                  personalEnabled={personalEnabled}
-                  linkAnalysisEnabled={linkAnalysisEnabled}
-                  onDone={() => {}}
-                />
-              </details>
+              <p className="fine">
+                The original link is saved. Complete source media has not
+                been retrieved.
+              </p>
             )}
           <details className="panel" hidden={Boolean(detail.publicImportId)}>
             <summary>Edit summary, tags and transcript correction</summary>
@@ -5004,14 +4821,22 @@ export function SourceDetail({
         sourcePreview={
           <div
             className="panel source-origin"
-            data-has-thumbnail={demo || postThumbnailCandidates(detail).length > 0}
+            data-ordered-media={showCarousel}
+            data-has-thumbnail={demo || showCarousel || postThumbnailCandidates(detail).length > 0}
           >
-            <SourceThumbnail source={detail} demo={demo} priority />
+            {showCarousel
+              ? <PostMediaCarousel key={id(detail)} slides={orderedSlides} original={detail.url} />
+              : <SourceThumbnail source={detail} demo={demo} priority />}
             <div className="source-origin-copy">
               <strong>{postDisplayTitle(detail)}</strong>
               {detail.linkPreview?.authorName && (
-                <span>{detail.linkPreview.authorName}</span>
+                detail.creator?.generation === detail.generation
+                  ? <Link href={`/app/${org}/creators/${encodeURIComponent(detail.creator.key)}`}>
+                      {detail.linkPreview.authorName}
+                    </Link>
+                  : <span>{detail.linkPreview.authorName}</span>
               )}
+              {detail.preparedService?.post?.text ? <OriginalCaption caption={detail.preparedService.post.text} /> : null}
               {!!displayedCategories?.length && (
                 <ul
                   className="source-reader-categories"
@@ -5023,10 +4848,7 @@ export function SourceDetail({
                 </ul>
               )}
               {detail.url && (
-                <a href={detail.url} target="_blank" rel="noopener noreferrer">
-                  Open original source{" "}
-                  <ExternalLink size={15} aria-hidden="true" />
-                </a>
+                <PostOriginals urls={detail.originalLinks ?? [detail.url]} />
               )}
             </div>
           </div>
@@ -5512,8 +5334,7 @@ function PersonalSourceAnalysis({
           (source.kind === "url" && linkAnalysisEnabled)
         ) ? (
         <p>
-          Upload the permitted video to start automatic transcription and frame
-          analysis.
+          Automatic analysis is unavailable for this link.
         </p>
       ) : (
         source.state !== "ready" && (

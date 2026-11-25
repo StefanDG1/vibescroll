@@ -199,11 +199,18 @@ export const publishCompleted = internalAction({
         return { state: "unknown" };
       }
       const outcome = await copyPreparedContribution(ctx, prepared);
-      if (outcome.state === "published")
+      if (outcome.state === "published") {
         await ctx.runMutation(internal.cloudCatalog.finishAutomatic, {
           contributionId: outcome.contributionId,
         });
-      else if (outcome.state === "copying" && (await waitForCopy()))
+        try {
+          await ctx.runMutation(internal.creatorDiscovery.notifyPublisher, {
+            sourceId: args.sourceId,
+          });
+        } catch {
+          // Creator discovery can retry delivery. The published artifact stays Ready.
+        }
+      } else if (outcome.state === "copying" && (await waitForCopy()))
         return { ...outcome, state: "pending" };
       else
         await ctx.runMutation(internal.cloudCatalog.automaticOutcome, {

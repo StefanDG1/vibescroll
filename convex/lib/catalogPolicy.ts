@@ -6,6 +6,7 @@ import {
   socialHash,
   privateCloudMediaIdentity,
 } from "../../packages/social/contracts";
+import { usesOrderedPostPreparation } from "../../packages/social/prepared-post";
 import { sourceRetained } from "./sourceAuthority";
 import { ensure } from "../../packages/policy";
 
@@ -31,6 +32,13 @@ export async function currentAutomaticCatalogPolicy(
     if (identity.platform !== "instagram" && identity.platform !== "tiktok")
       return null;
     if (!policy.platforms.includes(identity.platform)) return null;
+    if (
+      usesOrderedPostPreparation(
+        source.url,
+        process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true",
+      )
+    )
+      return null;
   } catch {
     return null;
   }

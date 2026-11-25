@@ -263,6 +263,18 @@ export async function postContextPage(
       authorName: isServicePreparedEvidence(c.evidence.prepared)
         ? c.evidence.prepared.metadata.authorName
         : (c.source.linkPreview?.authorName ?? null),
+      ...(isServicePreparedEvidence(c.evidence.prepared) &&
+      c.evidence.prepared.evidence.post?.version === "social-post-evidence-v1"
+        ? {
+            sourceAuthor: {
+              platformId: c.evidence.prepared.evidence.post.authorId,
+              handle: c.evidence.prepared.evidence.post.authorHandle,
+              publishedAt: c.evidence.prepared.evidence.post.publishedAt,
+            },
+            expectedAttachments:
+              c.evidence.prepared.evidence.post.expectedAssetCount,
+          }
+        : {}),
       durationMs:
         content.post.durationMs ??
         content.post.assets?.find(

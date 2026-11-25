@@ -61,6 +61,14 @@ export const postContextDataOutput = z.strictObject({
   canonical: z.string().url(),
   platform: z.string(),
   authorName: z.string().nullable(),
+  sourceAuthor: z
+    .strictObject({
+      platformId: id,
+      handle: id,
+      publishedAt: position.nullable(),
+    })
+    .optional(),
+  expectedAttachments: position.optional(),
   durationMs: position.nullable(),
   provenance: z.string(),
   summary: z.string().max(1500),

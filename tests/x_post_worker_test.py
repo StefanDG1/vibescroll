@@ -14,6 +14,50 @@ spec = importlib.util.spec_from_file_location('x_post_worker', Path(__file__).re
 worker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(worker)
 POST = '1234567890123456789'
+social_spec = importlib.util.spec_from_file_location(
+    'social_public_post', Path(__file__).resolve().parents[1] / 'packages/media/social-public-post.py')
+social = importlib.util.module_from_spec(social_spec)
+social_spec.loader.exec_module(social)
+
+
+class OrderedPublicPost(unittest.TestCase):
+    def parse_tiktok(self, item, count):
+        item['imagePost'] = {
+            'imageCount': count,
+            'images': [
+                {'imageURL': {'urlList': [f'https://a.tiktokcdn.com/{index}.jpg']}}
+                for index in (2, 1)
+            ],
+        }
+        scripts = {'__DEFAULT_SCOPE__': {'webapp.video-detail': {
+            'statusCode': 0, 'itemInfo': {'itemStruct': item},
+        }}}
+        return social.parse_post(
+            'https://vm.tiktok.com/ABCdef123/',
+            f'https://www.tiktok.com/@author/video/{POST}',
+            '<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__">' + json.dumps(scripts) + '</script>',
+        )
+
+    def test_typed_short_link_preserves_photo_order_and_rejects_missing_slides(self):
+        item = {'id': POST, 'author': {'id': '54321', 'uniqueId': 'Author'},
+                'desc': 'Whole caption with emoji 🌊', 'createTime': 1700000000,
+                'video': {'playAddr': 'https://a.tiktokcdn.com/cover-video.mp4'}}
+        post = self.parse_tiktok(item, 2)
+        self.assertEqual(post['canonical'], f'https://www.tiktok.com/@author/photo/{POST}')
+        self.assertEqual(post['authorId'], '54321')
+        self.assertEqual(post['text'], item['desc'])
+        self.assertEqual([asset['url'].rsplit('/', 1)[1] for asset in post['assets']], ['2.jpg', '1.jpg'])
+        with self.assertRaisesRegex(ValueError, 'incomplete_post_manifest'):
+            self.parse_tiktok(item, 3)
+        item['author']['uniqueId'] = 'another'
+        with self.assertRaisesRegex(ValueError, 'post_author_mismatch'):
+            self.parse_tiktok(item, 2)
+
+    def test_instagram_metadata_or_preview_cannot_replace_a_missing_carousel(self):
+        url = 'https://www.instagram.com/p/ABCdef1/'
+        html = '<meta property="og:image" content="https://a.cdninstagram.com/preview.jpg">'
+        with self.assertRaisesRegex(ValueError, 'post_manifest_unavailable'):
+            social.parse_post(url, url, html)
 
 
 class SelectedPost(unittest.TestCase):

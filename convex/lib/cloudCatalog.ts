@@ -1,3 +1,4 @@
+import { usesOrderedPostPreparation } from "../../packages/social/prepared-post";
 import { preparedServiceConfiguration } from "./preparedServicePolicy";
 import { openAiPreparedProcessingReviewHash } from "./openAiGrant";
 import { apiModels } from "../../packages/contracts/api-models";
@@ -187,6 +188,8 @@ export async function attachCloudCache(
     source.kind !== "url" ||
     !source.url ||
     !source.rightsAttested ||
+    (process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true" &&
+      usesOrderedPostPreparation(source.url, true)) ||
     !["saved", "needs_upload"].includes(source.state) ||
     source.generation !== 0 ||
     source.analysis ||

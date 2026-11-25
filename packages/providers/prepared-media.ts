@@ -1,3 +1,4 @@
+import type { readAuthorizedInstagramPost } from "../social/creator-feed";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { createJobSandbox } from "./sandbox";
@@ -13,6 +14,7 @@ import { jpegDimensions } from "../media/jpeg";
 import { ensure, PolicyError } from "../policy";
 import { readResponseBytes } from "./binary";
 import { prepareHostedXPost } from "./x-post-preparation";
+import { usesOrderedPostPreparation } from "../social/prepared-post";
 
 const downloader = {
   version: "2026.10.26",
@@ -39,12 +41,21 @@ export async function prepareHostedEvidence(
     metadata: (metadata: z.infer<typeof nativeMetadata>) => Promise<void>;
     failed?: (receipt: Record<string, unknown>) => Promise<void>;
     maximumDurationMs?: number;
+    authorizedInstagram?: Awaited<
+      ReturnType<typeof readAuthorizedInstagramPost>
+    >;
   },
 ) {
-  if (acquisitionPolicy(url).platform === "x")
+  const policy = acquisitionPolicy(url);
+  if (
+    callbacks.authorizedInstagram ||
+    usesOrderedPostPreparation(
+      policy.url,
+      process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true",
+    )
+  )
     return prepareHostedXPost(url, callbacks);
-  const policy = acquisitionPolicy(url),
-    times: Record<string, number> = {};
+  const times: Record<string, number> = {};
   const startedAt = Date.now();
   const maximumDurationMs = callbacks.maximumDurationMs ?? 600000;
   ensure(

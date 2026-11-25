@@ -13,7 +13,7 @@ import {
   validateOrderedEvidence,
 } from "../social/contracts";
 import { containsSecret } from "../policy/secrets.mjs";
-import { xPostEvidence } from "../social/x-post";
+import { preparedPostEvidence } from "../social/prepared-post";
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const timestamp = z.number().int().positive();
@@ -190,7 +190,7 @@ export const neutralCloudEvidence = z
     version: z.enum(["neutral-cloud-evidence-v1", "neutral-post-evidence-v2"]),
     canonical,
     platform: z.enum(["instagram", "tiktok", "x"]),
-    post: xPostEvidence.optional(),
+    post: preparedPostEvidence.optional(),
     evidenceHash: hash,
     sourceRevisionHash: hash,
     observedAt: timestamp,
@@ -215,8 +215,12 @@ export const neutralCloudEvidence = z
   .superRefine((e, ctx) => {
     const post = e.version === "neutral-post-evidence-v2";
     if (
-      post !== (e.platform === "x") ||
       post !== !!e.post ||
+      (e.platform === "x" && e.post?.version !== "x-post-evidence-v1") ||
+      (e.platform !== "x" &&
+        e.post !== undefined &&
+        (e.post.version !== "social-post-evidence-v1" ||
+          e.post.platform !== e.platform)) ||
       (!post &&
         (e.post !== undefined ||
           e.durationMs <= 0 ||

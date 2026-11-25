@@ -1,0 +1,60 @@
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0 20px;
+}
+.profile > span {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+  color: var(--teal);
+  font-weight: 650;
+}
+.profile p {
+  margin: 0;
+}
+.profile .note {
+  color: var(--subtle);
+  font-size: 0.875rem;
+  margin-top: 3px;
+}
+.profile form {
+  margin-left: auto;
+}
+.posts {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+}
+.posts li {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.posts a {
+  color: var(--ink);
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.posts time {
+  color: var(--subtle);
+  font-size: 0.8rem;
+}
+@media (max-width: 520px) {
+  .posts li {
+    flex-direction: column;
+    gap: 3px;
+  }
+  .profile {
+    gap: 10px;
+    align-items: start;
+  }
+}

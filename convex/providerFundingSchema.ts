@@ -36,6 +36,7 @@ export const providerFundingTables = {
     basis: v.optional(
       v.union(
         v.literal("reported_tariff_usage"),
+        v.literal("provider_reported_charge"),
         v.literal("confirmed_zero"),
         v.literal("unknown"),
       ),

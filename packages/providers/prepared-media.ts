@@ -15,13 +15,11 @@ import { ensure, PolicyError } from "../policy";
 import { readResponseBytes } from "./binary";
 import { prepareHostedXPost } from "./x-post-preparation";
 import { usesOrderedPostPreparation } from "../social/prepared-post";
-
-const downloader = {
-  version: "2026.10.26",
-  bytes: 3073072,
-  sha256: "e51e69e89489f199530f13d32a4342da3ddb2cf34842f364603a066db05afbf3",
-  url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp",
-};
+import { isInstagramSharePath } from "../social/identity.mjs";
+import {
+  preparedDownloader as downloader,
+  readPreparedDownloader,
+} from "./prepared-downloader";
 const nativeMetadata = z.object({
   title: z.string().max(160).optional(),
   authorName: z.string().max(160).optional(),
@@ -55,6 +53,12 @@ export async function prepareHostedEvidence(
     )
   )
     return prepareHostedXPost(url, callbacks);
+  ensure(
+    policy.platform !== "instagram" ||
+      !isInstagramSharePath(new URL(policy.url).pathname),
+    "UNSUPPORTED_SOURCE",
+    "This Instagram share link needs ordered post preparation.",
+  );
   const times: Record<string, number> = {};
   const startedAt = Date.now();
   const maximumDurationMs = callbacks.maximumDurationMs ?? 600000;
@@ -66,21 +70,7 @@ export async function prepareHostedEvidence(
     "Use a bounded media duration.",
   );
   // The trusted controller verifies the pinned public tool before sending it to an isolated job.
-  const toolResponse = await fetch(downloader.url, {
-    signal: AbortSignal.timeout(15000),
-  });
-  ensure(
-    toolResponse.ok,
-    "SETUP_REQUIRED",
-    "The pinned downloader could not be obtained.",
-  );
-  const tool = await readResponseBytes(toolResponse, downloader.bytes);
-  ensure(
-    tool.byteLength === downloader.bytes &&
-      createHash("sha256").update(tool).digest("hex") === downloader.sha256,
-    "POLICY_BLOCKED",
-    "The pinned downloader bytes changed.",
-  );
+  const tool = await readPreparedDownloader();
   times.toolReady = Date.now();
   const parserResponse = await fetch(parser.url, {
     signal: AbortSignal.timeout(10000),

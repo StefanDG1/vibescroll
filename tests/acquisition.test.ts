@@ -70,8 +70,12 @@ describe("permitted source acquisition", () => {
     ])
       expect(acquisitionManifest.safeParse(value).success).toBe(false);
     expect(acquisitionMessage("rate_limited")).toContain("rate limit");
-    expect(acquisitionMessage("needs_auth")).toContain("No login");
-    expect(acquisitionMessage("unsupported")).toContain("not supported");
+    expect(acquisitionMessage("needs_auth")).toContain("requires sign-in");
+    expect(acquisitionMessage("unsupported")).toContain("post format");
+    for (const status of ["rate_limited", "needs_auth", "unsupported"]) {
+      expect(acquisitionMessage(status)).toContain("Your link is saved.");
+      expect(acquisitionMessage(status)).not.toMatch(/attach|upload/i);
+    }
   });
   it("keeps the packaged worker pinned and enforces independent network and subprocess bounds", () => {
     expect(acquirer).toContain(`VERSION = '${release.version}'`);

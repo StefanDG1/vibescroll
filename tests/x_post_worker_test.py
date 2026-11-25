@@ -122,6 +122,14 @@ class OrderedPublicPost(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unsupported_post_reference'):
             social.reference(bare_photo)
 
+    def test_tiktok_video_requires_a_reviewed_web_cdn_host_and_path(self):
+        url = 'https://v16-webapp-prime.tiktok.com/video/tos/eu1a/assetid/?x=example'
+        self.assertEqual(social.media_url(url, 'tiktok'), url)
+        for bad in (url.replace('/video/tos/', '/user/'), url.replace('v16-webapp-prime', 'www'),
+                    url.replace('/assetid/', '/../status/')):
+            with self.assertRaisesRegex(ValueError, 'unverified_attachment_host'):
+                social.media_url(bad, 'tiktok')
+
     def test_instagram_metadata_or_preview_cannot_replace_a_missing_carousel(self):
         url = 'https://www.instagram.com/p/ABCdef1/'
         html = '<meta property="og:image" content="https://a.cdninstagram.com/preview.jpg">'
@@ -140,6 +148,23 @@ class OrderedPublicPost(unittest.TestCase):
             self.assertEqual([a['kind'] for a in result['assets']], ['image', 'video'] if mixed else ['image'])
             if mixed:
                 self.assertTrue(result['assets'][1]['url'].endswith('/clip.mp4'))
+
+    def test_instagram_share_checks_redirected_shortcode_before_looking_up_embed(self):
+        short = 'https://www.instagram.com/share/reel/StoryToken/'
+        reel = 'https://www.instagram.com/reel/ABCdef1/'
+        item = self.instagram_post()
+        public_page = (reel, '<html>Ordinary post page</html>')
+        embed = (self.embed_url, self.instagram_embed(item))
+        with patch.object(social, 'read_page', side_effect=[public_page, embed]) as read:
+            result = social.acquire_post(short, 'test-proxy', instagram_embed=True)
+        self.assertEqual(result['postId'], 'ABCdef1')
+        self.assertEqual(result['canonical'], self.url)
+        self.assertEqual([call.args[0] for call in read.call_args_list], [short, self.embed_url])
+        with patch.object(social, 'read_page', side_effect=[
+            ('https://www.instagram.com/reel/AnotherID/', public_page[1]), embed,
+        ]):
+            with self.assertRaisesRegex(ValueError, 'post_identity_mismatch'):
+                social.acquire_post(short, 'test-proxy', instagram_embed=True)
 
     def test_captioned_single_photo_proves_identity_and_omits_embed_comments(self):
         profile = 'https://www.instagram.com/example/'
@@ -162,6 +187,14 @@ class OrderedPublicPost(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'post_author_mismatch'):
             social.parse_post(self.url, self.embed_url, fixture.replace(
                 f'CaptionUsername" href="{profile}', 'CaptionUsername" href="https://www.instagram.com/elsewhere/'), embed=True)
+        collab = fixture.replace(
+            f'<a class="Username" href="{profile}">example</a>',
+            f'<a class="CollabUsername" href="{profile}">example</a>'
+            '<a class="Username" href="https://www.instagram.com/other/">other</a>',
+        )
+        collaborator = social.parse_post(self.url, self.embed_url, collab, embed=True)
+        self.assertEqual(collaborator['authorHandle'], 'example')
+        self.assertEqual(collaborator['authorId'], result['authorId'])
 
     def test_embed_rejects_wrong_identity_disabled_carousel_and_cover_only_video(self):
         item = self.instagram_post()
@@ -176,6 +209,37 @@ class OrderedPublicPost(unittest.TestCase):
         edges.pop()
         with self.assertRaisesRegex(ValueError, 'incomplete_carousel_manifest'):
             social.parse_post(self.url, self.embed_url, self.instagram_embed(item), embed=True)
+
+    @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'), 'project decoder tools unavailable')
+    def test_tiktok_video_uses_only_the_downloader_result_for_the_verified_post(self):
+        cloud_spec = importlib.util.spec_from_file_location(
+            'cloud_extraction', Path(__file__).resolve().parents[1] / 'packages/media/cloud_extraction.py')
+        extraction = importlib.util.module_from_spec(cloud_spec)
+        cloud_spec.loader.exec_module(extraction)
+        url = f'https://www.tiktok.com/@fixture/video/{POST}'
+        with tempfile.TemporaryDirectory() as tmp, patch.object(worker, 'ROOT', Path(tmp)), \
+             patch.dict(sys.modules, {'cloud_extraction': extraction}):
+            root = Path(tmp)
+            post = {'platform': 'tiktok', 'postId': POST, 'authorId': '12345', 'authorHandle': 'fixture',
+                    'provider': 'public_page', 'canonical': url, 'text': 'Full caption', 'publishedAt': None,
+                    'expectedAssetCount': 1, 'assets': [{'kind': 'video', 'animated': False}]}
+            worker.write_json('request.json', {'maximumDurationMs': 6000})
+            worker.write_json('x-acquisition.json', post)
+            info = {'webpage_url': url, 'id': POST, 'extractor_key': 'TikTok', 'duration': 2}
+            worker.write_json('resolved-info.json', {**info, 'id': 'different'})
+            with self.assertRaisesRegex(ValueError, 'source_identity_mismatch'):
+                worker.adopt_tiktok_video()
+            (root / 'resolved-info.json').write_text(json.dumps(info), encoding='utf8')
+            subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=160x240:r=10:d=2',
+                            '-an', '-c:v', 'mpeg4', '-f', 'mp4', str(root / 'input')], check=True)
+            worker.adopt_tiktok_video()
+            worker.decode()
+            result = worker.read_json('x-result.json')
+            self.assertEqual(result['post']['postId'], POST)
+            self.assertEqual(result['post']['authorId'], '12345')
+            self.assertEqual(result['post']['assets'][0]['kind'], 'video')
+            self.assertEqual(result['post']['assets'][0]['durationMs'], 2000)
+            self.assertEqual({f['assetIndex'] for f in result['frames']}, {0})
 
     @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'), 'project decoder tools unavailable')
     def test_normal_worker_keeps_embed_identity_through_inspection_download_and_decode(self):

@@ -1,3 +1,10 @@
+import { instagramPostShortcode } from "../media/instagram-identity.mjs";
+
+export {
+  isInstagramSharePath,
+  instagramPostShortcode,
+} from "../media/instagram-identity.mjs";
+
 const instagramHosts = new Set(["instagram.com", "www.instagram.com"]);
 const tiktokHosts = new Set(["tiktok.com", "www.tiktok.com"]);
 
@@ -25,14 +32,12 @@ function publicUrl(raw) {
 export function socialPostUrl(raw) {
   const url = publicUrl(raw);
   if (instagramHosts.has(url.hostname)) {
-    const match = /^\/(?:p|reel|tv)\/([A-Za-z0-9_-]{3,100})\/?$/.exec(
-      url.pathname,
-    );
-    if (!match) throw new Error("UNSUPPORTED_SOCIAL_POST");
+    const shortcode = instagramPostShortcode(url.pathname);
+    if (!shortcode) throw new Error("UNSUPPORTED_SOCIAL_POST");
     return {
       platform: "instagram",
-      postKey: match[1],
-      canonical: `https://www.instagram.com/p/${match[1]}/`,
+      postKey: shortcode,
+      canonical: `https://www.instagram.com/p/${shortcode}/`,
     };
   }
   if (tiktokHosts.has(url.hostname)) {

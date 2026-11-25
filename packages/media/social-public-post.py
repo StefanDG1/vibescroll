@@ -9,10 +9,12 @@ from urllib.parse import urljoin, urlsplit
 
 TIKTOK = {"tiktok.com", "www.tiktok.com", "vm.tiktok.com", "vt.tiktok.com"}
 INSTAGRAM = {"instagram.com", "www.instagram.com"}
+TIKTOK_WEB_VIDEO = {"v16-webapp-prime.tiktok.com", "v19-webapp-prime.tiktok.com"}
 TT_FULL = r"/@([A-Za-z0-9_.]{1,40})/(video|photo)/([0-9]{10,25})/?"
 TT_RESOLVED = r"/@([A-Za-z0-9_.]{0,40})/(video|photo)/([0-9]{10,25})/?"
 TT_SHORT = r"/(?:t/)?[A-Za-z0-9]{5,30}/?"
-IG_POST = r"/(?:p|reel|reels)/([A-Za-z0-9_-]{5,30})/?"
+IG_POST = r"(?:/[A-Za-z0-9_.]{1,30})?/(?:p|reel|reels|tv)/([A-Za-z0-9_-]{5,30})/?"
+IG_SHARE = r"/share/(?:p|reel)/[A-Za-z0-9_-]{5,30}/?"
 IG_EMBED = r"/p/([A-Za-z0-9_-]{5,30})/embed/(?:captioned/)?"
 EMBED_WRAPPER = re.compile(
     r'^\s*requireLazy\(\["TimeSliceImpl","ServerJS"\],function'
@@ -39,8 +41,11 @@ def reference(raw, embed=False, resolved=False):
         if url.hostname in INSTAGRAM and (match := re.fullmatch(IG_EMBED, url.path)):
             return "instagram", match[1]
         raise ValueError("unsupported_post_embed")
-    if url.hostname in INSTAGRAM and (match := re.fullmatch(IG_POST, url.path)):
-        return "instagram", match[1]
+    if url.hostname in INSTAGRAM:
+        if re.fullmatch(IG_SHARE, url.path):
+            return "instagram", None
+        if match := re.fullmatch(IG_POST, url.path):
+            return "instagram", match[1]
     if url.hostname in TIKTOK:
         if match := re.fullmatch(TT_RESOLVED if resolved else TT_FULL, url.path):
             return "tiktok", match[3]
@@ -53,6 +58,9 @@ def reference(raw, embed=False, resolved=False):
 
 def media_url(raw, platform):
     url = secure_url(raw)
+    if (platform == "tiktok" and url.hostname in TIKTOK_WEB_VIDEO and
+            re.fullmatch(r"/video/tos/(?:[A-Za-z0-9_-]+/)+[A-Za-z0-9_-]+/?", url.path)):
+        return raw
     suffixes = (".cdninstagram.com", ".fbcdn.net") if platform == "instagram" else (
         ".tiktokcdn.com", ".tiktokcdn-us.com", ".tiktokcdn-eu.com", ".byteoversea.com",
         ".ibytedtos.com", ".muscdn.com",
@@ -203,7 +211,7 @@ class InstagramEmbedPhoto(HTMLParser):
             self.stack.append((tag, scope))
         if "Embed" not in scope:
             return
-        for expected_tag, marker in (("div", "Embed"), ("a", "Username"), ("a", "EmbeddedMedia"),
+        for expected_tag, marker in (("div", "Embed"), ("a", "Username"), ("a", "CollabUsername"), ("a", "EmbeddedMedia"),
                                      ("img", "EmbeddedMediaImage"), ("div", "Caption"),
                                      ("a", "CaptionUsername")):
             if tag == expected_tag and marker in classes and (
@@ -252,21 +260,24 @@ def instagram_embed_photo(html, final, post_id):
             raise ValueError("post_identity_mismatch")
     if not {"Caption", "CaptionUsername", "Username", "EmbeddedMediaImage"} <= doc.fields.keys():
         raise MissingEmbedManifest("post_manifest_unavailable")
-    handles = set()
-    for field in ("Username", "CaptionUsername"):
-        profile = secure_url(doc.fields[field].get("href"))
-        handle = re.fullmatch(r"/([A-Za-z0-9_.]{1,40})/?", profile.path)
-        if profile.hostname not in INSTAGRAM or not handle:
+    handle = instagram_embed_handle(doc.fields["CaptionUsername"])
+    if handle != instagram_embed_handle(doc.fields["Username"]):
+        collaborator = doc.fields.get("CollabUsername")
+        if not collaborator or handle != instagram_embed_handle(collaborator):
             raise ValueError("post_author_mismatch")
-        handles.add(handle[1].lower())
-    if len(handles) != 1:
-        raise ValueError("post_author_mismatch")
-    handle = handles.pop()
     return {"platform": "instagram", "postId": post_id, "authorId": author_id,
             "authorHandle": handle, "authorName": handle, "text": "".join(doc.caption).strip(),
             "publishedAt": None, "expectedAssetCount": 1,
             "assets": [attachment(doc.fields["EmbeddedMediaImage"].get("src"), "image", "instagram")],
             "canonical": f"https://www.instagram.com/p/{post_id}/"}
+
+
+def instagram_embed_handle(link):
+    profile = secure_url(link.get("href"))
+    handle = re.fullmatch(r"/([A-Za-z0-9_.]{1,40})/?", profile.path)
+    if profile.hostname not in INSTAGRAM or not handle:
+        raise ValueError("post_author_mismatch")
+    return handle[1].lower()
 
 
 def attachment(raw, kind, platform):
@@ -405,11 +416,19 @@ def parse_post(requested, final, html, embed=False):
 
 def acquire_post(raw, proxy, instagram_embed=False):
     platform, post_id = reference(raw)
-    if instagram_embed and platform == "instagram" and urlsplit(raw).path.startswith("/p/"):
+    source = raw
+    page = None
+    if instagram_embed and platform == "instagram":
+        if not post_id:
+            page = read_page(raw, proxy)
+            source = page[0]
+            _, post_id = reference(source)
+            if not post_id:
+                raise ValueError("post_identity_unresolved")
         final, html = read_page(f"https://www.instagram.com/p/{post_id}/embed/captioned/", proxy, embed=True)
         try:
-            return parse_post(raw, final, html, embed=True)
+            return parse_post(source, final, html, embed=True)
         except MissingEmbedManifest:
             pass
-    final, html = read_page(raw, proxy)
+    final, html = page if page is not None else read_page(raw, proxy)
     return parse_post(raw, final, html)

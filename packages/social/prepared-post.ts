@@ -81,9 +81,12 @@ export function usesOrderedPostPreparation(raw: string, enabled: boolean) {
   const host = url.hostname.replace(/^www\./, "");
   if (host === "x.com") return true;
   if (!enabled) return false;
-  if (host === "instagram.com") return url.pathname.startsWith("/p/");
-  if (["vm.tiktok.com", "vt.tiktok.com"].includes(host)) return true;
-  return host === "tiktok.com" && /\/photo\/|^\/t\//.test(url.pathname);
+  return [
+    "instagram.com",
+    "tiktok.com",
+    "vm.tiktok.com",
+    "vt.tiktok.com",
+  ].includes(host);
 }
 
 export function preparedMediaContentKey(post: PreparedPostEvidence) {

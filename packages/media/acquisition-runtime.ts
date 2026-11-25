@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { safeSourceUrl, ensure } from "./acquisition-policy.mjs";
 import { containsSecret } from "../policy/secrets.mjs";
+import {
+  instagramPostShortcode,
+  isInstagramSharePath,
+} from "./instagram-identity.mjs";
 
 // Only supported post identifiers enter the isolated downloader. A platform
 // home page, arbitrary URL path, playlist or supplied CDN URL is not a job.
@@ -29,7 +33,10 @@ export function acquisitionPolicy(raw: string) {
   } else if (host === "instagram.com") {
     platform = "instagram";
     ensure(
-      /^\/(p|reel|reels)\/[A-Za-z0-9_-]{5,30}\/?$/.test(url.pathname),
+      isInstagramSharePath(url.pathname) ||
+        /^[A-Za-z0-9_-]{5,30}$/.test(
+          instagramPostShortcode(url.pathname) ?? "",
+        ),
       "UNSUPPORTED_SOURCE",
       "Use an Instagram post or reel link.",
     );
@@ -139,13 +146,13 @@ export function acquisitionMessage(status: string) {
   return (
     {
       needs_auth:
-        "This platform requires sign-in to retrieve this post. No login or access restriction was bypassed. Keep the link or attach permitted media.",
+        "The platform requires sign-in to retrieve this post. Your link is saved.",
       rate_limited:
-        "The platform temporarily blocked link retrieval with a rate limit. Your link is saved. Retry later or attach permitted media; no sign-in restriction was bypassed.",
+        "A platform rate limit blocked link retrieval. Your link is saved. Try again later.",
       unavailable:
         "This post could not be retrieved. It may be private, removed, or blocked by the platform. The saved link is still available.",
       unsupported:
-        "This post's format is not supported by the link downloader. Keep the link or attach permitted media.",
+        "This post format could not be retrieved from its link. Your link is saved.",
       over_limit: "This post exceeds the 250 MB or 10-minute processing limit.",
       failed:
         "Link retrieval did not finish. Review its status before retrying; no alternate AI provider was used.",

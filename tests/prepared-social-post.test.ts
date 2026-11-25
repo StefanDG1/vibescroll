@@ -102,18 +102,23 @@ it("rejects incomplete and relabeled post media even before it is sent to the mo
   ).toBe(false);
 });
 
-it("keeps the verified video flow separate during the ordered-media rollout", () => {
-  expect(usesOrderedPostPreparation(canonical, false)).toBe(false);
-  expect(usesOrderedPostPreparation(canonical, true)).toBe(true);
+it("checks social media type from the platform when ordered preparation is enabled", () => {
+  for (const url of [
+    canonical,
+    canonical.replace("/photo/", "/video/"),
+    "https://vm.tiktok.com/Example11/",
+    "https://www.instagram.com/reel/ABCdef12345/",
+    "https://www.instagram.com/share/p/Example11/",
+  ]) {
+    expect(usesOrderedPostPreparation(url, false)).toBe(false);
+    expect(usesOrderedPostPreparation(url, true)).toBe(true);
+  }
   expect(
-    usesOrderedPostPreparation("https://vm.tiktok.com/Example11/", true),
+    usesOrderedPostPreparation("https://x.com/i/web/status/123", false),
   ).toBe(true);
-  expect(
-    usesOrderedPostPreparation(
-      "https://www.instagram.com/reel/ABCdef12345/",
-      true,
-    ),
-  ).toBe(false);
+  expect(usesOrderedPostPreparation("https://vimeo.com/12345", true)).toBe(
+    false,
+  );
 });
 
 it("groups comparable re-encodes from a verified creator without matching reordered or edited posts", async () => {

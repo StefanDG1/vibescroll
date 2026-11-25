@@ -1,5 +1,19 @@
 # Implementation status
 
+## November 25 social link variants and X attachment matrix
+
+Public browser probes resolved Instagram post and Reel share tokens to first-party shortcodes. The candidate accepts those aliases, treats Reel and TikTok video URL paths as provisional, and checks Instagram collaboration headers before attributing a caption. Cookie-free acquisition downloaded a collaborative single-image share, a Reel share, and a two-slide TikTok slideshow reached through a video URL. The latter returned a slideshow manifest even though the same URL exposed a playback object. Instagram also exposed complete ordered lists for independent nine- and ten-image carousel fixtures.
+
+A true TikTok video returned a typed author and caption. Its public playback CDN returned HTTP 403 in the browser probe. The candidate now selects the existing pinned downloader at the verified single-video stage inside the same sandbox and verifies the resolved video ID before accepting its bytes. The isolated worker test uses a real local MP4 and rejects a mismatched downloader ID. This handoff still needs hosted verification.
+
+The reviewed X fallback returned exact post IDs, captions, authors and all media for five public fixtures. Offline replay decoded a single image, four ordered images, an animated GIF, an image followed by video, and a video followed by two images. The captured media yielded 30 evidence JPEGs. Existing text-only and single-video production acceptance is recorded separately. [Upstream X fixture set](https://github.com/mikf/gallery-dl/blob/v1.32.21/test/results/twitter.py) · [Existing X production acceptance](operations/X-POST-SUPPORT.md)
+
+The app retains its current release configuration while the candidate is local. Hosted analysis, per-format canaries and approved access for commercial Instagram extraction remain release gates. Public visibility and a working embed do not establish collection permission. [Meta collection guidance](https://about.fb.com/news/2021/04/how-we-combat-scraping/)
+
+The local Convex deployment prepared the functions and accepted startup. The targeted evidence and transport rerun passed 30 tests, the ordered worker passed 16 cases, and the companion package checks passed all 14 cases after the URL rules moved into its existing media module scope. The existing live MCP profile read returned three workspaces and a configured analysis route. No new hosted analysis was dispatched in this checkpoint.
+
+The final local `pnpm check` passed on November 25 with 1,793 core tests and nine skips, 92 auth tests, 194 public-knowledge and UI tests, the companion and Python checks, and both production builds. The dependency audit and generated MCP reference checks passed. Next.js reported existing generated CSS and help-content trace warnings.
+
 ## November 25 public Instagram embed probe
 
 The public captioned embed exposed structured media that the ordinary post page omitted. Cookie-free Chrome requests retrieved complete captions, stable author IDs and actual media for two single images, a five-image carousel, and a two-video carousel. Local worker replay on the downloaded originals retained seven ordered still JPEGs and sixteen sampled video JPEGs. The independent gallery-dl fixtures specify five and two items for those carousels. An unavailable public embed produced no accepted manifest. An Instagram Reel embed that declared a copyright block was excluded. [Gallery-dl fixtures](https://github.com/mikf/gallery-dl/blob/v1.32.21/test/results/instagram.py)

@@ -35,8 +35,11 @@ def main():
         if info.get('extractor_key') == 'TikTok' and isinstance(handle, str) and re.fullmatch(r'[A-Za-z0-9_.]{1,40}', handle):
             metadata['resolvedCanonical'] = f'https://www.tiktok.com/@{handle}/video/{info["id"]}'
         (ROOT / 'metadata.json').write_text(json.dumps(metadata))
-    elif phase == 'download':
+    elif phase in ('download', 'download-media'):
         worker = extraction.ResolvedDownloader.resume(ROOT, BINARY, run)
+        if phase == 'download-media':
+            worker.download()
+            return
         tracks = []
         for candidate in extraction.caption_candidates(worker.info):
             try:

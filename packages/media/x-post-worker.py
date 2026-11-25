@@ -186,6 +186,7 @@ def inspect():
             'title': (post['text'].strip().splitlines() or [f'@{post["authorHandle"]}'])[0][:160],
             'authorName': str(post['authorName'])[:160],
             'resolvedCanonical': post['canonical'],
+            'singleTikTokVideo': post['platform'] == 'tiktok' and len(post['assets']) == 1 and post['assets'][0]['kind'] == 'video',
             **({'publishedAt': post['publishedAt']} if post['publishedAt'] is not None else {}),
         })
         return
@@ -243,6 +244,28 @@ def download():
             raise ValueError('unsupported_attachment_content')
         total += size
         asset.update(file=path.name, mime=mime, bytes=size, contentHash=digest(path.read_bytes()))
+    write_json('x-acquired.json', post)
+
+
+def adopt_tiktok_video():
+    from cloud_extraction import validate_identity
+    post = read_json('x-acquisition.json')
+    if post.get('platform') != 'tiktok' or len(post['assets']) != 1 or post['assets'][0]['kind'] != 'video':
+        raise ValueError('unexpected_tiktok_video_handoff')
+    validate_identity(post['canonical'], read_json('resolved-info.json', 1000000))
+    video, audio = ROOT / 'input', ROOT / 'audio-input'
+    inputs = [video, audio] if audio.exists() or audio.is_symlink() else [video]
+    if any(p.is_symlink() or not p.is_file() for p in inputs) or not 0 < sum(p.stat().st_size for p in inputs) <= MAX_BYTES:
+        raise ValueError('download_over_limit_or_incomplete')
+    path = ROOT / 'asset-1.input'
+    audio_input = ['-i', str(audio), '-map', '0:v:0', '-map', '1:a:0'] if len(inputs) == 2 else [
+        '-map', '0:v:0', '-map', '0:a:0?']
+    tool(['ffmpeg', '-nostdin', '-v', 'error', '-protocol_whitelist', 'file', '-i', str(video),
+          *audio_input, '-c', 'copy', '-f', 'mp4', '-n', str(path)], 35)
+    if not 0 < path.stat().st_size <= MAX_BYTES:
+        raise ValueError('download_over_limit_or_incomplete')
+    post['assets'][0].update(file=path.name, mime='video/mp4', bytes=path.stat().st_size,
+                             contentHash=digest(path.read_bytes()))
     write_json('x-acquired.json', post)
 
 
@@ -362,4 +385,5 @@ def setup():
 
 
 if __name__ == '__main__':
-    {'setup': setup, 'inspect': inspect, 'download': download, 'decode': decode}[sys.argv[1]]()
+    {'setup': setup, 'inspect': inspect, 'download': download,
+     'adopt-tiktok-video': adopt_tiktok_video, 'decode': decode}[sys.argv[1]]()

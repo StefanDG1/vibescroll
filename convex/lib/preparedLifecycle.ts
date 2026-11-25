@@ -11,7 +11,19 @@ export async function stopPreparedAttempt(
     .query("mediaPreparations")
     .withIndex("by_attempt", (q) => q.eq("attemptId", attempt._id))
     .unique();
-  if (!run || ["ready", "unknown", "failed"].includes(run.state)) return;
+  if (!run || run.state === "ready" || run.state === "failed") return;
+  const expiredBeforeClaim =
+    attempt.expiresAt <= Date.now() &&
+    !attempt.taskId &&
+    !attempt.resultVersionId &&
+    (attempt.state === "queued" ||
+      (attempt.state === "cancelled" &&
+        attempt.diagnostic === "unclaimed_request_expired"));
+  if (
+    run.state === "unknown" &&
+    !(state === "failed" && run.executor === "work_cloud" && expiredBeforeClaim)
+  )
+    return;
   const now = Date.now();
   await ctx.db.patch(run._id, {
     state,

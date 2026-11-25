@@ -49,6 +49,7 @@ import { markProviderDispatch } from "./lib/providerFunding";
 import { requireProCatalogAccess } from "./lib/catalogEntitlement";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { openAiRunAuthority, reserveOpenAiGeneration } from "./lib/openAiGrant";
+import { stopPreparedAttempt } from "./lib/preparedLifecycle";
 
 const policySchema = z.strictObject({
   id: z.string().min(8).max(80),
@@ -1657,6 +1658,19 @@ export const expire = internalMutation({
   returns: v.null(),
   handler: async (ctx, { runId }) => {
     const run = await ctx.db.get(runId);
+    if (run?.executor === "work_cloud" && run.attemptId) {
+      // Once evidence is handed off, the exact analysis attempt owns expiry.
+      // An older preparation timer may already have marked an unclaimed run unknown.
+      if (run.state === "unknown") {
+        const attempt = await ctx.db.get(run.attemptId);
+        if (
+          attempt?.state === "cancelled" &&
+          attempt.diagnostic === "unclaimed_request_expired"
+        )
+          await stopPreparedAttempt(ctx, attempt, "failed");
+      }
+      return null;
+    }
     if (
       !run ||
       gatewayDeadline(run) > Date.now() ||

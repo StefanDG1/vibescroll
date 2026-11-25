@@ -544,6 +544,7 @@ it("automatic app Save prepares once and creates a generation-zero retained Assi
     74302,
     false,
   );
+  vi.setSystemTime(Date.now() + 60000);
   const attemptId = await s.t.mutation(
     internal.preparedAnalysis.queueSubscription,
     { runId: runs[0]._id },
@@ -555,6 +556,24 @@ it("automatic app Save prepares once and creates a generation-zero retained Assi
       sourceId: first.sourceId,
     }),
   ).toMatchObject({ state: "waiting_for_assistant", chargedCredits: 1 });
+  vi.setSystemTime(attempt!.expiresAt - 1);
+  await s.t.mutation(internal.preparedAnalysis.expire, { runId: runs[0]._id });
+  expect(await s.t.run((c) => c.db.get(runs[0]._id))).toMatchObject({
+    state: "waiting_for_assistant",
+  });
+  vi.setSystemTime(attempt!.expiresAt + 1);
+  await s.t.mutation(internal.analysisVersions.expire, { attemptId });
+  expect(await s.t.run((c) => c.db.get(attemptId))).toMatchObject({
+    state: "cancelled",
+    diagnostic: "unclaimed_request_expired",
+  });
+  await s.t.run((c) => c.db.patch(runs[0]._id, { state: "unknown" }));
+  await s.t.mutation(internal.preparedAnalysis.expire, { runId: runs[0]._id });
+  expect(
+    await s.owner.query(api.preparedService.status, {
+      sourceId: first.sourceId,
+    }),
+  ).toMatchObject({ state: "failed", chargedCredits: 1 });
 });
 
 it.each([

@@ -904,7 +904,12 @@ export const requestAnalysis = internalMutation({
           "FORBIDDEN",
           "Only the owner can retry this post.",
         );
-        if (preparedServiceConfiguration(a.actor.subject)) {
+        const preparedPolicy = preparedServiceConfiguration(a.actor.subject);
+        if (
+          preparedPolicy &&
+          (preparedPolicy.automaticOwnSubscriptionPreparation ||
+            !cloudRetryEligible(source))
+        ) {
           const prepared = await requestPreparedAnalysis(ctx, {
             sourceId: source._id,
             executor: "work_cloud",

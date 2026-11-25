@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-26",
+  "timezone": "Europe/Paris",
+  "productionCommit": "5c96517bba952c2f14f14b538f78480e747f4479",
+  "productionCodeChanged": false,
+  "source": "existing owner-saved TikTok video short link",
+  "managed": {
+    "start": "signed-in app with exact retained-evidence quote",
+    "model": "meta/muse-spark-1.3-contributor",
+    "effort": "medium",
+    "sameSavedPost": true,
+    "preparationReused": true,
+    "ready": true,
+    "insights": 4,
+    "frames": 8,
+    "chargedAppCredits": 2,
+    "gatewayReportedUsd": 0.0015106,
+    "gatewayRequestsInCanaryWindow": 1,
+    "mcpContextAndNativeJpegVerified": true,
+    "signedInReaderWidths": [390, 1440],
+    "emberQuoteOffered": false
+  },
+  "native": {
+    "rootCause": "The existing active ChatGPT monitor explicitly excluded this exact saved source and its TikTok short link.",
+    "olderUnclaimedFirstVersionEvents": 2,
+    "reusedExistingMonitor": true,
+    "narrowExceptionReadBack": true,
+    "preservedExclusionsOutsideExactVersion": true,
+    "testQueuedBeforeEditCancelledUnclaimed": true,
+    "newEventHttpStatus": 200,
+    "newEventClaimed": true,
+    "allRetainedImagesRead": true,
+    "reusedExactManagedEvidenceHash": true,
+    "ready": true,
+    "insights": 3,
+    "elapsedMsFromQueueToReady": 128837,
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "reportedModel": null,
+    "maximumApiReasoningUsd": 0,
+    "appAndMcpExactVersionRead": true,
+    "exactNativeVersionJpegReadViaMcp": true,
+    "managedResultRemainedSelected": true
+  },
+  "photoAccess": {
+    "instagramConnectedProductionAuthority": false,
+    "tiktokPhotoProductionAuthority": false,
+    "completePhotoPostsVerifiedInProduction": 0,
+    "guide": "../SOCIAL-PHOTO-ACCESS.md"
+  },
+  "checks": {
+    "focusedTestsPassed": 65
+  }
+}

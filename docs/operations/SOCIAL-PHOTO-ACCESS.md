@@ -1,0 +1,21 @@
+# Approved access for social photo posts
+
+Verified November 26, 2026. Use the original post link as the product input. A creator or approved provider can authorize access once, after which VibeScroll matches the original link to the permitted source.
+
+## Instagram carousels
+
+The existing Instagram Graph integration can read the carousel of a connected professional account. It resolves a saved permalink against the authorized account's indexed posts, checks the returned owner and media ID, and requires the complete child list. Each child's media URL is checked and its bytes are decoded in the isolated worker. The parent supplies the caption. This route needs an approved Meta app and a current connection for the account that owns the media. The live deployment had no configured Instagram feed authority during this check. [Meta media endpoint](https://developers.facebook.com/docs/instagram-platform/reference/instagram-media/v21.0/) · [VibeScroll intake decision](../adr/244-link-only-posts-and-creator-intake.md)
+
+Instagram oEmbed supplies HTML for display. VibeScroll needs permission to obtain and retain each attachment as analysis evidence. For arbitrary public links outside connected accounts, use a provider agreement that explicitly covers those actions and the intended model processing. [Meta Instagram oEmbed reference](https://developers.facebook.com/docs/graph-api/reference/instagram-oembed/)
+
+## TikTok Photo Mode
+
+TikTok Data Portability is an official option for posts made by the account holder. TikTok requires Login Kit approval, Data Portability approval, and creator consent. The Posts and Profile export can supply JPEG downloads. Confirm that the permitted export can match a share link to its exact post ID and provide every photo in its original order before deploying an adapter. The current production configuration has no photo access grant. [Data Portability approval](https://developers.tiktok.com/doc/data-portability-api-get-started) · [Export fields](https://developers.tiktok.com/docs/en/data-portability-data-types)
+
+TikTok's embed player can display a public Photo Mode post. The Display API describes access to video metadata, and Research Tools are limited to qualifying research. For arbitrary public Photo Mode links, obtain a licensed media feed or written TikTok authorization that covers this use. [Embed Player](https://developers.tiktok.com/docs/en/embed-player) · [Display API](https://developers.tiktok.com/docs/en/display-api-overview) · [Research Tools eligibility](https://developers.tiktok.com/products/research-api/)
+
+## Production acceptance
+
+For each platform, save one permitted original link through MCP. Confirm the exact source, caption, attachment count and order. Decode and retain each expected image. Run one reviewed standard managed or subscription analysis against that retained evidence. Verify Ready, cited insights and the actual JPEGs in the signed-in app and with MCP `fetch` and `read_post_frame`. Keep a source access failure visible if permission, identity or attachment completeness fails. A cover image or a successful video test does not verify a photo post.
+
+The current Muse Contributor route is restricted to supported video analysis. For approved ordered photo evidence, use the subscription route or verify an enabled standard managed model under the no-prompt-training policy. [Managed TikTok video receipt](evidence/launch-20261126-tiktok-managed-and-native.json) · [Vercel data controls](https://vercel.com/blog/zdr-on-ai-gateway)

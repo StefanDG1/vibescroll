@@ -1,5 +1,13 @@
 # Implementation status
 
+## November 26 TikTok production follow-up
+
+The same saved TikTok video now has two Ready analyses. The managed route reused eight stored frames and saved four cited insights with Muse Spark 1.3 Contributor Medium. It settled two app credits, and the matching AI Gateway window reported USD0.0015106 for one request. The signed-in reader and installed MCP reopened the result and retained images. Muse Ember was absent from the workspace's managed options and its quote was refused.
+
+The active ChatGPT monitor had an explicit exclusion for that exact saved link. The owner's follow-up allowed one exact version while preserving the other exclusions. A new event was claimed and completed in 128.837 seconds with three insights and all eight existing images read. The signed-in app and MCP reopened both versions. No product deployment or API reasoning call was needed for the native run. [Production receipt](operations/evidence/launch-20261126-tiktok-managed-and-native.json)
+
+Original-link access to Instagram carousels and TikTok Photo Mode remains unverified in production. The [photo-access guide](operations/SOCIAL-PHOTO-ACCESS.md) records the documented provider routes, consent requirements and evidence checks.
+
 ## November 25 live link-intake release
 
 Website and Convex now serve `5c96517bba95`. Exact CI passed and the staged website was promoted unchanged. The canonical link guide and recovery help returned 200. New native ChatGPT setups default to GPT-6.2 Sol High. The existing owner's runs use their saved preference. A supported single-video download can retain the verified creator ID and caption without establishing a complete carousel.

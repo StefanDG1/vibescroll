@@ -29,6 +29,8 @@ Inspect status and the exact private receipt when authorized. Separate saved, pr
 
 Provider configuration/funding, Pro access, OAuth, VibeScroll grant and native monitor are separate checks. Supported OAuth refresh avoids repeated normal sign-in, but credentials remain revocable. Ordinary permission changes use a normal session; account deletion retains stronger authentication.
 
+If delivery returns HTTP 200 and the attempt stays queued, check the exact task's active state and instructions for a source-specific exclusion. Change an exclusion only within the owner's current authorization. Preserve the existing task, grant, earlier attempts and unaffected exclusions. A new authorized event can verify the correction without treating a manual task run as an automatic claim. [TikTok example](evidence/launch-20261126-tiktok-managed-and-native.json)
+
 ## October29 production pilot
 
 The original connected MCP successfully ran a fresh Muse credit request and a fresh server-prepared native retry. Both published independent neutral shared versions with eight byte-verified540x960 JPEGs. Actual cached MCP calls, version/history reads, final credit settlement and a zero-work warm Save passed. The existing native Assistant inspected all eight images and returned a completion message while remaining Monitoring; no setup prompt was pasted again. [Current acceptance](CURRENT-STATE.md) records the later ordinary Save canary and rollout limits.

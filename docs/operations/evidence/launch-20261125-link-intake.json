@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-25",
+  "status": "live",
+  "website": {
+    "deployment": "dpl_81A4Y2V892msDpqtj46uqyjVoYtr",
+    "commit": "5b918e30cd92aff1011361b0b97f684776d10245",
+    "version": "0.1.0-alpha.20261125221529.g5b918e30cd92",
+    "previousCommit": "f26b0d93dee48a43ddba2f5f6f6b580a0dcb06b0",
+    "fixedBasicBuild": true,
+    "sameBuildPromotionVerified": true
+  },
+  "backend": {
+    "deployment": "bold-lemur-667",
+    "commit": "5b918e30cd92aff1011361b0b97f684776d10245",
+    "schemaValidationPassed": true,
+    "newIndexesOnSources": 3,
+    "sourceRowsReviewed": 348,
+    "removedIndexes": 0,
+    "applicationBackfill": false
+  },
+  "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/45711677089",
+  "acceptance": {
+    "authenticatedUploadRouteResponses": [410, 410],
+    "serverLinkOnlyEnabled": true,
+    "readyMcpReelRecovery": {
+      "sameSavedPost": true,
+      "insights": 5,
+      "retainedFrames": 8,
+      "nativeJpegRead": true,
+      "webReaderWidths": [390, 1440],
+      "horizontalOverflow": false,
+      "settledPreparationCredits": 1,
+      "subscriptionReasoning": true
+    },
+    "readyAppReelRecovery": {
+      "authenticatedAppOperation": true,
+      "sameSavedPost": true,
+      "insights": 3,
+      "exactRetainedVersionReadViaMcp": true,
+      "settledPreparationCredits": 1,
+      "subscriptionReasoning": true
+    }
+  },
+  "pending": [
+    "Permitted Instagram carousel and TikTok Photo Mode acquisition and hosted acceptance.",
+    "Independent complete production verification of configured creator discovery and managed model choices."
+  ]
+}

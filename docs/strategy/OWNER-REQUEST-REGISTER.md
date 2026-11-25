@@ -1,5 +1,7 @@
 # Owner request register
 
+November 25 link-intake release. The owner approves the production rollout and confirms room under the existing engineering ceiling. Analysis requests should retrieve the original post without an upload step or format choice. Keep one saved record, enable analysis for ordinary supported link submissions under the reviewed route, and report unavailable evidence explicitly. Use the default GPT-6.2 Sol High for new native setups. Validate the app and MCP and update the serving documentation. [Decision](../adr/244-link-only-posts-and-creator-intake.md) · [Production receipt](../operations/evidence/launch-20261125-link-intake.json)
+
 R179, November 20. Keep the onboarding quiz. Separate the real post and personal-link screens, explain the benefit before account creation, and measure the public site, onboarding, checkout and meaningful repeat use in PostHog. Complete the app and analytics release while tester recruitment remains open. [Implementation decision](../adr/240-focused-onboarding-and-consented-funnels.md) · [Production acceptance](../operations/evidence/launch-20261120-onboarding-analytics.json).
 
 R179 follow-up. Remove the project name from onboarding and use the repository choice when the user connects GitHub. Keep the work-stage question and accept older drafts. [Production acceptance](../operations/evidence/launch-20261120-onboarding-work-stage.json).

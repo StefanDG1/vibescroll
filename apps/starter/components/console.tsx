@@ -217,7 +217,8 @@ type Initial = {
   };
 };
 const id = (o: any) => o._id ?? o.id;
-const label = (s: string) => s.replaceAll("_", " ");
+const label = (s: string) =>
+  s === "needs_upload" ? "source not retrieved" : s.replaceAll("_", " ");
 const calendarDate = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "medium",
   timeZone: "UTC",
@@ -2061,7 +2062,7 @@ export function Console({
                             <p>
                               {s.summary ??
                                 (s.state === "needs_upload"
-                                  ? "Add the video or transcript to analyze it."
+                                  ? "Source media has not been retrieved. Open the post for details."
                                   : ["processing", "queued"].includes(s.state)
                                     ? "Transcribing and analyzing your source…"
                                     : s.state === "failed"

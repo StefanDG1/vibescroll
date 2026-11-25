@@ -24,7 +24,7 @@ const failures = {
   UNSUPPORTED_SOURCE: [
     "validation",
     "after_user_action",
-    "Save a supported YouTube, Instagram, TikTok or Vimeo link, an exact GitHub repository URL, or a Reddit discussion URL. Other sources need an upload or supplied text in VibeScroll.",
+    "Save the original link to a supported Instagram, TikTok, X, YouTube or Vimeo post, an exact GitHub repository, or a Reddit discussion. Available processing depends on the source format and your connection.",
   ],
   POLICY_BLOCKED: [
     "authorization",

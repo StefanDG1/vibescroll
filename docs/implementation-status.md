@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 25 live link-intake release
+
+The exact `5b918e30cd92` staged build passed Linux CI and was promoted without a rebuild. Both verified Reel retries reached Ready on their original posts. The MCP retry kept five cited insights and eight retained frames. The authenticated app retry kept three insights, and MCP reopened its exact saved version. An actual JPEG from the first post reopened through MCP, and the signed-in app displayed the post at 390 and 1440 pixels. Both signed-in upload endpoints returned the link-only response. [Production receipt](operations/evidence/launch-20261125-link-intake.json)
+
+Instagram public carousel and TikTok Photo Mode extraction remain outside the active production routes while approved media access is unavailable. The local image manifests and decoder results document technical coverage. They do not establish platform permission or a completed production analysis for those formats.
+
 ## November 25 social link variants and X attachment matrix
 
 Public browser probes resolved Instagram post and Reel share tokens to first-party shortcodes. The candidate accepts those aliases, treats Reel and TikTok video URL paths as provisional, and checks Instagram collaboration headers before attributing a caption. Cookie-free acquisition downloaded a collaborative single-image share, a Reel share, and a two-slide TikTok slideshow reached through a video URL. The latter returned a slideshow manifest even though the same URL exposed a playback object. Instagram also exposed complete ordered lists for independent nine- and ten-image carousel fixtures.

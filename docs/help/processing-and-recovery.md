@@ -65,9 +65,9 @@ Personal ChatGPT allowance is separate from VibeScroll credits. Local preparatio
 
 ## Retry safely
 
-If **Retry using Cloud defaults** is offered on a failed post, it starts one new request using your saved settings. Complete or resume Cloud setup first if prompted. VibeScroll offers this action only when the previous request was never claimed. It keeps the earlier attempt record and funding hold. Selecting Cloud does not fund a paid API fallback.
+If **Retry with subscription (up to 1 credit)** is available, VibeScroll prepares the source on its servers and sends one new attempt to your existing ChatGPT monitor. The credit covers preparation and your ChatGPT subscription covers the reasoning. Older connections can offer **Retry using Cloud defaults** for an unclaimed request. Complete or resume Cloud setup if prompted. VibeScroll keeps the earlier attempt record and funding hold.
 
-In ChatGPT, ask VibeScroll to retry that saved post. The assistant checks its current status and uses the same retry action. It cannot reset an unknown or previously claimed execution. A completed post uses **Reanalyze** to create a separate analysis version while keeping its current result.
+In ChatGPT, ask VibeScroll to retry the existing saved post. The assistant checks the current revision before requesting a retry and preserves unknown or previously claimed work. Use **Reanalyze** on a completed post to create a separate version while keeping the selected result.
 
 Check the existing source first. If completion is unknown, reconcile its status rather than submit duplicate work. Reuse accepted prepared evidence where supported. A retry still needs current permission, source revision and funding approval.
 

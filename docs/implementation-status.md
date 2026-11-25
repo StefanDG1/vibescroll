@@ -2,6 +2,12 @@
 
 ## November 25 live link-intake release
 
+Website and Convex now serve `5c96517bba95`. Exact CI passed and the staged website was promoted unchanged. The canonical link guide and recovery help returned 200. New native ChatGPT setups default to GPT-6.2 Sol High. The existing owner's runs use their saved preference. A supported single-video download can retain the verified creator ID and caption without establishing a complete carousel.
+
+All six ordinary MCP saves of previously unprocessed Reels reached Ready on their existing entries. Together with the two recovered expired Reels, eight of the 26 audited posts now have saved results. MCP reopened the latest post's eight-frame context and an actual retained JPEG. The signed-in app showed an accessible Instagram link and loaded retained images at 390 and 1440 pixels. The last three Instagram samples returned author display labels without verified creator IDs. Their reader pages showed no creator link.
+
+The TikTok short link completed media preparation and settled one preparation credit. The original preparation timer ended the claim period 40 seconds early. The exact stored attempt expired without a claim. The corrected run classification allowed one retry with retained evidence and a zero-credit quote. Its new event returned HTTP 200. The full window elapsed without a worker claim or saved analysis, and the run ended in a confirmed failure. The authenticated managed model options listed Muse Spark 1.3 Contributor Medium. The OpenAI promotional quote was unavailable for the owner canary.
+
 The exact `5b918e30cd92` staged build passed Linux CI and was promoted without a rebuild. Both verified Reel retries reached Ready on their original posts. The MCP retry kept five cited insights and eight retained frames. The authenticated app retry kept three insights, and MCP reopened its exact saved version. An actual JPEG from the first post reopened through MCP, and the signed-in app displayed the post at 390 and 1440 pixels. Both signed-in upload endpoints returned the link-only response. [Production receipt](operations/evidence/launch-20261125-link-intake.json)
 
 Instagram public carousel and TikTok Photo Mode extraction remain outside the active production routes while approved media access is unavailable. The local image manifests and decoder results document technical coverage. They do not establish platform permission or a completed production analysis for those formats.

@@ -18,6 +18,10 @@ Stage the exact build and exercise Save through ChatGPT, evidence retention, bot
 
 Use `VIBESCROLL_TIKTOK_ORDERED_ENABLED` to stage ordered TikTok posts without activating the new Instagram acquisition route. Application admission and the worker use the same setting.
 
+After a native subscription handoff, the exact analysis attempt owns its claim and execution deadlines. A preparation timer cannot expire an active handoff. Reconcile an older unknown preparation as an unclaimed failure only when the exact associated attempt proves it expired without a claim or stored result. A new explicit retry can reuse current retained evidence within the reviewed quote.
+
+For supported single-video downloads, retain the verified post ID, stable author ID, public handle and available caption returned by the pinned downloader. Keep the video and caption provenance distinct from a complete attachment manifest. A single-download result does not meet the ordered-post cache requirement.
+
 ## Instagram public embeds
 
 The `VIBESCROLL_INSTAGRAM_PUBLIC_EMBED_ENABLED` gate admits the public captioned embed route for selected Instagram posts in the existing ordered-post worker. It requires the ordered-social gate for public intake. Treat `/share/p/` and `/share/reel/` tokens as unresolved until an allowed first-party redirect supplies the exact shortcode. Reels, account-prefixed permalinks and other direct variants bind the same shortcode before fetching the embed under the existing network policy. Parse the typed carousel from the embed initializer as data, without evaluating the script. Require distinct child IDs and a complete non-paginated list. A video child must supply the original video URL. A cover never counts as that video.

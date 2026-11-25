@@ -1,6 +1,18 @@
 {
   "date": "2026-11-25",
   "status": "live",
+  "currentRelease": {
+    "deployedAtUtc": "2026-11-25",
+    "websiteDeployment": "dpl_AjtYPBnYrndzB1JHjn9ifrpwEQ11",
+    "convexDeployment": "bold-lemur-667",
+    "commit": "5c96517bba952c2f14f14b538f78480e747f4479",
+    "version": "0.1.0-alpha.20261125231049.g5c96517bba95",
+    "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/45719322169",
+    "sameBuildPromotionVerified": true,
+    "newOrRemovedIndexes": 0,
+    "applicationBackfill": false,
+    "canonicalGuideAndRecoveryHelpStatus": [200, 200]
+  },
   "website": {
     "deployment": "dpl_81A4Y2V892msDpqtj46uqyjVoYtr",
     "commit": "5b918e30cd92aff1011361b0b97f684776d10245",
@@ -39,10 +51,40 @@
       "exactRetainedVersionReadViaMcp": true,
       "settledPreparationCredits": 1,
       "subscriptionReasoning": true
+    },
+    "ordinaryMcpReels": {
+      "sameSavedPosts": true,
+      "ready": 6,
+      "insightCounts": [4, 3, 2, 3, 3, 3],
+      "exactRetainedVersionsReadViaMcp": true,
+      "latestNativeJpegRead": true,
+      "webReaderWidths": [390, 1440],
+      "accessiblePlatformLinksPerSingleSource": 1,
+      "verifiedCreatorIdsOnThreeLatestSamples": 0
+    },
+    "tiktokRetainedHandoff": {
+      "sameSavedPost": true,
+      "initialPreparationCredits": 1,
+      "firstAttemptCancelledBeforeClaim": true,
+      "firstPreparationDeadlineCutOffClaimWindowMs": 40533,
+      "retryReusedEvidence": true,
+      "retryMaximumCredits": 0,
+      "retryEventHttpStatus": 200,
+      "retryClaimWindowExpiredUnclaimed": true,
+      "retryFinalPreparationState": "failed",
+      "retrySavedAnalysis": false
+    },
+    "managedModelOptions": {
+      "httpStatus": 200,
+      "available": ["meta/muse-spark-1.3-contributor"],
+      "openAiPromotionalQuoteAvailable": false,
+      "paidFallbackDispatched": false
     }
   },
   "pending": [
-    "Permitted Instagram carousel and TikTok Photo Mode acquisition and hosted acceptance.",
-    "Independent complete production verification of configured creator discovery and managed model choices."
+    "Permitted Instagram single-image, Instagram carousel, and TikTok Photo Mode acquisition and hosted acceptance.",
+    "A successful native hosted analysis of the owner's TikTok short-link canary. Both checked deliveries expired unclaimed.",
+    "Independent production verification of a verified creator page, cross-platform creator grouping, scheduled discovery, and sponsorship.",
+    "Independent production verification of the OpenAI promotional managed route."
   ]
 }

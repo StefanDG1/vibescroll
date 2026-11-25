@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { makePreparedEvidence } from "../packages/contracts/prepared-evidence";
 import { preparedCreditQuote } from "../packages/contracts/prepared-service";
 import { neutralCloudObservations } from "../packages/contracts/cloud-catalog";
@@ -119,6 +119,23 @@ it("checks social media type from the platform when ordered preparation is enabl
   expect(usesOrderedPostPreparation("https://vimeo.com/12345", true)).toBe(
     false,
   );
+});
+
+it("allows a TikTok-only rollout across share URLs without enabling Instagram", () => {
+  vi.stubEnv("VIBESCROLL_ORDERED_SOCIAL_ENABLED", undefined);
+  vi.stubEnv("VIBESCROLL_TIKTOK_ORDERED_ENABLED", "true");
+  try {
+    expect(usesOrderedPostPreparation(canonical)).toBe(true);
+    expect(usesOrderedPostPreparation("https://vm.tiktok.com/Example11/")).toBe(
+      true,
+    );
+    expect(
+      usesOrderedPostPreparation("https://www.instagram.com/p/ABCdef12345/"),
+    ).toBe(false);
+    expect(usesOrderedPostPreparation(canonical, false)).toBe(false);
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });
 
 it("groups comparable re-encodes from a verified creator without matching reordered or edited posts", async () => {

@@ -76,17 +76,20 @@ export function preparedPostSourceIdentity(
   );
 }
 
-export function usesOrderedPostPreparation(raw: string, enabled: boolean) {
+export function usesOrderedPostPreparation(raw: string, enabled?: boolean) {
+  if (!URL.canParse(raw)) return false;
   const url = new URL(raw);
   const host = url.hostname.replace(/^www\./, "");
   if (host === "x.com") return true;
-  if (!enabled) return false;
-  return [
-    "instagram.com",
-    "tiktok.com",
-    "vm.tiktok.com",
-    "vt.tiktok.com",
-  ].includes(host);
+  const all =
+    enabled ?? process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true";
+  if (host === "instagram.com") return all;
+  return (
+    ["tiktok.com", "vm.tiktok.com", "vt.tiktok.com"].includes(host) &&
+    (all ||
+      (enabled === undefined &&
+        process.env.VIBESCROLL_TIKTOK_ORDERED_ENABLED === "true"))
+  );
 }
 
 export function preparedMediaContentKey(post: PreparedPostEvidence) {

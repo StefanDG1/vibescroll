@@ -1517,6 +1517,133 @@ it("retries a settled prepared failure through cached MCP and replays the retry 
     }),
   ).rejects.toThrow(/SOURCE_BUSY/);
 });
+it.each(["app", "mcp"] as const)(
+  "retries an expired legacy job through current prepared Cloud from %s",
+  async (path) => {
+    const s = await freshSource(await fixture());
+    await nativeReady(s);
+    vi.stubEnv(
+      "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+      JSON.stringify({
+        ...s.config,
+        automaticOwnSubscriptionPreparation: true,
+      }),
+    );
+    const grant = (await s.t.run((ctx) => ctx.db.get(s.grant.id)))!;
+    const now = Date.now();
+    const legacy = {
+      executor: "work_cloud" as const,
+      actor: s.actor._id,
+      generation: s.source.generation,
+      model: "synthetic-legacy-model",
+      effort: "medium",
+      state: "queued",
+      approvedAt: now - 900001,
+      expiresAt: now - 1,
+      leaseUntil: 0,
+      deadline: 0,
+      cloud: {
+        schemaVersion: "work-cloud-media-v3" as const,
+        grantId: s.grant.id,
+        grantVersion: s.grant.version,
+        clientId: grant.clientId,
+        selectedGeneration: s.source.generation,
+        selectedRevision: s.source.updatedAt,
+        inputHash: "a".repeat(64),
+        policyHash: "b".repeat(64),
+        funding: "own_subscription" as const,
+        maxApiUsd: 0 as const,
+        media: {
+          canonicalUrl: s.source.canonical,
+          toolchainHash: "c".repeat(64),
+          retainUntil: now + 86400000,
+        },
+      },
+    };
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.sourceId, { state: "queued", personalAnalysis: legacy }),
+    );
+    const retry = {
+      generation: s.source.generation,
+      revision: s.source.updatedAt,
+      key: "retry-expired-native",
+    };
+    const submit = (revision = retry.revision) =>
+      path === "app"
+        ? s.owner.mutation(api.workCloudSaves.retrySaved, {
+            sourceId: s.sourceId,
+            ...retry,
+            revision,
+          })
+        : s.assistant.mutation(internal.assistant.requestAnalysis, {
+            profileId: s.org,
+            sourceId: s.sourceId,
+            mode: "work_cloud",
+            retry: { ...retry, revision },
+          });
+    await expect(submit(retry.revision + 1)).rejects.toThrow("SOURCE_BUSY");
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.sourceId, {
+        personalAnalysis: {
+          ...legacy,
+          cloud: { ...legacy.cloud, claimedAt: now },
+        },
+      }),
+    );
+    await expect(submit()).rejects.toThrow("SOURCE_BUSY");
+    await s.t.run((ctx) =>
+      ctx.db.patch(s.sourceId, { personalAnalysis: legacy }),
+    );
+    const first = await submit();
+    expect(first).toMatchObject({ status: "queued" });
+    const replay = await submit();
+    expect(replay).toMatchObject(
+      path === "app" ? { reusedRequest: true } : { reused: true },
+    );
+    const source = (await s.t.run((ctx) => ctx.db.get(s.sourceId)))!;
+    expect(source.personalAnalysis).toEqual({ ...legacy, state: "expired" });
+    expect(source.generation).toBe(retry.generation);
+    const runs = await s.t.run((ctx) =>
+      ctx.db
+        .query("mediaPreparations")
+        .withIndex("by_org_source", (q) =>
+          q.eq("organizationId", s.org).eq("sourceId", s.sourceId),
+        )
+        .take(2),
+    );
+    expect(runs).toHaveLength(1);
+    const [run] = runs;
+    expect(run).toMatchObject({
+      executor: "work_cloud",
+      generation: retry.generation,
+      state: "queued",
+      receipt: {
+        admission: {
+          quote: { analysisCredits: 0, maximumCredits: 1 },
+        },
+      },
+    });
+    await retained({ ...s, source }, run._id, 74302, false);
+    const attemptId = await s.t.mutation(
+      internal.preparedAnalysis.queueSubscription,
+      { runId: run._id },
+    );
+    expect(
+      await s.assistant.query(internal.assistant.getJobStatus, {
+        profileId: s.org,
+        sourceId: s.sourceId,
+      }),
+    ).toMatchObject({
+      status: "waiting_for_assistant",
+      cloud_retry_eligible: false,
+      pending_analysis_version: {
+        attemptId,
+        inputKind: "retained_evidence",
+      },
+    });
+  },
+);
+
 it("retries native preparation with current defaults and at most one credit, preserving the failed row", async () => {
   const s = await freshSource(await fixture());
   await nativeReady(s);

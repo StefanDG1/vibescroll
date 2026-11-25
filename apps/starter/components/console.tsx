@@ -4611,7 +4611,9 @@ export function SourceDetail({
                           }}
                         >
                           {detail.workCloudRetryEligible
-                            ? "Retry using Cloud defaults"
+                            ? detail.workCloudLinkSetup.serverPrepared
+                              ? "Retry with subscription (up to 1 credit)"
+                              : "Retry using Cloud defaults"
                             : "Analyze using Cloud defaults"}
                         </button>
                       ) : (

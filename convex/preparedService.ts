@@ -51,7 +51,10 @@ import {
 } from "./lib/analysisHistory";
 import { recordAutomaticCatalogIntent } from "./lib/catalogPolicy";
 import { reserveCatalogProducer } from "./lib/cloudCatalog";
-import { cloudRetryRequest } from "../packages/contracts/cloud-retry";
+import {
+  cloudRetryEligible,
+  cloudRetryRequest,
+} from "../packages/contracts/cloud-retry";
 import {
   apiModelSelection,
   apiModelTariff,
@@ -171,10 +174,7 @@ async function quoteFor(
 ) {
   const sourceUrl = a.source.url ?? a.source.canonical;
   const platform = privateCloudMediaIdentity(sourceUrl).platform;
-  const ordered = usesOrderedPostPreparation(
-    sourceUrl,
-    process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true",
-  );
+  const ordered = usesOrderedPostPreparation(sourceUrl);
   const requiresOrderedEvidence = ordered && platform !== "x";
   let cacheHit =
     !request.reanalyze &&
@@ -360,14 +360,19 @@ async function quoteFor(
     );
   let grant;
   if (!cacheHit && request.executor === "work_cloud") {
-    const route = await savedCloudRoute(ctx, a.actor, a.organization);
+    const route = await savedCloudRoute(
+      ctx,
+      a.actor,
+      a.organization,
+      "work_cloud_waiting",
+    );
     grant = route?.grantId ? await ctx.db.get(route.grantId) : null;
     ensure(
       route?.available &&
         grant &&
         (await savedCloudGrantCurrent(ctx, a.actor, a.organization, grant)),
       "SETUP_REQUIRED",
-      "Resume or complete the existing VibeScroll Assistant setup.",
+      "Enable the waiting-analysis trigger in your VibeScroll Assistant connection.",
     );
   }
   const quote = {
@@ -513,10 +518,16 @@ const startArgs = {
 async function startHandler(
   ctx: MutationCtx,
   args: Request & { key: string; quoteHash: string; maximumCredits: number },
-  sponsor?: {
-    authority: Awaited<ReturnType<typeof owner>>;
-    durationLimit: number;
-  },
+  {
+    sponsor,
+    retryExpiredCloud = false,
+  }: {
+    sponsor?: {
+      authority: Awaited<ReturnType<typeof owner>>;
+      durationLimit: number;
+    };
+    retryExpiredCloud?: boolean;
+  } = {},
 ) {
   const a = sponsor?.authority ?? (await owner(ctx, args.sourceId, true));
   ensure(
@@ -569,11 +580,18 @@ async function startHandler(
     "SETUP_REQUIRED",
     "Current processing configuration is required for new work.",
   );
+  const priorCloudJob = a.source.personalAnalysis;
+  const replaceExpiredCloud =
+    retryExpiredCloud &&
+    args.executor === "work_cloud" &&
+    priorCloudJob?.actor === a.actor._id &&
+    cloudRetryEligible(a.source);
   ensure(
     !a.source.pendingAnalysisAttemptId &&
-      !["queued", "running", "recovering", "unknown"].includes(
-        a.source.personalAnalysis?.state ?? "",
-      ),
+      (replaceExpiredCloud ||
+        !["queued", "running", "recovering", "unknown"].includes(
+          priorCloudJob?.state ?? "",
+        )),
     "SOURCE_BUSY",
     "The existing task must finish or be reconciled first.",
   );
@@ -690,6 +708,12 @@ async function startHandler(
   // again when the new run completes at the same source generation.
   delete personalMedia.admissionBlock;
   await ctx.db.patch(a.source._id, {
+    ...(replaceExpiredCloud && priorCloudJob?.state === "queued"
+      ? {
+          personalAnalysis: { ...priorCloudJob, state: "expired" },
+          updatedAt: now,
+        }
+      : {}),
     personalMedia: {
       ...personalMedia,
       version: "service-preparation-progress-v1",
@@ -735,7 +759,7 @@ export const assistantStart = internalMutation({
 // Existing MCP clients can use their already-discovered credit request shape.
 // This admits first analysis and explicit retries of settled failures.
 // New versions and model choices use the exact quote/start contract above.
-export async function requestPreparedFromAssistant(
+export async function requestPreparedAnalysis(
   ctx: MutationCtx,
   args: {
     sourceId: Id<"sources">;
@@ -782,6 +806,7 @@ export async function requestPreparedFromAssistant(
       });
     }
   }
+  let retryExpiredCloud = false;
   if (retry) {
     const latest = await ctx.db
       .query("mediaPreparations")
@@ -792,14 +817,20 @@ export async function requestPreparedFromAssistant(
       )
       .order("desc")
       .first();
+    retryExpiredCloud =
+      executor === "work_cloud" &&
+      !latest &&
+      a.source.personalAnalysis?.actor === a.actor._id &&
+      cloudRetryEligible(a.source);
     ensure(
       retry.generation === a.source.generation &&
         retry.revision === a.source.updatedAt &&
-        latest?.generation === retry.generation &&
-        latest.state === "failed" &&
-        latest.receipt?.billing?.state === "settled",
+        (retryExpiredCloud ||
+          (latest?.generation === retry.generation &&
+            latest.state === "failed" &&
+            latest.receipt?.billing?.state === "settled")),
       "SOURCE_BUSY",
-      "Retry requires the current post revision and a confirmed settled failure. Active or uncertain work must be reconciled first.",
+      "Retry requires the current post revision and a settled failure or an expired unclaimed Cloud request.",
     );
   }
   const q = await quoteFor(ctx, a, {
@@ -838,13 +869,17 @@ export async function requestPreparedFromAssistant(
     "QUOTE_CHANGED",
     "Read the current credit quote before starting this fixed-baseline analysis.",
   );
-  return startHandler(ctx, {
-    sourceId: args.sourceId,
-    executor,
-    key,
-    quoteHash: q.quoteHash,
-    maximumCredits: q.quote.maximumCredits,
-  });
+  return startHandler(
+    ctx,
+    {
+      sourceId: args.sourceId,
+      executor,
+      key,
+      quoteHash: q.quoteHash,
+      maximumCredits: q.quote.maximumCredits,
+    },
+    { retryExpiredCloud },
+  );
 }
 
 type AutomaticPreparedReceipt = {
@@ -1228,7 +1263,7 @@ export const startCreatorSponsored = internalMutation({
         quoteHash: quote.quoteHash,
         maximumCredits: quote.quote.maximumCredits,
       },
-      { authority, durationLimit },
+      { sponsor: { authority, durationLimit } },
     );
     if (run.runId) {
       const poolId = await ctx.db.insert("creatorPoolRuns", {

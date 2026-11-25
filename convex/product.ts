@@ -21,6 +21,7 @@ import {
 import { notifyVideoLinkSaved } from "./lib/assistantEvents";
 import { recordPostSave } from "./lib/postEngagement";
 import { savedCloudRoute } from "./lib/workCloudSave";
+import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
@@ -712,13 +713,19 @@ export const detail = query({
       /* Other source routes keep their own setup. */
     }
     const workCloudRetryEligible = cloudSourceEligible && cloudRetryEligible(s);
+    const serverPrepared =
+      cloudSourceEligible &&
+      !!preparedServiceConfiguration(reader.actor.subject)
+        ?.automaticOwnSubscriptionPreparation;
     const automaticRoute =
       cloudSourceEligible && automaticVideoSupported
         ? await savedCloudRoute(
             ctx,
             reader.actor,
             reader.organization,
-            workCloudRetryEligible ? "work_cloud_waiting" : "video_link_saved",
+            workCloudRetryEligible || serverPrepared
+              ? "work_cloud_waiting"
+              : "video_link_saved",
           )
         : null;
     const automaticGrant = automaticRoute?.grantId
@@ -731,6 +738,7 @@ export const detail = query({
         ? {
             configured: automaticRoute.configured,
             monitorReady: automaticRoute.available,
+            serverPrepared,
             chatLinksEnabled:
               automaticGrant?.cloudSaveDefaults?.version ===
               "link-save-cloud-v2",

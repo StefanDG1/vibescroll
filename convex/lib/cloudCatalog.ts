@@ -188,8 +188,7 @@ export async function attachCloudCache(
     source.kind !== "url" ||
     !source.url ||
     !source.rightsAttested ||
-    (process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true" &&
-      usesOrderedPostPreparation(source.url, true)) ||
+    usesOrderedPostPreparation(source.url) ||
     !["saved", "needs_upload"].includes(source.state) ||
     source.generation !== 0 ||
     source.analysis ||

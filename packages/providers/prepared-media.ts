@@ -45,13 +45,7 @@ export async function prepareHostedEvidence(
   },
 ) {
   const policy = acquisitionPolicy(url);
-  if (
-    callbacks.authorizedInstagram ||
-    usesOrderedPostPreparation(
-      policy.url,
-      process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true",
-    )
-  )
+  if (callbacks.authorizedInstagram || usesOrderedPostPreparation(policy.url))
     return prepareHostedXPost(url, callbacks);
   ensure(
     policy.platform !== "instagram" ||

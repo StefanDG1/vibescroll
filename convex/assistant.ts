@@ -67,7 +67,7 @@ import {
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import {
   queueAutomaticPreparedSource,
-  requestPreparedFromAssistant,
+  requestPreparedAnalysis,
 } from "./preparedService";
 import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import {
@@ -129,9 +129,8 @@ async function automaticCloudReceipt(
     receipt: null,
   };
   const orderedSocial =
-    process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true" &&
     !!source.url &&
-    usesOrderedPostPreparation(source.url, true) &&
+    usesOrderedPostPreparation(source.url) &&
     !/^(https:\/\/(?:www\.)?x\.com|https:\/\/(?:www\.)?twitter\.com)\//.test(
       source.url,
     );
@@ -906,7 +905,7 @@ export const requestAnalysis = internalMutation({
           "Only the owner can retry this post.",
         );
         if (preparedServiceConfiguration(a.actor.subject)) {
-          const prepared = await requestPreparedFromAssistant(ctx, {
+          const prepared = await requestPreparedAnalysis(ctx, {
             sourceId: source._id,
             executor: "work_cloud",
             retry: args.retry,
@@ -997,7 +996,7 @@ export const requestAnalysis = internalMutation({
       args.mode === "credits" &&
       preparedServiceConfiguration(a.actor.subject)
     ) {
-      const prepared = await requestPreparedFromAssistant(ctx, {
+      const prepared = await requestPreparedAnalysis(ctx, {
         sourceId: source._id,
         generation: args.generation,
         maxCredits: args.maxCredits,

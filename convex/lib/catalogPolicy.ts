@@ -32,13 +32,7 @@ export async function currentAutomaticCatalogPolicy(
     if (identity.platform !== "instagram" && identity.platform !== "tiktok")
       return null;
     if (!policy.platforms.includes(identity.platform)) return null;
-    if (
-      usesOrderedPostPreparation(
-        source.url,
-        process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true",
-      )
-    )
-      return null;
+    if (usesOrderedPostPreparation(source.url)) return null;
   } catch {
     return null;
   }

@@ -1,5 +1,15 @@
 # Implementation status
 
+## November 25 public Instagram embed probe
+
+The public captioned embed exposed structured media that the ordinary post page omitted. Cookie-free Chrome requests retrieved complete captions, stable author IDs and actual media for two single images, a five-image carousel, and a two-video carousel. Local worker replay on the downloaded originals retained seven ordered still JPEGs and sixteen sampled video JPEGs. The independent gallery-dl fixtures specify five and two items for those carousels. An unavailable public embed produced no accepted manifest. An Instagram Reel embed that declared a copyright block was excluded. [Gallery-dl fixtures](https://github.com/mikf/gallery-dl/blob/v1.32.21/test/results/instagram.py)
+
+The existing ordered-post worker has a separate disabled-by-default Instagram embed gate. It records embed provenance, keeps unknown publication dates unset, and requires original video on a video slide. The worker checks also exposed and fixed a missing provider field on public Instagram and TikTok evidence and a TikTok alias redirect loop. Two public TikTok `/video/` aliases returned exact manifests for one and sixteen photos. The `/photo/` URLs for the same posts yielded no authoritative manifest. Two TikTok short links redirected to paths that had the post ID and omitted the username. Replaying those responses through the updated resolver recovered the sixteen-photo post, author and caption. The other short link still returned no verified manifest. [TikTok fixtures](https://github.com/mikf/gallery-dl/blob/v1.32.21/test/results/tiktok.py)
+
+The checks used public fixtures, browser acquisition and offline decoding. Real mixed Instagram carousels, hosted worker egress, native and managed ChatGPT-to-Ready runs, wider per-format coverage and creator discovery remain open. [Decision and rollout gates](adr/244-link-only-posts-and-creator-intake.md#instagram-public-embeds)
+
+The November 25 local `pnpm check` passed with both production builds and 1,791 core tests. After the final TikTok short-link changes, the Python media suites and 26 focused evidence, creator discovery and MCP tests passed.
+
 ## November 25 link-to-Ready candidate
 
 The isolated `codex/link-ready-20261125` candidate adds link-only Save, ordered media and caption evidence, verified creator pages, cross-post originals, MCP creator tools, managed model preferences, and gated daily discovery and sponsorship. The baseline checkout and its proposal changes are separate. [Decision record](adr/244-link-only-posts-and-creator-intake.md)

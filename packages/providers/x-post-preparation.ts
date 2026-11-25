@@ -77,6 +77,9 @@ export async function prepareHostedXPost(
     "Use a selected social post.",
   );
   const x = policy.platform === "x";
+  const instagramEmbed =
+    policy.platform === "instagram" &&
+    process.env.VIBESCROLL_INSTAGRAM_PUBLIC_EMBED_ENABLED === "true";
   const maximumDurationMs = callbacks.maximumDurationMs ?? 600000;
   ensure(
     Number.isSafeInteger(maximumDurationMs) &&
@@ -132,6 +135,7 @@ export async function prepareHostedXPost(
           url: policy.url,
           platform: policy.platform,
           maximumDurationMs,
+          ...(instagramEmbed ? { instagramEmbed } : {}),
           ...(callbacks.authorizedInstagram
             ? { authorizedInstagram: callbacks.authorizedInstagram }
             : {}),
@@ -205,7 +209,8 @@ export async function prepareHostedXPost(
           : !x &&
             output.post.platform === policy.platform &&
             sourceReferenceMatches(policy.url, output.post.postId) &&
-            output.post.publishedAt === metadata.publishedAt) &&
+            output.post.publishedAt === (metadata.publishedAt ?? null) &&
+            (output.post.provider !== "instagram_embed" || instagramEmbed)) &&
         output.post.textHash === hash(output.post.text) &&
         output.sourceHash ===
           hash(
@@ -323,11 +328,13 @@ export async function prepareHostedXPost(
       downloaderVersion:
         output.post.provider === "instagram_graph"
           ? "instagram-graph-v27"
-          : output.post.provider === "public_page"
-            ? "public-post-page-v1"
-            : output.post.provider === "gallery-dl"
-              ? `gallery-dl/${tools.wheels[0].version}`
-              : `fxtwitter/v2+gdl-${tools.wheels[0].version}`,
+          : output.post.provider === "instagram_embed"
+            ? "instagram-public-embed-v1"
+            : output.post.provider === "public_page"
+              ? "public-post-page-v1"
+              : output.post.provider === "gallery-dl"
+                ? `gallery-dl/${tools.wheels[0].version}`
+                : `fxtwitter/v2+gdl-${tools.wheels[0].version}`,
       preparationRecipeHash: hash(
         JSON.stringify({
           ...(x ? { tools } : { publicPageParser: hash(socialPublicPost) }),

@@ -5,9 +5,11 @@ from pathlib import Path
 import tempfile
 import shutil
 import subprocess
+import sys
+from io import BytesIO
 import wave
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from types import SimpleNamespace
 
 spec = importlib.util.spec_from_file_location('x_post_worker', Path(__file__).resolve().parents[1] / 'packages/media/x-post-worker.py')
@@ -21,7 +23,34 @@ social_spec.loader.exec_module(social)
 
 
 class OrderedPublicPost(unittest.TestCase):
-    def parse_tiktok(self, item, count):
+    url = 'https://www.instagram.com/p/ABCdef1/'
+    embed_url = url + 'embed/captioned/'
+
+    @staticmethod
+    def instagram_embed(item, **context_overrides):
+        context = {'shortcode': item['shortcode'], 'type': item['__typename'], 'copyright_blocked': False}
+        context.update(context_overrides)
+        init = {'isSidecar': item['__typename'] == 'GraphSidecar',
+                'contextJSON': json.dumps({'context': context, 'gql_data': {'shortcode_media': item}})}
+        block = {'require': [['PolarisEmbedSimple', 'init', [], [init]]]}
+        return ('<script>requireLazy(["TimeSliceImpl","ServerJS"],function(TimeSlice,ServerJS){'
+                'var s=(new ServerJS());s.handle(' + json.dumps(block) + ');});</script>')
+
+    @staticmethod
+    def instagram_post(two=True):
+        image = {'id': '801', 'is_video': False,
+                 'display_url': 'https://a.cdninstagram.com/photo.jpg'}
+        item = dict(image, shortcode='ABCdef1', __typename='GraphImage',
+                    owner={'id': '12345', 'username': 'author'},
+                    edge_media_to_caption={'edges': [{'node': {'text': 'Full caption 🌊'}}]})
+        if two:
+            video = {'id': '802', 'is_video': True, 'display_url': 'https://a.cdninstagram.com/cover.jpg',
+                     'video_url': 'https://a.cdninstagram.com/clip.mp4'}
+            item.update(__typename='GraphSidecar',
+                        edge_sidecar_to_children={'count': 2, 'edges': [{'node': image}, {'node': video}]})
+        return item
+
+    def parse_tiktok(self, item, count, suffix=None):
         item['imagePost'] = {
             'imageCount': count,
             'images': [
@@ -34,7 +63,7 @@ class OrderedPublicPost(unittest.TestCase):
         }}}
         return social.parse_post(
             'https://vm.tiktok.com/ABCdef123/',
-            f'https://www.tiktok.com/@author/video/{POST}',
+            f'https://www.tiktok.com/{suffix or f"@author/video/{POST}"}',
             '<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__">' + json.dumps(scripts) + '</script>',
         )
 
@@ -43,21 +72,139 @@ class OrderedPublicPost(unittest.TestCase):
                 'desc': 'Whole caption with emoji 🌊', 'createTime': 1700000000,
                 'video': {'playAddr': 'https://a.tiktokcdn.com/cover-video.mp4'}}
         post = self.parse_tiktok(item, 2)
+        self.assertEqual(post['provider'], 'public_page')
         self.assertEqual(post['canonical'], f'https://www.tiktok.com/@author/photo/{POST}')
         self.assertEqual(post['authorId'], '54321')
         self.assertEqual(post['text'], item['desc'])
         self.assertEqual([asset['url'].rsplit('/', 1)[1] for asset in post['assets']], ['2.jpg', '1.jpg'])
+        bare = self.parse_tiktok(item, 2, f'@/photo/{POST}')
+        self.assertEqual(bare['canonical'], post['canonical'])
+        self.assertEqual(bare['authorId'], post['authorId'])
         with self.assertRaisesRegex(ValueError, 'incomplete_post_manifest'):
             self.parse_tiktok(item, 3)
         item['author']['uniqueId'] = 'another'
         with self.assertRaisesRegex(ValueError, 'post_author_mismatch'):
             self.parse_tiktok(item, 2)
 
+    def test_tiktok_accepts_same_id_alias_redirect_once_without_looping(self):
+        photo = f'https://www.tiktok.com/@author/photo/{POST}'
+        alias = photo.replace('/photo/', '/video/')
+        redirect = social.urllib.error.HTTPError(alias, 302, 'Redirect',
+                                                 {'Location': photo}, None)
+        body = BytesIO(b'<html>post</html>')
+        body.status = 200
+        body.headers = SimpleNamespace(get_content_type=lambda: 'text/html')
+        opener = SimpleNamespace(open=Mock(side_effect=[redirect, body]))
+        with patch.object(social.urllib.request, 'build_opener', return_value=opener):
+            self.assertEqual(social.read_page(photo, 'test-proxy'), (photo, '<html>post</html>'))
+        self.assertEqual([c.args[0].full_url for c in opener.open.call_args_list], [alias, photo])
+
+    def test_tiktok_short_redirect_can_omit_profile_but_must_prove_photo_type(self):
+        short = 'https://vm.tiktok.com/ABCdef123/'
+        bare_photo = f'https://www.tiktok.com/@/photo/{POST}'
+        alias = bare_photo.replace('/photo/', '/video/')
+        item = {'id': POST, 'author': {'id': '12345', 'uniqueId': 'fixture'},
+                'desc': 'Photo redirect must not accept this video', 'createTime': 1700000000,
+                'video': {'playAddr': 'https://a.tiktokcdn.com/clip.mp4'}}
+        data = {'__DEFAULT_SCOPE__': {'webapp.video-detail': {
+            'statusCode': 0, 'itemInfo': {'itemStruct': item},
+        }}}
+        html = '<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__">' + json.dumps(data) + '</script>'
+        redirect = social.urllib.error.HTTPError(short, 302, 'Redirect', {'Location': bare_photo}, None)
+        body = BytesIO(html.encode())
+        body.status = 200
+        body.headers = SimpleNamespace(get_content_type=lambda: 'text/html')
+        opener = SimpleNamespace(open=Mock(side_effect=[redirect, body]))
+        with patch.object(social.urllib.request, 'build_opener', return_value=opener):
+            with self.assertRaisesRegex(ValueError, 'incomplete_photo_manifest'):
+                social.acquire_post(short, 'test-proxy')
+        self.assertEqual([c.args[0].full_url for c in opener.open.call_args_list], [short, alias])
+        with self.assertRaisesRegex(ValueError, 'unsupported_post_reference'):
+            social.reference(bare_photo)
+
     def test_instagram_metadata_or_preview_cannot_replace_a_missing_carousel(self):
         url = 'https://www.instagram.com/p/ABCdef1/'
         html = '<meta property="og:image" content="https://a.cdninstagram.com/preview.jpg">'
         with self.assertRaisesRegex(ValueError, 'post_manifest_unavailable'):
             social.parse_post(url, url, html)
+
+    def test_public_instagram_embed_reads_exact_caption_and_every_ordered_child(self):
+        for mixed in (False, True):
+            item = self.instagram_post(mixed)
+            result = social.parse_post(self.url, self.embed_url, self.instagram_embed(item), embed=True)
+            self.assertEqual(result['canonical'], self.url)
+            self.assertEqual(result['provider'], 'instagram_embed')
+            self.assertEqual(result['text'], 'Full caption 🌊')
+            self.assertEqual(result['authorId'], '12345')
+            self.assertIsNone(result['publishedAt'])
+            self.assertEqual([a['kind'] for a in result['assets']], ['image', 'video'] if mixed else ['image'])
+            if mixed:
+                self.assertTrue(result['assets'][1]['url'].endswith('/clip.mp4'))
+
+    def test_captioned_single_photo_proves_identity_and_omits_embed_comments(self):
+        profile = 'https://www.instagram.com/example/'
+        fixture = f'''<div class="Embed" data-media-type="GraphImage" data-media-id="801"
+                       data-owner-id="12345" data-permalink="{self.url}">
+          <a class="Username" href="{profile}">example</a>
+          <a class="EmbeddedMedia" href="{self.url}">
+            <img class="EmbeddedMediaImage" src="https://a.cdninstagram.com/photo.jpg">
+          </a>
+          <div class="Caption"><a class="CaptionUsername" href="{profile}">example</a>
+          Line one<br>Line <a href="https://www.instagram.com/explore/">two</a>.
+          <div class="CaptionComments"><span>Exclude this.</span></div></div>
+        </div>'''
+        result = social.parse_post(self.url, self.embed_url, fixture, embed=True)
+        self.assertEqual(result['authorId'], '12345')
+        self.assertEqual(result['text'], 'Line one\nLine two.')
+        self.assertEqual(result['expectedAssetCount'], 1)
+        with self.assertRaisesRegex(ValueError, 'post_manifest_unavailable'):
+            social.parse_post(self.url, self.embed_url, fixture.replace('GraphImage', 'GraphSidecar'), embed=True)
+        with self.assertRaisesRegex(ValueError, 'post_author_mismatch'):
+            social.parse_post(self.url, self.embed_url, fixture.replace(
+                f'CaptionUsername" href="{profile}', 'CaptionUsername" href="https://www.instagram.com/elsewhere/'), embed=True)
+
+    def test_embed_rejects_wrong_identity_disabled_carousel_and_cover_only_video(self):
+        item = self.instagram_post()
+        for context, error in [({'shortcode': 'another'}, 'post_identity_mismatch'),
+                               ({'copyright_blocked': True}, 'post_unavailable')]:
+            with self.assertRaisesRegex(ValueError, error):
+                social.parse_post(self.url, self.embed_url, self.instagram_embed(item, **context), embed=True)
+        edges = item['edge_sidecar_to_children']['edges']
+        edges[1]['node'].pop('video_url')
+        with self.assertRaisesRegex(ValueError, 'attachment_media_unavailable'):
+            social.parse_post(self.url, self.embed_url, self.instagram_embed(item), embed=True)
+        edges.pop()
+        with self.assertRaisesRegex(ValueError, 'incomplete_carousel_manifest'):
+            social.parse_post(self.url, self.embed_url, self.instagram_embed(item), embed=True)
+
+    @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'), 'project decoder tools unavailable')
+    def test_normal_worker_keeps_embed_identity_through_inspection_download_and_decode(self):
+        item = self.instagram_post(False)
+        with tempfile.TemporaryDirectory() as tmp, patch.object(worker, 'ROOT', Path(tmp)), \
+             patch.dict(sys.modules, {'social_public_post': social}), \
+             patch.object(worker, 'acquisition_proxy', return_value='test-proxy'), \
+             patch.object(social, 'read_page', return_value=(self.embed_url, self.instagram_embed(item))) as read:
+            sample = Path(tmp) / 'fixture.jpg'
+            subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=160x240',
+                            '-frames:v', '1', '-c:v', 'mjpeg', '-f', 'image2', str(sample)], check=True)
+            data = sample.read_bytes()
+            def fake_get(url, maximum, path):
+                self.assertEqual(url, item['display_url'])
+                self.assertLessEqual(len(data), maximum)
+                path.write_bytes(data)
+                return None, 'image/jpeg', len(data)
+            worker.write_json('request.json', {'url': self.url, 'platform': 'instagram',
+                                              'instagramEmbed': True, 'maximumDurationMs': 6000})
+            worker.inspect()
+            read.assert_called_once_with(self.embed_url, 'test-proxy', embed=True)
+            self.assertNotIn('publishedAt', worker.read_json('metadata.json'))
+            with patch.object(worker, 'get', side_effect=fake_get):
+                worker.download()
+            worker.decode()
+            result = worker.read_json('x-result.json')
+            self.assertEqual(result['post']['provider'], 'instagram_embed')
+            self.assertIsNone(result['post']['publishedAt'])
+            self.assertEqual(len(result['frames']), 1)
 
 
 class SelectedPost(unittest.TestCase):

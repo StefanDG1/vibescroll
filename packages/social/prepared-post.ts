@@ -18,7 +18,7 @@ const socialPost = z
     authorId: stableId,
     authorHandle: z.string().regex(/^[A-Za-z0-9_.]{1,40}$/),
     publishedAt: z.number().int().positive().max(4102444800000).nullable(),
-    provider: z.enum(["public_page", "instagram_graph"]),
+    provider: z.enum(["public_page", "instagram_embed", "instagram_graph"]),
     text: z.string().max(60000),
     textHash: hash,
     expectedAssetCount: z.number().int().min(1).max(35),

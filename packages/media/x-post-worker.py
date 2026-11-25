@@ -173,21 +173,20 @@ def fx_result(data, expected):
 def inspect():
     request = read_json('request.json', 260000)
     if request.get('platform') in ('instagram', 'tiktok'):
-        from social_public_post import read_page, parse_post, reference
+        from social_public_post import acquire_post, reference
         if request.get('authorizedInstagram'):
             post = request['authorizedInstagram']
             if reference(request['url']) != ('instagram', post['postId']) or post['platform'] != 'instagram' or post['expectedAssetCount'] != len(post['assets']):
                 raise ValueError('authorized_post_identity_mismatch')
             post['provider'] = 'instagram_graph'
         else:
-            final, html = read_page(request['url'], acquisition_proxy())
-            post = parse_post(request['url'], final, html)
+            post = acquire_post(request['url'], acquisition_proxy(), request.get('instagramEmbed') is True)
         write_json('x-acquisition.json', post)
         write_json('metadata.json', {
             'title': (post['text'].strip().splitlines() or [f'@{post["authorHandle"]}'])[0][:160],
             'authorName': str(post['authorName'])[:160],
             'resolvedCanonical': post['canonical'],
-            'publishedAt': post['publishedAt'],
+            **({'publishedAt': post['publishedAt']} if post['publishedAt'] is not None else {}),
         })
         return
     expected = post_id(request['url'])

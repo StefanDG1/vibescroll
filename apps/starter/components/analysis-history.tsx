@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePolling } from "@/lib/use-polling";
+import { defaultWorkCloudAnalysis } from "../../../packages/onboarding/work-cloud-models";
 import { EvidenceViewer } from "./evidence-viewer";
 
 type Version = {
@@ -99,8 +100,8 @@ export function AnalysisHistory({
     removed: string[];
     changed: string[];
   }>();
-  const [model, setModel] = useState("gpt-6.1-sol");
-  const [effort, setEffort] = useState("high");
+  const [model, setModel] = useState<string>(defaultWorkCloudAnalysis.model);
+  const [effort, setEffort] = useState<string>(defaultWorkCloudAnalysis.effort);
   const [cursor, setCursor] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<{ attemptId: string }>();
   const operation = useRef<{

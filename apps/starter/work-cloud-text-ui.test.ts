@@ -271,9 +271,9 @@ it("binds one media approval to the separate media gate, requested settings and 
   expect(
     button(render(props), "Approve one video analysis").props.disabled,
   ).toBe(true);
-  expect(input(render(props), "text").props.value).toBe("gpt-6.1-sol");
+  expect(input(render(props), "text").props.value).toBe("gpt-6.2-sol");
   expect(select(render(props), "Requested reasoning effort").props.value).toBe(
-    "medium",
+    "high",
   );
   input(render(props), "checkbox").props.onChange({
     target: { checked: true },
@@ -287,8 +287,8 @@ it("binds one media approval to the separate media gate, requested settings and 
       grantId: grant.id,
       grantVersion: grant.version,
       expectedInputHash: preview.inputHash,
-      model: "gpt-6.1-sol",
-      effort: "medium",
+      model: "gpt-6.2-sol",
+      effort: "high",
       useOwnPlan: true,
       maxApiUsd: 0,
       inputKind: "media",

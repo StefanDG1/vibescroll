@@ -12,3 +12,8 @@ export const workCloudModelChoices = [
   { id: "gpt-5.6-terra", name: "GPT-5.6 Terra" },
   { id: "gpt-5.6-luna", name: "GPT-5.6 Luna" },
 ] as const;
+
+export const defaultWorkCloudAnalysis = {
+  model: workCloudModelChoices[0].id,
+  effort: "high",
+} as const;

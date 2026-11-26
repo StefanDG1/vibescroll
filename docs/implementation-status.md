@@ -1,5 +1,13 @@
 # Implementation status
 
+## November 26 final X reuse production acceptance
+
+Website/backend `ea18b2006398` are live after exact CI, full local checks, two matching preparations and 13 guards. The 14 components, 174 tables and 392 indexes are unchanged, with no populated scan, backfill, auth or cron change. One fixed Basic build passed staging and same-build canonical promotion. Full checks passed 1,851 main, 92 authentication and 195 shared UI cases, media checks, both builds, audit and secret scan. [Final receipt](operations/evidence/launch-20261126-x-reuse-production.json)
+
+The separate account reused Instagram photos, TikTok photos, X text and X video at their exact shared versions. Nineteen JPEGs loaded and decoded. Its earlier X Save recovered in place; an author-URL duplicate returned the same entry. All eight saved posts are Ready. Five test credits remain, with zero spent/reserved and old holds unchanged. Four original private X versions remain Ready. There was no new extraction or model run.
+
+The original MCP reads all three platforms and a current shared JPEG, and correctly refuses the other account's private source ID. A creator page shows two shared analyses the receiver has not saved. Author/platform links and responsive readers work. Unfollowed profiles explain how to start checks, and an allowance without eligible contribution credits explains that limit. Native Follow tests are restored with sponsorship off. A live sponsored new post and real cross-platform creator/repost pair remain unobserved; policy, quota and grouping regressions pass. One unavailable Instagram post remains unattributed with its analysis preserved.
+
 ## November 26 Save production acceptance and X receiver correction
 
 Website `cd29157f632f` is live after exact CI, one fixed Basic build, staged checks and same-build promotion. The production popup has no title, processing checkbox or arrow menus and fits at 320, 390 and 1440 pixels. The second account saved the TikTok photo URL through it and reached Ready. Both photo posts reuse their exact shared versions; all eleven JPEGs loaded and decoded. Receiving credits spent and reserved are zero. Four retained X results are now shared, and their text/video contexts and a shared JPEG pass through the original MCP. The X feed completed its normal scheduled continuation. Reversible X and second-account TikTok follows are restored. [Receipt](operations/evidence/launch-20261126-save-dialog-production.json)

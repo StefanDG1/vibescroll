@@ -15,3 +15,5 @@ For an unset route, select local processing only when an eligible computer is on
 Use the existing verified-subject personal pilot and audited quality-review grant for the owner's second account. Grant five app credits for seven days, keep every saved source and unknown hold, and restore the temporary grant feature flag. This is operator testing, not a paid subscription, purchase or paid-customer acceptance. Shared reuse should consume zero credits.
 
 Verify the collapsed and expanded form on desktop and phone, import mode, keyboard close/focus, long URLs and errors. Record local, staging and production acceptance separately. The existing MCP connection and contracts need no replacement or re-export.
+
+The popup is live at 320, 390 and 1440 pixels. Expanded controls and metadata-only imports have no arrow menus, and Escape closes the dialog and restores Save focus. A native photo Save reached Ready without a title or processing checkbox. The [final receipt](../operations/evidence/launch-20261126-x-reuse-production.json) verifies automatic titles and zero-credit Instagram, TikTok and X reuse.

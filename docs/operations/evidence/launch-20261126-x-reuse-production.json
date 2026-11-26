@@ -1,0 +1,137 @@
+{
+  "date": "2026-11-26",
+  "websiteCommit": "ea18b20063987fab98e53c1e813ab9e89d1ddfad",
+  "backendCommit": "ea18b20063987fab98e53c1e813ab9e89d1ddfad",
+  "version": "0.1.0-alpha.20261126203731.gea18b2006398",
+  "deploymentId": "dpl_Ea8eUT3GNYrEZ9emvt27KaJ7t67y",
+  "backendFinishAcknowledgedAtUtc": "2026-11-26T20:42:55.722Z",
+  "canonicalVerifiedAtUtc": "2026-11-26T20:50:26.548Z",
+  "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/45892413739",
+  "checks": {
+    "fullLocalCheckPassed": true,
+    "mainPassed": 1851,
+    "mainSkipped": 9,
+    "authenticationPassed": 92,
+    "sharedUiPassed": 195,
+    "bothBuildsPassed": true,
+    "dependencyAuditPassed": true,
+    "secretScanPassed": true,
+    "focusedRegressionCasesPassed": 61
+  },
+  "publication": {
+    "matchingPreparedRequests": 2,
+    "preparedBytes": 7233425,
+    "preparedSha256": "76f9bebdfa33ef8c3d8d98cf75847f56ead5f5b501f2647c8a27e06102f8c213",
+    "guardCasesPassed": 13,
+    "components": 14,
+    "tables": 174,
+    "indexes": 392,
+    "databaseSchemaChanges": 0,
+    "indexChanges": 0,
+    "populatedScans": 0,
+    "populatedBackfills": 0,
+    "authChanges": 0,
+    "cronChanges": 0
+  },
+  "website": {
+    "fixedBasicBuild": true,
+    "machineCores": 2,
+    "machineMemoryGb": 8,
+    "stagedExactHealth": true,
+    "stagedDescriptor": true,
+    "stagedPrivateCreatorRedirect": 307,
+    "sameBuildPromoted": true,
+    "canonicalExactHealth": true,
+    "aliasesCompleted": true,
+    "normalDomainAssignmentRestored": true,
+    "temporaryShareRevoked": true
+  },
+  "crossUserProduction": {
+    "differentPersistedOwnerVerified": true,
+    "instagramCarousel": {
+      "ready": true,
+      "images": 9,
+      "insights": 6
+    },
+    "tiktokPhoto": {
+      "ready": true,
+      "images": 2,
+      "insights": 1
+    },
+    "xVideo": {
+      "ready": true,
+      "images": 8,
+      "insights": 5
+    },
+    "xTextPosts": {
+      "ready": true,
+      "count": 2,
+      "insightCounts": [5, 1]
+    },
+    "sameIndependentSharedVersions": true,
+    "imagesLoadedAndDecoded": 19,
+    "originalSavedXEntryRecoveredInPlace": true,
+    "authorUrlDuplicateReturnedSameEntry": true,
+    "duplicateSaveSourceCountUnchanged": true,
+    "testAccountSourcesReady": 8,
+    "testCreditsAvailable": 5,
+    "testCreditExpiryDays": 7,
+    "creditsSpent": 0,
+    "creditsReserved": 0,
+    "purchases": 0,
+    "newModelRuns": 0,
+    "newPreparations": 0,
+    "oldSavedPostsPreserved": true,
+    "historicalHoldsUnchanged": true
+  },
+  "creatorProduction": {
+    "instagramFeedReady": true,
+    "tiktokFeedReady": true,
+    "xFeedReady": true,
+    "scheduledCronSuccessObserved": true,
+    "secondAccountUnownedCreatorSharedPosts": 2,
+    "creatorLinksNavigateToAuthorPage": true,
+    "unfollowedAvailableFeedExplained": true,
+    "zeroEligibleContributionAllowanceExplained": true,
+    "testFollowsRestoredToUnfollowed": true,
+    "testSponsorshipEnabled": false,
+    "indexedSharedResults": 62,
+    "selectedSharedResults": 63,
+    "distinctCreators": 52,
+    "originalPrivateXVersionsStillReady": 4
+  },
+  "mcp": {
+    "instagramCompleteContext": true,
+    "tiktokCompleteContext": true,
+    "xTextCompleteContext": true,
+    "xVideoCompleteContext": true,
+    "currentSharedJpegRead": true,
+    "creatorSharedEntriesRead": true,
+    "otherAccountPrivateSaveCorrectlyDenied": true,
+    "originalConnectionRetained": true
+  },
+  "ui": {
+    "saveWidths": [320, 390, 1440],
+    "titleInputRemoved": true,
+    "processingCheckboxRemoved": true,
+    "saveArrowMenus": 0,
+    "expandedRouteArrowMenus": 0,
+    "metadataOnlyImportRemainsUsable": true,
+    "escapeClosesAndRestoresSaveFocus": true,
+    "mobileCreatorAndPostOverflow": false,
+    "platformAndAuthorLinksPresent": true,
+    "automaticTitleUsesRetainedPublicCaptionWhenNeeded": true,
+    "extraTitleModelRequests": 0
+  },
+  "failuresRetained": [
+    "The original real X receiving-user Save stopped at Saved because cache and pending-join checks admitted only Instagram and TikTok. The same entry recovered after the correction.",
+    "The new video fixture initially omitted required silent-video metadata and a prepared storage prefix. Corrected fixtures preserve strict evidence validation.",
+    "A full check caught an omitted strict creator response validator. All seven affected failures pass after adding the returned boolean to its validator."
+  ],
+  "notClaimed": [
+    "One original Instagram post is unavailable to its first-party endpoint; preserve its saved analysis without guessing its author.",
+    "A real new-post sponsored analysis after a contribution-enabled follow remains unobserved.",
+    "A live cross-platform creator/repost pair remains unobserved; reciprocal-identity and media-grouping regression tests pass.",
+    "Operator test access does not establish a real paid-customer purchase or a universal platform reliability rate."
+  ]
+}

@@ -34,7 +34,13 @@ A single-photo embed can expose its original image in markup. Require Instagram'
 
 The ordered-social route inspects a TikTok post's manifest for its actual media type. A `/video/` path may lead to Photo Mode. For a verified single TikTok video, use the existing hash-pinned downloader in the same sandbox. Check that its resolved video ID matches the already verified post before adopting the downloaded bytes. After switching off network access, bind the decoded clip to the typed caption, author, and attachment. Send an ordered image manifest through ordinary attachment download. Use the original failure path if identity or coverage cannot be established.
 
-Gallery-dl and Cobalt informed the probe. The worker uses the existing pinned tools and its own parser. Keep the embed gate off until the exact hosted worker, permitted access and retention, and ChatGPT-to-Ready flow are verified. The embed route supplies direct post evidence and does not list new creator posts.
+Gallery-dl and Cobalt informed the probe. The worker uses the existing pinned tools and its own parser. The embed gate was initially off during local and hosted verification. The November 26 public rollout below supersedes that setting. The embed route supplies direct post evidence and does not list new creator posts.
+
+## November 26 public photo rollout
+
+The owner explicitly directs the same public acquisition rollout for videos and photos. Enable the three public ordered and embed flags and the managed model options in production. Preserve exact post identity, complete attachment validation, isolated decoding, current account authority, idempotency and funded processing limits. Treat platform terms and the EU review as separate legal context. Owner rollout approval is recorded honestly.
+
+A nine-image Instagram carousel completed on its existing saved entry with six cited insights using Muse Ember Medium. A new two-image TikTok photo link saved through MCP completed through the existing native monitor. The whole-post MCP reader exposed an obsolete eight-frame restriction during acceptance. Match its frame bound to the existing 48-frame evidence contract and verify all retained images after deployment.
 
 ## November 26 rollout approval and EU review
 

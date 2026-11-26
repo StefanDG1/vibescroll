@@ -1,12 +1,14 @@
-# Approved access for social photo posts
+# Social photo extraction
 
-Verified November 26, 2026. Use the original post link as the product input. A creator or approved provider can authorize access once, after which VibeScroll matches the original link to the permitted source.
+The owner enabled public Instagram and TikTok extraction on November 26, 2026. The production flags `VIBESCROLL_ORDERED_SOCIAL_ENABLED`, `VIBESCROLL_TIKTOK_ORDERED_ENABLED`, and `VIBESCROLL_INSTAGRAM_PUBLIC_EMBED_ENABLED` are true. Ordinary link Save uses the public worker for eligible posts. Creator connections provide additional Graph routes.
+
+Public acquisition must establish the exact post, caption, author and complete ordered attachment list. The worker decodes every expected image before analysis. A missing or blocked manifest reports a source failure. Public rollout approval records the owner's product decision and does not establish platform permission or a legal opinion.
 
 ## Instagram carousels
 
 The existing Instagram Graph integration can read the carousel of a connected professional account. It resolves a saved permalink against the authorized account's indexed posts, checks the returned owner and media ID, and requires the complete child list. Each child's media URL is checked and its bytes are decoded in the isolated worker. The parent supplies the caption. This route needs an approved Meta app and a current connection for the account that owns the media. The live deployment had no configured Instagram feed authority during this check. [Meta media endpoint](https://developers.facebook.com/docs/instagram-platform/reference/instagram-media/v21.0/) · [VibeScroll intake decision](../adr/244-link-only-posts-and-creator-intake.md)
 
-Instagram oEmbed supplies HTML for display. VibeScroll needs permission to obtain and retain each attachment as analysis evidence. For arbitrary public links outside connected accounts, use a provider agreement that explicitly covers those actions and the intended model processing. [Meta Instagram oEmbed reference](https://developers.facebook.com/docs/graph-api/reference/instagram-oembed/)
+The enabled public route reads the captioned embed and verifies its typed media list. It supports single images and carousels when the page supplies a complete matching manifest. The official oEmbed interface supplies display HTML and has a separate API contract. [Meta Instagram oEmbed reference](https://developers.facebook.com/docs/graph-api/reference/instagram-oembed/)
 
 Enable creator discovery and configure the scoped Instagram feed for the connected account. Production Convex supports the Graph route with public ordered extraction and public embeds disabled. The saved link must match one indexed, authorized media ID. The preparation quote binds that ID, and dispatch checks the same binding again. If the grant expires, the job records a source access failure without a public fallback. [Release evidence](evidence/launch-20261126-approved-instagram-route.json)
 
@@ -20,7 +22,7 @@ Run the internal `creatorDiscovery:indexInstagramBusinessCreator` mutation with 
 
 TikTok Data Portability is an official option for posts made by the account holder. TikTok requires Login Kit approval, Data Portability approval, and creator consent. The Posts and Profile export can supply JPEG downloads. Confirm that the permitted export can match a share link to its exact post ID and provide every photo in its original order before deploying an adapter. The current production configuration has no photo access grant. [Data Portability approval](https://developers.tiktok.com/doc/data-portability-api-get-started) · [Export fields](https://developers.tiktok.com/docs/en/data-portability-data-types)
 
-TikTok's embed player can display a public Photo Mode post. The Display API describes access to video metadata, and Research Tools are limited to qualifying research. For arbitrary public Photo Mode links, obtain a licensed media feed or written TikTok authorization that covers this use. [Embed Player](https://developers.tiktok.com/docs/en/embed-player) · [Display API](https://developers.tiktok.com/docs/en/display-api-overview) · [Research Tools eligibility](https://developers.tiktok.com/products/research-api/)
+The enabled public route reads Photo Mode data from the original post page, verifies its ID and creator, and retains each ordered image. A `/video/` link can identify a photo post. The official embed, Display API and Research Tools have separate contracts and capabilities. [Embed Player](https://developers.tiktok.com/docs/en/embed-player) · [Display API](https://developers.tiktok.com/docs/en/display-api-overview) · [Research Tools eligibility](https://developers.tiktok.com/products/research-api/)
 
 ## Production acceptance
 

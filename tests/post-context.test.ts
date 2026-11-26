@@ -14,6 +14,8 @@ import {
   currentCloudArtifact,
 } from "../convex/lib/cloudCatalog";
 import { syncDashboardCard } from "../convex/lib/dashboardProjection";
+import { socialHash } from "../packages/social/contracts";
+import { preparedPostSourceIdentity } from "../packages/social/prepared-post";
 
 vi.mock("../packages/providers/storage", () => ({
   signedObject: () => "https://storage.example.test/post-context",
@@ -332,6 +334,119 @@ it("expands server-prepared evidence and links visible observations to one frame
   ).toMatchObject({ frameIds: ["frame-1"], segmentId: null });
   expect(result.context.authorName).toBe("Prepared author");
   expect(result.context.durationMs).toBe(10000);
+});
+
+it("reads every retained carousel slide beyond the former eight-frame video limit", async () => {
+  const f = await fixture();
+  const original = f.prepared.post.frames[0];
+  const canonical = f.prepared.post.canonical;
+  const assets = Array.from({ length: 9 }, (_, index) => ({
+    id: `asset-${index + 1}`,
+    index,
+    kind: "image" as const,
+    mime: "image/jpeg" as const,
+    contentHash: original.sha256,
+    bytes: original.bytes,
+    width: original.width,
+    height: original.height,
+  }));
+  const post = {
+    version: "social-post-evidence-v1" as const,
+    platform: "instagram" as const,
+    postId: "Abcdef12345",
+    authorId: "1234567890",
+    authorHandle: "creator",
+    publishedAt: null,
+    provider: "instagram_embed" as const,
+    text: "",
+    textHash: await socialHash(""),
+    expectedAssetCount: assets.length,
+    coverage: "complete_manifest" as const,
+    assets,
+  };
+  const frames = assets.map((asset) => ({
+    ...original,
+    id: `${asset.id}-frame-000`,
+    assetId: asset.id,
+    assetIndex: asset.index,
+    timestampMs: 0,
+  }));
+  const prepared = await makePreparedEvidence({
+    requestedCanonical: canonical,
+    canonical,
+    platform: "instagram",
+    post,
+    sourceHash: await socialHash(preparedPostSourceIdentity(canonical, post)),
+    recipeHash: "b".repeat(64),
+    downloaderVersion: "synthetic",
+    title: "Nine slide carousel",
+    authorName: "Creator",
+    durationMs: 0,
+    language: "und",
+    observedAt: Date.now() - 1000,
+    transcript: {
+      origin: "none",
+      model: null,
+      provider: null,
+      inputSha256: null,
+    },
+    segments: [],
+    frames,
+  });
+  await f.t.run(async (ctx) => {
+    const asset = (await ctx.db.get(f.assetId))!;
+    const evidence = (await ctx.db.get(f.version.evidenceId))!;
+    const { _id, _creationTime, ...properties } = asset;
+    const retainedFrames = [];
+    for (const frame of frames) {
+      const assetId = await ctx.db.insert("assets", {
+        ...properties,
+        kind: "prepared_frame",
+        key: `carousel-${frame.id}`,
+      });
+      retainedFrames.push({
+        ...evidence.frames[0],
+        frameId: frame.id,
+        key: `carousel-${frame.id}`,
+        timestampMs: 0,
+        assetId,
+      });
+    }
+    await ctx.db.patch(evidence._id, {
+      prepared,
+      frames: retainedFrames,
+      evidenceHash: prepared.evidence.evidenceHash,
+      revisionHash: prepared.evidence.sourceRevisionHash,
+    });
+  });
+  const result = postContextPageOutput.parse(
+    await f.assistant.query(internal.assistant.fetch, {
+      id: f.sourceId,
+      format: "post_context_v1",
+    }),
+  );
+  expect(result.context.complete).toBe(true);
+  expect(result.context.expectedAttachments).toBe(9);
+  expect(result.context.frames.map((frame) => frame.frameId)).toEqual(
+    frames.map((frame) => frame.id),
+  );
+  const last = result.context.frames.at(-1)!;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(f.bytes, {
+          headers: { "content-type": "image/jpeg" },
+        }),
+    ),
+  );
+  const image = await f.assistant.action(internal.postContextFrames.read, {
+    sourceId: f.sourceId,
+    analysisVersionId: f.versionId,
+    expectedEvidenceHash: result.context.evidenceHash,
+    frameId: last.frameId,
+  });
+  expect(Buffer.from(image.data, "base64")).toEqual(Buffer.from(f.bytes));
 });
 
 it("does not let an explicit retained version bypass a different source or a restricted grant", async () => {

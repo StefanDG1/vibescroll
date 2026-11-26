@@ -98,7 +98,7 @@ export async function resolvePostContext(ctx: QueryCtx, args: PostRead) {
   const retained = await retainedVersion(ctx, source, versionId);
   await verifyRetainedAssets(ctx, source, retained.evidence);
   ensure(
-    retained.evidence.frames.length <= 8,
+    retained.evidence.frames.length <= 48,
     "SOURCE_UNAVAILABLE",
     "This retained bundle exceeds supported frame coverage.",
   );

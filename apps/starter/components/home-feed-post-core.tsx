@@ -27,6 +27,11 @@ import {
   Image as ImageIcon,
   X,
 } from "lucide-react";
+import {
+  OriginalCaption,
+  PostMediaCarousel,
+  PostOriginals,
+} from "./post-source-media";
 import { useInterfaceMotion } from "./motion-preference";
 import { InsightCardControl } from "./insight-card-control";
 import { PostInsightStrip } from "./post-insight-strip";
@@ -172,11 +177,18 @@ export function FeedPostCardCore({
       : `${base}/posts/${post.id}`;
   const title = detail?.title ?? post.title;
   const author = detail?.authorName ?? post.authorName ?? "Saved post";
+  const slides = detail?.slides ?? [];
+  const showCarousel =
+    slides.some((slide) => slide.kind === "image") || slides.length > 1;
+  const creatorHref = detail?.creatorKey
+    ? `${base}/creators/${encodeURIComponent(detail.creatorKey)}`
+    : null;
   const isVideo =
-    demo ||
-    post.kind === "upload" ||
-    detail?.durationMs != null ||
-    /\/(reel|shorts|video)\/|youtu\.be\//.test(detail?.url ?? "");
+    !showCarousel &&
+    (demo ||
+      post.kind === "upload" ||
+      (detail?.durationMs ?? 0) > 0 ||
+      /\/(reel|shorts|video)\/|youtu\.be\//.test(detail?.url ?? ""));
   const candidates = detail?.thumbnailAssetIds.length
     ? detail.thumbnailAssetIds
     : post.thumbnailAssetIds;
@@ -202,8 +214,7 @@ export function FeedPostCardCore({
       .slice(0, Math.max(0, 3 - proposals.length)) ?? [];
   const engagement = demo ? detail?.engagement : observedEngagement;
   const displayedLiked =
-    pendingLike &&
-    engagement?.scopeKey === pendingLike.scopeKey
+    pendingLike && engagement?.scopeKey === pendingLike.scopeKey
       ? pendingLike.liked
       : engagement?.liked;
   const displayedLikes = engagement
@@ -239,37 +250,51 @@ export function FeedPostCardCore({
           key: crypto.randomUUID(),
         };
         try {
-          const result: Pick<FeedEngagement, "scopeKey" | "liked" | "revision"> =
-            await call("setPostLike", args).catch((failure) => {
-              // A timeout leaves the write outcome unknown. Replay the same key
-              // before sending an opposite intent against its revision.
-              if (failure instanceof TypeError ||
-                  (failure instanceof Error && failure.name === "TimeoutError"))
-                return call("setPostLike", args);
-              throw failure;
-            });
+          const result: Pick<
+            FeedEngagement,
+            "scopeKey" | "liked" | "revision"
+          > = await call("setPostLike", args).catch((failure) => {
+            // A timeout leaves the write outcome unknown. Replay the same key
+            // before sending an opposite intent against its revision.
+            if (
+              failure instanceof TypeError ||
+              (failure instanceof Error && failure.name === "TimeoutError")
+            )
+              return call("setPostLike", args);
+            throw failure;
+          });
           if (
             result.scopeKey !== scopeKey ||
             result.revision <= confirmed.revision
-          ) throw new Error("The reaction revision changed.");
+          )
+            throw new Error("The reaction revision changed.");
           onReaction(result);
           const observed = latestEngagement.current;
           confirmed =
-            observed?.scopeKey === scopeKey && observed.revision > result.revision
+            observed?.scopeKey === scopeKey &&
+            observed.revision > result.revision
               ? observed
               : { ...confirmed, ...result };
         } catch (failure) {
-          const stale = failure instanceof Error && "code" in failure &&
+          const stale =
+            failure instanceof Error &&
+            "code" in failure &&
             failure.code === "APPROVAL_STALE";
           if (!stale && queue.desired === target) {
             if (failure instanceof Error && !("outcome" in failure)) {
               void call("postEngagementRead", {
                 organizationId,
                 sourceIds: [post.id],
-              }).then((items: (FeedEngagement & { sourceId: string })[] | null) => {
-                const current = items?.find((item) => item.sourceId === post.id);
-                if (current?.scopeKey === scopeKey) onReaction(current);
-              }).catch(() => {});
+              })
+                .then(
+                  (items: (FeedEngagement & { sourceId: string })[] | null) => {
+                    const current = items?.find(
+                      (item) => item.sourceId === post.id,
+                    );
+                    if (current?.scopeKey === scopeKey) onReaction(current);
+                  },
+                )
+                .catch(() => {});
             }
             throw failure;
           }
@@ -325,7 +350,7 @@ export function FeedPostCardCore({
       !event.isPrimary ||
       event.pointerType !== "touch" ||
       (event.target as Element).closest(
-        "button, a, input, textarea, select, video",
+        "button, a, input, textarea, select, video, [data-post-carousel]",
       )
     )
       return;
@@ -458,10 +483,24 @@ export function FeedPostCardCore({
       }}
     >
       <div className={styles.creator}>
-        <span className={styles.avatar}>
-          {author.slice(0, 1).toUpperCase()}
-        </span>
-        <strong>{author}</strong>
+        {creatorHref ? (
+          <a href={creatorHref} className={styles.creatorLink}>
+            <span className={styles.avatar} aria-hidden="true">
+              {author.slice(0, 1).toUpperCase()}
+            </span>
+            <strong>{author}</strong>
+          </a>
+        ) : (
+          <>
+            <span className={styles.avatar} aria-hidden="true">
+              {author.slice(0, 1).toUpperCase()}
+            </span>
+            <strong>{author}</strong>
+          </>
+        )}
+        {detail?.url ? (
+          <PostOriginals urls={detail.originalLinks ?? [detail.url]} />
+        ) : null}
         {!mode && !demo && !preview && showTour && <FeedTour />}
         {!mode && (
           <button
@@ -492,6 +531,12 @@ export function FeedPostCardCore({
             sizes="(max-width:720px) 100vw, 340px"
             className={styles.demoPoster}
           />
+        ) : showCarousel ? (
+          <PostMediaCarousel
+            key={post.id}
+            slides={slides}
+            original={detail?.url}
+          />
         ) : (
           <Thumbnail
             render={renderThumbnail}
@@ -501,7 +546,8 @@ export function FeedPostCardCore({
             resolve={thumbnailResolver}
           />
         )}
-        {showPlayControl && isVideo &&
+        {showPlayControl &&
+          isVideo &&
           (detail?.url ? (
             <a
               className={styles.play}
@@ -517,12 +563,17 @@ export function FeedPostCardCore({
               <Play size={28} fill="currentColor" aria-hidden="true" />
             </span>
           ))}
-        {detail?.durationMs != null && (
-          <span className={styles.duration}>
-            {Math.floor(detail.durationMs / 60000)}:
-            {String(Math.floor(detail.durationMs / 1000) % 60).padStart(2, "0")}
-          </span>
-        )}
+        {detail?.durationMs != null &&
+          detail.durationMs > 0 &&
+          !showCarousel && (
+            <span className={styles.duration}>
+              {Math.floor(detail.durationMs / 60000)}:
+              {String(Math.floor(detail.durationMs / 1000) % 60).padStart(
+                2,
+                "0",
+              )}
+            </span>
+          )}
       </div>
       <div className={styles.sourceCopy}>
         <h2 id={`feed-title-${post.id}`} tabIndex={-1}>
@@ -537,6 +588,7 @@ export function FeedPostCardCore({
         ) : (
           <div className={styles.tagSpace} />
         )}
+        {detail?.caption ? <OriginalCaption caption={detail.caption} /> : null}
         <p className={styles.summary}>{detail?.summary ?? ""}</p>
         {observedState}
         {mode === "review" ? (
@@ -612,19 +664,21 @@ export function FeedPostCardCore({
       data-feed-column="insights"
       aria-label={`Insights for ${title}`}
     >
-      {!mode && <div className={styles.mobileContext}>
-        <Thumbnail
-          render={renderThumbnail}
-          candidates={candidates}
-          kind={post.kind}
-          demo={demo}
-          resolve={thumbnailResolver}
-        />
-        <div>
-          <h3>{title}</h3>
-          <small>{topics.slice(0, 2).map(postTopicName).join(" · ")}</small>
+      {!mode && (
+        <div className={styles.mobileContext}>
+          <Thumbnail
+            render={renderThumbnail}
+            candidates={candidates}
+            kind={post.kind}
+            demo={demo}
+            resolve={thumbnailResolver}
+          />
+          <div>
+            <h3>{title}</h3>
+            <small>{topics.slice(0, 2).map(postTopicName).join(" · ")}</small>
+          </div>
         </div>
-      </div>}
+      )}
       <div className={styles.sectionHeading}>
         <h2>Insights</h2>
         {detail && active && <span>{insights.length}</span>}
@@ -789,26 +843,28 @@ export function FeedPostCardCore({
       data-feed-column="plans"
       aria-label={`Project plans for ${title}`}
     >
-      {!mode && <div className={styles.mobileContext}>
-        <button
-          type="button"
-          aria-label="Back to insights"
-          onClick={() => scrollTo(`${uid}-insights`)}
-        >
-          <ChevronDown size={20} aria-hidden="true" />
-        </button>
-        <Thumbnail
-          render={renderThumbnail}
-          candidates={candidates}
-          kind={post.kind}
-          demo={demo}
-          resolve={thumbnailResolver}
-        />
-        <div>
-          <h3>{title}</h3>
-          <small>{topics.slice(0, 2).map(postTopicName).join(" · ")}</small>
+      {!mode && (
+        <div className={styles.mobileContext}>
+          <button
+            type="button"
+            aria-label="Back to insights"
+            onClick={() => scrollTo(`${uid}-insights`)}
+          >
+            <ChevronDown size={20} aria-hidden="true" />
+          </button>
+          <Thumbnail
+            render={renderThumbnail}
+            candidates={candidates}
+            kind={post.kind}
+            demo={demo}
+            resolve={thumbnailResolver}
+          />
+          <div>
+            <h3>{title}</h3>
+            <small>{topics.slice(0, 2).map(postTopicName).join(" · ")}</small>
+          </div>
         </div>
-      </div>}
+      )}
       <div className={styles.sectionHeading}>
         <h2>Apply to a project</h2>
         {!mode && (
@@ -1074,24 +1130,38 @@ export function FeedPostCardCore({
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       >
-        <section className="post-settings-group" aria-label="Source and evidence">
+        <section
+          className="post-settings-group"
+          aria-label="Source and evidence"
+        >
           <h3>Source and evidence</h3>
           <div className="post-settings-links">
             {detail?.url && (
               <a href={detail.url} target="_blank" rel="noopener noreferrer">
                 <ArrowUpRight size={18} aria-hidden="true" />
-                <span><strong>Original post</strong><small>Open on the source platform</small></span>
+                <span>
+                  <strong>Original post</strong>
+                  <small>Open on the source platform</small>
+                </span>
               </a>
             )}
-            {preview ? preview.evidence : (
+            {preview ? (
+              preview.evidence
+            ) : (
               <>
                 <a href={`${sourceHref}#post-settings-evidence`}>
                   <FileText size={18} aria-hidden="true" />
-                  <span><strong>Source evidence</strong><small>Transcript, caption and saved frames</small></span>
+                  <span>
+                    <strong>Source evidence</strong>
+                    <small>Transcript, caption and saved frames</small>
+                  </span>
                 </a>
                 <a href={`${sourceHref}#post-settings`}>
                   <Settings2 size={18} aria-hidden="true" />
-                  <span><strong>Analysis and post controls</strong><small>Versions, categories, privacy and processing</small></span>
+                  <span>
+                    <strong>Analysis and post controls</strong>
+                    <small>Versions, categories, privacy and processing</small>
+                  </span>
                 </a>
               </>
             )}

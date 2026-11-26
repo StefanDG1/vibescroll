@@ -233,7 +233,7 @@ it("reviews automatic app-Save defaults separately and invalidates the acknowled
     expect.objectContaining({
       cloudSaveDefaults: {
         version: "link-save-cloud-v2",
-        model: "gpt-6.1-sol",
+        model: "gpt-6.2-sol",
         effort: "high",
         retentionMs: 7 * 86400000,
         resultRetention: "until_deleted",
@@ -656,7 +656,7 @@ it("offers one Continue for standard Cloud access without per-action checkboxes 
     clientId: "host",
     expectedVersion: 0,
     route: "work_cloud",
-    model: "gpt-6.1-sol",
+    model: "gpt-6.2-sol",
     effort: "high",
   });
   const picker = elements(f.render()).find(

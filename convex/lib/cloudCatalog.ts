@@ -1,4 +1,9 @@
+import {
+  usesOrderedPostPreparation,
+  preparedMediaContentKey,
+} from "../../packages/social/prepared-post";
 import { preparedServiceConfiguration } from "./preparedServicePolicy";
+import { enqueueCreatorMatching } from "./creatorMatching";
 import { openAiPreparedProcessingReviewHash } from "./openAiGrant";
 import { apiModels } from "../../packages/contracts/api-models";
 import { resultRetained } from "../../packages/contracts/result-retention";
@@ -26,6 +31,8 @@ import { sourceRetained } from "./sourceAuthority";
 import { internal } from "../_generated/api";
 import { queryRead } from "./knowledgeReadContext";
 import { recordPostSave } from "./postEngagement";
+import { platformPostKey } from "../../packages/sources/post-identity";
+import { indexedCatalogCreator } from "./catalogCreator";
 
 export type CloudArtifact = Extract<
   Doc<"publicArtifacts">,
@@ -130,16 +137,28 @@ export async function cacheCandidate(
   let alias: string;
   try {
     const identity = privateCloudMediaIdentity(url);
-    if (!["instagram", "tiktok"].includes(identity.platform)) return null;
+    if (!["instagram", "tiktok", "x"].includes(identity.platform)) return null;
     alias = identity.url;
   } catch {
     return null;
   }
   const aliasKey = await catalogAliasKey(alias);
-  const mapped = await ctx.db
+  let mapped = await ctx.db
     .query("catalogAliases")
     .withIndex("by_key", (q) => q.eq("key", aliasKey))
     .unique();
+  // TikTok serves Photo Mode through either route. Keep existing alias keys,
+  // and look up the other direct route without changing the requested URL.
+  if (!mapped && alias.startsWith("https://www.tiktok.com/@")) {
+    const alternate = alias.replace(/\/(video|photo)\//, (_match, kind) =>
+      kind === "video" ? "/photo/" : "/video/",
+    );
+    const alternateKey = await catalogAliasKey(alternate);
+    mapped = await ctx.db
+      .query("catalogAliases")
+      .withIndex("by_key", (q) => q.eq("key", alternateKey))
+      .unique();
+  }
   let family: Doc<"catalogFamilies"> | null = null;
   if (mapped && resultRetained(mapped))
     family = await ctx.db.get(mapped.familyId);
@@ -167,7 +186,19 @@ export async function cacheCandidate(
   }
   if (!family?.selectedArtifactId) return null;
   try {
-    return await currentCloudArtifact(ctx, family.selectedArtifactId);
+    const cached = await currentCloudArtifact(ctx, family.selectedArtifactId);
+    if (
+      alias.startsWith("https://www.tiktok.com/@") &&
+      platformPostKey(alias) !== platformPostKey(family.canonical)
+    )
+      return null;
+    // A legacy sampled-video result cannot establish complete photo coverage.
+    if (
+      usesOrderedPostPreparation(url) &&
+      cached.prepared.post?.coverage !== "complete_manifest"
+    )
+      return null;
+    return cached;
   } catch (error) {
     if (
       error instanceof PolicyError &&
@@ -210,6 +241,18 @@ async function attachResult(
   contributor: boolean,
 ) {
   const now = Date.now();
+  const post = cached.prepared.post;
+  const title =
+    cached.artifact.postMetadata?.title || post?.text.trim().slice(0, 160);
+  const indexedCreator =
+    !post?.authorId || !post.authorHandle
+      ? await indexedCatalogCreator(
+          ctx,
+          cached.family._id,
+          cached.artifact._id,
+          cached.family.canonical,
+        )
+      : null;
   const layerId = await ctx.db.insert("publicImports", {
     organizationId: source.organizationId,
     origin: "cloud",
@@ -233,17 +276,38 @@ async function attachResult(
     catalogWait: undefined,
     publicImportId: layerId,
     coverage: "ordered_media",
-    ...(cached.artifact.postMetadata
+    ...(post?.authorId && post.authorHandle
+      ? {
+          platformPostKey: `${cached.prepared.platform}:${post.postId}`,
+          creator: {
+            key: `${cached.prepared.platform}:${post.authorId}`,
+            handle: post.authorHandle,
+            generation: source.generation,
+            contentKey: await preparedMediaContentKey(post),
+          },
+          ...(post.version === "social-post-evidence-v1" && post.publishedAt
+            ? { publishedAt: post.publishedAt }
+            : {}),
+        }
+      : indexedCreator
+        ? {
+            platformPostKey: indexedCreator.postKey,
+            creator: {
+              key: indexedCreator.key,
+              handle: indexedCreator.handle,
+              generation: source.generation,
+            },
+          }
+        : {}),
+    ...(cached.artifact.postMetadata || title
       ? {
           linkPreview: {
             ...source.linkPreview,
-            ...(cached.artifact.postMetadata.title
-              ? { title: cached.artifact.postMetadata.title }
-              : {}),
-            ...(cached.artifact.postMetadata.authorName
+            ...(title ? { title } : {}),
+            ...(cached.artifact.postMetadata?.authorName
               ? { authorName: cached.artifact.postMetadata.authorName }
               : {}),
-            ...(cached.artifact.postMetadata.durationSeconds
+            ...(cached.artifact.postMetadata?.durationSeconds
               ? {
                   durationSeconds: cached.artifact.postMetadata.durationSeconds,
                 }
@@ -279,6 +343,7 @@ async function attachResult(
     updatedAt: Math.max(now, source.updatedAt + 1),
   });
   await recordPostSave(ctx, (await ctx.db.get(source._id))!, actor);
+  await enqueueCreatorMatching(ctx, source._id);
   return true;
 }
 
@@ -380,7 +445,9 @@ async function joinPendingCatalog(
   try {
     const identity = privateCloudMediaIdentity(source.url);
     if (
-      (identity.platform !== "instagram" && identity.platform !== "tiktok") ||
+      (identity.platform !== "instagram" &&
+        identity.platform !== "tiktok" &&
+        identity.platform !== "x") ||
       !policy.platforms.includes(identity.platform)
     )
       return false;
@@ -566,7 +633,9 @@ export async function catalogPermission(
     const identity = privateCloudMediaIdentity(exact);
     const policy = config.defaultPolicy;
     if (
-      (identity.platform === "instagram" || identity.platform === "tiktok") &&
+      (identity.platform === "instagram" ||
+        identity.platform === "tiktok" ||
+        identity.platform === "x") &&
       policy.platforms.includes(identity.platform)
     ) {
       value = {

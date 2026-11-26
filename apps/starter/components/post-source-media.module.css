@@ -1,0 +1,111 @@
+.originals {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.original {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  text-decoration: none;
+  font-weight: 650;
+  font-size: 16px;
+}
+.original:hover {
+  background: var(--soft);
+}
+.original:focus-visible,
+.carousel:focus-visible,
+.controls button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+.carousel {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+  border-radius: 8px;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.carousel img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 65svh;
+  min-height: 0;
+  object-fit: contain;
+}
+.controls {
+  display: flex;
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 8px;
+  padding: 2px;
+  border-radius: 50px;
+  background: #141619eb;
+  color: white;
+  white-space: nowrap;
+  box-shadow: 0 2px 12px #0005;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+.controls button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.controls button:hover:not(:disabled) {
+  background: #ffffff25;
+}
+.controls button:disabled {
+  opacity: 0.4;
+  cursor: auto;
+}
+.originalVideo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  padding: 8px 10px;
+  gap: 6px;
+  align-items: center;
+  color: white;
+  background: #141619eb;
+  border-radius: 7px;
+  text-decoration: none;
+  font-size: 12px;
+}
+.caption {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.caption summary {
+  cursor: pointer;
+  font-weight: 550;
+}
+.caption p {
+  max-height: 12rem;
+  overflow: auto;
+  margin: 6px 0;
+}

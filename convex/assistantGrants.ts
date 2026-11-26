@@ -710,7 +710,7 @@ export const ensureDefaults = internalMutation({
                 cloudRequestPolicy: "explicit_per_source_v1" as const,
                 cloudSaveDefaults: {
                   version: "link-save-cloud-v2" as const,
-                  model: "gpt-6.1-sol",
+                  model: "gpt-6.2-sol",
                   effort: "high" as const,
                   retentionMs: 7 * 86400000,
                   resultRetention: "until_deleted" as const,

@@ -103,6 +103,16 @@ def get(raw, maximum, output=None):
     return b''.join(chunks), mime, size
 
 
+def stable_author(author):
+    if not isinstance(author, dict):
+        return {}
+    identity = str(author.get('id') or author.get('id_str') or author.get('user_id') or '')
+    handle = author.get('screen_name') or author.get('username') or author.get('name')
+    if re.fullmatch(r'[0-9]{1,30}', identity) and isinstance(handle, str) and re.fullmatch(r'[A-Za-z0-9_]{1,15}', handle):
+        return {'authorId': identity, 'authorHandle': handle}
+    return {}
+
+
 def gallery_result(messages, expected):
     if not isinstance(messages, list) or len(messages) > 36:
         raise ValueError('invalid_gallery_manifest')
@@ -129,7 +139,7 @@ def gallery_result(messages, expected):
         raise ValueError('incomplete_attachment_manifest')
     text = metadata.get('content')
     author = metadata.get('author') or {}
-    return {'provider': 'gallery-dl', 'text': text, 'authorName': author.get('nick') or author.get('name') or '', 'assets': assets}
+    return {'provider': 'gallery-dl', 'text': text, 'authorName': author.get('nick') or author.get('name') or '', 'assets': assets, **stable_author(author)}
 
 
 def fx_result(data, expected):
@@ -156,11 +166,30 @@ def fx_result(data, expected):
                 raise ValueError('unsupported_attachment_type')
             raw = max(variants, key=lambda f: f.get('bitrate', 0))['url']
         assets.append({'kind': 'image' if kind == 'photo' else 'video', 'animated': kind == 'gif', 'url': asset_url(raw)})
-    return {'provider': 'fxtwitter', 'text': post.get('text'), 'authorName': (post.get('author') or {}).get('name') or '', 'assets': assets}
+    author = post.get('author') or {}
+    return {'provider': 'fxtwitter', 'text': post.get('text'), 'authorName': author.get('name') or '', 'assets': assets, **stable_author(author)}
 
 
 def inspect():
-    request = read_json('request.json', 3000)
+    request = read_json('request.json', 260000)
+    if request.get('platform') in ('instagram', 'tiktok'):
+        from social_public_post import acquire_post, reference
+        if request.get('authorizedInstagram'):
+            post = request['authorizedInstagram']
+            if reference(request['url']) != ('instagram', post['postId']) or post['platform'] != 'instagram' or post['expectedAssetCount'] != len(post['assets']):
+                raise ValueError('authorized_post_identity_mismatch')
+            post['provider'] = 'instagram_graph'
+        else:
+            post = acquire_post(request['url'], acquisition_proxy(), request.get('instagramEmbed') is True)
+        write_json('x-acquisition.json', post)
+        write_json('metadata.json', {
+            'title': (post['text'].strip().splitlines() or [f'@{post["authorHandle"]}'])[0][:160],
+            'authorName': str(post['authorName'])[:160],
+            'resolvedCanonical': post['canonical'],
+            'singleTikTokVideo': post['platform'] == 'tiktok' and len(post['assets']) == 1 and post['assets'][0]['kind'] == 'video',
+            **({'publishedAt': post['publishedAt']} if post['publishedAt'] is not None else {}),
+        })
+        return
     expected = post_id(request['url'])
     env = dict(os.environ)
     env['PYTHONPATH'] = str(TOOLS / '_deps')
@@ -205,11 +234,38 @@ def download():
     total = 0
     for index, asset in enumerate(post['assets']):
         path = ROOT / f'asset-{index + 1}.input'
-        _, mime, size = get(asset_url(asset['url']), MAX_BYTES - total, path)
+        if post.get('platform'):
+            from social_public_post import media_url
+            url = media_url(asset['url'], post['platform'])
+        else:
+            url = asset_url(asset['url'])
+        _, mime, size = get(url, MAX_BYTES - total, path)
         if size == 0 or mime not in (('image/jpeg', 'image/png', 'image/webp') if asset['kind'] == 'image' else ('video/mp4',)):
             raise ValueError('unsupported_attachment_content')
         total += size
         asset.update(file=path.name, mime=mime, bytes=size, contentHash=digest(path.read_bytes()))
+    write_json('x-acquired.json', post)
+
+
+def adopt_tiktok_video():
+    from cloud_extraction import validate_identity
+    post = read_json('x-acquisition.json')
+    if post.get('platform') != 'tiktok' or len(post['assets']) != 1 or post['assets'][0]['kind'] != 'video':
+        raise ValueError('unexpected_tiktok_video_handoff')
+    validate_identity(post['canonical'], read_json('resolved-info.json', 1000000))
+    video, audio = ROOT / 'input', ROOT / 'audio-input'
+    inputs = [video, audio] if audio.exists() or audio.is_symlink() else [video]
+    if any(p.is_symlink() or not p.is_file() for p in inputs) or not 0 < sum(p.stat().st_size for p in inputs) <= MAX_BYTES:
+        raise ValueError('download_over_limit_or_incomplete')
+    path = ROOT / 'asset-1.input'
+    audio_input = ['-i', str(audio), '-map', '0:v:0', '-map', '1:a:0'] if len(inputs) == 2 else [
+        '-map', '0:v:0', '-map', '0:a:0?']
+    tool(['ffmpeg', '-nostdin', '-v', 'error', '-protocol_whitelist', 'file', '-i', str(video),
+          *audio_input, '-c', 'copy', '-f', 'mp4', '-n', str(path)], 35)
+    if not 0 < path.stat().st_size <= MAX_BYTES:
+        raise ValueError('download_over_limit_or_incomplete')
+    post['assets'][0].update(file=path.name, mime='video/mp4', bytes=path.stat().st_size,
+                             contentHash=digest(path.read_bytes()))
     write_json('x-acquired.json', post)
 
 
@@ -222,9 +278,23 @@ def media_info(path):
                            'format=duration:stream=codec_type,width,height', '-of', 'json', str(path)], 10))
 
 
+
+def fingerprint(path):
+    pixels = tool(['ffmpeg', '-nostdin', '-v', 'error', '-protocol_whitelist', 'file',
+                   '-i', str(path), '-frames:v', '1', '-vf', 'scale=9:8,format=gray', '-threads', '1',
+                   '-f', 'rawvideo', 'pipe:1'], 6)
+    if len(pixels) != 72 or max(pixels) - min(pixels) < 32:
+        return None
+    bits = 0
+    for row in range(8):
+        for column in range(8):
+            offset = row * 9 + column
+            bits = (bits << 1) | int(pixels[offset] > pixels[offset + 1])
+    return {'difference': f'{bits:016x}', 'mean': round(sum(pixels) / len(pixels))}
+
 def decode():
     post = read_json('x-acquired.json')
-    request = read_json('request.json', 3000)
+    request = read_json('request.json', 260000)
     assets, frames, audios = [], [], []
     total_duration = 0
     image_count = sum(a['kind'] == 'image' for a in post['assets'])
@@ -265,6 +335,8 @@ def decode():
             times = sorted({max(0, min(duration_ms - 250, duration_ms * i // max(1, samples - 1))) for i in range(samples)})
         else:
             times = [0]
+        checkpoints = {0, len(times) // 2, len(times) - 1}
+        signatures = []
         for number, timestamp in enumerate(times):
             name = f'asset-{index + 1}-frame-{number:03}.jpg'
             frame_path = ROOT / name
@@ -278,11 +350,26 @@ def decode():
             if not 0 < frame_path.stat().st_size <= 150000:
                 raise ValueError('source_image_over_limit')
             frames.append({'id': name, 'timestampMs': timestamp, 'assetId': asset['id'], 'assetIndex': index})
+            if number in checkpoints:
+                try:
+                    signatures.append(fingerprint(frame_path))
+                except subprocess.SubprocessError:
+                    signatures.append(None)
+        if signatures and all(signatures):
+            asset['fingerprints'] = signatures
         assets.append(asset)
     manifest = {'version': 'x-post-evidence-v1', 'postId': post['postId'], 'provider': post['provider'],
                 'text': post['text'], 'textHash': digest(post['text'].encode()), 'assets': assets,
                 'expectedAssetCount': len(assets), 'coverage': 'complete_manifest'}
-    source_hash = digest(canonical({'canonical': post['canonical'], 'text': post['text'], 'assets': assets}).encode())
+    if post.get('platform'):
+        manifest.update(version='social-post-evidence-v1', expectedAssetCount=post['expectedAssetCount'],
+                        **{key: post[key] for key in ('platform', 'authorId', 'authorHandle', 'publishedAt')})
+        identity = {'canonical': post['canonical'], 'post': manifest}
+    else:
+        if post.get('authorId') and post.get('authorHandle'):
+            manifest.update(authorId=post['authorId'], authorHandle=post['authorHandle'])
+        identity = {'canonical': post['canonical'], 'text': post['text'], 'assets': assets}
+    source_hash = digest(canonical(identity).encode())
     write_json('x-result.json', {'post': manifest, 'durationMs': total_duration, 'frames': frames, 'audios': audios,
                                 'sourceHash': source_hash, 'sourceBytes': sum(a['bytes'] for a in assets),
                                 'ffmpegVersion': tool(['ffmpeg', '-version'], 5).decode().splitlines()[0][:250],
@@ -298,4 +385,5 @@ def setup():
 
 
 if __name__ == '__main__':
-    {'setup': setup, 'inspect': inspect, 'download': download, 'decode': decode}[sys.argv[1]]()
+    {'setup': setup, 'inspect': inspect, 'download': download,
+     'adopt-tiktok-video': adopt_tiktok_video, 'decode': decode}[sys.argv[1]]()

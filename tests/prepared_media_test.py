@@ -50,6 +50,7 @@ class PreparedMediaTests(unittest.TestCase):
                     self.assertLess(frame['timestampMs'], manifest['durationSeconds'] * 1000)
                 receipt = json.loads((root / 'source-receipt.json').read_text())
                 self.assertEqual(receipt['sourceBytes'], len(source))
+                self.assertEqual(receipt['mp4ContentHash'], hashlib.sha256(source).hexdigest())
                 self.assertEqual(receipt['sourceHash'], hashlib.sha256(json.dumps([
                     hashlib.sha256(source).hexdigest()], separators=(',', ':')).encode()).hexdigest())
                 if captions:

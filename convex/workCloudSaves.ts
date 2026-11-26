@@ -5,7 +5,10 @@ import { writeAccess } from "./lib";
 import { ensure } from "../packages/policy";
 import { captureOne, captureAuthorized } from "./product";
 import { preparedPolicy, queuePreparedComparison } from "./preparedAnalysis";
-import { queueAutomaticPreparedSource } from "./preparedService";
+import {
+  queueAutomaticPreparedSource,
+  requestPreparedAnalysis,
+} from "./preparedService";
 import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { cacheCandidate } from "./lib/cloudCatalog";
@@ -27,7 +30,15 @@ export const analyzeSaved = mutation({
       "FORBIDDEN",
       "Use the scoped MCP analysis action from a chat.",
     );
-    const route = await savedCloudRoute(ctx, owner.actor, owner.organization);
+    const servicePrepared = preparedServiceConfiguration(
+      owner.actor.subject,
+    )?.automaticOwnSubscriptionPreparation;
+    const route = await savedCloudRoute(
+      ctx,
+      owner.actor,
+      owner.organization,
+      servicePrepared ? "work_cloud_waiting" : "video_link_saved",
+    );
     ensure(
       route?.available && route.grantId,
       "SETUP_REQUIRED",
@@ -76,6 +87,24 @@ export const retrySaved = mutation({
       "FORBIDDEN",
       "Use the scoped MCP retry action from a chat.",
     );
+    const { sourceId, ...retry } = request;
+    if (
+      preparedServiceConfiguration(owner.actor.subject)
+        ?.automaticOwnSubscriptionPreparation
+    ) {
+      const result = await requestPreparedAnalysis(ctx, {
+        sourceId,
+        executor: "work_cloud",
+        retry,
+      });
+      return {
+        sourceId,
+        generation: owner.source.generation,
+        status: result.state,
+        reusedRequest: "reused" in result && result.reused === true,
+        analysisStarted: false as const,
+      };
+    }
     const route = await savedCloudRoute(ctx, owner.actor, owner.organization);
     ensure(
       route?.grantId,
@@ -83,7 +112,6 @@ export const retrySaved = mutation({
       "Complete Cloud setup in Connections before retrying.",
     );
     const grant = (await ctx.db.get(route.grantId))!;
-    const { sourceId: _sourceId, ...retry } = request;
     return retrySavedCloudSource(ctx, owner, grant, retry);
   },
 });

@@ -62,4 +62,10 @@ crons.interval(
   internal.assistantEvents.recover,
   {},
 );
+crons.interval(
+  "Check reviewed creator feeds",
+  { minutes: 15 },
+  internal.creatorDiscovery.schedule,
+  {},
+);
 export default crons;

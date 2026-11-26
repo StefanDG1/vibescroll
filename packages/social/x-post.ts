@@ -13,8 +13,18 @@ const assetBase = {
     .max(50 * 1024 * 1024),
   width: z.number().int().positive().max(4096),
   height: z.number().int().positive().max(4096),
+  fingerprints: z
+    .array(
+      z.strictObject({
+        difference: z.string().regex(/^[a-f0-9]{16}$/),
+        mean: z.number().int().min(0).max(255),
+      }),
+    )
+    .min(1)
+    .max(3)
+    .optional(),
 };
-export const xPostAsset = z.discriminatedUnion("kind", [
+export const preparedPostAsset = z.discriminatedUnion("kind", [
   z.strictObject({
     ...assetBase,
     kind: z.literal("image"),
@@ -33,15 +43,24 @@ export const xPostEvidence = z
   .strictObject({
     version: z.literal("x-post-evidence-v1"),
     postId: z.string().regex(/^[0-9]{2,20}$/),
+    authorId: z
+      .string()
+      .regex(/^[0-9]{1,30}$/)
+      .optional(),
+    authorHandle: z
+      .string()
+      .regex(/^[A-Za-z0-9_]{1,15}$/)
+      .optional(),
     provider: z.enum(["gallery-dl", "fxtwitter"]),
     text: z.string().max(60000),
     textHash: hash,
     expectedAssetCount: z.number().int().min(0).max(35),
     coverage: z.literal("complete_manifest"),
-    assets: z.array(xPostAsset).max(35),
+    assets: z.array(preparedPostAsset).max(35),
   })
   .superRefine((post, ctx) => {
     if (
+      !!post.authorId !== !!post.authorHandle ||
       (!post.text.trim() && !post.assets.length) ||
       post.assets.length !== post.expectedAssetCount ||
       post.assets.some((a, i) => a.index !== i || a.id !== `asset-${i + 1}`) ||

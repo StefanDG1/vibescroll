@@ -247,7 +247,15 @@ export const finishDelete = internalMutation({
       .take(50);
     for (const preference of projectPreferences)
       await ctx.db.delete(preference._id);
+    const creatorFollows = await ctx.db
+      .query("creatorFollows")
+      .withIndex("by_actor_workspace_creator", (q) =>
+        q.eq("actorId", job.userId),
+      )
+      .take(50);
+    for (const follow of creatorFollows) await ctx.db.delete(follow._id);
     if (
+      creatorFollows.length === 50 ||
       subscriptions.length > 0 ||
       grants.length === 100 ||
       reactions.length === 50 ||

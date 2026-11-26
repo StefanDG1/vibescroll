@@ -7,6 +7,8 @@ import {
   neutralCloudAnalysis,
   neutralCloudEvidence,
   cloudCatalogFamilyKey,
+  cloudCatalogPolicyIdentity,
+  cloudCatalogDefaultPolicy,
 } from "../packages/contracts/cloud-catalog";
 import { reusableEvidenceIdentity } from "../packages/contracts/analysis-versions";
 import { socialHash } from "../packages/social/contracts";
@@ -51,6 +53,43 @@ const permission = (now: number) => ({
   reviewedAt: now - 1000,
   expiresAt: now + 100000,
   maximumRetentionMs: 604800000,
+});
+
+it("adds X permission without changing admitted Instagram/TikTok policy identities", () => {
+  const now = Date.now(),
+    policy = cloudCatalogDefaultPolicy.parse({
+      version: "automatic-neutral-catalog-v1",
+      id: "synthetic-shared-policy",
+      disclosureVersion: "synthetic-catalog-notice",
+      rightsBasis: "user_attested",
+      platforms: ["instagram", "tiktok"],
+      providerPermissionReference: "synthetic public source route",
+      contentPermissionReference: "synthetic user attestation",
+      privacyReviewReference: "synthetic neutral data",
+      reviewedAt: now - 1000,
+      expiresAt: now + 86400000,
+      maximumRetentionMs: 86400000,
+    });
+  const expanded = cloudCatalogDefaultPolicy.parse({
+    ...policy,
+    platforms: [...policy.platforms, "x"],
+  });
+  expect(cloudCatalogPolicyIdentity(expanded, "instagram")).toEqual(policy);
+  expect(cloudCatalogPolicyIdentity(expanded, "tiktok")).toEqual(policy);
+  expect(cloudCatalogPolicyIdentity(expanded, "x").platforms).toEqual(["x"]);
+  expect(
+    currentCloudCatalogPermission(
+      {
+        ...permission(now),
+        version: "cloud-catalog-permission-v2",
+        canonical: "https://x.com/i/web/status/2125691968407871598",
+        platform: "x",
+        rightsBasis: "user_attested",
+      },
+      "https://x.com/creator/status/2125691968407871598",
+      now,
+    ).platform,
+  ).toBe("x");
 });
 
 it("projects only neutral evidence and output, without producer source, task, attempt or lease identities", async () => {

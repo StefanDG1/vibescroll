@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { socialPostUrl } from "./identity.mjs";
+import { isInstagramSharePath, socialPostUrl } from "./identity.mjs";
 import { canonicalJson } from "../contracts/canonical-json.mjs";
 import { acquisitionPolicy } from "../media/acquisition-runtime.ts";
 
@@ -199,11 +199,11 @@ export function privateCloudMediaIdentity(url: string) {
     identityUrl.search = "";
     return acquisitionPolicy(identityUrl.href);
   }
-  // The existing single-video acquisition policy accepts /reels/ as a reel
-  // alias. Normalize only this private handoff's identity, without changing
-  // creator/social manifest validation or granting another acquisition route.
-  if (input.platform === "instagram")
-    identityUrl.pathname = identityUrl.pathname.replace(/^\/reels\//, "/reel/");
+  if (isInstagramSharePath(identityUrl.pathname)) {
+    identityUrl.hostname = "www.instagram.com";
+    identityUrl.search = "";
+    return acquisitionPolicy(identityUrl.href);
+  }
   return acquisitionPolicy(socialPostUrl(identityUrl.href).canonical);
 }
 export function privateCloudMediaCanonicalMatches(

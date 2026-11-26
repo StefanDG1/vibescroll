@@ -840,9 +840,9 @@ export async function retrySavedCloudSource(
     "This post reached its retry limit.",
   );
   ensure(
-    await savedCloudMonitorCurrent(ctx, grant),
+    await savedCloudMonitorCurrent(ctx, grant, "work_cloud_waiting"),
     "SETUP_REQUIRED",
-    "Resume your Cloud monitor in Connections before retrying.",
+    "Enable the waiting-analysis trigger in your Cloud connection before retrying.",
   );
   const identity = privateCloudMediaIdentity(source.url ?? source.canonical);
   ensure(

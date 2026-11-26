@@ -23,7 +23,11 @@ import {
   verifyRetainedAssets,
   freezeAnalysisBaseline,
 } from "./lib/analysisHistory";
-import { requireAutomaticCatalogIntent } from "./lib/catalogPolicy";
+import {
+  requireAutomaticCatalogIntent,
+  currentAutomaticCatalogPolicy,
+  recordAutomaticCatalogIntent,
+} from "./lib/catalogPolicy";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { workCloudMediaAllowed } from "./lib/personalAccess";
 import { sourceRetained } from "./lib/sourceAuthority";
@@ -44,6 +48,7 @@ import {
   cloudCatalogAuthority,
   projectNeutralCloudVersion,
   cloudCatalogAssessment,
+  cloudCatalogPolicyIdentity,
 } from "../packages/contracts/cloud-catalog";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { socialHash } from "../packages/social/contracts";
@@ -62,6 +67,7 @@ const copying = {
 const maximumCopyMs = 180000;
 
 function publicPostMetadata(s: Awaited<ReturnType<typeof snapshot>>) {
+  if (!s.evidence.frames.length) return undefined;
   const privateValues = [
     s.source._id,
     s.source.organizationId,
@@ -123,17 +129,13 @@ async function snapshot(
     ? await automaticOwner(ctx, args.sourceId, actorId)
     : await historySource(ctx, args.sourceId, true);
   const retained = await retainedVersion(ctx, owner.source, args.versionId);
-  if (actorId)
-    ensure(
-      retained.version.createdAt >= owner.source.catalogPolicy!.requestedAt,
-      "POLICY_BLOCKED",
-      "Existing private versions are not retroactive catalog consent.",
-    );
   const servicePrepared = isServicePreparedEvidence(retained.evidence.prepared);
+  const serviceEvidence = servicePrepared
+    ? await validatePreparedEvidence(retained.evidence.prepared)
+    : null;
   let preparedRun;
   let processingReviewHash;
   if (servicePrepared) {
-    await validatePreparedEvidence(retained.evidence.prepared);
     await requireProCatalogAccess(ctx, owner.source.organizationId);
     const config = preparedServiceConfiguration(owner.actor.subject);
     const runId =
@@ -230,11 +232,9 @@ async function snapshot(
     };
   }
   const neutral = await projectNeutralCloudVersion(
-    servicePrepared
-      ? (await validatePreparedEvidence(retained.evidence.prepared)).evidence
-      : retained.evidence.prepared,
+    serviceEvidence?.evidence ?? retained.evidence.prepared,
     projectionOutput,
-    "en",
+    serviceEvidence?.evidence.language ?? "en",
     {
       sourceId: owner.source._id,
       attemptId:
@@ -504,9 +504,9 @@ async function prepareContribution(
   const prefix =
     reused?.artifact.storagePrefix ??
     `catalog/${s.organization._id}/${crypto.randomUUID()}/`;
-  const frames = s.evidence.frames.map(({ assetId: _asset, ...f }) => ({
+  const frames = s.evidence.frames.map(({ assetId: _asset, ...f }, index) => ({
     ...f,
-    key: `${prefix}${f.sha256}.jpg`,
+    key: `${prefix}${index + 1}-${f.sha256}.jpg`,
   }));
   if (!reused) {
     const config = catalogConfiguration()!;
@@ -647,7 +647,7 @@ async function prepareContribution(
     compatibilityKey,
     variantKey,
     contentHash: s.outputHash,
-    language: "en",
+    language: s.neutralEvidence.language,
     pipelineVersion: "work-cloud-retained-analysis-v1",
     schemaVersion: "neutral-cloud-analysis-v1",
     coverage: "sampled_transcript_frames",
@@ -730,12 +730,38 @@ export const prepare = internalMutation({
   args: { ...selected, key: v.string(), consent: v.any() },
   returns: v.any(),
   handler: async (ctx, args) => {
+    const owner = await historySource(ctx, args.sourceId, true);
+    const policy = await currentAutomaticCatalogPolicy(
+      ctx,
+      owner.source,
+      owner.actor,
+    );
     const prepared = await prepareContribution(ctx, args);
     ensure(
       "contributionId" in prepared,
       "SOURCE_BUSY",
       "The shared copy is still pending.",
     );
+    // This request contains explicit consent bound to the retained version,
+    // hashes and retention. It can publish an existing result without inference.
+    if (policy) {
+      const row = (await ctx.db.get(prepared.contributionId))!;
+      ensure(
+        !row.automaticPolicyHash ||
+          row.automaticPolicyHash === policy.policyHash,
+        "APPROVAL_STALE",
+        "The contribution policy changed.",
+      );
+      await recordAutomaticCatalogIntent(ctx, owner.source, owner.actor);
+      await ctx.db.patch(row._id, { automaticPolicyHash: policy.policyHash });
+      await ctx.db.patch(owner.source._id, {
+        catalogStatus: {
+          state: row.state === "unknown" ? "unknown" : "pending",
+          versionId: args.versionId,
+          updatedAt: Date.now(),
+        },
+      });
+    }
     return prepared;
   },
 });
@@ -772,6 +798,12 @@ export const prepareAutomatic = internalMutation({
       );
       versionId = (await freezeAnalysisBaseline(ctx, source, true))._id;
     }
+    const retained = await retainedVersion(ctx, source, versionId);
+    ensure(
+      retained.version.createdAt >= source.catalogPolicy.requestedAt,
+      "POLICY_BLOCKED",
+      "Existing private versions require an explicit retained-version contribution.",
+    );
     const prepared = await prepareContribution(
       ctx,
       { sourceId: source._id, versionId, key: `auto_${versionId}` },
@@ -795,7 +827,12 @@ export const finishAutomatic = internalMutation({
     const policy = catalogConfiguration()?.defaultPolicy;
     if (
       !policy ||
-      row.automaticPolicyHash !== (await socialHash(canonicalJson(policy)))
+      row.automaticPolicyHash !==
+        (await socialHash(
+          canonicalJson(
+            cloudCatalogPolicyIdentity(policy, current.prepared.platform),
+          ),
+        ))
     )
       return null;
     const incumbent =
@@ -828,6 +865,9 @@ export const finishAutomatic = internalMutation({
         familyId: current.family._id,
       });
     const source = await ctx.db.get(row.sourceId);
+    await ctx.scheduler.runAfter(0, internal.creatorCatalog.indexFamily, {
+      familyId: current.family._id,
+    });
     const actor = await ctx.db.get(row.actor);
     if (
       source &&
@@ -1506,6 +1546,9 @@ export const selectRecommendation = mutation({
       "catalog.recommendation_selected",
       `${a.family._id}:${a.artifact._id}:${selectionRevision}`,
     );
+    await ctx.scheduler.runAfter(0, internal.creatorCatalog.indexFamily, {
+      familyId: a.family._id,
+    });
     return { selectionRevision };
   },
 });

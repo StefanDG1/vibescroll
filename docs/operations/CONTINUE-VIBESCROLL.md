@@ -5,7 +5,7 @@ Mode: how-to. Start with the [current state summary](CURRENT-STATE.md#start-here
 ## Establish the actual starting point
 
 1. Read `AGENTS.md` and confirm the intended outcome, scope, and any deadline or required approval from the current request. Use older plans for context and the latest applicable owner decision for scope.
-2. Run `git status --short`, identify the checkout and branch and inspect uncommitted changes. Preserve other work. Verify the active compatible checkout at `C:/Code/VibeScroller/.worktrees/production-search-20261111`.
+2. Run `git status --short`, identify the checkout and branch and inspect uncommitted changes. Use the compatible checkout listed in the current state summary and preserve work in other checkouts.
 3. Inspect the canonical health/version and actual current MCP profile/status only when needed for the task. Use supported connectors or browser-harness. Do not start an analysis as a connection test.
 4. Compare the live backend baseline, target commit and current private release/usage ledger before a hosted spending batch. Retain all historical holds and protected source identities. Never print credentials or raw environment lists.
 5. State the next user-visible checkpoint and its acceptance assertions. Continue useful work without asking again for routine release/build counts. Ask only when a required user step or actual authority is missing.

@@ -1,3 +1,5 @@
+import { apiModelSelection } from "../packages/contracts/api-models";
+import { ensure } from "../packages/policy";
 import { query } from "./_generated/server";
 import { mutation } from "./lib/projectedMutations";
 import { v } from "convex/values";
@@ -8,10 +10,18 @@ import { hostedMediaAllowed } from "./lib/hostedMediaAccess";
 import { googleConfigured } from "../packages/providers/google-inference";
 import { savedCloudRoute } from "./lib/workCloudSave";
 import { preparedServiceAvailable } from "./lib/preparedServicePolicy";
+const managedDefaults = v.object({
+  enabled: v.boolean(),
+  model: v.string(),
+  effort: v.optional(v.string()),
+  maximumCredits: v.number(),
+});
+
 export const read = query({
   args: { organizationId: v.id("organizations") },
   returns: v.object({
     preferChatGPTPlan: v.boolean(),
+    managedPostDefaults: v.optional(managedDefaults),
     hostedStatus: v.literal("awaiting_commercial_access"),
     active: v.literal(false),
     personalAlphaEnabled: v.boolean(),
@@ -51,6 +61,15 @@ export const read = query({
       processingRoute:
         setup?.actor === actor._id ? (setup.processingRoute ?? null) : null,
       preferChatGPTPlan: actor.preferChatGPTPlan ?? false,
+      ...(process.env.VIBESCROLL_MANAGED_AUTO_ENABLED === "true"
+        ? {
+            managedPostDefaults: actor.managedPostDefaults ?? {
+              enabled: false,
+              model: "auto",
+              maximumCredits: 11,
+            },
+          }
+        : {}),
       preparedAnalysisEnabled: await preparedServiceAvailable(
         ctx,
         actor,
@@ -85,5 +104,52 @@ export const save = mutation({
     });
     // This is a personal preference, not provider consent or execution approval.
     return { preferChatGPTPlan: args.preferChatGPTPlan, active: false };
+  },
+});
+
+export const saveManagedPostDefaults = mutation({
+  args: { organizationId: v.id("organizations"), defaults: managedDefaults },
+  returns: managedDefaults,
+  handler: async (ctx, { organizationId, defaults }) => {
+    const { actor, organization } = await access(ctx, organizationId, [
+      "owner",
+    ]);
+    ensure(
+      organization.privateOwnerId === actor._id,
+      "PERSONAL_FUNDING_REQUIRED",
+      "Set automatic managed analysis in your own workspace.",
+    );
+    ensure(
+      process.env.VIBESCROLL_MANAGED_AUTO_ENABLED === "true",
+      "SETUP_REQUIRED",
+      "Managed analysis defaults are currently unavailable.",
+    );
+    ensure(
+      Number.isSafeInteger(defaults.maximumCredits) &&
+        defaults.maximumCredits >= 1 &&
+        defaults.maximumCredits <= 501,
+      "INVALID_INPUT",
+      "Set a valid credit limit.",
+    );
+    ensure(
+      defaults.model === "auto" ||
+        [
+          "gpt-6.2-sol",
+          "gpt-6-luna",
+          "meta/muse-ember",
+          "anthropic/claude-haiku-5.5",
+        ].includes(defaults.model),
+      "MODEL_UNAVAILABLE",
+      "Choose an available managed model.",
+    );
+    ensure(
+      defaults.model !== "auto" || !defaults.effort,
+      "INVALID_INPUT",
+      "Auto uses the reviewed effort for the selected provider.",
+    );
+    if (defaults.model !== "auto")
+      apiModelSelection(defaults.model, defaults.effort);
+    await ctx.db.patch(actor._id, { managedPostDefaults: defaults });
+    return defaults;
   },
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { apiModelSelection } from "../contracts/api-models";
 import { createHash } from "node:crypto";
 import {
   analysisVersionOutput,
@@ -77,6 +78,8 @@ export async function analyzePreparedEvidence(args: {
   apiKey: string;
   maximumUsd: number;
   contributorAllowed: boolean;
+  model?: string;
+  effort?: string;
   fetch?: typeof fetch;
   onDispatch?: () => void | Promise<void>;
   onReceipt?: (receipt: Record<string, unknown>) => Promise<void>;
@@ -86,13 +89,23 @@ export async function analyzePreparedEvidence(args: {
 }) {
   const prepared = await validatePreparedEvidence(args.prepared),
     e = prepared.evidence;
+  const selected = apiModelSelection(
+    args.model ?? preparedInsightModel,
+    args.effort,
+  );
+  const contributor = selected.id === preparedInsightModel;
+  const provider =
+    selected.id === "anthropic/claude-haiku-5.5" ? "anthropic" : "meta";
   ensure(
-    args.contributorAllowed &&
+    selected.provider === "vercel_gateway" &&
+      (contributor
+        ? args.contributorAllowed
+        : process.env.VIBESCROLL_MANAGED_AUTO_ENABLED === "true") &&
       args.apiKey.length > 10 &&
       args.maximumUsd >= 0.02 &&
       args.maximumUsd <= 0.1,
     "DATA_POLICY_REQUIRED",
-    "Use an explicitly funded Contributor-compatible evidence request.",
+    "Use a reviewed and funded Gateway evidence request.",
   );
   ensure(
     args.frames.length === e.frames.length &&
@@ -121,14 +134,12 @@ export async function analyzePreparedEvidence(args: {
     "Gateway model pricing is unavailable.",
   );
   const models = await catalog.json(),
-    model = models.data?.find(
-      (m: { id: string }) => m.id === preparedInsightModel,
-    );
+    model = models.data?.find((m: { id: string }) => m.id === selected.id);
   ensure(
     model?.modalities?.input?.includes("image") &&
       model.tags?.includes("structured-output") &&
-      Number(model.pricing?.input) <= 0.0000001 &&
-      Number(model.pricing?.output) <= 0.0000002,
+      Number(model.pricing?.input) <= selected.inputNanoUsd / 1e9 &&
+      Number(model.pricing?.output) <= selected.outputNanoUsd / 1e9,
     "QUOTE_CHANGED",
     "The selected vision model price or capability changed.",
   );
@@ -177,10 +188,17 @@ export async function analyzePreparedEvidence(args: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: preparedInsightModel,
-        reasoning: { effort: "medium" },
-        providerOptions: { gateway: { only: ["meta"] } },
-        max_tokens: 6000,
+        model: selected.id,
+        ...(contributor
+          ? { reasoning: { effort: selected.effort } }
+          : { reasoning_effort: selected.effort }),
+        providerOptions: {
+          gateway: {
+            only: [provider],
+            ...(contributor ? {} : { disallowPromptTraining: true }),
+          },
+        },
+        max_tokens: selected.maximumOutputTokens,
         messages: [
           { role: "system", content: preparedAnalysisInstructions },
           { role: "user", content },
@@ -208,7 +226,7 @@ export async function analyzePreparedEvidence(args: {
     const generation =
       body?.id ?? response.headers.get("x-vercel-ai-gateway-generation-id");
     await args.onRejection?.({
-      model: preparedInsightModel,
+      model: selected.id,
       httpStatus: response.status,
       receivedAt: Date.now(),
       generationId:
@@ -240,7 +258,7 @@ export async function analyzePreparedEvidence(args: {
   );
   const result = JSON.parse(new TextDecoder().decode(bytes));
   ensure(
-    result.model === preparedInsightModel &&
+    result.model === selected.id &&
       result.choices?.[0]?.finish_reason === "stop" &&
       typeof result.choices[0].message?.content === "string",
     "PROVIDER_ERROR",
@@ -256,18 +274,56 @@ export async function analyzePreparedEvidence(args: {
     "COST_RECONCILIATION_REQUIRED",
     "Gateway usage is missing; preserve the reservation.",
   );
-  const rateEstimateUsd = inputTokens * 0.0000001 + outputTokens * 0.0000002;
+  let providerSettledUsd: number | null = null;
+  if (!contributor) {
+    const id = result.id;
+    ensure(
+      typeof id === "string" && /^gen_[A-Za-z0-9]{20,80}$/.test(id),
+      "COST_RECONCILIATION_REQUIRED",
+      "The Gateway returned no traceable generation.",
+    );
+    try {
+      const usage = await transport(
+        `https://ai-gateway.vercel.sh/v1/generation?id=${encodeURIComponent(id)}`,
+        {
+          headers: { Authorization: `Bearer ${args.apiKey}` },
+          signal: AbortSignal.timeout(3000),
+        },
+      );
+      if (usage.ok) {
+        const body = JSON.parse(
+          new TextDecoder().decode(await readResponseBytes(usage, 20000)),
+        );
+        const cost = body.data?.gateway_cost;
+        if (
+          body.data?.provider_name === provider &&
+          body.data?.is_byok === false &&
+          typeof cost === "number" &&
+          Number.isFinite(cost) &&
+          cost >= 0
+        )
+          providerSettledUsd = cost;
+      }
+    } catch {
+      // The bound still protects the unsettled attempt.
+    }
+  }
+  const rateEstimateUsd =
+    providerSettledUsd ??
+    (inputTokens * selected.cacheWriteNanoUsd +
+      outputTokens * selected.outputNanoUsd) /
+      1e9;
   const receipt = {
     model: result.model,
-    provider: "meta",
-    effort: "medium",
+    provider,
+    effort: selected.effort,
     startedAt,
     completedAt: Date.now(),
     requestId: result.id ?? null,
     inputTokens,
     outputTokens,
     rateEstimateUsd,
-    providerSettledUsd: null,
+    providerSettledUsd,
   };
   await args.onReceipt?.(receipt);
   const contentText = result.choices[0].message.content;

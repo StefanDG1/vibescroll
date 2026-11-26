@@ -1,3 +1,6 @@
+import { selectedOrderedPostIsComplete } from "./lib/preparedEvidenceAccess";
+import { locateAuthorizedInstagramMedia } from "./lib/instagramMediaLocator";
+import { usesOrderedPostPreparation } from "../packages/social/prepared-post";
 import {
   processingAccountSummary,
   optionalProcessingAccountSummary,
@@ -65,7 +68,7 @@ import {
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import {
   queueAutomaticPreparedSource,
-  requestPreparedFromAssistant,
+  requestPreparedAnalysis,
 } from "./preparedService";
 import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import {
@@ -126,7 +129,23 @@ async function automaticCloudReceipt(
     per_post_app_review_required: false,
     receipt: null,
   };
-  if (source.state === "ready")
+  const sourceUrl = source.url ?? source.canonical;
+  const instagramGraph = await locateAuthorizedInstagramMedia(ctx, sourceUrl);
+  const orderedSocial =
+    !!instagramGraph ||
+    (usesOrderedPostPreparation(sourceUrl) &&
+      !/^(https:\/\/(?:www\.)?x\.com|https:\/\/(?:www\.)?twitter\.com)\//.test(
+        sourceUrl,
+      ));
+  if (
+    source.state === "ready" &&
+    (!orderedSocial ||
+      (await selectedOrderedPostIsComplete(
+        ctx,
+        source,
+        instagramGraph ? "instagram_graph" : undefined,
+      )))
+  )
     return {
       ...common,
       status: "ready",
@@ -156,7 +175,7 @@ async function automaticCloudReceipt(
   let supported = false;
   try {
     supported = ["instagram", "tiktok", "x"].includes(
-      privateCloudMediaIdentity(source.url ?? source.canonical).platform,
+      privateCloudMediaIdentity(sourceUrl).platform,
     );
   } catch {
     /* A different source retains its separate supported route. */
@@ -221,12 +240,15 @@ async function automaticCloudReceipt(
             : "Saved. Server preparation is queued, then your existing ChatGPT Assistant will analyze the retained transcript and screenshots. No paid API reasoning fallback.",
       };
   }
-  if (privateCloudMediaIdentity(source.canonical).platform === "x")
+  if (
+    orderedSocial ||
+    privateCloudMediaIdentity(source.canonical).platform === "x"
+  )
     return {
       ...common,
       status: "cloud_setup_required",
       analysis_requested: false,
-      note: "Saved. X posts require the configured server-preparation route before assistant analysis.",
+      note: "Saved. This format needs server preparation before your ChatGPT task can analyze it.",
     };
   const queued = await queueSavedCloudIntent(
     ctx,
@@ -324,11 +346,17 @@ export const saveLink = internalMutation({
         "Project context OAuth permission is missing.",
       );
     const key = `mcp:${await digest(`${a.client.id}:${args.key}:${url}`)}`;
+    const managedDefault =
+      process.env.VIBESCROLL_MANAGED_AUTO_ENABLED === "true" &&
+      a.actor.managedPostDefaults?.enabled &&
+      a.scopes.includes("analysis:request") &&
+      a.scopes.includes("analysis:execute");
     let serverPrepared = false;
     if (
       args.analyze !== false &&
-      preparedServiceConfiguration(a.actor.subject)
-        ?.automaticOwnSubscriptionPreparation
+      (managedDefault ||
+        preparedServiceConfiguration(a.actor.subject)
+          ?.automaticOwnSubscriptionPreparation)
     ) {
       try {
         serverPrepared = ["instagram", "tiktok", "x"].includes(
@@ -434,6 +462,64 @@ export const saveLink = internalMutation({
     const sourceReview = intakeNeedsSourceReview(source);
     if (
       args.analyze !== false &&
+      managedDefault &&
+      serverPrepared &&
+      !sourceReview &&
+      !["failed", "cancelled", "local", "credits"].includes(
+        intake.queueState ?? "",
+      )
+    ) {
+      const common = {
+        source_id: source._id,
+        profile_id: a.organization._id,
+        saved: true,
+        url: `https://scroll.companynerve.com/app/${a.organization._id}/posts/${source._id}`,
+        analysis_started: false,
+        analysis_route: "prepared_credits",
+      };
+      try {
+        const job: { state: string; runId: Id<"mediaPreparations"> | null } =
+          await ctx.runMutation(
+            internal.preparedService.preferredManagedStart,
+            { sourceId: source._id },
+          );
+        return {
+          ...common,
+          status: job.state,
+          run_id: job.runId,
+          analysis_requested: !!job.runId,
+          note: "Saved using your managed post analysis preferences.",
+        };
+      } catch (error) {
+        const reason =
+          error instanceof Error
+            ? error.message.match(/\b([A-Z][A-Z_]{1,63}):/)?.[1]
+            : null;
+        if (
+          !reason ||
+          ![
+            "SETUP_REQUIRED",
+            "MODEL_UNAVAILABLE",
+            "BUDGET_EXCEEDED",
+            "INSUFFICIENT_CREDITS",
+            "QUOTA_EXCEEDED",
+            "OPERATOR_BUDGET_REACHED",
+            "SOURCE_BUSY",
+            "QUOTE_CHANGED",
+          ].includes(reason)
+        )
+          throw error;
+        return {
+          ...common,
+          status: "processing_blocked",
+          blocked_reason: reason,
+          analysis_requested: false,
+          note: "The link is saved. Open the post to review why managed analysis could not start.",
+        };
+      }
+    }
+    if (
+      args.analyze !== false &&
       a.grant.cloudRequestPolicy === "explicit_per_source_v1" &&
       !sourceReview &&
       !["failed", "cancelled", "local", "credits"].includes(
@@ -473,7 +559,7 @@ export const saveLink = internalMutation({
       analysis_started: false,
       receipt: await intakeReceipt(ctx, currentIntake, source),
       note: sourceReview
-        ? "Saved link metadata. Open the source in VibeScroll to review permitted retrieval or supply text, then separately review analysis. This save fetched no source content and started no analysis. Direct provider access requires current verified setup."
+        ? "Saved link metadata. Open the source in VibeScroll to review permitted retrieval then separately review analysis. This save fetched no source content and started no analysis. Direct provider access requires current verified setup."
         : args.analyze === false
           ? "Saved only, as requested."
           : ["failed", "cancelled"].includes(currentIntake.queueState ?? "")
@@ -826,8 +912,13 @@ export const requestAnalysis = internalMutation({
           "FORBIDDEN",
           "Only the owner can retry this post.",
         );
-        if (preparedServiceConfiguration(a.actor.subject)) {
-          const prepared = await requestPreparedFromAssistant(ctx, {
+        const preparedPolicy = preparedServiceConfiguration(a.actor.subject);
+        if (
+          preparedPolicy &&
+          (preparedPolicy.automaticOwnSubscriptionPreparation ||
+            !cloudRetryEligible(source))
+        ) {
+          const prepared = await requestPreparedAnalysis(ctx, {
             sourceId: source._id,
             executor: "work_cloud",
             retry: args.retry,
@@ -918,7 +1009,7 @@ export const requestAnalysis = internalMutation({
       args.mode === "credits" &&
       preparedServiceConfiguration(a.actor.subject)
     ) {
-      const prepared = await requestPreparedFromAssistant(ctx, {
+      const prepared = await requestPreparedAnalysis(ctx, {
         sourceId: source._id,
         generation: args.generation,
         maxCredits: args.maxCredits,

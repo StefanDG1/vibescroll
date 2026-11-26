@@ -3,10 +3,174 @@ import { makeFunctionReference } from "convex/server";
 import { api, internal } from "../convex/_generated/api";
 import { cloudCatalogFixture } from "./cloud-catalog-fixture";
 import { widgetOutputs } from "../packages/widget/outputs";
+import { indexedCatalogCreator } from "../convex/lib/catalogCreator";
 
 const readCatalogFrame = makeFunctionReference<"action">(
   "widgetCatalogFrames:read",
 );
+
+it("repairs a legacy shared author's metadata without changing analysis, overlays or credit holds", async () => {
+  vi.useFakeTimers();
+  const f = await published();
+  await f.t.mutation(internal.catalogAccess.grantOperatorAccess, {
+    subject: "user_01234567890123456789012345",
+    enabled: true,
+    reason: "Legacy creator metadata test",
+  });
+  const before = await f.t.run(async (ctx) => {
+    const source = (await ctx.db.get(f.sourceId))!;
+    const layer = await ctx.db.insert("publicImports", {
+      origin: "cloud",
+      organizationId: f.org,
+      actor: (await ctx.db
+        .query("users")
+        .withIndex("by_subject", (q) =>
+          q.eq("subject", "user_01234567890123456789012345"),
+        )
+        .unique())!._id,
+      sourceId: source._id,
+      sourceGeneration: source.generation,
+      artifactId: f.artifact._id,
+      familyId: f.familyId,
+      compatibilityKey: (await ctx.db.get(f.familyId))!.key,
+      notesVersionId: f.artifact.versionId,
+      notesHistory: [],
+      inputCanonical: f.prepared.post.canonical,
+      privateNote: "Keep my private overlay",
+      corrections: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    await ctx.db.patch(source._id, { publicImportId: layer });
+    return {
+      source: (await ctx.db.get(source._id))!,
+      layer: (await ctx.db.get(layer))!,
+      wallets: await ctx.db.query("wallets").take(100),
+      reservations: await ctx.db.query("reservations").take(100),
+      versions: await ctx.db.query("analysisVersions").take(100),
+    };
+  });
+  const canonical = f.prepared.post.canonical;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(
+          `<div class="Embed" data-owner-id="12345" data-media-id="1234567" data-media-type="GraphVideo" data-permalink="${canonical}"><a class="Username" href="https://www.instagram.com/creator/">Creator</a><a class="CaptionUsername" href="https://www.instagram.com/creator/">Creator</a><a class="EmbeddedMedia" href="${canonical}"></a></div>`,
+        ),
+    ),
+  );
+  expect(
+    await f.t.action(internal.creatorCatalog.repairFamily, {
+      familyId: f.familyId,
+    }),
+  ).toEqual({ state: "indexed" });
+  vi.advanceTimersByTime(0);
+  await f.t.finishInProgressScheduledFunctions();
+  const after = await f.t.run(async (ctx) => ({
+    source: (await ctx.db.get(f.sourceId))!,
+    layer: await ctx.db.get(before.layer._id),
+    wallets: await ctx.db.query("wallets").take(100),
+    reservations: await ctx.db.query("reservations").take(100),
+    versions: await ctx.db.query("analysisVersions").take(100),
+  }));
+  expect(after.source.creator).toEqual({
+    key: "instagram:12345",
+    handle: "creator",
+    generation: before.source.generation,
+  });
+  expect({
+    ...after.source,
+    creator: before.source.creator,
+    platformPostKey: before.source.platformPostKey,
+  }).toEqual(before.source);
+  expect(after.layer).toEqual(before.layer);
+  expect(after.wallets).toEqual(before.wallets);
+  expect(after.reservations).toEqual(before.reservations);
+  expect(after.versions).toEqual(before.versions);
+  const detail = await f.owner.mutation(api.catalogBrowse.detail, {
+    organizationId: f.org,
+    familyId: f.familyId,
+  });
+  expect(detail.creator).toEqual({ key: "instagram:12345", handle: "creator" });
+  expect(
+    await f.owner.mutation(api.creators.setFollow, {
+      organizationId: f.org,
+      creatorKey: "instagram:12345",
+      familyId: f.familyId,
+      following: true,
+    }),
+  ).toBe(true);
+  // Replays use the retained proof and do not request the page again.
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => {
+      throw Error("Unexpected metadata repeat");
+    }),
+  );
+  expect(
+    await f.t.action(internal.creatorCatalog.repairFamily, {
+      familyId: f.familyId,
+    }),
+  ).toEqual({ state: "skipped" });
+  await f.t.run(async (ctx) => {
+    expect(
+      await indexedCatalogCreator(ctx, f.familyId, f.artifact._id, canonical),
+    ).toBeTruthy();
+    await ctx.db.patch(f.artifact._id, { state: "blocked" });
+  });
+  await expect(
+    f.owner.mutation(api.catalogBrowse.detail, {
+      organizationId: f.org,
+      familyId: f.familyId,
+    }),
+  ).rejects.toThrow(/unavailable/);
+});
+
+it("does not attach a creator when metadata fails or the selected post changes during a repair", async () => {
+  const f = await published();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response("Unavailable", { status: 404 })),
+  );
+  expect(
+    await f.t.action(internal.creatorCatalog.repairFamily, {
+      familyId: f.familyId,
+    }),
+  ).toEqual({ state: "unavailable" });
+  expect(
+    await f.t.run((ctx) => ctx.db.query("creatorCatalogPosts").take(10)),
+  ).toEqual([]);
+  await expect(
+    f.t.mutation(internal.creatorCatalog.indexFamily, {
+      familyId: f.familyId,
+      identityProof: {
+        version: "public-post-author-v1",
+        creatorKey: "instagram:12345",
+        handle: "creator",
+        postKey: "instagram:Another12345",
+        method: "instagram_embed",
+        observedAt: Date.now(),
+      },
+    }),
+  ).rejects.toThrow("POST_AUTHOR_IDENTITY_CHANGED");
+  await expect(
+    f.t.mutation(internal.creatorCatalog.indexFamily, {
+      familyId: f.familyId,
+      identityProof: {
+        version: "public-post-author-v1",
+        creatorKey: "instagram:12345",
+        handle: "creator",
+        postKey: "instagram:Abcdef12345",
+        method: "instagram_embed",
+        observedAt: Date.now() - 60000,
+      },
+    }),
+  ).rejects.toThrow("POST_AUTHOR_IDENTITY_CHANGED");
+  expect(
+    await f.t.run((ctx) => ctx.db.query("creatorCatalogPosts").take(10)),
+  ).toEqual([]);
+});
 
 vi.mock("../packages/providers/storage", () => ({
   signedObject: (key: string) =>

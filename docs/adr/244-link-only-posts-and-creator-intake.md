@@ -1,0 +1,51 @@
+# Save social posts from their original links
+
+25 November 2026.
+
+Use the same link Save operation for the website, MCP, imports, and creator discovery. New saves get media, text, and creator identity from the original post. Existing uploads remain readable under their original access and retention rules. Rollout of server-side upload retirement uses `LINK_ONLY_CAPTURE_ENABLED`.
+
+The evidence for an image post or carousel includes the source and author IDs, original caption, full ordered attachment manifest, and decoded evidence for every attachment. Still images cite the attachment without a timestamp. Video attachments retain timed evidence and available speech evidence. Keep a saved link with a specific source status when access or completeness checks fail. An embed, preview image, or unresolved redirect cannot establish complete evidence.
+
+Guard public ordered acquisition with `VIBESCROLL_ORDERED_SOCIAL_ENABLED`. Verify the post ID after TikTok short-link resolution and before accepting a typed manifest. Retain the existing video and X paths during rollout. The Instagram Graph path uses a reviewed professional-account connection and verifies ownership. A public Instagram carousel returned no authoritative manifest in the November 25 probe. Broad public Instagram coverage remains unverified. Creator discovery uses reviewed creator connections and has separate format and permission requirements from direct Save.
+
+Key approved Instagram Graph preparation to a unique indexed creator and media ID. Keep it independent of the public acquisition toggle. Recheck the binding and grant at dispatch. A revoked or changed grant produces a settled source failure. A legacy video or public-page cache cannot stand in for the complete Graph evidence.
+
+Use Meta Business Discovery as a second scoped Graph method for approved public professional targets. Bind the method as well as the exact post and media ID. The requester authorizes the integration once. Each target's Graph ID and handle must match the provider response before its indexed media can enter preparation. The [operator procedure](../operations/SOCIAL-PHOTO-ACCESS.md#public-professional-accounts-through-business-discovery) records the query bounds and live acceptance dependency.
+
+Expose one linked platform icon per verified original. Base creator pages on verified platform account IDs and existing workspace rights. A reviewed account link can group creator pages across platforms. Add a matching original to the post reader after the creator association and retained evidence both pass. Exact matches compare ordered media and captions. Recent re-encodes need corroborating caption, order, and media fingerprints. The candidate retains each original and its evidence for separate access, attribution, and removal.
+
+New native connections default to GPT-6.2 Sol High. Under `VIBESCROLL_MANAGED_AUTO_ENABLED`, an account can explicitly authorize a background model routing preference and maximum app-credit quote. Managed Auto considers eligible OpenAI promotional capacity before the separately funded Muse route. A preference pinned to OpenAI waits when eligible promotional capacity is unavailable. Provider expense and app credits have separate reservations. Existing reviewed connection choices retain their own policy.
+
+Run discovery under `VIBESCROLL_CREATOR_DISCOVERY_ENABLED` with one checkpointed watch per verified platform account. Opt-in sponsorship additionally requires `VIBESCROLL_CREATOR_POOL_ENABLED`, approved feed coverage, and an operator allowance under `VIBESCROLL_CREATOR_POOL_DAILY_NANO_USD`. Use included monthly credits within the disclosed pilot cap and reserve projected use atomically with operator exposure. Choose from comparably eligible sponsors with a stable random tie-breaker using projected share of cap. Keep ledger history across rejoining. Settle one sponsor on Ready. A retry requires a confirmed first outcome, and unknown dispatch keeps the original hold.
+
+Stage the exact build and exercise Save through ChatGPT, evidence retention, both execution routes, creator delivery, and billing before enabling the corresponding production format or funded feature. Follow [implementation status](../implementation-status.md#november-25-link-to-ready-candidate) for current verification. Existing accepted production evidence and holds keep their prior authority.
+
+Use `VIBESCROLL_TIKTOK_ORDERED_ENABLED` to stage ordered TikTok posts without activating the new Instagram acquisition route. Application admission and the worker use the same setting.
+
+After a native subscription handoff, the exact analysis attempt owns its claim and execution deadlines. A preparation timer cannot expire an active handoff. Reconcile an older unknown preparation as an unclaimed failure only when the exact associated attempt proves it expired without a claim or stored result. A new explicit retry can reuse current retained evidence within the reviewed quote.
+
+For supported single-video downloads, retain the verified post ID, stable author ID, public handle and available caption returned by the pinned downloader. Keep the video and caption provenance distinct from a complete attachment manifest. A single-download result does not meet the ordered-post cache requirement.
+
+## Instagram public embeds
+
+The `VIBESCROLL_INSTAGRAM_PUBLIC_EMBED_ENABLED` gate admits the public captioned embed route for selected Instagram posts in the existing ordered-post worker. It requires the ordered-social gate for public intake. Treat `/share/p/` and `/share/reel/` tokens as unresolved until an allowed first-party redirect supplies the exact shortcode. Reels, account-prefixed permalinks and other direct variants bind the same shortcode before fetching the embed under the existing network policy. Parse the typed carousel from the embed initializer as data, without evaluating the script. Require distinct child IDs and a complete non-paginated list. A video child must supply the original video URL. A cover never counts as that video.
+
+A single-photo embed can expose its original image in markup. Require Instagram's explicit `GraphImage` type, stable author and media IDs, matching permalinks, corroborated profile links, and the captioned source. On a collaboration, corroborate the caption author through Instagram's explicit collaborator markup. Exclude author headers and comments from the caption. Use an unknown publication date when the embed omits it. Record `instagram_embed` provenance and verify the actual decoded attachment before preparation can complete. A missing embed manifest can try the existing public page. An embed that declares a block, incomplete children, or a conflicting identity fails the embed check.
+
+The ordered-social route inspects a TikTok post's manifest for its actual media type. A `/video/` path may lead to Photo Mode. For a verified single TikTok video, use the existing hash-pinned downloader in the same sandbox. Check that its resolved video ID matches the already verified post before adopting the downloaded bytes. After switching off network access, bind the decoded clip to the typed caption, author, and attachment. Send an ordered image manifest through ordinary attachment download. Use the original failure path if identity or coverage cannot be established.
+
+Gallery-dl and Cobalt informed the probe. The worker uses the existing pinned tools and its own parser. The embed gate was initially off during local and hosted verification. The November 26 public rollout below supersedes that setting. The embed route supplies direct post evidence and does not list new creator posts.
+
+## November 26 public photo rollout
+
+The owner explicitly directs the same public acquisition rollout for videos and photos. Enable the three public ordered and embed flags and the managed model options in production. Preserve exact post identity, complete attachment validation, isolated decoding, current account authority, idempotency and funded processing limits. Treat platform terms and the EU review as separate legal context. Owner rollout approval is recorded honestly.
+
+A nine-image Instagram carousel completed on its existing saved entry with six cited insights using Muse Ember Medium. A new two-image TikTok photo link saved through MCP completed through the existing native monitor. The whole-post MCP reader exposed an obsolete eight-frame restriction during acceptance. Match its frame bound to the existing 48-frame evidence contract and verify all retained images after deployment.
+
+## November 26 rollout approval and EU review
+
+The owner approved turning on the photo extractors. The current public switches also route individual videos through ordered preparation. The live deployment had no configured Instagram or TikTok feed authority and the public ordered-post switches were off. The public worker retrieves platform pages and attachments directly.
+
+Instagram's terms require express permission for automated collection. TikTok's EEA terms, section 4.5, require automated extraction tools to be provided or approved in writing by TikTok. An approved creator connection or licensed source must cover the actual media acquisition and the intended retention and analysis. [Instagram Terms](https://help.instagram.com/581066165581870/) · [TikTok EEA Terms](https://www.tiktok.com/legal/page/eea/terms-of-service/en)
+
+EU law applies separately. Where media contains personal data, GDPR Articles 5 and 6 require a lawful basis and limits on use and retention. Article 4 of the EU Copyright Directive can cover certain copies for text and data mining when access is lawful and the relevant rights have not been reserved. It limits retention to the period necessary for mining. Check the actual copy, retention and onward sharing in VibeScroll when evaluating an exception. The public switches stayed off after this review. [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj/eng) · [Copyright Directive](https://eur-lex.europa.eu/eli/dir/2019/790/oj/eng) · [Photo access](../operations/SOCIAL-PHOTO-ACCESS.md)

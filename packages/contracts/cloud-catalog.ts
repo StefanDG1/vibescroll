@@ -13,7 +13,7 @@ import {
   validateOrderedEvidence,
 } from "../social/contracts";
 import { containsSecret } from "../policy/secrets.mjs";
-import { xPostEvidence } from "../social/x-post";
+import { preparedPostEvidence } from "../social/prepared-post";
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const timestamp = z.number().int().positive();
@@ -38,7 +38,7 @@ export const cloudCatalogPermission = z.strictObject({
   ]),
   id: z.string().regex(/^[A-Za-z0-9_-]{8,100}$/),
   canonical,
-  platform: z.enum(["instagram", "tiktok"]),
+  platform: z.enum(["instagram", "tiktok", "x"]),
   providerPermissionReference: z.string().min(1).max(2000),
   contentPermissionReference: z.string().min(1).max(2000),
   privacyReviewReference: z.string().min(1).max(2000),
@@ -87,9 +87,9 @@ export const cloudCatalogDefaultPolicy = z.strictObject({
   disclosureVersion: z.string().regex(/^[A-Za-z0-9_-]{8,100}$/),
   rightsBasis: z.literal("user_attested"),
   platforms: z
-    .array(z.enum(["instagram", "tiktok"]))
+    .array(z.enum(["instagram", "tiktok", "x"]))
     .min(1)
-    .max(2),
+    .max(3),
   providerPermissionReference: z.string().min(1).max(2000),
   contentPermissionReference: z.string().min(1).max(2000),
   privacyReviewReference: z.string().min(1).max(2000),
@@ -138,6 +138,18 @@ export const cloudCatalogConfiguration = z
         message: "Catalog permission identities must be unique.",
       });
   });
+
+/** Adding X must preserve already admitted Instagram/TikTok publication intents. */
+export function cloudCatalogPolicyIdentity(
+  policy: z.infer<typeof cloudCatalogDefaultPolicy>,
+  platform: "instagram" | "tiktok" | "x",
+) {
+  return {
+    ...policy,
+    platforms:
+      platform === "x" ? ["x"] : policy.platforms.filter((p) => p !== "x"),
+  };
+}
 
 export function currentCloudCatalogPermission(
   value: unknown,
@@ -190,7 +202,7 @@ export const neutralCloudEvidence = z
     version: z.enum(["neutral-cloud-evidence-v1", "neutral-post-evidence-v2"]),
     canonical,
     platform: z.enum(["instagram", "tiktok", "x"]),
-    post: xPostEvidence.optional(),
+    post: preparedPostEvidence.optional(),
     evidenceHash: hash,
     sourceRevisionHash: hash,
     observedAt: timestamp,
@@ -215,8 +227,12 @@ export const neutralCloudEvidence = z
   .superRefine((e, ctx) => {
     const post = e.version === "neutral-post-evidence-v2";
     if (
-      post !== (e.platform === "x") ||
       post !== !!e.post ||
+      (e.platform === "x" && e.post?.version !== "x-post-evidence-v1") ||
+      (e.platform !== "x" &&
+        e.post !== undefined &&
+        (e.post.version !== "social-post-evidence-v1" ||
+          e.post.platform !== e.platform)) ||
       (!post &&
         (e.post !== undefined ||
           e.durationMs <= 0 ||
@@ -368,7 +384,8 @@ export async function projectNeutralCloudVersion(
     preparedValue &&
     typeof preparedValue === "object" &&
     "version" in preparedValue &&
-    preparedValue.version === "neutral-cloud-evidence-v1"
+    (preparedValue.version === "neutral-cloud-evidence-v1" ||
+      preparedValue.version === "neutral-post-evidence-v2")
   ) {
     const evidence = neutralCloudEvidence.parse(preparedValue);
     if (evidence.language !== languageValue)

@@ -1,6 +1,9 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { workCloudModelChoices } from "../../../packages/onboarding/work-cloud-models";
+import {
+  defaultWorkCloudAnalysis,
+  workCloudModelChoices,
+} from "../../../packages/onboarding/work-cloud-models";
 import { ChoiceSelect } from "./choice-select";
 import { workCloudMonitorMessage } from "../../../packages/onboarding/work-cloud-monitor";
 type Project = {
@@ -102,8 +105,12 @@ function AssistantAccessEditor({
   const [automatic, setAutomatic] = useState<boolean | null>(null);
   const [cloudRequests, setCloudRequests] = useState(false);
   const [cloudSaves, setCloudSaves] = useState(false);
-  const [cloudModel, setCloudModel] = useState("gpt-6.1-sol");
-  const [cloudEffort, setCloudEffort] = useState("high");
+  const [cloudModel, setCloudModel] = useState<string>(
+    defaultWorkCloudAnalysis.model,
+  );
+  const [cloudEffort, setCloudEffort] = useState<string>(
+    defaultWorkCloudAnalysis.effort,
+  );
   const [cloudRetentionDays, setCloudRetentionDays] = useState("until_deleted");
   const [computerId, setComputerId] = useState("");
   const [ack, setAck] = useState("");
@@ -281,8 +288,12 @@ function AssistantAccessEditor({
     setAutomatic(grant.analysisDefaults?.enabled ?? true);
     setCloudRequests(grant.cloudRequestPolicy === "explicit_per_source_v1");
     setCloudSaves(!!grant.cloudSaveDefaults);
-    setCloudModel(grant.cloudSaveDefaults?.model ?? "gpt-6.1-sol");
-    setCloudEffort(grant.cloudSaveDefaults?.effort ?? "high");
+    setCloudModel(
+      grant.cloudSaveDefaults?.model ?? defaultWorkCloudAnalysis.model,
+    );
+    setCloudEffort(
+      grant.cloudSaveDefaults?.effort ?? defaultWorkCloudAnalysis.effort,
+    );
     setCloudRetentionDays(
       grant.cloudSaveDefaults?.resultRetention === "until_deleted"
         ? "until_deleted"

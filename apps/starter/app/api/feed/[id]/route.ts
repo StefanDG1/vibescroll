@@ -3,7 +3,11 @@ import { backend, api } from "@/lib/backend";
 import { sourceUnavailable, workspaceAccessLost } from "@/lib/workspace-access";
 import { unstable_rethrow } from "next/navigation";
 import { postTopics, suggestProjects } from "@/lib/project-suggestions";
-import { feedInsightEvidence, type FeedDetail } from "@/lib/home-feed";
+import {
+  feedInsightEvidence,
+  orderedFeedMedia,
+  type FeedDetail,
+} from "@/lib/home-feed";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { postDisplayTitle } from "../../../../../../packages/sources/display";
 import { postThumbnailCandidates } from "../../../../../../packages/sources/thumbnail";
@@ -23,7 +27,10 @@ export async function GET(
       "organizationId",
     );
     if (!organizationId)
-      return Response.json({ error: "Post unavailable." }, { status: 404, headers });
+      return Response.json(
+        { error: "Post unavailable." },
+        { status: 404, headers },
+      );
     const client = await backend();
     const id = (await params).id as Id<"sources">;
     const [source, projects, recommendations] = await Promise.all([
@@ -42,13 +49,26 @@ export async function GET(
         .catch(() => null),
     ]);
     if (!source || source.state !== "ready")
-      return Response.json({ error: "Post unavailable." }, { status: 404, headers });
+      return Response.json(
+        { error: "Post unavailable." },
+        { status: 404, headers },
+      );
     const detail: FeedDetail = {
       id: source._id,
       generation: source.generation,
       title: postDisplayTitle(source),
       authorName: source.linkPreview?.authorName ?? null,
+      ...(source.creator && source.creator.generation === source.generation
+        ? { creatorKey: source.creator.key }
+        : {}),
+      ...(source.preparedService?.post
+        ? {
+            caption: source.preparedService.post.text,
+            slides: orderedFeedMedia(source),
+          }
+        : {}),
       url: source.url ?? null,
+      originalLinks: source.originalLinks,
       summary: source.summary ?? "",
       durationMs:
         source.linkPreview?.durationSeconds == null
@@ -116,7 +136,14 @@ export async function GET(
     unstable_rethrow(error);
     return Response.json(
       { error: "Post unavailable." },
-      { status: workspaceAccessLost(error) ? 403 : sourceUnavailable(error) ? 404 : 503, headers },
+      {
+        status: workspaceAccessLost(error)
+          ? 403
+          : sourceUnavailable(error)
+            ? 404
+            : 503,
+        headers,
+      },
     );
   }
 }

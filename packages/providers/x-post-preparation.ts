@@ -1,9 +1,14 @@
+import type { readAuthorizedInstagramPost } from "../social/creator-feed";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { acquisitionPolicy } from "../media/acquisition";
-import { xPostEvidence } from "../social/x-post";
-import { canonicalJson } from "../contracts/canonical-json.mjs";
-import { xPostUrl } from "../media/x-identity.mjs";
+import {
+  preparedPostCanonicalMatches,
+  preparedPostEvidence,
+  preparedPostSourceIdentity,
+} from "../social/prepared-post";
+import { socialPublicPost } from "../media/socialPublicPost";
+import { isInstagramSharePath, socialPostUrl } from "../social/identity.mjs";
 import { xPostWorker } from "../media/xPostWorker";
 import { cloudDependencySetup } from "../media/cloudDependencySetup";
 import tools from "../media/x-gallery.lock.json";
@@ -13,6 +18,13 @@ import { hardenSandbox } from "./isolation";
 import { readResponseBytes } from "./binary";
 import { jpegDimensions } from "../media/jpeg";
 import { ensure, PolicyError } from "../policy";
+import { acquirer } from "../media/acquirer";
+import { preparedAcquirer } from "../media/preparedAcquirer";
+import { preparedExtraction } from "../media/preparedExtraction";
+import {
+  preparedDownloader,
+  readPreparedDownloader,
+} from "./prepared-downloader";
 
 const hash = (bytes: string | Uint8Array) =>
   createHash("sha256").update(bytes).digest("hex");
@@ -23,7 +35,7 @@ const frame = z.strictObject({
   assetIndex: z.number().int().nonnegative(),
 });
 const outputSchema = z.strictObject({
-  post: xPostEvidence,
+  post: preparedPostEvidence,
   durationMs: z.number().int().min(0).max(600000),
   frames: z.array(frame).max(48),
   audios: z
@@ -56,17 +68,25 @@ export async function prepareHostedXPost(
       authorName?: string;
       resolvedCanonical: string;
       durationSeconds?: number;
+      publishedAt?: number;
     }) => Promise<void>;
     failed?: (receipt: Record<string, unknown>) => Promise<void>;
     maximumDurationMs?: number;
+    authorizedInstagram?: Awaited<
+      ReturnType<typeof readAuthorizedInstagramPost>
+    >;
   },
 ) {
   const policy = acquisitionPolicy(url);
   ensure(
-    policy.platform === "x",
+    ["x", "instagram", "tiktok"].includes(policy.platform),
     "UNSUPPORTED_SOURCE",
-    "Use a selected X post.",
+    "Use a selected social post.",
   );
+  const x = policy.platform === "x";
+  const instagramEmbed =
+    policy.platform === "instagram" &&
+    process.env.VIBESCROLL_INSTAGRAM_PUBLIC_EMBED_ENABLED === "true";
   const maximumDurationMs = callbacks.maximumDurationMs ?? 600000;
   ensure(
     Number.isSafeInteger(maximumDurationMs) &&
@@ -79,7 +99,7 @@ export async function prepareHostedXPost(
     times: Record<string, number> = {};
   // Only these hash-pinned pure wheels enter the VM. No install hooks execute.
   const wheels = await Promise.all(
-    tools.wheels.map(async (wheel) => {
+    (x ? tools.wheels : []).map(async (wheel) => {
       const response = await fetch(wheel.url, {
         redirect: "error",
         signal: AbortSignal.timeout(15000),
@@ -103,22 +123,33 @@ export async function prepareHostedXPost(
   let stopped = false,
     phase = "setup";
   let failure: Record<string, unknown> | null = null;
-  const command = async (stage: string, timeoutMs: number) => {
-    const result = await sandbox.commands.run(
-      `python3 /home/user/media/x-post-worker.py ${stage}`,
-      { user: "user", cwd: "/home/user/media", timeoutMs },
-    );
+  const run = async (script: string, timeoutMs: number) => {
+    const result = await sandbox.commands.run(script, {
+      user: "user",
+      cwd: "/home/user/media",
+      timeoutMs,
+    });
     ensure(
       result.exitCode === 0,
       "SOURCE_UNAVAILABLE",
-      "The X post could not be completely retrieved. No access restriction was bypassed.",
+      "The source post could not be completely retrieved.",
     );
   };
+  const command = (stage: string, timeoutMs: number) =>
+    run(`python3 /home/user/media/x-post-worker.py ${stage}`, timeoutMs);
   try {
     await sandbox.files.write([
       {
         path: "/home/user/media/request.json",
-        data: JSON.stringify({ url: policy.url, maximumDurationMs }),
+        data: JSON.stringify({
+          url: policy.url,
+          platform: policy.platform,
+          maximumDurationMs,
+          ...(instagramEmbed ? { instagramEmbed } : {}),
+          ...(callbacks.authorizedInstagram
+            ? { authorizedInstagram: callbacks.authorizedInstagram }
+            : {}),
+        }),
       },
       {
         path: "/home/user/media/x-dependencies.json",
@@ -129,13 +160,21 @@ export async function prepareHostedXPost(
         path: "/home/user/media/prepare_cloud_dependencies.py",
         data: cloudDependencySetup,
       },
+      ...(x
+        ? []
+        : [
+            {
+              path: "/home/user/media/social_public_post.py",
+              data: socialPublicPost,
+            },
+          ]),
       ...wheels.map((data, i) => ({
         path: `/home/user/tools/wheel-${i}.zip`,
         data,
       })),
     ]);
     await hardenAcquisition(sandbox);
-    await command("setup", 15000);
+    if (x) await command("setup", 15000);
     phase = "metadata";
     await callbacks.stage(phase);
     await command("inspect", 45000);
@@ -143,7 +182,9 @@ export async function prepareHostedXPost(
       .object({
         title: z.string().max(160),
         authorName: z.string().max(160),
-        resolvedCanonical: z.literal(policy.url),
+        resolvedCanonical: x ? z.literal(policy.url) : z.url().max(2048),
+        publishedAt: z.number().int().positive().optional(),
+        singleTikTokVideo: z.boolean().optional(),
       })
       .parse(
         JSON.parse(await sandbox.files.read("/home/user/media/metadata.json")),
@@ -152,11 +193,62 @@ export async function prepareHostedXPost(
     times.metadata = Date.now();
     phase = "downloading";
     await callbacks.stage(phase);
-    await command("download", 60000);
+    const verifiedTikTokVideo = metadata.singleTikTokVideo === true;
+    if (verifiedTikTokVideo) {
+      const canonical = socialPostUrl(metadata.resolvedCanonical);
+      ensure(
+        policy.platform === "tiktok" &&
+          canonical.platform === "tiktok" &&
+          canonical.canonical === metadata.resolvedCanonical &&
+          new URL(canonical.canonical).pathname.includes("/video/") &&
+          sourceReferenceMatches(policy.url, canonical.postKey),
+        "INVALID_EVIDENCE",
+        "The verified TikTok video identity changed before retrieval.",
+      );
+      await sandbox.files.write([
+        {
+          path: "/home/user/media/request.json",
+          data: JSON.stringify({ url: canonical.canonical, maximumDurationMs }),
+        },
+        { path: "/home/user/media/acquire.py", data: acquirer },
+        {
+          path: "/home/user/media/acquire-prepared.py",
+          data: preparedAcquirer,
+        },
+        {
+          path: "/home/user/media/cloud_extraction.py",
+          data: preparedExtraction,
+        },
+        {
+          path: "/home/user/tools/yt-dlp",
+          data: await readPreparedDownloader(),
+        },
+      ]);
+      const permissions = await sandbox.commands.run(
+        "chmod 700 /home/user/tools/yt-dlp",
+        {
+          user: "root",
+          timeoutMs: 5000,
+        },
+      );
+      ensure(
+        permissions.exitCode === 0,
+        "POLICY_BLOCKED",
+        "Downloader permissions could not be established.",
+      );
+      await run("python3 /home/user/media/acquire-prepared.py inspect", 30000);
+      await run(
+        "python3 /home/user/media/acquire-prepared.py download-media",
+        60000,
+      );
+    } else {
+      await command("download", 60000);
+    }
     times.downloaded = Date.now();
     await hardenSandbox(sandbox);
     phase = "preparing";
     await callbacks.stage(phase);
+    if (verifiedTikTokVideo) await command("adopt-tiktok-video", 40000);
     await command("decode", 90000);
     const rawBytes = await sandbox.files.read(
       "/home/user/media/x-result.json",
@@ -173,15 +265,20 @@ export async function prepareHostedXPost(
     const videos = output.post.assets.filter((a) => a.kind === "video");
     const speech = videos.filter((a) => a.audioStatus === "prepared");
     ensure(
-      output.post.postId === xPostUrl(policy.url).postId &&
+      preparedPostCanonicalMatches(metadata.resolvedCanonical, output.post) &&
+        (output.post.version === "x-post-evidence-v1"
+          ? x
+          : !x &&
+            output.post.platform === policy.platform &&
+            sourceReferenceMatches(policy.url, output.post.postId) &&
+            output.post.publishedAt === (metadata.publishedAt ?? null) &&
+            (output.post.provider !== "instagram_embed" || instagramEmbed) &&
+            (!verifiedTikTokVideo ||
+              (output.post.assets.length === 1 && videos.length === 1))) &&
         output.post.textHash === hash(output.post.text) &&
         output.sourceHash ===
           hash(
-            canonicalJson({
-              canonical: policy.url,
-              text: output.post.text,
-              assets: output.post.assets,
-            }),
+            preparedPostSourceIdentity(metadata.resolvedCanonical, output.post),
           ) &&
         output.sourceBytes ===
           output.post.assets.reduce((n, a) => n + a.bytes, 0) &&
@@ -215,7 +312,7 @@ export async function prepareHostedXPost(
           ),
         ),
       "INVALID_EVIDENCE",
-      "The complete X post identity or attachment coverage changed.",
+      "The post identity or attachment coverage changed.",
     );
     ensure(
       output.durationMs <= maximumDurationMs,
@@ -293,12 +390,28 @@ export async function prepareHostedXPost(
       times,
       startedAt,
       downloaderVersion:
-        output.post.provider === "gallery-dl"
-          ? `gallery-dl/${tools.wheels[0].version}`
-          : `fxtwitter/v2+gdl-${tools.wheels[0].version}`,
+        output.post.provider === "instagram_graph"
+          ? "instagram-graph-v27"
+          : output.post.provider === "instagram_embed"
+            ? "instagram-public-embed-v1"
+            : output.post.provider === "public_page"
+              ? verifiedTikTokVideo
+                ? `public-post-page-v1+yt-dlp/${preparedDownloader.version}`
+                : "public-post-page-v1"
+              : output.post.provider === "gallery-dl"
+                ? `gallery-dl/${tools.wheels[0].version}`
+                : `fxtwitter/v2+gdl-${tools.wheels[0].version}`,
       preparationRecipeHash: hash(
         JSON.stringify({
-          tools,
+          ...(x ? { tools } : { publicPageParser: hash(socialPublicPost) }),
+          ...(verifiedTikTokVideo
+            ? {
+                preparedDownloader,
+                reader: hash(acquirer),
+                videoAcquirer: hash(preparedAcquirer),
+                extraction: hash(preparedExtraction),
+              }
+            : {}),
           worker: hash(xPostWorker),
           dependencySetup: hash(cloudDependencySetup),
           ffmpegVersion,
@@ -312,7 +425,8 @@ export async function prepareHostedXPost(
   } catch (error) {
     failure = {
       phase,
-      code: error instanceof PolicyError ? error.code : "X_PREPARATION_FAILED",
+      code:
+        error instanceof PolicyError ? error.code : "POST_PREPARATION_FAILED",
     };
     throw error;
   } finally {
@@ -332,4 +446,24 @@ export async function prepareHostedXPost(
         providerDeletionVerified: false,
       });
   }
+}
+
+function sourceReferenceMatches(raw: string, postId: string) {
+  const url = new URL(raw);
+  if (
+    ["www.instagram.com", "instagram.com"].includes(url.hostname) &&
+    isInstagramSharePath(url.pathname)
+  )
+    return true;
+  if (
+    (url.hostname === "vm.tiktok.com" || url.hostname === "vt.tiktok.com") &&
+    /^\/[A-Za-z0-9]{5,30}\/?$/.test(url.pathname)
+  )
+    return true;
+  if (
+    ["www.tiktok.com", "tiktok.com"].includes(url.hostname) &&
+    /^\/t\/[A-Za-z0-9]{5,30}\/?$/.test(url.pathname)
+  )
+    return true;
+  return socialPostUrl(url.href).postKey === postId;
 }

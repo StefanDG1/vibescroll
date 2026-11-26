@@ -122,3 +122,27 @@ export async function preparedAssetCurrent(
       ),
   );
 }
+
+export async function selectedOrderedPostIsComplete(
+  ctx: QueryCtx,
+  source: Doc<"sources">,
+  provider?: "instagram_graph",
+) {
+  if (!source.selectedAnalysisVersionId) return false;
+  const selected = await ctx.db.get(source.selectedAnalysisVersionId);
+  if (
+    !selected ||
+    selected.sourceId !== source._id ||
+    selected.state !== "ready"
+  )
+    return false;
+  const evidence = await ctx.db.get(selected.evidenceId);
+  const post = preparedEvidenceIsCurrent(source, evidence)
+    ? evidence.prepared?.evidence?.post
+    : null;
+  return (
+    post?.version === "social-post-evidence-v1" &&
+    post.coverage === "complete_manifest" &&
+    (!provider || post.provider === provider)
+  );
+}

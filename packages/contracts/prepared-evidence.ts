@@ -5,7 +5,11 @@ import {
 } from "./cloud-catalog";
 import { canonicalJson } from "./canonical-json.mjs";
 import { privateCloudMediaIdentity, socialHash } from "../social/contracts";
-import { xPostCanonicalMatches, type XPostEvidence } from "../social/x-post";
+import {
+  preparedPostCanonicalMatches,
+  preparedPostSourceIdentity,
+  type PreparedPostEvidence,
+} from "../social/prepared-post";
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 export const preparedEvidenceVersion = "service-prepared-evidence-v1" as const;
@@ -62,7 +66,7 @@ export async function validatePreparedEvidence(value: unknown) {
   if (post) {
     if (
       prepared.version !== "service-prepared-post-v2" ||
-      !xPostCanonicalMatches(e.canonical, post) ||
+      !preparedPostCanonicalMatches(e.canonical, post) ||
       (await socialHash(post.text)) !== post.textHash ||
       e.durationMs !==
         post.assets.reduce(
@@ -70,13 +74,7 @@ export async function validatePreparedEvidence(value: unknown) {
           0,
         ) ||
       prepared.sourceHash !==
-        (await socialHash(
-          canonicalJson({
-            canonical: e.canonical,
-            text: post.text,
-            assets: post.assets,
-          }),
-        )) ||
+        (await socialHash(preparedPostSourceIdentity(e.canonical, post))) ||
       post.assets.some((a) => {
         const frames = e.frames.filter(
           (f) => f.assetId === a.id && f.assetIndex === a.index,
@@ -235,7 +233,7 @@ export async function makePreparedEvidence(input: {
   requestedCanonical: string;
   canonical: string;
   platform: "instagram" | "tiktok" | "x";
-  post?: XPostEvidence;
+  post?: PreparedPostEvidence;
   sourceHash: string;
   recipeHash: string;
   downloaderVersion: string;
@@ -375,7 +373,7 @@ export function captionChunks(text: string) {
   return chunks;
 }
 
-function assetDuration(post: XPostEvidence | undefined, id: string) {
+function assetDuration(post: PreparedPostEvidence | undefined, id: string) {
   const asset = post?.assets.find((a) => a.id === id);
   return asset?.kind === "video" ? asset.durationMs : undefined;
 }

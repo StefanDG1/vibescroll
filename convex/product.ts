@@ -1,3 +1,5 @@
+import { visibleOriginals } from "./lib/creatorLinks";
+import { platformPostKey } from "../packages/sources/post-identity";
 import {
   readAdminProcessingAllowance,
   refreshAdminProcessingAllowance,
@@ -19,6 +21,7 @@ import {
 import { notifyVideoLinkSaved } from "./lib/assistantEvents";
 import { recordPostSave } from "./lib/postEngagement";
 import { savedCloudRoute } from "./lib/workCloudSave";
+import { preparedServiceConfiguration } from "./lib/preparedServicePolicy";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { currentOrderedSource } from "./lib/workCloudMediaSource";
@@ -167,6 +170,7 @@ export async function reserve(
   id: Id<"organizations">,
   key: string,
   max: number,
+  funding: "standard" | "included" | "admin_monthly" = "standard",
 ) {
   ensure(
     Number.isSafeInteger(max) && max >= 0 && max <= 10000,
@@ -191,6 +195,13 @@ export async function reserve(
     "New funded work is paused for payment review. Existing results and reservations are preserved.",
   );
   const w = await wallet(ctx, id);
+  if (funding === "admin_monthly") {
+    ensure(
+      !!(await readAdminProcessingAllowance(ctx, undefined, id)),
+      "FORBIDDEN",
+      "Current admin funding is required.",
+    );
+  }
   const billing = await ctx.db
     .query("billing")
     .withIndex("by_org", (q) => q.eq("organizationId", id))
@@ -220,7 +231,11 @@ export async function reserve(
     pools = [(await ctx.db.get(poolId))!];
   }
   const valid = pools
-    .filter((p) => p.expiresAt === undefined || p.expiresAt > Date.now())
+    .filter(
+      (p) =>
+        (funding === "standard" || p.kind === funding) &&
+        (p.expiresAt === undefined || p.expiresAt > Date.now()),
+    )
     .sort((a, b) => (a.expiresAt ?? Infinity) - (b.expiresAt ?? Infinity));
   ensure(
     valid.reduce(
@@ -706,25 +721,41 @@ export const detail = query({
     } catch {
       /* Other source routes keep their own setup. */
     }
+    const workCloudRetryEligible = cloudSourceEligible && cloudRetryEligible(s);
+    const serverPrepared =
+      cloudSourceEligible &&
+      !!preparedServiceConfiguration(reader.actor.subject)
+        ?.automaticOwnSubscriptionPreparation;
     const automaticRoute =
       cloudSourceEligible && automaticVideoSupported
-        ? await savedCloudRoute(ctx, reader.actor, reader.organization)
+        ? await savedCloudRoute(
+            ctx,
+            reader.actor,
+            reader.organization,
+            workCloudRetryEligible || serverPrepared
+              ? "work_cloud_waiting"
+              : "video_link_saved",
+          )
         : null;
     const automaticGrant = automaticRoute?.grantId
       ? await ctx.db.get(automaticRoute.grantId)
       : null;
     return {
       ...s,
+      ...(s.creator?.contentKey
+        ? { originalLinks: await visibleOriginals(ctx, s) }
+        : {}),
       workCloudLinkSetup: automaticRoute
         ? {
             configured: automaticRoute.configured,
             monitorReady: automaticRoute.available,
+            serverPrepared,
             chatLinksEnabled:
               automaticGrant?.cloudSaveDefaults?.version ===
               "link-save-cloud-v2",
           }
         : null,
-      workCloudRetryEligible: cloudSourceEligible && cloudRetryEligible(s),
+      workCloudRetryEligible,
       catalogContributionAvailable:
         !!catalogConfiguration() &&
         selected?.metadata.origin === "private" &&
@@ -946,6 +977,12 @@ export async function captureAuthorized(
     "FORBIDDEN",
     "Capture scope mismatch.",
   );
+  ensure(
+    process.env.LINK_ONLY_CAPTURE_ENABLED !== "true" ||
+      (a.kind === "url" && !a.text && !a.objectKey),
+    "UNSUPPORTED_SOURCE",
+    "Save the original post link.",
+  );
   const saved = async (id: Id<"sources">) => {
     if (!bulk)
       await recordPostSave(ctx, (await ctx.db.get(id))!, actor.actor._id);
@@ -1026,12 +1063,31 @@ export async function captureAuthorized(
       "Complete a verified upload first.",
     );
   }
-  const dup = await ctx.db
-    .query("sources")
-    .withIndex("by_canonical", (q) =>
-      q.eq("organizationId", a.organizationId).eq("canonical", canonical),
-    )
-    .unique();
+  const stablePostKey =
+    classified?.sourceType === "media" ? platformPostKey(canonical) : undefined;
+  const duplicates = stablePostKey
+    ? await ctx.db
+        .query("sources")
+        .withIndex("by_org_platform_post", (q) =>
+          q
+            .eq("organizationId", a.organizationId)
+            .eq("platformPostKey", stablePostKey),
+        )
+        .take(8)
+    : [];
+  const dup =
+    duplicates.find(
+      (candidate) =>
+        candidate.state !== "deleted" &&
+        candidate.kind === "url" &&
+        sourceRetained(candidate.sourceRetentionUntil),
+    ) ??
+    (await ctx.db
+      .query("sources")
+      .withIndex("by_canonical", (q) =>
+        q.eq("organizationId", a.organizationId).eq("canonical", canonical),
+      )
+      .unique());
   if (dup && dup.state !== "deleted") {
     if (a.kind === "url" && (await attachCloudCache(ctx, dup, actor.actor._id)))
       return saved(dup._id);
@@ -1079,13 +1135,16 @@ export async function captureAuthorized(
   const id = await ctx.db.insert("sources", {
     ...a,
     canonical,
+    ...(stablePostKey ? { platformPostKey: stablePostKey } : {}),
     sourceType:
       classified?.sourceType ?? (a.kind === "text" ? "supplied_text" : "media"),
     ...(classified && classified.sourceType !== "media"
       ? { retrievalState: "saved" as const }
       : {}),
     state:
-      a.kind === "url" && classified?.sourceType === "media"
+      a.kind === "url" &&
+      classified?.sourceType === "media" &&
+      process.env.LINK_ONLY_CAPTURE_ENABLED !== "true"
         ? "needs_upload"
         : "saved",
     coverage: a.kind === "text" ? "caption_only" : "metadata_only",
@@ -1845,6 +1904,11 @@ export const attachSource = mutation({
     ensure(s && s.state !== "deleted", "FORBIDDEN", "Source unavailable.");
     const { actor } = await writeAccess(ctx, s.organizationId);
     ensure(
+      process.env.LINK_ONLY_CAPTURE_ENABLED !== "true",
+      "UNSUPPORTED_SOURCE",
+      "This post uses its original link.",
+    );
+    ensure(
       !s.publicImportId &&
         !s.currentRevisionId &&
         !["github_repository", "reddit_thread"].includes(s.sourceType ?? ""),
@@ -2033,6 +2097,8 @@ export async function redactSource(ctx: MutationCtx, id: Id<"sources">) {
     canonical: `deleted:${id}`,
     key: `deleted:${id}`,
     title: "Deleted source",
+    creator: undefined,
+    platformPostKey: undefined,
     summary: undefined,
     text: undefined,
     analysis: undefined,

@@ -56,6 +56,14 @@ export default defineSchema({
     createdAt: v.number(),
     profileVerifiedAt: v.optional(v.number()),
     preferChatGPTPlan: v.optional(v.boolean()),
+    managedPostDefaults: v.optional(
+      v.object({
+        enabled: v.boolean(),
+        model: v.string(),
+        effort: v.optional(v.string()),
+        maximumCredits: v.number(),
+      }),
+    ),
     defaultWorkspaceId: v.optional(v.id("organizations")),
     onboarding: v.optional(onboardingState),
     fullCatalogEnabled: v.optional(v.boolean()),

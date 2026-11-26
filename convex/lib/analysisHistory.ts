@@ -434,6 +434,16 @@ export async function selectedAnalysis(ctx: QueryCtx, source: Doc<"sources">) {
           output: shared.output,
           metadata: versionMetadata(shared.version),
           evidenceId: shared.evidence._id,
+          ...(shared.prepared.post
+            ? {
+                preparedService: preparedDetail(
+                  source,
+                  shared.version,
+                  shared.evidence,
+                  shared.prepared,
+                ),
+              }
+            : {}),
           shared,
         };
       }
@@ -447,44 +457,56 @@ export async function selectedAnalysis(ctx: QueryCtx, source: Doc<"sources">) {
   );
   const service = isServicePreparedEvidence(evidence.prepared)
     ? servicePreparedEvidence.parse(evidence.prepared).evidence
-    : null;
+    : evidence.owner === "service" && evidence.prepared.post
+      ? neutralCloudEvidence.parse(evidence.prepared)
+      : null;
   return {
     output: version.output,
     metadata: versionMetadata(version),
     evidenceId: evidence._id,
     ...(service
       ? {
-          preparedService: {
-            version: "service-prepared-detail-v1",
-            ...(service.post ? { post: service.post } : {}),
-            transcript: retainedEvidenceContent(evidence).transcript,
-            observations: retainedEvidenceContent(evidence).observations,
-            frames: evidence.frames.map((f) => {
-              const observed = service.frames.find(
-                (frame) => frame.id === f.frameId,
-              );
-              const asset = service.post?.assets.find(
-                (asset) => asset.id === observed?.assetId,
-              );
-              return {
-                id: f.frameId,
-                reference: f.assetId,
-                timestampMs: f.timestampMs,
-                ...(asset
-                  ? {
-                      sourceAssetId: asset.id,
-                      sourceAssetIndex: asset.index,
-                      sourceMediaKind: asset.kind,
-                    }
-                  : {}),
-              };
-            }),
-          },
+          preparedService: preparedDetail(source, version, evidence, service),
         }
       : {}),
     ...(evidence.owner === "service"
       ? { shared: await cloudSourceEvidence(ctx, source, evidence._id) }
       : {}),
+  };
+}
+
+function preparedDetail(
+  source: Doc<"sources">,
+  version: Doc<"analysisVersions">,
+  evidence: Doc<"analysisEvidence">,
+  service: ReturnType<typeof neutralCloudEvidence.parse>,
+) {
+  return {
+    version: "service-prepared-detail-v1" as const,
+    ...(service.post ? { post: service.post } : {}),
+    transcript: service.segments,
+    observations: neutralCloudObservations(service),
+    frames: evidence.frames.map((f) => {
+      const observed = service.frames.find((frame) => frame.id === f.frameId);
+      const asset = service.post?.assets.find(
+        (asset) => asset.id === observed?.assetId,
+      );
+      return {
+        id: f.frameId,
+        reference:
+          evidence.owner === "service"
+            ? `catalog~${source._id}~${version._id}~${f.frameId}`
+            : f.assetId,
+        timestampMs: f.timestampMs,
+        ...(asset
+          ? {
+              sourceAssetId: asset.id,
+              sourceAssetIndex: asset.index,
+              sourceMediaKind: asset.kind,
+            }
+          : {}),
+      };
+    }),
   };
 }
 

@@ -219,8 +219,19 @@ it("does not confuse manual Cloud permission with automatic analysis", async () 
   });
 });
 
-async function retryFixture(expired = false) {
+async function retryFixture(expired = false, waitingMonitor = true) {
   const s = await setup();
+  if (waitingMonitor)
+    await s.assistant.mutation(internal.assistantEvents.install, {
+      profileId: s.org,
+      grantVersion: s.grant.version,
+      eventName: "work_cloud_waiting",
+      externalId: "sub_" + "c".repeat(64),
+      ciphertext: "synthetic-waiting-authority",
+      keyVersion: "1",
+      expiresAt: Date.now() + 600000,
+      callbackVerifiedAt: Date.now(),
+    });
   const saved = await s.capture();
   await s.start(saved.sourceId, saved.intentId!);
   await s.t.run(async (ctx) => {
@@ -245,6 +256,24 @@ async function retryFixture(expired = false) {
   return { ...s, source, retry };
 }
 
+it("requires the waiting-analysis monitor before retrying a saved link", async () => {
+  const s = await retryFixture(true, false);
+  expect(
+    await s.owner.query(api.product.detail, { id: s.source._id }),
+  ).toMatchObject({
+    workCloudLinkSetup: { configured: true, monitorReady: false },
+    workCloudRetryEligible: true,
+  });
+  const holds = await s.t.run((ctx) => ctx.db.query("reservations").collect());
+  await expect(
+    s.owner.mutation(api.workCloudSaves.retrySaved, s.retry),
+  ).rejects.toThrow("SETUP_REQUIRED");
+  expect(await s.t.run((ctx) => ctx.db.get(s.source._id))).toEqual(s.source);
+  expect(
+    await s.t.run((ctx) => ctx.db.query("reservations").collect()),
+  ).toEqual(holds);
+});
+
 it.each([false, true])(
   "explicitly retries a never-claimed request once, preserves its hold and records prior provenance: expired=%s",
   async (expired) => {
@@ -253,6 +282,12 @@ it.each([false, true])(
       ctx.db.query("reservations").collect(),
     );
     expect(before).toHaveLength(1);
+    expect(
+      await s.owner.query(api.product.detail, { id: s.source._id }),
+    ).toMatchObject({
+      workCloudLinkSetup: { configured: true, monitorReady: true },
+      workCloudRetryEligible: true,
+    });
     const result = await s.owner.mutation(
       api.workCloudSaves.retrySaved,
       s.retry,
@@ -274,6 +309,19 @@ it.each([false, true])(
     });
     expect(source.workCloudSaveIntent).toBeUndefined();
     expect(source.cloudRetryReceipts).toHaveLength(1);
+    expect(
+      await s.t.run((ctx) =>
+        ctx.db
+          .query("assistantDeliveries")
+          .withIndex("by_source", (q) => q.eq("sourceId", source._id))
+          .collect(),
+      ),
+    ).toContainEqual(
+      expect.objectContaining({
+        eventName: "work_cloud_waiting",
+        generation: 2,
+      }),
+    );
     expect(source.cloudRetryReceipts![0]).toMatchObject({
       generation: 1,
       revision: s.retry.revision,

@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-26",
+  "timezone": "Europe/Paris",
+  "productionBackendCommit": "dce0c530c63d24bc0ecfc0a40ac656c20feb536b",
+  "productionWebsiteCommit": "5c96517bba952c2f14f14b538f78480e747f4479",
+  "finishAcknowledgedAtUtc": "2026-11-26T11:52:22.491Z",
+  "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/45813526072",
+  "localFocusedCasesPassed": 80,
+  "schemaPrediction": {
+    "components": 14,
+    "tables": 173,
+    "indexes": 388,
+    "populatedWalks": 0,
+    "indexChanges": 0,
+    "backfills": 0,
+    "newDefinitions": 0
+  },
+  "deterministicPreparedBundles": 2,
+  "publicationGuardCasesPassed": 8,
+  "changedCommitSecretScanPassed": true,
+  "instagram": {
+    "sameOriginalPrivateVersionRetained": true,
+    "catalogStatus": "published",
+    "independentServiceArtifact": true,
+    "completeManifest": true,
+    "savedImages": 9,
+    "citedInsights": 6,
+    "mcpContextComplete": true,
+    "mcpSharedJpegsRead": 9,
+    "mcpVerifiedCreatorRead": true,
+    "webReaderLastSlideDecodedWidth": 768,
+    "webReaderPhoneHorizontalOverflow": false
+  },
+  "tiktok": {
+    "sameOriginalPrivateVersionRetained": true,
+    "catalogStatus": "published",
+    "independentServiceArtifact": true,
+    "completeManifest": true,
+    "savedImages": 2,
+    "citedInsights": 1,
+    "mcpContextComplete": true,
+    "mcpSharedJpegsRead": 2,
+    "mcpVerifiedCreatorRead": true
+  },
+  "publicationRecovery": {
+    "newModelRequests": 0,
+    "newMediaPreparations": 0,
+    "newWebsiteBuilds": 0,
+    "availableCreditsAfter": 240,
+    "reservedCreditsAfter": 12,
+    "balancesUnchanged": true,
+    "historicalUnknownHoldsPreserved": true,
+    "firstBrowserCopyWaitTimedOut": true,
+    "timeoutReconciledAsPublishedWithoutReplay": true,
+    "firstDeploymentGuardStoppedBeforeAnyPush": true
+  },
+  "crossUserAcceptance": {
+    "isolatedConcurrentAndColdAccountSavesPassed": true,
+    "isolatedPhotoCounts": [9, 35],
+    "isolatedReceiverPreparationJobs": 0,
+    "isolatedReceiverSpentAndReservedCredits": 0,
+    "independentSecondUserBrowser": "pending signed-in session"
+  },
+  "remaining": [
+    "The production creator web route rejects an encoded creator segment although MCP creator reads succeed. A web-boundary correction is prepared separately.",
+    "Public-profile polling and automatic cross-platform creator matching remain incomplete.",
+    "Production following, sponsorship and independent second-user reuse require their own acceptance."
+  ]
+}

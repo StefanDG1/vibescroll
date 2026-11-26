@@ -1,5 +1,111 @@
 # Implementation status
 
+## November 26 final X reuse production acceptance
+
+Website/backend `ea18b2006398` are live after exact CI, full local checks, two matching preparations and 13 guards. The 14 components, 174 tables and 392 indexes are unchanged, with no populated scan, backfill, auth or cron change. One fixed Basic build passed staging and same-build canonical promotion. Full checks passed 1,851 main, 92 authentication and 195 shared UI cases, media checks, both builds, audit and secret scan. [Final receipt](operations/evidence/launch-20261126-x-reuse-production.json)
+
+The separate account reused Instagram photos, TikTok photos, X text and X video at their exact shared versions. Nineteen JPEGs loaded and decoded. Its earlier X Save recovered in place; an author-URL duplicate returned the same entry. All eight saved posts are Ready. Five test credits remain, with zero spent/reserved and old holds unchanged. Four original private X versions remain Ready. There was no new extraction or model run.
+
+The original MCP reads all three platforms and a current shared JPEG, and correctly refuses the other account's private source ID. A creator page shows two shared analyses the receiver has not saved. Author/platform links and responsive readers work. Unfollowed profiles explain how to start checks, and an allowance without eligible contribution credits explains that limit. Native Follow tests are restored with sponsorship off. A live sponsored new post and real cross-platform creator/repost pair remain unobserved; policy, quota and grouping regressions pass. One unavailable Instagram post remains unattributed with its analysis preserved.
+
+## November 26 Save production acceptance and X receiver correction
+
+Website `cd29157f632f` is live after exact CI, one fixed Basic build, staged checks and same-build promotion. The production popup has no title, processing checkbox or arrow menus and fits at 320, 390 and 1440 pixels. The second account saved the TikTok photo URL through it and reached Ready. Both photo posts reuse their exact shared versions; all eleven JPEGs loaded and decoded. Receiving credits spent and reserved are zero. Four retained X results are now shared, and their text/video contexts and a shared JPEG pass through the original MCP. The X feed completed its normal scheduled continuation. Reversible X and second-account TikTok follows are restored. [Receipt](operations/evidence/launch-20261126-save-dialog-production.json)
+
+The subsequent real X receiver test exposed an Instagram/TikTok-only cache lookup and pending-producer join. The candidate admits X under existing rights and entitlement, fills text-post titles from the retained public caption and corrects misleading unfollowed/zero-allowance creator UI. Targeted regression checks pass 61 cases, including text/video cold reuse, publication waiting and duplicate Save without receiver jobs or credits. Full checks and exact CI remain required before this correction is released. Initial full checks caught an omitted strict return validator, which is corrected; preserve that failed receipt. [Correction](adr/248-x-discovery-and-instagram-identity-fallback.md#receiving-user-x-correction)
+
+## November 26 final creator backend and Save refinement
+
+Backend `57fbc2cf16b5` is live after exact CI, matching preparations and 13 publication guards. The index now contains 58 results across 48 creators. Four private X author repairs preserved selected versions, generation and update time. X publication is enabled with prior Instagram/TikTok policy identities preserved. Metadata repair changed no balances or holds and started no inference or preparation. A real second account saved the carousel and reached Ready with the same nine shared images and six insights. [Receipt](operations/evidence/launch-20261126-creator-final-backend.json)
+
+The Save candidate removes arrow menus, the title field and the separate processing checkbox. The existing metadata and ordinary analysis supply titles. Local checks passed 1,850 main, 92 authentication and 194 shared UI tests, all media/Node/Python checks, lint, types and both builds. Initial lint findings for a nonsemantic group and autofocus were corrected. The default local route additionally requires an online eligible computer, while explicit stored routes remain intact. Exact candidate CI and production UI acceptance follow. [Decision](adr/249-link-first-save-dialog.md)
+
+## November 26 legacy creator metadata recovery
+
+Backend `b9cf8353beb5` is live after exact CI, two matching preparations and 13 publication guards. The only schema change is one optional proof field; all indexes and other tables are unchanged. The production pass recovered 54 authors, bringing the index to 56 selected results across 46 creators. Wallets and credit holds were unchanged. MCP returned the two recovered legacy workspace posts and their two shared entries on one creator page. There were no model calls, preparations or website builds. [Production receipt](operations/evidence/launch-20261126-creator-metadata-production.json)
+
+The 92 catalog families contain 59 selected results and 33 families without a selected result. The earlier missing-author count included those empty families. Three published Instagram results lacked public embed metadata. A local authenticated probe recovered two and reported the third unavailable. The fallback and X discovery are a tested follow-up candidate under [ADR248](adr/248-x-discovery-and-instagram-identity-fallback.md). Full local checks passed 1,850 main tests, 92 authentication tests and 194 shared UI tests, including the X metadata v2 route, text-only catalog reader, authenticated Instagram matching and targeted private-source identity recovery. Production acceptance is pending.
+
+## November 26 shared creator pages and public polling
+
+Website and backend `62f837b9e6d` are live. Exact CI, the full local check, two deterministic preparations and 13 publication guard cases passed. The actual schema prediction admitted four reviewed empty indexes with no populated walk or backfill. One fixed Basic build passed staged exact health, descriptor and private-route authentication checks, then the same build passed canonical health. Normal domain assignment was restored and the temporary share was revoked.
+
+Creator discovery, matching and the contribution pool are enabled. Production Instagram and TikTok watches reached Ready after real MCP Follow calls. TikTok discovered one recent video and one photo post. Both follows were restored to unfollowed with contribution disabled. No analysis, preparation or pool run started. MCP creator reads now include shared catalog post links. The bounded metadata pass visited all 92 families and indexed the two manifests retaining stable creator IDs. Older author recovery, current signed-in visual checks, independent receiver reuse and actual post-follow sponsored analysis remain separate acceptance. [Production receipt](operations/evidence/launch-20261126-creators-production.json)
+
+## November 26 complete-post shared publication
+
+Backend `dce0c530c63d` publishes the existing nine-image Instagram and two-image TikTok results to independent shared artifacts. The original private versions remain Ready. MCP reopened both complete contexts, verified creators and all eleven actual shared JPEGs. Recovery made no new model request or media preparation and left app credit balances unchanged. Exact Linux CI, 80 focused cases, matching prepared bundles and the unchanged-schema publication guard passed. [Production receipt](operations/evidence/launch-20261126-shared-photo-publication.json)
+
+The browser found an encoded creator-route defect despite working MCP creator reads. Its boundary correction is prepared separately. Public-profile polling, automatic creator matching and sponsorship remain incomplete. Independent receiving-user browser reuse awaits a second authorized signed-in session.
+
+## November 26 public carousel and Photo Mode production acceptance
+
+Public Instagram and TikTok extraction are enabled and read back. The existing nine-image Instagram carousel reached Ready with all nine saved JPEGs, a verified creator and six cited insights using Muse Ember Medium. A new two-image TikTok photo link saved through MCP completed through the existing ChatGPT monitor with both images and one cited insight. Its video URL path was resolved to the actual photo format. Replaying each link through MCP returned the same Ready source without another analysis.
+
+The live test exposed an eight-frame restriction in the whole-post MCP reader. Backend `11b5c4f8e0cf` now follows the existing 48-frame evidence contract. MCP reopened complete context and all eleven actual JPEGs. The signed-in readers passed at 390 and 1440 pixels, including the ninth Instagram slide. Shared-catalog publication failed for the Instagram result and remains separate work. These two cases establish bounded production acceptance. [Production evidence](operations/evidence/launch-20261126-public-photo-production.json)
+
+## November 26 Meta Business Discovery routing
+
+Production Convex `a62e05ce5528` supports indexed Instagram links from an approved public professional target without a VibeScroll connection for that creator. The configured requester uses Meta Business Discovery with Facebook Login. The tests cover exact account and media matching, multi-page lookup, ordered images, incomplete albums, and expired grants. Production function metadata confirms the index entry point is live. The existing TikTok result and its JPEG reopened through MCP after publication. A real Business Discovery carousel remains pending an approved requester connection and a matching target. [Release evidence](operations/evidence/launch-20261126-instagram-business-discovery.json) · [Access procedure](operations/SOCIAL-PHOTO-ACCESS.md#public-professional-accounts-through-business-discovery)
+
+## November 26 approved Instagram Graph routing
+
+Production Convex `ce22bd8583ac` routes an exact permalink from a connected Instagram creator through Graph with public acquisition disabled. Admission binds the creator and provider media ID. If the grant expires before dispatch, preparation reports a source failure and settles at zero app credits. The Linux CI and compatible deployment checks passed. Canonical health passed, and the installed MCP reopened an existing TikTok video's four cited insights, eight retained frames and a JPEG. A live Instagram carousel still needs a configured Meta creator connection. TikTok Photo Mode needs approved original-image access. [Release evidence](operations/evidence/launch-20261126-approved-instagram-route.json) · [Photo access and acceptance](operations/SOCIAL-PHOTO-ACCESS.md)
+
+## November 26 TikTok production follow-up
+
+The same saved TikTok video now has two Ready analyses. The managed route reused eight stored frames and saved four cited insights with Muse Spark 1.3 Contributor Medium. It settled two app credits, and the matching AI Gateway window reported USD0.0015106 for one request. The signed-in reader and installed MCP reopened the result and retained images. Muse Ember was absent from the workspace's managed options and its quote was refused.
+
+The active ChatGPT monitor had an explicit exclusion for that exact saved link. The owner's follow-up allowed one exact version while preserving the other exclusions. A new event was claimed and completed in 128.837 seconds with three insights and all eight existing images read. The signed-in app and MCP reopened both versions. No product deployment or API reasoning call was needed for the native run. [Production receipt](operations/evidence/launch-20261126-tiktok-managed-and-native.json)
+
+Original-link access to Instagram carousels and TikTok Photo Mode remains unverified in production. The [photo-access guide](operations/SOCIAL-PHOTO-ACCESS.md) records the documented provider routes, consent requirements and evidence checks.
+
+## November 25 live link-intake release
+
+Website and Convex now serve `5c96517bba95`. Exact CI passed and the staged website was promoted unchanged. The canonical link guide and recovery help returned 200. New native ChatGPT setups default to GPT-6.2 Sol High. The existing owner's runs use their saved preference. A supported single-video download can retain the verified creator ID and caption without establishing a complete carousel.
+
+All six ordinary MCP saves of previously unprocessed Reels reached Ready on their existing entries. Together with the two recovered expired Reels, eight of the 26 audited posts now have saved results. MCP reopened the latest post's eight-frame context and an actual retained JPEG. The signed-in app showed an accessible Instagram link and loaded retained images at 390 and 1440 pixels. The last three Instagram samples returned author display labels without verified creator IDs. Their reader pages showed no creator link.
+
+The TikTok short link completed media preparation and settled one preparation credit. The original preparation timer ended the claim period 40 seconds early. The exact stored attempt expired without a claim. The corrected run classification allowed one retry with retained evidence and a zero-credit quote. Its new event returned HTTP 200. The full window elapsed without a worker claim or saved analysis, and the run ended in a confirmed failure. The authenticated managed model options listed Muse Spark 1.3 Contributor Medium. The OpenAI promotional quote was unavailable for the owner canary.
+
+The exact `5b918e30cd92` staged build passed Linux CI and was promoted without a rebuild. Both verified Reel retries reached Ready on their original posts. The MCP retry kept five cited insights and eight retained frames. The authenticated app retry kept three insights, and MCP reopened its exact saved version. An actual JPEG from the first post reopened through MCP, and the signed-in app displayed the post at 390 and 1440 pixels. Both signed-in upload endpoints returned the link-only response. [Production receipt](operations/evidence/launch-20261125-link-intake.json)
+
+Instagram public carousel and TikTok Photo Mode extraction remain outside the active production routes while approved media access is unavailable. The local image manifests and decoder results document technical coverage. They do not establish platform permission or a completed production analysis for those formats.
+
+## November 25 social link variants and X attachment matrix
+
+Public browser probes resolved Instagram post and Reel share tokens to first-party shortcodes. The candidate accepts those aliases, treats Reel and TikTok video URL paths as provisional, and checks Instagram collaboration headers before attributing a caption. Cookie-free acquisition downloaded a collaborative single-image share, a Reel share, and a two-slide TikTok slideshow reached through a video URL. The latter returned a slideshow manifest even though the same URL exposed a playback object. Instagram also exposed complete ordered lists for independent nine- and ten-image carousel fixtures.
+
+A true TikTok video returned a typed author and caption. Its public playback CDN returned HTTP 403 in the browser probe. The candidate now selects the existing pinned downloader at the verified single-video stage inside the same sandbox and verifies the resolved video ID before accepting its bytes. The isolated worker test uses a real local MP4 and rejects a mismatched downloader ID. This handoff still needs hosted verification.
+
+The reviewed X fallback returned exact post IDs, captions, authors and all media for five public fixtures. Offline replay decoded a single image, four ordered images, an animated GIF, an image followed by video, and a video followed by two images. The captured media yielded 30 evidence JPEGs. Existing text-only and single-video production acceptance is recorded separately. [Upstream X fixture set](https://github.com/mikf/gallery-dl/blob/v1.32.21/test/results/twitter.py) · [Existing X production acceptance](operations/X-POST-SUPPORT.md)
+
+The app retains its current release configuration while the candidate is local. Hosted analysis, per-format canaries and approved access for commercial Instagram extraction remain release gates. Public visibility and a working embed do not establish collection permission. [Meta collection guidance](https://about.fb.com/news/2021/04/how-we-combat-scraping/)
+
+The local Convex deployment prepared the functions and accepted startup. The targeted evidence and transport rerun passed 30 tests, the ordered worker passed 16 cases, and the companion package checks passed all 14 cases after the URL rules moved into its existing media module scope. The existing live MCP profile read returned three workspaces and a configured analysis route. No new hosted analysis was dispatched in this checkpoint.
+
+The final local `pnpm check` passed on November 25 with 1,793 core tests and nine skips, 92 auth tests, 194 public-knowledge and UI tests, the companion and Python checks, and both production builds. The dependency audit and generated MCP reference checks passed. Next.js reported existing generated CSS and help-content trace warnings.
+
+## November 25 public Instagram embed probe
+
+The public captioned embed exposed structured media that the ordinary post page omitted. Cookie-free Chrome requests retrieved complete captions, stable author IDs and actual media for two single images, a five-image carousel, and a two-video carousel. Local worker replay on the downloaded originals retained seven ordered still JPEGs and sixteen sampled video JPEGs. The independent gallery-dl fixtures specify five and two items for those carousels. An unavailable public embed produced no accepted manifest. An Instagram Reel embed that declared a copyright block was excluded. [Gallery-dl fixtures](https://github.com/mikf/gallery-dl/blob/v1.32.21/test/results/instagram.py)
+
+The existing ordered-post worker has a separate disabled-by-default Instagram embed gate. It records embed provenance, keeps unknown publication dates unset, and requires original video on a video slide. The worker checks also exposed and fixed a missing provider field on public Instagram and TikTok evidence and a TikTok alias redirect loop. Two public TikTok `/video/` aliases returned exact manifests for one and sixteen photos. The `/photo/` URLs for the same posts yielded no authoritative manifest. Two TikTok short links redirected to paths that had the post ID and omitted the username. Replaying those responses through the updated resolver recovered the sixteen-photo post, author and caption. The other short link still returned no verified manifest. [TikTok fixtures](https://github.com/mikf/gallery-dl/blob/v1.32.21/test/results/tiktok.py)
+
+The checks used public fixtures, browser acquisition and offline decoding. Real mixed Instagram carousels, hosted worker egress, native and managed ChatGPT-to-Ready runs, wider per-format coverage and creator discovery remain open. [Decision and rollout gates](adr/244-link-only-posts-and-creator-intake.md#instagram-public-embeds)
+
+The November 25 local `pnpm check` passed with both production builds and 1,791 core tests. After the final TikTok short-link changes, the Python media suites and 26 focused evidence, creator discovery and MCP tests passed.
+
+## November 25 link-to-Ready candidate
+
+The isolated `codex/link-ready-20261125` candidate adds link-only Save, ordered media and caption evidence, verified creator pages, cross-post originals, MCP creator tools, managed model preferences, and gated daily discovery and sponsorship. The baseline checkout and its proposal changes are separate. [Decision record](adr/244-link-only-posts-and-creator-intake.md)
+
+The local anonymous Convex deployment accepted the new schema and functions. The private browser preview used a synthetic carousel and the normal media route at 390 and 1440 pixels. The narrow reader showed both source slides, platform and creator links, and accessible navigation without horizontal overflow.
+
+The candidate is based on `742555417ebf`. On November 25 at 20:18–20:21 Europe/Paris, `pnpm check` passed on Windows with the hash-pinned caption and downloader test dependencies. It validated 466 documents and 12 skills and passed lint, type checks, 1,791 core tests with nine skips, 92 auth tests, 194 public-knowledge and UI tests, the Node and Python packages, and both production builds. The new feature tests cover the typed TikTok short-link manifest, partial media rejection, read and write scope enforcement over MCP transport, related-post media matching, creator permissions, and pool eligibility. The dependency audit reported zero unresolved findings. The repository-wide build emitted warnings in generated search CSS and in the existing help-content filesystem trace.
+
+On November 25, a public TikTok lookup verified a stable post and author ID and one photo through an accepted alias. A public Instagram carousel lookup returned no authoritative attachment order. A read-only call through the existing production MCP connection reopened a saved TikTok video with eight frames and three insights. None of these checks exercised a new hosted Save, paid run, or creator poll. The candidate awaits exact staged builds and hosted acceptance. Instagram professional-account access, TikTok Photo Mode discovery, and broader cross-platform coverage still have provider or acceptance dependencies. Operator-reviewed creator associations are available in the candidate. Automatic creator identity linking and a historical backfill remain open.
+
 ## November 20 onboarding and analytics
 
 The work-stage follow-up removed the project name input, recap line and guest preview name. Existing-project and team choices progressed at 390 and 1440 pixels in staging and production. Exact CI passed, and the same build is live. [Follow-up receipt](operations/evidence/launch-20261120-onboarding-work-stage.json)
@@ -3867,3 +3973,19 @@ Websitee6cf399/backend796b2cf are live. Exact CI41364980672 passes1,697main/11sk
 ## November2 search-first onboarding production
 
 Website3748525/backend796b2cf, exact CI41441002106:1,700main/11skips,76auth,179UI, Node/Python and both builds pass. Local full/focused, dependency and secret checks pass. One60.900s fixed Basic build promoted unchanged; canonical health/UI and four theme/viewport cases pass. Real creator search returns one of five metadata cards without another metadata request; six retained insights/thumbnail and preview-limit recovery pass. No backend, inference, checkout or payment. [Receipt](operations/evidence/launch-20261102-search-first-onboarding.json).
+
+# November 26 complete-post shared publication candidate
+
+The candidate removes format exclusions from the standing catalog policy, accepts neutral post evidence, copies every retained image within the existing 48-frame contract, and retains separate slide references for identical bytes. Reused results retain creator identity and complete post detail in the web reader and MCP context. Explicit exact-version contribution can publish an existing result under the current standing policy without another model run. Automatic admission still rejects versions predating its request.
+
+Local focused publication, reuse and policy checks passed 80 cases. The nine-image and 35-image tests include concurrent second-account reuse and a later cold-account Save. Production recovery and independent browser acceptance are pending. [Decision](adr/245-complete-post-shared-publication.md)
+
+## November 26 creator discovery candidate
+
+The live website `e7d6478` fixes encoded creator routes. Signed-in production checks at 390 and 1440 pixels verify the creator header, saved post, layout and reversible Follow action. The backend candidate adds public TikTok and authenticated Instagram profile feeds, refreshed Instagram security tokens, cached reciprocal-link creator matching and zero-duration photo sponsorship. Local server adapters returned 20 Instagram posts and 15 TikTok posts, including five photo posts. Isolated tests cover matching, workspace access, feed failures, pinned posts and a single photo reservation preserved through unfollow and rejoin. Full checks and production polling acceptance are pending. [Decision](adr/246-public-creator-profiles-and-polling.md).
+
+The owner selected shared creator pages across VibeScroll. The candidate adds a bounded creator catalog index, shared pagination, cross-platform originals, retained catalog images/captions and shared links in MCP creator reads. Isolated independent-account browsing and follow create no personal source or credit reservation. A paired Instagram/TikTok fixture collapses to one shared row with two original links; blocking the alternate removes its link from both catalog and saved-post reads. Production indexing, polling and signed-in UI acceptance remain pending.
+
+Local creator candidate validation on 26 November passed `node scripts/run-offline.mjs pnpm check`: 1,823 main cases, 92 authentication cases and 194 shared UI cases, with the recorded external skips; Python/Node media checks, types, lint and both builds passed. The first run retained three failures: outdated schema/reference snapshots and a catalog test timeout. Updated schema assertions and generated MCP reference pass, the profile parser is removed from ordinary creator-identity reads, and the complete second run passes. The dependency audit passes with no unresolved advisories under the existing policy. The final local server probe found seven Instagram photo/carousel entries among 20 posts and five TikTok photo posts among 15. These are local checks, not production polling acceptance.
+
+The final review reproduced a grouped-creator Follow failure before the correction. Following now accepts a currently verified linked creator account, rejects an unrelated account and permits the owner to unfollow after source removal. The retained follow history remains available to its owner with an empty state. The focused four-file set passed 59 cases and both TypeScript projects passed. Exact final-commit CI remains required before release.

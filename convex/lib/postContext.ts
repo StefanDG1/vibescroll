@@ -98,7 +98,7 @@ export async function resolvePostContext(ctx: QueryCtx, args: PostRead) {
   const retained = await retainedVersion(ctx, source, versionId);
   await verifyRetainedAssets(ctx, source, retained.evidence);
   ensure(
-    retained.evidence.frames.length <= 8,
+    retained.evidence.frames.length <= 48,
     "SOURCE_UNAVAILABLE",
     "This retained bundle exceeds supported frame coverage.",
   );
@@ -204,6 +204,7 @@ export async function postContextPage(
                     (frame) =>
                       frame.frameId === observation.id ||
                       (!isServicePreparedEvidence(c.evidence.prepared) &&
+                        c.evidence.owner !== "service" &&
                         frame.timestampMs === observation.startMs),
                   )
                   .map((frame) => frame.frameId)
@@ -263,6 +264,16 @@ export async function postContextPage(
       authorName: isServicePreparedEvidence(c.evidence.prepared)
         ? c.evidence.prepared.metadata.authorName
         : (c.source.linkPreview?.authorName ?? null),
+      ...(content.post.post?.version === "social-post-evidence-v1"
+        ? {
+            sourceAuthor: {
+              platformId: content.post.post.authorId,
+              handle: content.post.post.authorHandle,
+              publishedAt: content.post.post.publishedAt,
+            },
+            expectedAttachments: content.post.post.expectedAssetCount,
+          }
+        : {}),
       durationMs:
         content.post.durationMs ??
         content.post.assets?.find(

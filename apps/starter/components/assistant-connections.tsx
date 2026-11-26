@@ -7,6 +7,10 @@ import { AccountSection } from "./account-layout";
 import { ChoiceSelect } from "./choice-select";
 import { LibrarySkeleton } from "./library-skeleton";
 import { TaskRuntimePicker, type TaskRuntime } from "./task-runtime-picker";
+import {
+  defaultWorkCloudAnalysis,
+  workCloudModelChoices,
+} from "../../../packages/onboarding/work-cloud-models";
 import { workCloudMonitorMessage } from "../../../packages/onboarding/work-cloud-monitor";
 const AssistantAccessAdvanced = dynamic(() =>
   import("./assistant-access-advanced").then((m) => m.AssistantAccessAdvanced),
@@ -16,7 +20,7 @@ type Grant = Parameters<typeof workCloudMonitorMessage>[1] & {
   state: string;
   expiresAt: number | null;
   analysisDefaults?: { enabled: boolean; deviceId: string };
-  cloudSaveDefaults?: { version: string; model: string };
+  cloudSaveDefaults?: { version: string; model: string; effort?: string };
 };
 type Setup = {
   serverPreparationEnabled?: boolean;
@@ -57,7 +61,7 @@ function ConnectionSetup({
   const [clientId, setClientId] = useState("");
   const [route, setRoute] = useState<TaskRuntime>("work_cloud");
   const [model, setModel] = useState("");
-  const [effort, setEffort] = useState("high");
+  const [effort, setEffort] = useState("");
   const [deviceId, setDeviceId] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -120,10 +124,13 @@ function ConnectionSetup({
   const devices = setup?.devices.filter((d) => d.profileBinding) ?? [];
   const chosenDevice =
     deviceId || grant?.analysisDefaults?.deviceId || devices[0]?.id || "";
-  const chosenModel = model || grant?.cloudSaveDefaults?.model || "gpt-6.1-sol";
-  const models = [
-    ...(setup?.modelChoices ?? [{ id: "gpt-6.1-sol", name: "GPT-6.1 Sol" }]),
-  ];
+  const chosenModel =
+    model || grant?.cloudSaveDefaults?.model || defaultWorkCloudAnalysis.model;
+  const chosenEffort =
+    effort ||
+    grant?.cloudSaveDefaults?.effort ||
+    defaultWorkCloudAnalysis.effort;
+  const models = [...(setup?.modelChoices ?? workCloudModelChoices)];
   if (!models.some((m) => m.id === chosenModel))
     models.push({ id: chosenModel, name: `${chosenModel} (saved setting)` });
   const disabled = pending || readOnly || demo || !setup?.enabled;
@@ -139,7 +146,7 @@ function ConnectionSetup({
         expectedVersion: grant?.version ?? 0,
         route,
         model: chosenModel,
-        effort,
+        effort: chosenEffort,
         ...(route === "local" ? { deviceId: chosenDevice } : {}),
       });
       if (!result) throw Error("Setup was not saved. Refresh and try again.");
@@ -382,7 +389,7 @@ function ConnectionSetup({
               Reasoning effort
               <ChoiceSelect
                 id={`connection-effort-${organizationId}`}
-                value={effort}
+                value={chosenEffort}
                 onValueChange={setEffort}
                 disabled={disabled}
               >

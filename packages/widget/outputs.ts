@@ -223,11 +223,13 @@ export const widgetOutputs = {
               timestampMs: z.number().int().nonnegative(),
               width: z.number().int().positive().max(4096),
               height: z.number().int().positive().max(4096),
+              assetIndex: z.number().int().min(0).max(34).nullable().optional(),
+              mediaKind: z.enum(["image", "video"]).optional(),
               reference: z.string().max(1000),
             })
             .strict(),
         )
-        .max(8),
+        .max(48),
       coverage,
     })
     .strict(),

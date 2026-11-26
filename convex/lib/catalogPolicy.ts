@@ -8,6 +8,7 @@ import {
 } from "../../packages/social/contracts";
 import { sourceRetained } from "./sourceAuthority";
 import { ensure } from "../../packages/policy";
+import { cloudCatalogPolicyIdentity } from "../../packages/contracts/cloud-catalog";
 
 export async function currentAutomaticCatalogPolicy(
   ctx: QueryCtx,
@@ -26,10 +27,16 @@ export async function currentAutomaticCatalogPolicy(
     actor.status !== "active"
   )
     return null;
+  let platform: "instagram" | "tiktok" | "x";
   try {
     const identity = privateCloudMediaIdentity(source.url);
-    if (identity.platform !== "instagram" && identity.platform !== "tiktok")
+    if (
+      identity.platform !== "instagram" &&
+      identity.platform !== "tiktok" &&
+      identity.platform !== "x"
+    )
       return null;
+    platform = identity.platform;
     if (!policy.platforms.includes(identity.platform)) return null;
   } catch {
     return null;
@@ -39,7 +46,9 @@ export async function currentAutomaticCatalogPolicy(
   const reviewed = await catalogPermission(ctx, source.url);
   return {
     policy,
-    policyHash: await socialHash(canonicalJson(policy)),
+    policyHash: await socialHash(
+      canonicalJson(cloudCatalogPolicyIdentity(policy, platform)),
+    ),
     ...reviewed,
   };
 }

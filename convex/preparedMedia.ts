@@ -1,4 +1,9 @@
 "use node";
+
+import {
+  instagramCreatorFeedPolicy,
+  readAuthorizedInstagramPost,
+} from "../packages/social/creator-feed";
 import { internalAction, type ActionCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { analyzeOpenAiPreparedEvidence } from "../packages/providers/openai-prepared-insights";
@@ -11,6 +16,7 @@ import { transcribePreparedAudio } from "../packages/providers/vercel-transcript
 import { analyzePreparedEvidence } from "../packages/providers/vercel-insights";
 import { makePreparedEvidence } from "../packages/contracts/prepared-evidence";
 import { privateCloudMediaIdentity } from "../packages/social/contracts";
+import { preparedPostSourceIdentity } from "../packages/social/prepared-post";
 import {
   signedObject,
   objectMetadata,
@@ -150,6 +156,8 @@ async function analyzeServicePreparedEvidence(
     apiKey,
     maximumUsd,
     contributorAllowed: input.contributorAllowed,
+    model: input.receipt?.admission?.quote?.model ?? undefined,
+    effort: input.receipt?.admission?.quote?.effort ?? undefined,
     ...callbacks,
     onDispatch: async () => {
       if (input.receipt?.admission?.providerReservationId)
@@ -246,7 +254,56 @@ export const run = internalAction({
         "SETUP_REQUIRED",
         "Configure the service Gateway credential.",
       );
+      const boundInstagram = input.receipt?.admission?.quote?.instagramGraph;
+      const locator =
+        boundInstagram ||
+        process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true"
+          ? await ctx.runQuery(
+              internal.creatorDiscovery.instagramMediaLocator,
+              {
+                runId,
+              },
+            )
+          : null;
+      const instagramScope = locator
+        ? instagramCreatorFeedPolicy(locator.creatorKey)
+        : null;
+      let authorizedInstagram;
+      if (locator || boundInstagram) {
+        try {
+          ensure(
+            instagramScope &&
+              locator &&
+              (locator.method === "business_discovery") ===
+                !!instagramScope.businessDiscoveryRequesterId,
+            "SOURCE_UNAVAILABLE",
+            "The connected Instagram source is unavailable.",
+          );
+          authorizedInstagram = await readAuthorizedInstagramPost(
+            instagramScope,
+            locator.mediaId,
+            locator.postKey,
+          );
+        } catch {
+          // The reviewed Graph route was not usable. Preserve the exact attempt
+          // and report its cause without trying a second source or credential.
+          await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
+            runId,
+            kind: "preparation_failure",
+            receipt: {
+              phase: "metadata",
+              code: "SOURCE_UNAVAILABLE",
+              stopAcknowledged: true,
+            },
+          });
+          throw new PolicyError(
+            "SOURCE_UNAVAILABLE",
+            "The connected Instagram source is unavailable.",
+          );
+        }
+      }
       const prepared = await prepareHostedEvidence(input.url, {
+        ...(authorizedInstagram ? { authorizedInstagram } : {}),
         maximumDurationMs: input.receipt?.admission?.quote.durationMaximumMs,
         failed: async (receipt) => {
           await ctx.runMutation(internal.preparedAnalysis.recordReceipt, {
@@ -541,7 +598,12 @@ export const run = internalAction({
         canonical: identity.url,
         platform: identity.platform,
         ...(post ? { post } : {}),
-        sourceHash: prepared.sourceReceipt.sourceHash,
+        sourceHash:
+          post?.coverage === "single_downloaded_video"
+            ? createHash("sha256")
+                .update(preparedPostSourceIdentity(identity.url, post))
+                .digest("hex")
+            : prepared.sourceReceipt.sourceHash,
         recipeHash,
         downloaderVersion: prepared.downloaderVersion,
         title: prepared.metadata.title ?? "",
@@ -550,12 +612,21 @@ export const run = internalAction({
         language: asr.language.split(/[-_]/)[0].toLowerCase(),
         observedAt: prepared.startedAt,
         transcript: asr.provenance,
-        segments: asr.segments,
+        segments:
+          post?.coverage === "single_downloaded_video"
+            ? asr.segments.map((segment) => ({
+                ...segment,
+                assetId: "asset-1",
+                assetIndex: 0,
+              }))
+            : asr.segments,
         frames: prepared.frames.map((f) => ({
           id: f.id,
           ...("assetId" in f
             ? { assetId: f.assetId, assetIndex: f.assetIndex }
-            : {}),
+            : post?.coverage === "single_downloaded_video"
+              ? { assetId: "asset-1", assetIndex: 0 }
+              : {}),
           timestampMs: f.timestampMs,
           sha256: f.sha256,
           bytes: f.bytes.byteLength,

@@ -8,7 +8,14 @@ export const preparedQuoteRequest = z.strictObject({
   executor: preparedExecutor,
   reanalyze: z.boolean().optional(),
   model: z
-    .enum(["meta/muse-spark-1.3-contributor", "gpt-6-luna", "gpt-6.1-sol"])
+    .enum([
+      "meta/muse-spark-1.3-contributor",
+      "meta/muse-ember",
+      "anthropic/claude-haiku-5.5",
+      "gpt-6-luna",
+      "gpt-6.1-sol",
+      "gpt-6.2-sol",
+    ])
     .optional(),
   effort: z.enum(["none", "low", "medium", "high", "xhigh", "max"]).optional(),
 });

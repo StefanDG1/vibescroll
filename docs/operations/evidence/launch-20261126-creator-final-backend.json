@@ -1,0 +1,56 @@
+{
+  "date": "2026-11-26",
+  "backendCommit": "57fbc2cf16b58e56ac57c8478cd6b003dbe66633",
+  "websiteCommitAtAcceptance": "62f837b9e6d5966d7776f81fa9de675e4114bba1",
+  "backendFinishAcknowledgedAtUtc": "2026-11-26T19:46:40.376Z",
+  "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/45885572069",
+  "checks": {
+    "mainPassed": 1850,
+    "mainSkipped": 9,
+    "authenticationPassed": 92,
+    "sharedUiPassed": 194,
+    "bothBuildsPassed": true,
+    "auditAndSecretScanPassed": true
+  },
+  "publication": {
+    "matchingBundles": 2,
+    "bundleBytes": 7893374,
+    "bundleSha256": "4d128d506e3d311b650b7864f60f5aff2a43b8751e58231641b5846179f2be11",
+    "guardCasesPassed": 13,
+    "components": 14,
+    "tables": 174,
+    "indexes": 392,
+    "schemaChange": "Widen the existing optional identity-proof method by instagram_media_api",
+    "indexChanges": 0,
+    "populatedScansOrBackfills": 0,
+    "websiteBuilds": 0
+  },
+  "production": {
+    "xAutomaticPublicationEnabled": true,
+    "priorInstagramAndTikTokPolicyIdentityPreserved": true,
+    "authenticatedInstagramAuthorsRecovered": 2,
+    "privateXAuthorsRecovered": 4,
+    "privateXSelectedVersionsGenerationsAndUpdatedAtPreserved": true,
+    "indexedSharedResults": 58,
+    "distinctCreators": 48,
+    "selectedSharedResults": 59,
+    "remainingOriginalInstagramPost": "Authenticated endpoint reported unavailable; preserve retained analysis without guessing its author",
+    "walletsUnchangedByMetadataRepair": true,
+    "creditHoldsUnchanged": true,
+    "newPreparations": 0,
+    "newModelRuns": 0,
+    "xFollowFeed": "First page succeeded; normal continuation pending",
+    "existingPrivateXResultsPublishedByMetadataRepair": false
+  },
+  "independentReceivingAccount": {
+    "differentPersistedOwnerVerified": true,
+    "instagramNativeSaveReachedReady": true,
+    "sameSharedVersion": true,
+    "savedImages": 9,
+    "insights": 6,
+    "oldSourcesPreserved": true,
+    "operatorAllowance": "Five audited test credits expiring after seven days; no subscription or payment change",
+    "tiktokPhotoReuse": "Pending revised Save dialog acceptance"
+  },
+  "mcp": { "repairedXCreatorRead": true, "originalConnectionRetained": true }
+}

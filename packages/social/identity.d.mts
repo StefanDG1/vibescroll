@@ -9,3 +9,5 @@ export function socialCreatorUrl(raw: string): {
   canonical: string;
 };
 export function socialPostAliases(raw: string): string[];
+export function isInstagramSharePath(path: string): boolean;
+export function instagramPostShortcode(path: string): string | null;

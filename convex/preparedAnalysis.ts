@@ -1,3 +1,6 @@
+import { creatorPoolEnabled } from "./lib/creatorPool";
+import { enqueueCreatorMatching } from "./lib/creatorMatching";
+import { preparedMediaContentKey } from "../packages/social/prepared-post";
 import { readAdminProcessingAllowance } from "./lib/adminProcessingAllowance";
 import { z } from "zod";
 import { v } from "convex/values";
@@ -47,6 +50,7 @@ import { markProviderDispatch } from "./lib/providerFunding";
 import { requireProCatalogAccess } from "./lib/catalogEntitlement";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { openAiRunAuthority, reserveOpenAiGeneration } from "./lib/openAiGrant";
+import { stopPreparedAttempt } from "./lib/preparedLifecycle";
 
 const policySchema = z.strictObject({
   id: z.string().min(8).max(80),
@@ -142,6 +146,38 @@ async function current(ctx: QueryCtx, id: Id<"mediaPreparations">) {
 async function active(ctx: QueryCtx, id: Id<"mediaPreparations">) {
   const c = await current(ctx, id);
   if (c.run.receipt?.admission?.version === "prepared-service-admission-v1") {
+    if (
+      c.run.receipt.creatorPoolId &&
+      ["queued", "evidence_ready"].includes(c.run.state)
+    ) {
+      const poolId = ctx.db.normalizeId(
+        "creatorPoolRuns",
+        c.run.receipt.creatorPoolId,
+      );
+      const pool = poolId ? await ctx.db.get(poolId) : null;
+      const follow = pool
+        ? await ctx.db
+            .query("creatorFollows")
+            .withIndex("by_actor_workspace_creator", (q) =>
+              q
+                .eq("actorId", c.actor._id)
+                .eq("organizationId", c.org._id)
+                .eq("creatorKey", pool.creatorKey),
+            )
+            .unique()
+        : null;
+      ensure(
+        pool &&
+          pool.runId === id &&
+          pool.sponsorId === c.actor._id &&
+          pool.state === "active" &&
+          creatorPoolEnabled(pool.creatorKey) &&
+          follow?.state === "following" &&
+          follow.sponsor,
+        "APPROVAL_STALE",
+        "The creator sponsorship is no longer enabled.",
+      );
+    }
     ensure(
       c.run.deadline > Date.now(),
       "APPROVAL_STALE",
@@ -788,7 +824,22 @@ export const retain = internalMutation({
       updatedAt: now,
       stages: [...c.run.stages, { stage: "evidence_ready", at: now }],
     });
+    const post = e.post;
+    const publishedAt =
+      post?.version === "social-post-evidence-v1" ? post.publishedAt : null;
     await ctx.db.patch(c.source._id, {
+      ...(post?.authorId && post.authorHandle
+        ? {
+            platformPostKey: `${e.platform}:${post.postId}`,
+            creator: {
+              key: `${e.platform}:${post.authorId}`,
+              handle: post.authorHandle,
+              generation: c.source.generation,
+              contentKey: await preparedMediaContentKey(post),
+            },
+            ...(publishedAt ? { publishedAt } : {}),
+          }
+        : {}),
       personalMedia: {
         ...c.source.personalMedia,
         version: "service-preparation-progress-v1",
@@ -852,12 +903,10 @@ export const finishGateway = internalMutation({
       evidence: neutralCloudObservations(prepared.evidence),
     });
     const openAi = c.run.receipt?.admission?.quote?.openAi;
-    const requestedModel = openAi
-      ? c.run.receipt!.admission.quote.model
-      : "meta/muse-spark-1.3-contributor";
-    const requestedEffort = openAi
-      ? c.run.receipt!.admission.quote.effort
-      : "medium";
+    const requestedModel =
+      c.run.receipt?.admission?.quote?.model ??
+      "meta/muse-spark-1.3-contributor";
+    const requestedEffort = c.run.receipt?.admission?.quote?.effort ?? "medium";
     if (openAi)
       ensure(
         c.run.receipt?.analysisDispatch?.authorityId === openAi.authorityId &&
@@ -935,7 +984,7 @@ export const finishGateway = internalMutation({
         ? typeof a.receipt.reportedEffort === "string"
           ? { reportedEffort: a.receipt.reportedEffort }
           : {}
-        : { reportedEffort: "medium" }),
+        : { reportedEffort: requestedEffort }),
       provenance: "managed_api_reported",
       evaluation: "review_required",
     });
@@ -1011,6 +1060,7 @@ export const finishGateway = internalMutation({
         },
       );
     }
+    await enqueueCreatorMatching(ctx, c.source._id);
     return versionId;
   },
 });
@@ -1145,12 +1195,14 @@ export const recordReceipt = internalMutation({
     const c = await current(ctx, runId);
     ensure(
       !assetId ||
-        (privateCloudMediaIdentity(c.run.canonical).platform === "x" &&
+        (["x", "instagram", "tiktok"].includes(
+          privateCloudMediaIdentity(c.run.canonical).platform,
+        ) &&
           c.run.state === "transcribing" &&
           /^asset-(?:[1-9]|[12][0-9]|3[0-5])$/.test(assetId) &&
           ["asr", "asr_output"].includes(kind)),
       "INVALID_INPUT",
-      "Use an exact X audio attachment receipt.",
+      "Use an exact post audio attachment receipt.",
     );
     const receiptKey = assetId ? `${kind}_${assetId}` : kind;
     // This private, source-scoped response survives validation failure. Strip
@@ -1202,7 +1254,9 @@ function knownReturnedPreparationFailure(
     /^asr_asset-(?:[1-9]|[12][0-9]|3[0-5])$/.test(key),
   );
   const returnedPostParts =
-    privateCloudMediaIdentity(run.canonical).platform === "x" &&
+    ["x", "instagram", "tiktok"].includes(
+      privateCloudMediaIdentity(run.canonical).platform,
+    ) &&
     parts.length > 0 &&
     parts.every(
       (key) =>
@@ -1606,6 +1660,19 @@ export const expire = internalMutation({
   returns: v.null(),
   handler: async (ctx, { runId }) => {
     const run = await ctx.db.get(runId);
+    if (run?.executor === "work_cloud" && run.attemptId) {
+      // Once evidence is handed off, the exact analysis attempt owns expiry.
+      // An older preparation timer may already have marked an unclaimed run unknown.
+      if (run.state === "unknown") {
+        const attempt = await ctx.db.get(run.attemptId);
+        if (
+          attempt?.state === "cancelled" &&
+          attempt.diagnostic === "unclaimed_request_expired"
+        )
+          await stopPreparedAttempt(ctx, attempt, "failed");
+      }
+      return null;
+    }
     if (
       !run ||
       gatewayDeadline(run) > Date.now() ||

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
+import { defaultWorkCloudAnalysis } from "../../../packages/onboarding/work-cloud-models";
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const grantSchema = z.object({
@@ -114,8 +115,12 @@ export function WorkCloudTextPanel({
   const [grants, setGrants] = useState<Grant[] | null>(null);
   const [grantId, setGrantId] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [model, setModel] = useState(media ? "gpt-6.1-sol" : "");
-  const [effort, setEffort] = useState(media ? "medium" : "");
+  const [model, setModel] = useState<string>(
+    media ? defaultWorkCloudAnalysis.model : "",
+  );
+  const [effort, setEffort] = useState<string>(
+    media ? defaultWorkCloudAnalysis.effort : "",
+  );
   const [consent, setConsent] = useState<string | null>(null);
   const [queued, setQueued] = useState<Queued | null>(null);
   const [busy, setBusy] = useState(false);

@@ -5,6 +5,7 @@ for (const [file, symbol] of [
   ["acquire-prepared.py", "preparedAcquirer"],
   ["cloud_extraction.py", "preparedExtraction"],
   ["x-post-worker.py", "xPostWorker"],
+  ["social-public-post.py", "socialPublicPost"],
   ["prepare_cloud_dependencies.py", "cloudDependencySetup"],
 ]) {
   const text = await readFile(
@@ -51,6 +52,7 @@ for (const file of [
   "preparedAcquirer",
   "preparedExtraction",
   "xPostWorker",
+  "socialPublicPost",
   "cloudDependencySetup",
   "decoder",
   "acquirer",

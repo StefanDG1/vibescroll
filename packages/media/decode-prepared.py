@@ -36,7 +36,7 @@ def prepare():
              '-map', '1:a:0', '-c', 'copy', '-f', 'matroska', str(combined)], 30)
         source = combined
     info = json.loads(run(['ffprobe', '-v', 'error', '-protocol_whitelist', 'file',
-                          '-show_entries', 'format=duration:stream=codec_type,width,height,duration',
+                          '-show_entries', 'format=duration,format_name:stream=codec_type,width,height,duration',
                           '-of', 'json', str(source)], 15))
     duration = float(info['format']['duration'])
     assert math.isfinite(duration) and 0 < duration <= 600
@@ -114,6 +114,8 @@ def prepare():
                'ffmpegVersion': run(['ffmpeg', '-version'], 5).decode('utf-8').splitlines()[0][:250],
                'ffprobeVersion': run(['ffprobe', '-version'], 5).decode('utf-8').splitlines()[0][:250],
                'pythonVersion': sys.version.split()[0]}
+    if len(acquired) == 1 and 'mp4' in info['format'].get('format_name', '').split(','):
+        receipt['mp4ContentHash'] = hashes[0]
     (ROOT / 'source-receipt.json').write_text(json.dumps(receipt), encoding='utf-8')
 
 

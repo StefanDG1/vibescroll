@@ -24,9 +24,9 @@ const grantPolicy = z
     maximumTotalNanoUsd: z.number().int().min(1000000).max(10000000000),
     verifiedGrantBalanceNanoUsd: z.number().int().positive().max(500000000000),
     allowedModels: z
-      .array(z.enum(["gpt-6-luna", "gpt-6.1-sol"]))
+      .array(z.enum(["gpt-6-luna", "gpt-6.1-sol", "gpt-6.2-sol"]))
       .min(1)
-      .max(2),
+      .max(3),
     subjects: z
       .array(z.string().regex(/^user_[A-Za-z0-9]{20,80}$/))
       .min(1)

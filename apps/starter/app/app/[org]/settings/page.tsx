@@ -1,8 +1,9 @@
+import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { backend, api } from "@/lib/backend";
-import { Database, Download, SlidersHorizontal } from "lucide-react";
+import { Database, Download, SlidersHorizontal, Sparkles } from "lucide-react";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
-import { ActionForm } from "@/components/action-form";
+import { ActionForm, type FormState } from "@/components/action-form";
 import {
   renameOrganization,
   deleteOrganization,
@@ -26,12 +27,37 @@ export default async function Page({
     localSnapshotRequest(),
     backend(),
   ]);
-  const [info, catalog] = await Promise.all([
+  const [info, catalog, models] = await Promise.all([
     client.query(api.organizations.details, { organizationId }),
     local
       ? Promise.resolve(null)
       : client.query(api.catalogAccess.status, { organizationId }),
+    local
+      ? Promise.resolve(null)
+      : client.query(api.aiPreferences.read, { organizationId }),
   ]);
+  async function setPostAnalysisDefaults(
+    _: FormState,
+    form: FormData,
+  ): Promise<FormState> {
+    "use server";
+    const model = String(form.get("model"));
+    const effort = String(form.get("effort") ?? "");
+    await (
+      await backend()
+    ).mutation(api.aiPreferences.saveManagedPostDefaults, {
+      organizationId,
+      defaults: {
+        model,
+        ...(model === "auto" || !effort ? {} : { effort }),
+        maximumCredits: Number(form.get("maximumCredits")),
+        enabled: form.get("managed") === "on",
+      },
+    });
+    revalidatePath(`/app/${org}/settings`);
+    return { message: "Post analysis settings saved." };
+  }
+  const defaults = models?.managedPostDefaults;
   return (
     <AccountPageFrame
       title="Workspace settings"
@@ -94,6 +120,60 @@ export default async function Page({
           )}
         </AccountSection>
       </div>
+      {info.role === "owner" && info.private && defaults && (
+        <AccountSection
+          title="Managed post analysis"
+          icon={Sparkles}
+          description="Use VibeScroll credits for future links shared with your connected ChatGPT. Auto uses eligible OpenAI grant funding first."
+        >
+          <ActionForm
+            action={setPostAnalysisDefaults}
+            label="Save analysis settings"
+          >
+            <Label htmlFor="managed-analysis" className="checkbox-label">
+              <input
+                id="managed-analysis"
+                name="managed"
+                type="checkbox"
+                defaultChecked={defaults.enabled}
+              />
+              <span>Analyze shared links automatically</span>
+            </Label>
+            <Label htmlFor="post-model">Default model</Label>
+            <select name="model" id="post-model" defaultValue={defaults.model}>
+              <option value="auto">Auto</option>
+              <option value="gpt-6.2-sol">GPT-6.2 Sol</option>
+              <option value="gpt-6-luna">GPT-6 Luna</option>
+              <option value="meta/muse-ember">Muse Ember</option>
+              <option value="anthropic/claude-haiku-5.5">
+                Claude Haiku 5.5
+              </option>
+            </select>
+            <Label htmlFor="post-effort">Reasoning effort</Label>
+            <select
+              name="effort"
+              id="post-effort"
+              defaultValue={defaults.effort ?? ""}
+            >
+              <option value="">Model default</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <Label htmlFor="post-limit">
+              Maximum VibeScroll credits per post
+            </Label>
+            <Input
+              name="maximumCredits"
+              id="post-limit"
+              type="number"
+              min={1}
+              max={501}
+              required
+              defaultValue={defaults.maximumCredits}
+            />
+          </ActionForm>
+        </AccountSection>
+      )}
       {info.role === "owner" && !local && (
         <>
           <AccountSection

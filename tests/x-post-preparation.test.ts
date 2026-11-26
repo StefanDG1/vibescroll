@@ -4,6 +4,8 @@ import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 const state = vi.hoisted(() => ({
   events: [] as string[],
   failSetup: false,
+  videoUrl: "",
+  requests: [] as unknown[],
   text: "Full caption. ".repeat(2500),
 }));
 const canonical = "https://x.com/i/web/status/1234567890123456789";
@@ -31,17 +33,29 @@ vi.mock("../packages/providers/isolation", () => ({
     state.events.push("decoder_denied_network");
   },
 }));
+vi.mock("../packages/providers/prepared-downloader", () => ({
+  preparedDownloader: { version: "synthetic" },
+  readPreparedDownloader: async () => {
+    state.events.push("downloader_read");
+    return new Uint8Array();
+  },
+}));
 vi.mock("../packages/providers/sandbox", () => ({
   createJobSandbox: async () => ({
     sandboxId: "vercel:synthetic-x-job",
     files: {
-      write: async () => {},
+      write: async (files: { path: string; data: string | Uint8Array }[]) => {
+        for (const { path, data } of files)
+          if (path.endsWith("request.json") && typeof data === "string")
+            state.requests.push(JSON.parse(data));
+      },
       read: async (path: string, options?: { format: string }) => {
         if (path.endsWith("metadata.json"))
           return JSON.stringify({
             title: "X post",
             authorName: "Author",
-            resolvedCanonical: canonical,
+            resolvedCanonical: state.videoUrl || canonical,
+            ...(state.videoUrl ? { singleTikTokVideo: true } : {}),
           });
         if (!path.endsWith("x-result.json") || options?.format !== "bytes")
           throw Error("bounded_binary_manifest_required");
@@ -79,7 +93,11 @@ vi.mock("../packages/providers/sandbox", () => ({
         const stage = command.split(" ").at(-1)!;
         state.events.push(stage);
         return {
-          exitCode: state.failSetup && stage === "setup" ? 1 : 0,
+          exitCode:
+            (state.failSetup && stage === "setup") ||
+            (state.videoUrl && stage === "download-media")
+              ? 1
+              : 0,
           stdout: "",
           stderr: "",
         };
@@ -95,6 +113,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
   state.events = [];
   state.failSetup = false;
+  state.videoUrl = "";
+  state.requests = [];
 });
 it("initializes the restricted broker before user commands and transfers complete captions beyond the text-read limit", async () => {
   vi.stubGlobal("fetch", async () => new Response(new Uint8Array()));
@@ -133,4 +153,28 @@ it("records a failed setup only after cleanup acknowledges the exact sandbox sto
   expect(state.events.indexOf("stopped")).toBeLessThan(
     state.events.indexOf("failure_receipt"),
   );
+});
+
+it("uses one isolated sandbox and preserves the quote when delegating a verified TikTok video", async () => {
+  state.videoUrl = "https://www.tiktok.com/@fixture/video/1234567890123456789";
+  await expect(
+    prepareHostedXPost("https://vm.tiktok.com/Synthetic123/", {
+      stage: async () => {},
+      metadata: async () => {},
+      maximumDurationMs: 12000,
+    }),
+  ).rejects.toThrow(/SOURCE_UNAVAILABLE/);
+  expect(state.requests.at(-1)).toEqual({
+    url: state.videoUrl,
+    maximumDurationMs: 12000,
+  });
+  expect(state.events).toEqual([
+    "broker_ready",
+    "inspect",
+    "downloader_read",
+    "/home/user/tools/yt-dlp",
+    "inspect",
+    "download-media",
+    "stopped",
+  ]);
 });

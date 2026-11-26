@@ -26,7 +26,12 @@ export const contribute = action({
     state: string;
   }> => {
     const prepared = await ctx.runMutation(internal.cloudCatalog.prepare, args);
-    return copyPreparedContribution(ctx, prepared);
+    const outcome = await copyPreparedContribution(ctx, prepared);
+    if (outcome.state === "published")
+      await ctx.runMutation(internal.cloudCatalog.finishAutomatic, {
+        contributionId: outcome.contributionId,
+      });
+    return outcome;
   },
 });
 
@@ -51,9 +56,9 @@ async function copyPreparedContribution(
   try {
     const input = await ctx.runQuery(internal.cloudCatalog.copyInput, binding);
     ensure(
-      input.frames.length >= 1 && input.frames.length <= 8,
+      input.frames.length <= 48,
       "INVALID_EVIDENCE",
-      "Copy at most eight retained screenshots.",
+      "Copy at most 48 retained post images.",
     );
     const buffers: { targetKey: string; bytes: Buffer }[] = [];
     let bytesRead = 0;
@@ -83,7 +88,7 @@ async function copyPreparedContribution(
           size += part.value.length;
           bytesRead += part.value.length;
           ensure(
-            size <= Math.min(frame.size, 150000) && bytesRead <= 1200000,
+            size <= Math.min(frame.size, 150000) && bytesRead <= 7200000,
             "INVALID_EVIDENCE",
             "The bounded screenshot copy exceeded its byte allowance.",
           );
@@ -199,11 +204,18 @@ export const publishCompleted = internalAction({
         return { state: "unknown" };
       }
       const outcome = await copyPreparedContribution(ctx, prepared);
-      if (outcome.state === "published")
+      if (outcome.state === "published") {
         await ctx.runMutation(internal.cloudCatalog.finishAutomatic, {
           contributionId: outcome.contributionId,
         });
-      else if (outcome.state === "copying" && (await waitForCopy()))
+        try {
+          await ctx.runMutation(internal.creatorDiscovery.notifyPublisher, {
+            sourceId: args.sourceId,
+          });
+        } catch {
+          // Creator discovery can retry delivery. The published artifact stays Ready.
+        }
+      } else if (outcome.state === "copying" && (await waitForCopy()))
         return { ...outcome, state: "pending" };
       else
         await ctx.runMutation(internal.cloudCatalog.automaticOutcome, {

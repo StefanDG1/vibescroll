@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-26",
+  "websiteCommit": "cd29157f632f4ebf8aec810c1bffda00ff593df7",
+  "backendCommit": "57fbc2cf16b58e56ac57c8478cd6b003dbe66633",
+  "version": "0.1.0-alpha.20261126201214.gcd29157f632f",
+  "deploymentId": "dpl_95ejKU4mVnn4Se5FpGsXCbaoFgXF",
+  "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/45889312612",
+  "localFullCheckPassed": true,
+  "checks": {
+    "mainPassed": 1850,
+    "authPassed": 92,
+    "sharedUiPassed": 195,
+    "bothBuildsPassed": true,
+    "dependencyAuditPassed": true,
+    "secretScanPassed": true
+  },
+  "release": {
+    "websiteBuilds": 1,
+    "fixedBasicBuild": true,
+    "machineCores": 2,
+    "machineMemoryGb": 8,
+    "stagedExactHealth": true,
+    "stagedDescriptor": true,
+    "stagedPrivateCreatorAuthRedirect": 307,
+    "sameBuildPromoted": true,
+    "canonicalExactHealth": true,
+    "aliasesCompleted": true,
+    "automaticDomainAssignmentRestored": true,
+    "temporaryShareRevoked": true,
+    "newBackendDeployments": 0
+  },
+  "signedInPopup": {
+    "widths": [1440, 390, 320],
+    "horizontalOverflow": false,
+    "titleField": false,
+    "processingRightsCheckbox": false,
+    "arrowMenus": 0,
+    "localExpandedRoutePickerArrowMenus": 0,
+    "nativeTiktokPhotoSaveReachedReady": true
+  },
+  "independentPhotoReuse": {
+    "differentPersistedOwner": true,
+    "instagramImages": 9,
+    "instagramInsights": 6,
+    "tiktokImages": 2,
+    "tiktokInsights": 1,
+    "sameSelectedSharedVersions": true,
+    "allElevenJpegsLoadedAndDecoded": true,
+    "receivingCreditsSpent": 0,
+    "receivingCreditsReserved": 0,
+    "oldSavedSourcesPreserved": true,
+    "newModelRuns": 0,
+    "newPreparations": 0
+  },
+  "creatorAcceptance": {
+    "xScheduledFeedReachedReady": true,
+    "scheduledCronSuccessObserved": true,
+    "testXFollowRestored": true,
+    "secondAccountNativeTikTokFollowAndUnfollow": true,
+    "sponsorshipEnabledByTests": false,
+    "retainedXResultsPublished": 4,
+    "sharedIndexedResultsAfterPublication": 62,
+    "distinctCreators": 52,
+    "mcpSharedXVideoContextAndJpeg": true,
+    "mcpSharedXTextContext": true
+  },
+  "remainingAtThisCheckpoint": [
+    "X receiving-user Save exposed the old two-platform cache restriction; the correction and regression coverage are prepared separately.",
+    "One original Instagram post is unavailable; its retained result remains without a guessed author.",
+    "A live sponsored new-post run requires an eligible post published after a contribution-enabled follow."
+  ]
+}

@@ -1,3 +1,4 @@
+import type { readAuthorizedInstagramPost } from "../social/creator-feed";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { createJobSandbox } from "./sandbox";
@@ -13,19 +14,23 @@ import { jpegDimensions } from "../media/jpeg";
 import { ensure, PolicyError } from "../policy";
 import { readResponseBytes } from "./binary";
 import { prepareHostedXPost } from "./x-post-preparation";
-
-const downloader = {
-  version: "2026.10.26",
-  bytes: 3073072,
-  sha256: "e51e69e89489f199530f13d32a4342da3ddb2cf34842f364603a066db05afbf3",
-  url: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp",
-};
+import {
+  downloadedVideoPostMetadata,
+  preparedPostEvidence,
+  usesOrderedPostPreparation,
+} from "../social/prepared-post";
+import { isInstagramSharePath } from "../social/identity.mjs";
+import {
+  preparedDownloader as downloader,
+  readPreparedDownloader,
+} from "./prepared-downloader";
 const nativeMetadata = z.object({
   title: z.string().max(160).optional(),
   authorName: z.string().max(160).optional(),
   durationSeconds: z.number().positive().max(600).optional(),
   publishedAt: z.number().optional(),
   resolvedCanonical: z.string().url().max(2048),
+  videoPost: downloadedVideoPostMetadata.optional(),
 });
 const parser = {
   url: "https://files.pythonhosted.org/packages/4f/43/6b89c84f5a6753b1dbc43b8d010443b8f2314a2b94f34e448975d115c962/pysubs2-1.9.0-py3-none-any.whl",
@@ -39,12 +44,21 @@ export async function prepareHostedEvidence(
     metadata: (metadata: z.infer<typeof nativeMetadata>) => Promise<void>;
     failed?: (receipt: Record<string, unknown>) => Promise<void>;
     maximumDurationMs?: number;
+    authorizedInstagram?: Awaited<
+      ReturnType<typeof readAuthorizedInstagramPost>
+    >;
   },
 ) {
-  if (acquisitionPolicy(url).platform === "x")
+  const policy = acquisitionPolicy(url);
+  if (callbacks.authorizedInstagram || usesOrderedPostPreparation(policy.url))
     return prepareHostedXPost(url, callbacks);
-  const policy = acquisitionPolicy(url),
-    times: Record<string, number> = {};
+  ensure(
+    policy.platform !== "instagram" ||
+      !isInstagramSharePath(new URL(policy.url).pathname),
+    "UNSUPPORTED_SOURCE",
+    "This Instagram share link needs ordered post preparation.",
+  );
+  const times: Record<string, number> = {};
   const startedAt = Date.now();
   const maximumDurationMs = callbacks.maximumDurationMs ?? 600000;
   ensure(
@@ -55,21 +69,7 @@ export async function prepareHostedEvidence(
     "Use a bounded media duration.",
   );
   // The trusted controller verifies the pinned public tool before sending it to an isolated job.
-  const toolResponse = await fetch(downloader.url, {
-    signal: AbortSignal.timeout(15000),
-  });
-  ensure(
-    toolResponse.ok,
-    "SETUP_REQUIRED",
-    "The pinned downloader could not be obtained.",
-  );
-  const tool = await readResponseBytes(toolResponse, downloader.bytes);
-  ensure(
-    tool.byteLength === downloader.bytes &&
-      createHash("sha256").update(tool).digest("hex") === downloader.sha256,
-    "POLICY_BLOCKED",
-    "The pinned downloader bytes changed.",
-  );
+  const tool = await readPreparedDownloader();
   times.toolReady = Date.now();
   const parserResponse = await fetch(parser.url, {
     signal: AbortSignal.timeout(10000),
@@ -146,13 +146,14 @@ export async function prepareHostedEvidence(
       "/home/user/media/metadata.json",
     );
     ensure(
-      metadataBytes.length <= 5000,
+      metadataBytes.length <= 370000,
       "INVALID_EVIDENCE",
       "Source metadata exceeded its bound.",
     );
     const metadata = nativeMetadata.parse(JSON.parse(metadataBytes));
     times.metadata = Date.now();
-    await callbacks.metadata(metadata);
+    const { videoPost, ...preview } = metadata;
+    await callbacks.metadata(preview);
     phase = "download";
     await callbacks.stage("downloading");
     await command(
@@ -195,6 +196,10 @@ export async function prepareHostedEvidence(
     const sourceReceipt = z
       .object({
         sourceHash: z.string().regex(/^[a-f0-9]{64}$/),
+        mp4ContentHash: z
+          .string()
+          .regex(/^[a-f0-9]{64}$/)
+          .optional(),
         sourceBytes: z
           .number()
           .int()
@@ -258,9 +263,37 @@ export async function prepareHostedEvidence(
     await sandbox.kill();
     stopped = true;
     times.stopped = Date.now();
+    const post =
+      videoPost && sourceReceipt.mp4ContentHash
+        ? preparedPostEvidence.parse({
+            ...videoPost,
+            version: "social-post-evidence-v1",
+            provider: "pinned_video_downloader",
+            coverage: "single_downloaded_video",
+            publishedAt: preview.publishedAt ?? null,
+            textHash: createHash("sha256").update(videoPost.text).digest("hex"),
+            expectedAssetCount: 1,
+            assets: [
+              {
+                id: "asset-1",
+                index: 0,
+                kind: "video",
+                mime: "video/mp4",
+                contentHash: sourceReceipt.mp4ContentHash,
+                bytes: sourceReceipt.sourceBytes,
+                width: sourceReceipt.width,
+                height: sourceReceipt.height,
+                durationMs: Math.round(manifest.durationSeconds * 1000),
+                animated: false,
+                audioStatus: audio || transcript ? "prepared" : "none",
+              },
+            ],
+          })
+        : undefined;
     succeeded = true;
     return {
-      metadata,
+      metadata: preview,
+      post,
       manifest,
       sourceReceipt,
       frames,

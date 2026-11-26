@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-26",
+  "timezone": "Europe/Paris",
+  "productionBackendCommit": "b9cf8353beb59fa656b09c66b3c7d3286d10c00b",
+  "productionWebsiteCommit": "62f837b9e6d5966d7776f81fa9de675e4114bba1",
+  "finishAcknowledgedAtUtc": "2026-11-26T19:10:05.109Z",
+  "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/45880780648",
+  "localChecks": {
+    "mainPassed": 1835,
+    "mainSkipped": 9,
+    "authPassed": 92,
+    "sharedUiPassed": 194,
+    "bothBuildsPassed": true
+  },
+  "schema": {
+    "components": 14,
+    "tables": 174,
+    "indexes": 392,
+    "onlyChange": "optional creatorCatalogPosts.identityProof",
+    "existingIndexesUnchanged": true,
+    "populatedWalks": 0,
+    "backfills": 0
+  },
+  "deterministicPreparations": 2,
+  "publicationGuardCasesPassed": 13,
+  "productionMetadataPass": {
+    "catalogFamilies": 92,
+    "familiesWithSelectedResult": 59,
+    "familiesWithoutSelectedResult": 33,
+    "indexedBefore": 2,
+    "authorsRecovered": 54,
+    "indexedAfter": 56,
+    "distinctCreators": 46,
+    "publicMetadataUnavailable": 3,
+    "newModelRuns": 0,
+    "newPreparations": 0,
+    "newWebsiteBuilds": 0,
+    "walletsUnchanged": true,
+    "creditHoldsUnchanged": true,
+    "unknownJobsReplayed": false
+  },
+  "mcp": {
+    "recoveredLegacyCreatorRead": true,
+    "workspacePostsReturned": 2,
+    "sharedPostsReturned": 2,
+    "originalConnectionRetained": true
+  },
+  "countCorrection": "The earlier 90 unindexed families were not 90 missing analyzed results. Thirty-three families have no selected published result. The bounded recovery preserved those families and their existing jobs and holds.",
+  "followup": {
+    "authenticatedLocalProbeRecoveredTwoMorePublicInstagramAuthors": true,
+    "thirdInstagramPostReportedUnavailable": true,
+    "authenticatedFallbackPublished": false,
+    "independentReceivingUserBrowser": "pending Chrome remote-debugging permission"
+  }
+}

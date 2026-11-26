@@ -70,7 +70,6 @@ it.each(
           return (
             {
               url: "https://www.instagram.com/reel/Example/",
-              rights: "on",
             } as Record<string, string>
           )[name];
         }
@@ -108,8 +107,7 @@ it.each([
   { preferredRoute: "local", expected: "local" },
   { preferredRoute: "cloud", expected: "cloud" },
   { preferredRoute: "save_only", expected: undefined },
-  { existingSourceId: "upload-recovery", expected: "local" },
-])("preserves an explicit route or upload recovery: %j", (selection) => {
+])("preserves an explicit selected route: %j", (selection) => {
   const tree = CaptureForm({
     organizationId: "workspace",
     personalEnabled: true,
@@ -123,6 +121,31 @@ it.each([
     elements(tree).find((node) => node.type === TaskRuntimePicker)!.props.value,
   ).toBe(selection.expected);
 });
+it("offers links and link imports as the only Save modes", () => {
+  const tree = CaptureForm({
+    organizationId: "workspace",
+    call: vi.fn(),
+    onDone: vi.fn(),
+  });
+  const modes = elements(tree).find(
+    (node) => node.props["aria-label"] === "Save mode",
+  );
+  expect(
+    elements(modes)
+      .filter((node) => node.type === "button")
+      .map((node) => node.props.children),
+  ).toEqual(["Post link", "Import saved links"]);
+  expect(
+    elements(tree).some(
+      (node) =>
+        node.props.name === "title" ||
+        node.props.name === "rights" ||
+        node.type === "details" ||
+        node.type === "select",
+    ),
+  ).toBe(false);
+});
+
 it("allows an explicit Save only without starting Cloud or requiring its monitor setup", async () => {
   const call = vi.fn(async () => "saved-only"),
     done = vi.fn(),
@@ -134,9 +157,7 @@ it("allows an explicit Save only without starting Cloud or requiring its monitor
       get(name: string) {
         return name === "url"
           ? "https://www.instagram.com/reel/Example/"
-          : name === "rights"
-            ? "on"
-            : null;
+          : null;
       }
     },
   );

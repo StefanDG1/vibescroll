@@ -13,26 +13,18 @@
         "benefitHypothesis": "This might improve the workflow, subject to verification.",
         "currentProblem": "The project profile may benefit from this source idea.",
         "disposition": "needs_context",
-        "nonGoals": [
-          "No implementation starts here."
-        ],
+        "nonGoals": ["No implementation starts here."],
         "proposedChange": "Inspect the current implementation before choosing a change.",
-        "risks": [
-          "The project code has not been inspected."
-        ],
+        "risks": ["The project code has not been inspected."],
         "title": "Review a useful idea for this project",
-        "verificationNeeds": [
-          "Inspect the selected repository revision."
-        ]
+        "verificationNeeds": ["Inspect the selected repository revision."]
       },
       "codingAuthorized": false,
       "contextHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "creditsSpent": 0,
       "current": true,
       "handoff": null,
-      "insightIds": [
-        "point_1"
-      ],
+      "insightIds": ["point_1"],
       "next_action": {
         "args": {
           "profileId": "synthetic_profile",
@@ -62,26 +54,18 @@
         "benefitHypothesis": "This might improve the workflow, subject to verification.",
         "currentProblem": "The project profile may benefit from this source idea.",
         "disposition": "needs_context",
-        "nonGoals": [
-          "No implementation starts here."
-        ],
+        "nonGoals": ["No implementation starts here."],
         "proposedChange": "Inspect the current implementation before choosing a change.",
-        "risks": [
-          "The project code has not been inspected."
-        ],
+        "risks": ["The project code has not been inspected."],
         "title": "Review a useful idea for this project",
-        "verificationNeeds": [
-          "Inspect the selected repository revision."
-        ]
+        "verificationNeeds": ["Inspect the selected repository revision."]
       },
       "codingAuthorized": false,
       "contextHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "creditsSpent": 0,
       "current": true,
       "handoff": null,
-      "insightIds": [
-        "point_1"
-      ],
+      "insightIds": ["point_1"],
       "origin": "chat_planning",
       "profileId": "synthetic_profile",
       "projectId": "synthetic_project",
@@ -135,9 +119,7 @@
           "creditsSpent": 0,
           "current": true,
           "disposition": "needs_context",
-          "insightIds": [
-            "point_1"
-          ],
+          "insightIds": ["point_1"],
           "origin": "chat_planning",
           "profileId": "synthetic_profile",
           "projectId": "synthetic_project",
@@ -199,9 +181,7 @@
           "current": true,
           "disposition": "needs_context",
           "handoff": null,
-          "insightIds": [
-            "point_1"
-          ],
+          "insightIds": ["point_1"],
           "origin": "chat_planning",
           "profileId": "synthetic_profile",
           "projectId": "synthetic_project",
@@ -288,7 +268,7 @@
       "grant_version": 2,
       "has_more": false,
       "index_ready": true,
-      "loaded_bytes": 12735,
+      "loaded_bytes": 12777,
       "matches": [
         {
           "excerpt": "Check the evidence before acting.",
@@ -299,9 +279,7 @@
           "title": "Check evidence"
         },
         {
-          "evidence_ids": [
-            "speech-1"
-          ],
+          "evidence_ids": ["speech-1"],
           "excerpt": "Check the evidence before acting.",
           "id": "private:synthetic_source:synthetic_analysis_version:passage:0",
           "kind": "post",

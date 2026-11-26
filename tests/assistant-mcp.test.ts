@@ -229,6 +229,44 @@ it("returns a profile-selection next action through MCP 2 without asking to reco
   expect(JSON.stringify(result)).not.toContain("PRIVATE backend detail");
   expect(result.result.isError).toBe(true);
 });
+
+it("exposes creator reads and explicit follow without granting spending authority", async () => {
+  const args = { profileId: "synthetic-profile", sourceId: "source-one" };
+  const backend = vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    value: { creatorKey: "tiktok:12345", following: true },
+  }));
+  const read = await packet(
+    await call(
+      "tools/call",
+      { name: "read_creator", arguments: args },
+      ["knowledge:read"],
+      backend,
+    ),
+  );
+  expect(read.result.isError).not.toBe(true);
+  expect(backend).toHaveBeenCalledExactlyOnceWith("read_creator", args);
+  backend.mockClear();
+  const follow = { ...args, following: true, explicitlyRequested: true };
+  await call(
+    "tools/call",
+    { name: "set_creator_follow", arguments: follow },
+    ["knowledge:read"],
+    backend,
+  );
+  expect(backend).not.toHaveBeenCalled();
+  const receipt = await packet(
+    await call(
+      "tools/call",
+      { name: "set_creator_follow", arguments: follow },
+      ["links:save"],
+      backend,
+    ),
+  );
+  expect(receipt.result.isError).not.toBe(true);
+  expect(backend).toHaveBeenCalledExactlyOnceWith("set_creator_follow", follow);
+});
 it("exposes bounded read and explicit intake schemas through actual stateless MCP dispatch", async () => {
   const response = await call("tools/list", {}, [
     "knowledge:read",

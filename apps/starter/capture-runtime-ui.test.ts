@@ -35,7 +35,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
-it.each(["save_only", "cloud"])(
+it.each(["save_only", "cloud", undefined])(
   "preserves the saved %s route without falling back to local processing",
   async (preferredRoute) => {
     const call = vi.fn(async (_operation: string) => "saved-source");

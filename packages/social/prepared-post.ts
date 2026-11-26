@@ -1,3 +1,4 @@
+import { equivalentRepostMedia } from "./repost-signature";
 import { z } from "zod";
 import { canonicalJson } from "../contracts/canonical-json.mjs";
 import { socialHash } from "./contracts";
@@ -130,60 +131,8 @@ export function isEquivalentPreparedRepost(
 ) {
   const caption = (post: PreparedPostEvidence) =>
     post.text.normalize("NFC").trim().replace(/\s+/g, " ");
-  if (
-    left.assets.length !== right.assets.length ||
-    caption(left) !== caption(right)
-  )
-    return false;
-  if (
-    left.assets.every(
-      (asset, index) =>
-        asset.kind === right.assets[index].kind &&
-        asset.contentHash === right.assets[index].contentHash,
-    )
-  )
-    return true;
-  // Perceptual matches require corroborating text and same ordered composition.
-  // Flat covers, missing samples and material edits remain separate.
-  if (caption(left).length < 16 || !left.assets.length) return false;
-  return left.assets.every((asset, index) => {
-    const other = right.assets[index];
-    if (
-      asset.kind !== other.kind ||
-      Math.abs(
-        Math.log((asset.width * other.height) / (other.width * asset.height)),
-      ) > 0.08
-    )
-      return false;
-    if (
-      asset.kind === "video" &&
-      (other.kind !== "video" ||
-        Math.abs(asset.durationMs - other.durationMs) > 500 ||
-        asset.fingerprints?.length !== 3)
-    )
-      return false;
-    return (
-      !!asset.fingerprints &&
-      asset.fingerprints.length === other.fingerprints?.length &&
-      asset.fingerprints.every((sample, n) => {
-        const target = other.fingerprints![n];
-        return (
-          Math.abs(sample.mean - target.mean) <= 10 &&
-          differenceDistance(sample.difference, target.difference) <= 5
-        );
-      })
-    );
-  });
-}
-
-function differenceDistance(left: string, right: string) {
-  let count = 0;
-  for (let index = 0; index < left.length; index++) {
-    let difference = parseInt(left[index], 16) ^ parseInt(right[index], 16);
-    while (difference) {
-      difference &= difference - 1;
-      count++;
-    }
-  }
-  return count;
+  return (
+    caption(left) === caption(right) &&
+    equivalentRepostMedia(left.assets, right.assets, caption(left).length >= 16)
+  );
 }

@@ -283,6 +283,19 @@ export const productTables = {
     .index("by_day", ["dayStart"]),
   creatorWatches: defineTable({
     creatorKey: v.string(),
+    handle: v.optional(v.string()),
+    profileUrl: v.optional(v.string()),
+    profile: v.optional(
+      v.object({
+        key: v.string(),
+        handle: v.string(),
+        links: v.array(v.string()),
+        observedAt: v.number(),
+      }),
+    ),
+    profileLease: v.optional(
+      v.object({ token: v.string(), expiresAt: v.number() }),
+    ),
     dueAt: v.number(),
     leaseUntil: v.optional(v.number()),
     lastSuccessAt: v.optional(v.number()),
@@ -296,7 +309,24 @@ export const productTables = {
     ),
   })
     .index("by_key", ["creatorKey"])
+    .index("by_profile_url", ["profileUrl"])
     .index("by_due", ["dueAt"]),
+  creatorCatalogPosts: defineTable({
+    creatorKey: v.string(),
+    handle: v.string(),
+    familyId: v.id("catalogFamilies"),
+    artifactId: v.id("publicArtifacts"),
+    canonical: v.string(),
+    title: v.string(),
+    sortAt: v.number(),
+    contentKey: v.string(),
+    signature: v.any(),
+    publishedAt: v.union(v.number(), v.null()),
+    updatedAt: v.number(),
+  })
+    .index("by_family", ["familyId"])
+    .index("by_creator_caption", ["creatorKey", "signature.captionHash"])
+    .index("by_creator_published", ["creatorKey", "sortAt", "familyId"]),
   creatorDiscoveries: defineTable({
     creatorKey: v.string(),
     postKey: v.string(),

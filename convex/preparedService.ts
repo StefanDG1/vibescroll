@@ -2,6 +2,7 @@ import {
   candidateSponsor,
   creatorPoolDailyExposureLimit,
   creatorPoolEnabled,
+  requireCreatorFunding,
 } from "./lib/creatorPool";
 import { currentAutomaticCatalogPolicy } from "./lib/catalogPolicy";
 import { selectedOrderedPostIsComplete } from "./lib/preparedEvidenceAccess";
@@ -662,7 +663,11 @@ async function startHandler(
     a.source.organizationId,
     reservationKey,
     q.quote.maximumCredits,
-    sponsor ? "included" : "standard",
+    sponsor
+      ? (await readAdminProcessingAllowance(ctx, a.actor, a.organization._id))
+        ? "admin_monthly"
+        : "included"
+      : "standard",
   );
   const providerReservationId =
     processingConfig.paidCustomer ||
@@ -1192,7 +1197,6 @@ export const startCreatorSponsored = internalMutation({
       !follow ||
       item.creatorKey !== follow.creatorKey ||
       !creatorPoolEnabled(item.creatorKey) ||
-      !item.durationMs ||
       item.publishedAt < Date.now() - 2 * 86400000
     )
       return null;
@@ -1210,7 +1214,7 @@ export const startCreatorSponsored = internalMutation({
     const candidate = await candidateSponsor(ctx, follow, item.publishedAt);
     if (!candidate) return null;
     const { actor, organization, allowance } = candidate;
-    await requirePaidProcessing(ctx, actor, organization._id);
+    await requireCreatorFunding(ctx, actor, organization._id);
     const key = `creator-${await digest(item.postKey)}`.slice(0, 56);
     const sourceId = await captureAuthorized(
       ctx,
@@ -1219,7 +1223,7 @@ export const startCreatorSponsored = internalMutation({
         key,
         kind: "url",
         url: item.url,
-        title: "TikTok video",
+        title: "Creator post",
         rightsAttested: true,
       },
       candidate,
@@ -1240,7 +1244,7 @@ export const startCreatorSponsored = internalMutation({
       "DATA_POLICY_REQUIRED",
       "The creator job has no reviewed shared delivery route.",
     );
-    const durationLimit = Math.min(600000, item.durationMs + 1000);
+    const durationLimit = Math.min(600000, (item.durationMs ?? 600000) + 1000);
     const request = { sourceId, executor: "gateway" as const };
     const authority = { source, actor, organization };
     const quote = await quoteFor(ctx, authority, request, durationLimit);

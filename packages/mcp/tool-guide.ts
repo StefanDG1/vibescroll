@@ -160,7 +160,7 @@ export const toolGuide: Record<string, ToolGuideEntry> = {
     funding: "no_ai",
     purpose: "Open a verified creator from an authorized saved post.",
     result:
-      "The creator profile link and a bounded page of visible analyzed posts.",
+      "The creator page, workspace posts and entitled shared analyzed posts with their verified platform links.",
     flow: find,
   },
   set_creator_follow: {

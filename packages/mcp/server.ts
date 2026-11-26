@@ -331,7 +331,7 @@ export function createKnowledgeHandler(
       );
       register(
         "read_creator",
-        "Read the verified creator of an exact authorized saved post and their visible analyzed posts. Supply that post's sourceId and profileId. This starts no work or spending.",
+        "Read the verified creator of an authorized saved post. Returns workspace posts and, with enabled full-catalog access, shared analyzed posts across VibeScroll. Supply sourceId and profileId. This starts no work or spending.",
         "knowledge:read",
         creatorSource,
       );

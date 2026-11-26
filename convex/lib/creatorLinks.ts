@@ -6,19 +6,27 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import { selectedAnalysis } from "./analysisHistory";
 import { sourceRetained } from "./sourceAuthority";
+import { publicCreatorKeys } from "./publicCreatorIdentity";
+import { creatorCatalogOriginals } from "./creatorCatalog";
 
 export async function linkedCreatorKeys(
   ctx: QueryCtx,
   organizationId: Id<"organizations">,
   accountKey: string,
 ) {
+  const publicKeys = await publicCreatorKeys(ctx, accountKey);
   const membership = await ctx.db
     .query("creatorAccountLinks")
     .withIndex("by_org_account", (q) =>
       q.eq("organizationId", organizationId).eq("accountKey", accountKey),
     )
     .unique();
-  if (!membership) return [accountKey];
+  if (
+    !membership ||
+    (membership.groupKey.startsWith("auto_") &&
+      membership.linkedAt < Date.now() - 7 * 86400000)
+  )
+    return publicKeys;
   const links = await ctx.db
     .query("creatorAccountLinks")
     .withIndex("by_org_group", (q) =>
@@ -27,7 +35,9 @@ export async function linkedCreatorKeys(
         .eq("groupKey", membership.groupKey),
     )
     .take(8);
-  return links.map((link) => link.accountKey);
+  return [
+    ...new Set([...publicKeys, ...links.map((link) => link.accountKey)]),
+  ].slice(0, 8);
 }
 
 export async function visibleOriginals(ctx: QueryCtx, source: Doc<"sources">) {
@@ -88,6 +98,26 @@ export async function visibleOriginals(ctx: QueryCtx, source: Doc<"sources">) {
       } catch {
         // A withdrawn analysis never becomes another original.
       }
+    }
+  }
+  if (source.publicImportId) {
+    const layer = await ctx.db.get(source.publicImportId);
+    if (
+      layer &&
+      "familyId" in layer &&
+      layer.organizationId === source.organizationId &&
+      layer.sourceId === source._id &&
+      layer.sourceGeneration === source.generation
+    ) {
+      const shared = await ctx.db
+        .query("creatorCatalogPosts")
+        .withIndex("by_family", (q) => q.eq("familyId", layer.familyId))
+        .unique();
+      if (
+        shared?.creatorKey === creator.key &&
+        shared.contentKey === creator.contentKey
+      )
+        urls.push(...(await creatorCatalogOriginals(ctx, shared, keys)));
     }
   }
   return [...new Set(urls)];

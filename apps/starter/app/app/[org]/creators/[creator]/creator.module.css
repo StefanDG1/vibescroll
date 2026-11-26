@@ -18,6 +18,13 @@
 .profile p {
   margin: 0;
 }
+.profile > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.profile form {
+  flex-shrink: 0;
+}
 .profile .note {
   color: var(--subtle);
   font-size: 0.875rem;

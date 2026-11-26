@@ -859,6 +859,9 @@ export const finishAutomatic = internalMutation({
         familyId: current.family._id,
       });
     const source = await ctx.db.get(row.sourceId);
+    await ctx.scheduler.runAfter(0, internal.creatorCatalog.indexFamily, {
+      familyId: current.family._id,
+    });
     const actor = await ctx.db.get(row.actor);
     if (
       source &&
@@ -1537,6 +1540,9 @@ export const selectRecommendation = mutation({
       "catalog.recommendation_selected",
       `${a.family._id}:${a.artifact._id}:${selectionRevision}`,
     );
+    await ctx.scheduler.runAfter(0, internal.creatorCatalog.indexFamily, {
+      familyId: a.family._id,
+    });
     return { selectionRevision };
   },
 });

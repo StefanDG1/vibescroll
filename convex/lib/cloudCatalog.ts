@@ -3,6 +3,7 @@ import {
   preparedMediaContentKey,
 } from "../../packages/social/prepared-post";
 import { preparedServiceConfiguration } from "./preparedServicePolicy";
+import { enqueueCreatorMatching } from "./creatorMatching";
 import { openAiPreparedProcessingReviewHash } from "./openAiGrant";
 import { apiModels } from "../../packages/contracts/api-models";
 import { resultRetained } from "../../packages/contracts/result-retention";
@@ -30,6 +31,7 @@ import { sourceRetained } from "./sourceAuthority";
 import { internal } from "../_generated/api";
 import { queryRead } from "./knowledgeReadContext";
 import { recordPostSave } from "./postEngagement";
+import { platformPostKey } from "../../packages/sources/post-identity";
 
 export type CloudArtifact = Extract<
   Doc<"publicArtifacts">,
@@ -140,10 +142,22 @@ export async function cacheCandidate(
     return null;
   }
   const aliasKey = await catalogAliasKey(alias);
-  const mapped = await ctx.db
+  let mapped = await ctx.db
     .query("catalogAliases")
     .withIndex("by_key", (q) => q.eq("key", aliasKey))
     .unique();
+  // TikTok serves Photo Mode through either route. Keep existing alias keys,
+  // and look up the other direct route without changing the requested URL.
+  if (!mapped && alias.startsWith("https://www.tiktok.com/@")) {
+    const alternate = alias.replace(/\/(video|photo)\//, (_match, kind) =>
+      kind === "video" ? "/photo/" : "/video/",
+    );
+    const alternateKey = await catalogAliasKey(alternate);
+    mapped = await ctx.db
+      .query("catalogAliases")
+      .withIndex("by_key", (q) => q.eq("key", alternateKey))
+      .unique();
+  }
   let family: Doc<"catalogFamilies"> | null = null;
   if (mapped && resultRetained(mapped))
     family = await ctx.db.get(mapped.familyId);
@@ -172,6 +186,11 @@ export async function cacheCandidate(
   if (!family?.selectedArtifactId) return null;
   try {
     const cached = await currentCloudArtifact(ctx, family.selectedArtifactId);
+    if (
+      alias.startsWith("https://www.tiktok.com/@") &&
+      platformPostKey(alias) !== platformPostKey(family.canonical)
+    )
+      return null;
     // A legacy sampled-video result cannot establish complete photo coverage.
     if (
       usesOrderedPostPreparation(url) &&
@@ -305,6 +324,7 @@ async function attachResult(
     updatedAt: Math.max(now, source.updatedAt + 1),
   });
   await recordPostSave(ctx, (await ctx.db.get(source._id))!, actor);
+  await enqueueCreatorMatching(ctx, source._id);
   return true;
 }
 

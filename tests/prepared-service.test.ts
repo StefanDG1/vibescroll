@@ -21,6 +21,7 @@ import * as analysisHistory from "../convex/lib/analysisHistory";
 import { preparedStatusOutput } from "../packages/contracts/prepared-service";
 import { socialHash } from "../packages/social/contracts";
 import { preparedPostSourceIdentity } from "../packages/social/prepared-post";
+import { sponsorAllowance } from "../convex/lib/creatorPool";
 const preparationMock = vi.hoisted(() => ({ run: vi.fn() }));
 vi.mock("../packages/providers/prepared-media", () => ({
   prepareHostedEvidence: preparationMock.run,
@@ -155,15 +156,23 @@ async function retained(
     stage: "transcribing",
   });
   const sha256 = createHash("sha256").update(s.bytes).digest("hex");
+  const platform = s.source.canonical.includes("www.tiktok.com/")
+    ? ("tiktok" as const)
+    : ("instagram" as const);
   const post = photoCount
     ? {
         version: "social-post-evidence-v1" as const,
-        platform: "instagram" as const,
-        postId: new URL(s.source.canonical).pathname.split("/")[2],
+        platform,
+        postId: new URL(s.source.canonical).pathname.split("/")[
+          platform === "instagram" ? 2 : 3
+        ],
         authorId: "123456789",
         authorHandle: "creator",
         publishedAt: Date.now() - 86400000,
-        provider: "instagram_embed" as const,
+        provider:
+          platform === "instagram"
+            ? ("instagram_embed" as const)
+            : ("public_page" as const),
         text: "Complete carousel caption.",
         textHash: await socialHash("Complete carousel caption."),
         expectedAssetCount: photoCount,
@@ -183,7 +192,7 @@ async function retained(
   const prepared = await makePreparedEvidence({
     requestedCanonical: s.source.canonical,
     canonical: s.source.canonical,
-    platform: "instagram",
+    platform,
     ...(post ? { post } : {}),
     sourceHash: post
       ? await socialHash(preparedPostSourceIdentity(s.source.canonical, post))
@@ -431,14 +440,18 @@ async function nativeReady(s: Awaited<ReturnType<typeof fixture>>) {
 async function freshSource(
   s: Awaited<ReturnType<typeof fixture>>,
   photos = false,
+  platform: "instagram" | "tiktok" = "instagram",
 ) {
   const sourceId = await s.owner.mutation(api.product.capture, {
     organizationId: s.org,
     key: "fresh-service-video",
     kind: "url",
-    url: photos
-      ? "https://www.instagram.com/p/Fresh000001/"
-      : "https://www.instagram.com/reel/Fresh000001/",
+    url:
+      platform === "tiktok"
+        ? "https://www.tiktok.com/@creator/video/7553302113757990166"
+        : photos
+          ? "https://www.instagram.com/p/Fresh000001/"
+          : "https://www.instagram.com/reel/Fresh000001/",
     title: "Imported video link",
     rightsAttested: true,
   });
@@ -449,11 +462,168 @@ async function freshSource(
   };
 }
 
-it.each([0, 9, 35])(
-  "publishes a first result with %i photos and shares every image without charging the second account",
-  async (photoCount) => {
+it("sponsors a photo once from current monthly credits and preserves its hold through unfollow and rejoin", async () => {
+  const f = await fixture(true);
+  if (!("serviceOrg" in f)) throw Error("Expected catalog fixture");
+  for (const flag of [
+    "VIBESCROLL_ORDERED_SOCIAL_ENABLED",
+    "VIBESCROLL_MANAGED_AUTO_ENABLED",
+    "VIBESCROLL_CREATOR_DISCOVERY_ENABLED",
+    "VIBESCROLL_CREATOR_POOL_ENABLED",
+  ])
+    vi.stubEnv(flag, "true");
+  vi.stubEnv("VIBESCROLL_CREATOR_POOL_DAILY_NANO_USD", "100000000");
+  vi.stubEnv(
+    "ADMIN_PROCESSING_ALLOWANCE_JSON",
+    JSON.stringify({
+      version: "admin-processing-allowance-v1",
+      id: "creator-admin-fixture",
+      enabled: true,
+      subject: f.actor.subject,
+      organizationId: f.org,
+      monthlyCredits: 300,
+      maximumHourlyJobs: 20,
+      maximumDailyJobs: 100,
+      startsAt: Date.now() - 1000,
+    }),
+  );
+  vi.stubEnv(
+    "PAID_PROCESSING_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "paid-processing-monetary-v2",
+      id: "creator-fixture-funding",
+      enabled: true,
+      verifiedAt: Date.now() - 1000,
+      expiresAt: Date.now() + 86400000,
+      operatingPoolNanoUsd: 900000000,
+      maximumJobNanoUsd: 50000000,
+      verifiedProviderCreditNanoUsd: 1000000000,
+      providerKeyBudgetNanoUsd: 1000000000,
+      priorExposureNanoUsd: 100000000,
+    }),
+  );
+  vi.stubEnv(
+    "PROPOSAL_SERVICE_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "proposal-service-v1",
+      enabled: true,
+      privateProjectContextAllowed: true,
+      permissionReference: "synthetic creator funding authority",
+    }),
+  );
+  vi.stubEnv(
+    "CLOUD_CATALOG_CONFIGURATION_JSON",
+    JSON.stringify({
+      version: "cloud-catalog-config-v2",
+      serviceOrganizationId: f.serviceOrg,
+      maximumStorageBytes: 20000000,
+      reviewedAt: Date.now() - 5000,
+      expiresAt: Date.now() + 86400000,
+      permissions: [],
+      defaultPolicy: {
+        version: "automatic-neutral-catalog-v1",
+        id: "creator-standing-fixture",
+        disclosureVersion: "synthetic-notice",
+        rightsBasis: "user_attested",
+        platforms: ["instagram", "tiktok"],
+        providerPermissionReference: "synthetic source route",
+        contentPermissionReference: "synthetic user attestation",
+        privacyReviewReference: "synthetic neutral-only projection",
+        reviewedAt: Date.now() - 5000,
+        expiresAt: Date.now() + 86400000,
+        maximumRetentionMs: 86400000,
+      },
+    }),
+  );
+  await f.t.mutation(internal.adminProcessingAllowance.renew, {
+    organizationId: f.org,
+  });
+  const creatorKey = "tiktok:123456789";
+  const ids = await f.t.run(async (c) => {
+    await c.db.patch(f.sourceId, {
+      creator: { key: creatorKey, handle: "creator", generation: 1 },
+    });
+    const followId = await c.db.insert("creatorFollows", {
+      organizationId: f.org,
+      actorId: f.actor._id,
+      creatorKey,
+      state: "following",
+      sponsor: true,
+      firstFollowedAt: Date.now() - 7200000,
+      activeSince: Date.now() - 7200000,
+      updatedAt: Date.now(),
+    });
+    const discoveryId = await c.db.insert("creatorDiscoveries", {
+      creatorKey,
+      postKey: "tiktok:7553302113757990166",
+      url: "https://www.tiktok.com/@creator/photo/7553302113757990166",
+      publishedAt: Date.now() - 3600000,
+      durationMs: 0,
+      observedAt: Date.now(),
+    });
+    return { followId, discoveryId };
+  });
+  const result = await f.t.mutation(
+    internal.preparedService.startCreatorSponsored,
+    ids,
+  );
+  expect(result?.runId).toBeTruthy();
+  const pool = (await f.t.run((c) => c.db.query("creatorPoolRuns").unique()))!;
+  expect(pool).toMatchObject({ state: "active", maxCredits: 2 });
+  expect(
+    await f.t.mutation(internal.preparedService.startCreatorSponsored, ids),
+  ).toBeNull();
+  const allowance = () =>
+    f.t.run(async (c) =>
+      sponsorAllowance(
+        c,
+        (await c.db.get(f.actor._id))!,
+        (await c.db.get(f.org))!,
+        Date.now(),
+      ),
+    );
+  expect((await allowance())?.used).toBe(2);
+  for (const following of [false, true])
+    await f.owner.mutation(api.creators.setFollow, {
+      organizationId: f.org,
+      sourceId: f.sourceId,
+      creatorKey,
+      following,
+    });
+  expect((await allowance())?.used).toBe(2);
+  const preparation = (await f.t.run((c) => c.db.get(result!.runId!)))!;
+  const retained = (await f.t.run((c) =>
+    c.db
+      .query("reservations")
+      .withIndex("by_key", (q) =>
+        q
+          .eq("organizationId", f.org)
+          .eq("key", preparation.receipt.admission.reservationKey),
+      )
+      .unique(),
+  ))!;
+  expect(retained).toBeTruthy();
+  expect(retained).toMatchObject({ state: "active", max: pool.maxCredits });
+  for (const allocation of retained.allocations ?? [])
+    expect((await f.t.run((c) => c.db.get(allocation.poolId)))?.kind).toBe(
+      "admin_monthly",
+    );
+  expect(
+    await f.t.mutation(internal.preparedService.startCreatorSponsored, ids),
+  ).toBeNull();
+  expect((await f.t.run((c) => c.db.get(pool._id)))?.state).toBe("active");
+});
+
+it.each([
+  ["instagram", 0],
+  ["instagram", 9],
+  ["instagram", 35],
+  ["tiktok", 2],
+] as const)(
+  "publishes a %s result with %i photos and shares every image without charging the second account",
+  async (platform, photoCount) => {
     const base = await fixture(true),
-      s = await freshSource(base, !!photoCount);
+      s = await freshSource(base, !!photoCount, platform);
     if (photoCount) {
       vi.stubEnv("VIBESCROLL_ORDERED_SOCIAL_ENABLED", "true");
       vi.stubEnv("VIBESCROLL_MANAGED_AUTO_ENABLED", "true");
@@ -592,7 +762,7 @@ it.each([0, 9, 35])(
     expect(secondSource?.publicImportId).toBeTruthy();
     if (photoCount) {
       expect(secondSource?.creator).toMatchObject({
-        key: "instagram:123456789",
+        key: `${platform}:123456789`,
         handle: "creator",
         generation: 0,
       });
@@ -610,7 +780,7 @@ it.each([0, 9, 35])(
         (
           await second.query(api.creators.read, {
             organizationId: secondOrg,
-            creatorKey: "instagram:123456789",
+            creatorKey: `${platform}:123456789`,
           })
         )?.items.map((p) => p.id),
       ).toContain(secondId);
@@ -696,11 +866,90 @@ it.each([0, 9, 35])(
         }),
       );
       const fetchedBefore = vi.mocked(fetch).mock.calls.length;
+      const familyId = await s.t.run(async (c) => {
+        const source = (await c.db.get(s.sourceId))!,
+          layer = source.publicImportId
+            ? await c.db.get(source.publicImportId)
+            : null;
+        if (!layer || !("familyId" in layer))
+          throw Error("Expected shared family");
+        return layer.familyId;
+      });
+      expect(
+        await s.t.mutation(internal.creatorCatalog.indexFamily, { familyId }),
+      ).toBe(true);
+      const creatorKey = `${platform}:123456789`;
+      expect(
+        await cold.query(api.creators.read, {
+          organizationId: coldOrg,
+          creatorKey,
+        }),
+      ).toBeNull();
+      for (const subject of [coldSubject, s.actor.subject])
+        await s.t.mutation(internal.catalogAccess.grantOperatorAccess, {
+          subject,
+          enabled: true,
+          reason: "Synthetic creator catalog acceptance",
+        });
+      const creatorPage = await cold.query(api.creators.read, {
+        organizationId: coldOrg,
+        creatorKey,
+      });
+      expect(creatorPage?.items).toHaveLength(0);
+      expect(creatorPage?.sharedItems).toHaveLength(1);
+      expect(creatorPage?.sharedItems[0].familyId).toBe(familyId);
+      const countsBeforeFollow = await s.t.run(async (c) => ({
+        sources: (
+          await c.db
+            .query("sources")
+            .withIndex("by_org", (q) => q.eq("organizationId", coldOrg))
+            .take(2)
+        ).length,
+        reservations: (await c.db.query("reservations").take(10)).length,
+      }));
+      expect(
+        await cold.mutation(api.creators.setFollow, {
+          organizationId: coldOrg,
+          creatorKey,
+          familyId,
+          following: true,
+        }),
+      ).toBe(true);
+      expect(
+        await s.t.run(async (c) => ({
+          sources: (
+            await c.db
+              .query("sources")
+              .withIndex("by_org", (q) => q.eq("organizationId", coldOrg))
+              .take(2)
+          ).length,
+          reservations: (await c.db.query("reservations").take(10)).length,
+        })),
+      ).toEqual(countsBeforeFollow);
+      const sharedReader = await cold.mutation(api.catalogBrowse.detail, {
+        organizationId: coldOrg,
+        familyId,
+      });
+      expect(sharedReader.frames).toHaveLength(photoCount);
+      expect(sharedReader.caption).toBe("Complete carousel caption.");
+      expect(sharedReader.creator?.key).toBe(creatorKey);
+      expect(
+        sharedReader.frames.every((frame: any) => frame.mediaKind === "image"),
+      ).toBe(true);
+      const creatorMcp = await s.assistant.query(
+        internal.creators.assistantRead,
+        { profileId: s.org, sourceId: s.sourceId },
+      );
+      expect(creatorMcp.sharedPosts).toHaveLength(1);
+      expect(creatorMcp.sharedPosts[0].url).toContain(`/catalog/${familyId}`);
       const coldSourceId = await cold.mutation(api.product.capture, {
         organizationId: coldOrg,
         key: "cold-complete-carousel",
         kind: "url",
-        url: s.source.url!,
+        url:
+          platform === "tiktok"
+            ? s.source.url!.replace("/video/", "/photo/")
+            : s.source.url!,
         title: "Cold carousel",
         rightsAttested: true,
       });
@@ -722,6 +971,107 @@ it.each([0, 9, 35])(
       expect(context.context.expectedAttachments).toBe(photoCount);
       expect(context.context.sourceAuthor?.handle).toBe("creator");
       expect(context.context.totals.observations).toBe(photoCount + 1);
+      if (platform === "instagram" && photoCount === 9) {
+        const pairedId = await s.owner.mutation(api.product.capture, {
+          organizationId: s.org,
+          key: "cross-platform-retained-pair",
+          kind: "url",
+          url: "https://www.tiktok.com/@creator/photo/7553302113757990167",
+          title: "Same creator on TikTok",
+          rightsAttested: true,
+        });
+        const paired = {
+          ...s,
+          sourceId: pairedId,
+          source: (await s.t.run((c) => c.db.get(pairedId)))!,
+        };
+        const request = { sourceId: pairedId, executor: "gateway" as const };
+        const quote = await s.owner.query(api.preparedService.quote, request);
+        const run = await s.owner.mutation(api.preparedService.start, {
+          ...request,
+          key: "cross-platform-analysis",
+          quoteHash: quote.quoteHash,
+          maximumCredits: quote.maximumCredits,
+        });
+        const completed = await finish(paired, run.runId!, 9);
+        await s.t.action(internal.cloudCatalogActions.publishCompleted, {
+          sourceId: pairedId,
+          actorId: s.actor._id,
+          generation: 0,
+          versionId: completed.versionId,
+        });
+        const pairedFamilyId = await s.t.run(async (c) => {
+          const source = (await c.db.get(pairedId))!;
+          const layer = await c.db.get(source.publicImportId!);
+          if (!layer || !("familyId" in layer))
+            throw Error("Missing paired family");
+          return layer.familyId;
+        });
+        expect(
+          await s.t.mutation(internal.creatorCatalog.indexFamily, {
+            familyId: pairedFamilyId,
+          }),
+        ).toBe(true);
+        vi.stubEnv("VIBESCROLL_CREATOR_MATCHING_ENABLED", "true");
+        for (const profile of [
+          {
+            key: "instagram:123456789",
+            handle: "creator",
+            links: ["https://www.tiktok.com/@creator"],
+            observedAt: Date.now(),
+          },
+          {
+            key: "tiktok:123456789",
+            handle: "creator",
+            links: ["https://www.instagram.com/creator/"],
+            observedAt: Date.now(),
+          },
+        ]) {
+          const lease = await s.t.mutation(internal.creatorProfiles.acquire, {
+            key: profile.key,
+            handle: profile.handle,
+          });
+          if (!lease?.token) throw Error("Expected profile lease");
+          await s.t.mutation(internal.creatorProfiles.retain, {
+            key: profile.key,
+            token: lease.token,
+            profile,
+          });
+        }
+        const grouped = await cold.query(api.creators.read, {
+          organizationId: coldOrg,
+          creatorKey,
+        });
+        expect(grouped?.sharedItems).toHaveLength(1);
+        expect(grouped?.sharedItems[0].originals).toHaveLength(2);
+        expect(
+          (await cold.query(api.product.detail, { id: coldSourceId }))
+            .originalLinks,
+        ).toHaveLength(2);
+        expect(
+          (
+            await cold.mutation(api.catalogBrowse.detail, {
+              organizationId: coldOrg,
+              familyId,
+            })
+          ).originals,
+        ).toHaveLength(2);
+        const pairedArtifact = (await s.t.run((c) => c.db.get(pairedFamilyId)))!
+          .selectedArtifactId!;
+        await s.t.run((c) => c.db.patch(pairedArtifact, { state: "blocked" }));
+        expect(
+          (
+            await cold.query(api.creators.read, {
+              organizationId: coldOrg,
+              creatorKey,
+            })
+          )?.sharedItems[0].originals,
+        ).toHaveLength(1);
+        expect(
+          (await cold.query(api.product.detail, { id: coldSourceId }))
+            .originalLinks,
+        ).toHaveLength(1);
+      }
     }
     const secondWallet = await s.t.run((c) =>
       c.db

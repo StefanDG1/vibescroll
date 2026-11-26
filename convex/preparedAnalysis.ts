@@ -1,4 +1,5 @@
 import { creatorPoolEnabled } from "./lib/creatorPool";
+import { enqueueCreatorMatching } from "./lib/creatorMatching";
 import { preparedMediaContentKey } from "../packages/social/prepared-post";
 import { readAdminProcessingAllowance } from "./lib/adminProcessingAllowance";
 import { z } from "zod";
@@ -1059,6 +1060,7 @@ export const finishGateway = internalMutation({
         },
       );
     }
+    await enqueueCreatorMatching(ctx, c.source._id);
     return versionId;
   },
 });

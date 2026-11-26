@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { socialPostUrl } from "./identity.mjs";
+import { publicCreatorFeedEnabled } from "./public-creators";
 
 const policy = z.strictObject({
   creatorKey: z.string().regex(/^tiktok:[A-Za-z0-9_-]{1,100}$/),
@@ -162,7 +163,9 @@ export function instagramCreatorFeedPolicy(key: string, now = Date.now()) {
 }
 export function creatorFeedAvailable(key: string, now = Date.now()) {
   return !!(
-    creatorFeedPolicy(key, now) || instagramCreatorFeedPolicy(key, now)
+    creatorFeedPolicy(key, now) ||
+    instagramCreatorFeedPolicy(key, now) ||
+    publicCreatorFeedEnabled(key)
   );
 }
 

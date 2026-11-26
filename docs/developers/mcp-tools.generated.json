@@ -3098,7 +3098,7 @@
     },
     {
       "name": "read_creator",
-      "description": "Read the verified creator of an exact authorized saved post and their visible analyzed posts. Supply that post's sourceId and profileId. This starts no work or spending.",
+      "description": "Read the verified creator of an authorized saved post. Returns workspace posts and, with enabled full-catalog access, shared analyzed posts across VibeScroll. Supply sourceId and profileId. This starts no work or spending.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -5861,7 +5861,7 @@
           },
           "provenance": { "type": "string", "maxLength": 100 },
           "frames": {
-            "maxItems": 8,
+            "maxItems": 48,
             "type": "array",
             "items": {
               "type": "object",
@@ -5882,6 +5882,13 @@
                   "exclusiveMinimum": 0,
                   "maximum": 4096
                 },
+                "assetIndex": {
+                  "anyOf": [
+                    { "type": "integer", "minimum": 0, "maximum": 34 },
+                    { "type": "null" }
+                  ]
+                },
+                "mediaKind": { "type": "string", "enum": ["image", "video"] },
                 "reference": { "type": "string", "maxLength": 1000 }
               },
               "required": ["id", "timestampMs", "width", "height", "reference"],

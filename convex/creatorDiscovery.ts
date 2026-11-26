@@ -2,10 +2,10 @@ import {
   candidateSponsor,
   creatorPoolEnabled,
   rankSponsors,
+  requireCreatorFunding,
 } from "./lib/creatorPool";
 import { captureAuthorized, digest } from "./product";
 import { cacheCandidate } from "./lib/cloudCatalog";
-import { requirePaidProcessing } from "./lib/paidProcessing";
 import { preparedCreditQuote } from "../packages/contracts/prepared-service";
 import {
   openAiGrantConfiguration,
@@ -30,6 +30,13 @@ import {
 } from "../packages/social/creator-feed";
 import { platformPostKey } from "../packages/sources/post-identity";
 import { locateAuthorizedInstagramMedia } from "./lib/instagramMediaLocator";
+import {
+  publicCreatorFeedEnabled,
+  readPublicInstagramCreatorPage,
+  readPublicTikTokCreatorPage,
+  publicCreatorProfile,
+  creatorProfileUrl,
+} from "../packages/social/public-creators";
 
 const hour = 3600000;
 const day = hour * 24;
@@ -38,6 +45,7 @@ export async function ensureCreatorWatch(
   ctx: MutationCtx,
   creatorKey: string,
   now: number,
+  handle?: string,
 ) {
   if (!creatorFeedAvailable(creatorKey, now)) return;
   const old = await ctx.db
@@ -47,8 +55,19 @@ export async function ensureCreatorWatch(
   if (!old)
     await ctx.db.insert("creatorWatches", {
       creatorKey,
+      ...(handle ? { handle } : {}),
       dueAt: now,
       state: "incomplete",
+    });
+  else if (
+    handle &&
+    (!old.handle ||
+      old.handle !== handle ||
+      (old.state === "incomplete" && !old.windowStartAt && !old.leaseUntil))
+  )
+    await ctx.db.patch(old._id, {
+      handle,
+      ...(old.state !== "checking" ? { dueAt: now } : {}),
     });
 }
 
@@ -93,6 +112,12 @@ export const schedule = internalMutation({
         !instagramCreatorFeedPolicy(watch.creatorKey, now)
           ?.businessDiscoveryRequesterId
       ) {
+        if (watch.profile && watch.profile.observedAt > now - 86400000) {
+          await ctx.db.patch(watch._id, {
+            dueAt: watch.profile.observedAt + 86400000,
+          });
+          continue;
+        }
         await ctx.db.delete(watch._id);
         continue;
       }
@@ -119,6 +144,7 @@ export const schedule = internalMutation({
         leaseUntil,
         windowStartAt,
         cursor: watch.cursor ?? null,
+        ...(watch.handle ? { handle: watch.handle } : {}),
       });
     }
     const old = await ctx.db
@@ -150,6 +176,14 @@ export const finish = internalMutation({
       v.null(),
       v.object({
         posts: v.array(discovery),
+        profile: v.optional(
+          v.object({
+            key: v.string(),
+            handle: v.string(),
+            links: v.array(v.string()),
+            observedAt: v.number(),
+          }),
+        ),
         nextCursor: v.union(v.number(), v.string(), v.null()),
       }),
     ),
@@ -176,6 +210,15 @@ export const finish = internalMutation({
       return null;
     }
     if (result.posts.length > 20) throw new Error("CREATOR_FEED_LIMIT");
+    if (result.profile) {
+      const profile = publicCreatorProfile.parse(result.profile);
+      if (profile.key !== creatorKey) throw Error("CREATOR_IDENTITY_CHANGED");
+      await ctx.db.patch(id, {
+        profile,
+        handle: profile.handle,
+        profileUrl: creatorProfileUrl(profile.key, profile.handle),
+      });
+    }
     for (const post of result.posts) {
       if (
         !Number.isSafeInteger(post.publishedAt) ||
@@ -197,11 +240,7 @@ export const finish = internalMutation({
           creatorKey,
           observedAt: now,
         }));
-      if (
-        creatorPoolEnabled(creatorKey) &&
-        post.durationMs &&
-        post.publishedAt >= now - 2 * day
-      )
+      if (creatorPoolEnabled(creatorKey) && post.publishedAt >= now - 2 * day)
         await ctx.scheduler.runAfter(
           0,
           internal.creatorDiscovery.sponsorDiscovered,
@@ -234,6 +273,7 @@ export const check = internalAction({
     ...lease,
     cursor: v.union(v.number(), v.string(), v.null()),
     windowStartAt: v.number(),
+    handle: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -242,26 +282,57 @@ export const check = internalAction({
     let result: Awaited<
       | ReturnType<typeof readCreatorVideoPage>
       | ReturnType<typeof readInstagramCreatorPage>
+      | ReturnType<typeof readPublicInstagramCreatorPage>
+      | ReturnType<typeof readPublicTikTokCreatorPage>
     > | null = null;
     if (
-      (tiktok || instagram) &&
+      (tiktok ||
+        instagram ||
+        (args.handle && publicCreatorFeedEnabled(args.creatorKey))) &&
       args.leaseUntil > Date.now() &&
       process.env.RESTORE_LOCK !== "true"
     ) {
       try {
         if (tiktok && typeof args.cursor !== "string") {
           result = await readCreatorVideoPage(tiktok, args.cursor);
-          if (
-            result.posts.some((post) => post.publishedAt < args.windowStartAt)
-          )
-            result.nextCursor = null;
         } else if (instagram && typeof args.cursor !== "number") {
           result = await readInstagramCreatorPage(
             instagram,
             instagram.businessDiscoveryRequesterId ? null : args.cursor,
           );
           if (instagram.businessDiscoveryRequesterId) result.nextCursor = null;
+        } else if (
+          args.handle &&
+          args.creatorKey.startsWith("tiktok:") &&
+          typeof args.cursor !== "string"
+        ) {
+          result = await readPublicTikTokCreatorPage(
+            { creatorKey: args.creatorKey, handle: args.handle },
+            args.cursor,
+          );
+        } else if (
+          args.handle &&
+          args.creatorKey.startsWith("instagram:") &&
+          typeof args.cursor !== "number"
+        ) {
+          result = await readPublicInstagramCreatorPage(
+            { creatorKey: args.creatorKey, handle: args.handle },
+            args.cursor,
+          );
         }
+        // Old pinned posts can precede newer posts. Finish only after a whole
+        // nonempty page is older than the overlap window.
+        if (
+          result?.posts.length &&
+          result.posts.every((post) => post.publishedAt < args.windowStartAt)
+        )
+          result.nextCursor = null;
+        if (
+          result &&
+          typeof result.nextCursor === "number" &&
+          result.nextCursor < args.windowStartAt
+        )
+          result.nextCursor = null;
       } catch {
         // Credentials, raw provider responses and transport details stay private.
       }
@@ -509,7 +580,7 @@ export const deliverOne = internalMutation({
       membership?.role !== "owner"
     )
       return null;
-    await requirePaidProcessing(ctx, actor, organization._id);
+    await requireCreatorFunding(ctx, actor, organization._id);
     if (!(await cacheCandidate(ctx, organization._id, item.url))) return null;
     await captureAuthorized(
       ctx,

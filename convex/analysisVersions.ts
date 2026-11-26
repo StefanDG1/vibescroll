@@ -1,4 +1,5 @@
 import { resultRetained } from "../packages/contracts/result-retention";
+import { enqueueCreatorMatching } from "./lib/creatorMatching";
 import { isServicePreparedEvidence } from "../packages/contracts/prepared-evidence";
 import { preparedEvidenceIsCurrent } from "./lib/preparedEvidenceAccess";
 import { settlePreparedCredits } from "./lib/preparedCredits";
@@ -1272,6 +1273,7 @@ export const dispatch = internalMutation({
         },
       );
     }
+    await enqueueCreatorMatching(ctx, c.source._id);
     return {
       accepted: true,
       cached: false,

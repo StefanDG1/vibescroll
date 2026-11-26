@@ -30,7 +30,7 @@ const base = "346b718baf91ba9847fbb707be7bbe069df57257";
 it("preserves historical schemas/config while admitting reviewed empty proposal/engagement tables and components", () => {
   // The new vector table starts empty. Historical product table definitions
   // and the two retired search indexes are checked individually below.
-  expect(Object.keys(schema.tables)).toHaveLength(112);
+  expect(Object.keys(schema.tables)).toHaveLength(113);
   expect(
     (schema.tables.users as any).export().documentType.value.onboarding,
   ).toEqual({
@@ -164,7 +164,7 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
         row.vectorIndexes.length
       );
     }, 0),
-  ).toBe(318);
+  ).toBe(322);
   expect(Object.keys(cloudCatalogTables).sort()).toEqual([
     "catalogAliases",
     "catalogContributions",
@@ -201,9 +201,29 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
           "creatorWatches",
           "creatorDiscoveries",
           "creatorPoolRuns",
+          "creatorCatalogPosts",
         ].includes(name),
     ),
   ).toEqual(Object.keys(before));
+  expect((productTables.creatorCatalogPosts as any).export().indexes).toEqual([
+    { indexDescriptor: "by_family", fields: ["familyId"] },
+    {
+      indexDescriptor: "by_creator_caption",
+      fields: ["creatorKey", "signature.captionHash"],
+    },
+    {
+      indexDescriptor: "by_creator_published",
+      fields: ["creatorKey", "sortAt", "familyId"],
+    },
+  ]);
+  const watch = (productTables.creatorWatches as any).export();
+  expect(watch.indexes).toEqual([
+    { indexDescriptor: "by_key", fields: ["creatorKey"] },
+    { indexDescriptor: "by_profile_url", fields: ["profileUrl"] },
+    { indexDescriptor: "by_due", fields: ["dueAt"] },
+  ]);
+  for (const field of ["profileUrl", "profile", "profileLease", "handle"])
+    expect(watch.documentType.value[field].optional).toBe(true);
   const follows = (productTables.creatorFollows as any).export();
   expect(
     follows.indexes.map(
@@ -223,6 +243,7 @@ it("preserves historical schemas/config while admitting reviewed empty proposal/
         "creatorWatches",
         "creatorDiscoveries",
         "creatorPoolRuns",
+        "creatorCatalogPosts",
       ].includes(name)
     )
       continue;

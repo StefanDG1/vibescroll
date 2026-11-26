@@ -7,6 +7,7 @@ import {
   currentCloudArtifactHeader,
   currentCloudArtifact,
 } from "./cloudCatalog";
+import { creatorCatalogOriginals } from "./creatorCatalog";
 
 const reference = (
   organizationId: Id<"organizations">,
@@ -118,6 +119,11 @@ export async function catalogPostDetail(
   await requireFullCatalog(ctx, organizationId);
   const family = await selected(ctx, familyId, artifactId),
     shared = await currentCloudArtifact(ctx, family.selectedArtifactId!);
+  const post = shared.prepared.post;
+  const creatorRow = await ctx.db
+    .query("creatorCatalogPosts")
+    .withIndex("by_family", (q) => q.eq("familyId", familyId))
+    .unique();
   ensure(
     shared.family._id === familyId,
     "SOURCE_UNAVAILABLE",
@@ -129,8 +135,20 @@ export async function catalogPostDetail(
     artifactId: shared.artifact._id,
     versionId: shared.version._id,
     canonical: family.canonical,
+    originals:
+      creatorRow?.artifactId === shared.artifact._id
+        ? await creatorCatalogOriginals(ctx, creatorRow)
+        : [family.canonical],
     title: shared.artifact.postMetadata?.title ?? "Shared video",
     authorName: shared.artifact.postMetadata?.authorName ?? null,
+    creator:
+      post?.authorId && post.authorHandle
+        ? {
+            key: `${post.version === "x-post-evidence-v1" ? "x" : post.platform}:${post.authorId}`,
+            handle: post.authorHandle,
+          }
+        : null,
+    caption: post?.text ?? "",
     analysis: shared.output,
     transcript: shared.prepared.segments,
     provenance: shared.version.provenance,
@@ -139,6 +157,11 @@ export async function catalogPostDetail(
       timestampMs: frame.timestampMs,
       width: frame.width,
       height: frame.height,
+      assetIndex: frame.assetIndex ?? null,
+      mediaKind:
+        frame.assetIndex !== undefined
+          ? (post?.assets[frame.assetIndex]?.kind ?? "video")
+          : "video",
       reference: reference(
         organizationId,
         familyId,

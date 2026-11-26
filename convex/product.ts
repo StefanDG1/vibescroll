@@ -170,7 +170,7 @@ export async function reserve(
   id: Id<"organizations">,
   key: string,
   max: number,
-  funding: "standard" | "included" = "standard",
+  funding: "standard" | "included" | "admin_monthly" = "standard",
 ) {
   ensure(
     Number.isSafeInteger(max) && max >= 0 && max <= 10000,
@@ -195,6 +195,13 @@ export async function reserve(
     "New funded work is paused for payment review. Existing results and reservations are preserved.",
   );
   const w = await wallet(ctx, id);
+  if (funding === "admin_monthly") {
+    ensure(
+      !!(await readAdminProcessingAllowance(ctx, undefined, id)),
+      "FORBIDDEN",
+      "Current admin funding is required.",
+    );
+  }
   const billing = await ctx.db
     .query("billing")
     .withIndex("by_org", (q) => q.eq("organizationId", id))
@@ -224,9 +231,11 @@ export async function reserve(
     pools = [(await ctx.db.get(poolId))!];
   }
   const valid = pools
-    .filter((p) =>
-      (funding === "standard" || p.kind === "included") &&
-      (p.expiresAt === undefined || p.expiresAt > Date.now()))
+    .filter(
+      (p) =>
+        (funding === "standard" || p.kind === funding) &&
+        (p.expiresAt === undefined || p.expiresAt > Date.now()),
+    )
     .sort((a, b) => (a.expiresAt ?? Infinity) - (b.expiresAt ?? Infinity));
   ensure(
     valid.reduce(
@@ -733,7 +742,9 @@ export const detail = query({
       : null;
     return {
       ...s,
-      ...(s.creator?.contentKey ? { originalLinks: await visibleOriginals(ctx, s) } : {}),
+      ...(s.creator?.contentKey
+        ? { originalLinks: await visibleOriginals(ctx, s) }
+        : {}),
       workCloudLinkSetup: automaticRoute
         ? {
             configured: automaticRoute.configured,
@@ -1052,20 +1063,31 @@ export async function captureAuthorized(
       "Complete a verified upload first.",
     );
   }
-  const stablePostKey = classified?.sourceType === "media"
-    ? platformPostKey(canonical)
-    : undefined;
+  const stablePostKey =
+    classified?.sourceType === "media" ? platformPostKey(canonical) : undefined;
   const duplicates = stablePostKey
-    ? await ctx.db.query("sources")
-        .withIndex("by_org_platform_post", (q) => q.eq("organizationId", a.organizationId)
-          .eq("platformPostKey", stablePostKey))
+    ? await ctx.db
+        .query("sources")
+        .withIndex("by_org_platform_post", (q) =>
+          q
+            .eq("organizationId", a.organizationId)
+            .eq("platformPostKey", stablePostKey),
+        )
         .take(8)
     : [];
-  const dup = duplicates.find((candidate) => candidate.state !== "deleted" && candidate.kind === "url" &&
-      sourceRetained(candidate.sourceRetentionUntil)) ??
-    await ctx.db.query("sources").withIndex("by_canonical", (q) =>
-      q.eq("organizationId", a.organizationId).eq("canonical", canonical)
-    ).unique();
+  const dup =
+    duplicates.find(
+      (candidate) =>
+        candidate.state !== "deleted" &&
+        candidate.kind === "url" &&
+        sourceRetained(candidate.sourceRetentionUntil),
+    ) ??
+    (await ctx.db
+      .query("sources")
+      .withIndex("by_canonical", (q) =>
+        q.eq("organizationId", a.organizationId).eq("canonical", canonical),
+      )
+      .unique());
   if (dup && dup.state !== "deleted") {
     if (a.kind === "url" && (await attachCloudCache(ctx, dup, actor.actor._id)))
       return saved(dup._id);
@@ -1113,15 +1135,16 @@ export async function captureAuthorized(
   const id = await ctx.db.insert("sources", {
     ...a,
     canonical,
-    ...(stablePostKey ? {platformPostKey: stablePostKey} : {}),
+    ...(stablePostKey ? { platformPostKey: stablePostKey } : {}),
     sourceType:
       classified?.sourceType ?? (a.kind === "text" ? "supplied_text" : "media"),
     ...(classified && classified.sourceType !== "media"
       ? { retrievalState: "saved" as const }
       : {}),
     state:
-      a.kind === "url" && classified?.sourceType === "media" &&
-        process.env.LINK_ONLY_CAPTURE_ENABLED !== "true"
+      a.kind === "url" &&
+      classified?.sourceType === "media" &&
+      process.env.LINK_ONLY_CAPTURE_ENABLED !== "true"
         ? "needs_upload"
         : "saved",
     coverage: a.kind === "text" ? "caption_only" : "metadata_only",

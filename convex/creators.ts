@@ -18,6 +18,10 @@ import { sourceRetained } from "./lib/sourceAuthority";
 import { ensure } from "../packages/policy";
 import { linkedCreatorKeys, visibleOriginals } from "./lib/creatorLinks";
 import { postDisplayTitle } from "../packages/sources/display";
+import { creatorCatalogPage } from "./lib/creatorCatalog";
+import { requireFullCatalog } from "./lib/fullCatalogAccess";
+import { currentCloudArtifact } from "./lib/cloudCatalog";
+import { internal } from "./_generated/api";
 
 const args = {
   organizationId: v.id("organizations"),
@@ -120,13 +124,33 @@ const profile = v.object({
       originals: v.array(v.string()),
     }),
   ),
+  sharedItems: v.array(
+    v.object({
+      familyId: v.id("catalogFamilies"),
+      artifactId: v.id("publicArtifacts"),
+      creatorKey: v.string(),
+      handle: v.string(),
+      title: v.string(),
+      canonical: v.string(),
+      originals: v.array(v.string()),
+      publishedAt: v.union(v.number(), v.null()),
+    }),
+  ),
+  sharedNext: v.union(v.string(), v.null()),
   next: v.union(v.string(), v.null()),
 });
 
 export const read = query({
-  args: { ...args, cursor: v.optional(v.string()) },
+  args: {
+    ...args,
+    cursor: v.optional(v.string()),
+    sharedCursor: v.optional(v.string()),
+  },
   returns: v.union(profile, v.null()),
-  handler: async (ctx, { organizationId, creatorKey, cursor }) => {
+  handler: async (
+    ctx,
+    { organizationId, creatorKey, cursor, sharedCursor },
+  ) => {
     const { actor, organization } = await access(ctx, organizationId);
     ensure(
       !cursor || cursor.length <= 4096,
@@ -139,8 +163,20 @@ export const read = query({
       creatorKey,
       cursor ?? null,
     );
-    const first = visible[0];
-    if (!first?.creator) return null;
+    const first =
+      visible.find((source) => source.creator?.key === creatorKey) ??
+      visible[0];
+    const shared = await creatorCatalogPage(
+      ctx,
+      organizationId,
+      creatorKey,
+      sharedCursor,
+    );
+    const sharedCreator =
+      shared.items.find((item) => item.creatorKey === creatorKey) ??
+      shared.items[0];
+    if (!first?.creator && !sharedCreator && !shared.next) return null;
+    const handle = first?.creator?.handle ?? sharedCreator?.handle ?? "";
     const follow = await ctx.db
       .query("creatorFollows")
       .withIndex("by_actor_workspace_creator", (q) =>
@@ -173,8 +209,8 @@ export const read = query({
             .take(12)
         : [];
     return {
-      name: first.linkPreview?.authorName || first.creator.handle,
-      handle: first.creator.handle,
+      name: first?.linkPreview?.authorName || handle || "Creator",
+      handle,
       following: follow?.state === "following",
       pool:
         follow?.state === "following" &&
@@ -219,16 +255,54 @@ export const read = query({
         })),
       ),
       next,
+      sharedItems: shared.items,
+      sharedNext: shared.next,
     };
   },
 });
 
 export const setFollow = mutation({
-  args: { ...args, following: v.boolean(), sourceId: v.id("sources") },
+  args: {
+    ...args,
+    following: v.boolean(),
+    sourceId: v.optional(v.id("sources")),
+    familyId: v.optional(v.id("catalogFamilies")),
+  },
   returns: v.boolean(),
-  handler: async (ctx, { organizationId, creatorKey, following, sourceId }) => {
+  handler: async (
+    ctx,
+    { organizationId, creatorKey, following, sourceId, familyId },
+  ) => {
     const { actor } = await writeAccess(ctx, organizationId);
-    const source = await ctx.db.get(sourceId);
+    if (!sourceId && familyId) {
+      await requireFullCatalog(ctx, organizationId);
+      const family = await ctx.db.get(familyId);
+      ensure(
+        family?.selectedArtifactId,
+        "SOURCE_UNAVAILABLE",
+        "Creator unavailable.",
+      );
+      const shared = await currentCloudArtifact(ctx, family.selectedArtifactId),
+        post = shared.prepared.post;
+      const platform =
+        post?.version === "x-post-evidence-v1" ? "x" : post?.platform;
+      ensure(
+        post?.authorId &&
+          post.authorHandle &&
+          `${platform}:${post.authorId}` === creatorKey,
+        "SOURCE_UNAVAILABLE",
+        "Creator unavailable.",
+      );
+      return saveFollow(
+        ctx,
+        actor._id,
+        organizationId,
+        creatorKey,
+        following,
+        post.authorHandle,
+      );
+    }
+    const source = sourceId ? await ctx.db.get(sourceId) : null;
     ensure(
       source &&
         source.organizationId === organizationId &&
@@ -241,7 +315,14 @@ export const setFollow = mutation({
       "SOURCE_UNAVAILABLE",
       "Creator unavailable.",
     );
-    return saveFollow(ctx, actor._id, organizationId, creatorKey, following);
+    return saveFollow(
+      ctx,
+      actor._id,
+      organizationId,
+      creatorKey,
+      following,
+      source.creator.handle,
+    );
   },
 });
 
@@ -251,6 +332,7 @@ async function saveFollow(
   organizationId: Id<"organizations">,
   creatorKey: string,
   following: boolean,
+  handle?: string,
 ) {
   const old = await ctx.db
     .query("creatorFollows")
@@ -263,8 +345,11 @@ async function saveFollow(
     .unique();
   const state = following ? ("following" as const) : ("unfollowed" as const);
   const now = Date.now();
-  if (following) await ensureCreatorWatch(ctx, creatorKey, now);
   if (old?.state === state) return following;
+  if (following) {
+    await ensureCreatorWatch(ctx, creatorKey, now, handle);
+    await ctx.scheduler.runAfter(0, internal.creatorDiscovery.schedule, {});
+  }
   if (old)
     await ctx.db.patch(old._id, {
       state,
@@ -327,6 +412,15 @@ export const assistantRead = internalQuery({
       }),
     ),
     more: v.boolean(),
+    sharedPosts: v.array(
+      v.object({
+        title: v.string(),
+        url: v.string(),
+        originalUrl: v.string(),
+        originalUrls: v.array(v.string()),
+      }),
+    ),
+    sharedMore: v.boolean(),
   }),
   handler: async (ctx, { profileId, sourceId }) => {
     const { scope, source, creator } = await scopedCreator(
@@ -341,6 +435,7 @@ export const assistantRead = internalQuery({
       null,
     );
     const base = `https://scroll.companynerve.com/app/${profileId}`;
+    const shared = await creatorCatalogPage(ctx, profileId, creator.key);
     const posts = [];
     for (const post of visible)
       if (
@@ -364,6 +459,13 @@ export const assistantRead = internalQuery({
       posts,
       // Do not disclose whether there are out-of-scope sources.
       more: scope.grant.libraryScope === "all" && next !== null,
+      sharedPosts: shared.items.map((item) => ({
+        title: item.title,
+        url: `${base}/catalog/${item.familyId}`,
+        originalUrl: item.canonical,
+        originalUrls: item.originals,
+      })),
+      sharedMore: shared.next !== null,
     };
   },
 });
@@ -382,7 +484,14 @@ export const assistantFollow = internalMutation({
       "FORBIDDEN",
       "This workspace is read-only.",
     );
-    await saveFollow(ctx, scope.actor._id, profileId, creator.key, following);
+    await saveFollow(
+      ctx,
+      scope.actor._id,
+      profileId,
+      creator.key,
+      following,
+      creator.handle,
+    );
     return {
       following,
       monitoringAvailable: creatorFeedAvailable(creator.key),

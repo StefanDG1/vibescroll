@@ -1,6 +1,18 @@
 import type { QueryCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
-import { creatorFeedPolicy } from "../../packages/social/creator-feed";
+import { creatorFeedAvailable } from "../../packages/social/creator-feed";
+import { readAdminProcessingAllowance } from "./adminProcessingAllowance";
+import { requirePaidProcessing } from "./paidProcessing";
+import { PolicyError } from "../../packages/policy";
+
+export async function requireCreatorFunding(
+  ctx: QueryCtx,
+  actor: Doc<"users">,
+  organizationId: Id<"organizations">,
+) {
+  if (!(await readAdminProcessingAllowance(ctx, actor, organizationId)))
+    await requirePaidProcessing(ctx, actor, organizationId);
+}
 
 export function creatorPoolDailyExposureLimit() {
   const value = Number(process.env.VIBESCROLL_CREATOR_POOL_DAILY_NANO_USD);
@@ -13,7 +25,7 @@ export function creatorPoolEnabled(creatorKey: string) {
     process.env.VIBESCROLL_MANAGED_AUTO_ENABLED === "true" &&
     process.env.RESTORE_LOCK !== "true" &&
     creatorPoolDailyExposureLimit() > 0 &&
-    !!creatorFeedPolicy(creatorKey)
+    creatorFeedAvailable(creatorKey)
   );
 }
 
@@ -30,14 +42,17 @@ export async function sponsorAllowance(
   )
     return null;
   const dayStart = Math.floor(now / 86400000) * 86400000;
-  const included = (
-    await ctx.db
-      .query("creditPools")
-      .withIndex("by_org", (q) => q.eq("organizationId", org._id))
-      .take(64)
-  ).filter(
+  const admin = await readAdminProcessingAllowance(ctx, actor, org._id);
+  const pools = await ctx.db
+    .query("creditPools")
+    .withIndex("by_org", (q) => q.eq("organizationId", org._id))
+    .take(64);
+  if (pools.length === 64) return null;
+  const included = pools.filter(
     (p) =>
-      p.kind === "included" && p.expiresAt !== undefined && p.expiresAt > now,
+      (admin ? p.kind === "admin_monthly" : p.kind === "included") &&
+      p.expiresAt !== undefined &&
+      p.expiresAt > now,
   );
   const primary = included.sort((a, b) => b.createdAt - a.createdAt)[0];
   if (!primary?.expiresAt) return null;
@@ -110,6 +125,21 @@ export async function candidateSponsor(
     )
     .unique();
   if (!membership || membership.role !== "owner") return null;
+  try {
+    await requireCreatorFunding(ctx, actor, organization._id);
+  } catch (error) {
+    if (
+      error instanceof PolicyError &&
+      [
+        "FORBIDDEN",
+        "PRO_REQUIRED",
+        "PAYMENT_REQUIRED",
+        "PAYMENT_REVIEW_REQUIRED",
+      ].includes(error.code)
+    )
+      return null;
+    throw error;
+  }
   const allowance = await sponsorAllowance(
     ctx,
     actor,

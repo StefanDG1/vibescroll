@@ -22,6 +22,7 @@ import { creatorCatalogPage } from "./lib/creatorCatalog";
 import { requireFullCatalog } from "./lib/fullCatalogAccess";
 import { currentCloudArtifact } from "./lib/cloudCatalog";
 import { internal } from "./_generated/api";
+import { indexedCatalogCreator } from "./lib/catalogCreator";
 
 const args = {
   organizationId: v.id("organizations"),
@@ -327,21 +328,23 @@ export const setFollow = mutation({
         post = shared.prepared.post;
       const platform =
         post?.version === "x-post-evidence-v1" ? "x" : post?.platform;
-      ensure(
-        post?.authorId && post.authorHandle,
-        "SOURCE_UNAVAILABLE",
-        "Creator unavailable.",
-      );
+      const verified =
+        post?.authorId && post.authorHandle
+          ? { key: `${platform}:${post.authorId}`, handle: post.authorHandle }
+          : await indexedCatalogCreator(
+              ctx,
+              family._id,
+              shared.artifact._id,
+              family.canonical,
+            );
+      ensure(verified, "SOURCE_UNAVAILABLE", "Creator unavailable.");
       return saveFollow(
         ctx,
         actor._id,
         organizationId,
         creatorKey,
         following,
-        await followHandle(ctx, organizationId, creatorKey, {
-          key: `${platform}:${post.authorId}`,
-          handle: post.authorHandle,
-        }),
+        await followHandle(ctx, organizationId, creatorKey, verified),
       );
     }
     const source = sourceId ? await ctx.db.get(sourceId) : null;

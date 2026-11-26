@@ -32,6 +32,7 @@ import { internal } from "../_generated/api";
 import { queryRead } from "./knowledgeReadContext";
 import { recordPostSave } from "./postEngagement";
 import { platformPostKey } from "../../packages/sources/post-identity";
+import { indexedCatalogCreator } from "./catalogCreator";
 
 export type CloudArtifact = Extract<
   Doc<"publicArtifacts">,
@@ -241,6 +242,15 @@ async function attachResult(
 ) {
   const now = Date.now();
   const post = cached.prepared.post;
+  const indexedCreator =
+    !post?.authorId || !post.authorHandle
+      ? await indexedCatalogCreator(
+          ctx,
+          cached.family._id,
+          cached.artifact._id,
+          cached.family.canonical,
+        )
+      : null;
   const layerId = await ctx.db.insert("publicImports", {
     organizationId: source.organizationId,
     origin: "cloud",
@@ -277,7 +287,16 @@ async function attachResult(
             ? { publishedAt: post.publishedAt }
             : {}),
         }
-      : {}),
+      : indexedCreator
+        ? {
+            platformPostKey: indexedCreator.postKey,
+            creator: {
+              key: indexedCreator.key,
+              handle: indexedCreator.handle,
+              generation: source.generation,
+            },
+          }
+        : {}),
     ...(cached.artifact.postMetadata
       ? {
           linkPreview: {

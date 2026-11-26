@@ -1,0 +1,79 @@
+{
+  "date": "2026-11-26",
+  "timezone": "Europe/Paris",
+  "productionBackendCommit": "62f837b9e6d5966d7776f81fa9de675e4114bba1",
+  "productionWebsiteCommit": "62f837b9e6d5966d7776f81fa9de675e4114bba1",
+  "productionWebsiteVersion": "0.1.0-alpha.20261126181932.g62f837b9e6d5",
+  "deploymentId": "dpl_HiLsg8drtQncw4JJczeqW7gG8Pc1",
+  "backendFinishAcknowledgedAtUtc": "2026-11-26T18:26:13.336Z",
+  "canonicalVerifiedAtUtc": "2026-11-26T18:43:27.501Z",
+  "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/45875024801",
+  "localChecks": {
+    "mainPassed": 1823,
+    "mainSkipped": 9,
+    "authPassed": 92,
+    "sharedUiPassed": 194,
+    "fullCheckPassed": true
+  },
+  "schemaPrediction": {
+    "components": 14,
+    "tables": 174,
+    "indexes": 392,
+    "newDefinitions": 0,
+    "populatedWalks": 0,
+    "populatedBackfills": 0,
+    "reviewedEmptyIndexes": 4
+  },
+  "deterministicPreparedBundles": 2,
+  "publicationGuardCasesPassed": 13,
+  "website": {
+    "fixedBasicBuild": true,
+    "machineCores": 2,
+    "machineMemoryGb": 8,
+    "stagedExactHealth": true,
+    "stagedDescriptor": true,
+    "stagedPrivateCreatorRedirect": 307,
+    "sameBuildPromoted": true,
+    "canonicalExactHealth": true,
+    "aliasesCompleted": true,
+    "normalDomainAssignmentRestored": true,
+    "temporaryShareRevoked": true,
+    "newSignedInVisualAcceptance": "pending browser attachment"
+  },
+  "production": {
+    "creatorDiscoveryEnabled": true,
+    "creatorMatchingEnabled": true,
+    "creatorPoolEnabled": true,
+    "instagramSessionInstalledAndValidated": true,
+    "instagramFeedWatch": "ready",
+    "tiktokFeedWatch": "ready",
+    "tiktokRecentVideoDiscoveries": 1,
+    "tiktokRecentPhotoDiscoveries": 1,
+    "testFollowsRestoredToUnfollowed": true,
+    "contributionsEnabledByTest": false,
+    "creatorPoolRunsStarted": 0,
+    "newModelRuns": 0,
+    "newMediaPreparations": 0
+  },
+  "mcp": {
+    "instagramCreatorRead": true,
+    "tiktokCreatorRead": true,
+    "bothIncludeSharedCatalogPosts": true,
+    "followAndUnfollowAcknowledged": true,
+    "originalConnectionRetained": true
+  },
+  "globalMetadataMigration": {
+    "familiesVisited": 92,
+    "complete": true,
+    "familiesWithRetainedStableCreatorIdentity": 2,
+    "legacyFamiliesMissingStableCreatorIdentity": 90,
+    "pageSize": 8,
+    "privateSourceScan": false
+  },
+  "remaining": [
+    "Independent receiving-user production reuse and current signed-in creator-page visual checks await browser attachment.",
+    "Recover stable author identities for legacy shared posts from verified original metadata.",
+    "Actual new-post pool sponsorship needs an eligible creator post published after a real contribution-enabled follow.",
+    "X post extraction is separate from creator polling; no X feed adapter is enabled."
+  ]
+}

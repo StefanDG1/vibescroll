@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 26 shared creator pages and public polling
+
+Website and backend `62f837b9e6d` are live. Exact CI, the full local check, two deterministic preparations and 13 publication guard cases passed. The actual schema prediction admitted four reviewed empty indexes with no populated walk or backfill. One fixed Basic build passed staged exact health, descriptor and private-route authentication checks, then the same build passed canonical health. Normal domain assignment was restored and the temporary share was revoked.
+
+Creator discovery, matching and the contribution pool are enabled. Production Instagram and TikTok watches reached Ready after real MCP Follow calls. TikTok discovered one recent video and one photo post. Both follows were restored to unfollowed with contribution disabled. No analysis, preparation or pool run started. MCP creator reads now include shared catalog post links. The bounded metadata pass visited all 92 families and indexed the two manifests retaining stable creator IDs. Older author recovery, current signed-in visual checks, independent receiver reuse and actual post-follow sponsored analysis remain separate acceptance. [Production receipt](operations/evidence/launch-20261126-creators-production.json)
+
 ## November 26 complete-post shared publication
 
 Backend `dce0c530c63d` publishes the existing nine-image Instagram and two-image TikTok results to independent shared artifacts. The original private versions remain Ready. MCP reopened both complete contexts, verified creators and all eleven actual shared JPEGs. Recovery made no new model request or media preparation and left app credit balances unchanged. Exact Linux CI, 80 focused cases, matching prepared bundles and the unchanged-schema publication guard passed. [Production receipt](operations/evidence/launch-20261126-shared-photo-publication.json)

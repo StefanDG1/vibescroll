@@ -1,4 +1,5 @@
 import { personalAnalysisValue } from "./personalAnalysisSchema";
+import { postAuthorProofValue } from "./creatorIdentitySchema";
 import { defineTable } from "convex/server";
 import { cloudSaveIntent } from "./workCloudSaveSchema";
 import { v } from "convex/values";
@@ -321,6 +322,7 @@ export const productTables = {
     sortAt: v.number(),
     contentKey: v.string(),
     signature: v.any(),
+    identityProof: v.optional(postAuthorProofValue),
     publishedAt: v.union(v.number(), v.null()),
     updatedAt: v.number(),
   })

@@ -1,5 +1,9 @@
 # Product decisions
 
+## November 26: shared creator pages and legacy author recovery
+
+[ADR246](adr/246-public-creator-profiles-and-polling.md) uses verified public identities, reciprocal account links and bounded profile polling. Creator pages show every entitled shared analyzed post, with private results under their existing workspace rights. [ADR247](adr/247-legacy-shared-creator-metadata.md) recovers missing legacy authors from original post metadata without changing retained analysis, private overlays or credit holds. Live acceptance and remaining limits are recorded in [the current state](operations/CURRENT-STATE.md#start-here).
+
 ## October31: medium-term completion and prepared euro prices
 
 Follow the [medium-term completion plan](launch-plan/2026-10-31/MEDIUM-TERM-COMPLETION.md). Prepare one Pro at EUR35/month, EUR350/year and EUR17/week, with300 monthly credits for monthly/annual. Weekly credits and live migration remain under review. The isolated pricing preview does not alter runtime contracts or customer terms. [ADR215](adr/215-targeted-repository-refresh.md) adds single-project snapshot recovery without refreshing unrelated projects or authorizing publication.

@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-26",
+  "timezone": "Europe/Paris",
+  "productionWebsiteCommit": "5c96517bba952c2f14f14b538f78480e747f4479",
+  "productionReaderBackendCommit": "11b5c4f8e0cff93f738534ed63819e341d029bb6",
+  "backendFinishAtUtc": "2026-11-26T01:34:43.127535Z",
+  "publicFlagsEnabledAndReadBack": [
+    "VIBESCROLL_ORDERED_SOCIAL_ENABLED",
+    "VIBESCROLL_TIKTOK_ORDERED_ENABLED",
+    "VIBESCROLL_INSTAGRAM_PUBLIC_EMBED_ENABLED",
+    "VIBESCROLL_MANAGED_AUTO_ENABLED"
+  ],
+  "instagram": {
+    "input": "Original permalink of an existing failed carousel",
+    "sameSavedSource": true,
+    "acquisition": "public captioned embed in production sandbox",
+    "expectedImages": 9,
+    "retainedImages": 9,
+    "citedInsights": 6,
+    "verifiedCreator": true,
+    "model": "meta/muse-ember",
+    "effort": "medium",
+    "state": "ready",
+    "queuedToReadyMs": 25363,
+    "settledAppCredits": 2,
+    "analysisProviderRateEstimateUsd": 0.002746125,
+    "providerInvoiceVerified": false,
+    "ordinaryMcpSaveReusedSameReadySource": true,
+    "mcpCompletePostContext": true,
+    "mcpActualJpegsRead": 9,
+    "sharedCatalogPublication": "failed"
+  },
+  "tiktok": {
+    "input": "Original public video-path link that actually contains two photos",
+    "entrypoint": "Normal MCP save_link with automatic analysis",
+    "expectedImages": 2,
+    "retainedImages": 2,
+    "citedInsights": 1,
+    "verifiedCreator": true,
+    "analysisRoute": "Existing native ChatGPT event monitor",
+    "manualClaimOrMonitorNudge": false,
+    "state": "ready",
+    "queuedToReadyMs": 112423,
+    "settledAppCredits": 1,
+    "paidApiReasoningRequests": 0,
+    "ordinaryMcpSaveReplayReusedSameReadySource": true,
+    "mcpCompletePostContext": true,
+    "mcpActualJpegsRead": 2,
+    "sharedCatalogPublication": "unverified"
+  },
+  "readerCorrection": {
+    "oldWholePostFrameLimit": 8,
+    "newWholePostFrameLimit": 48,
+    "existingEvidenceContractFrameLimit": 48,
+    "nineSlideRegressionAndLastImageRead": true
+  },
+  "checks": {
+    "ci": "https://github.com/StefanDG1/vibescroll/actions/runs/45736184125",
+    "mainTestsPassed": 1800,
+    "mainTestsSkipped": 11,
+    "focusedPostContextTestsPassed": 17,
+    "matchingCompatibleDryRuns": 2,
+    "schemaOrIndexChange": false,
+    "secretScanPassed": true,
+    "canonicalHealth": "ok",
+    "signedInReaderWidths": [390, 1440],
+    "readerHorizontalOverflow": false,
+    "instagramLastSlideNavigation": true,
+    "newWebsiteBuilds": 0
+  },
+  "scope": "Two real public posts passed. This is technical production acceptance for these cases and does not establish universal availability or platform permission."
+}

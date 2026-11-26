@@ -4,6 +4,8 @@ The owner enabled public Instagram and TikTok extraction on November 26, 2026. T
 
 Public acquisition must establish the exact post, caption, author and complete ordered attachment list. The worker decodes every expected image before analysis. A missing or blocked manifest reports a source failure. Public rollout approval records the owner's product decision and does not establish platform permission or a legal opinion.
 
+Production acceptance passed for a nine-image Instagram carousel with six insights and a two-image TikTok photo post with one insight. MCP returned complete context and all eleven actual JPEGs. The first used Muse Ember Medium and the second used the existing native ChatGPT monitor. Shared-catalog publication remains open. [Production receipt](evidence/launch-20261126-public-photo-production.json)
+
 ## Instagram carousels
 
 The existing Instagram Graph integration can read the carousel of a connected professional account. It resolves a saved permalink against the authorized account's indexed posts, checks the returned owner and media ID, and requires the complete child list. Each child's media URL is checked and its bytes are decoded in the isolated worker. The parent supplies the caption. This route needs an approved Meta app and a current connection for the account that owns the media. The live deployment had no configured Instagram feed authority during this check. [Meta media endpoint](https://developers.facebook.com/docs/instagram-platform/reference/instagram-media/v21.0/) · [VibeScroll intake decision](../adr/244-link-only-posts-and-creator-intake.md)

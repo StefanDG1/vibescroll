@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 26 public carousel and Photo Mode production acceptance
+
+Public Instagram and TikTok extraction are enabled and read back. The existing nine-image Instagram carousel reached Ready with all nine saved JPEGs, a verified creator and six cited insights using Muse Ember Medium. A new two-image TikTok photo link saved through MCP completed through the existing ChatGPT monitor with both images and one cited insight. Its video URL path was resolved to the actual photo format. Replaying each link through MCP returned the same Ready source without another analysis.
+
+The live test exposed an eight-frame restriction in the whole-post MCP reader. Backend `11b5c4f8e0cf` now follows the existing 48-frame evidence contract. MCP reopened complete context and all eleven actual JPEGs. The signed-in readers passed at 390 and 1440 pixels, including the ninth Instagram slide. Shared-catalog publication failed for the Instagram result and remains separate work. These two cases establish bounded production acceptance. [Production evidence](operations/evidence/launch-20261126-public-photo-production.json)
+
 ## November 26 Meta Business Discovery routing
 
 Production Convex `a62e05ce5528` supports indexed Instagram links from an approved public professional target without a VibeScroll connection for that creator. The configured requester uses Meta Business Discovery with Facebook Login. The tests cover exact account and media matching, multi-page lookup, ordered images, incomplete albums, and expired grants. Production function metadata confirms the index entry point is live. The existing TikTok result and its JPEG reopened through MCP after publication. A real Business Discovery carousel remains pending an approved requester connection and a matching target. [Release evidence](operations/evidence/launch-20261126-instagram-business-discovery.json) · [Access procedure](operations/SOCIAL-PHOTO-ACCESS.md#public-professional-accounts-through-business-discovery)

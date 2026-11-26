@@ -204,6 +204,7 @@ export async function postContextPage(
                     (frame) =>
                       frame.frameId === observation.id ||
                       (!isServicePreparedEvidence(c.evidence.prepared) &&
+                        c.evidence.owner !== "service" &&
                         frame.timestampMs === observation.startMs),
                   )
                   .map((frame) => frame.frameId)
@@ -263,16 +264,14 @@ export async function postContextPage(
       authorName: isServicePreparedEvidence(c.evidence.prepared)
         ? c.evidence.prepared.metadata.authorName
         : (c.source.linkPreview?.authorName ?? null),
-      ...(isServicePreparedEvidence(c.evidence.prepared) &&
-      c.evidence.prepared.evidence.post?.version === "social-post-evidence-v1"
+      ...(content.post.post?.version === "social-post-evidence-v1"
         ? {
             sourceAuthor: {
-              platformId: c.evidence.prepared.evidence.post.authorId,
-              handle: c.evidence.prepared.evidence.post.authorHandle,
-              publishedAt: c.evidence.prepared.evidence.post.publishedAt,
+              platformId: content.post.post.authorId,
+              handle: content.post.post.authorHandle,
+              publishedAt: content.post.post.publishedAt,
             },
-            expectedAttachments:
-              c.evidence.prepared.evidence.post.expectedAssetCount,
+            expectedAttachments: content.post.post.expectedAssetCount,
           }
         : {}),
       durationMs:

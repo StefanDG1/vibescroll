@@ -3935,3 +3935,9 @@ Websitee6cf399/backend796b2cf are live. Exact CI41364980672 passes1,697main/11sk
 ## November2 search-first onboarding production
 
 Website3748525/backend796b2cf, exact CI41441002106:1,700main/11skips,76auth,179UI, Node/Python and both builds pass. Local full/focused, dependency and secret checks pass. One60.900s fixed Basic build promoted unchanged; canonical health/UI and four theme/viewport cases pass. Real creator search returns one of five metadata cards without another metadata request; six retained insights/thumbnail and preview-limit recovery pass. No backend, inference, checkout or payment. [Receipt](operations/evidence/launch-20261102-search-first-onboarding.json).
+
+# November 26 complete-post shared publication candidate
+
+The candidate removes format exclusions from the standing catalog policy, accepts neutral post evidence, copies every retained image within the existing 48-frame contract, and retains separate slide references for identical bytes. Reused results retain creator identity and complete post detail in the web reader and MCP context. Explicit exact-version contribution can publish an existing result under the current standing policy without another model run. Automatic admission still rejects versions predating its request.
+
+Local focused publication, reuse and policy checks passed 80 cases. The nine-image and 35-image tests include concurrent second-account reuse and a later cold-account Save. Production recovery and independent browser acceptance are pending. [Decision](adr/245-complete-post-shared-publication.md)

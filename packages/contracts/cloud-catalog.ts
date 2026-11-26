@@ -372,7 +372,8 @@ export async function projectNeutralCloudVersion(
     preparedValue &&
     typeof preparedValue === "object" &&
     "version" in preparedValue &&
-    preparedValue.version === "neutral-cloud-evidence-v1"
+    (preparedValue.version === "neutral-cloud-evidence-v1" ||
+      preparedValue.version === "neutral-post-evidence-v2")
   ) {
     const evidence = neutralCloudEvidence.parse(preparedValue);
     if (evidence.language !== languageValue)

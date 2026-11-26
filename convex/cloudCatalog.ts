@@ -23,7 +23,11 @@ import {
   verifyRetainedAssets,
   freezeAnalysisBaseline,
 } from "./lib/analysisHistory";
-import { requireAutomaticCatalogIntent } from "./lib/catalogPolicy";
+import {
+  requireAutomaticCatalogIntent,
+  currentAutomaticCatalogPolicy,
+  recordAutomaticCatalogIntent,
+} from "./lib/catalogPolicy";
 import { workCloudSourceEligible } from "./lib/workCloudSourceAccess";
 import { workCloudMediaAllowed } from "./lib/personalAccess";
 import { sourceRetained } from "./lib/sourceAuthority";
@@ -62,6 +66,7 @@ const copying = {
 const maximumCopyMs = 180000;
 
 function publicPostMetadata(s: Awaited<ReturnType<typeof snapshot>>) {
+  if (!s.evidence.frames.length) return undefined;
   const privateValues = [
     s.source._id,
     s.source.organizationId,
@@ -123,12 +128,6 @@ async function snapshot(
     ? await automaticOwner(ctx, args.sourceId, actorId)
     : await historySource(ctx, args.sourceId, true);
   const retained = await retainedVersion(ctx, owner.source, args.versionId);
-  if (actorId)
-    ensure(
-      retained.version.createdAt >= owner.source.catalogPolicy!.requestedAt,
-      "POLICY_BLOCKED",
-      "Existing private versions are not retroactive catalog consent.",
-    );
   const servicePrepared = isServicePreparedEvidence(retained.evidence.prepared);
   let preparedRun;
   let processingReviewHash;
@@ -504,9 +503,9 @@ async function prepareContribution(
   const prefix =
     reused?.artifact.storagePrefix ??
     `catalog/${s.organization._id}/${crypto.randomUUID()}/`;
-  const frames = s.evidence.frames.map(({ assetId: _asset, ...f }) => ({
+  const frames = s.evidence.frames.map(({ assetId: _asset, ...f }, index) => ({
     ...f,
-    key: `${prefix}${f.sha256}.jpg`,
+    key: `${prefix}${index + 1}-${f.sha256}.jpg`,
   }));
   if (!reused) {
     const config = catalogConfiguration()!;
@@ -730,12 +729,38 @@ export const prepare = internalMutation({
   args: { ...selected, key: v.string(), consent: v.any() },
   returns: v.any(),
   handler: async (ctx, args) => {
+    const owner = await historySource(ctx, args.sourceId, true);
+    const policy = await currentAutomaticCatalogPolicy(
+      ctx,
+      owner.source,
+      owner.actor,
+    );
     const prepared = await prepareContribution(ctx, args);
     ensure(
       "contributionId" in prepared,
       "SOURCE_BUSY",
       "The shared copy is still pending.",
     );
+    // This request contains explicit consent bound to the retained version,
+    // hashes and retention. It can publish an existing result without inference.
+    if (policy) {
+      const row = (await ctx.db.get(prepared.contributionId))!;
+      ensure(
+        !row.automaticPolicyHash ||
+          row.automaticPolicyHash === policy.policyHash,
+        "APPROVAL_STALE",
+        "The contribution policy changed.",
+      );
+      await recordAutomaticCatalogIntent(ctx, owner.source, owner.actor);
+      await ctx.db.patch(row._id, { automaticPolicyHash: policy.policyHash });
+      await ctx.db.patch(owner.source._id, {
+        catalogStatus: {
+          state: row.state === "unknown" ? "unknown" : "pending",
+          versionId: args.versionId,
+          updatedAt: Date.now(),
+        },
+      });
+    }
     return prepared;
   },
 });
@@ -772,6 +797,12 @@ export const prepareAutomatic = internalMutation({
       );
       versionId = (await freezeAnalysisBaseline(ctx, source, true))._id;
     }
+    const retained = await retainedVersion(ctx, source, versionId);
+    ensure(
+      retained.version.createdAt >= source.catalogPolicy.requestedAt,
+      "POLICY_BLOCKED",
+      "Existing private versions require an explicit retained-version contribution.",
+    );
     const prepared = await prepareContribution(
       ctx,
       { sourceId: source._id, versionId, key: `auto_${versionId}` },

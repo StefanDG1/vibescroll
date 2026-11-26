@@ -19,6 +19,8 @@ import { postContextPageOutput } from "../packages/contracts/post-context";
 import { knowledgeFetchStructuredOutput } from "../packages/contracts/knowledge-read";
 import * as analysisHistory from "../convex/lib/analysisHistory";
 import { preparedStatusOutput } from "../packages/contracts/prepared-service";
+import { socialHash } from "../packages/social/contracts";
+import { preparedPostSourceIdentity } from "../packages/social/prepared-post";
 const preparationMock = vi.hoisted(() => ({ run: vi.fn() }));
 vi.mock("../packages/providers/prepared-media", () => ({
   prepareHostedEvidence: preparationMock.run,
@@ -145,60 +147,107 @@ async function retained(
   runId: any,
   durationMs = 74302,
   analyze = true,
+  photoCount = 0,
 ) {
   await s.t.mutation(internal.preparedAnalysis.claim, { runId });
   await s.t.mutation(internal.preparedAnalysis.progress, {
     runId,
     stage: "transcribing",
   });
+  const sha256 = createHash("sha256").update(s.bytes).digest("hex");
+  const post = photoCount
+    ? {
+        version: "social-post-evidence-v1" as const,
+        platform: "instagram" as const,
+        postId: new URL(s.source.canonical).pathname.split("/")[2],
+        authorId: "123456789",
+        authorHandle: "creator",
+        publishedAt: Date.now() - 86400000,
+        provider: "instagram_embed" as const,
+        text: "Complete carousel caption.",
+        textHash: await socialHash("Complete carousel caption."),
+        expectedAssetCount: photoCount,
+        coverage: "complete_manifest" as const,
+        assets: Array.from({ length: photoCount }, (_, index) => ({
+          id: `asset-${index + 1}`,
+          index,
+          kind: "image" as const,
+          mime: "image/jpeg" as const,
+          contentHash: sha256,
+          bytes: s.bytes.length,
+          width: 2,
+          height: 2,
+        })),
+      }
+    : undefined;
   const prepared = await makePreparedEvidence({
     requestedCanonical: s.source.canonical,
     canonical: s.source.canonical,
     platform: "instagram",
-    sourceHash: "a".repeat(64),
+    ...(post ? { post } : {}),
+    sourceHash: post
+      ? await socialHash(preparedPostSourceIdentity(s.source.canonical, post))
+      : "a".repeat(64),
     recipeHash: "b".repeat(64),
     downloaderVersion: "2026.10.26",
     title: "Real prepared metadata fixture",
     authorName: "creator",
-    durationMs,
+    durationMs: post ? 0 : durationMs,
     language: "en",
     observedAt: Date.now(),
-    transcript: {
-      origin: "platform_manual",
-      model: null,
-      provider: null,
-      inputSha256: "c".repeat(64),
-    },
-    segments: [
-      { id: "speech-1", startMs: 0, endMs: 1000, text: "Check the evidence." },
-    ],
-    frames: [
-      {
-        id: "frame-1",
-        timestampMs: 1000,
-        sha256: createHash("sha256").update(s.bytes).digest("hex"),
-        bytes: s.bytes.length,
-        width: 2,
-        height: 2,
-      },
-    ],
+    transcript: post
+      ? { origin: "none", model: null, provider: null, inputSha256: null }
+      : {
+          origin: "platform_manual",
+          model: null,
+          provider: null,
+          inputSha256: "c".repeat(64),
+        },
+    segments: post
+      ? []
+      : [
+          {
+            id: "speech-1",
+            startMs: 0,
+            endMs: 1000,
+            text: "Check the evidence.",
+          },
+        ],
+    frames: post
+      ? post.assets.map((a) => ({
+          id: `frame-${a.index + 1}`,
+          assetId: a.id,
+          assetIndex: a.index,
+          timestampMs: 0,
+          sha256,
+          bytes: s.bytes.length,
+          width: 2,
+          height: 2,
+        }))
+      : [
+          {
+            id: "frame-1",
+            timestampMs: 1000,
+            sha256: createHash("sha256").update(s.bytes).digest("hex"),
+            bytes: s.bytes.length,
+            width: 2,
+            height: 2,
+          },
+        ],
   });
-  const f = prepared.evidence.frames[0];
   const evidenceId = await s.t.mutation(internal.preparedAnalysis.retain, {
     runId,
     prepared,
     receipt: { preparation: { stopAcknowledged: true } },
-    frames: [
-      {
-        frameId: f.id,
-        key: `${s.org}/prepared-service-fixture`,
-        size: f.bytes,
-        sha256: f.sha256,
-        width: f.width,
-        height: f.height,
-        timestampMs: f.timestampMs,
-      },
-    ],
+    frames: prepared.evidence.frames.map((f) => ({
+      frameId: f.id,
+      key: `${s.org}/prepared-service-fixture-${f.id}`,
+      size: f.bytes,
+      sha256: f.sha256,
+      width: f.width,
+      height: f.height,
+      timestampMs: f.timestampMs,
+    })),
   });
   if (analyze)
     await s.t.mutation(internal.preparedAnalysis.progress, {
@@ -207,8 +256,12 @@ async function retained(
     });
   return { prepared, evidenceId };
 }
-async function finish(s: Awaited<ReturnType<typeof fixture>>, runId: any) {
-  const e = await retained(s, runId);
+async function finish(
+  s: Awaited<ReturnType<typeof fixture>>,
+  runId: any,
+  photoCount = 0,
+) {
+  const e = await retained(s, runId, 74302, true, photoCount);
   const output = {
     schemaVersion: "analysis-version-output-v1",
     sourceId: s.sourceId,
@@ -217,10 +270,22 @@ async function finish(s: Awaited<ReturnType<typeof fixture>>, runId: any) {
     postRevisionHash: e.prepared.evidence.sourceRevisionHash,
     summary: "Prepared source insights",
     warnings: [],
-    insights: s.output.insights,
+    insights: photoCount
+      ? s.output.insights.map((i) => ({
+          ...i,
+          evidence: [
+            {
+              kind: "image_observation",
+              id: "frame-1",
+              startMs: null,
+              endMs: null,
+            },
+          ],
+        }))
+      : s.output.insights,
   };
   const receipt = {
-    model: "meta/muse-spark-1.3-contributor",
+    model: photoCount ? "meta/muse-ember" : "meta/muse-spark-1.3-contributor",
     provider: "meta",
     requestId: "gen_" + "a".repeat(26),
     startedAt: Date.now() - 1000,
@@ -363,12 +428,17 @@ async function nativeReady(s: Awaited<ReturnType<typeof fixture>>) {
     callbackVerifiedAt: Date.now(),
   });
 }
-async function freshSource(s: Awaited<ReturnType<typeof fixture>>) {
+async function freshSource(
+  s: Awaited<ReturnType<typeof fixture>>,
+  photos = false,
+) {
   const sourceId = await s.owner.mutation(api.product.capture, {
     organizationId: s.org,
     key: "fresh-service-video",
     kind: "url",
-    url: "https://www.instagram.com/reel/Fresh000001/",
+    url: photos
+      ? "https://www.instagram.com/p/Fresh000001/"
+      : "https://www.instagram.com/reel/Fresh000001/",
     title: "Imported video link",
     rightsAttested: true,
   });
@@ -379,131 +449,290 @@ async function freshSource(s: Awaited<ReturnType<typeof fixture>>) {
   };
 }
 
-it("selects a first prepared result at generation zero and publishes it automatically", async () => {
-  const base = await fixture(true),
-    s = await freshSource(base);
-  if (!("serviceOrg" in base)) throw Error("Expected catalog fixture");
-  vi.stubEnv(
-    "CLOUD_CATALOG_CONFIGURATION_JSON",
-    JSON.stringify({
-      version: "cloud-catalog-config-v2",
-      serviceOrganizationId: base.serviceOrg,
-      maximumStorageBytes: 20000000,
-      reviewedAt: Date.now() - 5000,
-      expiresAt: Date.now() + 86400000,
-      permissions: [],
-      defaultPolicy: {
-        version: "automatic-neutral-catalog-v1",
-        id: "prepared-service-standing",
-        disclosureVersion: "synthetic-notice",
-        rightsBasis: "user_attested",
-        platforms: ["instagram", "tiktok"],
-        providerPermissionReference: "synthetic source route",
-        contentPermissionReference: "synthetic user attestation",
-        privacyReviewReference: "synthetic neutral-only projection",
+it.each([0, 9, 35])(
+  "publishes a first result with %i photos and shares every image without charging the second account",
+  async (photoCount) => {
+    const base = await fixture(true),
+      s = await freshSource(base, !!photoCount);
+    if (photoCount) {
+      vi.stubEnv("VIBESCROLL_ORDERED_SOCIAL_ENABLED", "true");
+      vi.stubEnv("VIBESCROLL_MANAGED_AUTO_ENABLED", "true");
+    }
+    if (!("serviceOrg" in base)) throw Error("Expected catalog fixture");
+    vi.stubEnv(
+      "CLOUD_CATALOG_CONFIGURATION_JSON",
+      JSON.stringify({
+        version: "cloud-catalog-config-v2",
+        serviceOrganizationId: base.serviceOrg,
+        maximumStorageBytes: 20000000,
         reviewedAt: Date.now() - 5000,
         expiresAt: Date.now() + 86400000,
-        maximumRetentionMs: 86400000,
+        permissions: [],
+        defaultPolicy: {
+          version: "automatic-neutral-catalog-v1",
+          id: "prepared-service-standing",
+          disclosureVersion: "synthetic-notice",
+          rightsBasis: "user_attested",
+          platforms: ["instagram", "tiktok"],
+          providerPermissionReference: "synthetic source route",
+          contentPermissionReference: "synthetic user attestation",
+          privacyReviewReference: "synthetic neutral-only projection",
+          reviewedAt: Date.now() - 5000,
+          expiresAt: Date.now() + 86400000,
+          maximumRetentionMs: 86400000,
+        },
+      }),
+    );
+    const request = { sourceId: s.sourceId, executor: "gateway" as const };
+    const q = await s.owner.query(api.preparedService.quote, request);
+    const run = await s.owner.mutation(api.preparedService.start, {
+      ...request,
+      key: "fresh-first-result",
+      quoteHash: q.quoteHash,
+      maximumCredits: q.maximumCredits,
+    });
+    const secondSubject = "user_08234567890123456789012345";
+    await s.t.mutation(internal.accounts.syncUser, {
+      subject: secondSubject,
+      email: "second@example.test",
+      name: "Second account",
+      verified: true,
+    });
+    const second = s.t.withIdentity({ subject: secondSubject }),
+      secondOrg = await second.mutation(api.organizations.createPrivate, {});
+    vi.stubEnv(
+      "CLOUD_CATALOG_ALPHA_ACCESS_JSON",
+      JSON.stringify({
+        version: "catalog-operator-alpha-access-v1",
+        subjects: [s.actor.subject, secondSubject],
+        reviewedAt: Date.now() - 1000,
+        expiresAt: Date.now() + 86400000,
+        reviewReference: "synthetic two-account access",
+      }),
+    );
+    vi.stubEnv(
+      "PREPARED_ANALYSIS_CONFIGURATION_JSON",
+      JSON.stringify({
+        ...s.config,
+        subjects: [s.actor.subject, secondSubject],
+      }),
+    );
+    const secondId = await second.mutation(api.product.capture, {
+      organizationId: secondOrg,
+      key: "second-same-video",
+      kind: "url",
+      url: s.source.url!,
+      title: "Imported video link",
+      rightsAttested: true,
+    });
+    const secondRequest = { sourceId: secondId, executor: "gateway" as const },
+      secondQuote = await second.query(
+        api.preparedService.quote,
+        secondRequest,
+      );
+    const waiting = await second.mutation(api.preparedService.start, {
+      ...secondRequest,
+      key: "second-same-analysis",
+      quoteHash: secondQuote.quoteHash,
+      maximumCredits: secondQuote.maximumCredits,
+    });
+    expect(waiting).toMatchObject({
+      runId: null,
+      state: "waiting_for_shared_analysis",
+      chargedCredits: 0,
+    });
+    expect(
+      await second.query(api.preparedService.status, { sourceId: secondId }),
+    ).toMatchObject({
+      state: "waiting_for_shared_analysis",
+      maximumCredits: 0,
+    });
+    const f = await finish(s, run.runId!, photoCount);
+    expect(
+      (
+        await s.owner.query(api.cloudCatalog.preview, {
+          sourceId: s.sourceId,
+          versionId: f.versionId,
+        })
+      ).frameCount,
+    ).toBe(photoCount || 1);
+    expect(s.source.generation).toBe(0);
+    expect(
+      (await s.t.run((c) => c.db.get(s.sourceId)))?.selectedAnalysisVersionId,
+    ).toBe(f.versionId);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) =>
+        init?.method === "PUT"
+          ? new Response(null, { status: 200 })
+          : new Response(s.bytes, {
+              headers: { "content-type": "image/jpeg" },
+            }),
+      ),
+    );
+    const published = await s.t.action(
+      internal.cloudCatalogActions.publishCompleted,
+      {
+        sourceId: s.sourceId,
+        actorId: s.actor._id,
+        generation: 0,
+        versionId: f.versionId,
       },
-    }),
-  );
-  const request = { sourceId: s.sourceId, executor: "gateway" as const };
-  const q = await s.owner.query(api.preparedService.quote, request);
-  const run = await s.owner.mutation(api.preparedService.start, {
-    ...request,
-    key: "fresh-first-result",
-    quoteHash: q.quoteHash,
-    maximumCredits: q.maximumCredits,
-  });
-  const secondSubject = "user_08234567890123456789012345";
-  await s.t.mutation(internal.accounts.syncUser, {
-    subject: secondSubject,
-    email: "second@example.test",
-    name: "Second account",
-    verified: true,
-  });
-  const second = s.t.withIdentity({ subject: secondSubject }),
-    secondOrg = await second.mutation(api.organizations.createPrivate, {});
-  vi.stubEnv(
-    "CLOUD_CATALOG_ALPHA_ACCESS_JSON",
-    JSON.stringify({
-      version: "catalog-operator-alpha-access-v1",
-      subjects: [s.actor.subject, secondSubject],
-      reviewedAt: Date.now() - 1000,
-      expiresAt: Date.now() + 86400000,
-      reviewReference: "synthetic two-account access",
-    }),
-  );
-  vi.stubEnv(
-    "PREPARED_ANALYSIS_CONFIGURATION_JSON",
-    JSON.stringify({ ...s.config, subjects: [s.actor.subject, secondSubject] }),
-  );
-  const secondId = await second.mutation(api.product.capture, {
-    organizationId: secondOrg,
-    key: "second-same-video",
-    kind: "url",
-    url: s.source.url!,
-    title: "Imported video link",
-    rightsAttested: true,
-  });
-  const secondRequest = { sourceId: secondId, executor: "gateway" as const },
-    secondQuote = await second.query(api.preparedService.quote, secondRequest);
-  const waiting = await second.mutation(api.preparedService.start, {
-    ...secondRequest,
-    key: "second-same-analysis",
-    quoteHash: secondQuote.quoteHash,
-    maximumCredits: secondQuote.maximumCredits,
-  });
-  expect(waiting).toMatchObject({
-    runId: null,
-    state: "waiting_for_shared_analysis",
-    chargedCredits: 0,
-  });
-  expect(
-    await second.query(api.preparedService.status, { sourceId: secondId }),
-  ).toMatchObject({ state: "waiting_for_shared_analysis", maximumCredits: 0 });
-  const f = await finish(s, run.runId!);
-  expect(s.source.generation).toBe(0);
-  expect(
-    (await s.t.run((c) => c.db.get(s.sourceId)))?.selectedAnalysisVersionId,
-  ).toBe(f.versionId);
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (_url: string, init?: RequestInit) =>
-      init?.method === "PUT"
-        ? new Response(null, { status: 200 })
-        : new Response(s.bytes, { headers: { "content-type": "image/jpeg" } }),
-    ),
-  );
-  const published = await s.t.action(
-    internal.cloudCatalogActions.publishCompleted,
-    {
-      sourceId: s.sourceId,
-      actorId: s.actor._id,
-      generation: 0,
-      versionId: f.versionId,
-    },
-  );
-  expect(published.state).toBe("published");
-  expect(
-    (await s.t.run((c) => c.db.get(s.sourceId)))?.catalogStatus?.state,
-  ).toBe("published");
-  const waitSource = (await s.t.run((c) => c.db.get(secondId)))!;
-  await s.t.mutation(internal.cloudCatalog.fulfillWaiters, {
-    familyId: waitSource.catalogWait!.familyId,
-  });
-  const secondSource = await s.t.run((c) => c.db.get(secondId));
-  expect(secondSource).toMatchObject({ state: "ready" });
-  expect(secondSource?.publicImportId).toBeTruthy();
-  const secondWallet = await s.t.run((c) =>
-    c.db
-      .query("wallets")
-      .withIndex("by_org", (x) => x.eq("organizationId", secondOrg))
-      .unique(),
-  );
-  expect(secondWallet?.spent ?? 0).toBe(0);
-  expect(secondWallet?.reserved ?? 0).toBe(0);
-});
+    );
+    expect(published.state).toBe("published");
+    expect(
+      (await s.t.run((c) => c.db.get(s.sourceId)))?.catalogStatus?.state,
+    ).toBe("published");
+    const waitSource = (await s.t.run((c) => c.db.get(secondId)))!;
+    await s.t.mutation(internal.cloudCatalog.fulfillWaiters, {
+      familyId: waitSource.catalogWait!.familyId,
+    });
+    const secondSource = await s.t.run((c) => c.db.get(secondId));
+    expect(secondSource).toMatchObject({ state: "ready" });
+    expect(secondSource?.publicImportId).toBeTruthy();
+    if (photoCount) {
+      expect(secondSource?.creator).toMatchObject({
+        key: "instagram:123456789",
+        handle: "creator",
+        generation: 0,
+      });
+      const result = await second.query(api.analysisVersions.read, {
+        sourceId: secondId,
+      });
+      expect(result.frames).toHaveLength(photoCount);
+      expect(result.post.post.expectedAssetCount).toBe(photoCount);
+      const detail = await second.query(api.product.detail, { id: secondId });
+      expect(detail.preparedService?.frames).toHaveLength(photoCount);
+      expect(detail.preparedService?.post?.expectedAssetCount).toBe(photoCount);
+      expect(detail.preparedService?.frames[0].sourceMediaKind).toBe("image");
+      expect(detail.preparedService?.frames[0].reference).toMatch(/^catalog~/);
+      expect(
+        (
+          await second.query(api.creators.read, {
+            organizationId: secondOrg,
+            creatorKey: "instagram:123456789",
+          })
+        )?.items.map((p) => p.id),
+      ).toContain(secondId);
+      const coldId = await second.mutation(api.product.capture, {
+        organizationId: secondOrg,
+        key: "cold-photo-cache-alias",
+        kind: "url",
+        url: s.source.url!,
+        title: "Same carousel",
+        rightsAttested: true,
+      });
+      expect(coldId).toBe(secondId);
+      expect(
+        await s.t.run((c) =>
+          c.db
+            .query("mediaPreparations")
+            .withIndex("by_org_source", (q) =>
+              q.eq("organizationId", secondOrg).eq("sourceId", secondId),
+            )
+            .take(2),
+        ),
+      ).toHaveLength(0);
+      await s.t.run((c) =>
+        c.db.patch(s.sourceId, {
+          catalogPolicy: undefined,
+          catalogStatus: undefined,
+        }),
+      );
+      expect(
+        await s.t.mutation(internal.cloudCatalog.prepareAutomatic, {
+          sourceId: s.sourceId,
+          actorId: s.actor._id,
+          generation: 0,
+          versionId: f.versionId,
+        }),
+      ).toBeNull();
+      const consent = (
+        await s.owner.query(api.cloudCatalog.preview, {
+          sourceId: s.sourceId,
+          versionId: f.versionId,
+        })
+      ).consent;
+      await expect(
+        s.owner.action(api.cloudCatalogActions.contribute, {
+          sourceId: s.sourceId,
+          versionId: f.versionId,
+          key: "recover-explicit-publication",
+          consent: { ...consent, outputHash: "0".repeat(64) },
+        }),
+      ).rejects.toThrow(/APPROVAL_STALE/);
+      expect(
+        (await s.t.run((c) => c.db.get(s.sourceId)))?.catalogPolicy,
+      ).toBeUndefined();
+      expect(
+        await s.owner.action(api.cloudCatalogActions.contribute, {
+          sourceId: s.sourceId,
+          versionId: f.versionId,
+          key: "recover-explicit-publication",
+          consent,
+        }),
+      ).toMatchObject({ state: "published" });
+      expect(
+        (await s.t.run((c) => c.db.get(s.sourceId)))?.catalogStatus?.state,
+      ).toBe("published");
+
+      const coldSubject = "user_07234567890123456789012345";
+      await s.t.mutation(internal.accounts.syncUser, {
+        subject: coldSubject,
+        email: "cold@example.test",
+        name: "Cold reader",
+        verified: true,
+      });
+      const cold = s.t.withIdentity({ subject: coldSubject });
+      const coldOrg = await cold.mutation(api.organizations.createPrivate, {});
+      vi.stubEnv(
+        "CLOUD_CATALOG_ALPHA_ACCESS_JSON",
+        JSON.stringify({
+          version: "catalog-operator-alpha-access-v1",
+          subjects: [s.actor.subject, secondSubject, coldSubject],
+          reviewedAt: Date.now() - 1000,
+          expiresAt: Date.now() + 86400000,
+          reviewReference: "synthetic cold cache admission",
+        }),
+      );
+      const fetchedBefore = vi.mocked(fetch).mock.calls.length;
+      const coldSourceId = await cold.mutation(api.product.capture, {
+        organizationId: coldOrg,
+        key: "cold-complete-carousel",
+        kind: "url",
+        url: s.source.url!,
+        title: "Cold carousel",
+        rightsAttested: true,
+      });
+      const coldDetail = await cold.query(api.product.detail, {
+        id: coldSourceId,
+      });
+      expect(coldDetail.state).toBe("ready");
+      expect(coldDetail.preparedService?.frames).toHaveLength(photoCount);
+      expect(coldDetail.analysisVersion?.id).toBe(detail.analysisVersion?.id);
+      expect(vi.mocked(fetch).mock.calls.length).toBe(fetchedBefore);
+      const context = postContextPageOutput.parse(
+        await s.assistant.query(internal.assistant.fetch, {
+          profileId: s.org,
+          id: s.sourceId,
+          format: "post_context_v1",
+        }),
+      );
+      expect(context.context.frames).toHaveLength(photoCount);
+      expect(context.context.expectedAttachments).toBe(photoCount);
+      expect(context.context.sourceAuthor?.handle).toBe("creator");
+      expect(context.context.totals.observations).toBe(photoCount + 1);
+    }
+    const secondWallet = await s.t.run((c) =>
+      c.db
+        .query("wallets")
+        .withIndex("by_org", (x) => x.eq("organizationId", secondOrg))
+        .unique(),
+    );
+    expect(secondWallet?.spent ?? 0).toBe(0);
+    expect(secondWallet?.reserved ?? 0).toBe(0);
+  },
+);
 
 it("automatic app Save prepares once and creates a generation-zero retained Assistant event", async () => {
   const s = await fixture();

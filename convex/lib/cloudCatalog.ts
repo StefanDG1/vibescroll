@@ -1,5 +1,7 @@
-import { usesOrderedPostPreparation } from "../../packages/social/prepared-post";
-import { locateAuthorizedInstagramMedia } from "./instagramMediaLocator";
+import {
+  usesOrderedPostPreparation,
+  preparedMediaContentKey,
+} from "../../packages/social/prepared-post";
 import { preparedServiceConfiguration } from "./preparedServicePolicy";
 import { openAiPreparedProcessingReviewHash } from "./openAiGrant";
 import { apiModels } from "../../packages/contracts/api-models";
@@ -169,7 +171,14 @@ export async function cacheCandidate(
   }
   if (!family?.selectedArtifactId) return null;
   try {
-    return await currentCloudArtifact(ctx, family.selectedArtifactId);
+    const cached = await currentCloudArtifact(ctx, family.selectedArtifactId);
+    // A legacy sampled-video result cannot establish complete photo coverage.
+    if (
+      usesOrderedPostPreparation(url) &&
+      cached.prepared.post?.coverage !== "complete_manifest"
+    )
+      return null;
+    return cached;
   } catch (error) {
     if (
       error instanceof PolicyError &&
@@ -189,7 +198,6 @@ export async function attachCloudCache(
     source.kind !== "url" ||
     !source.url ||
     !source.rightsAttested ||
-    usesOrderedPostPreparation(source.url) ||
     !["saved", "needs_upload"].includes(source.state) ||
     source.generation !== 0 ||
     source.analysis ||
@@ -200,7 +208,6 @@ export async function attachCloudCache(
     source.workCloudSaveIntent
   )
     return false;
-  if (await locateAuthorizedInstagramMedia(ctx, source.url)) return false;
   const cached = await cacheCandidate(ctx, source.organizationId, source.url);
   if (!cached) return joinPendingCatalog(ctx, source, actor);
   return attachResult(ctx, source, actor, cached, false);
@@ -214,6 +221,7 @@ async function attachResult(
   contributor: boolean,
 ) {
   const now = Date.now();
+  const post = cached.prepared.post;
   const layerId = await ctx.db.insert("publicImports", {
     organizationId: source.organizationId,
     origin: "cloud",
@@ -237,6 +245,20 @@ async function attachResult(
     catalogWait: undefined,
     publicImportId: layerId,
     coverage: "ordered_media",
+    ...(post?.authorId && post.authorHandle
+      ? {
+          platformPostKey: `${cached.prepared.platform}:${post.postId}`,
+          creator: {
+            key: `${cached.prepared.platform}:${post.authorId}`,
+            handle: post.authorHandle,
+            generation: source.generation,
+            contentKey: await preparedMediaContentKey(post),
+          },
+          ...(post.version === "social-post-evidence-v1" && post.publishedAt
+            ? { publishedAt: post.publishedAt }
+            : {}),
+        }
+      : {}),
     ...(cached.artifact.postMetadata
       ? {
           linkPreview: {

@@ -193,7 +193,7 @@ async function retained(
     title: "Real prepared metadata fixture",
     authorName: "creator",
     durationMs: post ? 0 : durationMs,
-    language: "en",
+    language: post ? "und" : "en",
     observedAt: Date.now(),
     transcript: post
       ? { origin: "none", model: null, provider: null, inputSha256: null }

@@ -129,10 +129,12 @@ async function snapshot(
     : await historySource(ctx, args.sourceId, true);
   const retained = await retainedVersion(ctx, owner.source, args.versionId);
   const servicePrepared = isServicePreparedEvidence(retained.evidence.prepared);
+  const serviceEvidence = servicePrepared
+    ? await validatePreparedEvidence(retained.evidence.prepared)
+    : null;
   let preparedRun;
   let processingReviewHash;
   if (servicePrepared) {
-    await validatePreparedEvidence(retained.evidence.prepared);
     await requireProCatalogAccess(ctx, owner.source.organizationId);
     const config = preparedServiceConfiguration(owner.actor.subject);
     const runId =
@@ -229,11 +231,9 @@ async function snapshot(
     };
   }
   const neutral = await projectNeutralCloudVersion(
-    servicePrepared
-      ? (await validatePreparedEvidence(retained.evidence.prepared)).evidence
-      : retained.evidence.prepared,
+    serviceEvidence?.evidence ?? retained.evidence.prepared,
     projectionOutput,
-    "en",
+    serviceEvidence?.evidence.language ?? "en",
     {
       sourceId: owner.source._id,
       attemptId:
@@ -646,7 +646,7 @@ async function prepareContribution(
     compatibilityKey,
     variantKey,
     contentHash: s.outputHash,
-    language: "en",
+    language: s.neutralEvidence.language,
     pipelineVersion: "work-cloud-retained-analysis-v1",
     schemaVersion: "neutral-cloud-analysis-v1",
     coverage: "sampled_transcript_frames",

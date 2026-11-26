@@ -2966,8 +2966,9 @@ export function CaptureForm({
   sharedDraft,
   onDraftChange,
 }: any) {
-  const kindId = useId();
+  const analysisOptionsId = useId();
   const [kind, setKind] = useState("url");
+  const [showAnalysisOptions, setShowAnalysisOptions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [autoAnalyze, setAutoAnalyze] = useState(
     preferredRoute !== "save_only",
@@ -2983,7 +2984,14 @@ export function CaptureForm({
             ? ""
             : workCloud?.configured
               ? "work_cloud"
-              : personalEnabled
+              : personalEnabled &&
+                  devices.some(
+                    (device: any) =>
+                      device.personalOwned &&
+                      device.state === "paired" &&
+                      device.personalOnline &&
+                      device.personalModels?.length,
+                  )
                 ? "personal"
                 : cloudEnabled || preparedEnabled
                   ? "cloud"
@@ -3002,9 +3010,8 @@ export function CaptureForm({
   const [chosenModel, setChosenModel] = useState("");
   const effectiveModel =
     chosenModel ||
-    computer?.personalModels.find(
-      (m: any) => m.slug === "gpt-6.1-sol" || m.slug === "gpt-5.6-sol",
-    )?.slug ||
+    computer?.personalModels.find((m: any) => m.slug === "gpt-6.2-sol")?.slug ||
+    computer?.personalModels.find((m: any) => m.slug === "gpt-6.1-sol")?.slug ||
     computer?.personalModels[0]?.slug ||
     "";
   const personalAutomatic =
@@ -3018,14 +3025,12 @@ export function CaptureForm({
     autoAnalyze &&
     (linkAnalysisEnabled || (preparedEnabled && kind === "url"));
   const workCloudAutomatic =
-    analysisRoute === "work_cloud" &&
-    kind === "url" &&
-    workCloud?.available;
+    analysisRoute === "work_cloud" && kind === "url" && workCloud?.available;
   const automatic = personalAutomatic || cloudAutomatic || workCloudAutomatic;
   const approval = {
     deviceId: chosenDevice,
     model: effectiveModel,
-    effort: "medium",
+    effort: "high",
     useOwnPlan: true,
     maxComputeCredits: 10,
   };
@@ -3060,7 +3065,7 @@ export function CaptureForm({
   useEffect(() => () => importAbort.current?.abort(), []);
   return (
     <form
-      className="form-grid"
+      className="capture-form"
       onSubmit={async (e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
@@ -3092,7 +3097,7 @@ export function CaptureForm({
               key: crypto.randomUUID(),
               format: "json",
               text: batch.text,
-              rightsAttested: f.get("rights") === "on",
+              rightsAttested: true,
             });
             if (result) {
               setManifest((previous: any) => ({
@@ -3150,9 +3155,9 @@ export function CaptureForm({
             const result = await call("captureWorkCloud", {
               organizationId,
               key: crypto.randomUUID(),
-              title: String(f.get("title") || defaultLinkTitle),
+              title: defaultLinkTitle,
               url: f.get("url"),
-              rightsAttested: f.get("rights") === "on",
+              rightsAttested: true,
               grantId: workCloud.grantId,
               grantVersion: workCloud.grantVersion,
             });
@@ -3163,9 +3168,9 @@ export function CaptureForm({
             organizationId,
             key: crypto.randomUUID(),
             kind: "url",
-            title: String(f.get("title") || defaultLinkTitle),
+            title: defaultLinkTitle,
             url: f.get("url"),
-            rightsAttested: f.get("rights") === "on",
+            rightsAttested: true,
           });
           if (!sourceId) return;
           if (automatic && !saveOnly) {
@@ -3215,19 +3220,24 @@ export function CaptureForm({
         }
       }}
     >
-      <div className="capture-kind">
-        <label htmlFor={kindId}>Post type</label>
-        <ChoiceSelect
-          id={kindId}
-          aria-label="Post type"
-          disabled={importBusy}
-          value={kind}
-          onValueChange={(value) => setKind(value)}
+      <fieldset className="capture-mode" aria-label="Save mode">
+        <button
+          type="button"
+          aria-pressed={kind === "url"}
+          disabled={saving || importBusy}
+          onClick={() => setKind("url")}
         >
-          <option value="url">Link</option>
-          <option value="import">Import Instagram saves</option>
-        </ChoiceSelect>
-      </div>
+          Post link
+        </button>
+        <button
+          type="button"
+          aria-pressed={kind === "import"}
+          disabled={saving || importBusy}
+          onClick={() => setKind("import")}
+        >
+          Import saved links
+        </button>
+      </fieldset>
       {kind === "import" ? (
         <div className="form-grid">
           <label>
@@ -3342,6 +3352,7 @@ export function CaptureForm({
           <input
             name="url"
             type="url"
+            autoComplete="url"
             defaultValue={sharedDraft ?? ""}
             onChange={(event) => onDraftChange?.(event.target.value)}
             placeholder="Paste a link"
@@ -3349,54 +3360,69 @@ export function CaptureForm({
           />
         </label>
       )}
-      {kind !== "import" && (
-        <label>
-          Title (optional)
-          <input name="title" maxLength={160} />
-        </label>
-      )}
-      <label className="check">
-        <input name="rights" type="checkbox" required />I may submit this
-        content for processing
-      </label>
-      <details className="capture-analysis" open={automatic || undefined}>
-        <summary>Analysis options</summary>
-        <TaskRuntimePicker
-        organizationId={organizationId}
-        value={
-          analysisRoute === "personal"
-            ? "local"
-            : analysisRoute === "cloud"
-              ? "cloud"
-              : analysisRoute === "work_cloud"
-                ? "work_cloud"
-                : undefined
-        }
-        onChange={(value) => {
-          if (value === "local") setAnalysisRoute("personal");
-          if (value === "cloud") setAnalysisRoute("cloud");
-          if (value === "work_cloud") setAnalysisRoute("work_cloud");
-        }}
-        serverAvailable={cloudEnabled || (preparedEnabled && kind === "url")}
-        workCloudAvailable={
-          !!workCloud?.available && kind === "url"
-        }
-        workCloudConfigured={workCloud?.configured}
-        localAvailable={personalEnabled}
-        localConfigured={paired.length > 0}
-        localStatus={
-          eligible.length
-            ? "check_before_running"
-            : paired.some((device: any) => device.personalOnline)
-              ? "setup_required"
-              : paired.length
-                ? "offline"
-                : "setup_required"
-        }
-        disabled={saving || importBusy}
-        onSetupNavigate={onSetupNavigate}
-        />
-      </details>
+      <section className="capture-analysis" aria-label="Analysis settings">
+        <div className="capture-analysis-heading">
+          <div>
+            <span className="capture-analysis-label">Analysis</span>
+            <span className="capture-analysis-value">
+              {analysisRoute === "work_cloud"
+                ? "ChatGPT"
+                : analysisRoute === "cloud"
+                  ? "VibeScroll credits"
+                  : analysisRoute === "personal"
+                    ? "My computer"
+                    : "Save now, analyze later"}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="capture-text-button"
+            aria-expanded={showAnalysisOptions}
+            aria-controls={analysisOptionsId}
+            onClick={() => setShowAnalysisOptions(!showAnalysisOptions)}
+          >
+            {showAnalysisOptions ? "Done" : "Change"}
+          </button>
+        </div>
+        <div id={analysisOptionsId} hidden={!showAnalysisOptions}>
+          <TaskRuntimePicker
+            compact
+            organizationId={organizationId}
+            value={
+              analysisRoute === "personal"
+                ? "local"
+                : analysisRoute === "cloud"
+                  ? "cloud"
+                  : analysisRoute === "work_cloud"
+                    ? "work_cloud"
+                    : undefined
+            }
+            onChange={(value) => {
+              if (value === "local") setAnalysisRoute("personal");
+              if (value === "cloud") setAnalysisRoute("cloud");
+              if (value === "work_cloud") setAnalysisRoute("work_cloud");
+            }}
+            serverAvailable={
+              cloudEnabled || (preparedEnabled && kind === "url")
+            }
+            workCloudAvailable={!!workCloud?.available && kind === "url"}
+            workCloudConfigured={workCloud?.configured}
+            localAvailable={personalEnabled}
+            localConfigured={paired.length > 0}
+            localStatus={
+              eligible.length
+                ? "check_before_running"
+                : paired.some((device: any) => device.personalOnline)
+                  ? "setup_required"
+                  : paired.length
+                    ? "offline"
+                    : "setup_required"
+            }
+            disabled={saving || importBusy}
+            onSetupNavigate={onSetupNavigate}
+          />
+        </div>
+      </section>
       {personalEnabled &&
         analysisRoute === "personal" &&
         linkAnalysisEnabled && (
@@ -3414,42 +3440,54 @@ export function CaptureForm({
             </label>
             {autoAnalyze && (
               <>
-                <label>
-                  Computer
-                  <ChoiceSelect
-                    value={chosenDevice}
-                    onValueChange={(value) => {
-                      setChosenDevice(value);
-                      setChosenModel("");
-                    }}
-                  >
-                    <option value="">Choose an online computer</option>
+                <fieldset className="capture-radio-group">
+                  <legend>Computer</legend>
+                  <span className="capture-radio-list">
                     {eligible.map((d: any) => (
-                      <option key={id(d)} value={id(d)}>
+                      <label className="check" key={id(d)}>
+                        <input
+                          type="radio"
+                          name="captureComputer"
+                          value={id(d)}
+                          checked={chosenDevice === id(d)}
+                          onChange={() => {
+                            setChosenDevice(id(d));
+                            setChosenModel("");
+                          }}
+                        />
                         {d.name}
-                      </option>
+                      </label>
                     ))}
-                  </ChoiceSelect>
-                </label>
-                <label>
-                  ChatGPT model
-                  <ChoiceSelect
-                    value={effectiveModel}
-                    onValueChange={(value) => setChosenModel(value)}
-                  >
+                    {!eligible.length && (
+                      <span className="fine">
+                        Connect an online computer in Account.
+                      </span>
+                    )}
+                  </span>
+                </fieldset>
+                <fieldset className="capture-radio-group">
+                  <legend>ChatGPT model</legend>
+                  <span className="capture-radio-list">
                     {!computer && (
-                      <option value="">Connect your computer first</option>
+                      <span className="fine">Choose a computer first.</span>
                     )}
                     {computer?.personalModels.map((m: any) => (
-                      <option key={m.slug} value={m.slug}>
+                      <label className="check" key={m.slug}>
+                        <input
+                          type="radio"
+                          name="captureModel"
+                          value={m.slug}
+                          checked={effectiveModel === m.slug}
+                          onChange={() => setChosenModel(m.slug)}
+                        />
                         {m.displayName}
-                      </option>
+                      </label>
                     ))}
-                  </ChoiceSelect>
-                </label>
+                  </span>
+                </fieldset>
                 <label className="check">
                   <input name="ownPlan" type="checkbox" required />
-                  Use my ChatGPT plan with medium reasoning. Reserve up to 10
+                  Use my ChatGPT plan with high reasoning. Reserve up to 10
                   compute credits per video
                   {kind === "import" ? ", up to five videos per batch" : ""}.
                 </label>
@@ -3488,14 +3526,14 @@ export function CaptureForm({
             )}
           </section>
         )}
-      <p className="fine">
+      <p className="fine capture-help">
         {workCloudAutomatic
           ? "ChatGPT receives this link and checks its runtime before analysis. Your computer can be off. No VibeScroll processing credits or paid API fallback."
           : cloudAutomatic
             ? "Processing continues in the background. Public links are retrieved when the platform permits access."
             : automatic
               ? "Keep your paired laptop on until analysis finishes. Public links are retrieved when the platform permits access."
-              : "Saving does not start analysis. Supplied text has no implied audio or visual coverage."}
+              : "The title and preview are filled in from the post automatically."}
       </p>
       <button
         className="primary"
@@ -3527,15 +3565,15 @@ export function CaptureForm({
                 : "Save link"}
       </button>
       {analysisRoute === "work_cloud" && kind === "url" && (
-          <button
-            type="submit"
-            name="saveOnly"
-            className="secondary"
-            disabled={saving}
-          >
-            Save only
-          </button>
-        )}
+        <button
+          type="submit"
+          name="saveOnly"
+          className="secondary"
+          disabled={saving}
+        >
+          Save only
+        </button>
+      )}
       {importError && (
         <div role="alert" className="form-grid">
           <p>{importError}</p>

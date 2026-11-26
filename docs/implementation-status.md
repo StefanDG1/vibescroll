@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 26 final creator backend and Save refinement
+
+Backend `57fbc2cf16b5` is live after exact CI, matching preparations and 13 publication guards. The index now contains 58 results across 48 creators. Four private X author repairs preserved selected versions, generation and update time. X publication is enabled with prior Instagram/TikTok policy identities preserved. Metadata repair changed no balances or holds and started no inference or preparation. A real second account saved the carousel and reached Ready with the same nine shared images and six insights. [Receipt](operations/evidence/launch-20261126-creator-final-backend.json)
+
+The Save candidate removes arrow menus, the title field and the separate processing checkbox. The existing metadata and ordinary analysis supply titles. Local checks passed 1,850 main, 92 authentication and 194 shared UI tests, all media/Node/Python checks, lint, types and both builds. Initial lint findings for a nonsemantic group and autofocus were corrected. The default local route additionally requires an online eligible computer, while explicit stored routes remain intact. Exact candidate CI and production UI acceptance follow. [Decision](adr/249-link-first-save-dialog.md)
+
 ## November 26 legacy creator metadata recovery
 
 Backend `b9cf8353beb5` is live after exact CI, two matching preparations and 13 publication guards. The only schema change is one optional proof field; all indexes and other tables are unchanged. The production pass recovered 54 authors, bringing the index to 56 selected results across 46 creators. Wallets and credit holds were unchanged. MCP returned the two recovered legacy workspace posts and their two shared entries on one creator page. There were no model calls, preparations or website builds. [Production receipt](operations/evidence/launch-20261126-creator-metadata-production.json)

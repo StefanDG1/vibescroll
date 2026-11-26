@@ -70,7 +70,6 @@ it.each(
           return (
             {
               url: "https://www.instagram.com/reel/Example/",
-              rights: "on",
             } as Record<string, string>
           )[name];
         }
@@ -129,13 +128,22 @@ it("offers links and link imports as the only Save modes", () => {
     onDone: vi.fn(),
   });
   const modes = elements(tree).find(
-    (node) => node.props["aria-label"] === "Post type",
+    (node) => node.props["aria-label"] === "Save mode",
   );
   expect(
     elements(modes)
-      .filter((node) => node.type === "option")
-      .map((node) => node.props.value),
-  ).toEqual(["url", "import"]);
+      .filter((node) => node.type === "button")
+      .map((node) => node.props.children),
+  ).toEqual(["Post link", "Import saved links"]);
+  expect(
+    elements(tree).some(
+      (node) =>
+        node.props.name === "title" ||
+        node.props.name === "rights" ||
+        node.type === "details" ||
+        node.type === "select",
+    ),
+  ).toBe(false);
 });
 
 it("allows an explicit Save only without starting Cloud or requiring its monitor setup", async () => {
@@ -149,9 +157,7 @@ it("allows an explicit Save only without starting Cloud or requiring its monitor
       get(name: string) {
         return name === "url"
           ? "https://www.instagram.com/reel/Example/"
-          : name === "rights"
-            ? "on"
-            : null;
+          : null;
       }
     },
   );

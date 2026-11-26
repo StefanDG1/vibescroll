@@ -1,10 +1,14 @@
 # Product decisions
 
+## November 26: link-first Save
+
+[ADR249](adr/249-link-first-save-dialog.md) removes Save arrow menus, the title field and the processing checkbox at the owner's request. Metadata and ordinary analysis supply titles without another model request. Funding consent remains separate. The owner's second test account receives an audited finite allowance without a fabricated paid subscription.
+
 ## November 26: shared creator pages and legacy author recovery
 
 [ADR246](adr/246-public-creator-profiles-and-polling.md) uses verified public identities, reciprocal account links and bounded profile polling. Creator pages show every entitled shared analyzed post, with private results under their existing workspace rights. [ADR247](adr/247-legacy-shared-creator-metadata.md) recovers missing legacy authors from original post metadata without changing retained analysis, private overlays or credit holds. Live acceptance and remaining limits are recorded in [the current state](operations/CURRENT-STATE.md#start-here).
 
-[ADR248](adr/248-x-discovery-and-instagram-identity-fallback.md) adds a fixed first-party fallback for public Instagram posts with disabled embeds, FxEmbed v2 X discovery, and compatible X shared-publication policy identities. It remains a tested candidate until its production receipt is recorded.
+[ADR248](adr/248-x-discovery-and-instagram-identity-fallback.md) adds a fixed first-party fallback for public Instagram posts with disabled embeds, FxEmbed v2 X discovery, and compatible X shared-publication policy identities. The [backend production receipt](operations/evidence/launch-20261126-creator-final-backend.json) records actual acceptance separately from remaining checks.
 
 ## October31: medium-term completion and prepared euro prices
 

@@ -1,5 +1,9 @@
 # Foundational document change log
 
+## November 26 Save popup
+
+The owner removes the title and processing checkbox from Save, replaces arrow menus with direct choices and requests cleaner spacing. Metadata and ordinary analysis supply the title without an additional charge. This simplifies an existing task; it changes no audience, offer, prices or measured outcome. [Decision](../adr/249-link-first-save-dialog.md).
+
 ## November 20 onboarding
 
 R179 makes the first public action a real retained example and gives the quiz and personal-link setup a separate route. The pre-account screen names the choice that will carry forward. This is an implemented copy and navigation decision. The existing audience, offer and credit terms still govern. The pilot has yet to establish conversion or independent customer outcomes. [Decision](../adr/240-focused-onboarding-and-consented-funnels.md).

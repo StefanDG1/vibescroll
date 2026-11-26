@@ -19,6 +19,7 @@ export function TaskRuntimePicker({
   disabled = false,
   setupMode = false,
   overviewOnly = false,
+  compact = false,
   onSetupNavigate,
 }: {
   value?: TaskRuntime;
@@ -33,6 +34,7 @@ export function TaskRuntimePicker({
   disabled?: boolean;
   setupMode?: boolean;
   overviewOnly?: boolean;
+  compact?: boolean;
   onSetupNavigate?: () => void;
 }) {
   const name = useId();
@@ -40,6 +42,7 @@ export function TaskRuntimePicker({
     {
       id: "work_cloud" as const,
       title: "My own Cloud Work",
+      shortTitle: "ChatGPT",
       description: "Uses your ChatGPT subscription. Your computer can be off.",
       available: workCloudAvailable,
       configured: workCloudConfigured,
@@ -55,6 +58,7 @@ export function TaskRuntimePicker({
     {
       id: "cloud" as const,
       title: "VibeScroll's servers",
+      shortTitle: "VibeScroll credits",
       description: "Runs online using credits bought separately.",
       available: serverAvailable,
       configured: serverAvailable,
@@ -66,6 +70,7 @@ export function TaskRuntimePicker({
     {
       id: "local" as const,
       title: "Local machine",
+      shortTitle: "My computer",
       description: "Uses your own subscription on your computer. Keep it on.",
       available: localAvailable,
       configured: localConfigured,
@@ -93,13 +98,18 @@ export function TaskRuntimePicker({
       </ul>
     );
   return (
-    <fieldset className="task-runtime-picker">
+    <fieldset
+      className={`task-runtime-picker${compact ? " task-runtime-compact" : ""}`}
+    >
       <legend className={setupMode ? "sr-only" : undefined}>
         Where tasks run
       </legend>
       {options.map((option) => (
         <div className="task-runtime-option" key={option.id}>
-          <label className="task-runtime-choice" aria-label={option.title}>
+          <label
+            className="task-runtime-choice"
+            aria-label={compact ? option.shortTitle : option.title}
+          >
             <input
               type="radio"
               name={name}
@@ -113,8 +123,8 @@ export function TaskRuntimePicker({
             />
             <span>
               <span className="task-runtime-title">
-                {option.title}
-                {option.id === "work_cloud" && (
+                {compact ? option.shortTitle : option.title}
+                {!compact && option.id === "work_cloud" && (
                   <span className="task-runtime-recommended">Recommended</span>
                 )}
               </span>
@@ -134,24 +144,26 @@ export function TaskRuntimePicker({
                 {option.configured ? "Manage setup" : "Finish setup"}
                 <span className="sr-only"> for {option.title}</span>
               </Link>
-              <details>
-                <summary>
-                  More info
-                  <span className="sr-only"> about {option.title}</span>
-                </summary>
-                <p>{option.detail}</p>
-                <Link
-                  href={
-                    option.id === "local"
-                      ? "/help/connect-your-computer"
-                      : "/help/processing-and-recovery"
-                  }
-                  prefetch={false}
-                  onClick={onSetupNavigate}
-                >
-                  Setup guide
-                </Link>
-              </details>
+              {!compact && (
+                <details>
+                  <summary>
+                    More info
+                    <span className="sr-only"> about {option.title}</span>
+                  </summary>
+                  <p>{option.detail}</p>
+                  <Link
+                    href={
+                      option.id === "local"
+                        ? "/help/connect-your-computer"
+                        : "/help/processing-and-recovery"
+                    }
+                    prefetch={false}
+                    onClick={onSetupNavigate}
+                  >
+                    Setup guide
+                  </Link>
+                </details>
+              )}
             </div>
           )}
         </div>

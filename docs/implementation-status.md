@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 26 Save production acceptance and X receiver correction
+
+Website `cd29157f632f` is live after exact CI, one fixed Basic build, staged checks and same-build promotion. The production popup has no title, processing checkbox or arrow menus and fits at 320, 390 and 1440 pixels. The second account saved the TikTok photo URL through it and reached Ready. Both photo posts reuse their exact shared versions; all eleven JPEGs loaded and decoded. Receiving credits spent and reserved are zero. Four retained X results are now shared, and their text/video contexts and a shared JPEG pass through the original MCP. The X feed completed its normal scheduled continuation. Reversible X and second-account TikTok follows are restored. [Receipt](operations/evidence/launch-20261126-save-dialog-production.json)
+
+The subsequent real X receiver test exposed an Instagram/TikTok-only cache lookup and pending-producer join. The candidate admits X under existing rights and entitlement, fills text-post titles from the retained public caption and corrects misleading unfollowed/zero-allowance creator UI. Targeted regression checks pass 61 cases, including text/video cold reuse, publication waiting and duplicate Save without receiver jobs or credits. Full checks and exact CI remain required before this correction is released. Initial full checks caught an omitted strict return validator, which is corrected; preserve that failed receipt. [Correction](adr/248-x-discovery-and-instagram-identity-fallback.md#receiving-user-x-correction)
+
 ## November 26 final creator backend and Save refinement
 
 Backend `57fbc2cf16b5` is live after exact CI, matching preparations and 13 publication guards. The index now contains 58 results across 48 creators. Four private X author repairs preserved selected versions, generation and update time. X publication is enabled with prior Instagram/TikTok policy identities preserved. Metadata repair changed no balances or holds and started no inference or preparation. A real second account saved the carousel and reached Ready with the same nine shared images and six insights. [Receipt](operations/evidence/launch-20261126-creator-final-backend.json)

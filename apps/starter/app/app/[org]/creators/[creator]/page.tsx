@@ -129,7 +129,11 @@ export default async function CreatorPage({
                 : result.monitoring.state === "unavailable"
                   ? "The creator feed is temporarily unavailable."
                   : "Checking the creator feed."
-              : "New-post checks are unavailable for this profile."}
+              : result.monitoringAvailable
+                ? result.following
+                  ? "New-post checks are starting."
+                  : "Follow to check for new posts."
+                : "New-post checks are unavailable for this profile."}
           </p>
           {result.following && result.monitoring && (
             <p className={styles.note}>
@@ -181,19 +185,26 @@ export default async function CreatorPage({
             {result.pool.used} of {result.pool.cap} credits used or reserved
             this period
           </p>
-          <ActionForm
-            action={changeSponsorship}
-            label={
-              result.pool.enabled ? "Stop contributing" : "Contribute credits"
-            }
-            pendingLabel="Updating…"
-          >
-            <input
-              type="hidden"
-              name="sponsor"
-              value={result.pool.enabled ? "no" : "yes"}
-            />
-          </ActionForm>
+          {result.pool.cap > 0 || result.pool.enabled ? (
+            <ActionForm
+              action={changeSponsorship}
+              label={
+                result.pool.enabled ? "Stop contributing" : "Contribute credits"
+              }
+              pendingLabel="Updating…"
+            >
+              <input
+                type="hidden"
+                name="sponsor"
+                value={result.pool.enabled ? "no" : "yes"}
+              />
+            </ActionForm>
+          ) : (
+            <p className={styles.note}>
+              Automatic creator analysis needs eligible included credits. Your
+              saved posts remain available.
+            </p>
+          )}
         </AccountSection>
       )}
       {!!result.monitoring?.discoveries.length && (

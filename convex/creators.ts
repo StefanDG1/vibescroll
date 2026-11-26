@@ -120,6 +120,7 @@ const profile = v.object({
   name: v.string(),
   handle: v.string(),
   following: v.boolean(),
+  monitoringAvailable: v.boolean(),
   pool: v.union(
     v.null(),
     v.object({
@@ -247,6 +248,7 @@ export const read = query({
       name: first?.linkPreview?.authorName || handle || "Creator",
       handle,
       following: follow?.state === "following",
+      monitoringAvailable: creatorFeedAvailable(creatorKey),
       pool:
         follow?.state === "following" &&
         creatorPoolEnabled(creatorKey) &&

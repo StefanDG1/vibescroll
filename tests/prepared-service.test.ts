@@ -14,6 +14,8 @@ import { workCloudMonitorMessage } from "../packages/onboarding/work-cloud-monit
 import {
   currentCloudArtifact,
   associateContributedCloudVersion,
+  catalogPermission,
+  reserveCatalogProducer,
 } from "../convex/lib/cloudCatalog";
 import { postContextPageOutput } from "../packages/contracts/post-context";
 import { knowledgeFetchStructuredOutput } from "../packages/contracts/knowledge-read";
@@ -3515,10 +3517,20 @@ it("reports only the current actor/generation shared wait through MCP until cach
   expect((await read()).status).toBe("ready");
 });
 
-it.each([false, true])(
-  "saves complete text-only X evidence with catalog=%s, finishes analysis and reuses it",
-  async (catalog) => {
+it.each([
+  { catalog: false, video: false },
+  { catalog: true, video: false },
+  { catalog: true, video: true },
+])(
+  "saves complete X evidence with catalog=$catalog, video=$video and reuses it across accounts",
+  async ({ catalog, video }) => {
     const s = await fixture(catalog);
+    const network = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === "PUT"
+        ? new Response(null, { status: 200 })
+        : new Response(s.bytes, { headers: { "content-type": "image/jpeg" } }),
+    );
+    vi.stubGlobal("fetch", network);
     if (catalog) {
       const config = JSON.parse(process.env.CLOUD_CATALOG_CONFIGURATION_JSON!);
       vi.stubEnv(
@@ -3568,6 +3580,38 @@ it.each([false, true])(
     const { socialHash } = await import("../packages/social/contracts");
     const { canonicalJson } =
       await import("../packages/contracts/canonical-json.mjs");
+    const frameHash = createHash("sha256").update(s.bytes).digest("hex");
+    const assets = video
+      ? [
+          {
+            id: "asset-1",
+            index: 0,
+            kind: "video" as const,
+            mime: "video/mp4" as const,
+            contentHash: "a".repeat(64),
+            bytes: 1234,
+            width: 2,
+            height: 2,
+            durationMs: 1000,
+            animated: false,
+            audioStatus: "silent" as const,
+          },
+        ]
+      : [];
+    const frames = video
+      ? [
+          {
+            id: "frame-1",
+            assetId: "asset-1",
+            assetIndex: 0,
+            timestampMs: 0,
+            sha256: frameHash,
+            bytes: s.bytes.length,
+            width: 2,
+            height: 2,
+          },
+        ]
+      : [];
     const prepared = await makePreparedEvidence({
       requestedCanonical: canonical,
       canonical,
@@ -3580,18 +3624,16 @@ it.each([false, true])(
         provider: "gallery-dl",
         text,
         textHash: await socialHash(text),
-        expectedAssetCount: 0,
+        expectedAssetCount: assets.length,
         coverage: "complete_manifest",
-        assets: [],
+        assets,
       },
-      sourceHash: await socialHash(
-        canonicalJson({ canonical, text, assets: [] }),
-      ),
+      sourceHash: await socialHash(canonicalJson({ canonical, text, assets })),
       recipeHash: "b".repeat(64),
       downloaderVersion: "gallery-dl/1.32.19",
       title: "X post",
       authorName: "Author",
-      durationMs: 0,
+      durationMs: video ? 1000 : 0,
       language: "und",
       observedAt: Date.now(),
       transcript: {
@@ -3601,12 +3643,20 @@ it.each([false, true])(
         inputSha256: null,
       },
       segments: [],
-      frames: [],
+      frames,
     });
     await s.t.mutation(internal.preparedAnalysis.retain, {
       runId: run.runId!,
       prepared,
-      frames: [],
+      frames: frames.map((f) => ({
+        frameId: f.id,
+        key: `${s.org}/prepared-x-shared-cache-regression`,
+        size: s.bytes.length,
+        sha256: frameHash,
+        width: 2,
+        height: 2,
+        timestampMs: 0,
+      })),
       receipt: {},
     });
     await s.t.mutation(internal.preparedAnalysis.progress, {
@@ -3647,7 +3697,7 @@ it.each([false, true])(
     expect(source.selectedAnalysisVersionId).toBe(versionId);
     expect(source.linkPreview?.title).toBe("X post");
     const quote = await s.quote();
-    expect(quote.durationMaximumMs).toBe(0);
+    expect(quote.durationMaximumMs).toBe(video ? 1000 : 0);
     expect(quote.preparationCredits).toBe(0);
     expect(quote.analysisCredits).toBeGreaterThan(0);
     const context = postContextPageOutput.parse(
@@ -3662,6 +3712,68 @@ it.each([false, true])(
         sourceId: s.sourceId,
         versionId,
       });
+      const subjects = [
+        "user_04234567890123456789012345",
+        "user_05234567890123456789012345",
+      ];
+      const receivers: Array<{
+        user: typeof s.owner;
+        organizationId: typeof s.org;
+      }> = [];
+      for (const subject of subjects) {
+        await s.t.mutation(internal.accounts.syncUser, {
+          subject,
+          email: `${subject}@example.test`,
+          name: "Independent X reader",
+          verified: true,
+        });
+        const user = s.t.withIdentity({ subject });
+        const organizationId = await user.mutation(
+          api.organizations.createPrivate,
+          {},
+        );
+        receivers.push({ user, organizationId });
+      }
+      vi.stubEnv(
+        "PERSONAL_ALPHA_SUBJECTS_JSON",
+        JSON.stringify([s.actor.subject, ...subjects]),
+      );
+      vi.stubEnv(
+        "CLOUD_CATALOG_ALPHA_ACCESS_JSON",
+        JSON.stringify({
+          version: "catalog-operator-alpha-access-v1",
+          subjects: [s.actor.subject, ...subjects],
+          reviewedAt: Date.now() - 1000,
+          expiresAt: Date.now() + 86400000,
+          reviewReference:
+            "Synthetic independent X reuse, no billing subscription",
+        }),
+      );
+      const save = (receiver: (typeof receivers)[number], key: string) =>
+        receiver.user.mutation(api.product.capture, {
+          organizationId: receiver.organizationId,
+          key,
+          kind: "url",
+          url: "https://x.com/creator/status/1234567890123456789",
+          title: "Imported video link",
+          rightsAttested: true,
+        });
+      await s.t.run(async (c) => {
+        const source = (await c.db.get(s.sourceId))!;
+        await reserveCatalogProducer(
+          c,
+          source,
+          s.actor,
+          await catalogPermission(c, canonical),
+          "synthetic-x-producer",
+          Date.now() + 60000,
+          Date.now() + 86400000,
+        );
+      });
+      const waitingId = await save(receivers[0], "x-before-publication");
+      expect(
+        (await s.t.run((c) => c.db.get(waitingId)))?.catalogWait,
+      ).toBeTruthy();
       const published = await s.t.action(
         internal.cloudCatalogActions.publishCompleted,
         {
@@ -3689,6 +3801,50 @@ it.each([false, true])(
       ).toBe(true);
       const layer = (await s.t.run((c) => c.db.get(current.publicImportId!)))!;
       if (!("familyId" in layer)) throw Error("Expected cloud association");
+      await s.t.mutation(internal.cloudCatalog.fulfillWaiters, {
+        familyId: layer.familyId,
+      });
+      const calls = network.mock.calls.length;
+      const coldId = await save(receivers[1], "x-after-publication");
+      expect(await save(receivers[1], "x-duplicate-save")).toBe(coldId);
+      for (const [index, id] of [waitingId, coldId].entries()) {
+        const receiver = receivers[index],
+          result = await receiver.user.query(api.product.detail, {
+            organizationId: receiver.organizationId,
+            id,
+          });
+        expect(result.state).toBe("ready");
+        expect(result.sharedCloud!.frames).toHaveLength(video ? 1 : 0);
+        expect(result.analysisVersion!.id).toBe(
+          (await s.owner.query(api.product.detail, { id: s.sourceId }))
+            .analysisVersion!.id,
+        );
+        expect(result.personalAnalysis).toBeUndefined();
+        expect(result.linkPreview?.title).toBe(video ? "X post" : text);
+        const wallet = await s.t.run((c) =>
+          c.db
+            .query("wallets")
+            .withIndex("by_org", (q) =>
+              q.eq("organizationId", receiver.organizationId),
+            )
+            .unique(),
+        );
+        expect(wallet?.spent ?? 0).toBe(0);
+        expect(wallet?.reserved ?? 0).toBe(0);
+        expect(
+          await s.t.run((c) =>
+            c.db
+              .query("mediaPreparations")
+              .withIndex("by_org_source", (q) =>
+                q
+                  .eq("organizationId", receiver.organizationId)
+                  .eq("sourceId", id),
+              )
+              .take(2),
+          ),
+        ).toHaveLength(0);
+      }
+      expect(network.mock.calls.length).toBe(calls);
       await s.t.mutation(internal.creatorCatalog.indexFamily, {
         familyId: layer.familyId,
       });
@@ -3699,7 +3855,7 @@ it.each([false, true])(
       expect(creator?.sharedItems).toHaveLength(1);
     }
     expect(context.context.complete).toBe(true);
-    expect(context.context.frames).toEqual([]);
+    expect(context.context.frames).toHaveLength(video ? 1 : 0);
     expect(
       context.context.items.some(
         (item) =>

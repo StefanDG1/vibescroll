@@ -137,7 +137,7 @@ export async function cacheCandidate(
   let alias: string;
   try {
     const identity = privateCloudMediaIdentity(url);
-    if (!["instagram", "tiktok"].includes(identity.platform)) return null;
+    if (!["instagram", "tiktok", "x"].includes(identity.platform)) return null;
     alias = identity.url;
   } catch {
     return null;
@@ -242,6 +242,8 @@ async function attachResult(
 ) {
   const now = Date.now();
   const post = cached.prepared.post;
+  const title =
+    cached.artifact.postMetadata?.title || post?.text.trim().slice(0, 160);
   const indexedCreator =
     !post?.authorId || !post.authorHandle
       ? await indexedCatalogCreator(
@@ -297,17 +299,15 @@ async function attachResult(
             },
           }
         : {}),
-    ...(cached.artifact.postMetadata
+    ...(cached.artifact.postMetadata || title
       ? {
           linkPreview: {
             ...source.linkPreview,
-            ...(cached.artifact.postMetadata.title
-              ? { title: cached.artifact.postMetadata.title }
-              : {}),
-            ...(cached.artifact.postMetadata.authorName
+            ...(title ? { title } : {}),
+            ...(cached.artifact.postMetadata?.authorName
               ? { authorName: cached.artifact.postMetadata.authorName }
               : {}),
-            ...(cached.artifact.postMetadata.durationSeconds
+            ...(cached.artifact.postMetadata?.durationSeconds
               ? {
                   durationSeconds: cached.artifact.postMetadata.durationSeconds,
                 }
@@ -445,7 +445,9 @@ async function joinPendingCatalog(
   try {
     const identity = privateCloudMediaIdentity(source.url);
     if (
-      (identity.platform !== "instagram" && identity.platform !== "tiktok") ||
+      (identity.platform !== "instagram" &&
+        identity.platform !== "tiktok" &&
+        identity.platform !== "x") ||
       !policy.platforms.includes(identity.platform)
     )
       return false;

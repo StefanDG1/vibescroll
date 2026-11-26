@@ -1,6 +1,6 @@
 # ADR 245: Publish complete retained posts to the shared library
 
-Date: November 26, 2026. Status: implementation candidate, production acceptance pending.
+Date: November 26, 2026. Status: accepted and deployed for shared publication. Creator and independent-user acceptance remain open.
 
 ## Decision
 
@@ -16,4 +16,4 @@ Ordered intake can reuse a complete post manifest. It cannot treat a legacy samp
 
 Isolated tests cover legacy video, nine-image and 35-image publication, concurrent waiters, a subsequent cold-account Save, unchanged second-account credits, creator-page visibility, exact image references and explicit publication of a retained version. Existing policy and reuse tests remain required. Production recovery will use the existing nine-image Instagram and two-image TikTok results, with their original private versions retained.
 
-Production publication, independent browser reuse, public creator polling, automatic identity matching and creator pool acceptance remain separate checks. Passing the shared publication checks does not close those creator requirements.
+Production recovered both retained results without a new model run. MCP read both shared contexts and all eleven JPEGs, and private version history remained intact. [Production receipt](../operations/evidence/launch-20261126-shared-photo-publication.json). Independent browser reuse, public creator polling, automatic identity matching and creator pool acceptance remain separate checks. Passing shared publication does not close those creator requirements.

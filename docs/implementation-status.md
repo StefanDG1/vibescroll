@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 26 complete-post shared publication
+
+Backend `dce0c530c63d` publishes the existing nine-image Instagram and two-image TikTok results to independent shared artifacts. The original private versions remain Ready. MCP reopened both complete contexts, verified creators and all eleven actual shared JPEGs. Recovery made no new model request or media preparation and left app credit balances unchanged. Exact Linux CI, 80 focused cases, matching prepared bundles and the unchanged-schema publication guard passed. [Production receipt](operations/evidence/launch-20261126-shared-photo-publication.json)
+
+The browser found an encoded creator-route defect despite working MCP creator reads. Its boundary correction is prepared separately. Public-profile polling, automatic creator matching and sponsorship remain incomplete. Independent receiving-user browser reuse awaits a second authorized signed-in session.
+
 ## November 26 public carousel and Photo Mode production acceptance
 
 Public Instagram and TikTok extraction are enabled and read back. The existing nine-image Instagram carousel reached Ready with all nine saved JPEGs, a verified creator and six cited insights using Muse Ember Medium. A new two-image TikTok photo link saved through MCP completed through the existing ChatGPT monitor with both images and one cited insight. Its video URL path was resolved to the actual photo format. Replaying each link through MCP returned the same Ready source without another analysis.

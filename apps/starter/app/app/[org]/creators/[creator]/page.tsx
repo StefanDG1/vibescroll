@@ -7,6 +7,7 @@ import { backend, api } from "@/lib/backend";
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
 import { revalidatePath } from "next/cache";
 import styles from "./creator.module.css";
+import { creatorRouteKey } from "../../../../../../../packages/sources/creator-route";
 
 const postDate = new Intl.DateTimeFormat("en", {
   dateStyle: "medium",
@@ -20,7 +21,8 @@ export default async function CreatorPage({
   params: Promise<{ org: string; creator: string }>;
   searchParams: Promise<{ after?: string }>;
 }) {
-  const { org, creator } = await params;
+  const { org, creator: segment } = await params;
+  const creator = creatorRouteKey(segment) ?? notFound();
   const { after } = await searchParams;
   const organizationId = org as Id<"organizations">;
   const base = `/app/${encodeURIComponent(org)}`;

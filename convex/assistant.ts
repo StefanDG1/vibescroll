@@ -1,4 +1,5 @@
 import { selectedOrderedPostIsComplete } from "./lib/preparedEvidenceAccess";
+import { locateAuthorizedInstagramMedia } from "./lib/instagramMediaLocator";
 import { usesOrderedPostPreparation } from "../packages/social/prepared-post";
 import {
   processingAccountSummary,
@@ -128,15 +129,22 @@ async function automaticCloudReceipt(
     per_post_app_review_required: false,
     receipt: null,
   };
+  const sourceUrl = source.url ?? source.canonical;
+  const instagramGraph = await locateAuthorizedInstagramMedia(ctx, sourceUrl);
   const orderedSocial =
-    !!source.url &&
-    usesOrderedPostPreparation(source.url) &&
-    !/^(https:\/\/(?:www\.)?x\.com|https:\/\/(?:www\.)?twitter\.com)\//.test(
-      source.url,
-    );
+    !!instagramGraph ||
+    (usesOrderedPostPreparation(sourceUrl) &&
+      !/^(https:\/\/(?:www\.)?x\.com|https:\/\/(?:www\.)?twitter\.com)\//.test(
+        sourceUrl,
+      ));
   if (
     source.state === "ready" &&
-    (!orderedSocial || (await selectedOrderedPostIsComplete(ctx, source)))
+    (!orderedSocial ||
+      (await selectedOrderedPostIsComplete(
+        ctx,
+        source,
+        instagramGraph ? "instagram_graph" : undefined,
+      )))
   )
     return {
       ...common,
@@ -167,7 +175,7 @@ async function automaticCloudReceipt(
   let supported = false;
   try {
     supported = ["instagram", "tiktok", "x"].includes(
-      privateCloudMediaIdentity(source.url ?? source.canonical).platform,
+      privateCloudMediaIdentity(sourceUrl).platform,
     );
   } catch {
     /* A different source retains its separate supported route. */

@@ -126,6 +126,7 @@ export async function preparedAssetCurrent(
 export async function selectedOrderedPostIsComplete(
   ctx: QueryCtx,
   source: Doc<"sources">,
+  provider?: "instagram_graph",
 ) {
   if (!source.selectedAnalysisVersionId) return false;
   const selected = await ctx.db.get(source.selectedAnalysisVersionId);
@@ -136,9 +137,12 @@ export async function selectedOrderedPostIsComplete(
   )
     return false;
   const evidence = await ctx.db.get(selected.evidenceId);
+  const post = preparedEvidenceIsCurrent(source, evidence)
+    ? evidence.prepared?.evidence?.post
+    : null;
   return (
-    preparedEvidenceIsCurrent(source, evidence) &&
-    evidence.prepared?.evidence?.post?.version === "social-post-evidence-v1" &&
-    evidence.prepared.evidence.post.coverage === "complete_manifest"
+    post?.version === "social-post-evidence-v1" &&
+    post.coverage === "complete_manifest" &&
+    (!provider || post.provider === provider)
   );
 }

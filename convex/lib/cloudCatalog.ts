@@ -1,4 +1,5 @@
 import { usesOrderedPostPreparation } from "../../packages/social/prepared-post";
+import { locateAuthorizedInstagramMedia } from "./instagramMediaLocator";
 import { preparedServiceConfiguration } from "./preparedServicePolicy";
 import { openAiPreparedProcessingReviewHash } from "./openAiGrant";
 import { apiModels } from "../../packages/contracts/api-models";
@@ -199,6 +200,7 @@ export async function attachCloudCache(
     source.workCloudSaveIntent
   )
     return false;
+  if (await locateAuthorizedInstagramMedia(ctx, source.url)) return false;
   const cached = await cacheCandidate(ctx, source.organizationId, source.url);
   if (!cached) return joinPendingCatalog(ctx, source, actor);
   return attachResult(ctx, source, actor, cached, false);

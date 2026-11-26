@@ -7,6 +7,7 @@ import {
   privateCloudMediaIdentity,
 } from "../../packages/social/contracts";
 import { usesOrderedPostPreparation } from "../../packages/social/prepared-post";
+import { locateAuthorizedInstagramMedia } from "./instagramMediaLocator";
 import { sourceRetained } from "./sourceAuthority";
 import { ensure } from "../../packages/policy";
 
@@ -36,6 +37,7 @@ export async function currentAutomaticCatalogPolicy(
   } catch {
     return null;
   }
+  if (await locateAuthorizedInstagramMedia(ctx, source.url)) return null;
   // The normal authenticated save/request attestation is recorded honestly as
   // user-attested. It is never described as an independently verified licence.
   const reviewed = await catalogPermission(ctx, source.url);

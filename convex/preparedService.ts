@@ -6,6 +6,7 @@ import {
 import { currentAutomaticCatalogPolicy } from "./lib/catalogPolicy";
 import { selectedOrderedPostIsComplete } from "./lib/preparedEvidenceAccess";
 import { usesOrderedPostPreparation } from "../packages/social/prepared-post";
+import { locateAuthorizedInstagramMedia } from "./lib/instagramMediaLocator";
 import type { ProcessingAccountSummary } from "../packages/contracts/processing-account";
 import { processingAdmission } from "./lib/processingAdmission";
 import {
@@ -174,7 +175,11 @@ async function quoteFor(
 ) {
   const sourceUrl = a.source.url ?? a.source.canonical;
   const platform = privateCloudMediaIdentity(sourceUrl).platform;
-  const ordered = usesOrderedPostPreparation(sourceUrl);
+  const instagramGraph =
+    platform === "instagram"
+      ? await locateAuthorizedInstagramMedia(ctx, sourceUrl)
+      : null;
+  const ordered = !!instagramGraph || usesOrderedPostPreparation(sourceUrl);
   const requiresOrderedEvidence = ordered && platform !== "x";
   let cacheHit =
     !request.reanalyze &&
@@ -185,7 +190,11 @@ async function quoteFor(
       a.source.publicImportId
     );
   if (cacheHit && requiresOrderedEvidence)
-    cacheHit = await selectedOrderedPostIsComplete(ctx, a.source);
+    cacheHit = await selectedOrderedPostIsComplete(
+      ctx,
+      a.source,
+      instagramGraph ? "instagram_graph" : undefined,
+    );
   const config = preparedServiceConfiguration(a.actor.subject);
   ensure(
     config || cacheHit,
@@ -226,12 +235,13 @@ async function quoteFor(
     )
       continue;
     const candidate = await ctx.db.get(run.evidenceId);
+    const post = candidate?.prepared?.evidence?.post;
     if (
       preparedEvidenceIsCurrent(a.source, candidate) &&
       (!requiresOrderedEvidence ||
-        (candidate.prepared?.evidence?.post?.version ===
-          "social-post-evidence-v1" &&
-          candidate.prepared.evidence.post.coverage === "complete_manifest"))
+        (post?.version === "social-post-evidence-v1" &&
+          post.coverage === "complete_manifest" &&
+          (!instagramGraph || post.provider === "instagram_graph")))
     ) {
       await verifyRetainedAssets(ctx, a.source, candidate);
       evidence = candidate;
@@ -416,6 +426,7 @@ async function quoteFor(
     grantId: grant?._id ?? null,
     grantVersion: grant?.version ?? null,
     maximumApiUsd: config?.maximumApiUsd ?? 0,
+    ...(instagramGraph ? { instagramGraph } : {}),
     ...(standardGateway ? { apiTariff: apiModelTariff } : {}),
     ...(openAi
       ? {

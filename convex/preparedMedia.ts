@@ -254,16 +254,28 @@ export const run = internalAction({
         "SETUP_REQUIRED",
         "Configure the service Gateway credential.",
       );
-      const locator = await ctx.runQuery(
-        internal.creatorDiscovery.instagramMediaLocator,
-        { runId },
-      );
+      const boundInstagram = input.receipt?.admission?.quote?.instagramGraph;
+      const locator =
+        boundInstagram ||
+        process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true"
+          ? await ctx.runQuery(
+              internal.creatorDiscovery.instagramMediaLocator,
+              {
+                runId,
+              },
+            )
+          : null;
       const instagramScope = locator
         ? instagramCreatorFeedPolicy(locator.creatorKey)
         : null;
       let authorizedInstagram;
-      if (instagramScope && locator) {
+      if (locator || boundInstagram) {
         try {
+          ensure(
+            instagramScope && locator,
+            "SOURCE_UNAVAILABLE",
+            "The connected Instagram source is unavailable.",
+          );
           authorizedInstagram = await readAuthorizedInstagramPost(
             instagramScope,
             locator.mediaId,

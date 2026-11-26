@@ -1,5 +1,9 @@
 # Implementation status
 
+## November 26 approved Instagram Graph routing
+
+The backend candidate routes an exact permalink from a connected Instagram creator through Graph with public acquisition disabled. Admission binds the creator and provider media ID. If the grant expires before dispatch, preparation reports a source failure and settles at zero app credits. An existing video cache does not prove attachment completeness. Production still needs a connected creator and a live carousel acceptance check. [Photo access and acceptance](operations/SOCIAL-PHOTO-ACCESS.md)
+
 ## November 26 TikTok production follow-up
 
 The same saved TikTok video now has two Ready analyses. The managed route reused eight stored frames and saved four cited insights with Muse Spark 1.3 Contributor Medium. It settled two app credits, and the matching AI Gateway window reported USD0.0015106 for one request. The signed-in reader and installed MCP reopened the result and retained images. Muse Ember was absent from the workspace's managed options and its quote was refused.

@@ -29,6 +29,7 @@ import {
   readInstagramCreatorPage,
 } from "../packages/social/creator-feed";
 import { platformPostKey } from "../packages/sources/post-identity";
+import { locateAuthorizedInstagramMedia } from "./lib/instagramMediaLocator";
 
 const hour = 3600000;
 const day = hour * 24;
@@ -537,33 +538,28 @@ export const instagramMediaLocator = internalQuery({
     }),
   ),
   handler: async (ctx, { runId }) => {
-    if (process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED !== "true") return null;
     const run = await ctx.db.get(runId);
     const source = run ? await ctx.db.get(run.sourceId) : null;
-    const key = source?.url ? platformPostKey(source.url) : null;
+    const expected = run?.receipt?.admission?.quote?.instagramGraph;
     if (
       !run ||
       !source?.rightsAttested ||
       source.generation !== run.generation ||
       source.organizationId !== run.organizationId ||
-      !key?.startsWith("instagram:")
+      (!expected && process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED !== "true")
     )
       return null;
-    const rows = await ctx.db
-      .query("creatorDiscoveries")
-      .withIndex("by_post_key", (q) => q.eq("postKey", key))
-      .take(3);
-    const available = rows.filter(
-      (row) =>
-        row.providerMediaId && instagramCreatorFeedPolicy(row.creatorKey),
+    const locator = await locateAuthorizedInstagramMedia(
+      ctx,
+      source.url ?? source.canonical,
     );
-    const exact = available.length === 1 ? available[0] : null;
-    return exact?.providerMediaId
-      ? {
-          creatorKey: exact.creatorKey,
-          postKey: key,
-          mediaId: exact.providerMediaId,
-        }
-      : null;
+    if (
+      expected &&
+      (locator?.creatorKey !== expected.creatorKey ||
+        locator?.mediaId !== expected.mediaId ||
+        locator?.postKey !== expected.postKey)
+    )
+      return null;
+    return locator;
   },
 });

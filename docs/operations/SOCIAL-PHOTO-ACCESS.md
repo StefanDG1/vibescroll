@@ -8,7 +8,7 @@ The existing Instagram Graph integration can read the carousel of a connected pr
 
 Instagram oEmbed supplies HTML for display. VibeScroll needs permission to obtain and retain each attachment as analysis evidence. For arbitrary public links outside connected accounts, use a provider agreement that explicitly covers those actions and the intended model processing. [Meta Instagram oEmbed reference](https://developers.facebook.com/docs/graph-api/reference/instagram-oembed/)
 
-Enable creator discovery and configure the scoped Instagram feed for the connected account. The Graph route works with public ordered extraction and public embeds disabled. The saved link must match one indexed, authorized media ID. The preparation quote binds that ID, and dispatch checks the same binding again. If the grant expires, the job records a source access failure without a public fallback.
+Enable creator discovery and configure the scoped Instagram feed for the connected account. Production Convex supports the Graph route with public ordered extraction and public embeds disabled. The saved link must match one indexed, authorized media ID. The preparation quote binds that ID, and dispatch checks the same binding again. If the grant expires, the job records a source access failure without a public fallback. [Release evidence](evidence/launch-20261126-approved-instagram-route.json)
 
 ## TikTok Photo Mode
 

@@ -2,7 +2,7 @@
 
 ## November 26 approved Instagram Graph routing
 
-The backend candidate routes an exact permalink from a connected Instagram creator through Graph with public acquisition disabled. Admission binds the creator and provider media ID. If the grant expires before dispatch, preparation reports a source failure and settles at zero app credits. An existing video cache does not prove attachment completeness. Production still needs a connected creator and a live carousel acceptance check. [Photo access and acceptance](operations/SOCIAL-PHOTO-ACCESS.md)
+Production Convex `ce22bd8583ac` routes an exact permalink from a connected Instagram creator through Graph with public acquisition disabled. Admission binds the creator and provider media ID. If the grant expires before dispatch, preparation reports a source failure and settles at zero app credits. The Linux CI and compatible deployment checks passed. Canonical health passed, and the installed MCP reopened an existing TikTok video's four cited insights, eight retained frames and a JPEG. A live Instagram carousel still needs a configured Meta creator connection. TikTok Photo Mode needs approved original-image access. [Release evidence](operations/evidence/launch-20261126-approved-instagram-route.json) · [Photo access and acceptance](operations/SOCIAL-PHOTO-ACCESS.md)
 
 ## November 26 TikTok production follow-up
 

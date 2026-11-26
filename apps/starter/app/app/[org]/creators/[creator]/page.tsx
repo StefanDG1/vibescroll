@@ -56,7 +56,7 @@ export default async function CreatorPage({
     seen.add(key);
     return true;
   });
-  if (!result || (!first && !firstShared && !result.sharedNext)) notFound();
+  if (!result) notFound();
 
   async function changeFollow(
     _state: FormState,
@@ -155,7 +155,7 @@ export default async function CreatorPage({
             </p>
           )}
         </div>
-        {(first || firstShared) && (
+        {(first || firstShared || result.following) && (
           <ActionForm
             action={changeFollow}
             label={result.following ? "Unfollow" : "Follow"}
@@ -169,6 +169,9 @@ export default async function CreatorPage({
           </ActionForm>
         )}
       </div>
+      {!first && !firstShared && !result.sharedNext && (
+        <p>No available analyzed posts.</p>
+      )}
       {result.pool && (
         <AccountSection
           title="Automatic analysis"

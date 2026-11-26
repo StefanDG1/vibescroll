@@ -28,6 +28,33 @@ const args = {
   creatorKey: v.string(),
 };
 
+async function followHandle(
+  ctx: QueryCtx,
+  organizationId: Id<"organizations">,
+  creatorKey: string,
+  observed: { key: string; handle: string },
+) {
+  if (observed.key === creatorKey) return observed.handle;
+  ensure(
+    (await linkedCreatorKeys(ctx, organizationId, observed.key)).includes(
+      creatorKey,
+    ),
+    "SOURCE_UNAVAILABLE",
+    "Creator unavailable.",
+  );
+  const watch = await ctx.db
+    .query("creatorWatches")
+    .withIndex("by_key", (q) => q.eq("creatorKey", creatorKey))
+    .unique();
+  ensure(
+    watch?.profile?.key === creatorKey &&
+      watch.profile.observedAt > Date.now() - 86400000,
+    "SOURCE_UNAVAILABLE",
+    "Creator unavailable. Refresh the profile.",
+  );
+  return watch.profile.handle;
+}
+
 async function readyPosts(
   ctx: QueryCtx,
   organizationId: Id<"organizations">,
@@ -175,8 +202,6 @@ export const read = query({
     const sharedCreator =
       shared.items.find((item) => item.creatorKey === creatorKey) ??
       shared.items[0];
-    if (!first?.creator && !sharedCreator && !shared.next) return null;
-    const handle = first?.creator?.handle ?? sharedCreator?.handle ?? "";
     const follow = await ctx.db
       .query("creatorFollows")
       .withIndex("by_actor_workspace_creator", (q) =>
@@ -186,12 +211,21 @@ export const read = query({
           .eq("creatorKey", creatorKey),
       )
       .unique();
+    if (!first?.creator && !sharedCreator && !shared.next && !follow)
+      return null;
+    const identityWatch = await ctx.db
+      .query("creatorWatches")
+      .withIndex("by_key", (q) => q.eq("creatorKey", creatorKey))
+      .unique();
+    const handle =
+      identityWatch?.profile?.handle ??
+      first?.creator?.handle ??
+      sharedCreator?.handle ??
+      identityWatch?.handle ??
+      "";
     const watch =
       follow?.state === "following" && creatorFeedAvailable(creatorKey)
-        ? await ctx.db
-            .query("creatorWatches")
-            .withIndex("by_key", (q) => q.eq("creatorKey", creatorKey))
-            .unique()
+        ? identityWatch
         : null;
     const discoveries =
       watch && follow
@@ -274,6 +308,13 @@ export const setFollow = mutation({
     { organizationId, creatorKey, following, sourceId, familyId },
   ) => {
     const { actor } = await writeAccess(ctx, organizationId);
+    ensure(
+      /^(tiktok|instagram|x):[A-Za-z0-9_-]{1,100}$/.test(creatorKey),
+      "INVALID_INPUT",
+      "Creator unavailable.",
+    );
+    if (!following)
+      return saveFollow(ctx, actor._id, organizationId, creatorKey, false);
     if (!sourceId && familyId) {
       await requireFullCatalog(ctx, organizationId);
       const family = await ctx.db.get(familyId);
@@ -287,9 +328,7 @@ export const setFollow = mutation({
       const platform =
         post?.version === "x-post-evidence-v1" ? "x" : post?.platform;
       ensure(
-        post?.authorId &&
-          post.authorHandle &&
-          `${platform}:${post.authorId}` === creatorKey,
+        post?.authorId && post.authorHandle,
         "SOURCE_UNAVAILABLE",
         "Creator unavailable.",
       );
@@ -299,7 +338,10 @@ export const setFollow = mutation({
         organizationId,
         creatorKey,
         following,
-        post.authorHandle,
+        await followHandle(ctx, organizationId, creatorKey, {
+          key: `${platform}:${post.authorId}`,
+          handle: post.authorHandle,
+        }),
       );
     }
     const source = sourceId ? await ctx.db.get(sourceId) : null;
@@ -310,7 +352,6 @@ export const setFollow = mutation({
         source.rightsAttested &&
         sourceRetained(source.sourceRetentionUntil) &&
         source.creator?.generation === source.generation &&
-        source.creator.key === creatorKey &&
         !!(await selectedAnalysis(ctx, source)),
       "SOURCE_UNAVAILABLE",
       "Creator unavailable.",
@@ -321,7 +362,7 @@ export const setFollow = mutation({
       organizationId,
       creatorKey,
       following,
-      source.creator.handle,
+      await followHandle(ctx, organizationId, creatorKey, source.creator),
     );
   },
 });

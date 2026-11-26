@@ -1045,6 +1045,22 @@ it.each([
         expect(grouped?.sharedItems).toHaveLength(1);
         expect(grouped?.sharedItems[0].originals).toHaveLength(2);
         expect(
+          await cold.mutation(api.creators.setFollow, {
+            organizationId: coldOrg,
+            creatorKey: "tiktok:123456789",
+            familyId: grouped!.sharedItems[0].familyId,
+            following: true,
+          }),
+        ).toBe(true);
+        await expect(
+          cold.mutation(api.creators.setFollow, {
+            organizationId: coldOrg,
+            creatorKey: "x:123456789",
+            familyId: grouped!.sharedItems[0].familyId,
+            following: true,
+          }),
+        ).rejects.toThrow("Creator unavailable");
+        expect(
           (await cold.query(api.product.detail, { id: coldSourceId }))
             .originalLinks,
         ).toHaveLength(2);
@@ -1071,6 +1087,32 @@ it.each([
           (await cold.query(api.product.detail, { id: coldSourceId }))
             .originalLinks,
         ).toHaveLength(1);
+        const mainArtifact = (await s.t.run((c) => c.db.get(familyId)))!
+          .selectedArtifactId!;
+        await s.t.run((c) => c.db.patch(mainArtifact, { state: "blocked" }));
+        expect(
+          (
+            await cold.query(api.creators.read, {
+              organizationId: coldOrg,
+              creatorKey: "tiktok:123456789",
+            })
+          )?.following,
+        ).toBe(true);
+        expect(
+          await cold.mutation(api.creators.setFollow, {
+            organizationId: coldOrg,
+            creatorKey: "tiktok:123456789",
+            following: false,
+          }),
+        ).toBe(false);
+        expect(
+          (
+            await cold.query(api.creators.read, {
+              organizationId: coldOrg,
+              creatorKey: "tiktok:123456789",
+            })
+          )?.following,
+        ).toBe(false);
       }
     }
     const secondWallet = await s.t.run((c) =>

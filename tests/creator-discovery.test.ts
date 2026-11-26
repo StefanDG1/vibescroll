@@ -3,6 +3,7 @@ import type { Id } from "../convex/_generated/dataModel";
 import { creatorPoolEnabled, rankSponsors } from "../convex/lib/creatorPool";
 import {
   creatorFeedPolicy,
+  instagramCreatorFeedPolicy,
   readCreatorVideoPage,
   readAuthorizedInstagramPost,
   readInstagramCreatorPage,
@@ -184,4 +185,115 @@ it("accepts an authorized Instagram carousel only with every child and matching 
       ),
     ),
   ).rejects.toThrow("CREATOR_FEED_IDENTITY_CHANGED");
+});
+
+it("resolves the exact carousel within an approved Meta Business Discovery account", async () => {
+  const target = {
+    ...authority,
+    creatorKey: "instagram:123456789",
+    accountId: "123456789",
+    businessDiscoveryRequesterId: "987654321",
+  };
+  vi.stubEnv("VIBESCROLL_CREATOR_DISCOVERY_ENABLED", "true");
+  vi.stubEnv("VIBESCROLL_INSTAGRAM_FEEDS", JSON.stringify([target]));
+  expect(instagramCreatorFeedPolicy(target.creatorKey)).toEqual(target);
+
+  const carousel = {
+    id: "123456789012345",
+    permalink: "https://www.instagram.com/p/BusinessAlbum01/",
+    timestamp: "2026-11-24T13:48:59Z",
+    media_type: "CAROUSEL_ALBUM",
+    caption: "Two ordered slides",
+    children: {
+      data: [
+        {
+          id: "123456780",
+          media_type: "IMAGE",
+          media_url: "https://scontent.cdninstagram.com/first.jpg",
+        },
+        {
+          id: "123456781",
+          media_type: "IMAGE",
+          media_url: "https://scontent.cdninstagram.com/second.jpg",
+        },
+      ],
+    },
+  };
+  const wrap = (data: unknown[], after?: string, targetId = target.accountId) =>
+    Response.json({
+      business_discovery: {
+        id: targetId,
+        username: target.handle,
+        media: { data, ...(after ? { paging: { cursors: { after } } } : {}) },
+      },
+    });
+  const listing = vi.fn(async () => wrap([carousel], "nextPage"));
+  await expect(
+    readInstagramCreatorPage(target, null, listing),
+  ).resolves.toEqual({
+    posts: [
+      {
+        postKey: "instagram:BusinessAlbum01",
+        url: carousel.permalink,
+        publishedAt: Date.parse(carousel.timestamp),
+        providerMediaId: carousel.id,
+      },
+    ],
+    nextCursor: "nextPage",
+  });
+
+  const transport = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(wrap([{ id: "123456789012346" }], "nextPage"))
+    .mockResolvedValueOnce(wrap([carousel]));
+  const read = (via: typeof fetch, postKey = "instagram:BusinessAlbum01") =>
+    readAuthorizedInstagramPost(target, carousel.id, postKey, via);
+  const result = await read(transport);
+  expect(result.text).toBe("Two ordered slides");
+  expect(result.authorId).toBe(target.accountId);
+  expect(result.assets.map((asset) => asset.url)).toEqual(
+    carousel.children.data.map((asset) => asset.media_url),
+  );
+  const [first, second] = transport.mock.calls;
+  const request = new URL(String(first[0]));
+  expect(request.origin).toBe("https://graph.facebook.com");
+  expect(request.pathname).toBe("/v27.0/987654321");
+  expect(request.searchParams.get("fields")).toContain(
+    "business_discovery.username(creator)",
+  );
+  expect(request.searchParams.get("access_token")).toBeNull();
+  expect(new Headers(first[1]?.headers).get("Authorization")).toBe(
+    `Bearer ${target.token}`,
+  );
+  expect(new URL(String(second[0])).searchParams.get("fields")).toContain(
+    ".after(nextPage)",
+  );
+
+  await expect(
+    read(vi.fn(async () => wrap([carousel], undefined, "999999999"))),
+  ).rejects.toThrow("CREATOR_FEED_IDENTITY_CHANGED");
+  await expect(
+    read(
+      vi.fn(async () => wrap([carousel])),
+      "instagram:DifferentPost",
+    ),
+  ).rejects.toThrow("CREATOR_FEED_IDENTITY_CHANGED");
+  await expect(
+    read(
+      vi.fn(async () =>
+        wrap([
+          {
+            ...carousel,
+            children: {
+              ...carousel.children,
+              paging: { cursors: { after: "unreadSlide" } },
+            },
+          },
+        ]),
+      ),
+    ),
+  ).rejects.toThrow("CREATOR_FEED_INCOMPLETE_MEDIA");
+  await expect(read(vi.fn(async () => wrap([])))).rejects.toThrow(
+    "CREATOR_FEED_MEDIA_UNAVAILABLE",
+  );
 });

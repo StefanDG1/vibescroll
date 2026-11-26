@@ -1450,81 +1450,101 @@ it("supports cached MCP clients through the existing credit command and safe job
     processing: { charged_credits: 3 },
   });
 });
-it("admits an approved Instagram carousel with public extraction disabled and stops when the grant expires", async () => {
-  const s = await fixture();
-  const url = "https://www.instagram.com/p/Approved001/";
-  const sourceId = await s.owner.mutation(api.product.capture, {
-    organizationId: s.org,
-    key: "approved-instagram-carousel",
-    kind: "url",
-    url,
-    title: "Approved carousel link",
-    rightsAttested: true,
-  });
-  const now = Date.now();
-  const creatorKey = "instagram:123456789";
-  const postKey = "instagram:Approved001";
-  const mediaId = "123456789012345";
-  await s.t.run((ctx) =>
-    ctx.db.insert("creatorDiscoveries", {
+it.each(["connected", "business_discovery"] as const)(
+  "admits an approved Instagram carousel through %s and stops when the grant expires",
+  async (method) => {
+    const s = await fixture();
+    const url = "https://www.instagram.com/p/Approved001/";
+    const sourceId = await s.owner.mutation(api.product.capture, {
+      organizationId: s.org,
+      key: "approved-instagram-carousel",
+      kind: "url",
+      url,
+      title: "Approved carousel link",
+      rightsAttested: true,
+    });
+    const now = Date.now();
+    const creatorKey = "instagram:123456789";
+    const postKey = "instagram:Approved001";
+    const mediaId = "123456789012345";
+    await s.t.run((ctx) =>
+      ctx.db.insert("creatorDiscoveries", {
+        creatorKey,
+        postKey,
+        url,
+        publishedAt: now,
+        observedAt: now,
+        providerMediaId: mediaId,
+      }),
+    );
+    vi.stubEnv("VIBESCROLL_ORDERED_SOCIAL_ENABLED", undefined);
+    vi.stubEnv("VIBESCROLL_INSTAGRAM_PUBLIC_EMBED_ENABLED", undefined);
+    vi.stubEnv("VIBESCROLL_CREATOR_DISCOVERY_ENABLED", "true");
+    vi.stubEnv("VIBESCROLL_MANAGED_AUTO_ENABLED", "true");
+    vi.stubEnv(
+      "VIBESCROLL_INSTAGRAM_FEEDS",
+      JSON.stringify([
+        {
+          creatorKey,
+          accountId: "123456789",
+          ...(method === "business_discovery"
+            ? { businessDiscoveryRequesterId: "987654321" }
+            : {}),
+          handle: "creator",
+          token: "synthetic-creator-test-token",
+          expiresAt: now + 60_000,
+          permissionReference: "Synthetic approved creator connection",
+        },
+      ]),
+    );
+    expect(
+      await s.t.mutation(
+        internal.creatorDiscovery.indexInstagramBusinessCreator,
+        {
+          creatorKey,
+        },
+      ),
+    ).toBe(method === "business_discovery");
+    const binding = {
       creatorKey,
       postKey,
-      url,
-      publishedAt: now,
-      observedAt: now,
-      providerMediaId: mediaId,
-    }),
-  );
-  vi.stubEnv("VIBESCROLL_ORDERED_SOCIAL_ENABLED", undefined);
-  vi.stubEnv("VIBESCROLL_INSTAGRAM_PUBLIC_EMBED_ENABLED", undefined);
-  vi.stubEnv("VIBESCROLL_CREATOR_DISCOVERY_ENABLED", "true");
-  vi.stubEnv("VIBESCROLL_MANAGED_AUTO_ENABLED", "true");
-  vi.stubEnv(
-    "VIBESCROLL_INSTAGRAM_FEEDS",
-    JSON.stringify([
-      {
-        creatorKey,
-        accountId: "123456789",
-        handle: "creator",
-        token: "synthetic-creator-test-token",
-        expiresAt: now + 60_000,
-        permissionReference: "Synthetic approved creator connection",
-      },
-    ]),
-  );
-  const request = {
-    sourceId,
-    executor: "gateway" as const,
-    model: "meta/muse-ember" as const,
-  };
-  const q = await s.owner.query(api.preparedService.quote, request);
-  expect(q.instagramGraph).toEqual({ creatorKey, postKey, mediaId });
-  const { runId } = await s.owner.mutation(api.preparedService.start, {
-    ...request,
-    key: "approved-instagram-carousel-start",
-    quoteHash: q.quoteHash,
-    maximumCredits: q.maximumCredits,
-  });
-  expect(runId).toBeTruthy();
-  const readLocator = () =>
-    s.t.query(internal.creatorDiscovery.instagramMediaLocator, {
-      runId: runId!,
+      mediaId,
+      ...(method === "business_discovery" ? { method } : {}),
+    };
+    const request = {
+      sourceId,
+      executor: "gateway" as const,
+      model: "meta/muse-ember" as const,
+    };
+    const q = await s.owner.query(api.preparedService.quote, request);
+    expect(q.instagramGraph).toEqual(binding);
+    const { runId } = await s.owner.mutation(api.preparedService.start, {
+      ...request,
+      key: "approved-instagram-carousel-start",
+      quoteHash: q.quoteHash,
+      maximumCredits: q.maximumCredits,
     });
-  expect(await readLocator()).toEqual({ creatorKey, postKey, mediaId });
+    expect(runId).toBeTruthy();
+    const readLocator = () =>
+      s.t.query(internal.creatorDiscovery.instagramMediaLocator, {
+        runId: runId!,
+      });
+    expect(await readLocator()).toEqual(binding);
 
-  vi.setSystemTime(now + 60_000);
-  expect(await readLocator()).toBeNull();
-  const extractorCalls = preparationMock.run.mock.calls.length;
-  await s.t.action(internal.preparedMedia.run, { runId: runId! });
-  expect(preparationMock.run).toHaveBeenCalledTimes(extractorCalls);
-  expect(
-    await s.owner.query(api.preparedService.status, { sourceId }),
-  ).toMatchObject({
-    state: "failed",
-    chargedCredits: 0,
-    failure: "SOURCE_UNAVAILABLE",
-  });
-});
+    vi.setSystemTime(now + 60_000);
+    expect(await readLocator()).toBeNull();
+    const extractorCalls = preparationMock.run.mock.calls.length;
+    await s.t.action(internal.preparedMedia.run, { runId: runId! });
+    expect(preparationMock.run).toHaveBeenCalledTimes(extractorCalls);
+    expect(
+      await s.owner.query(api.preparedService.status, { sourceId }),
+    ).toMatchObject({
+      state: "failed",
+      chargedCredits: 0,
+      failure: "SOURCE_UNAVAILABLE",
+    });
+  },
+);
 it("retains metadata without an extractor duration and defers the mandatory bound to decoding", async () => {
   const s = await freshSource(await fixture());
   const request = { sourceId: s.sourceId, executor: "gateway" as const };

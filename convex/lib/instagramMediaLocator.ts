@@ -14,14 +14,21 @@ export async function locateAuthorizedInstagramMedia(
     .withIndex("by_post_key", (q) => q.eq("postKey", postKey))
     .take(4);
   if (rows.length === 4) return null;
-  const matches = rows.filter(
-    (row) =>
-      row.providerMediaId &&
-      platformPostKey(row.url) === postKey &&
-      instagramCreatorFeedPolicy(row.creatorKey),
-  );
-  const match = matches.length === 1 ? matches[0] : null;
-  return match?.providerMediaId
-    ? { creatorKey: match.creatorKey, postKey, mediaId: match.providerMediaId }
-    : null;
+  const matches = rows.flatMap((row) => {
+    if (!row.providerMediaId || platformPostKey(row.url) !== postKey) return [];
+    const policy = instagramCreatorFeedPolicy(row.creatorKey);
+    return policy
+      ? [
+          {
+            creatorKey: row.creatorKey,
+            postKey,
+            mediaId: row.providerMediaId,
+            ...(policy.businessDiscoveryRequesterId
+              ? { method: "business_discovery" as const }
+              : {}),
+          },
+        ]
+      : [];
+  });
+  return matches.length === 1 ? matches[0] : null;
 }

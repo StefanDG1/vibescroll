@@ -52,6 +52,21 @@ export async function ensureCreatorWatch(
     });
 }
 
+export const indexInstagramBusinessCreator = internalMutation({
+  args: { creatorKey: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, { creatorKey }) => {
+    const now = Date.now();
+    if (
+      process.env.RESTORE_LOCK === "true" ||
+      !instagramCreatorFeedPolicy(creatorKey, now)?.businessDiscoveryRequesterId
+    )
+      return false;
+    await ensureCreatorWatch(ctx, creatorKey, now);
+    return true;
+  },
+});
+
 export const schedule = internalMutation({
   args: {},
   returns: v.null(),
@@ -73,7 +88,11 @@ export const schedule = internalMutation({
           q.eq("creatorKey", watch.creatorKey).eq("state", "following"),
         )
         .first();
-      if (!follower) {
+      if (
+        !follower &&
+        !instagramCreatorFeedPolicy(watch.creatorKey, now)
+          ?.businessDiscoveryRequesterId
+      ) {
         await ctx.db.delete(watch._id);
         continue;
       }
@@ -237,7 +256,11 @@ export const check = internalAction({
           )
             result.nextCursor = null;
         } else if (instagram && typeof args.cursor !== "number") {
-          result = await readInstagramCreatorPage(instagram, args.cursor);
+          result = await readInstagramCreatorPage(
+            instagram,
+            instagram.businessDiscoveryRequesterId ? null : args.cursor,
+          );
+          if (instagram.businessDiscoveryRequesterId) result.nextCursor = null;
         }
       } catch {
         // Credentials, raw provider responses and transport details stay private.
@@ -535,6 +558,7 @@ export const instagramMediaLocator = internalQuery({
       creatorKey: v.string(),
       postKey: v.string(),
       mediaId: v.string(),
+      method: v.optional(v.literal("business_discovery")),
     }),
   ),
   handler: async (ctx, { runId }) => {
@@ -557,7 +581,8 @@ export const instagramMediaLocator = internalQuery({
       expected &&
       (locator?.creatorKey !== expected.creatorKey ||
         locator?.mediaId !== expected.mediaId ||
-        locator?.postKey !== expected.postKey)
+        locator?.postKey !== expected.postKey ||
+        locator?.method !== expected.method)
     )
       return null;
     return locator;

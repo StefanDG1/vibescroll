@@ -104,27 +104,32 @@ export async function readCreatorVideoPage(
   return { posts, nextCursor: data.has_more ? data.cursor : null };
 }
 
+const instagramId = z.string().regex(/^\d{5,30}$/);
+const instagramHandle = z.string().regex(/^[A-Za-z0-9_.]{1,30}$/);
 const instagramPolicy = z.strictObject({
   creatorKey: z.string().regex(/^instagram:[A-Za-z0-9_-]{1,100}$/),
-  handle: z.string().regex(/^[A-Za-z0-9_.]{1,30}$/),
-  accountId: z.string().regex(/^\d{5,30}$/),
+  handle: instagramHandle,
+  accountId: instagramId,
+  businessDiscoveryRequesterId: instagramId.optional(),
   token: z.string().min(16).max(4096),
   expiresAt: z.number().int().positive(),
   permissionReference: z.string().min(10).max(1000),
 });
-const instaId = z.string().regex(/^\d{5,30}$/);
+const businessDiscoveryCursor = z.string().regex(/^[A-Za-z0-9_=+/-]{1,500}$/);
+const businessDiscoveryMediaPageSize = 5;
+const businessDiscoveryPages = 4;
+const businessDiscoveryListingSize =
+  businessDiscoveryMediaPageSize * businessDiscoveryPages;
+const businessDiscoveryMediaFields = "id,media_type,permalink,timestamp";
 const instagramVideoType = z.enum(["IMAGE", "VIDEO", "CAROUSEL_ALBUM"]);
+const instagramListingItem = z.object({
+  id: instagramId,
+  media_type: instagramVideoType,
+  permalink: z.string().url().max(2048),
+  timestamp: z.string().max(40),
+});
 const instagramListing = z.object({
-  data: z
-    .array(
-      z.object({
-        id: instaId,
-        media_type: instagramVideoType,
-        permalink: z.string().url().max(2048),
-        timestamp: z.string().max(40),
-      }),
-    )
-    .max(20),
+  data: z.array(instagramListingItem).max(20),
   paging: z
     .object({
       next: z.string().optional(),
@@ -143,7 +148,14 @@ export function instagramCreatorFeedPolicy(key: string, now = Date.now()) {
     const matches = records.filter(
       (item) => item.creatorKey === key && item.expiresAt > now,
     );
-    return matches.length === 1 ? matches[0] : null;
+    const configured = matches.length === 1 ? matches[0] : null;
+    if (
+      !configured ||
+      (configured.businessDiscoveryRequesterId &&
+        configured.creatorKey !== `instagram:${configured.accountId}`)
+    )
+      return null;
+    return configured;
   } catch {
     return null;
   }
@@ -159,15 +171,13 @@ async function instagramGet(
   query: URLSearchParams,
   token: string,
   transport: typeof fetch,
+  host: "graph.instagram.com" | "graph.facebook.com" = "graph.instagram.com",
 ) {
-  const response = await transport(
-    `https://graph.instagram.com/v27.0/${path}?${query}`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      redirect: "error",
-      signal: AbortSignal.timeout(10000),
-    },
-  );
+  const response = await transport(`https://${host}/v27.0/${path}?${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    redirect: "error",
+    signal: AbortSignal.timeout(10000),
+  });
   if (!response.ok || !response.body)
     throw new Error("CREATOR_FEED_UNAVAILABLE");
   const reader = response.body.getReader();
@@ -189,25 +199,100 @@ async function instagramGet(
   return JSON.parse(text + decoder.decode()) as unknown;
 }
 
+const businessDiscoveryResponse = z.object({
+  business_discovery: z.object({
+    id: instagramId,
+    username: instagramHandle,
+    media: z.object({
+      data: z
+        .array(z.looseObject({ id: instagramId }))
+        .max(businessDiscoveryListingSize),
+      paging: z
+        .object({
+          cursors: z
+            .object({ after: businessDiscoveryCursor.optional() })
+            .optional(),
+        })
+        .optional(),
+    }),
+  }),
+});
+
+async function readInstagramBusinessMediaPage(
+  authority: z.infer<typeof instagramPolicy>,
+  cursor: string | null,
+  fields: string,
+  limit: number,
+  transport: typeof fetch,
+) {
+  if (authority.expiresAt <= Date.now())
+    throw new Error("CREATOR_FEED_UNAVAILABLE");
+  const requesterId = instagramId.parse(authority.businessDiscoveryRequesterId);
+  const handle = instagramHandle.parse(authority.handle);
+  const after = cursor
+    ? `.after(${businessDiscoveryCursor.parse(cursor)})`
+    : "";
+  const query = new URLSearchParams({
+    fields: `business_discovery.username(${handle}){id,username,media.limit(${limit})${after}{${fields}}}`,
+  });
+  const { business_discovery: target } = businessDiscoveryResponse.parse(
+    await instagramGet(
+      requesterId,
+      query,
+      authority.token,
+      transport,
+      "graph.facebook.com",
+    ),
+  );
+  if (
+    target.id !== authority.accountId ||
+    target.username.toLowerCase() !== handle.toLowerCase()
+  )
+    throw new Error("CREATOR_FEED_IDENTITY_CHANGED");
+  if (target.media.data.length > limit) throw new Error("CREATOR_FEED_LIMIT");
+  const nextCursor = target.media.data.length
+    ? (target.media.paging?.cursors?.after ?? null)
+    : null;
+  if (nextCursor && nextCursor === cursor)
+    throw new Error("CREATOR_FEED_CURSOR_UNAVAILABLE");
+  return { data: target.media.data, nextCursor };
+}
+
 export async function readInstagramCreatorPage(
   authority: NonNullable<ReturnType<typeof instagramCreatorFeedPolicy>>,
   cursor: string | null,
   transport: typeof fetch = fetch,
 ) {
-  const query = new URLSearchParams({
-    fields: "id,media_type,permalink,timestamp",
-    limit: "20",
-  });
-  if (cursor) query.set("after", cursor);
-  const body = instagramListing.parse(
-    await instagramGet(
-      `${authority.accountId}/media`,
-      query,
-      authority.token,
+  let items: z.infer<typeof instagramListingItem>[];
+  let nextCursor: string | null | undefined;
+  if (authority.businessDiscoveryRequesterId) {
+    const { data, nextCursor: after } = await readInstagramBusinessMediaPage(
+      authority,
+      cursor,
+      businessDiscoveryMediaFields,
+      businessDiscoveryListingSize,
       transport,
-    ),
-  );
-  const posts = body.data.map((item) => {
+    );
+    items = data.map((item) => instagramListingItem.parse(item));
+    nextCursor = after;
+  } else {
+    const query = new URLSearchParams({
+      fields: businessDiscoveryMediaFields,
+      limit: "20",
+    });
+    if (cursor) query.set("after", cursor);
+    const body = instagramListing.parse(
+      await instagramGet(
+        `${authority.accountId}/media`,
+        query,
+        authority.token,
+        transport,
+      ),
+    );
+    items = body.data;
+    nextCursor = body.paging?.next ? body.paging.cursors?.after : null;
+  }
+  const posts = items.map((item) => {
     const identity = socialPostUrl(item.permalink);
     const publishedAt = Date.parse(item.timestamp);
     if (
@@ -223,32 +308,58 @@ export async function readInstagramCreatorPage(
       providerMediaId: item.id,
     };
   });
-  const nextCursor = body.paging?.next ? body.paging.cursors?.after : null;
   if (nextCursor === undefined || (nextCursor && nextCursor === cursor))
     throw new Error("CREATOR_FEED_CURSOR_UNAVAILABLE");
   return { posts, nextCursor };
 }
 
 const instagramChild = z.object({
-  id: instaId,
+  id: instagramId,
   media_type: z.enum(["IMAGE", "VIDEO"]),
   media_url: z.string().url().max(4096),
 });
-const instagramMedia = z.object({
-  id: instaId,
-  media_type: instagramVideoType,
+const instagramMedia = instagramListingItem.extend({
   media_url: z.string().url().max(4096).optional(),
-  permalink: z.string().url().max(2048),
   caption: z.string().max(60000).optional(),
-  owner: z.object({ id: instaId }),
-  timestamp: z.string().max(40),
   children: z
     .object({
       data: z.array(instagramChild).min(1).max(35),
-      paging: z.object({ next: z.string().optional() }).optional(),
+      paging: z
+        .object({
+          next: z.string().optional(),
+          cursors: z.object({ after: z.string().optional() }).optional(),
+        })
+        .optional(),
     })
     .optional(),
 });
+const ownedInstagramMedia = instagramMedia.extend({
+  owner: z.object({ id: instagramId }),
+});
+const instagramOrderedMediaFields = `${businessDiscoveryMediaFields},media_url,caption,children.limit(35){id,media_type,media_url}`;
+
+async function readInstagramBusinessPost(
+  authority: z.infer<typeof instagramPolicy>,
+  mediaId: string,
+  transport: typeof fetch,
+) {
+  let cursor: string | null = null;
+  for (let page = 0; page < businessDiscoveryPages; page++) {
+    const result = await readInstagramBusinessMediaPage(
+      authority,
+      cursor,
+      instagramOrderedMediaFields,
+      businessDiscoveryMediaPageSize,
+      transport,
+    );
+    const matches = result.data.filter((row) => row.id === mediaId);
+    if (matches.length > 1) throw new Error("CREATOR_FEED_IDENTITY_CHANGED");
+    if (matches.length === 1) return instagramMedia.parse(matches[0]);
+    if (!result.nextCursor) break;
+    cursor = result.nextCursor;
+  }
+  throw new Error("CREATOR_FEED_MEDIA_UNAVAILABLE");
+}
 
 export async function readAuthorizedInstagramPost(
   authority: NonNullable<ReturnType<typeof instagramCreatorFeedPolicy>>,
@@ -256,22 +367,26 @@ export async function readAuthorizedInstagramPost(
   postKey: string,
   transport: typeof fetch = fetch,
 ) {
-  const query = new URLSearchParams({
-    fields:
-      "id,owner,media_type,media_url,permalink,caption,timestamp,children.limit(35){id,media_type,media_url}",
-  });
-  const row = instagramMedia.parse(
-    await instagramGet(
-      instaId.parse(mediaId),
-      query,
-      authority.token,
-      transport,
-    ),
-  );
+  instagramId.parse(mediaId);
+  let row: z.infer<typeof instagramMedia>;
+  if (authority.businessDiscoveryRequesterId) {
+    row = await readInstagramBusinessPost(authority, mediaId, transport);
+  } else {
+    const owned = ownedInstagramMedia.parse(
+      await instagramGet(
+        mediaId,
+        new URLSearchParams({ fields: `owner,${instagramOrderedMediaFields}` }),
+        authority.token,
+        transport,
+      ),
+    );
+    if (owned.owner.id !== authority.accountId)
+      throw new Error("CREATOR_FEED_IDENTITY_CHANGED");
+    row = owned;
+  }
   const canonical = socialPostUrl(row.permalink);
   const publishedAt = Date.parse(row.timestamp);
   if (
-    row.owner.id !== authority.accountId ||
     row.id !== mediaId ||
     canonical.platform !== "instagram" ||
     `instagram:${canonical.postKey}` !== postKey ||
@@ -279,11 +394,15 @@ export async function readAuthorizedInstagramPost(
     publishedAt <= 0
   )
     throw new Error("CREATOR_FEED_IDENTITY_CHANGED");
+  const partialAlbum =
+    row.children?.paging?.next ||
+    (authority.businessDiscoveryRequesterId &&
+      row.children?.paging?.cursors?.after);
   const children =
     row.media_type === "CAROUSEL_ALBUM"
-      ? !row.children?.paging?.next
-        ? row.children?.data
-        : undefined
+      ? partialAlbum
+        ? undefined
+        : row.children?.data
       : [instagramChild.parse(row)];
   if (
     !children?.length ||

@@ -272,7 +272,10 @@ export const run = internalAction({
       if (locator || boundInstagram) {
         try {
           ensure(
-            instagramScope && locator,
+            instagramScope &&
+              locator &&
+              (locator.method === "business_discovery") ===
+                !!instagramScope.businessDiscoveryRequesterId,
             "SOURCE_UNAVAILABLE",
             "The connected Instagram source is unavailable.",
           );

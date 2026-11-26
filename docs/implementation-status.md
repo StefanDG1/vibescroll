@@ -1,5 +1,9 @@
 # Implementation status
 
+## November 26 Meta Business Discovery routing
+
+Production Convex `a62e05ce5528` supports indexed Instagram links from an approved public professional target without a VibeScroll connection for that creator. The configured requester uses Meta Business Discovery with Facebook Login. The tests cover exact account and media matching, multi-page lookup, ordered images, incomplete albums, and expired grants. Production function metadata confirms the index entry point is live. The existing TikTok result and its JPEG reopened through MCP after publication. A real Business Discovery carousel remains pending an approved requester connection and a matching target. [Release evidence](operations/evidence/launch-20261126-instagram-business-discovery.json) · [Access procedure](operations/SOCIAL-PHOTO-ACCESS.md#public-professional-accounts-through-business-discovery)
+
 ## November 26 approved Instagram Graph routing
 
 Production Convex `ce22bd8583ac` routes an exact permalink from a connected Instagram creator through Graph with public acquisition disabled. Admission binds the creator and provider media ID. If the grant expires before dispatch, preparation reports a source failure and settles at zero app credits. The Linux CI and compatible deployment checks passed. Canonical health passed, and the installed MCP reopened an existing TikTok video's four cited insights, eight retained frames and a JPEG. A live Instagram carousel still needs a configured Meta creator connection. TikTok Photo Mode needs approved original-image access. [Release evidence](operations/evidence/launch-20261126-approved-instagram-route.json) · [Photo access and acceptance](operations/SOCIAL-PHOTO-ACCESS.md)

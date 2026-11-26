@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-26",
+  "productionBackendCommit": "a62e05ce55281f933e5f7e09414f10d640876cf9",
+  "productionBackendFinishAtUtc": "2026-11-26T01:10:00.326092Z",
+  "productionWebsiteCommit": "5c96517bba952c2f14f14b538f78480e747f4479",
+  "ci": {
+    "run": "https://github.com/StefanDG1/vibescroll/actions/runs/45733286478",
+    "focusedTestsPassed": 111,
+    "mainTestsPassed": 1799,
+    "mainTestsSkipped": 11,
+    "secretScanPassed": true
+  },
+  "publication": {
+    "matchingDryRuns": 2,
+    "schemaOrIndexChange": false,
+    "dataMigration": false,
+    "finishAcknowledged": true,
+    "newWebsiteBuilds": 0,
+    "newAnalysisJobs": 0
+  },
+  "verification": {
+    "websiteHealth": "ok",
+    "businessDiscoveryIndexFunctionPresent": true,
+    "existingTikTokVideoOpenedInMcp": true,
+    "existingCitedInsights": 4,
+    "existingRetainedFrames": 8,
+    "readRetainedJpeg": true,
+    "approvedBusinessDiscoveryRequesterConfigured": false,
+    "liveBusinessDiscoveryCarouselAccepted": false,
+    "publicPhotoExtractionEnabled": false
+  }
+}

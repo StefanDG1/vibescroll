@@ -48,6 +48,7 @@ import {
   cloudCatalogAuthority,
   projectNeutralCloudVersion,
   cloudCatalogAssessment,
+  cloudCatalogPolicyIdentity,
 } from "../packages/contracts/cloud-catalog";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { socialHash } from "../packages/social/contracts";
@@ -826,7 +827,12 @@ export const finishAutomatic = internalMutation({
     const policy = catalogConfiguration()?.defaultPolicy;
     if (
       !policy ||
-      row.automaticPolicyHash !== (await socialHash(canonicalJson(policy)))
+      row.automaticPolicyHash !==
+        (await socialHash(
+          canonicalJson(
+            cloudCatalogPolicyIdentity(policy, current.prepared.platform),
+          ),
+        ))
     )
       return null;
     const incumbent =

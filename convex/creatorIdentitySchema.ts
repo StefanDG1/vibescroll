@@ -8,6 +8,7 @@ export const postAuthorProofValue = v.object({
   observedAt: v.number(),
   method: v.union(
     v.literal("instagram_embed"),
+    v.literal("instagram_media_api"),
     v.literal("tiktok_page"),
     v.literal("x_public_api"),
   ),

@@ -19,6 +19,7 @@ import {
 import { readPublicPostAuthor } from "../packages/social/post-author";
 import { sourceRetained } from "./lib/sourceAuthority";
 import { selectedAnalysis } from "./lib/analysisHistory";
+import { enqueueCreatorMatching } from "./lib/creatorMatching";
 
 export const indexFamily = internalMutation({
   args: {
@@ -256,6 +257,12 @@ export const repairAssociations = internalMutation({
           generation: source.generation,
         },
       });
+      if (
+        source.creator?.generation !== source.generation ||
+        source.creator.key !== proof.creatorKey ||
+        source.creator.handle !== proof.handle
+      )
+        await enqueueCreatorMatching(ctx, source._id);
     }
     if (!page.isDone)
       await ctx.scheduler.runAfter(

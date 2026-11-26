@@ -8,6 +8,7 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 const a = {
@@ -22,6 +23,46 @@ const b = {
   links: ["https://www.instagram.com/example/"],
   observedAt: Date.now(),
 };
+
+it("recovers an exact legacy private post's creator without publishing or changing its selected result", async () => {
+  vi.useFakeTimers();
+  const f = await fixture();
+  vi.stubEnv("VIBESCROLL_CREATOR_MATCHING_ENABLED", "true");
+  await f.t.run((c) => c.db.patch(f.sourceId, { creator: undefined }));
+  const before = (await f.t.run((c) => c.db.get(f.sourceId)))!;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async () =>
+        new Response(
+          `<div class="Embed" data-owner-id="12345" data-media-id="1234567" data-media-type="GraphVideo" data-permalink="${before.canonical}"><a class="Username" href="https://www.instagram.com/creator/">Creator</a><a class="EmbeddedMedia" href="${before.canonical}"></a></div>`,
+        ),
+    ),
+  );
+  expect(
+    await f.t.action(internal.creatorProfiles.repairSavedSource, {
+      sourceId: f.sourceId,
+    }),
+  ).toBe(true);
+  const after = (await f.t.run((c) => c.db.get(f.sourceId)))!;
+  expect(after.creator).toEqual({
+    key: "instagram:12345",
+    handle: "creator",
+    generation: before.generation,
+  });
+  expect({
+    ...after,
+    creator: before.creator,
+    platformPostKey: before.platformPostKey,
+  }).toEqual(before);
+  expect(after.publicImportId).toBeUndefined();
+  expect(
+    await f.t.action(internal.creatorProfiles.repairSavedSource, {
+      sourceId: f.sourceId,
+    }),
+  ).toBe(false);
+  vi.unstubAllGlobals();
+});
 
 it("requires reciprocal public links, including for accounts with identical handles", () => {
   expect(reciprocalCreatorComponent([a, b], a.key)).toEqual([a.key, b.key]);

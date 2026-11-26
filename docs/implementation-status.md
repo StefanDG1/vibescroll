@@ -1,5 +1,11 @@
 # Implementation status
 
+## November 26 legacy creator metadata recovery
+
+Backend `b9cf8353beb5` is live after exact CI, two matching preparations and 13 publication guards. The only schema change is one optional proof field; all indexes and other tables are unchanged. The production pass recovered 54 authors, bringing the index to 56 selected results across 46 creators. Wallets and credit holds were unchanged. MCP returned the two recovered legacy workspace posts and their two shared entries on one creator page. There were no model calls, preparations or website builds. [Production receipt](operations/evidence/launch-20261126-creator-metadata-production.json)
+
+The 92 catalog families contain 59 selected results and 33 families without a selected result. The earlier missing-author count included those empty families. Three published Instagram results lacked public embed metadata. A local authenticated probe recovered two and reported the third unavailable. The fallback and X discovery are a tested follow-up candidate under [ADR248](adr/248-x-discovery-and-instagram-identity-fallback.md). Full local checks passed 1,850 main tests, 92 authentication tests and 194 shared UI tests, including the X metadata v2 route, text-only catalog reader, authenticated Instagram matching and targeted private-source identity recovery. Production acceptance is pending.
+
 ## November 26 shared creator pages and public polling
 
 Website and backend `62f837b9e6d` are live. Exact CI, the full local check, two deterministic preparations and 13 publication guard cases passed. The actual schema prediction admitted four reviewed empty indexes with no populated walk or backfill. One fixed Basic build passed staged exact health, descriptor and private-route authentication checks, then the same build passed canonical health. Normal domain assignment was restored and the temporary share was revoked.

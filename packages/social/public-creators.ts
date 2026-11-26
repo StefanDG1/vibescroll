@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parse } from "parse5";
+import { platformPostKey } from "../sources/post-identity";
 
 import {
   numericId,
@@ -28,6 +29,8 @@ export function publicCreatorFeedEnabled(key: string) {
       process.env.VIBESCROLL_ORDERED_SOCIAL_ENABLED === "true" ||
       process.env.VIBESCROLL_TIKTOK_ORDERED_ENABLED === "true"
     );
+  if (/^x:[0-9]{1,30}$/.test(key))
+    return process.env.WORK_CLOUD_MEDIA_ENABLED === "true";
   return (
     /^instagram:[0-9]{1,30}$/.test(key) &&
     process.env.VIBESCROLL_INSTAGRAM_PUBLIC_EMBED_ENABLED === "true" &&
@@ -279,6 +282,64 @@ function instagramProfileSession(now = Date.now()) {
   } catch {
     return null;
   }
+}
+
+/** The fixed first-party endpoint can recover public posts with embedding disabled. */
+export async function readAuthenticatedInstagramPostAuthor(
+  code: string,
+  transport: typeof fetch = fetch,
+) {
+  if (!/^[A-Za-z0-9_-]{5,30}$/.test(code))
+    throw Error("POST_AUTHOR_IDENTITY_CHANGED");
+  const session = instagramProfileSession();
+  if (!session) throw Error("POST_AUTHOR_UNAVAILABLE");
+  const alphabet =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  let id = BigInt(0);
+  for (const letter of code)
+    id = id * BigInt(64) + BigInt(alphabet.indexOf(letter));
+  const data = JSON.parse(
+    await boundedText(
+      await transport(`https://www.instagram.com/api/v1/media/${id}/info/`, {
+        headers: {
+          Cookie: session.cookie,
+          "X-CSRFToken": session.csrf,
+          "User-Agent": session.userAgent,
+          "X-IG-App-ID": "936619743392459",
+        },
+        redirect: "error",
+        signal: AbortSignal.timeout(9000),
+      }),
+    ),
+  );
+  const identifier = z.union([
+    numericId,
+    z.number().int().safe().positive().transform(String),
+  ]);
+  const response = z
+    .object({
+      status: z.literal("ok"),
+      items: z
+        .array(
+          z.object({
+            code: z.literal(code),
+            audience: z.enum(["public", "everyone"]).nullish(),
+            is_close_friend: z.literal(false).optional(),
+            is_private: z.literal(false).optional(),
+            user: z.object({
+              pk: identifier,
+              username: handle,
+              is_private: z.literal(false),
+            }),
+          }),
+        )
+        .length(1),
+    })
+    .parse(data);
+  return {
+    authorId: response.items[0].user.pk,
+    authorHandle: response.items[0].user.username,
+  };
 }
 
 async function freshInstagramSession(transport: typeof fetch) {
@@ -599,41 +660,167 @@ export async function readPublicCreatorProfile(
     return (await tiktokProfile(name.slice(1), expectedKey, transport, now))
       .profile;
   if (u.hostname === "www.instagram.com")
-    return instagramProfile(name, expectedKey, transport, now);
-  // Matching can read public X identity even when timeline discovery is unavailable.
-  const data = await boundedText(
-    await transport(`https://api.fxtwitter.com/${name}`, {
-      redirect: "error",
-      signal: AbortSignal.timeout(9000),
-    }),
-  );
-  const row = z
+    return instagramProfile(
+      name,
+      expectedKey,
+      transport,
+      now,
+      instagramProfileSession()
+        ? await freshInstagramSession(transport)
+        : null,
+    );
+  return (
+    await xTimeline(
+      { creatorKey: expectedKey, handle: name },
+      null,
+      transport,
+      now,
+    )
+  ).profile;
+}
+
+const xAuthor = z.object({
+  id: numericId,
+  screen_name: z.string().regex(/^[A-Za-z0-9_]{1,15}$/),
+  protected: z.boolean(),
+  description: z.string().max(10000).nullish(),
+  website: z.object({ url: z.string().max(2048).nullable() }).nullish(),
+});
+const xStatus = z.object({
+  type: z.literal("status"),
+  id: z.string().regex(/^[0-9]{10,25}$/),
+  url: z.string().max(2048),
+  created_timestamp: z.number().int().positive(),
+  author: xAuthor,
+  reposted_by: z.unknown().optional(),
+  media: z
     .object({
-      code: z.literal(200),
-      user: z.object({
-        id: numericId,
-        screen_name: z.string().regex(/^[A-Za-z0-9_]{1,15}$/),
-        url: z.string().nullable().optional(),
-        description: z.string().optional(),
-      }),
+      videos: z
+        .array(z.object({ duration: z.number().nonnegative().nullish() }))
+        .max(10)
+        .optional(),
     })
-    .parse(JSON.parse(data)).user;
+    .nullish(),
+});
+async function xTimeline(
+  author: { creatorKey?: string; handle: string },
+  cursor: string | null,
+  transport: typeof fetch,
+  now: number,
+) {
+  creatorProfileUrl(author.creatorKey ?? "x:1", author.handle);
   if (
-    row.screen_name.toLowerCase() !== name.toLowerCase() ||
-    (expectedKey && expectedKey !== `x:${row.id}`)
+    (author.creatorKey && !/^x:[0-9]{1,30}$/.test(author.creatorKey)) ||
+    (cursor !== null && !/^[A-Za-z0-9_+=/-]{1,1000}$/.test(cursor))
   )
     throw Error("CREATOR_IDENTITY_CHANGED");
+  const target = author.creatorKey
+      ? `id:${author.creatorKey.slice(2)}`
+      : author.handle,
+    query = new URLSearchParams({ count: "20", ...(cursor ? { cursor } : {}) });
+  const data = z
+    .object({
+      code: z.literal(200),
+      results: z.array(xStatus).max(40),
+      cursor: z.object({ bottom: z.string().max(1000).nullable() }),
+    })
+    .parse(
+      JSON.parse(
+        await boundedText(
+          await transport(
+            `https://api.fxtwitter.com/2/profile/${encodeURIComponent(target)}/statuses?${query}`,
+            {
+              headers: {
+                "User-Agent":
+                  "VibeScroll/1.0 (+https://scroll.companynerve.com)",
+              },
+              redirect: "error",
+              signal: AbortSignal.timeout(9000),
+            },
+          ),
+        ),
+      ),
+    );
+  const owned = data.results.filter((row) =>
+    author.creatorKey
+      ? `x:${row.author.id}` === author.creatorKey
+      : row.author.screen_name.toLowerCase() === author.handle.toLowerCase(),
+  );
+  const identities = new Set(
+    owned.map(
+      (row) => `${row.author.id}:${row.author.screen_name.toLowerCase()}`,
+    ),
+  );
+  if (
+    !owned.length ||
+    identities.size !== 1 ||
+    owned.some((row) => row.author.protected)
+  )
+    throw Error("CREATOR_IDENTITY_CHANGED");
+  const owner = owned[0].author,
+    key = `x:${owner.id}`;
+  if (
+    data.results.some((row) => `x:${row.author.id}` !== key && !row.reposted_by)
+  )
+    throw Error("CREATOR_IDENTITY_CHANGED");
+  const posts: CreatorFeedPost[] = [],
+    seen = new Set<string>();
+  for (const row of owned) {
+    if (seen.has(row.id)) continue;
+    if (
+      platformPostKey(row.url) !== `x:${row.id}` ||
+      row.created_timestamp * 1000 > now + 300000
+    )
+      throw Error("CREATOR_IDENTITY_CHANGED");
+    seen.add(row.id);
+    const videos = row.media?.videos,
+      durations = videos?.map((v) => v.duration);
+    posts.push({
+      postKey: `x:${row.id}`,
+      url: `https://x.com/${owner.screen_name.toLowerCase()}/status/${row.id}`,
+      publishedAt: row.created_timestamp * 1000,
+      ...(!videos?.length
+        ? { durationMs: 0 }
+        : durations?.every((v): v is number => typeof v === "number")
+          ? {
+              durationMs: Math.ceil(
+                durations.reduce((sum, v) => sum + v, 0) * 1000,
+              ),
+            }
+          : {}),
+    });
+  }
+  if (posts.length > 20) throw Error("CREATOR_FEED_LIMIT");
+  const nextCursor = data.cursor.bottom;
+  if (
+    nextCursor &&
+    (nextCursor === cursor || !/^[A-Za-z0-9_+=/-]{1,1000}$/.test(nextCursor))
+  )
+    throw Error("CREATOR_FEED_CURSOR_UNAVAILABLE");
   const links = [
-    row.url,
-    ...(row.description?.match(/https:\/\/[^\s<>]+/g) ?? []),
-  ].flatMap((value) => {
-    const link = value ? publicProfileLink(value) : null;
+    owner.website?.url,
+    ...(owner.description?.match(/https:\/\/[^\s<>]+/g) ?? []),
+  ].flatMap((raw) => {
+    const link = raw ? publicProfileLink(raw) : null;
     return link ? [link] : [];
   });
-  return publicCreatorProfile.parse({
-    key: `x:${row.id}`,
-    handle: row.screen_name,
-    links: [...new Set(links)].slice(0, 12),
-    observedAt: now,
-  });
+  return {
+    profile: publicCreatorProfile.parse({
+      key,
+      handle: owner.screen_name,
+      links: [...new Set(links)].slice(0, 12),
+      observedAt: now,
+    }),
+    posts,
+    nextCursor,
+  };
+}
+
+export async function readPublicXCreatorPage(
+  author: { creatorKey: string; handle: string },
+  cursor: string | null,
+  transport: typeof fetch = fetch,
+  now = Date.now(),
+) {
+  return xTimeline(author, cursor, transport, now);
 }

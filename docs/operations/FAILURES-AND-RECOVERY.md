@@ -2,6 +2,12 @@
 
 Mode: reference. Audit: October 29,2026, Europe/Berlin. Scope: this conversation and its linked local evidence, not every failure in the product's history.
 
+## November 26 creator metadata and X policy identity
+
+A catalog family is not proof of a published result. The 92-family pass contains 59 selected results and 33 without a selected result. Preserve pending and unknown work instead of treating every empty family as an author-recovery failure. A public Instagram embed shell can omit metadata even when the original post is accessible. A fixed first-party authenticated media read recovered two public identities; the third original was unavailable. Do not guess its author or relabel the historical analysis as failed.
+
+The app's ES2017 type target rejected BigInt literals in a shared server module. BigInt constructors preserve the exact shortcode calculation without raising that target. The full check then passed. The X publication regression initially omitted the exact version argument used by prepared completions and then exposed a real mismatch between the new admission hash and the old completion hash. Use the same platform policy identity at both boundaries. A successful first shared association can select the independent shared version while preserving the original private version in history; test both identities and their state.
+
 ## November11 X acquisition and music-only speech
 
 A gallery-dl/FxTwitter benchmark outside the product VM does not prove the restricted acquisition integration. Initialize the public-download bridge before the first user command. The isolated namespace supplies only `VIBE_DOWNLOAD_PROXY`; pass its exact broker address to gallery-dl and an explicit HTTPS proxy handler to urllib. Missing or changed broker configuration must stop before contact. Parser-only tests missed both initialization and transport defects. The controller lifecycle and both provider transports now have focused regressions.

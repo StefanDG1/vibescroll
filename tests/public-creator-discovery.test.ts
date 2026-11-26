@@ -10,19 +10,20 @@ afterEach(() => {
 });
 const creatorKey = "tiktok:123456789";
 
-async function watched() {
+async function watched(key = creatorKey) {
   vi.useFakeTimers();
   const f = await fixture();
   vi.stubEnv("VIBESCROLL_CREATOR_DISCOVERY_ENABLED", "true");
   vi.stubEnv("VIBESCROLL_TIKTOK_ORDERED_ENABLED", "true");
+  vi.stubEnv("WORK_CLOUD_MEDIA_ENABLED", "true");
   await f.t.run((c) =>
     c.db.patch(f.sourceId, {
-      creator: { key: creatorKey, handle: "creator", generation: 1 },
+      creator: { key, handle: "creator", generation: 1 },
     }),
   );
   await f.owner.mutation(api.creators.setFollow, {
     organizationId: f.org,
-    creatorKey,
+    creatorKey: key,
     sourceId: f.sourceId,
     following: true,
   });
@@ -114,4 +115,55 @@ it("records a provider outage without creating discoveries or credit work", asyn
   expect(state.posts).toHaveLength(0);
   expect(state.runs).toHaveLength(0);
   expect(state.source?.selectedAnalysisVersionId).toBe(f.versionId);
+});
+
+it("stores a real-shaped X timeline discovery after Follow without sponsoring historical posts", async () => {
+  const key = "x:4686835494",
+    f = await watched(key),
+    now = Math.floor(Date.now() / 1000) * 1000;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      Response.json({
+        code: 200,
+        results: [
+          {
+            type: "status",
+            id: "2125691968407871598",
+            url: "https://x.com/creator/status/2125691968407871598",
+            created_timestamp: now / 1000 - 60,
+            author: {
+              id: "4686835494",
+              screen_name: "creator",
+              protected: false,
+            },
+            media: { photos: [{}] },
+          },
+        ],
+        cursor: { bottom: null },
+      }),
+    ),
+  );
+  await f.t.action(internal.creatorDiscovery.check, {
+    id: f.watch._id,
+    creatorKey: key,
+    leaseUntil: f.watch.leaseUntil!,
+    windowStartAt: f.watch.windowStartAt!,
+    handle: "creator",
+    cursor: null,
+  });
+  const state = await f.t.run(async (c) => ({
+    watch: await c.db.get(f.watch._id),
+    posts: await c.db.query("creatorDiscoveries").take(10),
+    runs: await c.db.query("creatorPoolRuns").take(10),
+  }));
+  expect(state.watch).toMatchObject({
+    state: "ready",
+    creatorKey: key,
+    profileUrl: "https://x.com/creator",
+  });
+  expect(state.posts).toMatchObject([
+    { postKey: "x:2125691968407871598", durationMs: 0 },
+  ]);
+  expect(state.runs).toEqual([]);
 });

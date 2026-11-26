@@ -631,7 +631,9 @@ export async function catalogPermission(
     const identity = privateCloudMediaIdentity(exact);
     const policy = config.defaultPolicy;
     if (
-      (identity.platform === "instagram" || identity.platform === "tiktok") &&
+      (identity.platform === "instagram" ||
+        identity.platform === "tiktok" ||
+        identity.platform === "x") &&
       policy.platforms.includes(identity.platform)
     ) {
       value = {

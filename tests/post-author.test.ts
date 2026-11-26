@@ -1,8 +1,26 @@
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { readPublicPostAuthor } from "../packages/social/post-author";
 import { validPostAuthorProof } from "../packages/social/post-author-proof";
+afterEach(() => vi.unstubAllEnvs());
 
 const canonical = "https://www.instagram.com/p/Abcdef12345/";
+function session() {
+  const now = Date.now();
+  vi.stubEnv(
+    "VIBESCROLL_INSTAGRAM_PROFILE_SESSION_JSON",
+    JSON.stringify({
+      version: "instagram-public-profile-session-v1",
+      accountHandle: "operator",
+      accountId: "12345",
+      cookie:
+        "sessionid=synthetic-session; csrftoken=synthetic-csrf; ds_user_id=12345",
+      csrf: "synthetic-csrf",
+      userAgent: "Synthetic VibeScroll tests",
+      capturedAt: now - 1000,
+      expiresAt: now + 3600000,
+    }),
+  );
+}
 const embed = (owner = "12345", name = "creator") =>
   `<div class="Embed" data-owner-id="${owner}" data-media-id="1234567" data-media-type="GraphVideo" data-permalink="${canonical}"><a class="Username" href="https://www.instagram.com/${name}/?utm_source=ig_embed">Creator</a><a class="CaptionUsername" href="https://www.instagram.com/${name}/">Creator</a><a class="EmbeddedMedia" href="${canonical}"></a></div>`;
 
@@ -83,9 +101,9 @@ it("binds X metadata to the exact status and refuses unavailable or oversized re
     transport = vi.fn(async () =>
       Response.json({
         code: 200,
-        tweet: {
+        status: {
           id: "1840000000000000000",
-          author: { id: "1234", screen_name: "creator" },
+          author: { id: "1234", screen_name: "creator", protected: false },
         },
       }),
     );
@@ -94,7 +112,7 @@ it("binds X metadata to the exact status and refuses unavailable or oversized re
     handle: "creator",
   });
   expect(transport).toHaveBeenCalledExactlyOnceWith(
-    "https://api.fxtwitter.com/status/1840000000000000000",
+    "https://api.fxtwitter.com/2/status/1840000000000000000",
     expect.objectContaining({ redirect: "error" }),
   );
   await expect(
@@ -150,3 +168,69 @@ it("follows only bounded TikTok short-link redirects and binds the resolved auth
     ),
   ).rejects.toThrow("POST_AUTHOR_IDENTITY_CHANGED");
 });
+
+it("recovers a public Instagram author when embeds are disabled, keeping the session on the fixed first-party endpoint", async () => {
+  session();
+  const transport = vi.fn(
+    async (url: string | URL | Request, init?: RequestInit) => {
+      if (String(url).includes("/embed/")) {
+        expect(init?.headers).toBeUndefined();
+        return new Response("<html>Embedding unavailable</html>");
+      }
+      expect(String(url)).toMatch(
+        /^https:\/\/www\.instagram\.com\/api\/v1\/media\/[0-9]+\/info\/$/,
+      );
+      expect(init?.redirect).toBe("error");
+      expect(init?.headers).toMatchObject({
+        Cookie: expect.stringContaining("sessionid=synthetic-session"),
+      });
+      return Response.json({
+        status: "ok",
+        items: [
+          {
+            code: "Abcdef12345",
+            user: { pk: "67890", username: "creator", is_private: false },
+          },
+        ],
+      });
+    },
+  );
+  expect(await readPublicPostAuthor(canonical, transport)).toMatchObject({
+    creatorKey: "instagram:67890",
+    handle: "creator",
+    method: "instagram_media_api",
+  });
+  expect(transport).toHaveBeenCalledTimes(2);
+  const duplicate = vi.fn(async () => new Response(embed() + embed()));
+  await expect(readPublicPostAuthor(canonical, duplicate)).rejects.toThrow(
+    "POST_AUTHOR_IDENTITY_CHANGED",
+  );
+  expect(duplicate).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+  { code: "Other12345", is_private: false },
+  { code: "Abcdef12345", is_private: true },
+  { code: "Abcdef12345", is_private: false, audience: "close_friends" },
+])(
+  "refuses a mismatched or private authenticated Instagram post",
+  async ({ code, is_private, ...extra }) => {
+    session();
+    await expect(
+      readPublicPostAuthor(canonical, async (url) =>
+        String(url).includes("/embed/")
+          ? new Response("<html>No embed</html>")
+          : Response.json({
+              status: "ok",
+              items: [
+                {
+                  code,
+                  ...extra,
+                  user: { pk: "67890", username: "creator", is_private },
+                },
+              ],
+            }),
+      ),
+    ).rejects.toThrow();
+  },
+);

@@ -38,7 +38,7 @@ export const cloudCatalogPermission = z.strictObject({
   ]),
   id: z.string().regex(/^[A-Za-z0-9_-]{8,100}$/),
   canonical,
-  platform: z.enum(["instagram", "tiktok"]),
+  platform: z.enum(["instagram", "tiktok", "x"]),
   providerPermissionReference: z.string().min(1).max(2000),
   contentPermissionReference: z.string().min(1).max(2000),
   privacyReviewReference: z.string().min(1).max(2000),
@@ -87,9 +87,9 @@ export const cloudCatalogDefaultPolicy = z.strictObject({
   disclosureVersion: z.string().regex(/^[A-Za-z0-9_-]{8,100}$/),
   rightsBasis: z.literal("user_attested"),
   platforms: z
-    .array(z.enum(["instagram", "tiktok"]))
+    .array(z.enum(["instagram", "tiktok", "x"]))
     .min(1)
-    .max(2),
+    .max(3),
   providerPermissionReference: z.string().min(1).max(2000),
   contentPermissionReference: z.string().min(1).max(2000),
   privacyReviewReference: z.string().min(1).max(2000),
@@ -138,6 +138,18 @@ export const cloudCatalogConfiguration = z
         message: "Catalog permission identities must be unique.",
       });
   });
+
+/** Adding X must preserve already admitted Instagram/TikTok publication intents. */
+export function cloudCatalogPolicyIdentity(
+  policy: z.infer<typeof cloudCatalogDefaultPolicy>,
+  platform: "instagram" | "tiktok" | "x",
+) {
+  return {
+    ...policy,
+    platforms:
+      platform === "x" ? ["x"] : policy.platforms.filter((p) => p !== "x"),
+  };
+}
 
 export function currentCloudCatalogPermission(
   value: unknown,

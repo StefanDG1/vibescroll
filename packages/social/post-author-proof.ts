@@ -10,7 +10,12 @@ export const postAuthorProof = z.strictObject({
   creatorKey: z.string().regex(/^(instagram|tiktok|x):[0-9]{1,30}$/),
   handle: z.string().regex(/^[A-Za-z0-9_.]{1,30}$/),
   observedAt: z.number().int().positive(),
-  method: z.enum(["instagram_embed", "tiktok_page", "x_public_api"]),
+  method: z.enum([
+    "instagram_embed",
+    "instagram_media_api",
+    "tiktok_page",
+    "x_public_api",
+  ]),
   inputCanonical: z.string().max(2048).optional(),
   resolvedCanonical: z.string().max(2048).optional(),
 });
@@ -57,14 +62,15 @@ export function validPostAuthorProof(raw: unknown, canonical: string) {
         !tikTokShortUrl(proof.inputCanonical) ||
         platformPostKey(proof.resolvedCanonical!) !== proof.postKey)) ||
     !proof.creatorKey.startsWith(`${platform}:`) ||
-    proof.method !==
-      (
-        {
-          instagram: "instagram_embed",
-          tiktok: "tiktok_page",
-          x: "x_public_api",
-        } as const
-      )[platform as "instagram" | "tiktok" | "x"]
+    (!(platform === "instagram" && proof.method === "instagram_media_api") &&
+      proof.method !==
+        (
+          {
+            instagram: "instagram_embed",
+            tiktok: "tiktok_page",
+            x: "x_public_api",
+          } as const
+        )[platform as "instagram" | "tiktok" | "x"])
   )
     return null;
   try {

@@ -4,6 +4,7 @@ import {
   publicProfileLink,
   readPublicInstagramCreatorPage,
   readPublicTikTokCreatorPage,
+  readPublicCreatorProfile,
 } from "../packages/social/public-creators";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -189,6 +190,14 @@ it.each([1, 8])(
     ]);
     expect(result.nextCursor).toBe("next-page");
     expect(result.profile.links).toEqual(["https://www.tiktok.com/@creator"]);
+    expect(
+      await readPublicCreatorProfile(
+        "https://www.instagram.com/creator/",
+        "instagram:123456789",
+        traffic,
+        now,
+      ),
+    ).toEqual(result.profile);
   },
 );
 

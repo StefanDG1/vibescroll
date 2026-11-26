@@ -1,6 +1,7 @@
 import { parse } from "parse5";
 import { platformPostKey } from "../sources/post-identity";
 import { publicProfileLink } from "./creator-identity";
+import { readAuthenticatedInstagramPostAuthor } from "./public-creators";
 import {
   validPostAuthorProof,
   tikTokShortUrl,
@@ -74,75 +75,90 @@ export async function readPublicPostAuthor(
       );
   let creatorKey: string, handle: string, method: PostAuthorProof["method"];
   if (platform === "instagram") {
-    const html = await fetchText(
-        `https://www.instagram.com/p/${id}/embed/captioned/`,
-      ),
-      pending: any[] = [parse(html)],
-      roots: any[] = [];
-    let visited = 0;
-    while (pending.length && ++visited <= 30000) {
-      const node = pending.pop(),
-        attrs = Object.fromEntries(
-          (node.attrs ?? []).map((a: any) => [a.name, a.value]),
-        );
-      if (
-        node.nodeName === "div" &&
-        attrs.class?.split(/\s+/).includes("Embed")
-      )
-        roots.push(node);
-      pending.push(...(node.childNodes ?? []));
-    }
-    if (pending.length || roots.length !== 1)
-      throw Error("POST_AUTHOR_UNAVAILABLE");
-    const root = roots[0],
-      attrs = Object.fromEntries(root.attrs.map((a: any) => [a.name, a.value])),
-      names = new Set<string>(),
-      captions = new Set<string>(),
-      media = new Set<string>();
-    if (
-      !/^[0-9]{1,30}$/.test(attrs["data-owner-id"] ?? "") ||
-      !/^[0-9]{1,30}$/.test(attrs["data-media-id"] ?? "") ||
-      !["GraphVideo", "GraphImage", "GraphSidecar"].includes(
-        attrs["data-media-type"],
-      ) ||
-      platformPostKey(attrs["data-permalink"] ?? "") !== postKey
-    )
-      throw Error("POST_AUTHOR_IDENTITY_CHANGED");
-    pending.push(root);
-    while (pending.length) {
-      const node = pending.pop(),
-        a = Object.fromEntries(
-          (node.attrs ?? []).map((x: any) => [x.name, x.value]),
+    try {
+      const html = await fetchText(
+          `https://www.instagram.com/p/${id}/embed/captioned/`,
         ),
-        classes = a.class?.split(/\s+/) ?? [];
-      if (node.nodeName === "a") {
-        if (classes.includes("EmbeddedMedia"))
-          media.add(platformPostKey(a.href ?? "") ?? "invalid");
-        if (
-          classes.includes("Username") ||
-          classes.includes("CaptionUsername")
-        ) {
-          const profile = publicProfileLink(a.href ?? "");
-          if (!profile?.startsWith("https://www.instagram.com/"))
-            throw Error("POST_AUTHOR_IDENTITY_CHANGED");
-          (classes.includes("CaptionUsername") ? captions : names).add(
-            profile.split("/")[3],
+        pending: any[] = [parse(html)],
+        roots: any[] = [];
+      let visited = 0;
+      while (pending.length && ++visited <= 30000) {
+        const node = pending.pop(),
+          attrs = Object.fromEntries(
+            (node.attrs ?? []).map((a: any) => [a.name, a.value]),
           );
-        }
+        if (
+          node.nodeName === "div" &&
+          attrs.class?.split(/\s+/).includes("Embed")
+        )
+          roots.push(node);
+        pending.push(...(node.childNodes ?? []));
       }
-      pending.push(...(node.childNodes ?? []));
+      if (pending.length) throw Error("POST_AUTHOR_LIMIT");
+      if (roots.length > 1) throw Error("POST_AUTHOR_IDENTITY_CHANGED");
+      if (roots.length === 0) throw Error("POST_AUTHOR_UNAVAILABLE");
+      const root = roots[0],
+        attrs = Object.fromEntries(
+          root.attrs.map((a: any) => [a.name, a.value]),
+        ),
+        names = new Set<string>(),
+        captions = new Set<string>(),
+        media = new Set<string>();
+      if (
+        !/^[0-9]{1,30}$/.test(attrs["data-owner-id"] ?? "") ||
+        !/^[0-9]{1,30}$/.test(attrs["data-media-id"] ?? "") ||
+        !["GraphVideo", "GraphImage", "GraphSidecar"].includes(
+          attrs["data-media-type"],
+        ) ||
+        platformPostKey(attrs["data-permalink"] ?? "") !== postKey
+      )
+        throw Error("POST_AUTHOR_IDENTITY_CHANGED");
+      pending.push(root);
+      while (pending.length) {
+        const node = pending.pop(),
+          a = Object.fromEntries(
+            (node.attrs ?? []).map((x: any) => [x.name, x.value]),
+          ),
+          classes = a.class?.split(/\s+/) ?? [];
+        if (node.nodeName === "a") {
+          if (classes.includes("EmbeddedMedia"))
+            media.add(platformPostKey(a.href ?? "") ?? "invalid");
+          if (
+            classes.includes("Username") ||
+            classes.includes("CaptionUsername")
+          ) {
+            const profile = publicProfileLink(a.href ?? "");
+            if (!profile?.startsWith("https://www.instagram.com/"))
+              throw Error("POST_AUTHOR_IDENTITY_CHANGED");
+            (classes.includes("CaptionUsername") ? captions : names).add(
+              profile.split("/")[3],
+            );
+          }
+        }
+        pending.push(...(node.childNodes ?? []));
+      }
+      if (
+        names.size !== 1 ||
+        (captions.size &&
+          (captions.size !== 1 || !captions.has([...names][0]))) ||
+        media.size !== 1 ||
+        !media.has(postKey)
+      )
+        throw Error("POST_AUTHOR_IDENTITY_CHANGED");
+      creatorKey = `instagram:${attrs["data-owner-id"]}`;
+      handle = [...names][0];
+      method = "instagram_embed";
+    } catch (error) {
+      if (
+        !(error instanceof Error) ||
+        error.message !== "POST_AUTHOR_UNAVAILABLE"
+      )
+        throw error;
+      const author = await readAuthenticatedInstagramPostAuthor(id, transport);
+      creatorKey = `instagram:${author.authorId}`;
+      handle = author.authorHandle;
+      method = "instagram_media_api";
     }
-    if (
-      names.size !== 1 ||
-      (captions.size &&
-        (captions.size !== 1 || !captions.has([...names][0]))) ||
-      media.size !== 1 ||
-      !media.has(postKey)
-    )
-      throw Error("POST_AUTHOR_IDENTITY_CHANGED");
-    creatorKey = `instagram:${attrs["data-owner-id"]}`;
-    handle = [...names][0];
-    method = "instagram_embed";
   } else if (platform === "tiktok") {
     const input = new URL(resolvedCanonical),
       match =
@@ -189,16 +205,24 @@ export async function readPublicPostAuthor(
     method = "tiktok_page";
   } else if (platform === "x") {
     const row = JSON.parse(
-      await fetchText(`https://api.fxtwitter.com/status/${id}`),
+      await body(
+        await transport(`https://api.fxtwitter.com/2/status/${id}`, {
+          headers: {
+            "User-Agent": "VibeScroll/1.0 (+https://scroll.companynerve.com)",
+          },
+          redirect: "error",
+          signal: AbortSignal.timeout(9000),
+        }),
+      ),
     );
     if (
       row.code !== 200 ||
-      row.tweet?.id !== id ||
-      row.tweet?.author?.protected
+      row.status?.id !== id ||
+      row.status?.author?.protected !== false
     )
       throw Error("POST_AUTHOR_UNAVAILABLE");
-    creatorKey = `x:${row.tweet?.author?.id}`;
-    handle = row.tweet?.author?.screen_name;
+    creatorKey = `x:${row.status?.author?.id}`;
+    handle = row.status?.author?.screen_name;
     method = "x_public_api";
   } else throw Error("POST_AUTHOR_UNAVAILABLE");
   const proof = validPostAuthorProof(

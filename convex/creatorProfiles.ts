@@ -19,8 +19,123 @@ import { sourceRetained } from "./lib/sourceAuthority";
 import { socialHash } from "../packages/social/contracts";
 import { canonicalJson } from "../packages/contracts/canonical-json.mjs";
 import { ensure } from "../packages/policy";
+import { PolicyError } from "../packages/policy";
+import { postAuthorProofValue } from "./creatorIdentitySchema";
+import { validPostAuthorProof } from "../packages/social/post-author-proof";
+import { readPublicPostAuthor } from "../packages/social/post-author";
+import { enqueueCreatorMatching } from "./lib/creatorMatching";
 
 import { reciprocalCreatorComponent } from "../packages/social/creator-identity";
+
+export const legacySourceContext = internalQuery({
+  args: { sourceId: v.id("sources") },
+  returns: v.union(
+    v.null(),
+    v.object({
+      generation: v.number(),
+      canonical: v.string(),
+      versionId: v.id("analysisVersions"),
+    }),
+  ),
+  handler: async (ctx, { sourceId }) => {
+    if (!enabled()) return null;
+    const source = await ctx.db.get(sourceId);
+    if (
+      !source?.url ||
+      source.state !== "ready" ||
+      !source.rightsAttested ||
+      !sourceRetained(source.sourceRetentionUntil) ||
+      source.publicImportId ||
+      !source.selectedAnalysisVersionId ||
+      source.creator?.generation === source.generation
+    )
+      return null;
+    if ((await ctx.db.get(source.organizationId))?.status !== "active")
+      return null;
+    try {
+      if (!(await selectedAnalysis(ctx, source))) return null;
+    } catch (error) {
+      if (error instanceof PolicyError) return null;
+      throw error;
+    }
+    return {
+      generation: source.generation,
+      canonical: source.canonical,
+      versionId: source.selectedAnalysisVersionId,
+    };
+  },
+});
+
+export const retainLegacySourceIdentity = internalMutation({
+  args: {
+    sourceId: v.id("sources"),
+    generation: v.number(),
+    versionId: v.id("analysisVersions"),
+    canonical: v.string(),
+    proof: postAuthorProofValue,
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    if (!enabled()) return false;
+    const source = await ctx.db.get(args.sourceId),
+      proof = validPostAuthorProof(args.proof, args.canonical);
+    if (
+      !source ||
+      !proof ||
+      proof.observedAt > Date.now() + 5000 ||
+      proof.observedAt < Date.now() - 40000 ||
+      source.generation !== args.generation ||
+      source.selectedAnalysisVersionId !== args.versionId ||
+      source.canonical !== args.canonical ||
+      source.publicImportId ||
+      source.state !== "ready" ||
+      !source.rightsAttested ||
+      !sourceRetained(source.sourceRetentionUntil) ||
+      source.creator?.generation === source.generation
+    )
+      return false;
+    if ((await ctx.db.get(source.organizationId))?.status !== "active")
+      return false;
+    try {
+      if (!(await selectedAnalysis(ctx, source))) return false;
+    } catch (error) {
+      if (error instanceof PolicyError) return false;
+      throw error;
+    }
+    await ctx.db.patch(source._id, {
+      platformPostKey: proof.postKey,
+      creator: {
+        key: proof.creatorKey,
+        handle: proof.handle,
+        generation: source.generation,
+      },
+    });
+    await enqueueCreatorMatching(ctx, source._id);
+    return true;
+  },
+});
+
+export const repairSavedSource = internalAction({
+  args: { sourceId: v.id("sources") },
+  returns: v.boolean(),
+  handler: async (ctx, { sourceId }): Promise<boolean> => {
+    const source = await ctx.runQuery(
+      internal.creatorProfiles.legacySourceContext,
+      { sourceId },
+    );
+    if (!source) return false;
+    let proof;
+    try {
+      proof = await readPublicPostAuthor(source.canonical);
+    } catch {
+      return false;
+    }
+    return ctx.runMutation(
+      internal.creatorProfiles.retainLegacySourceIdentity,
+      { sourceId, ...source, proof },
+    );
+  },
+});
 
 const day = 86400000;
 export const sourceContext = internalQuery({

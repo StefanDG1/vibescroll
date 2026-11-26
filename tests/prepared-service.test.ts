@@ -462,157 +462,166 @@ async function freshSource(
   };
 }
 
-it("sponsors a photo once from current monthly credits and preserves its hold through unfollow and rejoin", async () => {
-  const f = await fixture(true);
-  if (!("serviceOrg" in f)) throw Error("Expected catalog fixture");
-  for (const flag of [
-    "VIBESCROLL_ORDERED_SOCIAL_ENABLED",
-    "VIBESCROLL_MANAGED_AUTO_ENABLED",
-    "VIBESCROLL_CREATOR_DISCOVERY_ENABLED",
-    "VIBESCROLL_CREATOR_POOL_ENABLED",
-  ])
-    vi.stubEnv(flag, "true");
-  vi.stubEnv("VIBESCROLL_CREATOR_POOL_DAILY_NANO_USD", "100000000");
-  vi.stubEnv(
-    "ADMIN_PROCESSING_ALLOWANCE_JSON",
-    JSON.stringify({
-      version: "admin-processing-allowance-v1",
-      id: "creator-admin-fixture",
-      enabled: true,
-      subject: f.actor.subject,
-      organizationId: f.org,
-      monthlyCredits: 300,
-      maximumHourlyJobs: 20,
-      maximumDailyJobs: 100,
-      startsAt: Date.now() - 1000,
-    }),
-  );
-  vi.stubEnv(
-    "PAID_PROCESSING_CONFIGURATION_JSON",
-    JSON.stringify({
-      version: "paid-processing-monetary-v2",
-      id: "creator-fixture-funding",
-      enabled: true,
-      verifiedAt: Date.now() - 1000,
-      expiresAt: Date.now() + 86400000,
-      operatingPoolNanoUsd: 900000000,
-      maximumJobNanoUsd: 50000000,
-      verifiedProviderCreditNanoUsd: 1000000000,
-      providerKeyBudgetNanoUsd: 1000000000,
-      priorExposureNanoUsd: 100000000,
-    }),
-  );
-  vi.stubEnv(
-    "PROPOSAL_SERVICE_CONFIGURATION_JSON",
-    JSON.stringify({
-      version: "proposal-service-v1",
-      enabled: true,
-      privateProjectContextAllowed: true,
-      permissionReference: "synthetic creator funding authority",
-    }),
-  );
-  vi.stubEnv(
-    "CLOUD_CATALOG_CONFIGURATION_JSON",
-    JSON.stringify({
-      version: "cloud-catalog-config-v2",
-      serviceOrganizationId: f.serviceOrg,
-      maximumStorageBytes: 20000000,
-      reviewedAt: Date.now() - 5000,
-      expiresAt: Date.now() + 86400000,
-      permissions: [],
-      defaultPolicy: {
-        version: "automatic-neutral-catalog-v1",
-        id: "creator-standing-fixture",
-        disclosureVersion: "synthetic-notice",
-        rightsBasis: "user_attested",
-        platforms: ["instagram", "tiktok"],
-        providerPermissionReference: "synthetic source route",
-        contentPermissionReference: "synthetic user attestation",
-        privacyReviewReference: "synthetic neutral-only projection",
+it.each(["tiktok", "x"] as const)(
+  "sponsors a zero-duration %s post once and preserves its hold through unfollow and rejoin",
+  async (platform) => {
+    const f = await fixture(true);
+    if (!("serviceOrg" in f)) throw Error("Expected catalog fixture");
+    for (const flag of [
+      "VIBESCROLL_ORDERED_SOCIAL_ENABLED",
+      "WORK_CLOUD_MEDIA_ENABLED",
+      "VIBESCROLL_MANAGED_AUTO_ENABLED",
+      "VIBESCROLL_CREATOR_DISCOVERY_ENABLED",
+      "VIBESCROLL_CREATOR_POOL_ENABLED",
+    ])
+      vi.stubEnv(flag, "true");
+    vi.stubEnv("VIBESCROLL_CREATOR_POOL_DAILY_NANO_USD", "100000000");
+    vi.stubEnv(
+      "ADMIN_PROCESSING_ALLOWANCE_JSON",
+      JSON.stringify({
+        version: "admin-processing-allowance-v1",
+        id: "creator-admin-fixture",
+        enabled: true,
+        subject: f.actor.subject,
+        organizationId: f.org,
+        monthlyCredits: 300,
+        maximumHourlyJobs: 20,
+        maximumDailyJobs: 100,
+        startsAt: Date.now() - 1000,
+      }),
+    );
+    vi.stubEnv(
+      "PAID_PROCESSING_CONFIGURATION_JSON",
+      JSON.stringify({
+        version: "paid-processing-monetary-v2",
+        id: "creator-fixture-funding",
+        enabled: true,
+        verifiedAt: Date.now() - 1000,
+        expiresAt: Date.now() + 86400000,
+        operatingPoolNanoUsd: 900000000,
+        maximumJobNanoUsd: 50000000,
+        verifiedProviderCreditNanoUsd: 1000000000,
+        providerKeyBudgetNanoUsd: 1000000000,
+        priorExposureNanoUsd: 100000000,
+      }),
+    );
+    vi.stubEnv(
+      "PROPOSAL_SERVICE_CONFIGURATION_JSON",
+      JSON.stringify({
+        version: "proposal-service-v1",
+        enabled: true,
+        privateProjectContextAllowed: true,
+        permissionReference: "synthetic creator funding authority",
+      }),
+    );
+    vi.stubEnv(
+      "CLOUD_CATALOG_CONFIGURATION_JSON",
+      JSON.stringify({
+        version: "cloud-catalog-config-v2",
+        serviceOrganizationId: f.serviceOrg,
+        maximumStorageBytes: 20000000,
         reviewedAt: Date.now() - 5000,
         expiresAt: Date.now() + 86400000,
-        maximumRetentionMs: 86400000,
-      },
-    }),
-  );
-  await f.t.mutation(internal.adminProcessingAllowance.renew, {
-    organizationId: f.org,
-  });
-  const creatorKey = "tiktok:123456789";
-  const ids = await f.t.run(async (c) => {
-    await c.db.patch(f.sourceId, {
-      creator: { key: creatorKey, handle: "creator", generation: 1 },
-    });
-    const followId = await c.db.insert("creatorFollows", {
-      organizationId: f.org,
-      actorId: f.actor._id,
-      creatorKey,
-      state: "following",
-      sponsor: true,
-      firstFollowedAt: Date.now() - 7200000,
-      activeSince: Date.now() - 7200000,
-      updatedAt: Date.now(),
-    });
-    const discoveryId = await c.db.insert("creatorDiscoveries", {
-      creatorKey,
-      postKey: "tiktok:7553302113757990166",
-      url: "https://www.tiktok.com/@creator/photo/7553302113757990166",
-      publishedAt: Date.now() - 3600000,
-      durationMs: 0,
-      observedAt: Date.now(),
-    });
-    return { followId, discoveryId };
-  });
-  const result = await f.t.mutation(
-    internal.preparedService.startCreatorSponsored,
-    ids,
-  );
-  expect(result?.runId).toBeTruthy();
-  const pool = (await f.t.run((c) => c.db.query("creatorPoolRuns").unique()))!;
-  expect(pool).toMatchObject({ state: "active", maxCredits: 2 });
-  expect(
-    await f.t.mutation(internal.preparedService.startCreatorSponsored, ids),
-  ).toBeNull();
-  const allowance = () =>
-    f.t.run(async (c) =>
-      sponsorAllowance(
-        c,
-        (await c.db.get(f.actor._id))!,
-        (await c.db.get(f.org))!,
-        Date.now(),
-      ),
+        permissions: [],
+        defaultPolicy: {
+          version: "automatic-neutral-catalog-v1",
+          id: "creator-standing-fixture",
+          disclosureVersion: "synthetic-notice",
+          rightsBasis: "user_attested",
+          platforms: ["instagram", "tiktok", "x"],
+          providerPermissionReference: "synthetic source route",
+          contentPermissionReference: "synthetic user attestation",
+          privacyReviewReference: "synthetic neutral-only projection",
+          reviewedAt: Date.now() - 5000,
+          expiresAt: Date.now() + 86400000,
+          maximumRetentionMs: 86400000,
+        },
+      }),
     );
-  expect((await allowance())?.used).toBe(2);
-  for (const following of [false, true])
-    await f.owner.mutation(api.creators.setFollow, {
+    await f.t.mutation(internal.adminProcessingAllowance.renew, {
       organizationId: f.org,
-      sourceId: f.sourceId,
-      creatorKey,
-      following,
     });
-  expect((await allowance())?.used).toBe(2);
-  const preparation = (await f.t.run((c) => c.db.get(result!.runId!)))!;
-  const retained = (await f.t.run((c) =>
-    c.db
-      .query("reservations")
-      .withIndex("by_key", (q) =>
-        q
-          .eq("organizationId", f.org)
-          .eq("key", preparation.receipt.admission.reservationKey),
-      )
-      .unique(),
-  ))!;
-  expect(retained).toBeTruthy();
-  expect(retained).toMatchObject({ state: "active", max: pool.maxCredits });
-  for (const allocation of retained.allocations ?? [])
-    expect((await f.t.run((c) => c.db.get(allocation.poolId)))?.kind).toBe(
-      "admin_monthly",
+    const creatorKey = `${platform}:123456789`;
+    const ids = await f.t.run(async (c) => {
+      await c.db.patch(f.sourceId, {
+        creator: { key: creatorKey, handle: "creator", generation: 1 },
+      });
+      const followId = await c.db.insert("creatorFollows", {
+        organizationId: f.org,
+        actorId: f.actor._id,
+        creatorKey,
+        state: "following",
+        sponsor: true,
+        firstFollowedAt: Date.now() - 7200000,
+        activeSince: Date.now() - 7200000,
+        updatedAt: Date.now(),
+      });
+      const discoveryId = await c.db.insert("creatorDiscoveries", {
+        creatorKey,
+        postKey: `${platform}:7553302113757990166`,
+        url:
+          platform === "tiktok"
+            ? "https://www.tiktok.com/@creator/photo/7553302113757990166"
+            : "https://x.com/creator/status/7553302113757990166",
+        publishedAt: Date.now() - 3600000,
+        durationMs: 0,
+        observedAt: Date.now(),
+      });
+      return { followId, discoveryId };
+    });
+    const result = await f.t.mutation(
+      internal.preparedService.startCreatorSponsored,
+      ids,
     );
-  expect(
-    await f.t.mutation(internal.preparedService.startCreatorSponsored, ids),
-  ).toBeNull();
-  expect((await f.t.run((c) => c.db.get(pool._id)))?.state).toBe("active");
-});
+    expect(result?.runId).toBeTruthy();
+    const pool = (await f.t.run((c) =>
+      c.db.query("creatorPoolRuns").unique(),
+    ))!;
+    expect(pool).toMatchObject({ state: "active", maxCredits: 2 });
+    expect(
+      await f.t.mutation(internal.preparedService.startCreatorSponsored, ids),
+    ).toBeNull();
+    const allowance = () =>
+      f.t.run(async (c) =>
+        sponsorAllowance(
+          c,
+          (await c.db.get(f.actor._id))!,
+          (await c.db.get(f.org))!,
+          Date.now(),
+        ),
+      );
+    expect((await allowance())?.used).toBe(2);
+    for (const following of [false, true])
+      await f.owner.mutation(api.creators.setFollow, {
+        organizationId: f.org,
+        sourceId: f.sourceId,
+        creatorKey,
+        following,
+      });
+    expect((await allowance())?.used).toBe(2);
+    const preparation = (await f.t.run((c) => c.db.get(result!.runId!)))!;
+    const retained = (await f.t.run((c) =>
+      c.db
+        .query("reservations")
+        .withIndex("by_key", (q) =>
+          q
+            .eq("organizationId", f.org)
+            .eq("key", preparation.receipt.admission.reservationKey),
+        )
+        .unique(),
+    ))!;
+    expect(retained).toBeTruthy();
+    expect(retained).toMatchObject({ state: "active", max: pool.maxCredits });
+    for (const allocation of retained.allocations ?? [])
+      expect((await f.t.run((c) => c.db.get(allocation.poolId)))?.kind).toBe(
+        "admin_monthly",
+      );
+    expect(
+      await f.t.mutation(internal.preparedService.startCreatorSponsored, ids),
+    ).toBeNull();
+    expect((await f.t.run((c) => c.db.get(pool._id)))?.state).toBe("active");
+  },
+);
 
 it.each([
   ["instagram", 0],
@@ -3506,128 +3515,201 @@ it("reports only the current actor/generation shared wait through MCP until cach
   expect((await read()).status).toBe("ready");
 });
 
-it("saves complete text-only X evidence, finishes cited analysis and reuses it without a media duration", async () => {
-  const s = await fixture();
-  const canonical = "https://x.com/i/web/status/1234567890123456789";
-  await s.t.run((c) =>
-    c.db.patch(s.sourceId, {
-      canonical,
-      url: canonical,
-      title: "X post",
-      state: "queued",
-      analysis: undefined,
-      orderedMedia: undefined,
-      personalAnalysis: undefined,
-    }),
-  );
-  const run = await s.start("x-text-only-once");
-  await s.t.mutation(internal.preparedAnalysis.claim, { runId: run.runId! });
-  await s.t.mutation(internal.preparedAnalysis.progress, {
-    runId: run.runId!,
-    stage: "transcribing",
-  });
-  const text = "A complete post caption with no attachments.";
-  const { socialHash } = await import("../packages/social/contracts");
-  const { canonicalJson } =
-    await import("../packages/contracts/canonical-json.mjs");
-  const prepared = await makePreparedEvidence({
-    requestedCanonical: canonical,
-    canonical,
-    platform: "x",
-    post: {
-      version: "x-post-evidence-v1",
-      postId: "1234567890123456789",
-      provider: "gallery-dl",
-      text,
-      textHash: await socialHash(text),
-      expectedAssetCount: 0,
-      coverage: "complete_manifest",
-      assets: [],
-    },
-    sourceHash: await socialHash(
-      canonicalJson({ canonical, text, assets: [] }),
-    ),
-    recipeHash: "b".repeat(64),
-    downloaderVersion: "gallery-dl/1.32.19",
-    title: "X post",
-    authorName: "Author",
-    durationMs: 0,
-    language: "und",
-    observedAt: Date.now(),
-    transcript: {
-      origin: "none",
-      model: null,
-      provider: null,
-      inputSha256: null,
-    },
-    segments: [],
-    frames: [],
-  });
-  await s.t.mutation(internal.preparedAnalysis.retain, {
-    runId: run.runId!,
-    prepared,
-    frames: [],
-    receipt: {},
-  });
-  await s.t.mutation(internal.preparedAnalysis.progress, {
-    runId: run.runId!,
-    stage: "analyzing",
-  });
-  const output = {
-    schemaVersion: "analysis-version-output-v1",
-    sourceId: s.sourceId,
-    attemptId: run.runId!,
-    evidenceHash: prepared.evidence.evidenceHash,
-    postRevisionHash: prepared.evidence.sourceRevisionHash,
-    summary: "Caption analysis",
-    warnings: [],
-    insights: s.output.insights.map((i) => ({
-      ...i,
-      evidence: [
-        { kind: "caption", id: "post-caption-1", startMs: null, endMs: null },
-      ],
-    })),
-  };
-  const versionId = await s.t.mutation(
-    internal.preparedAnalysis.finishGateway,
-    {
+it.each([false, true])(
+  "saves complete text-only X evidence with catalog=%s, finishes analysis and reuses it",
+  async (catalog) => {
+    const s = await fixture(catalog);
+    if (catalog) {
+      const config = JSON.parse(process.env.CLOUD_CATALOG_CONFIGURATION_JSON!);
+      vi.stubEnv(
+        "CLOUD_CATALOG_CONFIGURATION_JSON",
+        JSON.stringify({
+          ...config,
+          version: "cloud-catalog-config-v2",
+          defaultPolicy: {
+            version: "automatic-neutral-catalog-v1",
+            id: "synthetic-x-standing-policy",
+            disclosureVersion: "synthetic-x-notice",
+            rightsBasis: "user_attested",
+            platforms: ["instagram", "tiktok", "x"],
+            providerPermissionReference: "synthetic public source access",
+            contentPermissionReference: "synthetic user attestation",
+            privacyReviewReference: "synthetic neutral-only projection",
+            reviewedAt: config.reviewedAt,
+            expiresAt: config.expiresAt,
+            maximumRetentionMs: 86400000,
+          },
+        }),
+      );
+    }
+    const canonical = "https://x.com/i/web/status/1234567890123456789";
+    await s.t.run((c) =>
+      c.db.patch(s.sourceId, {
+        canonical,
+        url: canonical,
+        title: "X post",
+        state: "queued",
+        selectedAnalysisVersionId: undefined,
+        selectedAnalysisSummary: undefined,
+        selectedAnalysisInsightCount: undefined,
+        selectedAnalysisMainPoints: undefined,
+        analysis: undefined,
+        orderedMedia: undefined,
+        personalAnalysis: undefined,
+      }),
+    );
+    const run = await s.start("x-text-only-once");
+    await s.t.mutation(internal.preparedAnalysis.claim, { runId: run.runId! });
+    await s.t.mutation(internal.preparedAnalysis.progress, {
       runId: run.runId!,
-      output,
-      receipt: {
-        model: "meta/muse-spark-1.3-contributor",
-        provider: "meta",
-        requestId: "gen_" + "a".repeat(26),
-        startedAt: Date.now() - 1000,
-        completedAt: Date.now(),
-        rateEstimateUsd: 0.002,
+      stage: "transcribing",
+    });
+    const text = "A complete post caption with no attachments.";
+    const { socialHash } = await import("../packages/social/contracts");
+    const { canonicalJson } =
+      await import("../packages/contracts/canonical-json.mjs");
+    const prepared = await makePreparedEvidence({
+      requestedCanonical: canonical,
+      canonical,
+      platform: "x",
+      post: {
+        version: "x-post-evidence-v1",
+        authorId: "123456789",
+        authorHandle: "creator",
+        postId: "1234567890123456789",
+        provider: "gallery-dl",
+        text,
+        textHash: await socialHash(text),
+        expectedAssetCount: 0,
+        coverage: "complete_manifest",
+        assets: [],
       },
-    },
-  );
-  const source = (await s.t.run((c) => c.db.get(s.sourceId)))!;
-  expect(source.selectedAnalysisVersionId).toBe(versionId);
-  expect(source.linkPreview?.title).toBe("X post");
-  const quote = await s.quote();
-  expect(quote.durationMaximumMs).toBe(0);
-  expect(quote.preparationCredits).toBe(0);
-  expect(quote.analysisCredits).toBeGreaterThan(0);
-  const context = postContextPageOutput.parse(
-    await s.assistant.query(internal.assistant.fetch, {
-      id: s.sourceId,
-      profileId: s.org,
-      format: "post_context_v1",
-    }),
-  );
-  expect(context.context.complete).toBe(true);
-  expect(context.context.frames).toEqual([]);
-  expect(
-    context.context.items.some(
-      (item) =>
-        item.kind === "observation" &&
-        item.value.kind === "caption" &&
-        item.value.text === text,
-    ),
-  ).toBe(true);
-});
+      sourceHash: await socialHash(
+        canonicalJson({ canonical, text, assets: [] }),
+      ),
+      recipeHash: "b".repeat(64),
+      downloaderVersion: "gallery-dl/1.32.19",
+      title: "X post",
+      authorName: "Author",
+      durationMs: 0,
+      language: "und",
+      observedAt: Date.now(),
+      transcript: {
+        origin: "none",
+        model: null,
+        provider: null,
+        inputSha256: null,
+      },
+      segments: [],
+      frames: [],
+    });
+    await s.t.mutation(internal.preparedAnalysis.retain, {
+      runId: run.runId!,
+      prepared,
+      frames: [],
+      receipt: {},
+    });
+    await s.t.mutation(internal.preparedAnalysis.progress, {
+      runId: run.runId!,
+      stage: "analyzing",
+    });
+    const output = {
+      schemaVersion: "analysis-version-output-v1",
+      sourceId: s.sourceId,
+      attemptId: run.runId!,
+      evidenceHash: prepared.evidence.evidenceHash,
+      postRevisionHash: prepared.evidence.sourceRevisionHash,
+      summary: "Caption analysis",
+      warnings: [],
+      insights: s.output.insights.map((i) => ({
+        ...i,
+        evidence: [
+          { kind: "caption", id: "post-caption-1", startMs: null, endMs: null },
+        ],
+      })),
+    };
+    const versionId = await s.t.mutation(
+      internal.preparedAnalysis.finishGateway,
+      {
+        runId: run.runId!,
+        output,
+        receipt: {
+          model: "meta/muse-spark-1.3-contributor",
+          provider: "meta",
+          requestId: "gen_" + "a".repeat(26),
+          startedAt: Date.now() - 1000,
+          completedAt: Date.now(),
+          rateEstimateUsd: 0.002,
+        },
+      },
+    );
+    const source = (await s.t.run((c) => c.db.get(s.sourceId)))!;
+    expect(source.selectedAnalysisVersionId).toBe(versionId);
+    expect(source.linkPreview?.title).toBe("X post");
+    const quote = await s.quote();
+    expect(quote.durationMaximumMs).toBe(0);
+    expect(quote.preparationCredits).toBe(0);
+    expect(quote.analysisCredits).toBeGreaterThan(0);
+    const context = postContextPageOutput.parse(
+      await s.assistant.query(internal.assistant.fetch, {
+        id: s.sourceId,
+        profileId: s.org,
+        format: "post_context_v1",
+      }),
+    );
+    if (catalog) {
+      await s.owner.query(api.cloudCatalog.preview, {
+        sourceId: s.sourceId,
+        versionId,
+      });
+      const published = await s.t.action(
+        internal.cloudCatalogActions.publishCompleted,
+        {
+          sourceId: s.sourceId,
+          actorId: s.actor._id,
+          generation: source.generation,
+          versionId,
+        },
+      );
+      expect(published.state).toBe("published");
+      const current = (await s.t.run((c) => c.db.get(s.sourceId)))!;
+      expect(current.publicImportId).toBeTruthy();
+      expect((await s.t.run((c) => c.db.get(versionId!)))?.state).toBe("ready");
+      expect(current.catalogStatus?.state).toBe("published");
+      await s.t.mutation(internal.catalogAccess.grantOperatorAccess, {
+        subject: s.actor.subject,
+        enabled: true,
+        reason: "Synthetic X text catalog reader",
+      });
+      const catalogPage = await s.owner.query(api.catalogBrowse.list, {
+        organizationId: s.org,
+      });
+      expect(
+        catalogPage.items.some((item) => item.canonical === canonical),
+      ).toBe(true);
+      const layer = (await s.t.run((c) => c.db.get(current.publicImportId!)))!;
+      if (!("familyId" in layer)) throw Error("Expected cloud association");
+      await s.t.mutation(internal.creatorCatalog.indexFamily, {
+        familyId: layer.familyId,
+      });
+      const creator = await s.owner.query(api.creators.read, {
+        organizationId: s.org,
+        creatorKey: "x:123456789",
+      });
+      expect(creator?.sharedItems).toHaveLength(1);
+    }
+    expect(context.context.complete).toBe(true);
+    expect(context.context.frames).toEqual([]);
+    expect(
+      context.context.items.some(
+        (item) =>
+          item.kind === "observation" &&
+          item.value.kind === "caption" &&
+          item.value.text === text,
+      ),
+    ).toBe(true);
+  },
+);
 
 function fundedPreparation(
   f: Awaited<ReturnType<typeof fixture>>,

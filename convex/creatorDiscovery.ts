@@ -34,6 +34,7 @@ import {
   publicCreatorFeedEnabled,
   readPublicInstagramCreatorPage,
   readPublicTikTokCreatorPage,
+  readPublicXCreatorPage,
   publicCreatorProfile,
   creatorProfileUrl,
 } from "../packages/social/public-creators";
@@ -284,6 +285,7 @@ export const check = internalAction({
       | ReturnType<typeof readInstagramCreatorPage>
       | ReturnType<typeof readPublicInstagramCreatorPage>
       | ReturnType<typeof readPublicTikTokCreatorPage>
+      | ReturnType<typeof readPublicXCreatorPage>
     > | null = null;
     if (
       (tiktok ||
@@ -307,6 +309,15 @@ export const check = internalAction({
           typeof args.cursor !== "string"
         ) {
           result = await readPublicTikTokCreatorPage(
+            { creatorKey: args.creatorKey, handle: args.handle },
+            args.cursor,
+          );
+        } else if (
+          args.handle &&
+          args.creatorKey.startsWith("x:") &&
+          typeof args.cursor !== "number"
+        ) {
+          result = await readPublicXCreatorPage(
             { creatorKey: args.creatorKey, handle: args.handle },
             args.cursor,
           );
